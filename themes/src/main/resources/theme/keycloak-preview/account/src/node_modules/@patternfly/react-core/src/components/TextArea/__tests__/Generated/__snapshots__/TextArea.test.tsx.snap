@@ -1,0 +1,12 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`TextArea should match snapshot (auto-generated) 1`] = `
+<textarea
+  aria-invalid={false}
+  aria-label="null"
+  className="pf-c-form-control ''"
+  onChange={[Function]}
+  required={false}
+  value="string"
+/>
+`;

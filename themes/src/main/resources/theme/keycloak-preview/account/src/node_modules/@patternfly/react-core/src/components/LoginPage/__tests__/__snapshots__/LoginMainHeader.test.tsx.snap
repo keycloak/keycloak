@@ -1,0 +1,11 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`className is added to the root element 1`] = `"pf-c-login__main-header extra-class"`;
+
+exports[`renders with PatternFly Core styles 1`] = `
+<header
+  className="pf-c-login__main-header"
+/>
+`;
+
+exports[`title and subtitle are rendered correctly 1`] = `"pf-c-login__main-header"`;

@@ -1,0 +1,108 @@
+.pf-c-clipboard-copy {
+  --pf-c-clipboard-copy__group-toggle--PaddingRight: var(--pf-global--spacer--md);
+  --pf-c-clipboard-copy__group-toggle--PaddingLeft: var(--pf-global--spacer--md);
+  --pf-c-clipboard-copy__group-toggle--BorderWidth: var(--pf-global--BorderWidth--sm);
+  --pf-c-clipboard-copy__group-toggle--BorderTopColor: var(--pf-global--BorderColor--300);
+  --pf-c-clipboard-copy__group-toggle--BorderRightColor: var(--pf-global--BorderColor--300);
+  --pf-c-clipboard-copy__group-toggle--BorderBottomColor: var(--pf-global--BorderColor--200);
+  --pf-c-clipboard-copy__group-toggle--BorderLeftColor: var(--pf-global--BorderColor--300);
+  --pf-c-clipboard-copy__group-toggle--hover--BorderBottomColor: var(--pf-global--active-color--100);
+  --pf-c-clipboard-copy__group-toggle--active--BorderBottomWidth: var(--pf-global--BorderWidth--md);
+  --pf-c-clipboard-copy__group-toggle--active--BorderBottomColor: var(--pf-global--active-color--100);
+  --pf-c-clipboard-copy__group-toggle--focus--BorderBottomWidth: var(--pf-global--BorderWidth--md);
+  --pf-c-clipboard-copy__group-toggle--focus--BorderBottomColor: var(--pf-global--active-color--100);
+  --pf-c-clipboard-copy__group-toggle--m-expanded--BorderBottomWidth: var(--pf-global--BorderWidth--md);
+  --pf-c-clipboard-copy__group-toggle--m-expanded--BorderBottomColor: var(--pf-global--active-color--100);
+  --pf-c-clipboard-copy__group-toggle--OutlineOffset: calc(-1 * var(--pf-global--spacer--xs));
+  --pf-c-clipboard-copy__group-toggle-icon--Transition: .2s ease-in 0s;
+  --pf-c-clipboard-copy--m-expanded__group-toggle-icon--Transform: rotate(90deg);
+  --pf-c-clipboard-copy__group-copy--PaddingRight: var(--pf-global--spacer--md);
+  --pf-c-clipboard-copy__group-copy--PaddingLeft: var(--pf-global--spacer--md);
+  --pf-c-clipboard-copy__group-copy--BorderWidth: var(--pf-global--BorderWidth--sm);
+  --pf-c-clipboard-copy__group-copy--BorderTopColor: var(--pf-global--BorderColor--300);
+  --pf-c-clipboard-copy__group-copy--BorderRightColor: var(--pf-global--BorderColor--300);
+  --pf-c-clipboard-copy__group-copy--BorderBottomColor: var(--pf-global--BorderColor--200);
+  --pf-c-clipboard-copy__group-copy--BorderLeftColor: var(--pf-global--BorderColor--300);
+  --pf-c-clipboard-copy__group-copy--hover--BorderBottomColor: var(--pf-global--active-color--100);
+  --pf-c-clipboard-copy__group-copy--active--BorderBottomWidth: var(--pf-global--BorderWidth--md);
+  --pf-c-clipboard-copy__group-copy--active--BorderBottomColor: var(--pf-global--active-color--100);
+  --pf-c-clipboard-copy__group-copy--focus--BorderBottomWidth: var(--pf-global--BorderWidth--md);
+  --pf-c-clipboard-copy__group-copy--focus--BorderBottomColor: var(--pf-global--active-color--100);
+  --pf-c-clipboard-copy__expandable-content--PaddingTop: var(--pf-global--spacer--md);
+  --pf-c-clipboard-copy__expandable-content--PaddingRight: var(--pf-global--spacer--md);
+  --pf-c-clipboard-copy__expandable-content--PaddingBottom: var(--pf-global--spacer--md);
+  --pf-c-clipboard-copy__expandable-content--PaddingLeft: var(--pf-global--spacer--md);
+  --pf-c-clipboard-copy__expandable-content--BackgroundColor: var(--pf-global--BackgroundColor--light-100);
+  --pf-c-clipboard-copy__expandable-content--BorderWidth: var(--pf-global--BorderWidth--sm);
+  --pf-c-clipboard-copy__expandable-content--BoxShadow: var(--pf-global--BoxShadow--md);
+  --pf-c-clipboard-copy__expandable-content--OutlineOffset: calc(-1 * var(--pf-global--spacer--xs)); }
+  .pf-c-clipboard-copy.pf-m-expanded .pf-c-clipboard-copy__group-toggle::before {
+    --pf-c-clipboard-copy__group-toggle--BorderBottomColor: var(--pf-c-clipboard-copy__group-toggle--m-expanded--BorderBottomColor);
+    border-bottom-width: var(--pf-c-clipboard-copy__group-toggle--m-expanded--BorderBottomWidth); }
+  .pf-c-clipboard-copy.pf-m-expanded .pf-c-clipboard-copy__group-toggle .pf-c-clipboard-copy__group-toggle-icon {
+    transform: var(--pf-c-clipboard-copy--m-expanded__group-toggle-icon--Transform); }
+
+.pf-c-clipboard-copy__group {
+  display: flex; }
+  .pf-c-clipboard-copy__group > * + * {
+    margin-left: -1px; }
+
+.pf-c-clipboard-copy__group-toggle {
+  position: relative;
+  padding-right: var(--pf-c-clipboard-copy__group-toggle--PaddingRight);
+  padding-left: var(--pf-c-clipboard-copy__group-toggle--PaddingLeft);
+  border: none;
+  outline-offset: var(--pf-c-clipboard-copy__group-toggle--OutlineOffset); }
+  .pf-c-clipboard-copy__group-toggle .pf-c-clipboard-copy__group-toggle-icon {
+    transition: var(--pf-c-clipboard-copy__group-toggle-icon--Transition); }
+  .pf-c-clipboard-copy__group-toggle::before {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    content: "";
+    border: var(--pf-c-clipboard-copy__group-toggle--BorderWidth) solid;
+    border-color: var(--pf-c-clipboard-copy__group-toggle--BorderTopColor) var(--pf-c-clipboard-copy__group-toggle--BorderRightColor) var(--pf-c-clipboard-copy__group-toggle--BorderBottomColor) var(--pf-c-clipboard-copy__group-toggle--BorderLeftColor); }
+  .pf-c-clipboard-copy__group-toggle:hover::before, .pf-c-clipboard-copy__group-toggle.pf-m-hover::before {
+    --pf-c-clipboard-copy__group-toggle--BorderBottomColor: var(--pf-c-clipboard-copy__group-toggle--hover--BorderBottomColor); }
+  .pf-c-clipboard-copy__group-toggle:active::before, .pf-c-clipboard-copy__group-toggle.pf-m-active::before {
+    --pf-c-clipboard-copy__group-toggle--BorderBottomColor: var(--pf-c-clipboard-copy__group-toggle--active--BorderBottomColor);
+    border-bottom-width: var(--pf-c-clipboard-copy__group-toggle--active--BorderBottomWidth); }
+  .pf-c-clipboard-copy__group-toggle:focus::before, .pf-c-clipboard-copy__group-toggle.pf-m-focus::before {
+    --pf-c-clipboard-copy__group-toggle--BorderBottomColor: var(--pf-c-clipboard-copy__group-toggle--focus--BorderBottomColor);
+    border-bottom-width: var(--pf-c-clipboard-copy__group-toggle--focus--BorderBottomWidth); }
+
+.pf-c-clipboard-copy__group-copy {
+  position: relative;
+  padding-right: var(--pf-c-clipboard-copy__group-copy--PaddingRight);
+  padding-left: var(--pf-c-clipboard-copy__group-copy--PaddingLeft);
+  border: none; }
+  .pf-c-clipboard-copy__group-copy::before {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    content: "";
+    border: var(--pf-c-clipboard-copy__group-copy--BorderWidth) solid;
+    border-color: var(--pf-c-clipboard-copy__group-copy--BorderTopColor) var(--pf-c-clipboard-copy__group-copy--BorderRightColor) var(--pf-c-clipboard-copy__group-copy--BorderBottomColor) var(--pf-c-clipboard-copy__group-copy--BorderLeftColor); }
+  .pf-c-clipboard-copy__group-copy:hover::before, .pf-c-clipboard-copy__group-copy.pf-m-hover::before {
+    --pf-c-clipboard-copy__group-copy--BorderBottomColor: var(--pf-c-clipboard-copy__group-copy--hover--BorderBottomColor); }
+  .pf-c-clipboard-copy__group-copy:active::before, .pf-c-clipboard-copy__group-copy.pf-m-active::before {
+    --pf-c-clipboard-copy__group-copy--BorderBottomColor: var(--pf-c-clipboard-copy__group-copy--active--BorderBottomColor);
+    border-bottom-width: var(--pf-c-clipboard-copy__group-copy--active--BorderBottomWidth); }
+  .pf-c-clipboard-copy__group-copy:focus::before, .pf-c-clipboard-copy__group-copy.pf-m-focus::before {
+    --pf-c-clipboard-copy__group-copy--BorderBottomColor: var(--pf-c-clipboard-copy__group-copy--focus--BorderBottomColor);
+    border-bottom-width: var(--pf-c-clipboard-copy__group-copy--focus--BorderBottomWidth); }
+
+.pf-c-clipboard-copy__expandable-content {
+  padding: var(--pf-c-clipboard-copy__expandable-content--PaddingTop) var(--pf-c-clipboard-copy__expandable-content--PaddingRight) var(--pf-c-clipboard-copy__expandable-content--PaddingBottom) var(--pf-c-clipboard-copy__expandable-content--PaddingLeft);
+  word-wrap: break-word;
+  background-color: var(--pf-c-clipboard-copy__expandable-content--BackgroundColor);
+  background-clip: padding-box;
+  border: var(--pf-c-clipboard-copy__expandable-content--BorderWidth) solid transparent;
+  outline-offset: var(--pf-c-clipboard-copy__expandable-content--OutlineOffset);
+  box-shadow: var(--pf-c-clipboard-copy__expandable-content--BoxShadow); }
+  .pf-c-clipboard-copy__expandable-content pre {
+    white-space: pre-wrap; }

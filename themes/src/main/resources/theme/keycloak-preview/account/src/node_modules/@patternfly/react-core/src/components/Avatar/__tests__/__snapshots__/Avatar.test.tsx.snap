@@ -1,0 +1,9 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`simple avatar 1`] = `
+<img
+  alt="avatar"
+  className="pf-c-avatar"
+  src=""
+/>
+`;

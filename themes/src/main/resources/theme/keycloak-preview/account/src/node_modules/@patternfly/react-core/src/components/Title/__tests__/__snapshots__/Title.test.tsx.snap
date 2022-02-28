@@ -1,0 +1,73 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`2xl Title 1`] = `
+<h1
+  className="pf-c-title pf-m-2xl"
+>
+  2xl
+   Title
+</h1>
+`;
+
+exports[`3xl Title 1`] = `
+<h1
+  className="pf-c-title pf-m-3xl"
+>
+  3xl
+   Title
+</h1>
+`;
+
+exports[`4xl Title 1`] = `
+<h1
+  className="pf-c-title pf-m-4xl"
+>
+  4xl
+   Title
+</h1>
+`;
+
+exports[`lg Title 1`] = `
+<h1
+  className="pf-c-title pf-m-lg"
+>
+  lg
+   Title
+</h1>
+`;
+
+exports[`md Title 1`] = `
+<h1
+  className="pf-c-title pf-m-md"
+>
+  md
+   Title
+</h1>
+`;
+
+exports[`sm Title 1`] = `
+<h1
+  className="pf-c-title"
+>
+  sm
+   Title
+</h1>
+`;
+
+exports[`xl Title 1`] = `
+<h1
+  className="pf-c-title pf-m-xl"
+>
+  xl
+   Title
+</h1>
+`;
+
+exports[`xs Title 1`] = `
+<h1
+  className="pf-c-title"
+>
+  xs
+   Title
+</h1>
+`;

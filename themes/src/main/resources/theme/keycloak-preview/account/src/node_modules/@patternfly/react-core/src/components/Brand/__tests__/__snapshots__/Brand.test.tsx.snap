@@ -1,0 +1,9 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`simple brand 1`] = `
+<img
+  alt="brand"
+  className="pf-c-brand"
+  src=""
+/>
+`;

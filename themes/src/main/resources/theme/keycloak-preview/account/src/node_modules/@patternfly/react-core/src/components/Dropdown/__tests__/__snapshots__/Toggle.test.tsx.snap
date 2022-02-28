@@ -1,0 +1,130 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Dropdown toggle 1`] = `
+<DropdownToggle
+  id="Dropdown Toggle"
+>
+  <Toggle
+    bubbleEvent={false}
+    className=""
+    id="Dropdown Toggle"
+    isActive={false}
+    isDisabled={false}
+    isFocused={false}
+    isHovered={false}
+    isOpen={false}
+    isPlain={false}
+    isPrimary={false}
+    isSplitButton={false}
+    onEnter={[Function]}
+    onToggle={[Function]}
+    parentRef={null}
+  >
+    <button
+      aria-expanded={false}
+      className="pf-c-dropdown__toggle"
+      disabled={false}
+      id="Dropdown Toggle"
+      onClick={[Function]}
+      onKeyDown={[Function]}
+      type="button"
+    >
+      <span
+        className=""
+      >
+        Dropdown
+      </span>
+      <CaretDownIcon
+        className=""
+        color="currentColor"
+        noVerticalAlign={false}
+        size="sm"
+        title={null}
+      >
+        <svg
+          aria-hidden={true}
+          aria-labelledby={null}
+          className=""
+          fill="currentColor"
+          height="1em"
+          role="img"
+          style={
+            Object {
+              "verticalAlign": "-0.125em",
+            }
+          }
+          viewBox="0 0 320 512"
+          width="1em"
+        >
+          <path
+            d="M31.3 192h257.3c17.8 0 26.7 21.5 14.1 34.1L174.1 354.8c-7.8 7.8-20.5 7.8-28.3 0L17.2 226.1C4.6 213.5 13.5 192 31.3 192z"
+            transform=""
+          />
+        </svg>
+      </CaretDownIcon>
+    </button>
+  </Toggle>
+</DropdownToggle>
+`;
+
+exports[`Kebab toggle 1`] = `
+<KebabToggle
+  id="Dropdown Toggle"
+>
+  <Toggle
+    aria-label="Actions"
+    bubbleEvent={false}
+    className=""
+    id="Dropdown Toggle"
+    isActive={false}
+    isDisabled={false}
+    isFocused={false}
+    isHovered={false}
+    isOpen={false}
+    isPlain={false}
+    isPrimary={false}
+    isSplitButton={false}
+    onEnter={[Function]}
+    onToggle={[Function]}
+    parentRef={null}
+  >
+    <button
+      aria-expanded={false}
+      aria-label="Actions"
+      className="pf-c-dropdown__toggle"
+      disabled={false}
+      id="Dropdown Toggle"
+      onClick={[Function]}
+      onKeyDown={[Function]}
+      type="button"
+    >
+      <EllipsisVIcon
+        color="currentColor"
+        noVerticalAlign={false}
+        size="sm"
+        title={null}
+      >
+        <svg
+          aria-hidden={true}
+          aria-labelledby={null}
+          fill="currentColor"
+          height="1em"
+          role="img"
+          style={
+            Object {
+              "verticalAlign": "-0.125em",
+            }
+          }
+          viewBox="0 0 192 512"
+          width="1em"
+        >
+          <path
+            d="M96 184c39.8 0 72 32.2 72 72s-32.2 72-72 72-72-32.2-72-72 32.2-72 72-72zM24 80c0 39.8 32.2 72 72 72s72-32.2 72-72S135.8 8 96 8 24 40.2 24 80zm0 352c0 39.8 32.2 72 72 72s72-32.2 72-72-32.2-72-72-72-72 32.2-72 72z"
+            transform=""
+          />
+        </svg>
+      </EllipsisVIcon>
+    </button>
+  </Toggle>
+</KebabToggle>
+`;

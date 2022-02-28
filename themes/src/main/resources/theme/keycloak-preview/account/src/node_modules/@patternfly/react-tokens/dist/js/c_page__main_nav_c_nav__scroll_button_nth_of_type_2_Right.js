@@ -1,0 +1,1 @@
+module.exports = {"name":"--pf-c-page__main-nav--c-nav__scroll-button--nth-of-type-2--Right","value":"calc(-1*(1.5rem - 0.25rem))","var":"var(--pf-c-page__main-nav--c-nav__scroll-button--nth-of-type-2--Right)"}

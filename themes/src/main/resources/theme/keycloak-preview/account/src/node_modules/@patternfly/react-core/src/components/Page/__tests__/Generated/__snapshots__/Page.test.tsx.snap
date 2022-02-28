@@ -1,0 +1,27 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Page should match snapshot (auto-generated) 1`] = `
+<ContextProvider
+  value={
+    Object {
+      "isManagedSidebar": false,
+      "isNavOpen": true,
+      "onNavToggle": [Function],
+    }
+  }
+>
+  <div
+    className="pf-c-page ''"
+  >
+    <main
+      aria-label="string"
+      className="pf-c-page__main"
+      id="null"
+      role="string"
+      tabIndex={-1}
+    >
+      ReactNode
+    </main>
+  </div>
+</ContextProvider>
+`;

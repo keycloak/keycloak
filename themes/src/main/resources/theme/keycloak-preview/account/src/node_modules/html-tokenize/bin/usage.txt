@@ -1,0 +1,5 @@
+usage: html-tokenize {FILE}
+
+  Tokenize FILE into newline-separated json arrays for each tag.
+  If FILE is not specified, use stdin.
+

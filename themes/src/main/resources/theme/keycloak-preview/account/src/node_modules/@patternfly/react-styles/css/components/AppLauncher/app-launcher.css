@@ -1,0 +1,193 @@
+.pf-c-app-launcher {
+  --pf-c-app-launcher__menu--BackgroundColor: var(--pf-global--BackgroundColor--light-100);
+  --pf-c-app-launcher__menu--BorderWidth: var(--pf-global--BorderWidth--sm);
+  --pf-c-app-launcher__menu--BoxShadow: var(--pf-global--BoxShadow--md);
+  --pf-c-app-launcher__menu--PaddingTop: var(--pf-global--spacer--sm);
+  --pf-c-app-launcher__menu--PaddingBottom: var(--pf-global--spacer--sm);
+  --pf-c-app-launcher__menu--Top: calc(100% + var(--pf-global--spacer--xs));
+  --pf-c-app-launcher__menu--ZIndex: var(--pf-global--ZIndex--sm);
+  --pf-c-app-launcher--m-top__menu--Top: 0;
+  --pf-c-app-launcher--m-top__menu--Transform: translateY(calc(-100% - var(--pf-global--spacer--xs)));
+  --pf-c-app-launcher__toggle--PaddingTop: var(--pf-global--spacer--form-element);
+  --pf-c-app-launcher__toggle--PaddingRight: var(--pf-global--spacer--md);
+  --pf-c-app-launcher__toggle--PaddingBottom: var(--pf-global--spacer--form-element);
+  --pf-c-app-launcher__toggle--PaddingLeft: var(--pf-global--spacer--md);
+  --pf-c-app-launcher__toggle--Color: var(--pf-global--Color--200);
+  --pf-c-app-launcher__toggle--hover--Color: var(--pf-global--Color--100);
+  --pf-c-app-launcher__toggle--active--Color: var(--pf-global--Color--100);
+  --pf-c-app-launcher__toggle--focus--Color: var(--pf-global--Color--100);
+  --pf-c-app-launcher__toggle--disabled--Color: var(--pf-global--disabled-color--200);
+  --pf-c-app-launcher__toggle--m-expanded--Color: var(--pf-global--Color--100);
+  --pf-c-app-launcher__menu-search--PaddingTop: var(--pf-global--spacer--sm);
+  --pf-c-app-launcher__menu-search--PaddingRight: var(--pf-global--spacer--md);
+  --pf-c-app-launcher__menu-search--PaddingBottom: var(--pf-global--spacer--md);
+  --pf-c-app-launcher__menu-search--PaddingLeft: var(--pf-global--spacer--md);
+  --pf-c-app-launcher__menu-search--BottomBorderColor: var(--pf-global--BorderColor--100);
+  --pf-c-app-launcher__menu-search--BottomBorderWidth: var(--pf-global--BorderWidth--sm);
+  --pf-c-app-launcher__menu-search--MarginBottom: var(--pf-global--spacer--sm);
+  --pf-c-app-launcher__menu-item--PaddingTop: var(--pf-global--spacer--sm);
+  --pf-c-app-launcher__menu-item--PaddingRight: var(--pf-global--spacer--md);
+  --pf-c-app-launcher__menu-item--PaddingBottom: var(--pf-global--spacer--sm);
+  --pf-c-app-launcher__menu-item--PaddingLeft: var(--pf-global--spacer--md);
+  --pf-c-app-launcher__menu-item--Color: var(--pf-global--Color--dark-100);
+  --pf-c-app-launcher__menu-item--FontWeight: var(--pf-global--FontWeight--normal);
+  --pf-c-app-launcher__menu-item--Width: 100%;
+  --pf-c-app-launcher__menu-item--disabled--Color: var(--pf-global--Color--dark-200);
+  --pf-c-app-launcher__menu-item--hover--BackgroundColor: var(--pf-global--BackgroundColor--light-300);
+  --pf-c-app-launcher__menu-item--m-link--PaddingRight: 0;
+  --pf-c-app-launcher__menu-item--m-link--hover--BackgroundColor: transparent;
+  --pf-c-app-launcher__menu-item--m-action--hover--BackgroundColor: transparent;
+  --pf-c-app-launcher__menu-item--m-action--Color: var(--pf-global--disabled-color--200);
+  --pf-c-app-launcher__menu-item--m-action--Width: auto;
+  --pf-c-app-launcher__menu-item--m-action--FontSize: var(--pf-global--icon--FontSize--sm);
+  --pf-c-app-launcher__menu-item--hover__menu-item--m-action--Color: var(--pf-global--Color--200);
+  --pf-c-app-launcher__menu-item--m-action--hover--Color: var(--pf-global--Color--100);
+  --pf-c-app-launcher__menu-item--m-favorite__menu-item--m-action--Color: var(--pf-global--palette--gold-400);
+  --pf-c-app-launcher__menu-item-icon--MarginRight: var(--pf-global--spacer--sm);
+  --pf-c-app-launcher__menu-item-icon--Width: var(--pf-global--icon--FontSize--lg);
+  --pf-c-app-launcher__menu-item-icon--Height: var(--pf-global--icon--FontSize--lg);
+  --pf-c-app-launcher__menu-item-external-icon--Color: var(--pf-global--link--Color);
+  --pf-c-app-launcher__menu-item-external-icon--PaddingLeft: var(--pf-global--spacer--md);
+  --pf-c-app-launcher__menu-item-external-icon--Transform: translateY(-0.0625rem);
+  --pf-c-app-launcher__menu-item-external-icon--FontSize: var(--pf-global--icon--FontSize--sm);
+  --pf-c-app-launcher__c-divider--MarginTop: var(--pf-global--spacer--sm);
+  --pf-c-app-launcher__c-divider--MarginBottom: var(--pf-global--spacer--sm);
+  --pf-c-app-launcher__separator--Height: var(--pf-global--BorderWidth--sm);
+  --pf-c-app-launcher__separator--BackgroundColor: var(--pf-global--BorderColor--100);
+  --pf-c-app-launcher__separator--MarginTop: var(--pf-global--spacer--sm);
+  --pf-c-app-launcher__separator--MarginBottom: var(--pf-global--spacer--sm);
+  --pf-c-app-launcher__group--PaddingTop: 0;
+  --pf-c-app-launcher__group--group--PaddingTop: var(--pf-global--spacer--sm);
+  --pf-c-app-launcher__group--first-child--PaddingTop: 0;
+  --pf-c-app-launcher__group-title--PaddingTop: var(--pf-global--spacer--sm);
+  --pf-c-app-launcher__group-title--PaddingRight: var(--pf-c-app-launcher__menu-item--PaddingRight);
+  --pf-c-app-launcher__group-title--PaddingBottom: var(--pf-c-app-launcher__menu-item--PaddingBottom);
+  --pf-c-app-launcher__group-title--PaddingLeft: var(--pf-c-app-launcher__menu-item--PaddingLeft);
+  --pf-c-app-launcher__group-title--FontSize: var(--pf-global--FontSize--sm);
+  --pf-c-app-launcher__group-title--FontWeight: var(--pf-global--FontWeight--semi-bold);
+  --pf-c-app-launcher__group-title--Color: var(--pf-global--Color--dark-200);
+  position: relative;
+  display: inline-block;
+  max-width: 100%; }
+  .pf-c-app-launcher.pf-m-expanded > .pf-c-app-launcher__toggle {
+    color: var(--pf-c-app-launcher__toggle--m-expanded--Color); }
+  .pf-c-app-launcher .pf-c-divider {
+    margin-top: var(--pf-c-app-launcher__c-divider--MarginTop);
+    margin-bottom: var(--pf-c-app-launcher__c-divider--MarginBottom); }
+
+.pf-c-app-launcher__toggle {
+  padding: var(--pf-c-app-launcher__toggle--PaddingTop) var(--pf-c-app-launcher__toggle--PaddingRight) var(--pf-c-app-launcher__toggle--PaddingBottom) var(--pf-c-app-launcher__toggle--PaddingLeft);
+  color: var(--pf-c-app-launcher__toggle--Color);
+  border: none; }
+  .pf-c-app-launcher__toggle:hover, .pf-c-app-launcher__toggle.pf-m-hover {
+    --pf-c-app-launcher__toggle--Color: var(--pf-c-app-launcher__toggle--hover--Color); }
+  .pf-c-app-launcher__toggle:active, .pf-c-app-launcher__toggle.pf-m-active {
+    --pf-c-app-launcher__toggle--Color: var(--pf-c-app-launcher__toggle--active--Color); }
+  .pf-c-app-launcher__toggle:focus, .pf-c-app-launcher__toggle.pf-m-focus {
+    --pf-c-app-launcher__toggle--Color: var(--pf-c-app-launcher__toggle--focus--Color); }
+  .pf-c-app-launcher__toggle:disabled, .pf-c-app-launcher__toggle.pf-m-disabled {
+    --pf-c-app-launcher__toggle--Color: var(--pf-c-app-launcher__toggle--disabled--Color);
+    pointer-events: none; }
+
+.pf-c-app-launcher__menu {
+  position: absolute;
+  top: var(--pf-c-app-launcher__menu--Top);
+  z-index: var(--pf-c-app-launcher__menu--ZIndex);
+  min-width: 100%;
+  padding-top: var(--pf-c-app-launcher__menu--PaddingTop);
+  padding-bottom: var(--pf-c-app-launcher__menu--PaddingBottom);
+  background-color: var(--pf-c-app-launcher__menu--BackgroundColor);
+  background-clip: padding-box;
+  border: var(--pf-c-app-launcher__menu--BorderWidth) solid transparent;
+  box-shadow: var(--pf-c-app-launcher__menu--BoxShadow); }
+  .pf-c-app-launcher__menu.pf-m-align-right {
+    right: 0; }
+  .pf-c-app-launcher.pf-m-top .pf-c-app-launcher__menu {
+    --pf-c-app-launcher__menu--Top: var(--pf-c-app-launcher--m-top__menu--Top);
+    transform: var(--pf-c-app-launcher--m-top__menu--Transform); }
+
+.pf-c-app-launcher__menu-search {
+  padding: var(--pf-c-app-launcher__menu-search--PaddingTop) var(--pf-c-app-launcher__menu-search--PaddingRight) var(--pf-c-app-launcher__menu-search--PaddingBottom) var(--pf-c-app-launcher__menu-search--PaddingLeft);
+  margin-bottom: var(--pf-c-app-launcher__menu-search--MarginBottom);
+  border-bottom: var(--pf-c-app-launcher__menu-search--BottomBorderWidth) solid var(--pf-c-app-launcher__menu-search--BottomBorderColor); }
+
+.pf-c-app-launcher__menu-wrapper {
+  display: flex; }
+  .pf-c-app-launcher__menu-wrapper.pf-m-favorite {
+    --pf-c-app-launcher__menu-item--m-action--Color: var(--pf-c-app-launcher__menu-item--m-favorite__menu-item--m-action--Color); }
+
+.pf-c-app-launcher__menu-item {
+  display: flex;
+  align-items: center;
+  width: var(--pf-c-app-launcher__menu-item--Width);
+  padding: var(--pf-c-app-launcher__menu-item--PaddingTop) var(--pf-c-app-launcher__menu-item--PaddingRight) var(--pf-c-app-launcher__menu-item--PaddingBottom) var(--pf-c-app-launcher__menu-item--PaddingLeft);
+  font-weight: var(--pf-c-app-launcher__menu-item--FontWeight);
+  color: var(--pf-c-app-launcher__menu-item--Color);
+  white-space: nowrap;
+  border: 0; }
+  .pf-c-app-launcher__menu-item:hover, .pf-c-app-launcher__menu-item.pf-m-hover, .pf-c-app-launcher__menu-item:focus, .pf-c-app-launcher__menu-item.pf-m-focus {
+    --pf-c-app-launcher__menu-item--m-action--Color: var(--pf-c-app-launcher__menu-item--hover__menu-item--m-action--Color);
+    text-decoration: none; }
+  .pf-c-app-launcher__menu-wrapper:hover, .pf-c-app-launcher__menu-wrapper.pf-m-hover, .pf-c-app-launcher__menu-wrapper:focus, .pf-c-app-launcher__menu-wrapper.pf-m-focus, .pf-c-app-launcher__menu-item:hover, .pf-c-app-launcher__menu-item.pf-m-hover, .pf-c-app-launcher__menu-item:focus, .pf-c-app-launcher__menu-item.pf-m-focus {
+    background-color: var(--pf-c-app-launcher__menu-item--hover--BackgroundColor); }
+  .pf-c-app-launcher__menu-item:disabled, .pf-c-app-launcher__menu-item.pf-m-disabled {
+    --pf-c-app-launcher__menu-item--Color: var(--pf-c-app-launcher__menu-item--disabled--Color);
+    pointer-events: none; }
+  .pf-c-app-launcher__menu-wrapper:disabled, .pf-c-app-launcher__menu-wrapper.pf-m-disabled, .pf-c-app-launcher__menu-item:disabled, .pf-c-app-launcher__menu-item.pf-m-disabled {
+    background-color: transparent; }
+  .pf-c-app-launcher__menu-wrapper.pf-m-external:hover .pf-c-app-launcher__menu-item-external-icon, .pf-c-app-launcher__menu-wrapper.pf-m-external:focus .pf-c-app-launcher__menu-item-external-icon, .pf-c-app-launcher__menu-item.pf-m-external:hover .pf-c-app-launcher__menu-item-external-icon, .pf-c-app-launcher__menu-item.pf-m-external:focus .pf-c-app-launcher__menu-item-external-icon {
+    opacity: 1; }
+  .pf-c-app-launcher__menu-item.pf-m-link {
+    --pf-c-app-launcher__menu-item--PaddingRight: var(--pf-c-app-launcher__menu-item--m-link--PaddingRight);
+    --pf-c-app-launcher__menu-item--hover--BackgroundColor: var(--pf-c-app-launcher__menu-item--m-link--hover--BackgroundColor); }
+  .pf-c-app-launcher__menu-item.pf-m-action {
+    --pf-c-app-launcher__menu-item--hover--BackgroundColor: var(--pf-c-app-launcher__menu-item--m-action--hover--BackgroundColor);
+    --pf-c-app-launcher__menu-item--Color: var(--pf-c-app-launcher__menu-item--m-action--Color);
+    --pf-c-app-launcher__menu-item--Width: var(--pf-c-app-launcher__menu-item--m-action--Width);
+    font-size: var(--pf-c-app-launcher__menu-item--m-action--FontSize); }
+    .pf-c-app-launcher__menu-item.pf-m-action:hover, .pf-c-app-launcher__menu-item.pf-m-action:focus {
+      --pf-c-app-launcher__menu-item--m-action--Color: var(--pf-c-app-launcher__menu-item--m-action--hover--Color); }
+
+.pf-c-app-launcher__menu-item-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--pf-c-app-launcher__menu-item-icon--Width);
+  height: var(--pf-c-app-launcher__menu-item-icon--Height);
+  margin-right: var(--pf-c-app-launcher__menu-item-icon--MarginRight); }
+  .pf-c-app-launcher__menu-item-icon > * {
+    max-width: 100%;
+    max-height: 100%; }
+
+.pf-c-app-launcher__menu-item-external-icon {
+  padding-left: var(--pf-c-app-launcher__menu-item-external-icon--PaddingLeft);
+  margin-left: auto;
+  font-size: var(--pf-c-app-launcher__menu-item-external-icon--FontSize);
+  color: var(--pf-c-app-launcher__menu-item-external-icon--Color);
+  opacity: 0;
+  transform: var(--pf-c-app-launcher__menu-item-external-icon--Transform); }
+
+.pf-c-app-launcher__separator {
+  height: var(--pf-c-app-launcher__separator--Height);
+  margin-top: var(--pf-c-app-launcher__separator--MarginTop);
+  margin-bottom: var(--pf-c-app-launcher__separator--MarginBottom);
+  background-color: var(--pf-c-app-launcher__separator--BackgroundColor);
+  border: 0; }
+  .pf-c-app-launcher__separator:last-child {
+    --pf-c-app-launcher__separator--MarginBottom: 0; }
+
+.pf-c-app-launcher__group {
+  padding-top: var(--pf-c-app-launcher__group--PaddingTop); }
+  .pf-c-app-launcher__group:first-child {
+    --pf-c-app-launcher__group--PaddingTop: var(--pf-c-app-launcher__group--first-child--PaddingTop); }
+  .pf-c-app-launcher__group + .pf-c-app-launcher__group {
+    --pf-c-app-launcher__group--PaddingTop: var(--pf-c-app-launcher__group--group--PaddingTop); }
+
+.pf-c-app-launcher__group-title {
+  padding-top: var(--pf-c-app-launcher__group-title--PaddingTop);
+  padding-right: var(--pf-c-app-launcher__group-title--PaddingRight);
+  padding-bottom: var(--pf-c-app-launcher__group-title--PaddingBottom);
+  padding-left: var(--pf-c-app-launcher__group-title--PaddingLeft);
+  font-size: var(--pf-c-app-launcher__group-title--FontSize);
+  font-weight: var(--pf-c-app-launcher__group-title--FontWeight);
+  color: var(--pf-c-app-launcher__group-title--Color); }

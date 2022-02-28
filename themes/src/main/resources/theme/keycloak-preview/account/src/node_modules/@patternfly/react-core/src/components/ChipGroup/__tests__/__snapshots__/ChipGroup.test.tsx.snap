@@ -1,0 +1,112 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ChipGroup chip group default 1`] = `
+<ul
+  className="pf-c-chip-group"
+>
+  <InnerChipGroup
+    className=""
+    collapsedText="\${remaining} more"
+    defaultIsOpen={false}
+    expandedText="Show Less"
+    isOpen={false}
+    numChips={3}
+    onToggleCollapse={[Function]}
+    withToolbar={false}
+  >
+    <Component>
+      1.1
+    </Component>
+  </InnerChipGroup>
+</ul>
+`;
+
+exports[`ChipGroup chip group with closable toolbar 1`] = `
+<ContextProvider
+  value="h4"
+>
+  <InnerChipGroup
+    className=""
+    collapsedText="\${remaining} more"
+    defaultIsOpen={false}
+    expandedText="Show Less"
+    isOpen={false}
+    numChips={3}
+    onToggleCollapse={[Function]}
+    withToolbar={true}
+  >
+    <ChipGroupToolbarItem
+      categoryName=""
+      className=""
+      closeBtnAriaLabel="Close chip group"
+      isClosable={true}
+      onClick={[Function]}
+      tooltipPosition="top"
+    >
+      <Component>
+        1.1
+      </Component>
+    </ChipGroupToolbarItem>
+  </InnerChipGroup>
+</ContextProvider>
+`;
+
+exports[`ChipGroup chip group with toolbar 1`] = `
+<ContextProvider
+  value="h4"
+>
+  <InnerChipGroup
+    className=""
+    collapsedText="\${remaining} more"
+    defaultIsOpen={false}
+    expandedText="Show Less"
+    isOpen={false}
+    numChips={3}
+    onToggleCollapse={[Function]}
+    withToolbar={true}
+  >
+    <ChipGroupToolbarItem
+      categoryName=""
+      className=""
+      closeBtnAriaLabel="Close chip group"
+      isClosable={false}
+      onClick={[Function]}
+      tooltipPosition="top"
+    >
+      <Component>
+        1.1
+      </Component>
+    </ChipGroupToolbarItem>
+  </InnerChipGroup>
+</ContextProvider>
+`;
+
+exports[`ChipGroup chip group with toolbar and tooltip 1`] = `
+<ContextProvider
+  value="h4"
+>
+  <InnerChipGroup
+    className=""
+    collapsedText="\${remaining} more"
+    defaultIsOpen={false}
+    expandedText="Show Less"
+    isOpen={false}
+    numChips={3}
+    onToggleCollapse={[Function]}
+    withToolbar={true}
+  >
+    <ChipGroupToolbarItem
+      categoryName="A very long category name"
+      className=""
+      closeBtnAriaLabel="Close chip group"
+      isClosable={false}
+      onClick={[Function]}
+      tooltipPosition="bottom"
+    >
+      <Component>
+        1.1
+      </Component>
+    </ChipGroupToolbarItem>
+  </InnerChipGroup>
+</ContextProvider>
+`;

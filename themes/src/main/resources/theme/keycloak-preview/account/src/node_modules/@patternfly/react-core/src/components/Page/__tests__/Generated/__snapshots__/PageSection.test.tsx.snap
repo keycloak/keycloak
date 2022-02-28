@@ -1,0 +1,11 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`PageSection should match snapshot (auto-generated) 1`] = `
+<section
+  className="pf-c-page__main-section pf-m-fill ''"
+>
+  <div>
+    ReactNode
+  </div>
+</section>
+`;

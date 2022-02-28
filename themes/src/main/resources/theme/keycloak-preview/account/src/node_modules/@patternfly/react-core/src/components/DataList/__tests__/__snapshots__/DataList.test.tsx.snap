@@ -1,0 +1,169 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`DataList Cell default 1`] = `
+<div
+  className="pf-c-data-list__cell"
+>
+  Secondary
+</div>
+`;
+
+exports[`DataList Cells 1`] = `
+<div
+  className="pf-c-data-list__item-content"
+>
+  <DataListCell
+    className="data-list-custom"
+    id="primary-item"
+    key="list-id-1"
+  >
+    Primary Id
+  </DataListCell>
+  <DataListCell
+    className="data-list-custom"
+    id="primary-item"
+    key="list-id-2"
+  >
+    Primary Id 2
+  </DataListCell>
+</div>
+`;
+
+exports[`DataList DataListAction button 1`] = `
+<div
+  className="pf-c-data-list__item-action"
+>
+  <Component
+    id="delete-item-1"
+  >
+    Delete
+  </Component>
+</div>
+`;
+
+exports[`DataList DataListAction dropdown 1`] = `
+<div
+  className="pf-c-data-list__item-action"
+>
+  <Dropdown
+    dropdownItems={
+      Array [
+        <DropdownItem
+          component="button"
+          onClick={[MockFunction]}
+        >
+          action-1
+        </DropdownItem>,
+        <DropdownItem
+          component="button"
+          onClick={[MockFunction]}
+        >
+          action-2
+        </DropdownItem>,
+      ]
+    }
+    isPlain={true}
+    position="right"
+    toggle={<KebabToggle />}
+  />
+</div>
+`;
+
+exports[`DataList DataListContent 1`] = `
+<section
+  aria-label="Primary Content Details"
+  className="pf-c-data-list__expandable-content"
+  hidden={false}
+  id=""
+>
+  <div
+    className="pf-c-data-list__expandable-content-body"
+  >
+     test
+  </div>
+</section>
+`;
+
+exports[`DataList DataListContent noPadding 1`] = `
+<section
+  aria-label="Primary Content Details"
+  className="pf-c-data-list__expandable-content"
+  hidden={true}
+  id=""
+>
+  <div
+    className="pf-c-data-list__expandable-content-body pf-m-no-padding"
+  >
+    test
+  </div>
+</section>
+`;
+
+exports[`DataList Item 1`] = `
+<ContextConsumer>
+  <Component />
+</ContextConsumer>
+`;
+
+exports[`DataList Item default 1`] = `
+<ContextConsumer>
+  <Component />
+</ContextConsumer>
+`;
+
+exports[`DataList List 1`] = `
+<ContextProvider
+  value={
+    Object {
+      "isSelectable": false,
+      "selectedDataListItemId": "",
+      "updateSelectedDataListItem": [Function],
+    }
+  }
+>
+  <ul
+    aria-label="this is a simple list"
+    className="pf-c-data-list data-list-custom"
+  />
+</ContextProvider>
+`;
+
+exports[`DataList List compact 1`] = `
+<ContextProvider
+  value={
+    Object {
+      "isSelectable": false,
+      "selectedDataListItemId": "",
+      "updateSelectedDataListItem": [Function],
+    }
+  }
+>
+  <ul
+    aria-label="this is a simple list"
+    className="pf-c-data-list pf-m-compact"
+  />
+</ContextProvider>
+`;
+
+exports[`DataList List default 1`] = `
+<ContextProvider
+  value={
+    Object {
+      "isSelectable": false,
+      "selectedDataListItemId": "",
+      "updateSelectedDataListItem": [Function],
+    }
+  }
+>
+  <ul
+    aria-label="this is a simple list"
+    className="pf-c-data-list"
+  />
+</ContextProvider>
+`;
+
+exports[`DataList item row default 1`] = `
+<div
+  className="pf-c-data-list__item-row"
+/>
+`;

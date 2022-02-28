@@ -1,0 +1,12 @@
+language: node_js
+cache: yarn
+notifications:
+  email: false
+node_js:
+  - '8'
+after_success:
+  - 'bash <(curl -s https://codecov.io/bash)'
+  - npx semantic-release
+branches:
+  except:
+    - /^v\d+\.\d+\.\d+$/

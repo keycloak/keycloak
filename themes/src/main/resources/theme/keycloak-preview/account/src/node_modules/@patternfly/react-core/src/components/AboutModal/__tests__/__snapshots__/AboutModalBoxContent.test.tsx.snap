@@ -1,0 +1,23 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`AboutModalBoxContent Test 1`] = `
+<div
+  className="pf-c-about-modal-box__content"
+  id="id"
+>
+  <div
+    className="pf-c-about-modal-box__body"
+  >
+    <div
+      className="pf-c-content"
+    >
+      This is a AboutModalBoxContent
+    </div>
+  </div>
+  <p
+    className="pf-c-about-modal-box__strapline"
+  >
+    trademark
+  </p>
+</div>
+`;

@@ -1,0 +1,11 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`EmptyStatePrimary should match snapshot (auto-generated) 1`] = `
+<div
+  className="pf-c-empty-state__primary ''"
+>
+  <div>
+    ReactNode
+  </div>
+</div>
+`;

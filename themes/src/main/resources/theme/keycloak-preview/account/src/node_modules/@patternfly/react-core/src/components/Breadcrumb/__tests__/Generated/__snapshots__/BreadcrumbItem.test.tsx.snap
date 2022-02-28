@@ -1,0 +1,25 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`BreadcrumbItem should match snapshot (auto-generated) 1`] = `
+<li
+  className="pf-c-breadcrumb__item ''"
+>
+  <a
+    className="pf-c-breadcrumb__link"
+    href="null"
+    target="null"
+  >
+    ReactNode
+  </a>
+  <span
+    className="pf-c-breadcrumb__item-divider"
+  >
+    <AngleRightIcon
+      color="currentColor"
+      noVerticalAlign={false}
+      size="sm"
+      title={null}
+    />
+  </span>
+</li>
+`;

@@ -1,0 +1,13 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`test About Modal Brand 1`] = `
+<div
+  className="pf-c-about-modal-box__brand"
+>
+  <img
+    alt="brand"
+    className="pf-c-about-modal-box__brand-image"
+    src="testimage.."
+  />
+</div>
+`;

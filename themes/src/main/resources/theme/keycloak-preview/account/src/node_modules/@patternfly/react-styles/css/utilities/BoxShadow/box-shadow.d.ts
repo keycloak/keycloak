@@ -1,0 +1,21 @@
+import './box-shadow.css';
+declare const _default: {
+    boxShadowSm: string;
+    boxShadowSmTop: string;
+    boxShadowSmRight: string;
+    boxShadowSmBottom: string;
+    boxShadowSmLeft: string;
+    boxShadowMd: string;
+    boxShadowMdTop: string;
+    boxShadowMdRight: string;
+    boxShadowMdBottom: string;
+    boxShadowMdLeft: string;
+    boxShadowLg: string;
+    boxShadowLgTop: string;
+    boxShadowLgRight: string;
+    boxShadowLgBottom: string;
+    boxShadowLgLeft: string;
+    boxShadowInset: string;
+    modifiers: {};
+};
+export default _default;

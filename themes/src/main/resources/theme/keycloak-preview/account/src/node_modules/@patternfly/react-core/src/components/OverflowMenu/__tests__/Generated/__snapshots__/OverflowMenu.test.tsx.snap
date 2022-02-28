@@ -1,0 +1,17 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`OverflowMenu should match snapshot (auto-generated) 1`] = `
+<div
+  className="pf-c-overflow-menu string"
+>
+  <ContextProvider
+    value={
+      Object {
+        "isBelowBreakpoint": false,
+      }
+    }
+  >
+    any
+  </ContextProvider>
+</div>
+`;

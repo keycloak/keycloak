@@ -1,0 +1,286 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Disabled FormSelect input  1`] = `
+<select
+  aria-invalid={false}
+  aria-label="disabled  FormSelect"
+  className="pf-c-form-control"
+  disabled={true}
+  onBlur={[Function]}
+  onChange={[Function]}
+  onFocus={[Function]}
+  required={false}
+  value=""
+>
+  <FormSelectOption
+    key="1"
+    label="Mr"
+    value="mr"
+  />
+</select>
+`;
+
+exports[`FormSelect input with aria-label does not generate console error 1`] = `
+<select
+  aria-invalid={false}
+  aria-label="FormSelect with aria-label"
+  className="pf-c-form-control"
+  disabled={false}
+  onBlur={[Function]}
+  onChange={[Function]}
+  onFocus={[Function]}
+  required={false}
+  value=""
+>
+  <FormSelectOption
+    key="1"
+    label="Mr"
+    value="mr"
+  />
+</select>
+`;
+
+exports[`FormSelect input with id does not generate console error 1`] = `
+<select
+  aria-invalid={false}
+  className="pf-c-form-control"
+  disabled={false}
+  id="id"
+  onBlur={[Function]}
+  onChange={[Function]}
+  onFocus={[Function]}
+  required={false}
+  value=""
+>
+  <FormSelectOption
+    key="1"
+    label="Mr"
+    value="mr"
+  />
+</select>
+`;
+
+exports[`FormSelect input with no aria-label or id generates console error 1`] = `
+<select
+  aria-invalid={false}
+  className="pf-c-form-control"
+  disabled={false}
+  onBlur={[Function]}
+  onChange={[Function]}
+  onFocus={[Function]}
+  required={false}
+  value=""
+>
+  <FormSelectOption
+    key="1"
+    label="Mr"
+    value="mr"
+  />
+</select>
+`;
+
+exports[`Grouped FormSelect input 1`] = `
+<select
+  aria-invalid={false}
+  aria-label=" grouped FormSelect"
+  className="pf-c-form-control"
+  disabled={false}
+  onBlur={[Function]}
+  onChange={[Function]}
+  onFocus={[Function]}
+  required={false}
+  value="2"
+>
+  <FormSelectOptionGroup
+    isDisabled={false}
+    key="0"
+    label="Group1"
+  >
+    <FormSelectOption
+      isDisabled={false}
+      key="0"
+      label="The First Option"
+      value="1"
+    />
+    <FormSelectOption
+      isDisabled={false}
+      key="1"
+      label="Second option is selected by default"
+      value="2"
+    />
+  </FormSelectOptionGroup>
+  <FormSelectOptionGroup
+    isDisabled={false}
+    key="1"
+    label="Group2"
+  >
+    <FormSelectOption
+      isDisabled={false}
+      key="0"
+      label="The Third Option"
+      value="3"
+    />
+    <FormSelectOption
+      isDisabled={false}
+      key="1"
+      label="The Fourth option"
+      value="4"
+    />
+  </FormSelectOptionGroup>
+  <FormSelectOptionGroup
+    isDisabled={true}
+    key="2"
+    label="Group3"
+  >
+    <FormSelectOption
+      isDisabled={false}
+      key="0"
+      label="The Fifth Option"
+      value="5"
+    />
+    <FormSelectOption
+      isDisabled={false}
+      key="1"
+      label="The Sixth option"
+      value="6"
+    />
+  </FormSelectOptionGroup>
+</select>
+`;
+
+exports[`Simple FormSelect input 1`] = `
+<select
+  aria-invalid={false}
+  aria-label="simple FormSelect"
+  className="pf-c-form-control"
+  disabled={false}
+  onBlur={[Function]}
+  onChange={[Function]}
+  onFocus={[Function]}
+  required={false}
+  value="mrs"
+>
+  <FormSelectOption
+    isDisabled={true}
+    key="0"
+    label="Please Choose"
+    value="please choose"
+  />
+  <FormSelectOption
+    isDisabled={false}
+    key="1"
+    label="Mr"
+    value="mr"
+  />
+  <FormSelectOption
+    isDisabled={false}
+    key="2"
+    label="Miss"
+    value="miss"
+  />
+  <FormSelectOption
+    isDisabled={false}
+    key="3"
+    label="Mrs"
+    value="mrs"
+  />
+  <FormSelectOption
+    isDisabled={false}
+    key="4"
+    label="Ms"
+    value="ms"
+  />
+  <FormSelectOption
+    isDisabled={false}
+    key="5"
+    label="Dr"
+    value="dr"
+  />
+  <FormSelectOption
+    isDisabled={true}
+    key="6"
+    label="Other"
+    value="other"
+  />
+</select>
+`;
+
+exports[`invalid FormSelect input 1`] = `
+<select
+  aria-invalid={true}
+  aria-label="invalid FormSelect"
+  className="pf-c-form-control"
+  disabled={false}
+  onBlur={[Function]}
+  onChange={[Function]}
+  onFocus={[Function]}
+  required={false}
+  value=""
+>
+  <FormSelectOption
+    key="1"
+    label="Mr"
+    value="mr"
+  />
+</select>
+`;
+
+exports[`required FormSelect input 1`] = `
+<select
+  aria-invalid={false}
+  aria-label="required FormSelect"
+  className="pf-c-form-control"
+  disabled={false}
+  onBlur={[Function]}
+  onChange={[Function]}
+  onFocus={[Function]}
+  required={false}
+  value=""
+>
+  <FormSelectOption
+    key="1"
+    label="Mr"
+    value="mr"
+  />
+</select>
+`;
+
+exports[`validated error FormSelect input 1`] = `
+<select
+  aria-invalid={true}
+  aria-label="validated FormSelect"
+  className="pf-c-form-control"
+  disabled={false}
+  onBlur={[Function]}
+  onChange={[Function]}
+  onFocus={[Function]}
+  required={false}
+  value=""
+>
+  <FormSelectOption
+    key="1"
+    label="Mr"
+    value="mr"
+  />
+</select>
+`;
+
+exports[`validated success FormSelect input 1`] = `
+<select
+  aria-invalid={false}
+  aria-label="validated FormSelect"
+  className="pf-c-form-control pf-m-success"
+  disabled={false}
+  onBlur={[Function]}
+  onChange={[Function]}
+  onFocus={[Function]}
+  required={false}
+  value=""
+>
+  <FormSelectOption
+    key="1"
+    label="Mr"
+    value="mr"
+  />
+</select>
+`;

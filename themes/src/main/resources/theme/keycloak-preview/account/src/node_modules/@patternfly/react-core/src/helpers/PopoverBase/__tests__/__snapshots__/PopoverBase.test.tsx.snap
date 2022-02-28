@@ -1,0 +1,36 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`<PopoverBase /> renders only the child element for element content 1`] = `
+<PopoverBase
+  content={
+    <div>
+      tooltip
+    </div>
+  }
+  trigger="mouseenter focus"
+>
+  <button />
+  <Portal
+    containerInfo={
+      <div>
+        <div>
+          tooltip
+        </div>
+      </div>
+    }
+  >
+    <div>
+      tooltip
+    </div>
+  </Portal>
+</PopoverBase>
+`;
+
+exports[`<PopoverBase /> renders only the child element for string content 1`] = `
+<PopoverBase
+  content="tooltip"
+  trigger="mouseenter focus"
+>
+  <button />
+</PopoverBase>
+`;

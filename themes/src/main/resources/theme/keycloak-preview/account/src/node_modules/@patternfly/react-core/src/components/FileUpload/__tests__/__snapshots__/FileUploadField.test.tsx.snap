@@ -1,0 +1,60 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`simple fileuploadfield 1`] = `
+<div
+  className="pf-c-file-upload"
+>
+  <div
+    className="pf-c-file-upload__file-select"
+  >
+    <InputGroup>
+      <ForwardRef
+        aria-describedby="custom-file-upload-browse-button"
+        aria-label="Do something custom with this!"
+        id="custom-file-upload-filename"
+        isDisabled={false}
+        isReadOnly={true}
+        name="custom-file-upload-filename"
+        placeholder="Do something custom with this!"
+        value=""
+      />
+      <Component
+        id="custom-file-upload-browse-button"
+        isDisabled={false}
+        onClick={[MockFunction]}
+        variant="control"
+      >
+        Browse...
+      </Component>
+      <Component
+        isDisabled={false}
+        onClick={[MockFunction]}
+        variant="control"
+      >
+        Clear
+      </Component>
+    </InputGroup>
+  </div>
+  <div
+    className="pf-c-file-upload__file-details"
+  >
+    <TextArea
+      aria-label="File upload"
+      className=""
+      disabled={false}
+      id="custom-file-upload"
+      isRequired={false}
+      isValid={true}
+      name="custom-file-upload"
+      onChange={[Function]}
+      readOnly={false}
+      resizeOrientation="vertical"
+      validated="default"
+      value=""
+    />
+  </div>
+  <p>
+    A custom preview of the uploaded file can be passed as children
+  </p>
+</div>
+`;

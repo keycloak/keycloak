@@ -1,0 +1,47 @@
+{
+  "name": "merge2",
+  "description": "Merge multiple streams into one stream in sequence or parallel.",
+  "authors": [
+    "Yan Qing <admin@zensh.com>"
+  ],
+  "license": "MIT",
+  "version": "1.3.0",
+  "main": "./index.js",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:teambition/merge2.git"
+  },
+  "homepage": "https://github.com/teambition/merge2",
+  "keywords": [
+    "merge2",
+    "multiple",
+    "sequence",
+    "parallel",
+    "merge",
+    "stream",
+    "merge stream",
+    "sync"
+  ],
+  "engines": {
+    "node": ">= 6"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "standard": "^14.2.0",
+    "through2": "^3.0.1",
+    "thunks": "^4.9.5",
+    "tman": "^1.9.0",
+    "to-through": "^2.0.0"
+  },
+  "scripts": {
+    "test": "standard && tman"
+  },
+  "files": [
+    "README.md",
+    "index.js"
+  ]
+
+,"_resolved": "https://registry.npmjs.org/merge2/-/merge2-1.3.0.tgz"
+,"_integrity": "sha512-2j4DAdlBOkiSZIsaXk4mTE3sRS02yBHAtfy127xRV3bQUFqXkjHCHLW6Scv7DwNRbIWNHH8zpnz9zMaKXIdvYw=="
+,"_from": "merge2@1.3.0"
+}

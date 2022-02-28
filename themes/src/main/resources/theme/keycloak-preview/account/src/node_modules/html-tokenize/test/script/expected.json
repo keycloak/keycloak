@@ -1,0 +1,4 @@
+[["open", "<script>"]
+,["text","\n  if (i < 3) console.log('beep');\n"]
+,["close", "</script>"]
+,["text","\n"]]

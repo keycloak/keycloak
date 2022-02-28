@@ -1,0 +1,108 @@
+.pf-c-card {
+  --pf-c-card--BackgroundColor: var(--pf-global--BackgroundColor--100);
+  --pf-c-card--BoxShadow: var(--pf-global--BoxShadow--sm);
+  --pf-c-card--m-hoverable--hover--BoxShadow: var(--pf-global--BoxShadow--lg);
+  --pf-c-card--m-selectable--hover--BoxShadow: var(--pf-global--BoxShadow--lg);
+  --pf-c-card--m-selectable--focus--BoxShadow: var(--pf-global--BoxShadow--lg);
+  --pf-c-card--m-selectable--active--BoxShadow: var(--pf-global--BoxShadow--lg);
+  --pf-c-card--m-selectable--m-selected--BoxShadow: var(--pf-global--BoxShadow--lg);
+  --pf-c-card--m-selectable--m-selected--before--Height: var(--pf-global--BorderWidth--lg);
+  --pf-c-card--m-selectable--m-selected--before--BackgroundColor: var(--pf-global--active-color--100);
+  --pf-c-card--m-compact__body--FontSize: var(--pf-global--FontSize--sm);
+  --pf-c-card--m-compact__footer--FontSize: var(--pf-global--FontSize--sm);
+  --pf-c-card--m-compact--first-child--PaddingTop: var(--pf-global--spacer--md);
+  --pf-c-card--m-compact--child--PaddingRight: var(--pf-global--spacer--md);
+  --pf-c-card--m-compact--child--PaddingBottom: var(--pf-global--spacer--md);
+  --pf-c-card--m-compact--child--PaddingLeft: var(--pf-global--spacer--md);
+  --pf-c-card--m-compact__header--not-last-child--PaddingBottom: var(--pf-global--spacer--sm);
+  --pf-c-card--first-child--PaddingTop: var(--pf-global--spacer--lg);
+  --pf-c-card--child--PaddingRight: var(--pf-global--spacer--lg);
+  --pf-c-card--child--PaddingBottom: var(--pf-global--spacer--lg);
+  --pf-c-card--child--PaddingLeft: var(--pf-global--spacer--lg);
+  --pf-c-card__header--not-last-child--PaddingBottom: var(--pf-global--spacer--md);
+  --pf-c-card__body--FontSize: var(--pf-global--FontSize--md);
+  --pf-c-card__footer--FontSize: var(--pf-global--FontSize--md);
+  --pf-c-card__actions--PaddingLeft: var(--pf-global--spacer--md);
+  --pf-c-card__actions--child--MarginLeft: var(--pf-global--spacer--sm);
+  display: flex;
+  flex-direction: column;
+  background-color: var(--pf-c-card--BackgroundColor);
+  box-shadow: var(--pf-c-card--BoxShadow); }
+  .pf-c-card.pf-m-hoverable:hover {
+    box-shadow: var(--pf-c-card--m-hoverable--hover--BoxShadow); }
+  .pf-c-card.pf-m-selectable {
+    position: relative;
+    cursor: pointer; }
+    .pf-c-card.pf-m-selectable:hover {
+      box-shadow: var(--pf-c-card--m-selectable--hover--BoxShadow); }
+    .pf-c-card.pf-m-selectable:focus {
+      box-shadow: var(--pf-c-card--m-selectable--focus--BoxShadow); }
+    .pf-c-card.pf-m-selectable:active {
+      box-shadow: var(--pf-c-card--m-selectable--active--BoxShadow); }
+    .pf-c-card.pf-m-selectable.pf-m-selected {
+      box-shadow: var(--pf-c-card--m-selectable--m-selected--BoxShadow); }
+      .pf-c-card.pf-m-selectable.pf-m-selected::before {
+        position: absolute;
+        top: 0;
+        right: 0;
+        left: 0;
+        height: var(--pf-c-card--m-selectable--m-selected--before--Height);
+        content: "";
+        background-color: var(--pf-c-card--m-selectable--m-selected--before--BackgroundColor); }
+  .pf-c-card.pf-m-compact {
+    --pf-c-card__body--FontSize: var(--pf-c-card--m-compact__body--FontSize);
+    --pf-c-card__footer--FontSize: var(--pf-c-card--m-compact__footer--FontSize);
+    --pf-c-card--first-child--PaddingTop: var(--pf-c-card--m-compact--first-child--PaddingTop);
+    --pf-c-card--child--PaddingRight: var(--pf-c-card--m-compact--child--PaddingRight);
+    --pf-c-card--child--PaddingBottom: var(--pf-c-card--m-compact--child--PaddingBottom);
+    --pf-c-card--child--PaddingLeft: var(--pf-c-card--m-compact--child--PaddingLeft);
+    --pf-c-card__header--not-last-child--PaddingBottom: var(--pf-c-card--m-compact__header--not-last-child--PaddingBottom); }
+
+.pf-c-card__head {
+  display: flex;
+  flex-direction: row;
+  align-items: center; }
+
+.pf-c-card__actions {
+  display: flex;
+  align-items: center;
+  align-self: flex-start;
+  order: 1;
+  padding-left: var(--pf-c-card__actions--PaddingLeft);
+  margin-left: auto; }
+  .pf-c-card__actions > * + * {
+    margin-left: var(--pf-c-card__actions--child--MarginLeft); }
+  .pf-c-card__actions + .pf-c-card__header,
+  .pf-c-card__actions + .pf-c-card__body,
+  .pf-c-card__actions + .pf-c-card__footer {
+    padding: 0; }
+
+.pf-c-card__head,
+.pf-c-card__header,
+.pf-c-card__body,
+.pf-c-card__footer {
+  padding-right: var(--pf-c-card--child--PaddingRight);
+  padding-bottom: var(--pf-c-card--child--PaddingBottom);
+  padding-left: var(--pf-c-card--child--PaddingLeft); }
+  .pf-c-card__head:first-child,
+  .pf-c-card__header:first-child,
+  .pf-c-card__body:first-child,
+  .pf-c-card__footer:first-child {
+    padding-top: var(--pf-c-card--first-child--PaddingTop); }
+
+.pf-c-card__head:not(:last-child),
+.pf-c-card__header:not(:last-child) {
+  padding-bottom: var(--pf-c-card__header--not-last-child--PaddingBottom); }
+
+.pf-c-card__body:not(.pf-m-no-fill) {
+  flex: 1 1 auto; }
+
+.pf-c-card__body {
+  font-size: var(--pf-c-card__body--FontSize); }
+
+.pf-c-card__footer {
+  font-size: var(--pf-c-card__footer--FontSize); }
+
+.pf-m-redhat-font .pf-c-card__header {
+  font-family: var(--pf-global--FontFamily--sans-serif);
+  font-weight: var(--pf-global--FontWeight--bold); }

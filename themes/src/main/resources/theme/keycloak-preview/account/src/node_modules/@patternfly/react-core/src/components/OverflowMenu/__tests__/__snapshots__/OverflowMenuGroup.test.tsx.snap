@@ -1,0 +1,33 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`OverflowMenuGroup Below breakpoint but not isPersistent should not show 1`] = `<OverflowMenuGroup />`;
+
+exports[`OverflowMenuGroup Button group 1`] = `
+<OverflowMenuGroup
+  groupType="button"
+>
+  <div
+    className="pf-c-overflow-menu__group pf-m-button-group"
+  />
+</OverflowMenuGroup>
+`;
+
+exports[`OverflowMenuGroup Icon group 1`] = `
+<OverflowMenuGroup
+  groupType="icon"
+>
+  <div
+    className="pf-c-overflow-menu__group pf-m-icon-button-group"
+  />
+</OverflowMenuGroup>
+`;
+
+exports[`OverflowMenuGroup isPersistent and below breakpoint should still show 1`] = `
+<OverflowMenuGroup
+  isPersistent={true}
+>
+  <div
+    className="pf-c-overflow-menu__group"
+  />
+</OverflowMenuGroup>
+`;

@@ -1,0 +1,93 @@
+.pf-c-chip {
+  --pf-global--Color--100: var(--pf-global--Color--dark-100);
+  --pf-global--Color--200: var(--pf-global--Color--dark-200);
+  --pf-global--BorderColor--100: var(--pf-global--BorderColor--dark-100);
+  --pf-global--primary-color--100: var(--pf-global--primary-color--dark-100);
+  --pf-global--link--Color: var(--pf-global--link--Color--dark);
+  --pf-global--link--Color--hover: var(--pf-global--link--Color--dark--hover);
+  --pf-global--BackgroundColor--100: var(--pf-global--BackgroundColor--light-100); }
+
+.pf-c-chip {
+  --pf-c-chip--PaddingLeft: var(--pf-global--spacer--sm);
+  --pf-c-chip--BackgroundColor: var(--pf-global--Color--light-100);
+  --pf-c-chip--BorderColor: var(--pf-global--secondary-color--100);
+  --pf-c-chip--BorderWidth: var(--pf-global--BorderWidth--sm);
+  --pf-c-chip--BorderRadius: var(--pf-global--BorderRadius--sm);
+  --pf-c-chip--m-overflow--BackgroundColor: var(--pf-global--BackgroundColor--300);
+  --pf-c-chip--m-overflow--PaddingLeft: 0;
+  --pf-c-chip--m-overflow--BorderWidth: 0;
+  --pf-c-chip--m-overflow--c-button--BorderRadius: var(--pf-global--BorderRadius--sm);
+  --pf-c-chip--m-overflow--c-button--BorderWidth: 0;
+  --pf-c-chip--m-overflow--c-button--PaddingLeft: var(--pf-global--spacer--sm);
+  --pf-c-chip--m-overflow--c-button--PaddingRight: var(--pf-global--spacer--sm);
+  --pf-c-chip--m-overflow--c-button--hover--BorderWidth: var(--pf-global--BorderWidth--sm);
+  --pf-c-chip--m-overflow--c-button--hover--BorderColor: var(--pf-global--secondary-color--100);
+  --pf-c-chip--m-overflow--c-button--active--BorderWidth: var(--pf-global--BorderWidth--sm);
+  --pf-c-chip--m-overflow--c-button--active--BorderColor: var(--pf-global--secondary-color--100);
+  --pf-c-chip--m-overflow--c-button--focus--BorderWidth: var(--pf-global--BorderWidth--sm);
+  --pf-c-chip--m-overflow--c-button--focus--BorderColor: var(--pf-global--secondary-color--100);
+  --pf-c-chip--m-read-only--PaddingTop: var(--pf-global--spacer--form-element);
+  --pf-c-chip--m-read-only--PaddingRight: var(--pf-global--spacer--sm);
+  --pf-c-chip--m-read-only--PaddingBottom: var(--pf-global--spacer--form-element);
+  --pf-c-chip__text--FontSize: var(--pf-global--FontSize--xs);
+  --pf-c-chip__text--Color: var(--pf-global--Color--100);
+  --pf-c-chip__text--MaxWidth: 7.5rem;
+  --pf-c-chip--c-button--PaddingLeft: var(--pf-global--spacer--sm);
+  --pf-c-chip--c-button--PaddingRight: var(--pf-global--spacer--sm);
+  --pf-c-chip--c-button--FontSize: var(--pf-global--FontSize--xs);
+  --pf-c-chip--c-badge--MarginLeft: var(--pf-global--spacer--xs);
+  color: var(--pf-global--Color--100);
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  padding-left: var(--pf-c-chip--PaddingLeft);
+  list-style: none;
+  background-color: var(--pf-c-chip--BackgroundColor);
+  border-radius: var(--pf-c-chip--BorderRadius); }
+  .pf-c-chip::before {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    content: "";
+    border: var(--pf-c-chip--BorderWidth) solid var(--pf-c-chip--BorderColor);
+    border-radius: var(--pf-c-chip--BorderRadius); }
+  .pf-c-chip.pf-m-overflow {
+    --pf-c-chip--PaddingLeft: var(--pf-c-chip--m-overflow--PaddingLeft);
+    --pf-c-chip--BackgroundColor: var(--pf-c-chip--m-overflow--BackgroundColor); }
+    .pf-c-chip.pf-m-overflow::before {
+      --pf-c-chip--BorderWidth: var(--pf-c-chip--m-overflow--BorderWidth); }
+    .pf-c-chip.pf-m-overflow .pf-c-button {
+      padding-right: var(--pf-c-chip--m-overflow--c-button--PaddingRight);
+      padding-left: var(--pf-c-chip--m-overflow--c-button--PaddingLeft); }
+      .pf-c-chip.pf-m-overflow .pf-c-button::after {
+        border: var(--pf-c-chip--m-overflow--c-button--BorderWidth) solid var(--pf-c-chip--m-overflow--c-button--active--BorderColor);
+        border-radius: var(--pf-c-chip--m-overflow--c-button--BorderRadius); }
+      .pf-c-chip.pf-m-overflow .pf-c-button.pf-m-hover::after, .pf-c-chip.pf-m-overflow .pf-c-button:hover::after {
+        --pf-c-chip--m-overflow--c-button--BorderWidth: var(--pf-c-chip--m-overflow--c-button--hover--BorderWidth);
+        --pf-c-chip--m-overflow--c-button--BorderColor: var(--pf-c-chip--m-overflow--c-button--hover--BorderColor); }
+      .pf-c-chip.pf-m-overflow .pf-c-button.pf-m-active::after, .pf-c-chip.pf-m-overflow .pf-c-button:active::after {
+        --pf-c-chip--m-overflow--c-button--BorderWidth: var(--pf-c-chip--m-overflow--c-button--active--BorderWidth);
+        --pf-c-chip--m-overflow--c-button--BorderColor: var(--pf-c-chip--m-overflow--c-button--active--BorderColor); }
+      .pf-c-chip.pf-m-overflow .pf-c-button.pf-m-focus::after, .pf-c-chip.pf-m-overflow .pf-c-button:focus::after {
+        --pf-c-chip--m-overflow--c-button--BorderWidth: var(--pf-c-chip--m-overflow--c-button--focus--BorderWidth);
+        --pf-c-chip--m-overflow--c-button--BorderColor: var(--pf-c-chip--m-overflow--c-button--focus--BorderColor); }
+  .pf-c-chip.pf-m-read-only {
+    padding-top: var(--pf-c-chip--m-read-only--PaddingTop);
+    padding-right: var(--pf-c-chip--m-read-only--PaddingRight);
+    padding-bottom: var(--pf-c-chip--m-read-only--PaddingBottom); }
+  .pf-c-chip .pf-c-button {
+    padding-right: var(--pf-c-chip--c-button--PaddingRight);
+    padding-left: var(--pf-c-chip--c-button--PaddingLeft);
+    font-size: var(--pf-c-chip--c-button--FontSize); }
+  .pf-c-chip .pf-c-badge {
+    margin-left: var(--pf-c-chip--c-badge--MarginLeft); }
+
+.pf-c-chip__text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: var(--pf-c-chip__text--MaxWidth);
+  font-size: var(--pf-c-chip__text--FontSize);
+  color: var(--pf-c-chip__text--Color); }

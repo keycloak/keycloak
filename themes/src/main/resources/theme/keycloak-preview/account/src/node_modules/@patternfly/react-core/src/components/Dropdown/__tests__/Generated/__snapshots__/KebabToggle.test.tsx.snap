@@ -1,0 +1,29 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`KebabToggle should match snapshot (auto-generated) 1`] = `
+<Toggle
+  aria-label="'Actions'"
+  bubbleEvent={false}
+  className="''"
+  id="''"
+  isActive={false}
+  isDisabled={false}
+  isFocused={false}
+  isHovered={false}
+  isOpen={false}
+  isPlain={false}
+  isPrimary={false}
+  isSplitButton={false}
+  onEnter={[Function]}
+  onToggle={[Function]}
+  parentRef={null}
+  type="button"
+>
+  <EllipsisVIcon
+    color="currentColor"
+    noVerticalAlign={false}
+    size="sm"
+    title={null}
+  />
+</Toggle>
+`;

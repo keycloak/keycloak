@@ -1,0 +1,20 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`BreadcrumbHeading should match snapshot (auto-generated) 1`] = `
+<li
+  className="pf-c-breadcrumb__item ''"
+>
+  <h1
+    className="pf-c-breadcrumb__heading"
+  >
+    <a
+      aria-current="page"
+      className="pf-c-breadcrumb__link pf-m-current"
+      href="null"
+      target="null"
+    >
+      ReactNode
+    </a>
+  </h1>
+</li>
+`;

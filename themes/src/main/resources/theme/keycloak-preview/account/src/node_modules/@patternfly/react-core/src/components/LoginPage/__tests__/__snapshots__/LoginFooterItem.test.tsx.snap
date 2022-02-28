@@ -1,0 +1,12 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`LoginFooterItem  with custom node 1`] = `<CustomNode />`;
+
+exports[`className is added to the root element 1`] = `undefined`;
+
+exports[`renders with PatternFly Core styles 1`] = `
+<a
+  href="#"
+  target="_self"
+/>
+`;

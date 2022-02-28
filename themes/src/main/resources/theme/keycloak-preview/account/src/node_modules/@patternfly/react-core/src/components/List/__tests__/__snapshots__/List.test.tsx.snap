@@ -1,0 +1,67 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`list inline list 1`] = `
+<List
+  variant="inline"
+>
+  <ul
+    className="pf-c-list pf-m-inline"
+  >
+    <ListItems>
+      <List>
+        <ul
+          className="pf-c-list"
+        >
+          <ListItem>
+            <li>
+              First
+            </li>
+          </ListItem>
+          <ListItem>
+            <li>
+              Second
+            </li>
+          </ListItem>
+          <ListItem>
+            <li>
+              Third
+            </li>
+          </ListItem>
+        </ul>
+      </List>
+    </ListItems>
+  </ul>
+</List>
+`;
+
+exports[`list simple list 1`] = `
+<List>
+  <ul
+    className="pf-c-list"
+  >
+    <ListItems>
+      <List>
+        <ul
+          className="pf-c-list"
+        >
+          <ListItem>
+            <li>
+              First
+            </li>
+          </ListItem>
+          <ListItem>
+            <li>
+              Second
+            </li>
+          </ListItem>
+          <ListItem>
+            <li>
+              Third
+            </li>
+          </ListItem>
+        </ul>
+      </List>
+    </ListItems>
+  </ul>
+</List>
+`;

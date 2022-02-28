@@ -1,0 +1,1 @@
+module.exports = {"name":"--pf-c-notification-drawer__list-item--m-info__list-item-header-icon--Color","value":"#73bcf7","var":"var(--pf-c-notification-drawer__list-item--m-info__list-item-header-icon--Color)"}

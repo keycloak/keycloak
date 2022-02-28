@@ -1,0 +1,19 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`FormSelect should match snapshot (auto-generated) 1`] = `
+<select
+  aria-invalid={false}
+  aria-label="string"
+  className="pf-c-form-control ''"
+  disabled={false}
+  onBlur={[Function]}
+  onChange={[Function]}
+  onFocus={[Function]}
+  required={false}
+  value=""
+>
+  <div>
+    ReactNode
+  </div>
+</select>
+`;

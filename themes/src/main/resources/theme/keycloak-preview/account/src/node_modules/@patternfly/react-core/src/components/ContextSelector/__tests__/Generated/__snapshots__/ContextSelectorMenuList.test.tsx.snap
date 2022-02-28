@@ -1,0 +1,11 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ContextSelectorMenuList should match snapshot (auto-generated) 1`] = `
+<ul
+  className="pf-c-context-selector__menu-list ''"
+  hidden={false}
+  role="menu"
+>
+  ReactNode
+</ul>
+`;

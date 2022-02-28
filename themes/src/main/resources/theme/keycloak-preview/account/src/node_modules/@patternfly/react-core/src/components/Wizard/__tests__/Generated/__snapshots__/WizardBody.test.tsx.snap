@@ -1,0 +1,13 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`WizardBody should match snapshot (auto-generated) 1`] = `
+<main
+  className="pf-c-wizard__main"
+>
+  <div
+    className="pf-c-wizard__main-body"
+  >
+    any
+  </div>
+</main>
+`;

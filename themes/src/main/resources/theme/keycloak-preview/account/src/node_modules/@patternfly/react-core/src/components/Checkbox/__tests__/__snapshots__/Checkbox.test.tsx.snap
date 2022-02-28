@@ -1,0 +1,186 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`controlled - 3rd state 1`] = `
+<div
+  className="pf-c-check"
+>
+  <input
+    aria-invalid={false}
+    aria-label="check"
+    className="pf-c-check__input"
+    disabled={false}
+    id="check"
+    onChange={[Function]}
+    type="checkbox"
+  />
+</div>
+`;
+
+exports[`controlled 1`] = `
+<div
+  className="pf-c-check"
+>
+  <input
+    aria-invalid={false}
+    aria-label="check"
+    checked={true}
+    className="pf-c-check__input"
+    disabled={false}
+    id="check"
+    onChange={[Function]}
+    type="checkbox"
+  />
+</div>
+`;
+
+exports[`isDisabled 1`] = `
+<div
+  className="pf-c-check"
+>
+  <input
+    aria-invalid={false}
+    aria-label="check"
+    className="pf-c-check__input"
+    disabled={true}
+    id="check"
+    onChange={[Function]}
+    type="checkbox"
+  />
+</div>
+`;
+
+exports[`label is function 1`] = `
+<div
+  className="pf-c-check"
+>
+  <input
+    aria-invalid={false}
+    aria-label="check"
+    checked={true}
+    className="pf-c-check__input"
+    disabled={false}
+    id="check"
+    onChange={[Function]}
+    type="checkbox"
+  />
+  <label
+    className="pf-c-check__label"
+    htmlFor="check"
+  >
+    <h1>
+      Header
+    </h1>
+  </label>
+</div>
+`;
+
+exports[`label is node 1`] = `
+<div
+  className="pf-c-check"
+>
+  <input
+    aria-invalid={false}
+    aria-label="check"
+    checked={true}
+    className="pf-c-check__input"
+    disabled={false}
+    id="check"
+    onChange={[Function]}
+    type="checkbox"
+  />
+  <label
+    className="pf-c-check__label"
+    htmlFor="check"
+  >
+    <h1>
+      Header
+    </h1>
+  </label>
+</div>
+`;
+
+exports[`label is string 1`] = `
+<div
+  className="pf-c-check"
+>
+  <input
+    aria-invalid={false}
+    aria-label="check"
+    checked={true}
+    className="pf-c-check__input"
+    disabled={false}
+    id="check"
+    onChange={[Function]}
+    type="checkbox"
+  />
+  <label
+    className="pf-c-check__label"
+    htmlFor="check"
+  >
+    Label
+  </label>
+</div>
+`;
+
+exports[`passing HTML attribute 1`] = `
+<div
+  className="pf-c-check"
+>
+  <input
+    aria-invalid={false}
+    aria-label="check"
+    aria-labelledby="labelId"
+    checked={true}
+    className="pf-c-check__input"
+    disabled={false}
+    id="check"
+    onChange={[Function]}
+    type="checkbox"
+  />
+  <label
+    className="pf-c-check__label"
+    htmlFor="check"
+  >
+    label
+  </label>
+</div>
+`;
+
+exports[`passing class 1`] = `
+<div
+  className="pf-c-check class-123"
+>
+  <input
+    aria-invalid={false}
+    aria-label="check"
+    checked={true}
+    className="pf-c-check__input"
+    disabled={false}
+    id="check"
+    onChange={[Function]}
+    type="checkbox"
+  />
+  <label
+    className="pf-c-check__label"
+    htmlFor="check"
+  >
+    label
+  </label>
+</div>
+`;
+
+exports[`uncontrolled 1`] = `
+<div
+  className="pf-c-check"
+>
+  <input
+    aria-invalid={false}
+    aria-label="check"
+    className="pf-c-check__input"
+    disabled={false}
+    id="check"
+    onChange={[Function]}
+    type="checkbox"
+  />
+</div>
+`;

@@ -1,0 +1,19 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`TabContent should match snapshot (auto-generated) 1`] = `
+<TabContentBase
+  activeKey={1}
+  aria-label="string"
+  child={
+    <p>
+      ReactElement
+    </p>
+  }
+  className="string"
+  eventKey={1}
+  id="string"
+  innerRef={null}
+>
+  any
+</TabContentBase>
+`;

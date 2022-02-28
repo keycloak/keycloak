@@ -1,0 +1,35 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`compact label 1`] = `
+<span
+  className="pf-c-label pf-m-compact"
+>
+  Something
+</span>
+`;
+
+exports[`label 1`] = `
+<span
+  className="pf-c-label"
+>
+  Something
+</span>
+`;
+
+exports[`label with additional class name 1`] = `
+<span
+  className="pf-c-label klass1"
+>
+  Something
+</span>
+`;
+
+exports[`label with additional class name and props 1`] = `
+<span
+  className="pf-c-label class-1"
+  data-label-name="something"
+  id="label-1"
+>
+  Something
+</span>
+`;

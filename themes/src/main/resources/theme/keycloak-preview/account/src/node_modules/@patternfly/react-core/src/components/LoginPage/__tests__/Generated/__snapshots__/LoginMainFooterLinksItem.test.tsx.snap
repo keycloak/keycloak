@@ -1,0 +1,18 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`LoginMainFooterLinksItem should match snapshot (auto-generated) 1`] = `
+<li
+  className="pf-c-login__main-footer-links-item ''"
+>
+  <a
+    0="a"
+    1="n"
+    2="y"
+    className="pf-c-login__main-footer-links-item-link"
+    href="''"
+    target="''"
+  >
+    ReactNode
+  </a>
+</li>
+`;

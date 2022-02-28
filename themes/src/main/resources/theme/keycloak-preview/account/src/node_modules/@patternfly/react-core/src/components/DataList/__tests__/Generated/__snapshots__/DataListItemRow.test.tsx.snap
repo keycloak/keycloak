@@ -1,0 +1,14 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`DataListItemRow should match snapshot (auto-generated) 1`] = `
+<div
+  className="pf-c-data-list__item-row ''"
+>
+  <div
+    key=".0"
+    rowid="''"
+  >
+    ReactNode
+  </div>
+</div>
+`;

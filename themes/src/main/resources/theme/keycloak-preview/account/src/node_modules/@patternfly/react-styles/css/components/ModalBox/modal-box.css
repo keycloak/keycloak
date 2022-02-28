@@ -1,0 +1,95 @@
+.pf-c-modal-box {
+  --pf-global--Color--100: var(--pf-global--Color--dark-100);
+  --pf-global--Color--200: var(--pf-global--Color--dark-200);
+  --pf-global--BorderColor--100: var(--pf-global--BorderColor--dark-100);
+  --pf-global--primary-color--100: var(--pf-global--primary-color--dark-100);
+  --pf-global--link--Color: var(--pf-global--link--Color--dark);
+  --pf-global--link--Color--hover: var(--pf-global--link--Color--dark--hover);
+  --pf-global--BackgroundColor--100: var(--pf-global--BackgroundColor--light-100); }
+
+.pf-c-modal-box {
+  --pf-c-modal-box--BackgroundColor: var(--pf-global--BackgroundColor--100);
+  --pf-c-modal-box--BorderColor: transparent;
+  --pf-c-modal-box--PaddingTop: var(--pf-global--spacer--xl);
+  --pf-c-modal-box--PaddingRight: var(--pf-global--spacer--xl);
+  --pf-c-modal-box--PaddingBottom: var(--pf-global--spacer--xl);
+  --pf-c-modal-box--PaddingLeft: var(--pf-global--spacer--xl);
+  --pf-c-modal-box--BorderSize: var(--pf-global--BorderWidth--sm);
+  --pf-c-modal-box--BoxShadow: var(--pf-global--BoxShadow--lg);
+  --pf-c-modal-box--ZIndex: var(--pf-global--ZIndex--xl);
+  --pf-c-modal-box--Width: 100%;
+  --pf-c-modal-box--MaxWidth: calc(100% - var(--pf-global--spacer--xl));
+  --pf-c-modal-box--m-sm--sm--MaxWidth: 35rem;
+  --pf-c-modal-box--m-lg--lg--MaxWidth: 70rem;
+  --pf-c-modal-box--MaxHeight: calc(100vh - var(--pf-global--spacer--2xl));
+  --pf-c-modal-box__c-title--description--MarginTop: var(--pf-global--spacer--sm);
+  --pf-c-modal-box--body--MinHeight: calc(var(--pf-global--FontSize--md) * var(--pf-global--LineHeight--md));
+  --pf-c-modal-box__description--body--MarginTop: var(--pf-global--spacer--lg);
+  --pf-c-modal-box--c-title--body--MarginTop: var(--pf-global--spacer--lg);
+  --pf-c-modal-box--c-button--Top: calc(var(--pf-c-modal-box--PaddingTop) - var(--pf-global--spacer--form-element) + 0.0625rem);
+  --pf-c-modal-box--c-button--Right: var(--pf-global--spacer--md);
+  --pf-c-modal-box--c-button--sibling--MarginRight: var(--pf-global--spacer--xl);
+  --pf-c-modal-box__footer--MarginTop: var(--pf-global--spacer--xl);
+  --pf-c-modal-box__footer--c-button--MarginRight: var(--pf-global--spacer--md);
+  --pf-c-modal-box__footer--c-button--sm--MarginRight: calc(var(--pf-c-modal-box__footer--c-button--MarginRight) / 2);
+  --pf-c-modal-box__footer__c-button--first-of-type--MarginLeft: auto;
+  color: var(--pf-global--Color--100);
+  position: relative;
+  z-index: var(--pf-c-modal-box--ZIndex);
+  display: flex;
+  flex-direction: column;
+  width: var(--pf-c-modal-box--Width);
+  max-width: var(--pf-c-modal-box--MaxWidth);
+  max-height: var(--pf-c-modal-box--MaxHeight);
+  padding: var(--pf-c-modal-box--PaddingTop) var(--pf-c-modal-box--PaddingRight) var(--pf-c-modal-box--PaddingBottom) var(--pf-c-modal-box--PaddingLeft);
+  background-color: var(--pf-c-modal-box--BackgroundColor);
+  border: var(--pf-c-modal-box--BorderSize) solid var(--pf-c-modal-box--BorderColor);
+  box-shadow: var(--pf-c-modal-box--BoxShadow); }
+  @media screen and (min-width: 576px) {
+    .pf-c-modal-box.pf-m-sm {
+      --pf-c-modal-box--MaxWidth: var(--pf-c-modal-box--m-sm--sm--MaxWidth); } }
+  @media screen and (min-width: 1200px) {
+    .pf-c-modal-box.pf-m-lg {
+      --pf-c-modal-box--MaxWidth: var(--pf-c-modal-box--m-lg--lg--MaxWidth); } }
+  .pf-c-modal-box > .pf-c-button {
+    position: absolute;
+    top: var(--pf-c-modal-box--c-button--Top);
+    right: var(--pf-c-modal-box--c-button--Right); }
+    .pf-c-modal-box > .pf-c-button + * {
+      margin-right: var(--pf-c-modal-box--c-button--sibling--MarginRight); }
+  .pf-c-modal-box > .pf-c-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 0 0 auto; }
+    .pf-c-modal-box > .pf-c-title + .pf-c-modal-box__description {
+      margin-top: var(--pf-c-modal-box__c-title--description--MarginTop); }
+    .pf-c-modal-box > .pf-c-title + .pf-c-modal-box__body {
+      margin-top: var(--pf-c-modal-box--c-title--body--MarginTop); }
+
+.pf-c-modal-box__description + .pf-c-modal-box__body {
+  margin-top: var(--pf-c-modal-box__description--body--MarginTop); }
+
+.pf-c-modal-box__body {
+  flex: 1 1 auto;
+  min-height: var(--pf-c-modal-box--body--MinHeight);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  word-break: break-word;
+  -webkit-overflow-scrolling: touch; }
+
+.pf-c-modal-box__footer {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  margin-top: var(--pf-c-modal-box__footer--MarginTop); }
+  .pf-c-modal-box__footer > .pf-c-button:first-of-type {
+    margin-left: var(--pf-c-modal-box__footer__c-button--first-of-type--MarginLeft); }
+  .pf-c-modal-box__footer > .pf-c-button:not(:last-child) {
+    margin-right: var(--pf-c-modal-box__footer--c-button--MarginRight); }
+    @media screen and (min-width: 576px) {
+      .pf-c-modal-box__footer > .pf-c-button:not(:last-child) {
+        --pf-c-modal-box__footer--c-button--MarginRight: var(--pf-c-modal-box__footer--c-button--sm--MarginRight); } }
+  .pf-c-modal-box__footer.pf-m-align-left {
+    --pf-c-modal-box__footer__c-button--first-of-type--MarginLeft: 0; }

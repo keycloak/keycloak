@@ -1,0 +1,130 @@
+.pf-c-context-selector__menu {
+  --pf-global--Color--100: var(--pf-global--Color--dark-100);
+  --pf-global--Color--200: var(--pf-global--Color--dark-200);
+  --pf-global--BorderColor--100: var(--pf-global--BorderColor--dark-100);
+  --pf-global--primary-color--100: var(--pf-global--primary-color--dark-100);
+  --pf-global--link--Color: var(--pf-global--link--Color--dark);
+  --pf-global--link--Color--hover: var(--pf-global--link--Color--dark--hover);
+  --pf-global--BackgroundColor--100: var(--pf-global--BackgroundColor--light-100); }
+
+.pf-c-context-selector {
+  --pf-c-context-selector--Width: 15.625rem;
+  --pf-c-context-selector__toggle--PaddingTop: var(--pf-global--spacer--form-element);
+  --pf-c-context-selector__toggle--PaddingRight: var(--pf-global--spacer--sm);
+  --pf-c-context-selector__toggle--PaddingBottom: var(--pf-global--spacer--form-element);
+  --pf-c-context-selector__toggle--PaddingLeft: var(--pf-global--spacer--sm);
+  --pf-c-context-selector__toggle--BorderWidth: var(--pf-global--BorderWidth--sm);
+  --pf-c-context-selector__toggle--BorderTopColor: var(--pf-global--BorderColor--300);
+  --pf-c-context-selector__toggle--BorderRightColor: var(--pf-global--BorderColor--300);
+  --pf-c-context-selector__toggle--BorderBottomColor: var(--pf-global--BorderColor--200);
+  --pf-c-context-selector__toggle--BorderLeftColor: var(--pf-global--BorderColor--300);
+  --pf-c-context-selector__toggle--Color: var(--pf-global--Color--100);
+  --pf-c-context-selector__toggle--hover--BorderBottomColor: var(--pf-global--active-color--100);
+  --pf-c-context-selector__toggle--active--BorderBottomWidth: var(--pf-global--BorderWidth--md);
+  --pf-c-context-selector__toggle--active--BorderBottomColor: var(--pf-global--active-color--100);
+  --pf-c-context-selector__toggle--expanded--BorderBottomWidth: var(--pf-global--BorderWidth--md);
+  --pf-c-context-selector__toggle--expanded--BorderBottomColor: var(--pf-global--active-color--100);
+  --pf-c-context-selector__toggle-text--FontSize: var(--pf-global--FontSize--md);
+  --pf-c-context-selector__toggle-text--FontWeight: var(--pf-global--FontWeight--normal);
+  --pf-c-context-selector__toggle-text--LineHeight: var(--pf-global--LineHeight--md);
+  --pf-c-context-selector__toggle-icon--MarginRight: var(--pf-global--spacer--sm);
+  --pf-c-context-selector__toggle-icon--MarginLeft: var(--pf-global--spacer--md);
+  --pf-c-context-selector__menu--Top: calc(100% + var(--pf-global--spacer--xs));
+  --pf-c-context-selector__menu--ZIndex: var(--pf-global--ZIndex--sm);
+  --pf-c-context-selector__menu--PaddingTop: var(--pf-global--spacer--sm);
+  --pf-c-context-selector__menu--BackgroundColor: var(--pf-global--BackgroundColor--light-100);
+  --pf-c-context-selector__menu--BorderWidth: var(--pf-global--BorderWidth--sm);
+  --pf-c-context-selector__menu--BoxShadow: var(--pf-global--BoxShadow--md);
+  --pf-c-context-selector__menu-input--PaddingTop: var(--pf-global--spacer--sm);
+  --pf-c-context-selector__menu-input--PaddingRight: var(--pf-global--spacer--md);
+  --pf-c-context-selector__menu-input--PaddingBottom: var(--pf-global--spacer--md);
+  --pf-c-context-selector__menu-input--PaddingLeft: var(--pf-global--spacer--md);
+  --pf-c-context-selector__menu-input--BottomBorderColor: var(--pf-global--BorderColor--100);
+  --pf-c-context-selector__menu-input--BottomBorderWidth: var(--pf-global--BorderWidth--sm);
+  --pf-c-context-selector__menu-list--MaxHeight: 12.5rem;
+  --pf-c-context-selector__menu-list-item--PaddingTop: var(--pf-global--spacer--sm);
+  --pf-c-context-selector__menu-list-item--PaddingRight: var(--pf-global--spacer--lg);
+  --pf-c-context-selector__menu-list-item--PaddingBottom: var(--pf-global--spacer--sm);
+  --pf-c-context-selector__menu-list-item--PaddingLeft: var(--pf-global--spacer--lg);
+  --pf-c-context-selector__menu-list-item--hover--BackgroundColor: var(--pf-global--BackgroundColor--light-300);
+  --pf-c-context-selector__menu-list-item--disabled--Color: var(--pf-global--Color--dark-200);
+  position: relative;
+  display: inline-block;
+  width: var(--pf-c-context-selector--Width);
+  max-width: 100%; }
+
+.pf-c-context-selector__toggle {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: var(--pf-c-context-selector__toggle--PaddingTop) var(--pf-c-context-selector__toggle--PaddingRight) var(--pf-c-context-selector__toggle--PaddingBottom) var(--pf-c-context-selector__toggle--PaddingLeft);
+  color: var(--pf-c-context-selector__toggle--Color);
+  white-space: nowrap;
+  cursor: pointer;
+  border: none; }
+  .pf-c-context-selector__toggle > * {
+    color: var(--pf-c-context-selector__toggle--Color); }
+  .pf-c-context-selector__toggle::before {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    content: "";
+    border: var(--pf-c-context-selector__toggle--BorderWidth) solid;
+    border-color: var(--pf-c-context-selector__toggle--BorderTopColor) var(--pf-c-context-selector__toggle--BorderRightColor) var(--pf-c-context-selector__toggle--BorderBottomColor) var(--pf-c-context-selector__toggle--BorderLeftColor); }
+  .pf-c-context-selector__toggle:hover::before, .pf-c-context-selector__toggle.pf-m-hover::before {
+    --pf-c-context-selector__toggle--BorderBottomColor: var(--pf-c-context-selector__toggle--hover--BorderBottomColor); }
+  .pf-c-context-selector__toggle:active::before, .pf-c-context-selector__toggle.pf-m-active::before, .pf-c-context-selector__toggle:focus-within::before {
+    --pf-c-context-selector__toggle--BorderBottomColor: var(--pf-c-context-selector__toggle--active--BorderBottomColor);
+    border-bottom-width: var(--pf-c-context-selector__toggle--active--BorderBottomWidth); }
+  .pf-m-expanded > .pf-c-context-selector__toggle::before {
+    --pf-c-context-selector__toggle--BorderBottomColor: var(--pf-c-context-selector__toggle--expanded--BorderBottomColor);
+    border-bottom-width: var(--pf-c-context-selector__toggle--expanded--BorderBottomWidth); }
+  .pf-c-context-selector__toggle .pf-c-context-selector__toggle-icon {
+    margin-right: var(--pf-c-context-selector__toggle-icon--MarginRight);
+    margin-left: var(--pf-c-context-selector__toggle-icon--MarginLeft); }
+  .pf-c-context-selector__toggle .pf-c-context-selector__toggle-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: var(--pf-c-context-selector__toggle-text--FontSize);
+    font-weight: var(--pf-c-context-selector__toggle-text--FontWeight);
+    line-height: var(--pf-c-context-selector__toggle-text--LineHeight); }
+
+.pf-c-context-selector__menu {
+  color: var(--pf-global--Color--100);
+  position: absolute;
+  top: var(--pf-c-context-selector__menu--Top);
+  z-index: var(--pf-c-context-selector__menu--ZIndex);
+  min-width: 100%;
+  padding-top: var(--pf-c-context-selector__menu--PaddingTop);
+  background-color: var(--pf-c-context-selector__menu--BackgroundColor);
+  background-clip: padding-box;
+  border: var(--pf-c-context-selector__menu--BorderWidth) solid transparent;
+  box-shadow: var(--pf-c-context-selector__menu--BoxShadow); }
+
+.pf-c-context-selector__menu-input {
+  position: relative;
+  padding: var(--pf-c-context-selector__menu-input--PaddingTop) var(--pf-c-context-selector__menu-input--PaddingRight) var(--pf-c-context-selector__menu-input--PaddingBottom) var(--pf-c-context-selector__menu-input--PaddingLeft);
+  border-bottom: var(--pf-c-context-selector__menu-input--BottomBorderWidth) solid var(--pf-c-context-selector__menu-input--BottomBorderColor); }
+
+.pf-c-context-selector__menu-list {
+  max-height: var(--pf-c-context-selector__menu-list--MaxHeight);
+  overflow-y: scroll; }
+
+.pf-c-context-selector__menu-list-item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: var(--pf-c-context-selector__menu-list-item--PaddingTop) var(--pf-c-context-selector__menu-list-item--PaddingRight) var(--pf-c-context-selector__menu-list-item--PaddingBottom) var(--pf-c-context-selector__menu-list-item--PaddingLeft);
+  white-space: nowrap;
+  border: none; }
+  .pf-c-context-selector__menu-list-item:hover, .pf-c-context-selector__menu-list-item.pf-m-hover, .pf-c-context-selector__menu-list-item:focus, .pf-c-context-selector__menu-list-item.pf-m-focus {
+    text-decoration: none;
+    background-color: var(--pf-c-context-selector__menu-list-item--hover--BackgroundColor); }
+  .pf-c-context-selector__menu-list-item:disabled, .pf-c-context-selector__menu-list-item.pf-m-disabled {
+    color: var(--pf-c-context-selector__menu-list-item--disabled--Color);
+    pointer-events: none; }

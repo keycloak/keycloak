@@ -1,0 +1,2 @@
+const c_nav__simple_list__c_divider_MarginLeft: {"name": "--pf-c-nav__simple-list__c-divider--MarginLeft"; "value": "1.5rem"; "var": "var(--pf-c-nav__simple-list__c-divider--MarginLeft)";}
+export default c_nav__simple_list__c_divider_MarginLeft

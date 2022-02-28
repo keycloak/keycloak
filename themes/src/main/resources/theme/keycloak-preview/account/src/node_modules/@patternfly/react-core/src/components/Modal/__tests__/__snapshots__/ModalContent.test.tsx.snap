@@ -1,0 +1,350 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Modal Content Test description 1`] = `
+<Backdrop>
+  <FocusTrap
+    active={true}
+    className="pf-l-bullseye"
+    focusTrapOptions={
+      Object {
+        "clickOutsideDeactivates": true,
+      }
+    }
+    paused={false}
+  >
+    <ModalBox
+      className=""
+      id="id"
+      isLarge={false}
+      isSmall={false}
+      style={Object {}}
+      title="Test Modal Content title"
+    >
+      <ModalBoxCloseButton
+        onClose={[Function]}
+      />
+      <ModalBoxHeader
+        hideTitle={false}
+      >
+         
+        Test Modal Content title
+         
+      </ModalBoxHeader>
+      <ModalBoxDescription
+        id="id"
+      >
+        This is a test description.
+      </ModalBoxDescription>
+      <ModalBoxBody>
+        This is a ModalBox header
+      </ModalBoxBody>
+    </ModalBox>
+  </FocusTrap>
+</Backdrop>
+`;
+
+exports[`Modal Content Test isOpen 1`] = `
+<Backdrop>
+  <FocusTrap
+    active={true}
+    className="pf-l-bullseye"
+    focusTrapOptions={
+      Object {
+        "clickOutsideDeactivates": true,
+      }
+    }
+    paused={false}
+  >
+    <ModalBox
+      className=""
+      id="id"
+      isLarge={false}
+      isSmall={false}
+      style={Object {}}
+      title="Test Modal Content title"
+    >
+      <ModalBoxCloseButton
+        onClose={[Function]}
+      />
+      <ModalBoxHeader
+        hideTitle={false}
+      >
+         
+        Test Modal Content title
+         
+      </ModalBoxHeader>
+      <ModalBoxBody
+        id="id"
+      >
+        This is a ModalBox header
+      </ModalBoxBody>
+    </ModalBox>
+  </FocusTrap>
+</Backdrop>
+`;
+
+exports[`Modal Content Test only body 1`] = `
+<Backdrop>
+  <FocusTrap
+    active={true}
+    className="pf-l-bullseye"
+    focusTrapOptions={
+      Object {
+        "clickOutsideDeactivates": true,
+      }
+    }
+    paused={false}
+  >
+    <ModalBox
+      className=""
+      id="id"
+      isLarge={false}
+      isSmall={false}
+      style={Object {}}
+      title="Test Modal Content title"
+    >
+      <ModalBoxCloseButton
+        onClose={[Function]}
+      />
+      <ModalBoxHeader
+        hideTitle={false}
+      >
+         
+        Test Modal Content title
+         
+      </ModalBoxHeader>
+      <ModalBoxBody
+        id="id"
+      >
+        This is a ModalBox header
+      </ModalBoxBody>
+    </ModalBox>
+  </FocusTrap>
+</Backdrop>
+`;
+
+exports[`Modal Content Test with footer 1`] = `
+<Backdrop>
+  <FocusTrap
+    active={true}
+    className="pf-l-bullseye"
+    focusTrapOptions={
+      Object {
+        "clickOutsideDeactivates": true,
+      }
+    }
+    paused={false}
+  >
+    <ModalBox
+      className=""
+      id="id"
+      isLarge={false}
+      isSmall={false}
+      style={Object {}}
+      title="Test Modal Content title"
+    >
+      <ModalBoxCloseButton
+        onClose={[Function]}
+      />
+      <ModalBoxHeader
+        hideTitle={false}
+      >
+         
+        Test Modal Content title
+         
+      </ModalBoxHeader>
+      <ModalBoxBody
+        id="id"
+      >
+        This is a ModalBox header
+      </ModalBoxBody>
+      <ModalBoxFooter
+        isLeftAligned={false}
+      >
+        Testing
+      </ModalBoxFooter>
+    </ModalBox>
+  </FocusTrap>
+</Backdrop>
+`;
+
+exports[`Modal Content Test with onclose 1`] = `
+<Backdrop>
+  <FocusTrap
+    active={true}
+    className="pf-l-bullseye"
+    focusTrapOptions={
+      Object {
+        "clickOutsideDeactivates": true,
+      }
+    }
+    paused={false}
+  >
+    <ModalBox
+      className=""
+      id="id"
+      isLarge={true}
+      isSmall={false}
+      style={Object {}}
+      title="Test Modal Content title"
+    >
+      <ModalBoxCloseButton
+        onClose={[Function]}
+      />
+      <ModalBoxHeader
+        hideTitle={false}
+      >
+         
+        Test Modal Content title
+         
+      </ModalBoxHeader>
+      <ModalBoxBody
+        id="id"
+      >
+        This is a ModalBox header
+      </ModalBoxBody>
+      <ModalBoxFooter
+        isLeftAligned={false}
+      >
+        Testing footer
+      </ModalBoxFooter>
+    </ModalBox>
+  </FocusTrap>
+</Backdrop>
+`;
+
+exports[`Modal Content test without footer 1`] = `
+<Backdrop>
+  <FocusTrap
+    active={true}
+    className="pf-l-bullseye"
+    focusTrapOptions={
+      Object {
+        "clickOutsideDeactivates": true,
+      }
+    }
+    paused={false}
+  >
+    <ModalBox
+      className=""
+      id="id"
+      isLarge={false}
+      isSmall={false}
+      style={Object {}}
+      title="Test Modal Content title"
+    >
+      <ModalBoxCloseButton
+        onClose={[Function]}
+      />
+      <ModalBoxHeader
+        hideTitle={false}
+      >
+         
+        Test Modal Content title
+         
+      </ModalBoxHeader>
+      <ModalBoxBody
+        id="id"
+      >
+        This is a ModalBox header
+      </ModalBoxBody>
+    </ModalBox>
+  </FocusTrap>
+</Backdrop>
+`;
+
+exports[`Modal Test with custom footer 1`] = `
+<Backdrop>
+  <FocusTrap
+    active={true}
+    className="pf-l-bullseye"
+    focusTrapOptions={
+      Object {
+        "clickOutsideDeactivates": true,
+      }
+    }
+    paused={false}
+  >
+    <ModalBox
+      className=""
+      id="id"
+      isLarge={true}
+      isSmall={false}
+      style={Object {}}
+      title="Test Modal Custom Footer"
+    >
+      <ModalBoxCloseButton
+        onClose={[Function]}
+      />
+      <ModalBoxHeader
+        hideTitle={false}
+      >
+         
+        Test Modal Custom Footer
+         
+      </ModalBoxHeader>
+      <ModalBoxBody
+        id="id"
+      >
+        This is a ModalBox header
+      </ModalBoxBody>
+      <ModalBoxFooter
+        isLeftAligned={false}
+      >
+        <span
+          id="test-custom-footer"
+        >
+          TEST
+        </span>
+      </ModalBoxFooter>
+    </ModalBox>
+  </FocusTrap>
+</Backdrop>
+`;
+
+exports[`Modal Test with custom header 1`] = `
+<Backdrop>
+  <FocusTrap
+    active={true}
+    className="pf-l-bullseye"
+    focusTrapOptions={
+      Object {
+        "clickOutsideDeactivates": true,
+      }
+    }
+    paused={false}
+  >
+    <ModalBox
+      className=""
+      id="id"
+      isLarge={true}
+      isSmall={false}
+      style={Object {}}
+      title="test-custom-header-modal"
+    >
+      <ModalBoxCloseButton
+        onClose={[Function]}
+      />
+      <div
+        className="pf-c-title"
+      >
+        <span
+          id="test-custom-header"
+        >
+          TEST
+        </span>
+      </div>
+      <ModalBoxBody
+        id="id"
+      >
+        This is a ModalBox header
+      </ModalBoxBody>
+      <ModalBoxFooter
+        isLeftAligned={false}
+      >
+        Testing footer
+      </ModalBoxFooter>
+    </ModalBox>
+  </FocusTrap>
+</Backdrop>
+`;

@@ -1,0 +1,16 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`AlertGroup should match snapshot (auto-generated) 1`] = `
+<Portal
+  containerInfo={<div />}
+>
+  <AlertGroupInline
+    className="string"
+    isToast={true}
+  >
+    <div>
+      ReactNode
+    </div>
+  </AlertGroupInline>
+</Portal>
+`;

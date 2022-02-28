@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "skipLibCheck": true,
+    "strict": true,
+    "target": "es5",
+    "declaration": true
+  },
+  "include": [
+    "./css/*",
+    "./css/**/*"
+  ]
+}

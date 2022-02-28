@@ -1,0 +1,16 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`DataListContent should match snapshot (auto-generated) 1`] = `
+<section
+  aria-label="string"
+  className="pf-c-data-list__expandable-content ''"
+  hidden={false}
+  id="''"
+>
+  <div
+    className="pf-c-data-list__expandable-content-body"
+  >
+    ReactNode
+  </div>
+</section>
+`;

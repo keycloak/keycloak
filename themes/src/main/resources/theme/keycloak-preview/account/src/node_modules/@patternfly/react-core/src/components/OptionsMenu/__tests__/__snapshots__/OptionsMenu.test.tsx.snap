@@ -1,0 +1,3721 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`optionsMenu expanded 1`] = `
+<OptionsMenu
+  id="expanded"
+  isOpen={true}
+  menuItems={
+    Array [
+      <OptionsMenuItemGroup
+        groupTitle="Sort order"
+      >
+        <OptionsMenuItem>
+          Name
+        </OptionsMenuItem>
+        <OptionsMenuItem>
+          Date
+        </OptionsMenuItem>
+        <OptionsMenuItem
+          isDisabled={true}
+        >
+          Disabled
+        </OptionsMenuItem>
+        <OptionsMenuItem>
+          Size
+        </OptionsMenuItem>
+      </OptionsMenuItemGroup>,
+      <OptionsMenuSeparator />,
+      <OptionsMenuItemGroup
+        groupTitle="Sort direction"
+        hasSeparator={true}
+      >
+        <OptionsMenuItem>
+          Ascending
+        </OptionsMenuItem>
+        <OptionsMenuItem>
+          Descending
+        </OptionsMenuItem>
+      </OptionsMenuItemGroup>,
+    ]
+  }
+  toggle={
+    <OptionsMenuToggle>
+      Options Menu
+    </OptionsMenuToggle>
+  }
+>
+  <Component
+    className=""
+    dropdownItems={
+      Array [
+        <OptionsMenuItemGroup
+          groupTitle="Sort order"
+        >
+          <OptionsMenuItem>
+            Name
+          </OptionsMenuItem>
+          <OptionsMenuItem>
+            Date
+          </OptionsMenuItem>
+          <OptionsMenuItem
+            isDisabled={true}
+          >
+            Disabled
+          </OptionsMenuItem>
+          <OptionsMenuItem>
+            Size
+          </OptionsMenuItem>
+        </OptionsMenuItemGroup>,
+        <OptionsMenuSeparator />,
+        <OptionsMenuItemGroup
+          groupTitle="Sort direction"
+          hasSeparator={true}
+        >
+          <OptionsMenuItem>
+            Ascending
+          </OptionsMenuItem>
+          <OptionsMenuItem>
+            Descending
+          </OptionsMenuItem>
+        </OptionsMenuItemGroup>,
+      ]
+    }
+    id="expanded"
+    isGrouped={false}
+    isOpen={true}
+    toggle={
+      <OptionsMenuToggle>
+        Options Menu
+      </OptionsMenuToggle>
+    }
+  >
+    <ComponentWithOuia
+      component={[Function]}
+      componentProps={
+        Object {
+          "className": "",
+          "dropdownItems": Array [
+            <OptionsMenuItemGroup
+              groupTitle="Sort order"
+            >
+              <OptionsMenuItem>
+                Name
+              </OptionsMenuItem>
+              <OptionsMenuItem>
+                Date
+              </OptionsMenuItem>
+              <OptionsMenuItem
+                isDisabled={true}
+              >
+                Disabled
+              </OptionsMenuItem>
+              <OptionsMenuItem>
+                Size
+              </OptionsMenuItem>
+            </OptionsMenuItemGroup>,
+            <OptionsMenuSeparator />,
+            <OptionsMenuItemGroup
+              groupTitle="Sort direction"
+              hasSeparator={true}
+            >
+              <OptionsMenuItem>
+                Ascending
+              </OptionsMenuItem>
+              <OptionsMenuItem>
+                Descending
+              </OptionsMenuItem>
+            </OptionsMenuItemGroup>,
+          ],
+          "id": "expanded",
+          "isGrouped": false,
+          "isOpen": true,
+          "toggle": <OptionsMenuToggle>
+            Options Menu
+          </OptionsMenuToggle>,
+        }
+      }
+      consumerContext={null}
+    >
+      <DropdownWithContext
+        autoFocus={true}
+        className=""
+        direction="down"
+        dropdownItems={
+          Array [
+            <OptionsMenuItemGroup
+              groupTitle="Sort order"
+            >
+              <OptionsMenuItem>
+                Name
+              </OptionsMenuItem>
+              <OptionsMenuItem>
+                Date
+              </OptionsMenuItem>
+              <OptionsMenuItem
+                isDisabled={true}
+              >
+                Disabled
+              </OptionsMenuItem>
+              <OptionsMenuItem>
+                Size
+              </OptionsMenuItem>
+            </OptionsMenuItemGroup>,
+            <OptionsMenuSeparator />,
+            <OptionsMenuItemGroup
+              groupTitle="Sort direction"
+              hasSeparator={true}
+            >
+              <OptionsMenuItem>
+                Ascending
+              </OptionsMenuItem>
+              <OptionsMenuItem>
+                Descending
+              </OptionsMenuItem>
+            </OptionsMenuItemGroup>,
+          ]
+        }
+        id="expanded"
+        isGrouped={false}
+        isOpen={true}
+        isPlain={false}
+        onSelect={[Function]}
+        ouiaComponentType="Dropdown"
+        ouiaContext={
+          Object {
+            "isOuia": false,
+            "ouiaId": null,
+          }
+        }
+        position="left"
+        toggle={
+          <OptionsMenuToggle>
+            Options Menu
+          </OptionsMenuToggle>
+        }
+      >
+        <div
+          className="pf-c-options-menu pf-m-expanded"
+          id="expanded"
+        >
+          <OptionsMenuToggle
+            ariaHasPopup={true}
+            id="pf-toggle-id-4"
+            isOpen={true}
+            isPlain={false}
+            key=".0"
+            onEnter={[Function]}
+            parentRef={
+              Object {
+                "current": <div
+                  class="pf-c-options-menu pf-m-expanded"
+                  id="expanded"
+                >
+                  <button
+                    aria-expanded="true"
+                    aria-haspopup="listbox"
+                    aria-label="Options menu"
+                    class="pf-c-options-menu__toggle"
+                    id="expanded-toggle"
+                    type="button"
+                  >
+                    <span
+                      class="pf-c-options-menu__toggle-text"
+                    />
+                    <svg
+                      aria-hidden="true"
+                      class="pf-c-options-menu__toggle-icon"
+                      fill="currentColor"
+                      height="1em"
+                      role="img"
+                      style="vertical-align: -0.125em;"
+                      viewBox="0 0 320 512"
+                      width="1em"
+                    >
+                      <path
+                        d="M31.3 192h257.3c17.8 0 26.7 21.5 14.1 34.1L174.1 354.8c-7.8 7.8-20.5 7.8-28.3 0L17.2 226.1C4.6 213.5 13.5 192 31.3 192z"
+                        transform=""
+                      />
+                    </svg>
+                  </button>
+                  <ul
+                    aria-labelledby="expanded-toggle"
+                    class="pf-c-options-menu__menu"
+                    role="menu"
+                  >
+                    <section
+                      class="pf-c-options-menu__group"
+                      index="0"
+                    >
+                      <h1
+                        class="pf-c-options-menu__group-title"
+                      >
+                        Sort order
+                      </h1>
+                      <ul
+                        aria-label=""
+                        class=""
+                      >
+                        <li
+                          id=""
+                          role="menuitem"
+                        >
+                          <button
+                            class="pf-c-options-menu__menu-item"
+                            tabindex="-1"
+                            type="button"
+                          >
+                            Name
+                          </button>
+                        </li>
+                        <li
+                          id=""
+                          role="menuitem"
+                        >
+                          <button
+                            class="pf-c-options-menu__menu-item"
+                            tabindex="-1"
+                            type="button"
+                          >
+                            Date
+                          </button>
+                        </li>
+                        <li
+                          id=""
+                          role="menuitem"
+                        >
+                          <button
+                            aria-disabled="true"
+                            class="pf-m-disabled pf-c-options-menu__menu-item"
+                            disabled=""
+                            tabindex="-1"
+                            type="button"
+                          >
+                            Disabled
+                          </button>
+                        </li>
+                        <li
+                          id=""
+                          role="menuitem"
+                        >
+                          <button
+                            class="pf-c-options-menu__menu-item"
+                            tabindex="-1"
+                            type="button"
+                          >
+                            Size
+                          </button>
+                        </li>
+                      </ul>
+                    </section>
+                    <li
+                      class="pf-c-options-menu__separator"
+                      index="1"
+                      role="separator"
+                    />
+                    <section
+                      class="pf-c-options-menu__group"
+                      index="2"
+                    >
+                      <h1
+                        class="pf-c-options-menu__group-title"
+                      >
+                        Sort direction
+                      </h1>
+                      <ul
+                        aria-label=""
+                        class=""
+                      >
+                        <li
+                          id=""
+                          role="menuitem"
+                        >
+                          <button
+                            class="pf-c-options-menu__menu-item"
+                            tabindex="-1"
+                            type="button"
+                          >
+                            Ascending
+                          </button>
+                        </li>
+                        <li
+                          id=""
+                          role="menuitem"
+                        >
+                          <button
+                            class="pf-c-options-menu__menu-item"
+                            tabindex="-1"
+                            type="button"
+                          >
+                            Descending
+                          </button>
+                        </li>
+                        <li
+                          class="pf-c-options-menu__separator"
+                          role="separator"
+                        />
+                      </ul>
+                    </section>
+                  </ul>
+                </div>,
+              }
+            }
+          >
+            <DropdownToggle
+              aria-expanded={true}
+              aria-label="Options menu"
+              ariaHasPopup="listbox"
+              id="expanded-toggle"
+              isActive={false}
+              isDisabled={false}
+              isFocused={false}
+              isHovered={false}
+              isOpen={true}
+              isPlain={false}
+              onEnter={[Function]}
+              parentRef={
+                Object {
+                  "current": <div
+                    class="pf-c-options-menu pf-m-expanded"
+                    id="expanded"
+                  >
+                    <button
+                      aria-expanded="true"
+                      aria-haspopup="listbox"
+                      aria-label="Options menu"
+                      class="pf-c-options-menu__toggle"
+                      id="expanded-toggle"
+                      type="button"
+                    >
+                      <span
+                        class="pf-c-options-menu__toggle-text"
+                      />
+                      <svg
+                        aria-hidden="true"
+                        class="pf-c-options-menu__toggle-icon"
+                        fill="currentColor"
+                        height="1em"
+                        role="img"
+                        style="vertical-align: -0.125em;"
+                        viewBox="0 0 320 512"
+                        width="1em"
+                      >
+                        <path
+                          d="M31.3 192h257.3c17.8 0 26.7 21.5 14.1 34.1L174.1 354.8c-7.8 7.8-20.5 7.8-28.3 0L17.2 226.1C4.6 213.5 13.5 192 31.3 192z"
+                          transform=""
+                        />
+                      </svg>
+                    </button>
+                    <ul
+                      aria-labelledby="expanded-toggle"
+                      class="pf-c-options-menu__menu"
+                      role="menu"
+                    >
+                      <section
+                        class="pf-c-options-menu__group"
+                        index="0"
+                      >
+                        <h1
+                          class="pf-c-options-menu__group-title"
+                        >
+                          Sort order
+                        </h1>
+                        <ul
+                          aria-label=""
+                          class=""
+                        >
+                          <li
+                            id=""
+                            role="menuitem"
+                          >
+                            <button
+                              class="pf-c-options-menu__menu-item"
+                              tabindex="-1"
+                              type="button"
+                            >
+                              Name
+                            </button>
+                          </li>
+                          <li
+                            id=""
+                            role="menuitem"
+                          >
+                            <button
+                              class="pf-c-options-menu__menu-item"
+                              tabindex="-1"
+                              type="button"
+                            >
+                              Date
+                            </button>
+                          </li>
+                          <li
+                            id=""
+                            role="menuitem"
+                          >
+                            <button
+                              aria-disabled="true"
+                              class="pf-m-disabled pf-c-options-menu__menu-item"
+                              disabled=""
+                              tabindex="-1"
+                              type="button"
+                            >
+                              Disabled
+                            </button>
+                          </li>
+                          <li
+                            id=""
+                            role="menuitem"
+                          >
+                            <button
+                              class="pf-c-options-menu__menu-item"
+                              tabindex="-1"
+                              type="button"
+                            >
+                              Size
+                            </button>
+                          </li>
+                        </ul>
+                      </section>
+                      <li
+                        class="pf-c-options-menu__separator"
+                        index="1"
+                        role="separator"
+                      />
+                      <section
+                        class="pf-c-options-menu__group"
+                        index="2"
+                      >
+                        <h1
+                          class="pf-c-options-menu__group-title"
+                        >
+                          Sort direction
+                        </h1>
+                        <ul
+                          aria-label=""
+                          class=""
+                        >
+                          <li
+                            id=""
+                            role="menuitem"
+                          >
+                            <button
+                              class="pf-c-options-menu__menu-item"
+                              tabindex="-1"
+                              type="button"
+                            >
+                              Ascending
+                            </button>
+                          </li>
+                          <li
+                            id=""
+                            role="menuitem"
+                          >
+                            <button
+                              class="pf-c-options-menu__menu-item"
+                              tabindex="-1"
+                              type="button"
+                            >
+                              Descending
+                            </button>
+                          </li>
+                          <li
+                            class="pf-c-options-menu__separator"
+                            role="separator"
+                          />
+                        </ul>
+                      </section>
+                    </ul>
+                  </div>,
+                }
+              }
+            >
+              <Toggle
+                aria-expanded={true}
+                aria-label="Options menu"
+                ariaHasPopup="listbox"
+                bubbleEvent={false}
+                className=""
+                id="expanded-toggle"
+                isActive={false}
+                isDisabled={false}
+                isFocused={false}
+                isHovered={false}
+                isOpen={true}
+                isPlain={false}
+                isPrimary={false}
+                isSplitButton={false}
+                onEnter={[Function]}
+                onToggle={[Function]}
+                parentRef={
+                  Object {
+                    "current": <div
+                      class="pf-c-options-menu pf-m-expanded"
+                      id="expanded"
+                    >
+                      <button
+                        aria-expanded="true"
+                        aria-haspopup="listbox"
+                        aria-label="Options menu"
+                        class="pf-c-options-menu__toggle"
+                        id="expanded-toggle"
+                        type="button"
+                      >
+                        <span
+                          class="pf-c-options-menu__toggle-text"
+                        />
+                        <svg
+                          aria-hidden="true"
+                          class="pf-c-options-menu__toggle-icon"
+                          fill="currentColor"
+                          height="1em"
+                          role="img"
+                          style="vertical-align: -0.125em;"
+                          viewBox="0 0 320 512"
+                          width="1em"
+                        >
+                          <path
+                            d="M31.3 192h257.3c17.8 0 26.7 21.5 14.1 34.1L174.1 354.8c-7.8 7.8-20.5 7.8-28.3 0L17.2 226.1C4.6 213.5 13.5 192 31.3 192z"
+                            transform=""
+                          />
+                        </svg>
+                      </button>
+                      <ul
+                        aria-labelledby="expanded-toggle"
+                        class="pf-c-options-menu__menu"
+                        role="menu"
+                      >
+                        <section
+                          class="pf-c-options-menu__group"
+                          index="0"
+                        >
+                          <h1
+                            class="pf-c-options-menu__group-title"
+                          >
+                            Sort order
+                          </h1>
+                          <ul
+                            aria-label=""
+                            class=""
+                          >
+                            <li
+                              id=""
+                              role="menuitem"
+                            >
+                              <button
+                                class="pf-c-options-menu__menu-item"
+                                tabindex="-1"
+                                type="button"
+                              >
+                                Name
+                              </button>
+                            </li>
+                            <li
+                              id=""
+                              role="menuitem"
+                            >
+                              <button
+                                class="pf-c-options-menu__menu-item"
+                                tabindex="-1"
+                                type="button"
+                              >
+                                Date
+                              </button>
+                            </li>
+                            <li
+                              id=""
+                              role="menuitem"
+                            >
+                              <button
+                                aria-disabled="true"
+                                class="pf-m-disabled pf-c-options-menu__menu-item"
+                                disabled=""
+                                tabindex="-1"
+                                type="button"
+                              >
+                                Disabled
+                              </button>
+                            </li>
+                            <li
+                              id=""
+                              role="menuitem"
+                            >
+                              <button
+                                class="pf-c-options-menu__menu-item"
+                                tabindex="-1"
+                                type="button"
+                              >
+                                Size
+                              </button>
+                            </li>
+                          </ul>
+                        </section>
+                        <li
+                          class="pf-c-options-menu__separator"
+                          index="1"
+                          role="separator"
+                        />
+                        <section
+                          class="pf-c-options-menu__group"
+                          index="2"
+                        >
+                          <h1
+                            class="pf-c-options-menu__group-title"
+                          >
+                            Sort direction
+                          </h1>
+                          <ul
+                            aria-label=""
+                            class=""
+                          >
+                            <li
+                              id=""
+                              role="menuitem"
+                            >
+                              <button
+                                class="pf-c-options-menu__menu-item"
+                                tabindex="-1"
+                                type="button"
+                              >
+                                Ascending
+                              </button>
+                            </li>
+                            <li
+                              id=""
+                              role="menuitem"
+                            >
+                              <button
+                                class="pf-c-options-menu__menu-item"
+                                tabindex="-1"
+                                type="button"
+                              >
+                                Descending
+                              </button>
+                            </li>
+                            <li
+                              class="pf-c-options-menu__separator"
+                              role="separator"
+                            />
+                          </ul>
+                        </section>
+                      </ul>
+                    </div>,
+                  }
+                }
+              >
+                <button
+                  aria-expanded={true}
+                  aria-haspopup="listbox"
+                  aria-label="Options menu"
+                  className="pf-c-options-menu__toggle"
+                  disabled={false}
+                  id="expanded-toggle"
+                  onClick={[Function]}
+                  onKeyDown={[Function]}
+                  type="button"
+                >
+                  <span
+                    className="pf-c-options-menu__toggle-text"
+                  />
+                  <CaretDownIcon
+                    className="pf-c-options-menu__toggle-icon"
+                    color="currentColor"
+                    noVerticalAlign={false}
+                    size="sm"
+                    title={null}
+                  >
+                    <svg
+                      aria-hidden={true}
+                      aria-labelledby={null}
+                      className="pf-c-options-menu__toggle-icon"
+                      fill="currentColor"
+                      height="1em"
+                      role="img"
+                      style={
+                        Object {
+                          "verticalAlign": "-0.125em",
+                        }
+                      }
+                      viewBox="0 0 320 512"
+                      width="1em"
+                    >
+                      <path
+                        d="M31.3 192h257.3c17.8 0 26.7 21.5 14.1 34.1L174.1 354.8c-7.8 7.8-20.5 7.8-28.3 0L17.2 226.1C4.6 213.5 13.5 192 31.3 192z"
+                        transform=""
+                      />
+                    </svg>
+                  </CaretDownIcon>
+                </button>
+              </Toggle>
+            </DropdownToggle>
+          </OptionsMenuToggle>
+          <DropdownMenu
+            aria-labelledby="expanded-toggle"
+            autoFocus={false}
+            className=""
+            component="ul"
+            isGrouped={false}
+            isOpen={true}
+            openedOnEnter={false}
+            position="left"
+          >
+            <ul
+              aria-labelledby="expanded-toggle"
+              autoFocus={false}
+              className="pf-c-options-menu__menu"
+              hidden={false}
+              role="menu"
+            >
+              <OptionsMenuItemGroup
+                groupTitle="Sort order"
+                index={0}
+                key=".$first group"
+              >
+                <section
+                  className="pf-c-options-menu__group"
+                  index={0}
+                >
+                  <h1
+                    className="pf-c-options-menu__group-title"
+                  >
+                    Sort order
+                  </h1>
+                  <ul
+                    aria-label=""
+                    className=""
+                  >
+                    <OptionsMenuItem
+                      key="name"
+                    >
+                      <DropdownItem
+                        component="button"
+                        id=""
+                        onClick={[Function]}
+                      >
+                        <InternalDropdownItem
+                          className=""
+                          component="button"
+                          context={
+                            Object {
+                              "keyHandler": [Function],
+                              "sendRef": [Function],
+                            }
+                          }
+                          enterTriggersArrowDown={false}
+                          id=""
+                          index={-1}
+                          isDisabled={false}
+                          isHovered={false}
+                          onClick={[Function]}
+                          role="menuitem"
+                          tabIndex={-1}
+                          tooltip={null}
+                          tooltipProps={Object {}}
+                          variant="item"
+                        >
+                          <li
+                            className={null}
+                            id=""
+                            onClick={[Function]}
+                            onKeyDown={[Function]}
+                            role="menuitem"
+                          >
+                            <button
+                              className="pf-c-options-menu__menu-item"
+                              disabled={false}
+                              tabIndex={-1}
+                              type="button"
+                            >
+                              Name
+                            </button>
+                          </li>
+                        </InternalDropdownItem>
+                      </DropdownItem>
+                    </OptionsMenuItem>
+                    <OptionsMenuItem
+                      key="date"
+                    >
+                      <DropdownItem
+                        component="button"
+                        id=""
+                        onClick={[Function]}
+                      >
+                        <InternalDropdownItem
+                          className=""
+                          component="button"
+                          context={
+                            Object {
+                              "keyHandler": [Function],
+                              "sendRef": [Function],
+                            }
+                          }
+                          enterTriggersArrowDown={false}
+                          id=""
+                          index={-1}
+                          isDisabled={false}
+                          isHovered={false}
+                          onClick={[Function]}
+                          role="menuitem"
+                          tabIndex={-1}
+                          tooltip={null}
+                          tooltipProps={Object {}}
+                          variant="item"
+                        >
+                          <li
+                            className={null}
+                            id=""
+                            onClick={[Function]}
+                            onKeyDown={[Function]}
+                            role="menuitem"
+                          >
+                            <button
+                              className="pf-c-options-menu__menu-item"
+                              disabled={false}
+                              tabIndex={-1}
+                              type="button"
+                            >
+                              Date
+                            </button>
+                          </li>
+                        </InternalDropdownItem>
+                      </DropdownItem>
+                    </OptionsMenuItem>
+                    <OptionsMenuItem
+                      isDisabled={true}
+                      key="disabled"
+                    >
+                      <DropdownItem
+                        aria-disabled={true}
+                        component="button"
+                        id=""
+                        isDisabled={true}
+                        onClick={[Function]}
+                      >
+                        <InternalDropdownItem
+                          aria-disabled={true}
+                          className=""
+                          component="button"
+                          context={
+                            Object {
+                              "keyHandler": [Function],
+                              "sendRef": [Function],
+                            }
+                          }
+                          enterTriggersArrowDown={false}
+                          id=""
+                          index={-1}
+                          isDisabled={true}
+                          isHovered={false}
+                          onClick={[Function]}
+                          role="menuitem"
+                          tabIndex={-1}
+                          tooltip={null}
+                          tooltipProps={Object {}}
+                          variant="item"
+                        >
+                          <li
+                            className={null}
+                            id=""
+                            onClick={[Function]}
+                            onKeyDown={[Function]}
+                            role="menuitem"
+                          >
+                            <button
+                              aria-disabled={true}
+                              className="pf-m-disabled pf-c-options-menu__menu-item"
+                              disabled={true}
+                              tabIndex={-1}
+                              type="button"
+                            >
+                              Disabled
+                            </button>
+                          </li>
+                        </InternalDropdownItem>
+                      </DropdownItem>
+                    </OptionsMenuItem>
+                    <OptionsMenuItem
+                      key="size"
+                    >
+                      <DropdownItem
+                        component="button"
+                        id=""
+                        onClick={[Function]}
+                      >
+                        <InternalDropdownItem
+                          className=""
+                          component="button"
+                          context={
+                            Object {
+                              "keyHandler": [Function],
+                              "sendRef": [Function],
+                            }
+                          }
+                          enterTriggersArrowDown={false}
+                          id=""
+                          index={-1}
+                          isDisabled={false}
+                          isHovered={false}
+                          onClick={[Function]}
+                          role="menuitem"
+                          tabIndex={-1}
+                          tooltip={null}
+                          tooltipProps={Object {}}
+                          variant="item"
+                        >
+                          <li
+                            className={null}
+                            id=""
+                            onClick={[Function]}
+                            onKeyDown={[Function]}
+                            role="menuitem"
+                          >
+                            <button
+                              className="pf-c-options-menu__menu-item"
+                              disabled={false}
+                              tabIndex={-1}
+                              type="button"
+                            >
+                              Size
+                            </button>
+                          </li>
+                        </InternalDropdownItem>
+                      </DropdownItem>
+                    </OptionsMenuItem>
+                  </ul>
+                </section>
+              </OptionsMenuItemGroup>
+              <OptionsMenuSeparator
+                index={1}
+                key=".$separator"
+              >
+                <li
+                  className="pf-c-options-menu__separator"
+                  index={1}
+                  role="separator"
+                />
+              </OptionsMenuSeparator>
+              <OptionsMenuItemGroup
+                groupTitle="Sort direction"
+                hasSeparator={true}
+                index={2}
+                key=".$second group"
+              >
+                <section
+                  className="pf-c-options-menu__group"
+                  index={2}
+                >
+                  <h1
+                    className="pf-c-options-menu__group-title"
+                  >
+                    Sort direction
+                  </h1>
+                  <ul
+                    aria-label=""
+                    className=""
+                  >
+                    <OptionsMenuItem
+                      key="ascending"
+                    >
+                      <DropdownItem
+                        component="button"
+                        id=""
+                        onClick={[Function]}
+                      >
+                        <InternalDropdownItem
+                          className=""
+                          component="button"
+                          context={
+                            Object {
+                              "keyHandler": [Function],
+                              "sendRef": [Function],
+                            }
+                          }
+                          enterTriggersArrowDown={false}
+                          id=""
+                          index={-1}
+                          isDisabled={false}
+                          isHovered={false}
+                          onClick={[Function]}
+                          role="menuitem"
+                          tabIndex={-1}
+                          tooltip={null}
+                          tooltipProps={Object {}}
+                          variant="item"
+                        >
+                          <li
+                            className={null}
+                            id=""
+                            onClick={[Function]}
+                            onKeyDown={[Function]}
+                            role="menuitem"
+                          >
+                            <button
+                              className="pf-c-options-menu__menu-item"
+                              disabled={false}
+                              tabIndex={-1}
+                              type="button"
+                            >
+                              Ascending
+                            </button>
+                          </li>
+                        </InternalDropdownItem>
+                      </DropdownItem>
+                    </OptionsMenuItem>
+                    <OptionsMenuItem
+                      key="descending"
+                    >
+                      <DropdownItem
+                        component="button"
+                        id=""
+                        onClick={[Function]}
+                      >
+                        <InternalDropdownItem
+                          className=""
+                          component="button"
+                          context={
+                            Object {
+                              "keyHandler": [Function],
+                              "sendRef": [Function],
+                            }
+                          }
+                          enterTriggersArrowDown={false}
+                          id=""
+                          index={-1}
+                          isDisabled={false}
+                          isHovered={false}
+                          onClick={[Function]}
+                          role="menuitem"
+                          tabIndex={-1}
+                          tooltip={null}
+                          tooltipProps={Object {}}
+                          variant="item"
+                        >
+                          <li
+                            className={null}
+                            id=""
+                            onClick={[Function]}
+                            onKeyDown={[Function]}
+                            role="menuitem"
+                          >
+                            <button
+                              className="pf-c-options-menu__menu-item"
+                              disabled={false}
+                              tabIndex={-1}
+                              type="button"
+                            >
+                              Descending
+                            </button>
+                          </li>
+                        </InternalDropdownItem>
+                      </DropdownItem>
+                    </OptionsMenuItem>
+                    <li
+                      className="pf-c-options-menu__separator"
+                      role="separator"
+                    />
+                  </ul>
+                </section>
+              </OptionsMenuItemGroup>
+            </ul>
+          </DropdownMenu>
+        </div>
+      </DropdownWithContext>
+    </ComponentWithOuia>
+  </Component>
+</OptionsMenu>
+`;
+
+exports[`optionsMenu isDisabled 1`] = `
+<OptionsMenu
+  id="disabled"
+  menuItems={
+    Array [
+      <OptionsMenuItemGroup
+        groupTitle="Sort order"
+      >
+        <OptionsMenuItem>
+          Name
+        </OptionsMenuItem>
+        <OptionsMenuItem>
+          Date
+        </OptionsMenuItem>
+        <OptionsMenuItem
+          isDisabled={true}
+        >
+          Disabled
+        </OptionsMenuItem>
+        <OptionsMenuItem>
+          Size
+        </OptionsMenuItem>
+      </OptionsMenuItemGroup>,
+      <OptionsMenuSeparator />,
+      <OptionsMenuItemGroup
+        groupTitle="Sort direction"
+        hasSeparator={true}
+      >
+        <OptionsMenuItem>
+          Ascending
+        </OptionsMenuItem>
+        <OptionsMenuItem>
+          Descending
+        </OptionsMenuItem>
+      </OptionsMenuItemGroup>,
+    ]
+  }
+  toggle={
+    <OptionsMenuToggle
+      isDisabled={true}
+    >
+      Options Menu
+    </OptionsMenuToggle>
+  }
+>
+  <Component
+    className=""
+    dropdownItems={
+      Array [
+        <OptionsMenuItemGroup
+          groupTitle="Sort order"
+        >
+          <OptionsMenuItem>
+            Name
+          </OptionsMenuItem>
+          <OptionsMenuItem>
+            Date
+          </OptionsMenuItem>
+          <OptionsMenuItem
+            isDisabled={true}
+          >
+            Disabled
+          </OptionsMenuItem>
+          <OptionsMenuItem>
+            Size
+          </OptionsMenuItem>
+        </OptionsMenuItemGroup>,
+        <OptionsMenuSeparator />,
+        <OptionsMenuItemGroup
+          groupTitle="Sort direction"
+          hasSeparator={true}
+        >
+          <OptionsMenuItem>
+            Ascending
+          </OptionsMenuItem>
+          <OptionsMenuItem>
+            Descending
+          </OptionsMenuItem>
+        </OptionsMenuItemGroup>,
+      ]
+    }
+    id="disabled"
+    isGrouped={false}
+    toggle={
+      <OptionsMenuToggle
+        isDisabled={true}
+      >
+        Options Menu
+      </OptionsMenuToggle>
+    }
+  >
+    <ComponentWithOuia
+      component={[Function]}
+      componentProps={
+        Object {
+          "className": "",
+          "dropdownItems": Array [
+            <OptionsMenuItemGroup
+              groupTitle="Sort order"
+            >
+              <OptionsMenuItem>
+                Name
+              </OptionsMenuItem>
+              <OptionsMenuItem>
+                Date
+              </OptionsMenuItem>
+              <OptionsMenuItem
+                isDisabled={true}
+              >
+                Disabled
+              </OptionsMenuItem>
+              <OptionsMenuItem>
+                Size
+              </OptionsMenuItem>
+            </OptionsMenuItemGroup>,
+            <OptionsMenuSeparator />,
+            <OptionsMenuItemGroup
+              groupTitle="Sort direction"
+              hasSeparator={true}
+            >
+              <OptionsMenuItem>
+                Ascending
+              </OptionsMenuItem>
+              <OptionsMenuItem>
+                Descending
+              </OptionsMenuItem>
+            </OptionsMenuItemGroup>,
+          ],
+          "id": "disabled",
+          "isGrouped": false,
+          "toggle": <OptionsMenuToggle
+            isDisabled={true}
+          >
+            Options Menu
+          </OptionsMenuToggle>,
+        }
+      }
+      consumerContext={null}
+    >
+      <DropdownWithContext
+        autoFocus={true}
+        className=""
+        direction="down"
+        dropdownItems={
+          Array [
+            <OptionsMenuItemGroup
+              groupTitle="Sort order"
+            >
+              <OptionsMenuItem>
+                Name
+              </OptionsMenuItem>
+              <OptionsMenuItem>
+                Date
+              </OptionsMenuItem>
+              <OptionsMenuItem
+                isDisabled={true}
+              >
+                Disabled
+              </OptionsMenuItem>
+              <OptionsMenuItem>
+                Size
+              </OptionsMenuItem>
+            </OptionsMenuItemGroup>,
+            <OptionsMenuSeparator />,
+            <OptionsMenuItemGroup
+              groupTitle="Sort direction"
+              hasSeparator={true}
+            >
+              <OptionsMenuItem>
+                Ascending
+              </OptionsMenuItem>
+              <OptionsMenuItem>
+                Descending
+              </OptionsMenuItem>
+            </OptionsMenuItemGroup>,
+          ]
+        }
+        id="disabled"
+        isGrouped={false}
+        isOpen={false}
+        isPlain={false}
+        onSelect={[Function]}
+        ouiaComponentType="Dropdown"
+        ouiaContext={
+          Object {
+            "isOuia": false,
+            "ouiaId": null,
+          }
+        }
+        position="left"
+        toggle={
+          <OptionsMenuToggle
+            isDisabled={true}
+          >
+            Options Menu
+          </OptionsMenuToggle>
+        }
+      >
+        <div
+          className="pf-c-options-menu"
+          id="disabled"
+        >
+          <OptionsMenuToggle
+            ariaHasPopup={true}
+            id="pf-toggle-id-7"
+            isDisabled={true}
+            isOpen={false}
+            isPlain={false}
+            key=".0"
+            onEnter={[Function]}
+            parentRef={
+              Object {
+                "current": <div
+                  class="pf-c-options-menu"
+                  id="disabled"
+                >
+                  <button
+                    aria-expanded="false"
+                    aria-haspopup="listbox"
+                    aria-label="Options menu"
+                    class="pf-c-options-menu__toggle"
+                    disabled=""
+                    id="disabled-toggle"
+                    type="button"
+                  >
+                    <span
+                      class="pf-c-options-menu__toggle-text"
+                    />
+                    <svg
+                      aria-hidden="true"
+                      class="pf-c-options-menu__toggle-icon"
+                      fill="currentColor"
+                      height="1em"
+                      role="img"
+                      style="vertical-align: -0.125em;"
+                      viewBox="0 0 320 512"
+                      width="1em"
+                    >
+                      <path
+                        d="M31.3 192h257.3c17.8 0 26.7 21.5 14.1 34.1L174.1 354.8c-7.8 7.8-20.5 7.8-28.3 0L17.2 226.1C4.6 213.5 13.5 192 31.3 192z"
+                        transform=""
+                      />
+                    </svg>
+                  </button>
+                </div>,
+              }
+            }
+          >
+            <DropdownToggle
+              aria-expanded={false}
+              aria-label="Options menu"
+              ariaHasPopup="listbox"
+              id="disabled-toggle"
+              isActive={false}
+              isDisabled={true}
+              isFocused={false}
+              isHovered={false}
+              isOpen={false}
+              isPlain={false}
+              onEnter={[Function]}
+              parentRef={
+                Object {
+                  "current": <div
+                    class="pf-c-options-menu"
+                    id="disabled"
+                  >
+                    <button
+                      aria-expanded="false"
+                      aria-haspopup="listbox"
+                      aria-label="Options menu"
+                      class="pf-c-options-menu__toggle"
+                      disabled=""
+                      id="disabled-toggle"
+                      type="button"
+                    >
+                      <span
+                        class="pf-c-options-menu__toggle-text"
+                      />
+                      <svg
+                        aria-hidden="true"
+                        class="pf-c-options-menu__toggle-icon"
+                        fill="currentColor"
+                        height="1em"
+                        role="img"
+                        style="vertical-align: -0.125em;"
+                        viewBox="0 0 320 512"
+                        width="1em"
+                      >
+                        <path
+                          d="M31.3 192h257.3c17.8 0 26.7 21.5 14.1 34.1L174.1 354.8c-7.8 7.8-20.5 7.8-28.3 0L17.2 226.1C4.6 213.5 13.5 192 31.3 192z"
+                          transform=""
+                        />
+                      </svg>
+                    </button>
+                  </div>,
+                }
+              }
+            >
+              <Toggle
+                aria-expanded={false}
+                aria-label="Options menu"
+                ariaHasPopup="listbox"
+                bubbleEvent={false}
+                className=""
+                id="disabled-toggle"
+                isActive={false}
+                isDisabled={true}
+                isFocused={false}
+                isHovered={false}
+                isOpen={false}
+                isPlain={false}
+                isPrimary={false}
+                isSplitButton={false}
+                onEnter={[Function]}
+                onToggle={[Function]}
+                parentRef={
+                  Object {
+                    "current": <div
+                      class="pf-c-options-menu"
+                      id="disabled"
+                    >
+                      <button
+                        aria-expanded="false"
+                        aria-haspopup="listbox"
+                        aria-label="Options menu"
+                        class="pf-c-options-menu__toggle"
+                        disabled=""
+                        id="disabled-toggle"
+                        type="button"
+                      >
+                        <span
+                          class="pf-c-options-menu__toggle-text"
+                        />
+                        <svg
+                          aria-hidden="true"
+                          class="pf-c-options-menu__toggle-icon"
+                          fill="currentColor"
+                          height="1em"
+                          role="img"
+                          style="vertical-align: -0.125em;"
+                          viewBox="0 0 320 512"
+                          width="1em"
+                        >
+                          <path
+                            d="M31.3 192h257.3c17.8 0 26.7 21.5 14.1 34.1L174.1 354.8c-7.8 7.8-20.5 7.8-28.3 0L17.2 226.1C4.6 213.5 13.5 192 31.3 192z"
+                            transform=""
+                          />
+                        </svg>
+                      </button>
+                    </div>,
+                  }
+                }
+              >
+                <button
+                  aria-expanded={false}
+                  aria-haspopup="listbox"
+                  aria-label="Options menu"
+                  className="pf-c-options-menu__toggle"
+                  disabled={true}
+                  id="disabled-toggle"
+                  onClick={[Function]}
+                  onKeyDown={[Function]}
+                  type="button"
+                >
+                  <span
+                    className="pf-c-options-menu__toggle-text"
+                  />
+                  <CaretDownIcon
+                    className="pf-c-options-menu__toggle-icon"
+                    color="currentColor"
+                    noVerticalAlign={false}
+                    size="sm"
+                    title={null}
+                  >
+                    <svg
+                      aria-hidden={true}
+                      aria-labelledby={null}
+                      className="pf-c-options-menu__toggle-icon"
+                      fill="currentColor"
+                      height="1em"
+                      role="img"
+                      style={
+                        Object {
+                          "verticalAlign": "-0.125em",
+                        }
+                      }
+                      viewBox="0 0 320 512"
+                      width="1em"
+                    >
+                      <path
+                        d="M31.3 192h257.3c17.8 0 26.7 21.5 14.1 34.1L174.1 354.8c-7.8 7.8-20.5 7.8-28.3 0L17.2 226.1C4.6 213.5 13.5 192 31.3 192z"
+                        transform=""
+                      />
+                    </svg>
+                  </CaretDownIcon>
+                </button>
+              </Toggle>
+            </DropdownToggle>
+          </OptionsMenuToggle>
+        </div>
+      </DropdownWithContext>
+    </ComponentWithOuia>
+  </Component>
+</OptionsMenu>
+`;
+
+exports[`optionsMenu open up 1`] = `
+<OptionsMenu
+  direction="up"
+  id="openUp"
+  menuItems={
+    Array [
+      <OptionsMenuItemGroup
+        groupTitle="Sort order"
+      >
+        <OptionsMenuItem>
+          Name
+        </OptionsMenuItem>
+        <OptionsMenuItem>
+          Date
+        </OptionsMenuItem>
+        <OptionsMenuItem
+          isDisabled={true}
+        >
+          Disabled
+        </OptionsMenuItem>
+        <OptionsMenuItem>
+          Size
+        </OptionsMenuItem>
+      </OptionsMenuItemGroup>,
+      <OptionsMenuSeparator />,
+      <OptionsMenuItemGroup
+        groupTitle="Sort direction"
+        hasSeparator={true}
+      >
+        <OptionsMenuItem>
+          Ascending
+        </OptionsMenuItem>
+        <OptionsMenuItem>
+          Descending
+        </OptionsMenuItem>
+      </OptionsMenuItemGroup>,
+    ]
+  }
+  toggle={
+    <OptionsMenuToggle>
+      Options Menu
+    </OptionsMenuToggle>
+  }
+>
+  <Component
+    className=""
+    direction="up"
+    dropdownItems={
+      Array [
+        <OptionsMenuItemGroup
+          groupTitle="Sort order"
+        >
+          <OptionsMenuItem>
+            Name
+          </OptionsMenuItem>
+          <OptionsMenuItem>
+            Date
+          </OptionsMenuItem>
+          <OptionsMenuItem
+            isDisabled={true}
+          >
+            Disabled
+          </OptionsMenuItem>
+          <OptionsMenuItem>
+            Size
+          </OptionsMenuItem>
+        </OptionsMenuItemGroup>,
+        <OptionsMenuSeparator />,
+        <OptionsMenuItemGroup
+          groupTitle="Sort direction"
+          hasSeparator={true}
+        >
+          <OptionsMenuItem>
+            Ascending
+          </OptionsMenuItem>
+          <OptionsMenuItem>
+            Descending
+          </OptionsMenuItem>
+        </OptionsMenuItemGroup>,
+      ]
+    }
+    id="openUp"
+    isGrouped={false}
+    toggle={
+      <OptionsMenuToggle>
+        Options Menu
+      </OptionsMenuToggle>
+    }
+  >
+    <ComponentWithOuia
+      component={[Function]}
+      componentProps={
+        Object {
+          "className": "",
+          "direction": "up",
+          "dropdownItems": Array [
+            <OptionsMenuItemGroup
+              groupTitle="Sort order"
+            >
+              <OptionsMenuItem>
+                Name
+              </OptionsMenuItem>
+              <OptionsMenuItem>
+                Date
+              </OptionsMenuItem>
+              <OptionsMenuItem
+                isDisabled={true}
+              >
+                Disabled
+              </OptionsMenuItem>
+              <OptionsMenuItem>
+                Size
+              </OptionsMenuItem>
+            </OptionsMenuItemGroup>,
+            <OptionsMenuSeparator />,
+            <OptionsMenuItemGroup
+              groupTitle="Sort direction"
+              hasSeparator={true}
+            >
+              <OptionsMenuItem>
+                Ascending
+              </OptionsMenuItem>
+              <OptionsMenuItem>
+                Descending
+              </OptionsMenuItem>
+            </OptionsMenuItemGroup>,
+          ],
+          "id": "openUp",
+          "isGrouped": false,
+          "toggle": <OptionsMenuToggle>
+            Options Menu
+          </OptionsMenuToggle>,
+        }
+      }
+      consumerContext={null}
+    >
+      <DropdownWithContext
+        autoFocus={true}
+        className=""
+        direction="up"
+        dropdownItems={
+          Array [
+            <OptionsMenuItemGroup
+              groupTitle="Sort order"
+            >
+              <OptionsMenuItem>
+                Name
+              </OptionsMenuItem>
+              <OptionsMenuItem>
+                Date
+              </OptionsMenuItem>
+              <OptionsMenuItem
+                isDisabled={true}
+              >
+                Disabled
+              </OptionsMenuItem>
+              <OptionsMenuItem>
+                Size
+              </OptionsMenuItem>
+            </OptionsMenuItemGroup>,
+            <OptionsMenuSeparator />,
+            <OptionsMenuItemGroup
+              groupTitle="Sort direction"
+              hasSeparator={true}
+            >
+              <OptionsMenuItem>
+                Ascending
+              </OptionsMenuItem>
+              <OptionsMenuItem>
+                Descending
+              </OptionsMenuItem>
+            </OptionsMenuItemGroup>,
+          ]
+        }
+        id="openUp"
+        isGrouped={false}
+        isOpen={false}
+        isPlain={false}
+        onSelect={[Function]}
+        ouiaComponentType="Dropdown"
+        ouiaContext={
+          Object {
+            "isOuia": false,
+            "ouiaId": null,
+          }
+        }
+        position="left"
+        toggle={
+          <OptionsMenuToggle>
+            Options Menu
+          </OptionsMenuToggle>
+        }
+      >
+        <div
+          className="pf-c-options-menu pf-m-top"
+          id="openUp"
+        >
+          <OptionsMenuToggle
+            ariaHasPopup={true}
+            id="pf-toggle-id-2"
+            isOpen={false}
+            isPlain={false}
+            key=".0"
+            onEnter={[Function]}
+            parentRef={
+              Object {
+                "current": <div
+                  class="pf-c-options-menu pf-m-top"
+                  id="openUp"
+                >
+                  <button
+                    aria-expanded="false"
+                    aria-haspopup="listbox"
+                    aria-label="Options menu"
+                    class="pf-c-options-menu__toggle"
+                    id="openUp-toggle"
+                    type="button"
+                  >
+                    <span
+                      class="pf-c-options-menu__toggle-text"
+                    />
+                    <svg
+                      aria-hidden="true"
+                      class="pf-c-options-menu__toggle-icon"
+                      fill="currentColor"
+                      height="1em"
+                      role="img"
+                      style="vertical-align: -0.125em;"
+                      viewBox="0 0 320 512"
+                      width="1em"
+                    >
+                      <path
+                        d="M31.3 192h257.3c17.8 0 26.7 21.5 14.1 34.1L174.1 354.8c-7.8 7.8-20.5 7.8-28.3 0L17.2 226.1C4.6 213.5 13.5 192 31.3 192z"
+                        transform=""
+                      />
+                    </svg>
+                  </button>
+                </div>,
+              }
+            }
+          >
+            <DropdownToggle
+              aria-expanded={false}
+              aria-label="Options menu"
+              ariaHasPopup="listbox"
+              id="openUp-toggle"
+              isActive={false}
+              isDisabled={false}
+              isFocused={false}
+              isHovered={false}
+              isOpen={false}
+              isPlain={false}
+              onEnter={[Function]}
+              parentRef={
+                Object {
+                  "current": <div
+                    class="pf-c-options-menu pf-m-top"
+                    id="openUp"
+                  >
+                    <button
+                      aria-expanded="false"
+                      aria-haspopup="listbox"
+                      aria-label="Options menu"
+                      class="pf-c-options-menu__toggle"
+                      id="openUp-toggle"
+                      type="button"
+                    >
+                      <span
+                        class="pf-c-options-menu__toggle-text"
+                      />
+                      <svg
+                        aria-hidden="true"
+                        class="pf-c-options-menu__toggle-icon"
+                        fill="currentColor"
+                        height="1em"
+                        role="img"
+                        style="vertical-align: -0.125em;"
+                        viewBox="0 0 320 512"
+                        width="1em"
+                      >
+                        <path
+                          d="M31.3 192h257.3c17.8 0 26.7 21.5 14.1 34.1L174.1 354.8c-7.8 7.8-20.5 7.8-28.3 0L17.2 226.1C4.6 213.5 13.5 192 31.3 192z"
+                          transform=""
+                        />
+                      </svg>
+                    </button>
+                  </div>,
+                }
+              }
+            >
+              <Toggle
+                aria-expanded={false}
+                aria-label="Options menu"
+                ariaHasPopup="listbox"
+                bubbleEvent={false}
+                className=""
+                id="openUp-toggle"
+                isActive={false}
+                isDisabled={false}
+                isFocused={false}
+                isHovered={false}
+                isOpen={false}
+                isPlain={false}
+                isPrimary={false}
+                isSplitButton={false}
+                onEnter={[Function]}
+                onToggle={[Function]}
+                parentRef={
+                  Object {
+                    "current": <div
+                      class="pf-c-options-menu pf-m-top"
+                      id="openUp"
+                    >
+                      <button
+                        aria-expanded="false"
+                        aria-haspopup="listbox"
+                        aria-label="Options menu"
+                        class="pf-c-options-menu__toggle"
+                        id="openUp-toggle"
+                        type="button"
+                      >
+                        <span
+                          class="pf-c-options-menu__toggle-text"
+                        />
+                        <svg
+                          aria-hidden="true"
+                          class="pf-c-options-menu__toggle-icon"
+                          fill="currentColor"
+                          height="1em"
+                          role="img"
+                          style="vertical-align: -0.125em;"
+                          viewBox="0 0 320 512"
+                          width="1em"
+                        >
+                          <path
+                            d="M31.3 192h257.3c17.8 0 26.7 21.5 14.1 34.1L174.1 354.8c-7.8 7.8-20.5 7.8-28.3 0L17.2 226.1C4.6 213.5 13.5 192 31.3 192z"
+                            transform=""
+                          />
+                        </svg>
+                      </button>
+                    </div>,
+                  }
+                }
+              >
+                <button
+                  aria-expanded={false}
+                  aria-haspopup="listbox"
+                  aria-label="Options menu"
+                  className="pf-c-options-menu__toggle"
+                  disabled={false}
+                  id="openUp-toggle"
+                  onClick={[Function]}
+                  onKeyDown={[Function]}
+                  type="button"
+                >
+                  <span
+                    className="pf-c-options-menu__toggle-text"
+                  />
+                  <CaretDownIcon
+                    className="pf-c-options-menu__toggle-icon"
+                    color="currentColor"
+                    noVerticalAlign={false}
+                    size="sm"
+                    title={null}
+                  >
+                    <svg
+                      aria-hidden={true}
+                      aria-labelledby={null}
+                      className="pf-c-options-menu__toggle-icon"
+                      fill="currentColor"
+                      height="1em"
+                      role="img"
+                      style={
+                        Object {
+                          "verticalAlign": "-0.125em",
+                        }
+                      }
+                      viewBox="0 0 320 512"
+                      width="1em"
+                    >
+                      <path
+                        d="M31.3 192h257.3c17.8 0 26.7 21.5 14.1 34.1L174.1 354.8c-7.8 7.8-20.5 7.8-28.3 0L17.2 226.1C4.6 213.5 13.5 192 31.3 192z"
+                        transform=""
+                      />
+                    </svg>
+                  </CaretDownIcon>
+                </button>
+              </Toggle>
+            </DropdownToggle>
+          </OptionsMenuToggle>
+        </div>
+      </DropdownWithContext>
+    </ComponentWithOuia>
+  </Component>
+</OptionsMenu>
+`;
+
+exports[`optionsMenu plain 1`] = `
+<OptionsMenu
+  id="plain"
+  isPlain={true}
+  menuItems={
+    Array [
+      <OptionsMenuItemGroup
+        groupTitle="Sort order"
+      >
+        <OptionsMenuItem>
+          Name
+        </OptionsMenuItem>
+        <OptionsMenuItem>
+          Date
+        </OptionsMenuItem>
+        <OptionsMenuItem
+          isDisabled={true}
+        >
+          Disabled
+        </OptionsMenuItem>
+        <OptionsMenuItem>
+          Size
+        </OptionsMenuItem>
+      </OptionsMenuItemGroup>,
+      <OptionsMenuSeparator />,
+      <OptionsMenuItemGroup
+        groupTitle="Sort direction"
+        hasSeparator={true}
+      >
+        <OptionsMenuItem>
+          Ascending
+        </OptionsMenuItem>
+        <OptionsMenuItem>
+          Descending
+        </OptionsMenuItem>
+      </OptionsMenuItemGroup>,
+    ]
+  }
+  toggle={
+    <OptionsMenuToggle>
+      Options Menu
+    </OptionsMenuToggle>
+  }
+>
+  <Component
+    className=""
+    dropdownItems={
+      Array [
+        <OptionsMenuItemGroup
+          groupTitle="Sort order"
+        >
+          <OptionsMenuItem>
+            Name
+          </OptionsMenuItem>
+          <OptionsMenuItem>
+            Date
+          </OptionsMenuItem>
+          <OptionsMenuItem
+            isDisabled={true}
+          >
+            Disabled
+          </OptionsMenuItem>
+          <OptionsMenuItem>
+            Size
+          </OptionsMenuItem>
+        </OptionsMenuItemGroup>,
+        <OptionsMenuSeparator />,
+        <OptionsMenuItemGroup
+          groupTitle="Sort direction"
+          hasSeparator={true}
+        >
+          <OptionsMenuItem>
+            Ascending
+          </OptionsMenuItem>
+          <OptionsMenuItem>
+            Descending
+          </OptionsMenuItem>
+        </OptionsMenuItemGroup>,
+      ]
+    }
+    id="plain"
+    isGrouped={false}
+    isPlain={true}
+    toggle={
+      <OptionsMenuToggle>
+        Options Menu
+      </OptionsMenuToggle>
+    }
+  >
+    <ComponentWithOuia
+      component={[Function]}
+      componentProps={
+        Object {
+          "className": "",
+          "dropdownItems": Array [
+            <OptionsMenuItemGroup
+              groupTitle="Sort order"
+            >
+              <OptionsMenuItem>
+                Name
+              </OptionsMenuItem>
+              <OptionsMenuItem>
+                Date
+              </OptionsMenuItem>
+              <OptionsMenuItem
+                isDisabled={true}
+              >
+                Disabled
+              </OptionsMenuItem>
+              <OptionsMenuItem>
+                Size
+              </OptionsMenuItem>
+            </OptionsMenuItemGroup>,
+            <OptionsMenuSeparator />,
+            <OptionsMenuItemGroup
+              groupTitle="Sort direction"
+              hasSeparator={true}
+            >
+              <OptionsMenuItem>
+                Ascending
+              </OptionsMenuItem>
+              <OptionsMenuItem>
+                Descending
+              </OptionsMenuItem>
+            </OptionsMenuItemGroup>,
+          ],
+          "id": "plain",
+          "isGrouped": false,
+          "isPlain": true,
+          "toggle": <OptionsMenuToggle>
+            Options Menu
+          </OptionsMenuToggle>,
+        }
+      }
+      consumerContext={null}
+    >
+      <DropdownWithContext
+        autoFocus={true}
+        className=""
+        direction="down"
+        dropdownItems={
+          Array [
+            <OptionsMenuItemGroup
+              groupTitle="Sort order"
+            >
+              <OptionsMenuItem>
+                Name
+              </OptionsMenuItem>
+              <OptionsMenuItem>
+                Date
+              </OptionsMenuItem>
+              <OptionsMenuItem
+                isDisabled={true}
+              >
+                Disabled
+              </OptionsMenuItem>
+              <OptionsMenuItem>
+                Size
+              </OptionsMenuItem>
+            </OptionsMenuItemGroup>,
+            <OptionsMenuSeparator />,
+            <OptionsMenuItemGroup
+              groupTitle="Sort direction"
+              hasSeparator={true}
+            >
+              <OptionsMenuItem>
+                Ascending
+              </OptionsMenuItem>
+              <OptionsMenuItem>
+                Descending
+              </OptionsMenuItem>
+            </OptionsMenuItemGroup>,
+          ]
+        }
+        id="plain"
+        isGrouped={false}
+        isOpen={false}
+        isPlain={true}
+        onSelect={[Function]}
+        ouiaComponentType="Dropdown"
+        ouiaContext={
+          Object {
+            "isOuia": false,
+            "ouiaId": null,
+          }
+        }
+        position="left"
+        toggle={
+          <OptionsMenuToggle>
+            Options Menu
+          </OptionsMenuToggle>
+        }
+      >
+        <div
+          className="pf-c-options-menu"
+          id="plain"
+        >
+          <OptionsMenuToggle
+            ariaHasPopup={true}
+            id="pf-toggle-id-5"
+            isOpen={false}
+            isPlain={true}
+            key=".0"
+            onEnter={[Function]}
+            parentRef={
+              Object {
+                "current": <div
+                  class="pf-c-options-menu"
+                  id="plain"
+                >
+                  <button
+                    aria-expanded="false"
+                    aria-haspopup="listbox"
+                    aria-label="Options menu"
+                    class="pf-c-options-menu__toggle pf-m-plain"
+                    id="plain-toggle"
+                    type="button"
+                  >
+                    <span />
+                  </button>
+                </div>,
+              }
+            }
+          >
+            <DropdownToggle
+              aria-expanded={false}
+              aria-label="Options menu"
+              ariaHasPopup="listbox"
+              iconComponent={null}
+              id="plain-toggle"
+              isActive={false}
+              isDisabled={false}
+              isFocused={false}
+              isHovered={false}
+              isOpen={false}
+              isPlain={true}
+              onEnter={[Function]}
+              parentRef={
+                Object {
+                  "current": <div
+                    class="pf-c-options-menu"
+                    id="plain"
+                  >
+                    <button
+                      aria-expanded="false"
+                      aria-haspopup="listbox"
+                      aria-label="Options menu"
+                      class="pf-c-options-menu__toggle pf-m-plain"
+                      id="plain-toggle"
+                      type="button"
+                    >
+                      <span />
+                    </button>
+                  </div>,
+                }
+              }
+            >
+              <Toggle
+                aria-expanded={false}
+                aria-label="Options menu"
+                ariaHasPopup="listbox"
+                bubbleEvent={false}
+                className=""
+                id="plain-toggle"
+                isActive={false}
+                isDisabled={false}
+                isFocused={false}
+                isHovered={false}
+                isOpen={false}
+                isPlain={true}
+                isPrimary={false}
+                isSplitButton={false}
+                onEnter={[Function]}
+                onToggle={[Function]}
+                parentRef={
+                  Object {
+                    "current": <div
+                      class="pf-c-options-menu"
+                      id="plain"
+                    >
+                      <button
+                        aria-expanded="false"
+                        aria-haspopup="listbox"
+                        aria-label="Options menu"
+                        class="pf-c-options-menu__toggle pf-m-plain"
+                        id="plain-toggle"
+                        type="button"
+                      >
+                        <span />
+                      </button>
+                    </div>,
+                  }
+                }
+              >
+                <button
+                  aria-expanded={false}
+                  aria-haspopup="listbox"
+                  aria-label="Options menu"
+                  className="pf-c-options-menu__toggle pf-m-plain"
+                  disabled={false}
+                  id="plain-toggle"
+                  onClick={[Function]}
+                  onKeyDown={[Function]}
+                  type="button"
+                >
+                  <span
+                    className={null}
+                  />
+                </button>
+              </Toggle>
+            </DropdownToggle>
+          </OptionsMenuToggle>
+        </div>
+      </DropdownWithContext>
+    </ComponentWithOuia>
+  </Component>
+</OptionsMenu>
+`;
+
+exports[`optionsMenu regular 1`] = `
+<OptionsMenu
+  id="regular"
+  menuItems={
+    Array [
+      <OptionsMenuItemGroup
+        groupTitle="Sort order"
+      >
+        <OptionsMenuItem>
+          Name
+        </OptionsMenuItem>
+        <OptionsMenuItem>
+          Date
+        </OptionsMenuItem>
+        <OptionsMenuItem
+          isDisabled={true}
+        >
+          Disabled
+        </OptionsMenuItem>
+        <OptionsMenuItem>
+          Size
+        </OptionsMenuItem>
+      </OptionsMenuItemGroup>,
+      <OptionsMenuSeparator />,
+      <OptionsMenuItemGroup
+        groupTitle="Sort direction"
+        hasSeparator={true}
+      >
+        <OptionsMenuItem>
+          Ascending
+        </OptionsMenuItem>
+        <OptionsMenuItem>
+          Descending
+        </OptionsMenuItem>
+      </OptionsMenuItemGroup>,
+    ]
+  }
+  toggle={
+    <OptionsMenuToggle>
+      Options Menu
+    </OptionsMenuToggle>
+  }
+>
+  <Component
+    className=""
+    dropdownItems={
+      Array [
+        <OptionsMenuItemGroup
+          groupTitle="Sort order"
+        >
+          <OptionsMenuItem>
+            Name
+          </OptionsMenuItem>
+          <OptionsMenuItem>
+            Date
+          </OptionsMenuItem>
+          <OptionsMenuItem
+            isDisabled={true}
+          >
+            Disabled
+          </OptionsMenuItem>
+          <OptionsMenuItem>
+            Size
+          </OptionsMenuItem>
+        </OptionsMenuItemGroup>,
+        <OptionsMenuSeparator />,
+        <OptionsMenuItemGroup
+          groupTitle="Sort direction"
+          hasSeparator={true}
+        >
+          <OptionsMenuItem>
+            Ascending
+          </OptionsMenuItem>
+          <OptionsMenuItem>
+            Descending
+          </OptionsMenuItem>
+        </OptionsMenuItemGroup>,
+      ]
+    }
+    id="regular"
+    isGrouped={false}
+    toggle={
+      <OptionsMenuToggle>
+        Options Menu
+      </OptionsMenuToggle>
+    }
+  >
+    <ComponentWithOuia
+      component={[Function]}
+      componentProps={
+        Object {
+          "className": "",
+          "dropdownItems": Array [
+            <OptionsMenuItemGroup
+              groupTitle="Sort order"
+            >
+              <OptionsMenuItem>
+                Name
+              </OptionsMenuItem>
+              <OptionsMenuItem>
+                Date
+              </OptionsMenuItem>
+              <OptionsMenuItem
+                isDisabled={true}
+              >
+                Disabled
+              </OptionsMenuItem>
+              <OptionsMenuItem>
+                Size
+              </OptionsMenuItem>
+            </OptionsMenuItemGroup>,
+            <OptionsMenuSeparator />,
+            <OptionsMenuItemGroup
+              groupTitle="Sort direction"
+              hasSeparator={true}
+            >
+              <OptionsMenuItem>
+                Ascending
+              </OptionsMenuItem>
+              <OptionsMenuItem>
+                Descending
+              </OptionsMenuItem>
+            </OptionsMenuItemGroup>,
+          ],
+          "id": "regular",
+          "isGrouped": false,
+          "toggle": <OptionsMenuToggle>
+            Options Menu
+          </OptionsMenuToggle>,
+        }
+      }
+      consumerContext={null}
+    >
+      <DropdownWithContext
+        autoFocus={true}
+        className=""
+        direction="down"
+        dropdownItems={
+          Array [
+            <OptionsMenuItemGroup
+              groupTitle="Sort order"
+            >
+              <OptionsMenuItem>
+                Name
+              </OptionsMenuItem>
+              <OptionsMenuItem>
+                Date
+              </OptionsMenuItem>
+              <OptionsMenuItem
+                isDisabled={true}
+              >
+                Disabled
+              </OptionsMenuItem>
+              <OptionsMenuItem>
+                Size
+              </OptionsMenuItem>
+            </OptionsMenuItemGroup>,
+            <OptionsMenuSeparator />,
+            <OptionsMenuItemGroup
+              groupTitle="Sort direction"
+              hasSeparator={true}
+            >
+              <OptionsMenuItem>
+                Ascending
+              </OptionsMenuItem>
+              <OptionsMenuItem>
+                Descending
+              </OptionsMenuItem>
+            </OptionsMenuItemGroup>,
+          ]
+        }
+        id="regular"
+        isGrouped={false}
+        isOpen={false}
+        isPlain={false}
+        onSelect={[Function]}
+        ouiaComponentType="Dropdown"
+        ouiaContext={
+          Object {
+            "isOuia": false,
+            "ouiaId": null,
+          }
+        }
+        position="left"
+        toggle={
+          <OptionsMenuToggle>
+            Options Menu
+          </OptionsMenuToggle>
+        }
+      >
+        <div
+          className="pf-c-options-menu"
+          id="regular"
+        >
+          <OptionsMenuToggle
+            ariaHasPopup={true}
+            id="pf-toggle-id-0"
+            isOpen={false}
+            isPlain={false}
+            key=".0"
+            onEnter={[Function]}
+            parentRef={
+              Object {
+                "current": <div
+                  class="pf-c-options-menu"
+                  id="regular"
+                >
+                  <button
+                    aria-expanded="false"
+                    aria-haspopup="listbox"
+                    aria-label="Options menu"
+                    class="pf-c-options-menu__toggle"
+                    id="regular-toggle"
+                    type="button"
+                  >
+                    <span
+                      class="pf-c-options-menu__toggle-text"
+                    />
+                    <svg
+                      aria-hidden="true"
+                      class="pf-c-options-menu__toggle-icon"
+                      fill="currentColor"
+                      height="1em"
+                      role="img"
+                      style="vertical-align: -0.125em;"
+                      viewBox="0 0 320 512"
+                      width="1em"
+                    >
+                      <path
+                        d="M31.3 192h257.3c17.8 0 26.7 21.5 14.1 34.1L174.1 354.8c-7.8 7.8-20.5 7.8-28.3 0L17.2 226.1C4.6 213.5 13.5 192 31.3 192z"
+                        transform=""
+                      />
+                    </svg>
+                  </button>
+                </div>,
+              }
+            }
+          >
+            <DropdownToggle
+              aria-expanded={false}
+              aria-label="Options menu"
+              ariaHasPopup="listbox"
+              id="regular-toggle"
+              isActive={false}
+              isDisabled={false}
+              isFocused={false}
+              isHovered={false}
+              isOpen={false}
+              isPlain={false}
+              onEnter={[Function]}
+              parentRef={
+                Object {
+                  "current": <div
+                    class="pf-c-options-menu"
+                    id="regular"
+                  >
+                    <button
+                      aria-expanded="false"
+                      aria-haspopup="listbox"
+                      aria-label="Options menu"
+                      class="pf-c-options-menu__toggle"
+                      id="regular-toggle"
+                      type="button"
+                    >
+                      <span
+                        class="pf-c-options-menu__toggle-text"
+                      />
+                      <svg
+                        aria-hidden="true"
+                        class="pf-c-options-menu__toggle-icon"
+                        fill="currentColor"
+                        height="1em"
+                        role="img"
+                        style="vertical-align: -0.125em;"
+                        viewBox="0 0 320 512"
+                        width="1em"
+                      >
+                        <path
+                          d="M31.3 192h257.3c17.8 0 26.7 21.5 14.1 34.1L174.1 354.8c-7.8 7.8-20.5 7.8-28.3 0L17.2 226.1C4.6 213.5 13.5 192 31.3 192z"
+                          transform=""
+                        />
+                      </svg>
+                    </button>
+                  </div>,
+                }
+              }
+            >
+              <Toggle
+                aria-expanded={false}
+                aria-label="Options menu"
+                ariaHasPopup="listbox"
+                bubbleEvent={false}
+                className=""
+                id="regular-toggle"
+                isActive={false}
+                isDisabled={false}
+                isFocused={false}
+                isHovered={false}
+                isOpen={false}
+                isPlain={false}
+                isPrimary={false}
+                isSplitButton={false}
+                onEnter={[Function]}
+                onToggle={[Function]}
+                parentRef={
+                  Object {
+                    "current": <div
+                      class="pf-c-options-menu"
+                      id="regular"
+                    >
+                      <button
+                        aria-expanded="false"
+                        aria-haspopup="listbox"
+                        aria-label="Options menu"
+                        class="pf-c-options-menu__toggle"
+                        id="regular-toggle"
+                        type="button"
+                      >
+                        <span
+                          class="pf-c-options-menu__toggle-text"
+                        />
+                        <svg
+                          aria-hidden="true"
+                          class="pf-c-options-menu__toggle-icon"
+                          fill="currentColor"
+                          height="1em"
+                          role="img"
+                          style="vertical-align: -0.125em;"
+                          viewBox="0 0 320 512"
+                          width="1em"
+                        >
+                          <path
+                            d="M31.3 192h257.3c17.8 0 26.7 21.5 14.1 34.1L174.1 354.8c-7.8 7.8-20.5 7.8-28.3 0L17.2 226.1C4.6 213.5 13.5 192 31.3 192z"
+                            transform=""
+                          />
+                        </svg>
+                      </button>
+                    </div>,
+                  }
+                }
+              >
+                <button
+                  aria-expanded={false}
+                  aria-haspopup="listbox"
+                  aria-label="Options menu"
+                  className="pf-c-options-menu__toggle"
+                  disabled={false}
+                  id="regular-toggle"
+                  onClick={[Function]}
+                  onKeyDown={[Function]}
+                  type="button"
+                >
+                  <span
+                    className="pf-c-options-menu__toggle-text"
+                  />
+                  <CaretDownIcon
+                    className="pf-c-options-menu__toggle-icon"
+                    color="currentColor"
+                    noVerticalAlign={false}
+                    size="sm"
+                    title={null}
+                  >
+                    <svg
+                      aria-hidden={true}
+                      aria-labelledby={null}
+                      className="pf-c-options-menu__toggle-icon"
+                      fill="currentColor"
+                      height="1em"
+                      role="img"
+                      style={
+                        Object {
+                          "verticalAlign": "-0.125em",
+                        }
+                      }
+                      viewBox="0 0 320 512"
+                      width="1em"
+                    >
+                      <path
+                        d="M31.3 192h257.3c17.8 0 26.7 21.5 14.1 34.1L174.1 354.8c-7.8 7.8-20.5 7.8-28.3 0L17.2 226.1C4.6 213.5 13.5 192 31.3 192z"
+                        transform=""
+                      />
+                    </svg>
+                  </CaretDownIcon>
+                </button>
+              </Toggle>
+            </DropdownToggle>
+          </OptionsMenuToggle>
+        </div>
+      </DropdownWithContext>
+    </ComponentWithOuia>
+  </Component>
+</OptionsMenu>
+`;
+
+exports[`optionsMenu right aligned + open up 1`] = `
+<OptionsMenu
+  direction="up"
+  id="rightAlignedOpenUp"
+  menuItems={
+    Array [
+      <OptionsMenuItemGroup
+        groupTitle="Sort order"
+      >
+        <OptionsMenuItem>
+          Name
+        </OptionsMenuItem>
+        <OptionsMenuItem>
+          Date
+        </OptionsMenuItem>
+        <OptionsMenuItem
+          isDisabled={true}
+        >
+          Disabled
+        </OptionsMenuItem>
+        <OptionsMenuItem>
+          Size
+        </OptionsMenuItem>
+      </OptionsMenuItemGroup>,
+      <OptionsMenuSeparator />,
+      <OptionsMenuItemGroup
+        groupTitle="Sort direction"
+        hasSeparator={true}
+      >
+        <OptionsMenuItem>
+          Ascending
+        </OptionsMenuItem>
+        <OptionsMenuItem>
+          Descending
+        </OptionsMenuItem>
+      </OptionsMenuItemGroup>,
+    ]
+  }
+  position="right"
+  toggle={
+    <OptionsMenuToggle>
+      Options Menu
+    </OptionsMenuToggle>
+  }
+>
+  <Component
+    className=""
+    direction="up"
+    dropdownItems={
+      Array [
+        <OptionsMenuItemGroup
+          groupTitle="Sort order"
+        >
+          <OptionsMenuItem>
+            Name
+          </OptionsMenuItem>
+          <OptionsMenuItem>
+            Date
+          </OptionsMenuItem>
+          <OptionsMenuItem
+            isDisabled={true}
+          >
+            Disabled
+          </OptionsMenuItem>
+          <OptionsMenuItem>
+            Size
+          </OptionsMenuItem>
+        </OptionsMenuItemGroup>,
+        <OptionsMenuSeparator />,
+        <OptionsMenuItemGroup
+          groupTitle="Sort direction"
+          hasSeparator={true}
+        >
+          <OptionsMenuItem>
+            Ascending
+          </OptionsMenuItem>
+          <OptionsMenuItem>
+            Descending
+          </OptionsMenuItem>
+        </OptionsMenuItemGroup>,
+      ]
+    }
+    id="rightAlignedOpenUp"
+    isGrouped={false}
+    position="right"
+    toggle={
+      <OptionsMenuToggle>
+        Options Menu
+      </OptionsMenuToggle>
+    }
+  >
+    <ComponentWithOuia
+      component={[Function]}
+      componentProps={
+        Object {
+          "className": "",
+          "direction": "up",
+          "dropdownItems": Array [
+            <OptionsMenuItemGroup
+              groupTitle="Sort order"
+            >
+              <OptionsMenuItem>
+                Name
+              </OptionsMenuItem>
+              <OptionsMenuItem>
+                Date
+              </OptionsMenuItem>
+              <OptionsMenuItem
+                isDisabled={true}
+              >
+                Disabled
+              </OptionsMenuItem>
+              <OptionsMenuItem>
+                Size
+              </OptionsMenuItem>
+            </OptionsMenuItemGroup>,
+            <OptionsMenuSeparator />,
+            <OptionsMenuItemGroup
+              groupTitle="Sort direction"
+              hasSeparator={true}
+            >
+              <OptionsMenuItem>
+                Ascending
+              </OptionsMenuItem>
+              <OptionsMenuItem>
+                Descending
+              </OptionsMenuItem>
+            </OptionsMenuItemGroup>,
+          ],
+          "id": "rightAlignedOpenUp",
+          "isGrouped": false,
+          "position": "right",
+          "toggle": <OptionsMenuToggle>
+            Options Menu
+          </OptionsMenuToggle>,
+        }
+      }
+      consumerContext={null}
+    >
+      <DropdownWithContext
+        autoFocus={true}
+        className=""
+        direction="up"
+        dropdownItems={
+          Array [
+            <OptionsMenuItemGroup
+              groupTitle="Sort order"
+            >
+              <OptionsMenuItem>
+                Name
+              </OptionsMenuItem>
+              <OptionsMenuItem>
+                Date
+              </OptionsMenuItem>
+              <OptionsMenuItem
+                isDisabled={true}
+              >
+                Disabled
+              </OptionsMenuItem>
+              <OptionsMenuItem>
+                Size
+              </OptionsMenuItem>
+            </OptionsMenuItemGroup>,
+            <OptionsMenuSeparator />,
+            <OptionsMenuItemGroup
+              groupTitle="Sort direction"
+              hasSeparator={true}
+            >
+              <OptionsMenuItem>
+                Ascending
+              </OptionsMenuItem>
+              <OptionsMenuItem>
+                Descending
+              </OptionsMenuItem>
+            </OptionsMenuItemGroup>,
+          ]
+        }
+        id="rightAlignedOpenUp"
+        isGrouped={false}
+        isOpen={false}
+        isPlain={false}
+        onSelect={[Function]}
+        ouiaComponentType="Dropdown"
+        ouiaContext={
+          Object {
+            "isOuia": false,
+            "ouiaId": null,
+          }
+        }
+        position="right"
+        toggle={
+          <OptionsMenuToggle>
+            Options Menu
+          </OptionsMenuToggle>
+        }
+      >
+        <div
+          className="pf-c-options-menu pf-m-top pf-m-align-right"
+          id="rightAlignedOpenUp"
+        >
+          <OptionsMenuToggle
+            ariaHasPopup={true}
+            id="pf-toggle-id-3"
+            isOpen={false}
+            isPlain={false}
+            key=".0"
+            onEnter={[Function]}
+            parentRef={
+              Object {
+                "current": <div
+                  class="pf-c-options-menu pf-m-top pf-m-align-right"
+                  id="rightAlignedOpenUp"
+                >
+                  <button
+                    aria-expanded="false"
+                    aria-haspopup="listbox"
+                    aria-label="Options menu"
+                    class="pf-c-options-menu__toggle"
+                    id="rightAlignedOpenUp-toggle"
+                    type="button"
+                  >
+                    <span
+                      class="pf-c-options-menu__toggle-text"
+                    />
+                    <svg
+                      aria-hidden="true"
+                      class="pf-c-options-menu__toggle-icon"
+                      fill="currentColor"
+                      height="1em"
+                      role="img"
+                      style="vertical-align: -0.125em;"
+                      viewBox="0 0 320 512"
+                      width="1em"
+                    >
+                      <path
+                        d="M31.3 192h257.3c17.8 0 26.7 21.5 14.1 34.1L174.1 354.8c-7.8 7.8-20.5 7.8-28.3 0L17.2 226.1C4.6 213.5 13.5 192 31.3 192z"
+                        transform=""
+                      />
+                    </svg>
+                  </button>
+                </div>,
+              }
+            }
+          >
+            <DropdownToggle
+              aria-expanded={false}
+              aria-label="Options menu"
+              ariaHasPopup="listbox"
+              id="rightAlignedOpenUp-toggle"
+              isActive={false}
+              isDisabled={false}
+              isFocused={false}
+              isHovered={false}
+              isOpen={false}
+              isPlain={false}
+              onEnter={[Function]}
+              parentRef={
+                Object {
+                  "current": <div
+                    class="pf-c-options-menu pf-m-top pf-m-align-right"
+                    id="rightAlignedOpenUp"
+                  >
+                    <button
+                      aria-expanded="false"
+                      aria-haspopup="listbox"
+                      aria-label="Options menu"
+                      class="pf-c-options-menu__toggle"
+                      id="rightAlignedOpenUp-toggle"
+                      type="button"
+                    >
+                      <span
+                        class="pf-c-options-menu__toggle-text"
+                      />
+                      <svg
+                        aria-hidden="true"
+                        class="pf-c-options-menu__toggle-icon"
+                        fill="currentColor"
+                        height="1em"
+                        role="img"
+                        style="vertical-align: -0.125em;"
+                        viewBox="0 0 320 512"
+                        width="1em"
+                      >
+                        <path
+                          d="M31.3 192h257.3c17.8 0 26.7 21.5 14.1 34.1L174.1 354.8c-7.8 7.8-20.5 7.8-28.3 0L17.2 226.1C4.6 213.5 13.5 192 31.3 192z"
+                          transform=""
+                        />
+                      </svg>
+                    </button>
+                  </div>,
+                }
+              }
+            >
+              <Toggle
+                aria-expanded={false}
+                aria-label="Options menu"
+                ariaHasPopup="listbox"
+                bubbleEvent={false}
+                className=""
+                id="rightAlignedOpenUp-toggle"
+                isActive={false}
+                isDisabled={false}
+                isFocused={false}
+                isHovered={false}
+                isOpen={false}
+                isPlain={false}
+                isPrimary={false}
+                isSplitButton={false}
+                onEnter={[Function]}
+                onToggle={[Function]}
+                parentRef={
+                  Object {
+                    "current": <div
+                      class="pf-c-options-menu pf-m-top pf-m-align-right"
+                      id="rightAlignedOpenUp"
+                    >
+                      <button
+                        aria-expanded="false"
+                        aria-haspopup="listbox"
+                        aria-label="Options menu"
+                        class="pf-c-options-menu__toggle"
+                        id="rightAlignedOpenUp-toggle"
+                        type="button"
+                      >
+                        <span
+                          class="pf-c-options-menu__toggle-text"
+                        />
+                        <svg
+                          aria-hidden="true"
+                          class="pf-c-options-menu__toggle-icon"
+                          fill="currentColor"
+                          height="1em"
+                          role="img"
+                          style="vertical-align: -0.125em;"
+                          viewBox="0 0 320 512"
+                          width="1em"
+                        >
+                          <path
+                            d="M31.3 192h257.3c17.8 0 26.7 21.5 14.1 34.1L174.1 354.8c-7.8 7.8-20.5 7.8-28.3 0L17.2 226.1C4.6 213.5 13.5 192 31.3 192z"
+                            transform=""
+                          />
+                        </svg>
+                      </button>
+                    </div>,
+                  }
+                }
+              >
+                <button
+                  aria-expanded={false}
+                  aria-haspopup="listbox"
+                  aria-label="Options menu"
+                  className="pf-c-options-menu__toggle"
+                  disabled={false}
+                  id="rightAlignedOpenUp-toggle"
+                  onClick={[Function]}
+                  onKeyDown={[Function]}
+                  type="button"
+                >
+                  <span
+                    className="pf-c-options-menu__toggle-text"
+                  />
+                  <CaretDownIcon
+                    className="pf-c-options-menu__toggle-icon"
+                    color="currentColor"
+                    noVerticalAlign={false}
+                    size="sm"
+                    title={null}
+                  >
+                    <svg
+                      aria-hidden={true}
+                      aria-labelledby={null}
+                      className="pf-c-options-menu__toggle-icon"
+                      fill="currentColor"
+                      height="1em"
+                      role="img"
+                      style={
+                        Object {
+                          "verticalAlign": "-0.125em",
+                        }
+                      }
+                      viewBox="0 0 320 512"
+                      width="1em"
+                    >
+                      <path
+                        d="M31.3 192h257.3c17.8 0 26.7 21.5 14.1 34.1L174.1 354.8c-7.8 7.8-20.5 7.8-28.3 0L17.2 226.1C4.6 213.5 13.5 192 31.3 192z"
+                        transform=""
+                      />
+                    </svg>
+                  </CaretDownIcon>
+                </button>
+              </Toggle>
+            </DropdownToggle>
+          </OptionsMenuToggle>
+        </div>
+      </DropdownWithContext>
+    </ComponentWithOuia>
+  </Component>
+</OptionsMenu>
+`;
+
+exports[`optionsMenu right aligned 1`] = `
+<OptionsMenu
+  id="rightAligned"
+  menuItems={
+    Array [
+      <OptionsMenuItemGroup
+        groupTitle="Sort order"
+      >
+        <OptionsMenuItem>
+          Name
+        </OptionsMenuItem>
+        <OptionsMenuItem>
+          Date
+        </OptionsMenuItem>
+        <OptionsMenuItem
+          isDisabled={true}
+        >
+          Disabled
+        </OptionsMenuItem>
+        <OptionsMenuItem>
+          Size
+        </OptionsMenuItem>
+      </OptionsMenuItemGroup>,
+      <OptionsMenuSeparator />,
+      <OptionsMenuItemGroup
+        groupTitle="Sort direction"
+        hasSeparator={true}
+      >
+        <OptionsMenuItem>
+          Ascending
+        </OptionsMenuItem>
+        <OptionsMenuItem>
+          Descending
+        </OptionsMenuItem>
+      </OptionsMenuItemGroup>,
+    ]
+  }
+  position="right"
+  toggle={
+    <OptionsMenuToggle>
+      Options Menu
+    </OptionsMenuToggle>
+  }
+>
+  <Component
+    className=""
+    dropdownItems={
+      Array [
+        <OptionsMenuItemGroup
+          groupTitle="Sort order"
+        >
+          <OptionsMenuItem>
+            Name
+          </OptionsMenuItem>
+          <OptionsMenuItem>
+            Date
+          </OptionsMenuItem>
+          <OptionsMenuItem
+            isDisabled={true}
+          >
+            Disabled
+          </OptionsMenuItem>
+          <OptionsMenuItem>
+            Size
+          </OptionsMenuItem>
+        </OptionsMenuItemGroup>,
+        <OptionsMenuSeparator />,
+        <OptionsMenuItemGroup
+          groupTitle="Sort direction"
+          hasSeparator={true}
+        >
+          <OptionsMenuItem>
+            Ascending
+          </OptionsMenuItem>
+          <OptionsMenuItem>
+            Descending
+          </OptionsMenuItem>
+        </OptionsMenuItemGroup>,
+      ]
+    }
+    id="rightAligned"
+    isGrouped={false}
+    position="right"
+    toggle={
+      <OptionsMenuToggle>
+        Options Menu
+      </OptionsMenuToggle>
+    }
+  >
+    <ComponentWithOuia
+      component={[Function]}
+      componentProps={
+        Object {
+          "className": "",
+          "dropdownItems": Array [
+            <OptionsMenuItemGroup
+              groupTitle="Sort order"
+            >
+              <OptionsMenuItem>
+                Name
+              </OptionsMenuItem>
+              <OptionsMenuItem>
+                Date
+              </OptionsMenuItem>
+              <OptionsMenuItem
+                isDisabled={true}
+              >
+                Disabled
+              </OptionsMenuItem>
+              <OptionsMenuItem>
+                Size
+              </OptionsMenuItem>
+            </OptionsMenuItemGroup>,
+            <OptionsMenuSeparator />,
+            <OptionsMenuItemGroup
+              groupTitle="Sort direction"
+              hasSeparator={true}
+            >
+              <OptionsMenuItem>
+                Ascending
+              </OptionsMenuItem>
+              <OptionsMenuItem>
+                Descending
+              </OptionsMenuItem>
+            </OptionsMenuItemGroup>,
+          ],
+          "id": "rightAligned",
+          "isGrouped": false,
+          "position": "right",
+          "toggle": <OptionsMenuToggle>
+            Options Menu
+          </OptionsMenuToggle>,
+        }
+      }
+      consumerContext={null}
+    >
+      <DropdownWithContext
+        autoFocus={true}
+        className=""
+        direction="down"
+        dropdownItems={
+          Array [
+            <OptionsMenuItemGroup
+              groupTitle="Sort order"
+            >
+              <OptionsMenuItem>
+                Name
+              </OptionsMenuItem>
+              <OptionsMenuItem>
+                Date
+              </OptionsMenuItem>
+              <OptionsMenuItem
+                isDisabled={true}
+              >
+                Disabled
+              </OptionsMenuItem>
+              <OptionsMenuItem>
+                Size
+              </OptionsMenuItem>
+            </OptionsMenuItemGroup>,
+            <OptionsMenuSeparator />,
+            <OptionsMenuItemGroup
+              groupTitle="Sort direction"
+              hasSeparator={true}
+            >
+              <OptionsMenuItem>
+                Ascending
+              </OptionsMenuItem>
+              <OptionsMenuItem>
+                Descending
+              </OptionsMenuItem>
+            </OptionsMenuItemGroup>,
+          ]
+        }
+        id="rightAligned"
+        isGrouped={false}
+        isOpen={false}
+        isPlain={false}
+        onSelect={[Function]}
+        ouiaComponentType="Dropdown"
+        ouiaContext={
+          Object {
+            "isOuia": false,
+            "ouiaId": null,
+          }
+        }
+        position="right"
+        toggle={
+          <OptionsMenuToggle>
+            Options Menu
+          </OptionsMenuToggle>
+        }
+      >
+        <div
+          className="pf-c-options-menu pf-m-align-right"
+          id="rightAligned"
+        >
+          <OptionsMenuToggle
+            ariaHasPopup={true}
+            id="pf-toggle-id-1"
+            isOpen={false}
+            isPlain={false}
+            key=".0"
+            onEnter={[Function]}
+            parentRef={
+              Object {
+                "current": <div
+                  class="pf-c-options-menu pf-m-align-right"
+                  id="rightAligned"
+                >
+                  <button
+                    aria-expanded="false"
+                    aria-haspopup="listbox"
+                    aria-label="Options menu"
+                    class="pf-c-options-menu__toggle"
+                    id="rightAligned-toggle"
+                    type="button"
+                  >
+                    <span
+                      class="pf-c-options-menu__toggle-text"
+                    />
+                    <svg
+                      aria-hidden="true"
+                      class="pf-c-options-menu__toggle-icon"
+                      fill="currentColor"
+                      height="1em"
+                      role="img"
+                      style="vertical-align: -0.125em;"
+                      viewBox="0 0 320 512"
+                      width="1em"
+                    >
+                      <path
+                        d="M31.3 192h257.3c17.8 0 26.7 21.5 14.1 34.1L174.1 354.8c-7.8 7.8-20.5 7.8-28.3 0L17.2 226.1C4.6 213.5 13.5 192 31.3 192z"
+                        transform=""
+                      />
+                    </svg>
+                  </button>
+                </div>,
+              }
+            }
+          >
+            <DropdownToggle
+              aria-expanded={false}
+              aria-label="Options menu"
+              ariaHasPopup="listbox"
+              id="rightAligned-toggle"
+              isActive={false}
+              isDisabled={false}
+              isFocused={false}
+              isHovered={false}
+              isOpen={false}
+              isPlain={false}
+              onEnter={[Function]}
+              parentRef={
+                Object {
+                  "current": <div
+                    class="pf-c-options-menu pf-m-align-right"
+                    id="rightAligned"
+                  >
+                    <button
+                      aria-expanded="false"
+                      aria-haspopup="listbox"
+                      aria-label="Options menu"
+                      class="pf-c-options-menu__toggle"
+                      id="rightAligned-toggle"
+                      type="button"
+                    >
+                      <span
+                        class="pf-c-options-menu__toggle-text"
+                      />
+                      <svg
+                        aria-hidden="true"
+                        class="pf-c-options-menu__toggle-icon"
+                        fill="currentColor"
+                        height="1em"
+                        role="img"
+                        style="vertical-align: -0.125em;"
+                        viewBox="0 0 320 512"
+                        width="1em"
+                      >
+                        <path
+                          d="M31.3 192h257.3c17.8 0 26.7 21.5 14.1 34.1L174.1 354.8c-7.8 7.8-20.5 7.8-28.3 0L17.2 226.1C4.6 213.5 13.5 192 31.3 192z"
+                          transform=""
+                        />
+                      </svg>
+                    </button>
+                  </div>,
+                }
+              }
+            >
+              <Toggle
+                aria-expanded={false}
+                aria-label="Options menu"
+                ariaHasPopup="listbox"
+                bubbleEvent={false}
+                className=""
+                id="rightAligned-toggle"
+                isActive={false}
+                isDisabled={false}
+                isFocused={false}
+                isHovered={false}
+                isOpen={false}
+                isPlain={false}
+                isPrimary={false}
+                isSplitButton={false}
+                onEnter={[Function]}
+                onToggle={[Function]}
+                parentRef={
+                  Object {
+                    "current": <div
+                      class="pf-c-options-menu pf-m-align-right"
+                      id="rightAligned"
+                    >
+                      <button
+                        aria-expanded="false"
+                        aria-haspopup="listbox"
+                        aria-label="Options menu"
+                        class="pf-c-options-menu__toggle"
+                        id="rightAligned-toggle"
+                        type="button"
+                      >
+                        <span
+                          class="pf-c-options-menu__toggle-text"
+                        />
+                        <svg
+                          aria-hidden="true"
+                          class="pf-c-options-menu__toggle-icon"
+                          fill="currentColor"
+                          height="1em"
+                          role="img"
+                          style="vertical-align: -0.125em;"
+                          viewBox="0 0 320 512"
+                          width="1em"
+                        >
+                          <path
+                            d="M31.3 192h257.3c17.8 0 26.7 21.5 14.1 34.1L174.1 354.8c-7.8 7.8-20.5 7.8-28.3 0L17.2 226.1C4.6 213.5 13.5 192 31.3 192z"
+                            transform=""
+                          />
+                        </svg>
+                      </button>
+                    </div>,
+                  }
+                }
+              >
+                <button
+                  aria-expanded={false}
+                  aria-haspopup="listbox"
+                  aria-label="Options menu"
+                  className="pf-c-options-menu__toggle"
+                  disabled={false}
+                  id="rightAligned-toggle"
+                  onClick={[Function]}
+                  onKeyDown={[Function]}
+                  type="button"
+                >
+                  <span
+                    className="pf-c-options-menu__toggle-text"
+                  />
+                  <CaretDownIcon
+                    className="pf-c-options-menu__toggle-icon"
+                    color="currentColor"
+                    noVerticalAlign={false}
+                    size="sm"
+                    title={null}
+                  >
+                    <svg
+                      aria-hidden={true}
+                      aria-labelledby={null}
+                      className="pf-c-options-menu__toggle-icon"
+                      fill="currentColor"
+                      height="1em"
+                      role="img"
+                      style={
+                        Object {
+                          "verticalAlign": "-0.125em",
+                        }
+                      }
+                      viewBox="0 0 320 512"
+                      width="1em"
+                    >
+                      <path
+                        d="M31.3 192h257.3c17.8 0 26.7 21.5 14.1 34.1L174.1 354.8c-7.8 7.8-20.5 7.8-28.3 0L17.2 226.1C4.6 213.5 13.5 192 31.3 192z"
+                        transform=""
+                      />
+                    </svg>
+                  </CaretDownIcon>
+                </button>
+              </Toggle>
+            </DropdownToggle>
+          </OptionsMenuToggle>
+        </div>
+      </DropdownWithContext>
+    </ComponentWithOuia>
+  </Component>
+</OptionsMenu>
+`;
+
+exports[`optionsMenu text 1`] = `
+<OptionsMenu
+  id="text"
+  menuItems={
+    Array [
+      <OptionsMenuItemGroup
+        groupTitle="Sort order"
+      >
+        <OptionsMenuItem>
+          Name
+        </OptionsMenuItem>
+        <OptionsMenuItem>
+          Date
+        </OptionsMenuItem>
+        <OptionsMenuItem
+          isDisabled={true}
+        >
+          Disabled
+        </OptionsMenuItem>
+        <OptionsMenuItem>
+          Size
+        </OptionsMenuItem>
+      </OptionsMenuItemGroup>,
+      <OptionsMenuSeparator />,
+      <OptionsMenuItemGroup
+        groupTitle="Sort direction"
+        hasSeparator={true}
+      >
+        <OptionsMenuItem>
+          Ascending
+        </OptionsMenuItem>
+        <OptionsMenuItem>
+          Descending
+        </OptionsMenuItem>
+      </OptionsMenuItemGroup>,
+    ]
+  }
+  toggle={
+    <OptionsMenuToggleWithText
+      toggleButtonContents={
+        <React.Fragment>
+          Test
+        </React.Fragment>
+      }
+      toggleText="Test"
+    />
+  }
+>
+  <Component
+    className=""
+    dropdownItems={
+      Array [
+        <OptionsMenuItemGroup
+          groupTitle="Sort order"
+        >
+          <OptionsMenuItem>
+            Name
+          </OptionsMenuItem>
+          <OptionsMenuItem>
+            Date
+          </OptionsMenuItem>
+          <OptionsMenuItem
+            isDisabled={true}
+          >
+            Disabled
+          </OptionsMenuItem>
+          <OptionsMenuItem>
+            Size
+          </OptionsMenuItem>
+        </OptionsMenuItemGroup>,
+        <OptionsMenuSeparator />,
+        <OptionsMenuItemGroup
+          groupTitle="Sort direction"
+          hasSeparator={true}
+        >
+          <OptionsMenuItem>
+            Ascending
+          </OptionsMenuItem>
+          <OptionsMenuItem>
+            Descending
+          </OptionsMenuItem>
+        </OptionsMenuItemGroup>,
+      ]
+    }
+    id="text"
+    isGrouped={false}
+    toggle={
+      <OptionsMenuToggleWithText
+        toggleButtonContents={
+          <React.Fragment>
+            Test
+          </React.Fragment>
+        }
+        toggleText="Test"
+      />
+    }
+  >
+    <ComponentWithOuia
+      component={[Function]}
+      componentProps={
+        Object {
+          "className": "",
+          "dropdownItems": Array [
+            <OptionsMenuItemGroup
+              groupTitle="Sort order"
+            >
+              <OptionsMenuItem>
+                Name
+              </OptionsMenuItem>
+              <OptionsMenuItem>
+                Date
+              </OptionsMenuItem>
+              <OptionsMenuItem
+                isDisabled={true}
+              >
+                Disabled
+              </OptionsMenuItem>
+              <OptionsMenuItem>
+                Size
+              </OptionsMenuItem>
+            </OptionsMenuItemGroup>,
+            <OptionsMenuSeparator />,
+            <OptionsMenuItemGroup
+              groupTitle="Sort direction"
+              hasSeparator={true}
+            >
+              <OptionsMenuItem>
+                Ascending
+              </OptionsMenuItem>
+              <OptionsMenuItem>
+                Descending
+              </OptionsMenuItem>
+            </OptionsMenuItemGroup>,
+          ],
+          "id": "text",
+          "isGrouped": false,
+          "toggle": <OptionsMenuToggleWithText
+            toggleButtonContents={
+              <React.Fragment>
+                Test
+              </React.Fragment>
+            }
+            toggleText="Test"
+          />,
+        }
+      }
+      consumerContext={null}
+    >
+      <DropdownWithContext
+        autoFocus={true}
+        className=""
+        direction="down"
+        dropdownItems={
+          Array [
+            <OptionsMenuItemGroup
+              groupTitle="Sort order"
+            >
+              <OptionsMenuItem>
+                Name
+              </OptionsMenuItem>
+              <OptionsMenuItem>
+                Date
+              </OptionsMenuItem>
+              <OptionsMenuItem
+                isDisabled={true}
+              >
+                Disabled
+              </OptionsMenuItem>
+              <OptionsMenuItem>
+                Size
+              </OptionsMenuItem>
+            </OptionsMenuItemGroup>,
+            <OptionsMenuSeparator />,
+            <OptionsMenuItemGroup
+              groupTitle="Sort direction"
+              hasSeparator={true}
+            >
+              <OptionsMenuItem>
+                Ascending
+              </OptionsMenuItem>
+              <OptionsMenuItem>
+                Descending
+              </OptionsMenuItem>
+            </OptionsMenuItemGroup>,
+          ]
+        }
+        id="text"
+        isGrouped={false}
+        isOpen={false}
+        isPlain={false}
+        onSelect={[Function]}
+        ouiaComponentType="Dropdown"
+        ouiaContext={
+          Object {
+            "isOuia": false,
+            "ouiaId": null,
+          }
+        }
+        position="left"
+        toggle={
+          <OptionsMenuToggleWithText
+            toggleButtonContents={
+              <React.Fragment>
+                Test
+              </React.Fragment>
+            }
+            toggleText="Test"
+          />
+        }
+      >
+        <div
+          className="pf-c-options-menu"
+          id="text"
+        >
+          <OptionsMenuToggleWithText
+            ariaHasPopup={true}
+            id="pf-toggle-id-6"
+            isOpen={false}
+            isPlain={false}
+            key=".0"
+            onEnter={[Function]}
+            parentRef={
+              Object {
+                "current": <div
+                  class="pf-c-options-menu"
+                  id="text"
+                >
+                  <div
+                    class="pf-c-options-menu__toggle pf-m-text"
+                    id="pf-toggle-id-6"
+                  >
+                    <span
+                      class="pf-c-options-menu__toggle-text"
+                    >
+                      Test
+                    </span>
+                    <button
+                      aria-expanded="false"
+                      aria-haspopup="listbox"
+                      aria-label="Options menu"
+                      class="pf-c-options-menu__toggle-button"
+                      id="-toggle"
+                    >
+                      Test
+                    </button>
+                  </div>
+                </div>,
+              }
+            }
+            toggleButtonContents={
+              <React.Fragment>
+                Test
+              </React.Fragment>
+            }
+            toggleText="Test"
+          >
+            <div
+              className="pf-c-options-menu__toggle pf-m-text"
+              id="pf-toggle-id-6"
+            >
+              <span
+                className="pf-c-options-menu__toggle-text"
+              >
+                Test
+              </span>
+              <button
+                aria-expanded={false}
+                aria-haspopup="listbox"
+                aria-label="Options menu"
+                className="pf-c-options-menu__toggle-button"
+                id="-toggle"
+                onClick={[Function]}
+              >
+                Test
+              </button>
+            </div>
+          </OptionsMenuToggleWithText>
+        </div>
+      </DropdownWithContext>
+    </ComponentWithOuia>
+  </Component>
+</OptionsMenu>
+`;

@@ -1,0 +1,27 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`OptionsMenuToggleWithText should match snapshot (auto-generated) 1`] = `
+<div
+  className="pf-c-options-menu__toggle pf-m-text"
+>
+  <span
+    className="pf-c-options-menu__toggle-text ''"
+  >
+    <div>
+      ReactNode
+    </div>
+  </span>
+  <button
+    aria-expanded={false}
+    aria-haspopup="listbox"
+    aria-label="'Options menu'"
+    className="pf-c-options-menu__toggle-button ''"
+    id="''-toggle"
+    onClick={[Function]}
+  >
+    <div>
+      ReactNode
+    </div>
+  </button>
+</div>
+`;

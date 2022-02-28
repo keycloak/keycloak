@@ -1,0 +1,1 @@
+export default {"name":"--pf-c-nav__scroll-button--m-dark--nth-of-type-2--BoxShadow","value":"-20px 0 10px -4px rgba(21,21,21,0.7)","var":"var(--pf-c-nav__scroll-button--m-dark--nth-of-type-2--BoxShadow)"}

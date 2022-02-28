@@ -1,0 +1,57 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ClipboardCopyButton should match snapshot (auto-generated) 1`] = `
+<Tooltip
+  appendTo={[Function]}
+  aria="describedby"
+  boundary="window"
+  className=""
+  content={
+    <div>
+      <div>
+        ReactNode
+      </div>
+    </div>
+  }
+  distance={15}
+  enableFlip={true}
+  entryDelay={100}
+  exitDelay={100}
+  flipBehavior={
+    Array [
+      "top",
+      "right",
+      "bottom",
+      "left",
+      "top",
+      "right",
+      "bottom",
+    ]
+  }
+  id=""
+  isAppLauncher={false}
+  isContentLeftAligned={false}
+  isVisible={false}
+  maxWidth="'100px'"
+  position="top"
+  tippyProps={Object {}}
+  trigger="mouseenter focus click"
+  zIndex={9999}
+>
+  <button
+    aria-label="'Copyable input'"
+    aria-labelledby="string string"
+    className="pf-c-clipboard-copy__group-copy ''"
+    id="string"
+    onClick={[Function]}
+    type="button"
+  >
+    <CopyIcon
+      color="currentColor"
+      noVerticalAlign={false}
+      size="sm"
+      title={null}
+    />
+  </button>
+</Tooltip>
+`;

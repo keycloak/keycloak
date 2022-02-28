@@ -1,0 +1,1 @@
+{"version":3,"file":"ast-converter.d.ts","sourceRoot":"","sources":["../src/ast-converter.ts"],"names":[],"mappings":"AAGA,OAAO,EAAE,MAAM,YAAY,CAAC;AAC5B,OAAO,EAAE,KAAK,EAAE,MAAM,kBAAkB,CAAC;AAEzC,MAAM,CAAC,OAAO,UAAU,YAAY,CAClC,GAAG,EAAE,EAAE,CAAC,UAAU,EAClB,KAAK,EAAE,KAAK,EACZ,2BAA2B,EAAE,OAAO;;;;;;EAwCrC"}

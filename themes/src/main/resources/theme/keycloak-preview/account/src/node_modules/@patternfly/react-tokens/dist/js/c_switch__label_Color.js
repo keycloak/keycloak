@@ -1,0 +1,1 @@
+module.exports = {"name":"--pf-c-switch__label--Color","value":"#151515","var":"var(--pf-c-switch__label--Color)"}

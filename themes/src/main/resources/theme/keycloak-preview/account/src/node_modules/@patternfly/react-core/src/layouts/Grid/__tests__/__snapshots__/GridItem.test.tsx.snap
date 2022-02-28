@@ -1,0 +1,37 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`adds _2xl offset classes 1`] = `"pf-l-grid__item"`;
+
+exports[`adds _2xl row classes 1`] = `"pf-l-grid__item"`;
+
+exports[`adds _2xl span class 1`] = `"pf-l-grid__item"`;
+
+exports[`adds Lg offset classes 1`] = `"pf-l-grid__item"`;
+
+exports[`adds Lg row classes 1`] = `"pf-l-grid__item"`;
+
+exports[`adds Lg span class 1`] = `"pf-l-grid__item"`;
+
+exports[`adds Md offset classes 1`] = `"pf-l-grid__item"`;
+
+exports[`adds Md row classes 1`] = `"pf-l-grid__item"`;
+
+exports[`adds Md span class 1`] = `"pf-l-grid__item"`;
+
+exports[`adds Sm offset classes 1`] = `"pf-l-grid__item"`;
+
+exports[`adds Sm row classes 1`] = `"pf-l-grid__item"`;
+
+exports[`adds Sm span class 1`] = `"pf-l-grid__item"`;
+
+exports[`adds Xl offset classes 1`] = `"pf-l-grid__item"`;
+
+exports[`adds Xl row classes 1`] = `"pf-l-grid__item"`;
+
+exports[`adds Xl span class 1`] = `"pf-l-grid__item"`;
+
+exports[`adds offset class 1`] = `"pf-l-grid__item pf-m-offset-4-col"`;
+
+exports[`adds row class 1`] = `"pf-l-grid__item pf-m-4-row"`;
+
+exports[`adds span class 1`] = `"pf-l-grid__item pf-m-4-col"`;

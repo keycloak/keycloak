@@ -1,0 +1,9 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`className is added to the root element 1`] = `"pf-l-bullseye extra-class"`;
+
+exports[`renders with PatternFly Core styles 1`] = `
+<div
+  className="pf-l-bullseye"
+/>
+`;

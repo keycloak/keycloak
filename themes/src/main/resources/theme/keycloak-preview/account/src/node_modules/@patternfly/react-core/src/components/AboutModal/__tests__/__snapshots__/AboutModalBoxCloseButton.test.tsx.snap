@@ -1,0 +1,58 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`AboutModalBoxCloseButton Test 1`] = `
+<div
+  className="pf-c-about-modal-box__close"
+>
+  <Component
+    aria-label="Close Dialog"
+    onClick={[Function]}
+    variant="plain"
+  >
+    <TimesIcon
+      color="currentColor"
+      noVerticalAlign={false}
+      size="sm"
+      title={null}
+    />
+  </Component>
+</div>
+`;
+
+exports[`AboutModalBoxCloseButton Test close button aria label 1`] = `
+<div
+  className="pf-c-about-modal-box__close"
+>
+  <Component
+    aria-label="Klose Daylok"
+    onClick={[Function]}
+    variant="plain"
+  >
+    <TimesIcon
+      color="currentColor"
+      noVerticalAlign={false}
+      size="sm"
+      title={null}
+    />
+  </Component>
+</div>
+`;
+
+exports[`AboutModalBoxCloseButton Test onclose 1`] = `
+<div
+  className="pf-c-about-modal-box__close"
+>
+  <Component
+    aria-label="Close Dialog"
+    onClick={[MockFunction]}
+    variant="plain"
+  >
+    <TimesIcon
+      color="currentColor"
+      noVerticalAlign={false}
+      size="sm"
+      title={null}
+    />
+  </Component>
+</div>
+`;

@@ -1,0 +1,33 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Checkbox should match snapshot (auto-generated) 1`] = `
+<div
+  className="pf-c-check ''"
+>
+  <input
+    aria-invalid={false}
+    aria-label="string"
+    checked={false}
+    className="pf-c-check__input"
+    disabled={false}
+    id="string"
+    onChange={[Function]}
+    type="checkbox"
+  />
+  <label
+    className="pf-c-check__label"
+    htmlFor="string"
+  >
+    <div>
+      ReactNode
+    </div>
+  </label>
+  <div
+    className="pf-c-check__description"
+  >
+    <div>
+      ReactNode
+    </div>
+  </div>
+</div>
+`;

@@ -1,0 +1,1 @@
+export default {"name":"--pf-c-notification-drawer__list-item--m-read--before--BackgroundColor","value":"transparent","var":"var(--pf-c-notification-drawer__list-item--m-read--before--BackgroundColor)"}

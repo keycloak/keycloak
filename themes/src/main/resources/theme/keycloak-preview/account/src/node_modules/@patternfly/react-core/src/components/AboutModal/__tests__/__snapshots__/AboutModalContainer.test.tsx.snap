@@ -1,0 +1,49 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`About Modal Container Test isOpen 1`] = `
+<Backdrop>
+  <FocusTrap
+    active={true}
+    className="pf-l-bullseye"
+    focusTrapOptions={
+      Object {
+        "clickOutsideDeactivates": true,
+      }
+    }
+    paused={false}
+  >
+    <AboutModalBox
+      aria-describedby="ariaDescribedById"
+      aria-labelledby="ariaLablledbyId"
+      className=""
+    >
+      <AboutModalBoxBrand
+        alt="Brand Image"
+        src="brandImg..."
+      />
+      <AboutModalBoxCloseButton
+        onClose={[Function]}
+      />
+      <AboutModalBoxHeader
+        id="ariaLablledbyId"
+        productName="Product Name"
+      />
+      <AboutModalBoxContent
+        id="ariaDescribedById"
+        noAboutModalBoxContentContainer={false}
+        title="Test Modal Container title"
+        trademark="Trademark and copyright information here"
+      >
+        This is ModalBox content
+      </AboutModalBoxContent>
+      <AboutModalBoxHero
+        backgroundImageSrc="backgroundImageSrc..."
+      />
+    </AboutModalBox>
+  </FocusTrap>
+</Backdrop>
+`;
+
+exports[`About Modal Container Test simple 1`] = `""`;
+
+exports[`About Modal Container Test with onlose 1`] = `""`;

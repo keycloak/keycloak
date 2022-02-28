@@ -1,0 +1,28 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Progress should match snapshot (auto-generated) 1`] = `
+<div
+  aria-valuetext="null"
+  className="pf-c-progress pf-m-danger pf-m-outside ''"
+  id="''"
+  role="progressbar"
+>
+  <ProgressContainer
+    ariaProps={
+      Object {
+        "aria-describedby": "''-description",
+        "aria-valuemax": 100,
+        "aria-valuemin": 0,
+        "aria-valuenow": 0,
+        "aria-valuetext": "null",
+      }
+    }
+    label={null}
+    measureLocation="outside"
+    parentId="''"
+    title="''"
+    value={0}
+    variant="danger"
+  />
+</div>
+`;

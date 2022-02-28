@@ -1,0 +1,7 @@
+{
+    "extends": "dtslint/dtslint.json",
+    "rules": {
+      "no-relative-import-in-test": false,
+      "array-type": [true, "generic"]
+    }
+}

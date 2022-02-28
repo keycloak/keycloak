@@ -1,0 +1,47 @@
+.pf-u-box-shadow-sm {
+  box-shadow: var(--pf-global--BoxShadow--sm) !important; }
+
+.pf-u-box-shadow-sm-top {
+  box-shadow: var(--pf-global--BoxShadow--sm-top) !important; }
+
+.pf-u-box-shadow-sm-right {
+  box-shadow: var(--pf-global--BoxShadow--sm-right) !important; }
+
+.pf-u-box-shadow-sm-bottom {
+  box-shadow: var(--pf-global--BoxShadow--sm-bottom) !important; }
+
+.pf-u-box-shadow-sm-left {
+  box-shadow: var(--pf-global--BoxShadow--sm-left) !important; }
+
+.pf-u-box-shadow-md {
+  box-shadow: var(--pf-global--BoxShadow--md) !important; }
+
+.pf-u-box-shadow-md-top {
+  box-shadow: var(--pf-global--BoxShadow--md-top) !important; }
+
+.pf-u-box-shadow-md-right {
+  box-shadow: var(--pf-global--BoxShadow--md-right) !important; }
+
+.pf-u-box-shadow-md-bottom {
+  box-shadow: var(--pf-global--BoxShadow--md-bottom) !important; }
+
+.pf-u-box-shadow-md-left {
+  box-shadow: var(--pf-global--BoxShadow--md-left) !important; }
+
+.pf-u-box-shadow-lg {
+  box-shadow: var(--pf-global--BoxShadow--lg) !important; }
+
+.pf-u-box-shadow-lg-top {
+  box-shadow: var(--pf-global--BoxShadow--lg-top) !important; }
+
+.pf-u-box-shadow-lg-right {
+  box-shadow: var(--pf-global--BoxShadow--lg-right) !important; }
+
+.pf-u-box-shadow-lg-bottom {
+  box-shadow: var(--pf-global--BoxShadow--lg-bottom) !important; }
+
+.pf-u-box-shadow-lg-left {
+  box-shadow: var(--pf-global--BoxShadow--lg-left) !important; }
+
+.pf-u-box-shadow-inset {
+  box-shadow: var(--pf-global--BoxShadow--inset) !important; }

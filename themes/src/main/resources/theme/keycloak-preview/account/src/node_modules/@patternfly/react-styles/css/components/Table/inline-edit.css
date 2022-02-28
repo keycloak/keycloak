@@ -1,0 +1,56 @@
+:root {
+  --pf-global--Blue--50: #def3ff;
+  --pf-global--Blue--200: #7dc3e8;
+}
+
+ tr.pf-c-table__editable-row:hover, tr.pf-c-table__editable-row.pf-m-editing {
+  background: var(--pf-global--Blue--50) !important;
+}
+tr.pf-c-table__editable-row:hover td, tr.pf-c-table__editable-row.pf-m-editing td {
+  border-bottom: 1px solid var(--pf-global--Blue--200) !important;
+  border-top: 1px solid var(--pf-global--Blue--200) !important;
+}
+tr.pf-c-table__editable-row:hover td:first-child, tr.pf-c-table__editable-row.pf-m-editing td:first-child {
+  border-left: 1px solid var(--pf-global--Blue--200) !important;
+}
+tr.pf-c-table__editable-row:hover td:last-child, tr.pf-c-table__editable-row.pf-m-editing td:last-child {
+  border-right: 1px solid var(--pf-global--Blue--200) !important;
+}
+tr.pf-c-table__editable-row.pf-m-table-editing-first-row {
+  border-top: 3px solid var(--pf-global--Blue--200) !important;
+}
+tr.pf-c-table__editable-row.pf-m-table-editing-last-row {
+  border-bottom: 3px solid var(--pf-global--Blue--200) !important;
+}
+tr.pf-c-table__editable-row input {
+  display: block;
+  background: var(--pf-global--BackgroundColor--100);
+  border: 1px solid var(--pf-global--BorderColor);
+}
+tr.pf-c-table__editable-row input:hover {
+  cursor: text;
+}
+
+ .pf-c-table__inline-edit-buttons {
+  position: fixed;
+  z-index: 1000;
+  padding: 4px;
+  margin: 0;
+  background: var(--pf-global--Blue--50);
+  border: 1px solid var(--pf-global--Blue--200);
+}
+.pf-c-table__inline-edit-buttons.pf-m-top {
+  border-bottom: 0;
+}
+.pf-c-table__inline-edit-buttons.pf-m-bottom {
+  border-top: 0;
+}
+.pf-c-table__inline-edit-buttons.pf-m-bold {
+  border-width: 3px;
+}
+.pf-c-table__inline-edit-buttons button {
+  margin-left: 4px;
+}
+.pf-c-table__inline-edit-buttons button:first-child {
+  margin-left: 0;
+} 

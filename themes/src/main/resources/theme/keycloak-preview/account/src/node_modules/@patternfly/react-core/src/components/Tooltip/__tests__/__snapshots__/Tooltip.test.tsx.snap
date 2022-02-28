@@ -1,0 +1,142 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`tooltip passes along values to tippy.js 1`] = `
+<PopoverBase
+  appendTo={[Function]}
+  aria="describedby"
+  arrow={true}
+  boundary="window"
+  content={
+    <div
+      className=""
+      id=""
+      role="tooltip"
+    >
+      <TooltipContent
+        isLeftAligned={false}
+      >
+        <div>
+          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam id feugiat augue, nec fringilla turpis.
+        </div>
+      </TooltipContent>
+    </div>
+  }
+  delay={
+    Array [
+      500,
+      500,
+    ]
+  }
+  distance={15}
+  duration={
+    Array [
+      200,
+      200,
+    ]
+  }
+  flip={true}
+  flipBehavior={
+    Array [
+      "top",
+      "right",
+      "bottom",
+      "left",
+      "top",
+      "right",
+      "bottom",
+    ]
+  }
+  isVisible={false}
+  lazy={true}
+  maxWidth="18.75rem"
+  offset={20}
+  onCreate={[Function]}
+  placement="top"
+  popperOptions={
+    Object {
+      "modifiers": Object {
+        "hide": Object {
+          "enabled": true,
+        },
+        "preventOverflow": Object {
+          "enabled": true,
+        },
+      },
+    }
+  }
+  theme="pf-tooltip"
+  trigger="mouseenter focus"
+  zIndex={9999}
+>
+  <div>
+    Tippy Props Test
+  </div>
+</PopoverBase>
+`;
+
+exports[`tooltip renders 1`] = `
+<PopoverBase
+  appendTo={[Function]}
+  aria="describedby"
+  arrow={true}
+  boundary="window"
+  content={
+    <div
+      className=""
+      id=""
+      role="tooltip"
+    >
+      <TooltipContent
+        isLeftAligned={false}
+      >
+        <div>
+          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam id feugiat augue, nec fringilla turpis.
+        </div>
+      </TooltipContent>
+    </div>
+  }
+  delay={
+    Array [
+      500,
+      500,
+    ]
+  }
+  distance={15}
+  flip={true}
+  flipBehavior={
+    Array [
+      "top",
+      "right",
+      "bottom",
+      "left",
+      "top",
+      "right",
+      "bottom",
+    ]
+  }
+  isVisible={false}
+  lazy={true}
+  maxWidth="18.75rem"
+  onCreate={[Function]}
+  placement="top"
+  popperOptions={
+    Object {
+      "modifiers": Object {
+        "hide": Object {
+          "enabled": true,
+        },
+        "preventOverflow": Object {
+          "enabled": true,
+        },
+      },
+    }
+  }
+  theme="pf-tooltip"
+  trigger="mouseenter focus"
+  zIndex={9999}
+>
+  <div>
+    Toggle tooltip
+  </div>
+</PopoverBase>
+`;

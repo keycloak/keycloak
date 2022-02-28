@@ -1,0 +1,65 @@
+.pf-c-input-group {
+  --pf-global--Color--100: var(--pf-global--Color--dark-100);
+  --pf-global--Color--200: var(--pf-global--Color--dark-200);
+  --pf-global--BorderColor--100: var(--pf-global--BorderColor--dark-100);
+  --pf-global--primary-color--100: var(--pf-global--primary-color--dark-100);
+  --pf-global--link--Color: var(--pf-global--link--Color--dark);
+  --pf-global--link--Color--hover: var(--pf-global--link--Color--dark--hover);
+  --pf-global--BackgroundColor--100: var(--pf-global--BackgroundColor--light-100); }
+
+.pf-c-input-group {
+  --pf-c-input-group--BackgroundColor: var(--pf-global--BackgroundColor--100);
+  --pf-c-input-group--BorderRadius: var(--pf-global--BorderRadius--sm);
+  --pf-c-input-group__text--FontSize: var(--pf-global--FontSize--md);
+  --pf-c-input-group__text--PaddingRight: var(--pf-global--spacer--sm);
+  --pf-c-input-group__text--PaddingLeft: var(--pf-global--spacer--sm);
+  --pf-c-input-group__text--Color: var(--pf-global--Color--dark-200);
+  --pf-c-input-group__text--BorderWidth: var(--pf-global--BorderWidth--sm);
+  --pf-c-input-group__text--BorderTopColor: var(--pf-global--BorderColor--300);
+  --pf-c-input-group__text--BorderRightColor: var(--pf-global--BorderColor--300);
+  --pf-c-input-group__text--BorderBottomColor: var(--pf-global--BorderColor--200);
+  --pf-c-input-group__text--BorderLeftColor: var(--pf-global--BorderColor--300);
+  --pf-c-input-group__text--BackgroundColor: var(--pf-global--BackgroundColor--100);
+  --pf-c-input-group__textarea--MinHeight: var(--pf-global--spacer--xl);
+  --pf-c-input-group--c-button--BorderRadius: var(--pf-global--BorderRadius--sm);
+  --pf-c-input-group--c-form-control--invalid--ZIndex: var(--pf-global--ZIndex--xs);
+  --pf-c-input-group--c-form-control--MarginRight: 1px;
+  color: var(--pf-global--Color--100);
+  display: flex;
+  width: 100%;
+  background-color: var(--pf-c-input-group--BackgroundColor);
+  border-radius: var(--pf-c-input-group--BorderRadius); }
+  .pf-c-input-group > * + * {
+    margin-left: -1px; }
+  .pf-c-input-group .pf-c-form-control[aria-invalid="true"]:not(:last-child) {
+    margin-right: var(--pf-c-input-group--c-form-control--MarginRight); }
+  .pf-c-input-group .pf-c-button:not(.pf-m-control) {
+    position: relative; }
+    .pf-c-input-group .pf-c-button:not(.pf-m-control), .pf-c-input-group .pf-c-button:not(.pf-m-control)::after {
+      border-radius: 0; }
+    .pf-c-input-group .pf-c-button:not(.pf-m-control):first-child, .pf-c-input-group .pf-c-button:not(.pf-m-control):first-child::after {
+      border-radius: var(--pf-c-input-group--c-button--BorderRadius) 0 0 var(--pf-c-input-group--c-button--BorderRadius); }
+    .pf-c-input-group .pf-c-button:not(.pf-m-control):last-child, .pf-c-input-group .pf-c-button:not(.pf-m-control):last-child::after {
+      border-radius: 0 var(--pf-c-input-group--c-button--BorderRadius) var(--pf-c-input-group--c-button--BorderRadius) 0; }
+  .pf-c-input-group .pf-c-dropdown__toggle {
+    height: 100%; }
+  .pf-c-input-group input:not([type="checkbox"]):not([type="radio"]),
+  .pf-c-input-group textarea {
+    flex: 2;
+    min-width: 0; }
+  .pf-c-input-group textarea {
+    min-height: var(--pf-c-input-group__textarea--MinHeight); }
+
+.pf-c-input-group__text {
+  display: flex;
+  align-items: center;
+  padding-right: var(--pf-c-input-group__text--PaddingRight);
+  padding-left: var(--pf-c-input-group__text--PaddingLeft);
+  font-size: var(--pf-c-input-group__text--FontSize);
+  color: var(--pf-c-input-group__text--Color);
+  text-align: center;
+  background-color: var(--pf-c-input-group__text--BackgroundColor);
+  border: var(--pf-c-input-group__text--BorderWidth) solid;
+  border-color: var(--pf-c-input-group__text--BorderTopColor) var(--pf-c-input-group__text--BorderRightColor) var(--pf-c-input-group__text--BorderBottomColor) var(--pf-c-input-group__text--BorderLeftColor); }
+  label.pf-c-input-group__text {
+    cursor: pointer; }

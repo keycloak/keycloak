@@ -1,0 +1,11 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`getSize returns a default size for unknown sizes 1`] = `"1em"`;
+
+exports[`getSize returns size for lg icons 1`] = `"2em"`;
+
+exports[`getSize returns size for md icons 1`] = `"1.5em"`;
+
+exports[`getSize returns size for sm icons 1`] = `"1em"`;
+
+exports[`getSize returns size for xl icons 1`] = `"3em"`;

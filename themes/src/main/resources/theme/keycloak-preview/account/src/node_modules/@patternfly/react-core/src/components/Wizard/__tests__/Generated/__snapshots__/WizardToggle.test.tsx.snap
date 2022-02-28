@@ -1,0 +1,46 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`WizardToggle should match snapshot (auto-generated) 1`] = `
+<Fragment>
+  <button
+    aria-expanded={true}
+    className="pf-c-wizard__toggle pf-m-expanded"
+    onClick={[Function]}
+  >
+    <ol
+      className="pf-c-wizard__toggle-list"
+    >
+      <li
+        className="pf-c-wizard__toggle-list-item"
+      >
+        <span
+          className="pf-c-wizard__toggle-num"
+        />
+         
+      </li>
+    </ol>
+    <CaretDownIcon
+      aria-hidden="true"
+      className="pf-c-wizard__toggle-icon"
+      color="currentColor"
+      noVerticalAlign={false}
+      size="sm"
+      title={null}
+    />
+  </button>
+  <div
+    className="pf-c-wizard__outer-wrap"
+  >
+    <div
+      className="pf-c-wizard__inner-wrap"
+    >
+      <WizardBody
+        hasBodyPadding={true}
+      />
+    </div>
+    <div>
+      ReactNode
+    </div>
+  </div>
+</Fragment>
+`;

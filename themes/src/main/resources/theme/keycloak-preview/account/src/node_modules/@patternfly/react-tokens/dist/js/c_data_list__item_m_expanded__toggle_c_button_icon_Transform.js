@@ -1,0 +1,1 @@
+module.exports = {"name":"--pf-c-data-list__item--m-expanded__toggle--c-button-icon--Transform","value":"rotate(90deg)","var":"var(--pf-c-data-list__item--m-expanded__toggle--c-button-icon--Transform)"}

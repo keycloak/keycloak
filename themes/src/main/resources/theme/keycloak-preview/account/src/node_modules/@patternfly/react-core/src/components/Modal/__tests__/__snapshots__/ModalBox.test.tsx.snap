@@ -1,0 +1,37 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ModalBox Test 1`] = `
+<div
+  aria-describedby="boxId"
+  aria-label="Test Modal Box"
+  aria-modal="true"
+  className="pf-c-modal-box"
+  role="dialog"
+>
+  This is a ModalBox
+</div>
+`;
+
+exports[`ModalBox Test isLarge 1`] = `
+<div
+  aria-describedby="boxId"
+  aria-label="Test Modal Box"
+  aria-modal="true"
+  className="pf-c-modal-box pf-m-lg"
+  role="dialog"
+>
+  This is a ModalBox
+</div>
+`;
+
+exports[`ModalBox Test isSmall 1`] = `
+<div
+  aria-describedby="boxId"
+  aria-label="Test Modal Box"
+  aria-modal="true"
+  className="pf-c-modal-box pf-m-sm"
+  role="dialog"
+>
+  This is a ModalBox
+</div>
+`;

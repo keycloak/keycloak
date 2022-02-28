@@ -1,0 +1,77 @@
+.pf-c-pagination {
+  --pf-c-pagination--child--MarginRight: var(--pf-global--spacer--lg);
+  --pf-c-pagination--m-compact--child--MarginRight: var(--pf-global--spacer--sm);
+  --pf-c-pagination--c-options-menu__toggle--FontSize: var(--pf-global--FontSize--sm);
+  --pf-c-pagination__menu-text--PaddingLeft: var(--pf-global--spacer--xs);
+  --pf-c-pagination__menu-text--FontSize: var(--pf-global--FontSize--sm);
+  --pf-c-pagination__menu-text--Color: var(--pf-global--Color--200);
+  --pf-c-pagination__nav--c-button--PaddingLeft: var(--pf-global--spacer--sm);
+  --pf-c-pagination__nav--c-button--PaddingRight: var(--pf-global--spacer--sm);
+  --pf-c-pagination__nav--c-button--FontSize: var(--pf-global--FontSize--md);
+  --pf-c-pagination--m-compact__nav--c-button--MarginLeft: var(--pf-global--spacer--md);
+  --pf-c-pagination__nav-page-select--FontSize: var(--pf-global--FontSize--sm);
+  --pf-c-pagination__nav-page-select--PaddingLeft: var(--pf-global--spacer--md);
+  --pf-c-pagination__nav-page-select--PaddingRight: var(--pf-global--spacer--md);
+  --pf-c-pagination__nav-page-select--child--MarginRight: var(--pf-global--spacer--xs);
+  --pf-c-pagination__nav-page-select--c-form-control--width-base: 3.5ch;
+  --pf-c-pagination__nav-page-select--c-form-control--width-chars: 2;
+  --pf-c-pagination__nav-page-select--c-form-control--Width: calc(var(--pf-c-pagination__nav-page-select--c-form-control--width-base) + (var(--pf-c-pagination__nav-page-select--c-form-control--width-chars) * 1ch));
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end; }
+  .pf-c-pagination > *:not(:last-child):not(.pf-c-pagination__total-items) {
+    margin-right: var(--pf-c-pagination--child--MarginRight); }
+  .pf-c-pagination:not(.pf-m-footer) .pf-c-options-menu,
+  .pf-c-pagination:not(.pf-m-footer) .pf-c-pagination__nav {
+    display: none;
+    visibility: hidden; }
+    @media screen and (min-width: 768px) {
+      .pf-c-pagination:not(.pf-m-footer) .pf-c-options-menu,
+      .pf-c-pagination:not(.pf-m-footer) .pf-c-pagination__nav {
+        display: flex;
+        visibility: visible; } }
+  .pf-c-pagination.pf-m-footer .pf-c-options-menu {
+    display: none;
+    visibility: hidden; }
+    @media screen and (min-width: 768px) {
+      .pf-c-pagination.pf-m-footer .pf-c-options-menu {
+        display: flex;
+        visibility: visible; } }
+  .pf-c-pagination .pf-c-options-menu__toggle {
+    font-size: var(--pf-c-pagination--c-options-menu__toggle--FontSize); }
+  .pf-c-pagination.pf-m-compact {
+    --pf-c-pagination--child--MarginRight: var(--pf-c-pagination--m-compact--child--MarginRight); }
+
+.pf-c-pagination__nav {
+  display: inline-flex;
+  justify-content: flex-end; }
+  .pf-c-pagination__nav .pf-c-button {
+    padding-right: var(--pf-c-pagination__nav--c-button--PaddingRight);
+    padding-left: var(--pf-c-pagination__nav--c-button--PaddingLeft);
+    font-size: var(--pf-c-pagination__nav--c-button--FontSize); }
+    .pf-c-pagination.pf-m-compact .pf-c-pagination__nav .pf-c-button + .pf-c-button {
+      margin-left: var(--pf-c-pagination--m-compact__nav--c-button--MarginLeft); }
+
+.pf-c-pagination__nav-page-select {
+  display: flex;
+  align-items: center;
+  padding-right: var(--pf-c-pagination__nav-page-select--PaddingRight);
+  padding-left: var(--pf-c-pagination__nav-page-select--PaddingLeft); }
+  .pf-c-pagination__nav-page-select > * {
+    font-size: var(--pf-c-pagination__nav-page-select--FontSize);
+    white-space: nowrap; }
+    .pf-c-pagination__nav-page-select > *:not(:last-child) {
+      margin-right: var(--pf-c-pagination__nav-page-select--child--MarginRight); }
+  .pf-c-pagination__nav-page-select .pf-c-form-control {
+    width: var(--pf-c-pagination__nav-page-select--c-form-control--Width); }
+
+@media screen and (min-width: 768px) {
+  .pf-c-pagination__total-items {
+    display: none;
+    visibility: hidden; } }
+
+.pf-c-pagination__menu-text {
+  padding-left: var(--pf-c-pagination__menu-text--PaddingLeft);
+  font-size: var(--pf-c-pagination__menu-text--FontSize);
+  color: var(--pf-c-pagination__menu-text--Color); }

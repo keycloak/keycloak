@@ -1,0 +1,30 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`expanded code content render 1`] = `
+<div
+  className="pf-c-clipboard-copy__expandable-content class-1"
+  contentEditable={true}
+  id="id-1"
+  onInput={[Function]}
+  suppressContentEditableWarning={true}
+>
+  <pre>
+    {
+    "name": "@patternfly/react-core",
+    "version": "1.33.2"
+  }
+  </pre>
+</div>
+`;
+
+exports[`expanded content render 1`] = `
+<div
+  className="pf-c-clipboard-copy__expandable-content class-1"
+  contentEditable={true}
+  id="id-1"
+  onInput={[Function]}
+  suppressContentEditableWarning={true}
+>
+  This is my text
+</div>
+`;

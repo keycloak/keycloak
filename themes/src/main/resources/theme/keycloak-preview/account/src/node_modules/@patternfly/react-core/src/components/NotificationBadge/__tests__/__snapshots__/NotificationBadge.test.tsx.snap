@@ -1,0 +1,27 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`false NotificationBadge 1`] = `
+<Component
+  variant="plain"
+>
+  <span
+    className="pf-c-notification-badge pf-m-unread"
+  >
+    unread
+     Badge
+  </span>
+</Component>
+`;
+
+exports[`true NotificationBadge 1`] = `
+<Component
+  variant="plain"
+>
+  <span
+    className="pf-c-notification-badge pf-m-read"
+  >
+    read
+     Badge
+  </span>
+</Component>
+`;

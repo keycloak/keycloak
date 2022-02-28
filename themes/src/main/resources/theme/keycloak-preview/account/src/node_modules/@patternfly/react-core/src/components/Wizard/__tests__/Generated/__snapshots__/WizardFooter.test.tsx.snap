@@ -1,0 +1,9 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`WizardFooter should match snapshot (auto-generated) 1`] = `
+<footer
+  className="pf-c-wizard__footer"
+>
+  any
+</footer>
+`;

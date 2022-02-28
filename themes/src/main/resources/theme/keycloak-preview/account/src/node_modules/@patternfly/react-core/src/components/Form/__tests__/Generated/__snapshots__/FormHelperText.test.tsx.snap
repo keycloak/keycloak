@@ -1,0 +1,9 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`FormHelperText should match snapshot (auto-generated) 1`] = `
+<p
+  className="pf-c-form__helper-text pf-m-hidden ''"
+>
+  ReactNode
+</p>
+`;

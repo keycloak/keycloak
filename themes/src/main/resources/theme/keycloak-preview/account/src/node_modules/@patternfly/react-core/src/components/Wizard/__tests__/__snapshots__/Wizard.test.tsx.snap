@@ -1,0 +1,572 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Wizard should match snapshot 1`] = `
+<div>
+  Object {
+    "$$typeof": Symbol(react.portal),
+    "children": <FocusTrap
+      active={true}
+      focusTrapOptions={
+        Object {
+          "clickOutsideDeactivates": true,
+        }
+      }
+      paused={false}
+    >
+      <Backdrop>
+        <Bullseye>
+          <Context.Provider
+            value={
+              Object {
+                "activeStep": Object {
+                  "canJumpTo": true,
+                  "component": <p>
+                    Step 1
+                  </p>,
+                  "name": "A",
+                },
+                "goToStepById": [Function],
+                "goToStepByName": [Function],
+                "onBack": [Function],
+                "onClose": [Function],
+                "onNext": [Function],
+              }
+            }
+          >
+            <div
+              aria-describedby="pf-wizard-description-0"
+              aria-labelledby="pf-wizard-title-0"
+              aria-modal="true"
+              className="pf-c-wizard"
+              role="dialog"
+            >
+              <WizardHeader
+                ariaLabelCloseButton="Close"
+                description="Description here"
+                descriptionId="pf-wizard-description-0"
+                onClose={[Function]}
+                title="Wizard title"
+                titleId="pf-wizard-title-0"
+              />
+              <WizardToggle
+                activeStep={
+                  Object {
+                    "canJumpTo": true,
+                    "component": <p>
+                      Step 1
+                    </p>,
+                    "name": "A",
+                  }
+                }
+                hasBodyPadding={true}
+                isNavOpen={false}
+                nav={[Function]}
+                onNavToggle={[Function]}
+                steps={
+                  Array [
+                    Object {
+                      "canJumpTo": true,
+                      "component": <p>
+                        Step 1
+                      </p>,
+                      "name": "A",
+                    },
+                    Object {
+                      "canJumpTo": true,
+                      "name": "B",
+                      "steps": Array [
+                        Object {
+                          "canJumpTo": true,
+                          "component": <p>
+                            Step 2
+                          </p>,
+                          "enableNext": true,
+                          "name": "B-1",
+                        },
+                        Object {
+                          "canJumpTo": true,
+                          "component": <p>
+                            Step 3
+                          </p>,
+                          "enableNext": false,
+                          "name": "B-2",
+                        },
+                      ],
+                    },
+                    Object {
+                      "canJumpTo": true,
+                      "component": <p>
+                        Step 4
+                      </p>,
+                      "name": "C",
+                    },
+                    Object {
+                      "canJumpTo": true,
+                      "component": <p>
+                        Step 5
+                      </p>,
+                      "name": "D",
+                    },
+                  ]
+                }
+              >
+                <WizardFooterInternal
+                  activeStep={
+                    Object {
+                      "canJumpTo": true,
+                      "component": <p>
+                        Step 1
+                      </p>,
+                      "name": "A",
+                    }
+                  }
+                  backButtonText="Back"
+                  cancelButtonText="Cancel"
+                  firstStep={true}
+                  isValid={true}
+                  nextButtonText="Next"
+                  onBack={[Function]}
+                  onClose={[Function]}
+                  onNext={[Function]}
+                />
+              </WizardToggle>
+            </div>
+          </Context.Provider>
+        </Bullseye>
+      </Backdrop>
+    </FocusTrap>,
+    "containerInfo": <div>
+      <div>
+        <div
+          class="pf-c-backdrop"
+        >
+          <div
+            class="pf-l-bullseye"
+          >
+            <div
+              aria-describedby="pf-wizard-description-0"
+              aria-labelledby="pf-wizard-title-0"
+              aria-modal="true"
+              class="pf-c-wizard"
+              role="dialog"
+            >
+              <div
+                class="pf-c-wizard__header"
+              >
+                <button
+                  aria-label="Close"
+                  class="pf-c-button pf-m-plain pf-c-wizard__close"
+                  type="button"
+                >
+                  <svg
+                    aria-hidden="true"
+                    fill="currentColor"
+                    height="1em"
+                    role="img"
+                    style="vertical-align: -0.125em;"
+                    viewBox="0 0 352 512"
+                    width="1em"
+                  >
+                    <path
+                      d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"
+                      transform=""
+                    />
+                  </svg>
+                </button>
+                <h1
+                  aria-label="Wizard title"
+                  class="pf-c-title pf-m-3xl pf-c-wizard__title"
+                  id="pf-wizard-title-0"
+                >
+                  Wizard title
+                </h1>
+                <p
+                  class="pf-c-wizard__description"
+                  id="pf-wizard-description-0"
+                >
+                  Description here
+                </p>
+              </div>
+              <button
+                aria-expanded="false"
+                class="pf-c-wizard__toggle"
+              >
+                <ol
+                  class="pf-c-wizard__toggle-list"
+                >
+                  <li
+                    class="pf-c-wizard__toggle-list-item"
+                  >
+                    <span
+                      class="pf-c-wizard__toggle-num"
+                    >
+                      1
+                    </span>
+                     
+                    A
+                  </li>
+                </ol>
+                <svg
+                  aria-hidden="true"
+                  class="pf-c-wizard__toggle-icon"
+                  fill="currentColor"
+                  height="1em"
+                  role="img"
+                  style="vertical-align: -0.125em;"
+                  viewBox="0 0 320 512"
+                  width="1em"
+                >
+                  <path
+                    d="M31.3 192h257.3c17.8 0 26.7 21.5 14.1 34.1L174.1 354.8c-7.8 7.8-20.5 7.8-28.3 0L17.2 226.1C4.6 213.5 13.5 192 31.3 192z"
+                    transform=""
+                  />
+                </svg>
+              </button>
+              <div
+                class="pf-c-wizard__outer-wrap"
+              >
+                <div
+                  class="pf-c-wizard__inner-wrap"
+                >
+                  <nav
+                    aria-label="Steps"
+                    class="pf-c-wizard__nav"
+                  >
+                    <ol
+                      class="pf-c-wizard__nav-list"
+                    >
+                      <li
+                        class="pf-c-wizard__nav-item"
+                      >
+                        <a
+                          aria-current="page"
+                          aria-disabled="false"
+                          class="pf-c-wizard__nav-link pf-m-current"
+                        >
+                          A
+                        </a>
+                      </li>
+                      <li
+                        class="pf-c-wizard__nav-item"
+                      >
+                        <a
+                          aria-current="false"
+                          aria-disabled="false"
+                          class="pf-c-wizard__nav-link"
+                        >
+                          B
+                        </a>
+                        <ol
+                          class="pf-c-wizard__nav-list"
+                        >
+                          <li
+                            class="pf-c-wizard__nav-item"
+                          >
+                            <a
+                              aria-current="false"
+                              aria-disabled="false"
+                              class="pf-c-wizard__nav-link"
+                            >
+                              B-1
+                            </a>
+                          </li>
+                          <li
+                            class="pf-c-wizard__nav-item"
+                          >
+                            <a
+                              aria-current="false"
+                              aria-disabled="false"
+                              class="pf-c-wizard__nav-link"
+                            >
+                              B-2
+                            </a>
+                          </li>
+                        </ol>
+                      </li>
+                      <li
+                        class="pf-c-wizard__nav-item"
+                      >
+                        <a
+                          aria-current="false"
+                          aria-disabled="false"
+                          class="pf-c-wizard__nav-link"
+                        >
+                          C
+                        </a>
+                      </li>
+                      <li
+                        class="pf-c-wizard__nav-item"
+                      >
+                        <a
+                          aria-current="false"
+                          aria-disabled="false"
+                          class="pf-c-wizard__nav-link"
+                        >
+                          D
+                        </a>
+                      </li>
+                    </ol>
+                  </nav>
+                  <main
+                    class="pf-c-wizard__main"
+                  >
+                    <div
+                      class="pf-c-wizard__main-body"
+                    >
+                      <p>
+                        Step 1
+                      </p>
+                    </div>
+                  </main>
+                </div>
+                <footer
+                  class="pf-c-wizard__footer"
+                >
+                  <button
+                    class="pf-c-button pf-m-primary"
+                    type="submit"
+                  >
+                    Next
+                  </button>
+                  <button
+                    class="pf-c-button pf-m-secondary pf-m-disabled"
+                    type="button"
+                  >
+                    Back
+                  </button>
+                  <button
+                    class="pf-c-button pf-m-link"
+                    type="button"
+                  >
+                    <span
+                      class="pf-c-button__text"
+                    >
+                      Cancel
+                    </span>
+                  </button>
+                </footer>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div
+          class="pf-c-backdrop"
+        >
+          <div
+            class="pf-l-bullseye"
+          >
+            <div
+              aria-describedby="pf-wizard-description-0"
+              aria-labelledby="pf-wizard-title-0"
+              aria-modal="true"
+              class="pf-c-wizard"
+              role="dialog"
+            >
+              <div
+                class="pf-c-wizard__header"
+              >
+                <button
+                  aria-label="Close"
+                  class="pf-c-button pf-m-plain pf-c-wizard__close"
+                  type="button"
+                >
+                  <svg
+                    aria-hidden="true"
+                    fill="currentColor"
+                    height="1em"
+                    role="img"
+                    style="vertical-align: -0.125em;"
+                    viewBox="0 0 352 512"
+                    width="1em"
+                  >
+                    <path
+                      d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"
+                      transform=""
+                    />
+                  </svg>
+                </button>
+                <h1
+                  aria-label="Wizard title"
+                  class="pf-c-title pf-m-3xl pf-c-wizard__title"
+                  id="pf-wizard-title-0"
+                >
+                  Wizard title
+                </h1>
+                <p
+                  class="pf-c-wizard__description"
+                  id="pf-wizard-description-0"
+                >
+                  Description here
+                </p>
+              </div>
+              <button
+                aria-expanded="false"
+                class="pf-c-wizard__toggle"
+              >
+                <ol
+                  class="pf-c-wizard__toggle-list"
+                >
+                  <li
+                    class="pf-c-wizard__toggle-list-item"
+                  >
+                    <span
+                      class="pf-c-wizard__toggle-num"
+                    >
+                      1
+                    </span>
+                     
+                    A
+                  </li>
+                </ol>
+                <svg
+                  aria-hidden="true"
+                  class="pf-c-wizard__toggle-icon"
+                  fill="currentColor"
+                  height="1em"
+                  role="img"
+                  style="vertical-align: -0.125em;"
+                  viewBox="0 0 320 512"
+                  width="1em"
+                >
+                  <path
+                    d="M31.3 192h257.3c17.8 0 26.7 21.5 14.1 34.1L174.1 354.8c-7.8 7.8-20.5 7.8-28.3 0L17.2 226.1C4.6 213.5 13.5 192 31.3 192z"
+                    transform=""
+                  />
+                </svg>
+              </button>
+              <div
+                class="pf-c-wizard__outer-wrap"
+              >
+                <div
+                  class="pf-c-wizard__inner-wrap"
+                >
+                  <nav
+                    aria-label="Steps"
+                    class="pf-c-wizard__nav"
+                  >
+                    <ol
+                      class="pf-c-wizard__nav-list"
+                    >
+                      <li
+                        class="pf-c-wizard__nav-item"
+                      >
+                        <a
+                          aria-current="page"
+                          aria-disabled="false"
+                          class="pf-c-wizard__nav-link pf-m-current"
+                        >
+                          A
+                        </a>
+                      </li>
+                      <li
+                        class="pf-c-wizard__nav-item"
+                      >
+                        <a
+                          aria-current="false"
+                          aria-disabled="false"
+                          class="pf-c-wizard__nav-link"
+                        >
+                          B
+                        </a>
+                        <ol
+                          class="pf-c-wizard__nav-list"
+                        >
+                          <li
+                            class="pf-c-wizard__nav-item"
+                          >
+                            <a
+                              aria-current="false"
+                              aria-disabled="false"
+                              class="pf-c-wizard__nav-link"
+                            >
+                              B-1
+                            </a>
+                          </li>
+                          <li
+                            class="pf-c-wizard__nav-item"
+                          >
+                            <a
+                              aria-current="false"
+                              aria-disabled="false"
+                              class="pf-c-wizard__nav-link"
+                            >
+                              B-2
+                            </a>
+                          </li>
+                        </ol>
+                      </li>
+                      <li
+                        class="pf-c-wizard__nav-item"
+                      >
+                        <a
+                          aria-current="false"
+                          aria-disabled="false"
+                          class="pf-c-wizard__nav-link"
+                        >
+                          C
+                        </a>
+                      </li>
+                      <li
+                        class="pf-c-wizard__nav-item"
+                      >
+                        <a
+                          aria-current="false"
+                          aria-disabled="false"
+                          class="pf-c-wizard__nav-link"
+                        >
+                          D
+                        </a>
+                      </li>
+                    </ol>
+                  </nav>
+                  <main
+                    class="pf-c-wizard__main"
+                  >
+                    <div
+                      class="pf-c-wizard__main-body"
+                    >
+                      <p>
+                        Step 1
+                      </p>
+                    </div>
+                  </main>
+                </div>
+                <footer
+                  class="pf-c-wizard__footer"
+                >
+                  <button
+                    class="pf-c-button pf-m-primary"
+                    type="submit"
+                  >
+                    Next
+                  </button>
+                  <button
+                    class="pf-c-button pf-m-secondary pf-m-disabled"
+                    type="button"
+                  >
+                    Back
+                  </button>
+                  <button
+                    class="pf-c-button pf-m-link"
+                    type="button"
+                  >
+                    <span
+                      class="pf-c-button__text"
+                    >
+                      Cancel
+                    </span>
+                  </button>
+                </footer>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>,
+    "implementation": null,
+    "key": null,
+  }
+</div>
+`;

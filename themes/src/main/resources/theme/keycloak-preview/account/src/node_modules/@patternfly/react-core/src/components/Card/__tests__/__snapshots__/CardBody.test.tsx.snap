@@ -1,0 +1,15 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`body with no-fill applied  1`] = `
+<div
+  className="pf-c-card__body pf-m-no-fill"
+/>
+`;
+
+exports[`className is added to the root element 1`] = `"pf-c-card__body extra-class"`;
+
+exports[`renders with PatternFly Core styles 1`] = `
+<div
+  className="pf-c-card__body"
+/>
+`;

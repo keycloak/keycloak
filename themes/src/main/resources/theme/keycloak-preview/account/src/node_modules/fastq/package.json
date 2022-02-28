@@ -1,0 +1,51 @@
+{
+  "name": "fastq",
+  "version": "1.7.0",
+  "description": "Fast, in memory work queue",
+  "main": "queue.js",
+  "scripts": {
+    "lint": "standard --verbose | snazzy",
+    "unit": "nyc --lines 100 --branches 100 --functions 100 --check-coverage --reporter=text tape test/test.js",
+    "coverage": "nyc --reporter=html --reporter=cobertura --reporter=text tape test/test.js",
+    "test:report": "npm run lint && npm run unit:report",
+    "test": "npm run lint && npm run unit && npm run typescript",
+    "typescript": "tsc --project ./test/tsconfig.json",
+    "legacy": "tape test/test.js"
+  },
+  "pre-commit": [
+    "test"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mcollina/fastq.git"
+  },
+  "keywords": [
+    "fast",
+    "queue",
+    "async",
+    "worker"
+  ],
+  "author": "Matteo Collina <hello@matteocollina.com>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mcollina/fastq/issues"
+  },
+  "homepage": "https://github.com/mcollina/fastq#readme",
+  "devDependencies": {
+    "async": "^3.1.0",
+    "neo-async": "^2.6.1",
+    "nyc": "^15.0.0",
+    "pre-commit": "^1.2.2",
+    "snazzy": "^8.0.0",
+    "standard": "^14.0.0",
+    "tape": "^4.13.2",
+    "typescript": "^3.8.3"
+  },
+  "dependencies": {
+    "reusify": "^1.0.4"
+  }
+
+,"_resolved": "https://registry.npmjs.org/fastq/-/fastq-1.7.0.tgz"
+,"_integrity": "sha512-YOadQRnHd5q6PogvAR/x62BGituF2ufiEA6s8aavQANw5YKHERI4AREboX6KotzP8oX2klxYF2wcV/7bn1clfQ=="
+,"_from": "fastq@1.7.0"
+}

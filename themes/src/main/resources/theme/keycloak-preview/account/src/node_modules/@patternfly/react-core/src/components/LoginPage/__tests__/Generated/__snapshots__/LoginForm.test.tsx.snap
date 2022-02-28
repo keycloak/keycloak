@@ -1,0 +1,69 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`LoginForm should match snapshot (auto-generated) 1`] = `
+<Form
+  className="''"
+>
+  <FormHelperText
+    isError={false}
+    isHidden={true}
+  />
+  <FormGroup
+    fieldId="pf-login-username-id"
+    isRequired={true}
+    isValid={true}
+    label="'Username'"
+  >
+    <ForwardRef
+      autoFocus={true}
+      id="pf-login-username-id"
+      isRequired={true}
+      isValid={true}
+      name="pf-login-username-id"
+      onChange={[Function]}
+      type="text"
+      value="''"
+    />
+  </FormGroup>
+  <FormGroup
+    fieldId="pf-login-password-id"
+    isRequired={true}
+    isValid={true}
+    label="'Password'"
+  >
+    <ForwardRef
+      id="pf-login-password-id"
+      isRequired={true}
+      isValid={true}
+      name="pf-login-password-id"
+      onChange={[Function]}
+      type="password"
+      value="''"
+    />
+  </FormGroup>
+  <FormGroup
+    fieldId="pf-login-remember-me-id"
+  >
+    <Checkbox
+      className=""
+      id="pf-login-remember-me-id"
+      isChecked={false}
+      isDisabled={false}
+      isValid={true}
+      label="''"
+      onChange={[Function]}
+    />
+  </FormGroup>
+  <ActionGroup>
+    <Component
+      isBlock={true}
+      isDisabled={false}
+      onClick={[Function]}
+      type="submit"
+      variant="primary"
+    >
+      'Log In'
+    </Component>
+  </ActionGroup>
+</Form>
+`;

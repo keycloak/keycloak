@@ -1,0 +1,630 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Alert Group should match snapshot 1`] = `<AlertGroupInline />`;
+
+exports[`Standard Alert Group is not a toast alert group 1`] = `
+<AlertGroup>
+  <AlertGroupInline>
+    <ul
+      className="pf-c-alert-group"
+    >
+      <li
+        key="0"
+      >
+        <Component
+          key=".0"
+          title="alert title"
+          variant="danger"
+        >
+          <ComponentWithOuia
+            component={[Function]}
+            componentProps={
+              Object {
+                "title": "alert title",
+                "variant": "danger",
+              }
+            }
+            consumerContext={null}
+          >
+            <Alert
+              ouiaContext={
+                Object {
+                  "isOuia": false,
+                  "ouiaId": null,
+                }
+              }
+              title="alert title"
+              variant="danger"
+            >
+              <div
+                aria-label="Danger Alert"
+                className="pf-c-alert pf-m-danger"
+              >
+                <AlertIcon
+                  variant="danger"
+                >
+                  <div
+                    className="pf-c-alert__icon"
+                  >
+                    <ExclamationCircleIcon
+                      color="currentColor"
+                      noVerticalAlign={false}
+                      size="sm"
+                      title={null}
+                    >
+                      <svg
+                        aria-hidden={true}
+                        aria-labelledby={null}
+                        fill="currentColor"
+                        height="1em"
+                        role="img"
+                        style={
+                          Object {
+                            "verticalAlign": "-0.125em",
+                          }
+                        }
+                        viewBox="0 0 512 512"
+                        width="1em"
+                      >
+                        <path
+                          d="M504 256c0 136.997-111.043 248-248 248S8 392.997 8 256C8 119.083 119.043 8 256 8s248 111.083 248 248zm-248 50c-25.405 0-46 20.595-46 46s20.595 46 46 46 46-20.595 46-46-20.595-46-46-46zm-43.673-165.346l7.418 136c.347 6.364 5.609 11.346 11.982 11.346h48.546c6.373 0 11.635-4.982 11.982-11.346l7.418-136c.375-6.874-5.098-12.654-11.982-12.654h-63.383c-6.884 0-12.356 5.78-11.981 12.654z"
+                          transform=""
+                        />
+                      </svg>
+                    </ExclamationCircleIcon>
+                  </div>
+                </AlertIcon>
+                <h4
+                  className="pf-c-alert__title"
+                >
+                  <span
+                    className="pf-u-screen-reader"
+                  >
+                    Danger alert:
+                  </span>
+                  alert title
+                </h4>
+              </div>
+            </Alert>
+          </ComponentWithOuia>
+        </Component>
+      </li>
+    </ul>
+  </AlertGroupInline>
+</AlertGroup>
+`;
+
+exports[`Toast Alert Group contains expected modifier class 1`] = `
+<AlertGroup
+  isToast={true}
+>
+  <Portal
+    containerInfo={
+      <div>
+        <ul
+          class="pf-c-alert-group pf-m-toast"
+        >
+          <li>
+            <div
+              aria-label="Warning Alert"
+              class="pf-c-alert pf-m-warning"
+            >
+              <div
+                class="pf-c-alert__icon"
+              >
+                <svg
+                  aria-hidden="true"
+                  fill="currentColor"
+                  height="1em"
+                  role="img"
+                  style="vertical-align: -0.125em;"
+                  viewBox="0 0 576 512"
+                  width="1em"
+                >
+                  <path
+                    d="M569.517 440.013C587.975 472.007 564.806 512 527.94 512H48.054c-36.937 0-59.999-40.055-41.577-71.987L246.423 23.985c18.467-32.009 64.72-31.951 83.154 0l239.94 416.028zM288 354c-25.405 0-46 20.595-46 46s20.595 46 46 46 46-20.595 46-46-20.595-46-46-46zm-43.673-165.346l7.418 136c.347 6.364 5.609 11.346 11.982 11.346h48.546c6.373 0 11.635-4.982 11.982-11.346l7.418-136c.375-6.874-5.098-12.654-11.982-12.654h-63.383c-6.884 0-12.356 5.78-11.981 12.654z"
+                    transform=""
+                  />
+                </svg>
+              </div>
+              <h4
+                class="pf-c-alert__title"
+              >
+                <span
+                  class="pf-u-screen-reader"
+                >
+                  Warning alert:
+                </span>
+                alert title
+              </h4>
+              
+            </div>
+          </li>
+        </ul>
+      </div>
+    }
+  >
+    <AlertGroupInline
+      isToast={true}
+    >
+      <ul
+        className="pf-c-alert-group pf-m-toast"
+      >
+        <li
+          key="0"
+        >
+          <Component
+            key=".0"
+            title="alert title"
+            variant="warning"
+          >
+            <ComponentWithOuia
+              component={[Function]}
+              componentProps={
+                Object {
+                  "title": "alert title",
+                  "variant": "warning",
+                }
+              }
+              consumerContext={null}
+            >
+              <Alert
+                ouiaContext={
+                  Object {
+                    "isOuia": false,
+                    "ouiaId": null,
+                  }
+                }
+                title="alert title"
+                variant="warning"
+              >
+                <div
+                  aria-label="Warning Alert"
+                  className="pf-c-alert pf-m-warning"
+                >
+                  <AlertIcon
+                    variant="warning"
+                  >
+                    <div
+                      className="pf-c-alert__icon"
+                    >
+                      <ExclamationTriangleIcon
+                        color="currentColor"
+                        noVerticalAlign={false}
+                        size="sm"
+                        title={null}
+                      >
+                        <svg
+                          aria-hidden={true}
+                          aria-labelledby={null}
+                          fill="currentColor"
+                          height="1em"
+                          role="img"
+                          style={
+                            Object {
+                              "verticalAlign": "-0.125em",
+                            }
+                          }
+                          viewBox="0 0 576 512"
+                          width="1em"
+                        >
+                          <path
+                            d="M569.517 440.013C587.975 472.007 564.806 512 527.94 512H48.054c-36.937 0-59.999-40.055-41.577-71.987L246.423 23.985c18.467-32.009 64.72-31.951 83.154 0l239.94 416.028zM288 354c-25.405 0-46 20.595-46 46s20.595 46 46 46 46-20.595 46-46-20.595-46-46-46zm-43.673-165.346l7.418 136c.347 6.364 5.609 11.346 11.982 11.346h48.546c6.373 0 11.635-4.982 11.982-11.346l7.418-136c.375-6.874-5.098-12.654-11.982-12.654h-63.383c-6.884 0-12.356 5.78-11.981 12.654z"
+                            transform=""
+                          />
+                        </svg>
+                      </ExclamationTriangleIcon>
+                    </div>
+                  </AlertIcon>
+                  <h4
+                    className="pf-c-alert__title"
+                  >
+                    <span
+                      className="pf-u-screen-reader"
+                    >
+                      Warning alert:
+                    </span>
+                    alert title
+                  </h4>
+                </div>
+              </Alert>
+            </ComponentWithOuia>
+          </Component>
+        </li>
+      </ul>
+    </AlertGroupInline>
+  </Portal>
+</AlertGroup>
+`;
+
+exports[`alertgroup closes when alerts are closed 1`] = `
+<AlertGroup
+  appendTo={
+    <body>
+      <div />
+      <div />
+      <div />
+      <div />
+      <div>
+        <ul
+          class="pf-c-alert-group pf-m-toast"
+        >
+          <li>
+            <div
+              aria-label="Warning Alert"
+              class="pf-c-alert pf-m-warning"
+            >
+              <div
+                class="pf-c-alert__icon"
+              >
+                <svg
+                  aria-hidden="true"
+                  fill="currentColor"
+                  height="1em"
+                  role="img"
+                  style="vertical-align: -0.125em;"
+                  viewBox="0 0 576 512"
+                  width="1em"
+                >
+                  <path
+                    d="M569.517 440.013C587.975 472.007 564.806 512 527.94 512H48.054c-36.937 0-59.999-40.055-41.577-71.987L246.423 23.985c18.467-32.009 64.72-31.951 83.154 0l239.94 416.028zM288 354c-25.405 0-46 20.595-46 46s20.595 46 46 46 46-20.595 46-46-20.595-46-46-46zm-43.673-165.346l7.418 136c.347 6.364 5.609 11.346 11.982 11.346h48.546c6.373 0 11.635-4.982 11.982-11.346l7.418-136c.375-6.874-5.098-12.654-11.982-12.654h-63.383c-6.884 0-12.356 5.78-11.981 12.654z"
+                    transform=""
+                  />
+                </svg>
+              </div>
+              <h4
+                class="pf-c-alert__title"
+              >
+                <span
+                  class="pf-u-screen-reader"
+                >
+                  Warning alert:
+                </span>
+                alert title
+              </h4>
+              
+            </div>
+          </li>
+        </ul>
+      </div>
+      <div />
+      <div>
+        <ul
+          class="pf-c-alert-group pf-m-toast"
+        >
+          <li>
+            <div
+              aria-atomic="false"
+              aria-label="Info Alert"
+              aria-live="polite"
+              class="pf-c-alert pf-m-info"
+            >
+              <div
+                class="pf-c-alert__icon"
+              >
+                <svg
+                  aria-hidden="true"
+                  fill="currentColor"
+                  height="1em"
+                  role="img"
+                  style="vertical-align: -0.125em;"
+                  viewBox="0 0 512 512"
+                  width="1em"
+                >
+                  <path
+                    d="M256 8C119.043 8 8 119.083 8 256c0 136.997 111.043 248 248 248s248-111.003 248-248C504 119.083 392.957 8 256 8zm0 110c23.196 0 42 18.804 42 42s-18.804 42-42 42-42-18.804-42-42 18.804-42 42-42zm56 254c0 6.627-5.373 12-12 12h-88c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h12v-64h-12c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h64c6.627 0 12 5.373 12 12v100h12c6.627 0 12 5.373 12 12v24z"
+                    transform=""
+                  />
+                </svg>
+              </div>
+              <h4
+                class="pf-c-alert__title"
+              >
+                <span
+                  class="pf-u-screen-reader"
+                >
+                  Info alert:
+                </span>
+                Test Alert
+              </h4>
+              
+              <div
+                class="pf-c-alert__action"
+              >
+                <button
+                  aria-label="Close"
+                  class="pf-c-button pf-m-plain"
+                  type="button"
+                >
+                  <svg
+                    aria-hidden="true"
+                    fill="currentColor"
+                    height="1em"
+                    role="img"
+                    style="vertical-align: -0.125em;"
+                    viewBox="0 0 352 512"
+                    width="1em"
+                  >
+                    <path
+                      d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"
+                      transform=""
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </body>
+  }
+  isToast={true}
+>
+  <Portal
+    containerInfo={
+      <div>
+        <ul
+          class="pf-c-alert-group pf-m-toast"
+        >
+          <li>
+            <div
+              aria-atomic="false"
+              aria-label="Info Alert"
+              aria-live="polite"
+              class="pf-c-alert pf-m-info"
+            >
+              <div
+                class="pf-c-alert__icon"
+              >
+                <svg
+                  aria-hidden="true"
+                  fill="currentColor"
+                  height="1em"
+                  role="img"
+                  style="vertical-align: -0.125em;"
+                  viewBox="0 0 512 512"
+                  width="1em"
+                >
+                  <path
+                    d="M256 8C119.043 8 8 119.083 8 256c0 136.997 111.043 248 248 248s248-111.003 248-248C504 119.083 392.957 8 256 8zm0 110c23.196 0 42 18.804 42 42s-18.804 42-42 42-42-18.804-42-42 18.804-42 42-42zm56 254c0 6.627-5.373 12-12 12h-88c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h12v-64h-12c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h64c6.627 0 12 5.373 12 12v100h12c6.627 0 12 5.373 12 12v24z"
+                    transform=""
+                  />
+                </svg>
+              </div>
+              <h4
+                class="pf-c-alert__title"
+              >
+                <span
+                  class="pf-u-screen-reader"
+                >
+                  Info alert:
+                </span>
+                Test Alert
+              </h4>
+              
+              <div
+                class="pf-c-alert__action"
+              >
+                <button
+                  aria-label="Close"
+                  class="pf-c-button pf-m-plain"
+                  type="button"
+                >
+                  <svg
+                    aria-hidden="true"
+                    fill="currentColor"
+                    height="1em"
+                    role="img"
+                    style="vertical-align: -0.125em;"
+                    viewBox="0 0 352 512"
+                    width="1em"
+                  >
+                    <path
+                      d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"
+                      transform=""
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </li>
+        </ul>
+      </div>
+    }
+  >
+    <AlertGroupInline
+      isToast={true}
+    >
+      <ul
+        className="pf-c-alert-group pf-m-toast"
+      >
+        <li
+          key="0"
+        >
+          <Component
+            action={
+              <AlertActionCloseButton
+                aria-label="Close"
+                onClose={[MockFunction]}
+              />
+            }
+            isLiveRegion={true}
+            key=".0"
+            title="Test Alert"
+          >
+            <ComponentWithOuia
+              component={[Function]}
+              componentProps={
+                Object {
+                  "action": <AlertActionCloseButton
+                    aria-label="Close"
+                    onClose={[MockFunction]}
+                  />,
+                  "isLiveRegion": true,
+                  "title": "Test Alert",
+                }
+              }
+              consumerContext={null}
+            >
+              <Alert
+                action={
+                  <AlertActionCloseButton
+                    aria-label="Close"
+                    onClose={[MockFunction]}
+                  />
+                }
+                isLiveRegion={true}
+                ouiaContext={
+                  Object {
+                    "isOuia": false,
+                    "ouiaId": null,
+                  }
+                }
+                title="Test Alert"
+              >
+                <div
+                  aria-atomic="false"
+                  aria-label="Info Alert"
+                  aria-live="polite"
+                  className="pf-c-alert pf-m-info"
+                >
+                  <AlertIcon
+                    variant="info"
+                  >
+                    <div
+                      className="pf-c-alert__icon"
+                    >
+                      <InfoCircleIcon
+                        color="currentColor"
+                        noVerticalAlign={false}
+                        size="sm"
+                        title={null}
+                      >
+                        <svg
+                          aria-hidden={true}
+                          aria-labelledby={null}
+                          fill="currentColor"
+                          height="1em"
+                          role="img"
+                          style={
+                            Object {
+                              "verticalAlign": "-0.125em",
+                            }
+                          }
+                          viewBox="0 0 512 512"
+                          width="1em"
+                        >
+                          <path
+                            d="M256 8C119.043 8 8 119.083 8 256c0 136.997 111.043 248 248 248s248-111.003 248-248C504 119.083 392.957 8 256 8zm0 110c23.196 0 42 18.804 42 42s-18.804 42-42 42-42-18.804-42-42 18.804-42 42-42zm56 254c0 6.627-5.373 12-12 12h-88c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h12v-64h-12c-6.627 0-12-5.373-12-12v-24c0-6.627 5.373-12 12-12h64c6.627 0 12 5.373 12 12v100h12c6.627 0 12 5.373 12 12v24z"
+                            transform=""
+                          />
+                        </svg>
+                      </InfoCircleIcon>
+                    </div>
+                  </AlertIcon>
+                  <h4
+                    className="pf-c-alert__title"
+                  >
+                    <span
+                      className="pf-u-screen-reader"
+                    >
+                      Info alert:
+                    </span>
+                    Test Alert
+                  </h4>
+                  <div
+                    className="pf-c-alert__action"
+                  >
+                    <AlertActionCloseButton
+                      aria-label="Close"
+                      onClose={[MockFunction]}
+                    >
+                      <Component
+                        aria-label="Close"
+                        onClick={[MockFunction]}
+                        variant="plain"
+                      >
+                        <ComponentWithOuia
+                          component={[Function]}
+                          componentProps={
+                            Object {
+                              "aria-label": "Close",
+                              "children": <TimesIcon
+                                color="currentColor"
+                                noVerticalAlign={false}
+                                size="sm"
+                                title={null}
+                              />,
+                              "onClick": [MockFunction],
+                              "variant": "plain",
+                            }
+                          }
+                          consumerContext={
+                            Object {
+                              "isOuia": false,
+                              "ouiaId": null,
+                            }
+                          }
+                        >
+                          <Button
+                            aria-label="Close"
+                            onClick={[MockFunction]}
+                            ouiaContext={
+                              Object {
+                                "isOuia": false,
+                                "ouiaId": null,
+                              }
+                            }
+                            variant="plain"
+                          >
+                            <button
+                              aria-disabled={null}
+                              aria-label="Close"
+                              className="pf-c-button pf-m-plain"
+                              disabled={false}
+                              onClick={[MockFunction]}
+                              tabIndex={null}
+                              type="button"
+                            >
+                              <TimesIcon
+                                color="currentColor"
+                                noVerticalAlign={false}
+                                size="sm"
+                                title={null}
+                              >
+                                <svg
+                                  aria-hidden={true}
+                                  aria-labelledby={null}
+                                  fill="currentColor"
+                                  height="1em"
+                                  role="img"
+                                  style={
+                                    Object {
+                                      "verticalAlign": "-0.125em",
+                                    }
+                                  }
+                                  viewBox="0 0 352 512"
+                                  width="1em"
+                                >
+                                  <path
+                                    d="M242.72 256l100.07-100.07c12.28-12.28 12.28-32.19 0-44.48l-22.24-22.24c-12.28-12.28-32.19-12.28-44.48 0L176 189.28 75.93 89.21c-12.28-12.28-32.19-12.28-44.48 0L9.21 111.45c-12.28 12.28-12.28 32.19 0 44.48L109.28 256 9.21 356.07c-12.28 12.28-12.28 32.19 0 44.48l22.24 22.24c12.28 12.28 32.2 12.28 44.48 0L176 322.72l100.07 100.07c12.28 12.28 32.2 12.28 44.48 0l22.24-22.24c12.28-12.28 12.28-32.19 0-44.48L242.72 256z"
+                                    transform=""
+                                  />
+                                </svg>
+                              </TimesIcon>
+                            </button>
+                          </Button>
+                        </ComponentWithOuia>
+                      </Component>
+                    </AlertActionCloseButton>
+                  </div>
+                </div>
+              </Alert>
+            </ComponentWithOuia>
+          </Component>
+        </li>
+      </ul>
+    </AlertGroupInline>
+  </Portal>
+</AlertGroup>
+`;

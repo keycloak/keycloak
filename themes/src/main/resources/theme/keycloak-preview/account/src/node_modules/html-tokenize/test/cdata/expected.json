@@ -1,0 +1,8 @@
+[[ "open", "<div>" ]
+,[ "text", "\n  " ]
+,[ "open", "<![CDATA[" ]
+,[ "text", "<b>beep boop</b>" ]
+,[ "close", "]]>" ]
+,[ "text", "\n" ]
+,[ "close", "</div>" ]
+,[ "text", "\n" ]]

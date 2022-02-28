@@ -1,0 +1,9 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Flex should match snapshot (auto-generated) 1`] = `
+<div
+  className="pf-l-flex ''"
+>
+  ReactNode
+</div>
+`;

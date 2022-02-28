@@ -1,0 +1,12 @@
+.pf-l-level {
+  --pf-l-level--m-gutter--MarginRight: var(--pf-global--gutter);
+  --pf-l-level--m-gutter--md--MarginRight: var(--pf-global--gutter--md);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between; }
+  @media screen and (max-width: 768px) {
+    .pf-l-level {
+      --pf-l-level--m-gutter--MarginRight: var(--pf-l-level--m-gutter--md--MarginRight); } }
+  .pf-l-level.pf-m-gutter > *:not(:last-child) {
+    margin-right: var(--pf-l-level--m-gutter--MarginRight); }

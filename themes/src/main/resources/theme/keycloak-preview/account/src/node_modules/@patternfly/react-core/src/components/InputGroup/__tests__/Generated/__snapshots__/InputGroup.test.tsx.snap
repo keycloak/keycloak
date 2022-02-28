@@ -1,0 +1,11 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`InputGroup should match snapshot (auto-generated) 1`] = `
+<div
+  className="pf-c-input-group ''"
+>
+  <div>
+    ReactNode
+  </div>
+</div>
+`;

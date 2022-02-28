@@ -1,0 +1,11 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`TooltipContent should match snapshot (auto-generated) 1`] = `
+<div
+  className="pf-c-tooltip__content pf-m-text-align-left string"
+>
+  <div>
+    ReactNode
+  </div>
+</div>
+`;

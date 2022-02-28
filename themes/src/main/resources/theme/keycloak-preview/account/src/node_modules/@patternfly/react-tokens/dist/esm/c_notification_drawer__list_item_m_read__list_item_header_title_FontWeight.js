@@ -1,0 +1,1 @@
+export default {"name":"--pf-c-notification-drawer__list-item--m-read__list-item-header-title--FontWeight","value":"400","var":"var(--pf-c-notification-drawer__list-item--m-read__list-item-header-title--FontWeight)"}

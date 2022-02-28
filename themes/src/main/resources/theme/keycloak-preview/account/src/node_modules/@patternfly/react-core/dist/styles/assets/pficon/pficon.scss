@@ -1,0 +1,907 @@
+@font-face {
+  font-family: "pficon";
+  src: url("#{$pf-global--fonticon-path}/pficon.eot");
+  src: url("#{$pf-global--fonticon-path}/pficon.eot?#iefix") format("eot"),
+    url("#{$pf-global--fonticon-path}/pficon.woff2") format("woff2"),
+    url("#{$pf-global--fonticon-path}/pficon.woff") format("woff"),
+    url("#{$pf-global--fonticon-path}/pficon.ttf") format("truetype"),
+    url("#{$pf-global--fonticon-path}/pficon.svg#pficon") format("svg");
+}
+
+@mixin pf-icon-styles {
+  font-family: "pficon";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  // speak: none; // only necessary if not using the private unicode range (firstGlyph option)
+  text-decoration: none;
+  text-transform: none;
+}
+
+%pf-icon {
+  @include pf-icon-styles;
+}
+
+@function pf-icon-char($filename) {
+  $char: "";
+
+  @if $filename == add-circle-o {
+    $char: "\E001";
+  }
+
+  @if $filename == applications {
+    $char: "\E002";
+  }
+
+  @if $filename == arrow {
+    $char: "\E003";
+  }
+
+  @if $filename == asleep {
+    $char: "\E004";
+  }
+
+  @if $filename == automation {
+    $char: "\E005";
+  }
+
+  @if $filename == blueprint {
+    $char: "\E006";
+  }
+
+  @if $filename == build {
+    $char: "\E007";
+  }
+
+  @if $filename == builder-image {
+    $char: "\E008";
+  }
+
+  @if $filename == bundle {
+    $char: "\E009";
+  }
+
+  @if $filename == catalog {
+    $char: "\E00A";
+  }
+
+  @if $filename == chat {
+    $char: "\E00B";
+  }
+
+  @if $filename == close {
+    $char: "\E00C";
+  }
+
+  @if $filename == cloud-security {
+    $char: "\E00D";
+  }
+
+  @if $filename == cloud-tenant {
+    $char: "\E00E";
+  }
+
+  @if $filename == cluster {
+    $char: "\E00F";
+  }
+
+  @if $filename == connected {
+    $char: "\E010";
+  }
+
+  @if $filename == container-node {
+    $char: "\E011";
+  }
+
+  @if $filename == cpu {
+    $char: "\E012";
+  }
+
+  @if $filename == degraded {
+    $char: "\E013";
+  }
+
+  @if $filename == disconnected {
+    $char: "\E014";
+  }
+
+  @if $filename == domain {
+    $char: "\E015";
+  }
+
+  @if $filename == edit {
+    $char: "\E016";
+  }
+
+  @if $filename == enhancement {
+    $char: "\E017";
+  }
+
+  @if $filename == enterprise {
+    $char: "\E018";
+  }
+
+  @if $filename == equalizer {
+    $char: "\E019";
+  }
+
+  @if $filename == error-circle-o {
+    $char: "\E01A";
+  }
+
+  @if $filename == export {
+    $char: "\E01B";
+  }
+
+  @if $filename == filter {
+    $char: "\E01C";
+  }
+
+  @if $filename == flavor {
+    $char: "\E01D";
+  }
+
+  @if $filename == folder-close {
+    $char: "\E01E";
+  }
+
+  @if $filename == folder-open {
+    $char: "\E01F";
+  }
+
+  @if $filename == globe-route {
+    $char: "\E020";
+  }
+
+  @if $filename == help {
+    $char: "\E021";
+  }
+
+  @if $filename == history {
+    $char: "\E022";
+  }
+
+  @if $filename == home {
+    $char: "\E023";
+  }
+
+  @if $filename == import {
+    $char: "\E024";
+  }
+
+  @if $filename == in-progress {
+    $char: "\E025";
+  }
+
+  @if $filename == info {
+    $char: "\E026";
+  }
+
+  @if $filename == infrastructure {
+    $char: "\E027";
+  }
+
+  @if $filename == integration {
+    $char: "\E028";
+  }
+
+  @if $filename == key {
+    $char: "\E029";
+  }
+
+  @if $filename == locked {
+    $char: "\E02A";
+  }
+
+  @if $filename == maintenance {
+    $char: "\E02B";
+  }
+
+  @if $filename == memory {
+    $char: "\E02C";
+  }
+
+  @if $filename == messages {
+    $char: "\E02D";
+  }
+
+  @if $filename == middleware {
+    $char: "\E02E";
+  }
+
+  @if $filename == migration {
+    $char: "\E02F";
+  }
+
+  @if $filename == monitoring {
+    $char: "\E030";
+  }
+
+  @if $filename == network {
+    $char: "\E031";
+  }
+
+  @if $filename == off {
+    $char: "\E032";
+  }
+
+  @if $filename == ok {
+    $char: "\E033";
+  }
+
+  @if $filename == on-running {
+    $char: "\E034";
+  }
+
+  @if $filename == on {
+    $char: "\E035";
+  }
+
+  @if $filename == optimize {
+    $char: "\E036";
+  }
+
+  @if $filename == orders {
+    $char: "\E037";
+  }
+
+  @if $filename == os-image {
+    $char: "\E038";
+  }
+
+  @if $filename == paused {
+    $char: "\E039";
+  }
+
+  @if $filename == pending {
+    $char: "\E03A";
+  }
+
+  @if $filename == pficon-dragdrop {
+    $char: "\E03B";
+  }
+
+  @if $filename == pficon-history {
+    $char: "\E03C";
+  }
+
+  @if $filename == pficon-network-range {
+    $char: "\E03D";
+  }
+
+  @if $filename == pficon-satellite {
+    $char: "\E03E";
+  }
+
+  @if $filename == pficon-sort-common-asc {
+    $char: "\E03F";
+  }
+
+  @if $filename == pficon-sort-common-desc {
+    $char: "\E040";
+  }
+
+  @if $filename == pficon-template {
+    $char: "\E041";
+  }
+
+  @if $filename == pficon-vcenter {
+    $char: "\E042";
+  }
+
+  @if $filename == plugged {
+    $char: "\E043";
+  }
+
+  @if $filename == port {
+    $char: "\E044";
+  }
+
+  @if $filename == print {
+    $char: "\E045";
+  }
+
+  @if $filename == private {
+    $char: "\E046";
+  }
+
+  @if $filename == process-automation {
+    $char: "\E047";
+  }
+
+  @if $filename == project {
+    $char: "\E048";
+  }
+
+  @if $filename == rebalance {
+    $char: "\E049";
+  }
+
+  @if $filename == rebooting {
+    $char: "\E04A";
+  }
+
+  @if $filename == regions {
+    $char: "\E04B";
+  }
+
+  @if $filename == registry {
+    $char: "\E04C";
+  }
+
+  @if $filename == remove2 {
+    $char: "\E04D";
+  }
+
+  @if $filename == replicator {
+    $char: "\E04E";
+  }
+
+  @if $filename == repository {
+    $char: "\E04F";
+  }
+
+  @if $filename == resource-pool {
+    $char: "\E050";
+  }
+
+  @if $filename == resources-almost-empty {
+    $char: "\E051";
+  }
+
+  @if $filename == resources-almost-full {
+    $char: "\E052";
+  }
+
+  @if $filename == resources-full {
+    $char: "\E053";
+  }
+
+  @if $filename == save {
+    $char: "\E054";
+  }
+
+  @if $filename == screen {
+    $char: "\E055";
+  }
+
+  @if $filename == security {
+    $char: "\E056";
+  }
+
+  @if $filename == server-group {
+    $char: "\E057";
+  }
+
+  @if $filename == server {
+    $char: "\E058";
+  }
+
+  @if $filename == service-catalog {
+    $char: "\E059";
+  }
+
+  @if $filename == service {
+    $char: "\E05A";
+  }
+
+  @if $filename == services {
+    $char: "\E05B";
+  }
+
+  @if $filename == spinner {
+    $char: "\E05C";
+  }
+
+  @if $filename == spinner2 {
+    $char: "\E05D";
+  }
+
+  @if $filename == storage-domain {
+    $char: "\E05E";
+  }
+
+  @if $filename == tenant {
+    $char: "\E05F";
+  }
+
+  @if $filename == thumb-tack {
+    $char: "\E060";
+  }
+
+  @if $filename == topology {
+    $char: "\E061";
+  }
+
+  @if $filename == trend-down {
+    $char: "\E062";
+  }
+
+  @if $filename == trend-up {
+    $char: "\E063";
+  }
+
+  @if $filename == unknown {
+    $char: "\E064";
+  }
+
+  @if $filename == unlocked {
+    $char: "\E065";
+  }
+
+  @if $filename == unplugged {
+    $char: "\E066";
+  }
+
+  @if $filename == user {
+    $char: "\E067";
+  }
+
+  @if $filename == users {
+    $char: "\E068";
+  }
+
+  @if $filename == virtual-machine {
+    $char: "\E069";
+  }
+
+  @if $filename == volume {
+    $char: "\E06A";
+  }
+
+  @if $filename == warning-triangle {
+    $char: "\E06B";
+  }
+
+  @if $filename == zone {
+    $char: "\E06C";
+  }
+
+  @return $char;
+}
+
+@mixin pf-icon($filename, $insert: before, $extend: true) {
+  &:#{$insert} {
+    @if $extend {
+      @extend %pf-icon;
+    } @else {
+      @include pf-icon-styles;
+    }
+
+    content: pf-icon-char($filename);
+  }
+}
+
+.pf-icon-add-circle-o {
+  @include pf-icon(add-circle-o);
+}
+
+.pf-icon-applications {
+  @include pf-icon(applications);
+}
+
+.pf-icon-arrow {
+  @include pf-icon(arrow);
+}
+
+.pf-icon-asleep {
+  @include pf-icon(asleep);
+}
+
+.pf-icon-automation {
+  @include pf-icon(automation);
+}
+
+.pf-icon-blueprint {
+  @include pf-icon(blueprint);
+}
+
+.pf-icon-build {
+  @include pf-icon(build);
+}
+
+.pf-icon-builder-image {
+  @include pf-icon(builder-image);
+}
+
+.pf-icon-bundle {
+  @include pf-icon(bundle);
+}
+
+.pf-icon-catalog {
+  @include pf-icon(catalog);
+}
+
+.pf-icon-chat {
+  @include pf-icon(chat);
+}
+
+.pf-icon-close {
+  @include pf-icon(close);
+}
+
+.pf-icon-cloud-security {
+  @include pf-icon(cloud-security);
+}
+
+.pf-icon-cloud-tenant {
+  @include pf-icon(cloud-tenant);
+}
+
+.pf-icon-cluster {
+  @include pf-icon(cluster);
+}
+
+.pf-icon-connected {
+  @include pf-icon(connected);
+}
+
+.pf-icon-container-node {
+  @include pf-icon(container-node);
+}
+
+.pf-icon-cpu {
+  @include pf-icon(cpu);
+}
+
+.pf-icon-degraded {
+  @include pf-icon(degraded);
+}
+
+.pf-icon-disconnected {
+  @include pf-icon(disconnected);
+}
+
+.pf-icon-domain {
+  @include pf-icon(domain);
+}
+
+.pf-icon-edit {
+  @include pf-icon(edit);
+}
+
+.pf-icon-enhancement {
+  @include pf-icon(enhancement);
+}
+
+.pf-icon-enterprise {
+  @include pf-icon(enterprise);
+}
+
+.pf-icon-equalizer {
+  @include pf-icon(equalizer);
+}
+
+.pf-icon-error-circle-o {
+  @include pf-icon(error-circle-o);
+}
+
+.pf-icon-export {
+  @include pf-icon(export);
+}
+
+.pf-icon-filter {
+  @include pf-icon(filter);
+}
+
+.pf-icon-flavor {
+  @include pf-icon(flavor);
+}
+
+.pf-icon-folder-close {
+  @include pf-icon(folder-close);
+}
+
+.pf-icon-folder-open {
+  @include pf-icon(folder-open);
+}
+
+.pf-icon-globe-route {
+  @include pf-icon(globe-route);
+}
+
+.pf-icon-help {
+  @include pf-icon(help);
+}
+
+.pf-icon-history {
+  @include pf-icon(history);
+}
+
+.pf-icon-home {
+  @include pf-icon(home);
+}
+
+.pf-icon-import {
+  @include pf-icon(import);
+}
+
+.pf-icon-in-progress {
+  @include pf-icon(in-progress);
+}
+
+.pf-icon-info {
+  @include pf-icon(info);
+}
+
+.pf-icon-infrastructure {
+  @include pf-icon(infrastructure);
+}
+
+.pf-icon-integration {
+  @include pf-icon(integration);
+}
+
+.pf-icon-key {
+  @include pf-icon(key);
+}
+
+.pf-icon-locked {
+  @include pf-icon(locked);
+}
+
+.pf-icon-maintenance {
+  @include pf-icon(maintenance);
+}
+
+.pf-icon-memory {
+  @include pf-icon(memory);
+}
+
+.pf-icon-messages {
+  @include pf-icon(messages);
+}
+
+.pf-icon-middleware {
+  @include pf-icon(middleware);
+}
+
+.pf-icon-migration {
+  @include pf-icon(migration);
+}
+
+.pf-icon-monitoring {
+  @include pf-icon(monitoring);
+}
+
+.pf-icon-network {
+  @include pf-icon(network);
+}
+
+.pf-icon-off {
+  @include pf-icon(off);
+}
+
+.pf-icon-ok {
+  @include pf-icon(ok);
+}
+
+.pf-icon-on-running {
+  @include pf-icon(on-running);
+}
+
+.pf-icon-on {
+  @include pf-icon(on);
+}
+
+.pf-icon-optimize {
+  @include pf-icon(optimize);
+}
+
+.pf-icon-orders {
+  @include pf-icon(orders);
+}
+
+.pf-icon-os-image {
+  @include pf-icon(os-image);
+}
+
+.pf-icon-paused {
+  @include pf-icon(paused);
+}
+
+.pf-icon-pending {
+  @include pf-icon(pending);
+}
+
+.pf-icon-pficon-dragdrop {
+  @include pf-icon(pficon-dragdrop);
+}
+
+.pf-icon-pficon-history {
+  @include pf-icon(pficon-history);
+}
+
+.pf-icon-pficon-network-range {
+  @include pf-icon(pficon-network-range);
+}
+
+.pf-icon-pficon-satellite {
+  @include pf-icon(pficon-satellite);
+}
+
+.pf-icon-pficon-sort-common-asc {
+  @include pf-icon(pficon-sort-common-asc);
+}
+
+.pf-icon-pficon-sort-common-desc {
+  @include pf-icon(pficon-sort-common-desc);
+}
+
+.pf-icon-pficon-template {
+  @include pf-icon(pficon-template);
+}
+
+.pf-icon-pficon-vcenter {
+  @include pf-icon(pficon-vcenter);
+}
+
+.pf-icon-plugged {
+  @include pf-icon(plugged);
+}
+
+.pf-icon-port {
+  @include pf-icon(port);
+}
+
+.pf-icon-print {
+  @include pf-icon(print);
+}
+
+.pf-icon-private {
+  @include pf-icon(private);
+}
+
+.pf-icon-process-automation {
+  @include pf-icon(process-automation);
+}
+
+.pf-icon-project {
+  @include pf-icon(project);
+}
+
+.pf-icon-rebalance {
+  @include pf-icon(rebalance);
+}
+
+.pf-icon-rebooting {
+  @include pf-icon(rebooting);
+}
+
+.pf-icon-regions {
+  @include pf-icon(regions);
+}
+
+.pf-icon-registry {
+  @include pf-icon(registry);
+}
+
+.pf-icon-remove2 {
+  @include pf-icon(remove2);
+}
+
+.pf-icon-replicator {
+  @include pf-icon(replicator);
+}
+
+.pf-icon-repository {
+  @include pf-icon(repository);
+}
+
+.pf-icon-resource-pool {
+  @include pf-icon(resource-pool);
+}
+
+.pf-icon-resources-almost-empty {
+  @include pf-icon(resources-almost-empty);
+}
+
+.pf-icon-resources-almost-full {
+  @include pf-icon(resources-almost-full);
+}
+
+.pf-icon-resources-full {
+  @include pf-icon(resources-full);
+}
+
+.pf-icon-save {
+  @include pf-icon(save);
+}
+
+.pf-icon-screen {
+  @include pf-icon(screen);
+}
+
+.pf-icon-security {
+  @include pf-icon(security);
+}
+
+.pf-icon-server-group {
+  @include pf-icon(server-group);
+}
+
+.pf-icon-server {
+  @include pf-icon(server);
+}
+
+.pf-icon-service-catalog {
+  @include pf-icon(service-catalog);
+}
+
+.pf-icon-service {
+  @include pf-icon(service);
+}
+
+.pf-icon-services {
+  @include pf-icon(services);
+}
+
+.pf-icon-spinner {
+  @include pf-icon(spinner);
+}
+
+.pf-icon-spinner2 {
+  @include pf-icon(spinner2);
+}
+
+.pf-icon-storage-domain {
+  @include pf-icon(storage-domain);
+}
+
+.pf-icon-tenant {
+  @include pf-icon(tenant);
+}
+
+.pf-icon-thumb-tack {
+  @include pf-icon(thumb-tack);
+}
+
+.pf-icon-topology {
+  @include pf-icon(topology);
+}
+
+.pf-icon-trend-down {
+  @include pf-icon(trend-down);
+}
+
+.pf-icon-trend-up {
+  @include pf-icon(trend-up);
+}
+
+.pf-icon-unknown {
+  @include pf-icon(unknown);
+}
+
+.pf-icon-unlocked {
+  @include pf-icon(unlocked);
+}
+
+.pf-icon-unplugged {
+  @include pf-icon(unplugged);
+}
+
+.pf-icon-user {
+  @include pf-icon(user);
+}
+
+.pf-icon-users {
+  @include pf-icon(users);
+}
+
+.pf-icon-virtual-machine {
+  @include pf-icon(virtual-machine);
+}
+
+.pf-icon-volume {
+  @include pf-icon(volume);
+}
+
+.pf-icon-warning-triangle {
+  @include pf-icon(warning-triangle);
+}
+
+.pf-icon-zone {
+  @include pf-icon(zone);
+}

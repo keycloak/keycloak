@@ -1,0 +1,1 @@
+export default {"name":"--pf-c-dropdown__toggle--m-split-button__toggle-check__input--Transform","value":"translateY(-0.0625rem)","var":"var(--pf-c-dropdown__toggle--m-split-button__toggle-check__input--Transform)"}

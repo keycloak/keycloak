@@ -1,0 +1,22 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ClipboardCopyToggle should match snapshot (auto-generated) 1`] = `
+<button
+  aria-controls="string string"
+  aria-expanded={false}
+  aria-labelledby="string string"
+  className="pf-c-clipboard-copy__group-toggle ''"
+  id="string"
+  onClick={[Function]}
+  type="button"
+>
+  <AngleRightIcon
+    aria-hidden="true"
+    className="pf-c-clipboard-copy__group-toggle-icon"
+    color="currentColor"
+    noVerticalAlign={false}
+    size="sm"
+    title={null}
+  />
+</button>
+`;

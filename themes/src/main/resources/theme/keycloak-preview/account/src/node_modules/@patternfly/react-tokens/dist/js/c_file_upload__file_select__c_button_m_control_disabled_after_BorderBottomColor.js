@@ -1,0 +1,1 @@
+module.exports = {"name":"--pf-c-file-upload__file-select__c-button--m-control--disabled--after--BorderBottomColor","value":"#8a8d90","var":"var(--pf-c-file-upload__file-select__c-button--m-control--disabled--after--BorderBottomColor)"}

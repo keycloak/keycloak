@@ -1,0 +1,11 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`DataListAction should match snapshot (auto-generated) 1`] = `
+<div
+  className="pf-c-data-list__item-action ''"
+>
+  <div>
+    ReactNode
+  </div>
+</div>
+`;

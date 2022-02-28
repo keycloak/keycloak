@@ -1,0 +1,56 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`check loginpage example against snapshot 1`] = `
+<Fragment>
+  <BackgroundImage
+    alt="Pf-background"
+    src="Background src"
+  />
+  <Login
+    className=""
+    footer={
+      <LoginFooter>
+        <p>
+          This is placeholder text only.
+        </p>
+        <List
+          variant="inline"
+        >
+          English
+        </List>
+      </LoginFooter>
+    }
+    header={
+      <LoginHeader
+        headerBrand={
+          <React.Fragment>
+            <Brand
+              alt="Pf-logo"
+              src="Brand src"
+            />
+          </React.Fragment>
+        }
+      />
+    }
+  >
+    <LoginMainHeader
+      title="Log into your account"
+    />
+    <LoginMainBody />
+    <LoginMainFooter
+      forgotCredentials={null}
+      signUpForAccountMessage={
+        <React.Fragment>
+          Login to your account 
+          <a
+            href="https://www.patternfly.org"
+          >
+            Need an account?
+          </a>
+        </React.Fragment>
+      }
+      socialMediaLoginContent="Footer"
+    />
+  </Login>
+</Fragment>
+`;

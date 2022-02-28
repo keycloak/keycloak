@@ -1,0 +1,235 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Breadcrumb component should render breadcrumb with aria-label 1`] = `
+<Component
+  aria-label="custom label"
+>
+  <ComponentWithOuia
+    component={[Function]}
+    componentProps={
+      Object {
+        "aria-label": "custom label",
+      }
+    }
+    consumerContext={null}
+  >
+    <Breadcrumb
+      aria-label="custom label"
+      ouiaContext={
+        Object {
+          "isOuia": false,
+          "ouiaId": null,
+        }
+      }
+    >
+      <nav
+        aria-label="custom label"
+        className="pf-c-breadcrumb"
+      >
+        <ol
+          className="pf-c-breadcrumb__list"
+        />
+      </nav>
+    </Breadcrumb>
+  </ComponentWithOuia>
+</Component>
+`;
+
+exports[`Breadcrumb component should render breadcrumb with children 1`] = `
+<Component>
+  <ComponentWithOuia
+    component={[Function]}
+    componentProps={
+      Object {
+        "children": Array [
+          <BreadcrumbItem
+            to="#"
+          >
+            Item 1
+          </BreadcrumbItem>,
+          " ",
+          <BreadcrumbItem
+            to="#"
+          >
+            Item 1
+          </BreadcrumbItem>,
+        ],
+      }
+    }
+    consumerContext={null}
+  >
+    <Breadcrumb
+      ouiaContext={
+        Object {
+          "isOuia": false,
+          "ouiaId": null,
+        }
+      }
+    >
+      <nav
+        aria-label="Breadcrumb"
+        className="pf-c-breadcrumb"
+      >
+        <ol
+          className="pf-c-breadcrumb__list"
+        >
+          <BreadcrumbItem
+            to="#"
+          >
+            <li
+              className="pf-c-breadcrumb__item"
+            >
+              <a
+                className="pf-c-breadcrumb__link"
+                href="#"
+                target={null}
+              >
+                Item 1
+              </a>
+              <span
+                className="pf-c-breadcrumb__item-divider"
+              >
+                <AngleRightIcon
+                  color="currentColor"
+                  noVerticalAlign={false}
+                  size="sm"
+                  title={null}
+                >
+                  <svg
+                    aria-hidden={true}
+                    aria-labelledby={null}
+                    fill="currentColor"
+                    height="1em"
+                    role="img"
+                    style={
+                      Object {
+                        "verticalAlign": "-0.125em",
+                      }
+                    }
+                    viewBox="0 0 256 512"
+                    width="1em"
+                  >
+                    <path
+                      d="M224.3 273l-136 136c-9.4 9.4-24.6 9.4-33.9 0l-22.6-22.6c-9.4-9.4-9.4-24.6 0-33.9l96.4-96.4-96.4-96.4c-9.4-9.4-9.4-24.6 0-33.9L54.3 103c9.4-9.4 24.6-9.4 33.9 0l136 136c9.5 9.4 9.5 24.6.1 34z"
+                      transform=""
+                    />
+                  </svg>
+                </AngleRightIcon>
+              </span>
+            </li>
+          </BreadcrumbItem>
+           
+          <BreadcrumbItem
+            to="#"
+          >
+            <li
+              className="pf-c-breadcrumb__item"
+            >
+              <a
+                className="pf-c-breadcrumb__link"
+                href="#"
+                target={null}
+              >
+                Item 1
+              </a>
+              <span
+                className="pf-c-breadcrumb__item-divider"
+              >
+                <AngleRightIcon
+                  color="currentColor"
+                  noVerticalAlign={false}
+                  size="sm"
+                  title={null}
+                >
+                  <svg
+                    aria-hidden={true}
+                    aria-labelledby={null}
+                    fill="currentColor"
+                    height="1em"
+                    role="img"
+                    style={
+                      Object {
+                        "verticalAlign": "-0.125em",
+                      }
+                    }
+                    viewBox="0 0 256 512"
+                    width="1em"
+                  >
+                    <path
+                      d="M224.3 273l-136 136c-9.4 9.4-24.6 9.4-33.9 0l-22.6-22.6c-9.4-9.4-9.4-24.6 0-33.9l96.4-96.4-96.4-96.4c-9.4-9.4-9.4-24.6 0-33.9L54.3 103c9.4-9.4 24.6-9.4 33.9 0l136 136c9.5 9.4 9.5 24.6.1 34z"
+                      transform=""
+                    />
+                  </svg>
+                </AngleRightIcon>
+              </span>
+            </li>
+          </BreadcrumbItem>
+        </ol>
+      </nav>
+    </Breadcrumb>
+  </ComponentWithOuia>
+</Component>
+`;
+
+exports[`Breadcrumb component should render breadcrumb with className 1`] = `
+<Component
+  className="className"
+>
+  <ComponentWithOuia
+    component={[Function]}
+    componentProps={
+      Object {
+        "className": "className",
+      }
+    }
+    consumerContext={null}
+  >
+    <Breadcrumb
+      className="className"
+      ouiaContext={
+        Object {
+          "isOuia": false,
+          "ouiaId": null,
+        }
+      }
+    >
+      <nav
+        aria-label="Breadcrumb"
+        className="pf-c-breadcrumb className"
+      >
+        <ol
+          className="pf-c-breadcrumb__list"
+        />
+      </nav>
+    </Breadcrumb>
+  </ComponentWithOuia>
+</Component>
+`;
+
+exports[`Breadcrumb component should render default breadcrumb 1`] = `
+<Component>
+  <ComponentWithOuia
+    component={[Function]}
+    componentProps={Object {}}
+    consumerContext={null}
+  >
+    <Breadcrumb
+      ouiaContext={
+        Object {
+          "isOuia": false,
+          "ouiaId": null,
+        }
+      }
+    >
+      <nav
+        aria-label="Breadcrumb"
+        className="pf-c-breadcrumb"
+      >
+        <ol
+          className="pf-c-breadcrumb__list"
+        />
+      </nav>
+    </Breadcrumb>
+  </ComponentWithOuia>
+</Component>
+`;

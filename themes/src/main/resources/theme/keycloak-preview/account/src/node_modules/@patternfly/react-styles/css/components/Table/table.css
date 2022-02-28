@@ -1,0 +1,421 @@
+.pf-c-table {
+  --pf-global--Color--100: var(--pf-global--Color--dark-100);
+  --pf-global--Color--200: var(--pf-global--Color--dark-200);
+  --pf-global--BorderColor--100: var(--pf-global--BorderColor--dark-100);
+  --pf-global--primary-color--100: var(--pf-global--primary-color--dark-100);
+  --pf-global--link--Color: var(--pf-global--link--Color--dark);
+  --pf-global--link--Color--hover: var(--pf-global--link--Color--dark--hover);
+  --pf-global--BackgroundColor--100: var(--pf-global--BackgroundColor--light-100); }
+
+.pf-c-table tr > * {
+  --pf-hidden-visible--visible--Visibility: visible;
+  --pf-hidden-visible--hidden--Display: none;
+  --pf-hidden-visible--hidden--Visibility: hidden;
+  --pf-hidden-visible--Display: var(--pf-hidden-visible--visible--Display);
+  --pf-hidden-visible--Visibility: var(--pf-hidden-visible--visible--Visibility);
+  display: var(--pf-hidden-visible--Display);
+  visibility: var(--pf-hidden-visible--Visibility); }
+  .pf-c-table tr > .pf-m-hidden {
+    --pf-hidden-visible--Display: var(--pf-hidden-visible--hidden--Display);
+    --pf-hidden-visible--Visibility: var(--pf-hidden-visible--hidden--Visibility); }
+  @media screen and (min-width: 576px) {
+    .pf-c-table tr > .pf-m-hidden-on-sm {
+      --pf-hidden-visible--Display: var(--pf-hidden-visible--hidden--Display);
+      --pf-hidden-visible--Visibility: var(--pf-hidden-visible--hidden--Visibility); }
+    .pf-c-table tr > .pf-m-visible-on-sm {
+      --pf-hidden-visible--Display: var(--pf-hidden-visible--visible--Display);
+      --pf-hidden-visible--Visibility: var(--pf-hidden-visible--visible--Visibility); } }
+  @media screen and (min-width: 768px) {
+    .pf-c-table tr > .pf-m-hidden-on-md {
+      --pf-hidden-visible--Display: var(--pf-hidden-visible--hidden--Display);
+      --pf-hidden-visible--Visibility: var(--pf-hidden-visible--hidden--Visibility); }
+    .pf-c-table tr > .pf-m-visible-on-md {
+      --pf-hidden-visible--Display: var(--pf-hidden-visible--visible--Display);
+      --pf-hidden-visible--Visibility: var(--pf-hidden-visible--visible--Visibility); } }
+  @media screen and (min-width: 992px) {
+    .pf-c-table tr > .pf-m-hidden-on-lg {
+      --pf-hidden-visible--Display: var(--pf-hidden-visible--hidden--Display);
+      --pf-hidden-visible--Visibility: var(--pf-hidden-visible--hidden--Visibility); }
+    .pf-c-table tr > .pf-m-visible-on-lg {
+      --pf-hidden-visible--Display: var(--pf-hidden-visible--visible--Display);
+      --pf-hidden-visible--Visibility: var(--pf-hidden-visible--visible--Visibility); } }
+  @media screen and (min-width: 1200px) {
+    .pf-c-table tr > .pf-m-hidden-on-xl {
+      --pf-hidden-visible--Display: var(--pf-hidden-visible--hidden--Display);
+      --pf-hidden-visible--Visibility: var(--pf-hidden-visible--hidden--Visibility); }
+    .pf-c-table tr > .pf-m-visible-on-xl {
+      --pf-hidden-visible--Display: var(--pf-hidden-visible--visible--Display);
+      --pf-hidden-visible--Visibility: var(--pf-hidden-visible--visible--Visibility); } }
+  @media screen and (min-width: 1450px) {
+    .pf-c-table tr > .pf-m-hidden-on-2xl {
+      --pf-hidden-visible--Display: var(--pf-hidden-visible--hidden--Display);
+      --pf-hidden-visible--Visibility: var(--pf-hidden-visible--hidden--Visibility); }
+    .pf-c-table tr > .pf-m-visible-on-2xl {
+      --pf-hidden-visible--Display: var(--pf-hidden-visible--visible--Display);
+      --pf-hidden-visible--Visibility: var(--pf-hidden-visible--visible--Visibility); } }
+
+.pf-c-table {
+  --pf-c-table--BackgroundColor: var(--pf-global--BackgroundColor--100);
+  --pf-c-table--BorderColor: var(--pf-global--BorderColor--100);
+  --pf-c-table--BorderWidth: var(--pf-global--BorderWidth--sm);
+  --pf-c-table--FontWeight: var(--pf-global--FontWeight--normal);
+  --pf-c-table-caption--FontSize: var(--pf-global--FontSize--sm);
+  --pf-c-table-caption--Color: var(--pf-global--Color--200);
+  --pf-c-table-caption--PaddingTop: var(--pf-global--spacer--md);
+  --pf-c-table-caption--PaddingRight: var(--pf-global--spacer--lg);
+  --pf-c-table-caption--md--PaddingRight: var(--pf-global--spacer--md);
+  --pf-c-table-caption--PaddingBottom: var(--pf-global--spacer--md);
+  --pf-c-table-caption--PaddingLeft: var(--pf-global--spacer--lg);
+  --pf-c-table-caption--md--PaddingLeft: var(--pf-global--spacer--md);
+  --pf-c-table-thead--FontSize: var(--pf-global--FontSize--sm);
+  --pf-c-table-thead--FontWeight: var(--pf-global--FontWeight--bold);
+  --pf-c-table-thead-cell--PaddingTop: var(--pf-global--spacer--md);
+  --pf-c-table-thead-cell--PaddingBottom: var(--pf-global--spacer--md);
+  --pf-c-table-cell--hidden-visible--Display: table-cell;
+  --pf-c-table-tbody-cell--PaddingTop: var(--pf-global--spacer--lg);
+  --pf-c-table-tbody-cell--PaddingBottom: var(--pf-global--spacer--lg);
+  --pf-c-table-cell--PaddingTop: var(--pf-global--spacer--md);
+  --pf-c-table-cell--PaddingRight: var(--pf-global--spacer--md);
+  --pf-c-table-cell--PaddingBottom: var(--pf-global--spacer--md);
+  --pf-c-table-cell--PaddingLeft: var(--pf-global--spacer--md);
+  --pf-c-table-cell--FontSize: var(--pf-global--FontSize--md);
+  --pf-c-table-cell--first-last-child--PaddingLeft: var(--pf-global--spacer--lg);
+  --pf-c-table-cell--first-last-child--PaddingRight: var(--pf-global--spacer--lg);
+  --pf-c-table__toggle--c-button--MarginTop: calc(0.375rem * -1);
+  --pf-c-table__toggle--c-button__toggle-icon--Transform: rotate(270deg);
+  --pf-c-table__toggle--c-button__toggle-icon--Transition: .2s ease-in 0s;
+  --pf-c-table__toggle--c-button--m-expanded__toggle-icon--Transform: rotate(360deg);
+  --pf-c-table--m-compact__toggle--PaddingTop: 0;
+  --pf-c-table--m-compact__toggle--PaddingBottom: 0;
+  --pf-c-table__check--input--MarginTop: 0.1875rem;
+  --pf-c-table__check--input--FontSize: var(--pf-global--FontSize--md);
+  --pf-c-table__action--PaddingTop: 0;
+  --pf-c-table__action--PaddingRight: 0;
+  --pf-c-table__action--PaddingBottom: 0;
+  --pf-c-table__action--PaddingLeft: 0;
+  --pf-c-table__inline-edit-action--PaddingTop: 0;
+  --pf-c-table__inline-edit-action--PaddingRight: 0;
+  --pf-c-table__inline-edit-action--PaddingBottom: 0;
+  --pf-c-table__inline-edit-action--PaddingLeft: 0;
+  --pf-c-table__expandable-row--Transition: var(--pf-global--Transition);
+  --pf-c-table__expandable-row--before--Width: var(--pf-global--BorderWidth--lg);
+  --pf-c-table__expandable-row--before--BackgroundColor: var(--pf-global--active-color--100);
+  --pf-c-table__expandable-row--before--ZIndex: var(--pf-global--ZIndex--sm);
+  --pf-c-table__expandable-row--before--Top: calc(var(--pf-c-table--BorderWidth) * -1);
+  --pf-c-table__expandable-row--before--Bottom: calc(var(--pf-c-table--BorderWidth) * -1);
+  --pf-c-table__expandable-row--MaxHeight: 28.125rem;
+  --pf-c-table__expandable-row-content--Transition: var(--pf-global--Transition);
+  --pf-c-table__expandable-row-content--PaddingTop: var(--pf-global--spacer--lg);
+  --pf-c-table__expandable-row-content--PaddingBottom: var(--pf-global--spacer--lg);
+  --pf-c-table__sort-indicator--MarginLeft: var(--pf-global--spacer--md);
+  --pf-c-table__sort-indicator--Color: var(--pf-global--disabled-color--200);
+  --pf-c-table__sort-indicator--hover--Color: var(--pf-global--Color--100);
+  --pf-c-table__sort--c-button--Color: var(--pf-global--Color--100);
+  --pf-c-table__sort-indicator--LineHeight: var(--pf-c-button--LineHeight);
+  --pf-c-table__icon-inline--MarginRight: var(--pf-global--spacer--sm);
+  --pf-c-table--nested--first-last-child--PaddingRight: var(--pf-global--spacer--3xl);
+  --pf-c-table--nested--first-last-child--PaddingLeft: var(--pf-global--spacer--3xl);
+  --pf-c-table--m-compact-th--PaddingTop: var(--pf-global--spacer--md);
+  --pf-c-table--m-compact-th--PaddingBottom: var(--pf-global--spacer--md);
+  --pf-c-table--m-compact-cell--PaddingTop: var(--pf-global--spacer--sm);
+  --pf-c-table--m-compact-cell--PaddingRight: var(--pf-global--spacer--sm);
+  --pf-c-table--m-compact-cell--PaddingBottom: var(--pf-global--spacer--sm);
+  --pf-c-table--m-compact-cell--PaddingLeft: var(--pf-global--spacer--sm);
+  --pf-c-table--m-compact-cell--first-last-child--PaddingLeft: var(--pf-global--spacer--lg);
+  --pf-c-table--m-compact-cell--first-last-child--PaddingRight: var(--pf-global--spacer--lg);
+  --pf-c-table--m-compact--FontSize: var(--pf-global--FontSize--sm);
+  --pf-c-table--m-compact__expandable-row-content--PaddingTop: var(--pf-global--spacer--lg);
+  --pf-c-table--m-compact__expandable-row-content--PaddingRight: var(--pf-global--spacer--lg);
+  --pf-c-table--m-compact__expandable-row-content--PaddingBottom: var(--pf-global--spacer--lg);
+  --pf-c-table--m-compact__expandable-row-content--PaddingLeft: var(--pf-global--spacer--lg);
+  --pf-c-table__compound-expansion-toggle--BorderTop--BorderWidth: var(--pf-global--BorderWidth--lg);
+  --pf-c-table__compound-expansion-toggle--BorderTop--BorderColor: var(--pf-global--primary-color--100);
+  --pf-c-table__compound-expansion-toggle--BorderRight--BorderWidth: var(--pf-global--BorderWidth--sm);
+  --pf-c-table__compound-expansion-toggle--BorderLeft--BorderWidth: var(--pf-global--BorderWidth--sm);
+  --pf-c-table__compound-expansion-toggle--BorderRight--BorderColor: var(--pf-global--BorderColor--100);
+  --pf-c-table__compound-expansion-toggle--BorderLeft--BorderColor: var(--pf-global--BorderColor--100);
+  --pf-c-table__compound-expansion-toggle--BorderBottom--BorderWidth: var(--pf-global--BorderWidth--sm);
+  --pf-c-table__compound-expansion-toggle--BorderBottom--BorderColor: var(--pf-global--BackgroundColor--light-100);
+  --pf-c-table__expandable-row--m-expanded--BoxShadow: var(--pf-global--BoxShadow--md-bottom);
+  --pf-c-table__expandable-row--m-expanded--BorderBottomColor: var(--pf-global--BackgroundColor--light-100);
+  --pf-c-table__sort--sorted--Color: var(--pf-global--active-color--100);
+  color: var(--pf-global--Color--100);
+  width: 100%;
+  background-color: var(--pf-c-table--BackgroundColor); }
+  @media screen and (max-width: 768px) {
+    .pf-c-table {
+      --pf-c-table-caption--PaddingRight: var(--pf-c-table-caption--md--PaddingRight);
+      --pf-c-table-caption--PaddingLeft: var(--pf-c-table-caption--md--PaddingLeft); } }
+  .pf-c-table td {
+    word-break: break-word; }
+  .pf-c-table tr:not(.pf-c-table__expandable-row) {
+    height: 1px;
+    border-bottom: var(--pf-c-table--BorderWidth) solid var(--pf-c-table--BorderColor); }
+    .pf-c-table tr:not(.pf-c-table__expandable-row).pf-m-height-auto {
+      height: auto; }
+  .pf-c-table tr > * {
+    --pf-hidden-visible--visible--Display: var(--pf-c-table-cell--hidden-visible--Display);
+    position: relative;
+    height: inherit;
+    padding: var(--pf-c-table-cell--PaddingTop) var(--pf-c-table-cell--PaddingRight) var(--pf-c-table-cell--PaddingBottom) var(--pf-c-table-cell--PaddingLeft);
+    font-size: var(--pf-c-table-cell--FontSize);
+    font-weight: var(--pf-c-table--FontWeight);
+    vertical-align: baseline; }
+    .pf-c-table tr > *:first-child {
+      --pf-c-table-cell--PaddingLeft: var(--pf-c-table-cell--first-last-child--PaddingLeft); }
+    .pf-c-table tr > *:last-child {
+      --pf-c-table-cell--PaddingRight: var(--pf-c-table-cell--first-last-child--PaddingRight); }
+    .pf-c-table tr > *.pf-m-center {
+      text-align: center; }
+  .pf-c-table caption {
+    padding-top: var(--pf-c-table-caption--PaddingTop);
+    padding-bottom: var(--pf-c-table-caption--PaddingBottom);
+    padding-left: var(--pf-c-table-caption--PaddingLeft);
+    font-size: var(--pf-c-table-caption--FontSize);
+    color: var(--pf-c-table-caption--Color);
+    text-align: left;
+    background-color: var(--pf-c-table--BackgroundColor); }
+  .pf-c-table thead {
+    --pf-c-table-cell--PaddingTop: var(--pf-c-table-thead-cell--PaddingTop);
+    --pf-c-table-cell--PaddingBottom: var(--pf-c-table-thead-cell--PaddingBottom);
+    --pf-c-table-cell--FontSize: var(--pf-c-table-thead--FontSize);
+    --pf-c-table--FontWeight: var(--pf-c-table-thead--FontWeight);
+    white-space: nowrap;
+    vertical-align: top; }
+  .pf-c-table tbody {
+    --pf-c-table-cell--PaddingTop: var(--pf-c-table-tbody-cell--PaddingTop);
+    --pf-c-table-cell--PaddingBottom: var(--pf-c-table-tbody-cell--PaddingBottom); }
+    .pf-c-table tbody > tr > :first-child::before {
+      position: absolute;
+      top: var(--pf-c-table__expandable-row--before--Top);
+      bottom: var(--pf-c-table__expandable-row--before--Bottom);
+      left: 0;
+      width: var(--pf-c-table__expandable-row--before--Width);
+      content: "";
+      background-color: transparent; }
+    .pf-c-table tbody.pf-m-expanded > tr > :not(th):first-child::before {
+      background-color: var(--pf-c-table__expandable-row--before--BackgroundColor); }
+  .pf-c-table .pf-c-table__sort, .pf-c-table .pf-c-table__sort:first-child, .pf-c-table .pf-c-table__sort:last-child,
+  .pf-c-table .pf-c-table__compound-expansion-toggle,
+  .pf-c-table .pf-c-table__compound-expansion-toggle:first-child,
+  .pf-c-table .pf-c-table__compound-expansion-toggle:last-child {
+    padding: 0; }
+  .pf-c-table .pf-c-table__sort .pf-c-button,
+  .pf-c-table .pf-c-table__compound-expansion-toggle .pf-c-button {
+    width: 100%;
+    padding: var(--pf-c-table-cell--PaddingTop) var(--pf-c-table-cell--PaddingRight) var(--pf-c-table-cell--PaddingBottom) var(--pf-c-table-cell--PaddingLeft);
+    font-size: inherit;
+    font-weight: inherit;
+    text-align: left; }
+
+.pf-c-table .pf-c-table__toggle,
+.pf-c-table .pf-c-table__check,
+.pf-c-table .pf-c-table__action,
+.pf-c-table .pf-c-table__inline-edit-action {
+  --pf-c-table-cell--PaddingBottom: 0;
+  width: 1%; }
+
+.pf-c-table__toggle {
+  --pf-c-table-cell--PaddingRight: 0;
+  --pf-c-table-cell--PaddingLeft: 0;
+  vertical-align: top; }
+  .pf-c-table__toggle .pf-c-button {
+    margin-top: var(--pf-c-table__toggle--c-button--MarginTop); }
+    .pf-c-table__toggle .pf-c-button > * {
+      transition: var(--pf-c-table__toggle--c-button__toggle-icon--Transition);
+      transform: var(--pf-c-table__toggle--c-button__toggle-icon--Transform); }
+    .pf-c-table__toggle .pf-c-button.pf-m-expanded > * {
+      transform: var(--pf-c-table__toggle--c-button--m-expanded__toggle-icon--Transform); }
+  .pf-c-table__toggle svg {
+    pointer-events: none; }
+
+.pf-c-table__check {
+  vertical-align: top;
+  --pf-c-table-cell--FontSize: var(--pf-c-table__check--input--FontSize); }
+  .pf-c-table__check > * {
+    margin-top: var(--pf-c-table__check--input--MarginTop);
+    vertical-align: top; }
+
+.pf-c-table__action,
+.pf-c-table__inline-edit-action {
+  --pf-c-table-cell--PaddingTop: 0;
+  --pf-c-table-cell--PaddingRight: var(--pf-c-table__action--PaddingRight);
+  --pf-c-table-cell--PaddingBottom: 0;
+  --pf-c-table-cell--PaddingLeft: var(--pf-c-table__action--PaddingLeft);
+  padding-top: 0;
+  padding-bottom: 0;
+  vertical-align: middle; }
+
+.pf-c-table__inline-edit-action {
+  --pf-c-table-cell--PaddingLeft: 0;
+  --pf-c-table-cell--PaddingRight: 0;
+  text-align: right; }
+
+.pf-c-table__compound-expansion-toggle {
+  position: relative; }
+  .pf-c-table__compound-expansion-toggle.pf-m-expanded {
+    border-bottom: var(--pf-c-table__compound-expansion-toggle--BorderBottom--BorderWidth) solid var(--pf-c-table__compound-expansion-toggle--BorderBottom--BorderColor); }
+  .pf-c-table__compound-expansion-toggle.pf-m-expanded .pf-c-button::before, .pf-c-table__compound-expansion-toggle:hover .pf-c-button::before {
+    position: absolute;
+    top: calc(var(--pf-c-table--BorderWidth) * -1);
+    right: 0;
+    left: 0;
+    content: "";
+    border-top: var(--pf-c-table__compound-expansion-toggle--BorderTop--BorderWidth) solid var(--pf-c-table__compound-expansion-toggle--BorderTop--BorderColor); }
+  .pf-c-table__compound-expansion-toggle.pf-m-expanded .pf-c-button::after, .pf-c-table__compound-expansion-toggle:hover .pf-c-button::after {
+    bottom: calc(var(--pf-c-table--BorderWidth) * -1);
+    border-right: var(--pf-c-table__compound-expansion-toggle--BorderRight--BorderWidth) solid var(--pf-c-table__compound-expansion-toggle--BorderRight--BorderColor);
+    border-left: var(--pf-c-table__compound-expansion-toggle--BorderLeft--BorderWidth) solid var(--pf-c-table__compound-expansion-toggle--BorderLeft--BorderColor); }
+  .pf-c-table__compound-expansion-toggle .pf-c-button {
+    --pf-c-button--BorderRadius: 0;
+    position: static; }
+
+.pf-c-table__sort .pf-c-button.pf-m-plain {
+  color: var(--pf-c-table__sort--c-button--Color); }
+
+.pf-c-table__sort.pf-m-wrap .pf-c-button {
+  display: flex;
+  white-space: normal; }
+
+.pf-c-table__sort.pf-m-selected .pf-c-button,
+.pf-c-table__sort.pf-m-selected .pf-c-table__sort-indicator {
+  color: var(--pf-c-table__sort--sorted--Color); }
+
+.pf-c-table__sort:not(.pf-m-selected):hover .pf-c-table__sort-indicator {
+  color: var(--pf-c-table__sort-indicator--hover--Color); }
+
+.pf-c-table__sort-indicator {
+  align-self: flex-start;
+  margin-left: var(--pf-c-table__sort-indicator--MarginLeft);
+  line-height: var(--pf-c-table__sort-indicator--LineHeight);
+  color: var(--pf-c-table__sort-indicator--Color);
+  pointer-events: none; }
+
+.pf-c-table__expandable-row {
+  --pf-c-table-cell--PaddingTop: 0;
+  --pf-c-table-cell--PaddingBottom: 0;
+  position: relative;
+  border-bottom: 0 solid transparent;
+  box-shadow: 0 0 0 0 transparent; }
+  .pf-c-table__expandable-row,
+  .pf-c-table__expandable-row td:first-child::before {
+    transition: var(--pf-c-table__expandable-row--Transition); }
+  .pf-c-table__expandable-row td.pf-m-no-padding {
+    padding: 0 0 0 var(--pf-c-table__expandable-row--before--Width); }
+    .pf-c-table__expandable-row td.pf-m-no-padding .pf-c-table__expandable-row-content {
+      padding: 0; }
+  .pf-c-table__expandable-row .pf-c-table__expandable-row-content {
+    padding-top: var(--pf-c-table__expandable-row-content--PaddingTop);
+    padding-bottom: var(--pf-c-table__expandable-row-content--PaddingBottom); }
+  .pf-c-table__expandable-row.pf-m-expanded {
+    border-bottom-color: var(--pf-c-table__expandable-row--m-expanded--BorderBottomColor);
+    border-bottom-width: var(--pf-c-table--BorderWidth);
+    box-shadow: var(--pf-c-table__expandable-row--m-expanded--BoxShadow); }
+  .pf-c-table__expandable-row:not(.pf-m-expanded) {
+    display: none;
+    visibility: hidden; }
+
+.pf-c-table .pf-c-table tr > *:first-child {
+  --pf-c-table-cell--PaddingLeft: var(--pf-c-table--nested--first-last-child--PaddingLeft); }
+
+.pf-c-table .pf-c-table tr > *:last-child {
+  --pf-c-table-cell--PaddingRight: var(--pf-c-table--nested--first-last-child--PaddingRight); }
+
+.pf-c-table.pf-m-compact {
+  --pf-c-table-cell--FontSize: var(--pf-c-table--m-compact--FontSize); }
+  .pf-c-table.pf-m-compact.pf-m-no-border-rows:not(.pf-m-expandable) tbody {
+    --pf-c-table--BorderWidth: 0;
+    --pf-c-table--BorderColor: transparent; }
+    .pf-c-table.pf-m-compact.pf-m-no-border-rows:not(.pf-m-expandable) tbody tr:first-child > * {
+      --pf-c-table-cell--PaddingTop: calc(var(--pf-c-table--m-compact-cell--PaddingTop) * 2); }
+    .pf-c-table.pf-m-compact.pf-m-no-border-rows:not(.pf-m-expandable) tbody tr:last-child > * {
+      --pf-c-table-cell--PaddingBottom: calc(var(--pf-c-table--m-compact-cell--PaddingBottom) * 2); }
+  .pf-c-table.pf-m-compact tr {
+    --pf-c-table-cell--PaddingLeft: var(--pf-c-table--m-compact-cell--PaddingLeft);
+    --pf-c-table-cell--PaddingRight: var(--pf-c-table--m-compact-cell--PaddingRight); }
+    .pf-c-table.pf-m-compact tr:not(.pf-c-table__expandable-row) {
+      --pf-c-table-cell--FontSize: var(--pf-c-table--m-compact--FontSize);
+      --pf-c-table-cell--PaddingTop: var(--pf-c-table--m-compact-cell--PaddingTop);
+      --pf-c-table-cell--PaddingBottom: var(--pf-c-table--m-compact-cell--PaddingBottom); }
+      .pf-c-table.pf-m-compact tr:not(.pf-c-table__expandable-row) > *:first-child {
+        --pf-c-table-cell--PaddingLeft: var(--pf-c-table--m-compact-cell--first-last-child--PaddingLeft); }
+      .pf-c-table.pf-m-compact tr:not(.pf-c-table__expandable-row) > *:last-child {
+        --pf-c-table-cell--PaddingRight: var(--pf-c-table--m-compact-cell--first-last-child--PaddingRight); }
+  .pf-c-table.pf-m-compact thead {
+    --pf-c-table--m-compact-cell--PaddingTop: var(--pf-c-table--m-compact-th--PaddingTop);
+    --pf-c-table--m-compact-cell--PaddingBottom: var(--pf-c-table--m-compact-th--PaddingBottom); }
+  .pf-c-table.pf-m-compact .pf-c-table__action {
+    --pf-c-table-cell--PaddingTop: var(--pf-c-table__action--PaddingTop);
+    --pf-c-table-cell--PaddingBottom: var(--pf-c-table__action--PaddingBottom);
+    --pf-c-table-cell--PaddingLeft: var(--pf-c-table__action--PaddingLeft); }
+  .pf-c-table.pf-m-compact .pf-c-table__toggle {
+    --pf-c-table-cell--PaddingTop: var(--pf-c-table--m-compact__toggle--PaddingTop);
+    --pf-c-table-cell--PaddingBottom: var(--pf-c-table--m-compact__toggle--PaddingBottom); }
+  .pf-c-table.pf-m-compact .pf-c-table__icon {
+    text-align: center; }
+  .pf-c-table .pf-c-table.pf-m-compact tr > *:first-child {
+    --pf-c-table-cell--PaddingLeft: var(--pf-c-table--nested--first-last-child--PaddingLeft); }
+  .pf-c-table .pf-c-table.pf-m-compact tr > *:last-child {
+    --pf-c-table-cell--PaddingRight: var(--pf-c-table--nested--first-last-child--PaddingRight); }
+  .pf-c-table.pf-m-compact .pf-c-table__expandable-row-content {
+    --pf-c-table__expandable-row-content--PaddingTop: var(--pf-c-table--m-compact__expandable-row-content--PaddingTop);
+    --pf-c-table__expandable-row-content--PaddingBottom: var(--pf-c-table--m-compact__expandable-row-content--PaddingBottom); }
+
+.pf-c-table__icon-inline {
+  display: flex;
+  align-items: center; }
+  .pf-c-table__icon-inline > :not(:last-child) {
+    margin-right: var(--pf-c-table__icon-inline--MarginRight); }
+
+.pf-c-table .pf-m-fit-content {
+  width: 1%;
+  white-space: nowrap; }
+
+.pf-c-table .pf-m-wrap {
+  white-space: normal;
+  vertical-align: top; }
+
+.pf-c-table [class*="pf-m-width-"] {
+  table-layout: fixed; }
+
+.pf-c-table .pf-m-width-10 {
+  width: 10%; }
+
+.pf-c-table .pf-m-width-15 {
+  width: 15%; }
+
+.pf-c-table .pf-m-width-20 {
+  width: 20%; }
+
+.pf-c-table .pf-m-width-25 {
+  width: 25%; }
+
+.pf-c-table .pf-m-width-30 {
+  width: 30%; }
+
+.pf-c-table .pf-m-width-35 {
+  width: 35%; }
+
+.pf-c-table .pf-m-width-40 {
+  width: 40%; }
+
+.pf-c-table .pf-m-width-45 {
+  width: 45%; }
+
+.pf-c-table .pf-m-width-50 {
+  width: 50%; }
+
+.pf-c-table .pf-m-width-60 {
+  width: 60%; }
+
+.pf-c-table .pf-m-width-70 {
+  width: 70%; }
+
+.pf-c-table .pf-m-width-80 {
+  width: 80%; }
+
+.pf-c-table .pf-m-width-90 {
+  width: 90%; }
+
+.pf-c-table .pf-m-width-max {
+  width: 100%; }

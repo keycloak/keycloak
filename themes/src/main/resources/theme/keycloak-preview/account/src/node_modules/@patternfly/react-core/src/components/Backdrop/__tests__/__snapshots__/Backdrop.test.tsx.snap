@@ -1,0 +1,9 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Backdrop Test 1`] = `
+<div
+  className="pf-c-backdrop"
+>
+  Backdrop
+</div>
+`;

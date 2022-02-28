@@ -1,0 +1,617 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`no label switch is checked 1`] = `
+<Component
+  id="no-label-switch-is-checked"
+  isChecked={true}
+>
+  <ComponentWithOuia
+    component={[Function]}
+    componentProps={
+      Object {
+        "id": "no-label-switch-is-checked",
+        "isChecked": true,
+      }
+    }
+    consumerContext={null}
+  >
+    <Switch
+      aria-label=""
+      className=""
+      id="no-label-switch-is-checked"
+      isChecked={true}
+      isDisabled={false}
+      label=""
+      labelOff=""
+      onChange={[Function]}
+      ouiaContext={
+        Object {
+          "isOuia": false,
+          "ouiaId": null,
+        }
+      }
+    >
+      <label
+        className="pf-c-switch"
+        htmlFor="no-label-switch-is-checked"
+      >
+        <input
+          aria-label=""
+          aria-labelledby="no-label-switch-is-checked-on"
+          checked={true}
+          className="pf-c-switch__input"
+          disabled={false}
+          id="no-label-switch-is-checked"
+          onChange={[Function]}
+          type="checkbox"
+        />
+        <span
+          className="pf-c-switch__toggle"
+        >
+          <div
+            aria-hidden="true"
+            className="pf-c-switch__toggle-icon"
+          >
+            <CheckIcon
+              color="currentColor"
+              noVerticalAlign={true}
+              size="sm"
+              title={null}
+            >
+              <svg
+                aria-hidden={true}
+                aria-labelledby={null}
+                fill="currentColor"
+                height="1em"
+                role="img"
+                style={null}
+                viewBox="0 0 512 512"
+                width="1em"
+              >
+                <path
+                  d="M173.898 439.404l-166.4-166.4c-9.997-9.997-9.997-26.206 0-36.204l36.203-36.204c9.997-9.998 26.207-9.998 36.204 0L192 312.69 432.095 72.596c9.997-9.997 26.207-9.997 36.204 0l36.203 36.204c9.997 9.997 9.997 26.206 0 36.204l-294.4 294.401c-9.998 9.997-26.207 9.997-36.204-.001z"
+                  transform=""
+                />
+              </svg>
+            </CheckIcon>
+          </div>
+        </span>
+      </label>
+    </Switch>
+  </ComponentWithOuia>
+</Component>
+`;
+
+exports[`no label switch is not checked 1`] = `
+<Component
+  id="no-label-switch-is-not-checked"
+  isChecked={false}
+>
+  <ComponentWithOuia
+    component={[Function]}
+    componentProps={
+      Object {
+        "id": "no-label-switch-is-not-checked",
+        "isChecked": false,
+      }
+    }
+    consumerContext={null}
+  >
+    <Switch
+      aria-label=""
+      className=""
+      id="no-label-switch-is-not-checked"
+      isChecked={false}
+      isDisabled={false}
+      label=""
+      labelOff=""
+      onChange={[Function]}
+      ouiaContext={
+        Object {
+          "isOuia": false,
+          "ouiaId": null,
+        }
+      }
+    >
+      <label
+        className="pf-c-switch"
+        htmlFor="no-label-switch-is-not-checked"
+      >
+        <input
+          aria-label=""
+          aria-labelledby="no-label-switch-is-not-checked-on"
+          checked={false}
+          className="pf-c-switch__input"
+          disabled={false}
+          id="no-label-switch-is-not-checked"
+          onChange={[Function]}
+          type="checkbox"
+        />
+        <span
+          className="pf-c-switch__toggle"
+        >
+          <div
+            aria-hidden="true"
+            className="pf-c-switch__toggle-icon"
+          >
+            <CheckIcon
+              color="currentColor"
+              noVerticalAlign={true}
+              size="sm"
+              title={null}
+            >
+              <svg
+                aria-hidden={true}
+                aria-labelledby={null}
+                fill="currentColor"
+                height="1em"
+                role="img"
+                style={null}
+                viewBox="0 0 512 512"
+                width="1em"
+              >
+                <path
+                  d="M173.898 439.404l-166.4-166.4c-9.997-9.997-9.997-26.206 0-36.204l36.203-36.204c9.997-9.998 26.207-9.998 36.204 0L192 312.69 432.095 72.596c9.997-9.997 26.207-9.997 36.204 0l36.203 36.204c9.997 9.997 9.997 26.206 0 36.204l-294.4 294.401c-9.998 9.997-26.207 9.997-36.204-.001z"
+                  transform=""
+                />
+              </svg>
+            </CheckIcon>
+          </div>
+        </span>
+      </label>
+    </Switch>
+  </ComponentWithOuia>
+</Component>
+`;
+
+exports[`switch is checked 1`] = `
+<Component
+  id="switch-is-checked"
+  isChecked={true}
+  label="On"
+  labelOff="Off"
+>
+  <ComponentWithOuia
+    component={[Function]}
+    componentProps={
+      Object {
+        "id": "switch-is-checked",
+        "isChecked": true,
+        "label": "On",
+        "labelOff": "Off",
+      }
+    }
+    consumerContext={null}
+  >
+    <Switch
+      aria-label=""
+      className=""
+      id="switch-is-checked"
+      isChecked={true}
+      isDisabled={false}
+      label="On"
+      labelOff="Off"
+      onChange={[Function]}
+      ouiaContext={
+        Object {
+          "isOuia": false,
+          "ouiaId": null,
+        }
+      }
+    >
+      <label
+        className="pf-c-switch"
+        htmlFor="switch-is-checked"
+      >
+        <input
+          aria-label=""
+          aria-labelledby="switch-is-checked-on"
+          checked={true}
+          className="pf-c-switch__input"
+          disabled={false}
+          id="switch-is-checked"
+          onChange={[Function]}
+          type="checkbox"
+        />
+        <span
+          className="pf-c-switch__toggle"
+        />
+        <span
+          aria-hidden="true"
+          className="pf-c-switch__label pf-m-on"
+          id="switch-is-checked-on"
+        >
+          On
+        </span>
+        <span
+          aria-hidden="true"
+          className="pf-c-switch__label pf-m-off"
+          id="switch-is-checked-off"
+        >
+          Off
+        </span>
+      </label>
+    </Switch>
+  </ComponentWithOuia>
+</Component>
+`;
+
+exports[`switch is checked and disabled 1`] = `
+<Component
+  id="switch-is-checked-and-disabled"
+  isChecked={true}
+  isDisabled={true}
+>
+  <ComponentWithOuia
+    component={[Function]}
+    componentProps={
+      Object {
+        "id": "switch-is-checked-and-disabled",
+        "isChecked": true,
+        "isDisabled": true,
+      }
+    }
+    consumerContext={null}
+  >
+    <Switch
+      aria-label=""
+      className=""
+      id="switch-is-checked-and-disabled"
+      isChecked={true}
+      isDisabled={true}
+      label=""
+      labelOff=""
+      onChange={[Function]}
+      ouiaContext={
+        Object {
+          "isOuia": false,
+          "ouiaId": null,
+        }
+      }
+    >
+      <label
+        className="pf-c-switch"
+        htmlFor="switch-is-checked-and-disabled"
+      >
+        <input
+          aria-label=""
+          aria-labelledby="switch-is-checked-and-disabled-on"
+          checked={true}
+          className="pf-c-switch__input"
+          disabled={true}
+          id="switch-is-checked-and-disabled"
+          onChange={[Function]}
+          type="checkbox"
+        />
+        <span
+          className="pf-c-switch__toggle"
+        >
+          <div
+            aria-hidden="true"
+            className="pf-c-switch__toggle-icon"
+          >
+            <CheckIcon
+              color="currentColor"
+              noVerticalAlign={true}
+              size="sm"
+              title={null}
+            >
+              <svg
+                aria-hidden={true}
+                aria-labelledby={null}
+                fill="currentColor"
+                height="1em"
+                role="img"
+                style={null}
+                viewBox="0 0 512 512"
+                width="1em"
+              >
+                <path
+                  d="M173.898 439.404l-166.4-166.4c-9.997-9.997-9.997-26.206 0-36.204l36.203-36.204c9.997-9.998 26.207-9.998 36.204 0L192 312.69 432.095 72.596c9.997-9.997 26.207-9.997 36.204 0l36.203 36.204c9.997 9.997 9.997 26.206 0 36.204l-294.4 294.401c-9.998 9.997-26.207 9.997-36.204-.001z"
+                  transform=""
+                />
+              </svg>
+            </CheckIcon>
+          </div>
+        </span>
+      </label>
+    </Switch>
+  </ComponentWithOuia>
+</Component>
+`;
+
+exports[`switch is not checked 1`] = `
+<Component
+  id="switch-is-not-checked"
+  isChecked={false}
+  label="On"
+  labelOff="Off"
+>
+  <ComponentWithOuia
+    component={[Function]}
+    componentProps={
+      Object {
+        "id": "switch-is-not-checked",
+        "isChecked": false,
+        "label": "On",
+        "labelOff": "Off",
+      }
+    }
+    consumerContext={null}
+  >
+    <Switch
+      aria-label=""
+      className=""
+      id="switch-is-not-checked"
+      isChecked={false}
+      isDisabled={false}
+      label="On"
+      labelOff="Off"
+      onChange={[Function]}
+      ouiaContext={
+        Object {
+          "isOuia": false,
+          "ouiaId": null,
+        }
+      }
+    >
+      <label
+        className="pf-c-switch"
+        htmlFor="switch-is-not-checked"
+      >
+        <input
+          aria-label=""
+          aria-labelledby="switch-is-not-checked-on"
+          checked={false}
+          className="pf-c-switch__input"
+          disabled={false}
+          id="switch-is-not-checked"
+          onChange={[Function]}
+          type="checkbox"
+        />
+        <span
+          className="pf-c-switch__toggle"
+        />
+        <span
+          aria-hidden="true"
+          className="pf-c-switch__label pf-m-on"
+          id="switch-is-not-checked-on"
+        >
+          On
+        </span>
+        <span
+          aria-hidden="true"
+          className="pf-c-switch__label pf-m-off"
+          id="switch-is-not-checked-off"
+        >
+          Off
+        </span>
+      </label>
+    </Switch>
+  </ComponentWithOuia>
+</Component>
+`;
+
+exports[`switch is not checked and disabled 1`] = `
+<Component
+  id="switch-is-not-checked-and-disabled"
+  isChecked={false}
+  isDisabled={true}
+>
+  <ComponentWithOuia
+    component={[Function]}
+    componentProps={
+      Object {
+        "id": "switch-is-not-checked-and-disabled",
+        "isChecked": false,
+        "isDisabled": true,
+      }
+    }
+    consumerContext={null}
+  >
+    <Switch
+      aria-label=""
+      className=""
+      id="switch-is-not-checked-and-disabled"
+      isChecked={false}
+      isDisabled={true}
+      label=""
+      labelOff=""
+      onChange={[Function]}
+      ouiaContext={
+        Object {
+          "isOuia": false,
+          "ouiaId": null,
+        }
+      }
+    >
+      <label
+        className="pf-c-switch"
+        htmlFor="switch-is-not-checked-and-disabled"
+      >
+        <input
+          aria-label=""
+          aria-labelledby="switch-is-not-checked-and-disabled-on"
+          checked={false}
+          className="pf-c-switch__input"
+          disabled={true}
+          id="switch-is-not-checked-and-disabled"
+          onChange={[Function]}
+          type="checkbox"
+        />
+        <span
+          className="pf-c-switch__toggle"
+        >
+          <div
+            aria-hidden="true"
+            className="pf-c-switch__toggle-icon"
+          >
+            <CheckIcon
+              color="currentColor"
+              noVerticalAlign={true}
+              size="sm"
+              title={null}
+            >
+              <svg
+                aria-hidden={true}
+                aria-labelledby={null}
+                fill="currentColor"
+                height="1em"
+                role="img"
+                style={null}
+                viewBox="0 0 512 512"
+                width="1em"
+              >
+                <path
+                  d="M173.898 439.404l-166.4-166.4c-9.997-9.997-9.997-26.206 0-36.204l36.203-36.204c9.997-9.998 26.207-9.998 36.204 0L192 312.69 432.095 72.596c9.997-9.997 26.207-9.997 36.204 0l36.203 36.204c9.997 9.997 9.997 26.206 0 36.204l-294.4 294.401c-9.998 9.997-26.207 9.997-36.204-.001z"
+                  transform=""
+                />
+              </svg>
+            </CheckIcon>
+          </div>
+        </span>
+      </label>
+    </Switch>
+  </ComponentWithOuia>
+</Component>
+`;
+
+exports[`switch with only label is checked 1`] = `
+<Component
+  id="switch-is-checked"
+  isChecked={true}
+  label="On"
+>
+  <ComponentWithOuia
+    component={[Function]}
+    componentProps={
+      Object {
+        "id": "switch-is-checked",
+        "isChecked": true,
+        "label": "On",
+      }
+    }
+    consumerContext={null}
+  >
+    <Switch
+      aria-label=""
+      className=""
+      id="switch-is-checked"
+      isChecked={true}
+      isDisabled={false}
+      label="On"
+      labelOff=""
+      onChange={[Function]}
+      ouiaContext={
+        Object {
+          "isOuia": false,
+          "ouiaId": null,
+        }
+      }
+    >
+      <label
+        className="pf-c-switch"
+        htmlFor="switch-is-checked"
+      >
+        <input
+          aria-label=""
+          aria-labelledby="switch-is-checked-on"
+          checked={true}
+          className="pf-c-switch__input"
+          disabled={false}
+          id="switch-is-checked"
+          onChange={[Function]}
+          type="checkbox"
+        />
+        <span
+          className="pf-c-switch__toggle"
+        />
+        <span
+          aria-hidden="true"
+          className="pf-c-switch__label pf-m-on"
+          id="switch-is-checked-on"
+        >
+          On
+        </span>
+        <span
+          aria-hidden="true"
+          className="pf-c-switch__label pf-m-off"
+          id="switch-is-checked-off"
+        >
+          On
+        </span>
+      </label>
+    </Switch>
+  </ComponentWithOuia>
+</Component>
+`;
+
+exports[`switch with only label is not checked 1`] = `
+<Component
+  id="switch-is-not-checked"
+  isChecked={false}
+  label="Off"
+>
+  <ComponentWithOuia
+    component={[Function]}
+    componentProps={
+      Object {
+        "id": "switch-is-not-checked",
+        "isChecked": false,
+        "label": "Off",
+      }
+    }
+    consumerContext={null}
+  >
+    <Switch
+      aria-label=""
+      className=""
+      id="switch-is-not-checked"
+      isChecked={false}
+      isDisabled={false}
+      label="Off"
+      labelOff=""
+      onChange={[Function]}
+      ouiaContext={
+        Object {
+          "isOuia": false,
+          "ouiaId": null,
+        }
+      }
+    >
+      <label
+        className="pf-c-switch"
+        htmlFor="switch-is-not-checked"
+      >
+        <input
+          aria-label=""
+          aria-labelledby="switch-is-not-checked-on"
+          checked={false}
+          className="pf-c-switch__input"
+          disabled={false}
+          id="switch-is-not-checked"
+          onChange={[Function]}
+          type="checkbox"
+        />
+        <span
+          className="pf-c-switch__toggle"
+        />
+        <span
+          aria-hidden="true"
+          className="pf-c-switch__label pf-m-on"
+          id="switch-is-not-checked-on"
+        >
+          Off
+        </span>
+        <span
+          aria-hidden="true"
+          className="pf-c-switch__label pf-m-off"
+          id="switch-is-not-checked-off"
+        >
+          Off
+        </span>
+      </label>
+    </Switch>
+  </ComponentWithOuia>
+</Component>
+`;

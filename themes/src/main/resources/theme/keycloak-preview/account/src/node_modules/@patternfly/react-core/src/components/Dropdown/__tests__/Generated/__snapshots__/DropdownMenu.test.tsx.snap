@@ -1,0 +1,16 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`DropdownMenu should match snapshot (auto-generated) 1`] = `
+<ContextProvider
+  value={
+    Object {
+      "keyHandler": [Function],
+      "sendRef": [Function],
+    }
+  }
+>
+  <ContextConsumer>
+    <Component />
+  </ContextConsumer>
+</ContextProvider>
+`;

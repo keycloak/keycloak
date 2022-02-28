@@ -1,0 +1,10 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`TextListItem should match snapshot (auto-generated) 1`] = `
+<li
+  className="''"
+  data-pf-content={true}
+>
+  ReactNode
+</li>
+`;

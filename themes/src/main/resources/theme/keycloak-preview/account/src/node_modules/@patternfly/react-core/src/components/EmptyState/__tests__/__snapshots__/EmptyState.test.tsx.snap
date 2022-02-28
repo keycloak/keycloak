@@ -1,0 +1,54 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`EmptyState Main 1`] = `
+<div
+  className="pf-c-empty-state pf-m-lg"
+>
+  <Title
+    headingLevel="h5"
+    size="lg"
+  >
+    HTTP Proxies
+  </Title>
+  <EmptyStateBody>
+    Defining HTTP Proxies that exist on your network allows you to perform various actions through those proxies.
+  </EmptyStateBody>
+  <Component
+    variant="primary"
+  >
+    New HTTP Proxy
+  </Component>
+  <EmptyStateSecondaryActions>
+    <Component
+      aria-label="learn more action"
+      variant="link"
+    >
+      Learn more about this in the documentation.
+    </Component>
+  </EmptyStateSecondaryActions>
+</div>
+`;
+
+exports[`EmptyState Main variant regular 1`] = `
+<div
+  className="pf-c-empty-state"
+>
+  <Title
+    size="md"
+  >
+    EmptyState full
+  </Title>
+</div>
+`;
+
+exports[`EmptyState Main variant small 1`] = `
+<div
+  className="pf-c-empty-state pf-m-sm"
+>
+  <Title
+    size="md"
+  >
+    EmptyState small
+  </Title>
+</div>
+`;

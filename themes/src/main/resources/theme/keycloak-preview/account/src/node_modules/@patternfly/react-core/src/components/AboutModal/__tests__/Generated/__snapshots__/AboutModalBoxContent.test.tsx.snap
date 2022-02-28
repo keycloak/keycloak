@@ -1,0 +1,25 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`AboutModalBoxContent should match snapshot (auto-generated) 1`] = `
+<div
+  className="pf-c-about-modal-box__content ''"
+  id="string"
+>
+  <div
+    className="pf-c-about-modal-box__body"
+  >
+    <div
+      className="pf-c-content"
+    >
+      <div>
+        ReactNode
+      </div>
+    </div>
+  </div>
+  <p
+    className="pf-c-about-modal-box__strapline"
+  >
+    string
+  </p>
+</div>
+`;

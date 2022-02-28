@@ -1,0 +1,1 @@
+export default {"name":"--pf-c-file-upload__file-select__c-button--m-control--disabled--BackgroundColor","value":"#ededed","var":"var(--pf-c-file-upload__file-select__c-button--m-control--disabled--BackgroundColor)"}

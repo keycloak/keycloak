@@ -1,0 +1,15 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ModalBox should match snapshot (auto-generated) 1`] = `
+<div
+  aria-describedby="string"
+  aria-label="string"
+  aria-modal="true"
+  className="pf-c-modal-box ''"
+  role="dialog"
+>
+  <div>
+    ReactNode
+  </div>
+</div>
+`;

@@ -1,0 +1,10 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`should render tab button 1`] = `
+<TabButtonBase
+  eventKey={0}
+  tabContentRef={null}
+>
+  Tab button
+</TabButtonBase>
+`;

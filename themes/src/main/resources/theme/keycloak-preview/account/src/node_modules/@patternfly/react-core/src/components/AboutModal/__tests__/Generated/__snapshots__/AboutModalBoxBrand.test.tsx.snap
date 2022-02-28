@@ -1,0 +1,13 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`AboutModalBoxBrand should match snapshot (auto-generated) 1`] = `
+<div
+  className="pf-c-about-modal-box__brand ''"
+>
+  <img
+    alt="string"
+    className="pf-c-about-modal-box__brand-image"
+    src="''"
+  />
+</div>
+`;

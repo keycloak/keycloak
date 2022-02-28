@@ -1,0 +1,217 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Radio check component controlled 1`] = `
+<div
+  className="pf-c-radio"
+>
+  <input
+    aria-invalid={false}
+    aria-label="check"
+    checked={true}
+    className="pf-c-radio__input"
+    disabled={false}
+    id="check"
+    name="check"
+    onChange={[Function]}
+    type="radio"
+  />
+</div>
+`;
+
+exports[`Radio check component isDisabled 1`] = `
+<div
+  className="pf-c-radio"
+>
+  <input
+    aria-invalid={false}
+    aria-label="check"
+    className="pf-c-radio__input"
+    disabled={true}
+    id="check"
+    name="check"
+    onChange={[Function]}
+    type="radio"
+  />
+</div>
+`;
+
+exports[`Radio check component isLabelBeforeButton 1`] = `
+<div
+  className="pf-c-radio"
+>
+  <label
+    className="pf-c-radio__label"
+    htmlFor="check"
+  >
+    Radio label
+  </label>
+  <input
+    aria-invalid={false}
+    className="pf-c-radio__input"
+    disabled={false}
+    id="check"
+    name="check"
+    onChange={[Function]}
+    type="radio"
+  />
+</div>
+`;
+
+exports[`Radio check component isLabelWrapped 1`] = `
+<label
+  className="pf-c-radio"
+  htmlFor="check"
+>
+  <input
+    aria-invalid={false}
+    className="pf-c-radio__input"
+    disabled={false}
+    id="check"
+    name="check"
+    onChange={[Function]}
+    type="radio"
+  />
+  <span
+    className="pf-c-radio__label"
+  >
+    Radio label
+  </span>
+</label>
+`;
+
+exports[`Radio check component label is function 1`] = `
+<div
+  className="pf-c-radio"
+>
+  <input
+    aria-invalid={false}
+    checked={true}
+    className="pf-c-radio__input"
+    disabled={false}
+    id="check"
+    name="check"
+    onChange={[Function]}
+    type="radio"
+  />
+  <label
+    className="pf-c-radio__label"
+    htmlFor="check"
+  >
+    <h1>
+      Header
+    </h1>
+  </label>
+</div>
+`;
+
+exports[`Radio check component label is node 1`] = `
+<div
+  className="pf-c-radio"
+>
+  <input
+    aria-invalid={false}
+    checked={true}
+    className="pf-c-radio__input"
+    disabled={false}
+    id="check"
+    name="check"
+    onChange={[Function]}
+    type="radio"
+  />
+  <label
+    className="pf-c-radio__label"
+    htmlFor="check"
+  >
+    <h1>
+      Header
+    </h1>
+  </label>
+</div>
+`;
+
+exports[`Radio check component label is string 1`] = `
+<div
+  className="pf-c-radio"
+>
+  <input
+    aria-invalid={false}
+    checked={true}
+    className="pf-c-radio__input"
+    disabled={false}
+    id="check"
+    name="check"
+    onChange={[Function]}
+    type="radio"
+  />
+  <label
+    className="pf-c-radio__label"
+    htmlFor="check"
+  >
+    Label
+  </label>
+</div>
+`;
+
+exports[`Radio check component passing HTML attribute 1`] = `
+<div
+  className="pf-c-radio"
+>
+  <input
+    aria-invalid={false}
+    aria-labelledby="labelId"
+    checked={true}
+    className="pf-c-radio__input"
+    disabled={false}
+    id="check"
+    name="check"
+    onChange={[Function]}
+    type="radio"
+  />
+  <label
+    className="pf-c-radio__label"
+    htmlFor="check"
+  >
+    label
+  </label>
+</div>
+`;
+
+exports[`Radio check component passing class 1`] = `
+<div
+  className="pf-c-radio class-123"
+>
+  <input
+    aria-invalid={false}
+    checked={true}
+    className="pf-c-radio__input"
+    disabled={false}
+    id="check"
+    name="check"
+    onChange={[Function]}
+    type="radio"
+  />
+  <label
+    className="pf-c-radio__label"
+    htmlFor="check"
+  >
+    label
+  </label>
+</div>
+`;
+
+exports[`Radio check component uncontrolled 1`] = `
+<div
+  className="pf-c-radio"
+>
+  <input
+    aria-invalid={false}
+    aria-label="check"
+    className="pf-c-radio__input"
+    disabled={false}
+    id="check"
+    name="check"
+    onChange={[Function]}
+    type="radio"
+  />
+</div>
+`;

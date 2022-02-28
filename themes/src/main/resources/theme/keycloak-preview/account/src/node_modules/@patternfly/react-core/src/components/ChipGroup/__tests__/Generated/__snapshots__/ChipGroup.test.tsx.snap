@@ -1,0 +1,23 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`ChipGroup should match snapshot (auto-generated) 1`] = `
+<ul
+  className="pf-c-chip-group ''"
+>
+  <InnerChipGroup
+    className="''"
+    collapsedText="'\${remaining} more'"
+    defaultIsOpen={false}
+    expandedText="'Show Less'"
+    headingLevel="h1"
+    isOpen={false}
+    numChips={3}
+    onToggleCollapse={[Function]}
+    withToolbar={false}
+  >
+    <div>
+      ReactNode
+    </div>
+  </InnerChipGroup>
+</ul>
+`;

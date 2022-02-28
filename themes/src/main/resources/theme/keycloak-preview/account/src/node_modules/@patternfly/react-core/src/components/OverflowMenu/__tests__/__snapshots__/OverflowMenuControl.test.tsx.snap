@@ -1,0 +1,25 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`OverflowMenuControl Additional Options 1`] = `
+<OverflowMenuControl
+  hasAdditionalOptions={true}
+>
+  <div
+    className="pf-c-overflow-menu__control"
+  >
+     
+     
+  </div>
+</OverflowMenuControl>
+`;
+
+exports[`OverflowMenuControl basic 1`] = `
+<OverflowMenuControl>
+  <div
+    className="pf-c-overflow-menu__control"
+  >
+     
+     
+  </div>
+</OverflowMenuControl>
+`;

@@ -1,0 +1,17 @@
+language: node_js
+cache:
+  directories:
+    - node_modules
+notifications:
+  email: false
+node_js:
+  - '8'
+  - '6'
+  - '4'
+before_install:
+  - npm i -g npm@^5.0.0
+after_success:
+  - travis-deploy-once "npm install -g semantic-release@13 && semantic-release"
+branches:
+  except:
+    - /^v\d+\.\d+\.\d+$/

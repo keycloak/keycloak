@@ -1,0 +1,13 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Renders ContextSelectorItem 1`] = `
+<ContextConsumer>
+  <Component />
+</ContextConsumer>
+`;
+
+exports[`Renders ContextSelectorItem disabled and hovered 1`] = `
+<ContextConsumer>
+  <Component />
+</ContextConsumer>
+`;

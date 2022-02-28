@@ -1,0 +1,9 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`GridItem should match snapshot (auto-generated) 1`] = `
+<div
+  className="pf-l-grid__item pf-m-1-col-on-sm pf-m-1-row-on-sm pf-m-offset-1-col-on-sm pf-m-1-col-on-md pf-m-1-row-on-md pf-m-offset-1-col-on-md pf-m-1-col-on-lg pf-m-1-row-on-lg pf-m-offset-1-col-on-lg pf-m-1-col-on-xl pf-m-1-row-on-xl pf-m-offset-1-col-on-xl pf-m-1-col-on-2xl pf-m-1-row-on-2xl pf-m-offset-1-col-on-2xl ''"
+>
+  ReactNode
+</div>
+`;

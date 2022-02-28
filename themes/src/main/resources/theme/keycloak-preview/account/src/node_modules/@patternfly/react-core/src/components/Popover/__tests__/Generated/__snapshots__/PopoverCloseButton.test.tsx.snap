@@ -1,0 +1,21 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`PopoverCloseButton should match snapshot (auto-generated) 1`] = `
+<Component
+  aria-label="string"
+  onClick={[Function]}
+  style={
+    Object {
+      "pointerEvents": "auto",
+    }
+  }
+  variant="plain"
+>
+  <TimesIcon
+    color="currentColor"
+    noVerticalAlign={false}
+    size="sm"
+    title={null}
+  />
+</Component>
+`;

@@ -1,0 +1,50 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`converts a css string into an object 1`] = `
+Object {
+  "alert": Object {
+    "__className": "pf-c-alert",
+    "__inject": [Function],
+  },
+  "button": Object {
+    "__className": "pf-c-button",
+    "__inject": [Function],
+  },
+  "inject": [Function],
+  "modifiers": Object {},
+  "raw": "
+  .pf-c-button {
+    color: red;
+  }
+  .pf-c-alert {
+    color: black;
+  }
+  ",
+}
+`;
+
+exports[`css concatenates values together 1`] = `"parseValue css-0 value"`;
+
+exports[`css handles values from StyleSheet.create 1`] = `"css-0"`;
+
+exports[`css handles values from StyleSheet.parse 1`] = `"parseValue"`;
+
+exports[`places modifers in the modifers object 1`] = `
+Object {
+  "inject": [Function],
+  "modifiers": Object {
+    "active": Object {
+      "__className": "pf-m-active",
+      "__inject": [Function],
+    },
+    "secondaryAlt": Object {
+      "__className": "pf-m-secondary-alt",
+      "__inject": [Function],
+    },
+  },
+  "raw": "
+  .pf-m-active {}
+  .pf-m-secondary-alt {}
+  ",
+}
+`;

@@ -1,0 +1,42 @@
+{
+	"name": "array-union",
+	"version": "2.1.0",
+	"description": "Create an array of unique values, in order, from the input arrays",
+	"license": "MIT",
+	"repository": "sindresorhus/array-union",
+	"author": {
+		"name": "Sindre Sorhus",
+		"email": "sindresorhus@gmail.com",
+		"url": "sindresorhus.com"
+	},
+	"engines": {
+		"node": ">=8"
+	},
+	"scripts": {
+		"test": "xo && ava && tsd"
+	},
+	"files": [
+		"index.js",
+		"index.d.ts"
+	],
+	"keywords": [
+		"array",
+		"set",
+		"uniq",
+		"unique",
+		"duplicate",
+		"remove",
+		"union",
+		"combine",
+		"merge"
+	],
+	"devDependencies": {
+		"ava": "^1.4.1",
+		"tsd": "^0.7.2",
+		"xo": "^0.24.0"
+	}
+
+,"_resolved": "https://registry.npmjs.org/array-union/-/array-union-2.1.0.tgz"
+,"_integrity": "sha512-HGyxoOTYUyCM6stUe6EJgnd4EoewAI7zMdfqO+kGjnlZmBDz/cR5pf8r/cR4Wq60sL/p0IkcjUEEPwS3GFrIyw=="
+,"_from": "array-union@2.1.0"
+}

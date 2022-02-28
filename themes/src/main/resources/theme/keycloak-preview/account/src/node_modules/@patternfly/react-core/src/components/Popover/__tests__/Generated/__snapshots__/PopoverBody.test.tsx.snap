@@ -1,0 +1,12 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`PopoverBody should match snapshot (auto-generated) 1`] = `
+<div
+  className="pf-c-popover__body"
+  id="string"
+>
+  <div>
+    ReactNode
+  </div>
+</div>
+`;

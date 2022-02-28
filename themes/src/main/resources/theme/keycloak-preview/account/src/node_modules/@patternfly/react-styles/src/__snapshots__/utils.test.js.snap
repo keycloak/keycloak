@@ -1,0 +1,25 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`createStyleDeclaration 1`] = `
+Object {
+  "__className": "foo-bar",
+  "__inject": [Function],
+}
+`;
+
+exports[`formatClassName formats component class names 1`] = `"fooBarBaz"`;
+
+exports[`formatClassName formats layout class names 1`] = `"fooBarBaz"`;
+
+exports[`formatClassName formats utility class names 1`] = `"fooBarBaz"`;
+
+exports[`getCSSClasses returns classes from css 1`] = `
+Array [
+  ".foo",
+  ".bar",
+  ".baz",
+  ".baz",
+]
+`;
+
+exports[`getClassName returns className from styleObj 1`] = `"foo-bar"`;

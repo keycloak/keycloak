@@ -1,0 +1,91 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`extra large spinner 1`] = `
+<span
+  aria-valuetext="Loading..."
+  className="pf-c-spinner pf-m-xl"
+  role="progressbar"
+>
+  <span
+    className="pf-c-spinner__clipper"
+  />
+  <span
+    className="pf-c-spinner__lead-ball"
+  />
+  <span
+    className="pf-c-spinner__tail-ball"
+  />
+</span>
+`;
+
+exports[`large spinner 1`] = `
+<span
+  aria-valuetext="Loading..."
+  className="pf-c-spinner pf-m-xl"
+  role="progressbar"
+>
+  <span
+    className="pf-c-spinner__clipper"
+  />
+  <span
+    className="pf-c-spinner__lead-ball"
+  />
+  <span
+    className="pf-c-spinner__tail-ball"
+  />
+</span>
+`;
+
+exports[`medium spinner 1`] = `
+<span
+  aria-valuetext="Loading..."
+  className="pf-c-spinner pf-m-xl"
+  role="progressbar"
+>
+  <span
+    className="pf-c-spinner__clipper"
+  />
+  <span
+    className="pf-c-spinner__lead-ball"
+  />
+  <span
+    className="pf-c-spinner__tail-ball"
+  />
+</span>
+`;
+
+exports[`simple spinner 1`] = `
+<span
+  aria-valuetext="Loading..."
+  className="pf-c-spinner pf-m-xl"
+  role="progressbar"
+>
+  <span
+    className="pf-c-spinner__clipper"
+  />
+  <span
+    className="pf-c-spinner__lead-ball"
+  />
+  <span
+    className="pf-c-spinner__tail-ball"
+  />
+</span>
+`;
+
+exports[`small spinner 1`] = `
+<span
+  aria-valuetext="Loading..."
+  className="pf-c-spinner pf-m-xl"
+  role="progressbar"
+>
+  <span
+    className="pf-c-spinner__clipper"
+  />
+  <span
+    className="pf-c-spinner__lead-ball"
+  />
+  <span
+    className="pf-c-spinner__tail-ball"
+  />
+</span>
+`;

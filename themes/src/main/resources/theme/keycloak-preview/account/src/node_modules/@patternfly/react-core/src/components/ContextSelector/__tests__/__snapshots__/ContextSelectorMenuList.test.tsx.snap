@@ -1,0 +1,129 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`Renders ContextSelectorMenuList closed 1`] = `
+<ul
+  className="pf-c-context-selector__menu-list"
+  hidden={true}
+  role="menu"
+>
+  <ContextSelectorItem
+    className=""
+    index={0}
+    isDisabled={false}
+    isHovered={false}
+    key=".$0"
+    onClick={[Function]}
+    sendRef={[Function]}
+  >
+    My Project
+  </ContextSelectorItem>
+  <ContextSelectorItem
+    className=""
+    index={1}
+    isDisabled={false}
+    isHovered={false}
+    key=".$1"
+    onClick={[Function]}
+    sendRef={[Function]}
+  >
+    OpenShift Cluster
+  </ContextSelectorItem>
+  <ContextSelectorItem
+    className=""
+    index={2}
+    isDisabled={false}
+    isHovered={false}
+    key=".$2"
+    onClick={[Function]}
+    sendRef={[Function]}
+  >
+    Production Ansible
+  </ContextSelectorItem>
+  <ContextSelectorItem
+    className=""
+    index={3}
+    isDisabled={false}
+    isHovered={false}
+    key=".$3"
+    onClick={[Function]}
+    sendRef={[Function]}
+  >
+    AWS
+  </ContextSelectorItem>
+  <ContextSelectorItem
+    className=""
+    index={4}
+    isDisabled={false}
+    isHovered={false}
+    key=".$4"
+    onClick={[Function]}
+    sendRef={[Function]}
+  >
+    Azure
+  </ContextSelectorItem>
+</ul>
+`;
+
+exports[`Renders ContextSelectorMenuList open 1`] = `
+<ul
+  className="pf-c-context-selector__menu-list"
+  hidden={true}
+  role="menu"
+>
+  <ContextSelectorItem
+    className=""
+    index={0}
+    isDisabled={false}
+    isHovered={false}
+    key=".$0"
+    onClick={[Function]}
+    sendRef={[Function]}
+  >
+    My Project
+  </ContextSelectorItem>
+  <ContextSelectorItem
+    className=""
+    index={1}
+    isDisabled={false}
+    isHovered={false}
+    key=".$1"
+    onClick={[Function]}
+    sendRef={[Function]}
+  >
+    OpenShift Cluster
+  </ContextSelectorItem>
+  <ContextSelectorItem
+    className=""
+    index={2}
+    isDisabled={false}
+    isHovered={false}
+    key=".$2"
+    onClick={[Function]}
+    sendRef={[Function]}
+  >
+    Production Ansible
+  </ContextSelectorItem>
+  <ContextSelectorItem
+    className=""
+    index={3}
+    isDisabled={false}
+    isHovered={false}
+    key=".$3"
+    onClick={[Function]}
+    sendRef={[Function]}
+  >
+    AWS
+  </ContextSelectorItem>
+  <ContextSelectorItem
+    className=""
+    index={4}
+    isDisabled={false}
+    isHovered={false}
+    key=".$4"
+    onClick={[Function]}
+    sendRef={[Function]}
+  >
+    Azure
+  </ContextSelectorItem>
+</ul>
+`;

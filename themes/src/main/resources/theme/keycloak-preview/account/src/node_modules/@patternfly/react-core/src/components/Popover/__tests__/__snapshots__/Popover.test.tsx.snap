@@ -1,0 +1,224 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`popover can have a custom minimum width 1`] = `
+<PopoverBase
+  appendTo={[Function]}
+  arrow={true}
+  boundary="window"
+  content={<React.Fragment />}
+  distance={25}
+  flip={true}
+  flipBehavior={
+    Array [
+      "top",
+      "right",
+      "bottom",
+      "left",
+      "top",
+      "right",
+      "bottom",
+    ]
+  }
+  hideOnClick={false}
+  interactive={true}
+  interactiveBorder={0}
+  isVisible={true}
+  lazy={true}
+  maxWidth="calc(2rem + 18.75rem)"
+  onCreate={[Function]}
+  onHidden={[Function]}
+  onHide={[Function]}
+  onMount={[Function]}
+  onShow={[Function]}
+  onShown={[Function]}
+  placement="top"
+  popperOptions={
+    Object {
+      "modifiers": Object {
+        "hide": Object {
+          "enabled": true,
+        },
+        "preventOverflow": Object {
+          "enabled": true,
+        },
+      },
+    }
+  }
+  theme="pf-popover"
+  trigger="manual"
+  zIndex={9999}
+>
+  <div>
+    Toggle Popover
+  </div>
+</PopoverBase>
+`;
+
+exports[`popover can specify position as object value 1`] = `
+<PopoverBase
+  appendTo={[Function]}
+  arrow={true}
+  boundary="window"
+  content={<React.Fragment />}
+  distance={25}
+  flip={true}
+  flipBehavior={
+    Array [
+      "top",
+      "right",
+      "bottom",
+      "left",
+      "top",
+      "right",
+      "bottom",
+    ]
+  }
+  hideOnClick={false}
+  interactive={true}
+  interactiveBorder={0}
+  isVisible={true}
+  lazy={true}
+  maxWidth="calc(2rem + 18.75rem)"
+  onCreate={[Function]}
+  onHidden={[Function]}
+  onHide={[Function]}
+  onMount={[Function]}
+  onShow={[Function]}
+  onShown={[Function]}
+  placement="right"
+  popperOptions={
+    Object {
+      "modifiers": Object {
+        "hide": Object {
+          "enabled": true,
+        },
+        "preventOverflow": Object {
+          "enabled": true,
+        },
+      },
+    }
+  }
+  theme="pf-popover"
+  trigger="manual"
+  zIndex={9999}
+>
+  <div>
+    Toggle Popover
+  </div>
+</PopoverBase>
+`;
+
+exports[`popover passes along values to tippy.js 1`] = `
+<PopoverBase
+  appendTo={[Function]}
+  arrow={true}
+  boundary="window"
+  content={<React.Fragment />}
+  distance={25}
+  duration={
+    Array [
+      200,
+      200,
+    ]
+  }
+  flip={true}
+  flipBehavior={
+    Array [
+      "top",
+      "right",
+      "bottom",
+      "left",
+      "top",
+      "right",
+      "bottom",
+    ]
+  }
+  hideOnClick={false}
+  interactive={true}
+  interactiveBorder={0}
+  isVisible={true}
+  lazy={true}
+  maxWidth="calc(2rem + 18.75rem)"
+  offset={20}
+  onCreate={[Function]}
+  onHidden={[Function]}
+  onHide={[Function]}
+  onMount={[Function]}
+  onShow={[Function]}
+  onShown={[Function]}
+  placement="right"
+  popperOptions={
+    Object {
+      "modifiers": Object {
+        "hide": Object {
+          "enabled": true,
+        },
+        "preventOverflow": Object {
+          "enabled": true,
+        },
+      },
+    }
+  }
+  theme="pf-popover"
+  trigger="manual"
+  zIndex={9999}
+>
+  <div>
+    Tippy Props Test
+  </div>
+</PopoverBase>
+`;
+
+exports[`popover renders close-button, header and body 1`] = `
+<PopoverBase
+  appendTo={[Function]}
+  arrow={true}
+  boundary="window"
+  content={<React.Fragment />}
+  distance={25}
+  flip={true}
+  flipBehavior={
+    Array [
+      "top",
+      "right",
+      "bottom",
+      "left",
+      "top",
+      "right",
+      "bottom",
+    ]
+  }
+  hideOnClick={false}
+  interactive={true}
+  interactiveBorder={0}
+  isVisible={true}
+  lazy={true}
+  maxWidth="calc(2rem + 18.75rem)"
+  onCreate={[Function]}
+  onHidden={[Function]}
+  onHide={[Function]}
+  onMount={[Function]}
+  onShow={[Function]}
+  onShown={[Function]}
+  placement="top"
+  popperOptions={
+    Object {
+      "modifiers": Object {
+        "hide": Object {
+          "enabled": true,
+        },
+        "preventOverflow": Object {
+          "enabled": true,
+        },
+      },
+    }
+  }
+  theme="pf-popover"
+  trigger="manual"
+  zIndex={9999}
+>
+  <div>
+    Toggle Popover
+  </div>
+</PopoverBase>
+`;

@@ -1,0 +1,14 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`OptionsMenuItem should match snapshot (auto-generated) 1`] = `
+<DropdownItem
+  aria-disabled={true}
+  className="string"
+  component="button"
+  id="''"
+  isDisabled={true}
+  onClick={[Function]}
+>
+  ReactNode
+</DropdownItem>
+`;

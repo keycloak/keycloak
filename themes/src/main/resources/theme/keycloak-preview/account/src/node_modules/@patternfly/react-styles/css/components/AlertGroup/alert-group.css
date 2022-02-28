@@ -1,0 +1,15 @@
+.pf-c-alert-group {
+  --pf-c-alert-group__item--MarginTop: var(--pf-global--spacer--sm);
+  --pf-c-alert-group--m-toast--Top: var(--pf-global--spacer--2xl);
+  --pf-c-alert-group--m-toast--Right: var(--pf-global--spacer--xl);
+  --pf-c-alert-group--m-toast--MaxWidth: 37.5rem;
+  --pf-c-alert-group--m-toast--ZIndex: var(--pf-global--ZIndex--2xl); }
+  .pf-c-alert-group > * + * {
+    margin-top: var(--pf-c-alert-group__item--MarginTop); }
+  .pf-c-alert-group.pf-m-toast {
+    position: fixed;
+    top: var(--pf-c-alert-group--m-toast--Top);
+    right: var(--pf-c-alert-group--m-toast--Right);
+    z-index: var(--pf-c-alert-group--m-toast--ZIndex);
+    width: calc(100% - calc(var(--pf-c-alert-group--m-toast--Right) * 2));
+    max-width: var(--pf-c-alert-group--m-toast--MaxWidth); }

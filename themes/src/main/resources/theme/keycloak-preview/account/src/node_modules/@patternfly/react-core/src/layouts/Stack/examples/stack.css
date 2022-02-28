@@ -1,0 +1,16 @@
+.ws-react-l-stack {
+  min-height: 30em;
+  display: flex;
+  flex-direction: column;
+}
+
+.ws-react-l-stack > .pf-l-stack {
+  flex-grow: 1;
+}
+
+.ws-react-l-stack .pf-l-stack,
+.ws-react-l-stack .pf-l-stack > .pf-l-stack__item {
+  padding: 1rem;
+  border-width: 2px;
+  border-style: dashed;
+}

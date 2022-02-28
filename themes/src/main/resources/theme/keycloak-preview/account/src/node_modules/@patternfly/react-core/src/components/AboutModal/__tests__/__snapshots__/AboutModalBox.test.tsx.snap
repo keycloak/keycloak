@@ -1,0 +1,13 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`AboutModalBox Test 1`] = `
+<div
+  aria-describedby="id2"
+  aria-labelledby="id"
+  aria-modal="true"
+  className="pf-c-about-modal-box"
+  role="dialog"
+>
+  This is a AboutModalBox
+</div>
+`;

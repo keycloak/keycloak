@@ -1,0 +1,19 @@
+{
+  "extends": ["okonet/node"],
+  "rules": {
+    "strict": 0,
+    "node/no-unpublished-require": 0,
+    // Import
+    "import/no-extraneous-dependencies": [
+      2,
+      {
+        "devDependencies": [
+          "webpack*.js",
+          "**/*.spec.js",
+          "**/*.config.js",
+          "**/testSetup.js"
+        ]
+      }
+    ]
+  }
+}
