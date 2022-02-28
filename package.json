@@ -60,7 +60,7 @@
     "@types/file-saver": "^2.0.5",
     "@types/flat": "^5.0.2",
     "@types/lodash-es": "^4.17.6",
-    "@types/node": "^17.0.18",
+    "@types/node": "^17.0.21",
     "@types/react": "^17.0.39",
     "@types/react-dom": "^17.0.11",
     "@types/react-router-dom": "^5.3.3",
