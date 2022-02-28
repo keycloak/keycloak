@@ -31,11 +31,13 @@ import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.models.credential.dto.WebAuthnCredentialData;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.webauthn.AbstractWebAuthnVirtualTest;
 import org.keycloak.testsuite.webauthn.utils.WebAuthnDataWrapper;
 import org.keycloak.testsuite.webauthn.utils.WebAuthnRealmData;
+import org.openqa.selenium.firefox.FirefoxDriver;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -50,6 +52,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.keycloak.testsuite.util.BrowserDriverUtil.isDriverFirefox;
 import static org.keycloak.testsuite.util.WaitUtils.pause;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 
@@ -84,6 +87,8 @@ public class WebAuthnOtherSettingsTest extends AbstractWebAuthnVirtualTest {
                 .assertEvent();
 
         final String credentialType = getCredentialType();
+        // Soft token in Firefox does not increment counter
+        long credentialCount = isDriverFirefox(driver) ? 0 : 1L;
 
         getTestingClient().server(TEST_REALM_NAME).run(session -> {
             final WebAuthnDataWrapper dataWrapper = new WebAuthnDataWrapper(session, USERNAME, credentialType);
@@ -95,7 +100,7 @@ public class WebAuthnOtherSettingsTest extends AbstractWebAuthnVirtualTest {
             assertThat(data.getAaguid(), is(ALL_ZERO_AAGUID));
             assertThat(data.getAttestationStatement(), nullValue());
             assertThat(data.getCredentialPublicKey(), notNullValue());
-            assertThat(data.getCounter(), is(1L));
+            assertThat(data.getCounter(), is(credentialCount));
             assertThat(data.getAttestationStatementFormat(), is(AttestationConveyancePreference.NONE.getValue()));
 
             final COSEKey pubKey = dataWrapper.getKey();
@@ -108,6 +113,7 @@ public class WebAuthnOtherSettingsTest extends AbstractWebAuthnVirtualTest {
     }
 
     @Test
+    @IgnoreBrowserDriver(FirefoxDriver.class)
     public void timeout() throws IOException {
         final Integer TIMEOUT = 3; //seconds
 

@@ -660,7 +660,6 @@ _keycloakSpecificProperties = [
     "surefire.memory.metaspace",
     "surefire.memory.metaspace.max",
     "surefire.memory.settings",
-    "tomcat7.version",
     "tomcat8.version",
     "tomcat9.version",
     "spring-boot24.version",
@@ -768,7 +767,7 @@ _keycloakToWildflyProperties = {
     # Skip "nexus.staging.plugin.version" since Keycloak specific
     # Skip "frontend.plugin.version" since Keycloak specific
     # Skip "docker.maven.plugin.version" since Keycloak specific
-    # Skip "tomcat7.version", "tomcat8.version", and "tomcat9.version" since Keycloak specific
+    # Skip "tomcat8.version", and "tomcat9.version" since Keycloak specific
     # Skip "spring-boot24.version" and "spring-boot26.version" since Keycloak specific
     # Skip "webauthn4j.version" since Keycloak specific
     # Skip "org.apache.kerby.kerby-asn1.version" since Keycloak specific
