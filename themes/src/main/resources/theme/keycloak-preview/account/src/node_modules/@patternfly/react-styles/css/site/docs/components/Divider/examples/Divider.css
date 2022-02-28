@@ -1,7 +1,0 @@
-#ws-core-c-divider-vertical .ws-preview-html,
-#ws-core-c-divider-vertical-inset-medium .ws-preview-html,
-#ws-core-c-divider-vertical-md-inset-no-inset-on-md-lg-inset-on-lg-sm-inset-on-xl .ws-preview-html {
-  height: 3rem;
-  display: flex;
-  align-items: center;
-}

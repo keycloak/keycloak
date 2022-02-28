@@ -1,9 +1,0 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`Split should match snapshot (auto-generated) 1`] = `
-<div
-  className="pf-l-split ''"
->
-  ReactNode
-</div>
-`;

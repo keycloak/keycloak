@@ -1,9 +1,0 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`ToolbarSection should match snapshot (auto-generated) 1`] = `
-<section
-  className="pf-l-toolbar__section null"
->
-  ReactNode
-</section>
-`;

@@ -1,9 +1,0 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`DataToolbarExpandableContent should match snapshot (auto-generated) 1`] = `
-<div
-  className="pf-c-data-toolbar__expandable-content string"
->
-  <ForwardRef />
-</div>
-`;
