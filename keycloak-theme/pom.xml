@@ -25,7 +25,7 @@
     <description>Keycloak Administration UI</description>
     
     <properties>
-        <nexus.staging.plugin.version>1.6.11</nexus.staging.plugin.version>
+        <nexus.staging.plugin.version>1.6.12</nexus.staging.plugin.version>
     </properties>
 
     <licenses>
