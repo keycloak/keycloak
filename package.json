@@ -66,7 +66,7 @@
     "@types/react-router-dom": "^5.3.3",
     "@types/snowpack-env": "^2.3.4",
     "@typescript-eslint/eslint-plugin": "^5.12.0",
-    "@typescript-eslint/parser": "^5.12.0",
+    "@typescript-eslint/parser": "^5.12.1",
     "cli-progress": "^3.10.0",
     "cypress": "^8.4.1",
     "decompress": "^4.2.1",
