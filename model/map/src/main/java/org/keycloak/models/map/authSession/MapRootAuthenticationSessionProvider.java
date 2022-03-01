@@ -86,7 +86,9 @@ public class MapRootAuthenticationSessionProvider implements AuthenticationSessi
         LOG.tracef("createRootAuthenticationSession(%s)%s", realm.getName(), getShortStackTrace());
 
         // create map authentication session entity
-        MapRootAuthenticationSessionEntity entity = new MapRootAuthenticationSessionEntity(id, realm.getId());
+        MapRootAuthenticationSessionEntity entity = new MapRootAuthenticationSessionEntityImpl();
+        entity.setId(id);
+        entity.setRealmId(realm.getId());
         entity.setTimestamp(Time.currentTime());
 
         if (id != null && tx.read(id) != null) {
