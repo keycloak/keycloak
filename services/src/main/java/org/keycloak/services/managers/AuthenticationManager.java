@@ -1192,9 +1192,7 @@ public class AuthenticationManager {
         //if Dynamic Scopes are enabled, get the scopes from the AuthorizationRequestContext, passing the session and scopes as parameters
         // then concat a Stream with the ClientModel, as it's discarded in the getAuthorizationRequestContext method
         if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
-            return Stream.concat(AuthorizationContextUtil.getAuthorizationRequestContextFromScopes(session, authSession.getClientNote(OAuth2Constants.SCOPE))
-                    .getAuthorizationDetailEntries().stream(),
-                    Collections.singletonList(new AuthorizationDetails(session.getContext().getClient())).stream());
+            return AuthorizationContextUtil.getAuthorizationRequestsStreamFromScopesWithClient(session, authSession.getClientNote(OAuth2Constants.SCOPE));
         }
         // if dynamic scopes are not enabled, we retain the old behaviour, but the ClientScopes will be wrapped in
         // AuthorizationRequest objects to standardize the code handling these.
