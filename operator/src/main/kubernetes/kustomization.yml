@@ -7,5 +7,13 @@ resources:
   - kubernetes/keycloaks.keycloak.org-v1.yml
   - kubernetes/kubernetes.yml
 
+# patchesStrategicMerge
 patches:
   - kubernetes/minikube.yml
+
+# patchesJson6902
+patches:
+  - path: append_legacy_cr.yaml
+    target:
+      kind: CustomResourceDefinition
+      name: keycloaks.keycloak.org
