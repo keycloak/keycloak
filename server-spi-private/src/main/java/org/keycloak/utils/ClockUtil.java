@@ -33,6 +33,8 @@ import java.time.ZonedDateTime;
  */
 public class ClockUtil {
 
+  public static final String CLOCK_ADVANCE_HOURS = "keycloak.clock.advance.hours";
+
   private static Clock clock = Clock.systemDefaultZone();
 
   public static Clock getClock() {

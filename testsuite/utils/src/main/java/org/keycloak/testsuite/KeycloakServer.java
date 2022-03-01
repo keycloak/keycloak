@@ -26,6 +26,7 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.plugins.server.servlet.ResteasyContextParameters;
 import org.jboss.resteasy.plugins.server.undertow.UndertowJaxrsServer;
 import org.jboss.resteasy.spi.ResteasyDeployment;
+import org.keycloak.admin.client.Keycloak;
 import org.keycloak.common.Version;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
@@ -39,6 +40,7 @@ import org.keycloak.services.resources.KeycloakApplication;
 import org.keycloak.testsuite.util.cli.TestsuiteCLI;
 import org.keycloak.util.JsonSerialization;
 import io.undertow.servlet.api.InstanceHandle;
+import org.keycloak.utils.ClockUtil;
 import org.xnio.Options;
 import org.xnio.SslClientAuthMode;
 
@@ -251,6 +253,10 @@ public class KeycloakServer {
 
         if (System.getProperties().containsKey("startTestsuiteCLI")) {
             new TestsuiteCLI(keycloak).start();
+        }
+
+        if (System.getProperties().containsKey(ClockUtil.CLOCK_ADVANCE_HOURS)){
+            ClockUtil.plusHours(Integer.valueOf(System.getProperty(ClockUtil.CLOCK_ADVANCE_HOURS)));
         }
 
         return keycloak;

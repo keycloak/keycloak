@@ -79,6 +79,13 @@ public class OIDCClientConfigWrapper {
     return Boolean.parseBoolean(getAttribute(CLIENT_SECRET_ROTATION_ENABLED));
   }
 
+  public void removeClientSecretRotated(){
+    if (hasRotatedSecret()){
+      setAttribute(CLIENT_ROTATED_SECRET,null);
+      setAttribute(CLIENT_ROTATED_SECRET_CREATION_TIME,null);
+    }
+  }
+
   public int getClientSecretCreationTime() {
     String creationTime = getAttribute(CLIENT_SECRET_CREATION_TIME);
     return creationTime == null ? 0 : Integer.parseInt(creationTime); //TODO Optional

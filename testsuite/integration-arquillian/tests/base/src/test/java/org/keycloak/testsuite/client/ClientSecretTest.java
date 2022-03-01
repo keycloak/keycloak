@@ -194,7 +194,6 @@ public class ClientSecretTest extends AbstractKeycloakTest {
   @Test
   public void regenerateSecretAfterCurrentSecretExpires() throws Exception {
 
-    configureDefaultProfileAndPolicy();
     String cidConfidential = createClientByAdmin(DEFAULT_CLIENT_ID);
     ClientResource clientResource = adminClient.realm(REALM_NAME).clients().get(cidConfidential);
     String firstSecret = clientResource.getSecret().getValue();
@@ -203,6 +202,9 @@ public class ClientSecretTest extends AbstractKeycloakTest {
     OIDCClientConfigWrapper wrapper = OIDCClientConfigWrapper.fromClientRepresentation(
         clientResource.toRepresentation());
     assertThat(wrapper.hasRotatedSecret(), is(Boolean.FALSE));
+
+    //apply policy
+    configureDefaultProfileAndPolicy();
 
     //advance 1 hour
     ClockUtil.plusHours(1);

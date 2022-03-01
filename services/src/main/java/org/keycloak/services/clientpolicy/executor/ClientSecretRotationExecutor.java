@@ -25,6 +25,7 @@ import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.AdminClientUpdateContext;
 import org.keycloak.services.clientpolicy.context.ClientSecretRotationContext;
 import org.keycloak.utils.ClockUtil;
+
 /**
  * @author <a href="mailto:masales@redhat.com">Marcelo Sales</a>
  */
@@ -83,58 +84,6 @@ public class ClientSecretRotationExecutor implements
 
   }
 
-  public static class Configuration extends ClientPolicyExecutorConfigurationRepresentation {
-
-    @JsonProperty(ClientSecretRotationExecutorFactory.SECRET_EXPIRATION_PERIOD)
-    protected Integer expirationPeriod;
-
-    @JsonProperty(ClientSecretRotationExecutorFactory.SECRET_REMAINING_ROTATION_PERIOD)
-    protected Integer remainExpirationPeriod;
-
-    @JsonProperty(ClientSecretRotationExecutorFactory.SECRET_ROTATED_EXPIRATION_PERIOD)
-    private Integer rotatedExpirationPeriod;
-
-    public Integer getExpirationPeriod() {
-      return expirationPeriod;
-    }
-
-    public void setExpirationPeriod(Integer expirationPeriod) {
-      this.expirationPeriod = expirationPeriod;
-    }
-
-    public Integer getRemainExpirationPeriod() {
-      return remainExpirationPeriod;
-    }
-
-    public void setRemainExpirationPeriod(Integer remainExpirationPeriod) {
-      this.remainExpirationPeriod = remainExpirationPeriod;
-    }
-
-    public Integer getRotatedExpirationPeriod() {
-      return rotatedExpirationPeriod;
-    }
-
-    public void setRotatedExpirationPeriod(Integer rotatedExpirationPeriod) {
-      this.rotatedExpirationPeriod = rotatedExpirationPeriod;
-    }
-
-    public Configuration parseWithDefaultValues() {
-      if (getExpirationPeriod() == null) {
-        setExpirationPeriod(DEFAULT_SECRET_EXPIRATION_PERIOD);
-      }
-
-      if (getRemainExpirationPeriod() == null) {
-        setRemainExpirationPeriod(DEFAULT_SECRET_REMAINING_ROTATION_PERIOD);
-      }
-
-      if (getRotatedExpirationPeriod() == null) {
-        setRotatedExpirationPeriod(DEFAULT_SECRET_ROTATED_EXPIRATION_PERIOD);
-      }
-
-      return this;
-    }
-  }
-
   private void executeOnAuthRequest() {
     ClientModel client = session.getContext().getClient();
     OIDCClientConfigWrapper wrapper = OIDCClientConfigWrapper.fromClientModel(
@@ -180,9 +129,7 @@ public class ClientSecretRotationExecutor implements
         ChronoUnit.SECONDS);
 
     LocalDateTime now = LocalDateTime.now(ClockUtil.getClock());
-    if ((adminContext instanceof ClientSecretRotationContext
-        && ((ClientSecretRotationContext) adminContext).isForceRotation())
-        || expiration.isBefore(now)) {
+    if (adminContext instanceof ClientSecretRotationContext || expiration.isBefore(now)) {
       rotateSecret(adminContext, expiration);
     } else {
       //TODO validation for client dynamic registration
@@ -199,11 +146,13 @@ public class ClientSecretRotationExecutor implements
     ClientModel client = adminContext.getTargetClient();
     OIDCClientConfigWrapper clientConfigWrapper = OIDCClientConfigWrapper.fromClientModel(client);
 
-    if (adminContext instanceof ClientSecretRotationContext
-        && !((ClientSecretRotationContext) adminContext).isForceRotation()) {
-      updateRotateSecret(clientConfigWrapper,((ClientSecretRotationContext) adminContext).getCurrentSecret());
+    if (adminContext instanceof ClientSecretRotationContext) {
+      ClientSecretRotationContext secretRotationContext = ((ClientSecretRotationContext) adminContext);
+      if (secretRotationContext.isForceRotation()) {
+        updateRotateSecret(clientConfigWrapper, secretRotationContext.getCurrentSecret());
+      }
     } else {
-      updateRotateSecret(clientConfigWrapper,client.getSecret());
+      updateRotateSecret(clientConfigWrapper, client.getSecret());
       KeycloakModelUtils.generateSecret(client);
     }
 
@@ -221,13 +170,83 @@ public class ClientSecretRotationExecutor implements
         adminContext.getProposedClientRepresentation());
   }
 
-  private void updateRotateSecret(OIDCClientConfigWrapper clientConfigWrapper, String secret){
-    if (configuration.rotatedExpirationPeriod > 0){
+  private void updateRotateSecret(OIDCClientConfigWrapper clientConfigWrapper, String secret) {
+    if (configuration.rotatedExpirationPeriod > 0) {
       clientConfigWrapper.setClientRotatedSecret(secret);
       clientConfigWrapper.setClientRotatedSecretCreationTime();
-    }else{
+    } else {
       clientConfigWrapper.setClientRotatedSecret(null);
       clientConfigWrapper.setClientRotatedSecretCreationTime(null);
+    }
+  }
+
+  public static class Configuration extends ClientPolicyExecutorConfigurationRepresentation {
+
+    @JsonProperty(ClientSecretRotationExecutorFactory.SECRET_EXPIRATION_PERIOD)
+    protected Integer expirationPeriod;
+    @JsonProperty(ClientSecretRotationExecutorFactory.SECRET_REMAINING_ROTATION_PERIOD)
+    protected Integer remainExpirationPeriod;
+    @JsonProperty(ClientSecretRotationExecutorFactory.SECRET_ROTATED_EXPIRATION_PERIOD)
+    private Integer rotatedExpirationPeriod;
+
+    @Override
+    public boolean validateConfig() {
+      // expiration must be a positive value greater than 0 (seconds)
+      if (expirationPeriod <= 0) {
+        return false;
+      }
+
+      // rotated secret duration could not be bigger than the main secret
+      if (rotatedExpirationPeriod > expirationPeriod) {
+        return false;
+      }
+
+      // remaining secret expiration period could not be bigger than main secret
+      if (remainExpirationPeriod > expirationPeriod) {
+        return false;
+      }
+
+      return true;
+    }
+
+    public Integer getExpirationPeriod() {
+      return expirationPeriod;
+    }
+
+    public void setExpirationPeriod(Integer expirationPeriod) {
+      this.expirationPeriod = expirationPeriod;
+    }
+
+    public Integer getRemainExpirationPeriod() {
+      return remainExpirationPeriod;
+    }
+
+    public void setRemainExpirationPeriod(Integer remainExpirationPeriod) {
+      this.remainExpirationPeriod = remainExpirationPeriod;
+    }
+
+    public Integer getRotatedExpirationPeriod() {
+      return rotatedExpirationPeriod;
+    }
+
+    public void setRotatedExpirationPeriod(Integer rotatedExpirationPeriod) {
+      this.rotatedExpirationPeriod = rotatedExpirationPeriod;
+    }
+
+    public Configuration parseWithDefaultValues() {
+      if (getExpirationPeriod() == null) {
+        setExpirationPeriod(DEFAULT_SECRET_EXPIRATION_PERIOD);
+      }
+
+      if (getRemainExpirationPeriod() == null) {
+        setRemainExpirationPeriod(DEFAULT_SECRET_REMAINING_ROTATION_PERIOD);
+      }
+
+      if (getRotatedExpirationPeriod() == null) {
+        setRotatedExpirationPeriod(DEFAULT_SECRET_ROTATED_EXPIRATION_PERIOD);
+      }
+
+      return this;
     }
   }
 

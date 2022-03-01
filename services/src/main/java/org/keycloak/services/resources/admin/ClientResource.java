@@ -16,6 +16,11 @@
  */
 package org.keycloak.services.resources.admin;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import javax.ws.rs.core.Response.Status;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.BadRequestException;
@@ -43,6 +48,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.protocol.ClientInstallationProvider;
+import org.keycloak.protocol.oidc.OIDCClientConfigWrapper;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
@@ -252,7 +258,7 @@ public class ClientResource {
 
         ClientRepresentation representation = ModelToRepresentation.toRepresentation(client, session);
         ClientSecretRotationContext secretRotationContext = new ClientSecretRotationContext(
-            representation, client, auth.adminAuth(), client.getSecret());
+            representation, client, client.getSecret());
 
         String secret = KeycloakModelUtils.generateSecret(client);
 
@@ -263,6 +269,7 @@ public class ClientResource {
         rep.setValue(secret);
 
         adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).representation(rep).success();
+
         return rep;
         } catch (ClientPolicyException cpe) {
             throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(),
@@ -678,6 +685,59 @@ public class ClientResource {
         }
     }
 
+    /**
+     * Invalidate the rotated secret for the client
+     *
+     * @return
+     */
+    @Path("client-secret/rotated")
+    @DELETE
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response invalidateRotatedSecret() {
+        try{
+            auth.clients().requireConfigure(client);
+
+            logger.debug("delete rotated secret");
+
+            OIDCClientConfigWrapper wrapper = OIDCClientConfigWrapper.fromClientModel(client);
+
+            CredentialRepresentation rep = new CredentialRepresentation();
+            rep.setType(CredentialRepresentation.SECRET);
+            rep.setValue(wrapper.getClientRotatedSecret());
+
+            adminEvent.operation(OperationType.DELETE).resourcePath(session.getContext().getUri()).representation(rep).success();
+
+            wrapper.removeClientSecretRotated();
+
+            return Response.noContent().build();
+        } catch (RuntimeException rte) {
+            throw new ErrorResponseException(rte.getCause().getMessage(), rte.getMessage(),
+                Status.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Get the client secret
+     *
+     * @return
+     */
+    @Path("client-secret/rotated")
+    @GET
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    public CredentialRepresentation getClientRotatedSecret() {
+        auth.clients().requireView(client);
+
+        logger.debug("getClientRotatedSecret");
+        OIDCClientConfigWrapper wrapper = OIDCClientConfigWrapper.fromClientModel(client);
+        if (!wrapper.hasRotatedSecret())
+            throw new NotFoundException("Client does not have a rotated secret");
+        else {
+            UserCredentialModel model = UserCredentialModel.secret(wrapper.getClientRotatedSecret());
+            return ModelToRepresentation.toRepresentation(model);
+        }
+    }
 
     private void updateClientFromRep(ClientRepresentation rep, ClientModel client, KeycloakSession session) throws ModelDuplicateException {
         UserModel serviceAccount = this.session.users().getServiceAccount(client);

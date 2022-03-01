@@ -378,6 +378,9 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
             // if client is confidential, generate a secret if none is defined
             if (newClient.getSecret() == null) {
                 KeycloakModelUtils.generateSecret(newClient);
+
+                if (rep.getAttributes()==null)rep.setAttributes(new HashMap<>());
+
                 rep.getAttributes().put(
                     ClientSecretConfig.CLIENT_SECRET_CREATION_TIME,String.valueOf(ClockUtil.currentTimeInSeconds()));
             }

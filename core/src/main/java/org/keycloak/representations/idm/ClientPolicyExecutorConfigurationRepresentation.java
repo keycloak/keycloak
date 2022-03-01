@@ -42,4 +42,7 @@ public class ClientPolicyExecutorConfigurationRepresentation {
     public void setConfigAsMap(String name, Object value) {
         this.configAsMap.put(name, value);
     }
+
+    //FIXME validate the configuration value
+    public boolean validateConfig(){return  true;}
 }
