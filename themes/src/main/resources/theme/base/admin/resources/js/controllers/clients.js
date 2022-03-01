@@ -1346,6 +1346,8 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
         $scope.authorizationSignedResponseAlg = $scope.client.attributes['authorization.signed.response.alg'];
         $scope.authorizationEncryptedResponseAlg = $scope.client.attributes['authorization.encrypted.response.alg'];
         $scope.authorizationEncryptedResponseEnc = $scope.client.attributes['authorization.encrypted.response.enc'];
+        $scope.userInfoEncryptedResponseAlg = $scope.client.attributes['user.info.encrypted.response.alg'];
+        $scope.userInfoEncryptedResponseEnc = $scope.client.attributes['user.info.encrypted.response.enc'];
 
         var attrVal1 = $scope.client.attributes['user.info.response.signature.alg'];
         $scope.userInfoSignedResponseAlg = attrVal1==null ? 'unsigned' : attrVal1;
@@ -1620,6 +1622,14 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
         } else {
             $scope.clientEdit.attributes['request.object.encryption.enc'] = $scope.requestObjectEncryptionEnc;
         }
+    };
+
+    $scope.changeUserInfoEncryptedResponseAlg = function() {
+        $scope.clientEdit.attributes['user.info.encrypted.response.alg'] = $scope.userInfoEncryptedResponseAlg;
+    };
+
+    $scope.changeUserInfoEncryptedResponseEnc = function() {
+        $scope.clientEdit.attributes['user.info.encrypted.response.enc'] = $scope.userInfoEncryptedResponseEnc;
     };
 
     $scope.changePkceCodeChallengeMethod = function() {

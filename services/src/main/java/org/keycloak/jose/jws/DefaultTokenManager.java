@@ -53,13 +53,9 @@ import org.keycloak.util.TokenUtil;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.Key;
-import java.security.PrivateKey;
 import java.util.Comparator;
 import java.util.Optional;
 import java.util.function.BiConsumer;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 public class DefaultTokenManager implements TokenManager {
@@ -279,6 +275,8 @@ public class DefaultTokenManager implements TokenManager {
                 return getCekManagementAlgorithm(OIDCConfigAttributes.ID_TOKEN_ENCRYPTED_RESPONSE_ALG);
             case AUTHORIZATION_RESPONSE:
                 return getCekManagementAlgorithm(OIDCConfigAttributes.AUTHORIZATION_ENCRYPTED_RESPONSE_ALG);
+            case USERINFO:
+                return getCekManagementAlgorithm(OIDCConfigAttributes.USER_INFO_ENCRYPTED_RESPONSE_ALG);
             default:
                 return null;
         }
@@ -302,6 +300,8 @@ public class DefaultTokenManager implements TokenManager {
                 return getEncryptAlgorithm(OIDCConfigAttributes.ID_TOKEN_ENCRYPTED_RESPONSE_ENC);
             case AUTHORIZATION_RESPONSE:
                 return getEncryptAlgorithm(OIDCConfigAttributes.AUTHORIZATION_ENCRYPTED_RESPONSE_ENC);
+            case USERINFO:
+                return getEncryptAlgorithm(OIDCConfigAttributes.USER_INFO_ENCRYPTED_RESPONSE_ENC);
             default:
                 return null;
         }

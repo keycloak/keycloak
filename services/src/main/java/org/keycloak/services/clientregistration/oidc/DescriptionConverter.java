@@ -22,7 +22,6 @@ import org.keycloak.authentication.ClientAuthenticator;
 import org.keycloak.authentication.ClientAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
-import org.keycloak.authentication.authenticators.client.X509ClientAuthenticator;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKParser;
@@ -141,6 +140,14 @@ public class DescriptionConverter {
         if (clientOIDC.getRequestObjectSigningAlg() != null) {
             Algorithm algorithm = Enum.valueOf(Algorithm.class, clientOIDC.getRequestObjectSigningAlg());
             configWrapper.setRequestObjectSignatureAlg(algorithm);
+        }
+
+        if (clientOIDC.getUserinfoEncryptedResponseAlg() != null) {
+            configWrapper.setUserInfoEncryptedResponseAlg(clientOIDC.getUserinfoEncryptedResponseAlg());
+        }
+
+        if (clientOIDC.getUserinfoEncryptedResponseEnc() != null) {
+            configWrapper.setUserInfoEncryptedResponseEnc(clientOIDC.getUserinfoEncryptedResponseEnc());
         }
 
         // KEYCLOAK-6771 Certificate Bound Token
@@ -334,6 +341,12 @@ public class DescriptionConverter {
         OIDCAdvancedConfigWrapper config = OIDCAdvancedConfigWrapper.fromClientRepresentation(client);
         if (config.isUserInfoSignatureRequired()) {
             response.setUserinfoSignedResponseAlg(config.getUserInfoSignedResponseAlg().toString());
+        }
+        if (config.getUserInfoEncryptedResponseAlg() != null) {
+            response.setUserinfoEncryptedResponseAlg(config.getUserInfoEncryptedResponseAlg());
+        }
+        if (config.getUserInfoEncryptedResponseEnc() != null) {
+            response.setUserinfoEncryptedResponseEnc(config.getUserInfoEncryptedResponseEnc());
         }
         if (config.getRequestObjectSignatureAlg() != null) {
             response.setRequestObjectSigningAlg(config.getRequestObjectSignatureAlg().toString());

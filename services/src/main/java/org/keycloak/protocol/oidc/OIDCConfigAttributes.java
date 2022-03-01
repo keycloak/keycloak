@@ -19,6 +19,8 @@ package org.keycloak.protocol.oidc;
 public final class OIDCConfigAttributes {
 
     public static final String USER_INFO_RESPONSE_SIGNATURE_ALG = "user.info.response.signature.alg";
+    public static final String USER_INFO_ENCRYPTED_RESPONSE_ALG = "user.info.encrypted.response.alg";
+    public static final String USER_INFO_ENCRYPTED_RESPONSE_ENC = "user.info.encrypted.response.enc";
 
     public static final String REQUEST_OBJECT_SIGNATURE_ALG = "request.object.signature.alg";
     public static final String REQUEST_OBJECT_ENCRYPTION_ALG = "request.object.encryption.alg";
