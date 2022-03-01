@@ -41,7 +41,6 @@ import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.storage.StorageId;
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
-import org.keycloak.models.ClientModel;
 
 public class MapResourceServerStore implements ResourceServerStore {
 

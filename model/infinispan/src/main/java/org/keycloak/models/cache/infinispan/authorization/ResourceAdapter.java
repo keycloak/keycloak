@@ -19,6 +19,7 @@ package org.keycloak.models.cache.infinispan.authorization;
 import org.keycloak.authorization.model.CachedModel;
 import org.keycloak.authorization.model.PermissionTicket;
 import org.keycloak.authorization.model.Resource;
+import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.store.PermissionTicketStore;
 import org.keycloak.authorization.store.PolicyStore;
@@ -132,9 +133,9 @@ public class ResourceAdapter implements Resource, CachedModel<Resource> {
     }
 
     @Override
-    public String getResourceServer() {
+    public ResourceServer getResourceServer() {
         if (isUpdated()) return updated.getResourceServer();
-        return cached.getResourceServerId();
+        return cacheSession.getResourceServerStoreDelegate().findById(cached.getResourceServerId());
     }
 
     @Override
@@ -203,7 +204,7 @@ public class ResourceAdapter implements Resource, CachedModel<Resource> {
         for (Scope scope : updated.getScopes()) {
             if (!scopes.contains(scope)) {
                 PermissionTicketStore permissionStore = cacheSession.getPermissionTicketStore();
-                List<PermissionTicket> permissions = permissionStore.findByScope(getResourceServer(), scope.getId());
+                List<PermissionTicket> permissions = permissionStore.findByScope(getResourceServer().getId(), scope.getId());
 
                 for (PermissionTicket permission : permissions) {
                     permissionStore.delete(permission.getId());
@@ -215,7 +216,7 @@ public class ResourceAdapter implements Resource, CachedModel<Resource> {
 
         for (Scope scope : updated.getScopes()) {
             if (!scopes.contains(scope)) {
-                policyStore.findByResource(getResourceServer(), getId(), policy -> policy.removeScope(scope));
+                policyStore.findByResource(getResourceServer().getId(), getId(), policy -> policy.removeScope(scope));
             }
         }
 

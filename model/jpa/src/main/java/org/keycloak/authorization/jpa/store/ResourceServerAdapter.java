@@ -88,11 +88,6 @@ public class ResourceServerAdapter extends AbstractAuthorizationModel implements
     }
 
     @Override
-    public String getClientId() {
-        return getId();
-    }
-
-    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || !(o instanceof ResourceServer)) return false;

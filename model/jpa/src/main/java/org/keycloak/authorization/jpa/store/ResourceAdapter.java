@@ -21,6 +21,7 @@ import org.keycloak.authorization.jpa.entities.ResourceEntity;
 import org.keycloak.authorization.jpa.entities.ScopeEntity;
 import org.keycloak.authorization.model.AbstractAuthorizationModel;
 import org.keycloak.authorization.model.Resource;
+import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.common.util.MultivaluedHashMap;
@@ -135,8 +136,8 @@ public class ResourceAdapter extends AbstractAuthorizationModel implements Resou
     }
 
     @Override
-    public String getResourceServer() {
-        return entity.getResourceServer();
+    public ResourceServer getResourceServer() {
+        return storeFactory.getResourceServerStore().findById(entity.getResourceServer());
     }
 
     @Override

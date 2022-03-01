@@ -466,14 +466,14 @@ public final class AuthorizationProvider implements Provider {
                 Resource resource = findById(null, id);
                 StoreFactory storeFactory = AuthorizationProvider.this.getStoreFactory();
                 PermissionTicketStore ticketStore = storeFactory.getPermissionTicketStore();
-                List<PermissionTicket> permissions = ticketStore.findByResource(resource.getResourceServer(), id);
+                List<PermissionTicket> permissions = ticketStore.findByResource(resource.getResourceServer().getId(), id);
 
                 for (PermissionTicket permission : permissions) {
                     ticketStore.delete(permission.getId());
                 }
 
                 PolicyStore policyStore = storeFactory.getPolicyStore();
-                List<Policy> policies = policyStore.findByResource(resource.getResourceServer(), id);
+                List<Policy> policies = policyStore.findByResource(resource.getResourceServer().getId(), id);
 
                 for (Policy policyModel : policies) {
                     if (policyModel.getResources().size() == 1) {

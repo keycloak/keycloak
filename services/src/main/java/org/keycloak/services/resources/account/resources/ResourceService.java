@@ -58,7 +58,7 @@ public class ResourceService extends AbstractResourceService {
             Auth auth, HttpRequest request) {
         super(session, user, auth, request);
         this.resource = resource;
-        this.resourceServer = provider.getStoreFactory().getResourceServerStore().findById(resource.getResourceServer());
+        this.resourceServer = resource.getResourceServer();
     }
 
     /**
@@ -135,7 +135,7 @@ public class ResourceService extends AbstractResourceService {
 
             filters.put(PermissionTicket.FilterOption.REQUESTER, user.getId());
 
-            List<PermissionTicket> tickets = ticketStore.find(resource.getResourceServer(), filters, -1, -1);
+            List<PermissionTicket> tickets = ticketStore.find(resource.getResourceServer().getId(), filters, -1, -1);
 
             // grants all requested permissions
             if (tickets.isEmpty()) {
