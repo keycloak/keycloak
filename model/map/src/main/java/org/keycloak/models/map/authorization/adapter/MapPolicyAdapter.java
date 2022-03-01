@@ -127,7 +127,7 @@ public class MapPolicyAdapter extends AbstractPolicyModel<MapPolicyEntity> {
         String resourceServerId = entity.getResourceServerId();
         Set<String> ids = entity.getAssociatedPolicyIds();
         return ids == null ? Collections.emptySet() : ids.stream()
-                .map(policyId -> storeFactory.getPolicyStore().findById(policyId, resourceServerId))
+                .map(policyId -> storeFactory.getPolicyStore().findById(resourceServerId, policyId))
                 .collect(Collectors.toSet());
     }
 
@@ -136,7 +136,7 @@ public class MapPolicyAdapter extends AbstractPolicyModel<MapPolicyEntity> {
         String resourceServerId = entity.getResourceServerId();
         Set<String> ids = entity.getResourceIds();
         return ids == null ? Collections.emptySet() : ids.stream()
-                .map(resourceId -> storeFactory.getResourceStore().findById(resourceId, resourceServerId))
+                .map(resourceId -> storeFactory.getResourceStore().findById(resourceServerId, resourceId))
                 .collect(Collectors.toSet());
     }
 
@@ -145,7 +145,7 @@ public class MapPolicyAdapter extends AbstractPolicyModel<MapPolicyEntity> {
         String resourceServerId = entity.getResourceServerId();
         Set<String> ids = entity.getScopeIds();
         return ids == null ? Collections.emptySet() : ids.stream()
-                .map(scopeId -> storeFactory.getScopeStore().findById(scopeId, resourceServerId))
+                .map(scopeId -> storeFactory.getScopeStore().findById(resourceServerId, scopeId))
                 .collect(Collectors.toSet());
     }
 

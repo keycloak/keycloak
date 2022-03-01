@@ -924,7 +924,7 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
         filters.put(OWNER, new String[] {user.getId()});
 
         List<Policy> policies = provider.getStoreFactory().getPolicyStore()
-                .findByResourceServer(filters, resourceServer.getId(), -1, -1);
+                .findByResourceServer(resourceServer.getId(), filters, -1, -1);
         assertEquals(1, policies.size());
 
         Policy policy = policies.get(0);
@@ -939,7 +939,7 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
 
         filters.put(OWNER, new String[] {user.getId()});
         policies = provider.getStoreFactory().getPolicyStore()
-                .findByResourceServer(filters, resourceServer.getId(), -1, -1);
+                .findByResourceServer(resourceServer.getId(), filters, -1, -1);
         assertTrue(policies.isEmpty());
     }
 
@@ -978,7 +978,7 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
         filters.put(OWNER, new String[] {user.getId()});
 
         List<Policy> policies = provider.getStoreFactory().getPolicyStore()
-                .findByResourceServer(filters, resourceServer.getId(), -1, -1);
+                .findByResourceServer(resourceServer.getId(), filters, -1, -1);
         assertEquals(1, policies.size());
 
         Policy policy = policies.get(0);
@@ -994,7 +994,7 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
         filters.put(OWNER, new String[] {user.getId()});
 
         policies = provider.getStoreFactory().getPolicyStore()
-                .findByResourceServer(filters, resourceServer.getId(), -1, -1);
+                .findByResourceServer(resourceServer.getId(), filters, -1, -1);
         assertTrue(policies.isEmpty());
     }
 
@@ -1033,7 +1033,7 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
         filters.put(OWNER, new String[] {user.getId()});
 
         List<Policy> policies = provider.getStoreFactory().getPolicyStore()
-            .findByResourceServer(filters, resourceServer.getId(), -1, -1);
+            .findByResourceServer(resourceServer.getId(), filters, -1, -1);
         assertEquals(1, policies.size());
 
         Policy policy = policies.get(0);
@@ -1049,7 +1049,7 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
         filters.put(OWNER, new String[] {user.getId()});
 
         policies = provider.getStoreFactory().getPolicyStore()
-            .findByResourceServer(filters, resourceServer.getId(), -1, -1);
+            .findByResourceServer(resourceServer.getId(), filters, -1, -1);
         assertTrue(policies.isEmpty());
     }
 

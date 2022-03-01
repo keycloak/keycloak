@@ -2359,10 +2359,10 @@ public class RepresentationToModel {
                     Set<String> policyIds = new HashSet<>();
 
                     for (String policyName : policies) {
-                        Policy policy = policyStore.findByName(policyName, resourceServer.getId());
+                        Policy policy = policyStore.findByName(resourceServer.getId(), policyName);
 
                         if (policy == null) {
-                            policy = policyStore.findById(policyName, resourceServer.getId());
+                            policy = policyStore.findById(resourceServer.getId(), policyName);
                         }
 
                         if (policy == null) {
@@ -2382,14 +2382,14 @@ public class RepresentationToModel {
             }
 
             PolicyStore policyStore = storeFactory.getPolicyStore();
-            Policy policy = policyStore.findById(policyRepresentation.getId(), resourceServer.getId());
+            Policy policy = policyStore.findById(resourceServer.getId(), policyRepresentation.getId());
 
             if (policy == null) {
-                policy = policyStore.findByName(policyRepresentation.getName(), resourceServer.getId());
+                policy = policyStore.findByName(resourceServer.getId(), policyRepresentation.getName());
             }
 
             if (policy == null) {
-                policy = policyStore.create(policyRepresentation, resourceServer);
+                policy = policyStore.create(resourceServer, policyRepresentation);
             } else {
                 policy = toModel(policyRepresentation, authorization, policy);
             }
@@ -2494,10 +2494,10 @@ public class RepresentationToModel {
                 }
                 if (!hasScope) {
                     ResourceServer resourceServer = policy.getResourceServer();
-                    Scope scope = storeFactory.getScopeStore().findById(scopeId, resourceServer.getId());
+                    Scope scope = storeFactory.getScopeStore().findById(resourceServer.getId(), scopeId);
 
                     if (scope == null) {
-                        scope = storeFactory.getScopeStore().findByName(scopeId, resourceServer.getId());
+                        scope = storeFactory.getScopeStore().findByName(resourceServer.getId(), scopeId);
                         if (scope == null) {
                             throw new RuntimeException("Scope with id or name [" + scopeId + "] does not exist");
                         }
@@ -2547,10 +2547,10 @@ public class RepresentationToModel {
                 }
 
                 if (!hasPolicy) {
-                    Policy associatedPolicy = policyStore.findById(policyId, resourceServer.getId());
+                    Policy associatedPolicy = policyStore.findById(resourceServer.getId(), policyId);
 
                     if (associatedPolicy == null) {
-                        associatedPolicy = policyStore.findByName(policyId, resourceServer.getId());
+                        associatedPolicy = policyStore.findByName(resourceServer.getId(), policyId);
                         if (associatedPolicy == null) {
                             throw new RuntimeException("Policy with id or name [" + policyId + "] does not exist");
                         }
@@ -2592,10 +2592,10 @@ public class RepresentationToModel {
                     }
                 }
                 if (!hasResource && !"".equals(resourceId)) {
-                    Resource resource = storeFactory.getResourceStore().findById(resourceId, policy.getResourceServer().getId());
+                    Resource resource = storeFactory.getResourceStore().findById(policy.getResourceServer().getId(), resourceId);
 
                     if (resource == null) {
-                        resource = storeFactory.getResourceStore().findByName(resourceId, policy.getResourceServer().getId());
+                        resource = storeFactory.getResourceStore().findByName(policy.getResourceServer().getId(), resourceId);
                         if (resource == null) {
                             throw new RuntimeException("Resource with id or name [" + resourceId + "] does not exist or is not owned by the resource server");
                         }
@@ -2658,9 +2658,9 @@ public class RepresentationToModel {
         Resource existing;
 
         if (resource.getId() != null) {
-            existing = resourceStore.findById(resource.getId(), resourceServer.getId());
+            existing = resourceStore.findById(resourceServer.getId(), resource.getId());
         } else {
-            existing = resourceStore.findByName(resource.getName(), ownerId, resourceServer.getId());
+            existing = resourceStore.findByName(resourceServer.getId(), resource.getName(), ownerId);
         }
 
         if (existing != null) {
@@ -2695,7 +2695,7 @@ public class RepresentationToModel {
             return existing;
         }
 
-        Resource model = resourceStore.create(resource.getId(), resource.getName(), resourceServer, ownerId);
+        Resource model = resourceStore.create(resourceServer, resource.getId(), resource.getName(), ownerId);
 
         model.setDisplayName(resource.getDisplayName());
         model.setType(resource.getType());
@@ -2732,9 +2732,9 @@ public class RepresentationToModel {
         Scope existing;
 
         if (scope.getId() != null) {
-            existing = scopeStore.findById(scope.getId(), resourceServer.getId());
+            existing = scopeStore.findById(resourceServer.getId(), scope.getId());
         } else {
-            existing = scopeStore.findByName(scope.getName(), resourceServer.getId());
+            existing = scopeStore.findByName(resourceServer.getId(), scope.getName());
         }
 
         if (existing != null) {
@@ -2746,7 +2746,7 @@ public class RepresentationToModel {
             return existing;
         }
 
-        Scope model = scopeStore.create(scope.getId(), scope.getName(), resourceServer);
+        Scope model = scopeStore.create(resourceServer, scope.getId(), scope.getName());
 
         model.setDisplayName(scope.getDisplayName());
         model.setIconUri(scope.getIconUri());
@@ -2758,7 +2758,7 @@ public class RepresentationToModel {
 
     public static PermissionTicket toModel(PermissionTicketRepresentation representation, String resourceServerId, AuthorizationProvider authorization) {
         PermissionTicketStore ticketStore = authorization.getStoreFactory().getPermissionTicketStore();
-        PermissionTicket ticket = ticketStore.findById(representation.getId(), resourceServerId);
+        PermissionTicket ticket = ticketStore.findById(resourceServerId, representation.getId());
         boolean granted = representation.isGranted();
 
         if (granted && !ticket.isGranted()) {

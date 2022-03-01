@@ -72,7 +72,7 @@ public class MapResourceStore implements ResourceStore {
     }
 
     @Override
-    public Resource create(String id, String name, ResourceServer resourceServer, String owner) {
+    public Resource create(ResourceServer resourceServer, String id, String name, String owner) {
         LOG.tracef("create(%s, %s, %s, %s)%s", id, name, resourceServer, owner, getShortStackTrace());
         // @UniqueConstraint(columnNames = {"NAME", "RESOURCE_SERVER_ID", "OWNER"})
         DefaultModelCriteria<Resource> mcb = forResourceServer(resourceServer.getId())
@@ -102,7 +102,7 @@ public class MapResourceStore implements ResourceStore {
     }
 
     @Override
-    public Resource findById(String id, String resourceServerId) {
+    public Resource findById(String resourceServerId, String id) {
         LOG.tracef("findById(%s, %s)%s", id, resourceServerId, getShortStackTrace());
 
         return tx.read(withCriteria(forResourceServer(resourceServerId)
@@ -113,7 +113,7 @@ public class MapResourceStore implements ResourceStore {
     }
 
     @Override
-    public void findByOwner(String ownerId, String resourceServerId, Consumer<Resource> consumer) {
+    public void findByOwner(String resourceServerId, String ownerId, Consumer<Resource> consumer) {
         findByOwnerFilter(ownerId, resourceServerId, consumer, -1, -1);
     }
 
@@ -127,7 +127,7 @@ public class MapResourceStore implements ResourceStore {
     }
 
     @Override
-    public List<Resource> findByOwner(String ownerId, String resourceServerId, int first, int max) {
+    public List<Resource> findByOwner(String resourceServerId, String ownerId, int first, int max) {
         List<Resource> resourceList = new LinkedList<>();
 
         findByOwnerFilter(ownerId, resourceServerId, resourceList::add, first, max);
@@ -136,7 +136,7 @@ public class MapResourceStore implements ResourceStore {
     }
 
     @Override
-    public List<Resource> findByUri(String uri, String resourceServerId) {
+    public List<Resource> findByUri(String resourceServerId, String uri) {
         LOG.tracef("findByUri(%s, %s)%s", uri, resourceServerId, getShortStackTrace());
 
         return tx.read(withCriteria(forResourceServer(resourceServerId)
@@ -155,7 +155,7 @@ public class MapResourceStore implements ResourceStore {
     }
 
     @Override
-    public List<Resource> findByResourceServer(Map<Resource.FilterOption, String[]> attributes, String resourceServerId, int firstResult, int maxResult) {
+    public List<Resource> findByResourceServer(String resourceServerId, Map<Resource.FilterOption, String[]> attributes, int firstResult, int maxResult) {
         LOG.tracef("findByResourceServer(%s, %s, %d, %d)%s", attributes, resourceServerId, firstResult, maxResult, getShortStackTrace());
         DefaultModelCriteria<Resource> mcb = forResourceServer(resourceServerId).and(
                 attributes.entrySet().stream()
@@ -194,7 +194,7 @@ public class MapResourceStore implements ResourceStore {
     }
 
     @Override
-    public void findByScope(List<String> scopes, String resourceServerId, Consumer<Resource> consumer) {
+    public void findByScope(String resourceServerId, List<String> scopes, Consumer<Resource> consumer) {
         LOG.tracef("findByScope(%s, %s, %s)%s", scopes, resourceServerId, consumer, getShortStackTrace());
 
         tx.read(withCriteria(forResourceServer(resourceServerId)
@@ -209,7 +209,7 @@ public class MapResourceStore implements ResourceStore {
     }
 
     @Override
-    public Resource findByName(String name, String ownerId, String resourceServerId) {
+    public Resource findByName(String resourceServerId, String name, String ownerId) {
         LOG.tracef("findByName(%s, %s, %s)%s", name, ownerId, resourceServerId, getShortStackTrace());
         return tx.read(withCriteria(forResourceServer(resourceServerId)
                 .compare(SearchableFields.OWNER, Operator.EQ, ownerId)
@@ -220,7 +220,7 @@ public class MapResourceStore implements ResourceStore {
     }
 
     @Override
-    public void findByType(String type, String resourceServerId, Consumer<Resource> consumer) {
+    public void findByType(String resourceServerId, String type, Consumer<Resource> consumer) {
         LOG.tracef("findByType(%s, %s, %s)%s", type, resourceServerId, consumer, getShortStackTrace());
         tx.read(withCriteria(forResourceServer(resourceServerId)
                 .compare(SearchableFields.TYPE, Operator.EQ, type)))
@@ -229,7 +229,7 @@ public class MapResourceStore implements ResourceStore {
     }
 
     @Override
-    public void findByType(String type, String owner, String resourceServerId, Consumer<Resource> consumer) {
+    public void findByType(String resourceServerId, String type, String owner, Consumer<Resource> consumer) {
         LOG.tracef("findByType(%s, %s, %s, %s)%s", type, owner, resourceServerId, consumer, getShortStackTrace());
 
         DefaultModelCriteria<Resource> mcb = forResourceServer(resourceServerId)
@@ -245,7 +245,7 @@ public class MapResourceStore implements ResourceStore {
     }
 
     @Override
-    public void findByTypeInstance(String type, String resourceServerId, Consumer<Resource> consumer) {
+    public void findByTypeInstance(String resourceServerId, String type, Consumer<Resource> consumer) {
         LOG.tracef("findByTypeInstance(%s, %s, %s)%s", type, resourceServerId, consumer, getShortStackTrace());
         tx.read(withCriteria(forResourceServer(resourceServerId)
                 .compare(SearchableFields.OWNER, Operator.NE, resourceServerId)

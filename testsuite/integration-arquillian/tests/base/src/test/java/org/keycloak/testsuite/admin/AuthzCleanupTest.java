@@ -95,7 +95,7 @@ public class AuthzCleanupTest extends AbstractKeycloakTest {
         representation.setLogic(Logic.POSITIVE);
         representation.addRole(roleName, true);
 
-        return authz.getStoreFactory().getPolicyStore().create(representation, resourceServer);
+        return authz.getStoreFactory().getPolicyStore().create(resourceServer, representation);
     }
 
 

@@ -516,7 +516,7 @@ public class AuthorizationTokenService {
                             break;
                         }
 
-                        Resource resource = resourceStore.findById(grantedPermission.getResourceId(), resourceServer.getId());
+                        Resource resource = resourceStore.findById(resourceServer.getId(), grantedPermission.getResourceId());
 
                         if (resource != null) {
                             ResourcePermission permission = permissionsToEvaluate.get(resource.getId());
@@ -540,7 +540,7 @@ public class AuthorizationTokenService {
                             }
 
                             for (String scopeName : grantedPermission.getScopes()) {
-                                Scope scope = scopeStore.findByName(scopeName, resourceServer.getId());
+                                Scope scope = scopeStore.findByName(resourceServer.getId(), scopeName);
 
                                 if (scope != null) {
                                     if (!permission.getScopes().contains(scope)) {
@@ -561,7 +561,7 @@ public class AuthorizationTokenService {
             Set<Scope> requestedScopesModel) {
         AtomicBoolean processed = new AtomicBoolean();
 
-        resourceStore.findByScope(requestedScopesModel.stream().map(Scope::getId).collect(Collectors.toList()), resourceServer.getId(), resource -> {
+        resourceStore.findByScope(resourceServer.getId(), requestedScopesModel.stream().map(Scope::getId).collect(Collectors.toList()), resource -> {
             if (limit != null && limit.get() <= 0) {
                 return;
             }
@@ -600,7 +600,7 @@ public class AuthorizationTokenService {
         Resource resource;
 
         if (resourceId.indexOf('-') != -1) {
-            resource = resourceStore.findById(resourceId, resourceServer.getId());
+            resource = resourceStore.findById(resourceServer.getId(), resourceId);
         } else {
             resource = null;
         }
@@ -610,25 +610,25 @@ public class AuthorizationTokenService {
         } else if (resourceId.startsWith("resource-type:")) {
             // only resource types, no resource instances. resource types are owned by the resource server
             String resourceType = resourceId.substring("resource-type:".length());
-            resourceStore.findByType(resourceType, resourceServer.getClientId(), resourceServer.getId(),
+            resourceStore.findByType(resourceServer.getId(), resourceType, resourceServer.getClientId(),
                     resource1 -> addPermission(request, resourceServer, authorization, permissionsToEvaluate, limit, requestedScopesModel, resource1));
         } else if (resourceId.startsWith("resource-type-any:")) {
             // any resource with a given type
             String resourceType = resourceId.substring("resource-type-any:".length());
-            resourceStore.findByType(resourceType, null, resourceServer.getId(),
+            resourceStore.findByType(resourceServer.getId(), resourceType, null,
                     resource12 -> addPermission(request, resourceServer, authorization, permissionsToEvaluate, limit, requestedScopesModel, resource12));
         } else if (resourceId.startsWith("resource-type-instance:")) {
             // only resource instances with a given type
             String resourceType = resourceId.substring("resource-type-instance:".length());
-            resourceStore.findByTypeInstance(resourceType, resourceServer.getId(),
+            resourceStore.findByTypeInstance(resourceServer.getId(), resourceType,
                     resource13 -> addPermission(request, resourceServer, authorization, permissionsToEvaluate, limit, requestedScopesModel, resource13));
         } else if (resourceId.startsWith("resource-type-owner:")) {
             // only resources where the current identity is the owner
             String resourceType = resourceId.substring("resource-type-owner:".length());
-            resourceStore.findByType(resourceType, identity.getId(), resourceServer.getId(),
+            resourceStore.findByType(resourceServer.getId(), resourceType, identity.getId(),
                     resource14 -> addPermission(request, resourceServer, authorization, permissionsToEvaluate, limit, requestedScopesModel, resource14));
         } else {
-            Resource ownerResource = resourceStore.findByName(resourceId, identity.getId(), resourceServer.getId());
+            Resource ownerResource = resourceStore.findByName(resourceServer.getId(), resourceId, identity.getId());
 
             if (ownerResource != null) {
                 permission.setResourceId(ownerResource.getId());
@@ -636,7 +636,7 @@ public class AuthorizationTokenService {
             }
 
             if (!identity.isResourceServer() || !identity.getId().equals(resourceServer.getClientId())) {
-                List<PermissionTicket> tickets = storeFactory.getPermissionTicketStore().findGranted(resourceId, identity.getId(), resourceServer.getId());
+                List<PermissionTicket> tickets = storeFactory.getPermissionTicketStore().findGranted(resourceServer.getId(), resourceId, identity.getId());
 
                 if (!tickets.isEmpty()) {
                     List<Scope> scopes = new ArrayList<>();
@@ -656,7 +656,7 @@ public class AuthorizationTokenService {
                     resourcePermission.setGranted(true);
                 }
 
-                Resource serverResource = resourceStore.findByName(resourceId, resourceServer.getId());
+                Resource serverResource = resourceStore.findByName(resourceServer.getId(), resourceId);
 
                 if (serverResource != null) {
                     permission.setResourceId(serverResource.getId());
@@ -685,7 +685,7 @@ public class AuthorizationTokenService {
             requestedScopes.addAll(Arrays.asList(clientAdditionalScopes.split(" ")));
         }
 
-        Set<Scope> requestedScopesModel = requestedScopes.stream().map(s -> scopeStore.findByName(s, resourceServer.getId())).filter(
+        Set<Scope> requestedScopesModel = requestedScopes.stream().map(s -> scopeStore.findByName(resourceServer.getId(), s)).filter(
                 Objects::nonNull).collect(Collectors.toSet());
 
         if (!requestedScopes.isEmpty() && requestedScopesModel.isEmpty()) {

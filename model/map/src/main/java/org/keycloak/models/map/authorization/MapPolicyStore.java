@@ -73,7 +73,7 @@ public class MapPolicyStore implements PolicyStore {
     }
 
     @Override
-    public Policy create(AbstractPolicyRepresentation representation, ResourceServer resourceServer) {
+    public Policy create(ResourceServer resourceServer, AbstractPolicyRepresentation representation) {
         LOG.tracef("create(%s, %s, %s)%s", representation.getId(), resourceServer.getId(), resourceServer, getShortStackTrace());
 
         // @UniqueConstraint(columnNames = {"NAME", "RESOURCE_SERVER_ID"})
@@ -103,7 +103,7 @@ public class MapPolicyStore implements PolicyStore {
     }
 
     @Override
-    public Policy findById(String id, String resourceServerId) {
+    public Policy findById(String resourceServerId, String id) {
         LOG.tracef("findById(%s, %s)%s", id, resourceServerId, getShortStackTrace());
 
         return tx.read(withCriteria(forResourceServer(resourceServerId)
@@ -114,7 +114,7 @@ public class MapPolicyStore implements PolicyStore {
     }
 
     @Override
-    public Policy findByName(String name, String resourceServerId) {
+    public Policy findByName(String resourceServerId, String name) {
         LOG.tracef("findByName(%s, %s)%s", name, resourceServerId, getShortStackTrace());
 
         return tx.read(withCriteria(forResourceServer(resourceServerId)
@@ -134,7 +134,7 @@ public class MapPolicyStore implements PolicyStore {
     }
 
     @Override
-    public List<Policy> findByResourceServer(Map<Policy.FilterOption, String[]> attributes, String resourceServerId, int firstResult, int maxResult) {
+    public List<Policy> findByResourceServer(String resourceServerId, Map<Policy.FilterOption, String[]> attributes, int firstResult, int maxResult) {
         LOG.tracef("findByResourceServer(%s, %s, %d, %d)%s", attributes, resourceServerId, firstResult, maxResult, getShortStackTrace());
 
         DefaultModelCriteria<Policy> mcb = forResourceServer(resourceServerId).and(
@@ -151,7 +151,7 @@ public class MapPolicyStore implements PolicyStore {
         return tx.read(withCriteria(mcb).pagination(firstResult, maxResult, SearchableFields.NAME))
             .map(MapPolicyEntity::getId)
             // We need to go through cache
-            .map(id -> authorizationProvider.getStoreFactory().getPolicyStore().findById(id, resourceServerId))
+            .map(id -> authorizationProvider.getStoreFactory().getPolicyStore().findById(resourceServerId, id))
             .collect(Collectors.toList());
     }
 
@@ -194,7 +194,7 @@ public class MapPolicyStore implements PolicyStore {
     }
 
     @Override
-    public void findByResource(String resourceId, String resourceServerId, Consumer<Policy> consumer) {
+    public void findByResource(String resourceServerId, String resourceId, Consumer<Policy> consumer) {
         LOG.tracef("findByResource(%s, %s, %s)%s", resourceId, resourceServerId, consumer, getShortStackTrace());
 
         tx.read(withCriteria(forResourceServer(resourceServerId)
@@ -204,7 +204,7 @@ public class MapPolicyStore implements PolicyStore {
     }
 
     @Override
-    public void findByResourceType(String type, String resourceServerId, Consumer<Policy> policyConsumer) {
+    public void findByResourceType(String resourceServerId, String type, Consumer<Policy> policyConsumer) {
         tx.read(withCriteria(forResourceServer(resourceServerId)
                 .compare(SearchableFields.CONFIG, Operator.LIKE, (Object[]) new String[]{"defaultResourceType", type})))
                 .map(this::entityToAdapter)
@@ -212,7 +212,7 @@ public class MapPolicyStore implements PolicyStore {
     }
 
     @Override
-    public List<Policy> findByScopeIds(List<String> scopeIds, String resourceServerId) {
+    public List<Policy> findByScopeIds(String resourceServerId, List<String> scopeIds) {
         return tx.read(withCriteria(forResourceServer(resourceServerId)
                 .compare(SearchableFields.SCOPE_ID, Operator.IN, scopeIds)))
                 .map(this::entityToAdapter)
@@ -220,7 +220,7 @@ public class MapPolicyStore implements PolicyStore {
     }
 
     @Override
-    public void findByScopeIds(List<String> scopeIds, String resourceId, String resourceServerId, Consumer<Policy> consumer) {
+    public void findByScopeIds(String resourceServerId, String resourceId, List<String> scopeIds, Consumer<Policy> consumer) {
         DefaultModelCriteria<Policy> mcb = forResourceServer(resourceServerId)
                 .compare(SearchableFields.TYPE, Operator.EQ, "scope")
                 .compare(SearchableFields.SCOPE_ID, Operator.IN, scopeIds);
@@ -237,7 +237,7 @@ public class MapPolicyStore implements PolicyStore {
     }
 
     @Override
-    public List<Policy> findByType(String type, String resourceServerId) {
+    public List<Policy> findByType(String resourceServerId, String type) {
         return tx.read(withCriteria(forResourceServer(resourceServerId)
                 .compare(SearchableFields.TYPE, Operator.EQ, type)))
                 .map(this::entityToAdapter)
@@ -245,7 +245,7 @@ public class MapPolicyStore implements PolicyStore {
     }
 
     @Override
-    public List<Policy> findDependentPolicies(String id, String resourceServerId) {
+    public List<Policy> findDependentPolicies(String resourceServerId, String id) {
         return tx.read(withCriteria(forResourceServer(resourceServerId)
                 .compare(SearchableFields.ASSOCIATED_POLICY_ID, Operator.EQ, id)))
                     .map(this::entityToAdapter)

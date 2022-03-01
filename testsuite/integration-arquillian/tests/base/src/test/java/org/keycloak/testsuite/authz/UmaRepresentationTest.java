@@ -143,7 +143,7 @@ public class UmaRepresentationTest extends AbstractResourceServerTest {
         ResourceServer resourceServer = authorization.getStoreFactory().getResourceServerStore().findByClient(client);
         ResourceBean resourceBean = authorizationBean.new ResourceBean(
             authorization.getStoreFactory().getResourceStore().findByName(
-                "Resource A", user.getId(), resourceServer.getId()
+                    resourceServer.getId(), "Resource A", user.getId()
             )
         );
 
@@ -169,7 +169,7 @@ public class UmaRepresentationTest extends AbstractResourceServerTest {
         ResourceServer resourceServer = authorization.getStoreFactory().getResourceServerStore().findByClient(client);
         ResourceBean resourceBean = authorizationBean.new ResourceBean(
             authorization.getStoreFactory().getResourceStore().findByName(
-                "Resource A", client.getId(), resourceServer.getId()
+                    resourceServer.getId(), "Resource A", client.getId()
             )
         );
 

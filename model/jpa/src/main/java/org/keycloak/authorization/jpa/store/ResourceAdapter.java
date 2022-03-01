@@ -21,7 +21,6 @@ import org.keycloak.authorization.jpa.entities.ResourceEntity;
 import org.keycloak.authorization.jpa.entities.ScopeEntity;
 import org.keycloak.authorization.model.AbstractAuthorizationModel;
 import org.keycloak.authorization.model.Resource;
-import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.common.util.MultivaluedHashMap;
@@ -117,7 +116,7 @@ public class ResourceAdapter extends AbstractAuthorizationModel implements Resou
     public List<Scope> getScopes() {
         List<Scope> scopes = new LinkedList<>();
         for (ScopeEntity scope : entity.getScopes()) {
-            scopes.add(storeFactory.getScopeStore().findById(scope.getId(), entity.getResourceServer()));
+            scopes.add(storeFactory.getScopeStore().findById(entity.getResourceServer(), scope.getId()));
         }
 
         return Collections.unmodifiableList(scopes);

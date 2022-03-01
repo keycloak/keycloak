@@ -38,11 +38,11 @@ public interface PolicyStore {
      * Creates a new {@link Policy} instance. The new instance is not necessarily persisted though, which may require
      * a call to the {#save} method to actually make it persistent.
      *
-     * @param representation the policy representation
      * @param resourceServer the resource server to which this policy belongs
+     * @param representation the policy representation
      * @return a new instance of {@link Policy}
      */
-    Policy create(AbstractPolicyRepresentation representation, ResourceServer resourceServer);
+    Policy create(ResourceServer resourceServer, AbstractPolicyRepresentation representation);
 
     /**
      * Deletes a policy from the underlying persistence mechanism.
@@ -54,20 +54,20 @@ public interface PolicyStore {
     /**
      * Returns a {@link Policy} with the given <code>id</code>
      *
-     * @param id the identifier of the policy
      * @param resourceServerId the resource server id
+     * @param id the identifier of the policy
      * @return a policy with the given identifier.
      */
-    Policy findById(String id, String resourceServerId);
+    Policy findById(String resourceServerId, String id);
 
     /**
      * Returns a {@link Policy} with the given <code>name</code>
      *
-     * @param name             the name of the policy
      * @param resourceServerId the resource server id
+     * @param name             the name of the policy
      * @return a policy with the given name.
      */
-    Policy findByName(String name, String resourceServerId);
+    Policy findByName(String resourceServerId, String name);
 
     /**
      * Returns a list of {@link Policy} associated with a {@link ResourceServer} with the given <code>resourceServerId</code>.
@@ -80,42 +80,42 @@ public interface PolicyStore {
     /**
      * Returns a list of {@link Policy} associated with a {@link ResourceServer} with the given <code>resourceServerId</code>.
      *
-     * @param attributes a map holding the attributes that will be used as a filter; possible filter options are given by {@link Policy.FilterOption}
      * @param resourceServerId the identifier of a resource server
+     * @param attributes a map holding the attributes that will be used as a filter; possible filter options are given by {@link Policy.FilterOption}
      * @return a list of policies that belong to the given resource server
      *
      * @throws IllegalArgumentException when there is an unknown attribute in the {@code attributes} map
      */
-    List<Policy> findByResourceServer(Map<Policy.FilterOption, String[]> attributes, String resourceServerId, int firstResult, int maxResult);
+    List<Policy> findByResourceServer(String resourceServerId, Map<Policy.FilterOption, String[]> attributes, int firstResult, int maxResult);
 
     /**
      * Returns a list of {@link Policy} associated with a {@link org.keycloak.authorization.core.model.Resource} with the given <code>resourceId</code>.
      *
-     * @param resourceId the identifier of a resource
      * @param resourceServerId the resource server id
+     * @param resourceId the identifier of a resource
      * @return a list of policies associated with the given resource
      */
-    default List<Policy> findByResource(String resourceId, String resourceServerId) {
+    default List<Policy> findByResource(String resourceServerId, String resourceId) {
         List<Policy> result = new LinkedList<>();
 
-        findByResource(resourceId, resourceServerId, result::add);
+        findByResource(resourceServerId, resourceId, result::add);
 
         return result;
     }
 
-    void findByResource(String resourceId, String resourceServerId, Consumer<Policy> consumer);
+    void findByResource(String resourceServerId, String resourceId, Consumer<Policy> consumer);
 
     /**
      * Returns a list of {@link Policy} associated with a {@link org.keycloak.authorization.core.model.Resource} with the given <code>type</code>.
      *
-     * @param resourceType     the type of a resource
      * @param resourceServerId the resource server id
+     * @param resourceType     the type of a resource
      * @return a list of policies associated with the given resource type
      */
-    default List<Policy> findByResourceType(String resourceType, String resourceServerId) {
+    default List<Policy> findByResourceType(String resourceServerId, String resourceType) {
         List<Policy> result = new LinkedList<>();
 
-        findByResourceType(resourceType, resourceServerId, result::add);
+        findByResourceType(resourceServerId, resourceType, result::add);
 
         return result;
     }
@@ -123,52 +123,52 @@ public interface PolicyStore {
     /**
      * Returns a list of {@link Policy} associated with a {@link org.keycloak.authorization.core.model.Scope} with the given <code>scopeIds</code>.
      *
-     * @param scopeIds the id of the scopes
      * @param resourceServerId the resource server id
+     * @param scopeIds the id of the scopes
      * @return a list of policies associated with the given scopes
      */
-    List<Policy> findByScopeIds(List<String> scopeIds, String resourceServerId);
+    List<Policy> findByScopeIds(String resourceServerId, List<String> scopeIds);
 
     /**
      * Returns a list of {@link Policy} associated with a {@link org.keycloak.authorization.core.model.Scope} with the given <code>resourceId</code> and <code>scopeIds</code>.
      *
-     * @param scopeIds the id of the scopes
-     * @param resourceId the id of the resource. Ignored if {@code null}.
      * @param resourceServerId the resource server id
+     * @param resourceId the id of the resource. Ignored if {@code null}.
+     * @param scopeIds the id of the scopes
      * @return a list of policies associated with the given scopes
      */
-    default List<Policy> findByScopeIds(List<String> scopeIds, String resourceId, String resourceServerId) {
+    default List<Policy> findByScopeIds(String resourceServerId, String resourceId, List<String> scopeIds) {
         List<Policy> result = new LinkedList<>();
 
-        findByScopeIds(scopeIds, resourceId, resourceServerId, result::add);
+        findByScopeIds(resourceServerId, resourceId, scopeIds, result::add);
 
         return result;
     }
 
     /**
-     * Effectively the same method as {@link #findByScopeIds(List, String, String)}, however in the end
+     * Effectively the same method as {@link #findByScopeIds(String, String, List)}, however in the end
      * the {@code consumer} is fed with the result.
      *
      */
-    void findByScopeIds(List<String> scopeIds, String resourceId, String resourceServerId, Consumer<Policy> consumer);
+    void findByScopeIds(String resourceServerId, String resourceId, List<String> scopeIds, Consumer<Policy> consumer);
 
     /**
      * Returns a list of {@link Policy} with the given <code>type</code>.
      *
-     * @param type the type of the policy
      * @param resourceServerId the resource server id
+     * @param type the type of the policy
      * @return a list of policies with the given type
      */
-    List<Policy> findByType(String type, String resourceServerId);
+    List<Policy> findByType(String resourceServerId, String type);
 
     /**
      * Returns a list of {@link Policy} that depends on another policy with the given <code>id</code>.
      *
-     * @param id the id of the policy to query its dependents
      * @param resourceServerId the resource server id
+     * @param id the id of the policy to query its dependents
      * @return a list of policies that depends on the a policy with the given identifier
      */
-    List<Policy> findDependentPolicies(String id, String resourceServerId);
+    List<Policy> findDependentPolicies(String resourceServerId, String id);
 
-    void findByResourceType(String type, String resourceServerId, Consumer<Policy> policyConsumer);
+    void findByResourceType(String resourceServerId, String type, Consumer<Policy> policyConsumer);
 }

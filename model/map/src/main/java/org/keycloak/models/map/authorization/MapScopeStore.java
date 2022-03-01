@@ -70,7 +70,7 @@ public class MapScopeStore implements ScopeStore {
     }
 
     @Override
-    public Scope create(String id, String name, ResourceServer resourceServer) {
+    public Scope create(ResourceServer resourceServer, String id, String name) {
         LOG.tracef("create(%s, %s, %s)%s", id, name, resourceServer, getShortStackTrace());
 
 
@@ -99,7 +99,7 @@ public class MapScopeStore implements ScopeStore {
     }
 
     @Override
-    public Scope findById(String id, String resourceServerId) {
+    public Scope findById(String resourceServerId, String id) {
         LOG.tracef("findById(%s, %s)%s", id, resourceServerId, getShortStackTrace());
 
         return tx.read(withCriteria(forResourceServer(resourceServerId)
@@ -110,7 +110,7 @@ public class MapScopeStore implements ScopeStore {
     }
 
     @Override
-    public Scope findByName(String name, String resourceServerId) {
+    public Scope findByName(String resourceServerId, String name) {
         LOG.tracef("findByName(%s, %s)%s", name, resourceServerId, getShortStackTrace());
 
         return tx.read(withCriteria(forResourceServer(resourceServerId).compare(SearchableFields.NAME,
@@ -130,7 +130,7 @@ public class MapScopeStore implements ScopeStore {
     }
 
     @Override
-    public List<Scope> findByResourceServer(Map<Scope.FilterOption, String[]> attributes, String resourceServerId, int firstResult, int maxResult) {
+    public List<Scope> findByResourceServer(String resourceServerId, Map<Scope.FilterOption, String[]> attributes, int firstResult, int maxResult) {
         DefaultModelCriteria<Scope> mcb = forResourceServer(resourceServerId);
 
         for (Scope.FilterOption filterOption : attributes.keySet()) {

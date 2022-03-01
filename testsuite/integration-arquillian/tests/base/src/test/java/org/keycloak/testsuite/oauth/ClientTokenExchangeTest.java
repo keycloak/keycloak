@@ -203,7 +203,7 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
         clientRep.addClient(noRefreshToken.getId());
 
         ResourceServer server = management.realmResourceServer();
-        Policy clientPolicy = management.authz().getStoreFactory().getPolicyStore().create(clientRep, server);
+        Policy clientPolicy = management.authz().getStoreFactory().getPolicyStore().create(server, clientRep);
         management.clients().exchangeToPermission(target).addAssociatedPolicy(clientPolicy);
 
         // permission for user impersonation for a client
@@ -214,7 +214,7 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
         clientImpersonateRep.addClient(directPublic.getId());
         clientImpersonateRep.addClient(directNoSecret.getId());
         server = management.realmResourceServer();
-        Policy clientImpersonatePolicy = management.authz().getStoreFactory().getPolicyStore().create(clientImpersonateRep, server);
+        Policy clientImpersonatePolicy = management.authz().getStoreFactory().getPolicyStore().create(server, clientImpersonateRep);
         management.users().setPermissionsEnabled(true);
         management.users().adminImpersonatingPermission().addAssociatedPolicy(clientImpersonatePolicy);
         management.users().adminImpersonatingPermission().setDecisionStrategy(DecisionStrategy.AFFIRMATIVE);
@@ -559,7 +559,7 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
         clientImpersonateRep.addClient(directExchanger.getId());
 
         ResourceServer server = management.realmResourceServer();
-        Policy clientImpersonatePolicy = management.authz().getStoreFactory().getPolicyStore().create(clientImpersonateRep, server);
+        Policy clientImpersonatePolicy = management.authz().getStoreFactory().getPolicyStore().create(server, clientImpersonateRep);
         management.users().setPermissionsEnabled(true);
         management.users().adminImpersonatingPermission().addAssociatedPolicy(clientImpersonatePolicy);
         management.users().adminImpersonatingPermission().setDecisionStrategy(DecisionStrategy.AFFIRMATIVE);

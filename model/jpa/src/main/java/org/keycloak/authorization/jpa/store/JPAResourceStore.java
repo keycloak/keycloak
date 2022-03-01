@@ -57,7 +57,7 @@ public class JPAResourceStore implements ResourceStore {
     }
 
     @Override
-    public Resource create(String id, String name, ResourceServer resourceServer, String owner) {
+    public Resource create(ResourceServer resourceServer, String id, String name, String owner) {
         ResourceEntity entity = new ResourceEntity();
 
         if (id == null) {
@@ -86,7 +86,7 @@ public class JPAResourceStore implements ResourceStore {
     }
 
     @Override
-    public Resource findById(String id, String resourceServerId) {
+    public Resource findById(String resourceServerId, String id) {
         if (id == null) {
             return null;
         }
@@ -97,12 +97,12 @@ public class JPAResourceStore implements ResourceStore {
     }
 
     @Override
-    public void findByOwner(String ownerId, String resourceServerId, Consumer<Resource> consumer) {
+    public void findByOwner(String resourceServerId, String ownerId, Consumer<Resource> consumer) {
         findByOwnerFilter(ownerId, resourceServerId, consumer, -1, -1);
     }
 
     @Override
-    public List<Resource> findByOwner(String ownerId, String resourceServerId, int first, int max) {
+    public List<Resource> findByOwner(String resourceServerId, String ownerId, int first, int max) {
         List<Resource> list = new LinkedList<>();
 
         findByOwnerFilter(ownerId, resourceServerId, list::add, first, max);
@@ -133,11 +133,11 @@ public class JPAResourceStore implements ResourceStore {
         }
 
         ResourceStore resourceStore = provider.getStoreFactory().getResourceStore();
-        closing(query.getResultStream().map(id -> resourceStore.findById(id.getId(), resourceServerId))).forEach(consumer);
+        closing(query.getResultStream().map(id -> resourceStore.findById(resourceServerId, id.getId()))).forEach(consumer);
     }
 
     @Override
-    public List<Resource> findByUri(String uri, String resourceServerId) {
+    public List<Resource> findByUri(String resourceServerId, String uri) {
         TypedQuery<String> query = entityManager.createNamedQuery("findResourceIdByUri", String.class);
 
         query.setFlushMode(FlushModeType.COMMIT);
@@ -149,7 +149,7 @@ public class JPAResourceStore implements ResourceStore {
         ResourceStore resourceStore = provider.getStoreFactory().getResourceStore();
 
         for (String id : result) {
-            Resource resource = resourceStore.findById(id, resourceServerId);
+            Resource resource = resourceStore.findById(resourceServerId, id);
 
             if (resource != null) {
                 list.add(resource);
@@ -170,7 +170,7 @@ public class JPAResourceStore implements ResourceStore {
         ResourceStore resourceStore = provider.getStoreFactory().getResourceStore();
 
         for (String id : result) {
-            Resource resource = resourceStore.findById(id, resourceServerId);
+            Resource resource = resourceStore.findById(resourceServerId, id);
 
             if (resource != null) {
                 list.add(resource);
@@ -181,7 +181,7 @@ public class JPAResourceStore implements ResourceStore {
     }
 
     @Override
-    public List<Resource> findByResourceServer(Map<Resource.FilterOption, String[]> attributes, String resourceServerId, int firstResult, int maxResult) {
+    public List<Resource> findByResourceServer(String resourceServerId, Map<Resource.FilterOption, String[]> attributes, int firstResult, int maxResult) {
         CriteriaBuilder builder = entityManager.getCriteriaBuilder();
         CriteriaQuery<ResourceEntity> querybuilder = builder.createQuery(ResourceEntity.class);
         Root<ResourceEntity> root = querybuilder.from(ResourceEntity.class);
@@ -234,7 +234,7 @@ public class JPAResourceStore implements ResourceStore {
         ResourceStore resourceStore = provider.getStoreFactory().getResourceStore();
 
         for (String id : result) {
-            Resource resource = resourceStore.findById(id, resourceServerId);
+            Resource resource = resourceStore.findById(resourceServerId, id);
 
             if (resource != null) {
                 list.add(resource);
@@ -245,7 +245,7 @@ public class JPAResourceStore implements ResourceStore {
     }
 
     @Override
-    public void findByScope(List<String> scopes, String resourceServerId, Consumer<Resource> consumer) {
+    public void findByScope(String resourceServerId, List<String> scopes, Consumer<Resource> consumer) {
         TypedQuery<ResourceEntity> query = entityManager.createNamedQuery("findResourceIdByScope", ResourceEntity.class);
 
         query.setFlushMode(FlushModeType.COMMIT);
@@ -265,7 +265,7 @@ public class JPAResourceStore implements ResourceStore {
     }
 
     @Override
-    public Resource findByName(String name, String ownerId, String resourceServerId) {
+    public Resource findByName(String resourceServerId, String name, String ownerId) {
         TypedQuery<ResourceEntity> query = entityManager.createNamedQuery("findResourceIdByName", ResourceEntity.class);
 
         query.setParameter("serverId", resourceServerId);
@@ -280,12 +280,12 @@ public class JPAResourceStore implements ResourceStore {
     }
 
     @Override
-    public void findByType(String type, String resourceServerId, Consumer<Resource> consumer) {
-        findByType(type, resourceServerId, resourceServerId, consumer);
+    public void findByType(String resourceServerId, String type, Consumer<Resource> consumer) {
+        findByType(resourceServerId, type, resourceServerId, consumer);
     }
 
     @Override
-    public void findByType(String type, String owner, String resourceServerId, Consumer<Resource> consumer) {
+    public void findByType(String resourceServerId, String type, String owner, Consumer<Resource> consumer) {
         TypedQuery<ResourceEntity> query;
 
         if (owner != null) {
@@ -311,7 +311,7 @@ public class JPAResourceStore implements ResourceStore {
     }
 
     @Override
-    public void findByTypeInstance(String type, String resourceServerId, Consumer<Resource> consumer) {
+    public void findByTypeInstance(String resourceServerId, String type, Consumer<Resource> consumer) {
         TypedQuery<ResourceEntity> query = entityManager.createNamedQuery("findResourceIdByTypeInstance", ResourceEntity.class);
 
         query.setFlushMode(FlushModeType.COMMIT);

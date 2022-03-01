@@ -67,14 +67,14 @@ public class DefaultPolicyEvaluator implements PolicyEvaluator {
         Resource resource = permission.getResource();
 
         if (resource != null) {
-            policyStore.findByResource(resource.getId(), resourceServer.getId(), policyConsumer);
+            policyStore.findByResource(resourceServer.getId(), resource.getId(), policyConsumer);
 
             if (resource.getType() != null) {
-                policyStore.findByResourceType(resource.getType(), resourceServer.getId(), policyConsumer);
+                policyStore.findByResourceType(resourceServer.getId(), resource.getType(), policyConsumer);
 
                 if (!resource.getOwner().equals(resourceServer.getClientId())) {
-                    for (Resource typedResource : resourceStore.findByType(resource.getType(), resourceServer.getId())) {
-                        policyStore.findByResource(typedResource.getId(), resourceServer.getId(), policyConsumer);
+                    for (Resource typedResource : resourceStore.findByType(resourceServer.getId(), resource.getType())) {
+                        policyStore.findByResource(resourceServer.getId(), typedResource.getId(), policyConsumer);
                     }
                 }
             }
@@ -83,7 +83,7 @@ public class DefaultPolicyEvaluator implements PolicyEvaluator {
         Collection<Scope> scopes = permission.getScopes();
 
         if (!scopes.isEmpty()) {
-            policyStore.findByScopeIds(scopes.stream().map(Scope::getId).collect(Collectors.toList()), null, resourceServer.getId(), policyConsumer);
+            policyStore.findByScopeIds(resourceServer.getId(), null, scopes.stream().map(Scope::getId).collect(Collectors.toList()), policyConsumer);
         }
 
         if (verified.get()) {

@@ -69,7 +69,7 @@ public class AuthorizationBean {
         List<String> pathParameters = uriInfo.getPathParameters().get("resource_id");
 
         if (pathParameters != null && !pathParameters.isEmpty()) {
-            Resource resource = authorization.getStoreFactory().getResourceStore().findById(pathParameters.get(0), null);
+            Resource resource = authorization.getStoreFactory().getResourceStore().findById(null, pathParameters.get(0));
 
             if (resource != null && !resource.getOwner().equals(user.getId())) {
                 throw new RuntimeException("User [" + user.getUsername() + "] can not access resource [" + resource.getId() + "]");
@@ -105,7 +105,7 @@ public class AuthorizationBean {
 
     public List<ResourceBean> getResources() {
         if (resources == null) {
-            resources = authorization.getStoreFactory().getResourceStore().findByOwner(user.getId(), null).stream()
+            resources = authorization.getStoreFactory().getResourceStore().findByOwner(null, user.getId()).stream()
                     .filter(Resource::isOwnerManagedAccess)
                     .map(ResourceBean::new)
                     .collect(Collectors.toList());
@@ -122,7 +122,7 @@ public class AuthorizationBean {
 
             PermissionTicketStore ticketStore = authorization.getStoreFactory().getPermissionTicketStore();
 
-            userSharedResources = toResourceRepresentation(ticketStore.find(filters, null, -1, -1));
+            userSharedResources = toResourceRepresentation(ticketStore.find(null, filters, -1, -1));
         }
         return userSharedResources;
     }
@@ -140,7 +140,7 @@ public class AuthorizationBean {
     }
 
     private ResourceBean getResource(String id) {
-        return new ResourceBean(authorization.getStoreFactory().getResourceStore().findById(id, null));
+        return new ResourceBean(authorization.getStoreFactory().getResourceStore().findById(null, id));
     }
 
     public static class RequesterBean {
@@ -306,7 +306,7 @@ public class AuthorizationBean {
                 filters.put(Policy.FilterOption.OWNER, new String[] {getClientOwner().getId()});
             }
 
-            List<Policy> policies = authorization.getStoreFactory().getPolicyStore().findByResourceServer(filters, getResourceServer().getId(), -1, -1);
+            List<Policy> policies = authorization.getStoreFactory().getPolicyStore().findByResourceServer(getResourceServer().getId(), filters, -1, -1);
 
             if (policies.isEmpty()) {
                 return Collections.emptyList();
@@ -318,7 +318,7 @@ public class AuthorizationBean {
 
                         filters1.put(PermissionTicket.FilterOption.POLICY_ID, policy.getId());
 
-                        return authorization.getStoreFactory().getPermissionTicketStore().find(filters1, resourceServer.getId(), -1, 1)
+                        return authorization.getStoreFactory().getPermissionTicketStore().find(resourceServer.getId(), filters1, -1, 1)
                                 .isEmpty();
                     })
                     .map(ManagedPermissionBean::new).collect(Collectors.toList());
@@ -370,7 +370,7 @@ public class AuthorizationBean {
     }
 
     private List<PermissionTicket> findPermissions(Map<PermissionTicket.FilterOption, String> filters) {
-        return authorization.getStoreFactory().getPermissionTicketStore().find(filters, null, -1, -1);
+        return authorization.getStoreFactory().getPermissionTicketStore().find(null, filters, -1, -1);
     }
 
     public class ResourceServerBean {

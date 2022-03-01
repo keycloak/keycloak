@@ -79,7 +79,7 @@ public class MapPermissionTicketStore implements PermissionTicketStore {
     }
     
     @Override
-    public long count(Map<PermissionTicket.FilterOption, String> attributes, String resourceServerId) {
+    public long count(String resourceServerId, Map<PermissionTicket.FilterOption, String> attributes) {
         DefaultModelCriteria<PermissionTicket> mcb = forResourceServer(resourceServerId).and(
                 attributes.entrySet().stream()
                         .map(this::filterEntryToDefaultModelCriteria)
@@ -90,10 +90,10 @@ public class MapPermissionTicketStore implements PermissionTicketStore {
     }
 
     @Override
-    public PermissionTicket create(String resourceId, String scopeId, String requester, ResourceServer resourceServer) {
+    public PermissionTicket create(ResourceServer resourceServer, String resourceId, String scopeId, String requester) {
         LOG.tracef("create(%s, %s, %s, %s)%s", resourceId, scopeId, requester, resourceServer, getShortStackTrace());
 
-        String owner = authorizationProvider.getStoreFactory().getResourceStore().findById(resourceId, resourceServer.getId()).getOwner();
+        String owner = authorizationProvider.getStoreFactory().getResourceStore().findById(resourceServer.getId(), resourceId).getOwner();
 
         // @UniqueConstraint(columnNames = {"OWNER", "REQUESTER", "RESOURCE_SERVER_ID", "RESOURCE_ID", "SCOPE_ID"})
         DefaultModelCriteria<PermissionTicket> mcb = forResourceServer(resourceServer.getId())
@@ -131,7 +131,7 @@ public class MapPermissionTicketStore implements PermissionTicketStore {
     public void delete(String id) {
         LOG.tracef("delete(%s)%s", id, getShortStackTrace());
 
-        PermissionTicket permissionTicket = findById(id, null);
+        PermissionTicket permissionTicket = findById(null, id);
         if (permissionTicket == null) return;
 
         tx.delete(id);
@@ -139,7 +139,7 @@ public class MapPermissionTicketStore implements PermissionTicketStore {
     }
 
     @Override
-    public PermissionTicket findById(String id, String resourceServerId) {
+    public PermissionTicket findById(String resourceServerId, String id) {
         LOG.tracef("findById(%s, %s)%s", id, resourceServerId, getShortStackTrace());
 
         return tx.read(withCriteria(forResourceServer(resourceServerId)
@@ -159,7 +159,7 @@ public class MapPermissionTicketStore implements PermissionTicketStore {
     }
 
     @Override
-    public List<PermissionTicket> findByOwner(String owner, String resourceServerId) {
+    public List<PermissionTicket> findByOwner(String resourceServerId, String owner) {
         LOG.tracef("findByOwner(%s, %s)%s", owner, resourceServerId, getShortStackTrace());
 
         return tx.read(withCriteria(forResourceServer(resourceServerId)
@@ -169,7 +169,7 @@ public class MapPermissionTicketStore implements PermissionTicketStore {
     }
 
     @Override
-    public List<PermissionTicket> findByResource(String resourceId, String resourceServerId) {
+    public List<PermissionTicket> findByResource(String resourceServerId, String resourceId) {
         LOG.tracef("findByResource(%s, %s)%s", resourceId, resourceServerId, getShortStackTrace());
 
         return tx.read(withCriteria(forResourceServer(resourceServerId)
@@ -179,7 +179,7 @@ public class MapPermissionTicketStore implements PermissionTicketStore {
     }
 
     @Override
-    public List<PermissionTicket> findByScope(String scopeId, String resourceServerId) {
+    public List<PermissionTicket> findByScope(String resourceServerId, String scopeId) {
         LOG.tracef("findByScope(%s, %s)%s", scopeId, resourceServerId, getShortStackTrace());
 
         return tx.read(withCriteria(forResourceServer(resourceServerId)
@@ -189,7 +189,7 @@ public class MapPermissionTicketStore implements PermissionTicketStore {
     }
 
     @Override
-    public List<PermissionTicket> find(Map<PermissionTicket.FilterOption, String> attributes, String resourceServerId, int firstResult, int maxResult) {
+    public List<PermissionTicket> find(String resourceServerId, Map<PermissionTicket.FilterOption, String> attributes, int firstResult, int maxResult) {
         DefaultModelCriteria<PermissionTicket> mcb = forResourceServer(resourceServerId);
 
         if (attributes.containsKey(PermissionTicket.FilterOption.RESOURCE_NAME)) {
@@ -199,7 +199,7 @@ public class MapPermissionTicketStore implements PermissionTicketStore {
 
             filterOptionStringMap.put(Resource.FilterOption.EXACT_NAME, new String[]{expectedResourceName});
             
-            List<Resource> r = authorizationProvider.getStoreFactory().getResourceStore().findByResourceServer(filterOptionStringMap, resourceServerId, -1, -1);
+            List<Resource> r = authorizationProvider.getStoreFactory().getResourceStore().findByResourceServer(resourceServerId, filterOptionStringMap, -1, -1);
             if (r == null || r.isEmpty()) {
                 return Collections.emptyList();
             }
@@ -248,24 +248,24 @@ public class MapPermissionTicketStore implements PermissionTicketStore {
     }
 
     @Override
-    public List<PermissionTicket> findGranted(String userId, String resourceServerId) {
+    public List<PermissionTicket> findGranted(String resourceServerId, String userId) {
         Map<PermissionTicket.FilterOption, String> filters = new EnumMap<>(PermissionTicket.FilterOption.class);
 
         filters.put(PermissionTicket.FilterOption.GRANTED, Boolean.TRUE.toString());
         filters.put(PermissionTicket.FilterOption.REQUESTER, userId);
 
-        return find(filters, resourceServerId, -1, -1);
+        return find(resourceServerId, filters, -1, -1);
     }
 
     @Override
-    public List<PermissionTicket> findGranted(String resourceName, String userId, String resourceServerId) {
+    public List<PermissionTicket> findGranted(String resourceServerId, String resourceName, String userId) {
         Map<PermissionTicket.FilterOption, String> filters = new EnumMap<>(PermissionTicket.FilterOption.class);
 
         filters.put(PermissionTicket.FilterOption.RESOURCE_NAME, resourceName);
         filters.put(PermissionTicket.FilterOption.GRANTED, Boolean.TRUE.toString());
         filters.put(PermissionTicket.FilterOption.REQUESTER, userId);
 
-        return find(filters, resourceServerId, -1, -1);
+        return find(resourceServerId, filters, -1, -1);
     }
 
     @Override
@@ -284,13 +284,13 @@ public class MapPermissionTicketStore implements PermissionTicketStore {
                 filterOptionMap.put(Resource.FilterOption.ID, new String[] {ticket.getResourceId()});
                 filterOptionMap.put(Resource.FilterOption.NAME, new String[] {name});
 
-                List<Resource> resource = resourceStore.findByResourceServer(filterOptionMap, ticket.getResourceServerId(), -1, 1);
+                List<Resource> resource = resourceStore.findByResourceServer(ticket.getResourceServerId(), filterOptionMap, -1, 1);
                 
                 return resource.isEmpty() ? null : resource.get(0);
             };
         } else {
             ticketResourceMapper = ticket -> resourceStore
-                    .findById(ticket.getResourceId(), ticket.getResourceServerId());
+                    .findById(ticket.getResourceServerId(), ticket.getResourceId());
         }
 
         return paginatedStream(tx.read(withCriteria(mcb).orderBy(SearchableFields.RESOURCE_ID, ASCENDING))
@@ -308,7 +308,7 @@ public class MapPermissionTicketStore implements PermissionTicketStore {
         return paginatedStream(tx.read(withCriteria(mcb).orderBy(SearchableFields.RESOURCE_ID, ASCENDING))
             .filter(distinctByKey(MapPermissionTicketEntity::getResourceId)), first, max)
             .map(ticket -> authorizationProvider.getStoreFactory().getResourceStore()
-                    .findById(ticket.getResourceId(), ticket.getResourceServerId()))
+                    .findById(ticket.getResourceServerId(), ticket.getResourceId()))
             .collect(Collectors.toList());
     }
 }

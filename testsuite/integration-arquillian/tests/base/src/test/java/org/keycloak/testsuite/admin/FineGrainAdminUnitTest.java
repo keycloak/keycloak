@@ -40,7 +40,6 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
-import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -274,7 +273,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         groupManagerRep.addUser("groupManager");
         groupManagerRep.addUser("noMapperGroupManager");
         ResourceServer server = permissions.realmResourceServer();
-        Policy groupManagerPolicy = permissions.authz().getStoreFactory().getPolicyStore().create(groupManagerRep, server);
+        Policy groupManagerPolicy = permissions.authz().getStoreFactory().getPolicyStore().create(server, groupManagerRep);
         permissions.groups().manageMembersPermission(group).addAssociatedPolicy(groupManagerPolicy);
         permissions.groups().manageMembershipPermission(group).addAssociatedPolicy(groupManagerPolicy);
         permissions.groups().viewPermission(group).addAssociatedPolicy(groupManagerPolicy);
@@ -288,7 +287,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         UserPolicyRepresentation userRep = new UserPolicyRepresentation();
         userRep.setName("userClientMapper");
         userRep.addUser("clientMapper");
-        Policy userPolicy = permissions.authz().getStoreFactory().getPolicyStore().create(userRep, permissions.clients().resourceServer(client));
+        Policy userPolicy = permissions.authz().getStoreFactory().getPolicyStore().create(permissions.clients().resourceServer(client), userRep);
         clientMapperPolicy.addAssociatedPolicy(userPolicy);
 
         UserModel clientManager = session.users().addUser(realm, "clientManager");
@@ -300,7 +299,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         userRep = new UserPolicyRepresentation();
         userRep.setName("clientManager");
         userRep.addUser("clientManager");
-        userPolicy = permissions.authz().getStoreFactory().getPolicyStore().create(userRep, permissions.clients().resourceServer(client));
+        userPolicy = permissions.authz().getStoreFactory().getPolicyStore().create(permissions.clients().resourceServer(client), userRep);
         clientManagerPolicy.addAssociatedPolicy(userPolicy);
 
 
@@ -313,7 +312,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         userRep = new UserPolicyRepresentation();
         userRep.setName("clientConfigure");
         userRep.addUser("clientConfigurer");
-        userPolicy = permissions.authz().getStoreFactory().getPolicyStore().create(userRep, permissions.clients().resourceServer(client));
+        userPolicy = permissions.authz().getStoreFactory().getPolicyStore().create(permissions.clients().resourceServer(client), userRep);
         clientConfigurePolicy.addAssociatedPolicy(userPolicy);
 
 
@@ -326,7 +325,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         UserPolicyRepresentation groupViewMembersRep = new UserPolicyRepresentation();
         groupViewMembersRep.setName("groupMemberViewers");
         groupViewMembersRep.addUser("groupViewer");
-        Policy groupViewMembersPolicy = permissions.authz().getStoreFactory().getPolicyStore().create(groupViewMembersRep, server);
+        Policy groupViewMembersPolicy = permissions.authz().getStoreFactory().getPolicyStore().create(server, groupViewMembersRep);
         Policy groupViewMembersPermission = permissions.groups().viewMembersPermission(group);
         groupViewMembersPermission.addAssociatedPolicy(groupViewMembersPolicy);
 
@@ -840,7 +839,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         byResourceServer = management.authz().getStoreFactory().getResourceStore().findByResourceServer(management.realmResourceServer().getId());
         Assert.assertEquals(1, byResourceServer.size());
         management.users().setPermissionsEnabled(false);
-        Resource userResource = management.authz().getStoreFactory().getResourceStore().findByName("Users", management.realmResourceServer().getId());
+        Resource userResource = management.authz().getStoreFactory().getResourceStore().findByName(management.realmResourceServer().getId(), "Users");
         Assert.assertNull(userResource);
         byResourceServer = management.authz().getStoreFactory().getResourceStore().findByResourceServer(management.realmResourceServer().getId());
         Assert.assertEquals(0, byResourceServer.size());
@@ -1002,7 +1001,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
 
             AuthorizationProvider provider = session.getProvider(AuthorizationProvider.class);
 
-            Policy userPolicy = provider.getStoreFactory().getPolicyStore().create(userPolicyRepresentation, management.realmResourceServer());
+            Policy userPolicy = provider.getStoreFactory().getPolicyStore().create(management.realmResourceServer(), userPolicyRepresentation);
 
             policy.addAssociatedPolicy(RepresentationToModel.toModel(userPolicyRepresentation, provider, userPolicy));
 
@@ -1096,7 +1095,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
             Policy policy = clientPermission.viewPermission(clientModel);
             AuthorizationProvider provider = session.getProvider(AuthorizationProvider.class);
             Policy userPolicy = provider.getStoreFactory().getPolicyStore()
-                    .create(userPolicyRepresentation, management.realmResourceServer());
+                    .create(management.realmResourceServer(), userPolicyRepresentation);
 
             policy.addAssociatedPolicy(RepresentationToModel.toModel(userPolicyRepresentation, provider, userPolicy));
         });
@@ -1129,7 +1128,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
             ClientModel realmAdminClient = realm.getClientByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID);
             ResourceServer resourceServer = provider.getStoreFactory().getResourceServerStore().findByClient(realmAdminClient);
 
-            policy.addAssociatedPolicy(provider.getStoreFactory().getPolicyStore().findByName("Only regular-admin-user", resourceServer.getId()));
+            policy.addAssociatedPolicy(provider.getStoreFactory().getPolicyStore().findByName(resourceServer.getId(), "Only regular-admin-user"));
         });
 
         try (Keycloak client = Keycloak.getInstance(getAuthServerContextRoot() + "/auth",
@@ -1198,7 +1197,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
                 ResourceServer resourceServer = provider.getStoreFactory().getResourceServerStore().findByClient(realmAdminClient);
 
                 policy.addAssociatedPolicy(provider.getStoreFactory().getPolicyStore()
-                        .findByName("Only regular-admin-user", resourceServer.getId()));
+                        .findByName(resourceServer.getId(), "Only regular-admin-user"));
             }
         });
 
@@ -1277,11 +1276,11 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
 
                 if (i == 15) {
                     provider.getStoreFactory().getPolicyStore()
-                            .create(userPolicyRepresentation, management.realmResourceServer());
+                            .create(management.realmResourceServer(), userPolicyRepresentation);
                 }
 
                 policy.addAssociatedPolicy(provider.getStoreFactory().getPolicyStore()
-                        .findByName("Only regular-admin-user", management.realmResourceServer().getId()));
+                        .findByName(management.realmResourceServer().getId(), "Only regular-admin-user"));
 
             }
         });
@@ -1364,7 +1363,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         clientRep.setName("to");
         clientRep.addClient(tokenexclient.getId());
         ResourceServer server = management.realmResourceServer();
-        Policy clientPolicy = management.authz().getStoreFactory().getPolicyStore().create(clientRep, server);
+        Policy clientPolicy = management.authz().getStoreFactory().getPolicyStore().create(server, clientRep);
         management.clients().exchangeToPermission(adminCli).addAssociatedPolicy(clientPolicy);
     }
 }

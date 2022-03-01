@@ -101,7 +101,7 @@ public class PermissionTicketAdapter implements PermissionTicket, JpaModel<Permi
             return null;
         }
 
-        return storeFactory.getPolicyStore().findById(policy.getId(), entity.getResourceServer().getId());
+        return storeFactory.getPolicyStore().findById(entity.getResourceServer().getId(), policy.getId());
     }
 
     @Override
@@ -113,7 +113,7 @@ public class PermissionTicketAdapter implements PermissionTicket, JpaModel<Permi
 
     @Override
     public Resource getResource() {
-        return storeFactory.getResourceStore().findById(entity.getResource().getId(), getResourceServer().getId());
+        return storeFactory.getResourceStore().findById(getResourceServer().getId(), entity.getResource().getId());
     }
 
     @Override
@@ -124,7 +124,7 @@ public class PermissionTicketAdapter implements PermissionTicket, JpaModel<Permi
             return null;
         }
 
-        return storeFactory.getScopeStore().findById(scope.getId(), getResourceServer().getId());
+        return storeFactory.getScopeStore().findById(getResourceServer().getId(), scope.getId());
     }
 
     @Override

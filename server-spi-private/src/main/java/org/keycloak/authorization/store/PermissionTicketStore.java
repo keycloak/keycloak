@@ -34,12 +34,12 @@ public interface PermissionTicketStore {
     /**
      * Returns count of {@link PermissionTicket}, filtered by the given attributes.
      *
-     * @param attributes permission tickets that do not match the attributes are not included with the count; possible filter options are given by {@link PermissionTicket.FilterOption}
      * @param resourceServerId the resource server id
+     * @param attributes permission tickets that do not match the attributes are not included with the count; possible filter options are given by {@link PermissionTicket.FilterOption}
      * @return an integer indicating the amount of permission tickets
      * @throws IllegalArgumentException when there is an unknown attribute in the {@code attributes} map
      */
-    long count(Map<PermissionTicket.FilterOption, String> attributes, String resourceServerId);
+    long count(String resourceServerId, Map<PermissionTicket.FilterOption, String> attributes);
 
     /**
      * Creates a new {@link PermissionTicket} instance.
@@ -48,7 +48,7 @@ public interface PermissionTicketStore {
      * @param resourceServer the resource server to which this policy belongs
      * @return a new instance of {@link PermissionTicket}
      */
-    PermissionTicket create(String resourceId, String scopeId, String requester, ResourceServer resourceServer);
+    PermissionTicket create(ResourceServer resourceServer, String resourceId, String scopeId, String requester);
 
     /**
      * Deletes a permission from the underlying persistence mechanism.
@@ -60,11 +60,11 @@ public interface PermissionTicketStore {
     /**
      * Returns a {@link PermissionTicket} with the given <code>id</code>
      *
-     * @param id the identifier of the permission
      * @param resourceServerId the resource server id
+     * @param id the identifier of the permission
      * @return a permission with the given identifier.
      */
-    PermissionTicket findById(String id, String resourceServerId);
+    PermissionTicket findById(String resourceServerId, String id);
 
     /**
      * Returns a list of {@link PermissionTicket} associated with a {@link ResourceServer} with the given <code>resourceServerId</code>.
@@ -80,31 +80,31 @@ public interface PermissionTicketStore {
      * @param owner the identifier of a resource server
      * @return a list of permissions belonging to the given owner
      */
-    List<PermissionTicket> findByOwner(String owner, String resourceServerId);
+    List<PermissionTicket> findByOwner(String resourceServerId, String owner);
 
     /**
      * Returns a list of {@link PermissionTicket} associated with a {@link org.keycloak.authorization.core.model.Resource} with the given <code>resourceId</code>.
      *
-     * @param resourceId the identifier of a resource
      * @param resourceServerId the resource server id
+     * @param resourceId the identifier of a resource
      * @return a list of permissions associated with the given resource
      */
-    List<PermissionTicket> findByResource(String resourceId, String resourceServerId);
+    List<PermissionTicket> findByResource(String resourceServerId, String resourceId);
 
     /**
      * Returns a list of {@link PermissionTicket} associated with a {@link org.keycloak.authorization.core.model.Scope} with the given <code>scopeId</code>.
      *
-     * @param scopeId the id of the scopes
      * @param resourceServerId the resource server id
+     * @param scopeId the id of the scopes
      * @return a list of permissions associated with the given scopes
      */
-    List<PermissionTicket> findByScope(String scopeId, String resourceServerId);
+    List<PermissionTicket> findByScope(String resourceServerId, String scopeId);
 
     /**
      * Returns a list of {@link PermissionTicket}, filtered by the given attributes.
      *
-     * @param attributes a map of keys and values to filter on; possible filter options are given by {@link PermissionTicket.FilterOption}
      * @param resourceServerId an id of resource server that resulting tickets should belong to. Ignored if {@code null}
+     * @param attributes a map of keys and values to filter on; possible filter options are given by {@link PermissionTicket.FilterOption}
      * @param firstResult first result to return; Ignored if negative or zero
      * @param maxResult maximum number of results to return; Ignored if negative
      * @return a list of filtered and paginated permissions
@@ -112,26 +112,26 @@ public interface PermissionTicketStore {
      * @throws IllegalArgumentException when there is an unknown attribute in the {@code attributes} map
      *
      */
-    List<PermissionTicket> find(Map<PermissionTicket.FilterOption, String> attributes, String resourceServerId, int firstResult, int maxResult);
+    List<PermissionTicket> find(String resourceServerId, Map<PermissionTicket.FilterOption, String> attributes, int firstResult, int maxResult);
 
     /**
      * Returns a list of {@link PermissionTicket} granted to the given {@code userId}.
      *
-     * @param userId the user id
      * @param resourceServerId the resource server id
+     * @param userId the user id
      * @return a list of permissions granted for a particular user
      */
-    List<PermissionTicket> findGranted(String userId, String resourceServerId);
+    List<PermissionTicket> findGranted(String resourceServerId, String userId);
 
     /**
      * Returns a list of {@link PermissionTicket} with name equal to {@code resourceName} granted to the given {@code userId}.
      *
+     * @param resourceServerId the resource server id
      * @param resourceName the name of a resource
      * @param userId the user id
-     * @param resourceServerId the resource server id
      * @return a list of permissions granted for a particular user
      */
-    List<PermissionTicket> findGranted(String resourceName, String userId, String resourceServerId);
+    List<PermissionTicket> findGranted(String resourceServerId, String resourceName, String userId);
 
     /**
      * Returns a list of {@link Resource} granted to the given {@code requester}

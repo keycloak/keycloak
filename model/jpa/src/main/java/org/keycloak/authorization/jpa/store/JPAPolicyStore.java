@@ -60,7 +60,7 @@ public class JPAPolicyStore implements PolicyStore {
     }
 
     @Override
-    public Policy create(AbstractPolicyRepresentation representation, ResourceServer resourceServer) {
+    public Policy create(ResourceServer resourceServer, AbstractPolicyRepresentation representation) {
         PolicyEntity entity = new PolicyEntity();
 
         if (representation.getId() == null) {
@@ -89,7 +89,7 @@ public class JPAPolicyStore implements PolicyStore {
 
 
     @Override
-    public Policy findById(String id, String resourceServerId) {
+    public Policy findById(String resourceServerId, String id) {
         if (id == null) {
             return null;
         }
@@ -104,7 +104,7 @@ public class JPAPolicyStore implements PolicyStore {
     }
 
     @Override
-    public Policy findByName(String name, String resourceServerId) {
+    public Policy findByName(String resourceServerId, String name) {
         TypedQuery<PolicyEntity> query = entityManager.createNamedQuery("findPolicyIdByName", PolicyEntity.class);
 
         query.setFlushMode(FlushModeType.COMMIT);
@@ -127,7 +127,7 @@ public class JPAPolicyStore implements PolicyStore {
         List<String> result = query.getResultList();
         List<Policy> list = new LinkedList<>();
         for (String id : result) {
-            Policy policy = provider.getStoreFactory().getPolicyStore().findById(id, resourceServerId);
+            Policy policy = provider.getStoreFactory().getPolicyStore().findById(resourceServerId, id);
             if (Objects.nonNull(policy)) {
                 list.add(policy);
             }
@@ -136,7 +136,7 @@ public class JPAPolicyStore implements PolicyStore {
     }
 
     @Override
-    public List<Policy> findByResourceServer(Map<Policy.FilterOption, String[]> attributes, String resourceServerId, int firstResult, int maxResult) {
+    public List<Policy> findByResourceServer(String resourceServerId, Map<Policy.FilterOption, String[]> attributes, int firstResult, int maxResult) {
         CriteriaBuilder builder = entityManager.getCriteriaBuilder();
         CriteriaQuery<PolicyEntity> querybuilder = builder.createQuery(PolicyEntity.class);
         Root<PolicyEntity> root = querybuilder.from(PolicyEntity.class);
@@ -196,7 +196,7 @@ public class JPAPolicyStore implements PolicyStore {
         List<String> result = paginateQuery(query, firstResult, maxResult).getResultList();
         List<Policy> list = new LinkedList<>();
         for (String id : result) {
-            Policy policy = provider.getStoreFactory().getPolicyStore().findById(id, resourceServerId);
+            Policy policy = provider.getStoreFactory().getPolicyStore().findById(resourceServerId, id);
             if (Objects.nonNull(policy)) {
                 list.add(policy);
             }
@@ -205,7 +205,7 @@ public class JPAPolicyStore implements PolicyStore {
     }
 
     @Override
-    public void findByResource(String resourceId, String resourceServerId, Consumer<Policy> consumer) {
+    public void findByResource(String resourceServerId, String resourceId, Consumer<Policy> consumer) {
         TypedQuery<PolicyEntity> query = entityManager.createNamedQuery("findPolicyIdByResource", PolicyEntity.class);
 
         query.setFlushMode(FlushModeType.COMMIT);
@@ -215,13 +215,13 @@ public class JPAPolicyStore implements PolicyStore {
         PolicyStore storeFactory = provider.getStoreFactory().getPolicyStore();
 
         closing(query.getResultStream()
-                .map(entity -> storeFactory.findById(entity.getId(), resourceServerId))
+                .map(entity -> storeFactory.findById(resourceServerId, entity.getId()))
                 .filter(Objects::nonNull))
                 .forEach(consumer::accept);
     }
 
     @Override
-    public void findByResourceType(String resourceType, String resourceServerId, Consumer<Policy> consumer) {
+    public void findByResourceType(String resourceServerId, String resourceType, Consumer<Policy> consumer) {
         TypedQuery<PolicyEntity> query = entityManager.createNamedQuery("findPolicyIdByResourceType", PolicyEntity.class);
 
         query.setFlushMode(FlushModeType.COMMIT);
@@ -235,7 +235,7 @@ public class JPAPolicyStore implements PolicyStore {
     }
 
     @Override
-    public List<Policy> findByScopeIds(List<String> scopeIds, String resourceServerId) {
+    public List<Policy> findByScopeIds(String resourceServerId, List<String> scopeIds) {
         if (scopeIds==null || scopeIds.isEmpty()) {
             return Collections.emptyList();
         }
@@ -251,14 +251,14 @@ public class JPAPolicyStore implements PolicyStore {
         PolicyStore storeFactory = provider.getStoreFactory().getPolicyStore();
 
         for (PolicyEntity entity : query.getResultList()) {
-            list.add(storeFactory.findById(entity.getId(), resourceServerId));
+            list.add(storeFactory.findById(resourceServerId, entity.getId()));
         }
 
         return list;
     }
 
     @Override
-    public void findByScopeIds(List<String> scopeIds, String resourceId, String resourceServerId, Consumer<Policy> consumer) {
+    public void findByScopeIds(String resourceServerId, String resourceId, List<String> scopeIds, Consumer<Policy> consumer) {
         // Use separate subquery to handle DB2 and MSSSQL
         TypedQuery<PolicyEntity> query;
 
@@ -282,7 +282,7 @@ public class JPAPolicyStore implements PolicyStore {
     }
 
     @Override
-    public List<Policy> findByType(String type, String resourceServerId) {
+    public List<Policy> findByType(String resourceServerId, String type) {
         TypedQuery<String> query = entityManager.createNamedQuery("findPolicyIdByType", String.class);
 
         query.setFlushMode(FlushModeType.COMMIT);
@@ -292,7 +292,7 @@ public class JPAPolicyStore implements PolicyStore {
         List<String> result = query.getResultList();
         List<Policy> list = new LinkedList<>();
         for (String id : result) {
-            Policy policy = provider.getStoreFactory().getPolicyStore().findById(id, resourceServerId);
+            Policy policy = provider.getStoreFactory().getPolicyStore().findById(resourceServerId, id);
             if (Objects.nonNull(policy)) {
                 list.add(policy);
             }
@@ -301,7 +301,7 @@ public class JPAPolicyStore implements PolicyStore {
     }
 
     @Override
-    public List<Policy> findDependentPolicies(String policyId, String resourceServerId) {
+    public List<Policy> findDependentPolicies(String resourceServerId, String policyId) {
 
         TypedQuery<String> query = entityManager.createNamedQuery("findPolicyIdByDependentPolices", String.class);
 
@@ -312,7 +312,7 @@ public class JPAPolicyStore implements PolicyStore {
         List<String> result = query.getResultList();
         List<Policy> list = new LinkedList<>();
         for (String id : result) {
-            Policy policy = provider.getStoreFactory().getPolicyStore().findById(id, resourceServerId);
+            Policy policy = provider.getStoreFactory().getPolicyStore().findById(resourceServerId, id);
             if (Objects.nonNull(policy)) {
                 list.add(policy);
             }

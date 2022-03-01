@@ -51,13 +51,13 @@ public class MapPermissionTicketAdapter extends AbstractPermissionTicketModel<Ma
 
     @Override
     public Resource getResource() {
-        return storeFactory.getResourceStore().findById(entity.getResourceId(), entity.getResourceServerId());
+        return storeFactory.getResourceStore().findById(entity.getResourceServerId(), entity.getResourceId());
     }
 
     @Override
     public Scope getScope() {
         if (entity.getScopeId() == null) return null;
-        return storeFactory.getScopeStore().findById(entity.getScopeId(), entity.getResourceServerId());
+        return storeFactory.getScopeStore().findById(entity.getResourceServerId(), entity.getScopeId());
     }
 
     @Override
@@ -89,7 +89,7 @@ public class MapPermissionTicketAdapter extends AbstractPermissionTicketModel<Ma
     @Override
     public Policy getPolicy() {
         if (entity.getPolicyId() == null) return null;
-        return storeFactory.getPolicyStore().findById(entity.getPolicyId(), entity.getResourceServerId());
+        return storeFactory.getPolicyStore().findById(entity.getResourceServerId(), entity.getPolicyId());
     }
 
     @Override

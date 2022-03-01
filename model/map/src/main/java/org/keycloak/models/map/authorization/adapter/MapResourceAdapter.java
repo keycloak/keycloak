@@ -92,7 +92,7 @@ public class MapResourceAdapter extends AbstractResourceModel<MapResourceEntity>
         Set<String> ids = entity.getScopeIds();
         return ids == null ? Collections.emptyList() : ids.stream()
                 .map(id -> storeFactory
-                        .getScopeStore().findById(id, entity.getResourceServerId()))
+                        .getScopeStore().findById(entity.getResourceServerId(), id))
                 .collect(Collectors.toList());
     }
 
@@ -141,13 +141,13 @@ public class MapResourceAdapter extends AbstractResourceModel<MapResourceEntity>
                 // The scope^ was removed from the Resource
 
                 // Remove permission tickets based on the scope
-                List<PermissionTicket> permissions = permissionStore.findByScope(scope.getId(), getResourceServer());
+                List<PermissionTicket> permissions = permissionStore.findByScope(getResourceServer(), scope.getId());
                 for (PermissionTicket permission : permissions) {
                     permissionStore.delete(permission.getId());
                 }
 
                 // Remove the scope from each Policy for this Resource
-                policyStore.findByResource(getId(), getResourceServer(), policy -> policy.removeScope(scope));
+                policyStore.findByResource(getResourceServer(), getId(), policy -> policy.removeScope(scope));
             }
         }
 

@@ -169,7 +169,7 @@ public class PolicyAdapter extends AbstractAuthorizationModel implements Policy,
     public Set<Resource> getResources() {
         Set<Resource> set = new HashSet<>();
         for (ResourceEntity res : entity.getResources()) {
-            set.add(storeFactory.getResourceStore().findById(res.getId(), entity.getResourceServer().getId()));
+            set.add(storeFactory.getResourceStore().findById(entity.getResourceServer().getId(), res.getId()));
         }
         return Collections.unmodifiableSet(set);
     }
@@ -178,7 +178,7 @@ public class PolicyAdapter extends AbstractAuthorizationModel implements Policy,
     public Set<Scope> getScopes() {
         Set<Scope> set = new HashSet<>();
         for (ScopeEntity res : entity.getScopes()) {
-            set.add(storeFactory.getScopeStore().findById(res.getId(), entity.getResourceServer().getId()));
+            set.add(storeFactory.getScopeStore().findById(entity.getResourceServer().getId(), res.getId()));
         }
         return Collections.unmodifiableSet(set);
     }

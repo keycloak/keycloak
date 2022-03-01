@@ -172,21 +172,21 @@ public class PolicyEvaluationService {
 
             ScopeStore scopeStore = storeFactory.getScopeStore();
 
-            Set<Scope> scopes = givenScopes.stream().map(scopeRepresentation -> scopeStore.findByName(scopeRepresentation.getName(), resourceServer.getId())).collect(Collectors.toSet());
+            Set<Scope> scopes = givenScopes.stream().map(scopeRepresentation -> scopeStore.findByName(resourceServer.getId(), scopeRepresentation.getName())).collect(Collectors.toSet());
 
             if (resource.getId() != null) {
-                Resource resourceModel = storeFactory.getResourceStore().findById(resource.getId(), resourceServer.getId());
+                Resource resourceModel = storeFactory.getResourceStore().findById(resourceServer.getId(), resource.getId());
                 return new ArrayList<>(Arrays.asList(
                         Permissions.createResourcePermissions(resourceModel, resourceServer, scopes, authorization, request))).stream();
             } else if (resource.getType() != null) {
-                return storeFactory.getResourceStore().findByType(resource.getType(), resourceServer.getId()).stream().map(resource1 -> Permissions.createResourcePermissions(resource1,
+                return storeFactory.getResourceStore().findByType(resourceServer.getId(), resource.getType()).stream().map(resource1 -> Permissions.createResourcePermissions(resource1,
                         resourceServer, scopes, authorization, request));
             } else {
                 if (scopes.isEmpty()) {
                     return Stream.empty();
                 }
 
-                List<Resource> resources = storeFactory.getResourceStore().findByScope(scopes.stream().map(Scope::getId).collect(Collectors.toList()), resourceServer.getId());
+                List<Resource> resources = storeFactory.getResourceStore().findByScope(resourceServer.getId(), scopes.stream().map(Scope::getId).collect(Collectors.toList()));
 
                 if (resources.isEmpty()) {
                     return scopes.stream().map(scope -> new ResourcePermission(null, new ArrayList<>(Arrays.asList(scope)), resourceServer));
