@@ -79,19 +79,23 @@
             <artifactId>quarkus-smallrye-metrics-deployment</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.quarkiverse.vault</groupId>
-            <artifactId>quarkus-vault-deployment</artifactId>
-            <version>1.0.1</version>
-        </dependency>
-        <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-junit5-internal</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-logging-json-deployment</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.rest-assured</groupId>
             <artifactId>rest-assured</artifactId>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkiverse.vault</groupId>
+            <artifactId>quarkus-vault-deployment</artifactId>
+            <version>1.0.1</version>
         </dependency>
     </dependencies>
 

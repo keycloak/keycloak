@@ -19,8 +19,13 @@ package org.keycloak.it.junit5.extension;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.List;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.approvaltests.Approvals;
 import io.quarkus.test.junit.main.LaunchResult;
 
@@ -96,5 +101,30 @@ public interface CLIResult extends LaunchResult {
 
     default void assertClusteredCache() {
         assertTrue(isClustered());
+    }
+
+    default void assertJsonLogDefaultsApplied() throws JsonProcessingException {
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        String[] splittedOutput = getOutput().split(System.lineSeparator());
+
+        int counter = 0;
+
+        for (String line: splittedOutput) {
+            if (!line.trim().startsWith("{")) {
+                counter++;
+                //we ignore non-json output for now. Problem: the build done by start-dev does not know about the runtime configuration,
+                // so when invoking start-dev and a build is done, the output is not json but unstructured console output
+                continue;
+            }
+            JsonNode json = objectMapper.readTree(line);
+            assertTrue(json.has("timestamp"));
+            assertTrue(json.has("message"));
+            assertTrue(json.has("level"));
+        }
+
+        if (counter == splittedOutput.length) {
+            fail("No JSON found in output.");
+        }
     }
 }
