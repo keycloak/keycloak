@@ -19,6 +19,7 @@ package org.keycloak.models.map.authorization;
 
 import org.jboss.logging.Logger;
 import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.UserManagedPermissionUtil;
 import org.keycloak.authorization.model.PermissionTicket;
 import org.keycloak.authorization.model.PermissionTicket.SearchableFields;
 import org.keycloak.authorization.model.Resource;
@@ -129,7 +130,12 @@ public class MapPermissionTicketStore implements PermissionTicketStore {
     @Override
     public void delete(String id) {
         LOG.tracef("delete(%s)%s", id, getShortStackTrace());
+
+        PermissionTicket permissionTicket = findById(id, null);
+        if (permissionTicket == null) return;
+
         tx.delete(id);
+        UserManagedPermissionUtil.removePolicy(permissionTicket, authorizationProvider.getStoreFactory());
     }
 
     @Override

@@ -494,15 +494,14 @@ public class AuthorizationTokenService {
             }
         }
 
-        resolvePreviousGrantedPermissions(ticket, request, resourceServer, permissionsToEvaluate, resourceStore, scopeStore, limit);
+        resolvePreviousGrantedPermissions(request, resourceServer, permissionsToEvaluate, resourceStore, scopeStore, limit);
 
         return permissionsToEvaluate.values();
     }
 
-    private void resolvePreviousGrantedPermissions(PermissionTicketToken ticket,
-            KeycloakAuthorizationRequest request, ResourceServer resourceServer,
-            Map<String, ResourcePermission> permissionsToEvaluate, ResourceStore resourceStore, ScopeStore scopeStore,
-            AtomicInteger limit) {
+    private void resolvePreviousGrantedPermissions(KeycloakAuthorizationRequest request, ResourceServer resourceServer,
+                                                   Map<String, ResourcePermission> permissionsToEvaluate, ResourceStore resourceStore, ScopeStore scopeStore,
+                                                   AtomicInteger limit) {
         AccessToken rpt = request.getRpt();
 
         if (rpt != null && rpt.isActive()) {
@@ -517,7 +516,7 @@ public class AuthorizationTokenService {
                             break;
                         }
 
-                        Resource resource = resourceStore.findById(grantedPermission.getResourceId(), ticket.getIssuedFor());
+                        Resource resource = resourceStore.findById(grantedPermission.getResourceId(), resourceServer.getId());
 
                         if (resource != null) {
                             ResourcePermission permission = permissionsToEvaluate.get(resource.getId());

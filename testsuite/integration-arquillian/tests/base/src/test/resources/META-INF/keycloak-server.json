@@ -167,6 +167,12 @@
         }
     },
 
+    "authorizationCache": {
+        "default": {
+            "enabled": "${keycloak.authorizationCache.enabled:true}"
+        }
+    },
+
     "userCache": {
         "provider": "${keycloak.user.cache.provider:default}",
         "default" : {

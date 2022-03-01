@@ -1134,6 +1134,7 @@
                                 <keycloak.userSession.provider>map</keycloak.userSession.provider>
                                 <keycloak.loginFailure.provider>map</keycloak.loginFailure.provider>
                                 <keycloak.authorization.provider>map</keycloak.authorization.provider>
+                                <keycloak.authorizationCache.enabled>false</keycloak.authorizationCache.enabled>
                           </systemPropertyVariables>
                       </configuration>
                     </plugin>
