@@ -420,6 +420,24 @@ public class ConfigurationTest {
     }
 
     @Test
+    public void testLogHandlerConfig() {
+        System.setProperty(CLI_ARGS, "--log=console,file");
+        SmallRyeConfig config = createConfig();
+        assertEquals("true", config.getConfigValue("quarkus.log.console.enable").getValue());
+        assertEquals("true", config.getConfigValue("quarkus.log.file.enable").getValue());
+
+        System.setProperty(CLI_ARGS, "--log=file");
+        SmallRyeConfig config2 = createConfig();
+        assertEquals("false", config2.getConfigValue("quarkus.log.console.enable").getValue());
+        assertEquals("true", config2.getConfigValue("quarkus.log.file.enable").getValue());
+
+        System.setProperty(CLI_ARGS, "--log=console");
+        SmallRyeConfig config3 = createConfig();
+        assertEquals("true", config3.getConfigValue("quarkus.log.console.enable").getValue());
+        assertEquals("false", config3.getConfigValue("quarkus.log.file.enable").getValue());
+    }
+
+    @Test
     public void testOptionValueWithEqualSign() {
         System.setProperty(CLI_ARGS, "--db-password=my_secret=");
         SmallRyeConfig config = createConfig();

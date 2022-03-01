@@ -7,9 +7,16 @@ title="Configuring logging"
 summary="Learn how to configure Logging"
 includedOptions="log-*">
 
-Logging is done on a per-category basis in Keycloak. You can configure logging for the root log level, or for more specific categories like `org.hibernate` or `org.keycloak`. In this guide, you will learn how to configure the log level and format.
+Keycloak uses the jboss logmanager logging framework. The high-level overview for the available log handlers is shown below:
 
-== Log level
+* root
+** console (_default_)
+** file
+
+== Logging: Root configuration
+Logging is done on a per-category basis in Keycloak. You can configure logging for the root log level, or for more specific categories like `org.hibernate` or `org.keycloak`. In this guide, you will learn how to configure logging.
+
+=== Root Log level
 The available log levels are listed in the following Table:
 
 |====
@@ -29,7 +36,7 @@ The root loggers log level can be set using the following command:
 
 <@kc.start parameters="--log-level=<root-level>"/>
 
-using one of the levels mentioned in the table above. When no log level configuration exists for a more specific category logger, the enclosing category is used instead. When there is no enclosing category, the root logger level is used.
+using one of the levels mentioned in the table above. When no log level configuration exists for a more specific category logger (see below), the enclosing category is used instead. When there is no enclosing category, the root logger level is used.
 
 Setting the log level is case-insensitive, so you could either use for example `DEBUG` or `debug`.
 
@@ -46,10 +53,17 @@ A configuration that applies to a category also applies to all sub-categories of
 <@kc.start parameters="--log-level=INFO,org.hibernate:debug,org.hibernate.hql.internal.ast:info"/>
 The example above sets the root log level for all loggers to INFO, and the hibernate log level in general to debug. But as we don't want SQL abstract syntax trees to make the log output verbose, we set the more specific sub category `org.hibernate.hql.internal.ast` to info, so the SQL abstract syntax trees, which would be shown at `debug` level, don't show up anymore.
 
-== Configuring the logging format
-Keycloak uses a pattern-based logging formatter that generates human-readable text logs by default.
+== Enabling log handlers
+To enable one or more log handlers, run the following command:
+<@kc.start parameters="--log=<handler1>,<handler2>"/>
 
-The logging format template for these lines can be applied at the root level.
+The available handlers are `console` and `file`. The more specific handler configuration mentioned below will only take effect when the handler is added to this comma-separated list.
+
+== Console Log Handler
+The console log handler is enabled by default, providing unstructured log messages for the console.
+
+=== Configuring the console log format
+Keycloak uses a pattern-based logging formatter that generates human-readable text logs by default.
 
 The default format template is:
 
@@ -74,17 +88,71 @@ The format string supports the following symbols:
 |%s|Simple message|Renders only the log message, without exception trace.
 |%t|Thread name|Renders the thread name.
 |%t{id}|Thread ID|Render the thread ID.
-|%z{<zone name>}|Time zone|Set the time zone of log output to <zone name>.
+|%z{<zone name>}|Timezone|Set the time zone of log output to <zone name>.
 |====
 
-=== Set the logging format
 To set the logging format for a logged line, build your desired format template using the table above and run the following command:
-<@kc.start parameters="--log-format=\"\'<format>\'\""/>
+
+<@kc.start parameters="--log-console-format=\"\'<format>\'\""/>
+
 Be aware that you need to escape characters when invoking commands containing special shell characters such as `;` using the CLI, so you might want to set it in the configuration file instead.
 
 .Example: Abbreviate the fully qualified category name
-<@kc.start parameters="\"\'%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c{3.}] (%t) %s%e%n\'\""/>
-The example above abbreviates the category name, which could get rather long in some cases, to three characters by setting `[%c{3.}]` in the template instead of the default `[%c]`.
+<@kc.start parameters="--log-console-format=\"\'%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c{3.}] (%t) %s%e%n\'\""/>
+The example above abbreviates the category name to three characters by setting `[%c{3.}]` in the template instead of the default `[%c]`.
+
+=== Configuring JSON or plain console logging
+By default, the console log handler logs plain unstructured data to the console. To use structured JSON log output instead, run the following command:
+
+<@kc.start parameters="--log-console-output=json"/>
+
+.Example Log Message
+[source, json]
+----
+{"timestamp":"2022-02-25T10:31:32.452+01:00","sequence":8442,"loggerClassName":"org.jboss.logging.Logger","loggerName":"io.quarkus","level":"INFO","message":"Keycloak 18.0.0-SNAPSHOT on JVM (powered by Quarkus 2.7.2.Final) started in 3.253s. Listening on: http://0.0.0.0:8080","threadName":"main","threadId":1,"mdc":{},"ndc":"","hostName":"host-name","processName":"QuarkusEntryPoint","processId":36946}
+----
+
+When using JSON output, colors are disabled and the format settings set by `--log-console-format` will not apply.
+
+To use unstructured logging, run the following command:
+
+<@kc.start parameters="--log-console-output=default"/>
+
+.Example Log Message:
+[source, bash]
+----
+2022-03-02 10:36:50,603 INFO  [io.quarkus] (main) Keycloak 18.0.0-SNAPSHOT on JVM (powered by Quarkus 2.7.2.Final) started in 3.615s. Listening on: http://0.0.0.0:8080
+
+----
+
+=== Colors
+Colored console log output for unstructured logs is disabled by default. It may lead to better readability, but can cause problems when shipping logs to external log aggregation systems. If you want to enable or disable color-coded console log output, run following command:
+
+<@kc.start parameters="--log-console-color=<false|true>"/>
+
+== File logging
+Instead of logging to the console, Keycloak also supports unstructured logging to a file.
+
+=== Enable file logging
+Logging to a file is disabled by default. To enable it, run the following command:
+
+<@kc.start parameters="--log=console,file"/>
+
+=== Configuring path and name of the generated log file
+By enabling the file log handler, a log file named `keycloak.log` will be created inside the `data/log` directory of your Keycloak installation.
+
+To change the location and name of the generated log file, run the following command:
+
+<@kc.start parameters="--log=console,file --log-file=<path-to>/<your-file.log>"/>
+
+Please make sure the location for the logfile is writeable. If not, an error will be thrown at start-up. Keycloak will start correctly, but no file containing logs will be created.
+
+=== Configuring the file handler format
+You can configure a different logging format for the file log handler by running the following command:
+
+<@kc.start parameters="--log-file-format=<pattern>"/>
+
+Please see the <<Configuring the console log format>> section in this guide for more information and a table of the available pattern configuration.
 
 == Configuring raw quarkus logging properties
 At the time of writing, the logging features of the quarkus based Keycloak are basic, yet powerful. Nevertheless, expect more to come and feel free to join the https://github.com/keycloak/keycloak/discussions/8870[discussion] at GitHub.

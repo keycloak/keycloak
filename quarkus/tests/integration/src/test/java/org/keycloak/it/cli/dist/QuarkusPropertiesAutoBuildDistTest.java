@@ -35,7 +35,7 @@ import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
 
 @DistributionTest(reInstall = DistributionTest.ReInstall.NEVER)
-@BeforeStartDistribution(QuarkusPropertiesAutoBuildDistTest.DisableConsoleLogHandler.class)
+@BeforeStartDistribution(QuarkusPropertiesAutoBuildDistTest.UpdateConsoleLogLevelToWarn.class)
 @RawDistOnly(reason = "Containers are immutable")
 @TestMethodOrder(OrderAnnotation.class)
 public class QuarkusPropertiesAutoBuildDistTest {
@@ -59,7 +59,7 @@ public class QuarkusPropertiesAutoBuildDistTest {
     }
 
     @Test
-    @BeforeStartDistribution(EnableConsoleLogHandler.class)
+    @BeforeStartDistribution(UpdateConsoleLogLevelToInfo.class)
     @Launch({ "start", "--auto-build", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
     @Order(3)
     void testReAugAfterChangingProperty(LaunchResult result) {
@@ -68,19 +68,19 @@ public class QuarkusPropertiesAutoBuildDistTest {
         assertTrue(cliResult.getOutput().contains("INFO  [io.quarkus]"));
     }
 
-    public static class DisableConsoleLogHandler implements Consumer<KeycloakDistribution> {
+    public static class UpdateConsoleLogLevelToWarn implements Consumer<KeycloakDistribution> {
 
         @Override
         public void accept(KeycloakDistribution distribution) {
-            distribution.setQuarkusProperty("quarkus.log.console.enable", "false");
+            distribution.setQuarkusProperty("quarkus.log.console.level", "WARN");
         }
     }
 
-    public static class EnableConsoleLogHandler implements Consumer<KeycloakDistribution> {
+    public static class UpdateConsoleLogLevelToInfo implements Consumer<KeycloakDistribution> {
 
         @Override
         public void accept(KeycloakDistribution distribution) {
-            distribution.setQuarkusProperty("quarkus.log.console.enable", "true");
+            distribution.setQuarkusProperty("quarkus.log.console.level", "INFO");
         }
     }
 
