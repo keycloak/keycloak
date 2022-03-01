@@ -16,6 +16,10 @@
  */
 package org.keycloak.models.map.storage.chm;
 
+import org.keycloak.models.map.authSession.MapAuthenticationSessionEntity;
+import org.keycloak.models.map.authSession.MapAuthenticationSessionEntityImpl;
+import org.keycloak.models.map.authSession.MapRootAuthenticationSessionEntity;
+import org.keycloak.models.map.authSession.MapRootAuthenticationSessionEntityImpl;
 import org.keycloak.models.map.authorization.entity.MapPermissionTicketEntity;
 import org.keycloak.models.map.authorization.entity.MapPermissionTicketEntityImpl;
 import org.keycloak.models.map.authorization.entity.MapPolicyEntity;
@@ -122,6 +126,8 @@ public class ConcurrentHashMapStorageProviderFactory implements AmphibianProvide
       .constructor(MapRequiredActionProviderEntity.class,           MapRequiredActionProviderEntityImpl::new)
       .constructor(MapRequiredCredentialEntity.class,               MapRequiredCredentialEntityImpl::new)
       .constructor(MapWebAuthnPolicyEntity.class,                   MapWebAuthnPolicyEntityImpl::new)
+      .constructor(MapRootAuthenticationSessionEntity.class,        MapRootAuthenticationSessionEntityImpl::new)
+      .constructor(MapAuthenticationSessionEntity.class,            MapAuthenticationSessionEntityImpl::new)
       .build();
 
     private static final Map<String, StringKeyConvertor> KEY_CONVERTORS = new HashMap<>();
