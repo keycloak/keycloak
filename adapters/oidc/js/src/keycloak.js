@@ -152,6 +152,10 @@ function Keycloak (config) {
                 kc.scope = initOptions.scope;
             }
 
+            if (typeof initOptions.updateTokenTimeout === 'number') {
+                kc.updateTokenTimeout = initOptions.updateTokenTimeout;
+            }
+
             if (typeof initOptions.messageReceiveTimeout === 'number' && initOptions.messageReceiveTimeout > 0) {
                 kc.messageReceiveTimeout = initOptions.messageReceiveTimeout;
             } else {
@@ -633,6 +637,10 @@ function Keycloak (config) {
                     req.open('POST', url, true);
                     req.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
                     req.withCredentials = true;
+
+                    if (kc.updateTokenTimeout) {
+                        req.timeout = kc.updateTokenTimeout;
+                    }
 
                     params += '&client_id=' + encodeURIComponent(kc.clientId);
 
