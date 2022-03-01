@@ -13,6 +13,8 @@ import { EditClientPolicyConditionRoute } from "./routes/EditCondition";
 import { UserProfileRoute } from "./routes/UserProfile";
 import { AddAttributeRoute } from "./routes/AddAttribute";
 import { KeysRoute } from "./routes/KeysTab";
+import { NewAttributesGroupRoute } from "./routes/NewAttributesGroup";
+import { EditAttributesGroupRoute } from "./routes/EditAttributesGroup";
 
 const routes: RouteDef[] = [
   RealmSettingsRoute,
@@ -29,6 +31,8 @@ const routes: RouteDef[] = [
   EditClientPolicyConditionRoute,
   UserProfileRoute,
   AddAttributeRoute,
+  NewAttributesGroupRoute,
+  EditAttributesGroupRoute,
 ];
 
 export default routes;

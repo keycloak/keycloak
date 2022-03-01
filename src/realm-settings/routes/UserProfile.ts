@@ -13,7 +13,7 @@ export type UserProfileParams = {
 export const UserProfileRoute: RouteDef = {
   path: "/:realm/realm-settings/userProfile/:tab",
   component: lazy(() => import("../RealmSettingsSection")),
-  breadcrumb: (t) => t("realmSettings"),
+  breadcrumb: (t) => t("realm-settings:userProfile"),
   access: "view-realm",
 };
 

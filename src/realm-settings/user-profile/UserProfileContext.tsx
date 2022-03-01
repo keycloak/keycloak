@@ -16,7 +16,7 @@ type UserProfileProps = {
 export type SaveCallback = (
   updatedConfig: UserProfileConfig,
   options?: SaveOptions
-) => Promise<void>;
+) => Promise<boolean>;
 
 export type SaveOptions = {
   successMessageKey?: string;
@@ -51,19 +51,23 @@ export const UserProfileProvider: FunctionComponent = ({ children }) => {
         realm,
       });
 
+      setIsSaving(false);
       setRefreshCount(refreshCount + 1);
       addAlert(
         t(options?.successMessageKey ?? "realm-settings:userProfileSuccess"),
         AlertVariant.success
       );
+
+      return true;
     } catch (error) {
+      setIsSaving(false);
       addError(
         options?.errorMessageKey ?? "realm-settings:userProfileError",
         error
       );
-    }
 
-    setIsSaving(false);
+      return false;
+    }
   };
 
   return (

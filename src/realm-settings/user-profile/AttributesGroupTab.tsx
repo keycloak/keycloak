@@ -11,12 +11,16 @@ import { Link, useHistory } from "react-router-dom";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
 import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTable";
+import { useRealm } from "../../context/realm-context/RealmContext";
+import { toEditAttributesGroup } from "../routes/EditAttributesGroup";
+import { toNewAttributesGroup } from "../routes/NewAttributesGroup";
 import { useUserProfile } from "./UserProfileContext";
 
 export const AttributesGroupTab = () => {
   const { config, save } = useUserProfile();
   const { t } = useTranslation();
   const history = useHistory();
+  const { realm } = useRealm();
   const [key, setKey] = useState(0);
   const [groupToDelete, setGroupToDelete] = useState<UserProfileGroup>();
 
@@ -66,9 +70,12 @@ export const AttributesGroupTab = () => {
         ariaLabelKey="attributes-group:tableTitle"
         toolbarItem={
           <ToolbarItem>
-            {/* TODO: Add link to page */}
-            <Button component={(props) => <Link {...props} to={{}} />}>
-              {t("attributes-group:createButtonText")}
+            <Button
+              component={(props) => (
+                <Link {...props} to={toNewAttributesGroup({ realm })} />
+              )}
+            >
+              {t("attributes-group:createGroupText")}
             </Button>
           </ToolbarItem>
         }
@@ -76,6 +83,11 @@ export const AttributesGroupTab = () => {
           {
             name: "name",
             displayKey: "attributes-group:columnName",
+            cellRenderer: (group) => (
+              <Link to={toEditAttributesGroup({ realm, name: group.name! })}>
+                {group.name}
+              </Link>
+            ),
           },
           {
             name: "displayHeader",
@@ -88,11 +100,6 @@ export const AttributesGroupTab = () => {
         ]}
         actions={[
           {
-            title: t("common:edit"),
-            // TODO: Add link to page.
-            onRowClick: () => history.push({}),
-          },
-          {
             title: t("common:delete"),
             onRowClick: deleteAttributeGroup,
           },
@@ -101,9 +108,10 @@ export const AttributesGroupTab = () => {
           <ListEmptyState
             message={t("attributes-group:emptyStateMessage")}
             instructions={t("attributes-group:emptyStateInstructions")}
-            primaryActionText={t("attributes-group:createButtonText")}
-            // TODO: Add link to page.
-            onPrimaryAction={() => history.push({})}
+            primaryActionText={t("attributes-group:createGroupText")}
+            onPrimaryAction={() =>
+              history.push(toNewAttributesGroup({ realm }))
+            }
           />
         }
       />
