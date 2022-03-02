@@ -19,19 +19,6 @@
     </properties>
 
     <build>
-        <plugins>
-            <plugin>
-                <artifactId>maven-clean-plugin</artifactId>
-                <configuration>
-                    <filesets>
-                        <fileset>
-                            <directory>${dir.common}/web_modules</directory>
-                        </fileset>
-                    </filesets>
-                </configuration>
-            </plugin>
-        </plugins>
-
         <resources>
             <resource>
                 <directory>src/main/resources</directory>
@@ -152,6 +139,59 @@
         </profile>
 
         <profile>
+            <id>common</id>
+            <activation>
+                <property>
+                    <name>!skipCommon</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-clean-plugin</artifactId>
+                        <configuration>
+                            <filesets>
+                                <fileset>
+                                    <directory>${dir.common}/web_modules</directory>
+                                </fileset>
+                            </filesets>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>com.github.eirslett</groupId>
+                        <artifactId>frontend-maven-plugin</artifactId>
+                        <executions>
+                            <!-- Download NPM tools -->
+                            <execution>
+                                <id>setup-node</id>
+                                <goals>
+                                    <goal>install-node-and-npm</goal>
+                                </goals>
+                                <phase>initialize</phase>
+                            </execution>
+                            <!-- Download NPM packages -->
+                            <execution>
+                                <id>npm-install-common</id>
+                                <phase>initialize</phase>
+                                <goals>
+                                    <goal>npm</goal>
+                                </goals>
+                                <configuration>
+                                    <workingDirectory>${dir.common}</workingDirectory>
+                                    <arguments>${args.npm.install}</arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <nodeVersion>${node.version}</nodeVersion>
+                            <installDirectory>${project.basedir}</installDirectory>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
             <id>admin-preview</id>
             <dependencies>
                 <dependency>
@@ -223,78 +263,6 @@
                         </includes>
                     </resource>
                 </resources>
-            </build>
-        </profile>
-
-        <profile>
-            <id>npm-update</id>
-            <build>
-                <plugins>
-                    <!-- Download packages -->
-                    <plugin>
-                        <groupId>com.github.eirslett</groupId>
-                        <artifactId>frontend-maven-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>npm-install</id>
-                                <phase>generate-resources</phase>
-                                <goals>
-                                    <goal>npm</goal>
-                                </goals>
-                                <configuration>
-                                    <workingDirectory>${dir.common}</workingDirectory>
-                                    <arguments>install -P -E --no-optional --ignore-scripts --no-bin-links --no-shrinkwrap --no-package-lock</arguments>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <!-- Clean downloaded packages from NPM -->
-                    <plugin>
-                        <artifactId>maven-clean-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>clean-all</id>
-                                <phase>initialize</phase>
-                                <goals>
-                                    <goal>clean</goal>
-                                </goals>
-                                <configuration>
-                                    <filesets>
-                                        <fileset>
-                                            <directory>${dir.common}/node_modules</directory>
-                                        </fileset>
-                                    </filesets>
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <id>clean-downloaded</id>
-                                <phase>generate-resources</phase>
-                                <goals>
-                                    <goal>clean</goal>
-                                </goals>
-                                <configuration>
-                                    <filesets>
-                                        <fileset>
-                                            <directory>${dir.common}/node_modules/angular-translate/node_modules/</directory>
-                                        </fileset>
-                                        <fileset>
-                                            <directory>${dir.common}/node_modules/patternfly/node_modules/</directory>
-                                        </fileset>
-                                        <fileset>
-                                            <directory>${dir.common}/node_modules/rcue/node_modules/</directory>
-                                        </fileset>
-                                        <fileset>
-                                            <directory>${dir.common}/node_modules/minimist</directory>
-                                        </fileset>
-                                        <fileset>
-                                            <directory>${dir.common}/node_modules/mkdirp</directory>
-                                        </fileset>
-                                    </filesets>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
             </build>
         </profile>
     </profiles>
