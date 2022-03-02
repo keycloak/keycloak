@@ -48,6 +48,7 @@ export default function NewClientForm() {
       const newClient = await adminClient.clients.create({
         ...convertFormValuesToObject(client),
         clientId: client.clientId?.trim(),
+        frontchannelLogout: true,
       });
       addAlert(t("createSuccess"), AlertVariant.success);
       history.push(
@@ -93,6 +94,9 @@ export default function NewClientForm() {
             <>
               <Button
                 variant="primary"
+                data-testid={
+                  activeStep.name === t("capabilityConfig") ? "save" : "next"
+                }
                 type="submit"
                 onClick={() => {
                   forward(onNext);
@@ -104,6 +108,7 @@ export default function NewClientForm() {
               </Button>
               <Button
                 variant="secondary"
+                data-testid="back"
                 onClick={() => {
                   back();
                   onBack();
@@ -112,7 +117,7 @@ export default function NewClientForm() {
               >
                 {t("common:back")}
               </Button>
-              <Button variant="link" onClick={onClose}>
+              <Button data-testid="cancel" variant="link" onClick={onClose}>
                 {t("common:cancel")}
               </Button>
             </>

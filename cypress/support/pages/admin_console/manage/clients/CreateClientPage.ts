@@ -10,15 +10,21 @@ export default class CreateClientPage {
     '[for="kc-always-display-in-console-switch"]  .pf-c-switch__toggle';
   frontchannelLogoutSwitch =
     '[for="kc-frontchannelLogout-switch"]  .pf-c-switch__toggle';
-  clientAuthenticationSwitch = '[for="kc-authentication"] .pf-c-switch__toggle';
+  clientAuthenticationSwitch =
+    '[for="kc-authentication-switch"] > .pf-c-switch__toggle';
+  clientAuthorizationSwitch =
+    '[for="kc-authorization-switch"] > .pf-c-switch__toggle';
   standardFlowChkBx = "#kc-flow-standard";
   directAccessChkBx = "#kc-flow-direct";
   implicitFlowChkBx = "#kc-flow-implicit";
+  oidcCibaGrantChkBx = "#kc-oidc-ciba-grant";
+  deviceAuthGrantChkBx = "#kc-oauth-device-authorization-grant";
   serviceAccountRolesChkBx = "#kc-flow-service-account";
 
-  continueBtn = ".pf-c-wizard__footer .pf-m-primary";
-  backBtn = ".pf-c-wizard__footer .pf-m-secondary";
-  cancelBtn = ".pf-c-wizard__footer .pf-m-link";
+  saveBtn = "save";
+  continueBtn = "next";
+  backBtn = "back";
+  cancelBtn = "cancel";
 
   //#region General Settings
   selectClientType(clientType: string) {
@@ -72,11 +78,25 @@ export default class CreateClientPage {
 
     return this;
   }
+
+  checkGeneralSettingsStepActive() {
+    cy.get(".pf-c-wizard__nav-link")
+      .contains("General Settings")
+      .should("have.class", "pf-m-current");
+
+    return this;
+  }
   //#endregion
 
   //#region Capability config
   switchClientAuthentication() {
     cy.get(this.clientAuthenticationSwitch).click();
+
+    return this;
+  }
+
+  switchClientAuthorization() {
+    cy.get(this.clientAuthorizationSwitch).click();
 
     return this;
   }
@@ -104,22 +124,40 @@ export default class CreateClientPage {
 
     return this;
   }
+
+  clickOAuthDeviceAuthorizationGrant() {
+    cy.get(this.deviceAuthGrantChkBx).click();
+
+    return this;
+  }
+
+  clickOidcCibaGrant() {
+    cy.get(this.oidcCibaGrantChkBx).click();
+
+    return this;
+  }
   //#endregion
 
+  save() {
+    cy.findByTestId(this.saveBtn).click();
+
+    return this;
+  }
+
   continue() {
-    cy.get(this.continueBtn).click();
+    cy.findByTestId(this.continueBtn).click();
 
     return this;
   }
 
   back() {
-    cy.get(this.backBtn).click();
+    cy.findByTestId(this.backBtn).click();
 
     return this;
   }
 
   cancel() {
-    cy.get(this.cancelBtn).click();
+    cy.findByTestId(this.cancelBtn).click();
 
     return this;
   }

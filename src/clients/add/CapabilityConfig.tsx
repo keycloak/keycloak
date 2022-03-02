@@ -69,6 +69,7 @@ export const CapabilityConfig = ({
                     if (!value) {
                       setValue("authorizationServicesEnabled", false);
                       setValue("serviceAccountsEnabled", false);
+                      setValue("attributes.oidc.ciba.grant.enabled", false);
                     }
                   }}
                 />
@@ -114,7 +115,7 @@ export const CapabilityConfig = ({
             label={t("authenticationFlow")}
             fieldId="kc-flow"
           >
-            <Grid>
+            <Grid id="authenticationFlowGrid">
               <GridItem lg={4} sm={6}>
                 <Controller
                   name="standardFlowEnabled"
@@ -127,7 +128,7 @@ export const CapabilityConfig = ({
                         label={t("standardFlow")}
                         id="kc-flow-standard"
                         name="standardFlowEnabled"
-                        isChecked={value}
+                        isChecked={value.toString() === "true"}
                         onChange={onChange}
                       />
                       <HelpItem
@@ -164,7 +165,7 @@ export const CapabilityConfig = ({
               <GridItem lg={4} sm={6}>
                 <Controller
                   name="implicitFlowEnabled"
-                  defaultValue={false}
+                  defaultValue={true}
                   control={control}
                   render={({ onChange, value }) => (
                     <InputGroup>
@@ -173,7 +174,7 @@ export const CapabilityConfig = ({
                         label={t("implicitFlow")}
                         id="kc-flow-implicit"
                         name="implicitFlowEnabled"
-                        isChecked={value}
+                        isChecked={value.toString() === "true"}
                         onChange={onChange}
                       />
                       <HelpItem
@@ -197,7 +198,8 @@ export const CapabilityConfig = ({
                         id="kc-flow-service-account"
                         name="serviceAccountsEnabled"
                         isChecked={
-                          value || (clientAuthentication && authorization)
+                          value.toString() === "true" ||
+                          (clientAuthentication && authorization)
                         }
                         onChange={onChange}
                         isDisabled={
@@ -208,6 +210,53 @@ export const CapabilityConfig = ({
                       <HelpItem
                         helpText="clients-help:serviceAccount"
                         fieldLabelId="clients:serviceAccount"
+                      />
+                    </InputGroup>
+                  )}
+                />
+              </GridItem>
+              <GridItem lg={8} sm={6}>
+                <Controller
+                  name="attributes.oauth2.device.authorization.grant.enabled"
+                  defaultValue={false}
+                  control={control}
+                  render={({ onChange, value }) => (
+                    <InputGroup>
+                      <Checkbox
+                        data-testid="oauth-device-authorization-grant"
+                        label={t("oauthDeviceAuthorizationGrant")}
+                        id="kc-oauth-device-authorization-grant"
+                        name="oauth2.device.authorization.grant.enabled"
+                        isChecked={value.toString() === "true"}
+                        onChange={onChange}
+                      />
+                      <HelpItem
+                        helpText="clients-help:oauthDeviceAuthorizationGrant"
+                        fieldLabelId="clients:oauthDeviceAuthorizationGrant"
+                      />
+                    </InputGroup>
+                  )}
+                />
+              </GridItem>
+              <GridItem lg={8} sm={6}>
+                <Controller
+                  name="attributes.oidc.ciba.grant.enabled"
+                  defaultValue={false}
+                  control={control}
+                  render={({ onChange, value }) => (
+                    <InputGroup>
+                      <Checkbox
+                        data-testid="oidc-ciba-grant"
+                        label={t("oidcCibaGrant")}
+                        id="kc-oidc-ciba-grant"
+                        name="oidc.ciba.grant.enabled"
+                        isChecked={value.toString() === "true"}
+                        onChange={onChange}
+                        isDisabled={clientAuthentication}
+                      />
+                      <HelpItem
+                        helpText="clients-help:oidcCibaGrant"
+                        fieldLabelId="clients:oidcCibaGrant"
                       />
                     </InputGroup>
                   )}
@@ -233,15 +282,15 @@ export const CapabilityConfig = ({
             <Controller
               name="attributes.saml.encrypt"
               control={control}
-              defaultValue="false"
+              defaultValue={false}
               render={({ onChange, value }) => (
                 <Switch
                   data-testid="encrypt"
                   id="kc-encrypt"
                   label={t("common:on")}
                   labelOff={t("common:off")}
-                  isChecked={value === "true"}
-                  onChange={(value) => onChange("" + value)}
+                  isChecked={value}
+                  onChange={onChange}
                 />
               )}
             />
@@ -260,15 +309,15 @@ export const CapabilityConfig = ({
             <Controller
               name="attributes.saml.client.signature"
               control={control}
-              defaultValue="false"
+              defaultValue={false}
               render={({ onChange, value }) => (
                 <Switch
                   data-testid="client-signature"
                   id="kc-client-signature"
                   label={t("common:on")}
                   labelOff={t("common:off")}
-                  isChecked={value === "true"}
-                  onChange={(value) => onChange("" + value)}
+                  isChecked={value}
+                  onChange={onChange}
                 />
               )}
             />

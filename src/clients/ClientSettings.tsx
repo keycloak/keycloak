@@ -47,6 +47,7 @@ export const ClientSettings = ({
     "attributes.display.on.consent.screen"
   );
   const protocol = watch("protocol");
+  const frontchannelLogout = watch("frontchannelLogout");
 
   const sections = useMemo(() => {
     let result = ["generalSettings"];
@@ -289,6 +290,75 @@ export const ClientSettings = ({
         </FormGroup>
       </FormAccess>
       <FormAccess isHorizontal role="manage-clients">
+        {protocol === "openid-connect" && (
+          <>
+            <FormGroup
+              label={t("frontchannelLogout")}
+              labelIcon={
+                <HelpItem
+                  helpText="clients-help:frontchannelLogout"
+                  fieldLabelId="clients:frontchannelLogout"
+                />
+              }
+              fieldId="frontchannelLogout"
+              hasNoPaddingTop
+            >
+              <Controller
+                name="frontchannelLogout"
+                defaultValue={true}
+                control={control}
+                render={({ onChange, value }) => (
+                  <Switch
+                    id="frontchannelLogout"
+                    label={t("common:on")}
+                    labelOff={t("common:off")}
+                    isChecked={value.toString() === "true"}
+                    onChange={(value) => onChange(value.toString())}
+                  />
+                )}
+              />
+            </FormGroup>
+            {frontchannelLogout?.toString() === "true" && (
+              <FormGroup
+                label={t("frontchannelLogoutUrl")}
+                fieldId="frontchannelLogoutUrl"
+                labelIcon={
+                  <HelpItem
+                    helpText="clients-help:frontchannelLogoutUrl"
+                    fieldLabelId="clients:frontchannelLogoutUrl"
+                  />
+                }
+                helperTextInvalid={
+                  errors.attributes?.frontchannel?.logout?.url?.message
+                }
+                validated={
+                  errors.attributes?.frontchannel?.logout?.url?.message
+                    ? ValidatedOptions.error
+                    : ValidatedOptions.default
+                }
+              >
+                <TextInput
+                  type="text"
+                  id="frontchannelLogoutUrl"
+                  name="attributes.frontchannel.logout.url"
+                  ref={register({
+                    validate: (uri) =>
+                      ((uri.startsWith("https://") ||
+                        uri.startsWith("http://")) &&
+                        !uri.includes("*")) ||
+                      uri === "" ||
+                      t("frontchannelUrlInvalid").toString(),
+                  })}
+                  validated={
+                    errors.attributes?.frontchannel?.logout?.url?.message
+                      ? ValidatedOptions.error
+                      : ValidatedOptions.default
+                  }
+                />
+              </FormGroup>
+            )}
+          </>
+        )}
         <FormGroup
           label={t("backchannelLogoutUrl")}
           fieldId="backchannelLogoutUrl"
@@ -314,7 +384,7 @@ export const ClientSettings = ({
             ref={register({
               validate: (uri) =>
                 ((uri.startsWith("https://") || uri.startsWith("http://")) &&
-                  uri.indexOf("*") === -1) ||
+                  !uri.includes("*")) ||
                 uri === "" ||
                 t("backchannelUrlInvalid").toString(),
             })}

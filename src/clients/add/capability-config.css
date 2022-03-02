@@ -3,3 +3,7 @@
     --pf-c-form--m-horizontal__group-label--md--GridColumnWidth: 10rem;
   }
 }
+
+div#authenticationFlowGrid > .pf-l-grid__item {
+  padding-bottom: var(--pf-global--spacer--lg);
+}

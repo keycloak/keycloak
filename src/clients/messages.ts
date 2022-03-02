@@ -348,6 +348,8 @@ export default {
     standardFlow: "Standard flow",
     directAccess: "Direct access grants",
     serviceAccount: "Service accounts roles",
+    oauthDeviceAuthorizationGrant: "OAuth 2.0 Device Authorization Grant",
+    oidcCibaGrant: "OIDC CIBA Grant",
     enableServiceAccount: "Enable service account roles",
     assignRolesTo: "Assign roles to {{client}} account",
     searchByRoleName: "Search by role name",
@@ -367,6 +369,8 @@ export default {
     backchannelLogoutRevokeOfflineSessions:
       "Backchannel logout revoke offline sessions",
     frontchannelLogout: "Front channel logout",
+    frontchannelLogoutUrl: "Front-channel logout URL",
+    frontchannelUrlInvalid: "Front-channel logout URL is not a valid URL",
     accessSettings: "Access settings",
     rootUrl: "Root URL",
     validRedirectUri: "Valid redirect URIs",
