@@ -18,6 +18,7 @@
 package org.keycloak.operator.utils;
 
 import org.keycloak.operator.v2alpha1.crds.Keycloak;
+import org.keycloak.operator.v2alpha1.crds.KeycloakRealmImport;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -25,8 +26,16 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 public final class CRAssert {
+
     public static void assertKeycloakStatusCondition(Keycloak kc, String condition, boolean status) {
+        assertKeycloakStatusCondition(kc, condition, status, null);
+    }
+    public static void assertKeycloakStatusCondition(Keycloak kc, String condition, boolean status, String containedMessage) {
         assertThat(kc.getStatus().getConditions().stream()
-                .anyMatch(c -> c.getType().equals(condition) && c.getStatus() == status)).isTrue();
+                .anyMatch(c ->
+                        c.getType().equals(condition) &&
+                        c.getStatus() == status &&
+                        (containedMessage == null || c.getMessage().contains(containedMessage)))
+                    ).isTrue();
     }
 }
