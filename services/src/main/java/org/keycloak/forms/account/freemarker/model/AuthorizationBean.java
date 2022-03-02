@@ -237,7 +237,7 @@ public class AuthorizationBean {
         public ResourceBean(Resource resource) {
             RealmModel realm = authorization.getRealm();
             ResourceServer resourceServerModel = resource.getResourceServer();
-            resourceServer = new ResourceServerBean(realm.getClientById(resourceServerModel.getClientId()));
+            resourceServer = new ResourceServerBean(realm.getClientById(resourceServerModel.getClientId()), resourceServerModel);
             this.resource = resource;
             userOwner = authorization.getKeycloakSession().users().getUserById(realm, resource.getOwner());
             if (userOwner == null) {
@@ -318,7 +318,7 @@ public class AuthorizationBean {
 
                         filters1.put(PermissionTicket.FilterOption.POLICY_ID, policy.getId());
 
-                        return authorization.getStoreFactory().getPermissionTicketStore().find(resourceServer.getId(), filters1, -1, 1)
+                        return authorization.getStoreFactory().getPermissionTicketStore().find(resourceServer.getResourceServerModel(), filters1, -1, 1)
                                 .isEmpty();
                     })
                     .map(ManagedPermissionBean::new).collect(Collectors.toList());
@@ -376,13 +376,15 @@ public class AuthorizationBean {
     public class ResourceServerBean {
 
         private ClientModel clientModel;
+        private ResourceServer resourceServer;
 
-        public ResourceServerBean(ClientModel clientModel) {
+        public ResourceServerBean(ClientModel clientModel, ResourceServer resourceServer) {
             this.clientModel = clientModel;
+            this.resourceServer = resourceServer;
         }
 
         public String getId() {
-            return clientModel.getId();
+            return resourceServer.getId();
         }
 
         public String getName() {
@@ -411,6 +413,10 @@ public class AuthorizationBean {
 
         public String getBaseUri() {
             return ResolveRelative.resolveRelativeUri(session, clientModel.getRootUrl(), clientModel.getBaseUrl());
+        }
+
+        public ResourceServer getResourceServerModel() {
+            return resourceServer;
         }
     }
 

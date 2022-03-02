@@ -135,7 +135,7 @@ public class ResourceService extends AbstractResourceService {
 
             filters.put(PermissionTicket.FilterOption.REQUESTER, user.getId());
 
-            List<PermissionTicket> tickets = ticketStore.find(resource.getResourceServer().getId(), filters, -1, -1);
+            List<PermissionTicket> tickets = ticketStore.find(resource.getResourceServer(), filters, -1, -1);
 
             // grants all requested permissions
             if (tickets.isEmpty()) {
@@ -205,7 +205,7 @@ public class ResourceService extends AbstractResourceService {
 
     private void grantPermission(UserModel user, String scopeId) {
         org.keycloak.authorization.model.Scope scope = getScope(scopeId, resourceServer);
-        PermissionTicket ticket = ticketStore.create(resourceServer, resource.getId(), scope.getId(), user.getId());
+        PermissionTicket ticket = ticketStore.create(resourceServer, resource, scope, user.getId());
         ticket.setGrantedTimestamp(Calendar.getInstance().getTimeInMillis());
     }
 

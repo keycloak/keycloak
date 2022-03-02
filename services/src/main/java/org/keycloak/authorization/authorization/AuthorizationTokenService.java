@@ -636,7 +636,7 @@ public class AuthorizationTokenService {
             }
 
             if (!identity.isResourceServer() || !identity.getId().equals(resourceServer.getClientId())) {
-                List<PermissionTicket> tickets = storeFactory.getPermissionTicketStore().findGranted(resourceServer.getId(), resourceId, identity.getId());
+                List<PermissionTicket> tickets = storeFactory.getPermissionTicketStore().findGranted(resourceServer, resourceId, identity.getId());
 
                 if (!tickets.isEmpty()) {
                     List<Scope> scopes = new ArrayList<>();

@@ -167,9 +167,9 @@ public class ResourcesService extends AbstractResourceService {
                 filters.put(PermissionTicket.FilterOption.GRANTED, Boolean.TRUE.toString());
                 filters.put(PermissionTicket.FilterOption.RESOURCE_ID, resource.getId());
 
-                tickets = ticketStore.find(null, filters, -1, -1);
+                tickets = ticketStore.find(resource.getResourceServer(), filters, -1, -1);
             } else {
-                tickets = ticketStore.findGranted(null, resource.getName(), user.getId());
+                tickets = ticketStore.findGranted(resource.getResourceServer(), resource.getName(), user.getId());
             }
 
             for (PermissionTicket ticket : tickets) {

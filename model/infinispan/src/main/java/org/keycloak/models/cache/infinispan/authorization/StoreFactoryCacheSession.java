@@ -1119,21 +1119,21 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
 
     protected class PermissionTicketCache implements PermissionTicketStore {
         @Override
-        public long count(String resourceServerId, Map<PermissionTicket.FilterOption, String> attributes) {
-            return getPermissionTicketStoreDelegate().count(resourceServerId, attributes);
+        public long count(ResourceServer resourceServer, Map<PermissionTicket.FilterOption, String> attributes) {
+            return getPermissionTicketStoreDelegate().count(resourceServer, attributes);
         }
 
         @Override
-        public PermissionTicket create(ResourceServer resourceServer, String resourceId, String scopeId, String requester) {
-            PermissionTicket created = getPermissionTicketStoreDelegate().create(resourceServer, resourceId, scopeId, requester);
-            registerPermissionTicketInvalidation(created.getId(), created.getOwner(), created.getRequester(), created.getResource().getId(), created.getResource().getName(), scopeId, created.getResourceServer().getId());
+        public PermissionTicket create(ResourceServer resourceServer, Resource resource, Scope scope, String requester) {
+            PermissionTicket created = getPermissionTicketStoreDelegate().create(resourceServer, resource, scope, requester);
+            registerPermissionTicketInvalidation(created.getId(), created.getOwner(), created.getRequester(), created.getResource().getId(), created.getResource().getName(), scope.getId(), created.getResourceServer().getId());
             return created;
         }
 
         @Override
         public void delete(String id) {
             if (id == null) return;
-            PermissionTicket permission = findById(null, id);
+            PermissionTicket permission = findById((ResourceServer) null, id);
             if (permission == null) return;
 
             cache.invalidateObject(id);
@@ -1149,7 +1149,7 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         }
 
         @Override
-        public PermissionTicket findById(String resourceServerId, String id) {
+        public PermissionTicket findById(ResourceServer resourceServer, String id) {
             if (id == null) return null;
 
             CachedPermissionTicket cached = cache.get(id, CachedPermissionTicket.class);
@@ -1159,7 +1159,7 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
             if (cached == null) {
                 Long loaded = cache.getCurrentRevision(id);
                 if (! modelMightExist(id)) return null;
-                PermissionTicket model = getPermissionTicketStoreDelegate().findById(resourceServerId, id);
+                PermissionTicket model = getPermissionTicketStoreDelegate().findById(resourceServer, id);
                 if (model == null) {
                     setModelDoesNotExists(id, loaded);
                     return null;
@@ -1168,7 +1168,7 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
                 cached = new CachedPermissionTicket(loaded, model);
                 cache.addRevisioned(cached, startupRevision);
             } else if (invalidations.contains(id)) {
-                return getPermissionTicketStoreDelegate().findById(resourceServerId, id);
+                return getPermissionTicketStoreDelegate().findById(resourceServer, id);
             } else if (managedPermissionTickets.containsKey(id)) {
                 return managedPermissionTickets.get(id);
             }
@@ -1178,41 +1178,41 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         }
 
         @Override
-        public List<PermissionTicket> findByResourceServer(String resourceServerId) {
-            return getPermissionTicketStoreDelegate().findByResourceServer(resourceServerId);
+        public List<PermissionTicket> findByResourceServer(ResourceServer resourceServer) {
+            return getPermissionTicketStoreDelegate().findByResourceServer(resourceServer);
         }
 
         @Override
-        public List<PermissionTicket> findByResource(String resourceServerId, String resourceId) {
-            String cacheKey = getPermissionTicketByResource(resourceId, resourceServerId);
-            return cacheQuery(cacheKey, PermissionTicketResourceListQuery.class, () -> getPermissionTicketStoreDelegate().findByResource(resourceServerId, resourceId),
-                    (revision, permissions) -> new PermissionTicketResourceListQuery(revision, cacheKey, resourceId, permissions.stream().map(permission -> permission.getId()).collect(Collectors.toSet()), resourceServerId), resourceServerId);
+        public List<PermissionTicket> findByResource(ResourceServer resourceServer, Resource resource) {
+            String cacheKey = getPermissionTicketByResource(resource.getId(), resourceServer.getId());
+            return cacheQuery(cacheKey, PermissionTicketResourceListQuery.class, () -> getPermissionTicketStoreDelegate().findByResource(resourceServer, resource),
+                    (revision, permissions) -> new PermissionTicketResourceListQuery(revision, cacheKey, resource.getId(), permissions.stream().map(permission -> permission.getId()).collect(Collectors.toSet()), resourceServer.getId()), resourceServer);
         }
 
         @Override
-        public List<PermissionTicket> findByScope(String resourceServerId, String scopeId) {
-            String cacheKey = getPermissionTicketByScope(scopeId, resourceServerId);
-            return cacheQuery(cacheKey, PermissionTicketScopeListQuery.class, () -> getPermissionTicketStoreDelegate().findByScope(resourceServerId, scopeId),
-                    (revision, permissions) -> new PermissionTicketScopeListQuery(revision, cacheKey, scopeId, permissions.stream().map(permission -> permission.getId()).collect(Collectors.toSet()), resourceServerId), resourceServerId);
+        public List<PermissionTicket> findByScope(ResourceServer resourceServer, Scope scope) {
+            String cacheKey = getPermissionTicketByScope(scope.getId(), resourceServer.getId());
+            return cacheQuery(cacheKey, PermissionTicketScopeListQuery.class, () -> getPermissionTicketStoreDelegate().findByScope(resourceServer, scope),
+                    (revision, permissions) -> new PermissionTicketScopeListQuery(revision, cacheKey, scope.getId(), permissions.stream().map(permission -> permission.getId()).collect(Collectors.toSet()), resourceServer.getId()), resourceServer);
         }
 
         @Override
-        public List<PermissionTicket> find(String resourceServerId, Map<PermissionTicket.FilterOption, String> attributes, int firstResult, int maxResult) {
-            return getPermissionTicketStoreDelegate().find(resourceServerId, attributes, firstResult, maxResult);
+        public List<PermissionTicket> find(ResourceServer resourceServer, Map<PermissionTicket.FilterOption, String> attributes, int firstResult, int maxResult) {
+            return getPermissionTicketStoreDelegate().find(resourceServer, attributes, firstResult, maxResult);
         }
 
         @Override
-        public List<PermissionTicket> findGranted(String resourceServerId, String userId) {
-            String cacheKey = getPermissionTicketByGranted(userId, resourceServerId);
-            return cacheQuery(cacheKey, PermissionTicketListQuery.class, () -> getPermissionTicketStoreDelegate().findGranted(resourceServerId, userId),
-                    (revision, permissions) -> new PermissionTicketListQuery(revision, cacheKey, permissions.stream().map(permission -> permission.getId()).collect(Collectors.toSet()), resourceServerId), resourceServerId);
+        public List<PermissionTicket> findGranted(ResourceServer resourceServer, String userId) {
+            String cacheKey = getPermissionTicketByGranted(userId, resourceServer.getId());
+            return cacheQuery(cacheKey, PermissionTicketListQuery.class, () -> getPermissionTicketStoreDelegate().findGranted(resourceServer, userId),
+                    (revision, permissions) -> new PermissionTicketListQuery(revision, cacheKey, permissions.stream().map(permission -> permission.getId()).collect(Collectors.toSet()), resourceServer.getId()), resourceServer);
         }
 
         @Override
-        public List<PermissionTicket> findGranted(String resourceServerId, String resourceName, String userId) {
-            String cacheKey = getPermissionTicketByResourceNameAndGranted(resourceName, userId, resourceServerId);
-            return cacheQuery(cacheKey, PermissionTicketListQuery.class, () -> getPermissionTicketStoreDelegate().findGranted(resourceServerId, resourceName, userId),
-                    (revision, permissions) -> new PermissionTicketResourceListQuery(revision, cacheKey, resourceName, permissions.stream().map(permission -> permission.getId()).collect(Collectors.toSet()), resourceServerId), resourceServerId);
+        public List<PermissionTicket> findGranted(ResourceServer resourceServer, String resourceName, String userId) {
+            String cacheKey = getPermissionTicketByResourceNameAndGranted(resourceName, userId, resourceServer.getId());
+            return cacheQuery(cacheKey, PermissionTicketListQuery.class, () -> getPermissionTicketStoreDelegate().findGranted(resourceServer, resourceName, userId),
+                    (revision, permissions) -> new PermissionTicketResourceListQuery(revision, cacheKey, resourceName, permissions.stream().map(permission -> permission.getId()).collect(Collectors.toSet()), resourceServer.getId()), resourceServer);
         }
 
         @Override
@@ -1226,13 +1226,13 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         }
 
         @Override
-        public List<PermissionTicket> findByOwner(String resourceServerId, String owner) {
-            String cacheKey = getPermissionTicketByOwner(owner, resourceServerId);
-            return cacheQuery(cacheKey, PermissionTicketListQuery.class, () -> getPermissionTicketStoreDelegate().findByOwner(resourceServerId, owner),
-                    (revision, permissions) -> new PermissionTicketListQuery(revision, cacheKey, permissions.stream().map(permission -> permission.getId()).collect(Collectors.toSet()), resourceServerId), resourceServerId);
+        public List<PermissionTicket> findByOwner(ResourceServer resourceServer, String owner) {
+            String cacheKey = getPermissionTicketByOwner(owner, resourceServer.getId());
+            return cacheQuery(cacheKey, PermissionTicketListQuery.class, () -> getPermissionTicketStoreDelegate().findByOwner(resourceServer, owner),
+                    (revision, permissions) -> new PermissionTicketListQuery(revision, cacheKey, permissions.stream().map(permission -> permission.getId()).collect(Collectors.toSet()), resourceServer.getId()), resourceServer);
         }
 
-        private <R, Q extends PermissionTicketQuery> List<R> cacheQuery(String cacheKey, Class<Q> queryType, Supplier<List<R>> resultSupplier, BiFunction<Long, List<R>, Q> querySupplier, String resourceServerId) {
+        private <R, Q extends PermissionTicketQuery> List<R> cacheQuery(String cacheKey, Class<Q> queryType, Supplier<List<R>> resultSupplier, BiFunction<Long, List<R>, Q> querySupplier, ResourceServer resourceServer) {
             Q query = cache.get(cacheKey, queryType);
             if (query != null) {
                 logger.tracev("cache hit for key: {0}", cacheKey);
@@ -1248,7 +1248,7 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
             } else if (query.isInvalid(invalidations)) {
                 return resultSupplier.get();
             } else {
-                return query.getPermissions().stream().map(resourceId -> (R) findById(resourceServerId, resourceId)).collect(Collectors.toList());
+                return query.getPermissions().stream().map(resourceId -> (R) findById(resourceServer, resourceId)).collect(Collectors.toList());
             }
         }
     }

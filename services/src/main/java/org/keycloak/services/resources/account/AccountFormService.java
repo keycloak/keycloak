@@ -25,6 +25,7 @@ import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.store.PermissionTicketStore;
 import org.keycloak.authorization.store.PolicyStore;
+import org.keycloak.authorization.store.ScopeStore;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.Time;
@@ -110,6 +111,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
@@ -829,7 +831,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
                 filters.put(PermissionTicket.FilterOption.GRANTED, Boolean.FALSE.toString());
             }
 
-            List<PermissionTicket> tickets = ticketStore.find(resource.getResourceServer().getId(), filters, -1, -1);
+            List<PermissionTicket> tickets = ticketStore.find(resource.getResourceServer(), filters, -1, -1);
             Iterator<PermissionTicket> iterator = tickets.iterator();
 
             while (iterator.hasNext()) {
@@ -884,6 +886,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
 
         AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
         PermissionTicketStore ticketStore = authorization.getStoreFactory().getPermissionTicketStore();
+        ScopeStore scopeStore = authorization.getStoreFactory().getScopeStore();
         Resource resource = authorization.getStoreFactory().getResourceStore().findById(null, resourceId);
         ResourceServer resourceServer = resource.getResourceServer();
 
@@ -918,40 +921,34 @@ public class AccountFormService extends AbstractSecuredLocalService {
             filters.put(PermissionTicket.FilterOption.OWNER, auth.getUser().getId());
             filters.put(PermissionTicket.FilterOption.REQUESTER, user.getId());
 
-            List<PermissionTicket> tickets = ticketStore.find(resource.getResourceServer().getId(), filters, -1, -1);
+            List<PermissionTicket> tickets = ticketStore.find(resource.getResourceServer(), filters, -1, -1);
+            final String userId = user.getId();
 
             if (tickets.isEmpty()) {
+
                 if (scopes != null && scopes.length > 0) {
-                    for (String scope : scopes) {
-                        PermissionTicket ticket = ticketStore.create(resourceServer, resourceId, scope, user.getId());
-                        ticket.setGrantedTimestamp(System.currentTimeMillis());
-                    }
+                    Arrays.stream(scopes)
+                            .map(scopeId -> scopeStore.findById(resourceServer.getId(), scopeId))
+                            .filter(Objects::nonNull)
+                            .forEach(scope -> ticketStore.create(resourceServer, resource, scope, userId));
                 } else {
                     if (resource.getScopes().isEmpty()) {
-                        PermissionTicket ticket = ticketStore.create(resourceServer, resourceId, null, user.getId());
-                        ticket.setGrantedTimestamp(System.currentTimeMillis());
+                        ticketStore.create(resourceServer, resource, null, userId);
                     } else {
-                        for (Scope scope : resource.getScopes()) {
-                            PermissionTicket ticket = ticketStore.create(resourceServer, resourceId, scope.getId(), user.getId());
-                            ticket.setGrantedTimestamp(System.currentTimeMillis());
-                        }
+                        resource.getScopes().forEach(scope -> ticketStore.create(resourceServer, resource, scope, userId));
                     }
                 }
             } else if (scopes != null && scopes.length > 0) {
-                List<String> grantScopes = new ArrayList<>(Arrays.asList(scopes));
+                Set<String> alreadyGrantedScopes = tickets.stream()
+                        .map(PermissionTicket::getScope)
+                        .map(Scope::getId)
+                        .collect(Collectors.toSet());
 
-                for (PermissionTicket ticket : tickets) {
-                    Scope scope = ticket.getScope();
-
-                    if (scope != null) {
-                        grantScopes.remove(scope.getId());
-                    }
-                }
-
-                for (String grantScope : grantScopes) {
-                    PermissionTicket ticket = ticketStore.create(resourceServer, resourceId, grantScope, user.getId());
-                    ticket.setGrantedTimestamp(System.currentTimeMillis());
-                }
+                Arrays.stream(scopes)
+                        .filter(((Predicate<String>) alreadyGrantedScopes::contains).negate())
+                        .map(scopeId -> scopeStore.findById(resourceServer.getId(), scopeId))
+                        .filter(Objects::nonNull)
+                        .forEach(scope -> ticketStore.create(resourceServer, resource, scope, userId));
             }
         }
 
@@ -995,7 +992,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
                 filters.put(PermissionTicket.FilterOption.GRANTED, Boolean.FALSE.toString());
             }
 
-            for (PermissionTicket ticket : ticketStore.find(resource.getResourceServer().getId(), filters, -1, -1)) {
+            for (PermissionTicket ticket : ticketStore.find(resource.getResourceServer(), filters, -1, -1)) {
                 ticketStore.delete(ticket.getId());
             }
         }

@@ -91,7 +91,7 @@ public final class Permissions {
         }
 
         // obtain all resources granted to the user via permission tickets (uma)
-        List<PermissionTicket> tickets = storeFactory.getPermissionTicketStore().findGranted(resourceServer.getId(), identity.getId());
+        List<PermissionTicket> tickets = storeFactory.getPermissionTicketStore().findGranted(resourceServer, identity.getId());
 
         if (!tickets.isEmpty()) {
             Map<String, ResourcePermission> userManagedPermissions = new HashMap<>();

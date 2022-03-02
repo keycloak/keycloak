@@ -121,10 +121,10 @@ public class PermissionTicketService {
         attributes.put(PermissionTicket.FilterOption.SCOPE_ID, scope.getId());
         attributes.put(PermissionTicket.FilterOption.REQUESTER, user.getId());
         
-        if (!ticketStore.find(resourceServer.getId(), attributes, -1, -1).isEmpty())
+        if (!ticketStore.find(resourceServer, attributes, -1, -1).isEmpty())
             throw new ErrorResponseException("invalid_permission", "Permission already exists", Response.Status.BAD_REQUEST);
         
-        PermissionTicket ticket = ticketStore.create(resourceServer, resource.getId(), scope.getId(), user.getId());
+        PermissionTicket ticket = ticketStore.create(resourceServer, resource, scope, user.getId());
         if(representation.isGranted())
                 ticket.setGrantedTimestamp(java.lang.System.currentTimeMillis());
         representation = ModelToRepresentation.toRepresentation(ticket, authorization);
@@ -139,7 +139,7 @@ public class PermissionTicketService {
         }
 
         PermissionTicketStore ticketStore = authorization.getStoreFactory().getPermissionTicketStore();
-        PermissionTicket ticket = ticketStore.findById(resourceServer.getId(), representation.getId());
+        PermissionTicket ticket = ticketStore.findById(resourceServer, representation.getId());
 
         if (ticket == null) {
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "invalid_ticket", Response.Status.BAD_REQUEST);
@@ -148,7 +148,7 @@ public class PermissionTicketService {
         if (!ticket.getOwner().equals(this.identity.getId()) && !this.identity.isResourceServer())
             throw new ErrorResponseException("not_authorised", "permissions for [" + representation.getResource() + "] can be updated only by the owner or by the resource server", Response.Status.FORBIDDEN);
 
-        RepresentationToModel.toModel(representation, resourceServer.getId(), authorization);
+        RepresentationToModel.toModel(representation, resourceServer, authorization);
 
         return Response.noContent().build();
     }
@@ -163,7 +163,7 @@ public class PermissionTicketService {
         }
 
         PermissionTicketStore ticketStore = authorization.getStoreFactory().getPermissionTicketStore();
-        PermissionTicket ticket = ticketStore.findById(resourceServer.getId(), id);
+        PermissionTicket ticket = ticketStore.findById(resourceServer, id);
 
         if (ticket == null) {
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "invalid_ticket", Response.Status.BAD_REQUEST);
@@ -192,7 +192,7 @@ public class PermissionTicketService {
 
         Map<PermissionTicket.FilterOption, String> filters = getFilters(storeFactory, resourceId, scopeId, owner, requester, granted);
 
-        return Response.ok().entity(permissionTicketStore.find(resourceServer.getId(), filters, firstResult != null ? firstResult : -1, maxResult != null ? maxResult : Constants.DEFAULT_MAX_RESULTS)
+        return Response.ok().entity(permissionTicketStore.find(resourceServer, filters, firstResult != null ? firstResult : -1, maxResult != null ? maxResult : Constants.DEFAULT_MAX_RESULTS)
                     .stream()
                         .map(permissionTicket -> ModelToRepresentation.toRepresentation(permissionTicket, authorization, returnNames == null ? false : returnNames))
                         .collect(Collectors.toList()))
@@ -211,7 +211,7 @@ public class PermissionTicketService {
         StoreFactory storeFactory = authorization.getStoreFactory();
         PermissionTicketStore permissionTicketStore = storeFactory.getPermissionTicketStore();
         Map<PermissionTicket.FilterOption, String> filters = getFilters(storeFactory, resourceId, scopeId, owner, requester, granted);
-        long count = permissionTicketStore.count(resourceServer.getId(), filters);
+        long count = permissionTicketStore.count(resourceServer, filters);
 
         return Response.ok().entity(count).build();
     }

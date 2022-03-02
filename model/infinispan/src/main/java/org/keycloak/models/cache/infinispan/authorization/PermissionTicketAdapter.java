@@ -42,7 +42,8 @@ public class PermissionTicketAdapter implements PermissionTicket, CachedModel<Pe
     @Override
     public PermissionTicket getDelegateForUpdate() {
         if (updated == null) {
-            updated = cacheSession.getPermissionTicketStoreDelegate().findById(cached.getResourceServerId(), cached.getId());
+            ResourceServer resourceServer = cacheSession.getResourceServerStoreDelegate().findById(cached.getResourceServerId());
+            updated = cacheSession.getPermissionTicketStoreDelegate().findById(resourceServer, cached.getId());
             if (updated == null) throw new IllegalStateException("Not found in database");
             cacheSession.registerPermissionTicketInvalidation(cached.getId(), cached.getOwner(), cached.getRequester(), cached.getResourceId(), updated.getResource().getName(), cached.getScopeId(), cached.getResourceServerId());
         }
@@ -69,7 +70,8 @@ public class PermissionTicketAdapter implements PermissionTicket, CachedModel<Pe
     protected boolean isUpdated() {
         if (updated != null) return true;
         if (!invalidated) return false;
-        updated = cacheSession.getPermissionTicketStoreDelegate().findById(cached.getResourceServerId(), cached.getId());
+        ResourceServer resourceServer = cacheSession.getResourceServerStoreDelegate().findById(cached.getResourceServerId());
+        updated = cacheSession.getPermissionTicketStoreDelegate().findById(resourceServer, cached.getId());
         if (updated == null) throw new IllegalStateException("Not found in database");
         return true;
     }
