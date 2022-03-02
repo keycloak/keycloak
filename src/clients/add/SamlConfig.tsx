@@ -110,6 +110,10 @@ export const SamlConfig = () => {
         label="forceArtifactBinding"
       />
       <Toggle
+        name="attributes.saml.authnstatement"
+        label="includeAuthnStatement"
+      />
+      <Toggle
         name="attributes.saml.onetimeuse.condition"
         label="includeOneTimeUseCondition"
       />
