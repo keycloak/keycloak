@@ -884,7 +884,13 @@ public class TokenManager {
         token.setNonce(clientSessionCtx.getAttribute(OIDCLoginProtocol.NONCE_PARAM, String.class));
         token.setScope(clientSessionCtx.getScopeString());
 
-        token.setAcr(getAcr(clientSession));
+        if (Profile.isFeatureEnabled(Profile.Feature.STEP_UP_AUTHENTICATION)) {
+            token.setAcr(getAcr(clientSession));
+        } else {
+            // Backwards compatibility behaviour prior step-up authentication was introduced
+            String acr = AuthenticationManager.isSSOAuthentication(clientSession) ? "0" : "1";
+            token.setAcr(acr);
+        }
 
         String authTime = session.getNote(AuthenticationManager.AUTH_TIME);
         if (authTime != null) {

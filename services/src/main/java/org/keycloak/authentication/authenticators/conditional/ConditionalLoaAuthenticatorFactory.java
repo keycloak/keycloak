@@ -21,13 +21,15 @@ import java.util.List;
 import org.keycloak.Config;
 import org.keycloak.authentication.AuthenticationFlowCallbackFactory;
 import org.keycloak.authentication.Authenticator;
+import org.keycloak.common.Profile;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 
-public class ConditionalLoaAuthenticatorFactory implements ConditionalAuthenticatorFactory, AuthenticationFlowCallbackFactory {
+public class ConditionalLoaAuthenticatorFactory implements ConditionalAuthenticatorFactory, AuthenticationFlowCallbackFactory, EnvironmentDependentProviderFactory {
 
     public static final String PROVIDER_ID = "conditional-level-of-authentication";
     private static final AuthenticationExecutionModel.Requirement[] REQUIREMENT_CHOICES = new AuthenticationExecutionModel.Requirement[]{
@@ -104,5 +106,10 @@ public class ConditionalLoaAuthenticatorFactory implements ConditionalAuthentica
     public ConditionalAuthenticator getSingleton() {
         // NOP - instance created in create() method
         return null;
+    }
+
+    @Override
+    public boolean isSupported() {
+        return Profile.isFeatureEnabled(Profile.Feature.STEP_UP_AUTHENTICATION);
     }
 }

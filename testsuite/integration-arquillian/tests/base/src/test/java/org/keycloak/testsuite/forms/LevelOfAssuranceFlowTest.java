@@ -31,11 +31,13 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.authentication.authenticators.browser.OTPFormAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.browser.UsernamePasswordFormFactory;
 import org.keycloak.authentication.authenticators.conditional.ConditionalLoaAuthenticator;
 import org.keycloak.authentication.authenticators.conditional.ConditionalLoaAuthenticatorFactory;
+import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
 import org.keycloak.models.AuthenticationExecutionModel.Requirement;
 import org.keycloak.models.Constants;
@@ -44,6 +46,7 @@ import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.ClaimsRepresentation;
 import org.keycloak.representations.IDToken;
+import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -51,9 +54,12 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.admin.authentication.AbstractAuthenticationTest;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.authentication.PushButtonAuthenticatorFactory;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
+import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
@@ -66,6 +72,7 @@ import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.util.JsonSerialization;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertEquals;
 import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 
 /**
@@ -614,6 +621,26 @@ public class LevelOfAssuranceFlowTest extends AbstractTestRealmKeycloakTest {
 
         // Tests that re-authentication always needed for levels 2 and 3
         stepupAuthentication();
+    }
+
+
+    @Test
+    @DisableFeature(value = Profile.Feature.STEP_UP_AUTHENTICATION, skipRestart = true)
+    public void testDisableStepupFeatureTest() {
+        BrowserFlowTest.revertFlows(testRealm(), "browser -  Level of Authentication FLow");
+
+        // Login normal way - should return 1 (backwards compatibility before step-up was introduced)
+        loginPage.open();
+        authenticateWithUsernamePassword();
+        authenticateWithTotp(); // OTP required due the user has it
+        assertLoggedInWithAcr("1");
+
+        // SSO login - should return 0 (backwards compatibility before step-up was introduced)
+        oauth.openLoginForm();
+        assertLoggedInWithAcr("0");
+
+        // Flow is needed due the "after()" method
+        testingClient.server(TEST_REALM_NAME).run(session -> FlowUtil.inCurrentRealm(session).copyBrowserFlow("browser -  Level of Authentication FLow"));
     }
 
 

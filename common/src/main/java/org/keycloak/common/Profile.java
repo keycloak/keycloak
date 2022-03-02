@@ -65,7 +65,8 @@ public class Profile {
         MAP_STORAGE("New store", Type.EXPERIMENTAL),
         PAR("OAuth 2.0 Pushed Authorization Requests (PAR)", Type.DEFAULT),
         DECLARATIVE_USER_PROFILE("Configure user profiles using a declarative style", Type.PREVIEW),
-        DYNAMIC_SCOPES("Dynamic OAuth 2.0 scopes", Type.EXPERIMENTAL);
+        DYNAMIC_SCOPES("Dynamic OAuth 2.0 scopes", Type.EXPERIMENTAL),
+        STEP_UP_AUTHENTICATION("Step-up Authentication", Type.DEFAULT);
 
         private String label;
         private final Type typeProject;
