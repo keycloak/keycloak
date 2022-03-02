@@ -154,6 +154,14 @@ is needed for deploying Keycloak in production.
 By default, the configuration options for the production mode are commented out in the `conf/keycloak.conf`. These examples
  are meant to give you an idea about the main settings to consider when running in production.
 
+== Setup of the initial admin user
+
+The initial admin user can be added manually using the web frontend when accessed from localhost or automatically using environment variables.
+
+To add the initial admin user using environment variables, set `KEYCLOAK_ADMIN` for the initial admin username and `KEYCLOAK_ADMIN_PASSWORD` for the initial admin password.
+Keycloak uses them at the first startup to create an initial user with administration rights.
+Once the first user with administrative rights exists, you can use the UI or the command line tool `kcadm.[sh|bat]` to create additional users.
+
 == Unsupported server options
 
 In most cases, the available options from the server configuration should suffice to configure the server.
