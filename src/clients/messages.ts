@@ -295,6 +295,7 @@ export default {
     clientSettings: "Client details",
     selectEncryptionType: "Select Encryption type",
     generalSettings: "General Settings",
+    alwaysDisplayInConsole: "Always display in console",
     capabilityConfig: "Capability config",
     clientsExplain:
       "Clients are applications and services that can request authentication of a user.",
@@ -365,6 +366,7 @@ export default {
     backchannelLogoutSessionRequired: "Backchannel logout session required",
     backchannelLogoutRevokeOfflineSessions:
       "Backchannel logout revoke offline sessions",
+    frontchannelLogout: "Front channel logout",
     accessSettings: "Access settings",
     rootUrl: "Root URL",
     validRedirectUri: "Valid redirect URIs",

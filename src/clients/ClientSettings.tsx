@@ -68,7 +68,7 @@ export const ClientSettings = ({
       sections={sections.map((section) => t(section))}
     >
       <Form isHorizontal>
-        <ClientDescription />
+        <ClientDescription protocol={client.protocol} />
       </Form>
       {protocol === "saml" ? (
         <SamlConfig />

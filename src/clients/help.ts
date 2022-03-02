@@ -22,6 +22,8 @@ export default {
     validRedirectURIs:
       "Valid URI pattern a browser can redirect to after a successful login or logout. Simple wildcards are allowed such as 'http://example.com/*'. Relative path can be specified too such as /my/relative/path/*. Relative paths are relative to the client root URL, or if none is specified the auth server root URL is used. For SAML, you must set valid URI patterns if you are relying on the consumer service URL embedded with the login request.",
     nameIdFormat: "The name ID format to use for the subject.",
+    alwaysDisplayInConsole:
+      "Always list this client in the Account Console, even if the user does not have an active session.",
     forceNameIdFormat:
       "Ignore requested NameID subject format and use admin console configured one.",
     forcePostBinding: "Always use POST binding for responses.",
@@ -169,6 +171,8 @@ export default {
       "SAML ARTIFACT Binding URL for the client's single logout service. You can leave this blank if you are using a different binding.",
     artifactBindingUrl:
       "URL to send the HTTP ARTIFACT messages to. You can leave this blank if you are using a different binding. This value should be set when forcing ARTIFACT binding together with IdP initiated login.",
+    frontchannelLogout:
+      "When true, logout requires a browser redirect to client. When false, server performs a background invocation for logout.",
     backchannelLogoutUrl:
       "URL that will cause the client to log itself out when a logout request is sent to this realm (via end_session_endpoint). If omitted, no logout request will be sent to the client is this case.",
     backchannelLogoutSessionRequired:

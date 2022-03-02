@@ -1,8 +1,9 @@
 import React from "react";
-import { useFormContext } from "react-hook-form";
+import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import {
   FormGroup,
+  Switch,
   TextArea,
   TextInput,
   ValidatedOptions,
@@ -13,9 +14,13 @@ import { HelpItem } from "../components/help-enabler/HelpItem";
 import { FormAccess } from "../components/form-access/FormAccess";
 import type { ClientForm } from "./ClientDetails";
 
-export const ClientDescription = () => {
+type ClientDescriptionProps = {
+  protocol?: string;
+};
+
+export const ClientDescription = ({ protocol }: ClientDescriptionProps) => {
   const { t } = useTranslation("clients");
-  const { register, errors } = useFormContext<ClientForm>();
+  const { register, errors, control } = useFormContext<ClientForm>();
   return (
     <FormAccess role="manage-clients" unWrap>
       <FormGroup
@@ -80,6 +85,62 @@ export const ClientDescription = () => {
           }
         />
       </FormGroup>
+      {protocol === "saml" && (
+        <>
+          <FormGroup
+            label={t("clients:alwaysDisplayInConsole")}
+            labelIcon={
+              <HelpItem
+                helpText="clients-help:alwaysDisplayInConsole"
+                fieldLabelId="clients:alwaysDisplayInConsole"
+              />
+            }
+            fieldId="kc-always-display-in-console"
+            hasNoPaddingTop
+          >
+            <Controller
+              name="alwaysDisplayInConsole"
+              defaultValue={false}
+              control={control}
+              render={({ onChange, value }) => (
+                <Switch
+                  id="kc-always-display-in-console-switch"
+                  label={t("common:on")}
+                  labelOff={t("common:off")}
+                  isChecked={value}
+                  onChange={onChange}
+                />
+              )}
+            />
+          </FormGroup>
+          <FormGroup
+            label={t("frontchannelLogout")}
+            labelIcon={
+              <HelpItem
+                helpText="clients-help:frontchannelLogout"
+                fieldLabelId="clients:frontchannelLogout"
+              />
+            }
+            fieldId="kc-frontchannelLogout"
+            hasNoPaddingTop
+          >
+            <Controller
+              name="frontchannelLogout"
+              defaultValue={true}
+              control={control}
+              render={({ onChange, value }) => (
+                <Switch
+                  id="kc-frontchannelLogout-switch"
+                  label={t("common:on")}
+                  labelOff={t("common:off")}
+                  isChecked={value.toString() === "true"}
+                  onChange={(value) => onChange(value.toString())}
+                />
+              )}
+            />
+          </FormGroup>
+        </>
+      )}
     </FormAccess>
   );
 };
