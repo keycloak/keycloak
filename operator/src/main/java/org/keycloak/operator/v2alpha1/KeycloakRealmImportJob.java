@@ -83,7 +83,7 @@ public class KeycloakRealmImportJob extends OperatorManagedResource {
                 .get();
     }
 
-    private Job buildJob(Container keycloakContainer, Volume secretVolume) {
+    private Job buildJob(Container keycloakContainer, List<Volume> volumes) {
         return new JobBuilder()
                 .withNewMetadata()
                 .withName(getName())
@@ -93,7 +93,7 @@ public class KeycloakRealmImportJob extends OperatorManagedResource {
                 .withNewTemplate()
                 .withNewSpec()
                 .withContainers(keycloakContainer)
-                .addToVolumes(secretVolume)
+                .withVolumes(volumes)
                 .withRestartPolicy("Never")
                 .endSpec()
                 .endTemplate()
@@ -112,8 +112,10 @@ public class KeycloakRealmImportJob extends OperatorManagedResource {
 
     private Job createImportJob() {
         var keycloakContainer = buildKeycloakJobContainer();
-        var secretVolume = buildSecretVolume();
-        var importJob = buildJob(keycloakContainer, secretVolume);
+
+        var volumes = this.existingDeployment.getSpec().getTemplate().getSpec().getVolumes();
+        volumes.add(buildSecretVolume());
+        var importJob = buildJob(keycloakContainer, volumes);
 
         return importJob;
     }
@@ -142,14 +144,13 @@ public class KeycloakRealmImportJob extends OperatorManagedResource {
                 .setCommand(command);
         keycloakContainer
                 .setArgs(commandArgs);
-        var volumeMounts = List.of(
-            new VolumeMountBuilder()
-                    .withName(volumeName)
-                    .withReadOnly(true)
-                    .withMountPath(importMntPath)
-                    .build());
+        var volumeMount = new VolumeMountBuilder()
+            .withName(volumeName)
+            .withReadOnly(true)
+            .withMountPath(importMntPath)
+            .build();
 
-        keycloakContainer.setVolumeMounts(volumeMounts);
+        keycloakContainer.getVolumeMounts().add(volumeMount);
 
         // Disable probes since we are not really starting the server
         keycloakContainer.setReadinessProbe(null);

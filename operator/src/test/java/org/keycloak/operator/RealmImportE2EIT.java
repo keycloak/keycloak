@@ -11,7 +11,7 @@ import org.keycloak.operator.v2alpha1.crds.KeycloakRealmImport;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.keycloak.operator.Constants.KEYCLOAK_SERVICE_PORT;
+import static org.keycloak.operator.Constants.KEYCLOAK_HTTPS_PORT;
 import static org.keycloak.operator.utils.K8sUtils.getDefaultKeycloakDeployment;
 import static org.keycloak.operator.utils.K8sUtils.inClusterCurl;
 import static org.keycloak.operator.v2alpha1.crds.KeycloakRealmImportStatusCondition.DONE;
@@ -55,9 +55,9 @@ public class RealmImportE2EIT extends ClusterOperatorTest {
                 });
         var service = new KeycloakService(k8sclient, getDefaultKeycloakDeployment());
         String url =
-                "http://" + service.getName() + "." + namespace + ":" + KEYCLOAK_SERVICE_PORT + "/realms/count0";
+                "https://" + service.getName() + "." + namespace + ":" + KEYCLOAK_HTTPS_PORT + "/realms/count0";
 
-        Awaitility.await().atMost(5, MINUTES).untilAsserted(() -> {
+        Awaitility.await().atMost(10, MINUTES).untilAsserted(() -> {
             Log.info("Starting curl Pod to test if the realm is available");
             Log.info("Url: '" + url + "'");
             String curlOutput = inClusterCurl(k8sclient, namespace, url);

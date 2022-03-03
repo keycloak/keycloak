@@ -17,7 +17,6 @@
 package org.keycloak.operator.v2alpha1;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceBuilder;
 import io.fabric8.kubernetes.api.model.ServiceSpec;
@@ -34,16 +33,19 @@ import java.util.Optional;
 public class KeycloakService extends OperatorManagedResource implements StatusUpdater<KeycloakStatusBuilder> {
 
     private Service existingService;
+    private final Keycloak keycloak;
 
     public KeycloakService(KubernetesClient client, Keycloak keycloakCR) {
         super(client, keycloakCR);
+        this.keycloak = keycloakCR;
         this.existingService = fetchExistingService();
     }
 
     private ServiceSpec getServiceSpec() {
+      var port = (this.keycloak.getSpec().isHttp()) ? Constants.KEYCLOAK_HTTP_PORT : Constants.KEYCLOAK_HTTPS_PORT;
       return new ServiceSpecBuilder()
               .addNewPort()
-              .withPort(Constants.KEYCLOAK_SERVICE_PORT)
+              .withPort(port)
               .withProtocol(Constants.KEYCLOAK_SERVICE_PROTOCOL)
               .endPort()
               .withSelector(Constants.DEFAULT_LABELS)

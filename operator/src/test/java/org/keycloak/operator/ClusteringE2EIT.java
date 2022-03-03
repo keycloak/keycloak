@@ -15,7 +15,6 @@ import org.keycloak.operator.v2alpha1.crds.KeycloakRealmImport;
 import org.keycloak.operator.v2alpha1.crds.KeycloakRealmImportStatusCondition;
 import org.keycloak.operator.v2alpha1.crds.KeycloakStatusCondition;
 
-import java.io.IOException;
 import java.time.Duration;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -69,7 +68,7 @@ public class ClusteringE2EIT extends ClusterOperatorTest {
 
         // get the service
         var service = new KeycloakService(k8sclient, kc);
-        String url = "http://" + service.getName() + "." + namespace + ":" + Constants.KEYCLOAK_SERVICE_PORT;
+        String url = "https://" + service.getName() + "." + namespace + ":" + Constants.KEYCLOAK_HTTPS_PORT;
 
         Awaitility.await().atMost(5, MINUTES).untilAsserted(() -> {
             Log.info("Starting curl Pod to test if the realm is available");
@@ -98,6 +97,7 @@ public class ClusteringE2EIT extends ClusterOperatorTest {
                 .resources(Keycloak.class)
                 .inNamespace(kc.getMetadata().getNamespace())
                 .withName(kc.getMetadata().getName());
+        K8sUtils.deployKeycloak(k8sclient, kc, false);
         var targetInstances = 3;
         kc.getSpec().setInstances(targetInstances);
         k8sclient.resources(Keycloak.class).inNamespace(namespace).createOrReplace(kc);
@@ -136,14 +136,15 @@ public class ClusteringE2EIT extends ClusterOperatorTest {
                         .pods()
                         .inNamespace(namespace)
                         .withName(pod.getMetadata().getName())
-                        .portForward(8080, 8080)) {
+                        .portForward(8443, 8443)) {
 
                     token = (token != null) ? token : RestAssured.given()
+                            .relaxedHTTPSValidation()
                             .param("grant_type" , "password")
                             .param("client_id", "token-test-client")
                             .param("username", "test")
                             .param("password", "test")
-                            .post("http://localhost:" + portForward.getLocalPort() + "/realms/token-test/protocol/openid-connect/token")
+                            .post("https://localhost:" + portForward.getLocalPort() + "/realms/token-test/protocol/openid-connect/token")
                             .body()
                             .jsonPath()
                             .getString("access_token");
@@ -151,8 +152,9 @@ public class ClusteringE2EIT extends ClusterOperatorTest {
                     Log.info("Using token:" + token);
 
                     var username = RestAssured.given()
+                            .relaxedHTTPSValidation()
                             .header("Authorization",  "Bearer " + token)
-                            .get("http://localhost:" + portForward.getLocalPort() + "/realms/token-test/protocol/openid-connect/userinfo")
+                            .get("https://localhost:" + portForward.getLocalPort() + "/realms/token-test/protocol/openid-connect/userinfo")
                             .body()
                             .jsonPath()
                             .getString("preferred_username");
@@ -174,22 +176,21 @@ public class ClusteringE2EIT extends ClusterOperatorTest {
             for (int i = 0; i < (targetInstances * 2); i++) {
 
                 if (token2 == null) {
-                    var tokenUrl = "http://" + service.getName() + "." + namespace + ":" + Constants.KEYCLOAK_SERVICE_PORT + "/realms/token-test/protocol/openid-connect/token";
+                    var tokenUrl = "https://" + service.getName() + "." + namespace + ":" + Constants.KEYCLOAK_HTTPS_PORT + "/realms/token-test/protocol/openid-connect/token";
                     Log.info("Checking url: " + tokenUrl);
 
-                    var tokenOutput = K8sUtils.inClusterCurl(k8sclient, namespace, "-s", "--data", "grant_type=password&client_id=token-test-client&username=test&password=test", tokenUrl);
+                    var tokenOutput = K8sUtils.inClusterCurl(k8sclient, namespace, "--insecure", "-s", "--data", "grant_type=password&client_id=token-test-client&username=test&password=test", tokenUrl);
                     Log.info("Curl Output with token: " + tokenOutput);
                     JsonNode tokenAnswer = Serialization.jsonMapper().readTree(tokenOutput);
                     assertThat(tokenAnswer.hasNonNull("access_token")).isTrue();
                     token2 = tokenAnswer.get("access_token").asText();
                 }
 
-                String url = "http://" + service.getName() + "." + namespace + ":" + Constants.KEYCLOAK_SERVICE_PORT + "/realms/token-test/protocol/openid-connect/userinfo";
+                String url = "https://" + service.getName() + "." + namespace + ":" + Constants.KEYCLOAK_HTTPS_PORT + "/realms/token-test/protocol/openid-connect/userinfo";
                 Log.info("Checking url: " + url);
 
-                var curlOutput = K8sUtils.inClusterCurl(k8sclient, namespace, "-s", "-H", "Authorization: Bearer " + token2, url);
+                var curlOutput = K8sUtils.inClusterCurl(k8sclient, namespace, "--insecure", "-s", "-H", "Authorization: Bearer " + token2, url);
                 Log.info("Curl Output on access attempt: " + curlOutput);
-
 
                 JsonNode answer = Serialization.jsonMapper().readTree(curlOutput);
                 assertThat(answer.hasNonNull("preferred_username")).isTrue();

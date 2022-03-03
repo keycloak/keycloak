@@ -6,6 +6,8 @@ import io.quarkus.logging.Log;
 import io.quarkus.test.junit.QuarkusTest;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
+import org.keycloak.operator.utils.K8sUtils;
+import org.keycloak.operator.v2alpha1.KeycloakService;
 import org.keycloak.operator.v2alpha1.crds.Keycloak;
 
 import java.time.Duration;
@@ -14,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.keycloak.operator.Constants.DEFAULT_LABELS;
 import static org.keycloak.operator.utils.K8sUtils.deployKeycloak;
@@ -138,6 +141,104 @@ public class KeycloakDeploymentE2EIT extends ClusterOperatorTest {
                         var logs = k8sclient.pods().inNamespace(namespace).withName(kcPod.getMetadata().getName()).getLog();
 
                         assertTrue(logs.contains("metrics-listener (org.jboss.aerogear.keycloak.metrics.MetricsEventListenerFactory) is implementing the internal SPI"));
+                    });
+        } catch (Exception e) {
+            savePodLogs();
+            throw e;
+        }
+    }
+
+    @Test
+    public void testTlsUsesCorrectSecret() {
+        try {
+            var kc = getDefaultKeycloakDeployment();
+            deployKeycloak(k8sclient, kc, true);
+
+            var service = new KeycloakService(k8sclient, kc);
+            Awaitility.await()
+                    .ignoreExceptions()
+                    .untilAsserted(() -> {
+                        String url = "https://" + service.getName() + "." + namespace + ":" + Constants.KEYCLOAK_HTTPS_PORT;
+                        Log.info("Checking url: " + url);
+
+                        var curlOutput = K8sUtils.inClusterCurl(k8sclient, namespace, "--insecure", "-s", "-v", url);
+                        Log.info("Curl Output: " + curlOutput);
+
+                        assertTrue(curlOutput.contains("issuer: O=mkcert development CA; OU=aperuffo@aperuffo-mac (Andrea Peruffo); CN=mkcert aperuffo@aperuffo-mac (Andrea Peruffo)"));
+                    });
+        } catch (Exception e) {
+            savePodLogs();
+            throw e;
+        }
+    }
+
+    @Test
+    public void testTlsDisabled() {
+        try {
+            var kc = getDefaultKeycloakDeployment();
+            kc.getSpec().setTlsSecret(Constants.INSECURE_DISABLE);
+            deployKeycloak(k8sclient, kc, true);
+
+            var service = new KeycloakService(k8sclient, kc);
+            Awaitility.await()
+                    .ignoreExceptions()
+                    .untilAsserted(() -> {
+                        String url = "http://" + service.getName() + "." + namespace + ":" + Constants.KEYCLOAK_HTTP_PORT;
+                        Log.info("Checking url: " + url);
+
+                        var curlOutput = K8sUtils.inClusterCurl(k8sclient, namespace, url);
+                        Log.info("Curl Output: " + curlOutput);
+
+                        assertEquals("200", curlOutput);
+                    });
+        } catch (Exception e) {
+            savePodLogs();
+            throw e;
+        }
+    }
+
+    @Test
+    public void testHostnameStrict() {
+        try {
+            var kc = getDefaultKeycloakDeployment();
+            deployKeycloak(k8sclient, kc, true);
+
+            var service = new KeycloakService(k8sclient, kc);
+            Awaitility.await()
+                    .ignoreExceptions()
+                    .untilAsserted(() -> {
+                        String url = "https://" + service.getName() + "." + namespace + ":" + Constants.KEYCLOAK_HTTPS_PORT;
+                        Log.info("Checking url: " + url);
+
+                        var curlOutput = K8sUtils.inClusterCurl(k8sclient, namespace, "--insecure", "-H", "Host: foo.bar", url);
+                        Log.info("Curl Output: " + curlOutput);
+
+                        assertTrue(curlOutput.contains("<a href=\"https://example.com/admin/\">"));
+                    });
+        } catch (Exception e) {
+            savePodLogs();
+            throw e;
+        }
+    }
+
+    @Test
+    public void testHostnameStrictDisabled() {
+        try {
+            var kc = getDefaultKeycloakDeployment();
+            kc.getSpec().setHostname(Constants.INSECURE_DISABLE);
+            deployKeycloak(k8sclient, kc, true);
+
+            var service = new KeycloakService(k8sclient, kc);
+            Awaitility.await()
+                    .ignoreExceptions()
+                    .untilAsserted(() -> {
+                        String url = "https://" + service.getName() + "." + namespace + ":" + Constants.KEYCLOAK_HTTPS_PORT;
+                        Log.info("Checking url: " + url);
+
+                        var curlOutput = K8sUtils.inClusterCurl(k8sclient, namespace, "--insecure", "-H", "Host: foo.bar", url);
+                        Log.info("Curl Output: " + curlOutput);
+
+                        assertTrue(curlOutput.contains("<a href=\"https://foo.bar/admin/\">"));
                     });
         } catch (Exception e) {
             savePodLogs();

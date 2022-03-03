@@ -355,6 +355,81 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
         }
     }
 
+    private void configureHostname(Deployment deployment) {
+        var kcContainer = deployment.getSpec().getTemplate().getSpec().getContainers().get(0);
+        var hostname = this.keycloakCR.getSpec().getHostname();
+        var envVars =  kcContainer.getEnv();
+        if (this.keycloakCR.getSpec().isHostnameDisabled()) {
+            var disableStrictHostname = List.of(
+                new EnvVarBuilder()
+                        .withName("KC_HOSTNAME_STRICT")
+                        .withValue("false")
+                        .build(),
+                new EnvVarBuilder()
+                        .withName("KC_HOSTNAME_STRICT_BACKCHANNEL")
+                        .withValue("false")
+                        .build());
+
+            envVars.addAll(disableStrictHostname);
+        } else {
+            var enabledStrictHostname = List.of(
+                new EnvVarBuilder()
+                        .withName("KC_HOSTNAME")
+                        .withValue(hostname)
+                        .build());
+
+            envVars.addAll(enabledStrictHostname);
+        }
+    }
+
+    private void configureTLS(Deployment deployment) {
+        var kcContainer = deployment.getSpec().getTemplate().getSpec().getContainers().get(0);
+        var tlsSecret = this.keycloakCR.getSpec().getTlsSecret();
+        var envVars =  kcContainer.getEnv();
+        if (this.keycloakCR.getSpec().isHttp()) {
+            var disableTls = List.of(
+                    new EnvVarBuilder()
+                            .withName("KC_HTTP_ENABLED")
+                            .withValue("true")
+                            .build());
+
+            envVars.addAll(disableTls);
+
+            kcContainer.getReadinessProbe().getExec().setCommand(
+                    List.of("curl", "--head", "--fail", "--silent", "http://127.0.0.1:" + Constants.KEYCLOAK_HTTP_PORT + "/health/ready"));
+            kcContainer.getLivenessProbe().getExec().setCommand(
+                    List.of("curl", "--head", "--fail", "--silent", "http://127.0.0.1:" + Constants.KEYCLOAK_HTTP_PORT + "/health/live"));
+        } else {
+            var enabledTls = List.of(
+                    new EnvVarBuilder()
+                            .withName("KC_HTTPS_CERTIFICATE_FILE")
+                            .withValue(Constants.CERTIFICATES_FOLDER + "/tls.crt")
+                            .build(),
+                    new EnvVarBuilder()
+                            .withName("KC_HTTPS_CERTIFICATE_KEY_FILE")
+                            .withValue(Constants.CERTIFICATES_FOLDER + "/tls.key")
+                            .build());
+
+            envVars.addAll(enabledTls);
+
+            var volume = new VolumeBuilder()
+                    .withName("keycloak-tls-certificates")
+                    .withNewSecret()
+                    .withSecretName(tlsSecret)
+                    .withOptional(false)
+                    .endSecret()
+                    .build();
+
+            var volumeMount = new VolumeMountBuilder()
+                    .withName(volume.getName())
+                    .withMountPath(Constants.CERTIFICATES_FOLDER)
+                    .build();
+
+            deployment.getSpec().getTemplate().getSpec().getVolumes().add(volume);
+            kcContainer.getVolumeMounts().add(volumeMount);
+        }
+    }
+
     private Deployment createBaseDeployment() {
         var is = this.getClass().getResourceAsStream("/base-keycloak-deployment.yaml");
         Deployment baseDeployment = Serialization.unmarshal(is, Deployment.class);
@@ -371,6 +446,8 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
 
         container.setEnv(getEnvVars());
 
+        configureHostname(baseDeployment);
+        configureTLS(baseDeployment);
         addInitContainer(baseDeployment, keycloakCR.getSpec().getExtensions());
         mergePodTemplate(baseDeployment.getSpec().getTemplate());
 
