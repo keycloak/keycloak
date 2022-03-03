@@ -884,10 +884,9 @@ public class TokenManager {
         token.setNonce(clientSessionCtx.getAttribute(OIDCLoginProtocol.NONCE_PARAM, String.class));
         token.setScope(clientSessionCtx.getScopeString());
 
-        if (Profile.isFeatureEnabled(Profile.Feature.STEP_UP_AUTHENTICATION)) {
-            token.setAcr(getAcr(clientSession));
-        } else {
-            // Backwards compatibility behaviour prior step-up authentication was introduced
+        // Backwards compatibility behaviour prior step-up authentication was introduced
+        // Protocol mapper is supposed to set this in case "step_up_authentication" feature enabled
+        if (!Profile.isFeatureEnabled(Profile.Feature.STEP_UP_AUTHENTICATION)) {
             String acr = AuthenticationManager.isSSOAuthentication(clientSession) ? "0" : "1";
             token.setAcr(acr);
         }
@@ -905,31 +904,6 @@ public class TokenManager {
         token.expiration(getTokenExpiration(realm, client, session, clientSession, offlineTokenRequested));
 
         return token;
-    }
-
-    private String getAcr(AuthenticatedClientSessionModel clientSession) {
-        int loa = LoAUtil.getCurrentLevelOfAuthentication(clientSession);
-        if (loa < Constants.MINIMUM_LOA) {
-            loa = AuthenticationManager.isSSOAuthentication(clientSession) ? 0 : 1;
-        }
-
-        Map<String, Integer> acrLoaMap = AcrUtils.getAcrLoaMap(clientSession.getClient());
-        String acr = AcrUtils.mapLoaToAcr(loa, acrLoaMap, AcrUtils.getRequiredAcrValues(
-            clientSession.getNote(OIDCLoginProtocol.CLAIMS_PARAM)));
-        if (acr == null) {
-            acr = AcrUtils.mapLoaToAcr(loa, acrLoaMap, AcrUtils.getAcrValues(
-                clientSession.getNote(OIDCLoginProtocol.CLAIMS_PARAM),
-                clientSession.getNote(OIDCLoginProtocol.ACR_PARAM), clientSession.getClient()));
-            if (acr == null) {
-                acr = AcrUtils.mapLoaToAcr(loa, acrLoaMap, acrLoaMap.keySet());
-                if (acr == null) {
-                    acr = String.valueOf(loa);
-                }
-            }
-        }
-
-        logger.tracef("Level sent in the token to client %s: %s. Original loa from the authentication: %d", clientSession.getClient().getClientId(), acr, loa);
-        return acr;
     }
 
     private int getTokenExpiration(RealmModel realm, ClientModel client, UserSessionModel userSession,
@@ -1191,7 +1165,12 @@ public class TokenManager {
             idToken.setAuthTime(accessToken.getAuthTime());
             idToken.setSessionState(accessToken.getSessionState());
             idToken.expiration(accessToken.getExpiration());
-            idToken.setAcr(accessToken.getAcr());
+
+            // Protocol mapper is supposed to set this in case "step_up_authentication" feature enabled
+            if (!Profile.isFeatureEnabled(Profile.Feature.STEP_UP_AUTHENTICATION)) {
+                idToken.setAcr(accessToken.getAcr());
+            }
+
             if (isIdTokenAsDetachedSignature == false) {
                 transformIDToken(session, idToken, userSession, clientSessionCtx);
             }

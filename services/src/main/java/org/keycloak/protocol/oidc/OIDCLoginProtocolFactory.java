@@ -18,6 +18,7 @@ package org.keycloak.protocol.oidc;
 
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.common.Profile;
 import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.events.EventBuilder;
@@ -32,6 +33,7 @@ import org.keycloak.models.utils.DefaultClientScopes;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.AbstractLoginProtocolFactory;
 import org.keycloak.protocol.LoginProtocol;
+import org.keycloak.protocol.oidc.mappers.AcrProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.AddressMapper;
 import org.keycloak.protocol.oidc.mappers.AllowedWebOriginsProtocolMapper;
 import org.keycloak.protocol.oidc.mappers.AudienceResolveProtocolMapper;
@@ -83,6 +85,7 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
     public static final String CLIENT_ROLES = "client roles";
     public static final String AUDIENCE_RESOLVE = "audience resolve";
     public static final String ALLOWED_WEB_ORIGINS = "allowed web origins";
+    public static final String ACR = "acr loa level";
     // microprofile-jwt claims
     public static final String UPN = "upn";
     public static final String GROUPS = "groups";
@@ -90,6 +93,7 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
     public static final String ROLES_SCOPE = "roles";
     public static final String WEB_ORIGINS_SCOPE = "web-origins";
     public static final String MICROPROFILE_JWT_SCOPE = "microprofile-jwt";
+    public static final String ACR_SCOPE = "acr";
 
     public static final String PROFILE_SCOPE_CONSENT_TEXT = "${profileScopeConsentText}";
     public static final String EMAIL_SCOPE_CONSENT_TEXT = "${emailScopeConsentText}";
@@ -191,6 +195,11 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
 
         model = UserRealmRoleMappingMapper.create(null, GROUPS, GROUPS, true, true, true);
         builtins.put(GROUPS, model);
+
+        if (Profile.isFeatureEnabled(Profile.Feature.STEP_UP_AUTHENTICATION)) {
+            model = AcrProtocolMapper.create(ACR, true, true);
+            builtins.put(ACR, model);
+        }
     }
 
     private static void createUserAttributeMapper(String name, String attrName, String claimName, String type) {
@@ -268,6 +277,7 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
         addRolesClientScope(newRealm);
         addWebOriginsClientScope(newRealm);
         addMicroprofileJWTClientScope(newRealm);
+        addAcrClientScope(newRealm);
     }
 
 
@@ -337,6 +347,30 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
         }
 
         return microprofileScope;
+    }
+
+
+    public static void addAcrClientScope(RealmModel newRealm) {
+        if (Profile.isFeatureEnabled(Profile.Feature.STEP_UP_AUTHENTICATION)) {
+            ClientScopeModel acrScope = KeycloakModelUtils.getClientScopeByName(newRealm, ACR_SCOPE);
+            if (acrScope == null) {
+                acrScope = newRealm.addClientScope(ACR_SCOPE);
+                acrScope.setDescription("OpenID Connect scope for add acr (authentication context class reference) to the token");
+                acrScope.setDisplayOnConsentScreen(false);
+                acrScope.setIncludeInTokenScope(false);
+                acrScope.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+                acrScope.addProtocolMapper(builtins.get(ACR));
+
+                // acr will be realm 'default' client scope
+                newRealm.addDefaultClientScope(acrScope, true);
+
+                logger.debugf("Client scope '%s' created in the realm '%s'.", ACR_SCOPE, newRealm.getName());
+            } else {
+                logger.debugf("Client scope '%s' already exists in realm '%s'. Skip creating it.", ACR_SCOPE, newRealm.getName());
+            }
+        } else {
+            logger.debugf("Skip creating client scope '%s' in the realm '%s' due the step-up authentication feature is disabled.", ACR_SCOPE, newRealm.getName());
+        }
     }
 
     @Override
