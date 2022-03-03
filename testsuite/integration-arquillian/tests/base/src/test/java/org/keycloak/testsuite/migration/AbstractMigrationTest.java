@@ -310,6 +310,11 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         testSamlAttributes(migrationRealm);
     }
 
+    protected void testMigrationTo18_0_0() {
+        // check that all expected scopes exist in the migrated realm.
+        testRealmDefaultClientScopes(migrationRealm);
+    }
+
     protected void testDeleteAccount(RealmResource realm) {
         ClientRepresentation accountClient = realm.clients().findByClientId(ACCOUNT_MANAGEMENT_CLIENT_ID).get(0);
         ClientResource accountResource = realm.clients().get(accountClient.getId());
@@ -929,6 +934,10 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         testMigrationTo12_0_0();
         testMigrationTo13_0_0(testRealmAttributesMigration);
         testMigrationTo14_0_0();
+    }
+
+    protected void testMigrationTo18_x() {
+        testMigrationTo18_0_0();
     }
 
     protected void testMigrationTo7_x(boolean supportedAuthzServices) {
