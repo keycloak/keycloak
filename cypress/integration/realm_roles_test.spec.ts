@@ -110,16 +110,14 @@ describe("Realm roles test", () => {
   describe("edit role details", () => {
     const editRoleName = "going to edit";
     const description = "some description";
-    before(() => {
+    before(() =>
       adminClient.createRealmRole({
         name: editRoleName,
         description,
-      });
-    });
+      })
+    );
 
-    after(() => {
-      adminClient.deleteRealmRole(editRoleName);
-    });
+    after(() => adminClient.deleteRealmRole(editRoleName));
 
     it("should edit realm role details", () => {
       listingPage.itemExist(editRoleName).goToItemDetails(editRoleName);
