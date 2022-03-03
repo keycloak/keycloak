@@ -17,12 +17,17 @@
 
 package org.keycloak.events.log;
 
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.events.EventListenerProvider;
 import org.keycloak.events.EventListenerProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -61,4 +66,28 @@ public class JBossLoggingEventListenerProviderFactory implements EventListenerPr
         return ID;
     }
 
+    @Override
+    public List<ProviderConfigProperty> getConfigMetadata() {
+        String[] logLevels = Arrays.stream(Logger.Level.values())
+                .map(Logger.Level::name)
+                .map(String::toLowerCase)
+                .sorted(Comparator.naturalOrder())
+                .toArray(String[]::new);
+        return ProviderConfigurationBuilder.create()
+                .property()
+                .name("success-level")
+                .type("string")
+                .helpText("The log level for success messages.")
+                .options(logLevels)
+                .defaultValue("debug")
+                .add()
+                .property()
+                .name("error-level")
+                .type("string")
+                .helpText("The log level for error messages.")
+                .options(logLevels)
+                .defaultValue("warn")
+                .add()
+                .build();
+    }
 }

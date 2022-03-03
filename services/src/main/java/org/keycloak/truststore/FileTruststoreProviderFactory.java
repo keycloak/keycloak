@@ -21,6 +21,8 @@ import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -36,9 +38,11 @@ import java.security.SignatureException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import javax.security.auth.x500.X500Principal;
 
@@ -127,7 +131,28 @@ public class FileTruststoreProviderFactory implements TruststoreProviderFactory 
         return "file";
     }
 
-
+    @Override
+    public List<ProviderConfigProperty> getConfigMetadata() {
+        return ProviderConfigurationBuilder.create()
+                .property()
+                .name("file")
+                .type("string")
+                .helpText("The file path of the trust store from where the certificates are going to be read from to validate TLS connections.")
+                .add()
+                .property()
+                .name("password")
+                .type("string")
+                .helpText("The trust store password.")
+                .add()
+                .property()
+                .name("hostname-verification-policy")
+                .type("string")
+                .helpText("The hostname verification policy.")
+                .options(Arrays.stream(HostnameVerificationPolicy.values()).map(HostnameVerificationPolicy::name).map(String::toLowerCase).toArray(String[]::new))
+                .defaultValue(HostnameVerificationPolicy.WILDCARD.name().toLowerCase())
+                .add()
+                .build();
+    }
 
     private static class TruststoreCertificatesLoader {
 

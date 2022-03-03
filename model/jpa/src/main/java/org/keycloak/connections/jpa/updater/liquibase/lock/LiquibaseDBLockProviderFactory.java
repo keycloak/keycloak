@@ -17,12 +17,15 @@
 
 package org.keycloak.connections.jpa.updater.liquibase.lock;
 
+import java.util.List;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.dblock.DBLockProviderFactory;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -73,5 +76,15 @@ public class LiquibaseDBLockProviderFactory implements DBLockProviderFactory {
     @Override
     public int order() {
         return PROVIDER_PRIORITY;
+    }
+
+    @Override
+    public List<ProviderConfigProperty> getConfigMetadata() {
+        return ProviderConfigurationBuilder.create()
+                .property()
+                .name("lockWaitTimeout")
+                .type("int")
+                .helpText("The maximum time to wait when waiting to release a database lock.")
+                .add().build();
     }
 }

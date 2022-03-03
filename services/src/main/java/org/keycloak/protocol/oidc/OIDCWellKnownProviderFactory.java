@@ -19,6 +19,7 @@ package org.keycloak.protocol.oidc;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 import java.util.Map;
 
 import org.jboss.logging.Logger;
@@ -26,6 +27,8 @@ import org.keycloak.Config;
 import org.keycloak.common.util.FindFile;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.wellknown.WellKnownProvider;
 import org.keycloak.wellknown.WellKnownProviderFactory;
@@ -86,6 +89,23 @@ public class OIDCWellKnownProviderFactory implements WellKnownProviderFactory {
     @Override
     public int getPriority() {
         return 100;
+    }
+
+    @Override
+    public List<ProviderConfigProperty> getConfigMetadata() {
+        return ProviderConfigurationBuilder.create()
+                .property()
+                .name("openid-configuration-override")
+                .type("string")
+                .helpText("The file path from where the metadata should be loaded from. You can use an absolute file path or, if the file is in the server classpath, use the 'classpath:' prefix to load the file from the classpath.")
+                .add()
+                .property()
+                .name("include-client-scopes")
+                .type("boolean")
+                .helpText("If client scopes should be used to calculate the list of supported scopes.")
+                .defaultValue(true)
+                .add()
+                .build();
     }
 
     protected Map<String, Object> getOpenidConfigOverride() {

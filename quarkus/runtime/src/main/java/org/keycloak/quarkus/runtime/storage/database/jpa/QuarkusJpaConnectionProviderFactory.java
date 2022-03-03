@@ -61,6 +61,8 @@ import org.keycloak.models.*;
 import org.keycloak.models.dblock.DBLockManager;
 import org.keycloak.models.dblock.DBLockProvider;
 import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.provider.ServerInfoAwareProviderFactory;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -139,6 +141,30 @@ public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionPr
             MigrationModel model = session.getProvider(DeploymentStateProvider.class).getMigrationModel();
             Version.RESOURCES_VERSION = model.getResourcesTag();
         }
+    }
+
+    @Override
+    public List<ProviderConfigProperty> getConfigMetadata() {
+        return ProviderConfigurationBuilder.create()
+                .property()
+                .name("initializeEmpty")
+                .type("boolean")
+                .helpText("Initialize database if empty. If set to false the database has to be manually initialized. If you want to manually initialize the database set migrationStrategy to manual which will create a file with SQL commands to initialize the database.")
+                .defaultValue(true)
+                .add()
+                .property()
+                .name("migrationStrategy")
+                .type("string")
+                .helpText("Strategy to use to migrate database. Valid values are update, manual and validate. Update will automatically migrate the database schema. Manual will export the required changes to a file with SQL commands that you can manually execute on the database. Validate will simply check if the database is up-to-date.")
+                .options("update", "manual", "validate")
+                .defaultValue("update")
+                .add()
+                .property()
+                .name("migrationExport")
+                .type("string")
+                .helpText("Path for where to write manual database initialization/migration file.")
+                .add()
+                .build();
     }
 
     @Override

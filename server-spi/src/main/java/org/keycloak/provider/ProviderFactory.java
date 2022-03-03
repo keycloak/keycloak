@@ -17,6 +17,8 @@
 
 package org.keycloak.provider;
 
+import java.util.Collections;
+import java.util.List;
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -57,4 +59,12 @@ public interface ProviderFactory<T extends Provider> {
         return 0;
     }
 
+    /**
+     * Returns the metadata for each configuration property supported by this factory.
+     *
+     * @return a list with the metadata for each configuration property supported by this factory
+     */
+    default List<ProviderConfigProperty> getConfigMetadata() {
+        return Collections.emptyList();
+    }
 }
