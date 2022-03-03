@@ -9,5 +9,7 @@ spec:
     KC_DB_URL_HOST: postgres-db
     KC_DB_USERNAME: postgres
     KC_DB_PASSWORD: testpassword
+  hostname: example.com
+  tlsSecret: INSECURE-DISABLE
   unsupported:
     podTemplate:

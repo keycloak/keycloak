@@ -18,7 +18,8 @@ spec:
     spec:
       containers:
       - args:
-        - start-dev
+        - start
+        - --auto-build
         imagePullPolicy: Always
         name: keycloak
         ports:
@@ -27,16 +28,26 @@ spec:
         - containerPort: 8080
           protocol: TCP
         livenessProbe:
-          httpGet:
-            path: /health/live
-            port: 8080
+          exec:
+            command:
+              - curl
+              - --insecure
+              - --head
+              - --fail
+              - --silent
+              - https://127.0.0.1:8443/health/live
           initialDelaySeconds: 20
           periodSeconds: 2
           failureThreshold: 100
         readinessProbe:
-          httpGet:
-            path: /health/ready
-            port: 8080
+          exec:
+            command:
+              - curl
+              - --insecure
+              - --head
+              - --fail
+              - --silent
+              - https://127.0.0.1:8443/health/ready
           initialDelaySeconds: 20
           periodSeconds: 2
           failureThreshold: 200

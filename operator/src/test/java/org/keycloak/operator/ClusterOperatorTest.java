@@ -181,7 +181,7 @@ public abstract class ClusterOperatorTest {
 
   private static void setDefaultAwaitilityTimings() {
     Awaitility.setDefaultPollInterval(Duration.ofSeconds(1));
-    Awaitility.setDefaultTimeout(Duration.ofSeconds(240));
+    Awaitility.setDefaultTimeout(Duration.ofSeconds(360));
   }
 
   @AfterEach
