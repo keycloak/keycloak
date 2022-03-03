@@ -74,6 +74,11 @@ The features that can be enabled and disabled are:
 |No
 |Preview
 
+|step_up_authentication
+|Step-up authentication
+|Yes
+|Supported
+
 |token_exchange
 |Token Exchange Service
 |No

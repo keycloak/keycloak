@@ -3,3 +3,11 @@
 == Recovery Codes
 
 Recovery Codes as another way to do two-factor authentication is now available as a preview feature.
+
+== Step-up authentication
+
+{project_name} now supports Step-up authentication. This feature was added in Keycloak 17 and it was further polished in this version.
+
+For more details, take a look at link:{adminguide_link}#_step-up-flow[{adminguide_name}].
+
+Thanks to https://github.com/CorneliaLahnsteiner[Cornelia Lahnsteiner] and https://github.com/romge[Georg Romstorfer] for the contribution.

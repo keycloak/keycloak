@@ -91,11 +91,20 @@ The procedure to select the algorithm is:
 . Open *Fine Grain OpenID Connect Configuration*.
 . Select the algorithm from *ID Token Encryption Content Encryption Algorithm* pulldown menu.
 
-[[_mapping-acr-to-loa]]
+[[_mapping-acr-to-loa-client]]
 *ACR to Level of Authentication (LoA) Mapping*
 
-In the advanced settings of a client, you can define which `Authentication Context Class Reference (ACR)` value is mapped to which `Level of Authentication (LoA)`. The ACR can be any value, whereas the LoA must be numeric.
-The acr claim in also included in the access token and ID token.
+In the advanced settings of a client, you can define which `Authentication Context Class Reference (ACR)` value is mapped to which `Level of Authentication (LoA)`.
+This mapping can be specified also at the realm as mentioned in the <<_mapping-acr-to-loa-realm,ACR to LoA Mapping>>. A best practice is to configure this mapping at the
+realm level, which allows to share the same settings across multiple clients.
+
+The `Default ACR Values` can be used to specify the default values when the login request is sent from this client to {project_name} without `acr_values` parameter and without
+a `claims` parameter that has an `acr` claim attached. See https://openid.net/specs/openid-connect-registration-1_0.html#ClientMetadata[offical OIDC dynamic client registration specification].
+
+WARNING: Note that default ACR values are used as the default level, however it cannot be reliably used to enforce login with the particular level.
+For example, assume that you configure the `Default ACR Values` to level 2. Then by default, users will be required to authenticate with level 2.
+However when the user explicitly attaches the parameter into login request such as `acr_values=1`, then the level 1 will be used. As a result, if the client
+really requires level 2, the client is encouraged to check the presence of the `acr` claim inside ID Token and doublecheck that it contains the requested level 2.
 
 image:images/client-oidc-map-acr-to-loa.png[alt="ACR to LoA mapping"]
 

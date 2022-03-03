@@ -1,0 +1,20 @@
+= Step-up authentication
+
+Step-up authentication is a new feature. This feature provides the `acr` client scope, which contains a protocol mapper that is supposed to add the `acr`
+claim in the token. The `acr` claim is not added automatically now as it was before this version, but it is added with the usage
+of this client scope and protocol mapper.
+
+The client scope is added as a realm "default" client scope and hence will be added to all newly created clients. For performance reasons,
+the client scope is not automatically added to all existing clients during migration. The clients will not have an `acr` claim by default after
+the migration. Consider these possible actions:
+
+- If you do not plan to use step-up authentication feature, but you rely on the `acr` claim in the token, you can disable `step_up_authentication`
+  feature as described in the link:{installguide_link}#profiles[{installguide_name}]. The claim will be added with the value `1` in case of normal authentication and `0` in case of SSO authentication.
+- Add `acr` client scope to your clients manually by admin REST API or admin console. This is needed especially if you want to use step-up authentication.
+  If you have a large number of clients in the realm and want to use `acr` claim for all of them, you can trigger some SQL similar to this against your DB.
+  However, remember to clear the cache or restart the server if {project_name} is already started:
+
+```
+insert into CLIENT_SCOPE_CLIENT (CLIENT_ID, SCOPE_ID, DEFAULT_SCOPE) select CLIENT.ID as CLIENT_ID, CLIENT_SCOPE.ID as SCOPE_ID, true as DEFAULT_SCOPE
+from CLIENT_SCOPE, CLIENT where CLIENT_SCOPE.REALM_ID='test' and CLIENT_SCOPE.NAME='acr' and CLIENT.REALM_ID='test' and CLIENT.PROTOCOL='openid-connect';
+```

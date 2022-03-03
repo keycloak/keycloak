@@ -271,7 +271,9 @@ Now you configure the flow for the first authentication level.
 . Click *Config*.
 . Enter `Level 1` as an alias.
 . Enter `1` for the Level of Authentication (LoA).
-. Set Store LoA in user session *ON*.
+. Set Max Age to *36000*. This value is in seconds and it is equivalent to 10 hours, which is the default `SSO Session Max` timeout set in the realm.
+  As a result, when a user authenticates with this level, subsequent SSO logins can re-use this level and the user does not need to authenticate
+  with this level until the end of the user session, which is 10 hours by default.
 . Click *Save*
 +
 .Configure the condition for the first authentication level
@@ -299,7 +301,8 @@ Now you configure the flow for the second authentication level.
 . Click *Config*.
 . Enter `Level 2` as an alias.
 . Enter `2` for the Level of Authentication (LoA).
-. Set Store LoA in user session *OFF*.
+. Set Max Age to *0*. As a result, when a user authenticates, this level is valid just for the current authentication, but not any
+  subsequent SSO authentications. So the user will always need to authenticate again with this level when this level is requested.
 . Click *Save*
 +
 .Configure the condition for the second authentication level
@@ -322,14 +325,14 @@ Finally, change the bindings.
 image:images/authentication-step-up-flow.png[]
 
 .Request a certain authentication level
-To use the step-up mechanism, you have to specify a requested level of authentication (LoA) in your authentication request. The claims parameter is used for this purpose:
+To use the step-up mechanism, you specify a requested level of authentication (LoA) in your authentication request. The `claims` parameter is used for this purpose:
 
 [source,subs=+attributes]
 ----
 https://{DOMAIN}{kc_realms_path}/{REALMNAME}/protocol/openid-connect/auth?client_id={CLIENT-ID}&redirect_uri={REDIRECT-URI}&scope=openid&response_type=code&response_mode=query&nonce=exg16fxdjcu&claims=%7B%22id_token%22%3A%7B%22acr%22%3A%7B%22essential%22%3Atrue%2C%22values%22%3A%5B%22gold%22%5D%7D%7D%7D
 ----
 
-The claims parameter is specified in a JSON representation:
+The `claims` parameter is specified in a JSON representation:
 [source]
 ----
 claims= {
@@ -342,28 +345,66 @@ claims= {
         }
 ----
 
-NOTE: To request the acr_values as text (such as `gold`) instead of a numeric value, you have to configure the mapping between the ACR and the LoA at the client level. For configuration see <<_mapping-acr-to-loa,ACR to LoA Mapping>>)
+The {project_name} javascript adapter has support for easy construct of this JSON and sending it in the login request.
+See link:{adapterguide_link_js_adapter}[Javascript adapter documentation] for more details.
+
+You can also use simpler parameter `acr_values` instead of `claims` parameter to request particular levels as non-essential. This is mentioned
+in the OIDC specification.
+
+You can also configure the default level for the particular client, which is used when the parameter `acr_values` or the parameter `claims` with the `acr` claim is not present.
+For further details, see <<_mapping-acr-to-loa-client,Client ACR configuration>>).
+
+NOTE: To request the acr_values as text (such as `gold`) instead of a numeric value, you configure the mapping between the ACR and the LoA.
+It is possible to configure it at the realm level (recommended) or at the client level. For configuration see <<_mapping-acr-to-loa-realm,ACR to LoA Mapping>>.
 
 For more details see the https://openid.net/specs/openid-connect-core-1_0.html#acrSemantics[official OIDC specification].
 
-.Flow logic 
+*Flow logic*
 
 The logic for the previous configured authentication flow is as follows: +
-If a client request a high authentication level, meaning Level of Authentication 2 (LoA 2), a user has to perform full 2-factor authentication: Username/Password + OTP. However, if a user already has a session in Keycloak, that was logged in with username and password (LoA 1), the user is only asked for the second authenticaton factor (OTP). 
+If a client request a high authentication level, meaning Level of Authentication 2 (LoA 2), a user has to perform full 2-factor authentication: Username/Password + OTP.
+However, if a user already has a session in Keycloak, that was logged in with username and password (LoA 1), the user is only asked for the second authentication factor (OTP).
 
-The *option in the condition to store the achieved LoA in the user session* determines wheather the user will be asked to present the authentication factor again during a subsequent authentication. If true, the user will not be re-authenticated with this level during subsequent authentication. If false, it means that subsequent authentications will re-authentication with that level again. This is useful for operations that require higher security in the application (e.g. send payment) and always require authentication with the specific level.
+The option *Max Age* in the condition determines how long (how much seconds) the subsequent authentication level is valid. This settings helps to decide
+whether the user will be asked to present the authentication factor again during a subsequent authentication. If the particular level X is requested
+by the `claims` or `acr_values` parameter and user already authenticated with level X, but it is expired (for example max age is configured to 300 and user authenticated before 310 seconds)
+then the user will be asked to re-authenticate again with the particular level. However if the level is not yet expired, the user will be automatically
+considered as authenticated with that level.
 
-.Implications about possible acr inputs in authentication request
-[cols="2",options="header"]
-|===
-| Authentication Request | Implication 
-| *No acr claim* is requested | Minimum authentication  (*1st Condition Flow*) is executed
-| *No essential claim* is requested in the acr claim | Default is *false*
-| *Unknown acr* value is requested | If essential false, minimum authentication is executed. If essential true, the outcome is a failed authentication attempt
-| User is re-authenticated via a *cookie* | Acr value in access token und ID token is `0`
-|===
+Using *Max Age* with the value 0 means, that particular level is valid just for this single authentication. Hence every re-authentication requesting that level
+will need to authenticate again with that level. This is useful for operations that require higher security in the application (e.g. send payment) and always require authentication
+with the specific level.
+
+WARNING: Note that parameters such as `claims` or `acr_values` might be changed by the user in the URL when the login request is sent from the client to the {project_name} via the user's browser.
+This situation can be mitigated if client uses PAR (Pushed authorization request), a request object, or other mechanisms that prevents the user from rewrite the parameters in the URL.
+Hence after the authentication, clients are encouraged to check the ID Token to doublecheck that `acr` in the token corresponds to the expected level.
+
+If no explicit level is requested by parameters, the {project_name} will require the authentication with the first LoA
+condition found in the authentication flow, such as the Username/Password in the preceding example. When a user was already authenticated with that level
+and that level expired, the user is not required to re-authenticate, but `acr` in the token will have the value 0. This result is considered as authentication
+based solely on `long-lived browser cookie` as mentioned in the section 2 of OIDC Core 1.0 specification.
 
 NOTE: A conflict situation may arise when an admin specifies several flows, sets different LoA levels to each, and assigns the flows to different clients. However, the rule is always the same: if a user has a certain level, it needs only have that level to connect to a client. It's up to the admin to make sure that the LoA is coherent.
+
+*Example scenario*
+
+. Max Age is configured as 300 seconds for level 1 condition.
+. Login request is sent without requesting any acr. Level 1 will be used and the user needs to authenticate with username and password. The token will have `acr=1`.
+. Another login request is sent after 100 seconds. The user is automatically authenticated due to the SSO and the token will return `acr=1`.
+. Another login request is sent after another 201 seconds (301 seconds since authentication in point 2). The user is automatically authenticated due to the SSO, but the token will return `acr=0` due the level 1 is considered expired.
+. Another login request is sent, but now it will explicitly request ACR of level 1 in the `claims` parameter. User will be asked to re-authenticate with username/password
+  and then `acr=1` will be returned in the token.
+
+*ACR claim in the token*
+
+ACR claim is added to the token by the `acr loa level` protocol mapper defined in the `acr` client scope. This client scope is the realm default client scope
+and hence will be added to all newly created clients in the realm.
+
+In case you do not want `acr` claim inside tokens or you need some custom logic for adding it, you can remove the client scope from your client.
+
+Note when the login request initiates a request with the `claims` parameter requesting `acr` as `essential` claim, then {project_name} will always return
+one of the specified levels. If it is not able to return one of the specified levels (For example if the requested level is unknown or bigger than configured conditions
+in the authentication flow), then {project_name} will throw an error.
 
 ifeval::[{project_community}==true]
 === Script Authenticator
