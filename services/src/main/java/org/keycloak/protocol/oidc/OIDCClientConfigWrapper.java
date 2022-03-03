@@ -76,10 +76,6 @@ public class OIDCClientConfigWrapper {
     }
   }
 
-//  public boolean isClientSecretRotationEnabled() {
-//    return Boolean.parseBoolean(getAttribute(CLIENT_SECRET_ROTATION_ENABLED));
-//  }
-
   public void removeClientSecretRotated() {
     if (hasRotatedSecret()) {
       setAttribute(CLIENT_ROTATED_SECRET, null);

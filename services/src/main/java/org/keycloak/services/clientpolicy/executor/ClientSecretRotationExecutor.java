@@ -58,8 +58,6 @@ public class ClientSecretRotationExecutor implements
           return;
 
         default:
-          logger.warn("----- EVENT INTERCEPTED -----");
-          logger.warn(context);
           return;
       }
     }

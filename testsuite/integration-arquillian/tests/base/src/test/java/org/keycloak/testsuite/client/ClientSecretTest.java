@@ -105,7 +105,7 @@ public class ClientSecretTest extends AbstractRestServiceTest {
       revertToBuiltinProfiles();
       revertToBuiltinPolicies();
     } catch (ClientPolicyException e) {
-      e.printStackTrace();
+      throw new RuntimeException(e);
     }
     resetTimeOffset();
   }
