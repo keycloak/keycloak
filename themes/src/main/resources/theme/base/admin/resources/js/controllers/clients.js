@@ -141,6 +141,7 @@ module.controller('ClientSecretCtrl', function($scope, $location, Client, Client
     var secret = ClientSecret.get({ realm : $scope.realm.realm, client : $scope.client.id },
         function() {
             $scope.secret = secret.value;
+            $scope.secret_created_time = new Date(secret.createdDate * 1000).toISOString();
         }
     );
 

@@ -32,6 +32,8 @@ import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
+import org.keycloak.common.Profile;
+import org.keycloak.common.Profile.Feature;
 import org.keycloak.events.Details;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientSecretConfig;
@@ -51,7 +53,11 @@ import org.keycloak.services.clientpolicy.executor.ClientSecretRotationExecutor;
 import org.keycloak.services.clientpolicy.executor.ClientSecretRotationExecutorFactory;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.account.AbstractRestServiceTest;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPoliciesBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientPolicyBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil.ClientProfileBuilder;
@@ -66,7 +72,9 @@ import org.keycloak.utils.ClockUtil;
 /**
  * @author <a href="mailto:masales@redhat.com">Marcelo Sales</a>
  */
-public class ClientSecretTest extends AbstractKeycloakTest {
+@AuthServerContainerExclude(AuthServer.REMOTE)
+@EnableFeature(value = Feature.CLIENT_SECRET_ROTATION)
+public class ClientSecretTest extends AbstractRestServiceTest {
 
   private static final String OIDC = "openid-connect";
   private static final String DEFAULT_CLIENT_ID = KeycloakModelUtils.generateId();
@@ -94,9 +102,13 @@ public class ClientSecretTest extends AbstractKeycloakTest {
   public AssertEvents events = new AssertEvents(this);
 
   @After
-  public void after() throws Exception {
-    revertToBuiltinProfiles();
-    revertToBuiltinPolicies();
+  public void after() {
+    try {
+      revertToBuiltinProfiles();
+      revertToBuiltinPolicies();
+    } catch (ClientPolicyException e) {
+      e.printStackTrace();
+    }
     ClockUtil.resetClock();
   }
 

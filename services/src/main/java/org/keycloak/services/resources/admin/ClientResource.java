@@ -16,10 +16,6 @@
  */
 package org.keycloak.services.resources.admin;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 import javax.ws.rs.core.Response.Status;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
@@ -74,6 +70,7 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissionManageme
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.utils.ProfileHelper;
 import org.keycloak.utils.ReservedCharValidator;
+import org.keycloak.utils.StringUtil;
 import org.keycloak.validation.ValidationUtil;
 
 import javax.ws.rs.Consumes;
@@ -267,6 +264,8 @@ public class ClientResource {
         CredentialRepresentation rep = new CredentialRepresentation();
         rep.setType(CredentialRepresentation.SECRET);
         rep.setValue(secret);
+        rep.setCreatedDate(
+            (long) OIDCClientConfigWrapper.fromClientModel(client).getClientSecretCreationTime());
 
         adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).representation(rep).success();
 
@@ -311,9 +310,16 @@ public class ClientResource {
         auth.clients().requireView(client);
 
         logger.debug("getClientSecret");
-        UserCredentialModel model = UserCredentialModel.secret(client.getSecret());
-        if (model == null) throw new NotFoundException("Client does not have a secret");
-        return ModelToRepresentation.toRepresentation(model);
+
+        if (StringUtil.isBlank(client.getSecret() )) throw new NotFoundException("Client does not have a secret");
+
+        CredentialRepresentation rep = new CredentialRepresentation();
+        rep.setType(CredentialRepresentation.SECRET);
+        rep.setValue(client.getSecret());
+        rep.setCreatedDate(
+            (long) OIDCClientConfigWrapper.fromClientModel(client).getClientSecretCreationTime());
+
+        return rep;
     }
 
     /**
