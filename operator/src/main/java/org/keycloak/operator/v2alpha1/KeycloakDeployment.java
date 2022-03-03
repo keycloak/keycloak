@@ -22,9 +22,12 @@ import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.VolumeBuilder;
 import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
+import io.fabric8.kubernetes.api.model.PodTemplateSpec;
+import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.utils.Serialization;
 import io.quarkus.logging.Log;
 import org.keycloak.operator.Config;
 import org.keycloak.operator.Constants;
@@ -32,11 +35,13 @@ import org.keycloak.operator.OperatorManagedResource;
 import org.keycloak.operator.v2alpha1.crds.Keycloak;
 import org.keycloak.operator.v2alpha1.crds.KeycloakStatusBuilder;
 
-import java.net.URL;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.ArrayList;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public class KeycloakDeployment extends OperatorManagedResource {
@@ -66,7 +71,7 @@ public class KeycloakDeployment extends OperatorManagedResource {
     }
 
     @Override
-    protected Optional<HasMetadata> getReconciledResource() {
+    public Optional<HasMetadata> getReconciledResource() {
         Deployment baseDeployment = new DeploymentBuilder(this.baseDeployment).build(); // clone not to change the base template
         Deployment reconciledDeployment;
         if (existingDeployment == null) {
@@ -146,9 +151,211 @@ public class KeycloakDeployment extends OperatorManagedResource {
         baseDeployment.getSpec().getTemplate().getSpec().setInitContainers(Collections.singletonList(initContainer));
     }
 
+    public void validatePodTemplate(KeycloakStatusBuilder status) {
+        if (keycloakCR.getSpec() == null ||
+                keycloakCR.getSpec().getUnsupported() == null ||
+                keycloakCR.getSpec().getUnsupported().getPodTemplate() == null) {
+            return;
+        }
+        var overlayTemplate = this.keycloakCR.getSpec().getUnsupported().getPodTemplate();
+
+        if (overlayTemplate.getMetadata() != null &&
+            overlayTemplate.getMetadata().getName() != null) {
+            status.addWarningMessage("The name of the podTemplate cannot be modified");
+        }
+
+        if (overlayTemplate.getMetadata() != null &&
+            overlayTemplate.getMetadata().getNamespace() != null) {
+            status.addWarningMessage("The namespace of the podTemplate cannot be modified");
+        }
+
+        if (overlayTemplate.getSpec() != null &&
+            overlayTemplate.getSpec().getContainers() != null &&
+            overlayTemplate.getSpec().getContainers().get(0) != null &&
+            overlayTemplate.getSpec().getContainers().get(0).getName() != null) {
+            status.addWarningMessage("The name of the keycloak container cannot be modified");
+        }
+
+        if (overlayTemplate.getSpec() != null &&
+            overlayTemplate.getSpec().getContainers() != null &&
+            overlayTemplate.getSpec().getContainers().get(0) != null &&
+            overlayTemplate.getSpec().getContainers().get(0).getImage() != null) {
+            status.addWarningMessage("The image of the keycloak container cannot be modified using podTemplate");
+        }
+    }
+
+    private <T, V> void mergeMaps(Map<T, V> map1, Map<T, V> map2, Consumer<Map<T, V>> consumer) {
+        var map = new HashMap<T, V>();
+        Optional.ofNullable(map1).ifPresent(e -> map.putAll(e));
+        Optional.ofNullable(map2).ifPresent(e -> map.putAll(e));
+        consumer.accept(map);
+    }
+
+    private <T> void mergeLists(List<T> list1, List<T> list2, Consumer<List<T>> consumer) {
+        var list = new ArrayList<T>();
+        Optional.ofNullable(list1).ifPresent(e -> list.addAll(e));
+        Optional.ofNullable(list2).ifPresent(e -> list.addAll(e));
+        consumer.accept(list);
+    }
+
+    private <T> void mergeField(T value, Consumer<T> consumer) {
+        if (value != null && (!(value instanceof List) || ((List<?>) value).size() > 0)) {
+            consumer.accept(value);
+        }
+    }
+
+    private void mergePodTemplate(PodTemplateSpec baseTemplate) {
+        if (keycloakCR.getSpec() == null ||
+            keycloakCR.getSpec().getUnsupported() == null ||
+            keycloakCR.getSpec().getUnsupported().getPodTemplate() == null) {
+            return;
+        }
+
+        var overlayTemplate = keycloakCR.getSpec().getUnsupported().getPodTemplate();
+
+        mergeMaps(
+                Optional.ofNullable(baseTemplate.getMetadata()).map(m -> m.getLabels()).orElse(null),
+                Optional.ofNullable(overlayTemplate.getMetadata()).map(m -> m.getLabels()).orElse(null),
+                labels -> baseTemplate.getMetadata().setLabels(labels));
+
+        mergeMaps(
+                Optional.ofNullable(baseTemplate.getMetadata()).map(m -> m.getAnnotations()).orElse(null),
+                Optional.ofNullable(overlayTemplate.getMetadata()).map(m -> m.getAnnotations()).orElse(null),
+                annotations -> baseTemplate.getMetadata().setAnnotations(annotations));
+
+        var baseSpec = baseTemplate.getSpec();
+        var overlaySpec = overlayTemplate.getSpec();
+
+        var containers = new ArrayList<Container>();
+        var overlayContainers =
+                (overlaySpec == null || overlaySpec.getContainers() == null) ?
+                        new ArrayList<Container>() : overlaySpec.getContainers();
+        if (overlayContainers.size() >= 1) {
+            var keycloakBaseContainer = baseSpec.getContainers().get(0);
+            var keycloakOverlayContainer = overlayContainers.get(0);
+            mergeField(keycloakOverlayContainer.getCommand(), v -> keycloakBaseContainer.setCommand(v));
+            mergeField(keycloakOverlayContainer.getReadinessProbe(), v -> keycloakBaseContainer.setReadinessProbe(v));
+            mergeField(keycloakOverlayContainer.getLivenessProbe(), v -> keycloakBaseContainer.setLivenessProbe(v));
+            mergeField(keycloakOverlayContainer.getStartupProbe(), v -> keycloakBaseContainer.setStartupProbe(v));
+            mergeField(keycloakOverlayContainer.getArgs(), v -> keycloakBaseContainer.setArgs(v));
+            mergeField(keycloakOverlayContainer.getImagePullPolicy(), v -> keycloakBaseContainer.setImagePullPolicy(v));
+            mergeField(keycloakOverlayContainer.getLifecycle(), v -> keycloakBaseContainer.setLifecycle(v));
+            mergeField(keycloakOverlayContainer.getSecurityContext(), v -> keycloakBaseContainer.setSecurityContext(v));
+            mergeField(keycloakOverlayContainer.getWorkingDir(), v -> keycloakBaseContainer.setWorkingDir(v));
+
+            var resources = new ResourceRequirements();
+            mergeMaps(
+                    Optional.ofNullable(keycloakBaseContainer.getResources()).map(r -> r.getRequests()).orElse(null),
+                    Optional.ofNullable(keycloakOverlayContainer.getResources()).map(r -> r.getRequests()).orElse(null),
+                    requests -> resources.setRequests(requests));
+            mergeMaps(
+                    Optional.ofNullable(keycloakBaseContainer.getResources()).map(l -> l.getLimits()).orElse(null),
+                    Optional.ofNullable(keycloakOverlayContainer.getResources()).map(l -> l.getLimits()).orElse(null),
+                    limits -> resources.setLimits(limits));
+            keycloakBaseContainer.setResources(resources);
+
+            mergeLists(
+                    keycloakBaseContainer.getPorts(),
+                    keycloakOverlayContainer.getPorts(),
+                    p -> keycloakBaseContainer.setPorts(p));
+            mergeLists(
+                    keycloakBaseContainer.getEnvFrom(),
+                    keycloakOverlayContainer.getEnvFrom(),
+                    e -> keycloakBaseContainer.setEnvFrom(e));
+            mergeLists(
+                    keycloakBaseContainer.getEnv(),
+                    keycloakOverlayContainer.getEnv(),
+                    e -> keycloakBaseContainer.setEnv(e));
+            mergeLists(
+                    keycloakBaseContainer.getVolumeMounts(),
+                    keycloakOverlayContainer.getVolumeMounts(),
+                    vm -> keycloakBaseContainer.setVolumeMounts(vm));
+            mergeLists(
+                    keycloakBaseContainer.getVolumeDevices(),
+                    keycloakOverlayContainer.getVolumeDevices(),
+                    vd -> keycloakBaseContainer.setVolumeDevices(vd));
+
+            containers.add(keycloakBaseContainer);
+
+            // Skip keycloak container and add the rest
+            for (int i = 1; i < overlayContainers.size(); i++) {
+                containers.add(overlayContainers.get(i));
+            }
+
+            baseSpec.setContainers(containers);
+        }
+
+        if (overlaySpec != null) {
+            mergeField(overlaySpec.getActiveDeadlineSeconds(), ads -> baseSpec.setActiveDeadlineSeconds(ads));
+            mergeField(overlaySpec.getAffinity(), a -> baseSpec.setAffinity(a));
+            mergeField(overlaySpec.getAutomountServiceAccountToken(), a -> baseSpec.setAutomountServiceAccountToken(a));
+            mergeField(overlaySpec.getDnsConfig(), dc -> baseSpec.setDnsConfig(dc));
+            mergeField(overlaySpec.getDnsPolicy(), dp -> baseSpec.setDnsPolicy(dp));
+            mergeField(overlaySpec.getEnableServiceLinks(), esl -> baseSpec.setEnableServiceLinks(esl));
+            mergeField(overlaySpec.getHostIPC(), h -> baseSpec.setHostIPC(h));
+            mergeField(overlaySpec.getHostname(), h -> baseSpec.setHostname(h));
+            mergeField(overlaySpec.getHostNetwork(), h -> baseSpec.setHostNetwork(h));
+            mergeField(overlaySpec.getHostPID(), h -> baseSpec.setHostPID(h));
+            mergeField(overlaySpec.getNodeName(), n -> baseSpec.setNodeName(n));
+            mergeField(overlaySpec.getNodeSelector(), ns -> baseSpec.setNodeSelector(ns));
+            mergeField(overlaySpec.getPreemptionPolicy(), pp -> baseSpec.setPreemptionPolicy(pp));
+            mergeField(overlaySpec.getPriority(), p -> baseSpec.setPriority(p));
+            mergeField(overlaySpec.getPriorityClassName(), pcn -> baseSpec.setPriorityClassName(pcn));
+            mergeField(overlaySpec.getRestartPolicy(), rp -> baseSpec.setRestartPolicy(rp));
+            mergeField(overlaySpec.getRuntimeClassName(), rcn -> baseSpec.setRuntimeClassName(rcn));
+            mergeField(overlaySpec.getSchedulerName(), sn -> baseSpec.setSchedulerName(sn));
+            mergeField(overlaySpec.getSecurityContext(), sc -> baseSpec.setSecurityContext(sc));
+            mergeField(overlaySpec.getServiceAccount(), sa -> baseSpec.setServiceAccount(sa));
+            mergeField(overlaySpec.getServiceAccountName(), san -> baseSpec.setServiceAccountName(san));
+            mergeField(overlaySpec.getSetHostnameAsFQDN(), h -> baseSpec.setSetHostnameAsFQDN(h));
+            mergeField(overlaySpec.getShareProcessNamespace(), spn -> baseSpec.setShareProcessNamespace(spn));
+            mergeField(overlaySpec.getSubdomain(), s -> baseSpec.setSubdomain(s));
+            mergeField(overlaySpec.getTerminationGracePeriodSeconds(), t -> baseSpec.setTerminationGracePeriodSeconds(t));
+
+            mergeLists(
+                    baseSpec.getImagePullSecrets(),
+                    overlaySpec.getImagePullSecrets(),
+                    ips -> baseSpec.setImagePullSecrets(ips));
+            mergeLists(
+                    baseSpec.getHostAliases(),
+                    overlaySpec.getHostAliases(),
+                    ha -> baseSpec.setHostAliases(ha));
+            mergeLists(
+                    baseSpec.getEphemeralContainers(),
+                    overlaySpec.getEphemeralContainers(),
+                    ec -> baseSpec.setEphemeralContainers(ec));
+            mergeLists(
+                    baseSpec.getInitContainers(),
+                    overlaySpec.getInitContainers(),
+                    ic -> baseSpec.setInitContainers(ic));
+            mergeLists(
+                    baseSpec.getReadinessGates(),
+                    overlaySpec.getReadinessGates(),
+                    rg -> baseSpec.setReadinessGates(rg));
+            mergeLists(
+                    baseSpec.getTolerations(),
+                    overlaySpec.getTolerations(),
+                    t -> baseSpec.setTolerations(t));
+            mergeLists(
+                    baseSpec.getTopologySpreadConstraints(),
+                    overlaySpec.getTopologySpreadConstraints(),
+                    tpc -> baseSpec.setTopologySpreadConstraints(tpc));
+
+            mergeLists(
+                    baseSpec.getVolumes(),
+                    overlaySpec.getVolumes(),
+                    v -> baseSpec.setVolumes(v));
+
+            mergeMaps(
+                    baseSpec.getOverhead(),
+                    overlaySpec.getOverhead(),
+                    o -> baseSpec.setOverhead(o));
+        }
+    }
+
     private Deployment createBaseDeployment() {
-        URL url = this.getClass().getResource("/base-keycloak-deployment.yaml");
-        Deployment baseDeployment = client.apps().deployments().load(url).get();
+        var is = this.getClass().getResourceAsStream("/base-keycloak-deployment.yaml");
+        Deployment baseDeployment = Serialization.unmarshal(is, Deployment.class);
 
         baseDeployment.getMetadata().setName(getName());
         baseDeployment.getMetadata().setNamespace(getNamespace());
@@ -171,6 +378,7 @@ public class KeycloakDeployment extends OperatorManagedResource {
                 .collect(Collectors.toList()));
 
         addInitContainer(baseDeployment, keycloakCR.getSpec().getExtensions());
+        mergePodTemplate(baseDeployment.getSpec().getTemplate());
 
 //        Set<String> configSecretsNames = new HashSet<>();
 //        List<EnvVar> configEnvVars = serverConfig.entrySet().stream()
@@ -199,6 +407,7 @@ public class KeycloakDeployment extends OperatorManagedResource {
     }
 
     public void updateStatus(KeycloakStatusBuilder status) {
+        validatePodTemplate(status);
         if (existingDeployment == null) {
             status.addNotReadyMessage("No existing Deployment found, waiting for creating a new one");
             return;

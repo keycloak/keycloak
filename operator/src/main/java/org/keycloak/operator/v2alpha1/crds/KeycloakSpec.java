@@ -18,6 +18,8 @@ package org.keycloak.operator.v2alpha1.crds;
 
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 
+import org.keycloak.operator.v2alpha1.crds.keycloakspec.Unsupported;
+
 import java.util.List;
 import java.util.Map;
 
@@ -26,9 +28,12 @@ public class KeycloakSpec {
     private int instances = 1;
     private String image;
     private Map<String, String> serverConfiguration;
-
     @JsonPropertyDescription("List of URLs to download Keycloak extensions.")
     private List<String> extensions;
+    @JsonPropertyDescription(
+        "In this section you can configure podTemplate advanced features, not production-ready, and not supported settings.\n" +
+        "Use at your own risk and open an issue with your use-case if you don't find an alternative way.")
+    private Unsupported unsupported;
 
     public List<String> getExtensions() {
         return extensions;
@@ -36,6 +41,14 @@ public class KeycloakSpec {
 
     public void setExtensions(List<String> extensions) {
         this.extensions = extensions;
+    }
+
+    public Unsupported getUnsupported() {
+        return unsupported;
+    }
+
+    public void setUnsupported(Unsupported unsupported) {
+        this.unsupported = unsupported;
     }
 
     public int getInstances() {

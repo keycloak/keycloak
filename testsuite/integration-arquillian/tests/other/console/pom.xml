@@ -33,7 +33,7 @@
 
     <properties>
         <keycloak.theme.dir>${auth.server.home}/themes</keycloak.theme.dir>
-        <supportedBrowsers>firefox|chrome|internetExplorer|safari|chromeHeadless</supportedBrowsers>
+        <supportedBrowsers>firefox|chrome|internetExplorer|safari|chromeHeadless|edge</supportedBrowsers>
     </properties>
 
     <build>
