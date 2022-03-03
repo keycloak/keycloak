@@ -227,7 +227,7 @@ public class AuthorizationEndpointChecker {
             return;
         }
 
-        if (parsedResponseType.isImplicitOrHybridFlow() && request.getNonce() == null) {
+        if (parsedResponseType.hasResponseType(OIDCResponseType.ID_TOKEN) && request.getNonce() == null) {
             ServicesLogger.LOGGER.missingParameter(OIDCLoginProtocol.NONCE_PARAM);
             event.error(Errors.INVALID_REQUEST);
             throw new AuthorizationCheckException(Response.Status.BAD_REQUEST, OAuthErrorException.INVALID_REQUEST, "Missing parameter: nonce");
