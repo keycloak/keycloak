@@ -9,11 +9,12 @@ import static org.keycloak.models.ClientSecretConfig.CLIENT_SECRET_ROTATION_ENAB
 
 import java.security.MessageDigest;
 import java.util.HashMap;
+import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientSecretConfig;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.utils.ClockUtil;
 import org.keycloak.utils.StringUtil;
+
 /**
  * @author <a href="mailto:masales@redhat.com">Marcelo Sales</a>
  */
@@ -75,20 +76,20 @@ public class OIDCClientConfigWrapper {
     }
   }
 
-  public boolean isClientSecretRotationEnabled() {
-    return Boolean.parseBoolean(getAttribute(CLIENT_SECRET_ROTATION_ENABLED));
-  }
+//  public boolean isClientSecretRotationEnabled() {
+//    return Boolean.parseBoolean(getAttribute(CLIENT_SECRET_ROTATION_ENABLED));
+//  }
 
-  public void removeClientSecretRotated(){
-    if (hasRotatedSecret()){
-      setAttribute(CLIENT_ROTATED_SECRET,null);
-      setAttribute(CLIENT_ROTATED_SECRET_CREATION_TIME,null);
+  public void removeClientSecretRotated() {
+    if (hasRotatedSecret()) {
+      setAttribute(CLIENT_ROTATED_SECRET, null);
+      setAttribute(CLIENT_ROTATED_SECRET_CREATION_TIME, null);
     }
   }
 
   public int getClientSecretCreationTime() {
     String creationTime = getAttribute(CLIENT_SECRET_CREATION_TIME);
-    return creationTime == null ? 0 : Integer.parseInt(creationTime); //TODO Optional
+    return creationTime == null ? 0 : Integer.parseInt(creationTime);
   }
 
   public void setClientSecretCreationTime(int creationTime) {
@@ -120,11 +121,11 @@ public class OIDCClientConfigWrapper {
   Update the creation time of a secret with current date time value
    */
   public void setClientSecretCreationTime() {
-    setClientSecretCreationTime(ClockUtil.currentTimeInSeconds());
+    setClientSecretCreationTime(Time.currentTime());
   }
 
   public void setClientRotatedSecretCreationTime() {
-    setClientRotatedSecretCreationTime(ClockUtil.currentTimeInSeconds());
+    setClientRotatedSecretCreationTime(Time.currentTime());
   }
 
   public void updateClientRepresentationAttributes(ClientRepresentation rep) {
@@ -174,63 +175,68 @@ public class OIDCClientConfigWrapper {
     }
   }
 
-  public void setClientSecretExpirationTime(int expiration) {
+  public boolean hasClientSecretExpirationTime() {
+    return getClientSecretExpirationTime() > 0;
+  }
+
+  public int getClientSecretExpirationTime() {
+    String expiration = getAttribute(CLIENT_SECRET_EXPIRATION);
+    return expiration == null ? 0 : Integer.parseInt(expiration);
+  }
+
+  public void setClientSecretExpirationTime(Integer expiration) {
     setAttribute(ClientSecretConfig.CLIENT_SECRET_EXPIRATION, String.valueOf(expiration));
   }
 
-  public void setClientRotatedSecretExpirationTime(int expiration) {
+  public boolean isClientSecretExpired() {
+    if (hasClientSecretExpirationTime()) {
+      if (getClientSecretExpirationTime() < Time.currentTime()) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  public int getClientRotatedSecretExpirationTime() {
+    if (hasClientRotatedSecretExpirationTime()) {
+      return Integer.valueOf(
+          getAttribute(ClientSecretConfig.CLIENT_ROTATED_SECRET_EXPIRATION_TIME));
+    }
+    return 0;
+  }
+
+  public void setClientRotatedSecretExpirationTime(Integer expiration) {
     setAttribute(ClientSecretConfig.CLIENT_ROTATED_SECRET_EXPIRATION_TIME,
         String.valueOf(expiration));
   }
 
-  public boolean hasClientSecretExpired() {
-    return StringUtil.isNotBlank(getAttribute(ClientSecretConfig.CLIENT_SECRET_EXPIRED));
-  }
-
-  public boolean isClientSecretExpired() {
-    if (hasClientSecretExpired()) {
-      return Boolean.parseBoolean(getAttribute(ClientSecretConfig.CLIENT_SECRET_EXPIRED));
-    }
-    //FIXME identify a scenario where the policy is not executed before credential validation
-    throw new IllegalStateException(
-        "attribute " + ClientSecretConfig.CLIENT_SECRET_EXPIRED + " not found");
-  }
-
-  public boolean hasClientRotatedSecretExpired() {
-    return StringUtil.isNotBlank(getAttribute(ClientSecretConfig.CLIENT_ROTATED_SECRET_EXPIRED));
+  public boolean hasClientRotatedSecretExpirationTime() {
+    return StringUtil.isNotBlank(
+        getAttribute(ClientSecretConfig.CLIENT_ROTATED_SECRET_EXPIRATION_TIME));
   }
 
   public boolean isClientRotatedSecretExpired() {
-    if (hasClientRotatedSecretExpired()) {
-      return Boolean.parseBoolean(getAttribute(ClientSecretConfig.CLIENT_ROTATED_SECRET_EXPIRED));
+    if (hasClientRotatedSecretExpirationTime()) {
+      return getClientRotatedSecretExpirationTime() < Time.currentTime();
     }
-    //FIXME identify a scenario where the policy is not executed before credential validation
-    throw new IllegalStateException(
-        "attribute " + ClientSecretConfig.CLIENT_ROTATED_SECRET_EXPIRED + " not found");
+    return true;
   }
 
   // validates the secret regarding to expiration (not value itself)
   public boolean validateClientSecret() {
-    if (isClientSecretRotationEnabled()) {
       if (isClientSecretExpired()) {
         return false;
       }
-    }
-
     return true;
   }
 
   //validates the rotated secret (value and expiration)
   public boolean validateRotatedSecret(String secret) {
-    //rotation must be enabled for the client
-    if (isClientSecretRotationEnabled()) {
-      // there must exist a rotated_secret
-      if (hasRotatedSecret()) {
-        // the rotated secret must not be outdated
-        if (isClientRotatedSecretExpired()) {
-          return false;
-        }
-      } else {
+
+    // there must exist a rotated_secret
+    if (hasRotatedSecret()) {
+      // the rotated secret must not be outdated
+      if (isClientRotatedSecretExpired()) {
         return false;
       }
     } else {

@@ -1,21 +1,13 @@
 package org.keycloak.services.clientpolicy.executor;
 
-import static org.keycloak.models.ClientSecretConfig.CLIENT_ROTATED_SECRET_EXPIRED;
-import static org.keycloak.models.ClientSecretConfig.CLIENT_SECRET_ROTATION_ENABLED;
 import static org.keycloak.services.clientpolicy.executor.ClientSecretRotationExecutorFactory.DEFAULT_SECRET_EXPIRATION_PERIOD;
 import static org.keycloak.services.clientpolicy.executor.ClientSecretRotationExecutorFactory.DEFAULT_SECRET_REMAINING_ROTATION_PERIOD;
 import static org.keycloak.services.clientpolicy.executor.ClientSecretRotationExecutorFactory.DEFAULT_SECRET_ROTATED_EXPIRATION_PERIOD;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
-import java.time.ZoneId;
-import java.time.ZoneOffset;
-import java.time.temporal.ChronoUnit;
 import org.jboss.logging.Logger;
+import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientSecretConfig;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCClientConfigWrapper;
@@ -24,7 +16,7 @@ import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.AdminClientUpdateContext;
 import org.keycloak.services.clientpolicy.context.ClientSecretRotationContext;
-import org.keycloak.utils.ClockUtil;
+
 
 /**
  * @author <a href="mailto:masales@redhat.com">Marcelo Sales</a>
@@ -86,97 +78,73 @@ public class ClientSecretRotationExecutor implements
 
   private void executeOnAuthRequest() {
     ClientModel client = session.getContext().getClient();
-    OIDCClientConfigWrapper wrapper = OIDCClientConfigWrapper.fromClientModel(
-        client);
-    client.setAttribute(CLIENT_SECRET_ROTATION_ENABLED, String.valueOf(Boolean.TRUE));
+    OIDCClientConfigWrapper wrapper = OIDCClientConfigWrapper.fromClientModel(client);
 
-    LocalDateTime creationTime = LocalDateTime.ofInstant(
-        Instant.ofEpochSecond(wrapper.getClientSecretCreationTime()), ZoneId.systemDefault());
-    LocalDateTime expiration = creationTime.plus(configuration.getExpirationPeriod(),
-        ChronoUnit.SECONDS);
-    LocalDateTime now = LocalDateTime.now(ClockUtil.getClock());
-    if (expiration.isBefore(now)) {
-      client.setAttribute(ClientSecretConfig.CLIENT_SECRET_EXPIRED,
-          String.valueOf(Boolean.TRUE));
-    } else {
-      client.setAttribute(ClientSecretConfig.CLIENT_SECRET_EXPIRED,
-          String.valueOf(Boolean.FALSE));
+    if (!wrapper.hasClientSecretExpirationTime()) {
+      //first login with policy
+      updatedSecretExpiration(wrapper);
     }
 
-    if (wrapper.hasRotatedSecret()) {
-      LocalDateTime rotatedCreationTime = LocalDateTime.ofInstant(
-          Instant.ofEpochSecond(wrapper.getClientRotatedSecretCreationTime()),
-          ZoneId.systemDefault());
-      LocalDateTime rotatedExpiration = rotatedCreationTime.plus(
-          configuration.getRotatedExpirationPeriod(), ChronoUnit.SECONDS);
-      if (rotatedExpiration.isBefore(now)) {
-        client.setAttribute(CLIENT_ROTATED_SECRET_EXPIRED, String.valueOf(Boolean.TRUE));
-      } else {
-        client.setAttribute(CLIENT_ROTATED_SECRET_EXPIRED, String.valueOf(Boolean.FALSE));
-      }
-    }
   }
 
   private void executeOnClientUpdate(AdminClientUpdateContext adminContext) {
     OIDCClientConfigWrapper clientConfigWrapper = OIDCClientConfigWrapper.fromClientModel(
         adminContext.getTargetClient());
 
-    LocalDateTime creationTime = LocalDateTime.ofInstant(
-        Instant.ofEpochSecond(OIDCClientConfigWrapper.fromClientRepresentation(
-            adminContext.getProposedClientRepresentation()).getClientSecretCreationTime()),
-        ZoneId.systemDefault());
-    LocalDateTime expiration = creationTime.plus(configuration.getExpirationPeriod(),
-        ChronoUnit.SECONDS);
-
-    LocalDateTime now = LocalDateTime.now(ClockUtil.getClock());
-    if (adminContext instanceof ClientSecretRotationContext || expiration.isBefore(now)) {
-      rotateSecret(adminContext, expiration);
+    if (adminContext instanceof ClientSecretRotationContext
+        || clientConfigWrapper.isClientSecretExpired() || !clientConfigWrapper.hasClientSecretExpirationTime()) {
+      rotateSecret(adminContext, clientConfigWrapper);
     } else {
       //TODO validation for client dynamic registration
-      LocalDateTime remainPeriod = expiration.minusSeconds(
-          configuration.remainExpirationPeriod);
-      long secondsRemaining = ChronoUnit.SECONDS.between(now, expiration);
+
+      int secondsRemaining = clientConfigWrapper.getClientSecretExpirationTime()
+          - configuration.remainExpirationPeriod;
       if (secondsRemaining <= configuration.remainExpirationPeriod) {
-        rotateSecret(adminContext, expiration);
+//        rotateSecret(adminContext);
       }
     }
   }
 
-  private void rotateSecret(AdminClientUpdateContext adminContext, LocalDateTime expiration) {
-    ClientModel client = adminContext.getTargetClient();
-    OIDCClientConfigWrapper clientConfigWrapper = OIDCClientConfigWrapper.fromClientModel(client);
+  private void rotateSecret(AdminClientUpdateContext adminContext,
+      OIDCClientConfigWrapper clientConfigWrapper) {
 
     if (adminContext instanceof ClientSecretRotationContext) {
       ClientSecretRotationContext secretRotationContext = ((ClientSecretRotationContext) adminContext);
       if (secretRotationContext.isForceRotation()) {
         updateRotateSecret(clientConfigWrapper, secretRotationContext.getCurrentSecret());
+        updateClientConfigProperties(clientConfigWrapper);
       }
+    } else if (!clientConfigWrapper.hasClientSecretExpirationTime()) {
+      updatedSecretExpiration(clientConfigWrapper);
     } else {
-      updateRotateSecret(clientConfigWrapper, client.getSecret());
-      KeycloakModelUtils.generateSecret(client);
+      updatedSecretExpiration(clientConfigWrapper);
+      updateRotateSecret(clientConfigWrapper, clientConfigWrapper.getSecret());
+      KeycloakModelUtils.generateSecret(adminContext.getTargetClient());
+      updateClientConfigProperties(clientConfigWrapper);
     }
 
-    clientConfigWrapper.setClientSecretCreationTime(ClockUtil.currentTimeInSeconds());
-    ZoneOffset offset = OffsetDateTime.now(ClockUtil.getClock()).getOffset();
+    clientConfigWrapper.updateClientRepresentationAttributes(adminContext.getProposedClientRepresentation());
+  }
 
+  private void updatedSecretExpiration(OIDCClientConfigWrapper clientConfigWrapper) {
     clientConfigWrapper.setClientSecretExpirationTime(
-        Long.valueOf(expiration.toEpochSecond(offset)).intValue());
-    clientConfigWrapper.setClientRotatedSecretExpirationTime(Long.valueOf(
-            LocalDateTime.now(ClockUtil.getClock())
-                .plusSeconds(configuration.getRotatedExpirationPeriod()).toEpochSecond(offset))
-        .intValue());
+        Time.currentTime() + configuration.getExpirationPeriod());
+  }
 
-    clientConfigWrapper.updateClientRepresentationAttributes(
-        adminContext.getProposedClientRepresentation());
+  private void updateClientConfigProperties(OIDCClientConfigWrapper clientConfigWrapper) {
+    clientConfigWrapper.setClientSecretCreationTime(Time.currentTime());
+    updatedSecretExpiration(clientConfigWrapper);
   }
 
   private void updateRotateSecret(OIDCClientConfigWrapper clientConfigWrapper, String secret) {
     if (configuration.rotatedExpirationPeriod > 0) {
       clientConfigWrapper.setClientRotatedSecret(secret);
       clientConfigWrapper.setClientRotatedSecretCreationTime();
+      clientConfigWrapper.setClientRotatedSecretExpirationTime( Time.currentTime() + configuration.getRotatedExpirationPeriod());
     } else {
       clientConfigWrapper.setClientRotatedSecret(null);
       clientConfigWrapper.setClientRotatedSecretCreationTime(null);
+      clientConfigWrapper.setClientRotatedSecretExpirationTime(null);
     }
   }
 

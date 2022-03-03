@@ -11,8 +11,9 @@ public class ClientSecretConfig extends AbstractConfig{
   public static final String CLIENT_ROTATED_SECRET = "client.secret.rotated";
   public static final String CLIENT_ROTATED_SECRET_CREATION_TIME = "client.secret.rotated.creation.time";
   public static final String CLIENT_ROTATED_SECRET_EXPIRATION_TIME = "client.secret.rotated.expiration.time";
+  public static final String CLIENT_SECRET_REMAINING_EXPIRATION_TIME = "clinet.secret.remaining.expiration.time";
 
-  public static final String CLIENT_SECRET_EXPIRED = "client.secret.expired";
-  public static final String CLIENT_ROTATED_SECRET_EXPIRED = "client.secret.rotated.expired";
+//  public static final String CLIENT_SECRET_EXPIRED = "client.secret.expired";
+//  public static final String CLIENT_ROTATED_SECRET_EXPIRED = "client.secret.rotated.expired";
 
 }

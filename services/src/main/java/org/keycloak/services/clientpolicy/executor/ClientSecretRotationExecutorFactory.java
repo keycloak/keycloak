@@ -10,6 +10,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
+
 /**
  * @author <a href="mailto:masales@redhat.com">Marcelo Sales</a>
  */
@@ -24,8 +25,7 @@ public class ClientSecretRotationExecutorFactory implements ClientPolicyExecutor
 
   public static final String SECRET_REMAINING_ROTATION_PERIOD = "remaining-rotation-period";
   public static final Integer DEFAULT_SECRET_REMAINING_ROTATION_PERIOD = Long.valueOf(
-      TimeUnit.DAYS.toSeconds(
-          10)).intValue();
+      TimeUnit.DAYS.toSeconds(10)).intValue();
 
   public static final String SECRET_ROTATED_EXPIRATION_PERIOD = "rotated-expiration-period";
   public static final Integer DEFAULT_SECRET_ROTATED_EXPIRATION_PERIOD = Long.valueOf(

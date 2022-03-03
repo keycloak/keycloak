@@ -19,6 +19,7 @@ package org.keycloak.protocol.oidc;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.constants.KerberosConstants;
+import org.keycloak.common.util.Time;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientModel;
@@ -50,7 +51,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import org.keycloak.utils.ClockUtil;
 
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_ID;
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_USERNAME;
@@ -379,10 +379,8 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
             if (newClient.getSecret() == null) {
                 KeycloakModelUtils.generateSecret(newClient);
 
-                if (rep.getAttributes()==null)rep.setAttributes(new HashMap<>());
-
-                rep.getAttributes().put(
-                    ClientSecretConfig.CLIENT_SECRET_CREATION_TIME,String.valueOf(ClockUtil.currentTimeInSeconds()));
+                //if (rep.getAttributes()==null)rep.setAttributes(new HashMap<>());
+                //rep.getAttributes().put(ClientSecretConfig.CLIENT_SECRET_CREATION_TIME,String.valueOf(Time.currentTime()));
             }
         }
         if (rep.isBearerOnly() == null) newClient.setBearerOnly(false);

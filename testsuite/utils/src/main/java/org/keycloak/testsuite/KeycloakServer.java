@@ -26,7 +26,6 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.plugins.server.servlet.ResteasyContextParameters;
 import org.jboss.resteasy.plugins.server.undertow.UndertowJaxrsServer;
 import org.jboss.resteasy.spi.ResteasyDeployment;
-import org.keycloak.admin.client.Keycloak;
 import org.keycloak.common.Version;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
@@ -40,7 +39,6 @@ import org.keycloak.services.resources.KeycloakApplication;
 import org.keycloak.testsuite.util.cli.TestsuiteCLI;
 import org.keycloak.util.JsonSerialization;
 import io.undertow.servlet.api.InstanceHandle;
-import org.keycloak.utils.ClockUtil;
 import org.xnio.Options;
 import org.xnio.SslClientAuthMode;
 
@@ -255,10 +253,6 @@ public class KeycloakServer {
             new TestsuiteCLI(keycloak).start();
         }
 
-        if (System.getProperties().containsKey(ClockUtil.CLOCK_ADVANCE_HOURS)){
-            ClockUtil.plusHours(Integer.valueOf(System.getProperty(ClockUtil.CLOCK_ADVANCE_HOURS)));
-        }
-
         return keycloak;
     }
 
@@ -268,14 +262,14 @@ public class KeycloakServer {
         log.infof("Using %s %s", JBOSS_SERVER_DATA_DIR,  dataPath);
     }
 
-  /**
-   * Detects the {@code jboss.server.data.dir} to use.
-   * If the System property {@code jboss.server.data.dir} is already set then the property value is used,
-   * otherwise a temporary data dir is created that will be deleted on JVM exit.
-   *
-   * @return
-   */
-  public static String detectDataDirectory() {
+    /**
+     * Detects the {@code jboss.server.data.dir} to use.
+     * If the System property {@code jboss.server.data.dir} is already set then the property value is used,
+     * otherwise a temporary data dir is created that will be deleted on JVM exit.
+     *
+     * @return
+     */
+    public static String detectDataDirectory() {
 
         String dataPath = System.getProperty(JBOSS_SERVER_DATA_DIR);
 
@@ -291,18 +285,18 @@ public class KeycloakServer {
 
         // we generate a dynamic jboss.server.data.dir and remove it at the end.
         try {
-          File tempKeycloakFolder = Platform.getPlatform().getTmpDirectory();
-          File tmpDataDir = new File(tempKeycloakFolder, "/data");
+            File tempKeycloakFolder = Platform.getPlatform().getTmpDirectory();
+            File tmpDataDir = new File(tempKeycloakFolder, "/data");
 
-          if (tmpDataDir.mkdirs()) {
-            tmpDataDir.deleteOnExit();
-          } else {
-            throw new IOException("Could not create directory " + tmpDataDir);
-          }
+            if (tmpDataDir.mkdirs()) {
+                tmpDataDir.deleteOnExit();
+            } else {
+                throw new IOException("Could not create directory " + tmpDataDir);
+            }
 
-          dataPath = tmpDataDir.getAbsolutePath();
+            dataPath = tmpDataDir.getAbsolutePath();
         } catch (IOException ioe){
-          throw new RuntimeException("Could not create temporary " + JBOSS_SERVER_DATA_DIR, ioe);
+            throw new RuntimeException("Could not create temporary " + JBOSS_SERVER_DATA_DIR, ioe);
         }
 
         return dataPath;
@@ -389,14 +383,14 @@ public class KeycloakServer {
         deployment.setApplicationClass(KeycloakApplication.class.getName());
 
         Builder builder = Undertow.builder()
-                .addHttpListener(config.getPort(), config.getHost())
-                .setWorkerThreads(config.getWorkerThreads())
-                .setIoThreads(config.getWorkerThreads() / 8);
+            .addHttpListener(config.getPort(), config.getHost())
+            .setWorkerThreads(config.getWorkerThreads())
+            .setIoThreads(config.getWorkerThreads() / 8);
 
         if (config.getPortHttps() != -1) {
             builder = builder
-                    .addHttpsListener(config.getPortHttps(), config.getHost(), createSSLContext())
-                    .setSocketOption(Options.SSL_CLIENT_AUTH_MODE, SslClientAuthMode.REQUESTED);
+                .addHttpsListener(config.getPortHttps(), config.getHost(), createSSLContext())
+                .setSocketOption(Options.SSL_CLIENT_AUTH_MODE, SslClientAuthMode.REQUESTED);
         }
 
         server = new UndertowJaxrsServer();
@@ -442,9 +436,9 @@ public class KeycloakServer {
             }
 
             info("Started Keycloak (http://" + config.getHost() + ":" + config.getPort() + "/auth"
-                    + (config.getPortHttps() > 0 ? ", https://" + config.getHost() + ":" + config.getPortHttps()+ "/auth" : "")
-                    + ") in "
-                    + (System.currentTimeMillis() - start) + " ms\n");
+                + (config.getPortHttps() > 0 ? ", https://" + config.getHost() + ":" + config.getPortHttps()+ "/auth" : "")
+                + ") in "
+                + (System.currentTimeMillis() - start) + " ms\n");
         } catch (RuntimeException e) {
             server.stop();
             throw e;
