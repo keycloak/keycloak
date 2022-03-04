@@ -193,6 +193,10 @@ public class AuthorizationEndpointChecker {
         }
     }
 
+    public boolean isInvalidResponseType(AuthorizationEndpointChecker.AuthorizationCheckException ex) {
+        return "Missing parameter: response_type".equals(ex.getErrorDescription()) || OAuthErrorException.UNSUPPORTED_RESPONSE_TYPE.equals(ex.getError());
+    }
+
     public void checkInvalidRequestMessage() throws AuthorizationCheckException {
         if (request.getInvalidRequestMessage() != null) {
             event.error(Errors.INVALID_REQUEST);

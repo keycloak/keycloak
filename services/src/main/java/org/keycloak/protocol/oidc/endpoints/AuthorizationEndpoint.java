@@ -151,7 +151,12 @@ public class AuthorizationEndpoint extends AuthorizationEndpointBase {
             this.parsedResponseType = checker.getParsedResponseType();
             this.parsedResponseMode = checker.getParsedResponseMode();
         } catch (AuthorizationEndpointChecker.AuthorizationCheckException ex) {
-            OIDCResponseMode responseMode = checker.getParsedResponseMode() != null ? checker.getParsedResponseMode() : OIDCResponseMode.QUERY;
+            OIDCResponseMode responseMode = null;
+            if (checker.isInvalidResponseType(ex)) {
+                responseMode = OIDCResponseMode.parseWhenInvalidResponseType(request.getResponseMode());
+            } else {
+                responseMode = checker.getParsedResponseMode() != null ? checker.getParsedResponseMode() : OIDCResponseMode.QUERY;
+            }
             return redirectErrorToClient(responseMode, ex.getError(), ex.getErrorDescription());
         }
         if (action == null) {
