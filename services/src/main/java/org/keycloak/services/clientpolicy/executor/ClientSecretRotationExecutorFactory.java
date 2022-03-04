@@ -21,7 +21,7 @@ public class ClientSecretRotationExecutorFactory implements ClientPolicyExecutor
 
   public static final String SECRET_EXPIRATION_PERIOD = "expiration-period";
   public static final Integer DEFAULT_SECRET_EXPIRATION_PERIOD = Long.valueOf(
-      TimeUnit.DAYS.toSeconds(30)).intValue();
+      TimeUnit.DAYS.toSeconds(29)).intValue();
 
   public static final String SECRET_REMAINING_ROTATION_PERIOD = "remaining-rotation-period";
   public static final Integer DEFAULT_SECRET_REMAINING_ROTATION_PERIOD = Long.valueOf(

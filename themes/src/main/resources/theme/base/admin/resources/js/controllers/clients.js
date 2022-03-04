@@ -141,7 +141,6 @@ module.controller('ClientSecretCtrl', function($scope, $location, Client, Client
     var secret = ClientSecret.get({ realm : $scope.realm.realm, client : $scope.client.id },
         function() {
             $scope.secret = secret.value;
-            $scope.secret_created_time = new Date(secret.createdDate * 1000).toISOString();
         }
     );
 
@@ -172,8 +171,16 @@ module.controller('ClientSecretCtrl', function($scope, $location, Client, Client
 
     $scope.tokenEndpointAuthSigningAlg = $scope.client.attributes['token.endpoint.auth.signing.alg'];
 
+    if ($scope.client.attributes['client.secret.expiration.time']){
+        $scope.secret_expiration_time = $scope.client.attributes['client.secret.expiration.time'] * 1000;
+    }
+
     if ($scope.client.attributes["client.secret.rotated"]) {
         $scope.secretRotated = $scope.client.attributes["client.secret.rotated"];
+    }
+
+    if ($scope.client.attributes['client.secret.rotated.expiration.time']){
+        $scope.rotated_secret_expiration_time = $scope.client.attributes['client.secret.rotated.expiration.time'] * 1000;
     }
 
     $scope.switchChange = function() {
