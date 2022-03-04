@@ -90,7 +90,7 @@ public class CacheExpirationTest extends KeycloakModelTest {
 
                 log.debug("Waiting for caches to join the cluster");
                 do {
-                    try { Thread.sleep(1000); } catch (InterruptedException ex) { Thread.currentThread().interrupt(); throw new RuntimeException(ex); }
+                    sleep(1000);
                 } while (! cache.getAdvancedCache().getDistributionManager().isJoinComplete());
 
                 String site = CONFIG.scope("connectionsInfinispan", "default").get("siteName");
@@ -98,7 +98,7 @@ public class CacheExpirationTest extends KeycloakModelTest {
 
                 log.debug("Waiting for cache to receive the two elements within the cluster");
                 do {
-                    try { Thread.sleep(1000); } catch (InterruptedException ex) { Thread.currentThread().interrupt(); throw new RuntimeException(ex); }
+                    sleep(1000);
                 } while (cache.entrySet().stream()
                         .filter(me -> me.getValue() instanceof AuthenticationSessionAuthNoteUpdateEvent)
                         .count() != 2);
@@ -113,7 +113,7 @@ public class CacheExpirationTest extends KeycloakModelTest {
                 // original issue: https://issues.redhat.com/browse/KEYCLOAK-18518
                 log.debug("Waiting for garbage collection to collect the entries across all caches in JVM");
                 do {
-                    try { Thread.sleep(1000); } catch (InterruptedException ex) { Thread.currentThread().interrupt(); throw new RuntimeException(ex); }
+                    sleep(1000);
                 } while (getNumberOfInstancesOfClass(AuthenticationSessionAuthNoteUpdateEvent.class) > previousInstancesOfClass);
 
                 log.debug("Test completed");

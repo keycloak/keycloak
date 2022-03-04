@@ -638,4 +638,14 @@ public abstract class KeycloakModelTest {
     protected boolean isUseSameKeycloakSessionFactoryForAllThreads() {
         return false;
     }
+
+    protected void sleep(long timeMs) {
+        try {
+            Thread.sleep(timeMs);
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(ex);
+        }
+    }
+
 }
