@@ -38,4 +38,9 @@ public final class CRAssert {
                         (containedMessage == null || c.getMessage().contains(containedMessage)))
                     ).isTrue();
     }
+
+    public static void assertKeycloakRealmImportStatusCondition(KeycloakRealmImport kri, String condition, boolean status) {
+        assertThat(kri.getStatus().getConditions().stream()
+                .anyMatch(c -> c.getType().equals(condition) && c.getStatus() == status)).isTrue();
+    }
 }

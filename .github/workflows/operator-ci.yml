@@ -61,7 +61,7 @@ jobs:
       - name: Test operator running in cluster
         working-directory: operator
         run: |
-          eval $(minikube -p minikube docker-env) 
+          eval $(minikube -p minikube docker-env)
           mvn clean verify \
               -Dquarkus.container-image.build=true -Dquarkus.container-image.tag=test \
               -Dquarkus.kubernetes.deployment-target=kubernetes \

@@ -20,6 +20,7 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.UserModel;
@@ -38,6 +39,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.hamcrest.Matchers;
 import org.junit.Test;
+
+import javax.naming.NamingException;
 
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
@@ -213,7 +216,16 @@ public class UserModelTest extends KeycloakModelTest {
             log.debugf("Removing selected users from backend");
             IntStream.range(FIRST_DELETED_USER_INDEX, LAST_DELETED_USER_INDEX).forEach(j -> {
                 final UserModel user = session.users().getUserByUsername(realm, "user-" + j);
-                ((UserRegistrationProvider) instance).removeUser(realm, user);
+                try {
+                    ((UserRegistrationProvider) instance).removeUser(realm, user);
+                } catch (ModelException ex) {
+                    // removing user might have failed for an LDAP reason
+                    // as this is not the main subject under test, retry once more to delete the entry
+                    if (ex.getMessage().contains("Could not unbind DN") && ex.getCause() instanceof NamingException) {
+                        log.warn("removing failed, retrying", ex);
+                        ((UserRegistrationProvider) instance).removeUser(realm, user);
+                    }
+                }
             });
             return null;
         });

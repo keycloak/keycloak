@@ -85,4 +85,10 @@ public abstract class OperatorManagedResource {
 
         resource.getMetadata().setOwnerReferences(Collections.singletonList(owner));
     }
+
+    protected String getNamespace() {
+        return cr.getMetadata().getNamespace();
+    }
+
+    protected abstract String getName();
 }

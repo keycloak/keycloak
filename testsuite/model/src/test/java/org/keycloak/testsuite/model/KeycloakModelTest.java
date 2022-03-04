@@ -16,6 +16,9 @@
  */
 package org.keycloak.testsuite.model;
 
+import org.infinispan.commons.CacheConfigurationException;
+import org.infinispan.manager.EmbeddedCacheManagerStartupException;
+import org.junit.Assert;
 import org.keycloak.Config.Scope;
 import org.keycloak.authorization.AuthorizationSpi;
 import org.keycloak.authorization.DefaultAuthorizationProviderFactory;
@@ -49,18 +52,29 @@ import org.keycloak.services.DefaultComponentFactoryProviderFactory;
 import org.keycloak.services.DefaultKeycloakSessionFactory;
 import org.keycloak.timer.TimerSpi;
 import com.google.common.collect.ImmutableSet;
+
+import java.lang.management.LockInfo;
+import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadInfo;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
@@ -155,7 +169,7 @@ public abstract class KeycloakModelTest {
                     if (getFactory().getProviderFactory(providerClass) == null) {
                         return new Statement() {
                             @Override
-                            public void evaluate() throws Throwable {
+                            public void evaluate() {
                                 throw new AssumptionViolatedException("Provider must exist: " + providerClass);
                             }
                         };
@@ -165,7 +179,7 @@ public abstract class KeycloakModelTest {
                     if (notFoundAny) {
                         return new Statement() {
                             @Override
-                            public void evaluate() throws Throwable {
+                            public void evaluate() {
                                 throw new AssumptionViolatedException("Provider must exist: " + providerClass + " one of [" + String.join(",", only) + "]");
                             }
                         };
@@ -322,48 +336,139 @@ public abstract class KeycloakModelTest {
      * Runs the given {@code task} in {@code numThreads} parallel threads, each thread operating
      * in the context of a fresh {@link KeycloakSessionFactory} independent of each other thread.
      *
+     * Will throw an exception when the thread throws an exception or if the thread doesn't complete in time.
+     *
      * @see #inIndependentFactory
      *
-     * @param numThreads
-     * @param timeoutSeconds
-     * @param task
-     * @throws InterruptedException
      */
     public static void inIndependentFactories(int numThreads, int timeoutSeconds, Runnable task) throws InterruptedException {
-        ExecutorService es = Executors.newFixedThreadPool(numThreads);
+        enabledContentionMonitoring();
+        // memorize threads created to be able to retrieve their stacktrace later if they don't terminate
+        LinkedList<Thread> threads = new LinkedList<>();
+        ExecutorService es = Executors.newFixedThreadPool(numThreads, new ThreadFactory() {
+            final ThreadFactory tf = Executors.defaultThreadFactory();
+            @Override
+            public Thread newThread(Runnable r) {
+                {
+                    Thread thread = tf.newThread(r);
+                    threads.add(thread);
+                    return thread;
+                }
+            }
+        });
         try {
-            /*
-                workaround for Infinispan 12.1.7.Final to prevent an internal Infinispan NullPointerException
-                when multiple nodes tried to join at the same time by starting them sequentially with 1 sec delay.
-                Already fixed in Infinispan 13.
-                https://issues.redhat.com/browse/ISPN-13231
-            */
+        /*
+            workaround for Infinispan 12.1.7.Final to prevent an internal Infinispan NullPointerException
+            when multiple nodes tried to join at the same time by starting them sequentially,
+            although that does not catch 100% of all occurrences.
+            Already fixed in Infinispan 13.
+            https://issues.redhat.com/browse/ISPN-13231
+        */
             Semaphore sem = new Semaphore(1);
+            CountDownLatch start = new CountDownLatch(numThreads);
+            CountDownLatch stop = new CountDownLatch(numThreads);
             Callable<?> independentTask = () -> {
+                AtomicBoolean locked = new AtomicBoolean(false);
                 try {
                     sem.acquire();
-                    return inIndependentFactory(() -> {
-                        Thread.sleep(1000);
+                    locked.set(true);
+                    Object val = inIndependentFactory(() -> {
                         sem.release();
-                        task.run();
+                        locked.set(false);
+
+                        // use the latch to ensure that all caches are online while the transaction below runs to avoid a RemoteException
+                        start.countDown();
+                        start.await();
+
+                        try {
+                            task.run();
+
+                            // use the latch to ensure that all caches are online while the transaction above runs to avoid a RemoteException
+                            // otherwise might fail with "Cannot wire or start components while the registry is not running" during shutdown
+                            // https://issues.redhat.com/browse/ISPN-9761
+                        } finally {
+                            stop.countDown();
+                        }
+                        stop.await();
+
+                        sem.acquire();
+                        locked.set(true);
                         return null;
                     });
-                } catch (Exception ex) {
-                    LOG.error("Thread terminated with an exception", ex);
-                    return null;
+                    sem.release();
+                    locked.set(false);
+                    return val;
+                } finally {
+                    if (locked.get()) {
+                        sem.release();
+                    }
                 }
             };
-            es.invokeAll(
-              IntStream.range(0, numThreads)
-                .mapToObj(i -> independentTask)
-                .collect(Collectors.toList()),
-              timeoutSeconds, TimeUnit.SECONDS
-            );
+
+            // submit tasks, and wait for the results without cancelling execution so that we'll be able to analyze the thread dump
+            List<? extends Future<?>> tasks = IntStream.range(0, numThreads)
+                    .mapToObj(i -> independentTask)
+                    .map(es::submit).collect(Collectors.toList());
+            long limit = System.currentTimeMillis() + timeoutSeconds * 1000L;
+            for (Future<?> future : tasks) {
+                long limitForTask = limit - System.currentTimeMillis();
+                if (limitForTask > 0) {
+                    try {
+                        future.get(limitForTask, TimeUnit.MILLISECONDS);
+                    } catch (ExecutionException e) {
+                        if (e.getCause() instanceof AssertionError) {
+                            throw (AssertionError) e.getCause();
+                        } else {
+                            LOG.error("Execution didn't complete", e);
+                            Assert.fail("Execution didn't complete: " + e.getMessage());
+                        }
+                    } catch (TimeoutException e) {
+                        failWithThreadDump(threads, e);
+                    }
+                } else {
+                    failWithThreadDump(threads, null);
+                }
+            }
         } finally {
-            LOG.debugf("waiting for threads to shutdown to avoid that one test pollutes another test");
-            es.shutdown();
-            LOG.debugf("shutdown of threads complete");
+            es.shutdownNow();
         }
+        // wait for shutdown executor pool, but not if there has been an exception
+        if (!es.awaitTermination(10, TimeUnit.SECONDS)) {
+            failWithThreadDump(threads, null);
+        }
+    }
+
+    private static void enabledContentionMonitoring() {
+        if (!ManagementFactory.getThreadMXBean().isThreadContentionMonitoringEnabled()) {
+            ManagementFactory.getThreadMXBean().setThreadContentionMonitoringEnabled(true);
+        }
+    }
+
+    private static void failWithThreadDump(LinkedList<Thread> threads, Exception e) {
+        ThreadInfo[] infos = ManagementFactory.getThreadMXBean().dumpAllThreads(true, true);
+        List<String> liveStacks = Arrays.stream(infos).map(thread -> {
+            StringBuilder sb = new StringBuilder();
+            if (threads.stream().anyMatch(t -> t.getId() == thread.getThreadId())) {
+                sb.append("[OurThreadPool] ");
+            }
+            sb.append(thread.getThreadName()).append(" (").append(thread.getThreadState()).append("):");
+            LockInfo lockInfo = thread.getLockInfo();
+            if (lockInfo != null) {
+                sb.append(" locked on ").append(lockInfo);
+                if (thread.getWaitedTime() != -1) {
+                  sb.append(" waiting for ").append(thread.getWaitedTime()).append(" ms");
+                }
+                if (thread.getBlockedTime() != -1) {
+                    sb.append(" blocked for ").append(thread.getBlockedTime()).append(" ms");
+                }
+            }
+            sb.append("\n");
+            for (StackTraceElement traceElement : thread.getStackTrace()) {
+                sb.append("\tat ").append(traceElement).append("\n");
+            }
+            return sb.toString();
+        }).collect(Collectors.toList());
+        throw new AssertionError("threads didn't terminate in time: " + liveStacks, e);
     }
 
     /**
@@ -376,10 +481,46 @@ public abstract class KeycloakModelTest {
             throw new IllegalStateException("USE_DEFAULT_FACTORY must be false to use an independent factory");
         }
         KeycloakSessionFactory original = getFactory();
-        KeycloakSessionFactory factory = createKeycloakSessionFactory();
+        int retries = 10;
+        KeycloakSessionFactory factory = null;
+        do {
+            try {
+                factory = createKeycloakSessionFactory();
+            } catch (CacheConfigurationException | EmbeddedCacheManagerStartupException ex) {
+                if (retries > 0) {
+                    /*
+                        workaround for Infinispan 12.1.7.Final for a NullPointerException
+                        when multiple nodes tried to join at the same time. Retry until this succeeds.
+                        Already fixed in Infinispan 13.
+                        https://issues.redhat.com/browse/ISPN-13231
+                    */
+                    LOG.warn("initialization failed, retrying", ex);
+                    --retries;
+                } else {
+                    throw ex;
+                }
+            }
+        } while (factory == null);
         try {
             setFactory(factory);
-            return task.call();
+            do {
+                try {
+                    return task.call();
+                } catch (CacheConfigurationException | EmbeddedCacheManagerStartupException ex) {
+                    if (retries > 0) {
+                    /*
+                        workaround for Infinispan 12.1.7.Final for a NullPointerException
+                        when multiple nodes tried to join at the same time. Retry until this succeeds.
+                        Already fixed in Infinispan 13.
+                        https://issues.redhat.com/browse/ISPN-13231
+                    */
+                        LOG.warn("initialization failed, retrying", ex);
+                        -- retries;
+                    } else {
+                        throw ex;
+                    }
+                }
+            } while (true);
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         } finally {
