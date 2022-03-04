@@ -1,6 +1,14 @@
 <infinispan>
     <cache-container>
         <transport stack="udp"/>
+        <distributed-cache name="auth-sessions" mode="SYNC">
+            <indexing>
+                <indexed-entities>
+                    <indexed-entity>kc.HotRodRootAuthenticationSessionEntity</indexed-entity>
+                </indexed-entities>
+            </indexing>
+            <encoding media-type="application/x-protostream"/>
+        </distributed-cache>
         <distributed-cache name="clients" mode="SYNC">
             <indexing>
                 <indexed-entities>
