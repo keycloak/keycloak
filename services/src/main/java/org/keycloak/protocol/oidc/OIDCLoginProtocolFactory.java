@@ -19,12 +19,10 @@ package org.keycloak.protocol.oidc;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.constants.KerberosConstants;
-import org.keycloak.common.util.Time;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
-import org.keycloak.models.ClientSecretConfig;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
@@ -378,7 +376,6 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
             // if client is confidential, generate a secret if none is defined
             if (newClient.getSecret() == null) {
                 KeycloakModelUtils.generateSecret(newClient);
-
             }
         }
         if (rep.isBearerOnly() == null) newClient.setBearerOnly(false);
