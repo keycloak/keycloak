@@ -92,9 +92,12 @@ public class ClientSecretTest extends AbstractRestServiceTest {
 
   private static final Logger logger = Logger.getLogger(ClientSecretTest.class);
   private static final ObjectMapper objectMapper = new ObjectMapper();
-  private static final int DEFAULT_EXPIRATION_PERIOD = Long.valueOf(TimeUnit.HOURS.toSeconds(1)).intValue();
-  private static final int DEFAULT_ROTATED_EXPIRATION_PERIOD = Long.valueOf(TimeUnit.MINUTES.toSeconds(10)).intValue();
-  private static final int DEFAULT_REMAIN_EXPIRATION_PERIOD = Long.valueOf(TimeUnit.MINUTES.toSeconds(30)).intValue();
+  private static final int DEFAULT_EXPIRATION_PERIOD = Long.valueOf(TimeUnit.HOURS.toSeconds(1))
+      .intValue();
+  private static final int DEFAULT_ROTATED_EXPIRATION_PERIOD = Long.valueOf(
+      TimeUnit.MINUTES.toSeconds(10)).intValue();
+  private static final int DEFAULT_REMAIN_EXPIRATION_PERIOD = Long.valueOf(
+      TimeUnit.MINUTES.toSeconds(30)).intValue();
 
   @Rule
   public AssertEvents events = new AssertEvents(this);
@@ -118,17 +121,11 @@ public class ClientSecretTest extends AbstractRestServiceTest {
     List<UserRepresentation> users = realm.getUsers();
 
     UserRepresentation user = UserBuilder.create().enabled(Boolean.TRUE).username(ADMIN_USER_NAME)
-        .password(USER_PASSWORD)
-        .addRoles(new String[]{AdminRoles.MANAGE_CLIENTS})
-        .build();
+        .password(USER_PASSWORD).addRoles(new String[]{AdminRoles.MANAGE_CLIENTS}).build();
     users.add(user);
 
-    UserRepresentation commonUser = UserBuilder.create()
-        .id(COMMON_USER_ID)
-        .enabled(Boolean.TRUE)
-        .username(COMMON_USER_NAME)
-        .email(COMMON_USER_NAME + "@localhost")
-        .password(USER_PASSWORD)
+    UserRepresentation commonUser = UserBuilder.create().id(COMMON_USER_ID).enabled(Boolean.TRUE)
+        .username(COMMON_USER_NAME).email(COMMON_USER_NAME + "@localhost").password(USER_PASSWORD)
         .build();
     users.add(commonUser);
 
@@ -136,6 +133,12 @@ public class ClientSecretTest extends AbstractRestServiceTest {
     testRealms.add(realm);
   }
 
+  /**
+   * When create a client even without policy secret rotation enabled the client must have a secret
+   * creation time
+   *
+   * @throws Exception
+   */
   @Test
   public void whenCreateClientSecretCreationTimeMustExist() throws Exception {
 
@@ -196,6 +199,29 @@ public class ClientSecretTest extends AbstractRestServiceTest {
   }
 
   /**
+   * When regenerate the secret for a client with policy enabled and the secret is not yet expired,
+   * the secret must be rotated
+   *
+   * @throws Exception
+   */
+  @Test
+  public void regenerateSecretOnCurrentSecretNotExpired() throws Exception {
+    //apply policy
+    configureDefaultProfileAndPolicy();
+
+    String cidConfidential = createClientByAdmin(DEFAULT_CLIENT_ID);
+    ClientResource clientResource = adminClient.realm(REALM_NAME).clients().get(cidConfidential);
+    String firstSecret = clientResource.getSecret().getValue();
+    String secondSecret = clientResource.generateNewSecret().getValue();
+    OIDCClientConfigWrapper wrapper = OIDCClientConfigWrapper.fromClientRepresentation(
+        clientResource.toRepresentation());
+
+    assertThat(secondSecret, not(equalTo(firstSecret)));
+    assertThat(wrapper.hasRotatedSecret(), is(Boolean.TRUE));
+    assertThat(wrapper.getClientRotatedSecret(), equalTo(firstSecret));
+  }
+
+  /**
    * When regenerate secret for a client and the expiration date is reached the policy must force a
    * secret rotation
    *
@@ -248,13 +274,14 @@ public class ClientSecretTest extends AbstractRestServiceTest {
     clientRepresentation.setDescription("New Description Updated");
     clientResource.update(clientRepresentation);
 
-    OIDCClientConfigWrapper wrapper = OIDCClientConfigWrapper.fromClientRepresentation(clientResource.toRepresentation());
+    OIDCClientConfigWrapper wrapper = OIDCClientConfigWrapper.fromClientRepresentation(
+        clientResource.toRepresentation());
     int secretCreationTime = wrapper.getClientSecretCreationTime();
 
-    logger.debug("Current time "+Time.toDate(Time.currentTime()));
+    logger.debug("Current time " + Time.toDate(Time.currentTime()));
     //advance 1 hour
     setTimeOffset(3601);
-    logger.debug("Time after offset "+Time.toDate(Time.currentTime()));
+    logger.debug("Time after offset " + Time.toDate(Time.currentTime()));
 
     clientRepresentation = clientResource.toRepresentation();
     clientRepresentation.setDescription("Force second Updated");
@@ -397,27 +424,36 @@ public class ClientSecretTest extends AbstractRestServiceTest {
     clientRepresentation.setDescription("New Description Updated");
     clientResource.update(clientRepresentation);
 
-    logger.debug(">>> secret creation time "+Time.toDate(Time.currentTime()));
+    logger.debug(">>> secret creation time " + Time.toDate(Time.currentTime()));
 
     setTimeOffset(3601);
     clientResource.update(clientResource.toRepresentation());
 
-    logger.debug(">>> secret expiration time after first update "+Time.toDate(OIDCClientConfigWrapper.fromClientRepresentation(clientResource.toRepresentation()).getClientSecretExpirationTime())+" | Time: "+Time.toDate(Time.currentTime()));
+    logger.debug(">>> secret expiration time after first update " + Time.toDate(
+        OIDCClientConfigWrapper.fromClientRepresentation(clientResource.toRepresentation())
+            .getClientSecretExpirationTime()) + " | Time: " + Time.toDate(Time.currentTime()));
 
     // force rotation
     String updatedSecret = clientResource.getSecret().getValue();
     assertThat(updatedSecret, not(equalTo(firstSecret)));
     clientRepresentation = clientResource.toRepresentation();
-    OIDCClientConfigWrapper wrapper = OIDCClientConfigWrapper.fromClientRepresentation(clientRepresentation);
+    OIDCClientConfigWrapper wrapper = OIDCClientConfigWrapper.fromClientRepresentation(
+        clientRepresentation);
 
-    logger.debug(">>> secret expiration configured "+ Time.toDate(wrapper.getClientSecretExpirationTime())+" | Time: "+Time.toDate(Time.currentTime()));
+    logger.debug(
+        ">>> secret expiration configured " + Time.toDate(wrapper.getClientSecretExpirationTime())
+            + " | Time: " + Time.toDate(Time.currentTime()));
 
     oauth.clientId(clientId);
 
     setTimeOffset(7201);
 
-    logger.debug("client secret:"+updatedSecret+"\nsecret expiration: "+Time.toDate(wrapper.getClientSecretExpirationTime())+"\nrotated secret: "+wrapper.getClientRotatedSecret()+"\nrotated expiration: "+Time.toDate(wrapper.getClientRotatedSecretExpirationTime())+" | Time: "+Time.toDate(Time.currentTime()));
-    logger.debug(">>> trying login at time "+Time.toDate(Time.currentTime()));
+    logger.debug("client secret:" + updatedSecret + "\nsecret expiration: " + Time.toDate(
+        wrapper.getClientSecretExpirationTime()) + "\nrotated secret: "
+        + wrapper.getClientRotatedSecret() + "\nrotated expiration: " + Time.toDate(
+        wrapper.getClientRotatedSecretExpirationTime()) + " | Time: " + Time.toDate(
+        Time.currentTime()));
+    logger.debug(">>> trying login at time " + Time.toDate(Time.currentTime()));
 
     // try to login with rotated secret (must fail)
     oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
@@ -429,13 +465,15 @@ public class ClientSecretTest extends AbstractRestServiceTest {
   }
 
   /**
-   * When a client goes through a secret rotation and the configuration for rotated secret is zero then the rotated secret is automatically invalidated, therefore the rotated secret is not valid for a successful login
+   * When a client goes through a secret rotation and the configuration for rotated secret is zero
+   * then the rotated secret is automatically invalidated, therefore the rotated secret is not valid
+   * for a successful login
    *
    * @throws Exception
    */
   @Test
   public void authenticateWithRotatedSecretWithZeroExpirationTime() throws Exception {
-    configureCustomProfileAndPolicy(DEFAULT_EXPIRATION_PERIOD,0,0);
+    configureCustomProfileAndPolicy(DEFAULT_EXPIRATION_PERIOD, 0, 0);
     String clientId = generateSuffixedName(CLIENT_NAME);
     String cidConfidential = createClientByAdmin(clientId);
     ClientResource clientResource = adminClient.realm(REALM_NAME).clients().get(cidConfidential);
@@ -454,8 +492,9 @@ public class ClientSecretTest extends AbstractRestServiceTest {
     //confirms rotation
     assertThat(updatedSecret, not(equalTo(firstSecret)));
 
-    OIDCClientConfigWrapper wrapper = OIDCClientConfigWrapper.fromClientRepresentation(clientResource.toRepresentation());
-    assertThat(wrapper.hasRotatedSecret(),is(Boolean.FALSE));
+    OIDCClientConfigWrapper wrapper = OIDCClientConfigWrapper.fromClientRepresentation(
+        clientResource.toRepresentation());
+    assertThat(wrapper.hasRotatedSecret(), is(Boolean.FALSE));
 
     // try to login with rotated secret (must fail)
     oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
@@ -466,14 +505,35 @@ public class ClientSecretTest extends AbstractRestServiceTest {
 
   }
 
+  /**
+   * When create a confidential client with policy enabled the client must have secret expiration
+   * time configured
+   *
+   * @throws Exception
+   */
+  @Test
+  public void createClientWithPolicyEnableSecretExpiredTime() throws Exception {
+
+    configureDefaultProfileAndPolicy();
+
+    String cidConfidential = createClientByAdmin(DEFAULT_CLIENT_ID);
+    ClientResource clientResource = adminClient.realm(REALM_NAME).clients().get(cidConfidential);
+    ClientRepresentation clientRepresentation = clientResource.toRepresentation();
+
+    OIDCClientConfigWrapper wrapper = OIDCClientConfigWrapper.fromClientRepresentation(
+        clientResource.toRepresentation());
+    int clientSecretExpirationTime = wrapper.getClientSecretExpirationTime();
+    assertThat(clientSecretExpirationTime, is(not(0)));
+
+  }
 
   /** -------------------- support methods -------------------- **/
 
-  private void configureCustomProfileAndPolicy(int secretExpiration,int rotatedExpiration,int remainingExpiration) throws Exception{
+  private void configureCustomProfileAndPolicy(int secretExpiration, int rotatedExpiration,
+      int remainingExpiration) throws Exception {
     ClientProfileBuilder profileBuilder = new ClientProfileBuilder();
     ClientSecretRotationExecutor.Configuration profileConfig = getClientProfileConfiguration(
-        secretExpiration, rotatedExpiration,
-        remainingExpiration);
+        secretExpiration, rotatedExpiration, remainingExpiration);
 
     doConfigProfileAndPolicy(profileBuilder, profileConfig);
   }
@@ -517,22 +577,7 @@ public class ClientSecretTest extends AbstractRestServiceTest {
   }
 
   protected String createClientByAdmin(String clientId) throws ClientPolicyException {
-    ClientRepresentation clientRep = new ClientRepresentation();
-    clientRep.setClientId(clientId);
-    clientRep.setName(CLIENT_NAME);
-    clientRep.setSecret(DEFAULT_SECRET);
-    clientRep.setAttributes(new HashMap<>());
-    clientRep.getAttributes().put(ClientSecretConfig.CLIENT_SECRET_CREATION_TIME, String.valueOf(Time.currentTime()));
-    clientRep.setProtocol(OIDC);
-    clientRep.setBearerOnly(Boolean.FALSE);
-    clientRep.setPublicClient(Boolean.FALSE);
-    clientRep.setServiceAccountsEnabled(Boolean.TRUE);
-    clientRep.setStandardFlowEnabled(Boolean.TRUE);
-    clientRep.setImplicitFlowEnabled(Boolean.TRUE);
-    clientRep.setClientAuthenticatorType(ClientIdAndSecretAuthenticator.PROVIDER_ID);
-
-    clientRep.setRedirectUris(Collections.singletonList(
-        ServerURLs.getAuthServerContextRoot() + "/auth/realms/master/app/auth"));
+    ClientRepresentation clientRep = getClientRepresentation(clientId);
 
     Response resp = adminClient.realm(REALM_NAME).clients().create(clientRep);
     if (resp.getStatus() == Response.Status.BAD_REQUEST.getStatusCode()) {
@@ -552,6 +597,28 @@ public class ClientSecretTest extends AbstractRestServiceTest {
     String cId = ApiUtil.getCreatedId(resp);
     testContext.getOrCreateCleanup(REALM_NAME).addClientUuid(cId);
     return cId;
+  }
+
+  @NotNull
+  private ClientRepresentation getClientRepresentation(String clientId) {
+    ClientRepresentation clientRep = new ClientRepresentation();
+    clientRep.setClientId(clientId);
+    clientRep.setName(CLIENT_NAME);
+    clientRep.setSecret(DEFAULT_SECRET);
+    clientRep.setAttributes(new HashMap<>());
+    clientRep.getAttributes()
+        .put(ClientSecretConfig.CLIENT_SECRET_CREATION_TIME, String.valueOf(Time.currentTime()));
+    clientRep.setProtocol(OIDC);
+    clientRep.setBearerOnly(Boolean.FALSE);
+    clientRep.setPublicClient(Boolean.FALSE);
+    clientRep.setServiceAccountsEnabled(Boolean.TRUE);
+    clientRep.setStandardFlowEnabled(Boolean.TRUE);
+    clientRep.setImplicitFlowEnabled(Boolean.TRUE);
+    clientRep.setClientAuthenticatorType(ClientIdAndSecretAuthenticator.PROVIDER_ID);
+
+    clientRep.setRedirectUris(Collections.singletonList(
+        ServerURLs.getAuthServerContextRoot() + "/auth/realms/master/app/auth"));
+    return clientRep;
   }
 
   protected String generateSuffixedName(String name) {

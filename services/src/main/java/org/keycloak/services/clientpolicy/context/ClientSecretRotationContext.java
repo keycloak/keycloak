@@ -2,6 +2,7 @@ package org.keycloak.services.clientpolicy.context;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 import org.keycloak.services.resources.admin.AdminAuth;
 import org.keycloak.utils.StringUtil;
 
@@ -25,6 +26,11 @@ public class ClientSecretRotationContext extends AdminClientUpdateContext {
       ClientModel targetClient) {
     super(proposedClientRepresentation, targetClient, null);
     this.currentSecret= null;
+  }
+
+  @Override
+  public ClientPolicyEvent getEvent() {
+    return ClientPolicyEvent.UPDATED;
   }
 
   public String getCurrentSecret() {

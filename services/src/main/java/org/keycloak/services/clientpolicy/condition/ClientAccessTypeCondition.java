@@ -74,7 +74,9 @@ public class ClientAccessTypeCondition extends AbstractClientPolicyConditionProv
             case TOKEN_INTROSPECT:
             case USERINFO_REQUEST:
             case LOGOUT_REQUEST:
-            case UPDATE:
+//            case UPDATE:
+            case UPDATED:
+            case REGISTERED:
                 if (isClientAccessTypeMatched()) return ClientPolicyVote.YES;
                 return ClientPolicyVote.NO;
             default:

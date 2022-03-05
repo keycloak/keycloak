@@ -33,6 +33,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ParConfig;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
+import org.keycloak.protocol.oidc.OIDCClientConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.PairwiseSubMapperHelper;
 import org.keycloak.protocol.oidc.utils.AcrUtils;
@@ -317,7 +318,7 @@ public class DescriptionConverter {
 
         if (client.getClientAuthenticatorType().equals(ClientIdAndSecretAuthenticator.PROVIDER_ID)) {
             response.setClientSecret(client.getSecret());
-            response.setClientSecretExpiresAt(0);
+            response.setClientSecretExpiresAt(OIDCClientConfigWrapper.fromClientRepresentation(client).getClientSecretExpirationTime());
         }
 
         response.setClientName(client.getName());

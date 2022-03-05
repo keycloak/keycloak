@@ -5,6 +5,7 @@ import static org.keycloak.services.clientpolicy.executor.ClientSecretRotationEx
 import static org.keycloak.services.clientpolicy.executor.ClientSecretRotationExecutorFactory.DEFAULT_SECRET_ROTATED_EXPIRATION_PERIOD;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.Objects;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
@@ -14,7 +15,7 @@ import org.keycloak.protocol.oidc.OIDCClientConfigWrapper;
 import org.keycloak.representations.idm.ClientPolicyExecutorConfigurationRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
-import org.keycloak.services.clientpolicy.context.AdminClientUpdateContext;
+import org.keycloak.services.clientpolicy.context.ClientCRUDContext;
 import org.keycloak.services.clientpolicy.context.ClientSecretRotationContext;
 
 
@@ -48,8 +49,9 @@ public class ClientSecretRotationExecutor implements
         .isBearerOnly()) {
 
       switch (context.getEvent()) {
-        case UPDATE:
-          executeOnClientUpdate((AdminClientUpdateContext) context);
+        case REGISTERED:
+        case UPDATED:
+          executeOnClientCreateOrUpdate((ClientCRUDContext) context);
           break;
 
         case AUTHORIZATION_REQUEST:
@@ -85,12 +87,13 @@ public class ClientSecretRotationExecutor implements
 
   }
 
-  private void executeOnClientUpdate(AdminClientUpdateContext adminContext) {
+  private void executeOnClientCreateOrUpdate(ClientCRUDContext adminContext) {
     OIDCClientConfigWrapper clientConfigWrapper = OIDCClientConfigWrapper.fromClientModel(
         adminContext.getTargetClient());
 
     if (adminContext instanceof ClientSecretRotationContext
-        || clientConfigWrapper.isClientSecretExpired() || !clientConfigWrapper.hasClientSecretExpirationTime()) {
+        || clientConfigWrapper.isClientSecretExpired()
+        || !clientConfigWrapper.hasClientSecretExpirationTime()) {
       rotateSecret(adminContext, clientConfigWrapper);
     } else {
       //TODO validation for client dynamic registration
@@ -103,11 +106,11 @@ public class ClientSecretRotationExecutor implements
     }
   }
 
-  private void rotateSecret(AdminClientUpdateContext adminContext,
+  private void rotateSecret(ClientCRUDContext crudContext,
       OIDCClientConfigWrapper clientConfigWrapper) {
 
-    if (adminContext instanceof ClientSecretRotationContext) {
-      ClientSecretRotationContext secretRotationContext = ((ClientSecretRotationContext) adminContext);
+    if (crudContext instanceof ClientSecretRotationContext) {
+      ClientSecretRotationContext secretRotationContext = ((ClientSecretRotationContext) crudContext);
       if (secretRotationContext.isForceRotation()) {
         updateRotateSecret(clientConfigWrapper, secretRotationContext.getCurrentSecret());
         updateClientConfigProperties(clientConfigWrapper);
@@ -117,11 +120,14 @@ public class ClientSecretRotationExecutor implements
     } else {
       updatedSecretExpiration(clientConfigWrapper);
       updateRotateSecret(clientConfigWrapper, clientConfigWrapper.getSecret());
-      KeycloakModelUtils.generateSecret(adminContext.getTargetClient());
+      KeycloakModelUtils.generateSecret(crudContext.getTargetClient());
       updateClientConfigProperties(clientConfigWrapper);
     }
 
-    clientConfigWrapper.updateClientRepresentationAttributes(adminContext.getProposedClientRepresentation());
+    if (Objects.nonNull(crudContext.getProposedClientRepresentation())) {
+      clientConfigWrapper.updateClientRepresentationAttributes(
+          crudContext.getProposedClientRepresentation());
+    }
   }
 
   private void updatedSecretExpiration(OIDCClientConfigWrapper clientConfigWrapper) {
@@ -138,7 +144,8 @@ public class ClientSecretRotationExecutor implements
     if (configuration.rotatedExpirationPeriod > 0) {
       clientConfigWrapper.setClientRotatedSecret(secret);
       clientConfigWrapper.setClientRotatedSecretCreationTime();
-      clientConfigWrapper.setClientRotatedSecretExpirationTime( Time.currentTime() + configuration.getRotatedExpirationPeriod());
+      clientConfigWrapper.setClientRotatedSecretExpirationTime(
+          Time.currentTime() + configuration.getRotatedExpirationPeriod());
     } else {
       clientConfigWrapper.setClientRotatedSecret(null);
       clientConfigWrapper.setClientRotatedSecretCreationTime(null);
