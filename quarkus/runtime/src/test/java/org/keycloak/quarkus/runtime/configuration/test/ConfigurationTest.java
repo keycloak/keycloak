@@ -172,7 +172,7 @@ public class ConfigurationTest {
         System.setProperty(CLI_ARGS, "--spi-hostname-default-frontend-url=http://fromargs.unittest" + ARG_SEPARATOR + "--no-ssl");
         assertEquals("http://fromargs.unittest", initConfig("hostname", "default").get("frontendUrl"));
     }
-    
+
     @Test
     public void testSpiConfigurationUsingCommandLineArguments() {
         System.setProperty(CLI_ARGS, "--spi-hostname-default-frontend-url=http://spifull.unittest");
@@ -316,10 +316,17 @@ public class ConfigurationTest {
         assertEquals(QuarkusPostgreSQL10Dialect.class.getName(), config.getConfigValue("quarkus.hibernate-orm.dialect").getValue());
         assertEquals(PGXADataSource.class.getName(), config.getConfigValue("quarkus.datasource.jdbc.driver").getValue());
 
-        System.setProperty(CLI_ARGS, "--db-schema=test-schema");
+        System.setProperty(CLI_ARGS, "--db-schema=test-schema" + ARG_SEPARATOR + "--db=mariadb");
         config = createConfig();
         assertEquals("test-schema", config.getConfigValue("kc.db-schema").getValue());
         assertEquals("test-schema", config.getConfigValue("quarkus.hibernate-orm.database.default-schema").getValue());
+        assertEquals("jdbc:mariadb://localhost/test-schema?test=test&test1=test1", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
+
+        System.setProperty(CLI_ARGS, "--db-url-database=test-url-db" + ARG_SEPARATOR + "--db-schema=test-schema" + ARG_SEPARATOR + "--db=mariadb");
+        config = createConfig();
+        assertEquals("test-schema", config.getConfigValue("kc.db-schema").getValue());
+        assertEquals("test-schema", config.getConfigValue("quarkus.hibernate-orm.database.default-schema").getValue());
+        assertEquals("jdbc:mariadb://localhost/test-url-db?test=test&test1=test1", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
     }
 
     // KEYCLOAK-15632
@@ -405,7 +412,7 @@ public class ConfigurationTest {
         assertEquals("com.microsoft.sqlserver.jdbc.SQLServerXADataSource", config2.getConfigValue("quarkus.datasource.jdbc.driver").getValue());
         assertEquals("xa", config2.getConfigValue("quarkus.datasource.jdbc.transactions").getValue());
     }
-    
+
     public void testResolveHealthOption() {
         System.setProperty(CLI_ARGS, "--health-enabled=true");
         SmallRyeConfig config = createConfig();

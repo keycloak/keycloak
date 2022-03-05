@@ -5,7 +5,6 @@ import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
 import org.keycloak.quarkus.runtime.storage.database.Database;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.function.BiFunction;
 
