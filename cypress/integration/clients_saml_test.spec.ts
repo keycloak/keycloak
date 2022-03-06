@@ -93,7 +93,7 @@ describe("Clients SAML tests", () => {
 
     it("disable client signature", () => {
       cy.intercept(
-        "auth/admin/realms/master/clients/*/certificates/saml.signing"
+        "admin/realms/master/clients/*/certificates/saml.signing"
       ).as("load");
       cy.findByTestId("clientSignature").click({ force: true });
       cy.waitFor("@load");

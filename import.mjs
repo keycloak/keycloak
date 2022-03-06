@@ -7,7 +7,7 @@ const consoleClientConfig = JSON.parse(
 );
 
 const adminClient = new KcAdminClient.default({
-  baseUrl: "http://localhost:8180/auth",
+  baseUrl: "http://localhost:8180",
   realmName: "master",
 });
 

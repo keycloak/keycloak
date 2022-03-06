@@ -88,7 +88,7 @@ describe("Client authentication subtab", () => {
     authenticationTab.goToPolicySubTab();
     cy.intercept(
       "GET",
-      "/auth/admin/realms/master/clients/*/authz/resource-server/policy/regex/*"
+      "/admin/realms/master/clients/*/authz/resource-server/policy/regex/*"
     ).as("get");
     authenticationTab
       .goToCreatePolicy("regex")
@@ -117,7 +117,7 @@ describe("Client authentication subtab", () => {
     authenticationTab.goToPolicySubTab();
     cy.intercept(
       "GET",
-      "/auth/admin/realms/master/clients/*/authz/resource-server/policy/client/*"
+      "/admin/realms/master/clients/*/authz/resource-server/policy/client/*"
     ).as("get");
     authenticationTab
       .goToCreatePolicy("client")

@@ -48,7 +48,7 @@ describe("Realm settings client policies tab tests", () => {
   });
 
   it("Complete new client form and submit", () => {
-    const url = `/auth/admin/realms/${realmName}/client-policies/policies`;
+    const url = `/admin/realms/${realmName}/client-policies/policies`;
     cy.intercept("PUT", url).as("save");
 
     realmSettingsPage.createNewClientPolicyFromEmptyState(
@@ -135,7 +135,7 @@ describe("Realm settings client policies tab tests", () => {
   });
 
   it("Should not create duplicate client profile", () => {
-    const url = `/auth/admin/realms/${realmName}/client-policies/policies`;
+    const url = `admin/realms/${realmName}/client-policies/policies`;
     cy.intercept("PUT", url).as("save");
 
     realmSettingsPage.createNewClientPolicyFromEmptyState(
@@ -172,7 +172,7 @@ describe("Realm settings client policies tab tests", () => {
   });
 
   it("Check deleting newly created client policy from create view via dropdown", () => {
-    const url = `/auth/admin/realms/${realmName}/client-policies/policies`;
+    const url = `admin/realms/${realmName}/client-policies/policies`;
     cy.intercept("PUT", url).as("save");
     realmSettingsPage.createNewClientPolicyFromEmptyState(
       "Test again",

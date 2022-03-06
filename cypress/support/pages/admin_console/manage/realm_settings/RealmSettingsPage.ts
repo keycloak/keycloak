@@ -311,7 +311,7 @@ export default class RealmSettingsPage {
   }
 
   toggleAddProviderDropdown() {
-    const keysUrl = `/auth/admin/realms/${this.realmName}/keys`;
+    const keysUrl = `/admin/realms/${this.realmName}/keys`;
     cy.intercept(keysUrl).as("keysFetch");
     cy.findByTestId(this.addProviderDropdown).click();
 
@@ -750,7 +750,7 @@ export default class RealmSettingsPage {
 
   openProfileDetails(name: string) {
     cy.intercept(
-      `/auth/admin/realms/${this.realmName}/client-policies/profiles*`
+      `/admin/realms/${this.realmName}/client-policies/profiles*`
     ).as("profilesFetch");
     cy.get(
       'a[href*="realm-settings/clientPolicies/' + name + '/edit-profile"]'
@@ -761,7 +761,7 @@ export default class RealmSettingsPage {
 
   editExecutor(availablePeriod?: number) {
     cy.intercept(
-      `/auth/admin/realms/${this.realmName}/client-policies/profiles*`
+      `/admin/realms/${this.realmName}/client-policies/profiles*`
     ).as("profilesFetch");
     cy.get(this.editExecutorBtn).click();
     cy.wait("@profilesFetch");

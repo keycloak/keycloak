@@ -84,7 +84,7 @@ export default class ListingPage {
 
   searchItem(searchValue: string, wait = true) {
     if (wait) {
-      const searchUrl = `/auth/admin/realms/master/*${searchValue}*`;
+      const searchUrl = `/admin/realms/master/*${searchValue}*`;
       cy.intercept(searchUrl).as("search");
     }
 
@@ -289,7 +289,7 @@ export default class ListingPage {
   }
 
   changeTypeToOfSelectedItems(assignedType: FilterAssignedType) {
-    cy.intercept("/auth/admin/realms/master/client-scopes").as("load");
+    cy.intercept("/admin/realms/master/client-scopes").as("load");
     cy.get(this.toolbarChangeType).click();
     cy.get(this.itemRowSelectItem).contains(assignedType).click();
     cy.wait("@load");

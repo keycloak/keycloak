@@ -156,7 +156,7 @@ describe("User creation", () => {
     listingPage.searchItem(itemId).itemExist(itemId);
     listingPage.goToItemDetails(itemId);
 
-    cy.intercept("PUT", `/auth/admin/realms/master/users/*`).as("save-user");
+    cy.intercept("PUT", `/admin/realms/master/users/*`).as("save-user");
 
     const attributeKey = "key-multiple";
     attributesTab

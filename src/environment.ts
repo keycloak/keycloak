@@ -25,9 +25,9 @@ const realm =
 // The default environment, used during development.
 const defaultEnvironment: Environment = {
   loginRealm: realm,
-  authServerUrl: "http://localhost:8180/auth",
-  authUrl: "http://localhost:8180/auth",
-  consoleBaseUrl: "/auth/admin/master/console/",
+  authServerUrl: "http://localhost:8180",
+  authUrl: "http://localhost:8180",
+  consoleBaseUrl: "/admin/master/console/",
   resourceUrl: ".",
   masterRealm: "master",
   resourceVersion: "unknown",

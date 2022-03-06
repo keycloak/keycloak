@@ -9,7 +9,7 @@ import { merge } from "lodash-es";
 
 class AdminClient {
   private readonly client = new KeycloakAdminClient({
-    baseUrl: `${Cypress.env("KEYCLOAK_SERVER")}/auth`,
+    baseUrl: Cypress.env("KEYCLOAK_SERVER"),
     realmName: "master",
   });
 

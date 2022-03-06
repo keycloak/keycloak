@@ -32,7 +32,7 @@ describe("Realm settings events tab tests", () => {
   });
 
   const goToDetails = () => {
-    const keysUrl = `/auth/admin/realms/${realmName}/keys`;
+    const keysUrl = `/admin/realms/${realmName}/keys`;
     cy.intercept(keysUrl).as("keysFetch");
 
     cy.findByTestId("rs-keys-tab").click();
@@ -77,7 +77,7 @@ describe("Realm settings events tab tests", () => {
   };
 
   const goToKeys = () => {
-    const keysUrl = `/auth/admin/realms/${realmName}/keys`;
+    const keysUrl = `/admin/realms/${realmName}/keys`;
     cy.intercept(keysUrl).as("keysFetch");
     cy.findByTestId("rs-keys-tab").click();
     cy.findByTestId("rs-keys-list-tab").click();
@@ -96,9 +96,7 @@ describe("Realm settings events tab tests", () => {
   };
 
   it("Enable user events", () => {
-    cy.intercept("GET", `/auth/admin/realms/${realmName}/events/config`).as(
-      "load"
-    );
+    cy.intercept("GET", `/admin/realms/${realmName}/events/config`).as("load");
     sidebarPage.goToRealmSettings();
     cy.findByTestId("rs-realm-events-tab").click();
     cy.findByTestId("rs-events-tab").click();
@@ -115,7 +113,7 @@ describe("Realm settings events tab tests", () => {
       .confirmModal();
     masthead.checkNotificationMessage("The user events have been cleared");
     const events = ["Client info", "Client info error"];
-    cy.intercept("GET", `/auth/admin/realms/${realmName}/events/config`).as(
+    cy.intercept("GET", `/admin/realms/${realmName}/events/config`).as(
       "fetchConfig"
     );
     realmSettingsPage.addUserEvents(events).clickAdd();

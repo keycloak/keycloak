@@ -22,8 +22,8 @@ describe("OIDC identity provider test", () => {
   const deleteSuccessMsg = "Provider successfully deleted";
 
   const keycloakServer = Cypress.env("KEYCLOAK_SERVER");
-  const discoveryUrl = `${keycloakServer}/auth/realms/master/.well-known/openid-configuration`;
-  const authorizationUrl = `${keycloakServer}/auth/realms/master/protocol/openid-connect/auth`;
+  const discoveryUrl = `${keycloakServer}/realms/master/.well-known/openid-configuration`;
+  const authorizationUrl = `${keycloakServer}/realms/master/protocol/openid-connect/auth`;
 
   describe("OIDC Identity provider creation", () => {
     const identityProviderName = "github";

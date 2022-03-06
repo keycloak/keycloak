@@ -47,19 +47,13 @@ jobs:
         working-directory: ${{ env.KEYCLOAK_SERVER_PATH }}
         run: |
           VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
-          echo "KEYCLOAK_SERVER_BIN=keycloak-server/distribution/server-dist/target/keycloak-$VERSION/bin" >> $GITHUB_ENV
+          tar -xvf quarkus/dist/target/keycloak-$VERSION.tar.gz -C quarkus/dist/target/
+          echo "KEYCLOAK_SERVER_BIN=keycloak-server/quarkus/dist/target/keycloak-$VERSION/bin" >> $GITHUB_ENV
 
       - name: Start Keycloak Server
         working-directory: ${{ env.KEYCLOAK_SERVER_BIN }}
         run: |
-          ./add-user-keycloak.sh --user admin --password admin
-          ./standalone.sh -Dkeycloak.profile.feature.admin2=enabled -Dkeycloak.profile.feature.declarative_user_profile=enabled &
-
-      - name: Configure Keycloak Server
-        working-directory: ${{ env.KEYCLOAK_SERVER_BIN }}
-        run: |
-          ./kcadm.sh config credentials --server http://localhost:8080/auth --realm master --user admin --password admin
-          ./kcadm.sh update realms/master -s "adminTheme=keycloak.v2"
+          KEYCLOAK_ADMIN=admin KEYCLOAK_ADMIN_PASSWORD=admin ./kc.sh start-dev -Dkeycloak.profile.feature.admin2=enabled -Dkeycloak.profile.feature.declarative_user_profile=enabled &
 
       - name: Set up Node
         uses: actions/setup-node@v2
@@ -75,7 +69,7 @@ jobs:
 
       - name: Run Cypress
         working-directory: ${{ env.ADMIN_UI_PATH }}
-        run: CYPRESS_BASE_URL=http://localhost:8080/auth/admin/ CYPRESS_KEYCLOAK_SERVER=http://localhost:8080 npm run start:cypress-tests
+        run: CYPRESS_BASE_URL=http://localhost:8080/admin/ CYPRESS_KEYCLOAK_SERVER=http://localhost:8080 npm run start:cypress-tests
 
       - name: Add Cypress videos artifacts
         uses: actions/upload-artifact@v2

@@ -43,7 +43,7 @@ export default class UserEventsTab {
     cy.get(this.eventTypeInputFld).type("LOGOUT");
     cy.get(this.eventTypeOption).contains("LOGOUT").click();
 
-    cy.intercept("/auth/admin/realms/master/events*").as("eventsFetch");
+    cy.intercept("/admin/realms/master/events*").as("eventsFetch");
     cy.findByTestId(this.searchEventsBtn).click();
     cy.wait("@eventsFetch");
 

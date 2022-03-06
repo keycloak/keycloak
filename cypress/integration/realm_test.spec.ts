@@ -58,7 +58,7 @@ describe("Realms test", () => {
       sidebarPage.goToCreateRealm();
       createRealmPage.fillRealmName(newRealmName).createRealm();
 
-      const fetchUrl = "/auth/admin/realms?briefRepresentation=true";
+      const fetchUrl = "/admin/realms?briefRepresentation=true";
       cy.intercept(fetchUrl).as("fetch");
 
       masthead.checkNotificationMessage("Realm created");

@@ -23,7 +23,7 @@ describe("Identity provider test", () => {
   const deleteSuccessMsg = "Provider successfully deleted";
 
   const keycloakServer = Cypress.env("KEYCLOAK_SERVER");
-  const samlDiscoveryUrl = `${keycloakServer}/auth/realms/master/protocol/saml/descriptor`;
+  const samlDiscoveryUrl = `${keycloakServer}/realms/master/protocol/saml/descriptor`;
 
   describe("SAML identity provider creation", () => {
     const identityProviderName = "github";

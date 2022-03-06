@@ -30,7 +30,7 @@ export default {
   ],
   routes: [
     {
-      src: "/auth/admin/.*",
+      src: "/admin/.*",
       dest: (req, res) =>
         proxy.web(req, res, {
           hostname: "localhost",

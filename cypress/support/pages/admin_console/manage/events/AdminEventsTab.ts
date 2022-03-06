@@ -45,7 +45,7 @@ export default class AdminEventsTab {
     cy.findByTestId(this.searchAdminEventDrpDwnBtn).click();
     cy.findByTestId(this.resourcePathInputFld).type("events/config");
 
-    cy.intercept("/auth/admin/realms/master/admin-events*").as("eventsFetch");
+    cy.intercept("/admin/realms/master/admin-events*").as("eventsFetch");
     cy.findByTestId(this.searchEventsBtn).click();
     cy.wait("@eventsFetch");
 

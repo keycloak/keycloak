@@ -70,7 +70,7 @@ describe("Clients test", () => {
       keycloakBefore();
       loginPage.logIn();
       sidebarPage.goToClients();
-      cy.intercept("/auth/admin/realms/master/clients/*").as("fetchClient");
+      cy.intercept("/admin/realms/master/clients/*").as("fetchClient");
       listingPage.searchItem(clientId).goToItemDetails(clientId);
       cy.wait("@fetchClient");
       clientScopesTab.goToClientScopesTab();
@@ -569,7 +569,7 @@ describe("Clients test", () => {
         bearerOnly: true,
       });
       sidebarPage.goToClients();
-      cy.intercept("/auth/admin/realms/master/clients/*").as("fetchClient");
+      cy.intercept("/admin/realms/master/clients/*").as("fetchClient");
       listingPage.searchItem(clientId).goToItemDetails(clientId);
       cy.wait("@fetchClient");
     });

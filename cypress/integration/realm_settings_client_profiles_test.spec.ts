@@ -52,7 +52,7 @@ describe("Realm settings client profiles tab tests", () => {
   });
 
   it("Complete new client form and submit", () => {
-    const url = `/auth/admin/realms/${realmName}/client-policies/profiles`;
+    const url = `admin/realms/${realmName}/client-policies/profiles`;
     cy.intercept("PUT", url).as("save");
     realmSettingsPage
       .createClientProfile(profileName, "Test Description")
@@ -78,7 +78,7 @@ describe("Realm settings client profiles tab tests", () => {
   });
 
   it("Should not create duplicate client profile", () => {
-    const url = `/auth/admin/realms/${realmName}/client-policies/profiles`;
+    const url = `admin/realms/${realmName}/client-policies/profiles`;
     cy.intercept("PUT", url).as("save");
     realmSettingsPage
       .createClientProfile(profileName, "Test Description")
