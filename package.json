@@ -75,7 +75,7 @@
     "eslint-plugin-cypress": "^2.12.1",
     "eslint-plugin-lodash": "^7.4.0",
     "eslint-plugin-prettier": "^4.0.0",
-    "eslint-plugin-react": "^7.29.2",
+    "eslint-plugin-react": "^7.29.3",
     "fork-ts-checker-webpack-plugin": "^7.2.1",
     "http2-proxy": "^5.0.53",
     "husky": "^7.0.4",
