@@ -87,7 +87,7 @@
     "progress-promise": "^0.0.6",
     "snowpack": "^3.8.6",
     "ts-jest": "^27.1.3",
-    "ts-node": "^10.5.0",
+    "ts-node": "^10.7.0",
     "typescript": "^4.5.5"
   },
   "lint-staged": {
