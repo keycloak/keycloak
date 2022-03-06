@@ -78,7 +78,11 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
         helperTextInvalid={t("common:required")}
       >
         <TextInput
-          ref={register({ required: true })}
+          ref={register({
+            required: true,
+            validate: (value: string) =>
+              !!value.trim() || t("common:required").toString(),
+          })}
           type="text"
           id="kc-name"
           name="name"
