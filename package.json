@@ -71,7 +71,7 @@
     "cypress": "^8.4.1",
     "decompress": "^4.2.1",
     "eslint": "^8.10.0",
-    "eslint-config-prettier": "^8.4.0",
+    "eslint-config-prettier": "^8.5.0",
     "eslint-plugin-cypress": "^2.12.1",
     "eslint-plugin-lodash": "^7.4.0",
     "eslint-plugin-prettier": "^4.0.0",
