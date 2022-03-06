@@ -183,8 +183,7 @@ describe("Realm settings events tab tests", () => {
     realmSettingsPage.testSelectFilter();
   });
 
-  // TODO: Fix this test so it passes.
-  it.skip("add locale", () => {
+  it("add locale", () => {
     sidebarPage.goToRealmSettings();
 
     cy.findByTestId("rs-localization-tab").click();
