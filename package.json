@@ -80,7 +80,7 @@
     "http2-proxy": "^5.0.53",
     "husky": "^7.0.4",
     "jest": "^27.5.1",
-    "lint-staged": "^12.3.4",
+    "lint-staged": "^12.3.5",
     "postcss": "^8.4.7",
     "postcss-import": "^14.0.2",
     "prettier": "^2.5.1",
