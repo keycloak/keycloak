@@ -63,7 +63,7 @@ export const TimeSelector = ({
       setMultiplier(x);
       setTimeValue(value / x);
     } else {
-      setTimeValue("");
+      setTimeValue(value);
       setMultiplier(defaultMultiplier);
     }
   }, [value]);
