@@ -20,7 +20,7 @@ import { CheckCircleIcon, PlusIcon, TableIcon } from "@patternfly/react-icons";
 import type AuthenticationExecutionInfoRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticationExecutionInfoRepresentation";
 import type { AuthenticationProviderRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigRepresentation";
 import type AuthenticationFlowRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticationFlowRepresentation";
-import { FlowParams, toFlow } from "./routes/Flow";
+import type { FlowParams } from "./routes/Flow";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { EmptyExecutionState } from "./EmptyExecutionState";
@@ -43,6 +43,7 @@ import { useRealm } from "../context/realm-context/RealmContext";
 import useToggle from "../utils/useToggle";
 import { toAuthentication } from "./routes/Authentication";
 import { EditFlowModal } from "./EditFlowModal";
+import { BindFlowDialog } from "./BindFlowDialog";
 
 export const providerConditionFilter = (
   value: AuthenticationProviderRepresentation
@@ -72,6 +73,7 @@ export default function FlowDetails() {
     useState<ExpandableExecution>();
   const [open, toggleOpen, setOpen] = useToggle();
   const [edit, setEdit] = useState(false);
+  const [bindFlowOpen, toggleBindFlow] = useToggle();
 
   useFetch(
     async () => {
@@ -178,20 +180,6 @@ export default function FlowDetails() {
     }
   };
 
-  const setAsDefault = async () => {
-    try {
-      const r = await adminClient.realms.findOne({ realm });
-      await adminClient.realms.update(
-        { realm },
-        { ...r, browserFlow: flow?.alias }
-      );
-      addAlert(t("updateFlowSuccess"), AlertVariant.success);
-      history.push(toFlow({ id, realm, usedBy: "default", builtIn }));
-    } catch (error) {
-      addError("authentication:updateFlowError", error);
-    }
-  };
-
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: "authentication:deleteConfirmExecution",
     children: (
@@ -241,14 +229,14 @@ export default function FlowDetails() {
   const hasExecutions = executionList?.expandableList.length !== 0;
 
   const dropdownItems = [
-    ...(usedBy !== "default"
+    ...(usedBy !== "default" && flow?.providerId !== "client-flow"
       ? [
           <DropdownItem
             data-testid="set-as-default"
             key="default"
-            onClick={() => setAsDefault()}
+            onClick={toggleBindFlow}
           >
-            {t("setAsDefault")}
+            {t("bindFlow")}
           </DropdownItem>,
         ]
       : []),
@@ -277,6 +265,15 @@ export default function FlowDetails() {
 
   return (
     <>
+      {bindFlowOpen && (
+        <BindFlowDialog
+          flowAlias={flow?.alias!}
+          onClose={() => {
+            toggleBindFlow();
+            refresh();
+          }}
+        />
+      )}
       {open && (
         <DuplicateFlowModal
           name={flow?.alias!}

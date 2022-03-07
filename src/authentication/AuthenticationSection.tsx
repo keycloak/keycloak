@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Trans, useTranslation } from "react-i18next";
+import { sortBy } from "lodash-es";
 import {
   AlertVariant,
   Button,
@@ -30,9 +31,10 @@ import { toCreateFlow } from "./routes/CreateFlow";
 import { toFlow } from "./routes/Flow";
 import { RequiredActions } from "./RequiredActions";
 import { Policies } from "./policies/Policies";
+import helpUrls from "../help-urls";
+import { BindFlowDialog } from "./BindFlowDialog";
 
 import "./authentication-section.css";
-import helpUrls from "../help-urls";
 
 type UsedBy = "specificClients" | "default" | "specificProviders";
 
@@ -40,7 +42,7 @@ type AuthenticationType = AuthenticationFlowRepresentation & {
   usedBy: { type?: UsedBy; values: string[] };
 };
 
-const realmFlows = [
+export const REALM_FLOWS = [
   "browserFlow",
   "registrationFlow",
   "directGrantFlow",
@@ -54,27 +56,29 @@ export default function AuthenticationSection() {
   const adminClient = useAdminClient();
   const { realm } = useRealm();
   const [key, setKey] = useState(0);
-  const refresh = () => setKey(new Date().getTime());
+  const refresh = () => setKey(key + 1);
   const { addAlert, addError } = useAlerts();
 
   const [selectedFlow, setSelectedFlow] = useState<AuthenticationType>();
-  const [open, toggleOpen, setOpen] = useToggle();
+  const [open, toggleOpen] = useToggle();
+  const [bindFlowOpen, toggleBindFlow] = useToggle();
 
   const loader = async () => {
-    const clients = await adminClient.clients.find();
-    const idps = await adminClient.identityProviders.find();
-    const realmRep = await adminClient.realms.findOne({ realm });
+    const [clients, idps, realmRep, flows] = await Promise.all([
+      adminClient.clients.find(),
+      adminClient.identityProviders.find(),
+      adminClient.realms.findOne({ realm }),
+      adminClient.authenticationManagement.getFlows(),
+    ]);
     if (!realmRep) {
       throw new Error(t("common:notFound"));
     }
 
     const defaultFlows = Object.entries(realmRep)
-      .filter((entry) => realmFlows.includes(entry[0]))
+      .filter((entry) => REALM_FLOWS.includes(entry[0]))
       .map((entry) => entry[1]);
 
-    const flows =
-      (await adminClient.authenticationManagement.getFlows()) as AuthenticationType[];
-    for (const flow of flows) {
+    for (const flow of flows as AuthenticationType[]) {
       flow.usedBy = { values: [] };
       const client = clients.find(
         (client) =>
@@ -104,8 +108,9 @@ export default function AuthenticationSection() {
       }
     }
 
-    return flows;
+    return sortBy(flows as AuthenticationType[], (flow) => flow.usedBy.type);
   };
+
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: "authentication:deleteConfirmFlow",
     children: (
@@ -150,29 +155,25 @@ export default function AuthenticationSection() {
             </div>
           }
         >
-          <Button variant={ButtonVariant.link} key={`button-${id}`}>
+          <>
             <CheckCircleIcon
               className="keycloak_authentication-section__usedby"
               key={`icon-${id}`}
             />{" "}
             {t(type)}
-          </Button>
+          </>
         </Popover>
       )}
       {type === "default" && (
-        <Button key={id} variant={ButtonVariant.link} isDisabled>
+        <>
           <CheckCircleIcon
             className="keycloak_authentication-section__usedby"
             key={`icon-${id}`}
           />{" "}
           {t("default")}
-        </Button>
+        </>
       )}
-      {!type && (
-        <Button key={id} variant={ButtonVariant.link} isDisabled>
-          {t("notInUse")}
-        </Button>
-      )}
+      {!type && t("notInUse")}
     </>
   );
 
@@ -208,8 +209,17 @@ export default function AuthenticationSection() {
           toggleDialog={toggleOpen}
           onComplete={() => {
             refresh();
-            setOpen(false);
+            toggleOpen();
           }}
+        />
+      )}
+      {bindFlowOpen && (
+        <BindFlowDialog
+          onClose={() => {
+            toggleBindFlow();
+            refresh();
+          }}
+          flowAlias={selectedFlow?.alias!}
         />
       )}
       <ViewHeader
@@ -245,10 +255,21 @@ export default function AuthenticationSection() {
                   {
                     title: t("duplicate"),
                     onClick: () => {
-                      setOpen(true);
+                      toggleOpen();
                       setSelectedFlow(data);
                     },
                   },
+                  ...(data.providerId !== "client-flow"
+                    ? [
+                        {
+                          title: t("bindFlow"),
+                          onClick: () => {
+                            toggleBindFlow();
+                            setSelectedFlow(data);
+                          },
+                        },
+                      ]
+                    : []),
                 ];
                 // remove delete when it's in use or default flow
                 if (data.builtIn || data.usedBy.values.length > 0) {
