@@ -76,11 +76,6 @@ public class ConditionalLoaAuthenticatorFactory implements ConditionalAuthentica
     }
 
     @Override
-    public String getReferenceCategory() {
-        return "condition";
-    }
-
-    @Override
     public boolean isConfigurable() {
         return true;
     }
