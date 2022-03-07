@@ -20,6 +20,7 @@ export default {
     value: "Value",
     noSearchResults: "No search results",
     noSearchResultsInstructions: "Click on the search bar above to search",
+    clearAllFilters: "Clear all filters",
     next: "Next",
     back: "Back",
     finish: "Finish",

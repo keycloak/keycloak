@@ -25,6 +25,7 @@ import { ListEmptyState } from "../list-empty-state/ListEmptyState";
 import { KeycloakSpinner } from "../keycloak-spinner/KeycloakSpinner";
 import { useFetch } from "../../context/auth/AdminClient";
 import type { SVGIconProps } from "@patternfly/react-icons/dist/js/createIcon";
+import { ButtonVariant } from "@patternfly/react-core";
 
 type TitleCell = { title: JSX.Element };
 type Cell<T> = keyof T | JSX.Element | TitleCell;
@@ -412,6 +413,17 @@ export function KeycloakDataTable<T>({
               isSearchVariant={true}
               message={t("noSearchResults")}
               instructions={t("noSearchResultsInstructions")}
+              secondaryActions={
+                !isSearching
+                  ? [
+                      {
+                        text: t("clearAllFilters"),
+                        onClick: () => setSearch(""),
+                        type: ButtonVariant.link,
+                      },
+                    ]
+                  : []
+              }
             />
           )}
           {loading && <Loading />}
