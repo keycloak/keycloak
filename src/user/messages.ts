@@ -144,6 +144,10 @@ export default {
     deleteCredentialsSuccess: "The credentials has been deleted successfully.",
     deleteCredentialsError: "Error deleting users credentials: {{error}}",
     deleteBtn: "Delete",
+    updatedCredentialMoveSuccess:
+      "User Credential configuration has been saved",
+    updatedCredentialMoveError:
+      "User Credential configuration hasn't been saved",
     resetPasswordFor: "Reset password for {{username}}",
     resetPasswordConfirm: "Reset password?",
     resetPasswordConfirmText:

@@ -22,6 +22,7 @@ export const CredentialDataDialog = ({
     <Modal
       variant={ModalVariant.medium}
       title={t("passwordDataTitle")}
+      data-testid="passwordDataDialog"
       isOpen
       onClose={onClose}
     >

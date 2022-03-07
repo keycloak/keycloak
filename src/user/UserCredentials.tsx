@@ -1,4 +1,4 @@
-import React, { Fragment, useState } from "react";
+import React, { Fragment, useMemo, useRef, useState } from "react";
 import {
   AlertVariant,
   Button,
@@ -24,8 +24,8 @@ import type CredentialRepresentation from "@keycloak/keycloak-admin-client/lib/d
 import { ResetPasswordDialog } from "./user-credentials/ResetPasswordDialog";
 import { ResetCredentialDialog } from "./user-credentials/ResetCredentialDialog";
 import { InlineLabelEdit } from "./user-credentials/InlineLabelEdit";
-
 import "./user-credentials.css";
+import styles from "@patternfly/react-styles/css/components/Table/table";
 import { CredentialRow } from "./user-credentials/CredentialRow";
 import { toUpperCase } from "../util";
 
@@ -60,6 +60,14 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
     status: boolean;
     rowKey: string;
   }>();
+
+  const bodyRef = useRef<HTMLTableSectionElement>(null);
+  const [state, setState] = useState({
+    draggedItemId: "",
+    draggingToItemIndex: -1,
+    dragging: false,
+    tempItemOrder: [""],
+  });
 
   useFetch(
     () => adminClient.users.getCredentials({ id: user.id! }),
@@ -150,6 +158,165 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
       />
     </CredentialRow>
   );
+
+  const itemOrder = useMemo(
+    () =>
+      groupedUserCredentials.map(({ value }) =>
+        value.map(({ id }) => id).toString()
+      ),
+    [groupedUserCredentials]
+  );
+
+  const onDragStart = (evt: React.DragEvent) => {
+    evt.dataTransfer.effectAllowed = "move";
+    evt.dataTransfer.setData("text/plain", evt.currentTarget.id);
+    const draggedItemId = evt.currentTarget.id;
+    evt.currentTarget.classList.add(styles.modifiers.ghostRow);
+    evt.currentTarget.setAttribute("aria-pressed", "true");
+    setState({ ...state, draggedItemId, dragging: true });
+  };
+
+  const moveItem = (items: string[], targetItem: string, toIndex: number) => {
+    const fromIndex = items.indexOf(targetItem);
+    if (fromIndex === toIndex) {
+      return items;
+    }
+    const result = [...items];
+    result.splice(toIndex, 0, result.splice(fromIndex, 1)[0]);
+    return result;
+  };
+
+  const move = (itemOrder: string[]) => {
+    if (!bodyRef.current) return;
+    const ulNode = bodyRef.current;
+    const nodes = Array.from(ulNode.children);
+    if (nodes.every(({ id }, i) => id === itemOrder[i])) {
+      return;
+    }
+    ulNode.replaceChildren();
+    itemOrder.forEach((itemId) => {
+      ulNode.appendChild(nodes.find(({ id }) => id === itemId)!);
+    });
+  };
+
+  const onDragCancel = () => {
+    if (!bodyRef.current) return;
+    Array.from(bodyRef.current.children).forEach((el) => {
+      el.classList.remove(styles.modifiers.ghostRow);
+      el.setAttribute("aria-pressed", "false");
+    });
+    setState({
+      ...state,
+      draggedItemId: "",
+      draggingToItemIndex: -1,
+      dragging: false,
+    });
+  };
+
+  const onDragLeave = (evt: React.DragEvent) => {
+    if (!isValidDrop(evt)) {
+      move(itemOrder);
+      setState({ ...state, draggingToItemIndex: -1 });
+    }
+  };
+
+  const isValidDrop = (evt: React.DragEvent) => {
+    if (!bodyRef.current) return false;
+    const ulRect = bodyRef.current.getBoundingClientRect();
+    return (
+      evt.clientX > ulRect.x &&
+      evt.clientX < ulRect.x + ulRect.width &&
+      evt.clientY > ulRect.y &&
+      evt.clientY < ulRect.y + ulRect.height
+    );
+  };
+
+  const onDrop = (evt: React.DragEvent) => {
+    if (isValidDrop(evt)) {
+      onDragFinish(state.draggedItemId, state.tempItemOrder);
+    } else {
+      onDragCancel();
+    }
+  };
+
+  const onDragOver = (evt: React.DragEvent) => {
+    evt.preventDefault();
+    const td = evt.target as HTMLTableCellElement;
+    const curListItem = td.closest("tr");
+    if (
+      !curListItem ||
+      (bodyRef.current && !bodyRef.current.contains(curListItem)) ||
+      curListItem.id === state.draggedItemId
+    ) {
+      return;
+    } else {
+      const dragId = curListItem.id;
+      const draggingToItemIndex = Array.from(
+        bodyRef.current?.children || []
+      ).findIndex((item) => item.id === dragId);
+      if (draggingToItemIndex === state.draggingToItemIndex) {
+        return;
+      }
+      const tempItemOrder = moveItem(
+        itemOrder,
+        state.draggedItemId,
+        draggingToItemIndex
+      );
+      move(tempItemOrder);
+      setState({
+        ...state,
+        draggingToItemIndex,
+        tempItemOrder,
+      });
+    }
+  };
+
+  const onDragEnd = ({ target }: React.DragEvent) => {
+    if (!(target instanceof HTMLTableRowElement)) {
+      return;
+    }
+    target.classList.remove(styles.modifiers.ghostRow);
+    target.setAttribute("aria-pressed", "false");
+    setState({
+      ...state,
+      draggedItemId: "",
+      draggingToItemIndex: -1,
+      dragging: false,
+    });
+  };
+
+  const onDragFinish = async (dragged: string, newOrder: string[]) => {
+    dragged = dragged.split(",")[0];
+    const keys = groupedUserCredentials.map(({ value }) =>
+      value.map(({ id }) => id)
+    );
+    const oldIndex = keys.findIndex((el) => el.join().includes(dragged));
+    const newIndex = newOrder.findIndex((el) => el.includes(dragged));
+    const times = newIndex - oldIndex;
+
+    try {
+      for (let index = 0; index < Math.abs(times); index++) {
+        if (times > 0) {
+          await adminClient.users.moveCredentialPositionDown({
+            id: user.id!,
+            credentialId: dragged,
+            newPreviousCredentialId: `${keys[newIndex][0]}`,
+          });
+        } else {
+          await adminClient.users.moveCredentialPositionUp({
+            id: user.id!,
+            credentialId: dragged,
+          });
+        }
+      }
+
+      refresh();
+      addAlert(t("users:updatedCredentialMoveSuccess"), AlertVariant.success);
+    } catch (error) {
+      addError("users:updatedCredentialMoveError", error);
+    }
+  };
+
   return (
     <>
       {isOpen && (
@@ -170,7 +337,6 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
       {userCredentials.length !== 0 && passwordTypeFinder === undefined && (
         <>
           <Button
-            key={`confirmSaveBtn-table-${user.id}`}
             className="kc-setPasswordBtn-tbl"
             data-testid="setPasswordBtn-table"
             variant="primary"
@@ -188,7 +354,7 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
         <>
           {user.email && (
             <Button
-              className="resetCredentialBtn-header"
+              className="kc-resetCredentialBtn-header"
               variant="primary"
               data-testid="credentialResetBtn"
               onClick={() => setOpenCredentialReset(true)}
@@ -196,15 +362,19 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
               {t("credentialResetBtn")}
             </Button>
           )}
-          <TableComposable aria-label="password-data-table" variant={"compact"}>
+          <TableComposable
+            aria-label="userCredentials-table"
+            variant={"compact"}
+          >
             <Thead>
-              <Tr>
+              <Tr className="kc-table-header">
                 <Th>
                   <HelpItem
                     helpText="users:userCredentialsHelpText"
                     fieldLabelId="users:userCredentialsHelpTextLabel"
                   />
                 </Th>
+                <Th />
                 <Th>{t("type")}</Th>
                 <Th>{t("userLabel")}</Th>
                 <Th>{t("data")}</Th>
@@ -212,10 +382,28 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
                 <Th />
               </Tr>
             </Thead>
-            <Tbody>
+            <Tbody
+              ref={bodyRef}
+              onDragOver={onDragOver}
+              onDrop={onDragOver}
+              onDragLeave={onDragLeave}
+            >
               {groupedUserCredentials.map((groupedCredential, rowIndex) => (
-                <Fragment key={`table-${groupedCredential.key}`}>
-                  <Tr>
+                <Fragment key={groupedCredential.key}>
+                  <Tr
+                    id={groupedCredential.value.map(({ id }) => id).toString()}
+                    draggable
+                    onDrop={onDrop}
+                    onDragEnd={onDragEnd}
+                    onDragStart={onDragStart}
+                  >
+                    <Td
+                      draggableRow={{
+                        id: `draggable-row-${groupedCredential.value.map(
+                          ({ id }) => id
+                        )}`,
+                      }}
+                    />
                     {groupedCredential.value.length > 1 ? (
                       <Td
                         className="kc-expandRow-btn"
@@ -240,24 +428,36 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
                       <Td />
                     )}
                     <Td
-                      key={`table-item-${groupedCredential.key}`}
                       dataLabel={`columns-${groupedCredential.key}`}
                       className="kc-notExpandableRow-credentialType"
+                      data-testid="credentialType"
                     >
                       {toUpperCase(groupedCredential.key)}
                     </Td>
                     {groupedCredential.value.length <= 1 &&
                       groupedCredential.value.map((credential) => (
-                        <Row
-                          key={`subrow-${credential.id}`}
-                          credential={credential}
-                        />
+                        <Row key={credential.id} credential={credential} />
                       ))}
                   </Tr>
                   {groupedCredential.isExpanded &&
                     groupedCredential.value.map((credential) => (
-                      <Tr key={`child-key-${credential.id}`}>
+                      <Tr
+                        key={credential.id}
+                        id={credential.id}
+                        draggable
+                        onDrop={onDrop}
+                        onDragEnd={onDragEnd}
+                        onDragStart={onDragStart}
+                      >
                         <Td />
+                        <Td
+                          className="kc-draggable-dropdown-type-icon"
+                          draggableRow={{
+                            id: `draggable-row-${groupedCredential.value.map(
+                              ({ id }) => id
+                            )}`,
+                          }}
+                        />
                         <Td
                           dataLabel={`child-columns-${credential.id}`}
                           className="kc-expandableRow-credentialType"

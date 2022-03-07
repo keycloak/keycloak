@@ -17,6 +17,11 @@ export default class CredentialsPage {
     "terms_and_conditions-option",
   ];
   private readonly confirmationButton = "confirm";
+  private readonly editLabelBtn = "editUserLabelBtn";
+  private readonly labelField = "userLabelFld";
+  private readonly editConfirmationBtn = "editUserLabelAcceptBtn";
+  private readonly showDataDialogBtn = "showDataBtn";
+  private readonly closeDataDialogBtn = '[aria-label^="Close"]';
 
   goToCredentialsTab() {
     cy.findByTestId(this.credentialsTab).click();
@@ -78,6 +83,40 @@ export default class CredentialsPage {
 
   clickSetPasswordBtn() {
     cy.findByTestId(this.setPasswordBtn).click();
+
+    return this;
+  }
+
+  clickEditCredentialLabelBtn() {
+    cy.findByTestId(this.editLabelBtn)
+      .should("be.visible")
+      .click({ force: true });
+
+    return this;
+  }
+
+  fillEditCredentialForm() {
+    cy.findByTestId(this.labelField).focus().type("test");
+
+    return this;
+  }
+
+  clickEditConfirmationBtn() {
+    cy.findByTestId(this.editConfirmationBtn).click();
+
+    return this;
+  }
+
+  clickShowDataDialogBtn() {
+    cy.findByTestId(this.showDataDialogBtn)
+      .should("be.visible")
+      .click({ force: true });
+
+    return this;
+  }
+
+  clickCloseDataDialogBtn() {
+    cy.get(this.closeDataDialogBtn).eq(1).click({ force: true });
 
     return this;
   }

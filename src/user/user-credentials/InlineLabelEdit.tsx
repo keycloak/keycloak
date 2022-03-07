@@ -61,25 +61,25 @@ export const InlineLabelEdit = ({
             <>
               <TextInput
                 name="userLabel"
+                data-testid="userLabelFld"
                 defaultValue={credential.userLabel}
                 ref={register()}
                 type="text"
                 className="kc-userLabel"
                 aria-label={t("userLabel")}
-                data-testid="user-label-fld"
               />
               <div className="kc-userLabel-actionBtns">
                 <Button
-                  data-testid="editUserLabel-acceptBtn"
+                  data-testid="editUserLabelAcceptBtn"
                   variant="link"
-                  className="kc-editUserLabel-acceptBtn"
+                  className="kc-editUserLabelAcceptBtn"
                   onClick={() => {
                     handleSubmit(saveUserLabel)();
                   }}
                   icon={<CheckIcon />}
                 />
                 <Button
-                  data-testid="editUserLabel-cancelBtn"
+                  data-testid="editUserLabelCancelBtn"
                   variant="link"
                   className="kc-editUserLabel-cancelBtn"
                   onClick={toggle}

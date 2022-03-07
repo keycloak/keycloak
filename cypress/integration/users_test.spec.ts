@@ -32,6 +32,7 @@ describe("User creation", () => {
   let itemId = "user_crud";
   let itemIdWithGroups = "user_with_groups_crud";
   let itemIdWithCred = "user_crud_cred";
+  const itemCredential = "Password";
 
   before(() => {
     for (let i = 0; i <= 2; i++) {
@@ -232,6 +233,38 @@ describe("User creation", () => {
 
     masthead.checkNotificationMessage(
       "Failed: Failed to send execute actions email"
+    );
+  });
+
+  it("Edit credential label", () => {
+    listingPage.goToItemDetails(itemIdWithCred);
+    credentialsPage
+      .goToCredentialsTab()
+      .clickEditCredentialLabelBtn()
+      .fillEditCredentialForm()
+      .clickEditConfirmationBtn();
+
+    masthead.checkNotificationMessage(
+      "The user label has been changed successfully."
+    );
+  });
+
+  it("Show credential data dialog", () => {
+    listingPage.goToItemDetails(itemIdWithCred);
+    credentialsPage
+      .goToCredentialsTab()
+      .clickShowDataDialogBtn()
+      .clickCloseDataDialogBtn();
+  });
+
+  it("Delete credential", () => {
+    listingPage.goToItemDetails(itemIdWithCred);
+    credentialsPage.goToCredentialsTab();
+    listingPage.deleteItem(itemCredential);
+    modalUtils.checkModalTitle("Delete credentials?").confirmModal();
+
+    masthead.checkNotificationMessage(
+      "The credentials has been deleted successfully."
     );
   });
 
