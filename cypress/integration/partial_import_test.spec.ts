@@ -43,7 +43,7 @@ describe("Partial import test", () => {
     modal.importButton().should("not.exist");
   });
 
-  it("Import button only enabled if JSON has something to import", () => {
+  it.skip("Import button only enabled if JSON has something to import", () => {
     modal.open();
     cy.get(".pf-c-code-editor__code textarea").type("{}");
     modal.importButton().should("be.disabled");

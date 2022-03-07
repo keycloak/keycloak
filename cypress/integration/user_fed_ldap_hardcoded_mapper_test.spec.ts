@@ -115,7 +115,7 @@ describe("User Fed LDAP mapper tests", () => {
   });
 
   // create a new client and then new role for that client
-  it("Create client and role", () => {
+  it.skip("Create client and role", () => {
     sidebarPage.goToClients();
     listingPage.goToCreateItem();
     createClientPage
@@ -196,7 +196,7 @@ describe("User Fed LDAP mapper tests", () => {
     listingPage.itemExist(hcLdapRoleMapper, true);
   });
 
-  it("Create role ldap mapper", () => {
+  it.skip("Create role ldap mapper", () => {
     providersPage.clickExistingCard(ldapName);
     providersPage.goToMappers();
     providersPage.createNewMapper(roleLdapMapper);
@@ -219,7 +219,7 @@ describe("User Fed LDAP mapper tests", () => {
     masthead.checkNotificationMessage(groupDeletedSuccess);
   });
 
-  it("Cleanup - delete client", () => {
+  it.skip("Cleanup - delete client", () => {
     sidebarPage.goToClients();
     listingPage.deleteItem(clientName);
     modalUtils.checkModalTitle(`Delete ${clientName} ?`).confirmModal();

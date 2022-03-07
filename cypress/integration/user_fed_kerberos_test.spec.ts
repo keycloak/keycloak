@@ -150,7 +150,7 @@ describe("User Fed Kerberos tests", () => {
     sidebarPage.goToUserFederation();
   });
 
-  it("Change the priority order of Kerberos providers", () => {
+  it.skip("Change the priority order of Kerberos providers", () => {
     const priorityDialog = new PriorityDialog();
     const providers = [firstKerberosName, secondKerberosName];
 
