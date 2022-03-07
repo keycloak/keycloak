@@ -230,6 +230,7 @@ export default {
     applyPolicy: "Apply policy",
     addClientScopes: "Add client scopes",
     clientScope: "Client scope",
+    groupsClaim: "Groups claim",
     addGroups: "Add groups",
     groups: "Groups",
     users: "Users",

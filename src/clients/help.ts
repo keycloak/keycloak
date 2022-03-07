@@ -255,6 +255,8 @@ export default {
     applyPolicy:
       "Specifies all the policies that must be applied to the scopes defined by this policy or permission.",
     policyClient: "Specifies which client(s) are allowed by this policy.",
+    groupsClaim:
+      "If defined, the policy will fetch user's groups from the given claim within an access token or ID token representing the identity asking permissions. If not defined, user's groups are obtained from your realm configuration.",
     policyGroups: "Specifies which user(s) are allowed by this policy.",
     targetClaim: "Specifies the target claim which the policy will fetch.",
     regexPattern: "Specifies the regex pattern.",
