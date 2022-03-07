@@ -68,6 +68,7 @@ import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionManagement;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
+import org.keycloak.utils.CredentialHelper;
 import org.keycloak.utils.ProfileHelper;
 import org.keycloak.utils.ReservedCharValidator;
 import org.keycloak.utils.StringUtil;
@@ -310,16 +311,9 @@ public class ClientResource {
         auth.clients().requireView(client);
 
         logger.debug("getClientSecret");
-
-        if (StringUtil.isBlank(client.getSecret() )) throw new NotFoundException("Client does not have a secret");
-
-        CredentialRepresentation rep = new CredentialRepresentation();
-        rep.setType(CredentialRepresentation.SECRET);
-        rep.setValue(client.getSecret());
-        rep.setCreatedDate(
-            (long) OIDCClientSecretConfigWrapper.fromClientModel(client).getClientSecretCreationTime());
-
-        return rep;
+        UserCredentialModel model = UserCredentialModel.secret(client.getSecret());
+        if (model == null) throw new NotFoundException("Client does not have a secret");
+        return ModelToRepresentation.toRepresentation(model);
     }
 
     /**

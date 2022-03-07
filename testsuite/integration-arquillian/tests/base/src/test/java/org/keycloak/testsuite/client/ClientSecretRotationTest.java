@@ -4,9 +4,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
@@ -22,6 +24,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import javax.ws.rs.BadRequestException;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import org.jboss.logging.Logger;
@@ -43,6 +46,7 @@ import org.keycloak.representations.idm.ClientPoliciesRepresentation;
 import org.keycloak.representations.idm.ClientProfileRepresentation;
 import org.keycloak.representations.idm.ClientProfilesRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -525,6 +529,54 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
     int clientSecretExpirationTime = wrapper.getClientSecretExpirationTime();
     assertThat(clientSecretExpirationTime, is(not(0)));
 
+  }
+
+  /**
+   * After rotate the secret the endpoint must return the rotated secret
+   *
+   * @throws Exception
+   */
+  @Test
+  public void getClientRotatedSecret() throws Exception {
+    configureDefaultProfileAndPolicy();
+
+    String cidConfidential = createClientByAdmin(DEFAULT_CLIENT_ID);
+    ClientResource clientResource = adminClient.realm(REALM_NAME).clients().get(cidConfidential);
+    String firstSecret = clientResource.getSecret().getValue();
+    try {
+      clientResource.getClientRotatedSecret();
+    } catch (Exception e) {
+      assertThat(e,is(instanceOf(NotFoundException.class)));
+    }
+
+    String newSecret = clientResource.generateNewSecret().getValue();
+    String rotatedSecret = clientResource.getClientRotatedSecret().getValue();
+    assertThat(firstSecret,not(equalTo(newSecret)));
+    assertThat(firstSecret,equalTo(rotatedSecret));
+  }
+
+  /**
+   * After rotate the secret it must be possible to invalidate the rotated secret
+   *
+   * @throws Exception
+   */
+  @Test
+  public void invalidateClientRotatedSecret() throws Exception {
+    configureDefaultProfileAndPolicy();
+
+    String cidConfidential = createClientByAdmin(DEFAULT_CLIENT_ID);
+    ClientResource clientResource = adminClient.realm(REALM_NAME).clients().get(cidConfidential);
+    String firstSecret = clientResource.getSecret().getValue();
+    String newSecret = clientResource.generateNewSecret().getValue();
+    String rotatedSecret = clientResource.getClientRotatedSecret().getValue();
+    assertThat(firstSecret,not(equalTo(newSecret)));
+    assertThat(firstSecret,equalTo(rotatedSecret));
+    clientResource.invalidateRotatedSecret();
+    try {
+      clientResource.getClientRotatedSecret();
+    } catch (Exception e) {
+      assertThat(e,is(instanceOf(NotFoundException.class)));
+    }
   }
 
   /** -------------------- support methods -------------------- **/

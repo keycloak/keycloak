@@ -208,11 +208,14 @@ public interface ClientResource {
     @Path("/authz/resource-server")
     AuthorizationResource authorization();
 
+
+    @Path("client-secret/rotated")
     @GET
     @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     public CredentialRepresentation getClientRotatedSecret();
 
+    @Path("client-secret/rotated")
     @DELETE
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
