@@ -481,7 +481,7 @@ export default function ClientDetails() {
                 </RoutableTabs>
               </Tab>
             )}
-            {client!.serviceAccountsEnabled && (
+            {client!.authorizationServicesEnabled && (
               <Tab
                 id="authorization"
                 data-testid="authorizationTab"
