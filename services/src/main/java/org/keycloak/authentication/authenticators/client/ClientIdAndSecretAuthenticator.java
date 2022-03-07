@@ -22,7 +22,7 @@ import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.ClientAuthenticationFlowContext;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.protocol.oidc.OIDCClientConfigWrapper;
+import org.keycloak.protocol.oidc.OIDCClientSecretConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -132,7 +132,7 @@ public class ClientIdAndSecretAuthenticator extends AbstractClientAuthenticator 
             return;
         }
 
-        OIDCClientConfigWrapper wrapper = OIDCClientConfigWrapper.fromClientModel(client);
+        OIDCClientSecretConfigWrapper wrapper = OIDCClientSecretConfigWrapper.fromClientModel(client);
 
         if (!client.validateSecret(clientSecret)) {
             if (!wrapper.validateRotatedSecret(clientSecret)){
@@ -141,7 +141,7 @@ public class ClientIdAndSecretAuthenticator extends AbstractClientAuthenticator 
             }
         }
 
-        if (!wrapper.validateClientSecret()){
+        if (wrapper.isClientSecretExpired()){
             reportFailedAuth(context);
             return;
         }

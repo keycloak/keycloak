@@ -44,7 +44,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.protocol.ClientInstallationProvider;
-import org.keycloak.protocol.oidc.OIDCClientConfigWrapper;
+import org.keycloak.protocol.oidc.OIDCClientSecretConfigWrapper;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
@@ -265,7 +265,7 @@ public class ClientResource {
         rep.setType(CredentialRepresentation.SECRET);
         rep.setValue(secret);
         rep.setCreatedDate(
-            (long) OIDCClientConfigWrapper.fromClientModel(client).getClientSecretCreationTime());
+            (long) OIDCClientSecretConfigWrapper.fromClientModel(client).getClientSecretCreationTime());
 
         adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).representation(rep).success();
 
@@ -317,7 +317,7 @@ public class ClientResource {
         rep.setType(CredentialRepresentation.SECRET);
         rep.setValue(client.getSecret());
         rep.setCreatedDate(
-            (long) OIDCClientConfigWrapper.fromClientModel(client).getClientSecretCreationTime());
+            (long) OIDCClientSecretConfigWrapper.fromClientModel(client).getClientSecretCreationTime());
 
         return rep;
     }
@@ -706,7 +706,7 @@ public class ClientResource {
 
             logger.debug("delete rotated secret");
 
-            OIDCClientConfigWrapper wrapper = OIDCClientConfigWrapper.fromClientModel(client);
+            OIDCClientSecretConfigWrapper wrapper = OIDCClientSecretConfigWrapper.fromClientModel(client);
 
             CredentialRepresentation rep = new CredentialRepresentation();
             rep.setType(CredentialRepresentation.SECRET);
@@ -736,7 +736,7 @@ public class ClientResource {
         auth.clients().requireView(client);
 
         logger.debug("getClientRotatedSecret");
-        OIDCClientConfigWrapper wrapper = OIDCClientConfigWrapper.fromClientModel(client);
+        OIDCClientSecretConfigWrapper wrapper = OIDCClientSecretConfigWrapper.fromClientModel(client);
         if (!wrapper.hasRotatedSecret())
             throw new NotFoundException("Client does not have a rotated secret");
         else {

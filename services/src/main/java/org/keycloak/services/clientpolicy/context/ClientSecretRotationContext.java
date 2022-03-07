@@ -11,21 +11,9 @@ public class ClientSecretRotationContext extends AdminClientUpdateContext {
   private final String currentSecret;
 
   public ClientSecretRotationContext(ClientRepresentation proposedClientRepresentation,
-      ClientModel targetClient, AdminAuth adminAuth, String currentSecret) {
-    super(proposedClientRepresentation, targetClient, adminAuth);
-    this.currentSecret= currentSecret;
-  }
-
-  public ClientSecretRotationContext(ClientRepresentation proposedClientRepresentation,
       ClientModel targetClient, String currentSecret) {
     super(proposedClientRepresentation, targetClient, null);
     this.currentSecret= currentSecret;
-  }
-
-  public ClientSecretRotationContext(ClientRepresentation proposedClientRepresentation,
-      ClientModel targetClient) {
-    super(proposedClientRepresentation, targetClient, null);
-    this.currentSecret= null;
   }
 
   @Override

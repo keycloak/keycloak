@@ -11,7 +11,7 @@ import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.protocol.oidc.OIDCClientConfigWrapper;
+import org.keycloak.protocol.oidc.OIDCClientSecretConfigWrapper;
 import org.keycloak.representations.idm.ClientPolicyExecutorConfigurationRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
@@ -78,7 +78,7 @@ public class ClientSecretRotationExecutor implements
 
   private void executeOnAuthRequest() {
     ClientModel client = session.getContext().getClient();
-    OIDCClientConfigWrapper wrapper = OIDCClientConfigWrapper.fromClientModel(client);
+    OIDCClientSecretConfigWrapper wrapper = OIDCClientSecretConfigWrapper.fromClientModel(client);
 
     if (!wrapper.hasClientSecretExpirationTime()) {
       //first login with policy
@@ -88,7 +88,7 @@ public class ClientSecretRotationExecutor implements
   }
 
   private void executeOnClientCreateOrUpdate(ClientCRUDContext adminContext) {
-    OIDCClientConfigWrapper clientConfigWrapper = OIDCClientConfigWrapper.fromClientModel(
+    OIDCClientSecretConfigWrapper clientConfigWrapper = OIDCClientSecretConfigWrapper.fromClientModel(
         adminContext.getTargetClient());
 
     if (adminContext instanceof ClientSecretRotationContext
@@ -107,7 +107,7 @@ public class ClientSecretRotationExecutor implements
   }
 
   private void rotateSecret(ClientCRUDContext crudContext,
-      OIDCClientConfigWrapper clientConfigWrapper) {
+      OIDCClientSecretConfigWrapper clientConfigWrapper) {
 
     if (crudContext instanceof ClientSecretRotationContext) {
       ClientSecretRotationContext secretRotationContext = ((ClientSecretRotationContext) crudContext);
@@ -130,17 +130,17 @@ public class ClientSecretRotationExecutor implements
     }
   }
 
-  private void updatedSecretExpiration(OIDCClientConfigWrapper clientConfigWrapper) {
+  private void updatedSecretExpiration(OIDCClientSecretConfigWrapper clientConfigWrapper) {
     clientConfigWrapper.setClientSecretExpirationTime(
         Time.currentTime() + configuration.getExpirationPeriod());
   }
 
-  private void updateClientConfigProperties(OIDCClientConfigWrapper clientConfigWrapper) {
+  private void updateClientConfigProperties(OIDCClientSecretConfigWrapper clientConfigWrapper) {
     clientConfigWrapper.setClientSecretCreationTime(Time.currentTime());
     updatedSecretExpiration(clientConfigWrapper);
   }
 
-  private void updateRotateSecret(OIDCClientConfigWrapper clientConfigWrapper, String secret) {
+  private void updateRotateSecret(OIDCClientSecretConfigWrapper clientConfigWrapper, String secret) {
     if (configuration.rotatedExpirationPeriod > 0) {
       clientConfigWrapper.setClientRotatedSecret(secret);
       clientConfigWrapper.setClientRotatedSecretCreationTime();

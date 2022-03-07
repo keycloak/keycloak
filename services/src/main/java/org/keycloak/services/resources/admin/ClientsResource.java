@@ -207,7 +207,7 @@ public class ClientsResource {
                         Response.Status.BAD_REQUEST);
             });
 
-            session.getContext().setClient(clientModel); //FIXME analyze impact of this change. The client is required to parse the conditional executor
+            session.getContext().setClient(clientModel);
             session.clientPolicy().triggerOnEvent(new AdminClientRegisteredContext(clientModel, auth.adminAuth()));
 
             return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(clientModel.getId()).build()).build();

@@ -2,7 +2,7 @@ package org.keycloak.models;
 /**
  * @author <a href="mailto:masales@redhat.com">Marcelo Sales</a>
  */
-public class ClientSecretConfig extends AbstractConfig{
+public class ClientSecretConstants {
 
   // client attribute names
   public static final String CLIENT_SECRET_ROTATION_ENABLED = "client.secret.rotation.enabled";

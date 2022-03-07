@@ -268,7 +268,6 @@ public class ClientPoliciesUtil {
         String executorProviderId = executorRep.getExecutorProviderId();
         Set<String> providerSet = session.listProviderIds(ClientPolicyExecutorProvider.class);
         if (providerSet != null && providerSet.contains(executorProviderId)) {
-            //FIXME provider does not have getConfiguration()??
             ClientPolicyExecutorProvider provider = getExecutorProvider(session, session.getContext().getRealm(), executorProviderId, executorRep.getConfiguration());
             ClientPolicyExecutorConfigurationRepresentation configuration =  (ClientPolicyExecutorConfigurationRepresentation) JsonSerialization.mapper.convertValue(executorRep.getConfiguration(), provider.getExecutorConfigurationClass());
             return configuration.validateConfig();

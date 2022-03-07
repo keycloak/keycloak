@@ -31,7 +31,7 @@ import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
-import org.keycloak.models.ClientSecretConfig;
+import org.keycloak.models.ClientSecretConstants;
 import org.keycloak.models.Constants;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderModel;
@@ -150,7 +150,7 @@ public final class KeycloakModelUtils {
     public static String generateSecret(ClientModel client) {
         String secret = SecretGenerator.getInstance().randomString();
         client.setSecret(secret);
-        client.setAttribute(ClientSecretConfig.CLIENT_SECRET_CREATION_TIME,String.valueOf(Time.currentTime()));
+        client.setAttribute(ClientSecretConstants.CLIENT_SECRET_CREATION_TIME,String.valueOf(Time.currentTime()));
         return secret;
     }
 
