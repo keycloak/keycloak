@@ -9,6 +9,7 @@ export type ProviderType =
   | "hmac-generated"
   | "java-keystore"
   | "rsa"
+  | "rsa-enc"
   | "rsa-enc-generated"
   | "rsa-generated";
 

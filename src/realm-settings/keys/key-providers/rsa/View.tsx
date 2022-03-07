@@ -14,7 +14,7 @@ import { HelpItem } from "../../../../components/help-enabler/HelpItem";
 import { KEY_PROVIDER_TYPE } from "../../../../util";
 import useToggle from "../../../../utils/useToggle";
 
-export default function View() {
+export default function View({ isEnc = false }: { isEnc?: boolean }) {
   const { t } = useTranslation("realm-settings");
   const { control } = useFormContext();
   const [isRSAalgDropdownOpen, toggleDropdown] = useToggle();
@@ -25,7 +25,8 @@ export default function View() {
   const allComponentTypes =
     serverInfo.componentTypes?.[KEY_PROVIDER_TYPE] ?? [];
 
-  const rsaAlgOptions = allComponentTypes[4].properties[3].options ?? [];
+  const rsaAlgOptions =
+    allComponentTypes[isEnc ? 5 : 4].properties[isEnc ? 5 : 3].options ?? [];
 
   return (
     <>
@@ -84,6 +85,7 @@ export default function View() {
               type="text"
               value={value.value}
               filename={privateKey}
+              hideDefaultPreview
               onChange={(value, filename) => {
                 onChange(value);
                 setPrivateKey(filename);
@@ -113,6 +115,7 @@ export default function View() {
               type="text"
               value={value}
               filename={certificate}
+              hideDefaultPreview
               onChange={(value, filename) => {
                 onChange(value);
                 setCertificate(filename);

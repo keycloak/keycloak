@@ -46,6 +46,8 @@ const SubView = ({ providerType }: { providerType: ProviderType }) => {
       return <JavaKeystoreView />;
     case "rsa":
       return <RsaView />;
+    case "rsa-enc":
+      return <RsaView isEnc />;
     case "rsa-enc-generated":
       return <RsaGeneratedView isEnc />;
     case "rsa-generated":
