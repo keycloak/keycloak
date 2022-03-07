@@ -142,6 +142,12 @@ export default {
       "JWE algorithm, which client needs to use when encrypting the content of the OIDC request object specified by 'request' or 'request_uri' parameters. If set to 'any', any algorithm is allowed.",
     validRequestURIs:
       "List of valid URIs, which can be used as values of 'request_uri' parameter during OpenID Connect authentication request. There is support for the same capabilities like for Valid Redirect URIs. For example wildcards or relative paths.",
+    idpInitiatedSsoUrlName:
+      "URL fragment name to reference client when you want to do IDP Initiated SSO. Leaving this empty will disable IDP Initiated SSO. The URL you will reference from your browser will be: {server-root}/realms/{realm}/protocol/saml/clients/{client-url-name}",
+    idpInitiatedSsoRelayState:
+      "Relay state you want to send with SAML request when you want to do IDP Initiated SSO.",
+    masterSamlProcessingUrl:
+      "If configured, this URL will be used for every binding to both the SP's Assertion Consumer and Single Logout Services. This can be individually overridden for each binding and service in the Fine Grain SAML Endpoint Configuration.",
     authorizationSignedResponseAlg:
       "JWA algorithm used for signing authorization response tokens when the response mode is jwt.",
     authorizationEncryptedResponseAlg:
