@@ -56,7 +56,7 @@ export default function ExecutorForm() {
     ClientProfileRepresentation[]
   >([]);
   const [profiles, setProfiles] = useState<ClientProfileRepresentation[]>([]);
-  const form = useForm({ defaultValues, shouldUnregister: false });
+  const form = useForm({ defaultValues });
   const { control, reset, handleSubmit } = form;
   const editMode = !!executorName;
 
@@ -188,13 +188,13 @@ export default function ExecutorForm() {
               name="executor"
               defaultValue=""
               control={control}
-              render={({ onChange, value }) => (
+              render={({ value }) => (
                 <Select
                   toggleId="kc-executor"
                   placeholderText="Select an executor"
                   onToggle={(isOpen) => setSelectExecutorTypeOpen(isOpen)}
                   onSelect={(_, value) => {
-                    onChange(value.toString());
+                    reset({ ...defaultValues, executor: value.toString() });
                     const selectedExecutor = executorTypes?.filter(
                       (type) => type.id === value
                     );
@@ -225,10 +225,11 @@ export default function ExecutorForm() {
             />
           </FormGroup>
           <FormProvider {...form}>
-            <DynamicComponents properties={executorProperties} />
-            {editMode && (
-              <DynamicComponents properties={editedProfileExecutors!} />
-            )}
+            <DynamicComponents
+              properties={
+                editMode ? editedProfileExecutors! : executorProperties
+              }
+            />
           </FormProvider>
           {!globalProfile && (
             <ActionGroup>
@@ -258,10 +259,7 @@ export default function ExecutorForm() {
           <div className="kc-backToProfile">
             <Button
               component={(props) => (
-                <Link
-                  {...props}
-                  to={toClientProfile({ realm, profileName })}
-                ></Link>
+                <Link {...props} to={toClientProfile({ realm, profileName })} />
               )}
               variant="primary"
             >
