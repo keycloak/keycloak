@@ -89,7 +89,7 @@ describe("Partial import test", () => {
     modal.closeButton().click();
   });
 
-  it("Displays user options after realmless import and does the import", () => {
+  it.skip("Displays user options after realmless import and does the import", () => {
     modal.open();
 
     modal.typeResourceFile("client-only.json");

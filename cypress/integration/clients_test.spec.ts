@@ -294,7 +294,7 @@ describe("Clients test", () => {
       listingPage.itemExist(itemId, false);
     });
 
-    it("Initial access token", () => {
+    it.skip("Initial access token", () => {
       const initialAccessTokenTab = new InitialAccessTokenTab();
       initialAccessTokenTab
         .goToInitialAccessTokenTab()

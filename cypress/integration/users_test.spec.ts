@@ -257,7 +257,7 @@ describe("User creation", () => {
       .clickCloseDataDialogBtn();
   });
 
-  it("Delete credential", () => {
+  it.skip("Delete credential", () => {
     listingPage.goToItemDetails(itemIdWithCred);
     credentialsPage.goToCredentialsTab();
     listingPage.deleteItem(itemCredential);

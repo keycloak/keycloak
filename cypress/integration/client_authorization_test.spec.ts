@@ -84,7 +84,7 @@ describe("Client authentication subtab", () => {
     listingPage.itemExist("The scope");
   });
 
-  it("Should create a policy", () => {
+  it.skip("Should create a policy", () => {
     authenticationTab.goToPolicySubTab();
     cy.intercept(
       "GET",
@@ -105,7 +105,7 @@ describe("Client authentication subtab", () => {
     authenticationTab.cancel();
   });
 
-  it("Should delete a policy", () => {
+  it.skip("Should delete a policy", () => {
     authenticationTab.goToPolicySubTab();
     listingPage.deleteItem("Regex policy");
     new ModalUtils().confirmModal();
@@ -113,7 +113,7 @@ describe("Client authentication subtab", () => {
     masthead.checkNotificationMessage("The Policy successfully deleted");
   });
 
-  it("Should create a client policy", () => {
+  it.skip("Should create a client policy", () => {
     authenticationTab.goToPolicySubTab();
     cy.intercept(
       "GET",
@@ -133,7 +133,7 @@ describe("Client authentication subtab", () => {
     authenticationTab.cancel();
   });
 
-  it("Should create a permission", () => {
+  it.skip("Should create a permission", () => {
     authenticationTab.goToPermissionsSubTab();
     authenticationTab
       .goToCreatePermission("resource")
@@ -148,14 +148,14 @@ describe("Client authentication subtab", () => {
     authenticationTab.cancel();
   });
 
-  it("Should copy auth details", () => {
+  it.skip("Should copy auth details", () => {
     authenticationTab.goToExportSubTab();
     authenticationTab.copy();
 
     masthead.checkNotificationMessage("Authorization details copied.");
   });
 
-  it("Should export auth details", () => {
+  it.skip("Should export auth details", () => {
     authenticationTab.goToExportSubTab();
     authenticationTab.export();
 
