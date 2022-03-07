@@ -17,19 +17,24 @@
 
 package org.keycloak.quarkus.runtime;
 
+import java.lang.annotation.Annotation;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiConsumer;
 
+import io.agroal.api.AgroalDataSource;
+import io.quarkus.agroal.DataSource;
+import io.quarkus.arc.Arc;
+import io.quarkus.arc.InstanceHandle;
+import io.quarkus.hibernate.orm.runtime.integration.HibernateOrmIntegrationRuntimeInitListener;
 import liquibase.Scope;
-import org.infinispan.configuration.parsing.ConfigurationBuilderHolder;
-import org.infinispan.configuration.parsing.ParserRegistry;
-import org.infinispan.jboss.marshalling.core.JBossUserMarshaller;
+
+import org.hibernate.cfg.AvailableSettings;
 import org.infinispan.manager.DefaultCacheManager;
 import io.quarkus.smallrye.metrics.runtime.SmallRyeMetricsHandler;
 import io.vertx.core.Handler;
 import io.vertx.ext.web.RoutingContext;
 import org.keycloak.common.Profile;
-import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
 import org.keycloak.quarkus.runtime.storage.database.liquibase.FastServiceLocator;
 import org.keycloak.provider.Provider;
@@ -94,5 +99,24 @@ public class KeycloakRecorder {
         SmallRyeMetricsHandler metricsHandler = new SmallRyeMetricsHandler();
         metricsHandler.setMetricsPath(path);
         return metricsHandler;
+    }
+
+    public HibernateOrmIntegrationRuntimeInitListener createUnitListener(String name) {
+        return new HibernateOrmIntegrationRuntimeInitListener() {
+            @Override
+            public void contributeRuntimeProperties(BiConsumer<String, Object> propertyCollector) {
+                InstanceHandle<AgroalDataSource> instance = Arc.container().instance(
+                        AgroalDataSource.class, new DataSource() {
+                            @Override public Class<? extends Annotation> annotationType() {
+                                return DataSource.class;
+                            }
+
+                            @Override public String value() {
+                                return name;
+                            }
+                        });
+                propertyCollector.accept(AvailableSettings.DATASOURCE, instance.get());
+            }
+        };
     }
 }

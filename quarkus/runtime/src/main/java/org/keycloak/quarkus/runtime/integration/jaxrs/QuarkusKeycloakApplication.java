@@ -20,9 +20,6 @@ package org.keycloak.quarkus.runtime.integration.jaxrs;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import javax.enterprise.inject.Instance;
-import javax.inject.Inject;
-import javax.persistence.EntityManagerFactory;
 import javax.ws.rs.ApplicationPath;
 
 import org.keycloak.Config;
@@ -47,12 +44,8 @@ public class QuarkusKeycloakApplication extends KeycloakApplication {
         return !WelcomeResource.class.isInstance(o);
     }
 
-    @Inject
-    Instance<EntityManagerFactory> entityManagerFactory;
-
     @Override
     protected void startup() {
-        forceEntityManagerInitialization();
         initializeKeycloakSessionFactory();
         setupScheduledTasks(sessionFactory);
         createAdminUser();
@@ -74,12 +67,6 @@ public class QuarkusKeycloakApplication extends KeycloakApplication {
         sessionFactory = instance;
         instance.init();
         sessionFactory.publish(new PostMigrationEvent());
-    }
-
-    private void forceEntityManagerInitialization() {
-        // also forces an initialization of the entity manager so that providers don't need to wait for any initialization logic
-        // when first creating an entity manager
-        entityManagerFactory.get().createEntityManager().close();
     }
 
     private void createAdminUser() {
