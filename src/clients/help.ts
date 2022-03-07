@@ -118,6 +118,11 @@ export default {
       "This section is used to configure advanced settings of this client related to OpenID Connect protocol.",
     fineGrainSamlEndpointConfig:
       "This section to configure exact URLs for Assertion Consumer and Single Logout Service.",
+    logoUrl: "URL that references a logo for the Client application",
+    policyUrl:
+      "URL that the Relying Party Client provides to the End-User to read about the how the profile data will be used",
+    termsOfServiceUrl:
+      "URL that the Relying Party Client provides to the End-User to read about the Relying Party's terms of service",
     accessTokenSignatureAlgorithm:
       "JWA algorithm used for signing access tokens.",
     idTokenSignatureAlgorithm: "JWA algorithm used for signing ID tokens.",

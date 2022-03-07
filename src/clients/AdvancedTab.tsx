@@ -376,7 +376,6 @@ export const AdvancedTab = ({
                 {t("clients-help:fineGrainOpenIdConnectConfiguration")}
               </Text>
               <FineGrainOpenIdConnect
-                control={control}
                 save={() => save()}
                 reset={() =>
                   convertToFormValues(attributes, (key, value) =>

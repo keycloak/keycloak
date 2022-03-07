@@ -47,7 +47,9 @@ export const AlertProvider: FunctionComponent = ({ children }) => {
       t(message, {
         error:
           "response" in error
-            ? error.response?.data?.errorMessage || error.response?.data?.error
+            ? error.response?.data?.error_description ||
+              error.response?.data?.errorMessage ||
+              error.response?.data?.error
             : error,
       }),
       AlertVariant.danger

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Control, Controller } from "react-hook-form";
+import { Controller, useFormContext } from "react-hook-form";
 import {
   ActionGroup,
   Button,
@@ -8,6 +8,7 @@ import {
   Select,
   SelectOption,
   SelectVariant,
+  TextInput,
 } from "@patternfly/react-core";
 
 import { FormAccess } from "../../components/form-access/FormAccess";
@@ -17,13 +18,11 @@ import { sortProviders } from "../../util";
 import { MultiLineInput } from "../../components/multi-line-input/MultiLineInput";
 
 type FineGrainOpenIdConnectProps = {
-  control: Control<Record<string, any>>;
   save: () => void;
   reset: () => void;
 };
 
 export const FineGrainOpenIdConnect = ({
-  control,
   save,
   reset,
 }: FineGrainOpenIdConnectProps) => {
@@ -55,6 +54,8 @@ export const FineGrainOpenIdConnect = ({
     authorizationEncryptedResponseOpen,
     setAuthorizationEncryptedResponseOpen,
   ] = useState(false);
+
+  const { control, register } = useFormContext();
 
   const keyOptions = [
     <SelectOption key="empty" value="">
@@ -141,6 +142,60 @@ export const FineGrainOpenIdConnect = ({
 
   return (
     <FormAccess role="manage-clients" isHorizontal>
+      <FormGroup
+        label={t("logoUrl")}
+        fieldId="logoUrl"
+        labelIcon={
+          <HelpItem
+            helpText="clients-help:logoUrl"
+            fieldLabelId="clients:logoUrl"
+          />
+        }
+      >
+        <TextInput
+          type="text"
+          id="logoUrl"
+          name="attributes.logoUri"
+          data-testid="logoUrl"
+          ref={register}
+        />
+      </FormGroup>
+      <FormGroup
+        label={t("policyUrl")}
+        fieldId="policyUrl"
+        labelIcon={
+          <HelpItem
+            helpText="clients-help:policyUrl"
+            fieldLabelId="clients:policyUrl"
+          />
+        }
+      >
+        <TextInput
+          type="text"
+          id="policyUrl"
+          name="attributes.policyUri"
+          data-testid="policyUrl"
+          ref={register}
+        />
+      </FormGroup>
+      <FormGroup
+        label={t("termsOfServiceUrl")}
+        fieldId="termsOfServiceUrl"
+        labelIcon={
+          <HelpItem
+            helpText="clients-help:termsOfServiceUrl"
+            fieldLabelId="clients:termsOfServiceUrl"
+          />
+        }
+      >
+        <TextInput
+          type="text"
+          id="termsOfServiceUrl"
+          name="attributes.tosUri"
+          data-testid="termsOfServiceUrl"
+          ref={register}
+        />
+      </FormGroup>
       <FormGroup
         label={t("accessTokenSignatureAlgorithm")}
         fieldId="accessTokenSignatureAlgorithm"

@@ -473,6 +473,9 @@ export default {
     fineGrainOpenIdConnectConfiguration:
       "Fine grain OpenID Connect configuration",
     fineGrainSamlEndpointConfig: "Fine Grain SAML Endpoint Configuration",
+    logoUrl: "Logo URL",
+    policyUrl: "Policy URL",
+    termsOfServiceUrl: "Terms of service URL",
     accessTokenSignatureAlgorithm: "Access token signature algorithm",
     idTokenSignatureAlgorithm: "ID token signature algorithm",
     idTokenEncryptionKeyManagementAlgorithm:
