@@ -1083,7 +1083,6 @@ public class JpaUserProvider implements UserProvider.Streams, UserCredentialStor
 
     private UserEntity userInEntityManagerContext(String id) {
         UserEntity user = em.getReference(UserEntity.class, id);
-        boolean isLoaded = em.getEntityManagerFactory().getPersistenceUnitUtil().isLoaded(user);
-        return isLoaded ? user : null;
+        return em.contains(user) ? user : null;
     }
 }
