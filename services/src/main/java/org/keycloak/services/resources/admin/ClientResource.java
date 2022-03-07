@@ -250,27 +250,27 @@ public class ClientResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public CredentialRepresentation regenerateSecret() {
         try{
-        auth.clients().requireConfigure(client);
+            auth.clients().requireConfigure(client);
 
-        logger.debug("regenerateSecret");
+            logger.debug("regenerateSecret");
 
-        ClientRepresentation representation = ModelToRepresentation.toRepresentation(client, session);
-        ClientSecretRotationContext secretRotationContext = new ClientSecretRotationContext(
-            representation, client, client.getSecret());
+            ClientRepresentation representation = ModelToRepresentation.toRepresentation(client, session);
+            ClientSecretRotationContext secretRotationContext = new ClientSecretRotationContext(
+                representation, client, client.getSecret());
 
-        String secret = KeycloakModelUtils.generateSecret(client);
+            String secret = KeycloakModelUtils.generateSecret(client);
 
-        session.clientPolicy().triggerOnEvent(secretRotationContext);
+            session.clientPolicy().triggerOnEvent(secretRotationContext);
 
-        CredentialRepresentation rep = new CredentialRepresentation();
-        rep.setType(CredentialRepresentation.SECRET);
-        rep.setValue(secret);
-        rep.setCreatedDate(
-            (long) OIDCClientSecretConfigWrapper.fromClientModel(client).getClientSecretCreationTime());
+            CredentialRepresentation rep = new CredentialRepresentation();
+            rep.setType(CredentialRepresentation.SECRET);
+            rep.setValue(secret);
+            rep.setCreatedDate(
+                (long) OIDCClientSecretConfigWrapper.fromClientModel(client).getClientSecretCreationTime());
 
-        adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).representation(rep).success();
+            adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).representation(rep).success();
 
-        return rep;
+            return rep;
         } catch (ClientPolicyException cpe) {
             throw new ErrorResponseException(cpe.getError(), cpe.getErrorDetail(),
                 Response.Status.BAD_REQUEST);
