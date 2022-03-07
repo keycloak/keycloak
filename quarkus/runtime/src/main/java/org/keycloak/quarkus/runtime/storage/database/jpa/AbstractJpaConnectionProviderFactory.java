@@ -25,6 +25,7 @@ import javax.enterprise.inject.Instance;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.EntityTransaction;
+import javax.persistence.FlushModeType;
 import javax.persistence.SynchronizationType;
 import org.hibernate.internal.SessionFactoryImpl;
 import org.keycloak.Config;
@@ -109,6 +110,8 @@ public abstract class AbstractJpaConnectionProviderFactory implements JpaConnect
         } else {
             entityManager = PersistenceExceptionConverter.create(session, emf.createEntityManager());
         }
+
+        entityManager.setFlushMode(FlushModeType.AUTO);
 
         return entityManager;
     }
