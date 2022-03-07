@@ -32,7 +32,6 @@ import { AttributeInput } from "../../components/attribute-input/AttributeInput"
 import { defaultContextAttributes } from "../utils";
 import type EvaluationResultRepresentation from "@keycloak/keycloak-admin-client/lib/defs/evaluationResultRepresentation";
 import type ResourceRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceRepresentation";
-import { useParams } from "react-router-dom";
 import type ScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/scopeRepresentation";
 import type { KeyValueType } from "../../components/attribute-form/attribute-convert";
 import { TableComposable, Th, Thead, Tr } from "@patternfly/react-table";
@@ -43,13 +42,14 @@ import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState
 
 interface EvaluateFormInputs
   extends Omit<ResourceEvaluation, "context" | "resources"> {
-  applyToResource: boolean;
   alias: string;
   authScopes: string[];
   context: {
     attributes: Record<string, string>[];
   };
   resources: Record<string, string>[];
+  client: ClientRepresentation;
+  user: UserRepresentation;
 }
 
 export type AttributeType = {
@@ -62,11 +62,8 @@ export type AttributeType = {
 };
 
 type ClientSettingsProps = {
-  clients: ClientRepresentation[];
-  clientName?: string;
+  client: ClientRepresentation;
   save: () => void;
-  users: UserRepresentation[];
-  clientRoles: RoleRepresentation[];
 };
 
 export type AttributeForm = Omit<
@@ -81,18 +78,12 @@ export type AttributeForm = Omit<
 
 type Props = ClientSettingsProps & EvaluationResultRepresentation;
 
-export const AuthorizationEvaluate = ({
-  clients,
-  clientRoles,
-  clientName,
-  users,
-}: Props) => {
+export const AuthorizationEvaluate = ({ client }: Props) => {
   const form = useFormContext<EvaluateFormInputs>();
   const { control, reset, trigger } = form;
   const { t } = useTranslation("clients");
   const adminClient = useAdminClient();
   const realm = useRealm();
-  const { clientId } = useParams<{ clientId: string }>();
 
   const [clientsDropdownOpen, setClientsDropdownOpen] = useState(false);
   const [scopesDropdownOpen, setScopesDropdownOpen] = useState(false);
@@ -103,8 +94,6 @@ export const AuthorizationEvaluate = ({
   const [applyToResourceType, setApplyToResourceType] = useState(false);
   const [resources, setResources] = useState<ResourceRepresentation[]>([]);
   const [scopes, setScopes] = useState<ScopeRepresentation[]>([]);
-  const [selectedClient, setSelectedClient] = useState<ClientRepresentation>();
-  const [selectedUser, setSelectedUser] = useState<UserRepresentation>();
   const [evaluateResults, setEvaluateResults] = useState<
     EvaluationResultRepresentation[]
   >([]);
@@ -117,7 +106,7 @@ export const AuthorizationEvaluate = ({
   const [key, setKey] = useState(0);
 
   const refresh = () => {
-    setKey(new Date().getTime());
+    setKey(key + 1);
   };
 
   const FilterType = {
@@ -128,14 +117,33 @@ export const AuthorizationEvaluate = ({
 
   const [filterType, setFilterType] = useState(FilterType.allResults);
 
+  const [clients, setClients] = useState<ClientRepresentation[]>([]);
+  const [clientRoles, setClientRoles] = useState<RoleRepresentation[]>([]);
+  const [users, setUsers] = useState<UserRepresentation[]>([]);
+
+  useFetch(
+    () =>
+      Promise.all([
+        adminClient.clients.find(),
+        adminClient.roles.find(),
+        adminClient.users.find(),
+      ]),
+    ([clients, roles, users]) => {
+      setClients(clients);
+      setClientRoles(roles);
+      setUsers(users);
+    },
+    []
+  );
+
   useFetch(
     async () =>
       Promise.all([
         adminClient.clients.listResources({
-          id: clientId,
+          id: client.id!,
         }),
         adminClient.clients.listAllScopes({
-          id: clientId,
+          id: client.id!,
         }),
       ]),
     ([resources, scopes]) => {
@@ -153,8 +161,8 @@ export const AuthorizationEvaluate = ({
     const keys = formValues.resources.map(({ key }) => key);
     const resEval: ResourceEvaluation = {
       roleIds: formValues.roleIds ?? [],
-      clientId: selectedClient ? selectedClient.id! : clientId,
-      userId: selectedUser?.id!,
+      clientId: formValues.client.id!,
+      userId: formValues.user.id!,
       resources: resources.filter((resource) => keys.includes(resource.name!)),
       entitlements: false,
       context: {
@@ -167,7 +175,7 @@ export const AuthorizationEvaluate = ({
     };
 
     const evaluation = await adminClient.clients.evaluateResource(
-      { id: clientId!, realm: realm.realm },
+      { id: client.id!, realm: realm.realm },
       resEval
     );
 
@@ -357,29 +365,25 @@ export const AuthorizationEvaluate = ({
             fieldId="client"
           >
             <Controller
-              name="clientId"
-              rules={{
-                validate: (value) => value.length > 0,
-              }}
-              defaultValue={clientName}
+              name="client"
+              defaultValue={client}
               control={control}
               render={({ onChange, value }) => (
                 <Select
                   toggleId="client"
                   onToggle={setClientsDropdownOpen}
                   onSelect={(_, value) => {
-                    setSelectedClient(value as ClientRepresentation);
-                    onChange((value as ClientRepresentation).clientId);
+                    onChange(value);
                     setClientsDropdownOpen(false);
                   }}
-                  selections={selectedClient === value ? value : clientName}
+                  selections={value.clientId}
                   variant={SelectVariant.typeahead}
                   aria-label={t("client")}
                   isOpen={clientsDropdownOpen}
                 >
                   {clients.map((client) => (
                     <SelectOption
-                      selected={client === value}
+                      selected={client.id === value.id}
                       key={client.clientId}
                       value={client}
                     >
@@ -399,12 +403,12 @@ export const AuthorizationEvaluate = ({
                 fieldLabelId="clients:userSelect"
               />
             }
-            fieldId="loginTheme"
+            fieldId="user"
           >
             <Controller
-              name="userId"
+              name="user"
               rules={{
-                validate: (value) => value.length > 0,
+                required: true,
               }}
               defaultValue=""
               control={control}
@@ -414,18 +418,17 @@ export const AuthorizationEvaluate = ({
                   placeholderText={t("selectAUser")}
                   onToggle={setUserDropdownOpen}
                   onSelect={(_, value) => {
-                    setSelectedUser(value as UserRepresentation);
-                    onChange((value as UserRepresentation).username);
+                    onChange(value);
                     setUserDropdownOpen(false);
                   }}
-                  selections={value}
+                  selections={value.username}
                   variant={SelectVariant.typeahead}
                   aria-label={t("user")}
                   isOpen={userDropdownOpen}
                 >
                   {users.map((user) => (
                     <SelectOption
-                      selected={user.username === value}
+                      selected={user.username === value.username}
                       key={user.username}
                       value={user}
                     >
@@ -498,26 +501,16 @@ export const AuthorizationEvaluate = ({
               />
             }
           >
-            <Controller
-              name="applyToResource"
-              defaultValue=""
-              control={control}
-              render={({ onChange, value }) => (
-                <Switch
-                  id="applyToResource-switch"
-                  label={t("common:on")}
-                  labelOff={t("common:off")}
-                  isChecked={value === "true"}
-                  onChange={(value) => {
-                    onChange(value.toString());
-                    setApplyToResourceType(value);
-                  }}
-                />
-              )}
+            <Switch
+              id="applyToResource-switch"
+              label={t("common:on")}
+              labelOff={t("common:off")}
+              isChecked={applyToResourceType}
+              onChange={setApplyToResourceType}
             />
           </FormGroup>
 
-          {!applyToResourceType && (
+          {!applyToResourceType ? (
             <FormGroup
               label={t("resourcesAndAuthScopes")}
               id="resourcesAndAuthScopes"
@@ -541,8 +534,7 @@ export const AuthorizationEvaluate = ({
                 name="resources"
               />
             </FormGroup>
-          )}
-          {applyToResourceType && (
+          ) : (
             <>
               <FormGroup
                 label={t("resourceType")}

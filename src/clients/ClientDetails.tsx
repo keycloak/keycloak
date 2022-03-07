@@ -59,8 +59,6 @@ import { AuthorizationScopes } from "./authorization/Scopes";
 import { AuthorizationPolicies } from "./authorization/Policies";
 import { AuthorizationPermissions } from "./authorization/Permissions";
 import { AuthorizationEvaluate } from "./authorization/AuthorizationEvaluate";
-import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
-import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
 import {
   routableTab,
   RoutableTabs,
@@ -205,24 +203,6 @@ export default function ClientDetails() {
   });
 
   const [client, setClient] = useState<ClientRepresentation>();
-  const [clients, setClients] = useState<ClientRepresentation[]>([]);
-  const [clientRoles, setClientRoles] = useState<RoleRepresentation[]>([]);
-  const [users, setUsers] = useState<UserRepresentation[]>([]);
-
-  useFetch(
-    () =>
-      Promise.all([
-        adminClient.clients.find(),
-        adminClient.roles.find(),
-        adminClient.users.find(),
-      ]),
-    ([clients, roles, users]) => {
-      setClients(clients);
-      setClientRoles(roles);
-      setUsers(users);
-    },
-    []
-  );
 
   const loader = async () => {
     const roles = await adminClient.clients.listRoles({ id: clientId });
@@ -543,13 +523,7 @@ export default function ClientDetails() {
                     title={<TabTitleText>{t("evaluate")}</TabTitleText>}
                     {...authenticationRoute("evaluate")}
                   >
-                    <AuthorizationEvaluate
-                      clients={clients}
-                      clientName={client.clientId}
-                      clientRoles={clientRoles}
-                      users={users}
-                      save={save}
-                    />
+                    <AuthorizationEvaluate client={client} save={save} />
                   </Tab>
                   <Tab
                     id="export"
