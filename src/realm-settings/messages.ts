@@ -358,11 +358,8 @@ export default {
     userProfileSuccess: "User profile settings successfully updated.",
     userProfileError: "Could not update user profile settings: {{error}}",
     status: "Status",
-    convertedToYearsValue: "{{convertedToYears}}",
-    convertedToDaysValue: "{{convertedToDays}}",
-    convertedToHoursValue: "{{convertedToHours}}",
-    convertedToMinutesValue: "{{convertedToMinutes}}",
-    convertedToSecondsValue: "{{convertedToSeconds}}",
+    recommendedSsoTimeout:
+      "It is recommended for this value to be shorter than the SSO session idle timeout: {{time}}",
     supportedLocales: "Supported locales",
     defaultLocale: "Default locale",
     selectLocales: "Select locales",

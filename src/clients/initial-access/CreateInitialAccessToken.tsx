@@ -86,7 +86,6 @@ export default function CreateInitialAccessToken() {
                   data-testid="expiration"
                   value={value}
                   onChange={onChange}
-                  units={["days", "hours", "minutes", "seconds"]}
                 />
               )}
             />

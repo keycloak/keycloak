@@ -307,7 +307,7 @@ export const WebauthnPolicy = ({
                   aria-label={t("webAuthnPolicyCreateTimeout")}
                   value={value}
                   onChange={onChange}
-                  units={["seconds", "minutes", "hours"]}
+                  units={["second", "minute", "hour"]}
                   validated={
                     errors.webAuthnPolicyCreateTimeout ? "error" : "default"
                   }

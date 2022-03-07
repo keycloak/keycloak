@@ -1,5 +1,4 @@
 import { cloneDeep } from "lodash-es";
-import { useTranslation } from "react-i18next";
 import FileSaver from "file-saver";
 import type { IFormatter, IFormatterValueType } from "@patternfly/react-table";
 import { unflatten, flatten } from "flat";
@@ -149,78 +148,6 @@ export const alphaRegexPattern = /[^A-Za-z]/g;
 
 export const emailRegexPattern =
   /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-
-export const forHumans = (seconds: number) => {
-  const { t } = useTranslation();
-
-  const levels: [
-    [number, string],
-    [number, string],
-    [number, string],
-    [number, string],
-    [number, string]
-  ] = [
-    [Math.floor(seconds / 31536000), t("common:times.years")],
-    [Math.floor((seconds % 31536000) / 86400), t("common:times.days")],
-    [
-      Math.floor(((seconds % 31536000) % 86400) / 3600),
-      t("common:times.hours"),
-    ],
-    [
-      Math.floor((((seconds % 31536000) % 86400) % 3600) / 60),
-      t("common:times.minutes"),
-    ],
-    [(((seconds % 31536000) % 86400) % 3600) % 60, t("common:times.seconds")],
-  ];
-  let returntext = "";
-
-  for (let i = 0, max = levels.length; i < max; i++) {
-    if (levels[i][0] === 0) continue;
-    returntext +=
-      " " +
-      levels[i][0] +
-      " " +
-      (levels[i][0] === 1
-        ? levels[i][1].substr(0, levels[i][1].length - 1)
-        : levels[i][1]);
-  }
-  return returntext.trim();
-};
-
-export const interpolateTimespan = (forHumans: string) => {
-  const { t } = useTranslation();
-  const timespan = forHumans.split(" ");
-
-  if (timespan[1] === "Years") {
-    return t(`realm-settings:convertedToYearsValue`, {
-      convertedToYears: forHumans,
-    });
-  }
-
-  if (timespan[1] === "Days") {
-    return t(`realm-settings:convertedToDaysValue`, {
-      convertedToYears: forHumans,
-    });
-  }
-
-  if (timespan[1] === "Hours") {
-    return t(`realm-settings:convertedToHoursValue`, {
-      convertedToHours: forHumans,
-    });
-  }
-
-  if (timespan[1] === "Minutes") {
-    return t(`realm-settings:convertedToMinutesValue`, {
-      convertedToMinutes: forHumans,
-    });
-  }
-
-  if (timespan[1] === "Seconds") {
-    return t(`realm-settings:convertedToSecondsValue`, {
-      convertedToSeconds: forHumans,
-    });
-  }
-};
 
 export const KEY_PROVIDER_TYPE = "org.keycloak.keys.KeyProvider";
 

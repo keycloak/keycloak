@@ -50,7 +50,7 @@ export const AdvancedSettings = ({
             control={control}
             render={({ onChange, value }) => (
               <TimeSelector
-                units={["minutes", "days", "hours"]}
+                units={["minute", "day", "hour"]}
                 value={value}
                 onChange={onChange}
               />
@@ -64,7 +64,7 @@ export const AdvancedSettings = ({
             id="accessTokenLifespan"
             name="attributes.access.token.lifespan"
             defaultValue=""
-            units={["minutes", "days", "hours"]}
+            units={["minute", "day", "hour"]}
             control={control}
           />
 

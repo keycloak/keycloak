@@ -1,3 +1,5 @@
+import React, { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Select,
   SelectOption,
@@ -8,10 +10,17 @@ import {
   TextInputProps,
   ToggleMenuBaseProps,
 } from "@patternfly/react-core";
-import React, { useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
 
-export type Unit = "seconds" | "minutes" | "hours" | "days";
+export type Unit = "second" | "minute" | "hour" | "day";
+
+type TimeUnit = { unit: Unit; label: string; multiplier: number };
+
+const allTimes: TimeUnit[] = [
+  { unit: "second", label: "times.seconds", multiplier: 1 },
+  { unit: "minute", label: "times.minutes", multiplier: 60 },
+  { unit: "hour", label: "times.hours", multiplier: 3600 },
+  { unit: "day", label: "times.days", multiplier: 86400 },
+];
 
 export type TimeSelectorProps = TextInputProps &
   ToggleMenuBaseProps & {
@@ -21,9 +30,28 @@ export type TimeSelectorProps = TextInputProps &
     className?: string;
   };
 
+export const getTimeUnit = (value: number) =>
+  allTimes.reduce(
+    (v, time) =>
+      value % time.multiplier === 0 && v.multiplier < time.multiplier
+        ? time
+        : v,
+    allTimes[0]
+  );
+
+export const toHumanFormat = (value: number, locale: string) => {
+  const timeUnit = getTimeUnit(value);
+  const formatter = new Intl.NumberFormat(locale, {
+    style: "unit",
+    unit: timeUnit.unit,
+    unitDisplay: "long",
+  });
+  return formatter.format(value / timeUnit.multiplier);
+};
+
 export const TimeSelector = ({
   value,
-  units = ["seconds", "minutes", "hours", "days"],
+  units = ["second", "minute", "hour", "day"],
   onChange,
   className,
   min,
@@ -32,36 +60,26 @@ export const TimeSelector = ({
 }: TimeSelectorProps) => {
   const { t } = useTranslation("common");
 
-  const allTimes: { unit: Unit; label: string; multiplier: number }[] = [
-    { unit: "seconds", label: t("times.seconds"), multiplier: 1 },
-    { unit: "minutes", label: t("times.minutes"), multiplier: 60 },
-    { unit: "hours", label: t("times.hours"), multiplier: 3600 },
-    { unit: "days", label: t("times.days"), multiplier: 86400 },
-  ];
-
-  const times = units.map(
-    (unit) => allTimes.find((time) => time.unit === unit)!
+  const times = useMemo(
+    () => units.map((unit) => allTimes.find((time) => time.unit === unit)!),
+    [units]
   );
-  const defaultMultiplier = allTimes.find(
-    (time) => time.unit === units[0]
-  )?.multiplier;
+
+  const defaultMultiplier = useMemo(
+    () => allTimes.find((time) => time.unit === units[0])?.multiplier,
+    [units]
+  );
 
   const [timeValue, setTimeValue] = useState<"" | number>("");
   const [multiplier, setMultiplier] = useState(defaultMultiplier);
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    const x = times.reduce(
-      (v, time) =>
-        value % time.multiplier === 0 && v < time.multiplier
-          ? time.multiplier
-          : v,
-      1
-    );
+    const multiplier = getTimeUnit(value).multiplier;
 
     if (value) {
-      setMultiplier(x);
-      setTimeValue(value / x);
+      setMultiplier(multiplier);
+      setTimeValue(value / multiplier);
     } else {
       setTimeValue(value);
       setMultiplier(defaultMultiplier);
@@ -118,7 +136,7 @@ export const TimeSelector = ({
               key={time.label}
               value={time.multiplier}
             >
-              {time.label}
+              {t(time.label)}
             </SelectOption>
           ))}
         </Select>

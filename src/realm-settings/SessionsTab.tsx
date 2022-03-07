@@ -78,7 +78,7 @@ export const RealmSettingsSessionsTab = ({
                   aria-label="sso-session-idle-input"
                   value={value}
                   onChange={onChange}
-                  units={["minutes", "hours", "days"]}
+                  units={["minute", "hour", "day"]}
                 />
               )}
             />
@@ -105,7 +105,7 @@ export const RealmSettingsSessionsTab = ({
                   aria-label="sso-session-max-input"
                   value={value}
                   onChange={onChange}
-                  units={["minutes", "hours", "days"]}
+                  units={["minute", "hour", "day"]}
                 />
               )}
             />
@@ -132,7 +132,7 @@ export const RealmSettingsSessionsTab = ({
                   aria-label="sso-session-idle-remember-me-input"
                   value={value}
                   onChange={onChange}
-                  units={["minutes", "hours", "days"]}
+                  units={["minute", "hour", "day"]}
                 />
               )}
             />
@@ -159,7 +159,7 @@ export const RealmSettingsSessionsTab = ({
                   data-testid="sso-session-max-remember-me-input"
                   value={value}
                   onChange={onChange}
-                  units={["minutes", "hours", "days"]}
+                  units={["minute", "hour", "day"]}
                 />
               )}
             />
@@ -197,7 +197,7 @@ export const RealmSettingsSessionsTab = ({
                   aria-label="client-session-idle-input"
                   value={value}
                   onChange={onChange}
-                  units={["minutes", "hours", "days"]}
+                  units={["minute", "hour", "day"]}
                 />
               )}
             />
@@ -224,7 +224,7 @@ export const RealmSettingsSessionsTab = ({
                   aria-label="client-session-max-input"
                   value={value}
                   onChange={onChange}
-                  units={["minutes", "hours", "days"]}
+                  units={["minute", "hour", "day"]}
                 />
               )}
             />
@@ -262,7 +262,7 @@ export const RealmSettingsSessionsTab = ({
                   aria-label="offline-session-idle-input"
                   value={value}
                   onChange={onChange}
-                  units={["minutes", "hours", "days"]}
+                  units={["minute", "hour", "day"]}
                 />
               )}
             />
@@ -318,7 +318,7 @@ export const RealmSettingsSessionsTab = ({
                     aria-label="offline-session-max-input"
                     value={value}
                     onChange={onChange}
-                    units={["minutes", "hours", "days"]}
+                    units={["minute", "hour", "day"]}
                   />
                 )}
               />
@@ -358,7 +358,7 @@ export const RealmSettingsSessionsTab = ({
                   aria-label="login-timeout-input"
                   value={value}
                   onChange={onChange}
-                  units={["minutes", "hours", "days"]}
+                  units={["minute", "hour", "day"]}
                 />
               )}
             />
@@ -385,7 +385,7 @@ export const RealmSettingsSessionsTab = ({
                   aria-label="login-action-timeout-input"
                   value={value}
                   onChange={onChange}
-                  units={["minutes", "hours", "days"]}
+                  units={["minute", "hour", "day"]}
                 />
               )}
             />

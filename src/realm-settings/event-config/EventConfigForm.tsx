@@ -132,7 +132,7 @@ export const EventConfigForm = ({
                   <TimeSelector
                     value={value}
                     onChange={onChange}
-                    units={["minutes", "hours", "days"]}
+                    units={["minute", "hour", "day"]}
                   />
                 )}
               />

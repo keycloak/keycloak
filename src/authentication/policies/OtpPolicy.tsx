@@ -255,7 +255,7 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
                   aria-label={t("otpPolicyPeriod")}
                   value={value}
                   onChange={onChange}
-                  units={["seconds", "minutes"]}
+                  units={["second", "minute"]}
                   validated={errors.otpPolicyPeriod ? "error" : "default"}
                 />
               )}

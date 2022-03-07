@@ -27,7 +27,7 @@ export const LifespanField = () => {
         render={({ onChange, value }) => (
           <TimeSelector
             value={value}
-            units={["minutes", "hours", "days"]}
+            units={["minute", "hour", "day"]}
             onChange={onChange}
             menuAppendTo="parent"
           />

@@ -19,11 +19,14 @@ import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/r
 import { FormAccess } from "../components/form-access/FormAccess";
 import { HelpItem } from "../components/help-enabler/HelpItem";
 import { FormPanel } from "../components/scroll-form/FormPanel";
-import { TimeSelector } from "../components/time-selector/TimeSelector";
+import {
+  TimeSelector,
+  toHumanFormat,
+} from "../components/time-selector/TimeSelector";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
-import { forHumans, interpolateTimespan } from "../util";
 
 import "./realm-settings-section.css";
+import { useWhoAmI } from "../context/whoami/WhoAmI";
 
 type RealmSettingsSessionsTabProps = {
   realm: RealmRepresentation;
@@ -38,6 +41,7 @@ export const RealmSettingsTokensTab = ({
 }: RealmSettingsSessionsTabProps) => {
   const { t } = useTranslation("realm-settings");
   const serverInfo = useServerInfo();
+  const { whoAmI } = useWhoAmI();
 
   const [defaultSigAlgDrpdwnIsOpen, setDefaultSigAlgDrpdwnOpen] =
     useState(false);
@@ -200,9 +204,12 @@ export const RealmSettingsTokensTab = ({
           <FormGroup
             label={t("accessTokenLifespan")}
             fieldId="accessTokenLifespan"
-            helperText={`It is recommended for this value to be shorter than the SSO session idle timeout: ${interpolateTimespan(
-              forHumans(realm.ssoSessionIdleTimeout!)
-            )}`}
+            helperText={t("recommendedSsoTimeout", {
+              time: toHumanFormat(
+                realm.ssoSessionIdleTimeout!,
+                whoAmI.getLocale()
+              ),
+            })}
             labelIcon={
               <HelpItem
                 helpText="realm-settings-help:accessTokenLifespan"
@@ -225,7 +232,7 @@ export const RealmSettingsTokensTab = ({
                   aria-label="access-token-lifespan"
                   value={value}
                   onChange={onChange}
-                  units={["minutes", "hours", "days"]}
+                  units={["minute", "hour", "day"]}
                 />
               )}
             />
@@ -252,7 +259,7 @@ export const RealmSettingsTokensTab = ({
                   aria-label="access-token-lifespan-implicit"
                   value={value}
                   onChange={onChange}
-                  units={["minutes", "hours", "days"]}
+                  units={["minute", "hour", "day"]}
                 />
               )}
             />
@@ -278,7 +285,7 @@ export const RealmSettingsTokensTab = ({
                   aria-label="client-login-timeout"
                   value={value}
                   onChange={onChange}
-                  units={["minutes", "hours", "days"]}
+                  units={["minute", "hour", "day"]}
                 />
               )}
             />
@@ -307,7 +314,7 @@ export const RealmSettingsTokensTab = ({
                     aria-label="offline-session-max-input"
                     value={value}
                     onChange={onChange}
-                    units={["minutes", "hours", "days"]}
+                    units={["minute", "hour", "day"]}
                   />
                 )}
               />
@@ -347,7 +354,7 @@ export const RealmSettingsTokensTab = ({
                   aria-label="user-initiated-action-lifespan"
                   value={value}
                   onChange={onChange}
-                  units={["minutes", "hours", "days"]}
+                  units={["minute", "hour", "day"]}
                 />
               )}
             />
@@ -374,7 +381,7 @@ export const RealmSettingsTokensTab = ({
                   aria-label="default-admin-initated-input"
                   value={value}
                   onChange={onChange}
-                  units={["minutes", "hours", "days"]}
+                  units={["minute", "hour", "day"]}
                 />
               )}
             />
@@ -401,7 +408,7 @@ export const RealmSettingsTokensTab = ({
                   aria-label="email-verification-input"
                   value={value}
                   onChange={(value: any) => onChange(value.toString())}
-                  units={["minutes", "hours", "days"]}
+                  units={["minute", "hour", "day"]}
                 />
               )}
             />
@@ -422,7 +429,7 @@ export const RealmSettingsTokensTab = ({
                   aria-label="idp-email-verification"
                   value={value}
                   onChange={onChange}
-                  units={["minutes", "hours", "days"]}
+                  units={["minute", "hour", "day"]}
                 />
               )}
             />
@@ -443,7 +450,7 @@ export const RealmSettingsTokensTab = ({
                   aria-label="forgot-pw-input"
                   value={value}
                   onChange={onChange}
-                  units={["minutes", "hours", "days"]}
+                  units={["minute", "hour", "day"]}
                 />
               )}
             />
@@ -464,7 +471,7 @@ export const RealmSettingsTokensTab = ({
                   aria-label="execute-actions-input"
                   value={value}
                   onChange={onChange}
-                  units={["minutes", "hours", "days"]}
+                  units={["minute", "hour", "day"]}
                 />
               )}
             />
