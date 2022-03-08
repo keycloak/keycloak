@@ -34,7 +34,7 @@
 
     <properties>
         <kc.quarkus.tests.dist>raw</kc.quarkus.tests.dist>
-        <approvaltests.version>12.3.2</approvaltests.version>
+        <approvaltests.version>14.0.0</approvaltests.version>
     </properties>
 
     <dependencies>

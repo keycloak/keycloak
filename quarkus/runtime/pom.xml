@@ -90,7 +90,7 @@
         <dependency>
             <groupId>io.quarkiverse.vault</groupId>
             <artifactId>quarkus-vault</artifactId>
-            <version>1.0.1</version>
+            <version>${io.quarkiverse.vault.version}</version>
         </dependency>
 
         <!-- CLI -->
