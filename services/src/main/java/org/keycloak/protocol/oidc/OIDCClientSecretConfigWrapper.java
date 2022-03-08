@@ -92,11 +92,13 @@ public class OIDCClientSecretConfigWrapper extends AbstractClientConfigWrapper {
     }
 
     public int getClientRotatedSecretCreationTime() {
-        return Integer.parseInt(getAttribute(CLIENT_ROTATED_SECRET_CREATION_TIME, "0"));
+        String rotatedCreationTime = getAttribute(CLIENT_ROTATED_SECRET_CREATION_TIME);
+        if (StringUtil.isNotBlank(rotatedCreationTime)) return Integer.parseInt(rotatedCreationTime);
+        return 0;
     }
 
     public void setClientRotatedSecretCreationTime(Integer rotatedTime) {
-        setAttribute(CLIENT_ROTATED_SECRET_CREATION_TIME, String.valueOf(rotatedTime));
+        setAttribute(CLIENT_ROTATED_SECRET_CREATION_TIME, rotatedTime != null ? String.valueOf(rotatedTime) : null);
     }
 
     /*
@@ -131,7 +133,7 @@ public class OIDCClientSecretConfigWrapper extends AbstractClientConfigWrapper {
     }
 
     public void setClientSecretExpirationTime(Integer expiration) {
-        setAttribute(ClientSecretConstants.CLIENT_SECRET_EXPIRATION, String.valueOf(expiration));
+        setAttribute(ClientSecretConstants.CLIENT_SECRET_EXPIRATION, expiration != null ? String.valueOf(expiration) : null);
     }
 
     public boolean isClientSecretExpired() {
@@ -153,7 +155,7 @@ public class OIDCClientSecretConfigWrapper extends AbstractClientConfigWrapper {
 
     public void setClientRotatedSecretExpirationTime(Integer expiration) {
         setAttribute(ClientSecretConstants.CLIENT_ROTATED_SECRET_EXPIRATION_TIME,
-                String.valueOf(expiration));
+                expiration != null ? String.valueOf(expiration) : null);
     }
 
     public boolean hasClientRotatedSecretExpirationTime() {
