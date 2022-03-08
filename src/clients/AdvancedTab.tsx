@@ -179,78 +179,83 @@ export const AdvancedTab = ({
   if (!publicClient) {
     sections.splice(1, 1);
   }
+  if (protocol !== openIdConnect) {
+    sections.splice(0, 1);
+  }
 
   return (
     <PageSection variant="light" className="pf-u-py-0">
       <ScrollForm sections={sections} borders>
-        <>
-          <Text className="pf-u-pb-lg">
-            <Trans i18nKey="clients-help:notBeforeIntro">
-              In order to successfully push setup url on
-              <Link to={toClient({ realm, clientId: id!, tab: "settings" })}>
-                {t("settings")}
-              </Link>
-              tab
-            </Trans>
-          </Text>
-          <FormAccess role="manage-clients" isHorizontal>
-            <FormGroup
-              label={t("notBefore")}
-              fieldId="kc-not-before"
-              labelIcon={
-                <HelpItem
-                  helpText="clients-help:notBefore"
-                  fieldLabelId="clients:notBefore"
-                />
-              }
-            >
-              <InputGroup>
-                <TextInput
-                  type="text"
-                  id="kc-not-before"
-                  name="notBefore"
-                  isReadOnly
-                  value={formatDate()}
-                />
-                <Button
-                  id="setToNow"
-                  variant="control"
-                  onClick={() => {
-                    setNotBefore(moment.now() / 1000, "notBeforeSetToNow");
-                  }}
-                >
-                  {t("setToNow")}
-                </Button>
-                <Button
-                  id="clear"
-                  variant="control"
-                  onClick={() => {
-                    setNotBefore(0, "notBeforeNowClear");
-                  }}
-                >
-                  {t("clear")}
-                </Button>
-              </InputGroup>
-            </FormGroup>
-            <ActionGroup>
-              {!adminUrl && (
-                <Tooltip
-                  reference={pushRevocationButtonRef}
-                  content={t("clients-help:notBeforeTooltip")}
-                />
-              )}
-              <Button
-                id="push"
-                variant="secondary"
-                onClick={push}
-                isAriaDisabled={!adminUrl}
-                ref={pushRevocationButtonRef}
+        {protocol === openIdConnect && (
+          <>
+            <Text className="pf-u-pb-lg">
+              <Trans i18nKey="clients-help:notBeforeIntro">
+                In order to successfully push setup url on
+                <Link to={toClient({ realm, clientId: id!, tab: "settings" })}>
+                  {t("settings")}
+                </Link>
+                tab
+              </Trans>
+            </Text>
+            <FormAccess role="manage-clients" isHorizontal>
+              <FormGroup
+                label={t("notBefore")}
+                fieldId="kc-not-before"
+                labelIcon={
+                  <HelpItem
+                    helpText="clients-help:notBefore"
+                    fieldLabelId="clients:notBefore"
+                  />
+                }
               >
-                {t("push")}
-              </Button>
-            </ActionGroup>
-          </FormAccess>
-        </>
+                <InputGroup>
+                  <TextInput
+                    type="text"
+                    id="kc-not-before"
+                    name="notBefore"
+                    isReadOnly
+                    value={formatDate()}
+                  />
+                  <Button
+                    id="setToNow"
+                    variant="control"
+                    onClick={() => {
+                      setNotBefore(moment.now() / 1000, "notBeforeSetToNow");
+                    }}
+                  >
+                    {t("setToNow")}
+                  </Button>
+                  <Button
+                    id="clear"
+                    variant="control"
+                    onClick={() => {
+                      setNotBefore(0, "notBeforeNowClear");
+                    }}
+                  >
+                    {t("clear")}
+                  </Button>
+                </InputGroup>
+              </FormGroup>
+              <ActionGroup>
+                {!adminUrl && (
+                  <Tooltip
+                    reference={pushRevocationButtonRef}
+                    content={t("clients-help:notBeforeTooltip")}
+                  />
+                )}
+                <Button
+                  id="push"
+                  variant="secondary"
+                  onClick={push}
+                  isAriaDisabled={!adminUrl}
+                  ref={pushRevocationButtonRef}
+                >
+                  {t("push")}
+                </Button>
+              </ActionGroup>
+            </FormAccess>
+          </>
+        )}
         {publicClient && (
           <>
             <FormAccess role="manage-clients" isHorizontal>
