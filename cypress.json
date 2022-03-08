@@ -5,10 +5,6 @@
     "chromeWebSecurity": false,
     "viewportWidth": 1360,
     "viewportHeight": 768,
-    "retries": {
-        "runMode": 2,
-        "openMode": 0
-      },
     "defaultCommandTimeout": 30000,
     "slowTestThreshold": 30000,
     "videoCompression": false,
