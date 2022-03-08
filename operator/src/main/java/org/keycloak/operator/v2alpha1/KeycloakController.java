@@ -37,15 +37,18 @@ import org.keycloak.operator.Constants;
 import org.keycloak.operator.v2alpha1.crds.Keycloak;
 import org.keycloak.operator.v2alpha1.crds.KeycloakStatus;
 import org.keycloak.operator.v2alpha1.crds.KeycloakStatusBuilder;
+import org.keycloak.operator.v2alpha1.crds.KeycloakStatusCondition;
 
 import javax.inject.Inject;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_FINALIZER;
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_CURRENT_NAMESPACE;
 
-@ControllerConfiguration(namespaces = WATCH_CURRENT_NAMESPACE, finalizerName = NO_FINALIZER)
+// TODO: remove "generationAwareEventProcessing = false" when the race condition is fixed
+@ControllerConfiguration(namespaces = WATCH_CURRENT_NAMESPACE, finalizerName = NO_FINALIZER, generationAwareEventProcessing = false)
 public class KeycloakController implements Reconciler<Keycloak>, EventSourceInitializer<Keycloak>, ErrorStatusHandler<Keycloak> {
 
     @Inject
@@ -98,13 +101,23 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
 
         Log.info("--- Reconciliation finished successfully");
 
+        UpdateControl<Keycloak> updateControl;
         if (status.equals(kc.getStatus())) {
-            return UpdateControl.noUpdate();
+            updateControl = UpdateControl.noUpdate();
         }
         else {
             kc.setStatus(status);
-            return UpdateControl.updateStatus(kc);
+            updateControl = UpdateControl.updateStatus(kc);
         }
+
+        if (status
+                .getConditions()
+                .stream()
+                .anyMatch(c -> c.getType().equals(KeycloakStatusCondition.READY) && !c.getStatus())) {
+            updateControl.rescheduleAfter(10, TimeUnit.SECONDS);
+        }
+
+        return updateControl;
     }
 
     @Override

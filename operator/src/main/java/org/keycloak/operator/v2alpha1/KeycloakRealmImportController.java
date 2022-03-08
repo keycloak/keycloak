@@ -32,19 +32,24 @@ import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 import io.quarkus.logging.Log;
+import org.keycloak.operator.v2alpha1.crds.Keycloak;
 import org.keycloak.operator.v2alpha1.crds.KeycloakRealmImport;
 import org.keycloak.operator.v2alpha1.crds.KeycloakRealmImportStatus;
 import org.keycloak.operator.v2alpha1.crds.KeycloakRealmImportStatusBuilder;
+import org.keycloak.operator.v2alpha1.crds.KeycloakRealmImportStatusCondition;
+import org.keycloak.operator.v2alpha1.crds.KeycloakStatusCondition;
 
 import javax.inject.Inject;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_FINALIZER;
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_CURRENT_NAMESPACE;
 
-@ControllerConfiguration(namespaces = WATCH_CURRENT_NAMESPACE, finalizerName = NO_FINALIZER)
+// TODO: remove "generationAwareEventProcessing = false" when the race condition is fixed
+@ControllerConfiguration(namespaces = WATCH_CURRENT_NAMESPACE, finalizerName = NO_FINALIZER, generationAwareEventProcessing = false)
 public class KeycloakRealmImportController implements Reconciler<KeycloakRealmImport>, EventSourceInitializer<KeycloakRealmImport>, ErrorStatusHandler<KeycloakRealmImport> {
 
     @Inject
@@ -83,12 +88,22 @@ public class KeycloakRealmImportController implements Reconciler<KeycloakRealmIm
 
         Log.info("--- Realm reconciliation finished successfully");
 
+        UpdateControl<KeycloakRealmImport> updateControl;
         if (status.equals(realm.getStatus())) {
-            return UpdateControl.noUpdate();
+            updateControl = UpdateControl.noUpdate();
         } else {
             realm.setStatus(status);
-            return UpdateControl.updateStatus(realm);
+            updateControl = UpdateControl.updateStatus(realm);
         }
+
+        if (status
+                .getConditions()
+                .stream()
+                .anyMatch(c -> c.getType().equals(KeycloakRealmImportStatusCondition.DONE) && !c.getStatus())) {
+            updateControl.rescheduleAfter(10, TimeUnit.SECONDS);
+        }
+
+        return updateControl;
     }
 
     @Override
