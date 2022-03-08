@@ -516,7 +516,7 @@ public class AuthorizationTokenService {
                             break;
                         }
 
-                        Resource resource = resourceStore.findById(resourceServer.getId(), grantedPermission.getResourceId());
+                        Resource resource = resourceStore.findById(resourceServer, grantedPermission.getResourceId());
 
                         if (resource != null) {
                             ResourcePermission permission = permissionsToEvaluate.get(resource.getId());
@@ -561,7 +561,7 @@ public class AuthorizationTokenService {
             Set<Scope> requestedScopesModel) {
         AtomicBoolean processed = new AtomicBoolean();
 
-        resourceStore.findByScope(resourceServer.getId(), requestedScopesModel.stream().map(Scope::getId).collect(Collectors.toList()), resource -> {
+        resourceStore.findByScopes(resourceServer, requestedScopesModel, resource -> {
             if (limit != null && limit.get() <= 0) {
                 return;
             }
@@ -600,7 +600,7 @@ public class AuthorizationTokenService {
         Resource resource;
 
         if (resourceId.indexOf('-') != -1) {
-            resource = resourceStore.findById(resourceServer.getId(), resourceId);
+            resource = resourceStore.findById(resourceServer, resourceId);
         } else {
             resource = null;
         }
@@ -610,25 +610,25 @@ public class AuthorizationTokenService {
         } else if (resourceId.startsWith("resource-type:")) {
             // only resource types, no resource instances. resource types are owned by the resource server
             String resourceType = resourceId.substring("resource-type:".length());
-            resourceStore.findByType(resourceServer.getId(), resourceType, resourceServer.getClientId(),
+            resourceStore.findByType(resourceServer, resourceType, resourceServer.getClientId(),
                     resource1 -> addPermission(request, resourceServer, authorization, permissionsToEvaluate, limit, requestedScopesModel, resource1));
         } else if (resourceId.startsWith("resource-type-any:")) {
             // any resource with a given type
             String resourceType = resourceId.substring("resource-type-any:".length());
-            resourceStore.findByType(resourceServer.getId(), resourceType, null,
+            resourceStore.findByType(resourceServer, resourceType, null,
                     resource12 -> addPermission(request, resourceServer, authorization, permissionsToEvaluate, limit, requestedScopesModel, resource12));
         } else if (resourceId.startsWith("resource-type-instance:")) {
             // only resource instances with a given type
             String resourceType = resourceId.substring("resource-type-instance:".length());
-            resourceStore.findByTypeInstance(resourceServer.getId(), resourceType,
+            resourceStore.findByTypeInstance(resourceServer, resourceType,
                     resource13 -> addPermission(request, resourceServer, authorization, permissionsToEvaluate, limit, requestedScopesModel, resource13));
         } else if (resourceId.startsWith("resource-type-owner:")) {
             // only resources where the current identity is the owner
             String resourceType = resourceId.substring("resource-type-owner:".length());
-            resourceStore.findByType(resourceServer.getId(), resourceType, identity.getId(),
+            resourceStore.findByType(resourceServer, resourceType, identity.getId(),
                     resource14 -> addPermission(request, resourceServer, authorization, permissionsToEvaluate, limit, requestedScopesModel, resource14));
         } else {
-            Resource ownerResource = resourceStore.findByName(resourceServer.getId(), resourceId, identity.getId());
+            Resource ownerResource = resourceStore.findByName(resourceServer, resourceId, identity.getId());
 
             if (ownerResource != null) {
                 permission.setResourceId(ownerResource.getId());
@@ -656,7 +656,7 @@ public class AuthorizationTokenService {
                     resourcePermission.setGranted(true);
                 }
 
-                Resource serverResource = resourceStore.findByName(resourceServer.getId(), resourceId);
+                Resource serverResource = resourceStore.findByName(resourceServer, resourceId);
 
                 if (serverResource != null) {
                     permission.setResourceId(serverResource.getId());

@@ -922,7 +922,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
             filters.put(PermissionTicket.FilterOption.OWNER, auth.getUser().getId());
             filters.put(PermissionTicket.FilterOption.REQUESTER, user.getId());
 
-            List<PermissionTicket> tickets = ticketStore.find(resource.getResourceServer(), filters, -1, -1);
+            List<PermissionTicket> tickets = ticketStore.find(resourceServer, filters, -1, -1);
             final String userId = user.getId();
 
             if (tickets.isEmpty()) {

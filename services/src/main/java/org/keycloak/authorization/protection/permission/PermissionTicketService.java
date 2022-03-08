@@ -83,7 +83,7 @@ public class PermissionTicketService {
             throw new ErrorResponseException("invalid_permission", "created permissions should have requester or requesterName", Response.Status.BAD_REQUEST);
          
         ResourceStore rstore = this.authorization.getStoreFactory().getResourceStore();
-        Resource resource = rstore.findById(resourceServer.getId(), representation.getResource());
+        Resource resource = rstore.findById(resourceServer, representation.getResource());
         if (resource == null ) throw new ErrorResponseException("invalid_resource_id", "Resource set with id [" + representation.getResource() + "] does not exists in this server.", Response.Status.BAD_REQUEST);
         
         if (!resource.getOwner().equals(this.identity.getId()))

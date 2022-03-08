@@ -175,18 +175,18 @@ public class PolicyEvaluationService {
             Set<Scope> scopes = givenScopes.stream().map(scopeRepresentation -> scopeStore.findByName(resourceServer, scopeRepresentation.getName())).collect(Collectors.toSet());
 
             if (resource.getId() != null) {
-                Resource resourceModel = storeFactory.getResourceStore().findById(resourceServer.getId(), resource.getId());
+                Resource resourceModel = storeFactory.getResourceStore().findById(resourceServer, resource.getId());
                 return new ArrayList<>(Arrays.asList(
                         Permissions.createResourcePermissions(resourceModel, resourceServer, scopes, authorization, request))).stream();
             } else if (resource.getType() != null) {
-                return storeFactory.getResourceStore().findByType(resourceServer.getId(), resource.getType()).stream().map(resource1 -> Permissions.createResourcePermissions(resource1,
+                return storeFactory.getResourceStore().findByType(resourceServer, resource.getType()).stream().map(resource1 -> Permissions.createResourcePermissions(resource1,
                         resourceServer, scopes, authorization, request));
             } else {
                 if (scopes.isEmpty()) {
                     return Stream.empty();
                 }
 
-                List<Resource> resources = storeFactory.getResourceStore().findByScope(resourceServer.getId(), scopes.stream().map(Scope::getId).collect(Collectors.toList()));
+                List<Resource> resources = storeFactory.getResourceStore().findByScopes(resourceServer, scopes);
 
                 if (resources.isEmpty()) {
                     return scopes.stream().map(scope -> new ResourcePermission(null, new ArrayList<>(Arrays.asList(scope)), resourceServer));

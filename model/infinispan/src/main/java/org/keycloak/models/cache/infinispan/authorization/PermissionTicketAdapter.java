@@ -140,7 +140,7 @@ public class PermissionTicketAdapter implements PermissionTicket, CachedModel<Pe
 
     @Override
     public Resource getResource() {
-        return cacheSession.getResourceStore().findById(getResourceServer().getId(), cached.getResourceId());
+        return cacheSession.getResourceStore().findById(getResourceServer(), cached.getResourceId());
     }
 
     @Override

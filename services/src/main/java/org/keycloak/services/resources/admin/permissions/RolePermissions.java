@@ -81,7 +81,7 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
         policy = mapCompositePermission(role);
         if (policy != null) authz.getStoreFactory().getPolicyStore().delete(policy.getId());
 
-        Resource resource = authz.getStoreFactory().getResourceStore().findByName(server.getId(), getRoleResourceName(role));
+        Resource resource = authz.getStoreFactory().getResourceStore().findByName(server, getRoleResourceName(role));
         if (resource != null) authz.getStoreFactory().getResourceStore().delete(resource.getId());
     }
 
@@ -123,7 +123,7 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
         ResourceStore resourceStore = authz.getStoreFactory().getResourceStore();
         ResourceServer server = resourceServer(role);
         if (server == null) return null;
-        return  resourceStore.findByName(server.getId(), getRoleResourceName(role));
+        return  resourceStore.findByName(server, getRoleResourceName(role));
     }
 
     @Override
@@ -558,7 +558,7 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
         }
 
         String roleResourceName = getRoleResourceName(role);
-        Resource resource = authz.getStoreFactory().getResourceStore().findByName(server.getId(), roleResourceName);
+        Resource resource = authz.getStoreFactory().getResourceStore().findByName(server, roleResourceName);
         if (resource == null) {
             resource = authz.getStoreFactory().getResourceStore().create(server, roleResourceName, server.getClientId());
             Set<Scope> scopeset = new HashSet<>();

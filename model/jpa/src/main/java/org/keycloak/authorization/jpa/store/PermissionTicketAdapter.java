@@ -115,7 +115,7 @@ public class PermissionTicketAdapter implements PermissionTicket, JpaModel<Permi
 
     @Override
     public Resource getResource() {
-        return storeFactory.getResourceStore().findById(getResourceServer().getId(), entity.getResource().getId());
+        return storeFactory.getResourceStore().findById(getResourceServer(), entity.getResource().getId());
     }
 
     @Override

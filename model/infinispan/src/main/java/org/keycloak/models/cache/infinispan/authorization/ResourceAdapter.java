@@ -81,7 +81,7 @@ public class ResourceAdapter implements Resource, CachedModel<Resource> {
     protected boolean isUpdated() {
         if (updated != null) return true;
         if (!invalidated) return false;
-        updated = cacheSession.getResourceStoreDelegate().findById(cached.getResourceServerId(), cached.getId());
+        updated = cacheSession.getResourceStoreDelegate().findById(getResourceServer(), cached.getId());
         if (updated == null) throw new IllegalStateException("Not found in database");
         return true;
     }
@@ -283,6 +283,6 @@ public class ResourceAdapter implements Resource, CachedModel<Resource> {
     }
 
     private Resource getResourceModel() {
-        return cacheSession.getResourceStoreDelegate().findById(cached.getResourceServerId(), cached.getId());
+        return cacheSession.getResourceStoreDelegate().findById(getResourceServer(), cached.getId());
     }
 }

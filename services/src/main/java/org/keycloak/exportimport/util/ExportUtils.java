@@ -309,7 +309,7 @@ public class ExportUtils {
         representation.setName(null);
         representation.setClientId(null);
 
-        List<ResourceRepresentation> resources = storeFactory.getResourceStore().findByResourceServer(settingsModel.getId())
+        List<ResourceRepresentation> resources = storeFactory.getResourceStore().findByResourceServer(settingsModel)
                 .stream().map(resource -> {
                     ResourceRepresentation rep = toRepresentation(resource, settingsModel, authorization);
 

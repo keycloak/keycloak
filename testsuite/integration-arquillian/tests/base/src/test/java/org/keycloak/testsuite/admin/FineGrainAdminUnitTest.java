@@ -824,7 +824,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
     public static void invokeDelete(KeycloakSession session)  {
         RealmModel realm = session.realms().getRealmByName(TEST);
         AdminPermissionManagement management = AdminPermissions.management(session, realm);
-        List<Resource> byResourceServer = management.authz().getStoreFactory().getResourceStore().findByResourceServer(management.realmResourceServer().getId());
+        List<Resource> byResourceServer = management.authz().getStoreFactory().getResourceStore().findByResourceServer(management.realmResourceServer());
         Assert.assertEquals(5, byResourceServer.size());
         RoleModel removedRole = realm.getRole("removedRole");
         realm.removeRole(removedRole);
@@ -833,15 +833,15 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         client.removeRole(removedClientRole);
         GroupModel group = KeycloakModelUtils.findGroupByPath(realm, "removedGroup");
         realm.removeGroup(group);
-        byResourceServer = management.authz().getStoreFactory().getResourceStore().findByResourceServer(management.realmResourceServer().getId());
+        byResourceServer = management.authz().getStoreFactory().getResourceStore().findByResourceServer(management.realmResourceServer());
         Assert.assertEquals(2, byResourceServer.size());
         realm.removeClient(client.getId());
-        byResourceServer = management.authz().getStoreFactory().getResourceStore().findByResourceServer(management.realmResourceServer().getId());
+        byResourceServer = management.authz().getStoreFactory().getResourceStore().findByResourceServer(management.realmResourceServer());
         Assert.assertEquals(1, byResourceServer.size());
         management.users().setPermissionsEnabled(false);
-        Resource userResource = management.authz().getStoreFactory().getResourceStore().findByName(management.realmResourceServer().getId(), "Users");
+        Resource userResource = management.authz().getStoreFactory().getResourceStore().findByName(management.realmResourceServer(), "Users");
         Assert.assertNull(userResource);
-        byResourceServer = management.authz().getStoreFactory().getResourceStore().findByResourceServer(management.realmResourceServer().getId());
+        byResourceServer = management.authz().getStoreFactory().getResourceStore().findByResourceServer(management.realmResourceServer());
         Assert.assertEquals(0, byResourceServer.size());
     }
 

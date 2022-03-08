@@ -93,10 +93,10 @@ public class PermissionTicketAwareDecisionResultCollector extends DecisionPermis
 
             if (permissions != null) {
                 for (Permission permission : permissions) {
-                    Resource resource = resourceStore.findById(resourceServer.getId(), permission.getResourceId());
+                    Resource resource = resourceStore.findById(resourceServer, permission.getResourceId());
 
                     if (resource == null) {
-                        resource = resourceStore.findByName(resourceServer.getId(), permission.getResourceId(), identity.getId());
+                        resource = resourceStore.findByName(resourceServer, permission.getResourceId(), identity.getId());
                     }
 
                     if (resource == null || !resource.isOwnerManagedAccess() || resource.getOwner().equals(identity.getId()) || resource.getOwner().equals(resourceServer.getClientId())) {

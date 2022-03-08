@@ -2592,10 +2592,10 @@ public class RepresentationToModel {
                     }
                 }
                 if (!hasResource && !"".equals(resourceId)) {
-                    Resource resource = storeFactory.getResourceStore().findById(policy.getResourceServer().getId(), resourceId);
+                    Resource resource = storeFactory.getResourceStore().findById(policy.getResourceServer(), resourceId);
 
                     if (resource == null) {
-                        resource = storeFactory.getResourceStore().findByName(policy.getResourceServer().getId(), resourceId);
+                        resource = storeFactory.getResourceStore().findByName(policy.getResourceServer(), resourceId);
                         if (resource == null) {
                             throw new RuntimeException("Resource with id or name [" + resourceId + "] does not exist or is not owned by the resource server");
                         }
@@ -2658,9 +2658,9 @@ public class RepresentationToModel {
         Resource existing;
 
         if (resource.getId() != null) {
-            existing = resourceStore.findById(resourceServer.getId(), resource.getId());
+            existing = resourceStore.findById(resourceServer, resource.getId());
         } else {
-            existing = resourceStore.findByName(resourceServer.getId(), resource.getName(), ownerId);
+            existing = resourceStore.findByName(resourceServer, resource.getName(), ownerId);
         }
 
         if (existing != null) {

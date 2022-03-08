@@ -119,17 +119,16 @@ public class ScopeService {
     public Response delete(@PathParam("id") String id) {
         this.auth.realm().requireManageAuthorization();
         StoreFactory storeFactory = authorization.getStoreFactory();
-        List<Resource> resources = storeFactory.getResourceStore().findByScope(resourceServer.getId(), Arrays.asList(id));
+        Scope scope = storeFactory.getScopeStore().findById(resourceServer, id);
+        if (scope == null) {
+            return Response.status(Status.NOT_FOUND).build();
+        }
 
+        List<Resource> resources = storeFactory.getResourceStore().findByScopes(resourceServer, Collections.singleton(scope));
         if (!resources.isEmpty()) {
             return ErrorResponse.error("Scopes can not be removed while associated with resources.", Status.BAD_REQUEST);
         }
 
-        Scope scope = storeFactory.getScopeStore().findById(resourceServer, id);
-
-        if (scope == null) {
-            return Response.status(Status.NOT_FOUND).build();
-        }
 
         PolicyStore policyStore = storeFactory.getPolicyStore();
         List<Policy> policies = policyStore.findByScopes(resourceServer, Collections.singletonList(scope));
@@ -177,7 +176,7 @@ public class ScopeService {
             return Response.status(Status.NOT_FOUND).build();
         }
 
-        return Response.ok(storeFactory.getResourceStore().findByScope(resourceServer.getId(), Arrays.asList(model.getId())).stream().map(resource -> {
+        return Response.ok(storeFactory.getResourceStore().findByScopes(resourceServer, Collections.singleton(model)).stream().map(resource -> {
             ResourceRepresentation representation = new ResourceRepresentation();
 
             representation.setId(resource.getId());

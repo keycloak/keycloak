@@ -26,6 +26,7 @@ import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.store.PermissionTicketStore;
+import org.keycloak.authorization.store.ResourceServerStore;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
@@ -95,7 +96,7 @@ public class MapPermissionTicketStore implements PermissionTicketStore {
     public PermissionTicket create(ResourceServer resourceServer, Resource resource, Scope scope, String requester) {
         LOG.tracef("create(%s, %s, %s, %s)%s", resource, scope, requester, resourceServer, getShortStackTrace());
 
-        String owner = authorizationProvider.getStoreFactory().getResourceStore().findById(resourceServer.getId(), resource.getId()).getOwner();
+        String owner = authorizationProvider.getStoreFactory().getResourceStore().findById(resourceServer, resource.getId()).getOwner();
 
         // @UniqueConstraint(columnNames = {"OWNER", "REQUESTER", "RESOURCE_SERVER_ID", "RESOURCE_ID", "SCOPE_ID"})
         DefaultModelCriteria<PermissionTicket> mcb = forResourceServer(resourceServer)
@@ -201,7 +202,7 @@ public class MapPermissionTicketStore implements PermissionTicketStore {
 
             filterOptionStringMap.put(Resource.FilterOption.EXACT_NAME, new String[]{expectedResourceName});
             
-            List<Resource> r = authorizationProvider.getStoreFactory().getResourceStore().findByResourceServer(resourceServer.getId(), filterOptionStringMap, -1, -1);
+            List<Resource> r = authorizationProvider.getStoreFactory().getResourceStore().findByResourceServer(resourceServer, filterOptionStringMap, -1, -1);
             if (r == null || r.isEmpty()) {
                 return Collections.emptyList();
             }
@@ -279,6 +280,7 @@ public class MapPermissionTicketStore implements PermissionTicketStore {
         Function<MapPermissionTicketEntity, Resource> ticketResourceMapper;
 
         ResourceStore resourceStore = authorizationProvider.getStoreFactory().getResourceStore();
+        ResourceServerStore resourceServerStore = authorizationProvider.getStoreFactory().getResourceServerStore();
         if (name != null) {
             ticketResourceMapper = ticket -> {
                 Map<Resource.FilterOption, String[]> filterOptionMap = new EnumMap<>(Resource.FilterOption.class);
@@ -286,13 +288,13 @@ public class MapPermissionTicketStore implements PermissionTicketStore {
                 filterOptionMap.put(Resource.FilterOption.ID, new String[] {ticket.getResourceId()});
                 filterOptionMap.put(Resource.FilterOption.NAME, new String[] {name});
 
-                List<Resource> resource = resourceStore.findByResourceServer(ticket.getResourceServerId(), filterOptionMap, -1, 1);
+                List<Resource> resource = resourceStore.findByResourceServer(resourceServerStore.findById(ticket.getResourceServerId()), filterOptionMap, -1, 1);
                 
                 return resource.isEmpty() ? null : resource.get(0);
             };
         } else {
             ticketResourceMapper = ticket -> resourceStore
-                    .findById(ticket.getResourceServerId(), ticket.getResourceId());
+                    .findById(resourceServerStore.findById(ticket.getResourceServerId()), ticket.getResourceId());
         }
 
         return paginatedStream(tx.read(withCriteria(mcb).orderBy(SearchableFields.RESOURCE_ID, ASCENDING))
@@ -307,10 +309,12 @@ public class MapPermissionTicketStore implements PermissionTicketStore {
         DefaultModelCriteria<PermissionTicket> mcb = criteria();
         mcb = mcb.compare(SearchableFields.OWNER, Operator.EQ, owner);
 
+        ResourceStore resourceStore = authorizationProvider.getStoreFactory().getResourceStore();
+        ResourceServerStore resourceServerStore = authorizationProvider.getStoreFactory().getResourceServerStore();
+
         return paginatedStream(tx.read(withCriteria(mcb).orderBy(SearchableFields.RESOURCE_ID, ASCENDING))
             .filter(distinctByKey(MapPermissionTicketEntity::getResourceId)), first, max)
-            .map(ticket -> authorizationProvider.getStoreFactory().getResourceStore()
-                    .findById(ticket.getResourceServerId(), ticket.getResourceId()))
+            .map(ticket -> resourceStore.findById(resourceServerStore.findById(ticket.getResourceServerId()), ticket.getResourceId()))
             .collect(Collectors.toList());
     }
 }

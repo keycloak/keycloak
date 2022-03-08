@@ -297,10 +297,10 @@ public final class AuthorizationProvider implements Provider {
 
                 if (resources != null) {
                     representation.setResources(resources.stream().map(id -> {
-                        Resource resource = storeFactory.getResourceStore().findById(resourceServer.getId(), id);
+                        Resource resource = storeFactory.getResourceStore().findById(resourceServer, id);
 
                         if (resource == null) {
-                            resource = storeFactory.getResourceStore().findByName(resourceServer.getId(), id);
+                            resource = storeFactory.getResourceStore().findByName(resourceServer, id);
                         }
 
                         if (resource == null) {
@@ -487,88 +487,83 @@ public final class AuthorizationProvider implements Provider {
             }
 
             @Override
-            public Resource findById(String resourceServerId, String id) {
-                return delegate.findById(resourceServerId, id);
+            public Resource findById(ResourceServer resourceServer, String id) {
+                return delegate.findById(resourceServer, id);
             }
 
             @Override
-            public List<Resource> findByOwner(String resourceServerId, String ownerId) {
-                return delegate.findByOwner(resourceServerId, ownerId);
+            public List<Resource> findByOwner(ResourceServer resourceServer, String ownerId) {
+                return delegate.findByOwner(resourceServer, ownerId);
             }
 
             @Override
-            public void findByOwner(String resourceServerId, String ownerId, Consumer<Resource> consumer) {
-                delegate.findByOwner(resourceServerId, ownerId, consumer);
+            public void findByOwner(ResourceServer resourceServer, String ownerId, Consumer<Resource> consumer) {
+                delegate.findByOwner(resourceServer, ownerId, consumer);
             }
 
             @Override
-            public List<Resource> findByOwner(String resourceServerId, String ownerId, int first, int max) {
-                return delegate.findByOwner(resourceServerId, ownerId, first, max);
+            public List<Resource> findByOwner(ResourceServer resourceServer, String ownerId, int first, int max) {
+                return delegate.findByOwner(resourceServer, ownerId, first, max);
             }
 
             @Override
-            public List<Resource> findByUri(String resourceServerId, String uri) {
-                return delegate.findByUri(resourceServerId, uri);
+            public List<Resource> findByUri(ResourceServer resourceServer, String uri) {
+                return delegate.findByUri(resourceServer, uri);
             }
 
             @Override
-            public List<Resource> findByResourceServer(String resourceServerId) {
-                return delegate.findByResourceServer(resourceServerId);
+            public List<Resource> findByResourceServer(ResourceServer resourceServer) {
+                return delegate.findByResourceServer(resourceServer);
             }
 
             @Override
-            public List<Resource> findByResourceServer(String resourceServerId, Map<Resource.FilterOption, String[]> attributes, int firstResult, int maxResult) {
-                return delegate.findByResourceServer(resourceServerId, attributes, firstResult, maxResult);
+            public List<Resource> findByResourceServer(ResourceServer resourceServer, Map<Resource.FilterOption, String[]> attributes, int firstResult, int maxResult) {
+                return delegate.findByResourceServer(resourceServer, attributes, firstResult, maxResult);
             }
 
             @Override
-            public List<Resource> findByScope(String resourceServerId, List<String> id) {
-                return delegate.findByScope(resourceServerId, id);
+            public List<Resource> findByScopes(ResourceServer resourceServer, Set<Scope> scopes) {
+                return delegate.findByScopes(resourceServer, scopes);
             }
 
             @Override
-            public void findByScope(String resourceServerId, List<String> scopes, Consumer<Resource> consumer) {
-                delegate.findByScope(resourceServerId, scopes, consumer);
+            public void findByScopes(ResourceServer resourceServer, Set<Scope> scopes, Consumer<Resource> consumer) {
+                delegate.findByScopes(resourceServer, scopes, consumer);
             }
 
             @Override
-            public Resource findByName(String name, String resourceServerId) {
-                return delegate.findByName(name, resourceServerId);
+            public Resource findByName(ResourceServer resourceServer, String name, String ownerId) {
+                return delegate.findByName(resourceServer, name, ownerId);
             }
 
             @Override
-            public Resource findByName(String resourceServerId, String name, String ownerId) {
-                return delegate.findByName(resourceServerId, name, ownerId);
+            public List<Resource> findByType(ResourceServer resourceServer, String type) {
+                return delegate.findByType(resourceServer, type);
             }
 
             @Override
-            public List<Resource> findByType(String resourceServerId, String type) {
-                return delegate.findByType(resourceServerId, type);
+            public void findByType(ResourceServer resourceServer, String type, Consumer<Resource> consumer) {
+                delegate.findByType(resourceServer, type, consumer);
             }
 
             @Override
-            public void findByType(String resourceServerId, String type, Consumer<Resource> consumer) {
-                delegate.findByType(resourceServerId, type, consumer);
+            public void findByType(ResourceServer resourceServer, String type, String owner, Consumer<Resource> consumer) {
+                delegate.findByType(resourceServer, type, owner, consumer);
             }
 
             @Override
-            public void findByType(String resourceServerId, String type, String owner, Consumer<Resource> consumer) {
-                delegate.findByType(resourceServerId, type, owner, consumer);
+            public List<Resource> findByType(ResourceServer resourceServer, String type, String owner) {
+                return delegate.findByType(resourceServer, type);
             }
 
             @Override
-            public List<Resource> findByType(String resourceServerId, String type, String owner) {
-                return delegate.findByType(resourceServerId, type);
+            public List<Resource> findByTypeInstance(ResourceServer resourceServer, String type) {
+                return delegate.findByTypeInstance(resourceServer, type);
             }
 
             @Override
-            public List<Resource> findByTypeInstance(String type, String resourceServerId) {
-                return delegate.findByTypeInstance(type, resourceServerId);
-            }
-
-            @Override
-            public void findByTypeInstance(String type, String resourceServerId, Consumer<Resource> consumer) {
-                delegate.findByTypeInstance(resourceServerId, type, consumer);
+            public void findByTypeInstance(ResourceServer resourceServer, String type, Consumer<Resource> consumer) {
+                delegate.findByTypeInstance(resourceServer, type, consumer);
             }
         };
     }

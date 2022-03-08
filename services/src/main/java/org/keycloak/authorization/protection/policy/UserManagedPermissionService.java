@@ -143,7 +143,7 @@ public class UserManagedPermissionService {
 
     private void checkRequest(String resourceId, UmaPermissionRepresentation representation) {
         ResourceStore resourceStore = this.authorization.getStoreFactory().getResourceStore();
-        Resource resource = resourceStore.findById(resourceServer.getId(), resourceId);
+        Resource resource = resourceStore.findById(resourceServer, resourceId);
 
         if (resource == null) {
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Resource [" + resourceId + "] cannot be found", Response.Status.BAD_REQUEST);

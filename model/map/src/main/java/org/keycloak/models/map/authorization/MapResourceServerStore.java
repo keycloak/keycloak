@@ -103,7 +103,7 @@ public class MapResourceServerStore implements ResourceServerStore {
                 .forEach(permissionTicketStore::delete);
 
         ResourceStore resourceStore = authorizationProvider.getStoreFactory().getResourceStore();
-        resourceStore.findByResourceServer(id).stream()
+        resourceStore.findByResourceServer(resourceServer).stream()
                 .map(Resource::getId)
                 .forEach(resourceStore::delete);
 

@@ -51,7 +51,7 @@ public class MapPermissionTicketAdapter extends AbstractPermissionTicketModel<Ma
 
     @Override
     public Resource getResource() {
-        return storeFactory.getResourceStore().findById(entity.getResourceServerId(), entity.getResourceId());
+        return storeFactory.getResourceStore().findById(getResourceServer(), entity.getResourceId());
     }
 
     @Override

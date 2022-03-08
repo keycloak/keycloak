@@ -19,11 +19,13 @@ package org.keycloak.authorization.store;
 
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.authorization.model.Scope;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 
 /**
@@ -66,101 +68,112 @@ public interface ResourceStore {
     /**
      * Returns a {@link Resource} instance based on its identifier.
      *
+     * @param resourceServer the resource server
      * @param id the identifier of an existing resource instance
      * @return the resource instance with the given identifier or null if no instance was found
      */
-    Resource findById(String resourceServerId, String id);
+    Resource findById(ResourceServer resourceServer, String id);
 
     /**
      * Finds all {@link Resource} instances with the given {@code ownerId}.
      *
+     *
+     * @param resourceServer
      * @param ownerId the identifier of the owner
      * @return a list with all resource instances owned by the given owner
      */
-    default List<Resource> findByOwner(String resourceServerId, String ownerId) {
+    default List<Resource> findByOwner(ResourceServer resourceServer, String ownerId) {
         List<Resource> list = new LinkedList<>();
 
-        findByOwner(resourceServerId, ownerId, list::add);
+        findByOwner(resourceServer, ownerId, list::add);
 
         return list;
     }
 
-    void findByOwner(String resourceServerId, String ownerId, Consumer<Resource> consumer);
+    void findByOwner(ResourceServer resourceServer, String ownerId, Consumer<Resource> consumer);
 
-    List<Resource> findByOwner(String resourceServerId, String ownerId, int first, int max);
+    List<Resource> findByOwner(ResourceServer resourceServer, String ownerId, int first, int max);
 
     /**
      * Finds all {@link Resource} instances with the given uri.
      *
+     *
+     * @param resourceServer
      * @param uri the identifier of the uri
      * @return a list with all resource instances owned by the given owner
      */
-    List<Resource> findByUri(String resourceServerId, String uri);
+    List<Resource> findByUri(ResourceServer resourceServer, String uri);
 
     /**
      * Finds all {@link Resource} instances associated with a given resource server.
      *
-     * @param resourceServerId the identifier of the resource server
+     * @param resourceServer the identifier of the resource server
      * @return a list with all resources associated with the given resource server
      */
-    List<Resource> findByResourceServer(String resourceServerId);
+    List<Resource> findByResourceServer(ResourceServer resourceServer);
 
     /**
      * Finds all {@link Resource} instances associated with a given resource server.
      *
-     * @param resourceServerId the identifier of the resource server
+     * @param resourceServer the identifier of the resource server
      * @param attributes a map holding the attributes that will be used as a filter; possible filter options are given by {@link Resource.FilterOption}
      * @return a list with all resources associated with the given resource server
      *
      * @throws IllegalArgumentException when there is an unknown attribute in the {@code attributes} map
      */
-    List<Resource> findByResourceServer(String resourceServerId, Map<Resource.FilterOption, String[]> attributes, int firstResult, int maxResult);
+    List<Resource> findByResourceServer(ResourceServer resourceServer, Map<Resource.FilterOption, String[]> attributes, int firstResult, int maxResult);
 
     /**
      * Finds all {@link Resource} associated with a given scope.
      *
-     * @param id one or more scope identifiers
+     *
+     * @param resourceServer
+     * @param scopes one or more scope identifiers
      * @return a list of resources associated with the given scope(s)
      */
-    default List<Resource> findByScope(String resourceServerId, List<String> id) {
+    default List<Resource> findByScopes(ResourceServer resourceServer, Set<Scope> scopes) {
         List<Resource> result = new ArrayList<>();
 
-        findByScope(resourceServerId, id, result::add);
+        findByScopes(resourceServer, scopes, result::add);
 
         return result;
     }
 
-    void findByScope(String resourceServerId, List<String> scopes, Consumer<Resource> consumer);
+    void findByScopes(ResourceServer resourceServer, Set<Scope> scopes, Consumer<Resource> consumer);
 
     /**
      * Find a {@link Resource} by its name where the owner is the resource server itself.
      *
-     * @param resourceServerId the identifier of the resource server
+     * @param resourceServer the resource server
      * @param name the name of the resource
      * @return a resource with the given name
      */
-    Resource findByName(String resourceServerId, String name);
+    default Resource findByName(ResourceServer resourceServer, String name) {
+        return findByName(resourceServer, name, resourceServer.getClientId());
+    }
 
     /**
      * Find a {@link Resource} by its name where the owner is the given <code>ownerId</code>.
      *
-     * @param resourceServerId the identifier of the resource server
+     * @param resourceServer the identifier of the resource server
      * @param name the name of the resource
      * @param ownerId the owner id
      * @return a resource with the given name
      */
-    Resource findByName(String resourceServerId, String name, String ownerId);
+    Resource findByName(ResourceServer resourceServer, String name, String ownerId);
 
     /**
      * Finds all {@link Resource} with the given type.
      *
+     *
+     * @param resourceServer
      * @param type the type of the resource
      * @return a list of resources with the given type
      */
-    default List<Resource> findByType(String resourceServerId, String type) {
+    default List<Resource> findByType(ResourceServer resourceServer, String type) {
         List<Resource> list = new LinkedList<>();
 
-        findByType(resourceServerId, type, list::add);
+        findByType(resourceServer, type, list::add);
 
         return list;
     }
@@ -168,14 +181,16 @@ public interface ResourceStore {
     /**
      * Finds all {@link Resource} with the given type.
      *
+     *
+     * @param resourceServer
      * @param type the type of the resource
      * @param owner the resource owner or null for any resource with a given type
      * @return a list of resources with the given type
      */
-    default List<Resource> findByType(String resourceServerId, String type, String owner) {
+    default List<Resource> findByType(ResourceServer resourceServer, String type, String owner) {
         List<Resource> list = new LinkedList<>();
 
-        findByType(resourceServerId, type, owner, list::add);
+        findByType(resourceServer, type, owner, list::add);
 
         return list;
     }
@@ -183,31 +198,31 @@ public interface ResourceStore {
     /**
      * Finds all {@link Resource} with the given type.
      *
-     * @param resourceServerId the resource server id
+     * @param resourceServer the resource server id
      * @param type the type of the resource
      * @param consumer the result consumer
      * @return a list of resources with the given type
      */
-    void findByType(String resourceServerId, String type, Consumer<Resource> consumer);
+    void findByType(ResourceServer resourceServer, String type, Consumer<Resource> consumer);
 
     /**
      * Finds all {@link Resource} with the given type.
      *
-     * @param resourceServerId the resource server id
+     * @param resourceServer the resource server id
      * @param type the type of the resource
      * @param owner the resource owner or null for any resource with a given type
      * @param consumer the result consumer
      * @return a list of resources with the given type
      */
-    void findByType(String resourceServerId, String type, String owner, Consumer<Resource> consumer);
+    void findByType(ResourceServer resourceServer, String type, String owner, Consumer<Resource> consumer);
 
-    default List<Resource> findByTypeInstance(String resourceServerId, String type) {
+    default List<Resource> findByTypeInstance(ResourceServer resourceServer, String type) {
         List<Resource> list = new LinkedList<>();
 
-        findByTypeInstance(resourceServerId, type, list::add);
+        findByTypeInstance(resourceServer, type, list::add);
 
         return list;
     }
 
-    void findByTypeInstance(String resourceServerId, String type, Consumer<Resource> consumer);
+    void findByTypeInstance(ResourceServer resourceServerId, String type, Consumer<Resource> consumer);
 }

@@ -206,7 +206,7 @@ public class PolicyService {
 
         if (resource != null && !"".equals(resource.trim())) {
             ResourceStore resourceStore = storeFactory.getResourceStore();
-            Resource resourceModel = resourceStore.findById(resourceServer.getId(), resource);
+            Resource resourceModel = resourceStore.findById(resourceServer, resource);
 
             if (resourceModel == null) {
                 Map<Resource.FilterOption, String[]> resourceFilters = new EnumMap<>(Resource.FilterOption.class);
@@ -217,7 +217,7 @@ public class PolicyService {
                     resourceFilters.put(Resource.FilterOption.OWNER, new String[]{owner});
                 }
 
-                Set<String> resources = resourceStore.findByResourceServer(resourceServer.getId(), resourceFilters, -1, 1).stream().map(Resource::getId).collect(Collectors.toSet());
+                Set<String> resources = resourceStore.findByResourceServer(resourceServer, resourceFilters, -1, 1).stream().map(Resource::getId).collect(Collectors.toSet());
 
                 if (resources.isEmpty()) {
                     return Response.noContent().build();

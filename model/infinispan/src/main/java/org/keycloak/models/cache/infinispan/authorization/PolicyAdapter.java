@@ -223,9 +223,9 @@ public class PolicyAdapter implements Policy, CachedModel<Policy> {
         if (resources != null) return resources;
         resources = new HashSet<>();
         ResourceStore resourceStore = cacheSession.getResourceStore();
+        ResourceServer resourceServer = getResourceServer();
         for (String resourceId : cached.getResourcesIds(modelSupplier)) {
-            String resourceServerId = cached.getResourceServerId();
-            Resource resource = resourceStore.findById(resourceServerId, resourceId);
+            Resource resource = resourceStore.findById(resourceServer, resourceId);
             cacheSession.cacheResource(resource);
             resources.add(resource);
         }
