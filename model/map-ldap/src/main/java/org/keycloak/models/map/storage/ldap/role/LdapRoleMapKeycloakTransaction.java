@@ -189,22 +189,22 @@ public class LdapRoleMapKeycloakTransaction extends LdapMapKeycloakTransaction<L
 
     @Override
     public boolean delete(String key) {
+        if (deletedKeys.contains(key)) {
+            return true;
+        }
         LdapMapRoleEntityFieldDelegate read = read(key);
         if (read == null) {
             throw new ModelException("unable to read entity with key " + key);
         }
-        if (!deletedKeys.contains((key))) {
-            // avoid enlisting LDAP removal twice if client calls it twice
-            deletedKeys.add(key);
-            tasksOnCommit.add(new DeleteOperation() {
-                @Override
-                public void execute() {
-                    identityStore.remove(read.getLdapMapObject());
-                    // once removed from LDAP, avoid updating a modified entity in LDAP.
-                    entities.remove(read.getId());
-                }
-            });
-        }
+        deletedKeys.add(key);
+        tasksOnCommit.add(new DeleteOperation() {
+            @Override
+            public void execute() {
+                identityStore.remove(read.getLdapMapObject());
+                // once removed from LDAP, avoid updating a modified entity in LDAP.
+                entities.remove(read.getId());
+            }
+        });
         return true;
     }
 

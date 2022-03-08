@@ -44,6 +44,10 @@ public class LdapMapConfig {
         };
     }
 
+    protected MultivaluedHashMap<String, String> getConfig() {
+        return config;
+    }
+
     // from: RoleMapperConfig
     public Collection<String> getRoleObjectClasses() {
         String objectClasses = config.getFirst(LdapMapRoleMapperConfig.ROLE_OBJECT_CLASSES);

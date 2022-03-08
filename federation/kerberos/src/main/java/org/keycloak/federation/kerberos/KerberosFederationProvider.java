@@ -198,6 +198,11 @@ public class KerberosFederationProvider implements UserStorageProvider,
             Map<String, String> state = new HashMap<String, String>();
             if (spnegoAuthenticator.isAuthenticated()) {
                 String username = spnegoAuthenticator.getAuthenticatedUsername();
+                if (!spnegoAuthenticator.getKerberosRealm().equals(kerberosConfig.getKerberosRealm())) {
+                    // TODO: we would probably allow for users of other realms to authenticate as well if there is a trust relationship
+                    // TODO: on the other hand how would we handle duplicate user names in the two realms? Would we combine the two to a long, distinct user name?
+                    return CredentialValidationOutput.failed();
+                }
                 UserModel user = findOrCreateAuthenticatedUser(realm, username);
                 if (user == null) {
                     return CredentialValidationOutput.failed();
@@ -242,7 +247,8 @@ public class KerberosFederationProvider implements UserStorageProvider,
             user = session.users().getUserById(realm, user.getId());  // make sure we get a cached instance
             logger.debug("Kerberos authenticated user " + username + " found in Keycloak storage");
 
-            if (!model.getId().equals(user.getFederationLink())) {
+            // TODO: revisit how federationLink would be set on map storage and if `user.getFederationLink() != null` is the right way to go
+            if (user.getFederationLink() != null && !model.getId().equals(user.getFederationLink())) {
                 logger.warn("User with username " + username + " already exists, but is not linked to provider [" + model.getName() + "]");
                 return null;
             } else {

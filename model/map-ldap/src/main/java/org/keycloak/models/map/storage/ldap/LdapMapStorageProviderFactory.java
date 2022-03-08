@@ -18,11 +18,13 @@ package org.keycloak.models.map.storage.ldap;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.component.AmphibianProviderFactory;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -32,6 +34,7 @@ import org.keycloak.models.map.storage.MapStorageProvider;
 import org.keycloak.models.map.storage.MapStorageProviderFactory;
 import org.keycloak.models.map.storage.ldap.config.LdapMapConfig;
 import org.keycloak.models.map.storage.ldap.role.LdapRoleMapKeycloakTransaction;
+import org.keycloak.models.map.storage.ldap.user.LdapUserMapKeycloakTransaction;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
 public class LdapMapStorageProviderFactory implements
@@ -46,10 +49,18 @@ public class LdapMapStorageProviderFactory implements
 
     private Config.Scope config;
 
+    /*
+     * TODO: This delegate will disappear in the final implementation. It's a helper for development when an entity is not fully
+     * supported and the tree storage can't be configured for it yet.
+     */
+    @Deprecated
+    private volatile MapStorageProvider delegate;
+
     @SuppressWarnings("rawtypes")
     private static final Map<Class<?>, LdapRoleMapKeycloakTransaction.LdapRoleMapKeycloakTransactionFunction<KeycloakSession, Config.Scope, MapKeycloakTransaction>> MODEL_TO_TX = new HashMap<>();
     static {
         MODEL_TO_TX.put(RoleModel.class,            LdapRoleMapKeycloakTransaction::new);
+        MODEL_TO_TX.put(UserModel.class,            LdapUserMapKeycloakTransaction::new);
     }
 
     public LdapMapStorageProviderFactory() {
@@ -57,12 +68,15 @@ public class LdapMapStorageProviderFactory implements
     }
 
     public <M, V extends AbstractEntity> MapKeycloakTransaction<V, M> createTransaction(KeycloakSession session, Class<M> modelType) {
-        return MODEL_TO_TX.get(modelType).apply(session, config);
+        LdapRoleMapKeycloakTransaction.LdapRoleMapKeycloakTransactionFunction<KeycloakSession, Config.Scope, MapKeycloakTransaction> tx = MODEL_TO_TX.get(modelType);
+        Objects.requireNonNull(tx, "model " + modelType + " is not supported for " + this.getClass());
+        return tx.apply(session, config);
     }
 
     @Override
     public MapStorageProvider create(KeycloakSession session) {
-        return new LdapMapStorageProvider(this, sessionTxPrefixForFactoryInstance);
+        lazyInit(session);
+        return new LdapMapStorageProvider(this, sessionTxPrefixForFactoryInstance, delegate);
     }
 
     @Override
@@ -87,6 +101,16 @@ public class LdapMapStorageProviderFactory implements
             value = defaultValue;
         }
         System.setProperty(name, value);
+    }
+
+    private void lazyInit(KeycloakSession session) {
+        if (delegate == null) {
+            synchronized (this) {
+                if (delegate == null) {
+                    delegate = session.getProvider(MapStorageProvider.class, "concurrenthashmap");
+                }
+            }
+        }
     }
 
     @Override

@@ -17,20 +17,26 @@
 package org.keycloak.models.map.storage.ldap;
 
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.MapStorageProvider;
 import org.keycloak.models.map.storage.MapStorageProviderFactory.Flag;
+import org.keycloak.models.map.storage.ldap.user.LdapUserMapKeycloakTransaction;
+import org.keycloak.models.map.user.MapUserEntity;
 
 public class LdapMapStorageProvider implements MapStorageProvider {
 
     private final LdapMapStorageProviderFactory factory;
     private final String sessionTxPrefix;
+    @Deprecated
+    private final MapStorageProvider delegate;
 
-    public LdapMapStorageProvider(LdapMapStorageProviderFactory factory, String sessionTxPrefix) {
+    public LdapMapStorageProvider(LdapMapStorageProviderFactory factory, String sessionTxPrefix, MapStorageProvider delegate) {
         this.factory = factory;
         this.sessionTxPrefix = sessionTxPrefix;
+        this.delegate = delegate;
     }
 
     @Override
@@ -49,6 +55,13 @@ public class LdapMapStorageProvider implements MapStorageProvider {
                 if (sessionTx == null) {
                     sessionTx = factory.createTransaction(session, modelType);
                     session.setAttribute(sessionTxPrefix + modelType.hashCode(), sessionTx);
+
+                    if (modelType == UserModel.class) {
+                        MapStorage<V, M> delegateStorage = delegate.getStorage(modelType, flags);
+                        MapKeycloakTransaction<V, M> delegateTransaction = delegateStorage.createTransaction(session);
+                        ((LdapUserMapKeycloakTransaction) sessionTx).setDelegate((MapKeycloakTransaction<MapUserEntity, UserModel>) delegateTransaction);
+                    }
+
                 }
                 return sessionTx;
             }

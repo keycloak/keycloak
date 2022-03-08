@@ -155,7 +155,7 @@
             "uuidLDAPAttribute": "entryUUID",
             "userObjectClasses": "inetOrgPerson, organizationalPerson",
             "connectionUrl": "${keycloak.map.storage.ldap.connectionUrl:}",
-            "usersDn": "ou=People,dc=keycloak,dc=org",
+            "usersDn": "ou=Internal,ou=People,dc=keycloak,dc=org",
             "bindDn": "${keycloak.map.storage.ldap.bindDn:}",
             "bindCredential": "${keycloak.map.storage.ldap.bindCredential:}",
             "roles.realm.dn": "ou=RealmRoles,dc=keycloak,dc=org",
@@ -164,10 +164,15 @@
             "membership.ldap.attribute": "member",
             "role.name.ldap.attribute": "cn",
             "role.object.classes": "groupOfNames",
-            "role.attributes": "ou",
+            "role.attributes": "description",
+            "user.attributes": "description",
             "mode": "LDAP_ONLY",
             "use.realm.roles.mapping": "true",
-            "connectionPooling": "true"
+            "connectionPooling": "true",
+            "use.realm.roles.mapping": "true",
+            "kerberosRealm": "KEYCLOAK.ORG",
+            "serverPrincipal": "HTTP/localhost@KEYCLOAK.ORG",
+            "keyTab": "${keycloak.map.storage.ldap.keyTab:testsuite/integration-arquillian/tests/base/src/test/resources/kerberos/http.keytab}"
         }
     },
 

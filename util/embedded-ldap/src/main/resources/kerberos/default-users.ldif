@@ -9,6 +9,16 @@ objectClass: organizationalUnit
 objectClass: top
 ou: People
 
+dn: ou=Internal,ou=People,dc=keycloak,dc=org
+objectClass: organizationalUnit
+objectClass: top
+ou: Internal
+
+dn: ou=RealmRoles,dc=keycloak,dc=org
+objectclass: top
+objectclass: organizationalUnit
+ou: RealmRoles
+
 dn: uid=krbtgt,ou=People,dc=keycloak,dc=org
 objectClass: top
 objectClass: person

@@ -18,8 +18,11 @@
 package org.keycloak.testsuite.pages;
 
 import org.openqa.selenium.By;
+import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
+
+import static org.jboss.arquillian.graphene.Graphene.waitModel;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -37,6 +40,12 @@ public abstract class AbstractAccountPage extends AbstractPage {
 
     public void logout() {
         logoutLink.click();
+        try {
+            // wait until logout is complete
+            waitModel().until().element(By.linkText("Sign Out")).is().not().present();
+        } catch (TimeoutException ex) {
+            throw new TimeoutException("found text: " + driver.findElement(By.tagName("header")).getText(), ex);
+        }
     }
 
     public String getLanguageDropdownText() {

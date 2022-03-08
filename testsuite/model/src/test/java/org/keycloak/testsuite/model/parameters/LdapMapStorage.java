@@ -17,6 +17,7 @@
 package org.keycloak.testsuite.model.parameters;
 
 import com.google.common.collect.ImmutableSet;
+import org.junit.rules.ExternalResource;
 import org.jboss.logging.Logger;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
@@ -38,7 +39,13 @@ import org.keycloak.testsuite.model.KeycloakModelParameters;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.util.ldap.LDAPEmbeddedServer;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Set;
+import javax.naming.NamingException;
 
 /**
  * @author Alexander Schwartz
@@ -57,15 +64,34 @@ public class LdapMapStorage extends KeycloakModelParameters {
 
     private final LDAPRule ldapRule = new LDAPRule();
 
+    /**
+     * Temporary folder for concurrent hashmap storage.
+     * The classic {@link org.junit.rules.TemporaryFolder} won't work here, as we'll need the folder already
+     * in {@link #updateConfig(Config)} that is executed too early for that rule as it hasn't been initialized there, yet.
+     */
+    private final Path temporaryFolder;
+
     public LdapMapStorage() {
         super(ALLOWED_SPIS, ALLOWED_FACTORIES);
+        try {
+            temporaryFolder = Files.createTempDirectory(Paths.get("target"), "mapstorage-");
+        } catch (IOException e) {
+            throw new RuntimeException("can't create temporary folder", e);
+        }
     }
 
     @Override
     public void updateConfig(Config cf) {
+        if (!temporaryFolder.toFile().exists()) {
+            // temporary folder has been cleaned up after previous test
+            if (!temporaryFolder.toFile().mkdir()) {
+                throw new RuntimeException("can't create folder " + temporaryFolder);
+            }
+        }
+
         cf.spi(MapStorageSpi.NAME)
                 .provider(ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
-                .config("dir", "${project.build.directory:target}");
+                .config("dir", temporaryFolder.toString());
 
         cf.spi(MapStorageSpi.NAME)
                 .provider(LdapMapStorageProviderFactory.PROVIDER_ID)
@@ -96,7 +122,7 @@ public class LdapMapStorage extends KeycloakModelParameters {
                 .spi("role").config("map.storage.provider", LdapMapStorageProviderFactory.PROVIDER_ID)
                 .spi(DeploymentStateSpi.NAME).config("map.storage.provider", ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
                 .spi(StoreFactorySpi.NAME).config("map.storage.provider", ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
-                .spi("user").config("map.storage.provider", ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
+                .spi("user").config("map.storage.provider", LdapMapStorageProviderFactory.PROVIDER_ID)
                 .spi(UserSessionSpi.NAME).config("map.storage-user-sessions.provider", ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
                 .spi(UserSessionSpi.NAME).config("map.storage-client-sessions.provider", ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
                 .spi(UserLoginFailureSpi.NAME).config("map.storage.provider", ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
@@ -115,7 +141,40 @@ public class LdapMapStorage extends KeycloakModelParameters {
 
     @Override
     public Statement classRule(Statement base, Description description) {
-        return ldapRule.apply(base, description);
+        base = ldapRule.apply(base, description);
+
+        // The folder cleanup is a classRule, as otherwise the @After methods might not be able to clean up realm information
+        // as the rule will run before the @After steps.
+        base = new ExternalResource() {
+            @Override
+            protected void before() throws Throwable {
+                if (!temporaryFolder.toFile().exists()) {
+                    // temporary folder has been cleaned up after previous test
+                    if (!temporaryFolder.toFile().mkdir()) {
+                        throw new RuntimeException("can't create folder " + temporaryFolder);
+                    }
+                }
+            }
+
+            @Override
+            protected void after() {
+                if (temporaryFolder.toFile().exists()) {
+                    File[] files = temporaryFolder.toFile().listFiles();
+                    if (files != null) {
+                        for (File file : files) {
+                            if (!file.delete()) {
+                                throw new RuntimeException("can't delete file " + file);
+                            }
+                        }
+                    }
+                    if (!temporaryFolder.toFile().delete()) {
+                        throw new RuntimeException("can't delete folder " + temporaryFolder);
+                    }
+                }
+            }
+        }.apply(base, description);
+
+        return base;
     }
 
 }

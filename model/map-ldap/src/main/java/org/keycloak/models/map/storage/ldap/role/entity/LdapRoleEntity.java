@@ -332,4 +332,33 @@ public class LdapRoleEntity extends UpdatableEntity.Impl implements EntityFieldD
         return consumer.apply(this);
     }
 
+    @Override
+    public <K, EF extends Enum<? extends EntityField<MapRoleEntity>> & EntityField<MapRoleEntity>> Object mapGet(EF field, K key) {
+        if (field == MapRoleEntityFields.ATTRIBUTES) {
+            return getAttribute((String) key);
+        } else {
+            throw new ModelException("unsupported field for mapGet " + field);
+        }
+    }
+
+    @Override
+    public <K, T, EF extends Enum<? extends EntityField<MapRoleEntity>> & EntityField<MapRoleEntity>> void mapPut(EF field, K key, T value) {
+        if (field == MapRoleEntityFields.ATTRIBUTES) {
+            //noinspection unchecked
+            setAttribute((String) key, (List<String>) value);
+        } else {
+            throw new ModelException("unsupported field for mapGetPut " + field);
+        }
+    }
+
+    @Override
+    public <K, EF extends Enum<? extends EntityField<MapRoleEntity>> & EntityField<MapRoleEntity>> Object mapRemove(EF field, K key) {
+        if (field == MapRoleEntityFields.ATTRIBUTES) {
+            removeAttribute((String) key);
+            return null;
+        } else {
+            throw new ModelException("unsupported field for mapRemove " + field);
+        }
+    }
+
 }

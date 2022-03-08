@@ -40,8 +40,8 @@ public class MapCredentialValidationOutput<V> {
         this.state = state;
     }
 
-    public static MapCredentialValidationOutput<?> failed() {
-        return new MapCredentialValidationOutput<Void>(null, CredentialValidationOutput.Status.FAILED, Collections.emptyMap());
+    public static <V> MapCredentialValidationOutput<V> failed() {
+        return new MapCredentialValidationOutput<>(null, CredentialValidationOutput.Status.FAILED, Collections.emptyMap());
     }
 
     public V getAuthenticatedUser() {

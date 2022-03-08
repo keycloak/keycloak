@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2022. Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.federation.kerberos.impl;
+package org.keycloak.models.map.storage.ldap.user.kerberos.impl;
 
 import org.ietf.jgss.GSSContext;
 import org.ietf.jgss.GSSCredential;
@@ -26,7 +26,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.KerberosSerializationUtils;
-import org.keycloak.federation.kerberos.CommonKerberosConfig;
+import org.keycloak.models.map.storage.ldap.user.kerberos.CommonKerberosConfig;
 
 import javax.security.auth.Subject;
 import javax.security.auth.kerberos.KerberosTicket;
@@ -114,8 +114,7 @@ public class SPNEGOAuthenticator {
      */
     public String getAuthenticatedUsername() {
         String[] tokens = authenticatedKerberosPrincipal.split("@");
-        String username = tokens[0];
-        return username;
+        return tokens[0];
     }
 
     /**
@@ -125,6 +124,7 @@ public class SPNEGOAuthenticator {
         String[] tokens = authenticatedKerberosPrincipal.split("@");
         return tokens[1];
     }
+
 
     private class AcceptSecContext implements PrivilegedExceptionAction<Boolean> {
 

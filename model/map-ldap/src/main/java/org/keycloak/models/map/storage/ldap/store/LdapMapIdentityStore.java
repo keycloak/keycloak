@@ -44,6 +44,7 @@ import javax.naming.directory.SchemaViolationException;
 import javax.naming.directory.SearchControls;
 import javax.naming.directory.SearchResult;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -530,6 +531,56 @@ public class LdapMapIdentityStore implements AutoCloseable {
             throw new ModelException("Could not retrieve identifier for entry [" + ldapObject.getDn().toString() + "].");
         }
     }
+
+    public void updatePassword(LdapMapObject user, String password, LdapMapOperationDecorator passwordUpdateDecorator) {
+        String userDN = user.getDn().toString();
+
+        if (logger.isDebugEnabled()) {
+            logger.debugf("Using DN [%s] for updating LDAP password of user", userDN);
+        }
+
+        if (getConfig().isActiveDirectory()) {
+            updateADPassword(userDN, password, passwordUpdateDecorator);
+            return;
+        }
+
+        try {
+            if (config.useExtendedPasswordModifyOp()) {
+                operationManager.passwordModifyExtended(userDN, password, passwordUpdateDecorator);
+            } else {
+                ModificationItem[] mods = new ModificationItem[1];
+                BasicAttribute mod0 = new BasicAttribute(LDAPConstants.USER_PASSWORD_ATTRIBUTE, password);
+                mods[0] = new ModificationItem(DirContext.REPLACE_ATTRIBUTE, mod0);
+                operationManager.modifyAttributes(userDN, mods, passwordUpdateDecorator);
+            }
+        } catch (ModelException me) {
+            throw me;
+        } catch (Exception e) {
+            throw new ModelException("Error updating password.", e);
+        }
+    }
+
+    private void updateADPassword(String userDN, String password, LdapMapOperationDecorator passwordUpdateDecorator) {
+        try {
+            // Replace the "unicdodePwd" attribute with a new value
+            // Password must be both Unicode and a quoted string
+            String newQuotedPassword = "\"" + password + "\"";
+            byte[] newUnicodePassword = newQuotedPassword.getBytes(StandardCharsets.UTF_16LE);
+
+            BasicAttribute unicodePwd = new BasicAttribute("unicodePwd", newUnicodePassword);
+
+            List<ModificationItem> modItems = new ArrayList<>();
+            modItems.add(new ModificationItem(DirContext.REPLACE_ATTRIBUTE, unicodePwd));
+
+            operationManager.modifyAttributes(userDN, modItems.toArray(new ModificationItem[] {}), passwordUpdateDecorator);
+        } catch (ModelException me) {
+            throw me;
+        } catch (Exception e) {
+            throw new ModelException(e);
+        }
+    }
+
+
 
     @Override
     public void close() {
