@@ -54,11 +54,13 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
     private final Keycloak keycloakCR;
     private final Deployment existingDeployment;
     private final Deployment baseDeployment;
+    private final String adminSecretName;
 
-    public KeycloakDeployment(KubernetesClient client, Config config, Keycloak keycloakCR, Deployment existingDeployment) {
+    public KeycloakDeployment(KubernetesClient client, Config config, Keycloak keycloakCR, Deployment existingDeployment, String adminSecretName) {
         super(client, keycloakCR);
         this.config = config;
         this.keycloakCR = keycloakCR;
+        this.adminSecretName = adminSecretName;
 
         if (existingDeployment != null) {
             Log.info("Existing Deployment provided by controller");
@@ -483,12 +485,37 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
         if (keycloakCR.getSpec().getServerConfiguration() != null) {
             serverConfig.putAll(keycloakCR.getSpec().getServerConfiguration());
         }
-        return serverConfig.entrySet().stream()
+        var envVars = serverConfig.entrySet().stream()
                 .map(e -> new EnvVarBuilder()
                         .withName(e.getKey())
                         .withValue(e.getValue())
                         .build())
                 .collect(Collectors.toList());
+
+        envVars.add(
+            new EnvVarBuilder()
+                    .withName("KEYCLOAK_ADMIN")
+                    .withNewValueFrom()
+                    .withNewSecretKeyRef()
+                    .withName(this.adminSecretName)
+                    .withKey("username")
+                    .withOptional(false)
+                    .endSecretKeyRef()
+                    .endValueFrom()
+                    .build());
+        envVars.add(
+            new EnvVarBuilder()
+                    .withName("KEYCLOAK_ADMIN_PASSWORD")
+                    .withNewValueFrom()
+                    .withNewSecretKeyRef()
+                    .withName(this.adminSecretName)
+                    .withKey("password")
+                    .withOptional(false)
+                    .endSecretKeyRef()
+                    .endValueFrom()
+                    .build());
+
+        return envVars;
     }
 
     public void updateStatus(KeycloakStatusBuilder status) {

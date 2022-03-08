@@ -160,6 +160,11 @@ public abstract class ClusterOperatorTest {
             .untilAsserted(() -> assertThat(k8sclient.apps().statefulSets().inNamespace(namespace).withName("postgresql-db").get().getStatus().getReadyReplicas()).isEqualTo(1));
   }
 
+  protected static void deleteDB() {
+    // Delete the Postgres StatefulSet
+    k8sclient.apps().statefulSets().inNamespace(namespace).withName("postgresql-db").delete();
+  }
+
   // TODO improve this (preferably move to JOSDK)
   protected void savePodLogs() {
     Log.infof("Saving pod logs to %s", POD_LOGS_DIR);
