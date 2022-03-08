@@ -249,6 +249,7 @@ public class ClientPoliciesUtil {
             if (proposedProfileRep.getExecutors() != null) {
                 for (ClientPolicyExecutorRepresentation executorRep : proposedProfileRep.getExecutors()) {
                     if (!isValidExecutor(session, executorRep)) {
+                        proposedProfileRep.getExecutors().remove(executorRep);
                         throw new ClientPolicyException("proposed client profile contains the executor, which does not have valid provider, or has invalid configuration.");
                     }
                 }
