@@ -251,7 +251,7 @@ export function KeycloakDataTable<T>({
       return getNodeText(
         isValidElement((node as TitleCell).title)
           ? (node as TitleCell).title.props?.children
-          : (node as TitleCell).title
+          : (node as JSX.Element).props.children
       );
     }
     return "";
