@@ -3856,6 +3856,7 @@ module.controller('ClientPoliciesProfilesEditExecutorCtrl', function($scope, rea
                 executor: $scope.executorType.id,
                 configuration: $scope.executor.config
             };
+            $scope.executors = $scope.editedProfile.executors.map((ex) => ex); //clone current executors
             $scope.editedProfile.executors.push(selectedExecutor);
         } else {
             var currentExecutor = getExecutorByIndex($scope.editedProfile, updatedExecutorIndex);
@@ -3876,6 +3877,8 @@ module.controller('ClientPoliciesProfilesEditExecutorCtrl', function($scope, rea
         }, function(errorResponse) {
             var errDetails = (!errorResponse.data.errorMessage) ? "unknown error, please see the server log" : errorResponse.data.errorMessage
             if ($scope.createNew) {
+                $scope.editedProfile.executors = $scope.executors.map((ex) => ex);
+                $scope.executors = undefined;
                 Notifications.error('Failed to create executor: ' + errDetails);
             } else {
                 Notifications.error('Failed to update executor: ' + errDetails);

@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -169,7 +170,7 @@ public class ClientPoliciesUtil {
             if (proposedProfileRep.getExecutors() != null) {
                 for (ClientPolicyExecutorRepresentation executorRep : proposedProfileRep.getExecutors()) {
                     // Skip the check if feature is disabled as then the executor implementations are disabled
-                    if (Profile.isFeatureEnabled(Profile.Feature.CLIENT_POLICIES) && !isValidExecutor(session, executorRep.getExecutorProviderId())) {
+                    if (Profile.isFeatureEnabled(Profile.Feature.CLIENT_POLICIES) && !isValidExecutor(session, executorRep)) {
                         throw new ClientPolicyException("proposed client profile contains the executor with its invalid configuration.");
                     }
                     profileRep.getExecutors().add(executorRep);
@@ -247,7 +248,8 @@ public class ClientPoliciesUtil {
         for (ClientProfileRepresentation proposedProfileRep : proposedProfilesRep.getProfiles()) {
             if (proposedProfileRep.getExecutors() != null) {
                 for (ClientPolicyExecutorRepresentation executorRep : proposedProfileRep.getExecutors()) {
-                    if (!isValidExecutor(session, executorRep.getExecutorProviderId())) {
+                    if (!isValidExecutor(session, executorRep)) {
+                        proposedProfileRep.getExecutors().remove(executorRep);
                         throw new ClientPolicyException("proposed client profile contains the executor, which does not have valid provider, or has invalid configuration.");
                     }
                 }
@@ -264,10 +266,17 @@ public class ClientPoliciesUtil {
      * check whether the proposed executor's provider can be found in keycloak's ClientPolicyExecutorProvider list.
      * not return null.
      */
-    private static boolean isValidExecutor(KeycloakSession session, String executorProviderId) {
+    private static boolean isValidExecutor(KeycloakSession session, ClientPolicyExecutorRepresentation executorRep) {
+        String executorProviderId = executorRep.getExecutorProviderId();
         Set<String> providerSet = session.listProviderIds(ClientPolicyExecutorProvider.class);
         if (providerSet != null && providerSet.contains(executorProviderId)) {
-            return true;
+            if (Objects.nonNull(session.getContext().getRealm())){
+                ClientPolicyExecutorProvider provider = getExecutorProvider(session, session.getContext().getRealm(), executorProviderId, executorRep.getConfiguration());
+                ClientPolicyExecutorConfigurationRepresentation configuration =  (ClientPolicyExecutorConfigurationRepresentation) JsonSerialization.mapper.convertValue(executorRep.getConfiguration(), provider.getExecutorConfigurationClass());
+                return configuration.validateConfig();
+            } else {
+                return true;
+            }
         }
         logger.warnv("no executor provider found. providerId = {0}", executorProviderId);
         return false;

@@ -136,7 +136,8 @@ module.controller('ClientCredentialsCtrl', function($scope, $location, realm, cl
     };
 });
 
-module.controller('ClientSecretCtrl', function($scope, $location, Client, ClientSecret, Notifications) {
+module.controller('ClientSecretCtrl', function($scope, $location, Client, ClientSecret, Notifications, $route) {
+
     var secret = ClientSecret.get({ realm : $scope.realm.realm, client : $scope.client.id },
         function() {
             $scope.secret = secret.value;
@@ -146,8 +147,8 @@ module.controller('ClientSecretCtrl', function($scope, $location, Client, Client
     $scope.changePassword = function() {
         var secret = ClientSecret.update({ realm : $scope.realm.realm, client : $scope.client.id },
             function() {
+                $route.reload();
                 Notifications.success('The secret has been changed.');
-                $scope.secret = secret.value;
             },
             function() {
                 Notifications.error("The secret was not changed due to a problem.");
@@ -156,7 +157,31 @@ module.controller('ClientSecretCtrl', function($scope, $location, Client, Client
         );
     };
 
+    $scope.removeRotatedSecret = function(){
+        ClientSecret.invalidate({realm: $scope.realm.realm, client: $scope.client.id },
+          function(){
+            $route.reload();
+            Notifications.success('The rotated secret has been invalidated.');
+          },
+          function(){
+            Notifications.error("The rotated secret was not invalidated due to a problem.");
+          }
+        );
+    };
+
     $scope.tokenEndpointAuthSigningAlg = $scope.client.attributes['token.endpoint.auth.signing.alg'];
+
+    if ($scope.client.attributes['client.secret.expiration.time']){
+        $scope.secret_expiration_time = $scope.client.attributes['client.secret.expiration.time'] * 1000;
+    }
+
+    if ($scope.client.attributes["client.secret.rotated"]) {
+        $scope.secretRotated = $scope.client.attributes["client.secret.rotated"];
+    }
+
+    if ($scope.client.attributes['client.secret.rotated.expiration.time']){
+        $scope.rotated_secret_expiration_time = $scope.client.attributes['client.secret.rotated.expiration.time'] * 1000;
+    }
 
     $scope.switchChange = function() {
         $scope.changed = true;
@@ -183,7 +208,9 @@ module.controller('ClientSecretCtrl', function($scope, $location, Client, Client
 
     $scope.cancel = function() {
         $location.url("/realms/" + $scope.realm.realm + "/clients/" + $scope.client.id + "/credentials");
+        $route.reload();
     };
+
 });
 
 module.controller('ClientX509Ctrl', function($scope, $location, Client, Notifications) {
@@ -807,7 +834,7 @@ module.controller('ClientRoleDetailCtrl', function($scope, $route, realm, client
     $scope.create = !role.name;
 
     $scope.changed = $scope.create;
-    
+
     $scope.save = function() {
         convertAttributeValuesToLists();
         if ($scope.create) {
@@ -852,7 +879,7 @@ module.controller('ClientRoleDetailCtrl', function($scope, $route, realm, client
         delete $scope.newAttribute;
     }
 
-    $scope.removeAttribute = function(key) {    
+    $scope.removeAttribute = function(key) {
         delete $scope.role.attributes[key];
     }
 
@@ -983,14 +1010,14 @@ module.controller('ClientListCtrl', function($scope, realm, Client, ClientListSe
         ClientListSearchState.query.realm = realm.realm;
         $scope.query = ClientListSearchState.query;
 
-        if (!ClientListSearchState.isFirstSearch) { 
+        if (!ClientListSearchState.isFirstSearch) {
             $scope.searchQuery();
         } else {
             $scope.query.clientId = null;
             $scope.firstPage();
         }
     };
-    
+
     $scope.searchQuery = function() {
         console.log("query.search: ", $scope.query);
         $scope.searchLoaded = false;

@@ -17,14 +17,14 @@
 
 package org.keycloak.common;
 
-import org.jboss.logging.Logger;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
+
+import org.jboss.logging.Logger;
 
 import static org.keycloak.common.Profile.Type.DEPRECATED;
 
@@ -34,105 +34,17 @@ import static org.keycloak.common.Profile.Type.DEPRECATED;
  */
 public class Profile {
 
-    private static final Logger logger = Logger.getLogger(Profile.class);
-
     public static final String PRODUCT_NAME = ProductValue.RHSSO.getName();
     public static final String PROJECT_NAME = ProductValue.KEYCLOAK.getName();
-
-    public enum Type {
-        DEFAULT,
-        DISABLED_BY_DEFAULT,
-        PREVIEW,
-        EXPERIMENTAL,
-        DEPRECATED;
-    }
-
-    public enum Feature {
-        AUTHORIZATION("Authorization Service", Type.DEFAULT),
-        ACCOUNT2("New Account Management Console", Type.DEFAULT),
-        ACCOUNT_API("Account Management REST API", Type.DEFAULT),
-        ADMIN_FINE_GRAINED_AUTHZ("Fine-Grained Admin Permissions", Type.PREVIEW),
-        ADMIN2("New Admin Console", Type.EXPERIMENTAL),
-        DOCKER("Docker Registry protocol", Type.DISABLED_BY_DEFAULT),
-        IMPERSONATION("Ability for admins to impersonate users", Type.DEFAULT),
-        OPENSHIFT_INTEGRATION("Extension to enable securing OpenShift", Type.PREVIEW),
-        SCRIPTS("Write custom authenticators using JavaScript", Type.PREVIEW),
-        TOKEN_EXCHANGE("Token Exchange Service", Type.PREVIEW),
-        UPLOAD_SCRIPTS("Ability to upload custom JavaScript through Admin REST API", DEPRECATED),
-        WEB_AUTHN("W3C Web Authentication (WebAuthn)", Type.DEFAULT, Type.PREVIEW),
-        CLIENT_POLICIES("Client configuration policies", Type.DEFAULT),
-        CIBA("OpenID Connect Client Initiated Backchannel Authentication (CIBA)", Type.DEFAULT),
-        MAP_STORAGE("New store", Type.EXPERIMENTAL),
-        PAR("OAuth 2.0 Pushed Authorization Requests (PAR)", Type.DEFAULT),
-        DECLARATIVE_USER_PROFILE("Configure user profiles using a declarative style", Type.PREVIEW),
-        DYNAMIC_SCOPES("Dynamic OAuth 2.0 scopes", Type.EXPERIMENTAL),
-        STEP_UP_AUTHENTICATION("Step-up Authentication", Type.DEFAULT);
-
-        private String label;
-        private final Type typeProject;
-        private final Type typeProduct;
-
-        Feature(String label, Type type) {
-            this(label, type, type);
-        }
-
-        Feature(String label, Type typeProject, Type typeProduct) {
-            this.label = label;
-            this.typeProject = typeProject;
-            this.typeProduct = typeProduct;
-        }
-
-        public String getLabel() {
-            return label;
-        }
-
-        public Type getTypeProject() {
-            return typeProject;
-        }
-
-        public Type getTypeProduct() {
-            return typeProduct;
-        }
-
-        public boolean hasDifferentProductType() {
-            return typeProject != typeProduct;
-        }
-    }
-
-    private enum ProductValue {
-        KEYCLOAK("Keycloak"),
-        RHSSO("RH-SSO");
-
-        private final String name;
-
-        ProductValue(String name) {
-            this.name = name;
-        }
-
-        public String getName() {
-            return name;
-        }
-    }
-
-    private enum ProfileValue {
-        COMMUNITY,
-        PRODUCT,
-        PREVIEW
-    }
-
+    private static final Logger logger = Logger.getLogger(Profile.class);
     private static Profile CURRENT;
-
     private final ProductValue product;
-
     private final ProfileValue profile;
-
     private final Set<Feature> disabledFeatures = new HashSet<>();
     private final Set<Feature> previewFeatures = new HashSet<>();
     private final Set<Feature> experimentalFeatures = new HashSet<>();
     private final Set<Feature> deprecatedFeatures = new HashSet<>();
-
     private final PropertyResolver propertyResolver;
-    
     public Profile(PropertyResolver resolver) {
         this.propertyResolver = resolver;
         Config config = new Config();
@@ -191,12 +103,12 @@ public class Profile {
         return CURRENT;
     }
 
-    public static void init() {
-        CURRENT = new Profile(null);
-    }
-    
     public static void setInstance(Profile instance) {
         CURRENT = instance;
+    }
+
+    public static void init() {
+        CURRENT = new Profile(null);
     }
 
     public static String getName() {
@@ -225,6 +137,93 @@ public class Profile {
 
     public static boolean isProduct() {
         return getInstance().profile.equals(ProfileValue.PRODUCT);
+    }
+
+    public enum Type {
+        DEFAULT,
+        DISABLED_BY_DEFAULT,
+        PREVIEW,
+        EXPERIMENTAL,
+        DEPRECATED;
+    }
+
+    public enum Feature {
+        AUTHORIZATION("Authorization Service", Type.DEFAULT),
+        ACCOUNT2("New Account Management Console", Type.DEFAULT),
+        ACCOUNT_API("Account Management REST API", Type.DEFAULT),
+        ADMIN_FINE_GRAINED_AUTHZ("Fine-Grained Admin Permissions", Type.PREVIEW),
+        ADMIN2("New Admin Console", Type.EXPERIMENTAL),
+        DOCKER("Docker Registry protocol", Type.DISABLED_BY_DEFAULT),
+        IMPERSONATION("Ability for admins to impersonate users", Type.DEFAULT),
+        OPENSHIFT_INTEGRATION("Extension to enable securing OpenShift", Type.PREVIEW),
+        SCRIPTS("Write custom authenticators using JavaScript", Type.PREVIEW),
+        TOKEN_EXCHANGE("Token Exchange Service", Type.PREVIEW),
+        UPLOAD_SCRIPTS("Ability to upload custom JavaScript through Admin REST API", DEPRECATED),
+        WEB_AUTHN("W3C Web Authentication (WebAuthn)", Type.DEFAULT, Type.PREVIEW),
+        CLIENT_POLICIES("Client configuration policies", Type.DEFAULT),
+        CIBA("OpenID Connect Client Initiated Backchannel Authentication (CIBA)", Type.DEFAULT),
+        MAP_STORAGE("New store", Type.EXPERIMENTAL),
+        PAR("OAuth 2.0 Pushed Authorization Requests (PAR)", Type.DEFAULT),
+        DECLARATIVE_USER_PROFILE("Configure user profiles using a declarative style", Type.PREVIEW),
+        DYNAMIC_SCOPES("Dynamic OAuth 2.0 scopes", Type.EXPERIMENTAL),
+        CLIENT_SECRET_ROTATION("Client Secret Rotation", Type.PREVIEW),
+        STEP_UP_AUTHENTICATION("Step-up Authentication", Type.DEFAULT);
+
+
+        private final Type typeProject;
+        private final Type typeProduct;
+        private String label;
+
+        Feature(String label, Type type) {
+            this(label, type, type);
+        }
+
+        Feature(String label, Type typeProject, Type typeProduct) {
+            this.label = label;
+            this.typeProject = typeProject;
+            this.typeProduct = typeProduct;
+        }
+
+        public String getLabel() {
+            return label;
+        }
+
+        public Type getTypeProject() {
+            return typeProject;
+        }
+
+        public Type getTypeProduct() {
+            return typeProduct;
+        }
+
+        public boolean hasDifferentProductType() {
+            return typeProject != typeProduct;
+        }
+    }
+
+    private enum ProductValue {
+        KEYCLOAK("Keycloak"),
+        RHSSO("RH-SSO");
+
+        private final String name;
+
+        ProductValue(String name) {
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
+        }
+    }
+
+    private enum ProfileValue {
+        COMMUNITY,
+        PRODUCT,
+        PREVIEW
+    }
+
+    public interface PropertyResolver {
+        String resolve(String feature);
     }
 
     private class Config {
@@ -287,17 +286,13 @@ public class Profile {
             if (value != null) {
                 return value;
             }
-            
+
             if (propertyResolver != null) {
                 return propertyResolver.resolve(name);
             }
-            
+
             return null;
         }
-    }
-    
-    public interface PropertyResolver {
-        String resolve(String feature);
     }
 
 }

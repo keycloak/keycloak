@@ -1518,10 +1518,15 @@ module.factory('ClientSecret', function($resource) {
         realm : '@realm',
         client : '@client'
     },  {
-        update : {
-            method : 'POST'
+          update : {
+              method : 'POST'
+          },
+          invalidate: {
+              url:  authUrl + '/admin/realms/:realm/clients/:client/client-secret/rotated',
+              method: 'DELETE'
+          }
         }
-    });
+    );
 });
 
 module.factory('ClientRegistrationAccessToken', function($resource) {
