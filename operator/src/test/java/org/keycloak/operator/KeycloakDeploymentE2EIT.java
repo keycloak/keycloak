@@ -7,16 +7,21 @@ import io.quarkus.test.junit.QuarkusTest;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 import org.keycloak.operator.utils.K8sUtils;
+import org.keycloak.operator.v2alpha1.KeycloakAdminSecret;
 import org.keycloak.operator.v2alpha1.KeycloakService;
 import org.keycloak.operator.v2alpha1.crds.Keycloak;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.keycloak.operator.Constants.DEFAULT_LABELS;
 import static org.keycloak.operator.utils.K8sUtils.deployKeycloak;
@@ -239,6 +244,77 @@ public class KeycloakDeploymentE2EIT extends ClusterOperatorTest {
                         Log.info("Curl Output: " + curlOutput);
 
                         assertTrue(curlOutput.contains("<a href=\"https://foo.bar/admin/\">"));
+                    });
+        } catch (Exception e) {
+            savePodLogs();
+            throw e;
+        }
+    }
+
+    // Reference curl command:
+    // curl --insecure --data "grant_type=password&client_id=admin-cli&username=admin&password=adminPassword" https://localhost:8443/realms/master/protocol/openid-connect/token
+    @Test
+    public void testInitialAdminUser() {
+        try {
+            // Recreating the database to keep this test isolated
+            deleteDB();
+            deployDB();
+            var kc = getDefaultKeycloakDeployment();
+            deployKeycloak(k8sclient, kc, true);
+
+            var decoder = Base64.getDecoder();
+            var service = new KeycloakService(k8sclient, kc);
+            var kcAdminSecret = new KeycloakAdminSecret(k8sclient, kc);
+
+            AtomicReference<String> adminUsername = new AtomicReference<>();
+            AtomicReference<String> adminPassword = new AtomicReference<>();
+            Awaitility.await()
+                    .ignoreExceptions()
+                    .untilAsserted(() -> {
+                        Log.info("Checking secret, ns: " + namespace + ", name: " + kcAdminSecret.getName());
+                        var adminSecret = k8sclient
+                                .secrets()
+                                .inNamespace(namespace)
+                                .withName(kcAdminSecret.getName())
+                                .get();
+
+                        adminUsername.set(new String(decoder.decode(adminSecret.getData().get("username").getBytes(StandardCharsets.UTF_8))));
+                        adminPassword.set(new String(decoder.decode(adminSecret.getData().get("password").getBytes(StandardCharsets.UTF_8))));
+
+                        String url = "https://" + service.getName() + "." + namespace + ":" + Constants.KEYCLOAK_HTTPS_PORT + "/realms/master/protocol/openid-connect/token";
+                        Log.info("Checking url: " + url);
+
+                        var curlOutput = K8sUtils.inClusterCurl(k8sclient, namespace, "--insecure", "-s", "--data", "grant_type=password&client_id=admin-cli&username=" + adminUsername.get() + "&password=" + adminPassword.get(), url);
+                        Log.info("Curl Output: " + curlOutput);
+
+                        assertTrue(curlOutput.contains("\"access_token\""));
+                        assertTrue(curlOutput.contains("\"token_type\":\"Bearer\""));
+                    });
+
+            // Redeploy the same Keycloak without redeploying the Database
+            k8sclient.resource(kc).delete();
+            deployKeycloak(k8sclient, kc, true);
+            Awaitility.await()
+                    .ignoreExceptions()
+                    .untilAsserted(() -> {
+                        Log.info("Checking secret, ns: " + namespace + ", name: " + kcAdminSecret.getName());
+                        var adminSecret = k8sclient
+                                .secrets()
+                                .inNamespace(namespace)
+                                .withName(kcAdminSecret.getName())
+                                .get();
+
+                        var newPassword = new String(decoder.decode(adminSecret.getData().get("password").getBytes(StandardCharsets.UTF_8)));
+
+                        String url = "https://" + service.getName() + "." + namespace + ":" + Constants.KEYCLOAK_HTTPS_PORT + "/realms/master/protocol/openid-connect/token";
+                        Log.info("Checking url: " + url);
+
+                        var curlOutput = K8sUtils.inClusterCurl(k8sclient, namespace, "--insecure", "-s", "--data", "grant_type=password&client_id=admin-cli&username=" + adminUsername.get() + "&password=" + adminPassword.get(), url);
+                        Log.info("Curl Output: " + curlOutput);
+
+                        assertTrue(curlOutput.contains("\"access_token\""));
+                        assertTrue(curlOutput.contains("\"token_type\":\"Bearer\""));
+                        assertNotEquals(adminPassword.get(), newPassword);
                     });
         } catch (Exception e) {
             savePodLogs();

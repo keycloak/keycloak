@@ -46,7 +46,7 @@ public class PodTemplateTest {
         spec.setHostname("example.com");
         spec.setTlsSecret("example-tls-secret");
         kc.setSpec(spec);
-        var deployment = new KeycloakDeployment(null, config, kc, new Deployment());
+        var deployment = new KeycloakDeployment(null, config, kc, new Deployment(), "dummy-admin");
         return (Deployment) deployment.getReconciledResource().get();
     }
 
