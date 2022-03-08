@@ -85,7 +85,7 @@ public class PolicyAdapter implements Policy, CachedModel<Policy> {
     protected boolean isUpdated() {
         if (updated != null) return true;
         if (!invalidated) return false;
-        updated = cacheSession.getPolicyStoreDelegate().findById(cached.getResourceServerId(), cached.getId());
+        updated = cacheSession.getPolicyStoreDelegate().findById(cacheSession.getResourceServerStore().findById(cached.getResourceServerId()), cached.getId());
         if (updated == null) throw new IllegalStateException("Not found in database");
         return true;
     }
@@ -208,7 +208,7 @@ public class PolicyAdapter implements Policy, CachedModel<Policy> {
         PolicyStore policyStore = cacheSession.getPolicyStore();
         String resourceServerId = cached.getResourceServerId();
         for (String id : cached.getAssociatedPoliciesIds(modelSupplier)) {
-            Policy policy = policyStore.findById(resourceServerId, id);
+            Policy policy = policyStore.findById(cacheSession.getResourceServerStore().findById(resourceServerId), id);
             cacheSession.cachePolicy(policy);
             associatedPolicies.add(policy);
         }
@@ -325,6 +325,6 @@ public class PolicyAdapter implements Policy, CachedModel<Policy> {
     }
 
     private Policy getPolicyModel() {
-        return cacheSession.getPolicyStoreDelegate().findById(cached.getResourceServerId(), cached.getId());
+        return cacheSession.getPolicyStoreDelegate().findById(cacheSession.getResourceServerStore().findById(cached.getResourceServerId()), cached.getId());
     }
 }

@@ -82,14 +82,14 @@ class IdentityProviderPermissions implements  IdentityProviderPermissionManageme
             resource.updateScopes(scopeset);
         }
         String exchangeToPermissionName = getExchangeToPermissionName(idp);
-        Policy exchangeToPermission = authz.getStoreFactory().getPolicyStore().findByName(server.getId(), exchangeToPermissionName);
+        Policy exchangeToPermission = authz.getStoreFactory().getPolicyStore().findByName(server, exchangeToPermissionName);
         if (exchangeToPermission == null) {
             Helper.addEmptyScopePermission(authz, server, exchangeToPermissionName, resource, exchangeToScope);
         }
     }
 
     private void deletePolicy(String name, ResourceServer server) {
-        Policy policy = authz.getStoreFactory().getPolicyStore().findByName(server.getId(), name);
+        Policy policy = authz.getStoreFactory().getPolicyStore().findByName(server, name);
         if (policy != null) {
             authz.getStoreFactory().getPolicyStore().delete(policy.getId());
         }
@@ -159,7 +159,7 @@ class IdentityProviderPermissions implements  IdentityProviderPermissionManageme
             return false;
         }
 
-        Policy policy = authz.getStoreFactory().getPolicyStore().findByName(server.getId(), getExchangeToPermissionName(to));
+        Policy policy = authz.getStoreFactory().getPolicyStore().findByName(server, getExchangeToPermissionName(to));
         if (policy == null) {
             logger.debug("No permission object set up for target idp");
             return false;
@@ -194,7 +194,7 @@ class IdentityProviderPermissions implements  IdentityProviderPermissionManageme
     public Policy exchangeToPermission(IdentityProviderModel idp) {
         ResourceServer server = root.initializeRealmResourceServer();
         if (server == null) return null;
-        return authz.getStoreFactory().getPolicyStore().findByName(server.getId(), getExchangeToPermissionName(idp));
+        return authz.getStoreFactory().getPolicyStore().findByName(server, getExchangeToPermissionName(idp));
     }
 
 }

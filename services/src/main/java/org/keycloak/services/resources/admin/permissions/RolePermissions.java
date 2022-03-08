@@ -99,7 +99,7 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
     public Policy mapRolePermission(RoleModel role) {
         ResourceServer server = resourceServer(role);
         if (server == null) return null;
-        return  authz.getStoreFactory().getPolicyStore().findByName(server.getId(), getMapRolePermissionName(role));
+        return  authz.getStoreFactory().getPolicyStore().findByName(server, getMapRolePermissionName(role));
     }
 
     @Override
@@ -107,7 +107,7 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
         ResourceServer server = resourceServer(role);
         if (server == null) return null;
 
-        return  authz.getStoreFactory().getPolicyStore().findByName(server.getId(), getMapCompositePermissionName(role));
+        return  authz.getStoreFactory().getPolicyStore().findByName(server, getMapCompositePermissionName(role));
     }
 
     @Override
@@ -115,7 +115,7 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
         ResourceServer server = resourceServer(role);
         if (server == null) return null;
 
-        return  authz.getStoreFactory().getPolicyStore().findByName(server.getId(), getMapClientScopePermissionName(role));
+        return  authz.getStoreFactory().getPolicyStore().findByName(server, getMapClientScopePermissionName(role));
     }
 
     @Override
@@ -300,7 +300,7 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
         ResourceServer resourceServer = resourceServer(role);
         if (resourceServer == null) return false;
 
-        Policy policy = authz.getStoreFactory().getPolicyStore().findByName(resourceServer.getId(), getMapRolePermissionName(role));
+        Policy policy = authz.getStoreFactory().getPolicyStore().findByName(resourceServer, getMapRolePermissionName(role));
         if (policy == null || policy.getAssociatedPolicies().isEmpty()) {
             return false;
         }
@@ -390,7 +390,7 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
         ResourceServer resourceServer = resourceServer(role);
         if (resourceServer == null) return false;
 
-        Policy policy = authz.getStoreFactory().getPolicyStore().findByName(resourceServer.getId(), getMapCompositePermissionName(role));
+        Policy policy = authz.getStoreFactory().getPolicyStore().findByName(resourceServer, getMapCompositePermissionName(role));
         if (policy == null || policy.getAssociatedPolicies().isEmpty()) {
             return false;
         }
@@ -429,7 +429,7 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
         ResourceServer resourceServer = resourceServer(role);
         if (resourceServer == null) return false;
 
-        Policy policy = authz.getStoreFactory().getPolicyStore().findByName(resourceServer.getId(), getMapClientScopePermissionName(role));
+        Policy policy = authz.getStoreFactory().getPolicyStore().findByName(resourceServer, getMapClientScopePermissionName(role));
         if (policy == null || policy.getAssociatedPolicies().isEmpty()) {
             return false;
         }
@@ -520,7 +520,7 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
     @Override
     public Policy rolePolicy(ResourceServer server, RoleModel role) {
         String policyName = Helper.getRolePolicyName(role);
-        Policy policy = authz.getStoreFactory().getPolicyStore().findByName(server.getId(), policyName);
+        Policy policy = authz.getStoreFactory().getPolicyStore().findByName(server, policyName);
         if (policy != null) return policy;
         return Helper.createRolePolicy(authz, server, role, policyName);
     }

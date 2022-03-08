@@ -306,7 +306,7 @@ public class AuthorizationBean {
                 filters.put(Policy.FilterOption.OWNER, new String[] {getClientOwner().getId()});
             }
 
-            List<Policy> policies = authorization.getStoreFactory().getPolicyStore().findByResourceServer(getResourceServer().getId(), filters, -1, -1);
+            List<Policy> policies = authorization.getStoreFactory().getPolicyStore().findByResourceServer(getResourceServer().getResourceServerModel(), filters, -1, -1);
 
             if (policies.isEmpty()) {
                 return Collections.emptyList();

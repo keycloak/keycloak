@@ -24,7 +24,9 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 import org.keycloak.authorization.model.Policy;
+import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.authorization.model.Scope;
 import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
 
 /**
@@ -54,121 +56,135 @@ public interface PolicyStore {
     /**
      * Returns a {@link Policy} with the given <code>id</code>
      *
-     * @param resourceServerId the resource server id
+     * @param resourceServer the resource server
      * @param id the identifier of the policy
      * @return a policy with the given identifier.
      */
-    Policy findById(String resourceServerId, String id);
+    Policy findById(ResourceServer resourceServer, String id);
 
     /**
      * Returns a {@link Policy} with the given <code>name</code>
      *
-     * @param resourceServerId the resource server id
+     * @param resourceServer the resource server
      * @param name             the name of the policy
      * @return a policy with the given name.
      */
-    Policy findByName(String resourceServerId, String name);
+    Policy findByName(ResourceServer resourceServer, String name);
 
     /**
      * Returns a list of {@link Policy} associated with a {@link ResourceServer} with the given <code>resourceServerId</code>.
      *
-     * @param resourceServerId the identifier of a resource server
+     * @param resourceServer the identifier of a resource server
      * @return a list of policies that belong to the given resource server
      */
-    List<Policy> findByResourceServer(String resourceServerId);
+    List<Policy> findByResourceServer(ResourceServer resourceServer);
 
     /**
      * Returns a list of {@link Policy} associated with a {@link ResourceServer} with the given <code>resourceServerId</code>.
      *
-     * @param resourceServerId the identifier of a resource server
+     * @param resourceServer the identifier of a resource server
      * @param attributes a map holding the attributes that will be used as a filter; possible filter options are given by {@link Policy.FilterOption}
      * @return a list of policies that belong to the given resource server
      *
      * @throws IllegalArgumentException when there is an unknown attribute in the {@code attributes} map
      */
-    List<Policy> findByResourceServer(String resourceServerId, Map<Policy.FilterOption, String[]> attributes, int firstResult, int maxResult);
+    List<Policy> findByResourceServer(ResourceServer resourceServer, Map<Policy.FilterOption, String[]> attributes, int firstResult, int maxResult);
 
     /**
-     * Returns a list of {@link Policy} associated with a {@link org.keycloak.authorization.core.model.Resource} with the given <code>resourceId</code>.
+     * Returns a list of {@link Policy} associated with a {@link org.keycloak.authorization.model.Resource} with the given <code>resourceId</code>.
      *
-     * @param resourceServerId the resource server id
-     * @param resourceId the identifier of a resource
+     * @param resourceServer the resource server
+     * @param resource the resource
      * @return a list of policies associated with the given resource
      */
-    default List<Policy> findByResource(String resourceServerId, String resourceId) {
+    default List<Policy> findByResource(ResourceServer resourceServer, Resource resource) {
         List<Policy> result = new LinkedList<>();
 
-        findByResource(resourceServerId, resourceId, result::add);
+        findByResource(resourceServer, resource, result::add);
 
         return result;
     }
 
-    void findByResource(String resourceServerId, String resourceId, Consumer<Policy> consumer);
+    /**
+     * Searches for all policies associated with the {@link org.keycloak.authorization.model.Resource} and passes the result to the {@code consumer}
+     *
+     * @param resourceServer the resourceServer
+     * @param resource the resource
+     * @param consumer consumer of policies resulted from the search
+     */
+    void findByResource(ResourceServer resourceServer, Resource resource, Consumer<Policy> consumer);
 
     /**
-     * Returns a list of {@link Policy} associated with a {@link org.keycloak.authorization.core.model.Resource} with the given <code>type</code>.
+     * Returns a list of {@link Policy} associated with a {@link org.keycloak.authorization.model.ResourceServer} with the given <code>type</code>.
      *
-     * @param resourceServerId the resource server id
-     * @param resourceType     the type of a resource
+     * @param resourceServer the resource server id
+     * @param resourceType the type of a resource
      * @return a list of policies associated with the given resource type
      */
-    default List<Policy> findByResourceType(String resourceServerId, String resourceType) {
+    default List<Policy> findByResourceType(ResourceServer resourceServer, String resourceType) {
         List<Policy> result = new LinkedList<>();
 
-        findByResourceType(resourceServerId, resourceType, result::add);
+        findByResourceType((ResourceServer) null, resourceType, result::add);
 
         return result;
     }
 
     /**
-     * Returns a list of {@link Policy} associated with a {@link org.keycloak.authorization.core.model.Scope} with the given <code>scopeIds</code>.
+     * Searches for policies associated with a {@link org.keycloak.authorization.model.ResourceServer} and passes the result to the consumer
      *
-     * @param resourceServerId the resource server id
-     * @param scopeIds the id of the scopes
-     * @return a list of policies associated with the given scopes
+     * @param resourceServer the resourceServer
+     * @param type the type of a resource
+     * @param policyConsumer consumer of policies resulted from the search
      */
-    List<Policy> findByScopeIds(String resourceServerId, List<String> scopeIds);
+    void findByResourceType(ResourceServer resourceServer, String type, Consumer<Policy> policyConsumer);
 
     /**
-     * Returns a list of {@link Policy} associated with a {@link org.keycloak.authorization.core.model.Scope} with the given <code>resourceId</code> and <code>scopeIds</code>.
+     * Returns a list of {@link Policy} associated with a {@link org.keycloak.authorization.model.Scope} within the given <code>scope</code>.
      *
-     * @param resourceServerId the resource server id
-     * @param resourceId the id of the resource. Ignored if {@code null}.
-     * @param scopeIds the id of the scopes
+     * @param resourceServer the resource server
+     * @param scopes the scopes
      * @return a list of policies associated with the given scopes
      */
-    default List<Policy> findByScopeIds(String resourceServerId, String resourceId, List<String> scopeIds) {
+    List<Policy> findByScopes(ResourceServer resourceServer, List<Scope> scopes);
+
+    /**
+     * Returns a list of {@link Policy} associated with a {@link org.keycloak.authorization.model.Scope} with the given <code>resource</code> and <code>scopes</code>.
+     *
+     * @param resourceServer the resource server
+     * @param resource the resource. Ignored if {@code null}.
+     * @param scopes the scopes
+     * @return a list of policies associated with the given scopes
+     */
+    default List<Policy> findByScopes(ResourceServer resourceServer, Resource resource, List<Scope> scopes) {
         List<Policy> result = new LinkedList<>();
 
-        findByScopeIds(resourceServerId, resourceId, scopeIds, result::add);
+        findByScopes(resourceServer, resource, scopes, result::add);
 
         return result;
     }
 
     /**
-     * Effectively the same method as {@link #findByScopeIds(String, String, List)}, however in the end
+     * Effectively the same method as {@link #findByScopes(ResourceServer, Resource, List)}, however in the end
      * the {@code consumer} is fed with the result.
      *
      */
-    void findByScopeIds(String resourceServerId, String resourceId, List<String> scopeIds, Consumer<Policy> consumer);
+    void findByScopes(ResourceServer resourceServer, Resource resource, List<Scope> scopes, Consumer<Policy> consumer);
 
     /**
      * Returns a list of {@link Policy} with the given <code>type</code>.
      *
-     * @param resourceServerId the resource server id
+     * @param resourceServer the resource server id
      * @param type the type of the policy
      * @return a list of policies with the given type
      */
-    List<Policy> findByType(String resourceServerId, String type);
+    List<Policy> findByType(ResourceServer resourceServer, String type);
 
     /**
      * Returns a list of {@link Policy} that depends on another policy with the given <code>id</code>.
      *
-     * @param resourceServerId the resource server id
+     * @param resourceServer the resource server
      * @param id the id of the policy to query its dependents
      * @return a list of policies that depends on the a policy with the given identifier
      */
-    List<Policy> findDependentPolicies(String resourceServerId, String id);
-
-    void findByResourceType(String resourceServerId, String type, Consumer<Policy> policyConsumer);
+    List<Policy> findDependentPolicies(ResourceServer resourceServer, String id);
 }

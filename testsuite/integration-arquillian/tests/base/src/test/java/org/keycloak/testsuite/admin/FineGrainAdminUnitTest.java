@@ -1128,7 +1128,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
             ClientModel realmAdminClient = realm.getClientByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID);
             ResourceServer resourceServer = provider.getStoreFactory().getResourceServerStore().findByClient(realmAdminClient);
 
-            policy.addAssociatedPolicy(provider.getStoreFactory().getPolicyStore().findByName(resourceServer.getId(), "Only regular-admin-user"));
+            policy.addAssociatedPolicy(provider.getStoreFactory().getPolicyStore().findByName(resourceServer, "Only regular-admin-user"));
         });
 
         try (Keycloak client = Keycloak.getInstance(getAuthServerContextRoot() + "/auth",
@@ -1197,7 +1197,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
                 ResourceServer resourceServer = provider.getStoreFactory().getResourceServerStore().findByClient(realmAdminClient);
 
                 policy.addAssociatedPolicy(provider.getStoreFactory().getPolicyStore()
-                        .findByName(resourceServer.getId(), "Only regular-admin-user"));
+                        .findByName(resourceServer, "Only regular-admin-user"));
             }
         });
 
@@ -1280,7 +1280,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
                 }
 
                 policy.addAssociatedPolicy(provider.getStoreFactory().getPolicyStore()
-                        .findByName(management.realmResourceServer().getId(), "Only regular-admin-user"));
+                        .findByName(management.realmResourceServer(), "Only regular-admin-user"));
 
             }
         });

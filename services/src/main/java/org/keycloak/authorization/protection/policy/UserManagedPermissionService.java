@@ -132,7 +132,7 @@ public class UserManagedPermissionService {
     }
 
     private Policy getPolicy(@PathParam("policyId") String policyId) {
-        Policy existing = authorization.getStoreFactory().getPolicyStore().findById(resourceServer.getId(), policyId);
+        Policy existing = authorization.getStoreFactory().getPolicyStore().findById(resourceServer, policyId);
 
         if (existing == null) {
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Policy with [" + policyId + "] does not exist", Status.NOT_FOUND);

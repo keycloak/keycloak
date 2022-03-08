@@ -88,7 +88,7 @@ public class PolicyService {
             return doCreatePolicyTypeResource(type);
         }
 
-        Policy policy = authorization.getStoreFactory().getPolicyStore().findById(resourceServer.getId(), type);
+        Policy policy = authorization.getStoreFactory().getPolicyStore().findById(resourceServer, type);
 
         return doCreatePolicyResource(policy);
     }
@@ -134,7 +134,7 @@ public class PolicyService {
 
     public Policy create(AbstractPolicyRepresentation representation) {
         PolicyStore policyStore = authorization.getStoreFactory().getPolicyStore();
-        Policy existing = policyStore.findByName(resourceServer.getId(), representation.getName());
+        Policy existing = policyStore.findByName(resourceServer, representation.getName());
 
         if (existing != null) {
             throw new ErrorResponseException("Policy with name [" + representation.getName() + "] already exists", "Conflicting policy", Status.CONFLICT);
@@ -158,7 +158,7 @@ public class PolicyService {
             return Response.status(Status.BAD_REQUEST).build();
         }
 
-        Policy model = storeFactory.getPolicyStore().findByName(this.resourceServer.getId(), name);
+        Policy model = storeFactory.getPolicyStore().findByName(this.resourceServer, name);
 
         if (model == null) {
             return Response.noContent().build();
@@ -265,7 +265,7 @@ public class PolicyService {
 
     protected List<Object> doSearch(Integer firstResult, Integer maxResult, String fields, Map<Policy.FilterOption, String[]> filters) {
         PolicyStore policyStore = authorization.getStoreFactory().getPolicyStore();
-        return policyStore.findByResourceServer(resourceServer.getId(), filters, firstResult != null ? firstResult : -1, maxResult != null ? maxResult : Constants.DEFAULT_MAX_RESULTS).stream()
+        return policyStore.findByResourceServer(resourceServer, filters, firstResult != null ? firstResult : -1, maxResult != null ? maxResult : Constants.DEFAULT_MAX_RESULTS).stream()
                 .map(policy -> toRepresentation(policy, fields, authorization))
                 .collect(Collectors.toList());
     }

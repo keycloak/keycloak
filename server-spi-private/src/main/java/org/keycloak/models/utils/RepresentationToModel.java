@@ -2359,10 +2359,10 @@ public class RepresentationToModel {
                     Set<String> policyIds = new HashSet<>();
 
                     for (String policyName : policies) {
-                        Policy policy = policyStore.findByName(resourceServer.getId(), policyName);
+                        Policy policy = policyStore.findByName(resourceServer, policyName);
 
                         if (policy == null) {
-                            policy = policyStore.findById(resourceServer.getId(), policyName);
+                            policy = policyStore.findById(resourceServer, policyName);
                         }
 
                         if (policy == null) {
@@ -2382,10 +2382,10 @@ public class RepresentationToModel {
             }
 
             PolicyStore policyStore = storeFactory.getPolicyStore();
-            Policy policy = policyStore.findById(resourceServer.getId(), policyRepresentation.getId());
+            Policy policy = policyStore.findById(resourceServer, policyRepresentation.getId());
 
             if (policy == null) {
-                policy = policyStore.findByName(resourceServer.getId(), policyRepresentation.getName());
+                policy = policyStore.findByName(resourceServer, policyRepresentation.getName());
             }
 
             if (policy == null) {
@@ -2547,10 +2547,10 @@ public class RepresentationToModel {
                 }
 
                 if (!hasPolicy) {
-                    Policy associatedPolicy = policyStore.findById(resourceServer.getId(), policyId);
+                    Policy associatedPolicy = policyStore.findById(resourceServer, policyId);
 
                     if (associatedPolicy == null) {
-                        associatedPolicy = policyStore.findByName(resourceServer.getId(), policyId);
+                        associatedPolicy = policyStore.findByName(resourceServer, policyId);
                         if (associatedPolicy == null) {
                             throw new RuntimeException("Policy with id or name [" + policyId + "] does not exist");
                         }

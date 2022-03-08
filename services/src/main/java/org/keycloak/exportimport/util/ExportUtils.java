@@ -331,10 +331,10 @@ public class ExportUtils {
         List<PolicyRepresentation> policies = new ArrayList<>();
         PolicyStore policyStore = storeFactory.getPolicyStore();
 
-        policies.addAll(policyStore.findByResourceServer(settingsModel.getId())
+        policies.addAll(policyStore.findByResourceServer(settingsModel)
                 .stream().filter(policy -> !policy.getType().equals("resource") && !policy.getType().equals("scope") && policy.getOwner() == null)
                 .map(policy -> createPolicyRepresentation(authorization, policy)).collect(Collectors.toList()));
-        policies.addAll(policyStore.findByResourceServer(settingsModel.getId())
+        policies.addAll(policyStore.findByResourceServer(settingsModel)
                 .stream().filter(policy -> (policy.getType().equals("resource") || policy.getType().equals("scope") && policy.getOwner() == null))
                 .map(policy -> createPolicyRepresentation(authorization, policy)).collect(Collectors.toList()));
 

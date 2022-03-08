@@ -334,10 +334,10 @@ public final class AuthorizationProvider implements Provider {
 
                 if (policies != null) {
                     representation.setPolicies(policies.stream().map(id -> {
-                        Policy policy = storeFactory.getPolicyStore().findById(resourceServer.getId(), id);
+                        Policy policy = storeFactory.getPolicyStore().findById(resourceServer, id);
 
                         if (policy == null) {
-                            policy = storeFactory.getPolicyStore().findByName(resourceServer.getId(), id);
+                            policy = storeFactory.getPolicyStore().findByName(resourceServer, id);
                         }
 
                         if (policy == null) {
@@ -369,7 +369,7 @@ public final class AuthorizationProvider implements Provider {
                         }
                     }
 
-                    findDependentPolicies(resourceServer.getId(), policy.getId()).forEach(dependentPolicy -> {
+                    findDependentPolicies(resourceServer, policy.getId()).forEach(dependentPolicy -> {
                         dependentPolicy.removeAssociatedPolicy(policy);
                         if (dependentPolicy.getAssociatedPolicies().isEmpty()) {
                             delete(dependentPolicy.getId());
@@ -381,68 +381,68 @@ public final class AuthorizationProvider implements Provider {
             }
 
             @Override
-            public Policy findById(String resourceServerId, String id) {
-                return policyStore.findById(resourceServerId, id);
+            public Policy findById(ResourceServer resourceServer, String id) {
+                return policyStore.findById(resourceServer, id);
             }
 
             @Override
-            public Policy findByName(String resourceServerId, String name) {
-                return policyStore.findByName(resourceServerId, name);
+            public Policy findByName(ResourceServer resourceServer, String name) {
+                return policyStore.findByName(resourceServer, name);
             }
 
             @Override
-            public List<Policy> findByResourceServer(String resourceServerId) {
-                return policyStore.findByResourceServer(resourceServerId);
+            public List<Policy> findByResourceServer(ResourceServer resourceServer) {
+                return policyStore.findByResourceServer(resourceServer);
             }
 
             @Override
-            public List<Policy> findByResourceServer(String resourceServerId, Map<Policy.FilterOption, String[]> attributes, int firstResult, int maxResult) {
-                return policyStore.findByResourceServer(resourceServerId, attributes, firstResult, maxResult);
+            public List<Policy> findByResourceServer(ResourceServer resourceServer, Map<Policy.FilterOption, String[]> attributes, int firstResult, int maxResult) {
+                return policyStore.findByResourceServer(resourceServer, attributes, firstResult, maxResult);
             }
 
             @Override
-            public List<Policy> findByResource(String resourceServerId, String resourceId) {
-                return policyStore.findByResource(resourceServerId, resourceId);
+            public List<Policy> findByResource(ResourceServer resourceServer, Resource resource) {
+                return policyStore.findByResource(resourceServer, resource);
             }
 
             @Override
-            public void findByResource(String resourceServerId, String resourceId, Consumer<Policy> consumer) {
-                policyStore.findByResource(resourceServerId, resourceId, consumer);
+            public void findByResource(ResourceServer resourceServer, Resource resource, Consumer<Policy> consumer) {
+                policyStore.findByResource(resourceServer, resource, consumer);
             }
 
             @Override
-            public List<Policy> findByResourceType(String resourceServerId, String resourceType) {
-                return policyStore.findByResourceType(resourceServerId, resourceType);
+            public List<Policy> findByResourceType(ResourceServer resourceServer, String resourceType) {
+                return policyStore.findByResourceType(resourceServer, resourceType);
             }
 
             @Override
-            public List<Policy> findByScopeIds(String resourceServerId, List<String> scopeIds) {
-                return policyStore.findByScopeIds(resourceServerId, scopeIds);
+            public List<Policy> findByScopes(ResourceServer resourceServer, List<Scope> scopes) {
+                return policyStore.findByScopes(resourceServer, scopes);
             }
 
             @Override
-            public List<Policy> findByScopeIds(String resourceServerId, String resourceId, List<String> scopeIds) {
-                return policyStore.findByScopeIds(resourceServerId, resourceId, scopeIds);
+            public List<Policy> findByScopes(ResourceServer resourceServer, Resource resource, List<Scope> scopes) {
+                return policyStore.findByScopes(resourceServer, resource, scopes);
             }
 
             @Override
-            public void findByScopeIds(String resourceServerId, String resourceId, List<String> scopeIds, Consumer<Policy> consumer) {
-                policyStore.findByScopeIds(resourceServerId, resourceId, scopeIds, consumer);
+            public void findByScopes(ResourceServer resourceServer, Resource resource, List<Scope> scopes, Consumer<Policy> consumer) {
+                policyStore.findByScopes(resourceServer, resource, scopes, consumer);
             }
 
             @Override
-            public List<Policy> findByType(String resourceServerId, String type) {
-                return policyStore.findByType(resourceServerId, type);
+            public List<Policy> findByType(ResourceServer resourceServer, String type) {
+                return policyStore.findByType(resourceServer, type);
             }
 
             @Override
-            public List<Policy> findDependentPolicies(String resourceServerId, String id) {
-                return policyStore.findDependentPolicies(resourceServerId, id);
+            public List<Policy> findDependentPolicies(ResourceServer resourceServer, String id) {
+                return policyStore.findDependentPolicies(resourceServer, id);
             }
 
             @Override
-            public void findByResourceType(String id, String type, Consumer<Policy> policyConsumer) {
-                policyStore.findByResourceType(id, type, policyConsumer);
+            public void findByResourceType(ResourceServer resourceServer, String type, Consumer<Policy> policyConsumer) {
+                policyStore.findByResourceType(resourceServer, type, policyConsumer);
             }
         };
     }
@@ -473,7 +473,7 @@ public final class AuthorizationProvider implements Provider {
                 }
 
                 PolicyStore policyStore = storeFactory.getPolicyStore();
-                List<Policy> policies = policyStore.findByResource(resource.getResourceServer().getId(), id);
+                List<Policy> policies = policyStore.findByResource(resource.getResourceServer(), resource);
 
                 for (Policy policyModel : policies) {
                     if (policyModel.getResources().size() == 1) {

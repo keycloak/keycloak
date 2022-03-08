@@ -154,7 +154,7 @@ public class PolicyResourceService {
             return Response.status(Status.NOT_FOUND).build();
         }
 
-        List<Policy> policies = authorization.getStoreFactory().getPolicyStore().findDependentPolicies(resourceServer.getId(), policy.getId());
+        List<Policy> policies = authorization.getStoreFactory().getPolicyStore().findDependentPolicies(resourceServer, policy.getId());
 
         return Response.ok(policies.stream().map(policy -> {
             PolicyRepresentation representation1 = new PolicyRepresentation();

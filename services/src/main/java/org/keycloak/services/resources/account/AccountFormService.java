@@ -782,13 +782,14 @@ public class AccountFormService extends AbstractSecuredLocalService {
             List<String> ids = new ArrayList<>(Arrays.asList(permissionId));
             Iterator<String> iterator = ids.iterator();
             PolicyStore policyStore = authorization.getStoreFactory().getPolicyStore();
+            ResourceServer resourceServer = authorization.getStoreFactory().getResourceServerStore().findByClient(client);
             Policy policy = null;
 
             while (iterator.hasNext()) {
                 String id = iterator.next();
 
                 if (!id.contains(":")) {
-                    policy = policyStore.findById(client.getId(), id);
+                    policy = policyStore.findById(resourceServer, id);
                     iterator.remove();
                     break;
                 }

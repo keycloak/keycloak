@@ -216,7 +216,7 @@ public class ResourceAdapter implements Resource, CachedModel<Resource> {
 
         for (Scope scope : updated.getScopes()) {
             if (!scopes.contains(scope)) {
-                policyStore.findByResource(getResourceServer().getId(), getId(), policy -> policy.removeScope(scope));
+                policyStore.findByResource(getResourceServer(), this, policy -> policy.removeScope(scope));
             }
         }
 

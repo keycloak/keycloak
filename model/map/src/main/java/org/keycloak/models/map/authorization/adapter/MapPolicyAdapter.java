@@ -127,7 +127,7 @@ public class MapPolicyAdapter extends AbstractPolicyModel<MapPolicyEntity> {
         String resourceServerId = entity.getResourceServerId();
         Set<String> ids = entity.getAssociatedPolicyIds();
         return ids == null ? Collections.emptySet() : ids.stream()
-                .map(policyId -> storeFactory.getPolicyStore().findById(resourceServerId, policyId))
+                .map(policyId -> storeFactory.getPolicyStore().findById(storeFactory.getResourceServerStore().findById(resourceServerId), policyId))
                 .collect(Collectors.toSet());
     }
 

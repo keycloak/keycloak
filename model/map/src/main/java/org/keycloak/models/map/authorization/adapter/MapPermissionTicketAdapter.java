@@ -89,7 +89,8 @@ public class MapPermissionTicketAdapter extends AbstractPermissionTicketModel<Ma
     @Override
     public Policy getPolicy() {
         if (entity.getPolicyId() == null) return null;
-        return storeFactory.getPolicyStore().findById(entity.getResourceServerId(), entity.getPolicyId());
+        ResourceServer resourceServer = storeFactory.getResourceServerStore().findById(entity.getResourceServerId());
+        return storeFactory.getPolicyStore().findById(resourceServer, entity.getPolicyId());
     }
 
     @Override

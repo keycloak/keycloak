@@ -114,27 +114,27 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
             scopeset.add(userImpersonatedScope);
             usersResource.updateScopes(scopeset);
         }
-        Policy managePermission = policyStore.findByName(server.getId(), MANAGE_PERMISSION_USERS);
+        Policy managePermission = policyStore.findByName(server, MANAGE_PERMISSION_USERS);
         if (managePermission == null) {
             Helper.addEmptyScopePermission(authz, server, MANAGE_PERMISSION_USERS, usersResource, manageScope);
         }
-        Policy viewPermission = policyStore.findByName(server.getId(), VIEW_PERMISSION_USERS);
+        Policy viewPermission = policyStore.findByName(server, VIEW_PERMISSION_USERS);
         if (viewPermission == null) {
             Helper.addEmptyScopePermission(authz, server, VIEW_PERMISSION_USERS, usersResource, viewScope);
         }
-        Policy mapRolesPermission = policyStore.findByName(server.getId(), MAP_ROLES_PERMISSION_USERS);
+        Policy mapRolesPermission = policyStore.findByName(server, MAP_ROLES_PERMISSION_USERS);
         if (mapRolesPermission == null) {
             Helper.addEmptyScopePermission(authz, server, MAP_ROLES_PERMISSION_USERS, usersResource, mapRolesScope);
         }
-        Policy membershipPermission = policyStore.findByName(server.getId(), MANAGE_GROUP_MEMBERSHIP_PERMISSION_USERS);
+        Policy membershipPermission = policyStore.findByName(server, MANAGE_GROUP_MEMBERSHIP_PERMISSION_USERS);
         if (membershipPermission == null) {
             Helper.addEmptyScopePermission(authz, server, MANAGE_GROUP_MEMBERSHIP_PERMISSION_USERS, usersResource, manageGroupMembershipScope);
         }
-        Policy impersonatePermission = policyStore.findByName(server.getId(), ADMIN_IMPERSONATING_PERMISSION);
+        Policy impersonatePermission = policyStore.findByName(server, ADMIN_IMPERSONATING_PERMISSION);
         if (impersonatePermission == null) {
             Helper.addEmptyScopePermission(authz, server, ADMIN_IMPERSONATING_PERMISSION, usersResource, impersonateScope);
         }
-        impersonatePermission = policyStore.findByName(server.getId(), USER_IMPERSONATED_PERMISSION);
+        impersonatePermission = policyStore.findByName(server, USER_IMPERSONATED_PERMISSION);
         if (impersonatePermission == null) {
             Helper.addEmptyScopePermission(authz, server, USER_IMPERSONATED_PERMISSION, usersResource, userImpersonatedScope);
         }
@@ -189,33 +189,33 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
 
     @Override
     public Policy managePermission() {
-        return policyStore.findByName(root.realmResourceServer().getId(), MANAGE_PERMISSION_USERS);
+        return policyStore.findByName(root.realmResourceServer(), MANAGE_PERMISSION_USERS);
     }
 
     @Override
     public Policy viewPermission() {
-        return policyStore.findByName(root.realmResourceServer().getId(), VIEW_PERMISSION_USERS);
+        return policyStore.findByName(root.realmResourceServer(), VIEW_PERMISSION_USERS);
     }
 
     @Override
     public Policy manageGroupMembershipPermission() {
-        return policyStore.findByName(root.realmResourceServer().getId(), MANAGE_GROUP_MEMBERSHIP_PERMISSION_USERS);
+        return policyStore.findByName(root.realmResourceServer(), MANAGE_GROUP_MEMBERSHIP_PERMISSION_USERS);
     }
 
     @Override
     public Policy mapRolesPermission() {
-        return policyStore.findByName(root.realmResourceServer().getId(), MAP_ROLES_PERMISSION_USERS);
+        return policyStore.findByName(root.realmResourceServer(), MAP_ROLES_PERMISSION_USERS);
     }
 
 
     @Override
     public Policy adminImpersonatingPermission() {
-        return policyStore.findByName(root.realmResourceServer().getId(), ADMIN_IMPERSONATING_PERMISSION);
+        return policyStore.findByName(root.realmResourceServer(), ADMIN_IMPERSONATING_PERMISSION);
     }
 
     @Override
     public Policy userImpersonatedPermission() {
-        return policyStore.findByName(root.realmResourceServer().getId(), USER_IMPERSONATED_PERMISSION);
+        return policyStore.findByName(root.realmResourceServer(), USER_IMPERSONATED_PERMISSION);
     }
 
     /**
@@ -377,7 +377,7 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
             return true;
         }
 
-        Policy policy = authz.getStoreFactory().getPolicyStore().findByName(server.getId(), USER_IMPERSONATED_PERMISSION);
+        Policy policy = authz.getStoreFactory().getPolicyStore().findByName(server, USER_IMPERSONATED_PERMISSION);
 
         if (policy == null) {
             return true;

@@ -126,44 +126,44 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
             resource.updateScopes(scopeset);
         }
         String managePermissionName = getManagePermissionName(client);
-        Policy managePermission = authz.getStoreFactory().getPolicyStore().findByName(server.getId(), managePermissionName);
+        Policy managePermission = authz.getStoreFactory().getPolicyStore().findByName(server, managePermissionName);
         if (managePermission == null) {
             Helper.addEmptyScopePermission(authz, server, managePermissionName, resource, manageScope);
         }
         String configurePermissionName = getConfigurePermissionName(client);
-        Policy configurePermission = authz.getStoreFactory().getPolicyStore().findByName(server.getId(), configurePermissionName);
+        Policy configurePermission = authz.getStoreFactory().getPolicyStore().findByName(server, configurePermissionName);
         if (configurePermission == null) {
             Helper.addEmptyScopePermission(authz, server, configurePermissionName, resource, configureScope);
         }
         String viewPermissionName = getViewPermissionName(client);
-        Policy viewPermission = authz.getStoreFactory().getPolicyStore().findByName(server.getId(), viewPermissionName);
+        Policy viewPermission = authz.getStoreFactory().getPolicyStore().findByName(server, viewPermissionName);
         if (viewPermission == null) {
             Helper.addEmptyScopePermission(authz, server, viewPermissionName, resource, viewScope);
         }
         String mapRolePermissionName = getMapRolesPermissionName(client);
-        Policy mapRolePermission = authz.getStoreFactory().getPolicyStore().findByName(server.getId(), mapRolePermissionName);
+        Policy mapRolePermission = authz.getStoreFactory().getPolicyStore().findByName(server, mapRolePermissionName);
         if (mapRolePermission == null) {
             Helper.addEmptyScopePermission(authz, server, mapRolePermissionName, resource, mapRoleScope);
         }
         String mapRoleClientScopePermissionName = getMapRolesClientScopePermissionName(client);
-        Policy mapRoleClientScopePermission = authz.getStoreFactory().getPolicyStore().findByName(server.getId(), mapRoleClientScopePermissionName);
+        Policy mapRoleClientScopePermission = authz.getStoreFactory().getPolicyStore().findByName(server, mapRoleClientScopePermissionName);
         if (mapRoleClientScopePermission == null) {
             Helper.addEmptyScopePermission(authz, server, mapRoleClientScopePermissionName, resource, mapRoleClientScope);
         }
         String mapRoleCompositePermissionName = getMapRolesCompositePermissionName(client);
-        Policy mapRoleCompositePermission = authz.getStoreFactory().getPolicyStore().findByName(server.getId(), mapRoleCompositePermissionName);
+        Policy mapRoleCompositePermission = authz.getStoreFactory().getPolicyStore().findByName(server, mapRoleCompositePermissionName);
         if (mapRoleCompositePermission == null) {
             Helper.addEmptyScopePermission(authz, server, mapRoleCompositePermissionName, resource, mapRoleCompositeScope);
         }
         String exchangeToPermissionName = getExchangeToPermissionName(client);
-        Policy exchangeToPermission = authz.getStoreFactory().getPolicyStore().findByName(server.getId(), exchangeToPermissionName);
+        Policy exchangeToPermission = authz.getStoreFactory().getPolicyStore().findByName(server, exchangeToPermissionName);
         if (exchangeToPermission == null) {
             Helper.addEmptyScopePermission(authz, server, exchangeToPermissionName, resource, exchangeToScope);
         }
     }
 
     private void deletePolicy(String name, ResourceServer server) {
-        Policy policy = authz.getStoreFactory().getPolicyStore().findByName(server.getId(), name);
+        Policy policy = authz.getStoreFactory().getPolicyStore().findByName(server, name);
         if (policy != null) {
             authz.getStoreFactory().getPolicyStore().delete(policy.getId());
         }
@@ -319,7 +319,7 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
                 return false;
             }
 
-            Policy policy = authz.getStoreFactory().getPolicyStore().findByName(server.getId(), getExchangeToPermissionName(to));
+            Policy policy = authz.getStoreFactory().getPolicyStore().findByName(server, getExchangeToPermissionName(to));
             if (policy == null) {
                 logger.debug("No permission object set up for target client");
                 return false;
@@ -369,7 +369,7 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
         Resource resource =  authz.getStoreFactory().getResourceStore().findByName(server.getId(), getResourceName(client));
         if (resource == null) return false;
 
-        Policy policy = authz.getStoreFactory().getPolicyStore().findByName(server.getId(), getManagePermissionName(client));
+        Policy policy = authz.getStoreFactory().getPolicyStore().findByName(server, getManagePermissionName(client));
         if (policy == null) {
             return false;
         }
@@ -397,7 +397,7 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
         Resource resource =  authz.getStoreFactory().getResourceStore().findByName(server.getId(), getResourceName(client));
         if (resource == null) return false;
 
-        Policy policy = authz.getStoreFactory().getPolicyStore().findByName(server.getId(), getConfigurePermissionName(client));
+        Policy policy = authz.getStoreFactory().getPolicyStore().findByName(server, getConfigurePermissionName(client));
         if (policy == null) {
             return false;
         }
@@ -443,7 +443,7 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
         Resource resource =  authz.getStoreFactory().getResourceStore().findByName(server.getId(), getResourceName(client));
         if (resource == null) return false;
 
-        Policy policy = authz.getStoreFactory().getPolicyStore().findByName(server.getId(), getViewPermissionName(client));
+        Policy policy = authz.getStoreFactory().getPolicyStore().findByName(server, getViewPermissionName(client));
         if (policy == null) {
             return false;
         }
@@ -522,7 +522,7 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
         Resource resource =  authz.getStoreFactory().getResourceStore().findByName(server.getId(), getResourceName(client));
         if (resource == null) return false;
 
-        Policy policy = authz.getStoreFactory().getPolicyStore().findByName(server.getId(), getMapRolesPermissionName(client));
+        Policy policy = authz.getStoreFactory().getPolicyStore().findByName(server, getMapRolesPermissionName(client));
         if (policy == null) {
             return false;
         }
@@ -541,49 +541,49 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
     public Policy exchangeToPermission(ClientModel client) {
         ResourceServer server = resourceServer(client);
         if (server == null) return null;
-        return authz.getStoreFactory().getPolicyStore().findByName(server.getId(), getExchangeToPermissionName(client));
+        return authz.getStoreFactory().getPolicyStore().findByName(server, getExchangeToPermissionName(client));
     }
 
     @Override
     public Policy mapRolesPermission(ClientModel client) {
         ResourceServer server = resourceServer(client);
         if (server == null) return null;
-        return authz.getStoreFactory().getPolicyStore().findByName(server.getId(), getMapRolesPermissionName(client));
+        return authz.getStoreFactory().getPolicyStore().findByName(server, getMapRolesPermissionName(client));
     }
 
     @Override
     public Policy mapRolesClientScopePermission(ClientModel client) {
         ResourceServer server = resourceServer(client);
         if (server == null) return null;
-        return authz.getStoreFactory().getPolicyStore().findByName(server.getId(), getMapRolesClientScopePermissionName(client));
+        return authz.getStoreFactory().getPolicyStore().findByName(server, getMapRolesClientScopePermissionName(client));
     }
 
     @Override
     public Policy mapRolesCompositePermission(ClientModel client) {
         ResourceServer server = resourceServer(client);
         if (server == null) return null;
-        return authz.getStoreFactory().getPolicyStore().findByName(server.getId(), getMapRolesCompositePermissionName(client));
+        return authz.getStoreFactory().getPolicyStore().findByName(server, getMapRolesCompositePermissionName(client));
     }
 
     @Override
     public Policy managePermission(ClientModel client) {
         ResourceServer server = resourceServer(client);
         if (server == null) return null;
-        return authz.getStoreFactory().getPolicyStore().findByName(server.getId(), getManagePermissionName(client));
+        return authz.getStoreFactory().getPolicyStore().findByName(server, getManagePermissionName(client));
     }
 
     @Override
     public Policy configurePermission(ClientModel client) {
         ResourceServer server = resourceServer(client);
         if (server == null) return null;
-        return authz.getStoreFactory().getPolicyStore().findByName(server.getId(), getConfigurePermissionName(client));
+        return authz.getStoreFactory().getPolicyStore().findByName(server, getConfigurePermissionName(client));
     }
 
     @Override
     public Policy viewPermission(ClientModel client) {
         ResourceServer server = resourceServer(client);
         if (server == null) return null;
-        return authz.getStoreFactory().getPolicyStore().findByName(server.getId(), getViewPermissionName(client));
+        return authz.getStoreFactory().getPolicyStore().findByName(server, getViewPermissionName(client));
     }
 
     @Override
@@ -599,7 +599,7 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
         Resource resource =  authz.getStoreFactory().getResourceStore().findByName(server.getId(), getResourceName(client));
         if (resource == null) return false;
 
-        Policy policy = authz.getStoreFactory().getPolicyStore().findByName(server.getId(), getMapRolesCompositePermissionName(client));
+        Policy policy = authz.getStoreFactory().getPolicyStore().findByName(server, getMapRolesCompositePermissionName(client));
         if (policy == null) {
             return false;
         }
@@ -621,7 +621,7 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
         Resource resource =  authz.getStoreFactory().getResourceStore().findByName(server.getId(), getResourceName(client));
         if (resource == null) return false;
 
-        Policy policy = authz.getStoreFactory().getPolicyStore().findByName(server.getId(), getMapRolesClientScopePermissionName(client));
+        Policy policy = authz.getStoreFactory().getPolicyStore().findByName(server, getMapRolesClientScopePermissionName(client));
         if (policy == null) {
             return false;
         }

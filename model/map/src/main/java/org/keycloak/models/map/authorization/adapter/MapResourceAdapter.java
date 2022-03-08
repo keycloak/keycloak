@@ -148,7 +148,7 @@ public class MapResourceAdapter extends AbstractResourceModel<MapResourceEntity>
                 }
 
                 // Remove the scope from each Policy for this Resource
-                policyStore.findByResource(getResourceServer().getId(), getId(), policy -> policy.removeScope(scope));
+                policyStore.findByResource(getResourceServer(), this, policy -> policy.removeScope(scope));
             }
         }
 

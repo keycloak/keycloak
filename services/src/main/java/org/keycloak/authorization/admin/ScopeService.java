@@ -50,6 +50,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -131,7 +132,7 @@ public class ScopeService {
         }
 
         PolicyStore policyStore = storeFactory.getPolicyStore();
-        List<Policy> policies = policyStore.findByScopeIds(resourceServer.getId(), Arrays.asList(scope.getId()));
+        List<Policy> policies = policyStore.findByScopes(resourceServer, Collections.singletonList(scope));
 
         for (Policy policyModel : policies) {
             if (policyModel.getScopes().size() == 1) {
@@ -201,7 +202,7 @@ public class ScopeService {
 
         PolicyStore policyStore = storeFactory.getPolicyStore();
 
-        return Response.ok(policyStore.findByScopeIds(resourceServer.getId(), Arrays.asList(model.getId())).stream().map(policy -> {
+        return Response.ok(policyStore.findByScopes(resourceServer, Collections.singletonList(model)).stream().map(policy -> {
             PolicyRepresentation representation = new PolicyRepresentation();
 
             representation.setId(policy.getId());

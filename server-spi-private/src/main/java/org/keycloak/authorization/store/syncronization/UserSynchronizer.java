@@ -86,7 +86,7 @@ public class UserSynchronizer implements Synchronizer<UserRemovedEvent> {
 
         resourceStore.findByOwner(null, userModel.getId(), resource -> {
             String resourceId = resource.getId();
-            policyStore.findByResource(resource.getResourceServer().getId(), resourceId).forEach(policy -> {
+            policyStore.findByResource(resource.getResourceServer(), resource).forEach(policy -> {
                 if (policy.getResources().size() == 1) {
                     policyStore.delete(policy.getId());
                 } else {

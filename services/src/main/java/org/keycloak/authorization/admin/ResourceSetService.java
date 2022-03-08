@@ -252,10 +252,10 @@ public class ResourceSetService {
         PolicyStore policyStore = authorization.getStoreFactory().getPolicyStore();
         Set<Policy> policies = new HashSet<>();
 
-        policies.addAll(policyStore.findByResource(resourceServer.getId(), model.getId()));
+        policies.addAll(policyStore.findByResource(resourceServer, model));
 
         if (model.getType() != null) {
-            policies.addAll(policyStore.findByResourceType(resourceServer.getId(), model.getType()));
+            policies.addAll(policyStore.findByResourceType(resourceServer, model.getType()));
 
             Map<Resource.FilterOption, String[]> resourceFilter = new EnumMap<>(Resource.FilterOption.class);
 
@@ -263,12 +263,12 @@ public class ResourceSetService {
             resourceFilter.put(Resource.FilterOption.TYPE, new String[]{model.getType()});
 
             for (Resource resourceType : resourceStore.findByResourceServer(resourceServer.getId(), resourceFilter, -1, -1)) {
-                policies.addAll(policyStore.findByResource(resourceServer.getId(), resourceType.getId()));
+                policies.addAll(policyStore.findByResource(resourceServer, resourceType));
             }
         }
 
-        policies.addAll(policyStore.findByScopeIds(resourceServer.getId(), id, model.getScopes().stream().map(scope -> scope.getId()).collect(Collectors.toList())));
-        policies.addAll(policyStore.findByScopeIds(resourceServer.getId(), null, model.getScopes().stream().map(scope -> scope.getId()).collect(Collectors.toList())));
+        policies.addAll(policyStore.findByScopes(resourceServer, model, model.getScopes()));
+        policies.addAll(policyStore.findByScopes(resourceServer, null, model.getScopes()));
 
         List<PolicyRepresentation> representation = new ArrayList<>();
 

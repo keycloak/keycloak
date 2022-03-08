@@ -128,7 +128,7 @@ public class PermissionTicketAdapter implements PermissionTicket, CachedModel<Pe
     @Override
     public Policy getPolicy() {
         if (isUpdated()) return updated.getPolicy();
-        return cacheSession.getPolicyStore().findById(cached.getResourceServerId(), cached.getPolicy());
+        return cacheSession.getPolicyStore().findById(cacheSession.getResourceServerStore().findById(cached.getResourceServerId()), cached.getPolicy());
     }
 
     @Override
