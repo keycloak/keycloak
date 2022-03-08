@@ -78,23 +78,9 @@
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-smallrye-metrics-deployment</artifactId>
         </dependency>
-        <!-- Cross-DC and ISPN client dependencies -->
         <dependency>
             <groupId>io.quarkus</groupId>
-            <artifactId>quarkus-infinispan-client-deployment</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.wildfly.security</groupId>
-            <artifactId>wildfly-elytron-sasl-gssapi</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.wildfly.security</groupId>
-            <artifactId>wildfly-elytron-sasl-gs2</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.quarkiverse.vault</groupId>
-            <artifactId>quarkus-vault-deployment</artifactId>
-            <version>1.0.1</version>
+            <artifactId>quarkus-logging-json-deployment</artifactId>
         </dependency>
         <dependency>
             <groupId>io.quarkus</groupId>
@@ -105,6 +91,11 @@
             <groupId>io.rest-assured</groupId>
             <artifactId>rest-assured</artifactId>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkiverse.vault</groupId>
+            <artifactId>quarkus-vault-deployment</artifactId>
+            <version>${io.quarkiverse.vault.version}</version>
         </dependency>
     </dependencies>
 
