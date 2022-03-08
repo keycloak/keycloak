@@ -169,7 +169,7 @@ public class DeepCloner {
          *
          * @param <V> Class or interface that would be instantiated by the given methods
          * @param clazz Class or interface that would be instantiated by the given methods
-         * @param constructor Function that creates a new instance of class {@code V}.
+         * @param delegateCreator Function that creates a new instance of class {@code V}.
          *          If {@code null}, such a single-parameter constructor is not available.
          * @return This builder.
          */
@@ -185,7 +185,7 @@ public class DeepCloner {
          *
          * @param <V> Class or interface that would be instantiated by the given methods
          * @param clazz Class or interface that would be instantiated by the given methods
-         * @param constructor Function that creates a new instance of class {@code V}.
+         * @param delegateCreator Function that creates a new instance of class {@code V}.
          *          If {@code null}, such a single-parameter constructor is not available.
          * @return This builder.
          */
@@ -376,7 +376,7 @@ public class DeepCloner {
     /**
      * Returns a class type of an instance that would be instantiated by {@link #newInstance(java.lang.Class)} method.
      * @param <V> Type (class or a {@code @Root} interface) to create a new instance
-     * @param clazz Type (class or a {@code @Root} interface) to create a new instance
+     * @param valueType Type (class or a {@code @Root} interface) to create a new instance
      * @return See description
      */
     @SuppressWarnings("unchecked")

@@ -72,7 +72,7 @@
                 </div>
                 <kc-tooltip>{{:: 'sslRequired.tooltip' | translate}}</kc-tooltip>
             </div>
-            <div class="form-group clearfix block">
+            <div class="form-group clearfix block" data-ng-show="serverInfo.featureEnabled('STEP_UP_AUTHENTICATION')">
                 <label class="col-md-2 control-label" for="newAcr">{{:: 'acr-loa-map' | translate}}</label>
                 <div class="col-sm-6">
                     <div class="input-group input-map" ng-repeat="(acr, loa) in acrLoaMap">

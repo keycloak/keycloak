@@ -102,10 +102,22 @@ Vault:
 
 Logging:
 
---log-format <format>
-                     The format of log entries. If the format has spaces in it, you need to escape
-                       the value such as "<format>". Default: %d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c]
-                       (%t) %s%e%n.
+--log <handler>      Enable one or more log handlers in a comma-separated list. Available log
+                       handlers are: console,file Default: console.
+--log-console-color <true|false>
+                     Enable or disable colors when logging to console. Default: false.
+--log-console-format <format>
+                     The format of unstructured console log entries. If the format has spaces in
+                       it, escape the value using "<format>". Default: %d{yyyy-MM-dd HH:mm:ss,SSS} %
+                       -5p [%c] (%t) %s%e%n.
+--log-console-output <default|json>
+                     Set the log output to JSON or default (plain) unstructured logging. Default:
+                       default.
+--log-file <path>/<file-name>.log
+                     Set the log file path and filename. Default: data/log/keycloak.log.
+--log-file-format <format>
+                     Set a format specific to file log entries. Default: %d{yyyy-MM-dd HH:mm:ss,
+                       SSS} %-5p [%c] (%t) %s%e%n.
 --log-level <category:level>
                      The log level of the root category or a comma-separated list of individual
                        categories and their levels. For the root category, you don't need to

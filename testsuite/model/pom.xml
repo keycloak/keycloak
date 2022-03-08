@@ -97,6 +97,10 @@
             <artifactId>keycloak-model-map-hot-rod</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-model-map-ldap</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.infinispan</groupId>
             <artifactId>infinispan-server-core</artifactId>
         </dependency>
@@ -303,6 +307,15 @@
                 <keycloak.model.parameters>Jpa,Map,HotRodMapStorage</keycloak.model.parameters>
             </properties>
         </profile>
+
+        <profile>
+            <id>map-ldap</id>
+            <properties>
+                <keycloak.profile.feature.map_storage>enabled</keycloak.profile.feature.map_storage>
+                <keycloak.model.parameters>Jpa,Map,LdapMapStorage</keycloak.model.parameters>
+            </properties>
+        </profile>
+
     </profiles>
     
 </project>

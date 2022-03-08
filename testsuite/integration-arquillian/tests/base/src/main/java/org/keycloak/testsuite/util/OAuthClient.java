@@ -166,6 +166,8 @@ public class OAuthClient {
 
     private String maxAge;
 
+    private String prompt;
+
     private String responseType;
 
     private String responseMode;
@@ -255,6 +257,7 @@ public class OAuthClient {
         clientSessionState = null;
         clientSessionHost = null;
         maxAge = null;
+        prompt = null;
         responseType = OAuth2Constants.CODE;
         responseMode = null;
         nonce = null;
@@ -1133,6 +1136,9 @@ public class OAuthClient {
             if (maxAge != null) {
                 parameters.add(new BasicNameValuePair(OIDCLoginProtocol.MAX_AGE_PARAM, maxAge));
             }
+            if (prompt != null) {
+                parameters.add(new BasicNameValuePair(OIDCLoginProtocol.PROMPT_PARAM, prompt));
+            }
             if (request != null) {
                 parameters.add(new BasicNameValuePair(OIDCLoginProtocol.REQUEST_PARAM, request));
             }
@@ -1418,6 +1424,9 @@ public class OAuthClient {
         if (maxAge != null) {
             b.queryParam(OIDCLoginProtocol.MAX_AGE_PARAM, maxAge);
         }
+        if (prompt != null) {
+            b.queryParam(OIDCLoginProtocol.PROMPT_PARAM, prompt);
+        }
         if (request != null) {
             b.queryParam(OIDCLoginProtocol.REQUEST_PARAM, request);
         }
@@ -1619,6 +1628,11 @@ public class OAuthClient {
 
     public OAuthClient maxAge(String maxAge) {
         this.maxAge = maxAge;
+        return this;
+    }
+
+    public OAuthClient prompt(String prompt) {
+        this.prompt = prompt;
         return this;
     }
 

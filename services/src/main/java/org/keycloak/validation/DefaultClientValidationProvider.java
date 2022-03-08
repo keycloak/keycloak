@@ -17,6 +17,7 @@
 package org.keycloak.validation;
 
 import org.keycloak.authentication.AuthenticatorUtil;
+import org.keycloak.authentication.authenticators.util.LoAUtil;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.protocol.ProtocolMapperConfigException;
@@ -279,7 +280,7 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
         }
         for (String configuredAcr : defaultAcrValues) {
             if (acrToLoaMap.containsKey(configuredAcr)) continue;
-            if (!AuthenticatorUtil.getLoAConfiguredInRealmBrowserFlow(client.getRealm())
+            if (!LoAUtil.getLoAConfiguredInRealmBrowserFlow(client.getRealm())
                     .anyMatch(level -> configuredAcr.equals(String.valueOf(level)))) {
                 context.addError("defaultAcrValues", "Default ACR values need to contain values specified in the ACR-To-Loa mapping or number levels from set realm browser flow");
             }

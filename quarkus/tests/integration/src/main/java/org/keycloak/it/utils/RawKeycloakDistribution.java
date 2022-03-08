@@ -137,8 +137,11 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     public String[] getCliArgs(List<String> arguments) {
         this.relativePath = arguments.stream().filter(arg -> arg.startsWith("--http-relative-path")).map(arg -> arg.substring(arg.indexOf('=') + 1)).findAny().orElse("/");
         this.httpPort = Integer.parseInt(arguments.stream().filter(arg -> arg.startsWith("--http-port")).map(arg -> arg.substring(arg.indexOf('=') + 1)).findAny().orElse("8080"));
+        List<String> args = new ArrayList<>();
+        args.add("-Dkc.home.dir=" + distPath + File.separator);
+        args.addAll(arguments);
 
-        return KeycloakDistribution.super.getCliArgs(arguments);
+        return KeycloakDistribution.super.getCliArgs(args);
     }
 
     private void waitForReadiness() throws MalformedURLException {
@@ -377,5 +380,9 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
 
     private File getQuarkusPropertiesFile() {
         return distPath.resolve("conf").resolve("quarkus.properties").toFile();
+    }
+
+    public Path getDistPath() {
+        return distPath;
     }
 }

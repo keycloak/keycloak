@@ -23,7 +23,7 @@ import static org.keycloak.quarkus.runtime.Environment.forceTestLaunchMode;
 import static org.keycloak.quarkus.runtime.cli.command.Main.CONFIG_FILE_LONG_NAME;
 import static org.keycloak.quarkus.runtime.cli.command.Main.CONFIG_FILE_SHORT_NAME;
 
-import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -31,12 +31,13 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import io.quarkus.dev.console.QuarkusConsole;
 import io.quarkus.runtime.configuration.QuarkusConfigFactory;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolutionException;
+import org.keycloak.it.utils.RawDistRootPath;
 import org.keycloak.it.utils.KeycloakDistribution;
+import org.keycloak.it.utils.RawKeycloakDistribution;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.command.Start;
 import org.keycloak.quarkus.runtime.cli.command.StartDev;
@@ -112,10 +113,8 @@ public class CLITestExtension extends QuarkusMainTestExtension {
     public void afterEach(ExtensionContext context) throws Exception {
         DistributionTest distConfig = getDistributionConfig(context);
 
-        if (distConfig != null) {
-            if (distConfig.keepAlive()) {
-                dist.stop();
-            }
+        if (distConfig != null && distConfig.keepAlive()) {
+            dist.stop();
         }
 
         super.afterEach(context);
@@ -187,6 +186,11 @@ public class CLITestExtension extends QuarkusMainTestExtension {
             return CLIResult.create(outputStream, errStream, exitCode);
         }
 
+        if (type.equals(RawDistRootPath.class)) {
+            //assuming the path to the distribution directory
+            return getDistPath();
+        }
+
         // for now, no support for manual launching using QuarkusMainLauncher
         throw new RuntimeException("Parameter type [" + type + "] not supported");
     }
@@ -195,7 +199,7 @@ public class CLITestExtension extends QuarkusMainTestExtension {
     public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext)
             throws ParameterResolutionException {
         Class<?> type = parameterContext.getParameter().getType();
-        return type == LaunchResult.class;
+        return type == LaunchResult.class || type == RawDistRootPath.class;
     }
 
     private void configureProfile(ExtensionContext context) {
@@ -248,5 +252,10 @@ public class CLITestExtension extends QuarkusMainTestExtension {
 
     private DistributionTest getDistributionConfig(ExtensionContext context) {
         return context.getTestClass().get().getDeclaredAnnotation(DistributionTest.class);
+    }
+
+    private RawDistRootPath getDistPath(){
+        Path distPath = ((RawKeycloakDistribution)dist).getDistPath();
+        return new RawDistRootPath(distPath);
     }
 }

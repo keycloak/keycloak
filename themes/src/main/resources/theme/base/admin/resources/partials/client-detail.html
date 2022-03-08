@@ -932,7 +932,7 @@
                 <kc-tooltip>{{:: 'require-pushed-authorization-requests.tooltip' | translate}}</kc-tooltip>
             </div>
 
-            <div class="form-group clearfix block" data-ng-show="!clientEdit.bearerOnly && protocol == 'openid-connect'">
+            <div class="form-group clearfix block" data-ng-show="!clientEdit.bearerOnly && protocol == 'openid-connect' && serverInfo.featureEnabled('STEP_UP_AUTHENTICATION')">
                 <label class="col-md-2 control-label" for="newAcr">{{:: 'acr-loa-map' | translate}}</label>
                 <div class="col-sm-6">
                     <div class="input-group input-map" ng-repeat="(acr, loa) in acrLoaMap">
@@ -953,7 +953,7 @@
                 <kc-tooltip>{{:: 'acr-loa-map-client.tooltip' | translate}}</kc-tooltip>
             </div>
 
-            <div class="form-group" data-ng-show="!clientEdit.bearerOnly && protocol == 'openid-connect'">
+            <div class="form-group" data-ng-show="!clientEdit.bearerOnly && protocol == 'openid-connect' && serverInfo.featureEnabled('STEP_UP_AUTHENTICATION')">
                 <label class="col-md-2 control-label" for="newDefaultAcrValue">{{:: 'default-acr-values' | translate}}</label>
 
                 <div class="col-sm-6">

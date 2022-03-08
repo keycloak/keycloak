@@ -35,7 +35,7 @@
     <packaging>pom</packaging>
 
     <properties>
-        <quarkus.version>2.7.2.Final</quarkus.version>
+        <quarkus.version>2.7.3.Final</quarkus.version>
 
         <!--
         Performing a Wildfly upgrade? Run the:
@@ -1272,6 +1272,11 @@
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-model-map-jpa</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-model-map-ldap</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
