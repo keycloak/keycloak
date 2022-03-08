@@ -526,15 +526,15 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
     }
 
     private Scope mapRoleScope(ResourceServer server) {
-        return authz.getStoreFactory().getScopeStore().findByName(server.getId(), MAP_ROLE_SCOPE);
+        return authz.getStoreFactory().getScopeStore().findByName(server, MAP_ROLE_SCOPE);
     }
 
     private Scope mapClientScope(ResourceServer server) {
-        return authz.getStoreFactory().getScopeStore().findByName(server.getId(), MAP_ROLE_CLIENT_SCOPE_SCOPE);
+        return authz.getStoreFactory().getScopeStore().findByName(server, MAP_ROLE_CLIENT_SCOPE_SCOPE);
     }
 
     private Scope mapCompositeScope(ResourceServer server) {
-        return authz.getStoreFactory().getScopeStore().findByName(server.getId(), MAP_ROLE_COMPOSITE_SCOPE);
+        return authz.getStoreFactory().getScopeStore().findByName(server, MAP_ROLE_COMPOSITE_SCOPE);
     }
 
 

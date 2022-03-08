@@ -102,9 +102,9 @@ public class PermissionTicketService {
         ScopeStore sstore = this.authorization.getStoreFactory().getScopeStore();
 
         if(representation.getScopeName() != null)
-            scope = sstore.findByName(resourceServer.getId(), representation.getScopeName());
+            scope = sstore.findByName(resourceServer, representation.getScopeName());
         else
-            scope = sstore.findById(resourceServer.getId(), representation.getScope());
+            scope = sstore.findById(resourceServer, representation.getScope());
 
         if (scope == null && representation.getScope() !=null )
             throw new ErrorResponseException("invalid_scope", "Scope [" + representation.getScope() + "] is invalid", Response.Status.BAD_REQUEST);
@@ -230,10 +230,10 @@ public class PermissionTicketService {
 
         if (scopeId != null) {
             ScopeStore scopeStore = storeFactory.getScopeStore();
-            Scope scope = scopeStore.findById(resourceServer.getId(), scopeId);
+            Scope scope = scopeStore.findById(resourceServer, scopeId);
 
             if (scope == null) {
-                scope = scopeStore.findByName(resourceServer.getId(), scopeId);
+                scope = scopeStore.findByName(resourceServer, scopeId);
             }
 
             filters.put(PermissionTicket.FilterOption.SCOPE_ID, scope != null ? scope.getId() : scopeId);

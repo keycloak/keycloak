@@ -520,7 +520,7 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         }
 
         @Override
-        public Scope findById(String resourceServerId, String id) {
+        public Scope findById(ResourceServer resourceServer, String id) {
             if (id == null) return null;
             CachedScope cached = cache.get(id, CachedScope.class);
             if (cached != null) {
@@ -529,7 +529,7 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
             if (cached == null) {
                 Long loaded = cache.getCurrentRevision(id);
                 if (! modelMightExist(id)) return null;
-                Scope model = getScopeStoreDelegate().findById(resourceServerId, id);
+                Scope model = getScopeStoreDelegate().findById(resourceServer, id);
                 if (model == null) {
                     setModelDoesNotExists(id, loaded);
                     return null;
@@ -538,7 +538,7 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
                 cached = new CachedScope(loaded, model);
                 cache.addRevisioned(cached, startupRevision);
             } else if (invalidations.contains(id)) {
-                return getScopeStoreDelegate().findById(resourceServerId, id);
+                return getScopeStoreDelegate().findById(resourceServer, id);
             } else if (managedScopes.containsKey(id)) {
                 return managedScopes.get(id);
             }
@@ -548,8 +548,9 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         }
 
         @Override
-        public Scope findByName(String resourceServerId, String name) {
+        public Scope findByName(ResourceServer resourceServer, String name) {
             if (name == null) return null;
+            String resourceServerId = resourceServer == null ? null : resourceServer.getId();
             String cacheKey = getScopeByNameCacheKey(name, resourceServerId);
             ScopeListQuery query = cache.get(cacheKey, ScopeListQuery.class);
             if (query != null) {
@@ -557,31 +558,31 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
             }
             if (query == null) {
                 Long loaded = cache.getCurrentRevision(cacheKey);
-                Scope model = getScopeStoreDelegate().findByName(resourceServerId, name);
+                Scope model = getScopeStoreDelegate().findByName(resourceServer, name);
                 if (model == null) return null;
                 if (invalidations.contains(model.getId())) return model;
                 query = new ScopeListQuery(loaded, cacheKey, model.getId(), resourceServerId);
                 cache.addRevisioned(query, startupRevision);
                 return model;
             } else if (invalidations.contains(cacheKey)) {
-                return getScopeStoreDelegate().findByName(resourceServerId, name);
+                return getScopeStoreDelegate().findByName(resourceServer, name);
             } else {
                 String id = query.getScopes().iterator().next();
                 if (invalidations.contains(id)) {
-                    return getScopeStoreDelegate().findByName(resourceServerId, name);
+                    return getScopeStoreDelegate().findByName(resourceServer, name);
                 }
-                return findById(query.getResourceServerId(), id);
+                return findById(resourceServer, id);
             }
         }
 
         @Override
-        public List<Scope> findByResourceServer(String id) {
-            return getScopeStoreDelegate().findByResourceServer(id);
+        public List<Scope> findByResourceServer(ResourceServer resourceServer) {
+            return getScopeStoreDelegate().findByResourceServer(resourceServer);
         }
 
         @Override
-        public List<Scope> findByResourceServer(String resourceServerId, Map<Scope.FilterOption, String[]> attributes, int firstResult, int maxResult) {
-            return getScopeStoreDelegate().findByResourceServer(resourceServerId, attributes, firstResult, maxResult);
+        public List<Scope> findByResourceServer(ResourceServer resourceServer, Map<Scope.FilterOption, String[]> attributes, int firstResult, int maxResult) {
+            return getScopeStoreDelegate().findByResourceServer(resourceServer, attributes, firstResult, maxResult);
         }
     }
 

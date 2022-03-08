@@ -287,10 +287,10 @@ public class PolicyAdapter implements Policy, CachedModel<Policy> {
         if (isUpdated()) return updated.getScopes();
         if (scopes != null) return scopes;
         scopes = new HashSet<>();
+        ResourceServer resourceServer = getResourceServer();
         ScopeStore scopeStore = cacheSession.getScopeStore();
-        String resourceServerId = cached.getResourceServerId();
         for (String scopeId : cached.getScopesIds(modelSupplier)) {
-            Scope scope = scopeStore.findById(resourceServerId, scopeId);
+            Scope scope = scopeStore.findById(resourceServer, scopeId);
             cacheSession.cacheScope(scope);
             scopes.add(scope);
         }

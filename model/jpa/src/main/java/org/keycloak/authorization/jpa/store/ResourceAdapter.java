@@ -116,8 +116,9 @@ public class ResourceAdapter extends AbstractAuthorizationModel implements Resou
     @Override
     public List<Scope> getScopes() {
         List<Scope> scopes = new LinkedList<>();
+        ResourceServer resourceServer = getResourceServer();
         for (ScopeEntity scope : entity.getScopes()) {
-            scopes.add(storeFactory.getScopeStore().findById(entity.getResourceServer(), scope.getId()));
+            scopes.add(storeFactory.getScopeStore().findById(resourceServer, scope.getId()));
         }
 
         return Collections.unmodifiableList(scopes);

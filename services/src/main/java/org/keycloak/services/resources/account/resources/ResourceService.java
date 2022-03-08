@@ -210,10 +210,10 @@ public class ResourceService extends AbstractResourceService {
     }
 
     private org.keycloak.authorization.model.Scope getScope(String scopeId, ResourceServer resourceServer) {
-        org.keycloak.authorization.model.Scope scope = scopeStore.findByName(resourceServer.getId(), scopeId);
+        org.keycloak.authorization.model.Scope scope = scopeStore.findByName(resourceServer, scopeId);
 
         if (scope == null) {
-            scope = scopeStore.findById(resourceServer.getId(), scopeId);
+            scope = scopeStore.findById(resourceServer, scopeId);
         }
         
         return scope;

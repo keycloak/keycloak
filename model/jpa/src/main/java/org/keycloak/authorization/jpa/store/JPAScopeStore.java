@@ -88,7 +88,7 @@ public class JPAScopeStore implements ScopeStore {
     }
 
     @Override
-    public Scope findById(String resourceServerId, String id) {
+    public Scope findById(ResourceServer resourceServer, String id) {
         if (id == null) {
             return null;
         }
@@ -100,45 +100,45 @@ public class JPAScopeStore implements ScopeStore {
     }
 
     @Override
-    public Scope findByName(String resourceServerId, String name) {
+    public Scope findByName(ResourceServer resourceServer, String name) {
         try {
             TypedQuery<String> query = entityManager.createNamedQuery("findScopeIdByName", String.class);
 
             query.setFlushMode(FlushModeType.COMMIT);
-            query.setParameter("serverId", resourceServerId);
+            query.setParameter("serverId", resourceServer.getId());
             query.setParameter("name", name);
 
             String id = query.getSingleResult();
-            return provider.getStoreFactory().getScopeStore().findById(resourceServerId, id);
+            return provider.getStoreFactory().getScopeStore().findById(resourceServer, id);
         } catch (NoResultException nre) {
             return null;
         }
     }
 
     @Override
-    public List<Scope> findByResourceServer(final String serverId) {
+    public List<Scope> findByResourceServer(final ResourceServer resourceServer) {
         TypedQuery<String> query = entityManager.createNamedQuery("findScopeIdByResourceServer", String.class);
 
         query.setFlushMode(FlushModeType.COMMIT);
-        query.setParameter("serverId", serverId);
+        query.setParameter("serverId", resourceServer.getId());
 
         List<String> result = query.getResultList();
         List<Scope> list = new LinkedList<>();
         for (String id : result) {
-            list.add(provider.getStoreFactory().getScopeStore().findById(serverId, id));
+            list.add(provider.getStoreFactory().getScopeStore().findById(resourceServer, id));
         }
         return list;
     }
 
     @Override
-    public List<Scope> findByResourceServer(String resourceServerId, Map<Scope.FilterOption, String[]> attributes, int firstResult, int maxResult) {
+    public List<Scope> findByResourceServer(ResourceServer resourceServer, Map<Scope.FilterOption, String[]> attributes, int firstResult, int maxResult) {
         CriteriaBuilder builder = entityManager.getCriteriaBuilder();
         CriteriaQuery<ScopeEntity> querybuilder = builder.createQuery(ScopeEntity.class);
         Root<ScopeEntity> root = querybuilder.from(ScopeEntity.class);
         querybuilder.select(root.get("id"));
         List<Predicate> predicates = new ArrayList();
 
-        predicates.add(builder.equal(root.get("resourceServer").get("id"), resourceServerId));
+        predicates.add(builder.equal(root.get("resourceServer").get("id"), resourceServer.getId()));
 
         attributes.forEach((filterOption, value) -> {
             switch (filterOption) {
@@ -160,7 +160,7 @@ public class JPAScopeStore implements ScopeStore {
         List result = paginateQuery(query, firstResult, maxResult).getResultList();
         List<Scope> list = new LinkedList<>();
         for (Object id : result) {
-            list.add(provider.getStoreFactory().getScopeStore().findById(resourceServerId, (String)id));
+            list.add(provider.getStoreFactory().getScopeStore().findById(resourceServer, (String)id));
         }
         return list;
 

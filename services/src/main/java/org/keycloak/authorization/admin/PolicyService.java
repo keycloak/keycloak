@@ -231,14 +231,14 @@ public class PolicyService {
 
         if (scope != null && !"".equals(scope.trim())) {
             ScopeStore scopeStore = storeFactory.getScopeStore();
-            Scope scopeModel = scopeStore.findById(resourceServer.getId(), scope);
+            Scope scopeModel = scopeStore.findById(resourceServer, scope);
 
             if (scopeModel == null) {
                 Map<Scope.FilterOption, String[]> scopeFilters = new EnumMap<>(Scope.FilterOption.class);
 
                 scopeFilters.put(Scope.FilterOption.NAME, new String[]{scope});
 
-                Set<String> scopes = scopeStore.findByResourceServer(resourceServer.getId(), scopeFilters, -1, 1).stream().map(Scope::getId).collect(Collectors.toSet());
+                Set<String> scopes = scopeStore.findByResourceServer(resourceServer, scopeFilters, -1, 1).stream().map(Scope::getId).collect(Collectors.toSet());
 
                 if (scopes.isEmpty()) {
                     return Response.noContent().build();

@@ -204,22 +204,22 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
 
 
     private Scope manageScope(ResourceServer server) {
-        return authz.getStoreFactory().getScopeStore().findByName(server.getId(), AdminPermissionManagement.MANAGE_SCOPE);
+        return authz.getStoreFactory().getScopeStore().findByName(server, AdminPermissionManagement.MANAGE_SCOPE);
     }
 
     private Scope exchangeToScope(ResourceServer server) {
-        return authz.getStoreFactory().getScopeStore().findByName(server.getId(), TOKEN_EXCHANGE);
+        return authz.getStoreFactory().getScopeStore().findByName(server, TOKEN_EXCHANGE);
     }
 
     private Scope configureScope(ResourceServer server) {
-        return authz.getStoreFactory().getScopeStore().findByName(server.getId(), CONFIGURE_SCOPE);
+        return authz.getStoreFactory().getScopeStore().findByName(server, CONFIGURE_SCOPE);
     }
 
     private Scope viewScope(ResourceServer server) {
-        return authz.getStoreFactory().getScopeStore().findByName(server.getId(), AdminPermissionManagement.VIEW_SCOPE);
+        return authz.getStoreFactory().getScopeStore().findByName(server, AdminPermissionManagement.VIEW_SCOPE);
     }
     private Scope mapRolesScope(ResourceServer server) {
-        return authz.getStoreFactory().getScopeStore().findByName(server.getId(), MAP_ROLES_SCOPE);
+        return authz.getStoreFactory().getScopeStore().findByName(server, MAP_ROLES_SCOPE);
     }
 
     @Override
@@ -610,7 +610,7 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
             return false;
         }
 
-        Scope scope = authz.getStoreFactory().getScopeStore().findByName(server.getId(), MAP_ROLES_COMPOSITE_SCOPE);
+        Scope scope = authz.getStoreFactory().getScopeStore().findByName(server, MAP_ROLES_COMPOSITE_SCOPE);
         return root.evaluatePermission(resource, server, scope);
     }
     @Override
@@ -632,7 +632,7 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
             return false;
         }
 
-        Scope scope = authz.getStoreFactory().getScopeStore().findByName(server.getId(), MAP_ROLES_CLIENT_SCOPE);
+        Scope scope = authz.getStoreFactory().getScopeStore().findByName(server, MAP_ROLES_CLIENT_SCOPE);
         return root.evaluatePermission(resource, server, scope);
     }
 

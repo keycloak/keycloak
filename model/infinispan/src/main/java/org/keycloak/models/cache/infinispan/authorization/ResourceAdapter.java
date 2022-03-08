@@ -173,7 +173,7 @@ public class ResourceAdapter implements Resource, CachedModel<Resource> {
         if (scopes != null) return scopes;
         scopes = new LinkedList<>();
         for (String scopeId : cached.getScopesIds(modelSupplier)) {
-            scopes.add(cacheSession.getScopeStore().findById(cached.getResourceServerId(), scopeId));
+            scopes.add(cacheSession.getScopeStore().findById(getResourceServer(), scopeId));
         }
         return scopes = Collections.unmodifiableList(scopes);
     }

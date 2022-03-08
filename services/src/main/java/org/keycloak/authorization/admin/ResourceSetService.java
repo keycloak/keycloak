@@ -403,7 +403,7 @@ public class ResourceSetService {
 
             scopeFilter.put(Scope.FilterOption.NAME, new String[] {scope});
 
-            List<Scope> scopes = authorization.getStoreFactory().getScopeStore().findByResourceServer(resourceServer.getId(), scopeFilter, -1, -1);
+            List<Scope> scopes = authorization.getStoreFactory().getScopeStore().findByResourceServer(resourceServer, scopeFilter, -1, -1);
 
             if (scopes.isEmpty()) {
                 return Response.ok(Collections.emptyList()).build();

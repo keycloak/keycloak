@@ -57,7 +57,7 @@ public class MapPermissionTicketAdapter extends AbstractPermissionTicketModel<Ma
     @Override
     public Scope getScope() {
         if (entity.getScopeId() == null) return null;
-        return storeFactory.getScopeStore().findById(entity.getResourceServerId(), entity.getScopeId());
+        return storeFactory.getScopeStore().findById(getResourceServer(), entity.getScopeId());
     }
 
     @Override

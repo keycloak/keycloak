@@ -126,7 +126,7 @@ public class PermissionTicketAdapter implements PermissionTicket, JpaModel<Permi
             return null;
         }
 
-        return storeFactory.getScopeStore().findById(getResourceServer().getId(), scope.getId());
+        return storeFactory.getScopeStore().findById(getResourceServer(), scope.getId());
     }
 
     @Override

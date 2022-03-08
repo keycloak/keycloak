@@ -540,7 +540,7 @@ public class AuthorizationTokenService {
                             }
 
                             for (String scopeName : grantedPermission.getScopes()) {
-                                Scope scope = scopeStore.findByName(resourceServer.getId(), scopeName);
+                                Scope scope = scopeStore.findByName(resourceServer, scopeName);
 
                                 if (scope != null) {
                                     if (!permission.getScopes().contains(scope)) {
@@ -685,7 +685,7 @@ public class AuthorizationTokenService {
             requestedScopes.addAll(Arrays.asList(clientAdditionalScopes.split(" ")));
         }
 
-        Set<Scope> requestedScopesModel = requestedScopes.stream().map(s -> scopeStore.findByName(resourceServer.getId(), s)).filter(
+        Set<Scope> requestedScopesModel = requestedScopes.stream().map(s -> scopeStore.findByName(resourceServer, s)).filter(
                 Objects::nonNull).collect(Collectors.toSet());
 
         if (!requestedScopes.isEmpty() && requestedScopesModel.isEmpty()) {

@@ -108,7 +108,7 @@ public class MapResourceServerStore implements ResourceServerStore {
                 .forEach(resourceStore::delete);
 
         ScopeStore scopeStore = authorizationProvider.getStoreFactory().getScopeStore();
-        scopeStore.findByResourceServer(id).stream()
+        scopeStore.findByResourceServer(resourceServer).stream()
                 .map(Scope::getId)
                 .forEach(scopeStore::delete);
 

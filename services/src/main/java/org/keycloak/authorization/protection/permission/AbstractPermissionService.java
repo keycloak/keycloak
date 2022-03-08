@@ -133,7 +133,7 @@ public class AbstractPermissionService {
                             .filter(baseScope -> baseScope.getName().equals(scopeName)).findFirst().orElse(null);
                 }
             } else {
-                scope = authorization.getStoreFactory().getScopeStore().findByName(resourceServer.getId(), scopeName);
+                scope = authorization.getStoreFactory().getScopeStore().findByName(resourceServer, scopeName);
             }
 
             if (scope == null) {

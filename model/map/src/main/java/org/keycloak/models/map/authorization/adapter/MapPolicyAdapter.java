@@ -142,10 +142,10 @@ public class MapPolicyAdapter extends AbstractPolicyModel<MapPolicyEntity> {
 
     @Override
     public Set<Scope> getScopes() {
-        String resourceServerId = entity.getResourceServerId();
+        ResourceServer resourceServer = getResourceServer();
         Set<String> ids = entity.getScopeIds();
         return ids == null ? Collections.emptySet() : ids.stream()
-                .map(scopeId -> storeFactory.getScopeStore().findById(resourceServerId, scopeId))
+                .map(scopeId -> storeFactory.getScopeStore().findById(resourceServer, scopeId))
                 .collect(Collectors.toSet());
     }
 

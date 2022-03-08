@@ -101,7 +101,7 @@ public class ScopeService {
             this.auth.realm().requireManageAuthorization();
         scope.setId(id);
         StoreFactory storeFactory = authorization.getStoreFactory();
-        Scope model = storeFactory.getScopeStore().findById(resourceServer.getId(), scope.getId());
+        Scope model = storeFactory.getScopeStore().findById(resourceServer, scope.getId());
 
         if (model == null) {
             return Response.status(Status.NOT_FOUND).build();
@@ -125,7 +125,7 @@ public class ScopeService {
             return ErrorResponse.error("Scopes can not be removed while associated with resources.", Status.BAD_REQUEST);
         }
 
-        Scope scope = storeFactory.getScopeStore().findById(resourceServer.getId(), id);
+        Scope scope = storeFactory.getScopeStore().findById(resourceServer, id);
 
         if (scope == null) {
             return Response.status(Status.NOT_FOUND).build();
@@ -155,7 +155,7 @@ public class ScopeService {
     @Produces(MediaType.APPLICATION_JSON)
     public Response findById(@PathParam("id") String id) {
         this.auth.realm().requireViewAuthorization();
-        Scope model = this.authorization.getStoreFactory().getScopeStore().findById(resourceServer.getId(), id);
+        Scope model = this.authorization.getStoreFactory().getScopeStore().findById(resourceServer, id);
 
         if (model == null) {
             return Response.status(Status.NOT_FOUND).build();
@@ -171,7 +171,7 @@ public class ScopeService {
     public Response getResources(@PathParam("id") String id) {
         this.auth.realm().requireViewAuthorization();
         StoreFactory storeFactory = this.authorization.getStoreFactory();
-        Scope model = storeFactory.getScopeStore().findById(resourceServer.getId(), id);
+        Scope model = storeFactory.getScopeStore().findById(resourceServer, id);
 
         if (model == null) {
             return Response.status(Status.NOT_FOUND).build();
@@ -194,7 +194,7 @@ public class ScopeService {
     public Response getPermissions(@PathParam("id") String id) {
         this.auth.realm().requireViewAuthorization();
         StoreFactory storeFactory = this.authorization.getStoreFactory();
-        Scope model = storeFactory.getScopeStore().findById(resourceServer.getId(), id);
+        Scope model = storeFactory.getScopeStore().findById(resourceServer, id);
 
         if (model == null) {
             return Response.status(Status.NOT_FOUND).build();
@@ -225,7 +225,7 @@ public class ScopeService {
             return Response.status(Status.BAD_REQUEST).build();
         }
 
-        Scope model = storeFactory.getScopeStore().findByName(this.resourceServer.getId(), name);
+        Scope model = storeFactory.getScopeStore().findByName(this.resourceServer, name);
 
         if (model == null) {
             return Response.status(Status.NO_CONTENT).build();
@@ -254,7 +254,7 @@ public class ScopeService {
         }
 
         return Response.ok(
-                this.authorization.getStoreFactory().getScopeStore().findByResourceServer(this.resourceServer.getId(), search, firstResult != null ? firstResult : -1, maxResult != null ? maxResult : Constants.DEFAULT_MAX_RESULTS).stream()
+                this.authorization.getStoreFactory().getScopeStore().findByResourceServer(this.resourceServer, search, firstResult != null ? firstResult : -1, maxResult != null ? maxResult : Constants.DEFAULT_MAX_RESULTS).stream()
                         .map(scope -> toRepresentation(scope))
                         .collect(Collectors.toList()))
                 .build();

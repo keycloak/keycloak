@@ -125,10 +125,10 @@ public class PermissionTicketAwareDecisionResultCollector extends DecisionPermis
                         ScopeStore scopeStore = authorization.getStoreFactory().getScopeStore();
 
                         for (String scopeId : scopes) {
-                            Scope scope = scopeStore.findByName(resourceServer.getId(), scopeId);
+                            Scope scope = scopeStore.findByName(resourceServer, scopeId);
 
                             if (scope == null) {
-                                scope = scopeStore.findById(resourceServer.getId(), scopeId);
+                                scope = scopeStore.findById(resourceServer, scopeId);
                             }
 
                             Map<PermissionTicket.FilterOption, String> filters = new EnumMap<>(PermissionTicket.FilterOption.class);

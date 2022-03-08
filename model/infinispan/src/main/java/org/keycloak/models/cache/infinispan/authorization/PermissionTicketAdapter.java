@@ -145,7 +145,7 @@ public class PermissionTicketAdapter implements PermissionTicket, CachedModel<Pe
 
     @Override
     public Scope getScope() {
-        return cacheSession.getScopeStore().findById(getResourceServer().getId(), cached.getScopeId());
+        return cacheSession.getScopeStore().findById(getResourceServer(), cached.getScopeId());
     }
 
     @Override

@@ -2494,10 +2494,10 @@ public class RepresentationToModel {
                 }
                 if (!hasScope) {
                     ResourceServer resourceServer = policy.getResourceServer();
-                    Scope scope = storeFactory.getScopeStore().findById(resourceServer.getId(), scopeId);
+                    Scope scope = storeFactory.getScopeStore().findById(resourceServer, scopeId);
 
                     if (scope == null) {
-                        scope = storeFactory.getScopeStore().findByName(resourceServer.getId(), scopeId);
+                        scope = storeFactory.getScopeStore().findByName(resourceServer, scopeId);
                         if (scope == null) {
                             throw new RuntimeException("Scope with id or name [" + scopeId + "] does not exist");
                         }
@@ -2732,9 +2732,9 @@ public class RepresentationToModel {
         Scope existing;
 
         if (scope.getId() != null) {
-            existing = scopeStore.findById(resourceServer.getId(), scope.getId());
+            existing = scopeStore.findById(resourceServer, scope.getId());
         } else {
-            existing = scopeStore.findByName(resourceServer.getId(), scope.getName());
+            existing = scopeStore.findByName(resourceServer, scope.getName());
         }
 
         if (existing != null) {

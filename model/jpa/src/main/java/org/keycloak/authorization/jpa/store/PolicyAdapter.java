@@ -177,8 +177,9 @@ public class PolicyAdapter extends AbstractAuthorizationModel implements Policy,
     @Override
     public Set<Scope> getScopes() {
         Set<Scope> set = new HashSet<>();
+        ResourceServer resourceServer = getResourceServer();
         for (ScopeEntity res : entity.getScopes()) {
-            set.add(storeFactory.getScopeStore().findById(entity.getResourceServer().getId(), res.getId()));
+            set.add(storeFactory.getScopeStore().findById(resourceServer, res.getId()));
         }
         return Collections.unmodifiableSet(set);
     }

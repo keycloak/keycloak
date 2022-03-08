@@ -91,9 +91,10 @@ public class MapResourceAdapter extends AbstractResourceModel<MapResourceEntity>
     @Override
     public List<Scope> getScopes() {
         Set<String> ids = entity.getScopeIds();
+        ResourceServer resourceServer = getResourceServer();
         return ids == null ? Collections.emptyList() : ids.stream()
                 .map(id -> storeFactory
-                        .getScopeStore().findById(entity.getResourceServerId(), id))
+                        .getScopeStore().findById(resourceServer, id))
                 .collect(Collectors.toList());
     }
 

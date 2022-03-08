@@ -265,23 +265,23 @@ public final class AuthorizationProvider implements Provider {
             }
 
             @Override
-            public Scope findById(String resourceServerId, String id) {
-                return delegate.findById(resourceServerId, id);
+            public Scope findById(ResourceServer resourceServer, String id) {
+                return delegate.findById(resourceServer, id);
             }
 
             @Override
-            public Scope findByName(String resourceServerId, String name) {
-                return delegate.findByName(resourceServerId, name);
+            public Scope findByName(ResourceServer resourceServer, String name) {
+                return delegate.findByName(resourceServer, name);
             }
 
             @Override
-            public List<Scope> findByResourceServer(String id) {
-                return delegate.findByResourceServer(id);
+            public List<Scope> findByResourceServer(ResourceServer resourceServer) {
+                return delegate.findByResourceServer(resourceServer);
             }
 
             @Override
-            public List<Scope> findByResourceServer(String resourceServerId, Map<Scope.FilterOption, String[]> attributes, int firstResult, int maxResult) {
-                return delegate.findByResourceServer(resourceServerId, attributes, firstResult, maxResult);
+            public List<Scope> findByResourceServer(ResourceServer resourceServer, Map<Scope.FilterOption, String[]> attributes, int firstResult, int maxResult) {
+                return delegate.findByResourceServer(resourceServer, attributes, firstResult, maxResult);
             }
         };
     }
@@ -315,10 +315,10 @@ public final class AuthorizationProvider implements Provider {
 
                 if (scopes != null) {
                     representation.setScopes(scopes.stream().map(id -> {
-                        Scope scope = storeFactory.getScopeStore().findById(resourceServer.getId(), id);
+                        Scope scope = storeFactory.getScopeStore().findById(resourceServer, id);
 
                         if (scope == null) {
-                            scope = storeFactory.getScopeStore().findByName(resourceServer.getId(), id);
+                            scope = storeFactory.getScopeStore().findByName(resourceServer, id);
                         }
 
                         if (scope == null) {

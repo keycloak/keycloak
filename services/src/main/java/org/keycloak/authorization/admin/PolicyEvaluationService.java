@@ -172,7 +172,7 @@ public class PolicyEvaluationService {
 
             ScopeStore scopeStore = storeFactory.getScopeStore();
 
-            Set<Scope> scopes = givenScopes.stream().map(scopeRepresentation -> scopeStore.findByName(resourceServer.getId(), scopeRepresentation.getName())).collect(Collectors.toSet());
+            Set<Scope> scopes = givenScopes.stream().map(scopeRepresentation -> scopeStore.findByName(resourceServer, scopeRepresentation.getName())).collect(Collectors.toSet());
 
             if (resource.getId() != null) {
                 Resource resourceModel = storeFactory.getResourceStore().findById(resourceServer.getId(), resource.getId());

@@ -803,7 +803,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
                 }
             } else {
                 for (String id : ids) {
-                    scopesToKeep.add(authorization.getStoreFactory().getScopeStore().findById(client.getId(), id.split(":")[1]));
+                    scopesToKeep.add(authorization.getStoreFactory().getScopeStore().findById(resourceServer, id.split(":")[1]));
                 }
 
                 for (Scope scope : policy.getScopes()) {
@@ -929,7 +929,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
 
                 if (scopes != null && scopes.length > 0) {
                     Arrays.stream(scopes)
-                            .map(scopeId -> scopeStore.findById(resourceServer.getId(), scopeId))
+                            .map(scopeId -> scopeStore.findById(resourceServer, scopeId))
                             .filter(Objects::nonNull)
                             .forEach(scope -> ticketStore.create(resourceServer, resource, scope, userId));
                 } else {
@@ -947,7 +947,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
 
                 Arrays.stream(scopes)
                         .filter(((Predicate<String>) alreadyGrantedScopes::contains).negate())
-                        .map(scopeId -> scopeStore.findById(resourceServer.getId(), scopeId))
+                        .map(scopeId -> scopeStore.findById(resourceServer, scopeId))
                         .filter(Objects::nonNull)
                         .forEach(scope -> ticketStore.create(resourceServer, resource, scope, userId));
             }

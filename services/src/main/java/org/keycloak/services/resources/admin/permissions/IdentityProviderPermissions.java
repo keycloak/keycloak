@@ -124,7 +124,7 @@ class IdentityProviderPermissions implements  IdentityProviderPermissionManageme
 
 
     private Scope exchangeToScope(ResourceServer server) {
-        return authz.getStoreFactory().getScopeStore().findByName(server.getId(), TOKEN_EXCHANGE);
+        return authz.getStoreFactory().getScopeStore().findByName(server, TOKEN_EXCHANGE);
     }
 
     @Override
