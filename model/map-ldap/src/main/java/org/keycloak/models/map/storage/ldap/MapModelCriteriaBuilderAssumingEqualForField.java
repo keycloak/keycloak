@@ -18,7 +18,8 @@
 package org.keycloak.models.map.storage.ldap;
 
 import org.keycloak.models.map.common.AbstractEntity;
-import org.keycloak.models.map.common.StringKeyConvertor;
+import org.keycloak.models.map.common.StringKeyConverter;
+import org.keycloak.models.map.common.StringKeyConverter;
 import org.keycloak.models.map.storage.chm.MapModelCriteriaBuilder;
 import org.keycloak.storage.SearchableModelField;
 
@@ -28,16 +29,16 @@ import java.util.function.Predicate;
 public class MapModelCriteriaBuilderAssumingEqualForField<K, V extends AbstractEntity, M> extends MapModelCriteriaBuilder<K, V, M> {
 
     private final Map<SearchableModelField<? super M>, UpdatePredicatesFunc<K, V, M>> fieldPredicates;
-    private final StringKeyConvertor<K> keyConvertor;
+    private final StringKeyConverter<K> keyConverter;
     private final SearchableModelField<? super M> modelFieldThatShouldCompareToTrueForEqual;
 
-    public MapModelCriteriaBuilderAssumingEqualForField(StringKeyConvertor<K> keyConvertor, Map<SearchableModelField<? super M>, UpdatePredicatesFunc<K, V, M>> fieldPredicates, SearchableModelField<? super M> modelFieldThatShouldCompareToTrueForEqual) {
-        this(keyConvertor, fieldPredicates, ALWAYS_TRUE, ALWAYS_TRUE, modelFieldThatShouldCompareToTrueForEqual);
+    public MapModelCriteriaBuilderAssumingEqualForField(StringKeyConverter<K> keyConverter, Map<SearchableModelField<? super M>, UpdatePredicatesFunc<K, V, M>> fieldPredicates, SearchableModelField<? super M> modelFieldThatShouldCompareToTrueForEqual) {
+        this(keyConverter, fieldPredicates, ALWAYS_TRUE, ALWAYS_TRUE, modelFieldThatShouldCompareToTrueForEqual);
     }
 
-    protected MapModelCriteriaBuilderAssumingEqualForField(StringKeyConvertor<K> keyConvertor, Map<SearchableModelField<? super M>, UpdatePredicatesFunc<K, V, M>> fieldPredicates, Predicate<? super K> indexReadFilter, Predicate<? super V> sequentialReadFilter, SearchableModelField<? super M> modelFieldThatShouldCompareToTrueForEqual) {
-        super(keyConvertor, fieldPredicates, indexReadFilter, sequentialReadFilter);
-        this.keyConvertor = keyConvertor;
+    protected MapModelCriteriaBuilderAssumingEqualForField(StringKeyConverter<K> keyConverter, Map<SearchableModelField<? super M>, UpdatePredicatesFunc<K, V, M>> fieldPredicates, Predicate<? super K> indexReadFilter, Predicate<? super V> sequentialReadFilter, SearchableModelField<? super M> modelFieldThatShouldCompareToTrueForEqual) {
+        super(keyConverter, fieldPredicates, indexReadFilter, sequentialReadFilter);
+        this.keyConverter = keyConverter;
         this.modelFieldThatShouldCompareToTrueForEqual = modelFieldThatShouldCompareToTrueForEqual;
         this.fieldPredicates = fieldPredicates;
     }
@@ -46,7 +47,7 @@ public class MapModelCriteriaBuilderAssumingEqualForField<K, V extends AbstractE
     public MapModelCriteriaBuilder<K, V, M> compare(SearchableModelField<? super M> modelField, Operator op, Object... values) {
         if (modelField == modelFieldThatShouldCompareToTrueForEqual && op == Operator.EQ) {
             return instantiateNewInstance(
-                    keyConvertor,
+                    keyConverter,
                     fieldPredicates,
                     ALWAYS_TRUE,
                     ALWAYS_TRUE);
@@ -55,7 +56,7 @@ public class MapModelCriteriaBuilderAssumingEqualForField<K, V extends AbstractE
     }
 
     @Override
-    protected MapModelCriteriaBuilder<K, V, M> instantiateNewInstance(StringKeyConvertor<K> keyConvertor, Map<SearchableModelField<? super M>, UpdatePredicatesFunc<K, V, M>> fieldPredicates, Predicate<? super K> indexReadFilter, Predicate<? super V> sequentialReadFilter) {
-        return new MapModelCriteriaBuilderAssumingEqualForField<>(keyConvertor, fieldPredicates, indexReadFilter, sequentialReadFilter, modelFieldThatShouldCompareToTrueForEqual);
+    protected MapModelCriteriaBuilder<K, V, M> instantiateNewInstance(StringKeyConverter<K> keyConverter, Map<SearchableModelField<? super M>, UpdatePredicatesFunc<K, V, M>> fieldPredicates, Predicate<? super K> indexReadFilter, Predicate<? super V> sequentialReadFilter) {
+        return new MapModelCriteriaBuilderAssumingEqualForField<>(keyConverter, fieldPredicates, indexReadFilter, sequentialReadFilter, modelFieldThatShouldCompareToTrueForEqual);
     }
 }

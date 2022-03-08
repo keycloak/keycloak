@@ -32,7 +32,7 @@ import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.RoleModel.SearchableFields;
-import org.keycloak.models.map.common.StringKeyConvertor.UUIDKey;
+import org.keycloak.models.map.common.StringKeyConverter.UUIDKey;
 import org.keycloak.models.map.storage.CriterionNotSupportedException;
 import org.keycloak.models.map.storage.jpa.JpaModelCriteriaBuilder;
 import org.keycloak.models.map.storage.jpa.role.entity.JpaRoleEntity;

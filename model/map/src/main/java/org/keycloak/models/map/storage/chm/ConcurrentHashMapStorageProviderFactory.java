@@ -28,7 +28,7 @@ import org.keycloak.models.map.authorization.entity.MapResourceEntityImpl;
 import org.keycloak.models.map.authorization.entity.MapResourceServerEntityImpl;
 import org.keycloak.models.map.authorization.entity.MapScopeEntity;
 import org.keycloak.models.map.authorization.entity.MapScopeEntityImpl;
-import org.keycloak.models.map.common.StringKeyConvertor;
+import org.keycloak.models.map.common.StringKeyConverter;
 import org.keycloak.component.AmphibianProviderFactory;
 import org.keycloak.Config.Scope;
 import org.keycloak.common.Profile;
@@ -90,13 +90,13 @@ public class ConcurrentHashMapStorageProviderFactory implements AmphibianProvide
 
     private final ConcurrentHashMap<String, ConcurrentHashMapStorage<?,?,?>> storages = new ConcurrentHashMap<>();
 
-    private final Map<String, StringKeyConvertor> keyConvertors = new HashMap<>();
+    private final Map<String, StringKeyConverter> keyConverters = new HashMap<>();
 
     private File storageDirectory;
 
     private String suffix;
 
-    private StringKeyConvertor defaultKeyConvertor;
+    private StringKeyConverter defaultKeyConverter;
 
     private final static DeepCloner CLONER = new DeepCloner.Builder()
       .genericCloner(Serialization::from)
@@ -130,11 +130,11 @@ public class ConcurrentHashMapStorageProviderFactory implements AmphibianProvide
       .constructor(MapAuthenticationSessionEntity.class,            MapAuthenticationSessionEntityImpl::new)
       .build();
 
-    private static final Map<String, StringKeyConvertor> KEY_CONVERTORS = new HashMap<>();
+    private static final Map<String, StringKeyConverter> KEY_CONVERTERS = new HashMap<>();
     static {
-        KEY_CONVERTORS.put("uuid", StringKeyConvertor.UUIDKey.INSTANCE);
-        KEY_CONVERTORS.put("string", StringKeyConvertor.StringKey.INSTANCE);
-        KEY_CONVERTORS.put("ulong", StringKeyConvertor.ULongKey.INSTANCE);
+        KEY_CONVERTERS.put("uuid", StringKeyConverter.UUIDKey.INSTANCE);
+        KEY_CONVERTERS.put("string", StringKeyConverter.StringKey.INSTANCE);
+        KEY_CONVERTERS.put("ulong", StringKeyConverter.ULongKey.INSTANCE);
     }
 
     @Override
@@ -152,9 +152,9 @@ public class ConcurrentHashMapStorageProviderFactory implements AmphibianProvide
         }
     
         final String keyType = config.get("keyType", "uuid");
-        defaultKeyConvertor = getKeyConvertor(keyType);
+        defaultKeyConverter = getKeyConverter(keyType);
         for (String name : getModelNames()) {
-            keyConvertors.put(name, getKeyConvertor(config.get("keyType." + name, keyType)));
+            keyConverters.put(name, getKeyConverter(config.get("keyType." + name, keyType)));
         }
 
         final String dir = config.get("dir");
@@ -178,8 +178,8 @@ public class ConcurrentHashMapStorageProviderFactory implements AmphibianProvide
         }
     }
 
-    private StringKeyConvertor getKeyConvertor(final String keyType) throws IllegalArgumentException {
-        StringKeyConvertor res = KEY_CONVERTORS.get(keyType);
+    private StringKeyConverter getKeyConverter(final String keyType) throws IllegalArgumentException {
+        StringKeyConverter res = KEY_CONVERTERS.get(keyType);
         if (res == null) {
             throw new IllegalArgumentException("Unknown key type: " + keyType);
         }
@@ -216,7 +216,7 @@ public class ConcurrentHashMapStorageProviderFactory implements AmphibianProvide
     @SuppressWarnings("unchecked")
     private <K, V extends AbstractEntity & UpdatableEntity, M> ConcurrentHashMapStorage<K, V, M> loadMap(String mapName,
       Class<M> modelType, EnumSet<Flag> flags) {
-        final StringKeyConvertor kc = keyConvertors.getOrDefault(mapName, defaultKeyConvertor);
+        final StringKeyConverter kc = keyConverters.getOrDefault(mapName, defaultKeyConverter);
         Class<?> valueType = ModelEntityUtil.getEntityType(modelType);
         LOG.debugf("Initializing new map storage: %s", mapName);
 

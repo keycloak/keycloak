@@ -24,7 +24,7 @@ import java.util.UUID;
  *
  *  @author hmlnarik
  */
-public interface StringKeyConvertor<K> {
+public interface StringKeyConverter<K> {
 
     /**
      * Returns String representation of the key from native representation
@@ -37,7 +37,7 @@ public interface StringKeyConvertor<K> {
 
     /**
      * Returns a new unique primary key for the storage that
-     * this {@code StringKeyConvertor} belongs to. The uniqueness
+     * this {@link StringKeyConverter} belongs to. The uniqueness
      * needs to be guaranteed by e.g. using database sequences or
      * using a random value that is proved sufficiently improbable
      * to be repeated.
@@ -70,7 +70,7 @@ public interface StringKeyConvertor<K> {
         }
     }
 
-    public static class UUIDKey implements StringKeyConvertor<UUID> {
+    class UUIDKey implements StringKeyConverter<UUID> {
 
         public static final UUIDKey INSTANCE = new UUIDKey();
 
@@ -85,7 +85,7 @@ public interface StringKeyConvertor<K> {
         }
     }
 
-    public static class StringKey implements StringKeyConvertor<String> {
+    class StringKey implements StringKeyConverter<String> {
 
         public static final StringKey INSTANCE = new StringKey();
 
@@ -100,7 +100,7 @@ public interface StringKeyConvertor<K> {
         }
     }
 
-    public static class ULongKey implements StringKeyConvertor<Long> {
+    class ULongKey implements StringKeyConverter<Long> {
 
         public static final ULongKey INSTANCE = new ULongKey();
 
