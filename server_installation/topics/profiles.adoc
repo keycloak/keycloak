@@ -64,6 +64,11 @@ The features that can be enabled and disabled are:
 |No
 |Preview
 
+|recovery_codes
+|Recovery codes for authentication
+|No
+|Preview
+
 |scripts
 |Write custom authenticators using JavaScript
 |No

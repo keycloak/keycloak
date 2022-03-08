@@ -1,0 +1,21 @@
+[[_recovery-codes]]
+
+=== Recovery Codes (RecoveryCodes)
+
+You can configure Recovery codes as two-factor authenticator. You need to add authenticator 'Recovery Authentication Code Form' as two-factor authenticator to your authentication flow. See the WebAuthn section above in xref:configuring-authentication[Configuring authentication] to see an example of how to configure authenticator as two-factor authenticator.
+
+ifeval::[{project_product}==true]
+:tech_feature_name: RecoveryCodes
+:tech_feature_setting: -Dkeycloak.profile.feature.recovery_codes=enabled
+:tech_feature_id: recovery-codes
+include::../templates/techpreview.adoc[]
+endif::[]
+
+ifeval::[{project_community}==true]
+
+[IMPORTANT]
+====
+Please note that Recovery Codes support is in development. Use this feature experimentally.
+====
+
+endif::[]

@@ -1,0 +1,5 @@
+= Highlights
+
+== Recovery Codes
+
+Recovery Codes as another way to do two-factor authentication is now available as a preview feature.
