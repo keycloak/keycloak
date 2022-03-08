@@ -22,7 +22,7 @@ import org.keycloak.models.ModelException;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.StreamUtils;
-import org.keycloak.models.map.common.StringKeyConvertor;
+import org.keycloak.models.map.common.StringKeyConverter;
 import org.keycloak.models.map.role.MapRoleEntity;
 
 import org.keycloak.models.map.storage.ModelCriteriaBuilder;
@@ -56,7 +56,7 @@ import java.util.stream.Stream;
 public class LdapRoleMapKeycloakTransaction extends LdapMapKeycloakTransaction<LdapMapRoleEntityFieldDelegate, MapRoleEntity, RoleModel> {
 
     private final KeycloakSession session;
-    private final StringKeyConvertor<String> keyConverter = new StringKeyConvertor.StringKey();
+    private final StringKeyConverter<String> keyConverter = new StringKeyConverter.StringKey();
     private final Set<String> deletedKeys = new HashSet<>();
     private final LdapMapRoleMapperConfig roleMapperConfig;
     private final LdapMapConfig ldapMapConfig;
