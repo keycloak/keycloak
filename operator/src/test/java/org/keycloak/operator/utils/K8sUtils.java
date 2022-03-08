@@ -34,8 +34,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
-
-import static java.util.concurrent.TimeUnit.MINUTES;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
@@ -75,8 +74,8 @@ public final class K8sUtils {
     public static void waitForKeycloakToBeReady(KubernetesClient client, Keycloak kc) {
         Log.infof("Waiting for Keycloak \"%s\"", kc.getMetadata().getName());
         Awaitility.await()
-                .pollInterval(Duration.ofSeconds(1))
-                .timeout(Duration.ofMinutes(5))
+                .pollInterval(1, TimeUnit.SECONDS)
+                .timeout(5, TimeUnit.MINUTES)
                 .ignoreExceptions()
                 .untilAsserted(() -> {
                     var currentKc = client
@@ -106,7 +105,7 @@ public final class K8sUtils {
                             .build())
                     .done();
             Log.info("Waiting for curl Pod to finish running");
-            Awaitility.await().atMost(3, MINUTES)
+            Awaitility.await().atMost(3, TimeUnit.MINUTES)
                     .until(() -> {
                         String phase =
                                 k8sclient.pods().inNamespace(namespace).withName(podName).get()
@@ -124,7 +123,7 @@ public final class K8sUtils {
         } finally {
             Log.info("Deleting curl Pod");
             k8sclient.pods().inNamespace(namespace).withName(podName).delete();
-            Awaitility.await().atMost(2, MINUTES)
+            Awaitility.await().atMost(2, TimeUnit.MINUTES)
                     .until(() -> k8sclient.pods().inNamespace(namespace).withName(podName)
                             .get() == null);
         }

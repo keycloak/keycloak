@@ -510,6 +510,7 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
                 || existingDeployment.getStatus().getReadyReplicas() == null
                 || existingDeployment.getStatus().getReadyReplicas() < keycloakCR.getSpec().getInstances()) {
             status.addNotReadyMessage("Waiting for more replicas");
+            return;
         }
     }
 

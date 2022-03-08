@@ -32,8 +32,8 @@
         <maven.compiler.target>11</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <quarkus.operator.sdk.version>3.0.2</quarkus.operator.sdk.version>
-        <quarkus.version>2.6.1.Final</quarkus.version>
+        <quarkus.operator.sdk.version>3.0.4</quarkus.operator.sdk.version>
+        <quarkus.version>2.7.3.Final</quarkus.version>
         <quarkus.container-image.group>keycloak</quarkus.container-image.group>
         <quarkus.jib.base-jvm-image>eclipse-temurin:11</quarkus.jib.base-jvm-image>
         <quarkus.kubernetes.image-pull-policy>Never</quarkus.kubernetes.image-pull-policy>
