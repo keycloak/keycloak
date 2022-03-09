@@ -104,7 +104,8 @@ public class KerberosUsernamePasswordAuthenticator {
             message.contains("CANNOT LOCATE") ||
             message.contains("CANNOT CONTACT") ||
             message.contains("CANNOT FIND") ||
-            message.contains("UNKNOWN ERROR")) {
+            message.contains("UNKNOWN ERROR") ||
+            message.contains("RECEIVE TIMED OUT")) {
             throw new ModelException("Kerberos unreachable", le);
         }
     }
