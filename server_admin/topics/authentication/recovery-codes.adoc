@@ -2,7 +2,7 @@
 
 === Recovery Codes (RecoveryCodes)
 
-You can configure Recovery codes as two-factor authenticator. You need to add authenticator 'Recovery Authentication Code Form' as two-factor authenticator to your authentication flow. See the WebAuthn section above in xref:configuring-authentication[Configuring authentication] to see an example of how to configure authenticator as two-factor authenticator.
+You can configure Recovery codes for two-factor authentication by adding 'Recovery Authentication Code Form' as a two-factor authenticator to your authentication flow. For an example of configuring this authenticator, see the WebAuthn section in xref:configuring-authentication[Configuring authentication].
 
 ifeval::[{project_product}==true]
 :tech_feature_name: RecoveryCodes
