@@ -10,8 +10,8 @@ import {
   InputGroup,
 } from "@patternfly/react-core";
 
+import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import { FormAccess } from "../../components/form-access/FormAccess";
-import type { ClientForm } from "../ClientDetails";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 
 import "./capability-config.css";
@@ -26,7 +26,7 @@ export const CapabilityConfig = ({
   protocol: type,
 }: CapabilityConfigProps) => {
   const { t } = useTranslation("clients");
-  const { control, watch, setValue } = useFormContext<ClientForm>();
+  const { control, watch, setValue } = useFormContext<ClientRepresentation>();
   const protocol = type || watch("protocol");
   const clientAuthentication = watch("publicClient");
   const authorization = watch("authorizationServicesEnabled");

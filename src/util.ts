@@ -12,10 +12,6 @@ import {
   attributesToArray,
   KeyValueType,
 } from "./components/attribute-form/attribute-convert";
-import {
-  convertToMultiline,
-  toValue,
-} from "./components/multi-line-input/multi-line-convert";
 
 export const sortProviders = (providers: {
   [index: string]: ProviderRepresentation;
@@ -84,37 +80,24 @@ const isEmpty = (obj: any) => Object.keys(obj).length === 0;
 
 export const convertToFormValues = (
   obj: any,
-  setValue: (name: string, value: any) => void,
-  multiline?: string[]
+  setValue: (name: string, value: any) => void
 ) => {
   Object.entries(obj).map(([key, value]) => {
     if (key === "attributes" && isAttributesObject(value)) {
       setValue(key, attributesToArray(value as Record<string, string[]>));
     } else if (key === "config" || key === "attributes") {
       setValue(key, !isEmpty(value) ? unflatten(value) : undefined);
-    } else if (multiline?.includes(key)) {
-      setValue(key, convertToMultiline(value as string[]));
     } else {
       setValue(key, value);
     }
   });
-  multiline?.map((line) => {
-    if (!Object.keys(obj).includes(line)) {
-      setValue(line, convertToMultiline([""]));
-    }
-  });
 };
 
-export function convertFormValuesToObject<T, G = T>(
-  obj: T,
-  multiline: string[] | undefined = []
-): G {
+export function convertFormValuesToObject<T, G = T>(obj: T): G {
   const result: any = {};
   Object.entries(obj).map(([key, value]) => {
     if (isAttributeArray(value)) {
       result[key] = arrayToAttributes(value as KeyValueType[]);
-    } else if (multiline.includes(key)) {
-      result[key] = toValue(value);
     } else if (key === "config" || key === "attributes") {
       result[key] = flatten(value as Record<string, any>, { safe: true });
     } else {

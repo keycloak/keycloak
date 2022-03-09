@@ -24,7 +24,6 @@ import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { SaveReset } from "./advanced/SaveReset";
 import { SamlConfig } from "./add/SamlConfig";
 import { SamlSignature } from "./add/SamlSignature";
-import type { ClientForm } from "./ClientDetails";
 import environment from "../environment";
 import { useRealm } from "../context/realm-context/RealmContext";
 
@@ -39,7 +38,8 @@ export const ClientSettings = ({
   save,
   reset,
 }: ClientSettingsProps) => {
-  const { register, control, watch, errors } = useFormContext<ClientForm>();
+  const { register, control, watch, errors } =
+    useFormContext<ClientRepresentation>();
   const { t } = useTranslation("clients");
   const { realm } = useRealm();
 

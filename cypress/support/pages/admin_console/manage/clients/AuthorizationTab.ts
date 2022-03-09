@@ -96,7 +96,7 @@ export default class AuthorizationTab {
       if (Array.isArray(value)) {
         for (let index = 0; index < value.length; index++) {
           const v = value[index];
-          cy.get(`input[name="${key}[${index}].value"]`).type(v);
+          cy.get(`input[name="${key}[${index}]"]`).type(v);
           cy.findByTestId("addValue").click();
         }
       } else {

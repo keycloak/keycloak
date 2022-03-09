@@ -24,7 +24,6 @@ import {
 } from "../components/confirm-dialog/ConfirmDialog";
 import { DownloadDialog } from "../components/download-dialog/DownloadDialog";
 import {
-  MultiLine,
   stringToMultiline,
   toStringValue,
 } from "../components/multi-line-input/multi-line-convert";
@@ -168,15 +167,6 @@ const ClientDetailHeader = ({
   );
 };
 
-export type ClientForm = Omit<
-  ClientRepresentation,
-  "redirectUris" | "webOrigins"
-> & {
-  redirectUris: MultiLine[];
-  webOrigins: MultiLine[];
-  requestUris?: MultiLine[];
-};
-
 export type SaveOptions = {
   confirmed?: boolean;
   messageKey?: string;
@@ -193,7 +183,7 @@ export default function ClientDetails() {
   const [downloadDialogOpen, toggleDownloadDialogOpen] = useToggle();
   const [changeAuthenticatorOpen, toggleChangeAuthenticatorOpen] = useToggle();
 
-  const form = useForm<ClientForm>({ shouldUnregister: false });
+  const form = useForm<ClientRepresentation>({ shouldUnregister: false });
   const { clientId } = useParams<ClientParams>();
 
   const clientAuthenticatorType = useWatch({
@@ -226,9 +216,9 @@ export default function ClientDetails() {
   });
 
   const setupForm = (client: ClientRepresentation) => {
-    convertToFormValues(client, form.setValue, ["redirectUris", "webOrigins"]);
+    convertToFormValues(client, form.setValue);
     form.setValue(
-      "requestUris",
+      "attributes.request.uris",
       stringToMultiline(client.attributes?.["request.uris"])
     );
   };
@@ -263,15 +253,14 @@ export default function ClientDetails() {
 
       const values = form.getValues();
 
-      if (values.requestUris) {
-        values.attributes!["request.uris"] = toStringValue(values.requestUris);
-        delete values.requestUris;
+      if (values.attributes?.request.uris) {
+        values.attributes["request.uris"] = toStringValue(
+          values.attributes.request.uris
+        );
       }
 
-      const submittedClient = convertFormValuesToObject<
-        ClientForm,
-        ClientRepresentation
-      >(values, ["redirectUris", "webOrigins"]);
+      const submittedClient =
+        convertFormValuesToObject<ClientRepresentation>(values);
 
       try {
         const newClient: ClientRepresentation = {

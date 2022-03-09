@@ -16,11 +16,11 @@ import {
   AlertVariant,
 } from "@patternfly/react-core";
 
+import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import type CertificateRepresentation from "@keycloak/keycloak-admin-client/lib/defs/certificateRepresentation";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
-import type { ClientForm } from "../ClientDetails";
 import { SamlKeysDialog } from "./SamlKeysDialog";
 import { FormPanel } from "../../components/scroll-form/FormPanel";
 import { Certificate } from "./Certificate";
@@ -65,7 +65,7 @@ const KeySection = ({
   onImport,
 }: KeySectionProps) => {
   const { t } = useTranslation("clients");
-  const { control, watch } = useFormContext<ClientForm>();
+  const { control, watch } = useFormContext<ClientRepresentation>();
   const title = KEYS_MAPPING[attr].title;
   const key = KEYS_MAPPING[attr].key;
   const name = KEYS_MAPPING[attr].name;

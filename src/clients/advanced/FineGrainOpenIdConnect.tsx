@@ -486,7 +486,7 @@ export const FineGrainOpenIdConnect = ({
         }
       >
         <MultiLineInput
-          name="requestUris"
+          name="attributes.request.uris"
           aria-label={t("validRequestURIs")}
           addButtonLabel="clients:addRequestUri"
         />

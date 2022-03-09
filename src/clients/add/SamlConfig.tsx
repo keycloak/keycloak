@@ -9,13 +9,13 @@ import {
   Switch,
 } from "@patternfly/react-core";
 
-import type { ClientForm } from "../ClientDetails";
+import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 
 export const Toggle = ({ name, label }: { name: string; label: string }) => {
   const { t } = useTranslation("clients");
-  const { control } = useFormContext<ClientForm>();
+  const { control } = useFormContext<ClientRepresentation>();
 
   return (
     <FormGroup
@@ -50,7 +50,7 @@ export const Toggle = ({ name, label }: { name: string; label: string }) => {
 
 export const SamlConfig = () => {
   const { t } = useTranslation("clients");
-  const { control } = useFormContext<ClientForm>();
+  const { control } = useFormContext<ClientRepresentation>();
 
   const [nameFormatOpen, setNameFormatOpen] = useState(false);
   return (

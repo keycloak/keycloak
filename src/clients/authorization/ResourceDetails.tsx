@@ -27,7 +27,6 @@ import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form-access/FormAccess";
-import type { MultiLine } from "../../components/multi-line-input/multi-line-convert";
 import type { KeyValueType } from "../../components/attribute-form/attribute-convert";
 import { convertFormValuesToObject, convertToFormValues } from "../../util";
 import { MultiLineInput } from "../../components/multi-line-input/MultiLineInput";
@@ -37,9 +36,8 @@ import { AttributeInput } from "../../components/attribute-input/AttributeInput"
 
 import "./resource-details.css";
 
-type SubmittedResource = Omit<ResourceRepresentation, "attributes" | "uris"> & {
+type SubmittedResource = Omit<ResourceRepresentation, "attributes"> & {
   attributes: KeyValueType[];
-  uris: MultiLine[];
 };
 
 export default function ResourceDetails() {
@@ -62,7 +60,7 @@ export default function ResourceDetails() {
   const history = useHistory();
 
   const setupForm = (resource: ResourceRepresentation = {}) => {
-    convertToFormValues(resource, setValue, ["uris"]);
+    convertToFormValues(resource, setValue);
   };
 
   useFetch(
@@ -92,7 +90,7 @@ export default function ResourceDetails() {
     const resource = convertFormValuesToObject<
       SubmittedResource,
       ResourceRepresentation
-    >(submitted, ["uris"]);
+    >(submitted);
 
     try {
       if (resourceId) {

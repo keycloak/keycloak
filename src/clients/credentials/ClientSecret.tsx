@@ -8,7 +8,7 @@ import {
   SplitItem,
 } from "@patternfly/react-core";
 import { useFormContext } from "react-hook-form";
-import type { ClientForm } from "../ClientDetails";
+import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 
 export type ClientSecretProps = {
   secret: string;
@@ -17,7 +17,7 @@ export type ClientSecretProps = {
 
 export const ClientSecret = ({ secret, toggle }: ClientSecretProps) => {
   const { t } = useTranslation("clients");
-  const { formState } = useFormContext<ClientForm>();
+  const { formState } = useFormContext<ClientRepresentation>();
   return (
     <FormGroup label={t("clientSecret")} fieldId="kc-client-secret">
       <Split hasGutter>

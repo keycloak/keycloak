@@ -1,5 +1,5 @@
-import React, { Fragment } from "react";
-import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
+import React, { Fragment, useEffect } from "react";
+import { useFormContext } from "react-hook-form";
 import {
   TextInput,
   Button,
@@ -13,32 +13,50 @@ import { useTranslation } from "react-i18next";
 export type MultiLineInputProps = Omit<TextInputProps, "form"> & {
   name: string;
   addButtonLabel?: string;
+  isDisabled?: boolean;
+  defaultValue?: string[];
 };
 
 export const MultiLineInput = ({
   name,
   addButtonLabel,
+  isDisabled = false,
+  defaultValue,
   ...rest
 }: MultiLineInputProps) => {
   const { t } = useTranslation();
-  const { register, control } = useFormContext();
-  const { fields, append, remove } = useFieldArray({
-    name,
-    control,
-  });
-  const currentValues: { [name: string]: { value: string } } | undefined =
-    useWatch({ control, name });
+  const { register, watch, setValue } = useFormContext();
+
+  const value = watch(name, defaultValue);
+  const fields = Array.isArray(value) && value.length !== 0 ? value : [""];
+
+  const remove = (index: number) => {
+    setValue(name, [...fields.slice(0, index), ...fields.slice(index + 1)]);
+  };
+
+  const append = () => {
+    setValue(name, [...fields, ""]);
+  };
+
+  useEffect(() => register(name), [register]);
 
   return (
     <>
-      {fields.map(({ id, value }, index) => (
-        <Fragment key={id}>
+      {fields.map((value: string, index: number) => (
+        <Fragment key={index}>
           <InputGroup>
             <TextInput
-              id={id}
-              ref={register()}
-              name={`${name}[${index}].value`}
-              defaultValue={value}
+              id={name + index}
+              onChange={(value) => {
+                setValue(name, [
+                  ...fields.slice(0, index),
+                  value,
+                  ...fields.slice(index + 1),
+                ]);
+              }}
+              name={`${name}[${index}]`}
+              value={value}
+              isDisabled={isDisabled}
               {...rest}
             />
             <Button
@@ -54,12 +72,11 @@ export const MultiLineInput = ({
           {index === fields.length - 1 && (
             <Button
               variant={ButtonVariant.link}
-              onClick={() => append({})}
+              onClick={append}
               tabIndex={-1}
               aria-label={t("common:add")}
               data-testid="addValue"
-              // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-              isDisabled={rest.isDisabled || !currentValues?.[index]?.value}
+              isDisabled={!value}
             >
               <PlusCircleIcon /> {t(addButtonLabel || "common:add")}
             </Button>

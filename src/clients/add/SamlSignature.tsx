@@ -8,7 +8,7 @@ import {
   SelectVariant,
 } from "@patternfly/react-core";
 
-import type { ClientForm } from "../ClientDetails";
+import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { Toggle } from "./SamlConfig";
@@ -46,7 +46,7 @@ export const SamlSignature = () => {
   const [keyOpen, setKeyOpen] = useState(false);
   const [canOpen, setCanOpen] = useState(false);
 
-  const { control, watch } = useFormContext<ClientForm>();
+  const { control, watch } = useFormContext<ClientRepresentation>();
 
   const signDocs = watch("attributes.saml.server.signature");
   const signAssertion = watch("attributes.saml.assertion.signature");

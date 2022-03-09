@@ -144,11 +144,6 @@ const WebauthnSelect = ({
   );
 };
 
-const MULTILINE_INPUTS = [
-  "webAuthnPolicyAcceptableAaguids",
-  "webAuthnPolicyPasswordlessAcceptableAaguids",
-];
-
 type WebauthnPolicyProps = {
   realm: RealmRepresentation;
   realmUpdated: (realm: RealmRepresentation) => void;
@@ -180,12 +175,12 @@ export const WebauthnPolicy = ({
     : "webAuthnPolicy";
 
   const setupForm = (realm: RealmRepresentation) =>
-    convertToFormValues(realm, setValue, MULTILINE_INPUTS);
+    convertToFormValues(realm, setValue);
 
   useEffect(() => setupForm(realm), []);
 
   const save = async (realm: RealmRepresentation) => {
-    const submittedRealm = convertFormValuesToObject(realm, MULTILINE_INPUTS);
+    const submittedRealm = convertFormValuesToObject(realm);
     try {
       await adminClient.realms.update({ realm: realmName }, submittedRealm);
       realmUpdated(submittedRealm);

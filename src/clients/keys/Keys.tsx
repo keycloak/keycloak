@@ -17,12 +17,12 @@ import {
   TextInput,
 } from "@patternfly/react-core";
 
+import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import type CertificateRepresentation from "@keycloak/keycloak-admin-client/lib/defs/certificateRepresentation";
 import type KeyStoreConfig from "@keycloak/keycloak-admin-client/lib/defs/keystoreConfig";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
-import type { ClientForm } from "../ClientDetails";
 import { GenerateKeyDialog } from "./GenerateKeyDialog";
 import { useFetch, useAdminClient } from "../../context/auth/AdminClient";
 import { useAlerts } from "../../components/alert/Alerts";
@@ -43,7 +43,7 @@ export const Keys = ({ clientId, save }: KeysProps) => {
     control,
     register,
     formState: { isDirty },
-  } = useFormContext<ClientForm>();
+  } = useFormContext<ClientRepresentation>();
   const adminClient = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
