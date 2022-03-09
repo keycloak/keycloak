@@ -365,6 +365,7 @@ export default function RealmRoleTabs() {
             {role.composite && (
               <Tab
                 eventKey="associated-roles"
+                className="kc-associated-roles-tab"
                 title={<TabTitleText>{t("associatedRolesText")}</TabTitleText>}
               >
                 <AssociatedRolesTab parentRole={role} refresh={refresh} />

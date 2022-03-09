@@ -121,7 +121,7 @@ export default class ListingPage {
       .contains(itemName)
       .parentsUntil("tbody")
       .find(this.itemRowDrpDwn)
-      .click();
+      .click({ force: true });
     return this;
   }
 
@@ -211,6 +211,13 @@ export default class ListingPage {
     return this;
   }
 
+  removeItem(itemName: string) {
+    this.clickRowDetails(itemName);
+    this.clickDetailMenu("Remove");
+
+    return this;
+  }
+
   deleteItemFromSearchBar(itemName: string) {
     this.markItemRow(itemName);
     cy.findByTestId(this.deleteUserButton).click();
@@ -221,13 +228,6 @@ export default class ListingPage {
   exportItem(itemName: string) {
     this.clickRowDetails(itemName);
     this.clickDetailMenu("Export");
-
-    return this;
-  }
-
-  removeItem(itemName: string) {
-    this.clickRowDetails(itemName);
-    this.clickDetailMenu("Remove");
 
     return this;
   }

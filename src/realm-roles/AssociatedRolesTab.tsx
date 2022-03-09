@@ -271,6 +271,7 @@ export const AssociatedRolesTab = ({
                 variant="link"
                 isDisabled={selectedRows.length === 0}
                 key="remove-role-button"
+                data-testid="removeRoles"
                 onClick={() => {
                   toggleDeleteAssociatedRolesDialog();
                 }}

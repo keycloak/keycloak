@@ -99,11 +99,11 @@ describe("Realm roles test", () => {
     masthead.checkNotificationMessage("Role created", true);
 
     // Add associated realm role
-    associatedRolesPage.addAssociatedRealmRole();
+    associatedRolesPage.addAssociatedRealmRole("create-realm");
     masthead.checkNotificationMessage("Associated roles have been added", true);
 
     // Add associated client role
-    associatedRolesPage.addAssociatedClientRole();
+    associatedRolesPage.addAssociatedClientRole("manage-account");
     masthead.checkNotificationMessage("Associated roles have been added", true);
   });
 
