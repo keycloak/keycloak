@@ -3,10 +3,7 @@ import SidebarPage from "../support/pages/admin_console/SidebarPage";
 import CreateRealmPage from "../support/pages/admin_console/CreateRealmPage";
 import Masthead from "../support/pages/admin_console/Masthead";
 import adminClient from "../support/util/AdminClient";
-import {
-  keycloakBefore,
-  keycloakBeforeEach,
-} from "../support/util/keycloak_hooks";
+import { keycloakBefore } from "../support/util/keycloak_hooks";
 
 const masthead = new Masthead();
 const loginPage = new LoginPage();
@@ -24,10 +21,6 @@ describe("Realms test", () => {
     before(() => {
       keycloakBefore();
       loginPage.logIn();
-    });
-
-    beforeEach(() => {
-      keycloakBeforeEach();
     });
 
     after(() => {

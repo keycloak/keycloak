@@ -1,10 +1,7 @@
 import SidebarPage from "../support/pages/admin_console/SidebarPage";
 import LoginPage from "../support/pages/LoginPage";
 import RealmSettingsPage from "../support/pages/admin_console/manage/realm_settings/RealmSettingsPage";
-import {
-  keycloakBefore,
-  keycloakBeforeEach,
-} from "../support/util/keycloak_hooks";
+import { keycloakBefore } from "../support/util/keycloak_hooks";
 import adminClient from "../support/util/AdminClient";
 import ModalUtils from "../support/util/ModalUtils";
 import Masthead from "../support/pages/admin_console/Masthead";
@@ -19,7 +16,6 @@ describe("Realm settings client policies tab tests", () => {
   const realmSettingsPage = new RealmSettingsPage(realmName);
 
   beforeEach(() => {
-    keycloakBeforeEach();
     sidebarPage
       .waitForPageLoad()
       .goToRealm(realmName)

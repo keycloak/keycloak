@@ -14,7 +14,3 @@ export const keycloakBefore = () => {
   cy.visit("");
   cy.get('[role="progressbar"]').should("not.exist");
 };
-
-export const keycloakBeforeEach = () => {
-  Cypress.Cookies.preserveOnce("KEYCLOAK_SESSION", "KEYCLOAK_IDENTITY");
-};

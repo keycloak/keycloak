@@ -4,10 +4,7 @@ import ListingPage from "../support/pages/admin_console/ListingPage";
 import SidebarPage from "../support/pages/admin_console/SidebarPage";
 import ModalUtils from "../support/util/ModalUtils";
 import adminClient from "../support/util/AdminClient";
-import {
-  keycloakBefore,
-  keycloakBeforeEach,
-} from "../support/util/keycloak_hooks";
+import { keycloakBefore } from "../support/util/keycloak_hooks";
 
 const loginPage = new LoginPage();
 const masthead = new Masthead();
@@ -34,7 +31,6 @@ describe("Clients SAML tests", () => {
     });
 
     beforeEach(() => {
-      keycloakBeforeEach();
       sidebarPage.goToClients();
       listingPage.searchItem(samlClientName).goToItemDetails(samlClientName);
     });
@@ -75,7 +71,6 @@ describe("Clients SAML tests", () => {
     });
 
     beforeEach(() => {
-      keycloakBeforeEach();
       sidebarPage.goToClients();
       listingPage.searchItem(clientId).goToItemDetails(clientId);
       cy.findByTestId("keysTab").click();

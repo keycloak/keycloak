@@ -1,7 +1,4 @@
-import {
-  keycloakBefore,
-  keycloakBeforeEach,
-} from "../support/util/keycloak_hooks";
+import { keycloakBefore } from "../support/util/keycloak_hooks";
 import adminClient from "../support/util/AdminClient";
 import LoginPage from "../support/pages/LoginPage";
 import ListingPage from "../support/pages/admin_console/ListingPage";
@@ -37,10 +34,6 @@ describe("Client authentication subtab", () => {
 
   after(() => {
     adminClient.deleteClient(clientId);
-  });
-
-  beforeEach(() => {
-    keycloakBeforeEach();
   });
 
   it("Should update the resource server settings", () => {

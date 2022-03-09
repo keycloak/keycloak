@@ -2,10 +2,7 @@ import ListingPage from "../support/pages/admin_console/ListingPage";
 import LoginPage from "../support/pages/LoginPage";
 import SidebarPage from "../support/pages/admin_console/SidebarPage";
 import Masthead from "../support/pages/admin_console/Masthead";
-import {
-  keycloakBefore,
-  keycloakBeforeEach,
-} from "../support/util/keycloak_hooks";
+import { keycloakBefore } from "../support/util/keycloak_hooks";
 
 const loginPage = new LoginPage();
 const masthead = new Masthead();
@@ -33,10 +30,6 @@ describe("Masthead tests in desktop mode", () => {
     loginPage.logIn();
   });
 
-  beforeEach(() => {
-    keycloakBeforeEach();
-  });
-
   it("Test dropdown in desktop mode", () => {
     goToAcctMgtTest();
 
@@ -60,10 +53,6 @@ describe("Masthead tests with kebab menu", () => {
     keycloakBefore();
     loginPage.logIn();
     masthead.setMobileMode(true);
-  });
-
-  beforeEach(() => {
-    keycloakBeforeEach();
   });
 
   it("Test dropdown in mobile mode", () => {

@@ -7,10 +7,7 @@ import ListingPage, {
 } from "../support/pages/admin_console/ListingPage";
 import SidebarPage from "../support/pages/admin_console/SidebarPage";
 import CreateClientScopePage from "../support/pages/admin_console/manage/client_scopes/CreateClientScopePage";
-import {
-  keycloakBefore,
-  keycloakBeforeEach,
-} from "../support/util/keycloak_hooks";
+import { keycloakBefore } from "../support/util/keycloak_hooks";
 import RoleMappingTab from "../support/pages/admin_console/manage/RoleMappingTab";
 import ModalUtils from "../support/util/ModalUtils";
 import adminClient from "../support/util/AdminClient";
@@ -65,7 +62,6 @@ describe("Client Scopes test", () => {
     });
 
     beforeEach(() => {
-      keycloakBeforeEach();
       sidebarPage.goToClientScopes();
     });
 
@@ -146,7 +142,6 @@ describe("Client Scopes test", () => {
     });
 
     beforeEach(() => {
-      keycloakBeforeEach();
       sidebarPage.goToClientScopes();
     });
 
@@ -211,7 +206,6 @@ describe("Client Scopes test", () => {
     });
 
     beforeEach(() => {
-      keycloakBeforeEach();
       sidebarPage.goToClientScopes();
     });
 
@@ -272,7 +266,6 @@ describe("Client Scopes test", () => {
     });
 
     beforeEach(() => {
-      keycloakBeforeEach();
       sidebarPage.goToClientScopes();
     });
 

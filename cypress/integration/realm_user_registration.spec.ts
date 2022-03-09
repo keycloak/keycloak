@@ -6,10 +6,7 @@ import Masthead from "../support/pages/admin_console/Masthead";
 import SidebarPage from "../support/pages/admin_console/SidebarPage";
 import LoginPage from "../support/pages/LoginPage";
 import adminClient from "../support/util/AdminClient";
-import {
-  keycloakBefore,
-  keycloakBeforeEach,
-} from "../support/util/keycloak_hooks";
+import { keycloakBefore } from "../support/util/keycloak_hooks";
 import ModalUtils from "../support/util/ModalUtils";
 
 describe("Realm settings - User registration tab", () => {
@@ -31,7 +28,6 @@ describe("Realm settings - User registration tab", () => {
   });
 
   beforeEach(() => {
-    keycloakBeforeEach();
     sidebarPage.goToRealmSettings();
     userRegistration.goToTab();
   });

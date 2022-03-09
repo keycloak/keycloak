@@ -3,10 +3,7 @@ import SidebarPage from "../support/pages/admin_console/SidebarPage";
 import LoginPage from "../support/pages/LoginPage";
 import PartialImportModal from "../support/pages/admin_console/configure/realm_settings/PartialImportModal";
 import RealmSettings from "../support/pages/admin_console/configure/realm_settings/RealmSettings";
-import {
-  keycloakBefore,
-  keycloakBeforeEach,
-} from "../support/util/keycloak_hooks";
+import { keycloakBefore } from "../support/util/keycloak_hooks";
 import adminClient from "../support/util/AdminClient";
 
 describe("Partial import test", () => {
@@ -23,7 +20,6 @@ describe("Partial import test", () => {
   });
 
   beforeEach(() => {
-    keycloakBeforeEach();
     // doing this from the UI has the added bonus of putting you in the test realm
     sidebarPage.goToCreateRealm();
     createRealmPage.fillRealmName(TEST_REALM).createRealm();

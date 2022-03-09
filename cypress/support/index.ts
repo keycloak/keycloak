@@ -23,3 +23,12 @@ import "./commands";
 if (!Cypress.env("KEYCLOAK_SERVER")) {
   Cypress.env("KEYCLOAK_SERVER", "http://localhost:8180");
 }
+
+// Always preserve session related cookies.
+Cypress.Cookies.defaults({
+  preserve: isSessionCookie,
+});
+
+function isSessionCookie({ name }: Cypress.Cookie) {
+  return name.startsWith("KEYCLOAK_") || name.startsWith("AUTH_SESSION_");
+}

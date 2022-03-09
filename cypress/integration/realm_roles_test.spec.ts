@@ -5,10 +5,7 @@ import ListingPage from "../support/pages/admin_console/ListingPage";
 import SidebarPage from "../support/pages/admin_console/SidebarPage";
 import CreateRealmRolePage from "../support/pages/admin_console/manage/realm_roles/CreateRealmRolePage";
 import AssociatedRolesPage from "../support/pages/admin_console/manage/realm_roles/AssociatedRolesPage";
-import {
-  keycloakBefore,
-  keycloakBeforeEach,
-} from "../support/util/keycloak_hooks";
+import { keycloakBefore } from "../support/util/keycloak_hooks";
 import adminClient from "../support/util/AdminClient";
 
 let itemId = "realm_role_crud";
@@ -27,7 +24,6 @@ describe("Realm roles test", () => {
   });
 
   beforeEach(() => {
-    keycloakBeforeEach();
     sidebarPage.goToRealmRoles();
   });
 

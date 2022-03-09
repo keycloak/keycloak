@@ -6,10 +6,7 @@ import ListingPage from "../support/pages/admin_console/ListingPage";
 import UserDetailsPage from "../support/pages/admin_console/manage/users/UserDetailsPage";
 import AttributesTab from "../support/pages/admin_console/manage/AttributesTab";
 import ModalUtils from "../support/util/ModalUtils";
-import {
-  keycloakBefore,
-  keycloakBeforeEach,
-} from "../support/util/keycloak_hooks";
+import { keycloakBefore } from "../support/util/keycloak_hooks";
 import UserGroupsPage from "../support/pages/admin_console/manage/users/UserGroupsPage";
 import adminClient from "../support/util/AdminClient";
 import CredentialsPage from "../support/pages/admin_console/manage/users/CredentialsPage";
@@ -46,7 +43,6 @@ describe("User creation", () => {
   });
 
   beforeEach(() => {
-    keycloakBeforeEach();
     sidebarPage.goToUsers();
   });
 

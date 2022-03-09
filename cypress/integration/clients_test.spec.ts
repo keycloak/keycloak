@@ -10,10 +10,7 @@ import ModalUtils from "../support/util/ModalUtils";
 import AdvancedTab from "../support/pages/admin_console/manage/clients/AdvancedTab";
 import adminClient from "../support/util/AdminClient";
 import InitialAccessTokenTab from "../support/pages/admin_console/manage/clients/InitialAccessTokenTab";
-import {
-  keycloakBefore,
-  keycloakBeforeEach,
-} from "../support/util/keycloak_hooks";
+import { keycloakBefore } from "../support/util/keycloak_hooks";
 import RoleMappingTab from "../support/pages/admin_console/manage/RoleMappingTab";
 import KeysTab from "../support/pages/admin_console/manage/clients/KeysTab";
 import ClientScopesTab from "../support/pages/admin_console/manage/clients/ClientScopesTab";
@@ -213,7 +210,6 @@ describe("Clients test", () => {
     });
 
     beforeEach(() => {
-      keycloakBeforeEach();
       sidebarPage.goToClients();
     });
 
@@ -557,7 +553,6 @@ describe("Clients test", () => {
     });
 
     beforeEach(() => {
-      keycloakBeforeEach();
       sidebarPage.goToClients();
 
       client = "client_" + (Math.random() + 1).toString(36).substring(7);
@@ -615,7 +610,6 @@ describe("Clients test", () => {
     });
 
     beforeEach(() => {
-      keycloakBeforeEach();
       sidebarPage.goToClients();
     });
 
@@ -692,7 +686,6 @@ describe("Clients test", () => {
     });
 
     beforeEach(() => {
-      keycloakBeforeEach();
       sidebarPage.goToClients();
       listingPage.searchItem(keysName).goToItemDetails(keysName);
     });
@@ -727,10 +720,6 @@ describe("Clients test", () => {
       loginPage.logIn();
       sidebarPage.goToClients();
       listingPage.searchItem(clientName).goToItemDetails(clientName);
-    });
-
-    beforeEach(() => {
-      keycloakBeforeEach();
     });
 
     it("Displays the correct tabs", () => {
@@ -773,10 +762,6 @@ describe("Clients test", () => {
 
     after(() => {
       adminClient.deleteClient(clientId);
-    });
-
-    beforeEach(() => {
-      keycloakBeforeEach();
     });
 
     it("Shows an explainer text for bearer only clients", () => {
