@@ -926,30 +926,37 @@ public class AccountFormService extends AbstractSecuredLocalService {
             final String userId = user.getId();
 
             if (tickets.isEmpty()) {
-
                 if (scopes != null && scopes.length > 0) {
-                    Arrays.stream(scopes)
-                            .map(scopeId -> scopeStore.findById(resourceServer, scopeId))
-                            .filter(Objects::nonNull)
-                            .forEach(scope -> ticketStore.create(resourceServer, resource, scope, userId));
+                    for (String scopeId : scopes) {
+                        Scope scope = scopeStore.findById(resourceServer, scopeId);
+                        PermissionTicket ticket = ticketStore.create(resourceServer, resource, scope, userId);
+                        ticket.setGrantedTimestamp(System.currentTimeMillis());
+                    }
                 } else {
                     if (resource.getScopes().isEmpty()) {
-                        ticketStore.create(resourceServer, resource, null, userId);
+                        PermissionTicket ticket = ticketStore.create(resourceServer, resource, null, userId);
+                        ticket.setGrantedTimestamp(System.currentTimeMillis());
                     } else {
-                        resource.getScopes().forEach(scope -> ticketStore.create(resourceServer, resource, scope, userId));
+                        for (Scope scope : resource.getScopes()) {
+                            PermissionTicket ticket = ticketStore.create(resourceServer, resource, scope, userId);
+                            ticket.setGrantedTimestamp(System.currentTimeMillis());
+                        }
                     }
                 }
             } else if (scopes != null && scopes.length > 0) {
+                List<String> grantScopes = new ArrayList<>(Arrays.asList(scopes));
                 Set<String> alreadyGrantedScopes = tickets.stream()
                         .map(PermissionTicket::getScope)
                         .map(Scope::getId)
                         .collect(Collectors.toSet());
 
-                Arrays.stream(scopes)
-                        .filter(((Predicate<String>) alreadyGrantedScopes::contains).negate())
-                        .map(scopeId -> scopeStore.findById(resourceServer, scopeId))
-                        .filter(Objects::nonNull)
-                        .forEach(scope -> ticketStore.create(resourceServer, resource, scope, userId));
+                grantScopes.removeIf(alreadyGrantedScopes::contains);
+
+                for (String scopeId : grantScopes) {
+                    Scope scope = scopeStore.findById(resourceServer, scopeId);
+                    PermissionTicket ticket = ticketStore.create(resourceServer, resource, scope, userId);
+                    ticket.setGrantedTimestamp(System.currentTimeMillis());
+                }
             }
         }
 
