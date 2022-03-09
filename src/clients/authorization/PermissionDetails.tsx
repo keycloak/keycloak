@@ -32,6 +32,7 @@ import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { ResourcesPolicySelect } from "./ResourcesPolicySelect";
 import { toAuthorizationTab } from "../routes/AuthenticationTab";
 import { ScopeSelect } from "./ScopeSelect";
+import { toUpperCase } from "../../util";
 
 const DECISION_STRATEGIES = ["UNANIMOUS", "AFFIRMATIVE", "CONSENSUS"] as const;
 
@@ -166,7 +167,11 @@ export default function PermissionDetails() {
     <>
       <DeleteConfirm />
       <ViewHeader
-        titleKey={permissionId ? permission?.name! : "clients:createPermission"}
+        titleKey={
+          permissionId
+            ? permission?.name!
+            : `clients:create${toUpperCase(permissionType)}BasedPermission`
+        }
         dropdownItems={
           permissionId
             ? [

@@ -283,6 +283,8 @@ export default {
       "Specifies that this permission must be applied to a specific resource instance.",
     permissionScopes:
       "Specifies that this permission must be applied to one or more scopes.",
+    permissionPolicies:
+      "Specifies all the policies that must be applied to the scopes defined by this policy or permission.",
     permissionType:
       "Specifies that this permission must be applied to all resources instances of a given type.",
     permissionDecisionStrategy:

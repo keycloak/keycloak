@@ -161,6 +161,7 @@ export const AuthorizationScopes = ({ clientId }: ScopesProps) => {
                 <Th>{t("resources")}</Th>
                 <Th>{t("permissions")}</Th>
                 <Th />
+                <Th />
               </Tr>
             </Thead>
             {scopes.map((scope, rowIndex) => (
@@ -197,7 +198,25 @@ export const AuthorizationScopes = ({ clientId }: ScopesProps) => {
                   <Td>
                     <PermissionsRenderer row={scope} />
                   </Td>
+                  <Td width={10}>
+                    <Button
+                      variant="link"
+                      component={(props) => (
+                        <Link
+                          {...props}
+                          to={toNewPermission({
+                            realm,
+                            id: clientId,
+                            permissionType: "scope",
+                          })}
+                        />
+                      )}
+                    >
+                      {t("createPermission")}
+                    </Button>
+                  </Td>
                   <Td
+                    isActionCell
                     actions={{
                       items: [
                         {
@@ -206,19 +225,6 @@ export const AuthorizationScopes = ({ clientId }: ScopesProps) => {
                             setSelectedScope(scope);
                             toggleDeleteDialog();
                           },
-                        },
-                        {
-                          title: t("createPermission"),
-                          className: "pf-m-link",
-                          isOutsideDropdown: true,
-                          onClick: () =>
-                            history.push(
-                              toNewPermission({
-                                realm,
-                                id: clientId,
-                                permissionType: "resource",
-                              })
-                            ),
                         },
                       ],
                     }}
