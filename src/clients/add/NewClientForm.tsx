@@ -39,16 +39,17 @@ export default function NewClientForm() {
     implicitFlowEnabled: false,
     directAccessGrantsEnabled: true,
     standardFlowEnabled: true,
+    frontchannelLogout: true,
   });
   const { addAlert, addError } = useAlerts();
   const methods = useForm<ClientRepresentation>({ defaultValues: client });
+  const protocol = methods.watch("protocol");
 
   const save = async () => {
     try {
       const newClient = await adminClient.clients.create({
-        ...convertFormValuesToObject(client),
+        ...client,
         clientId: client.clientId?.trim(),
-        frontchannelLogout: true,
       });
       addAlert(t("createSuccess"), AlertVariant.success);
       history.push(
@@ -65,10 +66,15 @@ export default function NewClientForm() {
         ...client,
         ...convertFormValuesToObject(methods.getValues()),
       });
-      setShowCapabilityConfig(true);
+      if (!isFinalStep()) {
+        setShowCapabilityConfig(true);
+      }
       onNext?.();
     }
   };
+
+  const isFinalStep = () =>
+    showCapabilityConfig || protocol !== "openid-connect";
 
   const back = () => {
     setClient({ ...client, ...convertFormValuesToObject(methods.getValues()) });
@@ -76,6 +82,7 @@ export default function NewClientForm() {
       ...client,
       ...convertFormValuesToObject(methods.getValues()),
     });
+    setShowCapabilityConfig(false);
   };
 
   const onGoToStep = (newStep: { id?: string | number }) => {
@@ -89,40 +96,34 @@ export default function NewClientForm() {
   const Footer = () => (
     <WizardFooter>
       <WizardContextConsumer>
-        {({ activeStep, onNext, onBack, onClose }) => {
-          return (
-            <>
-              <Button
-                variant="primary"
-                data-testid={
-                  activeStep.name === t("capabilityConfig") ? "save" : "next"
-                }
-                type="submit"
-                onClick={() => {
-                  forward(onNext);
-                }}
-              >
-                {activeStep.name === t("capabilityConfig")
-                  ? t("common:save")
-                  : t("common:next")}
-              </Button>
-              <Button
-                variant="secondary"
-                data-testid="back"
-                onClick={() => {
-                  back();
-                  onBack();
-                }}
-                isDisabled={activeStep.name === t("generalSettings")}
-              >
-                {t("common:back")}
-              </Button>
-              <Button data-testid="cancel" variant="link" onClick={onClose}>
-                {t("common:cancel")}
-              </Button>
-            </>
-          );
-        }}
+        {({ activeStep, onNext, onBack, onClose }) => (
+          <>
+            <Button
+              variant="primary"
+              data-testid={isFinalStep() ? "save" : "next"}
+              type="submit"
+              onClick={() => {
+                forward(onNext);
+              }}
+            >
+              {isFinalStep() ? t("common:save") : t("common:next")}
+            </Button>
+            <Button
+              variant="secondary"
+              data-testid="back"
+              onClick={() => {
+                back();
+                onBack();
+              }}
+              isDisabled={activeStep.name === t("generalSettings")}
+            >
+              {t("common:back")}
+            </Button>
+            <Button data-testid="cancel" variant="link" onClick={onClose}>
+              {t("common:cancel")}
+            </Button>
+          </>
+        )}
       </WizardContextConsumer>
     </WizardFooter>
   );
