@@ -70,6 +70,7 @@ public class KerberosUsernamePasswordAuthenticator {
             logger.debugf("Message from kerberos: %s", message);
 
             checkKerberosServerAvailable(le);
+            checkKerberosUsername(le);
 
             // Bit cumbersome, but seems to work with tested kerberos servers
             boolean exists = (!message.contains("Client not found"));
@@ -92,6 +93,7 @@ public class KerberosUsernamePasswordAuthenticator {
             return true;
         } catch (LoginException le) {
             checkKerberosServerAvailable(le);
+            checkKerberosUsername(le);
 
             logger.debug("Failed to authenticate user " + username, le);
             return false;
@@ -106,6 +108,13 @@ public class KerberosUsernamePasswordAuthenticator {
             message.contains("CANNOT FIND") ||
             message.contains("UNKNOWN ERROR")) {
             throw new ModelException("Kerberos unreachable", le);
+        }
+    }
+
+    protected void checkKerberosUsername(LoginException le) {
+        String message = le.getMessage();
+        if (message.contains("IllegalArgumentException")) {
+            throw new ModelException("Kerberos illegal username", le);
         }
     }
 
