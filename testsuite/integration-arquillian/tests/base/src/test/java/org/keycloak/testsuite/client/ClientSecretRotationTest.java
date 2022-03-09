@@ -615,12 +615,78 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
         try {
             configureCustomProfileAndPolicy(60, 61, 30);
         } catch (Exception e) {
-            assertThat(e,instanceOf(ClientPolicyException.class));
+            assertThat(e, instanceOf(ClientPolicyException.class));
         }
         // no police must have been created due to the above error
         ClientPoliciesPoliciesResource policiesResource = adminClient.realm(REALM_NAME).clientPoliciesPoliciesResource();
         ClientPoliciesRepresentation policies = policiesResource.getPolicies();
-        assertThat(policies.getPolicies(),is(empty()));
+        assertThat(policies.getPolicies(), is(empty()));
+    }
+
+    /**
+     * When there is a client that has a secret rotated and the policy is disabled, Rotation information must be removed after updating a client
+     *
+     * @throws Exception
+     */
+    @Test
+    public void removingPolicyMustClearRotationInformationFromClientOnUpdate() throws Exception {
+        //create and enable the profile
+        configureDefaultProfileAndPolicy();
+        //create client
+        String cidConfidential = createClientByAdmin(DEFAULT_CLIENT_ID);
+        ClientResource clientResource = adminClient.realm(REALM_NAME).clients().get(cidConfidential);
+        String firstSecret = clientResource.getSecret().getValue();
+        String newSecret = clientResource.generateNewSecret().getValue();
+        String rotatedSecret = clientResource.getClientRotatedSecret().getValue();
+        assertThat(firstSecret, not(equalTo(newSecret)));
+        assertThat(firstSecret, equalTo(rotatedSecret));
+
+        //disable the profile
+        disableProfile();
+
+        //force a update
+        ClientRepresentation clientRepresentation = clientResource.toRepresentation();
+        clientRepresentation.setDescription("New Description Updated");
+        clientResource.update(clientRepresentation);
+
+        //client must not have any information about rotation in it
+        clientRepresentation = clientResource.toRepresentation();
+        OIDCClientSecretConfigWrapper wrapper = OIDCClientSecretConfigWrapper.fromClientRepresentation(clientRepresentation);
+
+        assertThat(wrapper.hasRotatedSecret(), is(false));
+        assertThat(wrapper.getClientSecretExpirationTime(),is(0));
+    }
+
+    /**
+     * When there is a client that has a secret rotated and the policy is disabled, Rotation information must be removed after request a new secret
+     *
+     * @throws Exception
+     */
+    @Test
+    public void removingPolicyMustClearRotationInformationFromClientOnRequestNewSecret() throws Exception {
+        //create and enable the profile
+        configureDefaultProfileAndPolicy();
+        //create client
+        String cidConfidential = createClientByAdmin(DEFAULT_CLIENT_ID);
+        ClientResource clientResource = adminClient.realm(REALM_NAME).clients().get(cidConfidential);
+        String firstSecret = clientResource.getSecret().getValue();
+        String newSecret = clientResource.generateNewSecret().getValue();
+        String rotatedSecret = clientResource.getClientRotatedSecret().getValue();
+        assertThat(firstSecret, not(equalTo(newSecret)));
+        assertThat(firstSecret, equalTo(rotatedSecret));
+
+        //disable the profile
+        disableProfile();
+
+        //Request a new secret
+        newSecret = clientResource.generateNewSecret().getValue();
+
+        //client must not have any information about rotation in it
+        ClientRepresentation clientRepresentation = clientResource.toRepresentation();
+        OIDCClientSecretConfigWrapper wrapper = OIDCClientSecretConfigWrapper.fromClientRepresentation(clientRepresentation);
+        assertThat(clientResource.getSecret().getValue(),equalTo(newSecret));
+        assertThat(wrapper.hasRotatedSecret(), is(false));
+        assertThat(wrapper.getClientSecretExpirationTime(),is(0));
     }
 
     /**
@@ -644,6 +710,17 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
                 DEFAULT_REMAIN_EXPIRATION_PERIOD);
 
         doConfigProfileAndPolicy(profileBuilder, profileConfig);
+    }
+
+    private void disableProfile() throws Exception {
+        Configuration config = new Configuration();
+        config.setType(Arrays.asList(ClientAccessTypeConditionFactory.TYPE_CONFIDENTIAL));
+        String json = (new ClientPoliciesBuilder()).addPolicy(
+                (new ClientPolicyBuilder()).createPolicy(POLICY_NAME,
+                                "Policy for Client Secret Rotation",
+                                Boolean.FALSE).addCondition(ClientAccessTypeConditionFactory.PROVIDER_ID, config)
+                        .addProfile(PROFILE_NAME).toRepresentation()).toString();
+        updatePolicies(json);
     }
 
     private void doConfigProfileAndPolicy(ClientProfileBuilder profileBuilder,

@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientSecretConstants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCClientSecretConfigWrapper;
@@ -48,7 +49,7 @@ public class ClientSecretRotationExecutor implements
     public void executeOnEvent(ClientPolicyContext context) throws ClientPolicyException {
         if (!session.getContext().getClient().isPublicClient() && !session.getContext().getClient()
                 .isBearerOnly()) {
-
+            session.setAttribute(ClientSecretConstants.CLIENT_SECRET_ROTATION_ENABLED,Boolean.TRUE);
             switch (context.getEvent()) {
                 case REGISTERED:
                 case UPDATED:
