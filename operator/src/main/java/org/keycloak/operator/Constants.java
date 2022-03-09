@@ -52,6 +52,8 @@ public final class Constants {
     public static final Integer KEYCLOAK_DISCOVERY_SERVICE_PORT = 7800;
     public static final String KEYCLOAK_DISCOVERY_SERVICE_SUFFIX = "-discovery";
 
+    public static final String KEYCLOAK_INGRESS_SUFFIX = "-ingress";
+
     public static final String INSECURE_DISABLE = "INSECURE-DISABLE";
     public static final String CERTIFICATES_FOLDER = "/mnt/certificates";
 }

@@ -39,7 +39,8 @@ public class KeycloakSpec {
     @JsonPropertyDescription("A secret containing the TLS configuration for HTTPS. Reference: https://kubernetes.io/docs/concepts/configuration/secret/#tls-secrets.\n" +
             "The special value `" + Constants.INSECURE_DISABLE + "` disables https.")
     private String tlsSecret;
-
+    @JsonPropertyDescription("Disable the default ingress.")
+    private boolean disableDefaultIngress;
     @JsonPropertyDescription("List of URLs to download Keycloak extensions.")
     private List<String> extensions;
     @JsonPropertyDescription(
@@ -57,6 +58,14 @@ public class KeycloakSpec {
 
     public boolean isHostnameDisabled() {
         return this.hostname.equals(Constants.INSECURE_DISABLE);
+    }
+
+    public void setDefaultIngressDisabled(boolean value) {
+        this.disableDefaultIngress = value;
+    }
+
+    public boolean isDefaultIngressDisabled() {
+        return this.disableDefaultIngress;
     }
 
     public String getTlsSecret() {
