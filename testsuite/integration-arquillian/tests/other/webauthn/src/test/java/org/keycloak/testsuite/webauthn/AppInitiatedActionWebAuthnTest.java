@@ -49,7 +49,6 @@ import java.util.function.Supplier;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.keycloak.common.Profile.Feature.WEB_AUTHN;
 import static org.keycloak.models.AuthenticationExecutionModel.Requirement.ALTERNATIVE;
 import static org.keycloak.models.AuthenticationExecutionModel.Requirement.REQUIRED;
 import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
@@ -59,7 +58,6 @@ import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 /**
  * @author <a href="mailto:mabartos@redhat.com">Martin Bartos</a>
  */
-@EnableFeature(value = WEB_AUTHN, skipRestart = true, onlyForProduct = true)
 @AuthServerContainerExclude(REMOTE)
 public class AppInitiatedActionWebAuthnTest extends AbstractAppInitiatedActionTest implements UseVirtualAuthenticators {
 

@@ -41,7 +41,6 @@ import static org.hamcrest.Matchers.is;
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
-@EnableFeature(value = Profile.Feature.WEB_AUTHN, skipRestart = true, onlyForProduct = true)
 public class ProvidersTest extends AbstractAuthenticationTest {
 
     @Test

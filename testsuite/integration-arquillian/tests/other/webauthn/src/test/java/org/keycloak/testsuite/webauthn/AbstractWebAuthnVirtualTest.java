@@ -82,7 +82,6 @@ import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
  *
  * @author <a href="mailto:mabartos@redhat.com">Martin Bartos</a>
  */
-@EnableFeature(value = Profile.Feature.WEB_AUTHN, skipRestart = true, onlyForProduct = true)
 @AuthServerContainerExclude(REMOTE)
 public abstract class AbstractWebAuthnVirtualTest extends AbstractTestRealmKeycloakTest implements UseVirtualAuthenticators {
 
