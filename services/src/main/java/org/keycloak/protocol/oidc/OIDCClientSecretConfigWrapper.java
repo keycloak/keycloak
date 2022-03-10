@@ -18,6 +18,7 @@ import static org.keycloak.models.ClientSecretConstants.CLIENT_ROTATED_SECRET_CR
 import static org.keycloak.models.ClientSecretConstants.CLIENT_ROTATED_SECRET_EXPIRATION_TIME;
 import static org.keycloak.models.ClientSecretConstants.CLIENT_SECRET_CREATION_TIME;
 import static org.keycloak.models.ClientSecretConstants.CLIENT_SECRET_EXPIRATION;
+import static org.keycloak.models.ClientSecretConstants.CLIENT_SECRET_REMAINING_EXPIRATION_TIME;
 
 /**
  * @author <a href="mailto:masales@redhat.com">Marcelo Sales</a>
@@ -59,6 +60,12 @@ public class OIDCClientSecretConfigWrapper extends AbstractClientConfigWrapper {
         } else {
             return clientRep.getName();
         }
+    }
+
+    public void removeClientSecretRotationInfo() {
+        setAttribute(CLIENT_SECRET_EXPIRATION, null);
+        setAttribute(CLIENT_SECRET_REMAINING_EXPIRATION_TIME, null);
+        removeClientSecretRotated();
     }
 
     public void removeClientSecretRotated() {
