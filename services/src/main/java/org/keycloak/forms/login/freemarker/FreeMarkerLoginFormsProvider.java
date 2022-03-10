@@ -28,6 +28,8 @@ import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.forms.login.LoginFormsPages;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.forms.login.freemarker.model.AuthenticationContextBean;
+import org.keycloak.forms.login.freemarker.model.RecoveryAuthnCodeInputLoginBean;
+import org.keycloak.forms.login.freemarker.model.RecoveryAuthnCodesBean;
 import org.keycloak.forms.login.freemarker.model.ClientBean;
 import org.keycloak.forms.login.freemarker.model.CodeBean;
 import org.keycloak.forms.login.freemarker.model.IdentityProviderBean;
@@ -151,6 +153,10 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 actionMessage = Messages.CONFIGURE_TOTP;
                 page = LoginFormsPages.LOGIN_CONFIG_TOTP;
                 break;
+            case CONFIGURE_RECOVERY_AUTHN_CODES:
+                actionMessage = Messages.CONFIGURE_BACKUP_CODES;
+                page = LoginFormsPages.LOGIN_RECOVERY_AUTHN_CODES_CONFIG;
+                break;
             case UPDATE_PROFILE:
                 UpdateProfileContext userBasedContext = new UserUpdateProfileContext(realm, user);
                 this.attributes.put(UPDATE_PROFILE_CONTEXT_ATTR, userBasedContext);
@@ -217,6 +223,12 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         switch (page) {
             case LOGIN_CONFIG_TOTP:
                 attributes.put("totp", new TotpBean(session, realm, user, uriInfo.getRequestUriBuilder()));
+                break;
+            case LOGIN_RECOVERY_AUTHN_CODES_CONFIG:
+                attributes.put("recoveryAuthnCodesConfigBean", new RecoveryAuthnCodesBean());
+                break;
+            case LOGIN_RECOVERY_AUTHN_CODES_INPUT:
+                attributes.put("recoveryAuthnCodesInputBean", new RecoveryAuthnCodeInputLoginBean(session, realm, user));
                 break;
             case LOGIN_UPDATE_PROFILE:
                 UpdateProfileContext userCtx = (UpdateProfileContext) attributes.get(LoginFormsProvider.UPDATE_PROFILE_CONTEXT_ATTR);
@@ -547,6 +559,11 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     @Override
     public Response createLoginTotp() {
         return createResponse(LoginFormsPages.LOGIN_TOTP);
+    }
+
+    @Override
+    public Response createLoginRecoveryAuthnCode() {
+        return createResponse(LoginFormsPages.LOGIN_RECOVERY_AUTHN_CODES_INPUT);
     }
 
     @Override
