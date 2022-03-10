@@ -39,7 +39,6 @@ import java.util.Map;
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
-@EnableFeature(value = Profile.Feature.WEB_AUTHN, skipRestart = true, onlyForProduct = true)
 public class RequiredActionsTest extends AbstractAuthenticationTest {
 
     @Test

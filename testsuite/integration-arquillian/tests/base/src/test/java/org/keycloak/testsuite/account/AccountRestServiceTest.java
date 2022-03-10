@@ -90,7 +90,6 @@ import static org.junit.Assert.assertTrue;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 @AuthServerContainerExclude(AuthServer.REMOTE)
-@EnableFeature(value = Profile.Feature.WEB_AUTHN, skipRestart = true, onlyForProduct = true)
 public class AccountRestServiceTest extends AbstractRestServiceTest {
     
     @Rule
