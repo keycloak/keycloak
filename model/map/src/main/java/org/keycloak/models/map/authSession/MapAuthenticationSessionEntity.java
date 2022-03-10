@@ -31,6 +31,9 @@ import java.util.Set;
 @DeepCloner.Root
 public interface MapAuthenticationSessionEntity extends UpdatableEntity {
 
+    String getTabId();
+    void setTabId(String tabId);
+
     Map<String, String> getUserSessionNotes();
     void setUserSessionNotes(Map<String, String> userSessionNotes);
     void setUserSessionNote(String name, String value);
