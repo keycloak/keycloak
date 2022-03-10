@@ -8,11 +8,11 @@
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "lib": [ "es2015", "dom", "dom.iterable" ],
-    "noImplicitAny": false,
-    "strictNullChecks": false,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
     "jsx": "react",
     "suppressImplicitAnyIndexErrors": true,
-    "allowSyntheticDefaultImports": true
+    "skipLibCheck": true
   },
   "include": [
     "./app/**/*.ts?"

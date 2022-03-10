@@ -57,7 +57,7 @@ interface ShareTheResourceState {
  * @author Stan Silvert ssilvert@redhat.com (C) 2019 Red Hat Inc.
  */
 export class ShareTheResource extends React.Component<ShareTheResourceProps, ShareTheResourceState> {
-    protected static defaultProps = {permissions: []};
+    protected static defaultProps:any = {permissions: []};
     static contextType = AccountServiceContext;
     context: React.ContextType<typeof AccountServiceContext>;
 

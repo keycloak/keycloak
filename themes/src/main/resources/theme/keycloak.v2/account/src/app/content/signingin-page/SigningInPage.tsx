@@ -179,7 +179,7 @@ class SigningInPage extends React.Component<
     private renderTypes(category: CredCategory): React.ReactNode {
         let credTypeMap: CredTypeMap = this.state.credentialContainers.get(
             category
-        );
+        )!;
 
         // this.state.credentialContainers.get(category)!
         return (

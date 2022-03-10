@@ -49,7 +49,7 @@ interface PermissionRequestState {
 }
 
 export class PermissionRequest extends React.Component<PermissionRequestProps, PermissionRequestState> {
-    protected static defaultProps = { permissions: [], row: 0 };
+    protected static defaultProps:any = { permissions: [], row: 0 };
     static contextType = AccountServiceContext;
     context: React.ContextType<typeof AccountServiceContext>;
 

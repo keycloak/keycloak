@@ -46,7 +46,7 @@ interface EditTheResourceState {
 }
 
 export class EditTheResource extends React.Component<EditTheResourceProps, EditTheResourceState> {
-    protected static defaultProps = { permissions: [] };
+    protected static defaultProps:any = { permissions: [] };
     static contextType = AccountServiceContext;
     context: React.ContextType<typeof AccountServiceContext>;
 
