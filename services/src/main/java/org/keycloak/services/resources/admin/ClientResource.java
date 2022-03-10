@@ -32,6 +32,7 @@ import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.ClientSecretConstants;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
@@ -141,6 +142,7 @@ public class ClientResource {
         auth.clients().requireConfigure(client);
 
         try {
+            session.setAttribute(ClientSecretConstants.CLIENT_SECRET_ROTATION_ENABLED,Boolean.FALSE);
             session.clientPolicy().triggerOnEvent(new AdminClientUpdateContext(rep, client, auth.adminAuth()));
 
             updateClientFromRep(rep, client, session);
@@ -154,6 +156,12 @@ public class ClientResource {
             });
 
             session.clientPolicy().triggerOnEvent(new AdminClientUpdatedContext(rep, client, auth.adminAuth()));
+
+            if (!(boolean) session.getAttribute(ClientSecretConstants.CLIENT_SECRET_ROTATION_ENABLED)){
+                logger.debugv("Removing the previous rotation info for client {0}{1}, if there is",client.getClientId(),client.getName());
+                OIDCClientSecretConfigWrapper.fromClientModel(client).removeClientSecretRotationInfo();
+            }
+            session.removeAttribute(ClientSecretConstants.CLIENT_SECRET_ROTATION_ENABLED);
 
             adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri()).representation(rep).success();
             return Response.noContent().build();
@@ -253,6 +261,7 @@ public class ClientResource {
             auth.clients().requireConfigure(client);
 
             logger.debug("regenerateSecret");
+            session.setAttribute(ClientSecretConstants.CLIENT_SECRET_ROTATION_ENABLED,Boolean.FALSE);
 
             ClientRepresentation representation = ModelToRepresentation.toRepresentation(client, session);
             ClientSecretRotationContext secretRotationContext = new ClientSecretRotationContext(
@@ -265,10 +274,14 @@ public class ClientResource {
             CredentialRepresentation rep = new CredentialRepresentation();
             rep.setType(CredentialRepresentation.SECRET);
             rep.setValue(secret);
-            rep.setCreatedDate(
-                (long) OIDCClientSecretConfigWrapper.fromClientModel(client).getClientSecretCreationTime());
+
+            if (!(boolean) session.getAttribute(ClientSecretConstants.CLIENT_SECRET_ROTATION_ENABLED)){
+                logger.debugv("Removing the previous rotation info for client {0}{1}, if there is",client.getClientId(),client.getName());
+                OIDCClientSecretConfigWrapper.fromClientModel(client).removeClientSecretRotationInfo();
+            }
 
             adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).representation(rep).success();
+            session.removeAttribute(ClientSecretConstants.CLIENT_SECRET_ROTATION_ENABLED);
 
             return rep;
         } catch (ClientPolicyException cpe) {
