@@ -59,8 +59,7 @@ import picocli.CommandLine.Command;
                 + "      $ ${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} ${COMMAND-NAME} --http-relative-path=/auth%n%n"
                 + "You can also use the \"--auto-build\" option when starting the server to avoid running this command every time you change a configuration:%n%n"
                 + "    $ ${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} start --auto-build <OPTIONS>%n%n"
-                + "By doing that you have an additional overhead when the server is starting.%n%n"
-                + "Use '${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} ${COMMAND-NAME} --help-all' to list all available options, including the start options.")
+                + "By doing that you have an additional overhead when the server is starting.")
 public final class Build extends AbstractCommand implements Runnable {
 
     public static final String NAME = "build";

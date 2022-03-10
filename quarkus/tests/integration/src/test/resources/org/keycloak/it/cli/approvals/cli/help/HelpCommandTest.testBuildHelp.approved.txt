@@ -105,6 +105,3 @@ running this command every time you change a configuration:
     $ kc.sh start --auto-build <OPTIONS>
 
 By doing that you have an additional overhead when the server is starting.
-
-Use 'kc.sh build --help-all' to list all available options, including the start
-options.
