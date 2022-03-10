@@ -69,6 +69,12 @@ export const RealmSettingsTokensTab = ({
     defaultValue: realm.offlineSessionMaxLifespanEnabled,
   });
 
+  const ssoSessionIdleTimeout = useWatch({
+    control,
+    name: "ssoSessionIdleTimeout",
+    defaultValue: 36000,
+  });
+
   return (
     <PageSection variant="light">
       <FormPanel
@@ -205,10 +211,7 @@ export const RealmSettingsTokensTab = ({
             label={t("accessTokenLifespan")}
             fieldId="accessTokenLifespan"
             helperText={t("recommendedSsoTimeout", {
-              time: toHumanFormat(
-                realm.ssoSessionIdleTimeout!,
-                whoAmI.getLocale()
-              ),
+              time: toHumanFormat(ssoSessionIdleTimeout!, whoAmI.getLocale()),
             })}
             labelIcon={
               <HelpItem
@@ -225,7 +228,7 @@ export const RealmSettingsTokensTab = ({
               render={({ onChange, value }) => (
                 <TimeSelector
                   validated={
-                    value > realm.ssoSessionIdleTimeout! ? "warning" : "default"
+                    value > ssoSessionIdleTimeout! ? "warning" : "default"
                   }
                   className="kc-access-token-lifespan"
                   data-testid="access-token-lifespan-input"
