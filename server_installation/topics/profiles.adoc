@@ -86,16 +86,8 @@ The features that can be enabled and disabled are:
 
 |web_authn
 |W3C Web Authentication (WebAuthn)
-
-ifeval::[{project_community}==true]
 |Yes
-|Preview
-endif::[]
-
-ifeval::[{project_product}==true]
-|No
-|Preview
-endif::[]
+|Supported
 
 |===
 
