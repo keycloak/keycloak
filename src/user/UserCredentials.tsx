@@ -161,9 +161,12 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
 
   const itemOrder = useMemo(
     () =>
-      groupedUserCredentials.map(({ value }) =>
-        value.map(({ id }) => id).toString()
-      ),
+      groupedUserCredentials.flatMap((groupedCredential) => [
+        groupedCredential.value.map(({ id }) => id).toString(),
+        ...(groupedCredential.isExpanded
+          ? groupedCredential.value.map((c) => c.id!)
+          : []),
+      ]),
     [groupedUserCredentials]
   );
 
@@ -286,29 +289,28 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
   };
 
   const onDragFinish = async (dragged: string, newOrder: string[]) => {
-    dragged = dragged.split(",")[0];
-    const keys = groupedUserCredentials.map(({ value }) =>
-      value.map(({ id }) => id)
-    );
-    const oldIndex = keys.findIndex((el) => el.join().includes(dragged));
-    const newIndex = newOrder.findIndex((el) => el.includes(dragged));
+    const oldIndex = itemOrder.findIndex((key) => key === dragged);
+    const newIndex = newOrder.findIndex((key) => key === dragged);
     const times = newIndex - oldIndex;
 
+    const ids = dragged.split(",");
+
     try {
-      for (let index = 0; index < Math.abs(times); index++) {
-        if (times > 0) {
-          await adminClient.users.moveCredentialPositionDown({
-            id: user.id!,
-            credentialId: dragged,
-            newPreviousCredentialId: `${keys[newIndex][0]}`,
-          });
-        } else {
-          await adminClient.users.moveCredentialPositionUp({
-            id: user.id!,
-            credentialId: dragged,
-          });
+      for (const id of ids)
+        for (let index = 0; index < Math.abs(times); index++) {
+          if (times > 0) {
+            await adminClient.users.moveCredentialPositionDown({
+              id: user.id!,
+              credentialId: id,
+              newPreviousCredentialId: itemOrder[newIndex],
+            });
+          } else {
+            await adminClient.users.moveCredentialPositionUp({
+              id: user.id!,
+              credentialId: id,
+            });
+          }
         }
-      }
 
       refresh();
       addAlert(t("users:updatedCredentialMoveSuccess"), AlertVariant.success);
