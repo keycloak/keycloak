@@ -24,8 +24,13 @@ export const InitialAccessTokenList = () => {
 
   const [token, setToken] = useState<ClientInitialAccessPresentation>();
 
-  const loader = async () =>
-    await adminClient.realms.getClientsInitialAccess({ realm });
+  const loader = async () => {
+    try {
+      return await adminClient.realms.getClientsInitialAccess({ realm });
+    } catch (error) {
+      return [];
+    }
+  };
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: "clients:tokenDeleteConfirmTitle",
