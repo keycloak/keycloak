@@ -61,9 +61,8 @@ public class MapRootAuthenticationSessionAdapter extends AbstractRootAuthenticat
 
     @Override
     public Map<String, AuthenticationSessionModel> getAuthenticationSessions() {
-        return Optional.ofNullable(entity.getAuthenticationSessions()).orElseGet(Collections::emptyMap).entrySet().stream()
-                .collect(Collectors.toMap(Map.Entry::getKey,
-                        entry -> new MapAuthenticationSessionAdapter(session, this, entry.getKey(), (MapAuthenticationSessionEntity) entry.getValue())));
+        return Optional.ofNullable(entity.getAuthenticationSessions()).orElseGet(Collections::emptySet).stream()
+                .collect(Collectors.toMap(MapAuthenticationSessionEntity::getTabId, this::toAdapter));
     }
 
     @Override
@@ -72,13 +71,7 @@ public class MapRootAuthenticationSessionAdapter extends AbstractRootAuthenticat
             return null;
         }
 
-        AuthenticationSessionModel authSession = getAuthenticationSessions().get(tabId);
-        if (authSession != null && client.equals(authSession.getClient())) {
-            session.getContext().setAuthenticationSession(authSession);
-            return authSession;
-        } else {
-            return null;
-        }
+        return entity.getAuthenticationSession(tabId).map(this::toAdapter).map(this::setAuthContext).orElse(null);
     }
 
     @Override
@@ -90,16 +83,15 @@ public class MapRootAuthenticationSessionAdapter extends AbstractRootAuthenticat
 
         int timestamp = Time.currentTime();
         authSessionEntity.setTimestamp(timestamp);
+        String tabId = generateTabId();
+        authSessionEntity.setTabId(tabId);
 
-        String tabId =  generateTabId();
-        entity.setAuthenticationSession(tabId, authSessionEntity);
+        entity.addAuthenticationSession(authSessionEntity);
 
         // Update our timestamp when adding new authenticationSession
         entity.setTimestamp(timestamp);
 
-        MapAuthenticationSessionAdapter authSession = new MapAuthenticationSessionAdapter(session, this, tabId, entity.getAuthenticationSessions().get(tabId));
-        session.getContext().setAuthenticationSession(authSession);
-        return authSession;
+        return entity.getAuthenticationSession(tabId).map(this::toAdapter).map(this::setAuthContext).orElse(null);
     }
 
     @Override
@@ -122,5 +114,14 @@ public class MapRootAuthenticationSessionAdapter extends AbstractRootAuthenticat
 
     private String generateTabId() {
         return Base64Url.encode(SecretGenerator.getInstance().randomBytes(8));
+    }
+
+    private MapAuthenticationSessionAdapter toAdapter(MapAuthenticationSessionEntity entity) {
+        return new MapAuthenticationSessionAdapter(session, this, entity.getTabId(), entity);
+    }
+
+    private MapAuthenticationSessionAdapter setAuthContext(MapAuthenticationSessionAdapter adapter) {
+        session.getContext().setAuthenticationSession(adapter);
+        return adapter;
     }
 }

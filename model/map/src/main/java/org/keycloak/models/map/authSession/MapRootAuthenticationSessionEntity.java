@@ -23,8 +23,9 @@ import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.UpdatableEntity;
 
 import java.util.Collections;
-import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
@@ -52,15 +53,31 @@ public interface MapRootAuthenticationSessionEntity extends AbstractEntity, Upda
         }
 
         @Override
+        public Optional<MapAuthenticationSessionEntity> getAuthenticationSession(String tabId) {
+            Set<MapAuthenticationSessionEntity> authenticationSessions = getAuthenticationSessions();
+            if (authenticationSessions == null || authenticationSessions.isEmpty()) return Optional.empty();
+
+            return authenticationSessions.stream().filter(as -> Objects.equals(as.getTabId(), tabId)).findFirst();
+        }
+
+        @Override
+        public Boolean removeAuthenticationSession(String tabId) {
+            Set<MapAuthenticationSessionEntity> authenticationSessions = getAuthenticationSessions();
+            boolean removed = authenticationSessions != null && authenticationSessions.removeIf(c -> Objects.equals(c.getTabId(), tabId));
+            this.updated |= removed;
+            return removed;
+        }
+
+        @Override
         public boolean isUpdated() {
             return this.updated ||
-                    Optional.ofNullable(getAuthenticationSessions()).orElseGet(Collections::emptyMap).values().stream().anyMatch(MapAuthenticationSessionEntity::isUpdated);
+                    Optional.ofNullable(getAuthenticationSessions()).orElseGet(Collections::emptySet).stream().anyMatch(MapAuthenticationSessionEntity::isUpdated);
         }
 
         @Override
         public void clearUpdatedFlag() {
             this.updated = false;
-            Optional.ofNullable(getAuthenticationSessions()).orElseGet(Collections::emptyMap).values().forEach(UpdatableEntity::clearUpdatedFlag);
+            Optional.ofNullable(getAuthenticationSessions()).orElseGet(Collections::emptySet).forEach(UpdatableEntity::clearUpdatedFlag);
         }
     }
 
@@ -70,8 +87,9 @@ public interface MapRootAuthenticationSessionEntity extends AbstractEntity, Upda
     Integer getTimestamp();
     void setTimestamp(Integer timestamp);
 
-    Map<String, MapAuthenticationSessionEntity> getAuthenticationSessions();
-    void setAuthenticationSessions(Map<String, MapAuthenticationSessionEntity> authenticationSessions);
-    void setAuthenticationSession(String tabId, MapAuthenticationSessionEntity entity);
+    Set<MapAuthenticationSessionEntity> getAuthenticationSessions();
+    void setAuthenticationSessions(Set<MapAuthenticationSessionEntity> authenticationSessions);
+    Optional<MapAuthenticationSessionEntity> getAuthenticationSession(String tabId);
+    void addAuthenticationSession(MapAuthenticationSessionEntity authenticationSession);
     Boolean removeAuthenticationSession(String tabId);
 }
