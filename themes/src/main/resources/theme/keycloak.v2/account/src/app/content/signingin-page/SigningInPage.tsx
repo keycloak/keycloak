@@ -66,12 +66,20 @@ type CredType = string;
 type CredTypeMap = Map<CredType, CredentialContainer>;
 type CredContainerMap = Map<CredCategory, CredTypeMap>;
 
+interface CredMetadata {
+    infoMessage?: string;
+    warningMessageTitle?: string;
+    warningMessageDescription?: string;
+    credential: UserCredential;
+}
+
 interface UserCredential {
     id: string;
     type: string;
     userLabel: string;
     createdDate?: number;
     strCreatedDate?: string;
+    credentialData?: string;
 }
 
 // A CredentialContainer is unique by combo of credential type and credential category
@@ -83,7 +91,7 @@ interface CredentialContainer {
     createAction?: string;
     updateAction?: string;
     removeable: boolean;
-    userCredentials: UserCredential[];
+    userCredentialMetadatas: CredMetadata[];
     open: boolean;
 }
 
@@ -232,61 +240,33 @@ class SigningInPage extends React.Component<
         keycloak: KeycloakService
     ): React.ReactNode {
         const credContainer: CredentialContainer = credTypeMap.get(credType)!;
-        const userCredentials: UserCredential[] = credContainer.userCredentials;
+        const userCredentialMetadatas: CredMetadata[] = credContainer.userCredentialMetadatas;
         const removeable: boolean = credContainer.removeable;
         const type: string = credContainer.type;
         const displayName: string = credContainer.displayName;
-        if (!userCredentials || userCredentials.length === 0) {
+
+        if (!userCredentialMetadatas || userCredentialMetadatas.length === 0) {
             const localizedDisplayName = Msg.localize(displayName);
             return (
-                <DataList aria-label="no-credentials-list-item">
-                    <DataListItem
-                        key="no-credentials-list-item"
-                        aria-labelledby="no-credentials-list-item"
-                    >
-                        <DataListItemRow
-                            key="no-credentials-list-item-row"
-                            className="pf-u-align-items-center"
-                        >
-                            <DataListItemCells
-                                dataListCells={[
-                                    <DataListCell
-                                        key={"no-credentials-cell-0"}
-                                    />,
-                                    <EmptyState
-                                        id={`${type}-not-set-up`}
-                                        key={"no-credentials-cell-1"}
-                                        variant={EmptyStateVariant.xs}
-                                    >
-                                        <EmptyStateBody>
-                                            <Msg
-                                                msgKey="notSetUp"
-                                                params={[localizedDisplayName]}
-                                            />
-                                        </EmptyStateBody>
-                                    </EmptyState>,
-                                    <DataListCell
-                                        key={"no-credentials-cell-2"}
-                                    />,
-                                ]}
-                            />
-                        </DataListItemRow>
-                    </DataListItem>
-                </DataList>
+                <DataListItem key='no-credentials-list-item' aria-labelledby='no-credentials-list-item'>
+                    <DataListItemRow key='no-credentials-list-item-row'>
+                        <DataListItemCells
+                            dataListCells={[
+                                <DataListCell key={'no-credentials-cell-0'}/>,
+                                <strong id={`${type}-not-set-up`} key={'no-credentials-cell-1'}><Msg msgKey='notSetUp' params={[localizedDisplayName]}/></strong>,
+                                <DataListCell key={'no-credentials-cell-2'}/>
+                            ]}
+                        />
+                    </DataListItemRow>
+                </DataListItem>
             );
         }
 
-        userCredentials.forEach((credential) => {
-            if (!credential.userLabel)
-                credential.userLabel = Msg.localize(credential.type);
-            if (
-                credential.hasOwnProperty("createdDate") &&
-                credential.createdDate &&
-                credential.createdDate! > 0
-            ) {
-                credential.strCreatedDate = TimeUtil.format(
-                    credential.createdDate as number
-                );
+        userCredentialMetadatas.forEach(credentialMetadata => {
+            let credential = credentialMetadata.credential;
+            if (!credential.userLabel) credential.userLabel = Msg.localize(credential.type);
+            if (credential.hasOwnProperty('createdDate') && credential.createdDate && credential.createdDate! > 0) {
+                credential.strCreatedDate = TimeUtil.format(credential.createdDate as number);
             }
         });
 
@@ -296,64 +276,55 @@ class SigningInPage extends React.Component<
         }
 
         return (
-            <React.Fragment key="userCredentials">
-                {" "}
-                {userCredentials.map((credential) => (
-                    <DataList aria-label="no-credentials-list-item">
-                        <DataListItem
-                            id={`${SigningInPage.credElementId(
-                                type,
-                                credential.id,
-                                "row"
-                            )}`}
-                            key={"credential-list-item-" + credential.id}
-                            aria-labelledby={
-                                "credential-list-item-" + credential.userLabel
-                            }
-                        >
-                            <DataListItemRow
-                                key={"userCredentialRow-" + credential.id}
-                                className="pf-u-align-items-center"
-                            >
-                                <DataListItemCells
-                                    dataListCells={this.credentialRowCells(
-                                        credential,
-                                        type
-                                    )}
-                                />
-
-                                <CredentialAction
-                                    credential={credential}
-                                    removeable={removeable}
-                                    updateAction={updateAIA}
-                                    credRemover={this.handleRemove}
-                                />
-                            </DataListItemRow>
-                        </DataListItem>
-                    </DataList>
-                ))}
-            </React.Fragment>
-        );
+            <React.Fragment key='userCredentialMetadatas'> {
+                userCredentialMetadatas.map(credentialMetadata => (
+                    <DataListItem id={`${SigningInPage.credElementId(type, credentialMetadata.credential.id, 'row')}`} key={'credential-list-item-' + credentialMetadata.credential.id} aria-labelledby={'credential-list-item-' + credentialMetadata.credential.userLabel}>
+                        <DataListItemRow key={'userCredentialRow-' + credentialMetadata.credential.id}>
+                            <DataListItemCells dataListCells={this.credentialRowCells(credentialMetadata, type)}/>
+                            <CredentialAction
+                                credential={credentialMetadata.credential}
+                                removeable={removeable}
+                                updateAction={updateAIA}
+                                credRemover={this.handleRemove}
+                            />
+                        </DataListItemRow>
+                    </DataListItem>
+                ))
+            }
+            </React.Fragment>)
     }
 
-    private credentialRowCells(
-        credential: UserCredential,
-        type: string
-    ): React.ReactNode[] {
+    private credentialRowCells(credMetadata: CredMetadata, type: string): React.ReactNode[] {
         const credRowCells: React.ReactNode[] = [];
-        let maxWidth = { "--pf-u-max-width--MaxWidth": "300px" } as React.CSSProperties;
+        const credential = credMetadata.credential;
+        const infoMessage = credMetadata.infoMessage ? JSON.parse(credMetadata.infoMessage) : null;
+        const warningMessageTitle = credMetadata.warningMessageTitle ? JSON.parse(credMetadata.warningMessageTitle) : null;
+        const warningMessageDescription = credMetadata.warningMessageDescription ? JSON.parse(credMetadata.warningMessageDescription) : null;
         credRowCells.push(
-            <DataListCell
-                id={`${SigningInPage.credElementId(
-                    type,
-                    credential.id,
-                    "label"
-                )}`}
-                className="pf-u-max-width"
-                style={maxWidth}
-                key={"userLabel-" + credential.id}
-            >
+            <DataListCell id={`${SigningInPage.credElementId(type, credential.id, 'label')}`} key={'userLabel-' + credential.id}>
                 {credential.userLabel}
+                {infoMessage &&
+                    <div>{Msg.localize(infoMessage.key, infoMessage.parameters)}</div>
+                }
+                {warningMessageTitle &&
+                    <>
+                        <br />
+                        <div className="pf-c-alert pf-m-warning pf-m-inline" aria-label="Success alert">
+                            <div className="pf-c-alert__icon">
+                                <i className="pficon-warning-triangle-o" aria-hidden="true"></i>
+                            </div>
+                            <h4 className="pf-c-alert__title">
+                                <span className="pf-screen-reader">Warning alert:</span>
+                                {Msg.localize(warningMessageTitle.key, warningMessageTitle.parameters)}
+                            </h4>
+                            {credMetadata.warningMessageDescription &&
+                                <div className="pf-c-alert__description">
+                                    {Msg.localize(warningMessageDescription.key, warningMessageDescription.parameters)}
+                                </div>
+                            }
+                        </div>
+                    </>
+                }
             </DataListCell>
         );
         if (credential.strCreatedDate) {
@@ -511,7 +482,8 @@ interface CredentialActionProps {
     removeable: boolean;
     updateAction: AIACommand;
     credRemover: CredRemover;
-}
+};
+
 class CredentialAction extends React.Component<CredentialActionProps> {
     render(): React.ReactNode {
         if (this.props.updateAction) {
@@ -539,29 +511,12 @@ class CredentialAction extends React.Component<CredentialActionProps> {
         if (this.props.removeable) {
             const userLabel: string = this.props.credential.userLabel;
             return (
-                <DataListAction
-                    aria-labelledby="foo"
-                    aria-label="foo action"
-                    id={"removeAction-" + this.props.credential.id}
-                >
-                    <ContinueCancelModal
-                        buttonTitle="remove"
-                        buttonVariant="danger"
-                        buttonId={`${SigningInPage.credElementId(
-                            this.props.credential.type,
-                            this.props.credential.id,
-                            "remove"
-                        )}`}
-                        modalTitle={Msg.localize("removeCred", [userLabel])}
-                        modalMessage={Msg.localize("stopUsingCred", [
-                            userLabel,
-                        ])}
-                        onContinue={() =>
-                            this.props.credRemover(
-                                this.props.credential.id,
-                                userLabel
-                            )
-                        }
+                <DataListAction aria-labelledby='foo' aria-label='foo action' id={'removeAction-' + this.props.credential.id }>
+                    <ContinueCancelModal buttonTitle='remove'
+                        buttonId={`${SigningInPage.credElementId(this.props.credential.type, this.props.credential.id, 'remove')}`}
+                        modalTitle={Msg.localize('removeCred', [userLabel])}
+                        modalMessage={Msg.localize('stopUsingCred', [userLabel])}
+                        onContinue={() => this.props.credRemover(this.props.credential.id, userLabel)}
                     />
                 </DataListAction>
             );
@@ -572,4 +527,4 @@ class CredentialAction extends React.Component<CredentialActionProps> {
 }
 
 const SigningInPageWithRouter = withRouter(SigningInPage);
-export { SigningInPageWithRouter as SigningInPage };
+export { SigningInPageWithRouter as SigningInPage};

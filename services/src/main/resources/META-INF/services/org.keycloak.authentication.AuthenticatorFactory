@@ -55,3 +55,4 @@ org.keycloak.authentication.authenticators.browser.WebAuthnPasswordlessAuthentic
 org.keycloak.authentication.authenticators.access.DenyAccessAuthenticatorFactory
 org.keycloak.authentication.authenticators.access.AllowAccessAuthenticatorFactory
 org.keycloak.authentication.authenticators.sessionlimits.UserSessionLimitsAuthenticatorFactory
+org.keycloak.authentication.authenticators.browser.RecoveryAuthnCodesFormAuthenticatorFactory
