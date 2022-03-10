@@ -558,4 +558,4 @@ class CredentialAction extends React.Component<CredentialActionProps> {
 }
 
 const SigningInPageWithRouter = withRouter(SigningInPage);
-export { SigningInPageWithRouter as SigningInPage };
+export { SigningInPageWithRouter as SigningInPage};
