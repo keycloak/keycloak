@@ -26,6 +26,7 @@ import liquibase.database.jvm.JdbcConnection;
 import liquibase.exception.LiquibaseException;
 import liquibase.resource.ClassLoaderResourceAccessor;
 import liquibase.resource.ResourceAccessor;
+import liquibase.ui.LoggerUIService;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.connections.jpa.updater.liquibase.LiquibaseJpaUpdaterProvider;
@@ -81,6 +82,7 @@ public class DefaultLiquibaseConnectionProvider implements LiquibaseConnectionPr
         final Map<String, Object> scopeValues = new HashMap<>();
         scopeValues.put(Scope.Attr.resourceAccessor.name(), new ClassLoaderResourceAccessor(this.getClass().getClassLoader()));
         scopeValues.put(Scope.Attr.classLoader.name(), this.getClass().getClassLoader());
+        scopeValues.put(Scope.Attr.ui.name(), new LoggerUIService());
         try {
             Scope.enter(scopeValues);
         } catch (Exception e) {
