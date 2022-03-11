@@ -29,6 +29,7 @@ import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.ResourceServerStore;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.ScopeStore;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
@@ -47,10 +48,8 @@ public class MapResourceServerStore implements ResourceServerStore {
     private static final Logger LOG = Logger.getLogger(MapResourceServerStore.class);
     private final AuthorizationProvider authorizationProvider;
     final MapKeycloakTransaction<MapResourceServerEntity, ResourceServer> tx;
-    private final MapStorage<MapResourceServerEntity, ResourceServer> resourceServerStore;
 
     public MapResourceServerStore(KeycloakSession session, MapStorage<MapResourceServerEntity, ResourceServer> resourceServerStore, AuthorizationProvider provider) {
-        this.resourceServerStore = resourceServerStore;
         this.tx = resourceServerStore.createTransaction(session);
         this.authorizationProvider = provider;
         session.getTransactionManager().enlist(tx);
@@ -64,30 +63,34 @@ public class MapResourceServerStore implements ResourceServerStore {
 
     @Override
     public ResourceServer create(ClientModel client) {
+        LOG.tracef("create(%s)%s", client.getClientId(), getShortStackTrace());
+
         String clientId = client.getId();
-        LOG.tracef("create(%s)%s", clientId, getShortStackTrace());
-        
         if (clientId == null) return null;
 
         if (!StorageId.isLocalStorage(clientId)) {
             throw new ModelException("Creating resource server from federated ClientModel not supported");
         }
 
-        if (tx.read(clientId) != null) {
-            throw new ModelDuplicateException("Resource server already exists: " + clientId);
+        if (findByClient(client) != null) {
+            throw new ModelDuplicateException("Resource server assiciated with client : " + client.getClientId() + " already exists.");
         }
 
         MapResourceServerEntity entity = new MapResourceServerEntityImpl();
         entity.setId(clientId);
 
-        return entityToAdapter(tx.create(entity));
+        entity = tx.create(entity);
+        return entityToAdapter(entity);
     }
 
     @Override
     public void delete(ClientModel client) {
-        String id = client.getId();
-        LOG.tracef("delete(%s, %s)%s", id, getShortStackTrace());
-        if (id == null) return;
+        LOG.tracef("delete(%s, %s)%s", client.getClientId(), getShortStackTrace());
+
+        ResourceServer resourceServer = findByClient(client);
+        if (resourceServer == null) return;
+
+        String id = resourceServer.getId();
 
         // TODO: Simplify the following, ideally by leveraging triggers, stored procedures or ref integrity
         PolicyStore policyStore = authorizationProvider.getStoreFactory().getPolicyStore();

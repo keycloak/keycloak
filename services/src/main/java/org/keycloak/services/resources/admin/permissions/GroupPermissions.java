@@ -107,7 +107,7 @@ class GroupPermissions implements GroupPermissionEvaluator, GroupPermissionManag
         String groupResourceName = getGroupResourceName(group);
         Resource groupResource = resourceStore.findByName(groupResourceName, server.getId());
         if (groupResource == null) {
-            groupResource = resourceStore.create(groupResourceName, server, server.getId());
+            groupResource = resourceStore.create(groupResourceName, server, server.getClientId());
             Set<Scope> scopeset = new HashSet<>();
             scopeset.add(manageScope);
             scopeset.add(viewScope);

@@ -113,7 +113,7 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
         String resourceName = getResourceName(client);
         Resource resource = authz.getStoreFactory().getResourceStore().findByName(resourceName, server.getId());
         if (resource == null) {
-            resource = authz.getStoreFactory().getResourceStore().create(resourceName, server, server.getId());
+            resource = authz.getStoreFactory().getResourceStore().create(resourceName, server, server.getClientId());
             resource.setType("Client");
             Set<Scope> scopeset = new HashSet<>();
             scopeset.add(configureScope);

@@ -128,7 +128,7 @@ public class AbstractPermissionService {
 
                 if (scope == null && resource.getType() != null) {
                     scope = resourceStore.findByType(resource.getType(), resourceServer.getId()).stream()
-                            .filter(baseResource -> baseResource.getOwner().equals(resource.getResourceServer()))
+                            .filter(baseResource -> baseResource.getOwner().equals(resourceServer.getClientId()))
                             .flatMap(resource1 -> resource1.getScopes().stream())
                             .filter(baseScope -> baseScope.getName().equals(scopeName)).findFirst().orElse(null);
                 }

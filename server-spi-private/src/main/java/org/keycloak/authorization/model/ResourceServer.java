@@ -83,4 +83,9 @@ public interface ResourceServer {
      * @return the decision strategy
      */
     DecisionStrategy getDecisionStrategy();
+
+    /**
+     * Returns id of a client that this {@link ResourceServer} is associated with
+     */
+    String getClientId();
 }

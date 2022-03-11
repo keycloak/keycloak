@@ -560,7 +560,7 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
         String roleResourceName = getRoleResourceName(role);
         Resource resource = authz.getStoreFactory().getResourceStore().findByName(roleResourceName, server.getId());
         if (resource == null) {
-            resource = authz.getStoreFactory().getResourceStore().create(roleResourceName, server, server.getId());
+            resource = authz.getStoreFactory().getResourceStore().create(roleResourceName, server, server.getClientId());
             Set<Scope> scopeset = new HashSet<>();
             scopeset.add(mapClientScope);
             scopeset.add(mapCompositeScope);

@@ -72,7 +72,7 @@ public class DefaultPolicyEvaluator implements PolicyEvaluator {
             if (resource.getType() != null) {
                 policyStore.findByResourceType(resource.getType(), resourceServer.getId(), policyConsumer);
 
-                if (!resource.getOwner().equals(resourceServer.getId())) {
+                if (!resource.getOwner().equals(resourceServer.getClientId())) {
                     for (Resource typedResource : resourceStore.findByType(resource.getType(), resourceServer.getId())) {
                         policyStore.findByResource(typedResource.getId(), resourceServer.getId(), policyConsumer);
                     }

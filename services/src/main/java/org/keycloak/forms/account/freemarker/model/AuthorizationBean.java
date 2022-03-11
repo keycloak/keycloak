@@ -34,6 +34,7 @@ import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.PermissionTicket;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
+import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.store.PermissionTicketStore;
 import org.keycloak.common.util.Time;
@@ -235,7 +236,8 @@ public class AuthorizationBean {
 
         public ResourceBean(Resource resource) {
             RealmModel realm = authorization.getRealm();
-            resourceServer = new ResourceServerBean(realm.getClientById(resource.getResourceServer()));
+            ResourceServer resourceServerModel = authorization.getStoreFactory().getResourceServerStore().findById(resource.getResourceServer());
+            resourceServer = new ResourceServerBean(realm.getClientById(resourceServerModel.getClientId()));
             this.resource = resource;
             userOwner = authorization.getKeycloakSession().users().getUserById(realm, resource.getOwner());
             if (userOwner == null) {

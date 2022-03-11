@@ -80,6 +80,11 @@ public class ResourceServerAdapter implements ResourceServer, CachedModel<Resour
     }
 
     @Override
+    public String getClientId() {
+        return getId();
+    }
+
+    @Override
     public boolean isAllowRemoteResourceManagement() {
         if (isUpdated()) return updated.isAllowRemoteResourceManagement();
         return cached.isAllowRemoteResourceManagement();
