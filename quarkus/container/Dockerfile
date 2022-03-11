@@ -19,8 +19,8 @@ RUN chmod -R g+rwX /opt/keycloak
 
 FROM registry.access.redhat.com/ubi8-minimal
 
-LABEL="org.opencontainers.image.title"="Keycloak"
-LABEL="org.opencontainers.image.description"="Open Source Identity and Access Management"
+LABEL "org.opencontainers.image.title"="Keycloak"
+LABEL "org.opencontainers.image.description"="Open Source Identity and Access Management"
 
 COPY --from=build-env --chown=1000:0 /opt/keycloak /opt/keycloak
 
