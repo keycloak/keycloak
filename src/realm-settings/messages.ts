@@ -372,6 +372,7 @@ export default {
     updateMessageBundleSuccess: "Success! Message bundle updated.",
     updateMessageBundleError: "Error updating message bundle.",
     addMessageBundleError: "Error creating message bundle, {{error}}",
+    allGroups: "All groups",
     attributeName: "Name",
     attributeDisplayName: "Display name",
     attributeGroup: "Attribute group",

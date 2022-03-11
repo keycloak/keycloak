@@ -4,19 +4,24 @@ import {
   Button,
   ButtonVariant,
   Divider,
-  Dropdown,
-  DropdownItem,
-  KebabToggle,
+  Select,
+  SelectOption,
+  SelectVariant,
+  Toolbar,
+  ToolbarContent,
   ToolbarItem,
 } from "@patternfly/react-core";
+import { FilterIcon } from "@patternfly/react-icons";
+
+import type { UserProfileAttribute } from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
 import { DraggableTable } from "../../authentication/components/DraggableTable";
-import type { UserProfileAttribute } from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
-import { useHistory } from "react-router-dom";
+import { Link, useHistory } from "react-router-dom";
 import { toAddAttribute } from "../routes/AddAttribute";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useUserProfile } from "./UserProfileContext";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
+import useToggle from "../../utils/useToggle";
 
 type movedAttributeType = UserProfileAttribute;
 
@@ -25,12 +30,12 @@ export const AttributesTab = () => {
   const { realm: realmName } = useRealm();
   const { t } = useTranslation("realm-settings");
   const history = useHistory();
+  const [filter, setFilter] = useState("allGroups");
+  const [isFilterTypeDropdownOpen, toggleIsFilterTypeDropdownOpen] =
+    useToggle();
+  const [data, setData] = useState(config?.attributes);
   const [attributeToDelete, setAttributeToDelete] =
     useState<{ name: string }>();
-  const [kebabOpen, setKebabOpen] = useState({
-    status: false,
-    rowKey: "",
-  });
 
   const executeMove = async (
     attribute: UserProfileAttribute,
@@ -81,23 +86,67 @@ export const AttributesTab = () => {
     },
   });
 
-  if (!config) {
+  if (!config?.attributes) {
     return <KeycloakSpinner />;
   }
 
   return (
     <>
-      <div className="pf-u-mt-md pf-u-mb-md pf-u-ml-md">
-        <ToolbarItem className="kc-toolbar-attributesTab">
-          <Button
-            data-testid="createAttributeBtn"
-            variant="primary"
-            onClick={goToCreate}
-          >
-            {t("createAttribute")}
-          </Button>
-        </ToolbarItem>
-      </div>
+      <Toolbar>
+        <ToolbarContent>
+          <ToolbarItem>
+            <Select
+              width={200}
+              data-testid="filter-select"
+              isOpen={isFilterTypeDropdownOpen}
+              variant={SelectVariant.single}
+              onToggle={toggleIsFilterTypeDropdownOpen}
+              toggleIcon={<FilterIcon />}
+              onSelect={(_, value) => {
+                const filter = value.toString();
+                setFilter(filter);
+                setData(
+                  filter === "allGroups"
+                    ? config.attributes
+                    : config.attributes?.filter((attr) => attr.group === filter)
+                );
+                toggleIsFilterTypeDropdownOpen();
+              }}
+              selections={filter === "allGroups" ? t(filter) : filter}
+            >
+              {[
+                <SelectOption
+                  key="allGroups"
+                  data-testid="all-groups"
+                  value="allGroups"
+                >
+                  {t("allGroups")}
+                </SelectOption>,
+                ...config
+                  .attributes!.filter((attr) => !!attr.group)
+                  .map((attr) => (
+                    <SelectOption
+                      key={attr.group}
+                      data-testid={`${attr.group}-option`}
+                      value={attr.group}
+                    />
+                  )),
+              ]}
+            </Select>
+          </ToolbarItem>
+          <ToolbarItem className="kc-toolbar-attributesTab">
+            <Button
+              data-testid="createAttributeBtn"
+              variant="primary"
+              component={(props) => (
+                <Link {...props} to={toAddAttribute({ realm: realmName })} />
+              )}
+            >
+              {t("createAttribute")}
+            </Button>
+          </ToolbarItem>
+        </ToolbarContent>
+      </Toolbar>
       <Divider />
       <DeleteConfirm />
       <DraggableTable
@@ -111,10 +160,26 @@ export const AttributesTab = () => {
 
           executeMove(dragged, newIndex);
         }}
+        actions={[
+          {
+            title: t("common:edit"),
+            onClick: goToCreate,
+          },
+          {
+            title: t("common:delete"),
+            onClick: (_key, _idx, component) => {
+              setAttributeToDelete(component.name);
+              toggleDeleteDialog();
+            },
+          },
+        ]}
         columns={[
           {
             name: "name",
             displayKey: t("attributeName"),
+            cellRenderer: (row) => (
+              <Link to={toAddAttribute({ realm: realmName })}>{row.name}</Link>
+            ),
           },
           {
             name: "displayName",
@@ -124,68 +189,8 @@ export const AttributesTab = () => {
             name: "group",
             displayKey: t("attributeGroup"),
           },
-          {
-            name: "",
-            displayKey: "",
-            cellRenderer: (row) => (
-              <Dropdown
-                id={`${row.name}`}
-                label={t("attributesDropdown")}
-                data-testid="actions-dropdown"
-                toggle={
-                  <KebabToggle
-                    onToggle={(status) =>
-                      setKebabOpen({
-                        status,
-                        rowKey: row.name!,
-                      })
-                    }
-                    id={`toggle-${row.name}`}
-                  />
-                }
-                isOpen={kebabOpen.status && kebabOpen.rowKey === row.name}
-                isPlain
-                dropdownItems={[
-                  <DropdownItem
-                    key={`edit-dropdown-item-${row.name}`}
-                    data-testid="editDropdownAttributeItem"
-                    onClick={() => {
-                      setKebabOpen({
-                        status: false,
-                        rowKey: row.name!,
-                      });
-                    }}
-                  >
-                    {t("common:edit")}
-                  </DropdownItem>,
-                  <Fragment key={`delete-dropdown-${row.name}`}>
-                    {row.name !== "email" && row.name !== "username"
-                      ? [
-                          <DropdownItem
-                            key={`delete-dropdown-item-${row.name}`}
-                            data-testid="deleteDropdownAttributeItem"
-                            onClick={() => {
-                              toggleDeleteDialog();
-                              setAttributeToDelete({
-                                name: row.name!,
-                              });
-                              setKebabOpen({
-                                status: false,
-                                rowKey: row.name!,
-                              });
-                            }}
-                          >
-                            {t("common:delete")}
-                          </DropdownItem>,
-                        ]
-                      : []}
-                  </Fragment>,
-                ]}
-              />
-            ),
-          },
         ]}
-        data={config.attributes!}
+        data={data || config.attributes}
       />
     </>
   );
