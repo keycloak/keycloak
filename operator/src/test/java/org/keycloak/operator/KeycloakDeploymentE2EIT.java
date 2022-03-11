@@ -213,7 +213,7 @@ public class KeycloakDeploymentE2EIT extends ClusterOperatorTest {
                         var curlOutput = K8sUtils.inClusterCurl(k8sclient, namespace, "--insecure", "-H", "Host: foo.bar", url);
                         Log.info("Curl Output: " + curlOutput);
 
-                        assertTrue(curlOutput.contains("<a href=\"https://example.com/admin/\">"));
+                        assertTrue(curlOutput.contains("<a href=\"https://example.com:8443/admin/\">"));
                     });
         } catch (Exception e) {
             savePodLogs();
@@ -238,7 +238,7 @@ public class KeycloakDeploymentE2EIT extends ClusterOperatorTest {
                         var curlOutput = K8sUtils.inClusterCurl(k8sclient, namespace, "--insecure", "-H", "Host: foo.bar", url);
                         Log.info("Curl Output: " + curlOutput);
 
-                        assertTrue(curlOutput.contains("<a href=\"https://foo.bar/admin/\">"));
+                        assertTrue(curlOutput.contains("<a href=\"https://foo.bar:8443/admin/\">"));
                     });
         } catch (Exception e) {
             savePodLogs();
