@@ -130,7 +130,7 @@ public class MapScopeStore implements ScopeStore {
     }
 
     @Override
-    public List<Scope> findByResourceServer(ResourceServer resourceServer, Map<Scope.FilterOption, String[]> attributes, int firstResult, int maxResult) {
+    public List<Scope> findByResourceServer(ResourceServer resourceServer, Map<Scope.FilterOption, String[]> attributes, Integer firstResult, Integer maxResults) {
         DefaultModelCriteria<Scope> mcb = forResourceServer(resourceServer);
 
         for (Scope.FilterOption filterOption : attributes.keySet()) {
@@ -148,7 +148,7 @@ public class MapScopeStore implements ScopeStore {
             }
         }
 
-        return tx.read(withCriteria(mcb).pagination(firstResult, maxResult, SearchableFields.NAME))
+        return tx.read(withCriteria(mcb).pagination(firstResult, maxResults, SearchableFields.NAME))
             .map(this::entityToAdapter)
             .collect(Collectors.toList());
     }

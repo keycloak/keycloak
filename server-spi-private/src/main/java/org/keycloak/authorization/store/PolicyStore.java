@@ -84,11 +84,13 @@ public interface PolicyStore {
      *
      * @param resourceServer the identifier of a resource server
      * @param attributes a map holding the attributes that will be used as a filter; possible filter options are given by {@link Policy.FilterOption}
+     * @param firstResult first result to return. Ignored if negative or {@code null}.
+     * @param maxResults maximum number of results to return. Ignored if negative or {@code null}.
      * @return a list of policies that belong to the given resource server
      *
      * @throws IllegalArgumentException when there is an unknown attribute in the {@code attributes} map
      */
-    List<Policy> findByResourceServer(ResourceServer resourceServer, Map<Policy.FilterOption, String[]> attributes, int firstResult, int maxResult);
+    List<Policy> findByResourceServer(ResourceServer resourceServer, Map<Policy.FilterOption, String[]> attributes, Integer firstResult, Integer maxResults);
 
     /**
      * Returns a list of {@link Policy} associated with a {@link org.keycloak.authorization.model.Resource} with the given <code>resourceId</code>.

@@ -96,10 +96,12 @@ public interface ScopeStore {
      *
      * @param resourceServer the resource server
      * @param attributes a map holding the attributes that will be used as a filter; possible filter options are given by {@link Scope.FilterOption}
+     * @param firstResult first result to return. Ignored if negative or {@code null}.
+     * @param maxResults maximum number of results to return. Ignored if negative or {@code null}.
      * @return a list of scopes that belong to the given resource server
      * 
      * @throws IllegalArgumentException when there is an unknown attribute in the {@code attributes} map
      * 
      */
-    List<Scope> findByResourceServer(ResourceServer resourceServer, Map<Scope.FilterOption, String[]> attributes, int firstResult, int maxResult);
+    List<Scope> findByResourceServer(ResourceServer resourceServer, Map<Scope.FilterOption, String[]> attributes, Integer firstResult, Integer maxResults);
 }

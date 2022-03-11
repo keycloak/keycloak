@@ -60,7 +60,7 @@ public class UserSynchronizer implements Synchronizer<UserRemovedEvent> {
         attributes.put(Policy.FilterOption.TYPE, new String[] {"user"});
         attributes.put(Policy.FilterOption.CONFIG, new String[] {"users", userModel.getId()});
 
-        List<Policy> search = policyStore.findByResourceServer(null, attributes, -1, -1);
+        List<Policy> search = policyStore.findByResourceServer(null, attributes, null, null);
 
         for (Policy policy : search) {
             PolicyProviderFactory policyFactory = authorizationProvider.getProviderFactory(policy.getType());
@@ -105,7 +105,7 @@ public class UserSynchronizer implements Synchronizer<UserRemovedEvent> {
 
         attributes.put(PermissionTicket.FilterOption.OWNER, userModel.getId());
 
-        for (PermissionTicket ticket : ticketStore.find(null, attributes, -1, -1)) {
+        for (PermissionTicket ticket : ticketStore.find(null, attributes, null, null)) {
             ticketStore.delete(ticket.getId());
         }
 
@@ -113,7 +113,7 @@ public class UserSynchronizer implements Synchronizer<UserRemovedEvent> {
         
         attributes.put(PermissionTicket.FilterOption.REQUESTER, userModel.getId());
 
-        for (PermissionTicket ticket : ticketStore.find(null, attributes, -1, -1)) {
+        for (PermissionTicket ticket : ticketStore.find(null, attributes, null, null)) {
             ticketStore.delete(ticket.getId());
         }
     }

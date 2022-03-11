@@ -121,7 +121,7 @@ public class PermissionTicketService {
         attributes.put(PermissionTicket.FilterOption.SCOPE_ID, scope.getId());
         attributes.put(PermissionTicket.FilterOption.REQUESTER, user.getId());
         
-        if (!ticketStore.find(resourceServer, attributes, -1, -1).isEmpty())
+        if (!ticketStore.find(resourceServer, attributes, null, null).isEmpty())
             throw new ErrorResponseException("invalid_permission", "Permission already exists", Response.Status.BAD_REQUEST);
         
         PermissionTicket ticket = ticketStore.create(resourceServer, resource, scope, user.getId());

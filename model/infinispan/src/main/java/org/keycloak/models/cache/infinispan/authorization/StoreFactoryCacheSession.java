@@ -582,8 +582,8 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         }
 
         @Override
-        public List<Scope> findByResourceServer(ResourceServer resourceServer, Map<Scope.FilterOption, String[]> attributes, int firstResult, int maxResult) {
-            return getScopeStoreDelegate().findByResourceServer(resourceServer, attributes, firstResult, maxResult);
+        public List<Scope> findByResourceServer(ResourceServer resourceServer, Map<Scope.FilterOption, String[]> attributes, Integer firstResult, Integer maxResults) {
+            return getScopeStoreDelegate().findByResourceServer(resourceServer, attributes, firstResult, maxResults);
         }
     }
 
@@ -692,8 +692,8 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         }
 
         @Override
-        public List<Resource> findByOwner(ResourceServer resourceServer, String ownerId, int first, int max) {
-            return getResourceStoreDelegate().findByOwner(resourceServer, ownerId, first, max);
+        public List<Resource> findByOwner(ResourceServer resourceServer, String ownerId, Integer firstResult, Integer maxResults) {
+            return getResourceStoreDelegate().findByOwner(resourceServer, ownerId, firstResult, maxResults);
         }
 
         @Override
@@ -711,8 +711,8 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         }
 
         @Override
-        public List<Resource> findByResourceServer(ResourceServer resourceServer, Map<Resource.FilterOption, String[]> attributes, int firstResult, int maxResult) {
-            return getResourceStoreDelegate().findByResourceServer(resourceServer, attributes, firstResult, maxResult);
+        public List<Resource> findByResourceServer(ResourceServer resourceServer, Map<Resource.FilterOption, String[]> attributes, Integer firstResult, Integer maxResults) {
+            return getResourceStoreDelegate().findByResourceServer(resourceServer, attributes, firstResult, maxResults);
         }
 
         @Override
@@ -976,8 +976,8 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         }
 
         @Override
-        public List<Policy> findByResourceServer(ResourceServer resourceServer, Map<Policy.FilterOption, String[]> attributes, int firstResult, int maxResult) {
-            return getPolicyStoreDelegate().findByResourceServer(resourceServer, attributes, firstResult, maxResult);
+        public List<Policy> findByResourceServer(ResourceServer resourceServer, Map<Policy.FilterOption, String[]> attributes, Integer firstResult, Integer maxResults) {
+            return getPolicyStoreDelegate().findByResourceServer(resourceServer, attributes, firstResult, maxResults);
         }
 
         @Override
@@ -1217,7 +1217,7 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         }
 
         @Override
-        public List<PermissionTicket> find(ResourceServer resourceServer, Map<PermissionTicket.FilterOption, String> attributes, int firstResult, int maxResult) {
+        public List<PermissionTicket> find(ResourceServer resourceServer, Map<PermissionTicket.FilterOption, String> attributes, Integer firstResult, Integer maxResult) {
             return getPermissionTicketStoreDelegate().find(resourceServer, attributes, firstResult, maxResult);
         }
 
@@ -1238,13 +1238,13 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         }
 
         @Override
-        public List<Resource> findGrantedResources(String requester, String name, int first, int max) {
+        public List<Resource> findGrantedResources(String requester, String name, Integer first, Integer max) {
             return getPermissionTicketStoreDelegate().findGrantedResources(requester, name, first, max);
         }
 
         @Override
-        public List<Resource> findGrantedOwnerResources(String owner, int first, int max) {
-            return getPermissionTicketStoreDelegate().findGrantedOwnerResources(owner, first, max);
+        public List<Resource> findGrantedOwnerResources(String owner, Integer firstResult, Integer maxResults) {
+            return getPermissionTicketStoreDelegate().findGrantedOwnerResources(owner, firstResult, maxResults);
         }
 
         @Override

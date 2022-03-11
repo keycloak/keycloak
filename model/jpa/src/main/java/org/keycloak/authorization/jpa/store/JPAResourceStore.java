@@ -105,10 +105,10 @@ public class JPAResourceStore implements ResourceStore {
     }
 
     @Override
-    public List<Resource> findByOwner(ResourceServer resourceServer, String ownerId, int first, int max) {
+    public List<Resource> findByOwner(ResourceServer resourceServer, String ownerId, Integer firstResult, Integer maxResults) {
         List<Resource> list = new LinkedList<>();
 
-        findByOwnerFilter(ownerId, resourceServer, list::add, first, max);
+        findByOwnerFilter(ownerId, resourceServer, list::add, firstResult, maxResults);
 
         return list;
     }
@@ -184,7 +184,7 @@ public class JPAResourceStore implements ResourceStore {
     }
 
     @Override
-    public List<Resource> findByResourceServer(ResourceServer resourceServer, Map<Resource.FilterOption, String[]> attributes, int firstResult, int maxResult) {
+    public List<Resource> findByResourceServer(ResourceServer resourceServer, Map<Resource.FilterOption, String[]> attributes, Integer firstResult, Integer maxResults) {
         CriteriaBuilder builder = entityManager.getCriteriaBuilder();
         CriteriaQuery<ResourceEntity> querybuilder = builder.createQuery(ResourceEntity.class);
         Root<ResourceEntity> root = querybuilder.from(ResourceEntity.class);
@@ -232,7 +232,7 @@ public class JPAResourceStore implements ResourceStore {
 
         TypedQuery query = entityManager.createQuery(querybuilder);
 
-        List<String> result = paginateQuery(query, firstResult, maxResult).getResultList();
+        List<String> result = paginateQuery(query, firstResult, maxResults).getResultList();
         List<Resource> list = new LinkedList<>();
         ResourceStore resourceStore = provider.getStoreFactory().getResourceStore();
 

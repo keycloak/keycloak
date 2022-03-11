@@ -136,8 +136,8 @@ public class MapPolicyStore implements PolicyStore {
     }
 
     @Override
-    public List<Policy> findByResourceServer(ResourceServer resourceServer, Map<Policy.FilterOption, String[]> attributes, int firstResult, int maxResult) {
-        LOG.tracef("findByResourceServer(%s, %s, %d, %d)%s", attributes, resourceServer, firstResult, maxResult, getShortStackTrace());
+    public List<Policy> findByResourceServer(ResourceServer resourceServer, Map<Policy.FilterOption, String[]> attributes, Integer firstResult, Integer maxResults) {
+        LOG.tracef("findByResourceServer(%s, %s, %d, %d)%s", attributes, resourceServer, firstResult, maxResults, getShortStackTrace());
 
         DefaultModelCriteria<Policy> mcb = forResourceServer(resourceServer).and(
                 attributes.entrySet().stream()
@@ -150,7 +150,7 @@ public class MapPolicyStore implements PolicyStore {
             mcb = mcb.compare(SearchableFields.OWNER, Operator.NOT_EXISTS);
         }
 
-        return tx.read(withCriteria(mcb).pagination(firstResult, maxResult, SearchableFields.NAME))
+        return tx.read(withCriteria(mcb).pagination(firstResult, maxResults, SearchableFields.NAME))
             .map(MapPolicyEntity::getId)
             // We need to go through cache
             .map(id -> authorizationProvider.getStoreFactory().getPolicyStore().findById(resourceServer, id))

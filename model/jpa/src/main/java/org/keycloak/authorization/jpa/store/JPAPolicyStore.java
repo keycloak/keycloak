@@ -139,7 +139,7 @@ public class JPAPolicyStore implements PolicyStore {
     }
 
     @Override
-    public List<Policy> findByResourceServer(ResourceServer resourceServer, Map<Policy.FilterOption, String[]> attributes, int firstResult, int maxResult) {
+    public List<Policy> findByResourceServer(ResourceServer resourceServer, Map<Policy.FilterOption, String[]> attributes, Integer firstResult, Integer maxResults) {
         CriteriaBuilder builder = entityManager.getCriteriaBuilder();
         CriteriaQuery<PolicyEntity> querybuilder = builder.createQuery(PolicyEntity.class);
         Root<PolicyEntity> root = querybuilder.from(PolicyEntity.class);
@@ -196,7 +196,7 @@ public class JPAPolicyStore implements PolicyStore {
 
         TypedQuery query = entityManager.createQuery(querybuilder);
 
-        List<String> result = paginateQuery(query, firstResult, maxResult).getResultList();
+        List<String> result = paginateQuery(query, firstResult, maxResults).getResultList();
         List<Policy> list = new LinkedList<>();
         for (String id : result) {
             Policy policy = provider.getStoreFactory().getPolicyStore().findById(resourceServer, id);

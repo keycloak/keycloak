@@ -832,7 +832,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
                 filters.put(PermissionTicket.FilterOption.GRANTED, Boolean.FALSE.toString());
             }
 
-            List<PermissionTicket> tickets = ticketStore.find(resource.getResourceServer(), filters, -1, -1);
+            List<PermissionTicket> tickets = ticketStore.find(resource.getResourceServer(), filters, null, null);
             Iterator<PermissionTicket> iterator = tickets.iterator();
 
             while (iterator.hasNext()) {
@@ -922,7 +922,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
             filters.put(PermissionTicket.FilterOption.OWNER, auth.getUser().getId());
             filters.put(PermissionTicket.FilterOption.REQUESTER, user.getId());
 
-            List<PermissionTicket> tickets = ticketStore.find(resourceServer, filters, -1, -1);
+            List<PermissionTicket> tickets = ticketStore.find(resourceServer, filters, null, null);
             final String userId = user.getId();
 
             if (tickets.isEmpty()) {
@@ -1000,7 +1000,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
                 filters.put(PermissionTicket.FilterOption.GRANTED, Boolean.FALSE.toString());
             }
 
-            for (PermissionTicket ticket : ticketStore.find(resource.getResourceServer(), filters, -1, -1)) {
+            for (PermissionTicket ticket : ticketStore.find(resource.getResourceServer(), filters, null, null)) {
                 ticketStore.delete(ticket.getId());
             }
         }

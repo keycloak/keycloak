@@ -116,7 +116,7 @@ public class PermissionTicketAwareDecisionResultCollector extends DecisionPermis
                         filters.put(PermissionTicket.FilterOption.REQUESTER, identity.getId());
                         filters.put(PermissionTicket.FilterOption.SCOPE_IS_NULL, Boolean.TRUE.toString());
 
-                        List<PermissionTicket> tickets = authorization.getStoreFactory().getPermissionTicketStore().find(resource.getResourceServer(), filters, -1, -1);
+                        List<PermissionTicket> tickets = authorization.getStoreFactory().getPermissionTicketStore().find(resource.getResourceServer(), filters, null, null);
 
                         if (tickets.isEmpty()) {
                             authorization.getStoreFactory().getPermissionTicketStore().create(resourceServer, resource, null, identity.getId());
@@ -137,7 +137,7 @@ public class PermissionTicketAwareDecisionResultCollector extends DecisionPermis
                             filters.put(PermissionTicket.FilterOption.REQUESTER, identity.getId());
                             filters.put(PermissionTicket.FilterOption.SCOPE_ID, scope.getId());
 
-                            List<PermissionTicket> tickets = authorization.getStoreFactory().getPermissionTicketStore().find(resource.getResourceServer(), filters, -1, -1);
+                            List<PermissionTicket> tickets = authorization.getStoreFactory().getPermissionTicketStore().find(resource.getResourceServer(), filters, null, null);
 
                             if (tickets.isEmpty()) {
                                 authorization.getStoreFactory().getPermissionTicketStore().create(resourceServer, resource, scope, identity.getId());

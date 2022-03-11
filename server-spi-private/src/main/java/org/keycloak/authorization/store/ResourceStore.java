@@ -92,7 +92,7 @@ public interface ResourceStore {
 
     void findByOwner(ResourceServer resourceServer, String ownerId, Consumer<Resource> consumer);
 
-    List<Resource> findByOwner(ResourceServer resourceServer, String ownerId, int first, int max);
+    List<Resource> findByOwner(ResourceServer resourceServer, String ownerId, Integer firstResult, Integer maxResults);
 
     /**
      * Finds all {@link Resource} instances with the given uri.
@@ -117,11 +117,13 @@ public interface ResourceStore {
      *
      * @param resourceServer the identifier of the resource server
      * @param attributes a map holding the attributes that will be used as a filter; possible filter options are given by {@link Resource.FilterOption}
+     * @param firstResult first result to return. Ignored if negative or {@code null}.
+     * @param maxResults maximum number of results to return. Ignored if negative or {@code null}.
      * @return a list with all resources associated with the given resource server
      *
      * @throws IllegalArgumentException when there is an unknown attribute in the {@code attributes} map
      */
-    List<Resource> findByResourceServer(ResourceServer resourceServer, Map<Resource.FilterOption, String[]> attributes, int firstResult, int maxResult);
+    List<Resource> findByResourceServer(ResourceServer resourceServer, Map<Resource.FilterOption, String[]> attributes, Integer firstResult, Integer maxResults);
 
     /**
      * Finds all {@link Resource} associated with a given scope.

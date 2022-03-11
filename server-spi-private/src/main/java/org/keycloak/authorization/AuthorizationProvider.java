@@ -280,8 +280,8 @@ public final class AuthorizationProvider implements Provider {
             }
 
             @Override
-            public List<Scope> findByResourceServer(ResourceServer resourceServer, Map<Scope.FilterOption, String[]> attributes, int firstResult, int maxResult) {
-                return delegate.findByResourceServer(resourceServer, attributes, firstResult, maxResult);
+            public List<Scope> findByResourceServer(ResourceServer resourceServer, Map<Scope.FilterOption, String[]> attributes, Integer firstResult, Integer maxResults) {
+                return delegate.findByResourceServer(resourceServer, attributes, firstResult, maxResults);
             }
         };
     }
@@ -396,8 +396,8 @@ public final class AuthorizationProvider implements Provider {
             }
 
             @Override
-            public List<Policy> findByResourceServer(ResourceServer resourceServer, Map<Policy.FilterOption, String[]> attributes, int firstResult, int maxResult) {
-                return policyStore.findByResourceServer(resourceServer, attributes, firstResult, maxResult);
+            public List<Policy> findByResourceServer(ResourceServer resourceServer, Map<Policy.FilterOption, String[]> attributes, Integer firstResult, Integer maxResults) {
+                return policyStore.findByResourceServer(resourceServer, attributes, firstResult, maxResults);
             }
 
             @Override
@@ -502,8 +502,8 @@ public final class AuthorizationProvider implements Provider {
             }
 
             @Override
-            public List<Resource> findByOwner(ResourceServer resourceServer, String ownerId, int first, int max) {
-                return delegate.findByOwner(resourceServer, ownerId, first, max);
+            public List<Resource> findByOwner(ResourceServer resourceServer, String ownerId, Integer firstResult, Integer maxResults) {
+                return delegate.findByOwner(resourceServer, ownerId, firstResult, maxResults);
             }
 
             @Override
@@ -517,8 +517,8 @@ public final class AuthorizationProvider implements Provider {
             }
 
             @Override
-            public List<Resource> findByResourceServer(ResourceServer resourceServer, Map<Resource.FilterOption, String[]> attributes, int firstResult, int maxResult) {
-                return delegate.findByResourceServer(resourceServer, attributes, firstResult, maxResult);
+            public List<Resource> findByResourceServer(ResourceServer resourceServer, Map<Resource.FilterOption, String[]> attributes, Integer firstResult, Integer maxResults) {
+                return delegate.findByResourceServer(resourceServer, attributes, firstResult, maxResults);
             }
 
             @Override

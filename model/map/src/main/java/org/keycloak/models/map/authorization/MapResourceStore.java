@@ -129,10 +129,10 @@ public class MapResourceStore implements ResourceStore {
     }
 
     @Override
-    public List<Resource> findByOwner(ResourceServer resourceServer, String ownerId, int first, int max) {
+    public List<Resource> findByOwner(ResourceServer resourceServer, String ownerId, Integer firstResult, Integer maxResults) {
         List<Resource> resourceList = new LinkedList<>();
 
-        findByOwnerFilter(ownerId, resourceServer, resourceList::add, first, max);
+        findByOwnerFilter(ownerId, resourceServer, resourceList::add, firstResult, maxResults);
 
         return resourceList;
     }
@@ -157,15 +157,15 @@ public class MapResourceStore implements ResourceStore {
     }
 
     @Override
-    public List<Resource> findByResourceServer(ResourceServer resourceServer, Map<Resource.FilterOption, String[]> attributes, int firstResult, int maxResult) {
-        LOG.tracef("findByResourceServer(%s, %s, %d, %d)%s", attributes, resourceServer, firstResult, maxResult, getShortStackTrace());
+    public List<Resource> findByResourceServer(ResourceServer resourceServer, Map<Resource.FilterOption, String[]> attributes, Integer firstResult, Integer maxResults) {
+        LOG.tracef("findByResourceServer(%s, %s, %d, %d)%s", attributes, resourceServer, firstResult, maxResults, getShortStackTrace());
         DefaultModelCriteria<Resource> mcb = forResourceServer(resourceServer).and(
                 attributes.entrySet().stream()
                         .map(this::filterEntryToDefaultModelCriteria)
                         .toArray(DefaultModelCriteria[]::new)
         );
 
-        return tx.read(withCriteria(mcb).pagination(firstResult, maxResult, SearchableFields.NAME))
+        return tx.read(withCriteria(mcb).pagination(firstResult, maxResults, SearchableFields.NAME))
                 .map(this::entityToAdapter)
                 .collect(Collectors.toList());
     }

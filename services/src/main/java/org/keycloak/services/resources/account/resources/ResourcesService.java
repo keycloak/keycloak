@@ -123,7 +123,7 @@ public class ResourcesService extends AbstractResourceService {
         filters.put(PermissionTicket.FilterOption.REQUESTER, user.getId());
         filters.put(PermissionTicket.FilterOption.GRANTED, Boolean.FALSE.toString());
 
-        final List<PermissionTicket> permissionTickets = ticketStore.find(null, filters, -1, -1);
+        final List<PermissionTicket> permissionTickets = ticketStore.find(null, filters, null, null);
 
         final List<ResourcePermission> resourceList = new ArrayList<>(permissionTickets.size());
         for (PermissionTicket ticket : permissionTickets) {
@@ -167,7 +167,7 @@ public class ResourcesService extends AbstractResourceService {
                 filters.put(PermissionTicket.FilterOption.GRANTED, Boolean.TRUE.toString());
                 filters.put(PermissionTicket.FilterOption.RESOURCE_ID, resource.getId());
 
-                tickets = ticketStore.find(resource.getResourceServer(), filters, -1, -1);
+                tickets = ticketStore.find(resource.getResourceServer(), filters, null, null);
             } else {
                 tickets = ticketStore.findGranted(resource.getResourceServer(), resource.getName(), user.getId());
             }

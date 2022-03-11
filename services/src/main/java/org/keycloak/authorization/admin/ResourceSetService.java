@@ -262,7 +262,7 @@ public class ResourceSetService {
             resourceFilter.put(Resource.FilterOption.OWNER, new String[]{resourceServer.getClientId()});
             resourceFilter.put(Resource.FilterOption.TYPE, new String[]{model.getType()});
 
-            for (Resource resourceType : resourceStore.findByResourceServer(resourceServer, resourceFilter, -1, -1)) {
+            for (Resource resourceType : resourceStore.findByResourceServer(resourceServer, resourceFilter, null, null)) {
                 policies.addAll(policyStore.findByResource(resourceServer, resourceType));
             }
         }
@@ -403,7 +403,7 @@ public class ResourceSetService {
 
             scopeFilter.put(Scope.FilterOption.NAME, new String[] {scope});
 
-            List<Scope> scopes = authorization.getStoreFactory().getScopeStore().findByResourceServer(resourceServer, scopeFilter, -1, -1);
+            List<Scope> scopes = authorization.getStoreFactory().getScopeStore().findByResourceServer(resourceServer, scopeFilter, null, null);
 
             if (scopes.isEmpty()) {
                 return Response.ok(Collections.emptyList()).build();

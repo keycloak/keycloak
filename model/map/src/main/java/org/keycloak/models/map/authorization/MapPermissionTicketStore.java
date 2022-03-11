@@ -192,7 +192,7 @@ public class MapPermissionTicketStore implements PermissionTicketStore {
     }
 
     @Override
-    public List<PermissionTicket> find(ResourceServer resourceServer, Map<PermissionTicket.FilterOption, String> attributes, int firstResult, int maxResult) {
+    public List<PermissionTicket> find(ResourceServer resourceServer, Map<PermissionTicket.FilterOption, String> attributes, Integer firstResult, Integer maxResult) {
         DefaultModelCriteria<PermissionTicket> mcb = forResourceServer(resourceServer);
 
         if (attributes.containsKey(PermissionTicket.FilterOption.RESOURCE_NAME)) {
@@ -202,7 +202,7 @@ public class MapPermissionTicketStore implements PermissionTicketStore {
 
             filterOptionStringMap.put(Resource.FilterOption.EXACT_NAME, new String[]{expectedResourceName});
             
-            List<Resource> r = authorizationProvider.getStoreFactory().getResourceStore().findByResourceServer(resourceServer, filterOptionStringMap, -1, -1);
+            List<Resource> r = authorizationProvider.getStoreFactory().getResourceStore().findByResourceServer(resourceServer, filterOptionStringMap, null, null);
             if (r == null || r.isEmpty()) {
                 return Collections.emptyList();
             }
@@ -257,7 +257,7 @@ public class MapPermissionTicketStore implements PermissionTicketStore {
         filters.put(PermissionTicket.FilterOption.GRANTED, Boolean.TRUE.toString());
         filters.put(PermissionTicket.FilterOption.REQUESTER, userId);
 
-        return find(resourceServer, filters, -1, -1);
+        return find(resourceServer, filters, null, null);
     }
 
     @Override
@@ -268,11 +268,11 @@ public class MapPermissionTicketStore implements PermissionTicketStore {
         filters.put(PermissionTicket.FilterOption.GRANTED, Boolean.TRUE.toString());
         filters.put(PermissionTicket.FilterOption.REQUESTER, userId);
 
-        return find(resourceServer, filters, -1, -1);
+        return find(resourceServer, filters, null, null);
     }
 
     @Override
-    public List<Resource> findGrantedResources(String requester, String name, int first, int max) {
+    public List<Resource> findGrantedResources(String requester, String name, Integer first, Integer max) {
         DefaultModelCriteria<PermissionTicket> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REQUESTER, Operator.EQ, requester)
                 .compare(SearchableFields.GRANTED_TIMESTAMP, Operator.EXISTS);
@@ -305,7 +305,7 @@ public class MapPermissionTicketStore implements PermissionTicketStore {
     }
 
     @Override
-    public List<Resource> findGrantedOwnerResources(String owner, int first, int max) {
+    public List<Resource> findGrantedOwnerResources(String owner, Integer firstResult, Integer maxResults) {
         DefaultModelCriteria<PermissionTicket> mcb = criteria();
         mcb = mcb.compare(SearchableFields.OWNER, Operator.EQ, owner);
 
@@ -313,7 +313,7 @@ public class MapPermissionTicketStore implements PermissionTicketStore {
         ResourceServerStore resourceServerStore = authorizationProvider.getStoreFactory().getResourceServerStore();
 
         return paginatedStream(tx.read(withCriteria(mcb).orderBy(SearchableFields.RESOURCE_ID, ASCENDING))
-            .filter(distinctByKey(MapPermissionTicketEntity::getResourceId)), first, max)
+            .filter(distinctByKey(MapPermissionTicketEntity::getResourceId)), firstResult, maxResults)
             .map(ticket -> resourceStore.findById(resourceServerStore.findById(ticket.getResourceServerId()), ticket.getResourceId()))
             .collect(Collectors.toList());
     }

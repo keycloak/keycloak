@@ -17,7 +17,6 @@
 package org.keycloak.authorization.store;
 
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -113,14 +112,14 @@ public interface PermissionTicketStore {
      *
      * @param resourceServer a resource server that resulting tickets should belong to. Ignored if {@code null}
      * @param attributes a map of keys and values to filter on; possible filter options are given by {@link PermissionTicket.FilterOption}
-     * @param firstResult first result to return; Ignored if negative or zero
-     * @param maxResult maximum number of results to return; Ignored if negative
+     * @param firstResult first result to return. Ignored if negative or {@code null}.
+     * @param maxResults maximum number of results to return. Ignored if negative or {@code null}.
      * @return a list of filtered and paginated permissions
      *
      * @throws IllegalArgumentException when there is an unknown attribute in the {@code attributes} map
      *
      */
-    List<PermissionTicket> find(ResourceServer resourceServer, Map<PermissionTicket.FilterOption, String> attributes, int firstResult, int maxResult);
+    List<PermissionTicket> find(ResourceServer resourceServer, Map<PermissionTicket.FilterOption, String> attributes, Integer firstResult, Integer maxResults);
 
     /**
      * Returns a list of {@link PermissionTicket} granted to the given {@code userId}.
@@ -148,19 +147,19 @@ public interface PermissionTicketStore {
      *
      * @param requester the requester
      * @param name the keyword to query resources by name or null if any resource
-     * @param first first  result
-     * @param max max result
+     * @param firstResult first result to return. Ignored if negative or {@code null}.
+     * @param maxResults maximum number of results to return. Ignored if negative or {@code null}.
      * @return a list of {@link Resource} granted to the given {@code requester}
      */
-    List<Resource> findGrantedResources(String requester, String name, int first, int max);
+    List<Resource> findGrantedResources(String requester, String name, Integer firstResult, Integer maxResults);
 
     /**
      * Returns a list of {@link Resource} granted by the owner to other users
      *
      * @param owner the owner
-     * @param first first  result
-     * @param max max result
+     * @param firstResult first result to return. Ignored if negative or {@code null}.
+     * @param maxResults maximum number of results to return. Ignored if negative or {@code null}.
      * @return a list of {@link Resource} granted by the owner
      */
-    List<Resource> findGrantedOwnerResources(String owner, int first, int max);
+    List<Resource> findGrantedOwnerResources(String owner, Integer firstResult, Integer maxResults);
 }

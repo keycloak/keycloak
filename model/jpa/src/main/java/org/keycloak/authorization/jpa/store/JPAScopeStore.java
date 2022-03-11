@@ -131,7 +131,7 @@ public class JPAScopeStore implements ScopeStore {
     }
 
     @Override
-    public List<Scope> findByResourceServer(ResourceServer resourceServer, Map<Scope.FilterOption, String[]> attributes, int firstResult, int maxResult) {
+    public List<Scope> findByResourceServer(ResourceServer resourceServer, Map<Scope.FilterOption, String[]> attributes, Integer firstResult, Integer maxResults) {
         CriteriaBuilder builder = entityManager.getCriteriaBuilder();
         CriteriaQuery<ScopeEntity> querybuilder = builder.createQuery(ScopeEntity.class);
         Root<ScopeEntity> root = querybuilder.from(ScopeEntity.class);
@@ -157,7 +157,7 @@ public class JPAScopeStore implements ScopeStore {
 
         TypedQuery query = entityManager.createQuery(querybuilder);
 
-        List result = paginateQuery(query, firstResult, maxResult).getResultList();
+        List result = paginateQuery(query, firstResult, maxResults).getResultList();
         List<Scope> list = new LinkedList<>();
         for (Object id : result) {
             list.add(provider.getStoreFactory().getScopeStore().findById(resourceServer, (String)id));

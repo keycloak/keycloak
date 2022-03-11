@@ -241,7 +241,7 @@ public class JPAPermissionTicketStore implements PermissionTicketStore {
     }
 
     @Override
-    public List<PermissionTicket> find(ResourceServer resourceServer, Map<PermissionTicket.FilterOption, String> attributes, int firstResult, int maxResult) {
+    public List<PermissionTicket> find(ResourceServer resourceServer, Map<PermissionTicket.FilterOption, String> attributes, Integer firstResult, Integer maxResult) {
         CriteriaBuilder builder = entityManager.getCriteriaBuilder();
         CriteriaQuery<PermissionTicketEntity> querybuilder = builder.createQuery(PermissionTicketEntity.class);
         Root<PermissionTicketEntity> root = querybuilder.from(PermissionTicketEntity.class);
@@ -275,7 +275,7 @@ public class JPAPermissionTicketStore implements PermissionTicketStore {
         filters.put(PermissionTicket.FilterOption.GRANTED, Boolean.TRUE.toString());
         filters.put(PermissionTicket.FilterOption.REQUESTER, userId);
 
-        return find(resourceServer, filters, -1, -1);
+        return find(resourceServer, filters, null, null);
     }
 
     @Override
@@ -286,11 +286,11 @@ public class JPAPermissionTicketStore implements PermissionTicketStore {
         filters.put(PermissionTicket.FilterOption.GRANTED, Boolean.TRUE.toString());
         filters.put(PermissionTicket.FilterOption.REQUESTER, userId);
 
-        return find(resourceServer, filters, -1, -1);
+        return find(resourceServer, filters, null, null);
     }
 
     @Override
-    public List<Resource> findGrantedResources(String requester, String name, int first, int max) {
+    public List<Resource> findGrantedResources(String requester, String name, Integer first, Integer max) {
         TypedQuery<String> query = name == null ? 
                 entityManager.createNamedQuery("findGrantedResources", String.class) :
                 entityManager.createNamedQuery("findGrantedResourcesByName", String.class);
@@ -318,13 +318,13 @@ public class JPAPermissionTicketStore implements PermissionTicketStore {
     }
 
     @Override
-    public List<Resource> findGrantedOwnerResources(String owner, int first, int max) {
+    public List<Resource> findGrantedOwnerResources(String owner, Integer firstResult, Integer maxResults) {
         TypedQuery<String> query = entityManager.createNamedQuery("findGrantedOwnerResources", String.class);
 
         query.setFlushMode(FlushModeType.COMMIT);
         query.setParameter("owner", owner);
 
-        List<String> result = paginateQuery(query, first, max).getResultList();
+        List<String> result = paginateQuery(query, firstResult, maxResults).getResultList();
         List<Resource> list = new LinkedList<>();
         ResourceStore resourceStore = provider.getStoreFactory().getResourceStore();
 
