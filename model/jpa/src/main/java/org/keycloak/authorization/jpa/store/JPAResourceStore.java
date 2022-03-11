@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
 import static org.keycloak.utils.StreamsUtil.closing;
@@ -251,7 +252,7 @@ public class JPAResourceStore implements ResourceStore {
         TypedQuery<ResourceEntity> query = entityManager.createNamedQuery("findResourceIdByScope", ResourceEntity.class);
 
         query.setFlushMode(FlushModeType.COMMIT);
-        query.setParameter("scopeIds", scopes);
+        query.setParameter("scopeIds", scopes.stream().map(Scope::getId).collect(Collectors.toSet()));
         query.setParameter("serverId", resourceServer == null ? null : resourceServer.getId());
 
         StoreFactory storeFactory = provider.getStoreFactory();
@@ -308,12 +309,12 @@ public class JPAResourceStore implements ResourceStore {
     }
 
     @Override
-    public void findByTypeInstance(ResourceServer resourceServerId, String type, Consumer<Resource> consumer) {
+    public void findByTypeInstance(ResourceServer resourceServer, String type, Consumer<Resource> consumer) {
         TypedQuery<ResourceEntity> query = entityManager.createNamedQuery("findResourceIdByTypeInstance", ResourceEntity.class);
 
         query.setFlushMode(FlushModeType.COMMIT);
         query.setParameter("type", type);
-        query.setParameter("serverId", resourceServerId);
+        query.setParameter("serverId", resourceServer == null ? null : resourceServer.getId());
 
         StoreFactory storeFactory = provider.getStoreFactory();
 
