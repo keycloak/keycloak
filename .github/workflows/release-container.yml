@@ -4,6 +4,8 @@
     push:
       tags:
         - '[0-9]+.[0-9]+.[0-9]+'
+  concurrency: keycloak-container-release
+
   jobs:
     publish:
       if: github.repository == 'stianst/keycloak'
@@ -27,9 +29,6 @@
             type=ref,event=branch
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
-          labels: |
-            org.opencontainers.image.title=Keycloak
-            org.opencontainers.image.description=Open Source Identity and Access Management
 
       - name: Login to Quay
         uses: docker/login-action@v1
