@@ -40,10 +40,7 @@ import {
 
 import { AIACommand } from "../../util/AIACommand";
 import TimeUtil from "../../util/TimeUtil";
-import {
-    HttpResponse,
-    AccountServiceClient,
-} from "../../account-service/account.service";
+import { HttpResponse } from "../../account-service/account.service";
 import { AccountServiceContext } from "../../account-service/AccountServiceContext";
 import { ContinueCancelModal } from "../../widgets/ContinueCancelModal";
 import { Features } from "../../widgets/features";
@@ -52,7 +49,6 @@ import { ContentPage } from "../ContentPage";
 import { ContentAlert } from "../ContentAlert";
 import { KeycloakContext } from "../../keycloak-service/KeycloakContext";
 import { KeycloakService } from "../../keycloak-service/keycloak.service";
-import { css } from "@patternfly/react-styles";
 
 declare const features: Features;
 
@@ -249,18 +245,36 @@ class SigningInPage extends React.Component<
             const localizedDisplayName = Msg.localize(displayName);
             return (
               <DataList aria-label="no-credentials-list-item">
-                <DataListItem key='no-credentials-list-item' aria-labelledby='no-credentials-list-item'>
-                    <DataListItemRow key='no-credentials-list-item-row' className="pf-u-align-items-center">
+                <DataListItem
+                  key="no-credentials-list-item"
+                  aria-labelledby="no-credentials-list-item"
+                >
+                    <DataListItemRow
+                      key="no-credentials-list-item-row"
+                      className="pf-u-align-items-center"
+                    >
                         <DataListItemCells
                             dataListCells={[
-                                <DataListCell key={'no-credentials-cell-0'}/>,
-                                <EmptyState id={`${type}-not-set-up`} key={'no-credentials-cell-1'} variant={EmptyStateVariant.xs}>
-                                    <EmptyStateBody>
-                                        <Msg msgKey='notSetUp' params={[localizedDisplayName]}/>
-                                    </EmptyStateBody>
+                                <DataListCell
+                                  key={'no-credentials-cell-0'}
+                                />,
+                                <EmptyState
+                                  id={`${type}-not-set-up`}
+                                  key={'no-credentials-cell-1'}
+                                  variant={EmptyStateVariant.xs}
+                                >
+                                  <EmptyStateBody>
+                                      <Msg
+                                        msgKey='notSetUp'
+                                        params={[localizedDisplayName]}
+                                      />
+                                  </EmptyStateBody>
                                 </EmptyState>,
-                                <DataListCell key={'no-credentials-cell-2'}/>
-                            ]}/>
+                                <DataListCell
+                                  key={'no-credentials-cell-2'}
+                                />,
+                            ]}
+                        />
                     </DataListItemRow>
                 </DataListItem>
               </DataList>
@@ -269,9 +283,16 @@ class SigningInPage extends React.Component<
 
         userCredentialMetadatas.forEach(credentialMetadata => {
             let credential = credentialMetadata.credential;
-            if (!credential.userLabel) credential.userLabel = Msg.localize(credential.type);
-            if (credential.hasOwnProperty('createdDate') && credential.createdDate && credential.createdDate! > 0) {
-                credential.strCreatedDate = TimeUtil.format(credential.createdDate as number);
+            if (!credential.userLabel)
+              credential.userLabel = Msg.localize(credential.type);
+            if (
+              credential.hasOwnProperty('createdDate') &&
+              credential.createdDate &&
+              credential.createdDate! > 0
+            ) {
+                credential.strCreatedDate = TimeUtil.format(
+                credential.createdDate as number
+              );
             }
         });
 
@@ -281,22 +302,23 @@ class SigningInPage extends React.Component<
         }
 
         return (
-            <React.Fragment key='userCredentialMetadatas'> {
-                userCredentialMetadatas.map(credentialMetadata => (
-                  <DataList aria-label="user credential">
-                    <DataListItem id={`${SigningInPage.credElementId(type, credentialMetadata.credential.id, 'row')}`} key={'credential-list-item-' + credentialMetadata.credential.id} aria-labelledby={'credential-list-item-' + credentialMetadata.credential.userLabel}>
-                        <DataListItemRow key={'userCredentialRow-' + credentialMetadata.credential.id} className="pf-u-align-items-center">
-                            <DataListItemCells dataListCells={this.credentialRowCells(credentialMetadata, type)}/>
-                            <CredentialAction
-                                credential={credentialMetadata.credential}
-                                removeable={removeable}
-                                updateAction={updateAIA}
-                                credRemover={this.handleRemove}
-                            />
-                        </DataListItemRow>
-                    </DataListItem>
-                  </DataList>
-                ))
+            <React.Fragment key='userCredentialMetadatas'>
+              {" "}
+              {userCredentialMetadatas.map(credentialMetadata => (
+                <DataList aria-label={'credential-list-item-' + credentialMetadata.credential.userLabel}>
+                  <DataListItem id={`${SigningInPage.credElementId(type, credentialMetadata.credential.id, 'row')}`} key={'credential-list-item-' + credentialMetadata.credential.id} aria-labelledby={'credential-list-item-' + credentialMetadata.credential.userLabel}>
+                      <DataListItemRow key={'userCredentialRow-' + credentialMetadata.credential.id} className="pf-u-align-items-center">
+                          <DataListItemCells dataListCells={this.credentialRowCells(credentialMetadata, type)}/>
+                          <CredentialAction
+                              credential={credentialMetadata.credential}
+                              removeable={removeable}
+                              updateAction={updateAIA}
+                              credRemover={this.handleRemove}
+                          />
+                      </DataListItemRow>
+                  </DataListItem>
+                </DataList>
+              ))
             }
             </React.Fragment>)
     }
