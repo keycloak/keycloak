@@ -17,9 +17,7 @@
 
 package org.keycloak.admin.client.resource;
 
-import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
-import org.keycloak.representations.idm.IdentityProviderMapperTypeRepresentation;
-import org.keycloak.representations.idm.IdentityProviderRepresentation;
+import org.keycloak.representations.idm.*;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -83,4 +81,15 @@ public interface IdentityProviderResource {
     @DELETE
     @Path("mappers/{id}")
     void delete(@PathParam("id") String id);
+
+    @GET
+    @Path("management/permissions")
+    @Produces(MediaType.APPLICATION_JSON)
+    ManagementPermissionReference getPermissions();
+
+    @PUT
+    @Path("management/permissions")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    ManagementPermissionReference setPermissions(ManagementPermissionRepresentation status);
 }

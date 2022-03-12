@@ -17,6 +17,8 @@
 
 package org.keycloak.admin.client.resource;
 
+import org.keycloak.representations.idm.ManagementPermissionReference;
+import org.keycloak.representations.idm.ManagementPermissionRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 
 import javax.ws.rs.Consumes;
@@ -87,4 +89,14 @@ public interface RoleByIdResource {
     @Consumes(MediaType.APPLICATION_JSON)
     void deleteComposites(final @PathParam("role-id") String id, List<RoleRepresentation> roles);
 
+    @GET
+    @Path("{role-id}/management/permissions")
+    @Produces(MediaType.APPLICATION_JSON)
+    ManagementPermissionReference getPermissions(final @PathParam("role-id") String id);
+
+    @PUT
+    @Path("{role-id}/management/permissions")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    ManagementPermissionReference setPermissions(final @PathParam("role-id") String id, ManagementPermissionRepresentation status);
 }

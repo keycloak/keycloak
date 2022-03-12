@@ -18,10 +18,7 @@ package org.keycloak.testsuite.admin;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.keycloak.admin.client.resource.ClientResource;
-import org.keycloak.admin.client.resource.GroupResource;
-import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.admin.client.resource.RoleResource;
+import org.keycloak.admin.client.resource.*;
 import org.keycloak.common.Profile;
 import org.keycloak.representations.idm.*;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
@@ -255,6 +252,117 @@ public class ManagementPermissionsTest extends AbstractTestRealmKeycloakTest {
         assertNotNull(result);
         assertFalse(result.isEnabled());
         result = roleResource.getPermissions();
+        assertNotNull(result);
+        assertFalse(result.isEnabled());
+    }
+
+    @Test
+    public void updateRealmRoleByIdPermissions() {
+        RealmResource realmResource = adminClient.realms().realm("test");
+        RoleRepresentation roleRepresentation = new RoleRepresentation();
+        roleRepresentation.setName("perm-role-test");
+        realmResource.roles().create(roleRepresentation);
+
+        String roleId = realmResource.roles().get("perm-role-test").toRepresentation().getId();
+
+        RoleByIdResource roleResource = realmResource.rolesById();
+
+        ManagementPermissionReference result = roleResource.setPermissions(roleId, new ManagementPermissionRepresentation(true));
+        assertNotNull(result);
+        assertTrue(result.isEnabled());
+        result = roleResource.getPermissions(roleId);
+        assertNotNull(result);
+        assertTrue(result.isEnabled());
+
+        result = roleResource.setPermissions(roleId, new ManagementPermissionRepresentation(false));
+        assertNotNull(result);
+        assertFalse(result.isEnabled());
+        result = roleResource.getPermissions(roleId);
+        assertNotNull(result);
+        assertFalse(result.isEnabled());
+
+        result = roleResource.setPermissions(roleId, new ManagementPermissionRepresentation(true));
+        assertNotNull(result);
+        assertTrue(result.isEnabled());
+        result = roleResource.getPermissions(roleId);
+        assertNotNull(result);
+        assertTrue(result.isEnabled());
+
+        result = roleResource.setPermissions(roleId, new ManagementPermissionRepresentation(true));
+        assertNotNull(result);
+        assertTrue(result.isEnabled());
+        result = roleResource.getPermissions(roleId);
+        assertNotNull(result);
+        assertTrue(result.isEnabled());
+
+        result = roleResource.setPermissions(roleId, new ManagementPermissionRepresentation(false));
+        assertNotNull(result);
+        assertFalse(result.isEnabled());
+        result = roleResource.getPermissions(roleId);
+        assertNotNull(result);
+        assertFalse(result.isEnabled());
+
+        result = roleResource.setPermissions(roleId, new ManagementPermissionRepresentation(false));
+        assertNotNull(result);
+        assertFalse(result.isEnabled());
+        result = roleResource.getPermissions(roleId);
+        assertNotNull(result);
+        assertFalse(result.isEnabled());
+    }
+
+    @Test
+    public void updateIdentityProviderPermissions() {
+        RealmResource realmResource = adminClient.realms().realm("test");
+
+        IdentityProviderRepresentation idp = new IdentityProviderRepresentation();
+        idp.setAlias("perm-idp-test");
+        idp.setDisplayName("perm-idp-test");
+        idp.setProviderId("oidc");
+        idp.setEnabled(true);
+
+        realmResource.identityProviders().create(idp);
+
+        IdentityProviderResource identityProviderResource = realmResource.identityProviders().get("perm-idp-test");
+
+        ManagementPermissionReference result = identityProviderResource.setPermissions(new ManagementPermissionRepresentation(true));
+        assertNotNull(result);
+        assertTrue(result.isEnabled());
+        result = identityProviderResource.getPermissions();
+        assertNotNull(result);
+        assertTrue(result.isEnabled());
+
+        result = identityProviderResource.setPermissions(new ManagementPermissionRepresentation(false));
+        assertNotNull(result);
+        assertFalse(result.isEnabled());
+        result = identityProviderResource.getPermissions();
+        assertNotNull(result);
+        assertFalse(result.isEnabled());
+
+        result = identityProviderResource.setPermissions(new ManagementPermissionRepresentation(true));
+        assertNotNull(result);
+        assertTrue(result.isEnabled());
+        result = identityProviderResource.getPermissions();
+        assertNotNull(result);
+        assertTrue(result.isEnabled());
+
+        result = identityProviderResource.setPermissions(new ManagementPermissionRepresentation(true));
+        assertNotNull(result);
+        assertTrue(result.isEnabled());
+        result = identityProviderResource.getPermissions();
+        assertNotNull(result);
+        assertTrue(result.isEnabled());
+
+        result = identityProviderResource.setPermissions(new ManagementPermissionRepresentation(false));
+        assertNotNull(result);
+        assertFalse(result.isEnabled());
+        result = identityProviderResource.getPermissions();
+        assertNotNull(result);
+        assertFalse(result.isEnabled());
+
+        result = identityProviderResource.setPermissions(new ManagementPermissionRepresentation(false));
+        assertNotNull(result);
+        assertFalse(result.isEnabled());
+        result = identityProviderResource.getPermissions();
         assertNotNull(result);
         assertFalse(result.isEnabled());
     }
