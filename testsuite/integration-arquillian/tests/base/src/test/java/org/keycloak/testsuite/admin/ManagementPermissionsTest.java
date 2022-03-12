@@ -260,10 +260,10 @@ public class ManagementPermissionsTest extends AbstractTestRealmKeycloakTest {
     public void updateRealmRoleByIdPermissions() {
         RealmResource realmResource = adminClient.realms().realm("test");
         RoleRepresentation roleRepresentation = new RoleRepresentation();
-        roleRepresentation.setName("perm-role-test");
+        roleRepresentation.setName("perm-role-id-test");
         realmResource.roles().create(roleRepresentation);
 
-        String roleId = realmResource.roles().get("perm-role-test").toRepresentation().getId();
+        String roleId = realmResource.roles().get("perm-role-id-test").toRepresentation().getId();
 
         RoleByIdResource roleResource = realmResource.rolesById();
 
