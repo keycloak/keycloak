@@ -49,8 +49,8 @@ Here is a simple example of a JavaScript-based policy that uses attribute-based 
 obtained from the execution context:
 
 ```javascript
-var context = $evaluation.getContext();
-var contextAttributes = context.getAttributes();
+const context = $evaluation.getContext();
+const contextAttributes = context.getAttributes();
 
 if (contextAttributes.containsValue('kc.client.network.ip_address', '127.0.0.1')) {
     $evaluation.grant();
@@ -62,10 +62,10 @@ Here is a simple example of a JavaScript-based policy that uses attribute-based 
 obtained associated with the current identity:
 
 ```javascript
-var context = $evaluation.getContext();
-var identity = context.getIdentity();
-var attributes = identity.getAttributes();
-var email = attributes.getValue('email').asString(0);
+const context = $evaluation.getContext();
+const identity = context.getIdentity();
+const attributes = identity.getAttributes();
+const email = attributes.getValue('email').asString(0);
 
 if (email.endsWith('@keycloak.org')) {
     $evaluation.grant();
@@ -78,8 +78,8 @@ Where these attributes are mapped from whatever claim is defined in the token th
 You can also use Role-Based Access Control (RBAC) in your policies. In the example below, we check if a user is granted with a `keycloak_user` *realm* role:
 
 ```javascript
-var context = $evaluation.getContext();
-var identity = context.getIdentity();
+const context = $evaluation.getContext();
+const identity = context.getIdentity();
 
 if (identity.hasRealmRole('keycloak_user')) {
     $evaluation.grant();
@@ -89,8 +89,8 @@ if (identity.hasRealmRole('keycloak_user')) {
 Or you can check if a user is granted with a `my-client-role` *client* role, where `my-client` is the client id of the client application:
 
 ```javascript
-var context = $evaluation.getContext();
-var identity = context.getIdentity();
+const context = $evaluation.getContext();
+const identity = context.getIdentity();
 
 if (identity.hasClientRole('my-client', 'my-client-role')) {
     $evaluation.grant();
@@ -101,7 +101,7 @@ if (identity.hasClientRole('my-client', 'my-client-role')) {
 To check for realm roles granted to an user:
 
 ```javascript
-var realm = $evaluation.getRealm();
+const realm = $evaluation.getRealm();
 
 if (realm.isUserInRealmRole('marta', 'role-a')) {
     $evaluation.grant();
@@ -111,7 +111,7 @@ if (realm.isUserInRealmRole('marta', 'role-a')) {
 Or for client roles granted to an user:
 
 ```javascript
-var realm = $evaluation.getRealm();
+const realm = $evaluation.getRealm();
 
 if (realm.isUserInClientRole('marta', 'my-client', 'some-client-role')) {
     $evaluation.grant();
@@ -122,7 +122,7 @@ if (realm.isUserInClientRole('marta', 'my-client', 'some-client-role')) {
 To check for realm roles granted to a group:
 
 ```javascript
-var realm = $evaluation.getRealm();
+const realm = $evaluation.getRealm();
 
 if (realm.isGroupInRole('/Group A/Group D', 'role-a')) {
     $evaluation.grant();
@@ -134,7 +134,7 @@ To push arbitrary claims to the resource server in order to provide additional i
 enforced:
 
 ```javascript
-var permission = $evaluation.getPermission();
+let permission = $evaluation.getPermission();
 
 // decide if permission should be granted
 
@@ -149,7 +149,7 @@ if (granted) {
 === Checking for group membership
 
 ```javascript
-var realm = $evaluation.getRealm();
+const realm = $evaluation.getRealm();
 
 if (realm.isUserInGroup('marta', '/Group A/Group B')) {
     $evaluation.grant();
@@ -162,10 +162,10 @@ claims/attributes(ABAC) checks can be used within the same policy. In this case 
 or has an e-mail from `keycloak.org` domain:
 
 ```javascript
-var context = $evaluation.getContext();
-var identity = context.getIdentity();
-var attributes = identity.getAttributes();
-var email = attributes.getValue('email').asString(0);
+const context = $evaluation.getContext();
+const identity = context.getIdentity();
+const attributes = identity.getAttributes();
+const email = attributes.getValue('email').asString(0);
 
 if (identity.hasRealmRole('admin') || email.endsWith('@keycloak.org')) {
     $evaluation.grant();

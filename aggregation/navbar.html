@@ -1,8 +1,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.4.2/tocbot.js"></script>
 
 <script>
-    var oldtoc = document.getElementById('toctitle').nextElementSibling;
-    var newtoc = document.createElement('div');
+    const oldtoc = document.getElementById('toctitle').nextElementSibling;
+    let newtoc = document.createElement('div');
     newtoc.setAttribute('id', 'tocbot');
     newtoc.setAttribute('class', 'js-toc');
     oldtoc.parentNode.replaceChild(newtoc, oldtoc);
@@ -10,8 +10,8 @@
         headingSelector: 'h2, h3, h4',
         smoothScroll: false
     });
-    var handleTocOnResize = function() {
-        var width = window.innerWidth
+    const handleTocOnResize = function() {
+        const width = window.innerWidth
                     || document.documentElement.clientWidth
                     || document.body.clientWidth;
         if (width < 768) {

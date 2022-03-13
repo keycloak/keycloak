@@ -31,7 +31,7 @@ The following example shows how to initialize the JavaScript adapter:
     <script src="keycloak.js"></script>
     <script>
         function initKeycloak() {
-            var keycloak = new Keycloak();
+            const keycloak = new Keycloak();
             keycloak.init().then(function(authenticated) {
                 alert(authenticated ? 'authenticated' : 'not authenticated');
             }).catch(function() {
@@ -50,14 +50,14 @@ If the `keycloak.json` file is in a different location you can specify it:
 
 [source,javascript]
 ----
-var keycloak = new Keycloak('http://localhost:8080/myapp/keycloak.json');
+const keycloak = new Keycloak('http://localhost:8080/myapp/keycloak.json');
 ----
 
 Alternatively, you can pass in a JavaScript object with the required configuration instead:
 
 [source,javascript,subs="attributes+"]
 ----
-var keycloak = new Keycloak({
+const keycloak = new Keycloak({
     url: 'http://keycloak-server${kc_base_path}',
     realm: 'myrealm',
     clientId: 'myapp'
@@ -116,12 +116,12 @@ After the user is authenticated the application can make requests to RESTful ser
 
 [source,javascript]
 ----
-var loadData = function () {
+const loadData = function () {
     document.getElementById('username').innerText = keycloak.subject;
 
-    var url = 'http://localhost:8080/restful-service';
+    const url = 'http://localhost:8080/restful-service';
 
-    var req = new XMLHttpRequest();
+    let req = new XMLHttpRequest();
     req.open('GET', url, true);
     req.setRequestHeader('Accept', 'application/json');
     req.setRequestHeader('Authorization', 'Bearer ' + keycloak.token);

@@ -20,7 +20,7 @@ If you are using the `keycloak.js` adapter, you can also achieve the same behavi
 
 [source,javascript]
 ----
-var keycloak = new Keycloak('keycloak.json');
+const keycloak = new Keycloak('keycloak.json');
 
 keycloak.createLoginUrl({
 	idpHint: 'facebook'

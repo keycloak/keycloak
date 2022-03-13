@@ -51,11 +51,11 @@ involves no arguments.
 
 [source,javascript]
 ----
-    var session = require('express-session');
-    var Keycloak = require('keycloak-connect');
+    const session = require('express-session');
+    const Keycloak = require('keycloak-connect');
 
-    var memoryStore = new session.MemoryStore();
-    var keycloak = new Keycloak({ store: memoryStore });
+    const memoryStore = new session.MemoryStore();
+    const keycloak = new Keycloak({ store: memoryStore });
 ----
 
 By default, this will locate a file named `keycloak.json` alongside
@@ -69,7 +69,7 @@ object, rather than the `keycloak.json` file:
 
 [source,javascript,subs="attributes+"]
 ----
-    let kcConfig = {
+    const kcConfig = {
         clientId: 'myclient',
         bearerOnly: true,
         serverUrl: 'http://localhost:8080{kc_base_path}',
@@ -77,13 +77,13 @@ object, rather than the `keycloak.json` file:
         realmPublicKey: 'MIIBIjANB...'
     };
 
-    let keycloak = new Keycloak({ store: memoryStore }, kcConfig);
+    const keycloak = new Keycloak({ store: memoryStore }, kcConfig);
 ----
 
 Applications can also redirect users to their preferred identity provider by using:
 [source,javascript]
 ----
-    let keycloak = new Keycloak({ store: memoryStore, idpHint: myIdP }, kcConfig);
+    const keycloak = new Keycloak({ store: memoryStore, idpHint: myIdP }, kcConfig);
 ----
 
 Configuring a web session store::
@@ -94,16 +94,16 @@ server-side state for authentication, you need to initialize the
 session store that `express-session` is using.
 [source,javascript]
 ----
-    var session = require('express-session');
-    var memoryStore = new session.MemoryStore();
+    const session = require('express-session');
+    const memoryStore = new session.MemoryStore();
 
-    var keycloak = new Keycloak({ store: memoryStore });
+    const keycloak = new Keycloak({ store: memoryStore });
 ----
 Passing a custom scope value::
 
 By default, the scope value `openid` is passed as a query parameter to {project_name}'s login URL, but you can add an additional custom value:
 [source,javascript]
-    var keycloak = new Keycloak({ scope: 'offline_access' });
+    const keycloak = new Keycloak({ scope: 'offline_access' });
 
 ==== Installing middleware
 
@@ -111,7 +111,7 @@ Once instantiated, install the middleware into your connect-capable app:
 
 [source,javascript]
 ----
-    var app = express();
+    const app = express();
 
     app.use( keycloak.middleware() );
 ----
@@ -127,7 +127,7 @@ Example configuration:
 
 [source,javascript]
 ----
-    var app = express();
+    const app = express();
 
     app.set( 'trust proxy', true );
 
@@ -196,8 +196,8 @@ If `response_mode` is set to `token`, permissions are obtained from the server o
 [source,javascript]
 ----
     app.get('/apis/me', keycloak.enforcer('user:profile', {response_mode: 'token'}), function (req, res) {
-        var token = req.kauth.grant.access_token.content;
-        var permissions = token.authorization ? token.authorization.permissions : undefined;
+        const token = req.kauth.grant.access_token.content;
+        const permissions = token.authorization ? token.authorization.permissions : undefined;
 
         // show user profile
     });
@@ -210,7 +210,7 @@ If `response_mode` is set to `permissions` (default mode), the server only retur
 [source,javascript]
 ----
     app.get('/apis/me', keycloak.enforcer('user:profile', {response_mode: 'permissions'}), function (req, res) {
-        var permissions = req.permissions;
+        const permissions = req.permissions;
 
         // show user profile
     });
@@ -277,7 +277,7 @@ For example, this override checks if the URL contains /api/ and disables login r
 [source,javascript]
 ----
     Keycloak.prototype.redirectToLogin = function(req) {
-    var apiReqMatcher = /\/api\//i;
+    const apiReqMatcher = /\/api\//i;
     return !apiReqMatcher.test(req.originalUrl || req.url);
     };
 ----

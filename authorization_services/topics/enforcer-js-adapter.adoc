@@ -13,8 +13,8 @@ You can obtain this library from a running a {project_name} Server instance by i
 Once you do that, you can create a `KeycloakAuthorization` instance as follows:
 
 ```javascript
-var keycloak = ... // obtain a Keycloak instance from keycloak.js library
-var authorization = new KeycloakAuthorization(keycloak);
+const keycloak = ... // obtain a Keycloak instance from keycloak.js library
+const authorization = new KeycloakAuthorization(keycloak);
 ```
 The *keycloak-authz.js* library provides two main features:
 
@@ -46,7 +46,7 @@ and use the library to send an authorization request as follows:
 
 ```javascript
 // prepare a authorization request with the permission ticket
-var authorizationRequest = {};
+let authorizationRequest = {};
 authorizationRequest.ticket = ticket;
 
 // send the authorization request, if successful retry the request
@@ -112,7 +112,7 @@ properties:
 An array of objects representing the resource and scopes. For instance:
 +
 ```javascript
-var authorizationRequest = {
+const authorizationRequest = {
    "permissions": [
        {
            "id" : "Some Resource",
@@ -145,5 +145,5 @@ This parameter will only take effect when used together with the `ticket` parame
 If you have already obtained an RPT using any of the authorization functions provided by the library, you can always obtain the RPT as follows from the authorization object (assuming that it has been initialized by one of the techniques shown earlier):
 
 ```javascript
-var rpt = authorization.rpt;
+const rpt = authorization.rpt;
 ```
