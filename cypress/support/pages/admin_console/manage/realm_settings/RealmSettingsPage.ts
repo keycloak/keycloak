@@ -170,8 +170,8 @@ export default class RealmSettingsPage {
   private alertMessage = ".pf-c-alert__title";
   private moreDrpDwn = ".pf-c-dropdown__toggle.pf-m-plain";
   private moreDrpDwnItems = ".pf-c-dropdown__menu-item";
-  private deleteDialogTitle = ".pf-c-modal-box__title-text";
-  private deleteDialogBodyText = ".pf-c-modal-box__body";
+  private modalDialogTitle = ".pf-c-modal-box__title-text";
+  private modalDialogBodyText = ".pf-c-modal-box__body";
   private deleteDialogCancelBtn = "#modal-cancel";
   private jsonEditorSaveBtn = "jsonEditor-saveBtn";
   private jsonEditorSavePoliciesBtn = "jsonEditor-policies-saveBtn";
@@ -228,6 +228,13 @@ export default class RealmSettingsPage {
     this.realmName = realmName;
   }
 
+  disableRealm() {
+    cy.get(this.modalDialogTitle).contains("Disable realm?");
+    cy.get(this.modalDialogBodyText).contains(
+      "User and clients can't access the realm if it's disabled. Are you sure you want to continue?"
+    );
+    cy.findByTestId(this.modalConfirm).contains("Disable").click();
+  }
   selectLoginThemeType(themeType: string) {
     cy.get(this.selectLoginTheme).click();
     cy.get(this.loginThemeList).contains(themeType).click();
@@ -736,8 +743,8 @@ export default class RealmSettingsPage {
   shouldCancelDeletingExecutor() {
     cy.get(this.clientProfileTwo).click();
     cy.get('svg[class*="kc-executor-trash-icon"]').click();
-    cy.get(this.deleteDialogTitle).contains("Delete executor?");
-    cy.get(this.deleteDialogBodyText).contains(
+    cy.get(this.modalDialogTitle).contains("Delete executor?");
+    cy.get(this.modalDialogBodyText).contains(
       "The action will permanently delete secure-ciba-signed-authn-req. This cannot be undone."
     );
     cy.findByTestId(this.modalConfirm).contains("Delete");
@@ -813,8 +820,8 @@ export default class RealmSettingsPage {
   shouldDeleteExecutor() {
     cy.get(this.clientProfileTwo).click();
     cy.get('svg[class*="kc-executor-trash-icon"]').click();
-    cy.get(this.deleteDialogTitle).contains("Delete executor?");
-    cy.get(this.deleteDialogBodyText).contains(
+    cy.get(this.modalDialogTitle).contains("Delete executor?");
+    cy.get(this.modalDialogBodyText).contains(
       "The action will permanently delete secure-ciba-signed-authn-req. This cannot be undone."
     );
     cy.findByTestId(this.modalConfirm).contains("Delete");
@@ -1026,8 +1033,8 @@ export default class RealmSettingsPage {
   shouldDeleteClientScopesCondition() {
     cy.get(this.clientPolicy).click();
     cy.findByTestId(this.deleteClientScopesConditionBtn).click();
-    cy.get(this.deleteDialogTitle).contains("Delete condition?");
-    cy.get(this.deleteDialogBodyText).contains(
+    cy.get(this.modalDialogTitle).contains("Delete condition?");
+    cy.get(this.modalDialogBodyText).contains(
       "This action will permanently delete client-scopes. This cannot be undone."
     );
     cy.findByTestId(this.modalConfirm).contains("Delete");

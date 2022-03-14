@@ -120,6 +120,7 @@ export const ViewHeader = ({
                   <ToolbarItem>
                     <Switch
                       id={`${titleKey}-switch`}
+                      data-testid={`${titleKey}-switch`}
                       label={t("common:enabled")}
                       labelOff={t("common:disabled")}
                       className="pf-u-mr-lg"
