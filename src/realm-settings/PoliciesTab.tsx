@@ -24,13 +24,15 @@ import type ClientPolicyRepresentation from "@keycloak/keycloak-admin-client/lib
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { useAlerts } from "../components/alert/Alerts";
 
-import "./realm-settings-section.css";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { toAddClientPolicy } from "./routes/AddClientPolicy";
 import { toEditClientPolicy } from "./routes/EditClientPolicy";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
 import { Controller, useForm } from "react-hook-form";
 import { toClientPolicies } from "./routes/ClientPolicies";
+
+import "./realm-settings-section.css";
+
 export const PoliciesTab = () => {
   const { t } = useTranslation("realm-settings");
   const adminClient = useAdminClient();
@@ -93,25 +95,46 @@ export const PoliciesTab = () => {
     <Link to={toEditClientPolicy({ realm, policyName: name! })}>{name}</Link>
   );
 
-  const SwitchRenderer = (clientPolicy: ClientPolicyRepresentation) => {
+  const SwitchRenderer = ({
+    clientPolicy,
+  }: {
+    clientPolicy: ClientPolicyRepresentation;
+  }) => {
+    const [toggleDisableDialog, DisableConfirm] = useConfirmDialog({
+      titleKey: "realm-settings:disablePolicyConfirmTitle",
+      messageKey: "realm-settings:disablePolicyConfirm",
+      continueButtonLabel: "common:disable",
+      onConfirm: () => {
+        form.setValue(clientPolicy.name!, false);
+        saveStatus();
+      },
+    });
+
     return (
-      <Controller
-        name={clientPolicy.name!}
-        data-testid={`${clientPolicy.name!}-switch`}
-        defaultValue={clientPolicy.enabled}
-        control={form.control}
-        render={({ onChange, value }) => (
-          <Switch
-            label={t("common:enabled")}
-            labelOff={t("common:disabled")}
-            isChecked={value}
-            onChange={(value) => {
-              onChange(value);
-              saveStatus();
-            }}
-          />
-        )}
-      />
+      <>
+        <DisableConfirm />
+        <Controller
+          name={clientPolicy.name!}
+          data-testid={`${clientPolicy.name!}-switch`}
+          defaultValue={clientPolicy.enabled}
+          control={form.control}
+          render={({ onChange, value }) => (
+            <Switch
+              label={t("common:enabled")}
+              labelOff={t("common:disabled")}
+              isChecked={value}
+              onChange={(value) => {
+                if (!value) {
+                  toggleDisableDialog();
+                } else {
+                  onChange(value);
+                  saveStatus();
+                }
+              }}
+            />
+          )}
+        />
+      </>
     );
   };
 
@@ -247,7 +270,9 @@ export const PoliciesTab = () => {
             {
               name: "enabled",
               displayKey: "realm-settings:status",
-              cellRenderer: SwitchRenderer,
+              cellRenderer: (clientPolicy) => (
+                <SwitchRenderer clientPolicy={clientPolicy} />
+              ),
             },
             {
               name: "description",
@@ -264,9 +289,7 @@ export const PoliciesTab = () => {
               code={code}
               language={Language.json}
               height="30rem"
-              onChange={(value) => {
-                setCode(value ?? "");
-              }}
+              onChange={setCode}
             />
           </div>
           <div className="pf-u-mt-md">
@@ -285,7 +308,6 @@ export const PoliciesTab = () => {
                 setCode(prettyPrintJSON(tablePolicies));
               }}
             >
-              {" "}
               {t("reload")}
             </Button>
           </div>
