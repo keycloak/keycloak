@@ -34,9 +34,11 @@ import {
 } from "../../client-scopes/details/SearchFilter";
 import { ChangeTypeDropdown } from "../../client-scopes/ChangeTypeDropdown";
 
-import "./client-scopes.css";
 import { toDedicatedScope } from "../routes/DedicatedScopeDetails";
 import { useRealm } from "../../context/realm-context/RealmContext";
+import { useWhoAmI } from "../../context/whoami/WhoAmI";
+
+import "./client-scopes.css";
 
 export type ClientScopesProps = {
   clientId: string;
@@ -58,6 +60,7 @@ export const ClientScopes = ({
 }: ClientScopesProps) => {
   const { t } = useTranslation("clients");
   const adminClient = useAdminClient();
+  const { whoAmI } = useWhoAmI();
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
 
@@ -113,6 +116,7 @@ export const ClientScopes = ({
       clientScopes
         .filter((scope) => !names.includes(scope.name))
         .filter((scope) => scope.protocol === protocol)
+        .sort((a, b) => a.name!.localeCompare(b.name!, whoAmI.getLocale()))
     );
 
     const filter =
