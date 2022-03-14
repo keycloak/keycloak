@@ -52,6 +52,7 @@ import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.pages.VerifyEmailPage;
 import org.keycloak.testsuite.updaters.UserAttributeUpdater;
 import org.keycloak.testsuite.util.GreenMailRule;
+import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
 import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.SecondBrowser;
 import org.keycloak.testsuite.util.UserActionTokenBuilder;
@@ -90,6 +91,9 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
 
     @Rule
     public GreenMailRule greenMail = new GreenMailRule();
+
+    @Rule
+    public InfinispanTestTimeServiceRule ispnTestTimeService = new InfinispanTestTimeServiceRule(this);
 
     @Page
     protected AppPage appPage;
@@ -454,7 +458,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
         events.poll();
 
         try {
-            setTimeOffset(3600);
+            setTimeOffset(360);
 
             driver.navigate().to(verificationUrl.trim());
 
@@ -990,7 +994,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
         String verificationUrl = getPasswordResetEmailLink(message);
 
         try {
-            setTimeOffset(3600);
+            setTimeOffset(360);
 
             driver.navigate().to(verificationUrl.trim());
 

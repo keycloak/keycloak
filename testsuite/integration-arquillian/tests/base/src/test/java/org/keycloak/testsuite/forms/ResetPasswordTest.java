@@ -51,6 +51,7 @@ import org.keycloak.testsuite.pages.VerifyEmailPage;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.util.BrowserTabUtil;
 import org.keycloak.testsuite.util.GreenMailRule;
+import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
 import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
@@ -91,6 +92,9 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
 
     private String userId;
     private UserRepresentation defaultUser;
+
+    @Rule
+    public InfinispanTestTimeServiceRule ispnTestTimeService = new InfinispanTestTimeServiceRule(this);
 
     @Drone
     @SecondBrowser
@@ -409,7 +413,7 @@ public class ResetPasswordTest extends AbstractTestRealmKeycloakTest {
         String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);
 
         try {
-            setTimeOffset(1800 + 23);
+            setTimeOffset(360);
 
             driver.navigate().to(changePasswordUrl.trim());
 
