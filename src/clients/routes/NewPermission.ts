@@ -9,10 +9,11 @@ export type NewPermissionParams = {
   realm: string;
   id: string;
   permissionType: PermissionType;
+  selectedId?: string;
 };
 
 export const NewPermissionRoute: RouteDef = {
-  path: "/:realm/clients/:id/authorization/permission/new/:permissionType",
+  path: "/:realm/clients/:id/authorization/permission/new/:permissionType/:selectedId?",
   component: lazy(() => import("../authorization/PermissionDetails")),
   breadcrumb: (t) => t("clients:createPermission"),
   access: "manage-clients",

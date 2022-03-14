@@ -218,6 +218,7 @@ export const AuthorizationResources = ({ clientId }: ResourcesProps) => {
                           realm,
                           id: clientId,
                           permissionType: "resource",
+                          selectedId: resource._id,
                         })}
                       />
                     )}

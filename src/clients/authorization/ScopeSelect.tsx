@@ -9,9 +9,14 @@ import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 type ScopeSelectProps = {
   clientId: string;
   resourceId?: string;
+  preSelected?: string;
 };
 
-export const ScopeSelect = ({ clientId, resourceId }: ScopeSelectProps) => {
+export const ScopeSelect = ({
+  clientId,
+  resourceId,
+  preSelected,
+}: ScopeSelectProps) => {
   const { t } = useTranslation("clients");
   const adminClient = useAdminClient();
 
@@ -57,7 +62,7 @@ export const ScopeSelect = ({ clientId, resourceId }: ScopeSelectProps) => {
   return (
     <Controller
       name="scopes"
-      defaultValue={[]}
+      defaultValue={preSelected ? [preSelected] : []}
       control={control}
       rules={{ validate: (value) => value.length > 0 }}
       render={({ onChange, value }) => (
@@ -85,6 +90,7 @@ export const ScopeSelect = ({ clientId, resourceId }: ScopeSelectProps) => {
           isOpen={open}
           aria-labelledby={t("scopes")}
           validated={errors.scopes ? "error" : "default"}
+          isDisabled={!!preSelected}
         >
           {toSelectOptions(scopes)}
         </Select>

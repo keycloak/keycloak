@@ -208,6 +208,7 @@ export const AuthorizationScopes = ({ clientId }: ScopesProps) => {
                             realm,
                             id: clientId,
                             permissionType: "scope",
+                            selectedId: scope.id,
                           })}
                         />
                       )}

@@ -46,7 +46,7 @@ export default function PermissionDetails() {
   const { register, control, reset, errors, handleSubmit } = form;
 
   const history = useHistory();
-  const { id, realm, permissionType, permissionId } = useParams<
+  const { id, realm, permissionType, permissionId, selectedId } = useParams<
     NewPermissionParams & PermissionDetailsParams
   >();
 
@@ -287,6 +287,9 @@ export default function PermissionDetails() {
                   name="resources"
                   searchFunction="listResources"
                   clientId={id}
+                  preSelected={
+                    permissionType === "scope" ? undefined : selectedId
+                  }
                   variant={
                     permissionType === "scope"
                       ? SelectVariant.typeahead
@@ -309,7 +312,11 @@ export default function PermissionDetails() {
                 validated={errors.scopes ? "error" : "default"}
                 isRequired
               >
-                <ScopeSelect clientId={id} resourceId={resourcesIds?.[0]} />
+                <ScopeSelect
+                  clientId={id}
+                  resourceId={resourcesIds?.[0]}
+                  preSelected={selectedId}
+                />
               </FormGroup>
             )}
             <FormGroup

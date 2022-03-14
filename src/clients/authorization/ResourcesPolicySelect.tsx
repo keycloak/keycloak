@@ -12,6 +12,12 @@ type ResourcesPolicySelectProps = {
   clientId: string;
   searchFunction: keyof Pick<Clients, "listPolicies" | "listResources">;
   variant?: SelectVariant;
+  preSelected?: string;
+};
+
+type Policies = {
+  id?: string;
+  name?: string;
 };
 
 export const ResourcesPolicySelect = ({
@@ -19,12 +25,13 @@ export const ResourcesPolicySelect = ({
   searchFunction,
   clientId,
   variant = SelectVariant.typeaheadMulti,
+  preSelected,
 }: ResourcesPolicySelectProps) => {
   const { t } = useTranslation("clients");
   const adminClient = useAdminClient();
 
   const { control } = useFormContext<PolicyRepresentation>();
-  const [items, setItems] = useState<JSX.Element[]>([]);
+  const [items, setItems] = useState<Policies[]>([]);
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
 
@@ -41,21 +48,21 @@ export const ResourcesPolicySelect = ({
         id: "_id" in p ? p._id : "id" in p ? p.id : undefined,
         name: p.name,
       })),
-    (policies) =>
-      setItems(
-        policies.map((p) => (
-          <SelectOption key={p.id} value={p.id}>
-            {p.name}
-          </SelectOption>
-        ))
-      ),
+    (policies) => setItems(policies),
     [search]
   );
+
+  const toSelectOptions = () =>
+    items.map((p) => (
+      <SelectOption key={p.id} value={p.id}>
+        {p.name}
+      </SelectOption>
+    ));
 
   return (
     <Controller
       name={name}
-      defaultValue={[]}
+      defaultValue={preSelected ? [preSelected] : []}
       control={control}
       render={({ onChange, value }) => (
         <Select
@@ -64,7 +71,7 @@ export const ResourcesPolicySelect = ({
           onToggle={setOpen}
           onFilter={(_, filter) => {
             setSearch(filter);
-            return items;
+            return toSelectOptions();
           }}
           onClear={() => {
             onChange([]);
@@ -81,8 +88,9 @@ export const ResourcesPolicySelect = ({
           }}
           isOpen={open}
           aria-labelledby={t(name)}
+          isDisabled={!!preSelected}
         >
-          {items}
+          {toSelectOptions()}
         </Select>
       )}
     />
