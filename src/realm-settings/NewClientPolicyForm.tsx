@@ -36,6 +36,8 @@ import type ClientPolicyRepresentation from "@keycloak/keycloak-admin-client/lib
 import { toNewClientPolicyCondition } from "./routes/AddCondition";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { toEditClientPolicyCondition } from "./routes/EditCondition";
+import { toClientProfile } from "./routes/ClientProfile";
+
 import {
   EditClientPolicyParams,
   toEditClientPolicy,
@@ -667,7 +669,10 @@ export default function NewClientPolicyForm() {
                                 <Link
                                   key={profile}
                                   data-testid="profile-name-link"
-                                  to={""}
+                                  to={toClientProfile({
+                                    realm,
+                                    profileName: profile,
+                                  })}
                                   className="kc-profile-link"
                                 >
                                   {profile}
