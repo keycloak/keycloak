@@ -198,14 +198,21 @@ export default function ClientScopesSection() {
               <SearchToolbar
                 searchType={searchType}
                 type={searchTypeType}
-                onSelect={(searchType) => setSearchType(searchType)}
+                onSelect={(searchType) => {
+                  setSearchType(searchType);
+                  setSearchProtocol("all");
+                  setSearchTypeType(AllClientScopes.none);
+                  refresh();
+                }}
                 onType={(value) => {
                   setSearchTypeType(value);
+                  setSearchProtocol("all");
                   refresh();
                 }}
                 protocol={searchProtocol}
                 onProtocol={(protocol) => {
                   setSearchProtocol(protocol);
+                  setSearchTypeType(AllClientScopes.none);
                   refresh();
                 }}
               />
