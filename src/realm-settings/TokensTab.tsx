@@ -75,6 +75,12 @@ export const RealmSettingsTokensTab = ({
     defaultValue: 36000,
   });
 
+  const revokeRefreshToken = useWatch({
+    control,
+    name: "revokeRefreshToken",
+    defaultValue: false,
+  });
+
   return (
     <PageSection variant="light">
       <FormPanel
@@ -167,34 +173,36 @@ export const RealmSettingsTokensTab = ({
               )}
             />
           </FormGroup>
-          <FormGroup
-            label={t("refreshTokenMaxReuse")}
-            labelIcon={
-              <HelpItem
-                helpText="realm-settings-help:refreshTokenMaxReuse"
-                fieldLabelId="realm-settings:refreshTokenMaxReuse"
-              />
-            }
-            fieldId="refreshTokenMaxReuse"
-          >
-            <Controller
-              name="refreshTokenMaxReuse"
-              defaultValue={0}
-              control={form.control}
-              render={({ onChange, value }) => (
-                <NumberInput
-                  type="text"
-                  id="refreshTokenMaxReuseMs"
-                  value={value}
-                  onPlus={() => onChange(value + 1)}
-                  onMinus={() => onChange(value - 1)}
-                  onChange={(event) =>
-                    onChange(Number((event.target as HTMLInputElement).value))
-                  }
+          {revokeRefreshToken && (
+            <FormGroup
+              label={t("refreshTokenMaxReuse")}
+              labelIcon={
+                <HelpItem
+                  helpText="realm-settings-help:refreshTokenMaxReuse"
+                  fieldLabelId="realm-settings:refreshTokenMaxReuse"
                 />
-              )}
-            />
-          </FormGroup>
+              }
+              fieldId="refreshTokenMaxReuse"
+            >
+              <Controller
+                name="refreshTokenMaxReuse"
+                defaultValue={0}
+                control={form.control}
+                render={({ onChange, value }) => (
+                  <NumberInput
+                    type="text"
+                    id="refreshTokenMaxReuseMs"
+                    value={value}
+                    onPlus={() => onChange(value + 1)}
+                    onMinus={() => onChange(value - 1)}
+                    onChange={(event) =>
+                      onChange(Number((event.target as HTMLInputElement).value))
+                    }
+                  />
+                )}
+              />
+            </FormGroup>
+          )}
         </FormAccess>
       </FormPanel>
       <FormPanel
