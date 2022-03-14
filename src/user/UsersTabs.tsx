@@ -203,6 +203,13 @@ const UsersTabs = () => {
                 <UserCredentials user={user} />
               </Tab>
               <Tab
+                eventKey="role-mapping"
+                data-testid="role-mapping-tab"
+                title={<TabTitleText>{t("roleMapping")}</TabTitleText>}
+              >
+                <UserRoleMapping id={id} name={user.username!} />
+              </Tab>
+              <Tab
                 eventKey="groups"
                 data-testid="user-groups-tab"
                 title={<TabTitleText>{t("common:groups")}</TabTitleText>}
@@ -215,13 +222,6 @@ const UsersTabs = () => {
                 title={<TabTitleText>{t("consents")}</TabTitleText>}
               >
                 <UserConsents />
-              </Tab>
-              <Tab
-                eventKey="role-mapping"
-                data-testid="role-mapping-tab"
-                title={<TabTitleText>{t("roleMapping")}</TabTitleText>}
-              >
-                <UserRoleMapping id={id} name={user.username!} />
               </Tab>
               {hasAccess("view-identity-providers") && (
                 <Tab
