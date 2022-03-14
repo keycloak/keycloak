@@ -11,7 +11,6 @@ import {
 } from "@patternfly/react-core";
 
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
-import { KeycloakTabs } from "../../components/keycloak-tabs/KeycloakTabs";
 import { useAlerts } from "../../components/alert/Alerts";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
@@ -35,7 +34,11 @@ import {
 import { useRealm } from "../../context/realm-context/RealmContext";
 import useToggle from "../../utils/useToggle";
 import { toMapper } from "../routes/Mapper";
-import { toClientScope } from "../routes/ClientScope";
+import { ClientScopeTab, toClientScope } from "../routes/ClientScope";
+import {
+  routableTab,
+  RoutableTabs,
+} from "../../components/routable-tabs/RoutableTabs";
 
 export default function ClientScopeForm() {
   const { t } = useTranslation("client-scopes");
@@ -241,6 +244,17 @@ export default function ClientScopeForm() {
     return <KeycloakSpinner />;
   }
 
+  const clientRoute = (tab: ClientScopeTab) =>
+    routableTab({
+      to: toClientScope({
+        realm,
+        id,
+        tab,
+        type,
+      }),
+      history,
+    });
+
   return (
     <>
       <DeleteConfirm />
@@ -268,18 +282,22 @@ export default function ClientScopeForm() {
           </PageSection>
         )}
         {id && clientScope && (
-          <KeycloakTabs isBox>
+          <RoutableTabs isBox>
             <Tab
-              eventKey="settings"
+              id="settings"
+              data-testid="settings"
               title={<TabTitleText>{t("common:settings")}</TabTitleText>}
+              {...clientRoute("settings")}
             >
               <PageSection variant="light">
                 <ScopeForm save={save} clientScope={clientScope} />
               </PageSection>
             </Tab>
             <Tab
-              eventKey="mappers"
+              id="mappers"
+              data-testid="mappers"
               title={<TabTitleText>{t("common:mappers")}</TabTitleText>}
+              {...clientRoute("mappers")}
             >
               <MapperList
                 model={clientScope}
@@ -291,9 +309,10 @@ export default function ClientScopeForm() {
               />
             </Tab>
             <Tab
+              id="scope"
               data-testid="scopeTab"
-              eventKey="scope"
               title={<TabTitleText>{t("scope")}</TabTitleText>}
+              {...clientRoute("scope")}
             >
               <RoleMapping
                 id={id}
@@ -304,7 +323,7 @@ export default function ClientScopeForm() {
                 onHideRolesToggle={toggleHide}
               />
             </Tab>
-          </KeycloakTabs>
+          </RoutableTabs>
         )}
       </PageSection>
     </>
