@@ -48,11 +48,14 @@ public class HotRodRootAuthenticationSessionEntity extends AbstractHotRodEntity 
     @ProtoField(number = 3)
     public String realmId;
 
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
     @ProtoField(number = 4)
     public Integer timestamp;
 
+    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
     @ProtoField(number = 5)
+    public Long expiration;
+
+    @ProtoField(number = 6)
     public Set<HotRodAuthenticationSessionEntity> authenticationSessions;
 
     public static abstract class AbstractHotRodRootAuthenticationSessionEntityDelegate extends UpdatableHotRodEntityDelegateImpl<HotRodRootAuthenticationSessionEntity> implements MapRootAuthenticationSessionEntity {

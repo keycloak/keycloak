@@ -87,6 +87,9 @@ public interface MapRootAuthenticationSessionEntity extends AbstractEntity, Upda
     Integer getTimestamp();
     void setTimestamp(Integer timestamp);
 
+    Long getExpiration();
+    void setExpiration(Long expiration);
+
     Set<MapAuthenticationSessionEntity> getAuthenticationSessions();
     void setAuthenticationSessions(Set<MapAuthenticationSessionEntity> authenticationSessions);
     Optional<MapAuthenticationSessionEntity> getAuthenticationSession(String tabId);

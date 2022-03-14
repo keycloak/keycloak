@@ -179,8 +179,6 @@ public class AuthenticationSessionTest extends KeycloakModelTest {
             Assert.assertNotNull(rootAuthSession);
 
             Time.setOffset(1900);
-            // not needed with Infinispan where expiration handles Infinispan itself
-            session.authenticationSessions().removeExpired(realm);
 
             return null;
         });

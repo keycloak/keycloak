@@ -36,7 +36,7 @@ import org.keycloak.models.sessions.infinispan.events.RealmRemovedSessionEvent;
 import org.keycloak.models.sessions.infinispan.events.SessionEventsSenderTransaction;
 import org.keycloak.models.sessions.infinispan.stream.RootAuthenticationSessionPredicate;
 import org.keycloak.models.sessions.infinispan.util.InfinispanKeyGenerator;
-import org.keycloak.models.utils.RealmInfoUtil;
+import org.keycloak.models.utils.SessionExpiration;
 import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
@@ -83,7 +83,7 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
         entity.setRealmId(realm.getId());
         entity.setTimestamp(Time.currentTime());
 
-        int expirationSeconds = RealmInfoUtil.getDettachedClientSessionLifespan(realm);
+        int expirationSeconds = SessionExpiration.getAuthSessionLifespan(realm);
         tx.put(cache, id, entity, expirationSeconds, TimeUnit.SECONDS);
 
         return wrap(realm, entity);
