@@ -17,15 +17,14 @@
 
 package org.keycloak.admin.client;
 
-import org.jboss.resteasy.client.jaxrs.ResteasyClient;
-import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
-
 import static org.keycloak.OAuth2Constants.CLIENT_CREDENTIALS;
 import static org.keycloak.OAuth2Constants.PASSWORD;
 
+import javax.ws.rs.client.Client;
+
 /**
  * Provides a {@link Keycloak} client builder with the ability to customize the underlying
- * {@link ResteasyClient RESTEasy client} used to communicate with the Keycloak server.
+ * {@link javax.ws.rs.client.Client RESTEasy client} used to communicate with the Keycloak server.
  * <p>
  * <p>Example usage with a connection pool size of 20:</p>
  * <pre>
@@ -51,7 +50,7 @@ import static org.keycloak.OAuth2Constants.PASSWORD;
  * </pre>
  *
  * @author Scott Rossillo
- * @see ResteasyClientBuilder
+ * @see javax.ws.rs.client.Client
  */
 public class KeycloakBuilder {
     private String serverUrl;
@@ -61,7 +60,7 @@ public class KeycloakBuilder {
     private String clientId;
     private String clientSecret;
     private String grantType;
-    private ResteasyClient resteasyClient;
+    private Client resteasyClient;
     private String authorization;
 
     public KeycloakBuilder serverUrl(String serverUrl) {
@@ -100,7 +99,7 @@ public class KeycloakBuilder {
         return this;
     }
 
-    public KeycloakBuilder resteasyClient(ResteasyClient resteasyClient) {
+    public KeycloakBuilder resteasyClient(Client resteasyClient) {
         this.resteasyClient = resteasyClient;
         return this;
     }
