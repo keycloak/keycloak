@@ -293,6 +293,7 @@ export default {
     clientList: "Clients",
     clientsList: "Clients list",
     initialAccessToken: "Initial access token",
+    expirationValueNotValid: "Value should should be greater or equal to 1",
     clientSettings: "Client details",
     selectEncryptionType: "Select Encryption type",
     generalSettings: "General Settings",

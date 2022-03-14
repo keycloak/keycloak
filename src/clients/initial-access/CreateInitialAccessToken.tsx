@@ -24,7 +24,12 @@ import { toClients } from "../routes/Clients";
 
 export default function CreateInitialAccessToken() {
   const { t } = useTranslation("clients");
-  const { handleSubmit, control } = useForm();
+  const {
+    handleSubmit,
+    control,
+    errors,
+    formState: { isValid },
+  } = useForm({ mode: "onChange" });
 
   const adminClient = useAdminClient();
   const { realm } = useRealm();
@@ -76,16 +81,21 @@ export default function CreateInitialAccessToken() {
                 fieldLabelId="clients:expiration"
               />
             }
+            helperTextInvalid={t("expirationValueNotValid")}
+            validated={errors.expiration ? "error" : "default"}
           >
             <Controller
               name="expiration"
               defaultValue={86400}
               control={control}
+              rules={{ min: 1 }}
               render={({ onChange, value }) => (
                 <TimeSelector
                   data-testid="expiration"
                   value={value}
                   onChange={onChange}
+                  min={1}
+                  validated={errors.expiration ? "error" : "default"}
                 />
               )}
             />
@@ -113,15 +123,23 @@ export default function CreateInitialAccessToken() {
                   value={value}
                   onPlus={() => onChange(value + 1)}
                   onMinus={() => onChange(value - 1)}
-                  onChange={(event) =>
-                    onChange(Number((event.target as HTMLInputElement).value))
-                  }
+                  onChange={(event) => {
+                    const value = Number(
+                      (event.target as HTMLInputElement).value
+                    );
+                    onChange(value < 1 ? 1 : value);
+                  }}
                 />
               )}
             />
           </FormGroup>
           <ActionGroup>
-            <Button variant="primary" type="submit" data-testid="save">
+            <Button
+              variant="primary"
+              type="submit"
+              data-testid="save"
+              isDisabled={!isValid}
+            >
               {t("common:save")}
             </Button>
             <Button
