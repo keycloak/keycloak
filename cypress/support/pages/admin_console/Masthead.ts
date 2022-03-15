@@ -58,7 +58,7 @@ export default class Masthead {
       .parent()
       .within(() => {
         if (closeNotification) {
-          cy.get(".pf-c-alert__action").click();
+          cy.get(".pf-c-alert__action").click({ multiple: true });
         }
       });
     return this;
