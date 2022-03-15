@@ -56,17 +56,17 @@ export const ClientSettings = ({
   );
 
   const sections = useMemo(() => {
-    let result = ["generalSettings"];
+    let result = ["generalSettings", "accessSettings"];
 
     if (protocol === "saml") {
       result = [...result, "samlCapabilityConfig", "signatureAndEncryption"];
     } else if (!client.bearerOnly) {
       result = [...result, "capabilityConfig"];
     } else {
-      return [...result, "accessSettings"];
+      return result;
     }
 
-    return [...result, "accessSettings", "loginSettings", "logoutSettings"];
+    return [...result, "loginSettings", "logoutSettings"];
   }, [protocol, client]);
 
   return (
