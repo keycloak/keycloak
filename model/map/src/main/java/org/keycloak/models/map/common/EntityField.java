@@ -16,6 +16,12 @@ public interface EntityField<E> {
      * @return
      */
     String getName();
+    /*
+     * Returns name of this field in camel case with first word starting with lower case letter and
+     * further words starting with a capital letter.
+     * @return
+     */
+    String getNameCamelCase();
     /**
      * Returns name of this field in lowercase with words separated by a dash ({@code -}).
      * @return

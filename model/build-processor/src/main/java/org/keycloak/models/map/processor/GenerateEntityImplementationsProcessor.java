@@ -156,6 +156,7 @@ public class GenerateEntityImplementationsProcessor extends AbstractGenerateEnti
             TypeMirror fieldType = determineFieldType(fieldName, methods);
             pw.println("        public static final String FIELD_NAME = \"" + fieldName + "\";");
             pw.println("        public static final String FIELD_NAME_DASHED = \"" + fieldName.replaceAll("([^_A-Z])([A-Z])", "$1-$2").toLowerCase() + "\";");
+            pw.println("        public static final String FIELD_NAME_CAMEL_CASE = \"" + fieldName.substring(0, 1).toLowerCase() + fieldName.substring(1) + "\";");
             pw.println("        @SuppressWarnings(\"unchecked\") @Override public Class<?> getFieldClass() {");
             pw.println("            return " + types.erasure(fieldType) + ".class;");
             pw.println("        }");
@@ -164,6 +165,9 @@ public class GenerateEntityImplementationsProcessor extends AbstractGenerateEnti
             pw.println("        }");
             pw.println("        @Override public String getNameDashed() {");
             pw.println("            return FIELD_NAME_DASHED;");
+            pw.println("        }");
+            pw.println("        @Override public String getNameCamelCase() {");
+            pw.println("            return FIELD_NAME_CAMEL_CASE;");
             pw.println("        }");
 
             FieldAccessorType.getMethod(FieldAccessorType.COLLECTION_ADD, methods, fieldName, types, fieldType).ifPresent(method -> {
