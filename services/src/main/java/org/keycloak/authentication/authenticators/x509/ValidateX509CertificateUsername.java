@@ -124,7 +124,7 @@ public class ValidateX509CertificateUsername extends AbstractX509ClientCertifica
             return;
         }
 
-        String bruteForceError = getDisabledByBruteForceEventError(context.getProtector(), context.getSession(), context.getRealm(), user);
+        String bruteForceError = getDisabledByBruteForceEventError(context, user);
         if (bruteForceError != null) {
             context.getEvent().user(user);
             context.getEvent().error(bruteForceError);

@@ -1,0 +1,46 @@
+# For most projects, this workflow file will not need changing; you simply need
+# to commit it to your repository.
+#
+# You may wish to alter this file to override the set of languages analyzed,
+# or to provide custom queries or build logic.
+name: "CodeQL Themes"
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+    paths: 
+      - 'themes/src/**'
+  schedule:
+    - cron: '0 9 * * 2'
+    
+jobs:
+  analyze:
+    name: CodeQL analyze
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-java@v1
+      with:
+        java-version: '11'
+
+    - name: Update maven settings
+      run: mkdir -p ~/.m2 ; cp .github/settings.xml ~/.m2/
+
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v1
+      env: 
+        CODEQL_ACTION_EXTRA_OPTIONS: '{"database":{"finalize":["--no-run-unnecessary-builds"]}}'
+      with:
+        languages: javascript
+        source-root: themes/
+
+    - name: Build Keycloak
+      run: mvn install -Dmaven.test.skip -DskipQuarkus -DskipTestsuite -DskipExamples -DskipTests
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v1
+      env: 
+        CODEQL_ACTION_EXTRA_OPTIONS: '{"database":{"interpret-results":["--max-paths",0]}}'

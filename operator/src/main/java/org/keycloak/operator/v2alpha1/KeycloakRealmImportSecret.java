@@ -48,12 +48,9 @@ public class KeycloakRealmImportSecret extends OperatorManagedResource {
                 .build();
     }
 
-    private String getName() {
+    @Override
+    protected String getName() {
         return realmCR.getMetadata().getName();
-    }
-
-    private String getNamespace() {
-        return realmCR.getMetadata().getNamespace();
     }
 
     private String getRealmName() { return realmCR.getSpec().getRealm().getRealm(); }

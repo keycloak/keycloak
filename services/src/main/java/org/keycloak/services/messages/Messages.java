@@ -92,6 +92,8 @@ public class Messages {
 
     public static final String CONFIGURE_TOTP = "configureTotpMessage";
 
+    public static final String CONFIGURE_BACKUP_CODES = "configureBackupCodesMessage";
+
     public static final String UPDATE_PROFILE = "updateProfileMessage";
 
     public static final String RESET_PASSWORD = "resetPasswordMessage";

@@ -16,8 +16,7 @@
  */
 package org.keycloak.operator.v2alpha1;
 
-import javax.inject.Inject;
-
+import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
@@ -38,15 +37,18 @@ import org.keycloak.operator.Constants;
 import org.keycloak.operator.v2alpha1.crds.Keycloak;
 import org.keycloak.operator.v2alpha1.crds.KeycloakStatus;
 import org.keycloak.operator.v2alpha1.crds.KeycloakStatusBuilder;
+import org.keycloak.operator.v2alpha1.crds.KeycloakStatusCondition;
 
-import java.util.Collections;
+import javax.inject.Inject;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.NO_FINALIZER;
 import static io.javaoperatorsdk.operator.api.reconciler.Constants.WATCH_CURRENT_NAMESPACE;
 
-@ControllerConfiguration(namespaces = WATCH_CURRENT_NAMESPACE, finalizerName = NO_FINALIZER)
+// TODO: remove "generationAwareEventProcessing = false" when the race condition is fixed
+@ControllerConfiguration(namespaces = WATCH_CURRENT_NAMESPACE, finalizerName = NO_FINALIZER, generationAwareEventProcessing = false)
 public class KeycloakController implements Reconciler<Keycloak>, EventSourceInitializer<Keycloak>, ErrorStatusHandler<Keycloak> {
 
     @Inject
@@ -62,9 +64,15 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
                         .withLabels(Constants.DEFAULT_LABELS)
                         .runnableInformer(0);
 
-        EventSource deploymentEvent = new InformerEventSource<>(deploymentInformer, Mappers.fromOwnerReference());
+        SharedIndexInformer<Service> servicesInformer =
+                client.services().inNamespace(context.getConfigurationService().getClientConfiguration().getNamespace())
+                        .withLabels(Constants.DEFAULT_LABELS)
+                        .runnableInformer(0);
 
-        return List.of(deploymentEvent);
+        EventSource deploymentEvent = new InformerEventSource<>(deploymentInformer, Mappers.fromOwnerReference());
+        EventSource servicesEvent = new InformerEventSource<>(servicesInformer, Mappers.fromOwnerReference());
+
+        return List.of(deploymentEvent, servicesEvent);
     }
 
     @Override
@@ -82,17 +90,34 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
         kcDeployment.updateStatus(statusBuilder);
         kcDeployment.createOrUpdateReconciled();
 
+        var kcService = new KeycloakService(client, kc);
+        kcService.updateStatus(statusBuilder);
+        kcService.createOrUpdateReconciled();
+        var kcDiscoveryService = new KeycloakDiscoveryService(client, kc);
+        kcDiscoveryService.updateStatus(statusBuilder);
+        kcDiscoveryService.createOrUpdateReconciled();
+
         var status = statusBuilder.build();
 
         Log.info("--- Reconciliation finished successfully");
 
+        UpdateControl<Keycloak> updateControl;
         if (status.equals(kc.getStatus())) {
-            return UpdateControl.noUpdate();
+            updateControl = UpdateControl.noUpdate();
         }
         else {
             kc.setStatus(status);
-            return UpdateControl.updateStatus(kc);
+            updateControl = UpdateControl.updateStatus(kc);
         }
+
+        if (status
+                .getConditions()
+                .stream()
+                .anyMatch(c -> c.getType().equals(KeycloakStatusCondition.READY) && !c.getStatus())) {
+            updateControl.rescheduleAfter(10, TimeUnit.SECONDS);
+        }
+
+        return updateControl;
     }
 
     @Override

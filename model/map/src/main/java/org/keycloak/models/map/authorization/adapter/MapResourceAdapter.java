@@ -17,7 +17,10 @@
 
 package org.keycloak.models.map.authorization.adapter;
 
+import org.keycloak.authorization.model.PermissionTicket;
 import org.keycloak.authorization.model.Scope;
+import org.keycloak.authorization.store.PermissionTicketStore;
+import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.StoreFactory;
 
 import org.keycloak.models.map.authorization.entity.MapResourceEntity;
@@ -129,6 +132,25 @@ public class MapResourceAdapter extends AbstractResourceModel<MapResourceEntity>
     @Override
     public void updateScopes(Set<Scope> scopes) {
         throwExceptionIfReadonly();
+
+        PermissionTicketStore permissionStore = storeFactory.getPermissionTicketStore();
+        PolicyStore policyStore = storeFactory.getPolicyStore();
+
+        for (Scope scope : getScopes()) {
+            if (!scopes.contains(scope)) {
+                // The scope^ was removed from the Resource
+
+                // Remove permission tickets based on the scope
+                List<PermissionTicket> permissions = permissionStore.findByScope(scope.getId(), getResourceServer());
+                for (PermissionTicket permission : permissions) {
+                    permissionStore.delete(permission.getId());
+                }
+
+                // Remove the scope from each Policy for this Resource
+                policyStore.findByResource(getId(), getResourceServer(), policy -> policy.removeScope(scope));
+            }
+        }
+
         entity.setScopeIds(scopes.stream().map(Scope::getId).collect(Collectors.toSet()));
     }
 

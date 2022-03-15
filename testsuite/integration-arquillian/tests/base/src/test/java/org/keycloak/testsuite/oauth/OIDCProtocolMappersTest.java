@@ -30,6 +30,7 @@ import org.keycloak.common.Profile;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.AccountRoles;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.protocol.oidc.mappers.AddressMapper;
@@ -65,6 +66,7 @@ import javax.ws.rs.core.Response;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -1266,6 +1268,44 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             adminClient.realm("test").groups().group(group2.getId()).remove();
             deleteMappers(protocolMappers);
         }
+    }
+
+    @Test
+    @EnableFeature(value = Profile.Feature.DYNAMIC_SCOPES, skipRestart = true)
+    public void executeTokenMappersOnDynamicScopes() {
+        ClientResource clientResource = findClientResourceByClientId(adminClient.realm("test"), "test-app");
+        ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
+        scopeRep.setName("dyn-scope-with-mapper");
+        scopeRep.setProtocol("openid-connect");
+        scopeRep.setAttributes(new HashMap<String, String>() {{
+            put(ClientScopeModel.IS_DYNAMIC_SCOPE, "true");
+            put(ClientScopeModel.DYNAMIC_SCOPE_REGEXP, "dyn-scope-with-mapper:*");
+        }});
+        // create the attribute mapper
+        ProtocolMapperRepresentation protocolMapperRepresentation = createHardcodedClaim("dynamic-scope-hardcoded-mapper", "hardcoded-foo", "hardcoded-bar", "String", true, true);
+        scopeRep.setProtocolMappers(Collections.singletonList(protocolMapperRepresentation));
+
+        try (Response resp = adminClient.realm("test").clientScopes().create(scopeRep)) {
+            assertEquals(201, resp.getStatus());
+            String clientScopeId = ApiUtil.getCreatedId(resp);
+            getCleanup().addClientScopeId(clientScopeId);
+            clientResource.addOptionalClientScope(clientScopeId);
+        }
+
+        oauth.scope("openid dyn-scope-with-mapper:value");
+        OAuthClient.AccessTokenResponse response = browserLogin("password", "test-user@localhost", "password");
+        IDToken idToken = oauth.verifyIDToken(response.getIdToken());
+        AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
+
+        assertNotNull(idToken.getOtherClaims());
+        assertNotNull(idToken.getOtherClaims().get("hardcoded-foo"));
+        assertTrue(idToken.getOtherClaims().get("hardcoded-foo") instanceof String);
+        assertEquals("hardcoded-bar", idToken.getOtherClaims().get("hardcoded-foo"));
+
+        assertNotNull(accessToken.getOtherClaims());
+        assertNotNull(accessToken.getOtherClaims().get("hardcoded-foo"));
+        assertTrue(accessToken.getOtherClaims().get("hardcoded-foo") instanceof String);
+        assertEquals("hardcoded-bar", accessToken.getOtherClaims().get("hardcoded-foo"));
     }
 
     private void assertRoles(List<String> actualRoleList, String ...expectedRoles){

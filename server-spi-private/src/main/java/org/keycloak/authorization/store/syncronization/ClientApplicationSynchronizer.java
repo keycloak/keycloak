@@ -50,10 +50,10 @@ public class ClientApplicationSynchronizer implements Synchronizer<ClientRemoved
     private void removeFromClientPolicies(ClientRemovedEvent event, AuthorizationProvider authorizationProvider) {
         StoreFactory storeFactory = authorizationProvider.getStoreFactory();
         ResourceServerStore store = storeFactory.getResourceServerStore();
-        ResourceServer resourceServer = store.findById(event.getClient().getId());
+        ResourceServer resourceServer = store.findByClient(event.getClient());
 
         if (resourceServer != null) {
-            storeFactory.getResourceServerStore().delete(resourceServer.getId());
+            storeFactory.getResourceServerStore().delete(event.getClient());
         }
 
         Map<Policy.FilterOption, String[]> attributes = new EnumMap<>(Policy.FilterOption.class);

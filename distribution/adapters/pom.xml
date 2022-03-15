@@ -47,7 +47,6 @@
             </activation>
             <modules>
                 <module>tomcat-adapter-zip</module>
-                <module>tomcat7-adapter-zip</module>
                 <module>jetty92-adapter-zip</module>
                 <module>jetty93-adapter-zip</module>
                 <module>jetty94-adapter-zip</module>

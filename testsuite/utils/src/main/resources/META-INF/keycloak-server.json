@@ -117,6 +117,26 @@
             "driver": "org.postgresql.Driver",
             "driverDialect": "org.keycloak.models.map.storage.jpa.hibernate.dialect.JsonbPostgreSQL95Dialect",
             "showSql": "${keycloak.map.storage.connectionsJpa,showSql:false}"
+        },
+        "ldap-map-storage": {
+            "vendor": "other",
+            "usernameLDAPAttribute": "uid",
+            "rdnLDAPAttribute": "uid",
+            "uuidLDAPAttribute": "entryUUID",
+            "userObjectClasses": "inetOrgPerson, organizationalPerson",
+            "connectionUrl": "${keycloak.map.storage.ldap.connectionUrl:}",
+            "usersDn": "ou=People,dc=keycloak,dc=org",
+            "bindDn": "${keycloak.map.storage.ldap.bindDn:}",
+            "bindCredential": "${keycloak.map.storage.ldap.bindCredential:}",
+            "roles.realm.dn": "ou=RealmRoles,dc=keycloak,dc=org",
+            "roles.common.dn": "dc=keycloak,dc=org",
+            "roles.client.dn": "ou={0},dc=keycloak,dc=org",
+            "membership.ldap.attribute": "member",
+            "role.name.ldap.attribute": "cn",
+            "role.object.classes": "groupOfNames",
+            "role.attributes": "ou",
+            "mode": "LDAP_ONLY",
+            "use.realm.roles.mapping": "true"
         }
     },
 
@@ -165,6 +185,13 @@
             "showSql": "${keycloak.connectionsJpa.showSql:}",
             "formatSql": "${keycloak.connectionsJpa.formatSql:}",
             "globalStatsInterval": "${keycloak.connectionsJpa.globalStatsInterval:}"
+        }
+    },
+
+    "realmCache": {
+        "provider": "${keycloak.realm.cache.provider:default}",
+        "default" : {
+            "enabled": "${keycloak.realm.cache.provider.enabled:true}"
         }
     },
 

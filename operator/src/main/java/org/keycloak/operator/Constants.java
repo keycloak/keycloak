@@ -33,6 +33,25 @@ public final class Constants {
     );
 
     public static final Map<String, String> DEFAULT_DIST_CONFIG = Map.of(
-        "KC_METRICS_ENABLED", "true"
+        "KC_HEALTH_ENABLED","true",
+        "KC_CACHE", "ispn",
+        "KC_CACHE_STACK", "kubernetes"
     );
+
+    // Init container
+    public static final String EXTENSIONS_VOLUME_NAME = "extensions";
+    public static final String KEYCLOAK_PROVIDERS_FOLDER = "/opt/keycloak/providers";
+    public static final String INIT_CONTAINER_NAME = "keycloak-extensions";
+    public static final String INIT_CONTAINER_EXTENSIONS_FOLDER = "/opt/extensions";
+    public static final String INIT_CONTAINER_EXTENSIONS_ENV_VAR = "KEYCLOAK_EXTENSIONS";
+
+    public static final Integer KEYCLOAK_HTTP_PORT = 8080;
+    public static final Integer KEYCLOAK_HTTPS_PORT = 8443;
+    public static final String KEYCLOAK_SERVICE_PROTOCOL = "TCP";
+    public static final String KEYCLOAK_SERVICE_SUFFIX = "-service";
+    public static final Integer KEYCLOAK_DISCOVERY_SERVICE_PORT = 7800;
+    public static final String KEYCLOAK_DISCOVERY_SERVICE_SUFFIX = "-discovery";
+
+    public static final String INSECURE_DISABLE = "INSECURE-DISABLE";
+    public static final String CERTIFICATES_FOLDER = "/mnt/certificates";
 }

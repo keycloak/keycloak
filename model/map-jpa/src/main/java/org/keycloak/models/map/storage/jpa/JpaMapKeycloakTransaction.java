@@ -32,8 +32,8 @@ import javax.persistence.criteria.Selection;
 import org.keycloak.connections.jpa.JpaKeycloakTransaction;
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
 import org.keycloak.models.map.common.AbstractEntity;
-import org.keycloak.models.map.common.StringKeyConvertor;
-import org.keycloak.models.map.common.StringKeyConvertor.UUIDKey;
+import org.keycloak.models.map.common.StringKeyConverter;
+import org.keycloak.models.map.common.StringKeyConverter.UUIDKey;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.QueryParameters;
 import static org.keycloak.models.map.storage.jpa.JpaMapStorageProviderFactory.CLONER;
@@ -60,7 +60,7 @@ public abstract class JpaMapKeycloakTransaction<RE extends JpaRootEntity, E exte
         JpaRootEntity jpaEntity = entityType.cast(CLONER.from(mapEntity));
         CLONER.from(mapEntity);
         if (mapEntity.getId() == null) {
-            jpaEntity.setId(StringKeyConvertor.UUIDKey.INSTANCE.yieldNewUniqueKey().toString());
+            jpaEntity.setId(StringKeyConverter.UUIDKey.INSTANCE.yieldNewUniqueKey().toString());
         }
         setEntityVersion(jpaEntity);
         em.persist(jpaEntity);
@@ -71,7 +71,7 @@ public abstract class JpaMapKeycloakTransaction<RE extends JpaRootEntity, E exte
     @SuppressWarnings("unchecked")
     public E read(String key) {
         if (key == null) return null;
-        UUID uuid = StringKeyConvertor.UUIDKey.INSTANCE.fromStringSafe(key);
+        UUID uuid = StringKeyConverter.UUIDKey.INSTANCE.fromStringSafe(key);
         if (uuid == null) return null;
         return (E) em.find(entityType, uuid);
     }

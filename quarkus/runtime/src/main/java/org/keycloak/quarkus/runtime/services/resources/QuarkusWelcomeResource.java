@@ -24,10 +24,10 @@ import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.MimeTypeUtil;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.ApplianceBootstrap;
-import org.keycloak.services.resources.WelcomeResource;
 import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.services.util.CookieHelper;
 import org.keycloak.theme.FreeMarkerUtil;
@@ -188,6 +188,11 @@ public class QuarkusWelcomeResource {
                 boolean isLocal = isLocal();
                 map.put("localUser", isLocal);
 
+                String localAdminUrl = getLocalAdminUrl();
+
+                map.put("localAdminUrl", localAdminUrl);
+                map.put("adminUserCreationMessage", "or set the environment variables KEYCLOAK_ADMIN and KEYCLOAK_ADMIN_PASSWORD before starting the server");
+
                 if (isLocal) {
                     String stateChecker = setCsrfCookie();
                     map.put("stateChecker", stateChecker);
@@ -209,6 +214,21 @@ public class QuarkusWelcomeResource {
         } catch (Exception e) {
             throw new WebApplicationException(Response.Status.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    private String getLocalAdminUrl() {
+        boolean isHttpEnabled = Boolean.parseBoolean(Configuration.getConfigValue("kc.http-enabled").getValue());
+        String configPath = Configuration.getConfigValue("kc.http-relative-path").getValue();
+
+        if (!configPath.startsWith("/")) {
+            configPath = "/" + configPath;
+        }
+
+        String configPort = isHttpEnabled ? Configuration.getConfigValue("kc.http-port").getValue() : Configuration.getConfigValue("kc.https-port").getValue() ;
+
+        String scheme = isHttpEnabled ? "http://" : "https://";
+
+        return scheme + "localhost:" + configPort + configPath;
     }
 
     private Theme getTheme() {

@@ -5,6 +5,7 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.authentication.AuthenticatorFactory;
+import org.keycloak.credential.CredentialMetadata;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.CredentialProvider;
 import org.keycloak.credential.CredentialTypeMetadata;
@@ -17,6 +18,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.representations.account.CredentialMetadataRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.ErrorResponseException;
@@ -86,13 +88,13 @@ public class AccountCredentialResource {
         private String createAction;
         private String updateAction;
         private boolean removeable;
-        private List<CredentialRepresentation> userCredentials;
+        private List<CredentialMetadataRepresentation> userCredentialMetadatas;
         private CredentialTypeMetadata metadata;
 
         public CredentialContainer() {
         }
 
-        public CredentialContainer(CredentialTypeMetadata metadata, List<CredentialRepresentation> userCredentials) {
+        public CredentialContainer(CredentialTypeMetadata metadata, List<CredentialMetadataRepresentation> userCredentialMetadatas) {
             this.metadata = metadata;
             this.type = metadata.getType();
             this.category = metadata.getCategory().toString();
@@ -102,7 +104,7 @@ public class AccountCredentialResource {
             this.createAction = metadata.getCreateAction();
             this.updateAction = metadata.getUpdateAction();
             this.removeable = metadata.isRemoveable();
-            this.userCredentials = userCredentials;
+            this.userCredentialMetadatas = userCredentialMetadatas;
         }
 
         public String getCategory() {
@@ -137,8 +139,8 @@ public class AccountCredentialResource {
             return removeable;
         }
 
-        public List<CredentialRepresentation> getUserCredentials() {
-            return userCredentials;
+        public List<CredentialMetadataRepresentation> getUserCredentialMetadatas() {
+            return userCredentialMetadatas;
         }
 
         @JsonIgnore
@@ -171,8 +173,7 @@ public class AccountCredentialResource {
         Set<String> enabledCredentialTypes = getEnabledCredentialTypes(credentialProviders);
 
         Stream<CredentialModel> modelsStream = includeUserCredentials ? session.userCredentialManager().getStoredCredentialsStream(realm, user) : Stream.empty();
-        // Don't return secrets from REST endpoint
-        List<CredentialModel> models = modelsStream.peek(model -> model.setSecretData(null)).collect(Collectors.toList());
+        List<CredentialModel> models = modelsStream.collect(Collectors.toList());
 
         Function<CredentialProvider, CredentialContainer> toCredentialContainer = (credentialProvider) -> {
             CredentialTypeMetadataContext ctx = CredentialTypeMetadataContext.builder()
@@ -180,29 +181,43 @@ public class AccountCredentialResource {
                     .build(session);
             CredentialTypeMetadata metadata = credentialProvider.getCredentialTypeMetadata(ctx);
 
-            List<CredentialRepresentation> userCredentialModels = null;
+            List<CredentialMetadataRepresentation> userCredentialMetadataModels = null;
+
             if (includeUserCredentials) {
-                userCredentialModels = models.stream()
+                List<CredentialModel> modelsOfType = models.stream()
                         .filter(credentialModel -> credentialProvider.getType().equals(credentialModel.getType()))
-                        .map(ModelToRepresentation::toRepresentation)
                         .collect(Collectors.toList());
 
-                if (userCredentialModels.isEmpty() &&
+
+                List<CredentialMetadata> credentialMetadataList = modelsOfType.stream()
+                        .map(m -> {
+                            return credentialProvider.getCredentialMetadata(
+                                    credentialProvider.getCredentialFromModel(m), metadata
+                            );
+                        }).collect(Collectors.toList());
+
+                // Don't return secrets from REST endpoint
+                credentialMetadataList.stream().forEach(md -> md.getCredentialModel().setSecretData(null));
+                userCredentialMetadataModels = credentialMetadataList.stream().map(ModelToRepresentation::toRepresentation).collect(Collectors.toList());
+
+                if (userCredentialMetadataModels.isEmpty() &&
                         session.userCredentialManager().isConfiguredFor(realm, user, credentialProvider.getType())) {
                     // In case user is federated in the userStorage, he may have credential configured on the userStorage side. We're
                     // creating "dummy" credential representing the credential provided by userStorage
+                    CredentialMetadataRepresentation metadataRepresentation = new CredentialMetadataRepresentation();
                     CredentialRepresentation credential = createUserStorageCredentialRepresentation(credentialProvider.getType());
-                    userCredentialModels = Collections.singletonList(credential);
+                    metadataRepresentation.setCredential(credential);
+                    userCredentialMetadataModels = Collections.singletonList(metadataRepresentation);
                 }
 
                 // In case that there are no userCredentials AND there are not required actions for setup new credential,
                 // we won't include credentialType as user won't be able to do anything with it
-                if (userCredentialModels.isEmpty() && metadata.getCreateAction() == null && metadata.getUpdateAction() == null) {
+                if (userCredentialMetadataModels.isEmpty() && metadata.getCreateAction() == null && metadata.getUpdateAction() == null) {
                     return null;
                 }
             }
 
-            return new CredentialContainer(metadata, userCredentialModels);
+            return new CredentialContainer(metadata, userCredentialMetadataModels);
         };
 
         return credentialProviders.stream()

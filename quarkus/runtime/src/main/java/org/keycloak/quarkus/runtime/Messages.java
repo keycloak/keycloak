@@ -63,4 +63,12 @@ public final class Messages {
     public static Throwable invalidLogCategoryFormat(String category) {
         return new IllegalStateException("Invalid log category format: " + category + ". The format is 'category:level' such as 'org.keycloak:debug'.");
     }
+
+    public static Throwable emptyValueForKey(String key) {
+        return new IllegalStateException("Value for configuration key '" + key + "' is empty.");
+    }
+
+    public static Throwable notRecognizedValueInList(String key, String values, String expected) {
+        return new IllegalStateException("Invalid values in list for key: " + key + " Values: " + values + ". Possible values are a combination of: " + expected);
+    }
 }

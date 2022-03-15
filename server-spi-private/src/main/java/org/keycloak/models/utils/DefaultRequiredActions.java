@@ -17,6 +17,7 @@
 
 package org.keycloak.models.utils;
 
+import org.keycloak.common.Profile;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.UserModel;
@@ -59,6 +60,18 @@ public class DefaultRequiredActions {
             totp.setDefaultAction(false);
             totp.setPriority(10);
             realm.addRequiredActionProvider(totp);
+        }
+
+        if (realm.getRequiredActionProviderByAlias(UserModel.RequiredAction.CONFIGURE_RECOVERY_AUTHN_CODES.name()) == null &&
+                Profile.isFeatureEnabled(Profile.Feature.RECOVERY_CODES)) {
+            RequiredActionProviderModel recoveryCodes = new RequiredActionProviderModel();
+            recoveryCodes.setEnabled(true);
+            recoveryCodes.setAlias(UserModel.RequiredAction.CONFIGURE_RECOVERY_AUTHN_CODES.name());
+            recoveryCodes.setName("Recovery Authentication Codes");
+            recoveryCodes.setProviderId(UserModel.RequiredAction.CONFIGURE_RECOVERY_AUTHN_CODES.name());
+            recoveryCodes.setDefaultAction(false);
+            recoveryCodes.setPriority(70);
+            realm.addRequiredActionProvider(recoveryCodes);
         }
 
         if (realm.getRequiredActionProviderByAlias(UserModel.RequiredAction.UPDATE_PASSWORD.name()) == null) {

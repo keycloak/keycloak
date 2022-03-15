@@ -117,7 +117,12 @@ The following table shows transport stacks that are available without any furthe
 |Stack name|Transport protocol|Discovery
 |tcp|TCP|MPING (uses UDP multicast).
 |udp|UDP|UDP multicast
-|kubernetes|TCP|DNS_PING
+|===
+
+The following table shows transport stacks that are available using the `--cache-stack` build option and a minimum configuration:
+|===
+|Stack name|Transport protocol|Discovery
+|kubernetes|TCP|DNS_PING (requires `-Djgroups.dns.query=<headless-service-FQDN>` to be added to JAVA_OPTS or JAVA_OPTS_APPEND environment variable).
 |===
 
 === Additional transport stacks

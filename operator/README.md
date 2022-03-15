@@ -64,3 +64,19 @@ Remove the created resources with:
 ```bash
 kubectl delete -k <previously-used-folder>
 ```
+
+### Testing
+
+Testing allows 2 methods specified in the property `test.operator.deployment` : `local` & `remote`. 
+
+`local` : resources will be deployed to the local cluster and the operator will run out of the cluster
+
+`remote` : same as local test but an image for the operator will be generated and deployed run inside the cluster
+
+```bash
+mvn clean verify \
+  -Dquarkus.container-image.build=true \
+  -Dquarkus.container-image.tag=test \
+  -Dquarkus.kubernetes.deployment-target=kubernetes \
+  -Dtest.operator.deployment=remote
+```

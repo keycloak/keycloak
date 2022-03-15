@@ -88,6 +88,16 @@ The following table shows the recommended paths to expose.
 |Yes
 |Search engine rules
 
+|/metrics
+|-
+|No
+|Exposed metrics lead to an unnecessary attack vector.
+
+|/health
+|-
+|No
+|Exposed health checks lead to an unnecessary attack vector.
+
 |===
 We assume you run Keycloak on the root path `/` on your reverse proxy/gateway's public API.
 If not, prefix the path with your desired one.

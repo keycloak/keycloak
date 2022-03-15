@@ -28,21 +28,7 @@ import io.quarkus.test.junit.main.LaunchResult;
 public class CustomTransactionDistTest {
 
     @Test
-    @Launch({ "-Dkc.db-tx-type=enabled", "-Dkc.db-driver=org.postgresql.xa.PGXADataSource", "build", "--db=postgres" })
-    void failNoXAUsingXADriver(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
-        cliResult.assertError("Driver org.postgresql.xa.PGXADataSource is an XA datasource, but XA transactions have not been enabled on the default datasource");
-    }
-
-    @Test
-    @Launch({ "-Dkc.db-driver=com.microsoft.sqlserver.jdbc.SQLServerDriver", "build", "--db=mssql" })
-    void failXAUsingNonXADriver(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
-        cliResult.assertError("Driver is not an XA dataSource, while XA has been enabled in the configuration of the default datasource");
-    }
-
-    @Test
-    @Launch({ "-Dkc.db-tx-type=enabled", "-Dkc.db-driver=com.microsoft.sqlserver.jdbc.SQLServerDriver", "build", "--db=mssql" })
+    @Launch({ "build", "--db=mssql", "--transaction-xa-enabled=false" })
     void testNoXa(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertBuild();

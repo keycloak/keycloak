@@ -30,7 +30,7 @@ To run Keycloak download the distribution from our [website](https://www.keycloa
 
 Alternatively, you can use the Docker image by running:
 
-    docker run jboss/keycloak
+    docker run quay.io/keycloak/keycloak start-dev
     
 For more details refer to the [Keycloak Documentation](https://www.keycloak.org/documentation.html).
 
@@ -60,7 +60,6 @@ Before contributing to Keycloak please read our [contributing guidelines](CONTRI
 * [Keycloak](https://github.com/keycloak/keycloak) - Keycloak Server and Java adapters
 * [Keycloak Documentation](https://github.com/keycloak/keycloak-documentation) - Documentation for Keycloak
 * [Keycloak QuickStarts](https://github.com/keycloak/keycloak-quickstarts) - QuickStarts for getting started with Keycloak
-* [Keycloak Containers](https://github.com/keycloak/keycloak-containers) - Container images for Keycloak
 * [Keycloak Node.js Connect](https://github.com/keycloak/keycloak-nodejs-connect) - Node.js adapter for Keycloak
 * [Keycloak Node.js Admin Client](https://github.com/keycloak/keycloak-nodejs-admin-client) - Node.js library for Keycloak Admin REST API
 

@@ -30,7 +30,7 @@ import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import org.keycloak.models.GroupModel;
-import org.keycloak.models.map.common.StringKeyConvertor;
+import org.keycloak.models.map.common.StringKeyConverter;
 import org.keycloak.models.map.storage.CriterionNotSupportedException;
 import org.keycloak.models.map.storage.jpa.group.entity.JpaGroupEntity;
 import org.keycloak.models.map.storage.jpa.JpaModelCriteriaBuilder;
@@ -114,7 +114,7 @@ public class JpaGroupModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaGro
                         CriteriaBuilder.In<UUID> in = cb.in(root.get("id"));
                         for (Object id : collectionValues) {
                             try {
-                                in.value(StringKeyConvertor.UUIDKey.INSTANCE.fromString(Objects.toString(id, null)));
+                                in.value(StringKeyConverter.UUIDKey.INSTANCE.fromString(Objects.toString(id, null)));
                             } catch (IllegalArgumentException e) {
                                 throw new CriterionNotSupportedException(modelField, op, id + " id is not in uuid format.", e);
                             }

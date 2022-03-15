@@ -35,17 +35,4 @@
         <module>tomcat</module>
     </modules>
 
-    <profiles>
-        <profile>
-            <id>community</id>
-            <activation>
-                <property>
-                    <name>!product</name>
-                </property>
-            </activation>
-            <modules>
-                <module>tomcat7</module>
-            </modules>
-        </profile>
-    </profiles>
 </project>

@@ -28,21 +28,15 @@ public abstract class AbstractExportImportCommand extends AbstractStartCommand i
 
     @Option(names = "--dir",
             arity = "1",
-            description = "Set the path to a directory where files will be created with the exported data.",
+            description = "Set the path to a directory where files will be read from when importing or created with the exported data.",
             paramLabel = "<path>")
     String toDir;
 
     @Option(names = "--file",
             arity = "1",
-            description = "Set the path to a file that will be created with the exported data.",
+            description = "Set the path to a file that will be read when importing or created with the exported data.",
             paramLabel = "<path>")
     String toFile;
-
-    @Option(names = "--realm",
-            arity = "1",
-            description = "Set the name of the realm to export",
-            paramLabel = "<realm>")
-    String realm;
 
     protected AbstractExportImportCommand(String action) {
         this.action = action;
@@ -60,10 +54,6 @@ public abstract class AbstractExportImportCommand extends AbstractStartCommand i
             System.setProperty("keycloak.migration.file", toFile);
         } else {
             executionError(spec.commandLine(), "Must specify either --dir or --file options.");
-        }
-
-        if (realm != null) {
-            System.setProperty("keycloak.migration.realmName", realm);
         }
 
         Environment.setProfile(Environment.IMPORT_EXPORT_MODE);
