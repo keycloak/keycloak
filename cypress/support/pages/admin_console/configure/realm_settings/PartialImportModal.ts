@@ -7,18 +7,9 @@ export default class GroupModal {
   }
 
   typeResourceFile = (filename: string) => {
-    cy.readFile("cypress/fixtures/partial-import-test-data/" + filename).then(
-      (myJSON) => {
-        const text = JSON.stringify(myJSON);
-
-        cy.get(".pf-c-code-editor__code textarea")
-          .type(text, {
-            delay: 0,
-            parseSpecialCharSequences: false,
-          })
-          .type("{shift}{end}")
-          .type("{del}");
-      }
+    cy.get("#partial-import-file-filename").attachFile(
+      "./partial-import-test-data/" + filename,
+      { subjectType: "drag-n-drop" }
     );
   };
 
