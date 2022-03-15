@@ -22,9 +22,9 @@ import org.jboss.logging.Logger;
 import org.keycloak.common.Profile;
 import org.keycloak.migration.MigrationProvider;
 import org.keycloak.migration.ModelVersion;
-import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.utils.DefaultRequiredActions;
 import org.keycloak.representations.idm.RealmRepresentation;
 
 /**
@@ -46,6 +46,7 @@ public class MigrateTo18_0_0 implements Migration {
         if (Profile.isFeatureEnabled(Profile.Feature.STEP_UP_AUTHENTICATION)) {
             session.realms().getRealmsStream().forEach(realm -> migrateRealm(session, realm));
         }
+        session.realms().getRealmsStream().forEach(DefaultRequiredActions::addUpdateEmailAction);
     }
 
     @Override

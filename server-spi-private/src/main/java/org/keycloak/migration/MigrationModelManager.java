@@ -24,7 +24,6 @@ import org.jboss.logging.Logger;
 import org.keycloak.common.Version;
 import org.keycloak.migration.migrators.MigrateTo12_0_0;
 import org.keycloak.migration.migrators.MigrateTo14_0_0;
-import org.keycloak.migration.migrators.MigrateTo16_0_0;
 import org.keycloak.migration.migrators.MigrateTo18_0_0;
 import org.keycloak.migration.migrators.MigrateTo1_2_0;
 import org.keycloak.migration.migrators.MigrateTo1_3_0;
@@ -99,7 +98,6 @@ public class MigrationModelManager {
             new MigrateTo9_0_4(),
             new MigrateTo12_0_0(),
             new MigrateTo14_0_0(),
-            new MigrateTo16_0_0(),
             new MigrateTo18_0_0()
     };
 
