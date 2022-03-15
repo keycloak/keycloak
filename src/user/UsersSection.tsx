@@ -61,7 +61,7 @@ export default function UsersSection() {
   const [selectedRows, setSelectedRows] = useState<UserRepresentation[]>([]);
 
   const [key, setKey] = useState("");
-  const refresh = () => setKey(`${new Date().getTime()}`);
+  const refresh = () => setKey(key + 1);
 
   useFetch(
     async () => {
@@ -129,7 +129,11 @@ export default function UsersSection() {
       }
       return users;
     } catch (error) {
-      addError("users:noUsersFoundError", error);
+      if (userStorage?.length) {
+        addError("users:noUsersFoundErrorStorage", error);
+      } else {
+        addError("users:noUsersFoundError", error);
+      }
       return [];
     }
   };

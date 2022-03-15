@@ -7,7 +7,7 @@ import {
 } from "@patternfly/react-core";
 
 export type AlertType = {
-  key: number;
+  key: string;
   message: string;
   variant: AlertVariant;
   description?: string;
@@ -15,7 +15,7 @@ export type AlertType = {
 
 type AlertPanelProps = {
   alerts: AlertType[];
-  onCloseAlert: (key: number) => void;
+  onCloseAlert: (key: string) => void;
 };
 
 export function AlertPanel({ alerts, onCloseAlert }: AlertPanelProps) {

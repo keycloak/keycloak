@@ -26,9 +26,9 @@ export const AlertProvider: FunctionComponent = ({ children }) => {
   const [alerts, setAlerts] = useState<AlertType[]>([]);
   const setTimeout = useSetTimeout();
 
-  const createId = () => new Date().getTime();
+  const createId = () => Math.random().toString(16);
 
-  const hideAlert = (key: number) => {
+  const hideAlert = (key: string) => {
     setAlerts((alerts) => [...alerts.filter((el) => el.key !== key)]);
   };
 

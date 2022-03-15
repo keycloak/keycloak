@@ -10,6 +10,8 @@ export default {
     createNewUser: "Create new user",
     noUsersFound: "No users found",
     noUsersFoundError: "No users found due to {{error}}",
+    noUsersFoundErrorStorage:
+      "No users found, could be due to wrongly configured federated provider {{error}}",
     noGroups: "No groups",
     noGroupsText:
       "You haven't added this user to any groups. Join a group to get started.",
