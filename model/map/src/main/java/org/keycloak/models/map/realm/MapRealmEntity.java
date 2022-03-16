@@ -438,6 +438,7 @@ public interface MapRealmEntity extends UpdatableEntity, AbstractEntity, EntityW
 
     Map<String, String> getBrowserSecurityHeaders();
     void setBrowserSecurityHeaders(Map<String, String> headers);
+    void setBrowserSecurityHeader(String name, String value);
 
     Map<String, String> getSmtpConfig();
     void setSmtpConfig(Map<String, String> smtpConfig);
