@@ -1,6 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { useFormContext } from "react-hook-form";
+import { FormProvider, useFormContext } from "react-hook-form";
 import { AlertVariant } from "@patternfly/react-core";
 
 import type { KeyTypes } from "./SamlKeys";
@@ -22,7 +22,8 @@ export const SamlImportKeyDialog = ({
   onClose,
 }: SamlImportKeyDialogProps) => {
   const { t } = useTranslation("clients");
-  const { register, control, handleSubmit } = useFormContext();
+  const form = useFormContext();
+  const { handleSubmit } = form;
 
   const adminClient = useAdminClient();
   const { addAlert, addError } = useAlerts();
@@ -48,7 +49,9 @@ export const SamlImportKeyDialog = ({
         onClose();
       }}
     >
-      <KeyForm register={register} control={control} useFile />
+      <FormProvider {...form}>
+        <KeyForm useFile />
+      </FormProvider>
     </ConfirmDialogModal>
   );
 };

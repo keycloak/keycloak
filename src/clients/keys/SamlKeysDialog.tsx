@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import FileSaver from "file-saver";
 import { useTranslation } from "react-i18next";
-import { useForm } from "react-hook-form";
+import { FormProvider, useForm } from "react-hook-form";
 import {
   AlertVariant,
   Button,
@@ -75,12 +75,11 @@ export const SamlKeysDialog = ({
   const { t } = useTranslation("clients");
   const [type, setType] = useState(false);
   const [keys, setKeys] = useState<CertificateRepresentation>();
+  const form = useForm<SamlKeysDialogForm>();
   const {
-    register,
-    control,
     handleSubmit,
     formState: { isDirty },
-  } = useForm<SamlKeysDialogForm>();
+  } = form;
 
   const adminClient = useAdminClient();
   const { addAlert, addError } = useAlerts();
@@ -211,7 +210,11 @@ export const SamlKeysDialog = ({
           </FormGroup>
         </Form>
       )}
-      {type && <KeyForm register={register} control={control} useFile />}
+      {type && (
+        <FormProvider {...form}>
+          <KeyForm useFile />
+        </FormProvider>
+      )}
     </Modal>
   );
 };

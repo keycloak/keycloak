@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Controller, useForm, useWatch } from "react-hook-form";
+import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
 import {
   Button,
   ButtonVariant,
@@ -43,7 +43,8 @@ export const ImportKeyDialog = ({
   toggleDialog,
 }: ImportKeyDialogProps) => {
   const { t } = useTranslation("clients");
-  const { register, control, handleSubmit } = useForm<ImportFile>();
+  const form = useForm<ImportFile>();
+  const { control, handleSubmit } = form;
 
   const [openArchiveFormat, setOpenArchiveFormat] = useState(false);
 
@@ -128,7 +129,9 @@ export const ImportKeyDialog = ({
           />
         </FormGroup>
         {baseFormats.includes(format) && (
-          <StoreSettings register={register} hidePassword />
+          <FormProvider {...form}>
+            <StoreSettings hidePassword />
+          </FormProvider>
         )}
         <FormGroup label={t("importFile")} fieldId="importFile">
           <Controller

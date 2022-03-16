@@ -42,6 +42,7 @@ export const Keys = ({ clientId, save }: KeysProps) => {
   const {
     control,
     register,
+    getValues,
     formState: { isDirty },
   } = useFormContext<ClientRepresentation>();
   const adminClient = useAdminClient();
@@ -106,6 +107,7 @@ export const Keys = ({ clientId, save }: KeysProps) => {
     <PageSection variant="light" className="keycloak__form">
       {openGenerateKeys && (
         <GenerateKeyDialog
+          clientId={getValues("clientId")!}
           toggleDialog={toggleOpenGenerateKeys}
           save={generate}
         />

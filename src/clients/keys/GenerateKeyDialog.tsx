@@ -1,6 +1,11 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Control, Controller, useForm } from "react-hook-form";
+import {
+  Controller,
+  FormProvider,
+  useForm,
+  useFormContext,
+} from "react-hook-form";
 import {
   Button,
   ButtonVariant,
@@ -21,25 +26,22 @@ import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { StoreSettings } from "./StoreSettings";
 
 type GenerateKeyDialogProps = {
+  clientId: string;
   toggleDialog: () => void;
   save: (keyStoreConfig: KeyStoreConfig) => void;
 };
 
 type KeyFormProps = {
-  register: () => void;
-  control: Control<KeyStoreConfig>;
   useFile?: boolean;
 };
 
-export const KeyForm = ({
-  register,
-  control,
-  useFile = false,
-}: KeyFormProps) => {
+export const KeyForm = ({ useFile = false }: KeyFormProps) => {
   const { t } = useTranslation("clients");
 
   const [filename, setFilename] = useState<string>();
   const [openArchiveFormat, setOpenArchiveFormat] = useState(false);
+
+  const { control } = useFormContext<KeyStoreConfig>();
 
   return (
     <Form className="pf-u-pt-lg">
@@ -111,17 +113,26 @@ export const KeyForm = ({
           />
         </FormGroup>
       )}
-      <StoreSettings register={register} hidePassword={useFile} />
+      <StoreSettings hidePassword={useFile} />
     </Form>
   );
 };
 
 export const GenerateKeyDialog = ({
+  clientId,
   save,
   toggleDialog,
 }: GenerateKeyDialogProps) => {
   const { t } = useTranslation("clients");
-  const { register, control, handleSubmit } = useForm<KeyStoreConfig>();
+  const form = useForm<KeyStoreConfig>({
+    defaultValues: { keyAlias: clientId },
+    mode: "onChange",
+  });
+
+  const {
+    handleSubmit,
+    formState: { isValid },
+  } = form;
 
   return (
     <Modal
@@ -134,6 +145,7 @@ export const GenerateKeyDialog = ({
           id="modal-confirm"
           key="confirm"
           data-testid="confirm"
+          isDisabled={!isValid}
           onClick={() => {
             handleSubmit((config) => {
               save(config);
@@ -159,7 +171,9 @@ export const GenerateKeyDialog = ({
       <TextContent>
         <Text>{t("clients-help:generateKeysDescription")}</Text>
       </TextContent>
-      <KeyForm register={register} control={control} />
+      <FormProvider {...form}>
+        <KeyForm />
+      </FormProvider>
     </Modal>
   );
 };

@@ -1,24 +1,26 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
+import { useFormContext } from "react-hook-form";
 import { FormGroup, TextInput } from "@patternfly/react-core";
 
+import type KeyStoreConfig from "@keycloak/keycloak-admin-client/lib/defs/keystoreConfig";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { PasswordInput } from "../../components/password-input/PasswordInput";
 
 export const StoreSettings = ({
-  register,
   hidePassword = false,
 }: {
-  register: () => void;
   hidePassword?: boolean;
 }) => {
   const { t } = useTranslation("clients");
+  const { register } = useFormContext<KeyStoreConfig>();
 
   return (
     <>
       <FormGroup
         label={t("keyAlias")}
         fieldId="keyAlias"
+        isRequired
         labelIcon={
           <HelpItem
             helpText="clients-help:keyAlias"
@@ -31,13 +33,14 @@ export const StoreSettings = ({
           type="text"
           id="keyAlias"
           name="keyAlias"
-          ref={register}
+          ref={register({ required: true })}
         />
       </FormGroup>
       {!hidePassword && (
         <FormGroup
           label={t("keyPassword")}
           fieldId="keyPassword"
+          isRequired
           labelIcon={
             <HelpItem
               helpText="clients-help:keyPassword"
@@ -49,13 +52,14 @@ export const StoreSettings = ({
             data-testid="keyPassword"
             id="keyPassword"
             name="keyPassword"
-            ref={register}
+            ref={register({ required: true })}
           />
         </FormGroup>
       )}
       <FormGroup
         label={t("storePassword")}
         fieldId="storePassword"
+        isRequired
         labelIcon={
           <HelpItem
             helpText="clients-help:storePassword"
@@ -67,7 +71,7 @@ export const StoreSettings = ({
           data-testid="storePassword"
           id="storePassword"
           name="storePassword"
-          ref={register}
+          ref={register({ required: true })}
         />
       </FormGroup>
     </>
