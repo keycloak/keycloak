@@ -97,6 +97,7 @@ export const LocalizationTab = ({
   const watchSupportedLocales = useWatch<string[]>({
     control,
     name: "supportedLocales",
+    defaultValue: [DEFAULT_LOCALE],
   });
   const internationalizationEnabled = useWatch({
     control,
@@ -227,9 +228,7 @@ export const LocalizationTab = ({
   };
 
   const updateEditableRows = async (
-    evt: any,
     type: RowEditType,
-    isEditable?: boolean | undefined,
     rowIndex?: number,
     validationErrors?: RowErrors
   ) => {
@@ -281,18 +280,14 @@ export const LocalizationTab = ({
 
   const options = [
     <SelectGroup label={t("defaultLocale")} key="group1">
-      {watchSupportedLocales
-        ?.filter((item) => item === realm.defaultLocale)
-        .map((locale) => (
-          <SelectOption key={locale} value={locale}>
-            {t(`allSupportedLocales.${locale}`)}
-          </SelectOption>
-        ))}
+      <SelectOption key={DEFAULT_LOCALE} value={DEFAULT_LOCALE}>
+        {t(`allSupportedLocales.${DEFAULT_LOCALE}`)}
+      </SelectOption>
     </SelectGroup>,
     <Divider key="divider" />,
     <SelectGroup label={t("supportedLocales")} key="group2">
       {watchSupportedLocales
-        ?.filter((item) => item !== realm.defaultLocale)
+        .filter((item) => item !== realm.defaultLocale)
         .map((locale) => (
           <SelectOption key={locale} value={locale}>
             {t(`allSupportedLocales.${locale}`)}
@@ -402,7 +397,7 @@ export const LocalizationTab = ({
                         }
                       }}
                       onClear={() => {
-                        onChange([]);
+                        onChange([DEFAULT_LOCALE]);
                       }}
                       selections={value}
                       variant={SelectVariant.typeaheadMulti}
@@ -410,20 +405,15 @@ export const LocalizationTab = ({
                       isOpen={supportedLocalesOpen}
                       placeholderText={t("selectLocales")}
                     >
-                      {
-                        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-                        themeTypes.login![0].locales?.map(
-                          (locale: string, idx: number) => (
-                            <SelectOption
-                              selected={value.includes(locale)}
-                              key={`locale-${idx}`}
-                              value={locale}
-                            >
-                              {t(`allSupportedLocales.${locale}`)}
-                            </SelectOption>
-                          )
-                        )
-                      }
+                      {themeTypes.login![0].locales.map((locale) => (
+                        <SelectOption
+                          selected={value.includes(locale)}
+                          key={locale}
+                          value={locale}
+                        >
+                          {t(`allSupportedLocales.${locale}`)}
+                        </SelectOption>
+                      ))}
                     </Select>
                   )}
                 />
@@ -461,7 +451,7 @@ export const LocalizationTab = ({
                       placeholderText={t("placeholderText")}
                       data-testid="select-default-locale"
                     >
-                      {watchSupportedLocales?.map(
+                      {watchSupportedLocales.map(
                         (locale: string, idx: number) => (
                           <SelectOption
                             key={`default-locale-${idx}`}
@@ -576,7 +566,9 @@ export const LocalizationTab = ({
                   variant={TableVariant.compact}
                   cells={[t("common:key"), t("common:value")]}
                   rows={tableRows}
-                  onRowEdit={updateEditableRows}
+                  onRowEdit={(_, type, _b, rowIndex, validation) =>
+                    updateEditableRows(type, rowIndex, validation)
+                  }
                 >
                   <TableHeader />
                   <TableBody />
