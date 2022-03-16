@@ -188,7 +188,11 @@ export const AuthorizationPermissions = ({ clientId }: PermissionsProps) => {
           toolbarItem={
             <>
               <ToolbarItem>
-                <SearchDropdown types={policyProviders} onSearch={setSearch} />
+                <SearchDropdown
+                  types={policyProviders}
+                  search={search}
+                  onSearch={setSearch}
+                />
               </ToolbarItem>
               <ToolbarItem>
                 <Dropdown

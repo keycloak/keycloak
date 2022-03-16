@@ -35,6 +35,7 @@ import useToggle from "../../utils/useToggle";
 import { NewPolicyDialog } from "./NewPolicyDialog";
 import { toCreatePolicy } from "../routes/NewPolicy";
 import { DetailDescription } from "./DetailDescription";
+import { SearchDropdown, SearchForm } from "./SearchDropdown";
 
 type PoliciesProps = {
   clientId: string;
@@ -63,6 +64,7 @@ export const AuthorizationPolicies = ({ clientId }: PoliciesProps) => {
 
   const [max, setMax] = useState(10);
   const [first, setFirst] = useState(0);
+  const [search, setSearch] = useState<SearchForm>({});
   const [newDialog, toggleDialog] = useToggle();
 
   useFetch(
@@ -72,6 +74,7 @@ export const AuthorizationPolicies = ({ clientId }: PoliciesProps) => {
         max,
         id: clientId,
         permission: "false",
+        ...search,
       });
 
       return await Promise.all([
@@ -97,7 +100,7 @@ export const AuthorizationPolicies = ({ clientId }: PoliciesProps) => {
       );
       setPolicies(policies);
     },
-    [key]
+    [key, search]
   );
 
   const DependentPoliciesRenderer = ({
@@ -157,10 +160,12 @@ export const AuthorizationPolicies = ({ clientId }: PoliciesProps) => {
     return <KeycloakSpinner />;
   }
 
+  const noData = policies.length === 0;
+  const searching = Object.keys(search).length !== 0;
   return (
     <PageSection variant="light" className="pf-u-p-0">
       <DeleteConfirm />
-      {policies.length > 0 && (
+      {(!noData || searching) && (
         <>
           {newDialog && (
             <NewPolicyDialog
@@ -185,98 +190,119 @@ export const AuthorizationPolicies = ({ clientId }: PoliciesProps) => {
               setMax(max);
             }}
             toolbarItem={
-              <ToolbarItem>
-                <Button data-testid="createPolicy" onClick={toggleDialog}>
-                  {t("createPolicy")}
-                </Button>
-              </ToolbarItem>
+              <>
+                <ToolbarItem>
+                  <SearchDropdown
+                    types={policyProviders}
+                    search={search}
+                    onSearch={setSearch}
+                  />
+                </ToolbarItem>
+                <ToolbarItem>
+                  <Button data-testid="createPolicy" onClick={toggleDialog}>
+                    {t("createPolicy")}
+                  </Button>
+                </ToolbarItem>
+              </>
             }
           >
-            <TableComposable aria-label={t("resources")} variant="compact">
-              <Thead>
-                <Tr>
-                  <Th />
-                  <Th>{t("common:name")}</Th>
-                  <Th>{t("common:type")}</Th>
-                  <Th>{t("dependentPermission")}</Th>
-                  <Th>{t("common:description")}</Th>
-                  <Th />
-                </Tr>
-              </Thead>
-              {policies.map((policy, rowIndex) => (
-                <Tbody key={policy.id} isExpanded={policy.isExpanded}>
+            {!noData && (
+              <TableComposable aria-label={t("resources")} variant="compact">
+                <Thead>
                   <Tr>
-                    <Td
-                      expand={{
-                        rowIndex,
-                        isExpanded: policy.isExpanded,
-                        onToggle: (_, rowIndex) => {
-                          const rows = policies.map((policy, index) =>
-                            index === rowIndex
-                              ? { ...policy, isExpanded: !policy.isExpanded }
-                              : policy
-                          );
-                          setPolicies(rows);
-                        },
-                      }}
-                    />
-                    <Td data-testid={`name-column-${policy.name}`}>
-                      <Link
-                        to={toPolicyDetails({
-                          realm,
-                          id: clientId,
-                          policyType: policy.type!,
-                          policyId: policy.id!,
-                        })}
-                      >
-                        {policy.name}
-                      </Link>
-                    </Td>
-                    <Td>{toUpperCase(policy.type!)}</Td>
-                    <Td>
-                      <DependentPoliciesRenderer row={policy} />
-                    </Td>
-                    <Td>{policy.description}</Td>
-                    <Td
-                      actions={{
-                        items: [
-                          {
-                            title: t("common:delete"),
-                            onClick: async () => {
-                              setSelectedPolicy(policy);
-                              toggleDeleteDialog();
-                            },
+                    <Th />
+                    <Th>{t("common:name")}</Th>
+                    <Th>{t("common:type")}</Th>
+                    <Th>{t("dependentPermission")}</Th>
+                    <Th>{t("common:description")}</Th>
+                    <Th />
+                  </Tr>
+                </Thead>
+                {policies.map((policy, rowIndex) => (
+                  <Tbody key={policy.id} isExpanded={policy.isExpanded}>
+                    <Tr>
+                      <Td
+                        expand={{
+                          rowIndex,
+                          isExpanded: policy.isExpanded,
+                          onToggle: (_, rowIndex) => {
+                            const rows = policies.map((policy, index) =>
+                              index === rowIndex
+                                ? { ...policy, isExpanded: !policy.isExpanded }
+                                : policy
+                            );
+                            setPolicies(rows);
                           },
-                        ],
-                      }}
-                    />
-                  </Tr>
-                  <Tr key={`child-${policy.id}`} isExpanded={policy.isExpanded}>
-                    <Td />
-                    <Td colSpan={4}>
-                      <ExpandableRowContent>
-                        {policy.isExpanded && (
-                          <DescriptionList
-                            isHorizontal
-                            className="keycloak_resource_details"
-                          >
-                            <DetailDescription
-                              name="dependentPermission"
-                              array={policy.dependentPolicies}
-                              convert={(p) => p.name!}
-                            />
-                          </DescriptionList>
-                        )}
-                      </ExpandableRowContent>
-                    </Td>
-                  </Tr>
-                </Tbody>
-              ))}
-            </TableComposable>
+                        }}
+                      />
+                      <Td data-testid={`name-column-${policy.name}`}>
+                        <Link
+                          to={toPolicyDetails({
+                            realm,
+                            id: clientId,
+                            policyType: policy.type!,
+                            policyId: policy.id!,
+                          })}
+                        >
+                          {policy.name}
+                        </Link>
+                      </Td>
+                      <Td>{toUpperCase(policy.type!)}</Td>
+                      <Td>
+                        <DependentPoliciesRenderer row={policy} />
+                      </Td>
+                      <Td>{policy.description}</Td>
+                      <Td
+                        actions={{
+                          items: [
+                            {
+                              title: t("common:delete"),
+                              onClick: async () => {
+                                setSelectedPolicy(policy);
+                                toggleDeleteDialog();
+                              },
+                            },
+                          ],
+                        }}
+                      />
+                    </Tr>
+                    <Tr
+                      key={`child-${policy.id}`}
+                      isExpanded={policy.isExpanded}
+                    >
+                      <Td />
+                      <Td colSpan={4}>
+                        <ExpandableRowContent>
+                          {policy.isExpanded && (
+                            <DescriptionList
+                              isHorizontal
+                              className="keycloak_resource_details"
+                            >
+                              <DetailDescription
+                                name="dependentPermission"
+                                array={policy.dependentPolicies}
+                                convert={(p) => p.name!}
+                              />
+                            </DescriptionList>
+                          )}
+                        </ExpandableRowContent>
+                      </Td>
+                    </Tr>
+                  </Tbody>
+                ))}
+              </TableComposable>
+            )}
           </PaginatingTableToolbar>
         </>
       )}
-      {policies.length === 0 && (
+      {noData && searching && (
+        <ListEmptyState
+          isSearchVariant
+          message={t("common:noSearchResults")}
+          instructions={t("common:noSearchResultsInstructions")}
+        />
+      )}
+      {noData && !searching && (
         <>
           {newDialog && (
             <NewPolicyDialog

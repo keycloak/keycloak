@@ -58,6 +58,7 @@ export const AuthorizationScopes = ({ clientId }: ScopesProps) => {
 
   const [max, setMax] = useState(10);
   const [first, setFirst] = useState(0);
+  const [search, setSearch] = useState("");
 
   useFetch(
     async () => {
@@ -65,6 +66,7 @@ export const AuthorizationScopes = ({ clientId }: ScopesProps) => {
         first,
         max,
         deep: false,
+        name: search,
       };
       const scopes = await adminClient.clients.listAllScopes({
         ...params,
@@ -89,7 +91,7 @@ export const AuthorizationScopes = ({ clientId }: ScopesProps) => {
       );
     },
     setScopes,
-    [key]
+    [key, search]
   );
 
   const ResourceRenderer = ({
@@ -120,6 +122,8 @@ export const AuthorizationScopes = ({ clientId }: ScopesProps) => {
     return <KeycloakSpinner />;
   }
 
+  const noData = scopes.length === 0;
+  const searching = search !== "";
   return (
     <PageSection variant="light" className="pf-u-p-0">
       <DeleteScopeDialog
@@ -129,7 +133,7 @@ export const AuthorizationScopes = ({ clientId }: ScopesProps) => {
         selectedScope={selectedScope}
         refresh={refresh}
       />
-      {scopes.length > 0 && (
+      {(!noData || searching) && (
         <PaginatingTableToolbar
           count={scopes.length}
           first={first}
@@ -140,6 +144,9 @@ export const AuthorizationScopes = ({ clientId }: ScopesProps) => {
             setFirst(first);
             setMax(max);
           }}
+          inputGroupName="search"
+          inputGroupPlaceholder={t("searchByName")}
+          inputGroupOnEnter={setSearch}
           toolbarItem={
             <ToolbarItem>
               <Button
@@ -153,113 +160,119 @@ export const AuthorizationScopes = ({ clientId }: ScopesProps) => {
             </ToolbarItem>
           }
         >
-          <TableComposable aria-label={t("scopes")} variant="compact">
-            <Thead>
-              <Tr>
-                <Th />
-                <Th>{t("common:name")}</Th>
-                <Th>{t("resources")}</Th>
-                <Th>{t("permissions")}</Th>
-                <Th />
-                <Th />
-              </Tr>
-            </Thead>
-            {scopes.map((scope, rowIndex) => (
-              <Tbody key={scope.id} isExpanded={scope.isExpanded}>
+          {!noData && (
+            <TableComposable aria-label={t("scopes")} variant="compact">
+              <Thead>
                 <Tr>
-                  <Td
-                    expand={{
-                      rowIndex,
-                      isExpanded: scope.isExpanded,
-                      onToggle: (_, rowIndex) => {
-                        const rows = scopes.map((resource, index) =>
-                          index === rowIndex
-                            ? { ...resource, isExpanded: !resource.isExpanded }
-                            : resource
-                        );
-                        setScopes(rows);
-                      },
-                    }}
-                  />
-                  <Td data-testid={`name-column-${scope.name}`}>
-                    <Link
-                      to={toScopeDetails({
-                        realm,
-                        id: clientId,
-                        scopeId: scope.id!,
-                      })}
-                    >
-                      {scope.name}
-                    </Link>
-                  </Td>
-                  <Td>
-                    <ResourceRenderer row={scope} />
-                  </Td>
-                  <Td>
-                    <PermissionsRenderer row={scope} />
-                  </Td>
-                  <Td width={10}>
-                    <Button
-                      variant="link"
-                      component={(props) => (
-                        <Link
-                          {...props}
-                          to={toNewPermission({
-                            realm,
-                            id: clientId,
-                            permissionType: "scope",
-                            selectedId: scope.id,
-                          })}
-                        />
-                      )}
-                    >
-                      {t("createPermission")}
-                    </Button>
-                  </Td>
-                  <Td
-                    isActionCell
-                    actions={{
-                      items: [
-                        {
-                          title: t("common:delete"),
-                          onClick: () => {
-                            setSelectedScope(scope);
-                            toggleDeleteDialog();
-                          },
+                  <Th />
+                  <Th>{t("common:name")}</Th>
+                  <Th>{t("resources")}</Th>
+                  <Th>{t("permissions")}</Th>
+                  <Th />
+                  <Th />
+                </Tr>
+              </Thead>
+              {scopes.map((scope, rowIndex) => (
+                <Tbody key={scope.id} isExpanded={scope.isExpanded}>
+                  <Tr>
+                    <Td
+                      expand={{
+                        rowIndex,
+                        isExpanded: scope.isExpanded,
+                        onToggle: (_, rowIndex) => {
+                          const rows = scopes.map((resource, index) =>
+                            index === rowIndex
+                              ? {
+                                  ...resource,
+                                  isExpanded: !resource.isExpanded,
+                                }
+                              : resource
+                          );
+                          setScopes(rows);
                         },
-                      ],
-                    }}
-                  />
-                </Tr>
-                <Tr key={`child-${scope.id}`} isExpanded={scope.isExpanded}>
-                  <Td colSpan={5}>
-                    <ExpandableRowContent>
-                      {scope.isExpanded && (
-                        <DescriptionList
-                          isHorizontal
-                          className="keycloak_resource_details"
-                        >
-                          <DetailDescription
-                            name="resources"
-                            array={scope.resources}
-                            convert={(r) => r.name!}
+                      }}
+                    />
+                    <Td data-testid={`name-column-${scope.name}`}>
+                      <Link
+                        to={toScopeDetails({
+                          realm,
+                          id: clientId,
+                          scopeId: scope.id!,
+                        })}
+                      >
+                        {scope.name}
+                      </Link>
+                    </Td>
+                    <Td>
+                      <ResourceRenderer row={scope} />
+                    </Td>
+                    <Td>
+                      <PermissionsRenderer row={scope} />
+                    </Td>
+                    <Td width={10}>
+                      <Button
+                        variant="link"
+                        component={(props) => (
+                          <Link
+                            {...props}
+                            to={toNewPermission({
+                              realm,
+                              id: clientId,
+                              permissionType: "scope",
+                              selectedId: scope.id,
+                            })}
                           />
-                          <DetailDescription
-                            name="associatedPermissions"
-                            array={scope.permissions}
-                            convert={(p) => p.name!}
-                          />
-                        </DescriptionList>
-                      )}
-                    </ExpandableRowContent>
-                  </Td>
-                </Tr>
-              </Tbody>
-            ))}
-          </TableComposable>
+                        )}
+                      >
+                        {t("createPermission")}
+                      </Button>
+                    </Td>
+                    <Td
+                      isActionCell
+                      actions={{
+                        items: [
+                          {
+                            title: t("common:delete"),
+                            onClick: () => {
+                              setSelectedScope(scope);
+                              toggleDeleteDialog();
+                            },
+                          },
+                        ],
+                      }}
+                    />
+                  </Tr>
+                  <Tr key={`child-${scope.id}`} isExpanded={scope.isExpanded}>
+                    <Td />
+                    <Td colSpan={4}>
+                      <ExpandableRowContent>
+                        {scope.isExpanded && (
+                          <DescriptionList
+                            isHorizontal
+                            className="keycloak_resource_details"
+                          >
+                            <DetailDescription
+                              name="resources"
+                              array={scope.resources}
+                              convert={(r) => r.name!}
+                            />
+                            <DetailDescription
+                              name="associatedPermissions"
+                              array={scope.permissions}
+                              convert={(p) => p.name!}
+                            />
+                          </DescriptionList>
+                        )}
+                      </ExpandableRowContent>
+                    </Td>
+                  </Tr>
+                </Tbody>
+              ))}
+            </TableComposable>
+          )}
         </PaginatingTableToolbar>
       )}
-      {scopes.length === 0 && (
+      {noData && !searching && (
         <ListEmptyState
           message={t("emptyAuthorizationScopes")}
           instructions={t("emptyAuthorizationInstructions")}
@@ -267,6 +280,13 @@ export const AuthorizationScopes = ({ clientId }: ScopesProps) => {
             history.push(toNewScope({ id: clientId, realm }))
           }
           primaryActionText={t("createAuthorizationScope")}
+        />
+      )}
+      {noData && searching && (
+        <ListEmptyState
+          isSearchVariant
+          message={t("common:noSearchResults")}
+          instructions={t("common:noSearchResultsInstructions")}
         />
       )}
     </PageSection>

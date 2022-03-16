@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Controller, useForm } from "react-hook-form";
 import {
@@ -27,15 +27,23 @@ export type SearchForm = {
 };
 
 type SearchDropdownProps = {
-  types?: PolicyProviderRepresentation[];
+  types?: PolicyProviderRepresentation[] | PolicyProviderRepresentation[];
+  search: SearchForm;
   onSearch: (form: SearchForm) => void;
+  isResource?: boolean;
 };
 
-export const SearchDropdown = ({ types, onSearch }: SearchDropdownProps) => {
+export const SearchDropdown = ({
+  types,
+  search,
+  onSearch,
+  isResource = false,
+}: SearchDropdownProps) => {
   const { t } = useTranslation("clients");
   const {
     register,
     control,
+    reset,
     formState: { isDirty },
     handleSubmit,
   } = useForm<SearchForm>({ mode: "onChange" });
@@ -47,6 +55,8 @@ export const SearchDropdown = ({ types, onSearch }: SearchDropdownProps) => {
     toggle();
     onSearch(form);
   };
+
+  useEffect(() => reset(search), [search]);
 
   const typeOptions = (value: string) => [
     <SelectOption key="empty" value="">
@@ -91,15 +101,48 @@ export const SearchDropdown = ({ types, onSearch }: SearchDropdownProps) => {
             data-testid="searchdropdown_name"
           />
         </FormGroup>
-        <FormGroup label={t("resource")} fieldId="resource">
-          <TextInput
-            ref={register}
-            type="text"
-            id="resource"
-            name="resource"
-            data-testid="searchdropdown_resource"
-          />
-        </FormGroup>
+        {isResource && (
+          <>
+            <FormGroup label={t("common:type")} fieldId="type">
+              <TextInput
+                ref={register}
+                type="text"
+                id="type"
+                name="type"
+                data-testid="searchdropdown_type"
+              />
+            </FormGroup>
+            <FormGroup label={t("uris")} fieldId="uri">
+              <TextInput
+                ref={register}
+                type="text"
+                id="uri"
+                name="uri"
+                data-testid="searchdropdown_uri"
+              />
+            </FormGroup>
+            <FormGroup label={t("owner")} fieldId="owner">
+              <TextInput
+                ref={register}
+                type="text"
+                id="owner"
+                name="owner"
+                data-testid="searchdropdown_owner"
+              />
+            </FormGroup>
+          </>
+        )}
+        {!isResource && (
+          <FormGroup label={t("resource")} fieldId="resource">
+            <TextInput
+              ref={register}
+              type="text"
+              id="resource"
+              name="resource"
+              data-testid="searchdropdown_resource"
+            />
+          </FormGroup>
+        )}
         <FormGroup label={t("scope")} fieldId="scope">
           <TextInput
             ref={register}
@@ -109,30 +152,32 @@ export const SearchDropdown = ({ types, onSearch }: SearchDropdownProps) => {
             data-testid="searchdropdown_scope"
           />
         </FormGroup>
-        <FormGroup label={t("common:type")} fieldId="type">
-          <Controller
-            name="type"
-            defaultValue=""
-            control={control}
-            render={({ onChange, value }) => (
-              <Select
-                toggleId="type"
-                onToggle={toggleType}
-                onSelect={(event, value) => {
-                  event.stopPropagation();
-                  onChange(value);
-                  toggleType();
-                }}
-                selections={value || t("allTypes")}
-                variant={SelectVariant.single}
-                aria-label={t("common:type")}
-                isOpen={typeOpen}
-              >
-                {typeOptions(value)}
-              </Select>
-            )}
-          />
-        </FormGroup>
+        {!isResource && (
+          <FormGroup label={t("common:type")} fieldId="type">
+            <Controller
+              name="type"
+              defaultValue=""
+              control={control}
+              render={({ onChange, value }) => (
+                <Select
+                  toggleId="type"
+                  onToggle={toggleType}
+                  onSelect={(event, value) => {
+                    event.stopPropagation();
+                    onChange(value);
+                    toggleType();
+                  }}
+                  selections={value || t("allTypes")}
+                  variant={SelectVariant.single}
+                  aria-label={t("common:type")}
+                  isOpen={typeOpen}
+                >
+                  {typeOptions(value)}
+                </Select>
+              )}
+            />
+          </FormGroup>
+        )}
         <ActionGroup>
           <Button
             variant="primary"

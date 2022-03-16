@@ -254,7 +254,7 @@ export default function ResourceDetails() {
             >
               <MultiLineInput
                 name="uris"
-                aria-label={t("uri")}
+                aria-label={t("uris")}
                 addButtonLabel="clients:addUri"
               />
             </FormGroup>
