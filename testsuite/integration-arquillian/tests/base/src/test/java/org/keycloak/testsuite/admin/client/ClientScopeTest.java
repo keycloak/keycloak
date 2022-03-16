@@ -61,9 +61,12 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import static org.hamcrest.CoreMatchers.anyOf;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.Assert.assertNames;
@@ -698,7 +701,7 @@ public class ClientScopeTest extends AbstractClientTest {
         scopeRep = clientScopes().get(scopeDefId).toRepresentation();
         assertEquals("non-dynamic-scope-def", scopeRep.getName());
         assertEquals("false", scopeRep.getAttributes().get(ClientScopeModel.IS_DYNAMIC_SCOPE));
-        assertEquals("", scopeRep.getAttributes().get(ClientScopeModel.DYNAMIC_SCOPE_REGEXP));
+        assertThat(scopeRep.getAttributes().get(ClientScopeModel.DYNAMIC_SCOPE_REGEXP), anyOf(nullValue(), equalTo("")));
     }
 
     @Test
@@ -766,7 +769,7 @@ public class ClientScopeTest extends AbstractClientTest {
             clientScopes().get(scopeDefId).update(scopeRep);
             Assert.fail("This update should fail");
         } catch (ClientErrorException ex) {
-            MatcherAssert.assertThat(ex.getResponse(), Matchers.statusCodeIs(Status.BAD_REQUEST));
+            assertThat(ex.getResponse(), Matchers.statusCodeIs(Status.BAD_REQUEST));
         }
     }
 
@@ -794,7 +797,7 @@ public class ClientScopeTest extends AbstractClientTest {
             clientResource.addDefaultClientScope(optionalClientScopeId);
             Assert.fail("A Dynamic Scope shouldn't not be assigned as a default scope to a client");
         } catch (ClientErrorException ex) {
-            MatcherAssert.assertThat(ex.getResponse(), Matchers.statusCodeIs(Status.BAD_REQUEST));
+            assertThat(ex.getResponse(), Matchers.statusCodeIs(Status.BAD_REQUEST));
         }
 
     }
