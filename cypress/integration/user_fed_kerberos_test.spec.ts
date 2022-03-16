@@ -31,13 +31,18 @@ const secondKerberosPrincipal = `${kerberosPrincipal}-2`;
 const secondKerberosKeytab = `${kerberosKeytab}-2`;
 
 const defaultPolicy = "DEFAULT";
-const newPolicy = "EVICT_WEEKLY";
+const weeklyPolicy = "EVICT_WEEKLY";
+const dailyPolicy = "EVICT_DAILY";
+const lifespanPolicy = "MAX_LIFESPAN";
+const noCachePolicy = "NO_CACHE";
+
 const defaultKerberosDay = "Sunday";
 const defaultKerberosHour = "00";
 const defaultKerberosMinute = "00";
 const newKerberosDay = "Wednesday";
 const newKerberosHour = "15";
 const newKerberosMinute = "55";
+const maxLifespan = "60000";
 
 const addProviderMenu = "Add new provider";
 const createdSuccessMessage = "User federation provider successfully created";
@@ -55,7 +60,7 @@ describe("User Fed Kerberos tests", () => {
     sidebarPage.goToUserFederation();
   });
 
-  it("Create Kerberos provider from empty state", () => {
+  it("Should create Kerberos provider from empty state", () => {
     // if tests don't start at empty state, e.g. user has providers configured locally,
     // create a new card from the card view instead
     cy.get("body").then(($body) => {
@@ -77,9 +82,54 @@ describe("User Fed Kerberos tests", () => {
     sidebarPage.goToUserFederation();
   });
 
-  it("Update an existing Kerberos provider and save", () => {
+  it("Should enable debug, password authentication, and first login", () => {
     providersPage.clickExistingCard(firstKerberosName);
-    providersPage.selectCacheType(newPolicy);
+    providersPage.toggleSwitch(providersPage.debugSwitch);
+    providersPage.toggleSwitch(providersPage.passwordAuthSwitch);
+    providersPage.toggleSwitch(providersPage.firstLoginSwitch);
+
+    providersPage.save(provider);
+    masthead.checkNotificationMessage(savedSuccessMessage);
+
+    sidebarPage.goToUserFederation();
+    providersPage.clickExistingCard(firstKerberosName);
+
+    providersPage.verifyToggle(providersPage.debugSwitch, "on");
+    providersPage.verifyToggle(providersPage.passwordAuthSwitch, "on");
+    providersPage.verifyToggle(providersPage.firstLoginSwitch, "on");
+  });
+
+  it("Should set cache policy to evict_daily", () => {
+    providersPage.clickExistingCard(firstKerberosName);
+    providersPage.selectCacheType(dailyPolicy);
+    providersPage.changeCacheTime("hour", newKerberosHour);
+    providersPage.changeCacheTime("minute", newKerberosMinute);
+    providersPage.save(provider);
+
+    masthead.checkNotificationMessage(savedSuccessMessage);
+    sidebarPage.goToUserFederation();
+    providersPage.clickExistingCard(firstKerberosName);
+
+    expect(cy.contains(dailyPolicy).should("exist"));
+    expect(cy.contains(defaultPolicy).should("not.exist"));
+  });
+
+  it("Should set cache policy to default", () => {
+    providersPage.clickExistingCard(firstKerberosName);
+    providersPage.selectCacheType(defaultPolicy);
+    providersPage.save(provider);
+
+    masthead.checkNotificationMessage(savedSuccessMessage);
+    sidebarPage.goToUserFederation();
+    providersPage.clickExistingCard(firstKerberosName);
+
+    expect(cy.contains(defaultPolicy).should("exist"));
+    expect(cy.contains(dailyPolicy).should("not.exist"));
+  });
+
+  it("Should set cache policy to evict_weekly", () => {
+    providersPage.clickExistingCard(firstKerberosName);
+    providersPage.selectCacheType(weeklyPolicy);
     providersPage.changeCacheTime("day", newKerberosDay);
     providersPage.changeCacheTime("hour", newKerberosHour);
     providersPage.changeCacheTime("minute", newKerberosMinute);
@@ -89,26 +139,52 @@ describe("User Fed Kerberos tests", () => {
     sidebarPage.goToUserFederation();
     providersPage.clickExistingCard(firstKerberosName);
 
-    expect(cy.contains(newPolicy).should("exist"));
+    expect(cy.contains(weeklyPolicy).should("exist"));
     expect(cy.contains(defaultPolicy).should("not.exist"));
   });
 
-  it("Change existing Kerberos provider and click button to cancel", () => {
+  it("Should edit existing Kerberos provider and cancel", () => {
     providersPage.clickExistingCard(firstKerberosName);
-    providersPage.selectCacheType(newPolicy);
+    providersPage.selectCacheType(weeklyPolicy);
 
     providersPage.changeCacheTime("day", defaultKerberosDay);
     providersPage.changeCacheTime("hour", defaultKerberosHour);
     providersPage.changeCacheTime("minute", defaultKerberosMinute);
 
     providersPage.cancel(provider);
-    cy.wait(1000);
 
     providersPage.clickExistingCard(firstKerberosName);
-    providersPage.selectCacheType(newPolicy);
+    providersPage.selectCacheType(weeklyPolicy);
 
     providersPage.verifyChangedHourInput(newKerberosHour, defaultKerberosHour);
     sidebarPage.goToUserFederation();
+  });
+
+  it("Should set cache policy to max_lifespan", () => {
+    providersPage.clickExistingCard(firstKerberosName);
+    providersPage.selectCacheType(lifespanPolicy);
+    providersPage.fillMaxLifespanData(maxLifespan);
+    providersPage.save(provider);
+
+    masthead.checkNotificationMessage(savedSuccessMessage);
+    sidebarPage.goToUserFederation();
+    providersPage.clickExistingCard(firstKerberosName);
+
+    expect(cy.contains(lifespanPolicy).should("exist"));
+    expect(cy.contains(weeklyPolicy).should("not.exist"));
+  });
+
+  it("Should set cache policy to no_cache", () => {
+    providersPage.clickExistingCard(firstKerberosName);
+    providersPage.selectCacheType(noCachePolicy);
+    providersPage.save(provider);
+
+    masthead.checkNotificationMessage(savedSuccessMessage);
+    sidebarPage.goToUserFederation();
+    providersPage.clickExistingCard(firstKerberosName);
+
+    expect(cy.contains(noCachePolicy).should("exist"));
+    expect(cy.contains(lifespanPolicy).should("not.exist"));
   });
 
   it("Disable an existing Kerberos provider", () => {

@@ -48,7 +48,7 @@ export default class ProviderPage {
   private ldapGroupsDnInput = "groups.dn";
   private ldapRolesDnInput = "roles.dn";
 
-  // mapper types
+  // Mapper types
   private msadUserAcctMapper = "msad-user-account-control-mapper";
   private msadLdsUserAcctMapper = "msad-lds-user-account-control-mapper";
   private userAttLdapMapper = "user-attribute-ldap-mapper";
@@ -69,6 +69,13 @@ export default class ProviderPage {
 
   private groupName = "aa-uf-mappers-group";
   private clientName = "aa-uf-mappers-client";
+
+  private maxLifespan = "kerberos-cache-lifespan";
+
+  // Kerberos settings switch input values
+  debugSwitch = "debug";
+  firstLoginSwitch = "update-first-login";
+  passwordAuthSwitch = "allow-password-authentication";
 
   changeCacheTime(unit: string, time: string) {
     switch (unit) {
@@ -130,6 +137,22 @@ export default class ProviderPage {
     if (keytab) {
       cy.get(`[${this.kerberosKeytabInput}]`).type(keytab);
     }
+    return this;
+  }
+
+  fillMaxLifespanData(lifespan: string) {
+    cy.findByTestId(this.maxLifespan).type("x");
+    cy.findByTestId(this.maxLifespan).clear().type(lifespan).blur();
+    return this;
+  }
+
+  toggleSwitch(switchName: string) {
+    cy.findByTestId(switchName).click({ force: true });
+    return this;
+  }
+
+  verifyToggle(switchName: string, value: "on" | "off") {
+    cy.findByTestId(switchName).should("have.value", value);
     return this;
   }
 

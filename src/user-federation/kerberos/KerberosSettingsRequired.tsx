@@ -225,6 +225,7 @@ export const KerberosSettingsRequired = ({
             render={({ onChange, value }) => (
               <Switch
                 id={"kc-debug"}
+                data-testid="debug"
                 onChange={(value) => onChange([`${value}`])}
                 isChecked={value?.[0] === "true"}
                 label={t("common:on")}
@@ -252,6 +253,7 @@ export const KerberosSettingsRequired = ({
             render={({ onChange, value }) => (
               <Switch
                 id={"kc-allow-password-authentication"}
+                data-testid="allow-password-authentication"
                 onChange={(value) => onChange([`${value}`])}
                 isChecked={value?.[0] === "true"}
                 label={t("common:on")}
@@ -320,6 +322,7 @@ export const KerberosSettingsRequired = ({
             render={({ onChange, value }) => (
               <Switch
                 id={"kc-update-first-login"}
+                data-testid="update-first-login"
                 onChange={(value) => onChange([`${value}`])}
                 isChecked={value?.[0] === "true"}
                 label={t("common:on")}
