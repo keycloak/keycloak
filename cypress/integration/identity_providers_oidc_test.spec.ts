@@ -26,7 +26,6 @@ describe("OIDC identity provider test", () => {
   const authorizationUrl = `${keycloakServer}/realms/master/protocol/openid-connect/auth`;
 
   describe("OIDC Identity provider creation", () => {
-    const identityProviderName = "github";
     const oidcProviderName = "oidc";
     const secret = "123";
 
@@ -36,25 +35,14 @@ describe("OIDC identity provider test", () => {
       sidebarPage.goToIdentityProviders();
     });
 
-    it("should create provider", () => {
-      createProviderPage.checkGitHubCardVisible().clickGitHubCard();
-
-      createProviderPage.checkAddButtonDisabled();
-      createProviderPage
-        .fill(identityProviderName)
-        .clickAdd()
-        .checkClientIdRequiredMessage(true);
-      createProviderPage.fill(identityProviderName, secret).clickAdd();
-      masthead.checkNotificationMessage(createSuccessMsg, true);
-
-      sidebarPage.goToIdentityProviders();
-      listingPage.itemExist(identityProviderName);
-    });
-
     it("should create an OIDC provider using discovery url", () => {
       createProviderPage
-        .clickCreateDropdown()
-        .clickItem(oidcProviderName)
+        .checkVisible(oidcProviderName)
+        .clickCard(oidcProviderName);
+
+      createProviderPage.checkAddButtonDisabled();
+
+      createProviderPage
         .fillDiscoveryUrl(discoveryUrl)
         .shouldBeSuccessful()
         .fill(oidcProviderName, secret)
@@ -86,11 +74,6 @@ describe("OIDC identity provider test", () => {
 
       sidebarPage.goToIdentityProviders();
       listingPage.itemExist(oidcProviderName).deleteItem(oidcProviderName);
-      modalUtils.checkModalTitle(deletePrompt).confirmModal();
-      masthead.checkNotificationMessage(deleteSuccessMsg, true);
-      listingPage
-        .itemExist(identityProviderName)
-        .deleteItem(identityProviderName);
       modalUtils.checkModalTitle(deletePrompt).confirmModal();
       masthead.checkNotificationMessage(deleteSuccessMsg, true);
     });

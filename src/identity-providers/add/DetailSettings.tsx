@@ -141,12 +141,34 @@ export default function DetailSettings() {
 
       reset(fetchedProvider);
       setProvider(fetchedProvider);
+
+      if (fetchedProvider.config!.authnContextClassRefs) {
+        form.setValue(
+          "config.authnContextClassRefs",
+          JSON.parse(fetchedProvider.config?.authnContextClassRefs)
+        );
+      }
+
+      if (fetchedProvider.config!.authnContextDeclRefs) {
+        form.setValue(
+          "config.authnContextDeclRefs",
+          JSON.parse(fetchedProvider.config?.authnContextDeclRefs)
+        );
+      }
     },
     []
   );
 
   const save = async (provider?: IdentityProviderRepresentation) => {
     const p = provider || getValues();
+    if (p.config?.authnContextClassRefs)
+      p.config.authnContextClassRefs = JSON.stringify(
+        p.config.authnContextClassRefs
+      );
+    if (p.config?.authnContextDeclRefs)
+      p.config.authnContextDeclRefs = JSON.stringify(
+        p.config.authnContextDeclRefs
+      );
     try {
       await adminClient.identityProviders.update(
         { alias },

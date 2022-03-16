@@ -7,7 +7,13 @@ export default class CreateProviderPage {
   private discoveryEndpoint = "discoveryEndpoint";
   private authorizationUrl = "authorizationUrl";
   private addButton = "createProvider";
+  private saveButton = "save";
   private ssoServiceUrl = "sso-service-url";
+  private authnContextClassRefs = "classref-field";
+  private authnContextDeclRefs = "declref-field";
+  private addProvider = "Add provider";
+  private addClassRef = "Add AuthnContext ClassRef";
+  private addDeclRef = "Add AuthnContext DeclRef";
 
   checkVisible(name: string) {
     cy.findByTestId(`${name}-card`).should("exist");
@@ -47,8 +53,23 @@ export default class CreateProviderPage {
     return this;
   }
 
+  clickSave() {
+    cy.findByTestId(this.saveButton).click();
+    return this;
+  }
+
+  clickClassRefsAdd() {
+    cy.contains(this.addClassRef).click();
+    return this;
+  }
+
+  clickDeclRefsAdd() {
+    cy.contains(this.addDeclRef).click();
+    return this;
+  }
+
   clickCreateDropdown() {
-    cy.contains("Add provider").click();
+    cy.contains(this.addProvider).click();
     return this;
   }
 
@@ -74,6 +95,18 @@ export default class CreateProviderPage {
   fillDiscoveryUrl(value: string) {
     cy.findByTestId(this.discoveryEndpoint).type("x");
     cy.findByTestId(this.discoveryEndpoint).clear().type(value).blur();
+    return this;
+  }
+
+  fillAuthnContextClassRefs(value: string) {
+    cy.findByTestId(this.authnContextClassRefs).type("x");
+    cy.findByTestId(this.authnContextClassRefs).clear().type(value).blur();
+    return this;
+  }
+
+  fillAuthnContextDeclRefs(value: string) {
+    cy.findByTestId(this.authnContextDeclRefs).type("x");
+    cy.findByTestId(this.authnContextDeclRefs).clear().type(value).blur();
     return this;
   }
 

@@ -27,6 +27,7 @@ export const DisplayOrder = () => {
         defaultValue=""
         render={({ onChange, value }) => (
           <TextInput
+            id="displayOrder"
             type="number"
             value={value}
             data-testid="displayOrder"

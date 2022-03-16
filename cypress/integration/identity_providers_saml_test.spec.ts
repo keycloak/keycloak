@@ -7,7 +7,7 @@ import CreateProviderPage from "../support/pages/admin_console/manage/identity_p
 import ModalUtils from "../support/util/ModalUtils";
 import AddMapperPage from "../support/pages/admin_console/manage/identity_providers/AddMapperPage";
 
-describe("Identity provider test", () => {
+describe("SAML identity provider test", () => {
   const loginPage = new LoginPage();
   const sidebarPage = new SidebarPage();
   const masthead = new Masthead();
@@ -16,19 +16,22 @@ describe("Identity provider test", () => {
   const addMapperPage = new AddMapperPage();
 
   const createSuccessMsg = "Identity provider successfully created";
+  const saveSuccessMsg = "Provider successfully updated";
+
   const createMapperSuccessMsg = "Mapper created successfully.";
   const saveMapperSuccessMsg = "Mapper saved successfully.";
 
   const deletePrompt = "Delete provider?";
   const deleteSuccessMsg = "Provider successfully deleted";
 
+  const classRefName = "acClassRef-1";
+  const declRefName = "acDeclRef-1";
+
   const keycloakServer = Cypress.env("KEYCLOAK_SERVER");
   const samlDiscoveryUrl = `${keycloakServer}/realms/master/protocol/saml/descriptor`;
 
   describe("SAML identity provider creation", () => {
-    const identityProviderName = "github";
     const samlProviderName = "saml";
-    const secret = "123";
 
     beforeEach(() => {
       keycloakBefore();
@@ -36,29 +39,28 @@ describe("Identity provider test", () => {
       sidebarPage.goToIdentityProviders();
     });
 
-    it("should create provider", () => {
-      createProviderPage.checkGitHubCardVisible().clickGitHubCard();
-
+    it("should create a SAML provider using entity descriptor", () => {
+      createProviderPage
+        .checkVisible(samlProviderName)
+        .clickCard(samlProviderName);
       createProviderPage.checkAddButtonDisabled();
       createProviderPage
-        .fill(identityProviderName)
-        .clickAdd()
-        .checkClientIdRequiredMessage(true);
-      createProviderPage.fill(identityProviderName, secret).clickAdd();
-      masthead.checkNotificationMessage(createSuccessMsg, true);
-
-      sidebarPage.goToIdentityProviders();
-      listingPage.itemExist(identityProviderName);
-    });
-
-    it("should create a SAML provider using SSO service url", () => {
-      createProviderPage
-        .clickCreateDropdown()
-        .clickItem(samlProviderName)
         .fillDiscoveryUrl(samlDiscoveryUrl)
         .shouldBeSuccessful()
         .clickAdd();
       masthead.checkNotificationMessage(createSuccessMsg, true);
+    });
+
+    it("should add auth constraints to existing SAML provider", () => {
+      sidebarPage.goToIdentityProviders();
+      listingPage.goToItemDetails(samlProviderName);
+      createProviderPage
+        .fillAuthnContextClassRefs(classRefName)
+        .clickClassRefsAdd()
+        .fillAuthnContextDeclRefs(declRefName)
+        .clickDeclRefsAdd()
+        .clickSave();
+      masthead.checkNotificationMessage(saveSuccessMsg, true);
     });
 
     it("should add SAML mapper of type Advanced Attribute to Role", () => {
@@ -151,11 +153,6 @@ describe("Identity provider test", () => {
 
       sidebarPage.goToIdentityProviders();
       listingPage.itemExist(samlProviderName).deleteItem(samlProviderName);
-      modalUtils.checkModalTitle(deletePrompt).confirmModal();
-      masthead.checkNotificationMessage(deleteSuccessMsg, true);
-      listingPage
-        .itemExist(identityProviderName)
-        .deleteItem(identityProviderName);
       modalUtils.checkModalTitle(deletePrompt).confirmModal();
       masthead.checkNotificationMessage(deleteSuccessMsg, true);
     });

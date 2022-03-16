@@ -8,7 +8,7 @@ import {
   SelectVariant,
 } from "@patternfly/react-core";
 
-import { TextField } from "../component/TextField";
+import { MultiLineInput } from "../../components/multi-line-input/MultiLineInput";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 
 const comparisonValues = ["exact", "minimum", "maximum", "better"];
@@ -61,14 +61,40 @@ export const ReqAuthnConstraints = () => {
           )}
         />
       </FormGroup>
-      <TextField
-        field="config.authnContextClassRefs"
-        label="authnContextClassRefs"
-      />
-      <TextField
-        field="config.authnContextDeclRefs"
-        label="authnContextDeclRefs"
-      />
+      <FormGroup
+        label={t("authnContextClassRefs")}
+        fieldId="kc-authnContextClassRefs"
+        labelIcon={
+          <HelpItem
+            helpText="identity-providers-help:authnContextClassRefs"
+            fieldLabelId="authnContextClassRefs"
+          />
+        }
+      >
+        <MultiLineInput
+          name="config.authnContextClassRefs"
+          aria-label={t("identify-providers:authnContextClassRefs")}
+          addButtonLabel="identity-providers:addAuthnContextClassRef"
+          data-testid="classref-field"
+        />
+      </FormGroup>
+      <FormGroup
+        label={t("authnContextDeclRefs")}
+        fieldId="kc-authnContextDeclRefs"
+        labelIcon={
+          <HelpItem
+            helpText="identity-providers-help:authnContextDeclRefs"
+            fieldLabelId="authnContextDeclRefs"
+          />
+        }
+      >
+        <MultiLineInput
+          name="config.authnContextDeclRefs"
+          aria-label={t("identify-providers:authnContextDeclRefs")}
+          addButtonLabel="identity-providers:addAuthnContextDeclRef"
+          data-testid="declref-field"
+        />
+      </FormGroup>
     </>
   );
 };
