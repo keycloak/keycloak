@@ -273,3 +273,25 @@ input#kc-scopes {
 .kc-join-group-modal-check {
   margin-right: var(--pf-global--spacer--sm);
 }
+
+.kc-requiredFor {
+  display: flex;
+}
+
+.kc-requiredFor-option {
+  margin-right: 20px;
+}
+
+.kc-emptyValidators {
+  color: #8d9195;
+  margin-left: 25px;
+}
+
+.kc-attributes-validations {
+  max-width: 1024px;
+  margin-bottom: 52px;
+}
+
+.kc-attributeCancel {
+  align-self: center;
+}

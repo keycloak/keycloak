@@ -13,6 +13,7 @@ import { EditClientPolicyConditionRoute } from "./routes/EditCondition";
 import { UserProfileRoute } from "./routes/UserProfile";
 import { AddAttributeRoute } from "./routes/AddAttribute";
 import { KeysRoute } from "./routes/KeysTab";
+import { AttributeRoute } from "./routes/Attribute";
 import { NewAttributesGroupRoute } from "./routes/NewAttributesGroup";
 import { EditAttributesGroupRoute } from "./routes/EditAttributesGroup";
 
@@ -31,6 +32,7 @@ const routes: RouteDef[] = [
   EditClientPolicyConditionRoute,
   UserProfileRoute,
   AddAttributeRoute,
+  AttributeRoute,
   NewAttributesGroupRoute,
   EditAttributesGroupRoute,
 ];

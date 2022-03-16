@@ -13,7 +13,6 @@ import {
 } from "@patternfly/react-core";
 import { FilterIcon } from "@patternfly/react-icons";
 
-import type { UserProfileAttribute } from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
 import { DraggableTable } from "../../authentication/components/DraggableTable";
 import { Link, useHistory } from "react-router-dom";
@@ -21,6 +20,8 @@ import { toAddAttribute } from "../routes/AddAttribute";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useUserProfile } from "./UserProfileContext";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
+import { toAttribute } from "../routes/Attribute";
+import type { UserProfileAttribute } from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
 import useToggle from "../../utils/useToggle";
 
 type movedAttributeType = UserProfileAttribute;
@@ -34,8 +35,7 @@ export const AttributesTab = () => {
   const [isFilterTypeDropdownOpen, toggleIsFilterTypeDropdownOpen] =
     useToggle();
   const [data, setData] = useState(config?.attributes);
-  const [attributeToDelete, setAttributeToDelete] =
-    useState<{ name: string }>();
+  const [attributeToDelete, setAttributeToDelete] = useState("");
 
   const executeMove = async (
     attribute: UserProfileAttribute,
@@ -62,13 +62,13 @@ export const AttributesTab = () => {
   const goToCreate = () => history.push(toAddAttribute({ realm: realmName }));
 
   const updatedAttributes = config?.attributes!.filter(
-    (attribute) => attribute.name !== attributeToDelete?.name
+    (attribute) => attribute.name !== attributeToDelete
   );
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: t("deleteAttributeConfirmTitle"),
     messageKey: t("deleteAttributeConfirm", {
-      attributeName: attributeToDelete?.name!,
+      attributeName: attributeToDelete,
     }),
     continueButtonLabel: t("common:delete"),
     continueButtonVariant: ButtonVariant.danger,
@@ -80,11 +80,21 @@ export const AttributesTab = () => {
           errorMessageKey: "realm-settings:deleteAttributeError",
         }
       );
-      setAttributeToDelete({
-        name: "",
-      });
+      setAttributeToDelete("");
     },
   });
+
+  const cellFormatter = (row: UserProfileAttribute) => (
+    <Link
+      to={toAttribute({
+        realm: realmName,
+        attributeName: row.name!,
+      })}
+      key={row.name}
+    >
+      {row.name}
+    </Link>
+  );
 
   if (!config?.attributes) {
     return <KeycloakSpinner />;
@@ -177,9 +187,7 @@ export const AttributesTab = () => {
           {
             name: "name",
             displayKey: t("attributeName"),
-            cellRenderer: (row) => (
-              <Link to={toAddAttribute({ realm: realmName })}>{row.name}</Link>
-            ),
+            cellRenderer: cellFormatter,
           },
           {
             name: "displayName",
