@@ -5,10 +5,7 @@ import { ActionGroup, Button } from "@patternfly/react-core";
 
 import type { RoleRepresentation } from "../../model/role-model";
 import type { KeyValueType } from "./attribute-convert";
-import {
-  AttributeInput,
-  AttributeType,
-} from "../attribute-input/AttributeInput";
+import { AttributeInput } from "../attribute-input/AttributeInput";
 import { FormAccess } from "../form-access/FormAccess";
 
 export type AttributeForm = Omit<RoleRepresentation, "attributes"> & {
@@ -17,19 +14,11 @@ export type AttributeForm = Omit<RoleRepresentation, "attributes"> & {
 
 export type AttributesFormProps = {
   form: UseFormMethods<AttributeForm>;
-  isKeySelectable?: boolean;
-  selectableValues?: AttributeType[];
   save?: (model: AttributeForm) => void;
   reset?: () => void;
 };
 
-export const AttributesForm = ({
-  form,
-  reset,
-  save,
-  isKeySelectable,
-  selectableValues,
-}: AttributesFormProps) => {
+export const AttributesForm = ({ form, reset, save }: AttributesFormProps) => {
   const { t } = useTranslation("roles");
   const noSaveCancelButtons = !save && !reset;
   const {
@@ -43,11 +32,7 @@ export const AttributesForm = ({
       onSubmit={save ? handleSubmit(save) : undefined}
     >
       <FormProvider {...form}>
-        <AttributeInput
-          isKeySelectable={isKeySelectable}
-          selectableValues={selectableValues}
-          name="attributes"
-        />
+        <AttributeInput name="attributes" />
       </FormProvider>
       {!noSaveCancelButtons && (
         <ActionGroup className="kc-attributes__action-group">

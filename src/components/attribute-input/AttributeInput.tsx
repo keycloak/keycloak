@@ -1,13 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { Controller, useFieldArray, useFormContext } from "react-hook-form";
-import {
-  Button,
-  Select,
-  SelectOption,
-  SelectVariant,
-  TextInput,
-} from "@patternfly/react-core";
+import { useFieldArray, useFormContext } from "react-hook-form";
+import { Button, TextInput } from "@patternfly/react-core";
 import {
   TableComposable,
   Tbody,
@@ -19,141 +13,26 @@ import {
 import { MinusCircleIcon, PlusCircleIcon } from "@patternfly/react-icons";
 
 import "../attribute-form/attribute-form.css";
-import { defaultContextAttributes } from "../../clients/utils";
-import { camelCase } from "lodash-es";
-import type ResourceRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceRepresentation";
-
-export type AttributeType = {
-  key?: string;
-  name: string;
-  custom?: boolean;
-  values?: {
-    [key: string]: string;
-  }[];
-};
 
 type AttributeInputProps = {
   name: string;
-  selectableValues?: AttributeType[];
-  isKeySelectable?: boolean;
-  resources?: ResourceRepresentation[];
 };
 
-export const AttributeInput = ({
-  name,
-  isKeySelectable,
-  selectableValues,
-  resources,
-}: AttributeInputProps) => {
+export const AttributeInput = ({ name }: AttributeInputProps) => {
   const { t } = useTranslation("common");
-  const { control, register, watch, getValues } = useFormContext();
+  const { control, register, watch } = useFormContext();
   const { fields, append, remove } = useFieldArray({
     control: control,
     name,
   });
+
+  const watchLast = watch(`${name}[${fields.length - 1}].key`, "");
 
   useEffect(() => {
     if (!fields.length) {
       append({ key: "", value: "" });
     }
   }, [fields]);
-
-  const [isKeyOpenArray, setIsKeyOpenArray] = useState([false]);
-  const watchLastKey = watch(`${name}[${fields.length - 1}].key`, "");
-  const watchLastValue = watch(`${name}[${fields.length - 1}].value`, "");
-
-  const [isValueOpenArray, setIsValueOpenArray] = useState([false]);
-  const toggleKeySelect = (rowIndex: number, open: boolean) => {
-    const arr = [...isKeyOpenArray];
-    arr[rowIndex] = open;
-    setIsKeyOpenArray(arr);
-  };
-
-  const toggleValueSelect = (rowIndex: number, open: boolean) => {
-    const arr = [...isValueOpenArray];
-    arr[rowIndex] = open;
-    setIsValueOpenArray(arr);
-  };
-
-  const renderValueInput = (rowIndex: number, attribute: any) => {
-    let attributeValues: { key: string; name: string }[] | undefined = [];
-
-    const scopeValues = resources?.find(
-      (resource) => resource.name === getValues().resources[rowIndex]?.key
-    )?.scopes;
-
-    if (selectableValues) {
-      attributeValues = defaultContextAttributes.find(
-        (attr) => attr.key === getValues().context[rowIndex]?.key
-      )?.values;
-    }
-
-    const renderSelectOptionType = () => {
-      if (attributeValues?.length && !resources) {
-        return attributeValues.map((attr) => (
-          <SelectOption key={attr.key} value={attr.key}>
-            {attr.name}
-          </SelectOption>
-        ));
-      } else if (scopeValues?.length) {
-        return scopeValues.map((scope) => (
-          <SelectOption key={scope.name} value={scope.name}>
-            {scope.name}
-          </SelectOption>
-        ));
-      }
-    };
-
-    const getMessageBundleKey = (attributeName: string) =>
-      camelCase(attributeName).replace(/\W/g, "");
-
-    return (
-      <Td>
-        {resources || attributeValues?.length ? (
-          <Controller
-            name={`${name}[${rowIndex}].value`}
-            defaultValue={[]}
-            control={control}
-            render={({ onChange, value }) => (
-              <Select
-                id={`${attribute.id}-value`}
-                className="kc-attribute-value-selectable"
-                name={`${name}[${rowIndex}].value`}
-                chipGroupProps={{
-                  numChips: 1,
-                  expandedText: t("common:hide"),
-                  collapsedText: t("common:showRemaining"),
-                }}
-                toggleId={`group-${name}`}
-                onToggle={(open) => toggleValueSelect(rowIndex, open)}
-                isOpen={isValueOpenArray[rowIndex]}
-                variant={SelectVariant.typeahead}
-                typeAheadAriaLabel={t("clients:selectOrTypeAKey")}
-                placeholderText={t("clients:selectOrTypeAKey")}
-                selections={value}
-                onSelect={(_, v) => {
-                  onChange(v);
-
-                  toggleValueSelect(rowIndex, false);
-                }}
-              >
-                {renderSelectOptionType()}
-              </Select>
-            )}
-          />
-        ) : (
-          <TextInput
-            id={`${getMessageBundleKey(attribute.key)}-value`}
-            className="value-input"
-            name={`${name}[${rowIndex}].value`}
-            ref={register()}
-            defaultValue={attribute.value}
-            data-testid="attribute-value-input"
-          />
-        )}
-      </Td>
-    );
-  };
 
   return (
     <TableComposable
@@ -176,52 +55,23 @@ export const AttributeInput = ({
         {fields.map((attribute, rowIndex) => (
           <Tr key={attribute.id} data-testid="attribute-row">
             <Td>
-              {isKeySelectable ? (
-                <Controller
-                  name={`${name}[${rowIndex}].key`}
-                  defaultValue={attribute.key}
-                  control={control}
-                  render={({ onChange, value }) => (
-                    <Select
-                      id={`${name}[${rowIndex}].key`}
-                      className="kc-attribute-key-selectable"
-                      name={`${name}[${rowIndex}].key`}
-                      toggleId={`group-${name}`}
-                      onToggle={(open) => toggleKeySelect(rowIndex, open)}
-                      isOpen={isKeyOpenArray[rowIndex]}
-                      variant={SelectVariant.typeahead}
-                      typeAheadAriaLabel={t("clients:selectOrTypeAKey")}
-                      placeholderText={t("clients:selectOrTypeAKey")}
-                      selections={value}
-                      onSelect={(_, v) => {
-                        onChange(v.toString());
-
-                        toggleKeySelect(rowIndex, false);
-                      }}
-                    >
-                      {selectableValues?.map((attribute) => (
-                        <SelectOption
-                          selected={attribute.name === value}
-                          key={attribute.key}
-                          value={resources ? attribute.name : attribute.key}
-                        >
-                          {attribute.name}
-                        </SelectOption>
-                      ))}
-                    </Select>
-                  )}
-                />
-              ) : (
-                <TextInput
-                  id={`${attribute.id}-key`}
-                  name={`${name}[${rowIndex}].key`}
-                  ref={register()}
-                  defaultValue={attribute.key}
-                  data-testid="attribute-key-input"
-                />
-              )}
+              <TextInput
+                id={`${attribute.id}-key`}
+                name={`${name}[${rowIndex}].key`}
+                ref={register()}
+                defaultValue={attribute.key}
+                data-testid="attribute-key-input"
+              />
             </Td>
-            {renderValueInput(rowIndex, attribute)}
+            <Td>
+              <TextInput
+                id={`${attribute.id}-value`}
+                name={`${name}[${rowIndex}].value`}
+                ref={register()}
+                defaultValue={attribute.value}
+                data-testid="attribute-value-input"
+              />
+            </Td>
             <Td key="minus-button" id={`kc-minus-button-${rowIndex}`}>
               <Button
                 id={`minus-button-${rowIndex}`}
@@ -241,14 +91,9 @@ export const AttributeInput = ({
               id="plus-icon"
               variant="link"
               className="kc-attributes__plus-icon"
-              onClick={() => {
-                append({ key: "", value: "" });
-                if (isKeySelectable) {
-                  setIsKeyOpenArray([...isKeyOpenArray, false]);
-                }
-              }}
+              onClick={() => append({ key: "", value: "" })}
               icon={<PlusCircleIcon />}
-              isDisabled={isKeySelectable ? !watchLastValue : !watchLastKey}
+              isDisabled={!watchLast}
               data-testid="attribute-add-row"
             >
               {t("roles:addAttributeText")}

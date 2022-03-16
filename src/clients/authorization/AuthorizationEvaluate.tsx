@@ -29,7 +29,7 @@ import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/ro
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import type ResourceEvaluation from "@keycloak/keycloak-admin-client/lib/defs/resourceEvaluation";
 import { useRealm } from "../../context/realm-context/RealmContext";
-import { AttributeInput } from "../../components/attribute-input/AttributeInput";
+import { KeyBasedAttributeInput } from "./KeyBasedAttributeInput";
 import { defaultContextAttributes } from "../utils";
 import type EvaluationResultRepresentation from "@keycloak/keycloak-admin-client/lib/defs/evaluationResultRepresentation";
 import type ResourceRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceRepresentation";
@@ -518,13 +518,12 @@ export const AuthorizationEvaluate = ({ client }: Props) => {
               helperTextInvalid={t("common:required")}
               fieldId="resourcesAndAuthScopes"
             >
-              <AttributeInput
+              <KeyBasedAttributeInput
                 selectableValues={resources.map<AttributeType>((item) => ({
                   name: item.name!,
                   key: item._id!,
                 }))}
                 resources={resources}
-                isKeySelectable
                 name="resources"
               />
             </FormGroup>
@@ -613,9 +612,8 @@ export const AuthorizationEvaluate = ({ client }: Props) => {
               helperTextInvalid={t("common:required")}
               fieldId="contextualAttributes"
             >
-              <AttributeInput
+              <KeyBasedAttributeInput
                 selectableValues={defaultContextAttributes}
-                isKeySelectable
                 name="context.attributes"
               />
             </FormGroup>
