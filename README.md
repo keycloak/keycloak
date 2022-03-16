@@ -27,18 +27,6 @@ For development on this project you will need a running Keycloak server listenin
     $> npm run start
     ```
 
-## Build and run through Docker
-    git checkout git@github.com:keycloak/keycloak-admin-ui.git
-    cd keycloak-admin-ui
-    docker build -t keycloak-v2 .
-    docker run --name keycloak-v2 -d -p 127.0.0.1:8080:8080 -e KEYCLOAK_USER=admin -e KEYCLOAK_PASSWORD=admin keycloak-v2 -Dkeycloak.profile.feature.admin2=enabled
-
-You can reach the new admin interface at `http://localhost:8080`. Then go to `Realm Settings --> Themes` and set Admin Console Theme to `keycloak.v2`.
-
-If your Keycloak instance is not on `localhost:8180`, create a file `.env` with the following:
-
-    KEYCLOAK_ENDPOINT=https:\/\/remoteinstance.keycloak.com
-
 ## Building as a Keycloak theme
 
 If you want to build the application using Maven and produce a JAR that can be installed directly into Keycloak, check out the [Keycloak theme documentation](./keycloak-theme/README.md).
