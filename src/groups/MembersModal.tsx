@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useHistory } from "react-router-dom";
 import {
   AlertVariant,
   Button,
@@ -10,12 +9,10 @@ import {
 
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import { useAdminClient } from "../context/auth/AdminClient";
-import { useRealm } from "../context/realm-context/RealmContext";
 import { useAlerts } from "../components/alert/Alerts";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { emptyFormatter } from "../util";
-import { toAddUser } from "../user/routes/AddUser";
 import { differenceBy } from "lodash-es";
 
 type MemberModalProps = {
@@ -28,10 +25,6 @@ export const MemberModal = ({ groupId, onClose }: MemberModalProps) => {
   const adminClient = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const [selectedRows, setSelectedRows] = useState<UserRepresentation[]>([]);
-
-  const history = useHistory();
-  const { realm } = useRealm();
-  const goToCreate = () => history.push(toAddUser({ realm }));
 
   const loader = async (first?: number, max?: number, search?: string) => {
     const members = await adminClient.groups.listMembers({ id: groupId });
@@ -101,8 +94,6 @@ export const MemberModal = ({ groupId, onClose }: MemberModalProps) => {
           <ListEmptyState
             message={t("users:noUsersFound")}
             instructions={t("users:emptyInstructions")}
-            primaryActionText={t("users:createNewUser")}
-            onPrimaryAction={goToCreate}
           />
         }
         columns={[
