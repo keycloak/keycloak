@@ -117,6 +117,8 @@ cypress run --spec "cypress/integration/example-test.spec.js" --browser chrome
 ```
 **note**: the complete list of parameters can be found in the [official Cypress documentation](https://docs.cypress.io/guides/guides/command-line.html#Commands).
 
+Read more about [how to write tests](./cypress/WRITING_TESTS.md)
+
 ## Project Structure
 
 ```text
