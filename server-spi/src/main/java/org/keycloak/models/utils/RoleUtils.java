@@ -81,6 +81,16 @@ public class RoleUtils {
     }
 
     /**
+     *
+     * @param groups
+     * @param targetGroup
+     * @return true if targetGroup is in groups directly
+     */
+    public static boolean isDirectMember(Stream<GroupModel> groups, GroupModel targetGroup) {
+        return groups.anyMatch(g -> targetGroup.getId().equals(g.getId()));
+    }
+
+    /**
      * @param roles
      * @param targetRole
      * @return true if targetRole is in roles (directly or indirectly via composite role)
