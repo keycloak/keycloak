@@ -13,7 +13,7 @@ RUN (cd /tmp/keycloak && \
     tar -xvf /tmp/keycloak/keycloak-*.tar.gz && \
     rm /tmp/keycloak/keycloak-*.tar.gz) || true
 
-RUN mv /tmp/keycloak/keycloak-* /opt/keycloak
+RUN mv /tmp/keycloak/keycloak-* /opt/keycloak && mkdir -p /opt/keycloak/data
 
 RUN chmod -R g+rwX /opt/keycloak
 
