@@ -47,7 +47,6 @@ if "%KEY%" == "--debug" (
 if "%KEY%" == "start-dev" (
   set "CONFIG_ARGS=%CONFIG_ARGS% --profile=dev %KEY% --auto-build"
   shift
-  shift
   goto READ-ARGS
 )
 if not "%KEY:~0,2%"=="--" if "%KEY:~0,2%"=="-D" (
