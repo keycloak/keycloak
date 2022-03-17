@@ -30,14 +30,14 @@ public class HotRodAttributeEntityNonIndexed {
     public String name;
 
     @ProtoField(number = 2)
-    public List<String> values = new LinkedList<>();
+    public List<String> values;
 
     public HotRodAttributeEntityNonIndexed() {
     }
 
     public HotRodAttributeEntityNonIndexed(String name, List<String> values) {
         this.name = name;
-        this.values.addAll(values);
+        this.values = values;
     }
 
     public String getName() {

@@ -17,8 +17,11 @@
 
 package org.keycloak.models.map.storage.hotRod.common;
 
+import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.storage.hotRod.authSession.HotRodAuthenticationSessionEntity;
+import org.keycloak.models.map.storage.hotRod.realm.entity.HotRodLocalizationTexts;
+import org.keycloak.models.map.storage.hotRod.realm.entity.HotRodRequirement;
 import org.keycloak.models.map.storage.hotRod.user.HotRodUserConsentEntity;
 import org.keycloak.models.map.storage.hotRod.user.HotRodUserFederatedIdentityEntity;
 
@@ -114,5 +117,30 @@ public class HotRodTypesUtils {
 
     public static String getKey(HotRodAuthenticationSessionEntity hotRodAuthenticationSessionEntity) {
         return hotRodAuthenticationSessionEntity.tabId;
+    }
+
+    public static AuthenticationExecutionModel.Requirement migrateHotRodRequirementToRequirement(HotRodRequirement p0) {
+        return p0 == null ? null : AuthenticationExecutionModel.Requirement.values()[p0.ordinal()];
+    }
+
+    public static HotRodRequirement migrateRequirementToHotRodRequirement(AuthenticationExecutionModel.Requirement p0) {
+        return p0 == null ? null : HotRodRequirement.values()[p0.ordinal()];
+    }
+
+    public static String getKey(HotRodLocalizationTexts hotRodLocalizationTexts) {
+        return hotRodLocalizationTexts.getLocale();
+    }
+
+    public static Map<String, String> getValue(HotRodLocalizationTexts hotRodLocalizationTexts) {
+        Set<HotRodPair<String, String>> values = hotRodLocalizationTexts.getValues();
+        return values == null ? null : values.stream().collect(Collectors.toMap(HotRodPair::getKey, HotRodPair::getValue));
+    }
+
+    public static HotRodLocalizationTexts migrateStringMapToHotRodLocalizationTexts(String p0, Map<String, String> p1) {
+        HotRodLocalizationTexts hotRodLocalizationTexts = new HotRodLocalizationTexts();
+        hotRodLocalizationTexts.setLocale(p0);
+        hotRodLocalizationTexts.setValues(migrateMapToSet(p1, HotRodTypesUtils::createHotRodPairFromMapEntry));
+
+        return hotRodLocalizationTexts;
     }
 }

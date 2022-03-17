@@ -19,6 +19,7 @@ package org.keycloak.models.map.storage.hotRod;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder;
@@ -68,6 +69,9 @@ public class IckleQueryMapModelCriteriaBuilder<E extends AbstractHotRodEntity, M
         INFINISPAN_NAME_OVERRIDES.put(UserModel.SearchableFields.ASSIGNED_GROUP, "groupsMembership");
         INFINISPAN_NAME_OVERRIDES.put(UserModel.SearchableFields.ATTRIBUTE, "attributes");
         INFINISPAN_NAME_OVERRIDES.put(UserModel.SearchableFields.IDP_AND_USER, "federatedIdentities");
+
+        INFINISPAN_NAME_OVERRIDES.put(RealmModel.SearchableFields.CLIENT_INITIAL_ACCESS, "clientInitialAccesses");
+        INFINISPAN_NAME_OVERRIDES.put(RealmModel.SearchableFields.COMPONENT_PROVIDER_TYPE, "components.providerType");
     }
 
     static {
