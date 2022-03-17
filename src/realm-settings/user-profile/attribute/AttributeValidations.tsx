@@ -50,7 +50,10 @@ export const AttributeValidations = () => {
     continueButtonLabel: "common:delete",
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
-      console.log("TODO");
+      const updatedValidators = validators.filter(
+        (validator) => validator.name !== validatorToDelete?.name
+      );
+      setValue("validations", [...updatedValidators]);
     },
   });
 
@@ -104,7 +107,6 @@ export const AttributeValidations = () => {
                       key="validator"
                       variant="link"
                       data-testid="deleteValidator"
-                      isDisabled={true}
                       onClick={() => {
                         toggleDeleteDialog();
                         setValidatorToDelete({

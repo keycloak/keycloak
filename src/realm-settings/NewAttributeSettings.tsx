@@ -142,7 +142,16 @@ export default function NewAttributeSettings() {
         : profileConfig.scopeRequired,
     };
 
-    const validations = profileConfig.validations;
+    const validations = profileConfig.validations?.reduce(
+      (prevValidations: any, currentValidations: any) => {
+        prevValidations[currentValidations.name] =
+          currentValidations.config.length === 0
+            ? {}
+            : currentValidations.config;
+        return prevValidations;
+      },
+      {}
+    );
 
     const annotations = (profileConfig.annotations! as KeyValueType[]).reduce(
       (obj, item) => Object.assign(obj, { [item.key]: item.value }),
