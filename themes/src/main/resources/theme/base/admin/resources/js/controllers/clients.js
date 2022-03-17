@@ -136,7 +136,8 @@ module.controller('ClientCredentialsCtrl', function($scope, $location, realm, cl
     };
 });
 
-module.controller('ClientSecretCtrl', function($scope, $location, Client, ClientSecret, Notifications) {
+module.controller('ClientSecretCtrl', function($scope, $location, Client, ClientSecret, Notifications, $route) {
+
     var secret = ClientSecret.get({ realm : $scope.realm.realm, client : $scope.client.id },
         function() {
             $scope.secret = secret.value;
@@ -146,8 +147,8 @@ module.controller('ClientSecretCtrl', function($scope, $location, Client, Client
     $scope.changePassword = function() {
         var secret = ClientSecret.update({ realm : $scope.realm.realm, client : $scope.client.id },
             function() {
+                $route.reload();
                 Notifications.success('The secret has been changed.');
-                $scope.secret = secret.value;
             },
             function() {
                 Notifications.error("The secret was not changed due to a problem.");
@@ -156,7 +157,31 @@ module.controller('ClientSecretCtrl', function($scope, $location, Client, Client
         );
     };
 
+    $scope.removeRotatedSecret = function(){
+        ClientSecret.invalidate({realm: $scope.realm.realm, client: $scope.client.id },
+          function(){
+            $route.reload();
+            Notifications.success('The rotated secret has been invalidated.');
+          },
+          function(){
+            Notifications.error("The rotated secret was not invalidated due to a problem.");
+          }
+        );
+    };
+
     $scope.tokenEndpointAuthSigningAlg = $scope.client.attributes['token.endpoint.auth.signing.alg'];
+
+    if ($scope.client.attributes['client.secret.expiration.time']){
+        $scope.secret_expiration_time = $scope.client.attributes['client.secret.expiration.time'] * 1000;
+    }
+
+    if ($scope.client.attributes["client.secret.rotated"]) {
+        $scope.secretRotated = $scope.client.attributes["client.secret.rotated"];
+    }
+
+    if ($scope.client.attributes['client.secret.rotated.expiration.time']){
+        $scope.rotated_secret_expiration_time = $scope.client.attributes['client.secret.rotated.expiration.time'] * 1000;
+    }
 
     $scope.switchChange = function() {
         $scope.changed = true;
@@ -183,7 +208,9 @@ module.controller('ClientSecretCtrl', function($scope, $location, Client, Client
 
     $scope.cancel = function() {
         $location.url("/realms/" + $scope.realm.realm + "/clients/" + $scope.client.id + "/credentials");
+        $route.reload();
     };
+
 });
 
 module.controller('ClientX509Ctrl', function($scope, $location, Client, Notifications) {
@@ -807,7 +834,7 @@ module.controller('ClientRoleDetailCtrl', function($scope, $route, realm, client
     $scope.create = !role.name;
 
     $scope.changed = $scope.create;
-    
+
     $scope.save = function() {
         convertAttributeValuesToLists();
         if ($scope.create) {
@@ -852,7 +879,7 @@ module.controller('ClientRoleDetailCtrl', function($scope, $route, realm, client
         delete $scope.newAttribute;
     }
 
-    $scope.removeAttribute = function(key) {    
+    $scope.removeAttribute = function(key) {
         delete $scope.role.attributes[key];
     }
 
@@ -983,14 +1010,14 @@ module.controller('ClientListCtrl', function($scope, realm, Client, ClientListSe
         ClientListSearchState.query.realm = realm.realm;
         $scope.query = ClientListSearchState.query;
 
-        if (!ClientListSearchState.isFirstSearch) { 
+        if (!ClientListSearchState.isFirstSearch) {
             $scope.searchQuery();
         } else {
             $scope.query.clientId = null;
             $scope.firstPage();
         }
     };
-    
+
     $scope.searchQuery = function() {
         console.log("query.search: ", $scope.query);
         $scope.searchLoaded = false;
@@ -1107,7 +1134,7 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
     }
     $scope.flows.push(emptyFlow)
     $scope.clientFlows.push(emptyFlow)
-
+    var deletedSomeDefaultAcrValue = false;
 
 
     $scope.accessTypes = [
@@ -1477,6 +1504,13 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
             $scope.client.requestUris = [];
         }
 
+        if ($scope.client.attributes["default.acr.values"] && $scope.client.attributes["default.acr.values"].length > 0) {
+            $scope.defaultAcrValues = $scope.client.attributes["default.acr.values"].split("##");
+        } else {
+            $scope.defaultAcrValues = [];
+        }
+        deletedSomeDefaultAcrValue = false;
+
         try {
           $scope.acrLoaMap = JSON.parse($scope.client.attributes["acr.loa.map"] || "{}");
         } catch (e) {
@@ -1680,6 +1714,10 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
         if ($scope.newRequestUri && $scope.newRequestUri.length > 0) {
             return true;
         }
+        if ($scope.newDefaultAcrValue && $scope.newDefaultAcrValue.length > 0) {
+            return true;
+        }
+        if (deletedSomeDefaultAcrValue) return true;
         if ($scope.newAcr && $scope.newAcr.length > 0 && $scope.newLoa && $scope.newLoa.length > 0) {
             return true;
         }
@@ -1795,6 +1833,10 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
         $scope.changed = isChanged();
     }, true);
 
+    $scope.$watch('newDefaultAcrValue', function() {
+        $scope.changed = isChanged();
+    }, true);
+
     $scope.deleteWebOrigin = function(index) {
         $scope.clientEdit.webOrigins.splice(index, 1);
     }
@@ -1808,6 +1850,15 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
     $scope.addRequestUri = function() {
         $scope.clientEdit.requestUris.push($scope.newRequestUri);
         $scope.newRequestUri = "";
+    }
+    $scope.deleteDefaultAcrValue = function(index) {
+        $scope.defaultAcrValues.splice(index, 1);
+        deletedSomeDefaultAcrValue = true;
+        $scope.changed = isChanged();
+    }
+    $scope.addDefaultAcrValue = function() {
+        $scope.defaultAcrValues.push($scope.newDefaultAcrValue);
+        $scope.newDefaultAcrValue = "";
     }
     $scope.deleteRedirectUri = function(index) {
         $scope.clientEdit.redirectUris.splice(index, 1);
@@ -1839,6 +1890,15 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
             $scope.clientEdit.attributes["frontchannel.logout.url"] = null;
         }
         delete $scope.clientEdit.requestUris;
+
+        if ($scope.newDefaultAcrValue && $scope.newDefaultAcrValue.length > 0) {
+            $scope.addDefaultAcrValue();
+        }
+        if ($scope.defaultAcrValues && $scope.defaultAcrValues.length > 0) {
+            $scope.clientEdit.attributes["default.acr.values"] = $scope.defaultAcrValues.join("##");
+        } else {
+            $scope.clientEdit.attributes["default.acr.values"] = null;
+        }
 
         if ($scope.samlArtifactBinding == true) {
             $scope.clientEdit.attributes["saml.artifact.binding"] = "true";

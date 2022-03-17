@@ -19,6 +19,8 @@ package org.keycloak.models.map.client;
 import org.keycloak.models.map.common.DeepCloner;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Map;
+
 import org.junit.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
@@ -86,9 +88,10 @@ public class MapClientEntityClonerTest {
         newInstance.setAttribute("attr", Arrays.asList("aa", "bb", "cc"));
         MapProtocolMapperEntity pmm = new MapProtocolMapperEntityImpl();
         pmm.setId("pmm-id");
-        pmm.setConfig(new HashMap<>());
-        pmm.getConfig().put("key1", "value1");
-        pmm.getConfig().put("key2", "value2");
+        Map<String, String> config = new HashMap<>();
+        config.put("key1", "value1");
+        config.put("key2", "value2");
+        pmm.setConfig(config);
         newInstance.setProtocolMapper("pmm-id", pmm);
         newInstance.setAttribute("attr", Arrays.asList("aa", "bb", "cc"));
 
@@ -122,9 +125,11 @@ public class MapClientEntityClonerTest {
         newInstance.setAttribute("attr", Arrays.asList("aa", "bb", "cc"));
         MapProtocolMapperEntity pmm = new MapProtocolMapperEntityImpl();
         pmm.setId("pmm-id");
-        pmm.setConfig(new HashMap<>());
-        pmm.getConfig().put("key1", "value1");
-        pmm.getConfig().put("key2", "value2");
+        Map<String, String> config = new HashMap<>();
+        config.put("key1", "value1");
+        config.put("key2", "value2");
+        pmm.setConfig(config);
+
         newInstance.setProtocolMapper("pmm-id", pmm);
         newInstance.setAttribute("attr", Arrays.asList("aa", "bb", "cc"));
 

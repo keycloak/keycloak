@@ -286,7 +286,6 @@
                         <configuration>
                             <systemProperties>
                                 <systemProperty><key>keycloak.profile.feature.map_storage</key><value>enabled</value></systemProperty>
-                                <systemProperty><key>keycloak.mapStorage.provider</key><value>concurrenthashmap</value></systemProperty>
                                 <systemProperty><key>keycloak.realm.provider</key><value>map</value></systemProperty>
                                 <systemProperty><key>keycloak.client.provider</key><value>map</value></systemProperty>
                                 <systemProperty><key>keycloak.clientScope.provider</key><value>map</value></systemProperty>

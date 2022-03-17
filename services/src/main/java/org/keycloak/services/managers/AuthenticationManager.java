@@ -143,6 +143,9 @@ public class AuthenticationManager {
     // clientSession note with flag that clientSession was authenticated through SSO cookie
     public static final String SSO_AUTH = "SSO_AUTH";
 
+    // authSession note with flag that is true if user is forced to re-authenticate by client (EG. in case of OIDC client by sending "prompt=login")
+    public static final String FORCED_REAUTHENTICATION = "FORCED_REAUTHENTICATION";
+
     protected static final Logger logger = Logger.getLogger(AuthenticationManager.class);
 
     public static final String FORM_USERNAME = "username";
@@ -1192,9 +1195,7 @@ public class AuthenticationManager {
         //if Dynamic Scopes are enabled, get the scopes from the AuthorizationRequestContext, passing the session and scopes as parameters
         // then concat a Stream with the ClientModel, as it's discarded in the getAuthorizationRequestContext method
         if (Profile.isFeatureEnabled(Profile.Feature.DYNAMIC_SCOPES)) {
-            return Stream.concat(AuthorizationContextUtil.getAuthorizationRequestContextFromScopes(session, authSession.getClientNote(OAuth2Constants.SCOPE))
-                    .getAuthorizationDetailEntries().stream(),
-                    Collections.singletonList(new AuthorizationDetails(session.getContext().getClient())).stream());
+            return AuthorizationContextUtil.getAuthorizationRequestsStreamFromScopesWithClient(session, authSession.getClientNote(OAuth2Constants.SCOPE));
         }
         // if dynamic scopes are not enabled, we retain the old behaviour, but the ClientScopes will be wrapped in
         // AuthorizationRequest objects to standardize the code handling these.

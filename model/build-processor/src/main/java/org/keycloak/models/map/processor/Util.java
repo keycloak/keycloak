@@ -100,10 +100,22 @@ public class Util {
     }
 
     public static String singularToPlural(String word) {
-        return word.endsWith("y") ? word.substring(0, word.length() -1) + "ies" : word + "s";
+        if (word.endsWith("y")) {
+            return word.substring(0, word.length() -1) + "ies";
+        } else if (word.endsWith("s")) {
+            return word + "es";
+        } else {
+            return word + "s";
+        }
     }
 
     public static String pluralToSingular(String word) {
-        return word.endsWith("ies") ? word.substring(0, word.length() - 3) + "y" : word.endsWith("s") ? word.substring(0, word.length() - 1) : word;
+        if (word.endsWith("ies")) {
+            return word.substring(0, word.length() - 3) + "y";
+        } else if (word.endsWith("ses")) {
+            return word.substring(0, word.length() - 2);
+        } else {
+            return word.endsWith("s") ? word.substring(0, word.length() - 1) : word;
+        }
     }
 }

@@ -932,7 +932,7 @@
                 <kc-tooltip>{{:: 'require-pushed-authorization-requests.tooltip' | translate}}</kc-tooltip>
             </div>
 
-            <div class="form-group clearfix block" data-ng-show="(!clientEdit.bearerOnly && protocol == 'openid-connect') && (clientEdit.standardFlowEnabled || clientEdit.directAccessGrantsEnabled || clientEdit.implicitFlowEnabled)">
+            <div class="form-group clearfix block" data-ng-show="!clientEdit.bearerOnly && protocol == 'openid-connect' && serverInfo.featureEnabled('STEP_UP_AUTHENTICATION')">
                 <label class="col-md-2 control-label" for="newAcr">{{:: 'acr-loa-map' | translate}}</label>
                 <div class="col-sm-6">
                     <div class="input-group input-map" ng-repeat="(acr, loa) in acrLoaMap">
@@ -950,8 +950,31 @@
                         </div>
                     </div>
                 </div>
-                <kc-tooltip>{{:: 'acr-loa-map.tooltip' | translate}}</kc-tooltip>
+                <kc-tooltip>{{:: 'acr-loa-map-client.tooltip' | translate}}</kc-tooltip>
             </div>
+
+            <div class="form-group" data-ng-show="!clientEdit.bearerOnly && protocol == 'openid-connect' && serverInfo.featureEnabled('STEP_UP_AUTHENTICATION')">
+                <label class="col-md-2 control-label" for="newDefaultAcrValue">{{:: 'default-acr-values' | translate}}</label>
+
+                <div class="col-sm-6">
+                    <div class="input-group" ng-repeat="(i, defaultAcrValue) in defaultAcrValues track by $index">
+                        <input class="form-control" ng-model="defaultAcrValues[i]">
+                        <div class="input-group-btn">
+                            <button class="btn btn-default" type="button" data-ng-click="deleteDefaultAcrValue($index)"><span class="fa fa-minus"></span></button>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <input class="form-control" ng-model="newDefaultAcrValue" id="newDefaultAcrValue">
+                        <div class="input-group-btn">
+                            <button class="btn btn-default" type="button" data-ng-click="newDefaultAcrValue.length > 0 && addDefaultAcrValue()"><span class="fa fa-plus"></span></button>
+                        </div>
+                    </div>
+                </div>
+
+                <kc-tooltip>{{:: 'default-acr-values.tooltip' | translate}}</kc-tooltip>
+            </div>
+
         </fieldset>
 
         <fieldset>

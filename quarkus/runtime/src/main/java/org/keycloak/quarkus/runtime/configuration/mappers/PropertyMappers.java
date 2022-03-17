@@ -26,11 +26,13 @@ public final class PropertyMappers {
         MAPPERS.addAll(DatabasePropertyMappers.getDatabasePropertyMappers());
         MAPPERS.addAll(HostnamePropertyMappers.getHostnamePropertyMappers());
         MAPPERS.addAll(HttpPropertyMappers.getHttpPropertyMappers());
+        MAPPERS.addAll(HealthPropertyMappers.getHealthPropertyMappers());
         MAPPERS.addAll(MetricsPropertyMappers.getMetricsPropertyMappers());
         MAPPERS.addAll(ProxyPropertyMappers.getProxyPropertyMappers());
         MAPPERS.addAll(VaultPropertyMappers.getVaultPropertyMappers());
         MAPPERS.addAll(FeaturePropertyMappers.getMappers());
         MAPPERS.addAll(LoggingPropertyMappers.getMappers());
+        MAPPERS.addAll(TransactionPropertyMappers.getTransactionPropertyMappers());
     }
 
     public static ConfigValue getValue(ConfigSourceInterceptorContext context, String name) {

@@ -19,6 +19,7 @@ rules:
       - ""
     resources:
       - secrets
+      - services
     verbs:
       - get
       - list
@@ -31,6 +32,18 @@ rules:
       - batch
     resources:
       - jobs
+    verbs:
+      - get
+      - list
+      - watch
+      - create
+      - delete
+      - patch
+      - update
+  - apiGroups:
+      - networking.k8s.io
+    resources:
+      - ingresses
     verbs:
       - get
       - list

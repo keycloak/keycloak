@@ -35,7 +35,7 @@ import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
 
 @DistributionTest(reInstall = DistributionTest.ReInstall.NEVER)
-@BeforeStartDistribution(QuarkusPropertiesDistTest.DisableConsoleLogHandler.class)
+@BeforeStartDistribution(QuarkusPropertiesDistTest.UpdateConsoleLogLevelToWarn.class)
 @RawDistOnly(reason = "Containers are immutable")
 @TestMethodOrder(OrderAnnotation.class)
 public class QuarkusPropertiesDistTest {
@@ -58,7 +58,7 @@ public class QuarkusPropertiesDistTest {
     }
 
     @Test
-    @Launch({ "-Dquarkus.log.console.enabled=true", "start", "--http-enabled=true", "--hostname-strict=false" })
+    @Launch({ "-Dquarkus.log.console.level=info", "start", "--http-enabled=true", "--hostname-strict=false" })
     @Order(3)
     void testIgnoreQuarkusSystemPropertiesAtStart(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
@@ -66,7 +66,7 @@ public class QuarkusPropertiesDistTest {
     }
 
     @Test
-    @Launch({ "-Dquarkus.log.console.enabled=true", "build" })
+    @Launch({ "-Dquarkus.log.console.level=info", "build" })
     @Order(4)
     void testIgnoreQuarkusSystemPropertyAtBuild(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
@@ -75,7 +75,7 @@ public class QuarkusPropertiesDistTest {
     }
 
     @Test
-    @BeforeStartDistribution(DisableConsoleLogHandlerInKeycloakConf.class)
+    @BeforeStartDistribution(UpdateConsoleLogLevelToInfo.class)
     @Launch({ "build" })
     @Order(5)
     void testIgnoreQuarkusPropertyFromKeycloakConf(LaunchResult result) {
@@ -84,20 +84,20 @@ public class QuarkusPropertiesDistTest {
         cliResult.assertBuild();
     }
 
-    public static class DisableConsoleLogHandler implements Consumer<KeycloakDistribution> {
+    public static class UpdateConsoleLogLevelToWarn implements Consumer<KeycloakDistribution> {
 
         @Override
         public void accept(KeycloakDistribution distribution) {
-            distribution.setQuarkusProperty("quarkus.log.console.enable", "false");
+            distribution.setQuarkusProperty("quarkus.log.console.level", "WARN");
         }
     }
 
-    public static class DisableConsoleLogHandlerInKeycloakConf implements Consumer<KeycloakDistribution> {
+    public static class UpdateConsoleLogLevelToInfo implements Consumer<KeycloakDistribution> {
 
         @Override
         public void accept(KeycloakDistribution distribution) {
             distribution.deleteQuarkusProperties();
-            distribution.setProperty("quarkus.log.console.enable", "false");
+            distribution.setProperty("quarkus.log.console.level", "INFO");
         }
     }
 }

@@ -97,8 +97,17 @@
             <artifactId>keycloak-model-map-hot-rod</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-model-map-ldap</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.infinispan</groupId>
             <artifactId>infinispan-server-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.infinispan</groupId>
+            <artifactId>infinispan-component-annotations</artifactId>
+            <version>${infinispan.version}</version>
         </dependency>
     </dependencies>
 
@@ -146,6 +155,8 @@
                         <log4j.configuration>file:${project.build.directory}/test-classes/log4j.properties</log4j.configuration> <!-- for the logging to properly work with tests in the 'other' module -->
                         <keycloak.profile.feature.map_storage>${keycloak.profile.feature.map_storage}</keycloak.profile.feature.map_storage>
                         <keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase>${keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase}</keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase>
+                        <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
+                        <org.jboss.logging.provider>log4j</org.jboss.logging.provider>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>
@@ -184,6 +195,13 @@
             <id>jpa+infinispan</id>
             <properties>
                 <keycloak.model.parameters>Infinispan,Jpa</keycloak.model.parameters>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>jpa+infinispan+client-storage</id>
+            <properties>
+                <keycloak.model.parameters>Jpa,Infinispan,HardcodedClientStorage</keycloak.model.parameters>
             </properties>
         </profile>
 
@@ -289,6 +307,15 @@
                 <keycloak.model.parameters>Jpa,Map,HotRodMapStorage</keycloak.model.parameters>
             </properties>
         </profile>
+
+        <profile>
+            <id>map-ldap</id>
+            <properties>
+                <keycloak.profile.feature.map_storage>enabled</keycloak.profile.feature.map_storage>
+                <keycloak.model.parameters>Jpa,Map,LdapMapStorage</keycloak.model.parameters>
+            </properties>
+        </profile>
+
     </profiles>
     
 </project>

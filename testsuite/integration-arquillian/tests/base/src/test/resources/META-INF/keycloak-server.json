@@ -167,6 +167,12 @@
         }
     },
 
+    "authorizationCache": {
+        "default": {
+            "enabled": "${keycloak.authorizationCache.enabled:true}"
+        }
+    },
+
     "userCache": {
         "provider": "${keycloak.user.cache.provider:default}",
         "default" : {
@@ -260,7 +266,7 @@
             "username": "${keycloak.connectionsHotRod.username:myuser}",
             "password": "${keycloak.connectionsHotRod.password:qwer1234!}",
             "enableSecurity": "${keycloak.connectionsHotRod.enableSecurity:true}",
-            "reindexCaches": "${keycloak.connectionsHotRod.reindexCaches:clients,groups,users,roles}"
+            "reindexCaches": "${keycloak.connectionsHotRod.reindexCaches:clients,client-scopes,groups,users,roles}"
         }
     },
 

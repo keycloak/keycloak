@@ -88,8 +88,66 @@ The following table shows the recommended paths to expose.
 |Yes
 |Search engine rules
 
+|/metrics
+|-
+|No
+|Exposed metrics lead to an unnecessary attack vector.
+
+|/health
+|-
+|No
+|Exposed health checks lead to an unnecessary attack vector.
+
 |===
 We assume you run Keycloak on the root path `/` on your reverse proxy/gateway's public API.
 If not, prefix the path with your desired one.
+
+=== Enabling client certificate lookup
+
+When the proxy is configured as a TLS termination proxy the client certificate information can be forwarded to the server through specific HTTP request headers and then used to authenticate
+clients. You are able to configure how the server is going to retrieve client certificate information depending on the proxy you are using.
+
+The server supports some of the most commons TLS termination proxies such as:
+
+|===
+|Proxy|Provider
+
+|Apache HTTP Server
+|apache
+
+|HAProxy
+|haproxy
+
+|NGINX
+|nginx
+|===
+
+To configure how client certificates are retrieved from the requests you need to:
+
+.Enable the corresponding proxy provider
+<@kc.build parameters="--spi-x509cert-lookup-provider=<provider>"/>
+
+.Configure the HTTP headers
+<@kc.start parameters="--spi-x509cert-lookup-<provider>-ssl-client-cert=SSL_CLIENT_CERT --spi-x509cert-lookup-<provider>-ssl-cert-chain-prefix=CERT_CHAIN --spi-x509cert-lookup-<provider>-certificate-chain-length=10"/>
+
+When configuring the HTTP headers, you need to make sure the values you are using correspond to the name of the headers
+forwarded by the proxy with the client certificate information.
+
+The available options for configuring a provider are:
+
+|===
+|Option|Description
+
+|ssl-client-cert
+| The name of the header holding the client certificate
+
+|ssl-cert-chain-prefix
+| The prefix of the headers holding additional certificates in the chain and used to retrieve individual
+certificates accordingly to the length of the chain. For instance, a value `CERT_CHAIN` will tell the server
+to load additional certificates from headers `CERT_CHAIN_0` to `CERT_CHAIN_9` if `certificate-chain-length` is set to `10`.
+
+|certificate-chain-length
+| The maximum length of the certificate chain.
+|===
 
 </@tmpl.guide>

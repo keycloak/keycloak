@@ -22,16 +22,17 @@ import org.keycloak.authentication.ClientAuthenticator;
 import org.keycloak.authentication.ClientAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
-import org.keycloak.authentication.authenticators.client.X509ClientAuthenticator;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKParser;
 import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.models.CibaConfig;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ParConfig;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
+import org.keycloak.protocol.oidc.OIDCClientSecretConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.PairwiseSubMapperHelper;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
@@ -234,6 +235,10 @@ public class DescriptionConverter {
 
         configWrapper.setFrontChannelLogoutUrl(Optional.ofNullable(clientOIDC.getFrontChannelLogoutUri()).orElse(null));
 
+        if (clientOIDC.getDefaultAcrValues() != null) {
+            configWrapper.setAttributeMultivalued(Constants.DEFAULT_ACR_VALUES, clientOIDC.getDefaultAcrValues());
+        }
+
         return client;
     }
 
@@ -311,7 +316,8 @@ public class DescriptionConverter {
 
         if (client.getClientAuthenticatorType().equals(ClientIdAndSecretAuthenticator.PROVIDER_ID)) {
             response.setClientSecret(client.getSecret());
-            response.setClientSecretExpiresAt(0);
+            response.setClientSecretExpiresAt(
+                OIDCClientSecretConfigWrapper.fromClientRepresentation(client).getClientSecretExpirationTime());
         }
 
         response.setClientName(client.getName());
@@ -413,6 +419,11 @@ public class DescriptionConverter {
         }
 
         response.setFrontChannelLogoutUri(config.getFrontChannelLogoutUrl());
+
+        List<String> defaultAcrValues = config.getAttributeMultivalued(Constants.DEFAULT_ACR_VALUES);
+        if (!defaultAcrValues.isEmpty()) {
+            response.setDefaultAcrValues(defaultAcrValues);
+        }
 
         return response;
     }

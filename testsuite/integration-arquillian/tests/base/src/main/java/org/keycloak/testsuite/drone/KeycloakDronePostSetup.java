@@ -20,6 +20,8 @@ package org.keycloak.testsuite.drone;
 import java.util.concurrent.TimeUnit;
 
 import io.appium.java_client.AppiumDriver;
+import org.jboss.arquillian.core.api.InstanceProducer;
+import org.jboss.arquillian.core.api.annotation.Inject;
 import org.jboss.arquillian.core.api.annotation.Observes;
 import org.jboss.arquillian.drone.spi.DroneContext;
 import org.jboss.arquillian.drone.spi.DronePoint;
@@ -27,6 +29,7 @@ import org.jboss.arquillian.drone.spi.event.AfterDroneEnhanced;
 import org.jboss.arquillian.graphene.proxy.GrapheneProxyInstance;
 import org.jboss.arquillian.graphene.proxy.Interceptor;
 import org.jboss.arquillian.graphene.proxy.InvocationContext;
+import org.jboss.arquillian.test.spi.annotation.ClassScoped;
 import org.jboss.logging.Logger;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.WebDriver;
@@ -38,8 +41,11 @@ import org.openqa.selenium.remote.RemoteWebDriver;
  */
 public class KeycloakDronePostSetup {
 
-    protected static final Logger log = org.jboss.logging.Logger.getLogger(KeycloakDronePostSetup.class);
+    @Inject
+    @ClassScoped // needed in BrowserDriverIgnoreDecider
+    private InstanceProducer<WebDriver> webDriverProducer;
 
+    protected static final Logger log = org.jboss.logging.Logger.getLogger(KeycloakDronePostSetup.class);
 
     public void configureWebDriver(@Observes AfterDroneEnhanced event, DroneContext droneContext) {
         DronePoint<?> dronePoint = event.getDronePoint();
@@ -48,12 +54,13 @@ public class KeycloakDronePostSetup {
         if (drone instanceof RemoteWebDriver) {
             RemoteWebDriver remoteWebDriver = (RemoteWebDriver) drone;
             log.infof("Detected browser: %s %s", remoteWebDriver.getCapabilities().getBrowserName(), remoteWebDriver.getCapabilities().getVersion());
+            webDriverProducer.set(remoteWebDriver);
         }
-
 
         if (drone instanceof WebDriver && !(drone instanceof AppiumDriver)) {
             WebDriver webDriver = (WebDriver) drone;
             configureDriverSettings(webDriver);
+            webDriverProducer.set(webDriver);
         } else {
             log.warn("Drone is not instanceof WebDriver for a desktop browser! Drone is " + drone);
         }

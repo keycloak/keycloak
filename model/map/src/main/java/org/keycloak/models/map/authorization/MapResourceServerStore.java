@@ -40,6 +40,7 @@ import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.storage.StorageId;
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
+import org.keycloak.models.ClientModel;
 
 public class MapResourceServerStore implements ResourceServerStore {
 
@@ -62,7 +63,8 @@ public class MapResourceServerStore implements ResourceServerStore {
     }
 
     @Override
-    public ResourceServer create(String clientId) {
+    public ResourceServer create(ClientModel client) {
+        String clientId = client.getId();
         LOG.tracef("create(%s)%s", clientId, getShortStackTrace());
         
         if (clientId == null) return null;
@@ -82,7 +84,8 @@ public class MapResourceServerStore implements ResourceServerStore {
     }
 
     @Override
-    public void delete(String id) {
+    public void delete(ClientModel client) {
+        String id = client.getId();
         LOG.tracef("delete(%s, %s)%s", id, getShortStackTrace());
         if (id == null) return;
 
@@ -120,5 +123,10 @@ public class MapResourceServerStore implements ResourceServerStore {
 
         MapResourceServerEntity entity = tx.read(id);
         return entityToAdapter(entity);
+    }
+
+    @Override
+    public ResourceServer findByClient(ClientModel client) {
+        return findById(client.getId());
     }
 }

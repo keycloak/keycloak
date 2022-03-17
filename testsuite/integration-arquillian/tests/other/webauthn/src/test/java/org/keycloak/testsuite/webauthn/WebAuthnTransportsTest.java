@@ -18,7 +18,9 @@
 package org.keycloak.testsuite.webauthn;
 
 import org.junit.Test;
+import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.webauthn.pages.WebAuthnAuthenticatorsList;
+import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.virtualauthenticator.VirtualAuthenticatorOptions;
 
 import java.util.List;
@@ -34,6 +36,7 @@ import static org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthO
 /**
  * @author <a href="mailto:mabartos@redhat.com">Martin Bartos</a>
  */
+@IgnoreBrowserDriver(FirefoxDriver.class)
 public class WebAuthnTransportsTest extends AbstractWebAuthnVirtualTest {
 
     @Test

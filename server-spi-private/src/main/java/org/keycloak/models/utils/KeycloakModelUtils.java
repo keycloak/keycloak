@@ -25,11 +25,13 @@ import org.keycloak.common.util.CertificateUtils;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.common.util.SecretGenerator;
+import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.ClientSecretConstants;
 import org.keycloak.models.Constants;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderModel;
@@ -148,6 +150,7 @@ public final class KeycloakModelUtils {
     public static String generateSecret(ClientModel client) {
         String secret = SecretGenerator.getInstance().randomString();
         client.setSecret(secret);
+        client.setAttribute(ClientSecretConstants.CLIENT_SECRET_CREATION_TIME,String.valueOf(Time.currentTime()));
         return secret;
     }
 

@@ -29,7 +29,7 @@ import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.storage.hotRod.common.AbstractHotRodEntity;
 import org.keycloak.models.map.storage.hotRod.common.HotRodEntityDelegate;
 import org.keycloak.models.map.storage.hotRod.common.HotRodEntityDescriptor;
-import org.keycloak.models.map.common.StringKeyConvertor;
+import org.keycloak.models.map.common.StringKeyConverter;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.QueryParameters;
@@ -39,7 +39,6 @@ import org.keycloak.models.map.storage.chm.MapFieldPredicates;
 import org.keycloak.models.map.storage.chm.MapModelCriteriaBuilder;
 import org.keycloak.storage.SearchableModelField;
 
-import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Spliterators;
@@ -57,14 +56,14 @@ public class HotRodMapStorage<K, E extends AbstractHotRodEntity, V extends HotRo
     private static final Logger LOG = Logger.getLogger(HotRodMapStorage.class);
 
     private final RemoteCache<K, E> remoteCache;
-    private final StringKeyConvertor<K> keyConvertor;
+    private final StringKeyConverter<K> keyConverter;
     private final HotRodEntityDescriptor<E, V> storedEntityDescriptor;
     private final Function<E, V> delegateProducer;
     private final DeepCloner cloner;
 
-    public HotRodMapStorage(RemoteCache<K, E> remoteCache, StringKeyConvertor<K> keyConvertor, HotRodEntityDescriptor<E, V> storedEntityDescriptor, DeepCloner cloner) {
+    public HotRodMapStorage(RemoteCache<K, E> remoteCache, StringKeyConverter<K> keyConverter, HotRodEntityDescriptor<E, V> storedEntityDescriptor, DeepCloner cloner) {
         this.remoteCache = remoteCache;
-        this.keyConvertor = keyConvertor;
+        this.keyConverter = keyConverter;
         this.storedEntityDescriptor = storedEntityDescriptor;
         this.cloner = cloner;
         this.delegateProducer = storedEntityDescriptor.getHotRodDelegateProvider();
@@ -72,10 +71,10 @@ public class HotRodMapStorage<K, E extends AbstractHotRodEntity, V extends HotRo
 
     @Override
     public V create(V value) {
-        K key = keyConvertor.fromStringSafe(value.getId());
+        K key = keyConverter.fromStringSafe(value.getId());
         if (key == null) {
-            key = keyConvertor.yieldNewUniqueKey();
-            value = cloner.from(keyConvertor.keyToString(key), value);
+            key = keyConverter.yieldNewUniqueKey();
+            value = cloner.from(keyConverter.keyToString(key), value);
         }
 
         remoteCache.putIfAbsent(key, value.getHotRodEntity());
@@ -86,19 +85,19 @@ public class HotRodMapStorage<K, E extends AbstractHotRodEntity, V extends HotRo
     @Override
     public V read(String key) {
         Objects.requireNonNull(key, "Key must be non-null");
-        K k = keyConvertor.fromStringSafe(key);
+        K k = keyConverter.fromStringSafe(key);
         return delegateProducer.apply(remoteCache.get(k));
     }
 
     @Override
     public V update(V value) {
-        K key = keyConvertor.fromStringSafe(value.getId());
+        K key = keyConverter.fromStringSafe(value.getId());
         return delegateProducer.apply(remoteCache.replace(key, value.getHotRodEntity()));
     }
 
     @Override
     public boolean delete(String key) {
-        K k = keyConvertor.fromStringSafe(key);
+        K k = keyConverter.fromStringSafe(key);
         return remoteCache.remove(k) != null;
     }
 
@@ -193,6 +192,6 @@ public class HotRodMapStorage<K, E extends AbstractHotRodEntity, V extends HotRo
     @Override
     public MapKeycloakTransaction<V, M> createTransaction(KeycloakSession session) {
         Map<SearchableModelField<? super M>, MapModelCriteriaBuilder.UpdatePredicatesFunc<K, V, M>> fieldPredicates = MapFieldPredicates.getPredicates((Class<M>) storedEntityDescriptor.getModelTypeClass());
-        return new ConcurrentHashMapKeycloakTransaction<>(this, keyConvertor, cloner, fieldPredicates);
+        return new ConcurrentHashMapKeycloakTransaction<>(this, keyConverter, cloner, fieldPredicates);
     }
 }

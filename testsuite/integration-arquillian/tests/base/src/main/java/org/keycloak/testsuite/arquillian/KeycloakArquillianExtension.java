@@ -27,6 +27,7 @@ import org.jboss.arquillian.graphene.location.CustomizableURLResourceProvider;
 import org.jboss.arquillian.test.spi.TestEnricher;
 import org.jboss.arquillian.test.spi.enricher.resource.ResourceProvider;
 import org.jboss.arquillian.test.spi.execution.TestExecutionDecider;
+import org.keycloak.testsuite.arquillian.decider.BrowserDriverIgnoreDecider;
 import org.keycloak.testsuite.arquillian.h2.H2TestEnricher;
 import org.keycloak.testsuite.arquillian.jmx.JmxConnectorRegistryCreator;
 import org.keycloak.testsuite.arquillian.decider.AdapterTestExecutionDecider;
@@ -73,7 +74,8 @@ public class KeycloakArquillianExtension implements LoadableExtension {
                 .service(TestExecutionDecider.class, MigrationTestExecutionDecider.class)
                 .service(TestExecutionDecider.class, AdapterTestExecutionDecider.class)
                 .service(TestExecutionDecider.class, VaultTestExecutionDecider.class)
-                .service(TestExecutionDecider.class, AuthServerExcludeExecutionDecider.class);
+                .service(TestExecutionDecider.class, AuthServerExcludeExecutionDecider.class)
+                .service(TestExecutionDecider.class, BrowserDriverIgnoreDecider.class);
 
         builder
                 .override(ResourceProvider.class, URLResourceProvider.class, URLProvider.class)

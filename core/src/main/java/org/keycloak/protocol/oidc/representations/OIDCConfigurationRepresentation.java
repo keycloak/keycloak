@@ -64,6 +64,9 @@ public class OIDCConfigurationRepresentation {
     @JsonProperty("grant_types_supported")
     private List<String> grantTypesSupported;
 
+    @JsonProperty("acr_values_supported")
+    private List<String> acrValuesSupported;
+
     @JsonProperty("response_types_supported")
     private List<String> responseTypesSupported;
 
@@ -256,6 +259,14 @@ public class OIDCConfigurationRepresentation {
 
     public void setGrantTypesSupported(List<String> grantTypesSupported) {
         this.grantTypesSupported = grantTypesSupported;
+    }
+
+    public List<String> getAcrValuesSupported() {
+        return acrValuesSupported;
+    }
+
+    public void setAcrValuesSupported(List<String> acrValuesSupported) {
+        this.acrValuesSupported = acrValuesSupported;
     }
 
     public List<String> getResponseTypesSupported() {

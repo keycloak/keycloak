@@ -212,7 +212,7 @@ public class CibaGrantType {
         }
 
         ClientSessionContext clientSessionCtx = DefaultClientSessionContext
-                .fromClientSessionAndClientScopes(userSession.getAuthenticatedClientSessionByClient(client.getId()), TokenManager.getRequestedClientScopes(scopeParam, client), session);
+                .fromClientSessionAndScopeParameter(userSession.getAuthenticatedClientSessionByClient(client.getId()), scopeParam, session);
 
         int authTime = Time.currentTime();
         userSession.setNote(AuthenticationManager.AUTH_TIME, String.valueOf(authTime));

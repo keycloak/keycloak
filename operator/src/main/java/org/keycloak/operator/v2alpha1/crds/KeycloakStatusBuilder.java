@@ -52,6 +52,11 @@ public class KeycloakStatusBuilder {
         return this;
     }
 
+    public KeycloakStatusBuilder addWarningMessage(String message) {
+        errorMessages.add("warning: " + message);
+        return this;
+    }
+
     public KeycloakStatus build() {
         readyCondition.setMessage(String.join("\n", notReadyMessages));
         hasErrorsCondition.setMessage(String.join("\n", errorMessages));

@@ -39,7 +39,6 @@ import java.util.Map;
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
-@EnableFeature(value = Profile.Feature.WEB_AUTHN, skipRestart = true, onlyForProduct = true)
 public class RequiredActionsTest extends AbstractAuthenticationTest {
 
     @Test
@@ -85,7 +84,9 @@ public class RequiredActionsTest extends AbstractAuthenticationTest {
         // Dummy RequiredAction is not registered in the realm and WebAuthn actions
         List<RequiredActionProviderSimpleRepresentation> result = authMgmtResource.getUnregisteredRequiredActions();
         Assert.assertEquals(4, result.size());
-        RequiredActionProviderSimpleRepresentation action = result.get(0);
+        RequiredActionProviderSimpleRepresentation action = result.stream().filter(
+                a -> a.getProviderId().equals(DummyRequiredActionFactory.PROVIDER_ID)
+        ).findFirst().get();
         Assert.assertEquals(DummyRequiredActionFactory.PROVIDER_ID, action.getProviderId());
         Assert.assertEquals("Dummy Action", action.getName());
 
