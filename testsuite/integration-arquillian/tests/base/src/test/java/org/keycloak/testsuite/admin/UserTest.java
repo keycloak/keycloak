@@ -3040,4 +3040,78 @@ public class UserTest extends AbstractAdminTest {
             testRealm().roles().get("realm-role").remove();
         }
     }
+
+    /**
+     * Test for #9482
+     */
+    @Test
+    public void joinParentGroupAfterSubGroup() {
+        String username = "user-with-sub-and-parent-group";
+        String parentGroupName = "parent-group";
+        String subGroupName = "sub-group";
+
+        UserRepresentation userRepresentation = UserBuilder.create().username(username).build();
+
+        GroupRepresentation subGroupRep = GroupBuilder.create().name(subGroupName).build();
+        GroupRepresentation parentGroupRep = GroupBuilder.create().name(parentGroupName).subGroups(List.of(subGroupRep)).build();
+
+        try (Creator<UserResource> u = Creator.create(realm, userRepresentation);
+             Creator<GroupResource> subgroup = Creator.create(realm, subGroupRep);
+             Creator<GroupResource> parentGroup = Creator.create(realm, parentGroupRep)) {
+
+            UserResource user = u.resource();
+
+            //when
+            user.joinGroup(subgroup.id());
+            List<GroupRepresentation> obtainedGroups = realm.users().get(u.id()).groups();
+
+            //then
+            assertEquals(1, obtainedGroups.size());
+            assertEquals(subGroupName, obtainedGroups.get(0).getName());
+
+            //when
+            user.joinGroup(parentGroup.id());
+            obtainedGroups = realm.users().get(u.id()).groups();
+
+            //then
+            assertEquals(2, obtainedGroups.size());
+            assertEquals(parentGroupName, obtainedGroups.get(0).getName());
+            assertEquals(subGroupName, obtainedGroups.get(1).getName());
+        }
+    }
+
+    @Test
+    public void joinSubGroupAfterParentGroup() {
+        String username = "user-with-sub-and-parent-group";
+        String parentGroupName = "parent-group";
+        String subGroupName = "sub-group";
+
+        UserRepresentation userRepresentation = UserBuilder.create().username(username).build();
+        GroupRepresentation subGroupRep = GroupBuilder.create().name(subGroupName).build();
+        GroupRepresentation parentGroupRep = GroupBuilder.create().name(parentGroupName).subGroups(List.of(subGroupRep)).build();
+
+        try (Creator<UserResource> u = Creator.create(realm, userRepresentation);
+             Creator<GroupResource> subgroup = Creator.create(realm, subGroupRep);
+             Creator<GroupResource> parentGroup = Creator.create(realm, parentGroupRep)) {
+
+            UserResource user = u.resource();
+
+            //when
+            user.joinGroup(parentGroup.id());
+            List<GroupRepresentation> obtainedGroups = realm.users().get(u.id()).groups();
+
+            //then
+            assertEquals(1, obtainedGroups.size());
+            assertEquals(parentGroupName, obtainedGroups.get(0).getName());
+
+            //when
+            user.joinGroup(subgroup.id());
+            obtainedGroups = realm.users().get(u.id()).groups();
+
+            //then
+            assertEquals(2, obtainedGroups.size());
+            assertEquals(parentGroupName, obtainedGroups.get(0).getName());
+            assertEquals(subGroupName, obtainedGroups.get(1).getName());
+        }
+    }
 }

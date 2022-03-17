@@ -255,6 +255,7 @@ public abstract class MapUserAdapter extends AbstractUserModel<MapUserEntity> {
 
     @Override
     public void joinGroup(GroupModel group) {
+        if (RoleUtils.isDirectMember(getGroupsStream(), group)) return;
         entity.addGroupsMembership(group.getId());
     }
 
