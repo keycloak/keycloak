@@ -2097,25 +2097,31 @@
         </profile>
 
         <profile>
-            <id>gpg-sign</id>
+            <id>gpg</id>
             <build>
                 <plugins>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-gpg-plugin</artifactId>
-                        <configuration>
-                            <gpgArguments>
-                                <arg>--pinentry-mode</arg>
-                                <arg>loopback</arg>
-                            </gpgArguments>
-                        </configuration>
+                        <version>3.0.1</version>
                         <executions>
                             <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
                                 <goals>
                                     <goal>sign</goal>
                                 </goals>
+                                <configuration>
+                                    <gpgArguments>
+                                        <arg>--batch</arg>
+                                        <arg>--pinentry-mode</arg>
+                                        <arg>loopback</arg>
+                                    </gpgArguments>
+                                </configuration>
                             </execution>
                         </executions>
+                        <configuration>
+                        </configuration>
                     </plugin>
                 </plugins>
             </build>
