@@ -62,17 +62,7 @@ public class KeycloakRecorder {
 
     public RuntimeValue<CacheManagerFactory> createCacheInitializer(String config, ShutdownContext shutdownContext) {
         try {
-            ConfigurationBuilderHolder builder = new ParserRegistry().parse(config);
-
-            if (builder.getNamedConfigurationBuilders().get("sessions").clustering().cacheMode().isClustered()) {
-                configureTransportStack(builder);
-            }
-
-            // For Infinispan 10, we go with the JBoss marshalling.
-            // TODO: This should be replaced later with the marshalling recommended by infinispan. Probably protostream.
-            // See https://infinispan.org/docs/stable/titles/developing/developing.html#marshalling for the details
-            builder.getGlobalConfigurationBuilder().serialization().marshaller(new JBossUserMarshaller());
-            CacheManagerFactory cacheManagerFactory = new CacheManagerFactory(builder);
+            CacheManagerFactory cacheManagerFactory = new CacheManagerFactory(config);
 
             shutdownContext.addShutdownTask(new Runnable() {
                 @Override
@@ -88,15 +78,6 @@ public class KeycloakRecorder {
             return new RuntimeValue<>(cacheManagerFactory);
         } catch (Exception e) {
             throw new RuntimeException(e);
-        }
-    }
-
-    private void configureTransportStack(ConfigurationBuilderHolder builder) {
-        String transportStack = Configuration.getRawValue("kc.cache-stack");
-
-        if (transportStack != null) {
-            builder.getGlobalConfigurationBuilder().transport().defaultTransport()
-                    .addProperty("configurationFile", "default-configs/default-jgroups-" + transportStack + ".xml");
         }
     }
 
