@@ -36,6 +36,7 @@ import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -327,7 +328,7 @@ public class GenerateHotRodEntityImplementationsProcessor extends AbstractGenera
             switch (accessorType) {
                 case GETTER:
                     pw.println("    @SuppressWarnings(\"unchecked\") @Override public " + method.getReturnType() + " " + method + " {");
-                    pw.println("        return " + migrateToType(method.getReturnType(), hotRodFieldType, hotRodEntityField(fieldName)) + ";");
+                    pw.println("        return " + hotRodEntityField(fieldName)  + " == null ? null : " + migrateToType(method.getReturnType(), hotRodFieldType, hotRodEntityField(fieldName)) + ";");
                     pw.println("    }");
                     return true;
                 case SETTER:
@@ -336,9 +337,12 @@ public class GenerateHotRodEntityImplementationsProcessor extends AbstractGenera
                         pw.println("        p0 = " + deepClone(firstParameterType, "p0") + ";");
                     }
                     if (isCollection(firstParameterType)) {
-                        pw.println("        if (p0 != null) " + removeUndefined(firstParameterType, "p0") + ";");
+                        pw.println("        if (p0 != null) {");
+                        pw.println("            " + removeUndefined(firstParameterType, "p0") + ";");
+                        pw.println("            if (" + isUndefined("p0") + ") p0 = null;");
+                        pw.println("        }");
                     }
-                    pw.println("        " + hotRodFieldType.toString() + " migrated = " + migrateToType(hotRodFieldType, firstParameterType, "p0") + ";");
+                    pw.println("        " + hotRodFieldType.toString() + " migrated = p0 == null ? null : " + migrateToType(hotRodFieldType, firstParameterType, "p0") + ";");
                     pw.println("        " + hotRodEntityField("updated") + " |= ! Objects.equals(" + hotRodEntityField(fieldName) + ", migrated);");
                     pw.println("        " + hotRodEntityField(fieldName) + " = migrated;");
                     pw.println("    }");
@@ -387,7 +391,6 @@ public class GenerateHotRodEntityImplementationsProcessor extends AbstractGenera
                     collectionItemType = getGenericsDeclaration(hotRodFieldType).get(0);
                     TypeMirror secondParameterType = method.getParameters().get(1).asType();
                     pw.println("    @SuppressWarnings(\"unchecked\") @Override public " + method.getReturnType() + " " + method.getSimpleName() + "(" + firstParameterType + " p0, " + secondParameterType + " p1) {");
-                    pw.println("        if (" + hotRodEntityField(fieldName) + " == null) { " + hotRodEntityField(fieldName) + " = " + interfaceToImplementation((TypeElement) types.asElement(types.erasure(hotRodFieldType)), "") + "; }");
                     if (! isImmutableFinalType(secondParameterType)) {
                         pw.println("        p1 = " + deepClone(secondParameterType, "p1") + ";");
                     }
@@ -395,6 +398,7 @@ public class GenerateHotRodEntityImplementationsProcessor extends AbstractGenera
                         pw.println("        if (p1 != null) " + removeUndefined(secondParameterType, "p1") + ";");
                     }
                     pw.println("        boolean valueUndefined = " + isUndefined("p1") + ";");
+                    pw.println("        if (" + hotRodEntityField(fieldName) + " == null && !valueUndefined) { " + hotRodEntityField(fieldName) + " = " + interfaceToImplementation((TypeElement) types.asElement(types.erasure(hotRodFieldType)), "") + "; }");
                     pw.println("        " + hotRodEntityField("updated") + " |= " + hotRodUtils.getQualifiedName().toString() + ".removeFromSetByMapKey("
                             + hotRodEntityField(fieldName) + ", "
                             + "p0, "
@@ -522,8 +526,7 @@ public class GenerateHotRodEntityImplementationsProcessor extends AbstractGenera
                 return "new " + fromType[anotherHotRodEntityIndex.getAsInt()] + "Delegate(" + String.join(", ", fieldNames) + ")";
             }
 
-            int last = fromType.length -1 ;
-            return hotRodUtils.getQualifiedName().toString() + ".migrate" + toSimpleName(fromType[last]) + "To" + toSimpleName(toType) + "(" + fieldNames[last] + ")";
+            return hotRodUtils.getQualifiedName().toString() + ".migrate" + Arrays.stream(fromType).map(this::toSimpleName).collect(Collectors.joining("")) + "To" + toSimpleName(toType) + "(" + String.join(", ", fieldNames) + ")";
         }
 
         private Optional<ExecutableElement> findSuitableConstructor(TypeMirror desiredType, TypeMirror[] parameters) {

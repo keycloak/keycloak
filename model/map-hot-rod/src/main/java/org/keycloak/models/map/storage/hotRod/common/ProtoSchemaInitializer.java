@@ -27,6 +27,20 @@ import org.keycloak.models.map.storage.hotRod.client.HotRodProtocolMapperEntity;
 import org.keycloak.models.map.storage.hotRod.clientscope.HotRodClientScopeEntity;
 import org.keycloak.models.map.storage.hotRod.group.HotRodGroupEntity;
 import org.keycloak.models.map.storage.hotRod.loginFailure.HotRodUserLoginFailureEntity;
+import org.keycloak.models.map.storage.hotRod.realm.HotRodRealmEntity;
+import org.keycloak.models.map.storage.hotRod.realm.entity.HotRodAuthenticationExecutionEntity;
+import org.keycloak.models.map.storage.hotRod.realm.entity.HotRodAuthenticationFlowEntity;
+import org.keycloak.models.map.storage.hotRod.realm.entity.HotRodAuthenticatorConfigEntity;
+import org.keycloak.models.map.storage.hotRod.realm.entity.HotRodClientInitialAccessEntity;
+import org.keycloak.models.map.storage.hotRod.realm.entity.HotRodComponentEntity;
+import org.keycloak.models.map.storage.hotRod.realm.entity.HotRodIdentityProviderEntity;
+import org.keycloak.models.map.storage.hotRod.realm.entity.HotRodIdentityProviderMapperEntity;
+import org.keycloak.models.map.storage.hotRod.realm.entity.HotRodLocalizationTexts;
+import org.keycloak.models.map.storage.hotRod.realm.entity.HotRodOTPPolicyEntity;
+import org.keycloak.models.map.storage.hotRod.realm.entity.HotRodRequiredActionProviderEntity;
+import org.keycloak.models.map.storage.hotRod.realm.entity.HotRodRequiredCredentialEntity;
+import org.keycloak.models.map.storage.hotRod.realm.entity.HotRodRequirement;
+import org.keycloak.models.map.storage.hotRod.realm.entity.HotRodWebAuthnPolicyEntity;
 import org.keycloak.models.map.storage.hotRod.role.HotRodRoleEntity;
 import org.keycloak.models.map.storage.hotRod.user.HotRodUserConsentEntity;
 import org.keycloak.models.map.storage.hotRod.user.HotRodUserCredentialEntity;
@@ -64,6 +78,22 @@ import org.keycloak.models.map.storage.hotRod.user.HotRodUserFederatedIdentityEn
 
                 // Login Failures
                 HotRodUserLoginFailureEntity.class,
+
+                // Realms
+                HotRodAuthenticationExecutionEntity.class,
+                HotRodAuthenticationFlowEntity.class,
+                HotRodAuthenticatorConfigEntity.class,
+                HotRodClientInitialAccessEntity.class,
+                HotRodComponentEntity.class,
+                HotRodIdentityProviderEntity.class,
+                HotRodIdentityProviderMapperEntity.class,
+                HotRodLocalizationTexts.class,
+                HotRodOTPPolicyEntity.class,
+                HotRodRequiredActionProviderEntity.class,
+                HotRodRequiredCredentialEntity.class,
+                HotRodRequirement.class,
+                HotRodWebAuthnPolicyEntity.class,
+                HotRodRealmEntity.class,
 
                 // Common
                 HotRodPair.class,

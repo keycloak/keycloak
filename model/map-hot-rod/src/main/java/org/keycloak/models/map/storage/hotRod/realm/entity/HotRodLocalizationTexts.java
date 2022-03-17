@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,46 +15,34 @@
  * limitations under the License.
  */
 
-package org.keycloak.models.map.storage.hotRod.common;
+package org.keycloak.models.map.storage.hotRod.realm.entity;
 
-import org.infinispan.protostream.annotations.ProtoDoc;
 import org.infinispan.protostream.annotations.ProtoField;
+import org.keycloak.models.map.storage.hotRod.common.HotRodPair;
 
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
-@ProtoDoc("@Indexed")
-public class HotRodAttributeEntity {
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+public class HotRodLocalizationTexts {
     @ProtoField(number = 1)
-    public String name;
+    public String locale;
 
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
     @ProtoField(number = 2)
-    public List<String> values;
+    public Set<HotRodPair<String, String>> values;
 
-    public HotRodAttributeEntity() {
+    public String getLocale() {
+        return locale;
     }
 
-    public HotRodAttributeEntity(String name, List<String> values) {
-        this.name = name;
-        this.values = values;
+    public void setLocale(String locale) {
+        this.locale = locale;
     }
 
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public List<String> getValues() {
+    public Set<HotRodPair<String, String>> getValues() {
         return values;
     }
 
-    public void setValues(List<String> values) {
+    public void setValues(Set<HotRodPair<String, String>> values) {
         this.values = values;
     }
 
@@ -62,12 +50,12 @@ public class HotRodAttributeEntity {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        HotRodAttributeEntity that = (HotRodAttributeEntity) o;
-        return Objects.equals(name, that.name) && Objects.equals(values, that.values);
+        HotRodLocalizationTexts that = (HotRodLocalizationTexts) o;
+        return Objects.equals(locale, that.locale) && Objects.equals(values, that.values);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, values);
+        return Objects.hash(locale, values);
     }
 }

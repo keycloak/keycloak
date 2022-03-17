@@ -64,5 +64,14 @@
             </indexing>
             <encoding media-type="application/x-protostream"/>
         </distributed-cache>
+        <distributed-cache name="realms" mode="SYNC">
+            <indexing>
+                <indexed-entities>
+                    <indexed-entity>kc.HotRodRealmEntity</indexed-entity>
+                    <indexed-entity>kc.HotRodComponentEntity</indexed-entity>
+                </indexed-entities>
+            </indexing>
+            <encoding media-type="application/x-protostream"/>
+        </distributed-cache>
     </cache-container>
 </infinispan>
