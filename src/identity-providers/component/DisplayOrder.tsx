@@ -32,7 +32,10 @@ export const DisplayOrder = () => {
             value={value}
             data-testid="displayOrder"
             min={0}
-            onChange={onChange}
+            onChange={(value) => {
+              const num = Number(value);
+              onChange(value === "" ? value : num < 0 ? 0 : num);
+            }}
           />
         )}
       />
