@@ -65,6 +65,7 @@ public class UserAttributeMapper extends AbstractIdentityProviderMapper implemen
     public static final String ATTRIBUTE_FRIENDLY_NAME = "attribute.friendly.name";
     public static final String ATTRIBUTE_NAME_FORMAT = "attribute.name.format";
     public static final String USER_ATTRIBUTE = "user.attribute";
+    public static final String IS_REQUIRED = "is.required";
     private static final String EMAIL = "email";
     private static final String FIRST_NAME = "firstName";
     private static final String LAST_NAME = "lastName";
@@ -98,6 +99,12 @@ public class UserAttributeMapper extends AbstractIdentityProviderMapper implemen
         property.setLabel("User Attribute Name");
         property.setHelpText("User attribute name to store saml attribute.  Use email, lastName, and firstName to map to those predefined user properties.");
         property.setType(ProviderConfigProperty.USER_PROFILE_ATTRIBUTE_LIST_TYPE);
+        configProperties.add(property);
+        property = new ProviderConfigProperty();
+        property.setName(IS_REQUIRED);
+        property.setLabel("isRequired");
+        property.setHelpText("Friendly name of attribute to search for in assertion.  You can leave this blank and specify a name instead.");
+        property.setType(ProviderConfigProperty.BOOLEAN_TYPE);
         configProperties.add(property);
     }
 
@@ -238,7 +245,7 @@ public class UserAttributeMapper extends AbstractIdentityProviderMapper implemen
         String attributeFriendlyName = mapperModel.getConfig().get(UserAttributeMapper.ATTRIBUTE_FRIENDLY_NAME);
 
         RequestedAttributeType requestedAttribute = new RequestedAttributeType(attributeName);
-        requestedAttribute.setIsRequired(null);
+        requestedAttribute.setIsRequired(Boolean.valueOf(mapperModel.getConfig().get(UserAttributeMapper.IS_REQUIRED)) ? true: null);
         requestedAttribute.setNameFormat(mapperModel.getConfig().get(UserAttributeMapper.ATTRIBUTE_NAME_FORMAT) != null ? JBossSAMLURIConstants.valueOf(mapperModel.getConfig().get(UserAttributeMapper.ATTRIBUTE_NAME_FORMAT)).get() :ATTRIBUTE_FORMAT_BASIC.get());
 
         if (attributeFriendlyName != null && attributeFriendlyName.length() > 0)
