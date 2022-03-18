@@ -114,6 +114,10 @@ public class CLITestExtension extends QuarkusMainTestExtension {
             if (distConfig.keepAlive()) {
                 dist.stop();
             }
+
+            if (DistributionTest.ReInstall.BEFORE_TEST.equals(distConfig.reInstall())) {
+                dist = null;
+            }
         }
 
         super.afterEach(context);
