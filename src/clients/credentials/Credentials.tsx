@@ -223,7 +223,6 @@ export const Credentials = ({ clientId, save }: CredentialsProps) => {
                   <Button
                     variant="secondary"
                     onClick={toggleAccessTokenConfirm}
-                    isDisabled={isDirty}
                   >
                     {t("regenerate")}
                   </Button>
