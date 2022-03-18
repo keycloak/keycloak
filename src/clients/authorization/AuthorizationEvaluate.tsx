@@ -184,7 +184,9 @@ export const AuthorizationEvaluate = ({ client }: Props) => {
       roleIds: formValues.roleIds ?? [],
       clientId: formValues.client.id!,
       userId: formValues.user.id!,
-      resources: resources.filter((resource) => keys.includes(resource.name!)),
+      resources: formValues.resources.filter((resource) =>
+        keys.includes(resource.name!)
+      ),
       entitlements: false,
       context: {
         attributes: Object.fromEntries(
