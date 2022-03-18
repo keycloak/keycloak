@@ -390,6 +390,12 @@ public class ConfigurationTest {
     }
 
     @Test
+    public void testDatabaseDialectSetExplicitly() {
+        System.setProperty(CLI_ARGS, "--db-dialect=user-defined");
+        assertEquals("user-defined", createConfig().getRawValue("quarkus.hibernate-orm.dialect"));
+    }
+
+    @Test
     public void testTransactionTypeChangesDriver() {
         System.setProperty(CLI_ARGS, "--db=mssql" + ARG_SEPARATOR + "--transaction-xa-enabled=false");
         assertTrue(System.getProperty(CLI_ARGS, "").contains("mssql"));
