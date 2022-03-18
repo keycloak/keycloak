@@ -212,13 +212,13 @@ public class KeycloakDeploymentE2EIT extends ClusterOperatorTest {
             Awaitility.await()
                     .ignoreExceptions()
                     .untilAsserted(() -> {
-                        String url = "https://" + service.getName() + "." + namespace + ":" + Constants.KEYCLOAK_HTTPS_PORT;
+                        String url = "https://" + service.getName() + "." + namespace + ":" + Constants.KEYCLOAK_HTTPS_PORT + "/admin/master/console/";
                         Log.info("Checking url: " + url);
 
-                        var curlOutput = K8sUtils.inClusterCurl(k8sclient, namespace, "--insecure", "-H", "Host: foo.bar", url);
+                        var curlOutput = K8sUtils.inClusterCurl(k8sclient, namespace, "-s", "--insecure", "-H", "Host: foo.bar", url);
                         Log.info("Curl Output: " + curlOutput);
 
-                        assertTrue(curlOutput.contains("<a href=\"https://example.com:8443/admin/\">"));
+                        assertTrue(curlOutput.contains("var authServerUrl = 'https://example.com:8443';"));
                     });
         } catch (Exception e) {
             savePodLogs();
@@ -237,13 +237,13 @@ public class KeycloakDeploymentE2EIT extends ClusterOperatorTest {
             Awaitility.await()
                     .ignoreExceptions()
                     .untilAsserted(() -> {
-                        String url = "https://" + service.getName() + "." + namespace + ":" + Constants.KEYCLOAK_HTTPS_PORT;
+                        String url = "https://" + service.getName() + "." + namespace + ":" + Constants.KEYCLOAK_HTTPS_PORT + "/admin/master/console/";
                         Log.info("Checking url: " + url);
 
-                        var curlOutput = K8sUtils.inClusterCurl(k8sclient, namespace, "--insecure", "-H", "Host: foo.bar", url);
+                        var curlOutput = K8sUtils.inClusterCurl(k8sclient, namespace, "-s", "--insecure", "-H", "Host: foo.bar", url);
                         Log.info("Curl Output: " + curlOutput);
 
-                        assertTrue(curlOutput.contains("<a href=\"https://foo.bar:8443/admin/\">"));
+                        assertTrue(curlOutput.contains("var authServerUrl = 'https://foo.bar:8443';"));
                     });
         } catch (Exception e) {
             savePodLogs();
