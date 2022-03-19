@@ -30,6 +30,7 @@ import org.keycloak.models.dblock.DBLockProviderFactory;
 public class LiquibaseDBLockProviderFactory implements DBLockProviderFactory {
 
     private static final Logger logger = Logger.getLogger(LiquibaseDBLockProviderFactory.class);
+    public static final int PROVIDER_PRIORITY = 1;
 
     private long lockWaitTimeoutMillis;
 
@@ -67,5 +68,10 @@ public class LiquibaseDBLockProviderFactory implements DBLockProviderFactory {
     @Override
     public String getId() {
         return "jpa";
+    }
+
+    @Override
+    public int order() {
+        return PROVIDER_PRIORITY;
     }
 }

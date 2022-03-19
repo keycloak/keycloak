@@ -17,23 +17,30 @@
 
 package org.keycloak.testsuite.webauthn.account;
 
+import org.hamcrest.Matchers;
+import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.authentication.authenticators.browser.WebAuthnAuthenticatorFactory;
-import org.keycloak.authentication.authenticators.browser.WebAuthnPasswordlessAuthenticatorFactory;
 import org.keycloak.authentication.requiredactions.WebAuthnPasswordlessRegisterFactory;
 import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
-import org.keycloak.representations.idm.AuthenticationExecutionRepresentation;
-import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
+import org.keycloak.models.credential.WebAuthnCredentialModel;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
-import org.keycloak.representations.idm.RequiredActionProviderSimpleRepresentation;
 import org.keycloak.testsuite.ui.account2.page.SigningInPage;
-import org.keycloak.testsuite.ui.account2.page.utils.SigningInPageUtils;
-import org.keycloak.testsuite.webauthn.authenticators.UseVirtualAuthenticators;
+import org.keycloak.testsuite.webauthn.pages.WebAuthnAuthenticatorsList;
+import org.keycloak.testsuite.webauthn.pages.WebAuthnLoginPage;
+import org.keycloak.theme.DateTimeFormatterUtil;
 
+import java.io.Closeable;
+import java.io.IOException;
+import java.text.DateFormat;
+import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyList;
@@ -43,13 +50,12 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasSize;
-import static org.keycloak.models.AuthenticationExecutionModel.Requirement.REQUIRED;
 import static org.keycloak.testsuite.ui.account2.page.utils.SigningInPageUtils.assertUserCredential;
 import static org.keycloak.testsuite.ui.account2.page.utils.SigningInPageUtils.testSetUpLink;
 import static org.keycloak.testsuite.util.UIUtils.refreshPageAndWaitForLoad;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 
-public class WebAuthnSigningInTest extends AbstractWebAuthnAccountTest implements UseVirtualAuthenticators {
+public class WebAuthnSigningInTest extends AbstractWebAuthnAccountTest {
 
     @Test
     public void categoriesTest() {
@@ -78,7 +84,7 @@ public class WebAuthnSigningInTest extends AbstractWebAuthnAccountTest implement
     }
 
     @Test
-    public void testCreateWebAuthnSameUserLabel() {
+    public void createWebAuthnSameUserLabel() {
         final String SAME_LABEL = "key123";
 
         // Do we really allow to have several authenticators with the same user label??
@@ -112,7 +118,7 @@ public class WebAuthnSigningInTest extends AbstractWebAuthnAccountTest implement
     }
 
     @Test
-    public void testMultipleSecurityKeys() {
+    public void multipleSecurityKeys() {
         final String LABEL = "SecurityKey#";
 
         List<SigningInPage.UserCredential> createdCredentials = new ArrayList<>();
@@ -168,16 +174,218 @@ public class WebAuthnSigningInTest extends AbstractWebAuthnAccountTest implement
     }
 
     @Test
-    public void testCancelRegistration() {
-        cancelRegistration(false);
+    public void displayAvailableAuthenticators() {
+        addWebAuthnCredential("authenticator#1");
+        addWebAuthnCredential("authenticator#2");
+
+        final int webAuthnCount = webAuthnCredentialType.getUserCredentialsCount();
+        assertThat(webAuthnCount, is(2));
+
+        setUpWebAuthnFlow("webAuthnFlow");
+        logout();
+
+        signingInPage.navigateTo();
+        loginToAccount();
+
+        webAuthnLoginPage.assertCurrent();
+
+        WebAuthnAuthenticatorsList authenticators = webAuthnLoginPage.getAuthenticators();
+        assertThat(authenticators.getCount(), is(2));
+        assertThat(authenticators.getLabels(), Matchers.contains("authenticator#1", "authenticator#2"));
+
+        webAuthnLoginPage.clickAuthenticate();
+        signingInPage.assertCurrent();
     }
 
     @Test
-    public void testCancelPasswordlessRegistration() {
-        cancelRegistration(true);
+    public void notDisplayAvailableAuthenticatorsPasswordless() {
+        addWebAuthnCredential("authenticator#1", true);
+        addWebAuthnCredential("authenticator#2", true);
+
+        final int passwordlessCount = webAuthnPwdlessCredentialType.getUserCredentialsCount();
+        assertThat(passwordlessCount, is(2));
+
+        setUpWebAuthnFlow("passwordlessFlow", true);
+        logout();
+
+        signingInPage.navigateTo();
+        loginToAccount();
+
+        webAuthnLoginPage.assertCurrent();
+        assertThat(webAuthnLoginPage.getAuthenticators().getCount(), is(0));
+
+        webAuthnLoginPage.clickAuthenticate();
+        signingInPage.assertCurrent();
     }
 
-    private void cancelRegistration(boolean passwordless) {
+    @Test
+    public void availableAuthenticatorsAfterRemove(){
+        addWebAuthnCredential("authenticator#1");
+        addWebAuthnCredential("authenticator#2");
+
+        final int webAuthnCount = webAuthnCredentialType.getUserCredentialsCount();
+        assertThat(webAuthnCount, is(2));
+
+        setUpWebAuthnFlow("webAuthnFlow");
+        logout();
+
+        signingInPage.navigateTo();
+        loginToAccount();
+
+        webAuthnLoginPage.assertCurrent();
+
+        WebAuthnAuthenticatorsList authenticators = webAuthnLoginPage.getAuthenticators();
+        assertThat(authenticators.getCount(), is(2));
+        assertThat(authenticators.getLabels(), Matchers.contains("authenticator#1", "authenticator#2"));
+
+        final String credentialId = testUserResource().credentials()
+                .stream()
+                .filter(Objects::nonNull)
+                .filter(f -> WebAuthnCredentialModel.TYPE_TWOFACTOR.equals(f.getType()))
+                .map(CredentialRepresentation::getId)
+                .findFirst()
+                .orElse(null);
+
+        assertThat(credentialId, notNullValue());
+        testUserResource().removeCredential(credentialId);
+
+        driver.navigate().refresh();
+
+        webAuthnLoginPage.assertCurrent();
+        authenticators = webAuthnLoginPage.getAuthenticators();
+        assertThat(authenticators.getCount(), is(1));
+
+        webAuthnLoginPage.clickAuthenticate();
+        signingInPage.assertCurrent();
+    }
+
+    @Test
+    public void checkAuthenticatorTimeLocale() throws ParseException, IOException {
+        addWebAuthnCredential("authenticator#1");
+
+        final int webAuthnCount = webAuthnCredentialType.getUserCredentialsCount();
+        assertThat(webAuthnCount, is(1));
+
+        setUpWebAuthnFlow("webAuthnFlow");
+        logout();
+
+        signingInPage.navigateTo();
+        loginToAccount();
+
+        webAuthnLoginPage.assertCurrent();
+
+        WebAuthnAuthenticatorsList authenticators = webAuthnLoginPage.getAuthenticators();
+        assertThat(authenticators.getCount(), is(1));
+        assertThat(authenticators.getLabels(), Matchers.contains("authenticator#1"));
+
+        WebAuthnAuthenticatorsList.WebAuthnAuthenticatorItem item = authenticators.getItems().get(0);
+        assertThat(item, notNullValue());
+        assertThat(item.getName(), is("authenticator#1"));
+
+        final String dateEnglishString = item.getCreatedDate();
+        assertThat(dateEnglishString, notNullValue());
+
+        DateFormat format = DateTimeFormatterUtil.getDefaultDateFormat(Locale.ENGLISH);
+        final Date dateEnglish = format.parse(dateEnglishString);
+        assertThat(dateEnglish, notNullValue());
+
+        webAuthnLoginPage.clickAuthenticate();
+        signingInPage.assertCurrent();
+
+        logout();
+
+        try (Closeable c = setLocalesUpdater(Locale.CHINA.getLanguage()).update()) {
+            signingInPage.navigateTo();
+            loginToAccount();
+
+            webAuthnLoginPage.assertCurrent();
+
+            authenticators = webAuthnLoginPage.getAuthenticators();
+            assertThat(authenticators.getCount(), is(1));
+            item = webAuthnLoginPage.getAuthenticators().getItems().get(0);
+
+            final String dateChineseString = item.getCreatedDate();
+            assertThat(dateChineseString, notNullValue());
+
+            format = DateTimeFormatterUtil.getDefaultDateFormat(Locale.CHINA);
+            final Date dateChinese = format.parse(dateChineseString);
+            assertThat(dateChinese, notNullValue());
+
+            assertThat(dateEnglishString, is(not(dateChineseString)));
+            assertThat(dateEnglish, is(dateChinese));
+
+            webAuthnLoginPage.clickAuthenticate();
+            signingInPage.assertCurrent();
+
+            logout();
+        }
+
+        try (Closeable c = setLocalesUpdater("xx", Locale.ENGLISH.getLanguage()).update()) {
+            signingInPage.navigateTo();
+            loginToAccount();
+
+            webAuthnLoginPage.assertCurrent();
+
+            authenticators = webAuthnLoginPage.getAuthenticators();
+            assertThat(authenticators.getCount(), is(1));
+            item = webAuthnLoginPage.getAuthenticators().getItems().get(0);
+
+            final String dateInvalidString = item.getCreatedDate();
+            assertThat(dateInvalidString, notNullValue());
+
+            assertThat(dateInvalidString, is(dateEnglishString));
+        }
+    }
+
+    @Test
+    public void userAuthenticatorTimeLocale() throws IOException {
+        Consumer<String> checkCreatedAtLabels = (requiredLabel) ->
+                webAuthnLoginPage.getAuthenticators()
+                        .getItems()
+                        .stream()
+                        .map(WebAuthnAuthenticatorsList.WebAuthnAuthenticatorItem::getCreatedLabel)
+                        .forEach(f -> assertThat(f, is(requiredLabel)));
+
+        try (Closeable c = setLocalesUpdater(Locale.ENGLISH.getLanguage(), "cs").update()) {
+            addWebAuthnCredential("authenticator#1");
+            addWebAuthnCredential("authenticator#2");
+
+            final int webAuthnCount = webAuthnCredentialType.getUserCredentialsCount();
+            assertThat(webAuthnCount, is(2));
+
+            setUpWebAuthnFlow("webAuthnFlow");
+            logout();
+
+            signingInPage.navigateTo();
+            loginToAccount();
+
+            webAuthnLoginPage.assertCurrent();
+
+            WebAuthnAuthenticatorsList authenticators = webAuthnLoginPage.getAuthenticators();
+            assertThat(authenticators.getCount(), is(2));
+            assertThat(authenticators.getLabels(), Matchers.contains("authenticator#1", "authenticator#2"));
+
+            checkCreatedAtLabels.accept("Created");
+
+            webAuthnLoginPage.openLanguage("Čeština");
+            checkCreatedAtLabels.accept("Vytvořeno");
+
+            webAuthnLoginPage.clickAuthenticate();
+            signingInPage.assertCurrent();
+        }
+    }
+
+    @Test
+    public void cancelRegistration() {
+        checkCancelRegistration(false);
+    }
+
+    @Test
+    public void cancelPasswordlessRegistration() {
+        checkCancelRegistration(true);
+    }
+
+    private void checkCancelRegistration(boolean passwordless) {
         SigningInPage.CredentialType credentialType = passwordless ? webAuthnPwdlessCredentialType : webAuthnCredentialType;
 
         credentialType.clickSetUpLink();

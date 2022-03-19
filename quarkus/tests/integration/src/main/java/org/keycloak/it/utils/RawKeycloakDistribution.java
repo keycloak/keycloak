@@ -19,19 +19,24 @@ package org.keycloak.it.utils;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -42,9 +47,10 @@ import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
+
+import io.quarkus.fs.util.ZipUtils;
 import org.apache.commons.io.FileUtils;
 
-import io.quarkus.bootstrap.util.ZipUtils;
 import org.keycloak.common.Version;
 
 public final class RawKeycloakDistribution implements KeycloakDistribution {
@@ -60,6 +66,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     private boolean debug;
     private boolean reCreate;
     private ExecutorService outputExecutor;
+    private boolean inited = false;
 
     public RawKeycloakDistribution(boolean debug, boolean manualStop, boolean reCreate) {
         this.debug = debug;
@@ -130,8 +137,11 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     public String[] getCliArgs(List<String> arguments) {
         this.relativePath = arguments.stream().filter(arg -> arg.startsWith("--http-relative-path")).map(arg -> arg.substring(arg.indexOf('=') + 1)).findAny().orElse("/");
         this.httpPort = Integer.parseInt(arguments.stream().filter(arg -> arg.startsWith("--http-port")).map(arg -> arg.substring(arg.indexOf('=') + 1)).findAny().orElse("8080"));
+        List<String> args = new ArrayList<>();
+        args.add("-Dkc.home.dir=" + distPath + File.separator);
+        args.addAll(arguments);
 
-        return KeycloakDistribution.super.getCliArgs(arguments);
+        return KeycloakDistribution.super.getCliArgs(args);
     }
 
     private void waitForReadiness() throws MalformedURLException {
@@ -246,7 +256,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         try {
             Path distRootPath = Paths.get(System.getProperty("java.io.tmpdir")).resolve("kc-tests");
             distRootPath.toFile().mkdirs();
-            File distFile = new File("../../../distribution/server-x-dist/target/keycloak.x-" + Version.VERSION_KEYCLOAK + ".zip");
+            File distFile = new File("../../dist/target/keycloak-" + Version.VERSION_KEYCLOAK + ".zip");
             if (!distFile.exists()) {
                 throw new RuntimeException("Distribution archive " + distFile.getAbsolutePath() +" doesn't exists");
             }
@@ -254,7 +264,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
             String distDirName = distFile.getName().replace("keycloak-server-x-dist", "keycloak.x");
             Path distPath = distRootPath.resolve(distDirName.substring(0, distDirName.lastIndexOf('.')));
 
-            if (reCreate || !distPath.toFile().exists()) {
+            if (!inited || (reCreate || !distPath.toFile().exists())) {
                 distPath.toFile().delete();
                 ZipUtils.unzip(distFile.toPath(), distRootPath);
             }
@@ -263,6 +273,8 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
             if (!distPath.resolve("bin").resolve("kc.sh").toFile().setExecutable(true)) {
                 throw new RuntimeException("Cannot set kc.sh executable");
             }
+
+            inited = true;
 
             return distPath;
         } catch (Exception cause) {
@@ -310,5 +322,67 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         FileUtils.deleteDirectory(distPath.resolve("data").toFile());
 
         keycloak = builder.start();
+    }
+
+    @Override
+    public void setProperty(String key, String value) {
+        setProperty(key, value, distPath.resolve("conf").resolve("keycloak.conf").toFile());
+    }
+
+    @Override
+    public void setQuarkusProperty(String key, String value) {
+        setProperty(key, value, getQuarkusPropertiesFile());
+    }
+
+    @Override
+    public void deleteQuarkusProperties() {
+        File file = getQuarkusPropertiesFile();
+
+        if (file.exists()) {
+            file.delete();
+        }
+    }
+
+    @Override
+    public void copyOrReplaceFileFromClasspath(String file, Path targetFile) {
+        File targetDir = distPath.resolve(targetFile).toFile();
+
+        try {
+            Files.copy(getClass().getResourceAsStream(file), targetDir.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException cause) {
+            throw new RuntimeException("Failed to copy file", cause);
+        }
+    }
+
+    private void setProperty(String key, String value, File confFile) {
+        Properties properties = new Properties();
+
+        if (confFile.exists()) {
+            try (
+                FileInputStream in = new FileInputStream(confFile);
+            ) {
+
+                properties.load(in);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to update " + confFile, e);
+            }
+        }
+
+        try (
+            FileOutputStream out = new FileOutputStream(confFile)
+        ) {
+            properties.put(key, value);
+            properties.store(out, "");
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to update " + confFile, e);
+        }
+    }
+
+    private File getQuarkusPropertiesFile() {
+        return distPath.resolve("conf").resolve("quarkus.properties").toFile();
+    }
+
+    public Path getDistPath() {
+        return distPath;
     }
 }

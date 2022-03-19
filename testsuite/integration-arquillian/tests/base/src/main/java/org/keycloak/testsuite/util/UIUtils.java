@@ -17,7 +17,11 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
+import java.util.Optional;
+import java.util.function.Supplier;
+
 import static org.keycloak.testsuite.util.DroneUtils.getCurrentDriver;
+import static org.keycloak.testsuite.util.WaitUtils.log;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 import static org.keycloak.testsuite.util.WaitUtils.waitUntilElementClassContains;
@@ -157,13 +161,39 @@ public final class UIUtils {
             try {
                 // Safari on macOS doesn't comply with WebDriver specs yet again - getText() retrieves hidden text by CSS.
                 text = element.findElement(By.xpath("./span[not(contains(@class,'ng-hide'))]")).getText();
-            }
-            catch (NoSuchElementException e) {
+            } catch (NoSuchElementException e) {
                 // no op
             }
             return text.trim(); // Safari on macOS sometimes for no obvious reason surrounds the text with spaces
         }
         return text;
+    }
+
+    /**
+     * Get text from required WebElement
+     *
+     * @param element required WebElement
+     * @return text from element, or null if element is not found
+     */
+    public static String getTextFromElementOrNull(Supplier<WebElement> element) {
+        return Optional.ofNullable(getElementOrNull(element))
+                .map(UIUtils::getTextFromElement)
+                .orElse(null);
+    }
+
+    /**
+     * Get required WebElement
+     *
+     * @param element required WebElement
+     * @return element, or null if element is not found
+     */
+    public static WebElement getElementOrNull(Supplier<WebElement> element) {
+        try {
+            return element.get();
+        } catch (NoSuchElementException e) {
+            log.debug("Particular element is not found.", e);
+            return null;
+        }
     }
 
     /**

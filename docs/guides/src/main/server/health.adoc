@@ -1,0 +1,39 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/kc.adoc" as kc>
+<#import "/templates/options.adoc" as opts>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Enabling Keycloak Health checks"
+summary="Learn how to enable and use Keycloak health checks"
+includedOptions="health-enabled">
+
+Keycloak has built in support for health checks. This guide describes how to enable and use the Keycloak health checks.
+
+== Keycloak Health checks
+
+Keycloak exposed health endpoints are three:
+
+* `/health`
+* `/health/live`
+* `/health/ready`
+
+The result is returned in json format and it looks as follows:
+[source, json]
+----
+{
+    "status": "UP",
+    "checks": [
+        {
+            "name": "Keycloak database connections health check",
+            "status": "UP"
+        }
+    ]
+}
+----
+
+== Enabling the health checks
+Is possible to enable the health checks using the build time option `health-enabled`:
+<@kc.build parameters="--health-enabled=true"/>
+
+</@tmpl.guide>

@@ -26,8 +26,8 @@ Cluster:
 
 Database:
 
---db <vendor>        The database vendor. Possible values are: h2-file, h2-mem, mariadb, mssql,
-                       mssql-2012, mysql, oracle, postgres, postgres-95
+--db <vendor>        The database vendor. Possible values are: dev-file, dev-mem, mariadb, mssql,
+                       mysql, oracle, postgres
 --db-password <password>
                      The password of the database user.
 --db-pool-initial-size <size>
@@ -52,44 +52,17 @@ Database:
 --db-username <username>
                      The username of the database user.
 
+Transaction:
+
+--transaction-xa-enabled <true|false>
+                     Manually override the transaction type. Transaction type XA and the
+                       appropriate driver is used by default. Default: true.
+
 Feature:
 
---features-account2 <enabled|disabled>
-                     Enables the ACCOUNT2 feature.
---features-account_api <enabled|disabled>
-                     Enables the ACCOUNT_API feature.
---features-admin2 <enabled|disabled>
-                     Enables the ADMIN2 feature.
---features-admin_fine_grained_authz <enabled|disabled>
-                     Enables the ADMIN_FINE_GRAINED_AUTHZ feature.
---features-authorization <enabled|disabled>
-                     Enables the AUTHORIZATION feature.
---features-ciba <enabled|disabled>
-                     Enables the CIBA feature.
---features-client_policies <enabled|disabled>
-                     Enables the CLIENT_POLICIES feature.
---features-declarative_user_profile <enabled|disabled>
-                     Enables the DECLARATIVE_USER_PROFILE feature.
---features-docker <enabled|disabled>
-                     Enables the DOCKER feature.
---features-impersonation <enabled|disabled>
-                     Enables the IMPERSONATION feature.
---features-map_storage <enabled|disabled>
-                     Enables the MAP_STORAGE feature.
---features-openshift_integration <enabled|disabled>
-                     Enables the OPENSHIFT_INTEGRATION feature.
---features-par <enabled|disabled>
-                     Enables the PAR feature.
---features-scripts <enabled|disabled>
-                     Enables the SCRIPTS feature.
---features-token_exchange <enabled|disabled>
-                     Enables the TOKEN_EXCHANGE feature.
---features-upload_scripts <enabled|disabled>
-                     Enables the UPLOAD_SCRIPTS feature.
---features-web_authn <enabled|disabled>
-                     Enables the WEB_AUTHN feature.
--ft, --features <preview>
-                     Enables all tech preview features.
+--features <feature> Enables a set of one or more features.
+--features-disabled <feature>
+                     Disables a set of one or more features.
 
 Hostname:
 
@@ -135,7 +108,7 @@ HTTP/TLS:
                        detected based on the file name.
 --https-port <port>  The used HTTPS port. Default: 8443.
 --https-protocols <protocols>
-                     The list of protocols to explicitly enable.
+                     The list of protocols to explicitly enable. Default: TLSv1.3.
 --https-trust-store-file <file>
                      The trust store which holds the certificate information of the certificates to
                        trust.
@@ -145,12 +118,18 @@ HTTP/TLS:
                      The type of the trust store file. If not given, the type is automatically
                        detected based on the file name.
 
+Health:
+
+--health-enabled <true|false>
+                     If the server should expose health check endpoints. If enabled, health checks
+                       are available at the '/health', '/health/ready' and '/health/live'
+                       endpoints. Default: false.
+
 Metrics:
 
 --metrics-enabled <true|false>
-                     If the server should expose metrics and healthcheck. If enabled, metrics are
-                       available at the '/metrics' endpoint and healthcheck at the '/health'
-                       endpoint. Default: false.
+                     If the server should expose metrics. If enabled, metrics are available at the
+                       '/metrics' endpoint. Default: false.
 
 Proxy:
 
@@ -159,11 +138,32 @@ Proxy:
 
 Vault:
 
---vault-file-path <dir>
-                     If set, secrets can be obtained by reading the content of files within the
-                       given path.
---vault-hashicorp-paths <paths>
-                     A set of one or more paths that should be used when looking up secrets.
+--vault <provider>   Enables a vault provider.
+--vault-dir <dir>    If set, secrets can be obtained by reading the content of files within the
+                       given directory.
+
+Logging:
+
+--log <handler>      Enable one or more log handlers in a comma-separated list. Available log
+                       handlers are: console,file Default: console.
+--log-console-color <true|false>
+                     Enable or disable colors when logging to console. Default: false.
+--log-console-format <format>
+                     The format of unstructured console log entries. If the format has spaces in
+                       it, escape the value using "<format>". Default: %d{yyyy-MM-dd HH:mm:ss,SSS} %
+                       -5p [%c] (%t) %s%e%n.
+--log-console-output <default|json>
+                     Set the log output to JSON or default (plain) unstructured logging. Default:
+                       default.
+--log-file <path>/<file-name>.log
+                     Set the log file path and filename. Default: data/log/keycloak.log.
+--log-file-format <format>
+                     Set a format specific to file log entries. Default: %d{yyyy-MM-dd HH:mm:ss,
+                       SSS} %-5p [%c] (%t) %s%e%n.
+--log-level <category:level>
+                     The log level of the root category or a comma-separated list of individual
+                       categories and their levels. For the root category, you don't need to
+                       specify a category. Default: info.
 
 Do NOT start the server using this command when deploying to production.
 

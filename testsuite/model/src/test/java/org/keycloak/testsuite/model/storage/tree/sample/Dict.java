@@ -27,7 +27,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.keycloak.models.map.client.MapClientEntity;
-import org.keycloak.models.map.client.MapClientEntityFieldDelegate;
 import org.keycloak.models.map.client.MapClientEntityFields;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.EntityField;
@@ -80,7 +79,7 @@ public class Dict<E> extends UpdatableEntity.Impl implements EntityFieldDelegate
     }
 
     @Override
-    public Object get(EntityField<E> field) {
+    public <EF extends Enum<? extends EntityField<E>> & EntityField<E>> Object get(EF field) {
         if ("Attributes".equals(field.getName())) {
             return attributeName2key.entrySet().stream()
               .filter(me -> get(me.getValue()) != null)
@@ -94,7 +93,7 @@ public class Dict<E> extends UpdatableEntity.Impl implements EntityFieldDelegate
     }
 
     @Override
-    public <T> void set(EntityField<E> field, T value) {
+    public <T, EF extends Enum<? extends EntityField<E>> & EntityField<E>> void set(EF field, T value) {
         String key = fieldName2key.get(field.getName());
         if (key != null) {
             put(key, value);
@@ -102,7 +101,7 @@ public class Dict<E> extends UpdatableEntity.Impl implements EntityFieldDelegate
     }
 
     @Override
-    public <K> Object mapGet(EntityField<E> field, K key) {
+    public <K, EF extends Enum<? extends EntityField<E>> & EntityField<E>> Object mapGet(EF field, K key) {
         if ("Attributes".equals(field.getName()) && attributeName2key.containsKey(key)) {
             Object v = get(attributeName2key.get(key));
             return v == null ? null : Collections.singletonList(get(attributeName2key.get(key)));
@@ -111,7 +110,7 @@ public class Dict<E> extends UpdatableEntity.Impl implements EntityFieldDelegate
     }
 
     @Override
-    public <K, T> void mapPut(EntityField<E> field, K key, T value) {
+    public <K, T, EF extends Enum<? extends EntityField<E>> & EntityField<E>> void mapPut(EF field, K key, T value) {
         if ("Attributes".equals(field.getName()) && attributeName2key.containsKey(key) && (value instanceof List)) {
             List<?> l = (List<?>) value;
             if (l.isEmpty()) {
@@ -123,7 +122,7 @@ public class Dict<E> extends UpdatableEntity.Impl implements EntityFieldDelegate
     }
 
     @Override
-    public <K> Object mapRemove(EntityField<E> field, K key) {
+    public <K, EF extends Enum<? extends EntityField<E>> & EntityField<E>> Object mapRemove(EF field, K key) {
         if ("Attributes".equals(field.getName()) && attributeName2key.containsKey(key)) {
             Object o = remove(attributeName2key.get(key));
             return o == null ? null : Collections.singletonList(o);

@@ -26,6 +26,7 @@ import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.TokenVerifier;
+import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.GroupResource;
 import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -73,6 +74,7 @@ import org.keycloak.testsuite.pages.PageUtils;
 import org.keycloak.testsuite.pages.ProceedPage;
 import org.keycloak.testsuite.runonserver.RunHelpers;
 import org.keycloak.testsuite.updaters.Creator;
+import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.GreenMailRule;
@@ -118,6 +120,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.Assert.assertNames;
 import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
+import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -150,10 +153,10 @@ public class UserTest extends AbstractAdminTest {
 
     @After
     public void after() {
-        realm.identityProviders().findAll().stream()
+        realm.identityProviders().findAll()
                 .forEach(ip -> realm.identityProviders().get(ip.getAlias()).remove());
 
-        realm.groups().groups().stream()
+        realm.groups().groups()
                 .forEach(g -> realm.groups().group(g.getId()).remove());
     }
 
@@ -176,9 +179,10 @@ public class UserTest extends AbstractAdminTest {
     }
 
     private String createUser(UserRepresentation userRep, boolean assertAdminEvent) {
-        Response response = realm.users().create(userRep);
-        String createdId = ApiUtil.getCreatedId(response);
-        response.close();
+        final String createdId;
+        try (Response response = realm.users().create(userRep)) {
+            createdId = ApiUtil.getCreatedId(response);
+        }
 
         if (assertAdminEvent) {
             assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.userResourcePath(createdId), userRep,
@@ -233,15 +237,14 @@ public class UserTest extends AbstractAdminTest {
 
         UserRepresentation user = new UserRepresentation();
         user.setUsername("user1");
-        Response response = realm.users().create(user);
-        assertEquals(409, response.getStatus());
-        assertAdminEvents.assertEmpty();
+        try (Response response = realm.users().create(user)) {
+            assertEquals(409, response.getStatus());
+            assertAdminEvents.assertEmpty();
 
-        // Just to show how to retrieve underlying error message
-        ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
-        Assert.assertEquals("User exists with same username", error.getErrorMessage());
-
-        response.close();
+            // Just to show how to retrieve underlying error message
+            ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
+            Assert.assertEquals("User exists with same username", error.getErrorMessage());
+        }
     }
 
     @Test
@@ -251,14 +254,14 @@ public class UserTest extends AbstractAdminTest {
         UserRepresentation user = new UserRepresentation();
         user.setUsername("user2");
         user.setEmail("user1@localhost");
-        Response response = realm.users().create(user);
-        assertEquals(409, response.getStatus());
-        assertAdminEvents.assertEmpty();
 
-        ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
-        Assert.assertEquals("User exists with same email", error.getErrorMessage());
+        try (Response response = realm.users().create(user)) {
+            assertEquals(409, response.getStatus());
+            assertAdminEvents.assertEmpty();
 
-        response.close();
+            ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
+            Assert.assertEquals("User exists with same email", error.getErrorMessage());
+        }
     }
 
     //KEYCLOAK-14611
@@ -283,11 +286,14 @@ public class UserTest extends AbstractAdminTest {
 
         //Create a third user with the same email
         user.setUsername("user3");
-        Response response = realm.users().create(user);
-        assertEquals(409, response.getStatus());
-        ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
-        Assert.assertEquals("User exists with same email", error.getErrorMessage());
-        response.close();
+        assertAdminEvents.clear();
+
+        try (Response response = realm.users().create(user)) {
+            assertEquals(409, response.getStatus());
+            ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
+            Assert.assertEquals("User exists with same email", error.getErrorMessage());
+            assertAdminEvents.assertEmpty();
+        }
     }
 
     @Test
@@ -440,9 +446,11 @@ public class UserTest extends AbstractAdminTest {
 
         UserRepresentation user = new UserRepresentation();
         user.setUsername("User1");
-        Response response = realm.users().create(user);
-        assertEquals(409, response.getStatus());
-        response.close();
+
+        try (Response response = realm.users().create(user)) {
+            assertEquals(409, response.getStatus());
+            assertAdminEvents.assertEmpty();
+        }
     }
 
     @Test
@@ -451,9 +459,11 @@ public class UserTest extends AbstractAdminTest {
 
         UserRepresentation user = new UserRepresentation();
         user.setUsername("USER1");
-        Response response = realm.users().create(user);
-        assertEquals(409, response.getStatus());
-        response.close();
+
+        try (Response response = realm.users().create(user)) {
+            assertEquals(409, response.getStatus());
+            assertAdminEvents.assertEmpty();
+        }
     }
 
     @Test
@@ -463,9 +473,11 @@ public class UserTest extends AbstractAdminTest {
         UserRepresentation user = new UserRepresentation();
         user.setUsername("user2");
         user.setEmail("User1@localhost");
-        Response response = realm.users().create(user);
-        assertEquals(409, response.getStatus());
-        response.close();
+
+        try (Response response = realm.users().create(user)) {
+            assertEquals(409, response.getStatus());
+            assertAdminEvents.assertEmpty();
+        }
     }
 
     @Test
@@ -475,9 +487,11 @@ public class UserTest extends AbstractAdminTest {
         UserRepresentation user = new UserRepresentation();
         user.setUsername("user2");
         user.setEmail("user1@LOCALHOST");
-        Response response = realm.users().create(user);
-        assertEquals(409, response.getStatus());
-        response.close();
+
+        try (Response response = realm.users().create(user)) {
+            assertEquals(409, response.getStatus());
+            assertAdminEvents.assertEmpty();
+        }
     }
 
     @Test
@@ -487,12 +501,11 @@ public class UserTest extends AbstractAdminTest {
         UserRepresentation user = new UserRepresentation();
         user.setUsername("user2");
         user.setEmail("user1@localhost");
-        Response response = realm.users().create(user);
-        assertEquals(409, response.getStatus());
-        response.close();
 
-        assertAdminEvents.assertEmpty();
-
+        try (Response response = realm.users().create(user)) {
+            assertEquals(409, response.getStatus());
+            assertAdminEvents.assertEmpty();
+        }
     }
 
     // KEYCLOAK-7015
@@ -532,11 +545,13 @@ public class UserTest extends AbstractAdminTest {
     public void createUserWithoutUsername() {
         UserRepresentation user = new UserRepresentation();
         user.setEmail("user1@localhost");
-        Response response = realm.users().create(user);
-        assertEquals(400, response.getStatus());
-        ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
-        Assert.assertEquals("User name is missing", error.getErrorMessage());
-        response.close();
+
+        try (Response response = realm.users().create(user)) {
+            assertEquals(400, response.getStatus());
+            ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
+            Assert.assertEquals("User name is missing", error.getErrorMessage());
+            assertAdminEvents.assertEmpty();
+        }
     }
 
     @Test
@@ -556,11 +571,13 @@ public class UserTest extends AbstractAdminTest {
         UserRepresentation user = new UserRepresentation();
         user.setUsername("");
         user.setEmail("user2@localhost");
-        Response response = realm.users().create(user);
-        assertEquals(400, response.getStatus());
-        ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
-        Assert.assertEquals("User name is missing", error.getErrorMessage());
-        response.close();
+
+        try (Response response = realm.users().create(user)) {
+            assertEquals(400, response.getStatus());
+            ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
+            Assert.assertEquals("User name is missing", error.getErrorMessage());
+            assertAdminEvents.assertEmpty();
+        }
     }
 
     @Test
@@ -575,14 +592,17 @@ public class UserTest extends AbstractAdminTest {
         CredentialRepresentation rawPassword = new CredentialRepresentation();
         rawPassword.setValue("ABCD");
         rawPassword.setType(CredentialRepresentation.PASSWORD);
-        user.setCredentials(Arrays.asList(rawPassword));
-        Response response = realm.users().create(user);
-        assertEquals(400, response.getStatus());
-        ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
-        Assert.assertEquals("Password policy not met", error.getErrorMessage());
-        rep.setPasswordPolicy(passwordPolicy);
-        realm.update(rep);
-        response.close();
+        user.setCredentials(Collections.singletonList(rawPassword));
+        assertAdminEvents.clear();
+
+        try (Response response = realm.users().create(user)) {
+            assertEquals(400, response.getStatus());
+            ErrorRepresentation error = response.readEntity(ErrorRepresentation.class);
+            Assert.assertEquals("Password policy not met", error.getErrorMessage());
+            rep.setPasswordPolicy(passwordPolicy);
+            assertAdminEvents.assertEmpty();
+            realm.update(rep);
+        }
     }
 
     private List<String> createUsers() {
@@ -718,7 +738,7 @@ public class UserTest extends AbstractAdminTest {
 
         createUser(user);
 
-        List<UserRepresentation> users = realm.users().search("wit", null, null);
+        List<UserRepresentation> users = realm.users().search("*wit*", null, null);
         assertEquals(1, users.size());
     }
 
@@ -920,25 +940,131 @@ public class UserTest extends AbstractAdminTest {
     }
 
     @Test
-    public void search() {
-        createUsers();
+    public void infixSearch() {
+        List<String> userIds = createUsers();
 
-        List<UserRepresentation> users = realm.users().search("username1", null, null);
-        assertEquals(1, users.size());
+        // Username search
+        List<UserRepresentation> users = realm.users().search("*1*", null, null);
+        assertThat(users, hasSize(1));
+        assertThat(userIds.get(0), equalTo(users.get(0).getId()));
 
-        users = realm.users().search("first1", null, null);
-        assertEquals(1, users.size());
+        users = realm.users().search("*y*", null, null);
+        assertThat(users.size(), is(0));
 
-        users = realm.users().search("last", null, null);
-        assertEquals(9, users.size());
+        users = realm.users().search("*name*", null, null);
+        assertThat(users, hasSize(9));
+
+        users = realm.users().search("**", null, null);
+        assertThat(users, hasSize(9));
+
+        // First/Last name search
+        users = realm.users().search("*first1*", null, null);
+        assertThat(users, hasSize(1));
+        assertThat(userIds.get(0), equalTo(users.get(0).getId()));
+
+        users = realm.users().search("*last*", null, null);
+        assertThat(users, hasSize(9));
+
+        // Email search
+        users = realm.users().search("*@localhost*", null, null);
+        assertThat(users, hasSize(9));
+
+        users = realm.users().search("*1@local*", null, null);
+        assertThat(users, hasSize(1));
+        assertThat(userIds.get(0), equalTo(users.get(0).getId()));
     }
 
     @Test
-    public void count() {
+    public void prefixSearch() {
+        List<String> userIds = createUsers();
+
+        // Username search
+        List<UserRepresentation> users = realm.users().search("user", null, null);
+        assertThat(users, hasSize(9));
+
+        users = realm.users().search("user*", null, null);
+        assertThat(users, hasSize(9));
+
+        users = realm.users().search("name", null, null);
+        assertThat(users, hasSize(0));
+
+        users = realm.users().search("name*", null, null);
+        assertThat(users, hasSize(0));
+
+        users = realm.users().search("username1", null, null);
+        assertThat(users, hasSize(1));
+        assertThat(userIds.get(0), equalTo(users.get(0).getId()));
+
+        users = realm.users().search("username1*", null, null);
+        assertThat(users, hasSize(1));
+        assertThat(userIds.get(0), equalTo(users.get(0).getId()));
+
+        users = realm.users().search(null, null, null);
+        assertThat(users, hasSize(9));
+
+        users = realm.users().search("", null, null);
+        assertThat(users, hasSize(9));
+
+        users = realm.users().search("*", null, null);
+        assertThat(users, hasSize(9));
+
+        // First/Last name search
+        users = realm.users().search("first1", null, null);
+        assertThat(users, hasSize(1));
+        assertThat(userIds.get(0), equalTo(users.get(0).getId()));
+
+        users = realm.users().search("first1*", null, null);
+        assertThat(users, hasSize(1));
+        assertThat(userIds.get(0), equalTo(users.get(0).getId()));
+
+        users = realm.users().search("last", null, null);
+        assertThat(users, hasSize(9));
+
+        users = realm.users().search("last*", null, null);
+        assertThat(users, hasSize(9));
+
+        // Email search
+        users = realm.users().search("user1@local", null, null);
+        assertThat(users, hasSize(1));
+        assertThat(userIds.get(0), equalTo(users.get(0).getId()));
+
+        users = realm.users().search("user1@local*", null, null);
+        assertThat(users, hasSize(1));
+        assertThat(userIds.get(0), equalTo(users.get(0).getId()));
+    }
+
+    @Test
+    public void circumfixSearchNotSupported() {
         createUsers();
 
-        Integer count = realm.users().count();
-        assertEquals(9, count.intValue());
+        List<UserRepresentation> users = realm.users().search("u*name", null, null);
+        assertThat(users, hasSize(0));
+    }
+
+    @Test
+    public void exactSearch() {
+        List<String> userIds = createUsers();
+
+        // Username search
+        List<UserRepresentation> users = realm.users().search("\"username1\"", null, null);
+        assertThat(users, hasSize(1));
+        assertThat(userIds.get(0), equalTo(users.get(0).getId()));
+
+        users = realm.users().search("\"user\"", null, null);
+        assertThat(users, hasSize(0));
+
+        users = realm.users().search("\"\"", null, null);
+        assertThat(users, hasSize(0));
+
+        // First/Last name search
+        users = realm.users().search("\"first1\"", null, null);
+        assertThat(users, hasSize(1));
+        assertThat(userIds.get(0), equalTo(users.get(0).getId()));
+
+        // Email search
+        users = realm.users().search("\"user1@localhost\"", null, null);
+        assertThat(users, hasSize(1));
+        assertThat(userIds.get(0), equalTo(users.get(0).getId()));
     }
 
     @Test
@@ -966,17 +1092,17 @@ public class UserTest extends AbstractAdminTest {
     @Test
     public void delete() {
         String userId = createUser();
-        Response response = realm.users().delete(userId);
-        assertEquals(204, response.getStatus());
-        response.close();
+        try (Response response = realm.users().delete(userId)) {
+            assertEquals(204, response.getStatus());
+        }
         assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.userResourcePath(userId), ResourceType.USER);
     }
 
     @Test
     public void deleteNonExistent() {
-        Response response = realm.users().delete("does-not-exist");
-        assertEquals(404, response.getStatus());
-        response.close();
+        try (Response response = realm.users().delete("does-not-exist")) {
+            assertEquals(404, response.getStatus());
+        }
         assertAdminEvents.assertEmpty();
     }
 
@@ -1176,6 +1302,7 @@ public class UserTest extends AbstractAdminTest {
             Assert.fail("Not supposed to successfully update user");
         } catch (BadRequestException bre) {
             // Expected
+            assertAdminEvents.assertEmpty();
         }
 
         // The same test as before, but with the case-sensitivity used
@@ -1186,6 +1313,7 @@ public class UserTest extends AbstractAdminTest {
             Assert.fail("Not supposed to successfully update user");
         } catch (BadRequestException bre) {
             // Expected
+            assertAdminEvents.assertEmpty();
         }
 
         // Attribute "deniedSomeAdmin" was denied for administrator
@@ -1196,6 +1324,7 @@ public class UserTest extends AbstractAdminTest {
             Assert.fail("Not supposed to successfully update user");
         } catch (BadRequestException bre) {
             // Expected
+            assertAdminEvents.assertEmpty();
         }
 
         // usercertificate and saml attribute are allowed by admin
@@ -1243,6 +1372,7 @@ public class UserTest extends AbstractAdminTest {
 
             ErrorRepresentation error = e.getResponse().readEntity(ErrorRepresentation.class);
             Assert.assertEquals("User email missing", error.getErrorMessage());
+            assertAdminEvents.assertEmpty();
         }
         try {
             userRep = user.toRepresentation();
@@ -1257,6 +1387,7 @@ public class UserTest extends AbstractAdminTest {
 
             ErrorRepresentation error = e.getResponse().readEntity(ErrorRepresentation.class);
             Assert.assertEquals("User is disabled", error.getErrorMessage());
+            assertAdminEvents.assertEmpty();
         }
         try {
             userRep.setEnabled(true);
@@ -1269,6 +1400,7 @@ public class UserTest extends AbstractAdminTest {
 
             ErrorRepresentation error = e.getResponse().readEntity(ErrorRepresentation.class);
             Assert.assertEquals("Client doesn't exist", error.getErrorMessage());
+            assertAdminEvents.assertEmpty();
         }
     }
 
@@ -1307,7 +1439,7 @@ public class UserTest extends AbstractAdminTest {
         driver.navigate().to(link);
 
         proceedPage.assertCurrent();
-        Assert.assertThat(proceedPage.getInfo(), Matchers.containsString("Update Password"));
+        assertThat(proceedPage.getInfo(), Matchers.containsString("Update Password"));
         proceedPage.clickProceedLink();
         passwordUpdatePage.assertCurrent();
 
@@ -1367,7 +1499,7 @@ public class UserTest extends AbstractAdminTest {
         driver.navigate().to(link);
 
         proceedPage.assertCurrent();
-        Assert.assertThat(proceedPage.getInfo(), Matchers.containsString("Update Password"));
+        assertThat(proceedPage.getInfo(), Matchers.containsString("Update Password"));
         proceedPage.clickProceedLink();
         passwordUpdatePage.assertCurrent();
 
@@ -1407,7 +1539,7 @@ public class UserTest extends AbstractAdminTest {
             driver.navigate().to(link);
 
             proceedPage.assertCurrent();
-            Assert.assertThat(proceedPage.getInfo(), Matchers.containsString("Update Password"));
+            assertThat(proceedPage.getInfo(), Matchers.containsString("Update Password"));
             proceedPage.clickProceedLink();
             passwordUpdatePage.assertCurrent();
 
@@ -1453,7 +1585,7 @@ public class UserTest extends AbstractAdminTest {
             driver.navigate().to(link);
 
             proceedPage.assertCurrent();
-            Assert.assertThat(proceedPage.getInfo(), Matchers.containsString("Update Password"));
+            assertThat(proceedPage.getInfo(), Matchers.containsString("Update Password"));
             proceedPage.clickProceedLink();
             passwordUpdatePage.assertCurrent();
 
@@ -1495,7 +1627,7 @@ public class UserTest extends AbstractAdminTest {
         driver.navigate().to(link);
 
         proceedPage.assertCurrent();
-        Assert.assertThat(proceedPage.getInfo(), Matchers.containsString("Update Password"));
+        assertThat(proceedPage.getInfo(), Matchers.containsString("Update Password"));
         proceedPage.clickProceedLink();
         passwordUpdatePage.assertCurrent();
 
@@ -1505,7 +1637,7 @@ public class UserTest extends AbstractAdminTest {
         driver.navigate().to(link);
 
         proceedPage.assertCurrent();
-        Assert.assertThat(proceedPage.getInfo(), Matchers.containsString("Update Password"));
+        assertThat(proceedPage.getInfo(), Matchers.containsString("Update Password"));
         proceedPage.clickProceedLink();
         passwordUpdatePage.assertCurrent();
 
@@ -1609,7 +1741,7 @@ public class UserTest extends AbstractAdminTest {
         driver.navigate().to(link);
 
         proceedPage.assertCurrent();
-        Assert.assertThat(proceedPage.getInfo(), Matchers.containsString("Update Password"));
+        assertThat(proceedPage.getInfo(), Matchers.containsString("Update Password"));
         proceedPage.clickProceedLink();
         passwordUpdatePage.assertCurrent();
 
@@ -1673,7 +1805,7 @@ public class UserTest extends AbstractAdminTest {
         driver.navigate().to(link);
 
         proceedPage.assertCurrent();
-        Assert.assertThat(proceedPage.getInfo(), Matchers.containsString("Update Password"));
+        assertThat(proceedPage.getInfo(), Matchers.containsString("Update Password"));
         proceedPage.clickProceedLink();
         passwordUpdatePage.assertCurrent();
 
@@ -1758,7 +1890,7 @@ public class UserTest extends AbstractAdminTest {
         driver.navigate().to(link);
 
         proceedPage.assertCurrent();
-        Assert.assertThat(proceedPage.getInfo(), Matchers.containsString("Update Password"));
+        assertThat(proceedPage.getInfo(), Matchers.containsString("Update Password"));
         proceedPage.clickProceedLink();
         passwordUpdatePage.assertCurrent();
 
@@ -1809,6 +1941,7 @@ public class UserTest extends AbstractAdminTest {
 
             ErrorRepresentation error = e.getResponse().readEntity(ErrorRepresentation.class);
             Assert.assertEquals("User is disabled", error.getErrorMessage());
+            assertAdminEvents.assertEmpty();
         }
         try {
             userRep.setEnabled(true);
@@ -1821,6 +1954,7 @@ public class UserTest extends AbstractAdminTest {
 
             ErrorRepresentation error = e.getResponse().readEntity(ErrorRepresentation.class);
             Assert.assertEquals("Client doesn't exist", error.getErrorMessage());
+            assertAdminEvents.assertEmpty();
         }
 
         user.sendVerifyEmail();
@@ -1833,7 +1967,7 @@ public class UserTest extends AbstractAdminTest {
         driver.navigate().to(link);
 
         proceedPage.assertCurrent();
-        Assert.assertThat(proceedPage.getInfo(), Matchers.containsString("Verify Email"));
+        assertThat(proceedPage.getInfo(), Matchers.containsString("Verify Email"));
         proceedPage.clickProceedLink();
         Assert.assertEquals("Your account has been updated.", infoPage.getInfo());
 
@@ -1841,7 +1975,7 @@ public class UserTest extends AbstractAdminTest {
 
         driver.navigate().to(link); // It should be possible to use the same action token multiple times
         proceedPage.assertCurrent();
-        Assert.assertThat(proceedPage.getInfo(), Matchers.containsString("Verify Email"));
+        assertThat(proceedPage.getInfo(), Matchers.containsString("Verify Email"));
         proceedPage.clickProceedLink();
         Assert.assertEquals("Your account has been updated.", infoPage.getInfo());
     }
@@ -1914,6 +2048,30 @@ public class UserTest extends AbstractAdminTest {
     }
 
     @Test
+    public void updateUserWithExistingEmail() {
+        final String userId = createUser();
+        assertNotNull(userId);
+        assertNotNull(createUser("user2", "user2@localhost"));
+
+        UserResource user = realm.users().get(userId);
+        UserRepresentation userRep = user.toRepresentation();
+        assertNotNull(userRep);
+        userRep.setEmail("user2@localhost");
+
+        try {
+            updateUser(user, userRep);
+            fail("Expected failure - Email conflict");
+        } catch (ClientErrorException e) {
+            assertNotNull(e.getResponse());
+            assertThat(e.getResponse().getStatus(), is(409));
+
+            ErrorRepresentation error = e.getResponse().readEntity(ErrorRepresentation.class);
+            Assert.assertEquals("User exists with same username or email", error.getErrorMessage());
+            assertAdminEvents.assertEmpty();
+        }
+    }
+
+    @Test
     public void updateUserWithNewUsernameNotPossible() {
         String id = createUser();
 
@@ -1941,6 +2099,7 @@ public class UserTest extends AbstractAdminTest {
             fail("Expected failure");
         } catch (ClientErrorException e) {
             assertEquals(404, e.getResponse().getStatus());
+            assertAdminEvents.assertEmpty();
         } finally {
             switchEditUsernameAllowedOn(false);
         }
@@ -2103,10 +2262,10 @@ public class UserTest extends AbstractAdminTest {
         realm.roles().create(RoleBuilder.create().name("realm-child").build());
         realm.roles().get("realm-composite").addComposites(Collections.singletonList(realm.roles().get("realm-child").toRepresentation()));
 
-
-        Response response = realm.clients().create(ClientBuilder.create().clientId("myclient").build());
-        String clientUuid = ApiUtil.getCreatedId(response);
-        response.close();
+        final String clientUuid;
+        try (Response response = realm.clients().create(ClientBuilder.create().clientId("myclient").build())) {
+            clientUuid = ApiUtil.getCreatedId(response);
+        }
 
         RoleRepresentation clientCompositeRole = RoleBuilder.create().name("client-composite").singleAttribute("attribute1", "value1").build();
 
@@ -2117,9 +2276,10 @@ public class UserTest extends AbstractAdminTest {
         realm.clients().get(clientUuid).roles().create(RoleBuilder.create().name("client-child").build());
         realm.clients().get(clientUuid).roles().get("client-composite").addComposites(Collections.singletonList(realm.clients().get(clientUuid).roles().get("client-child").toRepresentation()));
 
-        response = realm.users().create(UserBuilder.create().username("myuser").build());
-        String userId = ApiUtil.getCreatedId(response);
-        response.close();
+        final String userId;
+        try (Response response = realm.users().create(UserBuilder.create().username("myuser").build())) {
+            userId = ApiUtil.getCreatedId(response);
+        }
 
         // Admin events for creating role, client or user tested already in other places
         assertAdminEvents.clear();
@@ -2635,15 +2795,54 @@ public class UserTest extends AbstractAdminTest {
     }
 
     private GroupRepresentation createGroup(RealmResource realm, GroupRepresentation group) {
-        Response response = realm.groups().add(group);
-        String groupId = ApiUtil.getCreatedId(response);
-        getCleanup().addGroupId(groupId);
-        response.close();
+        final String groupId;
+        try (Response response = realm.groups().add(group)) {
+            groupId = ApiUtil.getCreatedId(response);
+            getCleanup().addGroupId(groupId);
+        }
 
         assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.groupPath(groupId), group, ResourceType.GROUP);
 
         // Set ID to the original rep
         group.setId(groupId);
         return group;
+    }
+
+    @Test
+    public void failCreateUserUsingRegularUser() throws Exception {
+        String regularUserId = ApiUtil.getCreatedId(
+                testRealm().users().create(UserBuilder.create().username("regular-user").password("password").build()));
+        UserResource regularUser = testRealm().users().get(regularUserId);
+        UserRepresentation regularUserRep = regularUser.toRepresentation();
+
+        try (Keycloak adminClient = AdminClientUtil.createAdminClient(suiteContext.isAdapterCompatTesting(),
+                TEST, regularUserRep.getUsername(), "password", Constants.ADMIN_CLI_CLIENT_ID, null)) {
+            UserRepresentation invalidUser = UserBuilder.create().username("do-not-create-me").build();
+
+            Response response = adminClient.realm(TEST).users().create(invalidUser);
+            assertEquals(Response.Status.FORBIDDEN.getStatusCode(), response.getStatus());
+
+            invalidUser.setGroups(Collections.emptyList());
+            response = adminClient.realm(TEST).users().create(invalidUser);
+
+            assertEquals(Response.Status.FORBIDDEN.getStatusCode(), response.getStatus());
+        }
+    }
+
+    @Test
+    public void testCreateUserDoNotGrantRole() {
+        testRealm().roles().create(RoleBuilder.create().name("realm-role").build());
+
+        try {
+            UserRepresentation userRep = UserBuilder.create().username("alice").password("password").addRoles("realm-role")
+                    .build();
+            String userId = ApiUtil.getCreatedId(testRealm().users().create(userRep));
+            UserResource user = testRealm().users().get(userId);
+            List<RoleRepresentation> realmMappings = user.roles().getAll().getRealmMappings();
+
+            assertFalse(realmMappings.stream().map(RoleRepresentation::getName).anyMatch("realm-role"::equals));
+        } finally {
+            testRealm().roles().get("realm-role").remove();
+        }
     }
 }

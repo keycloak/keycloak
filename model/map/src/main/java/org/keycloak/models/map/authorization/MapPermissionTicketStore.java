@@ -19,6 +19,7 @@ package org.keycloak.models.map.authorization;
 
 import org.jboss.logging.Logger;
 import org.keycloak.authorization.AuthorizationProvider;
+import org.keycloak.authorization.UserManagedPermissionUtil;
 import org.keycloak.authorization.model.PermissionTicket;
 import org.keycloak.authorization.model.PermissionTicket.SearchableFields;
 import org.keycloak.authorization.model.Resource;
@@ -29,6 +30,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.map.authorization.adapter.MapPermissionTicketAdapter;
 import org.keycloak.models.map.authorization.entity.MapPermissionTicketEntity;
+import org.keycloak.models.map.authorization.entity.MapPermissionTicketEntityImpl;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
 
@@ -108,7 +110,7 @@ public class MapPermissionTicketStore implements PermissionTicketStore {
                     + ", Resource: " + resourceId + ", owner: " + owner + ", scopeId: " + scopeId + " already exists.");
         }
 
-        MapPermissionTicketEntity entity = new MapPermissionTicketEntity();
+        MapPermissionTicketEntity entity = new MapPermissionTicketEntityImpl();
         entity.setResourceId(resourceId);
         entity.setRequester(requester);
         entity.setCreatedTimestamp(System.currentTimeMillis());
@@ -128,7 +130,12 @@ public class MapPermissionTicketStore implements PermissionTicketStore {
     @Override
     public void delete(String id) {
         LOG.tracef("delete(%s)%s", id, getShortStackTrace());
+
+        PermissionTicket permissionTicket = findById(id, null);
+        if (permissionTicket == null) return;
+
         tx.delete(id);
+        UserManagedPermissionUtil.removePolicy(permissionTicket, authorizationProvider.getStoreFactory());
     }
 
     @Override

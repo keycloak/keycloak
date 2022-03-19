@@ -19,6 +19,7 @@
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
 
     <changeSet author="bburke@redhat.com" id="2.2.0">
+        <validCheckSum>7:53188c3eb1107546e6f765835705b6c1</validCheckSum>
 
         <addColumn tableName="ADMIN_EVENT_ENTITY">
             <column name="RESOURCE_TYPE" type="VARCHAR(64)"></column>

@@ -97,4 +97,19 @@ public class RealmAttributeUpdater extends ServerResourceUpdater<RealmAttributeU
         rep.setBrowserFlow(browserFlow);
         return this;
     }
+
+    public RealmAttributeUpdater setDefaultLocale(String defaultLocale) {
+        rep.setDefaultLocale(defaultLocale);
+        return this;
+    }
+
+    public RealmAttributeUpdater addSupportedLocale(String locale) {
+        rep.addSupportedLocales(locale);
+        return this;
+    }
+
+    public RealmAttributeUpdater setInternationalizationEnabled(Boolean internationalizationEnabled) {
+        rep.setInternationalizationEnabled(internationalizationEnabled);
+        return this;
+    }
 }

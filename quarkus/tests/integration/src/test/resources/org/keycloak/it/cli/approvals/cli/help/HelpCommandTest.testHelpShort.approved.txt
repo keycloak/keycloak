@@ -14,12 +14,8 @@ Options:
 
 -cf, --config-file <file>
                      Set the path to a configuration file. By default, configuration properties are
-                       read from the "keycloak.properties" file in the "conf" directory.
--D<key>=<value> <sysProps>
-                     Set a Java system property
+                       read from the "keycloak.conf" file in the "conf" directory.
 -h, --help           This help message.
--pf, --profile <profile>
-                     Set the profile. Use 'dev' profile to enable development mode.
 -v, --verbose        Print out error details when running this command.
 -V, --version        Show version information
 
@@ -31,7 +27,7 @@ Commands:
   export                  Export data from realms to a file or directory.
   import                  Import data from a directory or a file.
   show-config             Print out the current configuration.
-  tools                   %nUtilities for use and interaction with the server.
+  tools                   Utilities for use and interaction with the server.
     completion            Generate bash/zsh completion script for kc.sh.
 
 Examples:

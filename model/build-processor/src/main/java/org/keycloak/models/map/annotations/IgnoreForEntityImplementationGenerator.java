@@ -26,6 +26,6 @@ import java.lang.annotation.Target;
  * @author hmlnarik
  */
 @Retention(RetentionPolicy.CLASS)
-@Target({ElementType.TYPE, ElementType.METHOD})
+@Target({ElementType.TYPE, ElementType.METHOD, ElementType.FIELD})
 public @interface IgnoreForEntityImplementationGenerator {
 }

@@ -20,17 +20,15 @@ package org.keycloak.testsuite.webauthn.pages;
 import com.webauthn4j.data.AttestationConveyancePreference;
 import com.webauthn4j.data.AuthenticatorAttachment;
 import com.webauthn4j.data.UserVerificationRequirement;
-import org.jboss.arquillian.graphene.elements.GrapheneSelect;
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.testsuite.console.page.authentication.Authentication;
 import org.keycloak.testsuite.console.page.fragment.OnOffSwitch;
 import org.keycloak.testsuite.console.page.idp.mappers.MultivaluedStringProperty;
-import org.keycloak.testsuite.page.AbstractPatternFlyAlert;
 import org.keycloak.testsuite.webauthn.utils.PropertyRequirement;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
-import org.openqa.selenium.support.ui.ISelect;
+import org.openqa.selenium.support.ui.Select;
 
 import java.util.List;
 import java.util.function.Supplier;
@@ -51,22 +49,22 @@ public class WebAuthnPolicyPage extends Authentication {
     private WebElement rpEntityName;
 
     @FindBy(xpath = "//select[@id='sigalg']")
-    private GrapheneSelect signatureAlgorithms;
+    private Select signatureAlgorithms;
 
     @FindBy(id = "rpid")
     private WebElement rpEntityId;
 
     @FindBy(id = "attpref")
-    private GrapheneSelect attestationConveyancePreference;
+    private Select attestationConveyancePreference;
 
     @FindBy(id = "authnatt")
-    private GrapheneSelect authenticatorAttachment;
+    private Select authenticatorAttachment;
 
     @FindBy(id = "reqresident")
-    private GrapheneSelect requireResidentKey;
+    private Select requireResidentKey;
 
     @FindBy(id = "usrverify")
-    private GrapheneSelect userVerification;
+    private Select userVerification;
 
     @FindBy(id = "timeout")
     private WebElement timeout;
@@ -106,10 +104,8 @@ public class WebAuthnPolicyPage extends Authentication {
 
     /* Signature Algorithms */
 
-    public ISelect getSignatureAlgorithms() {
-        GrapheneSelect select = checkElement(() -> signatureAlgorithms);
-        select.setIsMulti(true);
-        return select;
+    public Select getSignatureAlgorithms() {
+        return checkElement(() -> signatureAlgorithms);
     }
 
     /* Relaying Party Entity ID */
@@ -174,7 +170,7 @@ public class WebAuthnPolicyPage extends Authentication {
     // If parameter state is null, the requirement is considered as not set up
     public void requireResidentKey(PropertyRequirement requiresProperty) {
         if (requiresProperty == null) return;
-        GrapheneSelect select = checkElement(() -> requireResidentKey);
+        Select select = checkElement(() -> requireResidentKey);
         select.selectByVisibleText(requiresProperty.getValue());
     }
 

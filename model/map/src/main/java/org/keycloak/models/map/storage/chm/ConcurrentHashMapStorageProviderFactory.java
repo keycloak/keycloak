@@ -16,7 +16,19 @@
  */
 package org.keycloak.models.map.storage.chm;
 
-import org.keycloak.models.map.common.StringKeyConvertor;
+import org.keycloak.models.map.authSession.MapAuthenticationSessionEntity;
+import org.keycloak.models.map.authSession.MapAuthenticationSessionEntityImpl;
+import org.keycloak.models.map.authSession.MapRootAuthenticationSessionEntity;
+import org.keycloak.models.map.authSession.MapRootAuthenticationSessionEntityImpl;
+import org.keycloak.models.map.authorization.entity.MapPermissionTicketEntity;
+import org.keycloak.models.map.authorization.entity.MapPermissionTicketEntityImpl;
+import org.keycloak.models.map.authorization.entity.MapPolicyEntity;
+import org.keycloak.models.map.authorization.entity.MapPolicyEntityImpl;
+import org.keycloak.models.map.authorization.entity.MapResourceEntityImpl;
+import org.keycloak.models.map.authorization.entity.MapResourceServerEntityImpl;
+import org.keycloak.models.map.authorization.entity.MapScopeEntity;
+import org.keycloak.models.map.authorization.entity.MapScopeEntityImpl;
+import org.keycloak.models.map.common.StringKeyConverter;
 import org.keycloak.component.AmphibianProviderFactory;
 import org.keycloak.Config.Scope;
 import org.keycloak.common.Profile;
@@ -28,11 +40,15 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.map.client.MapClientEntityImpl;
 import org.keycloak.models.map.client.MapProtocolMapperEntity;
 import org.keycloak.models.map.client.MapProtocolMapperEntityImpl;
+import org.keycloak.models.map.clientscope.MapClientScopeEntityImpl;
 import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.Serialization;
 import org.keycloak.models.map.common.UpdatableEntity;
 import org.keycloak.models.map.group.MapGroupEntityImpl;
+import org.keycloak.models.map.realm.MapRealmEntity;
+import org.keycloak.models.map.realm.MapRealmEntityImpl;
+import org.keycloak.models.map.realm.entity.*;
 import org.keycloak.models.map.role.MapRoleEntityImpl;
 import com.fasterxml.jackson.databind.JavaType;
 import java.io.File;
@@ -44,6 +60,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.jboss.logging.Logger;
 import org.keycloak.models.map.storage.MapStorageProvider;
 import org.keycloak.models.map.storage.MapStorageProviderFactory;
+import org.keycloak.models.map.user.MapUserConsentEntityImpl;
+import org.keycloak.models.map.user.MapUserCredentialEntityImpl;
+import org.keycloak.models.map.user.MapUserEntityImpl;
+import org.keycloak.models.map.user.MapUserFederatedIdentityEntityImpl;
 import org.keycloak.models.map.storage.ModelEntityUtil;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
@@ -70,27 +90,51 @@ public class ConcurrentHashMapStorageProviderFactory implements AmphibianProvide
 
     private final ConcurrentHashMap<String, ConcurrentHashMapStorage<?,?,?>> storages = new ConcurrentHashMap<>();
 
-    private final Map<String, StringKeyConvertor> keyConvertors = new HashMap<>();
+    private final Map<String, StringKeyConverter> keyConverters = new HashMap<>();
 
     private File storageDirectory;
 
     private String suffix;
 
-    private StringKeyConvertor defaultKeyConvertor;
+    private StringKeyConverter defaultKeyConverter;
 
     private final static DeepCloner CLONER = new DeepCloner.Builder()
       .genericCloner(Serialization::from)
-      .constructorDC(MapClientEntityImpl.class,         MapClientEntityImpl::new)
-      .constructor(MapProtocolMapperEntity.class,       MapProtocolMapperEntityImpl::new)
-      .constructorDC(MapGroupEntityImpl.class,          MapGroupEntityImpl::new)
-      .constructorDC(MapRoleEntityImpl.class,           MapRoleEntityImpl::new)
+      .constructor(MapClientEntityImpl.class,                       MapClientEntityImpl::new)
+      .constructor(MapProtocolMapperEntity.class,                   MapProtocolMapperEntityImpl::new)
+      .constructor(MapGroupEntityImpl.class,                        MapGroupEntityImpl::new)
+      .constructor(MapRoleEntityImpl.class,                         MapRoleEntityImpl::new)
+      .constructor(MapUserEntityImpl.class,                         MapUserEntityImpl::new)
+      .constructor(MapUserCredentialEntityImpl.class,               MapUserCredentialEntityImpl::new)
+      .constructor(MapUserFederatedIdentityEntityImpl.class,        MapUserFederatedIdentityEntityImpl::new)
+      .constructor(MapUserConsentEntityImpl.class,                  MapUserConsentEntityImpl::new)
+      .constructor(MapClientScopeEntityImpl.class,                  MapClientScopeEntityImpl::new)
+      .constructor(MapResourceServerEntityImpl.class,               MapResourceServerEntityImpl::new)
+      .constructor(MapResourceEntityImpl.class,                     MapResourceEntityImpl::new)
+      .constructor(MapScopeEntity.class,                            MapScopeEntityImpl::new)
+      .constructor(MapPolicyEntity.class,                           MapPolicyEntityImpl::new)
+      .constructor(MapPermissionTicketEntity.class,                 MapPermissionTicketEntityImpl::new)
+      .constructor(MapRealmEntity.class,                            MapRealmEntityImpl::new)
+      .constructor(MapAuthenticationExecutionEntity.class,          MapAuthenticationExecutionEntityImpl::new)
+      .constructor(MapAuthenticationFlowEntity.class,               MapAuthenticationFlowEntityImpl::new)
+      .constructor(MapAuthenticatorConfigEntity.class,              MapAuthenticatorConfigEntityImpl::new)
+      .constructor(MapClientInitialAccessEntity.class,              MapClientInitialAccessEntityImpl::new)
+      .constructor(MapComponentEntity.class,                        MapComponentEntityImpl::new)
+      .constructor(MapIdentityProviderEntity.class,                 MapIdentityProviderEntityImpl::new)
+      .constructor(MapIdentityProviderMapperEntity.class,           MapIdentityProviderMapperEntityImpl::new)
+      .constructor(MapOTPPolicyEntity.class,                        MapOTPPolicyEntityImpl::new)
+      .constructor(MapRequiredActionProviderEntity.class,           MapRequiredActionProviderEntityImpl::new)
+      .constructor(MapRequiredCredentialEntity.class,               MapRequiredCredentialEntityImpl::new)
+      .constructor(MapWebAuthnPolicyEntity.class,                   MapWebAuthnPolicyEntityImpl::new)
+      .constructor(MapRootAuthenticationSessionEntity.class,        MapRootAuthenticationSessionEntityImpl::new)
+      .constructor(MapAuthenticationSessionEntity.class,            MapAuthenticationSessionEntityImpl::new)
       .build();
 
-    private static final Map<String, StringKeyConvertor> KEY_CONVERTORS = new HashMap<>();
+    private static final Map<String, StringKeyConverter> KEY_CONVERTERS = new HashMap<>();
     static {
-        KEY_CONVERTORS.put("uuid", StringKeyConvertor.UUIDKey.INSTANCE);
-        KEY_CONVERTORS.put("string", StringKeyConvertor.StringKey.INSTANCE);
-        KEY_CONVERTORS.put("ulong", StringKeyConvertor.ULongKey.INSTANCE);
+        KEY_CONVERTERS.put("uuid", StringKeyConverter.UUIDKey.INSTANCE);
+        KEY_CONVERTERS.put("string", StringKeyConverter.StringKey.INSTANCE);
+        KEY_CONVERTERS.put("ulong", StringKeyConverter.ULongKey.INSTANCE);
     }
 
     @Override
@@ -108,9 +152,9 @@ public class ConcurrentHashMapStorageProviderFactory implements AmphibianProvide
         }
     
         final String keyType = config.get("keyType", "uuid");
-        defaultKeyConvertor = getKeyConvertor(keyType);
+        defaultKeyConverter = getKeyConverter(keyType);
         for (String name : getModelNames()) {
-            keyConvertors.put(name, getKeyConvertor(config.get("keyType." + name, keyType)));
+            keyConverters.put(name, getKeyConverter(config.get("keyType." + name, keyType)));
         }
 
         final String dir = config.get("dir");
@@ -134,8 +178,8 @@ public class ConcurrentHashMapStorageProviderFactory implements AmphibianProvide
         }
     }
 
-    private StringKeyConvertor getKeyConvertor(final String keyType) throws IllegalArgumentException {
-        StringKeyConvertor res = KEY_CONVERTORS.get(keyType);
+    private StringKeyConverter getKeyConverter(final String keyType) throws IllegalArgumentException {
+        StringKeyConverter res = KEY_CONVERTERS.get(keyType);
         if (res == null) {
             throw new IllegalArgumentException("Unknown key type: " + keyType);
         }
@@ -172,7 +216,7 @@ public class ConcurrentHashMapStorageProviderFactory implements AmphibianProvide
     @SuppressWarnings("unchecked")
     private <K, V extends AbstractEntity & UpdatableEntity, M> ConcurrentHashMapStorage<K, V, M> loadMap(String mapName,
       Class<M> modelType, EnumSet<Flag> flags) {
-        final StringKeyConvertor kc = keyConvertors.getOrDefault(mapName, defaultKeyConvertor);
+        final StringKeyConverter kc = keyConverters.getOrDefault(mapName, defaultKeyConverter);
         Class<?> valueType = ModelEntityUtil.getEntityType(modelType);
         LOG.debugf("Initializing new map storage: %s", mapName);
 

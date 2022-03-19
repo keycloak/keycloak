@@ -147,7 +147,6 @@ import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP6)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP71)
-@AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT7)
 @AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT8)
 @AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT9)
 @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
@@ -855,7 +854,9 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
             String appUri = tokenMinTTLPage.getUriBuilder().queryParam(OIDCLoginProtocol.PROMPT_PARAM, OIDCLoginProtocol.PROMPT_VALUE_LOGIN).build().toString();
             URLUtils.navigateToUri(appUri);
             assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
-            testRealmLoginPage.form().login("bburke@redhat.com", "password");
+            WaitUtils.waitForPageToLoad();
+            testRealmLoginPage.form().setPassword("password");
+            testRealmLoginPage.form().login();
             AccessToken token = tokenMinTTLPage.getAccessToken();
             int authTime = token.getAuthTime();
             assertThat(authTime, is(greaterThanOrEqualTo(currentTime + 10)));

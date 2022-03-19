@@ -24,17 +24,16 @@ final class ClusteringPropertyMappers {
                         .expectedValues("local", "ispn")
                         .build(),
                 builder().from("cache-stack")
-                        .to("kc.spi.connections-infinispan.quarkus.stack")
+                        .to("kc.spi-connections-infinispan-quarkus-stack")
                         .description("Define the default stack to use for cluster communication and node discovery. This option only takes effect "
-                                + "if 'cache' is set to 'ispn'.")
-                        .defaultValue("udp")
+                                + "if 'cache' is set to 'ispn'. Default: udp.")
                         .paramLabel("stack")
                         .isBuildTimeProperty(true)
                         .expectedValues(Arrays.asList("tcp", "udp", "kubernetes", "ec2", "azure", "google"))
                         .build(),
-                builder().from("cache.config-file")
+                builder().from("cache-config-file")
                         .mapFrom("cache")
-                        .to("kc.spi.connections-infinispan.quarkus.config-file")
+                        .to("kc.spi-connections-infinispan-quarkus-config-file")
                         .description("Defines the file from which cache configuration should be loaded from.")
                         .transformer(new BiFunction<String, ConfigSourceInterceptorContext, String>() {
                             @Override

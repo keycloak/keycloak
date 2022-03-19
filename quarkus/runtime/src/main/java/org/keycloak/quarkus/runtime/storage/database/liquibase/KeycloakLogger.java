@@ -17,104 +17,86 @@
 
 package org.keycloak.quarkus.runtime.storage.database.liquibase;
 
-import liquibase.changelog.ChangeSet;
-import liquibase.changelog.DatabaseChangeLog;
-import liquibase.logging.LogLevel;
-import liquibase.logging.Logger;
+import java.util.logging.Level;
 
-public class KeycloakLogger implements Logger {
+import liquibase.logging.core.AbstractLogger;
+import liquibase.logging.core.DefaultLogMessageFilter;
+import org.jboss.logging.Logger;
 
-    private static final org.jboss.logging.Logger logger = org.jboss.logging.Logger.getLogger(KeycloakLogger.class);
-    
-    @Override
-    public void setName(String name) {
-    }
+/**
+ * A {@link liquibase.logging.Logger} implementation that delegates to a JBoss {@link Logger}.
+ *
+ * @author <a href="mailto:sguilhen@redhat.com">Stefan Guilhen</a>
+ */
+public class KeycloakLogger extends AbstractLogger {
 
-    @Override
-    public void setLogLevel(String logLevel, String logFile) {
+    private final Logger delegate;
+
+    public KeycloakLogger(final Class clazz) {
+        super(new DefaultLogMessageFilter());
+        this.delegate = Logger.getLogger(clazz);
     }
 
     @Override
     public void severe(String message) {
-        logger.error(message);
+        this.delegate.error(message);
     }
 
     @Override
     public void severe(String message, Throwable e) {
-        logger.error(message, e);
+        this.delegate.error(message, e);
     }
 
     @Override
     public void warning(String message) {
         // Ignore this warning as cascaded drops doesn't work anyway with all DBs, which we need to support
         if ("Database does not support drop with cascade".equals(message)) {
-            logger.debug(message);
+            this.delegate.debug(message);
         } else {
-            logger.warn(message);
+            this.delegate.warn(message);
         }
     }
 
     @Override
     public void warning(String message, Throwable e) {
-        logger.warn(message, e);
+        this.delegate.warn(message, e);
     }
 
     @Override
     public void info(String message) {
-        logger.debug(message);
+        this.delegate.debug(message);
     }
 
     @Override
     public void info(String message, Throwable e) {
-        logger.debug(message, e);
+        this.delegate.debug(message, e);
     }
 
     @Override
     public void debug(String message) {
-        if (logger.isTraceEnabled()) {
-            logger.trace(message);
+        if (this.delegate.isTraceEnabled()) {
+            this.delegate.trace(message);
         }
-    }
-
-    @Override
-    public LogLevel getLogLevel() {
-        if (logger.isTraceEnabled()) {
-            return LogLevel.DEBUG;
-        } else if (logger.isDebugEnabled()) {
-            return LogLevel.INFO;
-        } else {
-            return LogLevel.WARNING;
-        }
-    }
-
-    @Override
-    public void setLogLevel(String level) {
-    }
-
-    @Override
-    public void setLogLevel(LogLevel level) {
     }
 
     @Override
     public void debug(String message, Throwable e) {
-        logger.trace(message, e);
+        this.delegate.trace(message, e);
     }
 
     @Override
-    public void setChangeLog(DatabaseChangeLog databaseChangeLog) {
+    public void log(Level level, String message, Throwable e) {
+        if (level.equals(Level.OFF)) {
+            return;
+        } else if (level.equals(Level.SEVERE)) {
+            this.delegate.error(message, e);
+        } else if (level.equals(Level.WARNING)) {
+            this.delegate.warn(message, e);
+        } else if (level.equals(Level.INFO)) {
+            this.delegate.debug(message, e);
+        } else if (level.equals(Level.FINE) | level.equals(Level.FINER) | level.equals(Level.FINEST)) {
+            if (this.delegate.isTraceEnabled())
+                this.delegate.trace(message, e);
+        }
     }
-
-    @Override
-    public void setChangeSet(ChangeSet changeSet) {
-    }
-
-    @Override
-    public int getPriority() {
-        return 0;
-    }
-
-    @Override
-    public void closeLogFile() {
-    }
-
 }

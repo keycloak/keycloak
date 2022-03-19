@@ -2284,17 +2284,17 @@ public class RepresentationToModel {
 
             rep.setClientId(client.getId());
 
-            toModel(rep, authorization);
+            toModel(rep, authorization, client);
         }
     }
 
-    public static ResourceServer toModel(ResourceServerRepresentation rep, AuthorizationProvider authorization) {
+    public static ResourceServer toModel(ResourceServerRepresentation rep, AuthorizationProvider authorization, ClientModel client) {
         ResourceServerStore resourceServerStore = authorization.getStoreFactory().getResourceServerStore();
         ResourceServer resourceServer;
-        ResourceServer existing = resourceServerStore.findById(rep.getClientId());
+        ResourceServer existing = resourceServerStore.findByClient(client);
 
         if (existing == null) {
-            resourceServer = resourceServerStore.create(rep.getClientId());
+            resourceServer = resourceServerStore.create(client);
             resourceServer.setAllowRemoteResourceManagement(true);
             resourceServer.setPolicyEnforcementMode(PolicyEnforcementMode.ENFORCING);
         } else {
@@ -2903,6 +2903,6 @@ public class RepresentationToModel {
         representation.setAllowRemoteResourceManagement(true);
         representation.setClientId(client.getId());
 
-        return toModel(representation, authorization);
+        return toModel(representation, authorization, client);
     }
 }

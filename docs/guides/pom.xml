@@ -19,7 +19,7 @@
     <parent>
         <artifactId>keycloak-docs-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>16.0.0-SNAPSHOT</version>
+        <version>18.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -28,12 +28,13 @@
     <name>Keycloak Guides</name>
     <artifactId>keycloak-guides</artifactId>
     <description>Keycloak Guides</description>
+    <packaging>pom</packaging>
 
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-guides-maven-plugin</artifactId>
-            <version>16.0.0-SNAPSHOT</version>
+            <version>${project.version}</version>
         </dependency>
     </dependencies>
 
@@ -42,6 +43,7 @@
             <plugin>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-guides-maven-plugin</artifactId>
+                <version>${project.version}</version>
                 <executions>
                     <execution>
                         <id>generate-asciidoc</id>
@@ -79,6 +81,23 @@
                                 <docinfo1>true</docinfo1>
                             </attributes>
                         </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <configuration>
+                    <descriptors>
+                        <descriptor>assembly.xml</descriptor>
+                    </descriptors>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>create-archive</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
                     </execution>
                 </executions>
             </plugin>

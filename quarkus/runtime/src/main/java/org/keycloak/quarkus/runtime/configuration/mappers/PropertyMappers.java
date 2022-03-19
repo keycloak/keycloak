@@ -26,9 +26,13 @@ public final class PropertyMappers {
         MAPPERS.addAll(DatabasePropertyMappers.getDatabasePropertyMappers());
         MAPPERS.addAll(HostnamePropertyMappers.getHostnamePropertyMappers());
         MAPPERS.addAll(HttpPropertyMappers.getHttpPropertyMappers());
+        MAPPERS.addAll(HealthPropertyMappers.getHealthPropertyMappers());
         MAPPERS.addAll(MetricsPropertyMappers.getMetricsPropertyMappers());
         MAPPERS.addAll(ProxyPropertyMappers.getProxyPropertyMappers());
         MAPPERS.addAll(VaultPropertyMappers.getVaultPropertyMappers());
+        MAPPERS.addAll(FeaturePropertyMappers.getMappers());
+        MAPPERS.addAll(LoggingPropertyMappers.getMappers());
+        MAPPERS.addAll(TransactionPropertyMappers.getTransactionPropertyMappers());
     }
 
     public static ConfigValue getValue(ConfigSourceInterceptorContext context, String name) {
@@ -49,7 +53,7 @@ public final class PropertyMappers {
     }
 
     public static boolean isBuildTimeProperty(String name) {
-        if (isFeaturesBuildTimeProperty(name) || isSpiBuildTimeProperty(name)) {
+        if (isFeaturesBuildTimeProperty(name) || isSpiBuildTimeProperty(name) || name.startsWith(MicroProfileConfigProvider.NS_QUARKUS_PREFIX)) {
             return true;
         }
 
@@ -82,7 +86,7 @@ public final class PropertyMappers {
                 && !Environment.PROFILE.equals(name)
                 && !"kc.show.config".equals(name)
                 && !"kc.show.config.runtime".equals(name)
-                && !toCLIFormat("kc.config.file").equals(name);
+                && !"kc.config-file".equals(name);
     }
 
     private static boolean isSpiBuildTimeProperty(String name) {
@@ -93,16 +97,6 @@ public final class PropertyMappers {
         return name.startsWith("kc.features");
     }
 
-    public static String toCLIFormat(String name) {
-        if (name.indexOf('.') == -1) {
-            return name;
-        }
-
-        return MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX
-                .concat(name.substring(3, name.lastIndexOf('.') + 1)
-                        .replaceAll("\\.", "-") + name.substring(name.lastIndexOf('.') + 1));
-    }
-
     public static List<PropertyMapper> getRuntimeMappers() {
         return MAPPERS.values().stream()
                 .filter(entry -> !entry.isBuildTime()).collect(Collectors.toList());
@@ -111,10 +105,6 @@ public final class PropertyMappers {
     public static List<PropertyMapper> getBuildTimeMappers() {
         return MAPPERS.values().stream()
                 .filter(PropertyMapper::isBuildTime).collect(Collectors.toList());
-    }
-
-    public static String canonicalFormat(String name) {
-        return name.replaceAll("-", "\\.");
     }
 
     public static String formatValue(String property, String value) {
@@ -137,6 +127,9 @@ public final class PropertyMappers {
     }
 
     public static PropertyMapper getMapper(String property) {
+        if (property.startsWith("%")) {
+            return MAPPERS.get(property.substring(property.indexOf('.') + 1));
+        }
         return MAPPERS.get(property);
     }
 
@@ -170,6 +163,7 @@ public final class PropertyMappers {
                 super.put(mapper.getTo(), mapper);
                 super.put(mapper.getFrom(), mapper);
                 super.put(mapper.getCliFormat(), mapper);
+                super.put(mapper.getEnvVarFormat(), mapper);
             }
         }
 

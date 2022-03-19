@@ -18,6 +18,7 @@
 package org.keycloak.it.cli.dist;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
@@ -27,7 +28,6 @@ import org.keycloak.it.junit5.extension.DistributionTest;
 
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
-import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 
 @DistributionTest
 public class StartCommandDistTest extends StartCommandTest {
@@ -35,7 +35,7 @@ public class StartCommandDistTest extends StartCommandTest {
     @Test
     @Launch({ "-pf=dev", "start", "--auto-build", "--http-enabled=true", "--hostname-strict=false" })
     void failIfAutoBuildUsingDevProfile(LaunchResult result) {
-        assertTrue(result.getErrorOutput().contains("ERROR: You can not 'start' the server using the 'dev' configuration profile. Please re-build the server first, using 'kc.sh build' for the default production profile, or using 'kc.sh build --profile=<profile>' with a profile more suitable for production."),
+        assertTrue(result.getErrorOutput().contains("You can not 'start' the server in development mode. Please re-build the server first, using 'kc.sh build' for the default production mode."),
                 () -> "The Output:\n" + result.getErrorOutput() + "doesn't contains the expected string.");
         assertEquals(4, result.getErrorStream().size());
     }
@@ -48,10 +48,17 @@ public class StartCommandDistTest extends StartCommandTest {
     }
 
     @Test
-    @Launch({ "start", "--auto-build", "--db-password=secret", "--https-key-store-password=secret"})
-    void testStartWithAutoBuildDoesntShowCredentialsInConsole(LaunchResult result) {
+    @Launch({ "start", "--auto-build", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
+    void testStartUsingAutoBuild(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        assertTrue(cliResult.getOutput().contains("--db-password=" + PropertyMappers.VALUE_MASK));
-        assertTrue(cliResult.getOutput().contains("--https-key-store-password=" + PropertyMappers.VALUE_MASK));
+        cliResult.assertMessage("Changes detected in configuration. Updating the server image.");
+        cliResult.assertMessage("Updating the configuration and installing your custom providers, if any. Please wait.");
+        cliResult.assertMessage("Server configuration updated and persisted. Run the following command to review the configuration:");
+        cliResult.assertMessage("kc.sh show-config");
+        cliResult.assertMessage("Next time you run the server, just run:");
+        cliResult.assertMessage("kc.sh start --http-enabled=true --hostname-strict=false");
+        assertFalse(cliResult.getOutput().contains("--cache"));
+        cliResult.assertStarted();
     }
+
 }

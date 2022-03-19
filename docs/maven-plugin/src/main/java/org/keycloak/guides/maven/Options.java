@@ -4,6 +4,8 @@ import org.keycloak.quarkus.runtime.configuration.mappers.ConfigCategory;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 
 import java.util.Collection;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -17,7 +19,8 @@ public class Options {
         options = PropertyMappers.getMappers().stream()
                 .filter(m -> !m.isHidden())
                 .map(m -> new Option(m.getFrom(), m.getCategory(), m.isBuildTime(), m.getDescription(), m.getDefaultValue(), m.getExpectedValues()))
-                .collect(Collectors.toMap(Option::getKey, o -> o, (o1, o2) -> o1)); // Need to ignore duplicate keys??
+                .sorted(Comparator.comparing(Option::getKey))
+                .collect(Collectors.toMap(Option::getKey, o -> o, (o1, o2) -> o1, LinkedHashMap::new)); // Need to ignore duplicate keys??
     }
 
     public ConfigCategory[] getCategories() {
@@ -41,7 +44,7 @@ public class Options {
         return this.options.values().stream().filter(o -> o.getKey().matches(r)).collect(Collectors.toList());
     }
 
-    public static class Option {
+    public class Option {
 
         private String key;
         private ConfigCategory category;
@@ -76,7 +79,22 @@ public class Options {
         }
 
         public String getDescription() {
-            return description;
+            int i = description.indexOf('.');
+            if (i == -1) {
+                return description;
+            } else {
+                return description.substring(0, i + 1).trim();
+            }
+        }
+
+        public String getDescriptionExtended() {
+            int i = description.indexOf('.');
+            if (i == -1) {
+                return null;
+            } else {
+                String extended = description.substring(i + 1).trim();
+                return extended.length() > 0 ? extended : null;
+            }
         }
 
         public String getDefaultValue() {

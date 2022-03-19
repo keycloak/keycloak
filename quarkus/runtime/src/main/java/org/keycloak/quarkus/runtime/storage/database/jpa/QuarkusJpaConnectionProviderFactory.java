@@ -35,25 +35,22 @@ import java.util.Map;
 import java.util.StringTokenizer;
 
 import javax.enterprise.inject.Instance;
-import javax.enterprise.inject.spi.CDI;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
-import javax.persistence.SynchronizationType;
 import javax.transaction.SystemException;
 import javax.transaction.Transaction;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+
+import io.quarkus.arc.Arc;
 import io.quarkus.runtime.Quarkus;
 
-import org.hibernate.internal.SessionFactoryImpl;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.ServerStartupError;
 import org.keycloak.common.Version;
 import org.keycloak.connections.jpa.DefaultJpaConnectionProvider;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
-import org.keycloak.connections.jpa.JpaConnectionProviderFactory;
-import org.keycloak.connections.jpa.PersistenceExceptionConverter;
 import org.keycloak.connections.jpa.updater.JpaUpdaterProvider;
 import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.exportimport.ExportImportManager;
@@ -77,32 +74,23 @@ import org.keycloak.util.JsonSerialization;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public final class QuarkusJpaConnectionProviderFactory implements JpaConnectionProviderFactory, ServerInfoAwareProviderFactory {
+public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionProviderFactory implements ServerInfoAwareProviderFactory {
 
     public static final String QUERY_PROPERTY_PREFIX = "kc.query.";
     private static final Logger logger = Logger.getLogger(QuarkusJpaConnectionProviderFactory.class);
-    private static final String SQL_GET_LATEST_VERSION = "SELECT VERSION FROM %sMIGRATION_MODEL";
+    private static final String SQL_GET_LATEST_VERSION = "SELECT VERSION FROM %sMIGRATION_MODEL ORDER BY UPDATE_TIME DESC";
 
     enum MigrationStrategy {
         UPDATE, VALIDATE, MANUAL
     }
 
-    private EntityManagerFactory emf;
-    private Config.Scope config;
     private Map<String, String> operationalInfo;
     private KeycloakSessionFactory factory;
 
     @Override
     public JpaConnectionProvider create(KeycloakSession session) {
         logger.trace("Create QuarkusJpaConnectionProvider");
-        return new DefaultJpaConnectionProvider(createEntityManager(session));
-    }
-
-    @Override
-    public void close() {
-        if (emf != null) {
-            emf.close();
-        }
+        return new DefaultJpaConnectionProvider(createEntityManager(entityManagerFactory, session));
     }
 
     @Override
@@ -110,20 +98,17 @@ public final class QuarkusJpaConnectionProviderFactory implements JpaConnectionP
         return "quarkus";
     }
 
-    @Override
-    public void init(Config.Scope config) {
-        this.config = config;
-    }
-
-    private void addSpecificNamedQueries(KeycloakSession session, Connection connection) {
-        EntityManager em = createEntityManager(session);
+    private void addSpecificNamedQueries(KeycloakSession session) {
+        EntityManager em = createEntityManager(entityManagerFactory, session);
 
         try {
-            Map<String, Object> unitProperties = emf.getProperties();
+            Map<String, Object> unitProperties = entityManagerFactory.getProperties();
 
-            unitProperties.entrySet().stream()
-                    .filter(entry -> entry.getKey().startsWith(QUERY_PROPERTY_PREFIX))
-                    .forEach(entry -> configureNamedQuery(entry.getKey().substring(QUERY_PROPERTY_PREFIX.length()), entry.getValue().toString(), em));
+            for (Map.Entry<String, Object> entry : unitProperties.entrySet()) {
+                if (entry.getKey().startsWith(QUERY_PROPERTY_PREFIX)) {
+                    configureNamedQuery(entry.getKey().substring(QUERY_PROPERTY_PREFIX.length()), entry.getValue().toString(), em);
+                }
+            }
         } finally {
             JpaUtils.closeEntityManager(em);
         }
@@ -131,21 +116,15 @@ public final class QuarkusJpaConnectionProviderFactory implements JpaConnectionP
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
+        super.postInit(factory);
         this.factory = factory;
-        Instance<EntityManagerFactory> instance = CDI.current().select(EntityManagerFactory.class);
-
-        if (!instance.isResolvable()) {
-            throw new RuntimeException("Failed to resolve " + EntityManagerFactory.class + " from Quarkus runtime");
-        }
-
-        emf = instance.get();
 
         KeycloakSession session = factory.create();
         boolean schemaChanged;
 
         try (Connection connection = getConnection()) {
             createOperationalInfo(connection);
-            addSpecificNamedQueries(session, connection);
+            addSpecificNamedQueries(session);
             schemaChanged = createOrUpdateSchema(getSchema(), connection, session);
         } catch (SQLException cause) {
             throw new RuntimeException("Failed to update database.", cause);
@@ -163,19 +142,14 @@ public final class QuarkusJpaConnectionProviderFactory implements JpaConnectionP
     }
 
     @Override
-    public Connection getConnection() {
-        SessionFactoryImpl entityManagerFactory = emf.unwrap(SessionFactoryImpl.class);
+    protected EntityManagerFactory getEntityManagerFactory() {
+        Instance<EntityManagerFactory> instance = Arc.container().select(EntityManagerFactory.class);
 
-        try {
-            return entityManagerFactory.getJdbcServices().getBootstrapJdbcConnectionAccess().obtainConnection();
-        } catch (SQLException cause) {
-            throw new RuntimeException("Failed to obtain JDBC connection", cause);
+        if (instance.isResolvable()) {
+            return instance.get();
         }
-    }
 
-    @Override
-    public String getSchema() {
-        return config.get("schema");
+        return getEntityManagerFactory("keycloak-default").orElseThrow(() -> new IllegalStateException("Failed to resolve the default entity manager factory"));
     }
 
     @Override
@@ -238,19 +212,19 @@ public final class QuarkusJpaConnectionProviderFactory implements JpaConnectionP
 
         try {
             session.getTransactionManager().begin();
-            JtaTransactionManagerLookup lookup = (JtaTransactionManagerLookup) factory
-                    .getProviderFactory(JtaTransactionManagerLookup.class);
-            if (lookup != null) {
-                if (lookup.getTransactionManager() != null) {
-                    try {
-                        Transaction transaction = lookup.getTransactionManager().getTransaction();
-                        logger.debugv("bootstrap current transaction? {0}", transaction != null);
-                        if (transaction != null) {
-                            logger.debugv("bootstrap current transaction status? {0}", transaction.getStatus());
-                        }
-                    } catch (SystemException e) {
-                        throw new RuntimeException(e);
+
+            if (xaEnabled) {
+                JtaTransactionManagerLookup lookup = (JtaTransactionManagerLookup) factory
+                        .getProviderFactory(JtaTransactionManagerLookup.class);
+
+                try {
+                    Transaction transaction = lookup.getTransactionManager().getTransaction();
+                    logger.debugv("bootstrap current transaction? {0}", transaction != null);
+                    if (transaction != null) {
+                        logger.debugv("bootstrap current transaction status? {0}", transaction.getStatus());
                     }
+                } catch (SystemException e) {
+                    throw new RuntimeException(e);
                 }
             }
 
@@ -510,14 +484,5 @@ public final class QuarkusJpaConnectionProviderFactory implements JpaConnectionP
         } finally {
             dbLock2.releaseLock();
         }
-    }
-
-    private EntityManager createEntityManager(KeycloakSession session) {
-        // we need to auto join the transaction, hence the synchronized type
-        // ideally, we should leverage how hibernate-orm creates the entity manager
-        // but that breaks us, mainly due to flush which is always set to always
-        // as per hibernate guys, we should consider how JTASessionOpener creates entity managers
-        // but that brings lot of details that we need to investigate further
-        return PersistenceExceptionConverter.create(session, emf.createEntityManager(SynchronizationType.SYNCHRONIZED));
     }
 }

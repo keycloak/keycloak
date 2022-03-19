@@ -163,7 +163,7 @@ public class JBossWebPrincipalFactory implements PrincipalFactory {
 
     static Constructor findJBossGenericPrincipalConstructor() {
         for (Constructor<?> c : JBossGenericPrincipal.class.getConstructors()) {
-            if (c.getParameterTypes().length == 9 &&
+            if (c.getParameterCount() == 9 &&
                     c.getParameterTypes()[0].equals(Realm.class) &&
                     c.getParameterTypes()[1].equals(String.class) &&
                     c.getParameterTypes()[3].equals(List.class) &&

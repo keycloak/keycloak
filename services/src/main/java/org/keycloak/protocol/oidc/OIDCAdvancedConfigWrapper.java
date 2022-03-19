@@ -17,10 +17,11 @@
 
 package org.keycloak.protocol.oidc;
 
+import static org.keycloak.protocol.oidc.OIDCConfigAttributes.USE_LOWER_CASE_IN_TOKEN_RESPONSE;
+
 import org.keycloak.authentication.authenticators.client.X509ClientAuthenticator;
 import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.utils.StringUtil;
@@ -33,16 +34,11 @@ import java.util.List;
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class OIDCAdvancedConfigWrapper {
-
-    private final ClientModel clientModel;
-    private final ClientRepresentation clientRep;
+public class OIDCAdvancedConfigWrapper extends AbstractClientConfigWrapper {
 
     private OIDCAdvancedConfigWrapper(ClientModel client, ClientRepresentation clientRep) {
-        this.clientModel = client;
-        this.clientRep = clientRep;
+        super(client,clientRep);
     }
-
 
     public static OIDCAdvancedConfigWrapper fromClientModel(ClientModel client) {
         return new OIDCAdvancedConfigWrapper(client, null);
@@ -175,6 +171,14 @@ public class OIDCAdvancedConfigWrapper {
     public void setUseRefreshToken(boolean useRefreshToken) {
         String val = String.valueOf(useRefreshToken);
         setAttribute(OIDCConfigAttributes.USE_REFRESH_TOKEN, val);
+    }
+
+    public boolean isUseLowerCaseInTokenResponse() {
+        return Boolean.parseBoolean(getAttribute(USE_LOWER_CASE_IN_TOKEN_RESPONSE, "false"));
+    }
+
+    public void setUseLowerCaseInTokenResponse(boolean useRefreshToken) {
+        setAttribute(USE_LOWER_CASE_IN_TOKEN_RESPONSE, String.valueOf(useRefreshToken));
     }
 
     /**
@@ -329,56 +333,4 @@ public class OIDCAdvancedConfigWrapper {
         setAttribute(ClientModel.TOS_URI, tosUri);
     }
 
-    private String getAttribute(String attrKey) {
-        if (clientModel != null) {
-            return clientModel.getAttribute(attrKey);
-        } else {
-            return clientRep.getAttributes()==null ? null : clientRep.getAttributes().get(attrKey);
-        }
-    }
-
-    private String getAttribute(String attrKey, String defaultValue) {
-        String value = getAttribute(attrKey);
-        if (value == null) {
-            return defaultValue;
-        }
-        return value;
-    }
-
-    private void setAttribute(String attrKey, String attrValue) {
-        if (clientModel != null) {
-            if (attrValue != null) {
-                clientModel.setAttribute(attrKey, attrValue);
-            } else {
-                clientModel.removeAttribute(attrKey);
-            }
-        } else {
-            if (attrValue != null) {
-                if (clientRep.getAttributes() == null) {
-                    clientRep.setAttributes(new HashMap<>());
-                }
-                clientRep.getAttributes().put(attrKey, attrValue);
-            } else {
-                if (clientRep.getAttributes() != null) {
-                    clientRep.getAttributes().put(attrKey, null);
-                }
-            }
-        }
-    }
-
-    private List<String> getAttributeMultivalued(String attrKey) {
-        String attrValue = getAttribute(attrKey);
-        if (attrValue == null) return Collections.emptyList();
-        return Arrays.asList(Constants.CFG_DELIMITER_PATTERN.split(attrValue));
-    }
-
-    private void setAttributeMultivalued(String attrKey, List<String> attrValues) {
-        if (attrValues == null || attrValues.size() == 0) {
-            // Remove attribute
-            setAttribute(attrKey, null);
-        } else {
-            String attrValueFull = String.join(Constants.CFG_DELIMITER, attrValues);
-            setAttribute(attrKey, attrValueFull);
-        }
-    }
 }

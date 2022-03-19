@@ -48,6 +48,9 @@ public abstract class LanguageComboboxAwarePage extends AbstractPage {
     @FindBy(id = "reset-login")
     private WebElement resetLoginLink;
 
+    @FindBy(id = "account")
+    private WebElement accountLink;
+
     public String getLanguageDropdownText() {
         return languageText.getText();
     }
@@ -73,6 +76,18 @@ public abstract class LanguageComboboxAwarePage extends AbstractPage {
         tryAnotherWayLink.click();
     }
 
+    public void assertAccountLinkAvailability(boolean expectedAvailability) {
+        try {
+            driver.findElement(By.id("account"));
+            Assert.assertTrue(expectedAvailability);
+        } catch (NoSuchElementException nse) {
+            Assert.assertFalse(expectedAvailability);
+        }
+    }
+
+    public void clickAccountLink() {
+        accountLink.click();
+    }
 
     // If false, we don't expect "attempted username" link available on the page. If true, we expect that it is available on the page
     public void assertAttemptedUsernameAvailability(boolean expectedAvailability) {
@@ -91,7 +106,6 @@ public abstract class LanguageComboboxAwarePage extends AbstractPage {
     public String getAttemptedUsername() {
         return attemptedUsernameLabel.getText();
     }
-
 
     public void clickResetLogin() {
         resetLoginLink.click();

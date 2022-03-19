@@ -36,6 +36,7 @@ import java.sql.Types;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Properties;
 import org.hibernate.HibernateException;
 import org.hibernate.type.AbstractSingleColumnStandardBasicType;
 import org.hibernate.type.descriptor.ValueBinder;
@@ -47,17 +48,17 @@ import org.hibernate.type.descriptor.java.MutableMutabilityPlan;
 import org.hibernate.type.descriptor.sql.BasicBinder;
 import org.hibernate.type.descriptor.sql.BasicExtractor;
 import org.hibernate.type.descriptor.sql.SqlTypeDescriptor;
-import org.keycloak.models.map.client.MapClientEntity;
+import org.hibernate.usertype.DynamicParameterizedType;
 import org.keycloak.models.map.client.MapProtocolMapperEntity;
 import org.keycloak.models.map.client.MapProtocolMapperEntityImpl;
 import org.keycloak.models.map.common.DeepCloner;
+import org.keycloak.models.map.common.EntityWithAttributes;
 import org.keycloak.models.map.common.Serialization.IgnoreUpdatedMixIn;
 import org.keycloak.models.map.common.Serialization.IgnoredTypeMixIn;
 import org.keycloak.models.map.common.UpdatableEntity;
-import org.keycloak.models.map.storage.jpa.client.entity.JpaClientMetadata;
-import org.keycloak.models.map.storage.jpa.client.JpaClientMapStorage;
+import static org.keycloak.models.map.storage.jpa.hibernate.jsonb.JpaEntityMigration.MIGRATIONS;
 
-public class JsonbType extends AbstractSingleColumnStandardBasicType<Object> {
+public class JsonbType extends AbstractSingleColumnStandardBasicType<Object> implements DynamicParameterizedType {
 
     public static final JsonbType INSTANCE = new JsonbType();
     public static final ObjectMapper MAPPER = new ObjectMapper()
@@ -70,15 +71,23 @@ public class JsonbType extends AbstractSingleColumnStandardBasicType<Object> {
             .registerModule(new SimpleModule().addAbstractTypeMapping(MapProtocolMapperEntity.class, MapProtocolMapperEntityImpl.class))
             .addMixIn(UpdatableEntity.class, IgnoreUpdatedMixIn.class)
             .addMixIn(DeepCloner.class, IgnoredTypeMixIn.class)
-            .addMixIn(MapClientEntity.class, IgnoredClientFieldsMixIn.class);
+            .addMixIn(EntityWithAttributes.class, IgnoredMetadataFieldsMixIn.class);
 
-    abstract class IgnoredClientFieldsMixIn {
+    abstract class IgnoredMetadataFieldsMixIn {
         @JsonIgnore public abstract String getId();
         @JsonIgnore public abstract Map<String, List<String>> getAttributes();
+
+        // roles: assumed it's true when getClient() != null, see AbstractRoleEntity.isClientRole()
+        @JsonIgnore public abstract Boolean isClientRole();
     }
 
     public JsonbType() {
-        super(JsonbSqlTypeDescriptor.INSTANCE, JsonbJavaTypeDescriptor.INSTANCE);
+        super(JsonbSqlTypeDescriptor.INSTANCE, new JsonbJavaTypeDescriptor());
+    }
+
+    @Override
+    public void setParameterValues(Properties parameters) {
+        ((JsonbJavaTypeDescriptor) getJavaTypeDescriptor()).setParameterValues(parameters);
     }
 
     @Override
@@ -148,9 +157,14 @@ public class JsonbType extends AbstractSingleColumnStandardBasicType<Object> {
         }
     }
 
-    private static class JsonbJavaTypeDescriptor extends AbstractTypeDescriptor<Object> {
+    private static class JsonbJavaTypeDescriptor extends AbstractTypeDescriptor<Object> implements DynamicParameterizedType {
 
-        private static final JsonbJavaTypeDescriptor INSTANCE = new JsonbJavaTypeDescriptor();
+        private Class valueType;
+
+        @Override
+        public void setParameterValues(Properties parameters) {
+            valueType = ((ParameterType) parameters.get(PARAMETER_TYPE)).getReturnedClass();
+        }
 
         public JsonbJavaTypeDescriptor() {
             super(Object.class, new MutableMutabilityPlan<Object>() {
@@ -166,26 +180,29 @@ public class JsonbType extends AbstractSingleColumnStandardBasicType<Object> {
         }
 
         @Override
+        @SuppressWarnings("unchecked")
         public Object fromString(String json) {
             try {
                 ObjectNode tree = MAPPER.readValue(json, ObjectNode.class);
                 JsonNode ev = tree.get("entityVersion");
                 if (ev == null || ! ev.isInt()) throw new IllegalArgumentException("unable to read entity version from " + json);
 
-                int entityVersion = ev.asInt();
+                Integer entityVersion = ev.asInt();
 
-                if (entityVersion > JpaClientMapStorage.SUPPORTED_VERSION + 1) throw new IllegalArgumentException("Incompatible entity version: " + entityVersion + ", supportedVersion: " + JpaClientMapStorage.SUPPORTED_VERSION);
+                tree = migrate(tree, entityVersion);
 
-                if (entityVersion < JpaClientMapStorage.SUPPORTED_VERSION) {
-                    tree = JpaClientMigration.migrateTreeTo(entityVersion, JpaClientMapStorage.SUPPORTED_VERSION, tree);
-                }
-                return MAPPER.treeToValue(tree, JpaClientMetadata.class);
+                return MAPPER.treeToValue(tree, valueType);
             } catch (IOException e) {
                 throw new HibernateException("unable to read", e);
             }
         }
 
+        private ObjectNode migrate(ObjectNode tree, Integer entityVersion) {
+            return MIGRATIONS.getOrDefault(valueType, (node, version) -> node).apply(tree, entityVersion);
+        }
+
         @Override
+        @SuppressWarnings("unchecked")
         public <X> X unwrap(Object value, Class<X> type, WrapperOptions options) {
             if (value == null) return null;
 

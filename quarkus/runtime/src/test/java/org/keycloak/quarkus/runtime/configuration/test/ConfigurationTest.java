@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Properties;
 
 import io.quarkus.hibernate.orm.runtime.dialect.QuarkusH2Dialect;
+import io.quarkus.hibernate.orm.runtime.dialect.QuarkusPostgreSQL10Dialect;
 import io.quarkus.runtime.LaunchMode;
 import io.smallrye.config.SmallRyeConfig;
 import org.eclipse.microprofile.config.ConfigProvider;
@@ -43,7 +44,9 @@ import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 import io.quarkus.runtime.configuration.ConfigUtils;
 import io.smallrye.config.SmallRyeConfigProviderResolver;
 import org.keycloak.quarkus.runtime.Environment;
-import org.keycloak.vault.FilesPlainTextVaultProviderFactory;
+import org.keycloak.quarkus.runtime.vault.FilesPlainTextVaultProviderFactory;
+import org.mariadb.jdbc.MySQLDataSource;
+import org.postgresql.xa.PGXADataSource;
 
 public class ConfigurationTest {
 
@@ -120,18 +123,18 @@ public class ConfigurationTest {
 
     @Test
     public void testEnvVarAvailableFromPropertyNames() {
-        putEnvVar("KC_VAULT_FILE_PATH", "/foo/bar");
-        Config.Scope config = initConfig("vault", FilesPlainTextVaultProviderFactory.PROVIDER_ID);
+        putEnvVar("KC_VAULT_DIR", "/foo/bar");
+        Config.Scope config = initConfig("vault", FilesPlainTextVaultProviderFactory.ID);
         assertEquals("/foo/bar", config.get("dir"));
         assertTrue(config.getPropertyNames()
-                .contains("kc.spi.vault.".concat(FilesPlainTextVaultProviderFactory.PROVIDER_ID).concat(".dir")));
+                .contains("kc.spi-vault-".concat(FilesPlainTextVaultProviderFactory.ID).concat("-dir")));
     }
 
     @Test
-    public void testSysPropPriorityOverEnvVar() {
+    public void testEnvVarPriorityOverSysProps() {
         putEnvVar("KC_SPI_HOSTNAME_DEFAULT_FRONTEND_URL", "http://envvar.unittest");
-        System.setProperty("kc.spi.hostname.default.frontend-url", "http://propvar.unittest");
-        assertEquals("http://propvar.unittest", initConfig("hostname", "default").get("frontendUrl"));
+        System.setProperty("kc.spi-hostname-default-frontend-url", "http://propvar.unittest");
+        assertEquals("http://envvar.unittest", initConfig("hostname", "default").get("frontendUrl"));
     }
 
     @Test
@@ -193,19 +196,19 @@ public class ConfigurationTest {
         assertEquals(1, config.getPropertyNames().size());
         assertEquals("http://c.jwk.url", config.get("static-jwk-url"));
 
-        System.setProperty(CLI_ARGS, "--vault-file-path=secrets");
-        config = initConfig("vault", FilesPlainTextVaultProviderFactory.PROVIDER_ID);
+        System.setProperty(CLI_ARGS, "--vault-dir=secrets");
+        config = initConfig("vault", FilesPlainTextVaultProviderFactory.ID);
         assertEquals(1, config.getPropertyNames().size());
         assertEquals("secrets", config.get("dir"));
 
         System.getProperties().remove(CLI_ARGS);
-        System.setProperty("kc.spi.client-registration.openid-connect.static-jwk-url", "http://c.jwk.url");
+        System.setProperty("kc.spi-client-registration-openid-connect-static-jwk-url", "http://c.jwk.url");
         config = initConfig("client-registration", "openid-connect");
         assertEquals(1, config.getPropertyNames().size());
         assertEquals("http://c.jwk.url", config.get("static-jwk-url"));
 
         System.getProperties().remove(CLI_ARGS);
-        System.getProperties().remove("kc.spi.client-registration.openid-connect.static-jwk-url");
+        System.getProperties().remove("kc.spi-client-registration-openid-connect-static-jwk-url");
         putEnvVar("KC_SPI_CLIENT_REGISTRATION_OPENID_CONNECT_STATIC_JWK_URL", "http://c.jwk.url/from-env");
         config = initConfig("client-registration", "openid-connect");
         assertEquals(1, config.getPropertyNames().size());
@@ -231,16 +234,28 @@ public class ConfigurationTest {
 
     @Test
     public void testDatabaseDefaults() {
-        System.setProperty(CLI_ARGS, "--db=h2-file");
+        System.setProperty(CLI_ARGS, "--db=dev-file");
         SmallRyeConfig config = createConfig();
         assertEquals(QuarkusH2Dialect.class.getName(), config.getConfigValue("quarkus.hibernate-orm.dialect").getValue());
         assertEquals("jdbc:h2:file:~/data/h2/keycloakdb;;AUTO_SERVER=TRUE", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
 
-        System.setProperty(CLI_ARGS, "--db=h2-mem");
+        System.setProperty(CLI_ARGS, "--db=dev-mem");
         config = createConfig();
         assertEquals(QuarkusH2Dialect.class.getName(), config.getConfigValue("quarkus.hibernate-orm.dialect").getValue());
         assertEquals("jdbc:h2:mem:keycloakdb", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
         assertEquals("h2", config.getConfigValue("quarkus.datasource.db-kind").getValue());
+
+        System.setProperty(CLI_ARGS, "--db=dev-mem" + ARG_SEPARATOR + "--db-username=other");
+        config = createConfig();
+        assertEquals("sa", config.getConfigValue("quarkus.datasource.username").getValue());
+
+        System.setProperty(CLI_ARGS, "--db=postgres" + ARG_SEPARATOR + "--db-username=other");
+        config = createConfig();
+        assertEquals("other", config.getConfigValue("quarkus.datasource.username").getValue());
+
+        System.setProperty(CLI_ARGS, "--db=postgres");
+        config = createConfig();
+        assertEquals(null, config.getConfigValue("quarkus.datasource.username").getValue());
     }
 
     @Test
@@ -275,17 +290,36 @@ public class ConfigurationTest {
 
     @Test
     public void testDatabaseProperties() {
-        System.setProperty("kc.db.url.properties", ";;test=test;test1=test1");
-        System.setProperty("kc.db.url.path", "test-dir");
-        System.setProperty(CLI_ARGS, "--db=h2-file");
+        System.setProperty("kc.db-url-properties", ";;test=test;test1=test1");
+        System.setProperty("kc.db-url-path", "test-dir");
+        System.setProperty(CLI_ARGS, "--db=dev-file");
         SmallRyeConfig config = createConfig();
         assertEquals(QuarkusH2Dialect.class.getName(), config.getConfigValue("quarkus.hibernate-orm.dialect").getValue());
         assertEquals("jdbc:h2:file:test-dir" + File.separator + "data" + File.separator + "h2" + File.separator + "keycloakdb;;test=test;test1=test1", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
+        assertEquals("xa", config.getConfigValue("quarkus.datasource.jdbc.transactions").getValue());
 
-        System.setProperty("kc.db.url.properties", "?test=test&test1=test1");
+        System.setProperty(CLI_ARGS, "");
+        config = createConfig();
+        assertEquals(QuarkusH2Dialect.class.getName(), config.getConfigValue("quarkus.hibernate-orm.dialect").getValue());
+        assertEquals("jdbc:h2:file:test-dir" + File.separator + "data" + File.separator + "h2" + File.separator + "keycloakdb;;test=test;test1=test1", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
+
+        System.setProperty("kc.db-url-properties", "?test=test&test1=test1");
         System.setProperty(CLI_ARGS, "--db=mariadb");
         config = createConfig();
         assertEquals("jdbc:mariadb://localhost/keycloak?test=test&test1=test1", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
+        assertEquals(MariaDBDialect.class.getName(), config.getConfigValue("quarkus.hibernate-orm.dialect").getValue());
+        assertEquals(MySQLDataSource.class.getName(), config.getConfigValue("quarkus.datasource.jdbc.driver").getValue());
+
+        System.setProperty(CLI_ARGS, "--db=postgres");
+        config = createConfig();
+        assertEquals("jdbc:postgresql://localhost/keycloak?test=test&test1=test1", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
+        assertEquals(QuarkusPostgreSQL10Dialect.class.getName(), config.getConfigValue("quarkus.hibernate-orm.dialect").getValue());
+        assertEquals(PGXADataSource.class.getName(), config.getConfigValue("quarkus.datasource.jdbc.driver").getValue());
+
+        System.setProperty(CLI_ARGS, "--db-schema=test-schema");
+        config = createConfig();
+        assertEquals("test-schema", config.getConfigValue("kc.db-schema").getValue());
+        assertEquals("test-schema", config.getConfigValue("quarkus.hibernate-orm.database.default-schema").getValue());
     }
 
     // KEYCLOAK-15632
@@ -340,6 +374,83 @@ public class ConfigurationTest {
 
         System.setProperty(CLI_ARGS, "--spi-client-jpa-searchable-attributes=bar,foo, \"foo bar\"" + ARG_SEPARATOR + "--spi-hostname-default-frontend-url=http://foo.unittest");
         assertEquals("http://foo.unittest", initConfig("hostname-default").get("frontend-url"));
+    }
+
+    @Test
+    public void testDatabaseDriverSetExplicitly() {
+        System.setProperty(CLI_ARGS, "--db=mssql" + ARG_SEPARATOR + "--db-url=jdbc:sqlserver://localhost/keycloak");
+        System.setProperty("kc.db-driver", "com.microsoft.sqlserver.jdbc.SQLServerDriver");
+        System.setProperty("kc.transaction-xa-enabled", "false");
+        assertTrue(System.getProperty(CLI_ARGS, "").contains("mssql"));
+        SmallRyeConfig config = createConfig();
+        assertEquals("jdbc:sqlserver://localhost/keycloak", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
+        assertEquals("mssql", config.getConfigValue("quarkus.datasource.db-kind").getValue());
+        assertEquals("com.microsoft.sqlserver.jdbc.SQLServerDriver", config.getConfigValue("quarkus.datasource.jdbc.driver").getValue());
+        assertEquals("enabled", config.getConfigValue("quarkus.datasource.jdbc.transactions").getValue());
+    }
+
+    @Test
+    public void testTransactionTypeChangesDriver() {
+        System.setProperty(CLI_ARGS, "--db=mssql" + ARG_SEPARATOR + "--transaction-xa-enabled=false");
+        assertTrue(System.getProperty(CLI_ARGS, "").contains("mssql"));
+
+        SmallRyeConfig config = createConfig();
+        assertEquals("com.microsoft.sqlserver.jdbc.SQLServerDriver", config.getConfigValue("quarkus.datasource.jdbc.driver").getValue());
+        assertEquals("enabled", config.getConfigValue("quarkus.datasource.jdbc.transactions").getValue());
+
+        System.setProperty(CLI_ARGS, "--db=mssql" + ARG_SEPARATOR + "--transaction-xa-enabled=true");
+        assertTrue(System.getProperty(CLI_ARGS, "").contains("mssql"));
+        SmallRyeConfig config2 = createConfig();
+
+        assertEquals("com.microsoft.sqlserver.jdbc.SQLServerXADataSource", config2.getConfigValue("quarkus.datasource.jdbc.driver").getValue());
+        assertEquals("xa", config2.getConfigValue("quarkus.datasource.jdbc.transactions").getValue());
+    }
+    
+    public void testResolveHealthOption() {
+        System.setProperty(CLI_ARGS, "--health-enabled=true");
+        SmallRyeConfig config = createConfig();
+        assertEquals("true", config.getConfigValue("quarkus.datasource.health.enabled").getValue());
+    }
+
+    @Test
+    public void testResolveMetricsOption() {
+        System.setProperty(CLI_ARGS, "--metrics-enabled=true");
+        SmallRyeConfig config = createConfig();
+        assertEquals("true", config.getConfigValue("quarkus.datasource.metrics.enabled").getValue());
+    }
+
+    @Test
+    public void testLogHandlerConfig() {
+        System.setProperty(CLI_ARGS, "--log=console,file");
+        SmallRyeConfig config = createConfig();
+        assertEquals("true", config.getConfigValue("quarkus.log.console.enable").getValue());
+        assertEquals("true", config.getConfigValue("quarkus.log.file.enable").getValue());
+
+        System.setProperty(CLI_ARGS, "--log=file");
+        SmallRyeConfig config2 = createConfig();
+        assertEquals("false", config2.getConfigValue("quarkus.log.console.enable").getValue());
+        assertEquals("true", config2.getConfigValue("quarkus.log.file.enable").getValue());
+
+        System.setProperty(CLI_ARGS, "--log=console");
+        SmallRyeConfig config3 = createConfig();
+        assertEquals("true", config3.getConfigValue("quarkus.log.console.enable").getValue());
+        assertEquals("false", config3.getConfigValue("quarkus.log.file.enable").getValue());
+    }
+
+    @Test
+    public void testOptionValueWithEqualSign() {
+        System.setProperty(CLI_ARGS, "--db-password=my_secret=");
+        SmallRyeConfig config = createConfig();
+        assertEquals("my_secret=", config.getConfigValue("kc.db-password").getValue());
+    }
+
+    @Test
+    public void testResolvePropertyFromDefaultProfile() {
+        Environment.setProfile("import_export");
+        assertEquals("false", createConfig().getConfigValue("kc.hostname-strict").getValue());
+
+        Environment.setProfile("prod");
+        assertEquals("true", createConfig().getConfigValue("kc.hostname-strict").getValue());
     }
 
     private Config.Scope initConfig(String... scope) {

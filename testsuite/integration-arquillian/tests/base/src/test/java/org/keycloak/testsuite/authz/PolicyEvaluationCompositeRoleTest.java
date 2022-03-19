@@ -75,7 +75,7 @@ public class PolicyEvaluationCompositeRoleTest extends AbstractAuthzTest {
 
         AuthorizationProviderFactory factory = (AuthorizationProviderFactory)session.getKeycloakSessionFactory().getProviderFactory(AuthorizationProvider.class);
         AuthorizationProvider authz = factory.create(session, realm);
-        ResourceServer resourceServer = authz.getStoreFactory().getResourceServerStore().create(client.getId());
+        ResourceServer resourceServer = authz.getStoreFactory().getResourceServerStore().create(client);
         Policy policy = createRolePolicy(authz, resourceServer, role1);
 
         Scope scope = authz.getStoreFactory().getScopeStore().create("myscope", resourceServer);

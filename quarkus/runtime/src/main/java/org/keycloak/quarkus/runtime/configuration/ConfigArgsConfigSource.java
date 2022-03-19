@@ -21,6 +21,8 @@ import static java.util.Arrays.asList;
 import static org.keycloak.quarkus.runtime.cli.Picocli.ARG_SHORT_PREFIX;
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.AUTO_BUILD_OPTION_LONG;
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.AUTO_BUILD_OPTION_SHORT;
+import static org.keycloak.quarkus.runtime.configuration.Configuration.OPTION_PART_SEPARATOR;
+import static org.keycloak.quarkus.runtime.configuration.Configuration.OPTION_PART_SEPARATOR_CHAR;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getMappedPropertyName;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
 
@@ -51,6 +53,7 @@ import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 public class ConfigArgsConfigSource extends PropertiesConfigSource {
 
     public static final String CLI_ARGS = "kc.config.args";
+    public static final String NAME = "CliConfigSource";
     private static final String ARG_SEPARATOR = ";;";
     private static final Pattern ARG_SPLIT = Pattern.compile(";;");
     private static final Pattern ARG_KEY_VALUE_SPLIT = Pattern.compile("=");
@@ -62,8 +65,7 @@ public class ConfigArgsConfigSource extends PropertiesConfigSource {
     }
 
     protected ConfigArgsConfigSource() {
-        // higher priority over default Quarkus config sources
-        super(parseArgument(), "CliConfigSource", 500);
+        super(parseArgument(), NAME, 600);
     }
 
     public static void setCliArgs(String[] args) {
@@ -98,7 +100,7 @@ public class ConfigArgsConfigSource extends PropertiesConfigSource {
             return value;
         }
 
-        return properties.get(propertyName.replace('-', '.'));
+        return properties.get(propertyName.replace(OPTION_PART_SEPARATOR_CHAR, '.'));
     }
 
     private static Map<String, String> parseArgument() {
@@ -128,9 +130,6 @@ public class ConfigArgsConfigSource extends PropertiesConfigSource {
                 if (mapper != null) {
                     properties.put(mapper.getFrom(), value);
                 }
-
-                // to make lookup easier, we normalize the key
-                properties.put(Picocli.normalizeKey(key), value);
             }
         });
 
@@ -172,7 +171,7 @@ public class ConfigArgsConfigSource extends PropertiesConfigSource {
                 continue;
             }
 
-            String[] keyValue = ARG_KEY_VALUE_SPLIT.split(arg);
+            String[] keyValue = ARG_KEY_VALUE_SPLIT.split(arg, 2);
             String key = keyValue[0];
 
             if ("".equals(key.trim())) {

@@ -25,6 +25,7 @@ import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.authenticators.broker.AbstractIdpAuthenticator;
 import org.keycloak.authentication.authenticators.broker.util.PostBrokerLoginConstants;
 import org.keycloak.authentication.authenticators.broker.util.SerializedBrokeredIdentityContext;
+import org.keycloak.authentication.authenticators.browser.AbstractUsernameFormAuthenticator;
 import org.keycloak.broker.provider.AuthenticationRequest;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.IdentityBrokerException;
@@ -451,15 +452,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
             if (authResult != null) {
                 AccessToken token = authResult.getToken();
-                String issuedFor = token.getIssuedFor();
-                ClientModel clientModel = this.realmModel.getClientByClientId(issuedFor);
-
-                if (clientModel == null) {
-                    return badRequest("Invalid client.");
-                }
-                if (!clientModel.isEnabled()) {
-                    return badRequest("Client is disabled");
-                }
+                ClientModel clientModel = authResult.getClient();
 
                 session.getContext().setClient(clientModel);
 
@@ -554,6 +547,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         if (federatedUser == null) {
 
             logger.debugf("Federated user not found for provider '%s' and broker username '%s'", providerId, context.getUsername());
+            authenticationSession.setAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME, context.getUsername());
 
             String username = context.getModelUsername();
             if (username == null) {
@@ -600,6 +594,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
             return Response.status(302).location(redirect).build();
 
         } else {
+            authenticationSession.setAuthNote(AbstractUsernameFormAuthenticator.ATTEMPTED_USERNAME, federatedUser.getUsername());
             Response response = validateUser(authenticationSession, federatedUser, realmModel);
             if (response != null) {
                 return response;

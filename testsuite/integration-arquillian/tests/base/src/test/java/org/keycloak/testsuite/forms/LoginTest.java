@@ -22,6 +22,7 @@ import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Retry;
@@ -32,17 +33,22 @@ import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.BrowserSecurityHeaders;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.utils.SessionTimeoutHelper;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.console.page.AdminConsole;
 import org.keycloak.testsuite.pages.AccountUpdateProfilePage;
 import org.keycloak.testsuite.pages.AppPage;
@@ -81,6 +87,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
+import static org.keycloak.common.Profile.Feature.AUTHORIZATION;
+import static org.keycloak.common.Profile.Feature.DYNAMIC_SCOPES;
 import static org.keycloak.testsuite.admin.ApiUtil.findClientByClientId;
 import static org.keycloak.testsuite.util.OAuthClient.AUTH_SERVER_ROOT;
 import static org.keycloak.testsuite.util.OAuthClient.SERVER_ROOT;
@@ -952,6 +960,32 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
             appPage.openAccount();
             loginPage.assertCurrent();
         }
+    }
+
+    @Test
+    @EnableFeature(value = Profile.Feature.DYNAMIC_SCOPES, skipRestart = true)
+    public void loginSuccessfulWithDynamicScope() {
+        ProfileAssume.assumeFeatureEnabled(DYNAMIC_SCOPES);
+        ClientScopeRepresentation clientScope = new ClientScopeRepresentation();
+        clientScope.setName("dynamic");
+        clientScope.setAttributes(new HashMap<String, String>() {{
+            put(ClientScopeModel.IS_DYNAMIC_SCOPE, "true");
+            put(ClientScopeModel.DYNAMIC_SCOPE_REGEXP, "dynamic:*");
+        }});
+        clientScope.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        Response response = testRealm().clientScopes().create(clientScope);
+        String scopeId = ApiUtil.getCreatedId(response);
+        getCleanup().addClientScopeId(scopeId);
+        response.close();
+
+        ClientResource testApp = ApiUtil.findClientByClientId(testRealm(), "test-app");
+        ClientRepresentation testAppRep = testApp.toRepresentation();
+        testApp.update(testAppRep);
+        testApp.addOptionalClientScope(scopeId);
+
+        oauth.scope("dynamic:scope");
+        oauth.doLogin("login@test.com", "password");
+        events.expectLogin().user(userId).assertEvent();
     }
 
 }

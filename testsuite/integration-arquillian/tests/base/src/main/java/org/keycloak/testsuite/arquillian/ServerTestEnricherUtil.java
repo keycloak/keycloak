@@ -54,6 +54,20 @@ public class ServerTestEnricherUtil {
     public static boolean addHttpsListener(OnlineManagementClient client) {
         try {
             LOG.debug("Add Undertow HTTPS listener 'https'");
+            client.execute("/subsystem=undertow/server=default-server/https-listener=https:add(ssl-context=httpsSSC, socket-binding=https)");
+            return true;
+        } catch (Exception e) {
+            LOG.warn("Cannot add HTTPS listener 'https'");
+            return false;
+        }
+    }
+
+    /**
+     * Add Undertow HTTPS listener for Wildfly 23
+     */
+    public static boolean addHttpsListenerAppServer(OnlineManagementClient client) {
+        try {
+            LOG.debug("Add Undertow HTTPS listener 'https'");
             client.apply(new AddUndertowListener.HttpsBuilder("https", "default-server", "https")
                     .securityRealm("UndertowRealm")
                     .verifyClient(SslVerifyClient.REQUESTED)

@@ -68,14 +68,18 @@ public final class Database {
         return Optional.of(vendor.defaultUrl.apply(alias));
     }
 
-    public static Optional<String> getDriver(String alias) {
+    public static Optional<String> getDriver(String alias, boolean isXaEnabled) {
         Vendor vendor = DATABASES.get(alias);
 
         if (vendor == null) {
             return Optional.empty();
         }
 
-        return Optional.of(vendor.driver);
+        if (isXaEnabled) {
+            return Optional.of(vendor.xaDriver);
+        }
+
+        return Optional.of(vendor.nonXaDriver);
     }
 
     public static Optional<String> getDialect(String alias) {
@@ -95,100 +99,85 @@ public final class Database {
     private enum Vendor {
         H2("h2",
                 "org.h2.jdbcx.JdbcDataSource",
+                "org.h2.Driver",
                 "io.quarkus.hibernate.orm.runtime.dialect.QuarkusH2Dialect",
                 new Function<String, String>() {
                     @Override
                     public String apply(String alias) {
-                        if ("h2-file".equalsIgnoreCase(alias)) {
-                            return "jdbc:h2:file:${kc.home.dir:${kc.db.url.path:~}}" + File.separator + "${kc.data.dir:data}"
+                        if ("dev-file".equalsIgnoreCase(alias)) {
+                            return "jdbc:h2:file:${kc.home.dir:${kc.db-url-path:~}}" + File.separator + "${kc.data.dir:data}"
                                     + File.separator + "h2" + File.separator
-                                    + "keycloakdb${kc.db.url.properties:;;AUTO_SERVER=TRUE}";
+                                    + "keycloakdb${kc.db-url-properties:;;AUTO_SERVER=TRUE}";
                         }
-                        return "jdbc:h2:mem:keycloakdb${kc.db.url.properties:}";
+                        return "jdbc:h2:mem:keycloakdb${kc.db-url-properties:}";
                     }
                 },
                 asList("liquibase.database.core.H2Database"),
-                "h2-mem", "h2-file"
+                "dev-mem", "dev-file"
         ),
         MYSQL("mysql",
                 "com.mysql.cj.jdbc.MysqlXADataSource",
+                "com.mysql.cj.jdbc.Driver",
                 "org.hibernate.dialect.MySQL8Dialect",
-
-                "jdbc:mysql://${kc.db.url.host:localhost}/${kc.db.url.database:keycloak}${kc.db.url.properties:}",
+                "jdbc:mysql://${kc.db-url-host:localhost}/${kc.db-url-database:keycloak}${kc.db-url-properties:}",
                 asList("org.keycloak.connections.jpa.updater.liquibase.UpdatedMySqlDatabase")
         ),
         MARIADB("mariadb",
                 "org.mariadb.jdbc.MySQLDataSource",
+                "org.mariadb.jdbc.Driver",
                 "org.hibernate.dialect.MariaDBDialect",
-                "jdbc:mariadb://${kc.db.url.host:localhost}/${kc.db.url.database:keycloak}${kc.db.url.properties:}",
+                "jdbc:mariadb://${kc.db-url-host:localhost}/${kc.db-url-database:keycloak}${kc.db-url-properties:}",
                 asList("org.keycloak.connections.jpa.updater.liquibase.UpdatedMariaDBDatabase")
         ),
         POSTGRES("postgresql",
                 "org.postgresql.xa.PGXADataSource",
-                new Function<String, String>() {
-                    @Override
-                    public String apply(String alias) {
-                        if ("postgres-95".equalsIgnoreCase(alias)) {
-                            return "io.quarkus.hibernate.orm.runtime.dialect.QuarkusPostgreSQL95Dialect";
-                        }
-                        return "io.quarkus.hibernate.orm.runtime.dialect.QuarkusPostgreSQL10Dialect";
-                    }
-                },
-                "jdbc:postgresql://${kc.db.url.host:localhost}/${kc.db.url.database:keycloak}${kc.db.url.properties:}",
+                "org.postgresql.Driver",
+                "io.quarkus.hibernate.orm.runtime.dialect.QuarkusPostgreSQL10Dialect",
+                "jdbc:postgresql://${kc.db-url-host:localhost}/${kc.db-url-database:keycloak}${kc.db-url-properties:}",
                 asList("liquibase.database.core.PostgresDatabase",
                         "org.keycloak.connections.jpa.updater.liquibase.PostgresPlusDatabase"),
-                "postgres", "postgres-95"
+                "postgres"
         ),
         MSSQL("mssql",
                 "com.microsoft.sqlserver.jdbc.SQLServerXADataSource",
-                new Function<String, String>() {
-                    @Override
-                    public String apply(String alias) {
-                        if ("mssql-12".equals(alias)) {
-                            return "org.hibernate.dialect.SQLServer2012Dialect";
-                        }
-                        // quarkus latest/default
-                        return "org.hibernate.dialect.SQLServer2016Dialect";
-                    }
-                },
-                "jdbc:sqlserver://${kc.db.url.host:localhost}:1433;databaseName=${kc.db.url.database:keycloak}${kc.db.url.properties:}",
+                "com.microsoft.sqlserver.jdbc.SQLServerDriver",
+                "org.hibernate.dialect.SQLServer2016Dialect",
+                "jdbc:sqlserver://${kc.db-url-host:localhost}:1433;databaseName=${kc.db-url-database:keycloak}${kc.db-url-properties:}",
                 asList("org.keycloak.quarkus.runtime.storage.database.liquibase.database.CustomMSSQLDatabase"),
-                "mssql", "mssql-2012"
+                "mssql"
         ),
         ORACLE("oracle",
                 "oracle.jdbc.xa.client.OracleXADataSource",
+                "oracle.jdbc.driver.OracleDriver",
                 "org.hibernate.dialect.Oracle12cDialect",
-                "jdbc:oracle:thin:@//${kc.db.url.host:localhost}:1521/${kc.db.url.database:keycloak}",
+                "jdbc:oracle:thin:@//${kc.db-url-host:localhost}:1521/${kc.db-url-database:keycloak}",
                 asList("liquibase.database.core.OracleDatabase")
         );
 
         final String databaseKind;
-        final String driver;
+        final String xaDriver;
+        final String nonXaDriver;
         final Function<String, String> dialect;
         final Function<String, String> defaultUrl;
         final List<String> liquibaseTypes;
         final String[] aliases;
 
-        Vendor(String databaseKind, String driver, String dialect, String defaultUrl, List<String> liquibaseTypes,
-                String... aliases) {
-            this(databaseKind, driver, alias -> dialect, alias -> defaultUrl, liquibaseTypes, aliases);
+        Vendor(String databaseKind, String xaDriver, String nonXaDriver, String dialect, String defaultUrl, List<String> liquibaseTypes,
+               String... aliases) {
+            this(databaseKind, xaDriver, nonXaDriver, alias -> dialect, alias -> defaultUrl, liquibaseTypes, aliases);
         }
 
-        Vendor(String databaseKind, String driver, String dialect, Function<String, String> defaultUrl,
-                List<String> liquibaseTypes, String... aliases) {
-            this(databaseKind, driver, alias -> dialect, defaultUrl, liquibaseTypes, aliases);
+        Vendor(String databaseKind, String xaDriver, String nonXaDriver, String dialect, Function<String, String> defaultUrl,
+               List<String> liquibaseTypes, String... aliases) {
+            this(databaseKind, xaDriver, nonXaDriver, alias -> dialect, defaultUrl, liquibaseTypes, aliases);
         }
 
-        Vendor(String databaseKind, String driver, Function<String, String> dialect, String defaultUrl,
-                List<String> liquibaseTypes, String... aliases) {
-            this(databaseKind, driver, dialect, alias -> defaultUrl, liquibaseTypes, aliases);
-        }
-
-        Vendor(String databaseKind, String driver, Function<String, String> dialect, Function<String, String> defaultUrl,
-                List<String> liquibaseTypes,
-                String... aliases) {
+        Vendor(String databaseKind, String xaDriver, String nonXaDriver, Function<String, String> dialect, Function<String, String> defaultUrl,
+               List<String> liquibaseTypes,
+               String... aliases) {
             this.databaseKind = databaseKind;
-            this.driver = driver;
+            this.xaDriver = xaDriver;
+            this.nonXaDriver = nonXaDriver;
             this.dialect = dialect;
             this.defaultUrl = defaultUrl;
             this.liquibaseTypes = liquibaseTypes;

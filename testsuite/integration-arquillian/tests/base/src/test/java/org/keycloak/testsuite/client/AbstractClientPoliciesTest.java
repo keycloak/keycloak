@@ -1140,7 +1140,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
     protected void assertExpectedClientScopesCondition(String type, List<String> scopes, ClientPolicyRepresentation policyRep) {
         ClientScopesCondition.Configuration cfg = getConfigAsExpectedType(policyRep, ClientScopesConditionFactory.PROVIDER_ID,  ClientScopesCondition.Configuration.class);
         Assert.assertEquals(cfg.getType(), type);
-        Assert.assertEquals(cfg.getScope(), scopes);
+        Assert.assertEquals(cfg.getScopes(), scopes);
     }
 
     protected void assertExpectedClientUpdateContextCondition(List<String> updateClientSources, ClientPolicyRepresentation policyRep) {

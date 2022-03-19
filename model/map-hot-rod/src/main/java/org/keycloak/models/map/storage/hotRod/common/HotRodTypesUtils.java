@@ -18,8 +18,10 @@
 package org.keycloak.models.map.storage.hotRod.common;
 
 import org.keycloak.models.map.common.AbstractEntity;
-import org.keycloak.models.map.storage.hotRod.client.HotRodAttributeEntity;
+import org.keycloak.models.map.storage.hotRod.user.HotRodUserConsentEntity;
+import org.keycloak.models.map.storage.hotRod.user.HotRodUserFederatedIdentityEntity;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -37,7 +39,7 @@ public class HotRodTypesUtils {
     }
 
     public static <MapKey, MapValue, SetValue> Map<MapKey, MapValue> migrateSetToMap(Set<SetValue> set, Function<SetValue, MapKey> keyProducer, Function<SetValue, MapValue> valueProducer) {
-        return set == null ? null : set.stream().collect(Collectors.toMap(keyProducer, valueProducer));
+        return set == null ? null : set.stream().collect(HashMap::new, (m, v) -> m.put(keyProducer.apply(v), valueProducer.apply(v)), HashMap::putAll);
     }
 
     public static <T, V> HotRodPair<T, V> createHotRodPairFromMapEntry(Map.Entry<T, V> entry) {
@@ -46,6 +48,10 @@ public class HotRodTypesUtils {
 
     public static HotRodAttributeEntity createHotRodAttributeEntityFromMapEntry(Map.Entry<String, List<String>> entry) {
         return new HotRodAttributeEntity(entry.getKey(), entry.getValue());
+    }
+
+    public static HotRodAttributeEntityNonIndexed createHotRodAttributeEntityNonIndexedFromMapEntry(Map.Entry<String, List<String>> entry) {
+        return new HotRodAttributeEntityNonIndexed(entry.getKey(), entry.getValue());
     }
 
     public static <SetType, KeyType> boolean removeFromSetByMapKey(Set<SetType> set, KeyType key, Function<SetType, KeyType> keyGetter) {
@@ -73,11 +79,35 @@ public class HotRodTypesUtils {
         return attributeEntity.name;
     }
 
+    public static String getKey(HotRodAttributeEntityNonIndexed attributeEntity) {
+        return attributeEntity.name;
+    }
+
     public static List<String> getValue(HotRodAttributeEntity attributeEntity) {
+        return attributeEntity.values;
+    }
+
+    public static List<String> getValue(HotRodAttributeEntityNonIndexed attributeEntity) {
         return attributeEntity.values;
     }
 
     public static String getKey(AbstractEntity entity) {
         return entity.getId();
+    }
+
+    public static String getKey(HotRodUserFederatedIdentityEntity hotRodUserFederatedIdentityEntity) {
+        return hotRodUserFederatedIdentityEntity.identityProvider;
+    }
+
+    public static String getKey(HotRodUserConsentEntity hotRodUserConsentEntity) {
+        return hotRodUserConsentEntity.clientId;
+    }
+
+    public static <T, V> List<V> migrateList(List<T> p0, Function<T, V> migrator) {
+        return p0 == null ? null : p0.stream().map(migrator).collect(Collectors.toList());
+    }
+
+    public static <T, V> Set<V> migrateSet(Set<T> p0, Function<T, V> migrator) {
+        return p0 == null ? null : p0.stream().map(migrator).collect(Collectors.toSet());
     }
 }

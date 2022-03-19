@@ -18,6 +18,7 @@
 package org.keycloak.quarkus.runtime;
 
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getBuildTimeProperty;
+import static org.keycloak.quarkus.runtime.configuration.Configuration.getConfig;
 
 import java.io.File;
 import java.io.FilenameFilter;
@@ -30,6 +31,7 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import io.quarkus.bootstrap.runner.RunnerClassLoader;
 import io.quarkus.runtime.LaunchMode;
 import io.quarkus.runtime.configuration.ProfileManager;
 import org.apache.commons.lang3.SystemUtils;
@@ -47,7 +49,11 @@ public final class Environment {
     private Environment() {}
 
     public static Boolean isRebuild() {
-        return Boolean.getBoolean("quarkus.launch.rebuild");
+        return !isRuntimeMode();
+    }
+
+    public static Boolean isRuntimeMode() {
+        return Thread.currentThread().getContextClassLoader() instanceof RunnerClassLoader;
     }
 
     public static String getHomeDir() {
@@ -102,11 +108,18 @@ public final class Environment {
 
     public static void setProfile(String profile) {
         System.setProperty(PROFILE, profile);
-        System.setProperty("quarkus.profile", profile);
+        System.setProperty(ProfileManager.QUARKUS_PROFILE_PROP, profile);
         if (isTestLaunchMode()) {
             System.setProperty("mp.config.profile", profile);
-            System.setProperty(ProfileManager.QUARKUS_TEST_PROFILE_PROP, profile);
         }
+    }
+
+    public static String getCurrentOrPersistedProfile() {
+        String profile = getProfile();
+        if(profile == null) {
+            profile = getConfig().getRawValue(PROFILE);
+        }
+        return profile;
     }
 
     public static String getProfileOrDefault(String defaultProfile) {
@@ -176,7 +189,41 @@ public final class Environment {
         System.setProperty(LAUNCH_MODE, "test");
     }
 
+    /**
+     * We want to hide the "profiles" from Quarkus to not make things unnecessarily complicated for users,
+     * so this method returns the equivalent launch mode instead. For use in e.g. CLI Output.
+     *
+     * @param profile the internal profile string used
+     * @return the mapped launch mode, none when nothing is given or the profile as is when its
+     * neither null/empty nor matching the quarkus default profiles we use.
+     */
+    public static String getKeycloakModeFromProfile(String profile) {
+
+        if(profile == null || profile.isEmpty()) {
+            return "none";
+        }
+
+        if(profile.equals(LaunchMode.DEVELOPMENT.getDefaultProfile())) {
+            return "development";
+        }
+
+        if(profile.equals(LaunchMode.TEST.getDefaultProfile())) {
+            return "test";
+        }
+
+        if(profile.equals(LaunchMode.NORMAL.getDefaultProfile())) {
+            return "production";
+        }
+
+        //when no profile is matched and not empty, just return the profile name.
+        return profile;
+    }
+
     public static boolean isDistribution() {
         return getHomeDir() != null;
+    }
+
+    public static boolean isRebuildCheck() {
+        return Boolean.getBoolean("kc.config.rebuild-and-exit");
     }
 }

@@ -19,11 +19,14 @@ package org.keycloak.authentication.authenticators.browser;
 
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.Authenticator;
+import org.keycloak.authentication.authenticators.util.AcrStore;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.messages.Messages;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
 /**
@@ -44,18 +47,33 @@ public class CookieAuthenticator implements Authenticator {
         if (authResult == null) {
             context.attempted();
         } else {
-            AuthenticationSessionModel clientSession = context.getAuthenticationSession();
-            LoginProtocol protocol = context.getSession().getProvider(LoginProtocol.class, clientSession.getProtocol());
+            AuthenticationSessionModel authSession = context.getAuthenticationSession();
+            LoginProtocol protocol = context.getSession().getProvider(LoginProtocol.class, authSession.getProtocol());
+            authSession.setAuthNote(Constants.LOA_MAP, authResult.getSession().getNote(Constants.LOA_MAP));
+            context.setUser(authResult.getUser());
+            AcrStore acrStore = new AcrStore(authSession);
 
             // Cookie re-authentication is skipped if re-authentication is required
-            if (protocol.requireReauthentication(authResult.getSession(), clientSession)) {
+            if (protocol.requireReauthentication(authResult.getSession(), authSession)) {
+                // Full re-authentication, so we start with no loa
+                acrStore.setLevelAuthenticatedToCurrentRequest(Constants.NO_LOA);
+                authSession.setAuthNote(AuthenticationManager.FORCED_REAUTHENTICATION, "true");
+                context.setForwardedInfoMessage(Messages.REAUTHENTICATE);
                 context.attempted();
             } else {
-                context.getAuthenticationSession().setAuthNote(AuthenticationManager.SSO_AUTH, "true");
-
-                context.setUser(authResult.getUser());
-                context.attachUserSession(authResult.getSession());
-                context.success();
+                int previouslyAuthenticatedLevel = acrStore.getHighestAuthenticatedLevelFromPreviousAuthentication();
+                if (acrStore.getRequestedLevelOfAuthentication() > previouslyAuthenticatedLevel) {
+                    // Step-up authentication, we keep the loa from the existing user session.
+                    // The cookie alone is not enough and other authentications must follow.
+                    acrStore.setLevelAuthenticatedToCurrentRequest(previouslyAuthenticatedLevel);
+                    context.attempted();
+                } else {
+                    // Cookie only authentication
+                    acrStore.setLevelAuthenticatedToCurrentRequest(previouslyAuthenticatedLevel);
+                    authSession.setAuthNote(AuthenticationManager.SSO_AUTH, "true");
+                    context.attachUserSession(authResult.getSession());
+                    context.success();
+                }
             }
         }
 

@@ -17,18 +17,16 @@
 
 package org.keycloak.it.cli.dist;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import org.junit.jupiter.api.MethodOrderer;
+import java.util.function.Consumer;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
-import org.junit.jupiter.api.condition.DisabledIf;
-import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
+import org.keycloak.it.junit5.extension.BeforeStartDistribution;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.RawDistOnly;
+import org.keycloak.it.utils.KeycloakDistribution;
 
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
@@ -39,16 +37,47 @@ import io.quarkus.test.junit.main.LaunchResult;
 public class BuildAndStartDistTest {
 
     @Test
-    @Launch({ "build", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
+    @Launch({ "build", "--cache=local" })
     @Order(1)
-    void firstYouBuild(LaunchResult result) {
+    void testBuildWithCliArgs(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertBuild();
+    }
+
+    @Test
+    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false" })
+    @Order(2)
+    void testStartUsingCliArgs(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertStarted();
+        cliResult.assertLocalCache();
+    }
+
+    @Test
+    @BeforeStartDistribution(SetDefaultOptions.class)
+    @Launch({ "build" })
+    @Order(3)
+    void testBuildUsingConfFile(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertBuild();
     }
 
     @Test
     @Launch({ "start" })
-    @Order(2)
-    void thenYouStart(LaunchResult result) {
+    @Order(4)
+    void testStartUsingConfFile(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertStarted();
+        cliResult.assertLocalCache();
+    }
+
+    public static class SetDefaultOptions implements Consumer<KeycloakDistribution> {
+
+        @Override
+        public void accept(KeycloakDistribution distribution) {
+            distribution.setProperty("http-enabled", "true");
+            distribution.setProperty("hostname-strict", "false");
+            distribution.setProperty("cache", "local");
+        }
     }
 }

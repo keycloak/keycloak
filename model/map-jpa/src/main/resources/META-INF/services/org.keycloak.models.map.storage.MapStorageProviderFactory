@@ -15,4 +15,4 @@
 # limitations under the License.
 #
 
-org.keycloak.models.map.storage.jpa.client.JpaClientMapStorageProviderFactory
+org.keycloak.models.map.storage.jpa.JpaMapStorageProviderFactory

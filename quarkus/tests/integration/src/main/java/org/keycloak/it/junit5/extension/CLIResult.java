@@ -19,8 +19,13 @@ package org.keycloak.it.junit5.extension;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.List;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.approvaltests.Approvals;
 import io.quarkus.test.junit.main.LaunchResult;
 
@@ -52,13 +57,13 @@ public interface CLIResult extends LaunchResult {
     }
 
     default void assertNotDevMode() {
-        assertFalse(getOutput().contains("Running the server in dev mode."),
-                () -> "The standard output:\n" + getOutput() + "does include the Start Dev output");
+        assertFalse(getOutput().contains("Running the server in development mode."),
+                () -> "The standard output:\n" + getOutput() + "\ndoes include the Start Dev output");
     }
 
     default void assertStartedDevMode() {
-        assertTrue(getOutput().contains("Running the server in dev mode."),
-                () -> "The standard output:\n" + getOutput() + "doesn't include the Start Dev output");
+        assertTrue(getOutput().contains("Running the server in development mode."),
+                () -> "The standard output:\n" + getOutput() + "\ndoesn't include the Start Dev output");
     }
 
     default void assertError(String msg) {
@@ -76,5 +81,50 @@ public interface CLIResult extends LaunchResult {
 
     default void assertMessage(String message) {
         assertTrue(getOutput().contains(message));
+    }
+
+    default void assertBuild() {
+        assertMessage("Server configuration updated and persisted");
+    }
+
+    default void assertNoBuild() {
+        assertFalse(getOutput().contains("Server configuration updated and persisted"));
+    }
+
+    default boolean isClustered() {
+        return getOutput().contains("Starting JGroups channel `ISPN`");
+    }
+
+    default void assertLocalCache() {
+        assertFalse(isClustered());
+    }
+
+    default void assertClusteredCache() {
+        assertTrue(isClustered());
+    }
+
+    default void assertJsonLogDefaultsApplied() throws JsonProcessingException {
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        String[] splittedOutput = getOutput().split(System.lineSeparator());
+
+        int counter = 0;
+
+        for (String line: splittedOutput) {
+            if (!line.trim().startsWith("{")) {
+                counter++;
+                //we ignore non-json output for now. Problem: the build done by start-dev does not know about the runtime configuration,
+                // so when invoking start-dev and a build is done, the output is not json but unstructured console output
+                continue;
+            }
+            JsonNode json = objectMapper.readTree(line);
+            assertTrue(json.has("timestamp"));
+            assertTrue(json.has("message"));
+            assertTrue(json.has("level"));
+        }
+
+        if (counter == splittedOutput.length) {
+            fail("No JSON found in output.");
+        }
     }
 }

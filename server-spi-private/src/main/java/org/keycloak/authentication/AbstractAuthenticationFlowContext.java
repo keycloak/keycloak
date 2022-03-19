@@ -112,6 +112,21 @@ public interface AbstractAuthenticationFlowContext {
     FormMessage getForwardedSuccessMessage();
 
     /**
+     * This could be an info message forwarded from another authenticator. This info message will be usually displayed only once on the
+     * first screen shown to the user during authentication. The authenticator forwarding the info message does not know which the screen would be.
+     * For example during user re-authentication, the user should see info message like "Please re-authenticate", but at the beginning of the
+     * authentication, it is not 100% clear which screen will be the first shown screen where this message should be displayed
+     */
+    FormMessage getForwardedInfoMessage();
+
+    /**
+     * @see #getForwardedInfoMessage()
+     * @param message to be forwarded
+     * @param parameters parameters of the message if any
+     */
+    void setForwardedInfoMessage(String message, Object... parameters);
+
+    /**
      * Generates access code and updates clientsession timestamp
      * Access codes must be included in form action callbacks as a query parameter.
      *
@@ -142,6 +157,16 @@ public interface AbstractAuthenticationFlowContext {
      * @param response Response that will be sent back to HTTP client
      */
     void failure(AuthenticationFlowError error, Response response);
+    
+    /**
+     * Aborts the current flow.
+     *
+     * @param error
+     * @param response Response that will be sent back to HTTP client
+     * @param eventDetails Details about the error event
+     * @param userErrorMessage A message describing the error to the user
+     */
+    void failure(AuthenticationFlowError error, Response response, String eventDetails, String userErrorMessage);
 
     /**
      * Sends a challenge response back to the HTTP client.  If the current execution requirement is optional, this response will not be
@@ -189,4 +214,17 @@ public interface AbstractAuthenticationFlowContext {
      * @return may return null if there was no error
      */
     AuthenticationFlowError getError();
+    
+    
+    /**
+     * Get details of the event that caused an error
+     * @return may return null if not set
+     */
+    String getEventDetails();
+    
+    /**
+     * A custom error message that can be displayed to the user
+     * @return Optional error message
+     */
+    String getUserErrorMessage();
 }

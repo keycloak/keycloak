@@ -209,8 +209,8 @@ public final class DefaultHostnameProvider implements HostnameProvider, Hostname
         }
 
         defaultPath = config.get("path");
-        noProxy = Configuration.getConfigValue("kc.proxy").getValue().equals("none");
-        defaultTlsPort = Integer.parseInt(Configuration.getConfigValue("kc.https.port").getValue());
+        noProxy = Configuration.getConfigValue("kc.proxy").getValue().equals("false");
+        defaultTlsPort = Integer.parseInt(Configuration.getConfigValue("kc.https-port").getValue());
         adminHostName = config.get("admin");
         strictBackChannel = config.getBoolean("strict-backchannel", false);
 

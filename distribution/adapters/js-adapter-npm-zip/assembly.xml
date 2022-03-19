@@ -25,7 +25,7 @@
 
     <files>
         <file>
-            <source>src/main/resources/package.json</source>
+            <source>../../../adapters/oidc/js/package.json</source>
             <outputDirectory>/</outputDirectory>
             <filtered>true</filtered>
         </file>
@@ -37,6 +37,7 @@
             <outputDirectory>dist/</outputDirectory>
             <includes>
                 <include>**/*.js</include>
+                <include>**/*.mjs</include>
                 <include>**/*.map</include>
                 <include>**/*.d.ts</include>
             </includes>

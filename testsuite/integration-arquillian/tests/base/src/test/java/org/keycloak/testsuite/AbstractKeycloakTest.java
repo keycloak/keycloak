@@ -81,9 +81,9 @@ import java.util.Scanner;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
-import static org.junit.Assert.assertThat;
 import static org.keycloak.testsuite.admin.Users.setPasswordFor;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_HOST;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_PORT;
@@ -188,12 +188,29 @@ public abstract class AbstractKeycloakTest {
         adminClient = testContext.getAdminClient();
     }
 
+    /**
+     * Executed before test realms import
+     * <p>
+     * In @Before block
+     */
     protected void beforeAbstractKeycloakTestRealmImport() throws Exception {
     }
-    protected void postAfterAbstractKeycloak() throws Exception {
+
+    /**
+     * Executed after test realms import
+     * <p>
+     * In @Before block
+     */
+    protected void afterAbstractKeycloakTestRealmImport() {
     }
 
-    protected void afterAbstractKeycloakTestRealmImport() {}
+    /**
+     * Executed as the last task of each test case
+     * <p>
+     * In @After block
+     */
+    protected void postAfterAbstractKeycloak() throws Exception {
+    }
 
     @After
     public void afterAbstractKeycloakTest() throws Exception {

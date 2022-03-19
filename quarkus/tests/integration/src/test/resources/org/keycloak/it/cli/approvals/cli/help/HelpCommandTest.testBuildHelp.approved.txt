@@ -21,7 +21,6 @@ optimal runtime.
 Options:
 
 -h, --help           This help message.
---help-all           This same help message but with additional options.
 
 Cluster:
 
@@ -37,87 +36,62 @@ Cluster:
 
 Database:
 
---db <vendor>        The database vendor. Possible values are: h2-file, h2-mem, mariadb, mssql,
-                       mssql-2012, mysql, oracle, postgres, postgres-95
+--db <vendor>        The database vendor. Possible values are: dev-file, dev-mem, mariadb, mssql,
+                       mysql, oracle, postgres
+
+Transaction:
+
+--transaction-xa-enabled <true|false>
+                     Manually override the transaction type. Transaction type XA and the
+                       appropriate driver is used by default. Default: true.
 
 Feature:
 
---features-account2 <enabled|disabled>
-                     Enables the ACCOUNT2 feature.
---features-account_api <enabled|disabled>
-                     Enables the ACCOUNT_API feature.
---features-admin2 <enabled|disabled>
-                     Enables the ADMIN2 feature.
---features-admin_fine_grained_authz <enabled|disabled>
-                     Enables the ADMIN_FINE_GRAINED_AUTHZ feature.
---features-authorization <enabled|disabled>
-                     Enables the AUTHORIZATION feature.
---features-ciba <enabled|disabled>
-                     Enables the CIBA feature.
---features-client_policies <enabled|disabled>
-                     Enables the CLIENT_POLICIES feature.
---features-declarative_user_profile <enabled|disabled>
-                     Enables the DECLARATIVE_USER_PROFILE feature.
---features-docker <enabled|disabled>
-                     Enables the DOCKER feature.
---features-impersonation <enabled|disabled>
-                     Enables the IMPERSONATION feature.
---features-map_storage <enabled|disabled>
-                     Enables the MAP_STORAGE feature.
---features-openshift_integration <enabled|disabled>
-                     Enables the OPENSHIFT_INTEGRATION feature.
---features-par <enabled|disabled>
-                     Enables the PAR feature.
---features-scripts <enabled|disabled>
-                     Enables the SCRIPTS feature.
---features-token_exchange <enabled|disabled>
-                     Enables the TOKEN_EXCHANGE feature.
---features-upload_scripts <enabled|disabled>
-                     Enables the UPLOAD_SCRIPTS feature.
---features-web_authn <enabled|disabled>
-                     Enables the WEB_AUTHN feature.
--ft, --features <preview>
-                     Enables all tech preview features.
+--features <feature> Enables a set of one or more features.
+--features-disabled <feature>
+                     Disables a set of one or more features.
 
 HTTP/TLS:
 
 --http-relative-path <path>
                      Set the path relative to '/' for serving resources. Default: /.
 
+Health:
+
+--health-enabled <true|false>
+                     If the server should expose health check endpoints. If enabled, health checks
+                       are available at the '/health', '/health/ready' and '/health/live'
+                       endpoints. Default: false.
+
 Metrics:
 
 --metrics-enabled <true|false>
-                     If the server should expose metrics and healthcheck. If enabled, metrics are
-                       available at the '/metrics' endpoint and healthcheck at the '/health'
-                       endpoint. Default: false.
+                     If the server should expose metrics. If enabled, metrics are available at the
+                       '/metrics' endpoint. Default: false.
 
 Vault:
 
---vault-file-path <dir>
-                     If set, secrets can be obtained by reading the content of files within the
-                       given path.
---vault-hashicorp-paths <paths>
-                     A set of one or more paths that should be used when looking up secrets.
+--vault <provider>   Enables a vault provider.
 
 Examples:
 
-  Optimize the server based on a profile configuration:
+  Change the database vendor:
 
-      $ kc.sh --profile=prod build
-
-  Change database settings:
-
-      $ kc.sh build --db=postgres [--db-url][--db-username][--db-password]
+      $ kc.sh build --db=postgres
 
   Enable a feature:
 
-      $ kc.sh build --features-<feature_name>=[enabled|disabled]
+      $ kc.sh build --features=<feature_name>
 
   Or alternatively, enable all tech preview features:
 
       $ kc.sh build --features=preview
 
-  Enable metrics:
+  Enable health endpoints:
+
+      $ kc.sh build --health-enabled=true
+
+  Enable metrics endpoints:
 
       $ kc.sh build --metrics-enabled=true
 
@@ -131,6 +105,3 @@ running this command every time you change a configuration:
     $ kc.sh start --auto-build <OPTIONS>
 
 By doing that you have an additional overhead when the server is starting.
-
-Use 'kc.sh build --help-all' to list all available options, including the start
-options.

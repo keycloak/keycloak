@@ -16,3 +16,4 @@
 #
 
 org.keycloak.models.map.storage.jpa.updater.MapJpaUpdaterSpi
+org.keycloak.models.map.storage.jpa.liquibase.connection.MapLiquibaseConnectionSpi

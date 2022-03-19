@@ -36,6 +36,7 @@ import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientScopeResource;
+import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.enums.SslRequired;
@@ -51,6 +52,7 @@ import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.mappers.HardcodedClaim;
@@ -114,6 +116,7 @@ import static org.keycloak.testsuite.util.ProtocolMapperUtil.createRoleNameMappe
 import static org.keycloak.testsuite.Assert.assertExpiration;
 
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.util.TokenUtil;
 import org.openqa.selenium.By;
 
 /**
@@ -252,6 +255,28 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         assertEquals(oauth.parseRefreshToken(response.getRefreshToken()).getId(), event.getDetails().get(Details.REFRESH_TOKEN_ID));
         assertEquals(sessionId, token.getSessionState());
 
+    }
+
+    @Test
+    public void testTokenResponseUsingLowerCaseType() throws Exception {
+        ClientsResource clients = realmsResouce().realm("test").clients();
+        ClientRepresentation client = clients.findByClientId(oauth.getClientId()).get(0);
+
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(client).setUseLowerCaseInTokenResponse(true);
+
+        clients.get(client.getId()).update(client);
+
+        try {
+            oauth.doLogin("test-user@localhost", "password");
+
+            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+
+            assertEquals(TokenUtil.TOKEN_TYPE_BEARER.toLowerCase(), response.getTokenType());
+        } finally {
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(client).setUseLowerCaseInTokenResponse(false);
+            clients.get(client.getId()).update(client);
+        }
     }
 
     // KEYCLOAK-3692

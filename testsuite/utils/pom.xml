@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-testsuite-pom</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>16.0.0-SNAPSHOT</version>
+        <version>18.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -286,7 +286,6 @@
                         <configuration>
                             <systemProperties>
                                 <systemProperty><key>keycloak.profile.feature.map_storage</key><value>enabled</value></systemProperty>
-                                <systemProperty><key>keycloak.mapStorage.provider</key><value>concurrenthashmap</value></systemProperty>
                                 <systemProperty><key>keycloak.realm.provider</key><value>map</value></systemProperty>
                                 <systemProperty><key>keycloak.client.provider</key><value>map</value></systemProperty>
                                 <systemProperty><key>keycloak.clientScope.provider</key><value>map</value></systemProperty>

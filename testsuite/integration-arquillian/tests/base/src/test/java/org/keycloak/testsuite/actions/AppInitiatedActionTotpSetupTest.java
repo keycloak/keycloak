@@ -55,10 +55,11 @@ import static org.junit.Assert.assertTrue;
  */
 public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionTest {
 
-    public AppInitiatedActionTotpSetupTest() {
-        super(UserModel.RequiredAction.CONFIGURE_TOTP.name());
+    @Override
+    public String getAiaAction() {
+        return UserModel.RequiredAction.CONFIGURE_TOTP.name();
     }
-    
+
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
         testRealm.setResetPasswordAllowed(Boolean.TRUE);
@@ -117,7 +118,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         String authSessionId = events.expectRequiredAction(EventType.UPDATE_TOTP).user(userId).detail(Details.USERNAME, "setuptotp").assertEvent()
                 .getDetails().get(Details.CODE_ID);
 
-        assertKcActionStatus("success");
+        assertKcActionStatus(SUCCESS);
         
         events.expectLogin().user(userId).session(authSessionId).detail(Details.USERNAME, "setuptotp").assertEvent();
     }
@@ -352,7 +353,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         String authSessionId = events.expectRequiredAction(EventType.UPDATE_TOTP).assertEvent()
                 .getDetails().get(Details.CODE_ID);
 
-        assertKcActionStatus("success");
+        assertKcActionStatus(SUCCESS);
 
         EventRepresentation loginEvent = events.expectLogin().session(authSessionId).assertEvent();
 
@@ -387,7 +388,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         totpPage.configure(totp.generateTOTP(totpCode));
 
         // After totp config, user should be on the app page
-        assertKcActionStatus("success");
+        assertKcActionStatus(SUCCESS);
 
         events.poll();
         events.expectRequiredAction(EventType.UPDATE_TOTP).user(userId).detail(Details.USERNAME, "setuptotp2").assertEvent();
@@ -459,7 +460,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         String sessionId = events.expectRequiredAction(EventType.UPDATE_TOTP).assertEvent()
                 .getDetails().get(Details.CODE_ID);
 
-        assertKcActionStatus("success");
+        assertKcActionStatus(SUCCESS);
 
         EventRepresentation loginEvent = events.expectLogin().session(sessionId).assertEvent();
 
@@ -512,7 +513,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
             .getDetails().get(Details.CODE_ID);
         
         //RequestType reqType = appPage.getRequestType();
-        assertKcActionStatus("success");
+        assertKcActionStatus(SUCCESS);
         EventRepresentation loginEvent = events.expectLogin().session(sessionId).assertEvent();
 
         oauth.openLogout();

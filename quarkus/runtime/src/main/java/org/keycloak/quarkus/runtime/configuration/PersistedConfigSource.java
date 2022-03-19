@@ -44,7 +44,7 @@ public final class PersistedConfigSource extends PropertiesConfigSource {
     private static final PersistedConfigSource INSTANCE = new PersistedConfigSource();
 
     private PersistedConfigSource() {
-        super(readProperties(), "", 300);
+        super(readProperties(), "", 200);
     }
 
     public static PersistedConfigSource getInstance() {
@@ -64,7 +64,7 @@ public final class PersistedConfigSource extends PropertiesConfigSource {
             return value;
         }
 
-        return super.getValue(propertyName.replace('-', '.'));
+        return super.getValue(propertyName.replace(Configuration.OPTION_PART_SEPARATOR_CHAR, '.'));
     }
 
     private static Map<String, String> readProperties() {

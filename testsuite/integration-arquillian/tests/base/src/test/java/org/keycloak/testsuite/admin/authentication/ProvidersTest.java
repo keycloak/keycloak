@@ -41,7 +41,6 @@ import static org.hamcrest.Matchers.is;
 /**
  * @author <a href="mailto:mstrukel@redhat.com">Marko Strukelj</a>
  */
-@EnableFeature(value = Profile.Feature.WEB_AUTHN, skipRestart = true, onlyForProduct = true)
 public class ProvidersTest extends AbstractAuthenticationTest {
 
     @Test
@@ -221,6 +220,15 @@ public class ProvidersTest extends AbstractAuthenticationTest {
                 "Access will be always denied. Useful for example in the conditional flows to be used after satisfying the previous conditions");
         addProviderInfo(result, "allow-access-authenticator", "Allow access",
                 "Authenticator will always successfully authenticate. Useful for example in the conditional flows to be used after satisfying the previous conditions");
+
+        addProviderInfo(result, "conditional-level-of-authentication", "Condition - Level of Authentication",
+                "Flow is executed only if the configured LOA or a higher one has been requested but not yet satisfied. After the flow is successfully finished, the LOA in the session will be updated to value prescribed by this condition.");
+        
+        addProviderInfo(result, "user-session-limits", "User session count limiter",
+                "Configures how many concurrent sessions a single user is allowed to create for this realm and/or client");
+
+        addProviderInfo(result, "custom-callback-authenticator", "Custom callback Factory",
+                "Used for testing purposes of Callback factory");
 
         return result;
     }
