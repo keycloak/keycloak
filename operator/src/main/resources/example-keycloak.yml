@@ -5,15 +5,15 @@ metadata:
 spec:
   instances: 1
   serverConfiguration:
-    - name: KC_DB
+    - name: db
       value: postgres
-    - name: KC_DB_URL_HOST
+    - name: db-url-host
       value: postgres-db
-    - name: KC_DB_USERNAME
+    - name: db-username
       secret:
         name: keycloak-db-secret
         key: username
-    - name: KC_DB_PASSWORD
+    - name: db-password
       secret:
         name: keycloak-db-secret
         key: password

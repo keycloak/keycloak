@@ -50,6 +50,8 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import static io.smallrye.config.common.utils.StringUtil.replaceNonAlphanumericByUnderscores;
+
 public class KeycloakDeployment extends OperatorManagedResource implements StatusUpdater<KeycloakStatusBuilder> {
 
     private final Config config;
@@ -474,7 +476,6 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
         List<ValueOrSecret> serverConfig = Constants.DEFAULT_DIST_CONFIG.entrySet().stream()
                 .map(e -> new ValueOrSecret(e.getKey(), e.getValue()))
                 .collect(Collectors.toList());
-        serverConfig.add(new ValueOrSecret("jgroups.dns.query", getName() + Constants.KEYCLOAK_DISCOVERY_SERVICE_SUFFIX +"." + getNamespace()));
 
         // merge with the CR; the values in CR take precedence
         if (keycloakCR.getSpec().getServerConfiguration() != null) {
@@ -486,7 +487,7 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
         serverConfigSecretsNames = new HashSet<>();
         List<EnvVar> envVars = serverConfig.stream()
                 .map(v -> {
-                    var envBuilder = new EnvVarBuilder().withName(v.getName());
+                    var envBuilder = new EnvVarBuilder().withName(getEnvVarName(v.getName()));
                     var secret = v.getSecret();
                     if (secret != null) {
                         envBuilder.withValueFrom(
@@ -521,6 +522,12 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
                         .withOptional(false)
                         .endSecretKeyRef()
                         .endValueFrom()
+                        .build());
+
+        envVars.add(
+                new EnvVarBuilder()
+                        .withName("jgroups.dns.query")
+                        .withValue(getName() + Constants.KEYCLOAK_DISCOVERY_SERVICE_SUFFIX +"." + getNamespace())
                         .build());
 
         return envVars;
@@ -577,5 +584,10 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
                 .inNamespace(getNamespace())
                 .withName(getName())
                 .rolling().restart();
+    }
+
+    public static String getEnvVarName(String kcConfigName) {
+        // TODO make this use impl from Quarkus dist (Configuration.toEnvVarFormat)
+        return "KC_" + replaceNonAlphanumericByUnderscores(kcConfigName).toUpperCase();
     }
 }
