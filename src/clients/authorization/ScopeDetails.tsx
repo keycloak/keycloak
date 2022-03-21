@@ -104,7 +104,9 @@ export default function ScopeDetails() {
         }
       />
       <ViewHeader
-        titleKey={"clients:createResource"}
+        titleKey={
+          scopeId ? scope?.name! : t("clients:createAuthorizationScope")
+        }
         dropdownItems={
           scopeId
             ? [
