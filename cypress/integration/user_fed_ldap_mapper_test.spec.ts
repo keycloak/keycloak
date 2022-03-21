@@ -45,9 +45,22 @@ const mapperDeleteTitle = "Delete mapping?";
 const msadUserAcctMapper = "msad-user-account-control-mapper";
 const msadLdsUserAcctMapper = "msad-lds-user-account-control-mapper";
 const userAttLdapMapper = "user-attribute-ldap-mapper";
-const certLdapMapper = "certificate-ldap-mapper";
 const fullNameLdapMapper = "full-name-ldap-mapper";
 const groupLdapMapper = "group-ldap-mapper";
+const certLdapMapper = "certificate-ldap-mapper";
+
+const mapperNames = [
+  `${msadUserAcctMapper}-test`,
+  `${msadLdsUserAcctMapper}-test`,
+  `${userAttLdapMapper}-test`,
+  `${fullNameLdapMapper}-test`,
+  `${groupLdapMapper}-test`,
+];
+const multiMapperNames = mapperNames.slice(2);
+const singleMapperName = mapperNames.slice(4);
+const uniqueSearchTerm = "group";
+const multipleSearchTerm = "ldap";
+const nonexistingSearchTerm = "redhat";
 
 // Used by "Delete default mappers" test
 const creationDateMapper = "creation date";
@@ -170,7 +183,8 @@ describe("User Fed LDAP mapper tests", () => {
     masthead.checkNotificationMessage(mapperDeletedSuccess);
   });
 
-  // create one of each mapper type
+  // create one of each non-hardcoded mapper type except
+  // certificate ldap mapper which was already tested in CRUD section
   it("Create user account control mapper", () => {
     providersPage.clickExistingCard(ldapName);
     providersPage.goToMappers();
@@ -187,15 +201,6 @@ describe("User Fed LDAP mapper tests", () => {
     providersPage.save("ldap-mapper");
     masthead.checkNotificationMessage(mapperCreatedSuccess);
     listingPage.itemExist(msadLdsUserAcctMapper, true);
-  });
-
-  it("Create certificate ldap mapper", () => {
-    providersPage.clickExistingCard(ldapName);
-    providersPage.goToMappers();
-    providersPage.createNewMapper(certLdapMapper);
-    providersPage.save("ldap-mapper");
-    masthead.checkNotificationMessage(mapperCreatedSuccess);
-    listingPage.itemExist(certLdapMapper, true);
   });
 
   it("Create user attribute ldap mapper", () => {
@@ -223,6 +228,34 @@ describe("User Fed LDAP mapper tests", () => {
     providersPage.save("ldap-mapper");
     masthead.checkNotificationMessage(mapperCreatedSuccess);
     listingPage.itemExist(groupLdapMapper, true);
+  });
+
+  it("Should return one search result for mapper with unique string", () => {
+    providersPage.clickExistingCard(ldapName);
+    providersPage.goToMappers();
+    listingPage.searchItem(uniqueSearchTerm, false);
+    singleMapperName.map((mapperName) => listingPage.itemExist(mapperName));
+  });
+
+  it("Should return multiple search results for mappers that share common string", () => {
+    providersPage.clickExistingCard(ldapName);
+    providersPage.goToMappers();
+    listingPage.searchItem(multipleSearchTerm, false);
+    multiMapperNames.map((mapperName) => listingPage.itemExist(mapperName));
+  });
+
+  it("Should return all mappers in search results when no string is specified", () => {
+    providersPage.clickExistingCard(ldapName);
+    providersPage.goToMappers();
+    listingPage.searchItem("", false);
+    mapperNames.map((mapperName) => listingPage.itemExist(mapperName));
+  });
+
+  it("Should return no search results for string that does not exist in any mappers", () => {
+    providersPage.clickExistingCard(ldapName);
+    providersPage.goToMappers();
+    listingPage.searchItem(nonexistingSearchTerm, false);
+    cy.findByTestId(listingPage.emptyState).should("exist");
   });
 
   // *** test cleanup ***
