@@ -62,6 +62,9 @@ import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorageProvider;
 import org.keycloak.models.map.storage.MapStorageProviderFactory;
+import org.keycloak.models.map.storage.jpa.authSession.JpaRootAuthenticationSessionMapKeycloakTransaction;
+import org.keycloak.models.map.storage.jpa.authSession.entity.JpaAuthenticationSessionEntity;
+import org.keycloak.models.map.storage.jpa.authSession.entity.JpaRootAuthenticationSessionEntity;
 import org.keycloak.models.map.storage.jpa.client.JpaClientMapKeycloakTransaction;
 import org.keycloak.models.map.storage.jpa.clientscope.JpaClientScopeMapKeycloakTransaction;
 import org.keycloak.models.map.storage.jpa.clientscope.entity.JpaClientScopeEntity;
@@ -75,6 +78,7 @@ import org.keycloak.models.map.storage.jpa.updater.MapJpaUpdaterProvider;
 import static org.keycloak.models.map.storage.jpa.updater.MapJpaUpdaterProvider.Status.VALID;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
+import org.keycloak.sessions.RootAuthenticationSessionModel;
 
 public class JpaMapStorageProviderFactory implements 
         AmphibianProviderFactory<MapStorageProvider>,
@@ -89,23 +93,27 @@ public class JpaMapStorageProviderFactory implements
     private Config.Scope config;
 
     public final static DeepCloner CLONER = new DeepCloner.Builder()
-            //client
-            .constructor(JpaClientEntity.class,                 JpaClientEntity::new)
-            .constructor(MapProtocolMapperEntity.class,         MapProtocolMapperEntityImpl::new)
-            //client-scope
-            .constructor(JpaClientScopeEntity.class,            JpaClientScopeEntity::new)
-            //group
-            .constructor(JpaGroupEntity.class,                  JpaGroupEntity::new)
-            //role
-            .constructor(JpaRoleEntity.class,                   JpaRoleEntity::new)
-            .build();
+        //auth-session
+        .constructor(JpaRootAuthenticationSessionEntity.class,  JpaRootAuthenticationSessionEntity::new)
+        .constructor(JpaAuthenticationSessionEntity.class,      JpaAuthenticationSessionEntity::new)
+        //client
+        .constructor(JpaClientEntity.class,                     JpaClientEntity::new)
+        .constructor(MapProtocolMapperEntity.class,             MapProtocolMapperEntityImpl::new)
+        //client-scope
+        .constructor(JpaClientScopeEntity.class,                JpaClientScopeEntity::new)
+        //group
+        .constructor(JpaGroupEntity.class,                      JpaGroupEntity::new)
+        //role
+        .constructor(JpaRoleEntity.class,                       JpaRoleEntity::new)
+        .build();
 
     private static final Map<Class<?>, Function<EntityManager, MapKeycloakTransaction>> MODEL_TO_TX = new HashMap<>();
     static {
-        MODEL_TO_TX.put(ClientScopeModel.class,     JpaClientScopeMapKeycloakTransaction::new);
-        MODEL_TO_TX.put(ClientModel.class,          JpaClientMapKeycloakTransaction::new);
-        MODEL_TO_TX.put(GroupModel.class,           JpaGroupMapKeycloakTransaction::new);
-        MODEL_TO_TX.put(RoleModel.class,            JpaRoleMapKeycloakTransaction::new);
+        MODEL_TO_TX.put(RootAuthenticationSessionModel.class,   JpaRootAuthenticationSessionMapKeycloakTransaction::new);
+        MODEL_TO_TX.put(ClientScopeModel.class,                 JpaClientScopeMapKeycloakTransaction::new);
+        MODEL_TO_TX.put(ClientModel.class,                      JpaClientMapKeycloakTransaction::new);
+        MODEL_TO_TX.put(GroupModel.class,                       JpaGroupMapKeycloakTransaction::new);
+        MODEL_TO_TX.put(RoleModel.class,                        JpaRoleMapKeycloakTransaction::new);
     }
 
     public MapKeycloakTransaction createTransaction(Class<?> modelType, EntityManager em) {

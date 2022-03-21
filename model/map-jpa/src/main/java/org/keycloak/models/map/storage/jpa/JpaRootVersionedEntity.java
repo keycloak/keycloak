@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,10 +16,14 @@
  */
 package org.keycloak.models.map.storage.jpa;
 
-public interface Constants {
-    public static final Integer CURRENT_SCHEMA_VERSION_AUTH_SESSION = 1;
-    public static final Integer CURRENT_SCHEMA_VERSION_CLIENT = 1;
-    public static final Integer CURRENT_SCHEMA_VERSION_CLIENT_SCOPE = 1;
-    public static final Integer CURRENT_SCHEMA_VERSION_GROUP = 1;
-    public static final Integer CURRENT_SCHEMA_VERSION_ROLE = 1;
+/**
+ * Interface for all root entities which implements optimistic locking.
+ */
+public interface JpaRootVersionedEntity extends JpaRootEntity {
+
+    /**
+     * Version of the JPA entity used for optimistic locking
+     */
+    int getVersion();
+
 }

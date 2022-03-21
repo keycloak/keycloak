@@ -43,7 +43,7 @@ import org.keycloak.models.map.client.MapClientEntity.AbstractClientEntity;
 import org.keycloak.models.map.client.MapProtocolMapperEntity;
 import org.keycloak.models.map.common.DeepCloner;
 import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_CLIENT;
-import org.keycloak.models.map.storage.jpa.JpaRootEntity;
+import org.keycloak.models.map.storage.jpa.JpaRootVersionedEntity;
 import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
 
 /**
@@ -59,7 +59,7 @@ import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
             )
 })
 @TypeDefs({@TypeDef(name = "jsonb", typeClass = JsonbType.class)})
-public class JpaClientEntity extends AbstractClientEntity implements JpaRootEntity {
+public class JpaClientEntity extends AbstractClientEntity implements JpaRootVersionedEntity {
 
     @Id
     @Column
