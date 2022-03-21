@@ -56,7 +56,7 @@ export const PageNav: React.FunctionComponent = () => {
     return (
       <NavItem
         id={"nav-item" + path.replace("/", "-")}
-        to={`/${realm}${path}`}
+        to={`#/${realm}${path}`}
         isActive={
           path === activeItem || (path !== "/" && activeItem.startsWith(path))
         }
