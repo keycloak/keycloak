@@ -22,6 +22,7 @@ import java.util.UUID;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
 import javax.persistence.EntityManager;
+import javax.persistence.PersistenceException;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaDelete;
 import javax.persistence.criteria.CriteriaQuery;
@@ -29,7 +30,8 @@ import javax.persistence.criteria.Order;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import javax.persistence.criteria.Selection;
-import org.keycloak.connections.jpa.JpaKeycloakTransaction;
+import org.jboss.logging.Logger;
+import org.keycloak.connections.jpa.PersistenceExceptionConverter;
 import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
 import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.StringKeyConverter;
@@ -39,13 +41,15 @@ import org.keycloak.models.map.storage.QueryParameters;
 import static org.keycloak.models.map.storage.jpa.JpaMapStorageProviderFactory.CLONER;
 import static org.keycloak.utils.StreamsUtil.closing;
 
-public abstract class JpaMapKeycloakTransaction<RE extends JpaRootEntity, E extends AbstractEntity, M> extends JpaKeycloakTransaction implements MapKeycloakTransaction<E, M> {
+public abstract class JpaMapKeycloakTransaction<RE extends JpaRootEntity, E extends AbstractEntity, M> implements MapKeycloakTransaction<E, M> {
 
+    private static final Logger logger = Logger.getLogger(JpaMapKeycloakTransaction.class);
     private final Class<RE> entityType;
+    protected EntityManager em;
 
     @SuppressWarnings("unchecked")
     public JpaMapKeycloakTransaction(Class<RE> entityType, EntityManager em) {
-        super(em);
+        this.em = em;
         this.entityType = entityType;
     }
 
@@ -58,10 +62,10 @@ public abstract class JpaMapKeycloakTransaction<RE extends JpaRootEntity, E exte
     @SuppressWarnings("unchecked")
     public E create(E mapEntity) {
         JpaRootEntity jpaEntity = entityType.cast(CLONER.from(mapEntity));
-        CLONER.from(mapEntity);
         if (mapEntity.getId() == null) {
             jpaEntity.setId(StringKeyConverter.UUIDKey.INSTANCE.yieldNewUniqueKey().toString());
         }
+        logger.tracef("tx %d: create entity %s", hashCode(), jpaEntity.getId());
         setEntityVersion(jpaEntity);
         em.persist(jpaEntity);
         return (E) jpaEntity;
@@ -137,6 +141,7 @@ public abstract class JpaMapKeycloakTransaction<RE extends JpaRootEntity, E exte
         UUID uuid = UUIDKey.INSTANCE.fromStringSafe(key);
         if (uuid == null) return false;
         em.remove(em.getReference(entityType, uuid));
+        logger.tracef("tx %d: delete entity %s", hashCode(), key);
         return true;
     }
 
@@ -155,14 +160,43 @@ public abstract class JpaMapKeycloakTransaction<RE extends JpaRootEntity, E exte
         BiFunction<CriteriaBuilder, Root<RE>, Predicate> predicateFunc = mcb.getPredicateFunc();
         if (predicateFunc != null) deleteQuery.where(predicateFunc.apply(cb, root));
 
-// TODO find out if the flush and clear are needed here or not, since delete(QueryParameters) 
-// is not used yet from the code it's difficult to investigate its potential purpose here
-// according to https://thorben-janssen.com/5-common-hibernate-mistakes-that-cause-dozens-of-unexpected-queries/#Remove_Child_Entities_With_a_Bulk_Operation
-// it seems it is necessary unless it is sure that any of removed entities wasn't fetched
-// Once KEYCLOAK-19697 is done we could test our scenarios and see if we need the flush and clear
-//        em.flush();
-//        em.clear();
-
         return em.createQuery(deleteQuery).executeUpdate();
+    }
+
+    @Override
+    public void begin() {
+        logger.tracef("tx %d: begin", hashCode());
+        em.getTransaction().begin();
+    }
+
+    @Override
+    public void commit() {
+        try {
+            logger.tracef("tx %d: commit", hashCode());
+            em.getTransaction().commit();
+        } catch (PersistenceException e) {
+            throw PersistenceExceptionConverter.convert(e.getCause() != null ? e.getCause() : e);
+        }
+    }
+
+    @Override
+    public void rollback() {
+        logger.tracef("tx %d: rollback", hashCode());
+        em.getTransaction().rollback();
+    }
+
+    @Override
+    public void setRollbackOnly() {
+        em.getTransaction().setRollbackOnly();
+    }
+
+    @Override
+    public boolean getRollbackOnly() {
+        return  em.getTransaction().getRollbackOnly();
+    }
+
+    @Override
+    public boolean isActive() {
+        return em.getTransaction().isActive();
     }
 }
