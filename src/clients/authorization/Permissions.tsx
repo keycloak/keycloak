@@ -32,13 +32,14 @@ import useToggle from "../../utils/useToggle";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { SearchDropdown, SearchForm } from "./SearchDropdown";
 import { MoreLabel } from "./MoreLabel";
-import { DetailDescription } from "./DetailDescription";
+import { DetailDescriptionLink } from "./DetailDescription";
 import { EmptyPermissionsState } from "./EmptyPermissionsState";
 import { toNewPermission } from "../routes/NewPermission";
 import { toPermissionDetails } from "../routes/PermissionDetails";
 import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
 
 import "./permissions.css";
+import { toPolicyDetails } from "../routes/PolicyDetails";
 
 type PermissionsProps = {
   clientId: string;
@@ -324,10 +325,18 @@ export const AuthorizationPermissions = ({ clientId }: PermissionsProps) => {
                             isHorizontal
                             className="keycloak_resource_details"
                           >
-                            <DetailDescription
+                            <DetailDescriptionLink
                               name="associatedPolicy"
                               array={permission.associatedPolicies}
                               convert={(p) => p.name!}
+                              link={(p) =>
+                                toPolicyDetails({
+                                  id: clientId,
+                                  realm,
+                                  policyId: p.id!,
+                                  policyType: p.type!,
+                                })
+                              }
                             />
                           </DescriptionList>
                         )}

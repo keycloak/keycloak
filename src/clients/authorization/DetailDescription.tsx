@@ -1,4 +1,6 @@
 import React from "react";
+import { Link } from "react-router-dom";
+import type { LocationDescriptor } from "history";
 import { useTranslation } from "react-i18next";
 import {
   DescriptionListGroup,
@@ -12,11 +14,20 @@ type DetailDescriptionProps<T> = {
   convert?: (obj: T) => string;
 };
 
-export function DetailDescription<T>({
+export function DetailDescription<T>(props: DetailDescriptionProps<T>) {
+  return <DetailDescriptionLink {...props} />;
+}
+
+type DetailDescriptionLinkProps<T> = DetailDescriptionProps<T> & {
+  link?: (element: T) => LocationDescriptor;
+};
+
+export function DetailDescriptionLink<T>({
   name,
   array,
   convert,
-}: DetailDescriptionProps<T>) {
+  link,
+}: DetailDescriptionLinkProps<T>) {
   const { t } = useTranslation("clients");
   return (
     <DescriptionListGroup>
@@ -25,7 +36,11 @@ export function DetailDescription<T>({
         {array?.map((element) => {
           const value =
             typeof element === "string" ? element : convert!(element);
-          return (
+          return link ? (
+            <Link key={value} to={link(element as T)} className="pf-u-pr-sm">
+              {value}
+            </Link>
+          ) : (
             <span key={value} className="pf-u-pr-sm">
               {value}
             </span>

@@ -30,8 +30,10 @@ import { toNewScope } from "../routes/NewScope";
 import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
 import useToggle from "../../utils/useToggle";
 import { DeleteScopeDialog } from "./DeleteScopeDialog";
-import { DetailDescription } from "./DetailDescription";
+import { DetailDescriptionLink } from "./DetailDescription";
 import { toNewPermission } from "../routes/NewPermission";
+import { toResourceDetails } from "../routes/Resource";
+import { toPermissionDetails } from "../routes/PermissionDetails";
 
 type ScopesProps = {
   clientId: string;
@@ -251,15 +253,30 @@ export const AuthorizationScopes = ({ clientId }: ScopesProps) => {
                             isHorizontal
                             className="keycloak_resource_details"
                           >
-                            <DetailDescription
+                            <DetailDescriptionLink
                               name="resources"
                               array={scope.resources}
                               convert={(r) => r.name!}
+                              link={(r) =>
+                                toResourceDetails({
+                                  id: clientId,
+                                  realm,
+                                  resourceId: r._id!,
+                                })
+                              }
                             />
-                            <DetailDescription
+                            <DetailDescriptionLink
                               name="associatedPermissions"
                               array={scope.permissions}
                               convert={(p) => p.name!}
+                              link={(p) =>
+                                toPermissionDetails({
+                                  id: clientId,
+                                  realm,
+                                  permissionId: p.id!,
+                                  permissionType: p.type!,
+                                })
+                              }
                             />
                           </DescriptionList>
                         )}
