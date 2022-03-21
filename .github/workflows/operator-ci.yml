@@ -51,6 +51,12 @@ jobs:
           eval $(minikube -p minikube docker-env)
           docker build --build-arg KEYCLOAK_DIST=$(ls keycloak-*.tar.gz) . -t keycloak:${GITHUB_SHA}
 
+      - name: Build a custom pre-augmented Keycloak Docker image
+        working-directory: operator
+        run: |
+          eval $(minikube -p minikube docker-env)
+          ./scripts/build-testing-docker-images.sh ${GITHUB_SHA} keycloak
+
       - name: Test operator running locally
         working-directory: operator
         run: |
@@ -58,7 +64,8 @@ jobs:
               -Dquarkus.kubernetes.deployment-target=kubernetes \
               -Doperator.keycloak.image=keycloak:${GITHUB_SHA} \
               -Doperator.keycloak.image-pull-policy=Never \
-              -Dtest.operator.kubernetes.ip=$(minikube ip)
+              -Dtest.operator.kubernetes.ip=$(minikube ip) \
+              -Dtest.operator.custom.image=custom-keycloak:${GITHUB_SHA}
 
       - name: Test operator running in cluster
         working-directory: operator
@@ -69,4 +76,5 @@ jobs:
               -Dquarkus.kubernetes.deployment-target=kubernetes \
               -Dquarkus.jib.jvm-arguments="-Djava.util.logging.manager=org.jboss.logmanager.LogManager","-Doperator.keycloak.image=keycloak:${GITHUB_SHA}","-Doperator.keycloak.image-pull-policy=Never" \
               --no-transfer-progress -Dtest.operator.deployment=remote \
-              -Dtest.operator.kubernetes.ip=$(minikube ip)
+              -Dtest.operator.kubernetes.ip=$(minikube ip) \
+              -Dtest.operator.custom.image=custom-keycloak:${GITHUB_SHA}

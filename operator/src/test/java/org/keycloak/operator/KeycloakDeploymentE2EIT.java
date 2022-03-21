@@ -6,6 +6,7 @@ import io.quarkus.logging.Log;
 import io.quarkus.test.junit.QuarkusTest;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.keycloak.operator.utils.K8sUtils;
 import org.keycloak.operator.v2alpha1.KeycloakAdminSecret;
 import org.keycloak.operator.v2alpha1.KeycloakDeployment;
@@ -319,6 +320,29 @@ public class KeycloakDeploymentE2EIT extends ClusterOperatorTest {
                         assertTrue(curlOutput.contains("\"token_type\":\"Bearer\""));
                         assertNotEquals(adminPassword.get(), newPassword);
                     });
+        } catch (Exception e) {
+            savePodLogs();
+            throw e;
+        }
+    }
+
+    @Test
+    @EnabledIfSystemProperty(named = OPERATOR_CUSTOM_IMAGE, matches = ".+")
+    public void testCustomImage() {
+        try {
+            var kc = getDefaultKeycloakDeployment();
+            kc.getSpec().setImage(customImage);
+            deployKeycloak(k8sclient, kc, true);
+
+            var pods = k8sclient
+                    .pods()
+                    .inNamespace(namespace)
+                    .withLabels(Constants.DEFAULT_LABELS)
+                    .list()
+                    .getItems();
+
+            assertEquals(1, pods.get(0).getSpec().getContainers().get(0).getArgs().size());
+            assertEquals("start", pods.get(0).getSpec().getContainers().get(0).getArgs().get(0));
         } catch (Exception e) {
             savePodLogs();
             throw e;
