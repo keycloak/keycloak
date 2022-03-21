@@ -17,9 +17,9 @@
 
 package org.keycloak.admin.client.token;
 
-import org.jboss.resteasy.client.jaxrs.ResteasyClient;
-import org.jboss.resteasy.client.jaxrs.ResteasyWebTarget;
+import javax.ws.rs.client.WebTarget;
 import org.keycloak.admin.client.Config;
+import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.BasicAuthFilter;
 import org.keycloak.common.util.Time;
 import org.keycloak.representations.AccessTokenResponse;
@@ -49,11 +49,11 @@ public class TokenManager {
 
     public TokenManager(Config config, Client client) {
         this.config = config;
-        ResteasyWebTarget target = (ResteasyWebTarget) client.target(config.getServerUrl());
+        WebTarget target = client.target(config.getServerUrl());
         if (!config.isPublicClient()) {
             target.register(new BasicAuthFilter(config.getClientId(), config.getClientSecret()));
         }
-        this.tokenService = target.proxy(TokenService.class);
+        this.tokenService = Keycloak.getClientProvider().targetProxy(target, TokenService.class);
         this.accessTokenGrantType = config.getGrantType();
 
         if (CLIENT_CREDENTIALS.equals(accessTokenGrantType) && config.isPublicClient()) {
