@@ -69,6 +69,17 @@
         </#if>
         </div>
 
+    </div>
+    <#elseif section = "info" >
+        <#if realm.password && realm.registrationAllowed && !registrationDisabled??>
+            <div id="kc-registration-container">
+                <div id="kc-registration">
+                    <span>${msg("noAccount")} <a tabindex="6"
+                                                 href="${url.registrationUrl}">${msg("doRegister")}</a></span>
+                </div>
+            </div>
+        </#if>
+    <#elseif section = "socialProviders" >
         <#if realm.password && social.providers??>
             <div id="kc-social-providers" class="${properties.kcFormSocialAccountSectionClass!}">
                 <hr/>
@@ -87,17 +98,6 @@
                         </a>
                     </#list>
                 </ul>
-            </div>
-        </#if>
-
-    </div>
-    <#elseif section = "info" >
-        <#if realm.password && realm.registrationAllowed && !registrationDisabled??>
-            <div id="kc-registration-container">
-                <div id="kc-registration">
-                    <span>${msg("noAccount")} <a tabindex="6"
-                                                 href="${url.registrationUrl}">${msg("doRegister")}</a></span>
-                </div>
             </div>
         </#if>
     </#if>

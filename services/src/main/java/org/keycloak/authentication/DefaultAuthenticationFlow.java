@@ -448,6 +448,14 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
                 }
             }
         }
+        else {
+            if ((authUser != null) &&
+                    !authenticator.configuredFor(processor.getSession(), processor.getRealm(), authUser) &&
+                    !factory.isUserSetupAllowed() &&
+                    (authenticator instanceof CredentialValidator)) {
+                throw new AuthenticationFlowException("authenticator: " + factory.getId(), AuthenticationFlowError.CREDENTIAL_SETUP_REQUIRED);
+            }
+        }
         logger.debugv("invoke authenticator.authenticate: {0}", factory.getId());
         authenticator.authenticate(context);
 
