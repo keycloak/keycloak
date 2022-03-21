@@ -42,6 +42,7 @@ public abstract class ClusterOperatorTest {
   public static final String OPERATOR_DEPLOYMENT_PROP = "test.operator.deployment";
   public static final String TARGET_KUBERNETES_GENERATED_YML_FOLDER = "target/kubernetes/";
   public static final String OPERATOR_KUBERNETES_IP = "test.operator.kubernetes.ip";
+  public static final String OPERATOR_CUSTOM_IMAGE = "test.operator.custom.image";
 
   public static final String TEST_RESULTS_DIR = "target/operator-test-results/";
   public static final String POD_LOGS_DIR = TEST_RESULTS_DIR + "pod-logs/";
@@ -55,6 +56,7 @@ public abstract class ClusterOperatorTest {
   protected static String namespace;
   protected static String deploymentTarget;
   protected static String kubernetesIp;
+  protected static String customImage;
   private static Operator operator;
 
 
@@ -65,6 +67,7 @@ public abstract class ClusterOperatorTest {
     operatorDeployment = ConfigProvider.getConfig().getOptionalValue(OPERATOR_DEPLOYMENT_PROP, OperatorDeployment.class).orElse(OperatorDeployment.local);
     deploymentTarget = ConfigProvider.getConfig().getOptionalValue(QUARKUS_KUBERNETES_DEPLOYMENT_TARGET, String.class).orElse("kubernetes");
     kubernetesIp = ConfigProvider.getConfig().getOptionalValue(OPERATOR_KUBERNETES_IP, String.class).orElse("localhost");
+    customImage = ConfigProvider.getConfig().getOptionalValue(OPERATOR_CUSTOM_IMAGE, String.class).orElse(null);
 
     setDefaultAwaitilityTimings();
     calculateNamespace();

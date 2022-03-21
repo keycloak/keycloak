@@ -402,7 +402,12 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
         baseDeployment.getSpec().getTemplate().getMetadata().setLabels(Constants.DEFAULT_LABELS);
 
         Container container = baseDeployment.getSpec().getTemplate().getSpec().getContainers().get(0);
-        container.setImage(Optional.ofNullable(keycloakCR.getSpec().getImage()).orElse(config.keycloak().image()));
+        var customImage = Optional.ofNullable(keycloakCR.getSpec().getImage());
+        container.setImage(customImage.orElse(config.keycloak().image()));
+        if (customImage.isEmpty()) {
+            container.getArgs().add("--auto-build");
+        }
+
         container.setImagePullPolicy(config.keycloak().imagePullPolicy());
 
         container.setEnv(getEnvVars());

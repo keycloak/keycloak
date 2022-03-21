@@ -90,3 +90,15 @@ On Linux or on Mac using `minikube` on a VM, instead you should pass this additi
 ```bash
 -Dtest.operator.kubernetes.ip=$(minikube ip)
 ```
+
+To avoid skipping tests that are depending on custom Keycloak images, you need to build those first:
+
+```bash
+./build-testing-docker-images.sh <optional/keycloak-version> <optional/keycloak-image-name>
+```
+
+And run the tests passing an extra Java property:
+
+```bash
+-Dtest.operator.custom.image=custom-keycloak:latest
+```
