@@ -19,9 +19,13 @@ package org.keycloak.quarkus.runtime.storage.database.liquibase;
 
 import java.lang.reflect.Method;
 import java.sql.Connection;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.xml.parsers.SAXParserFactory;
 
+import liquibase.Scope;
+import liquibase.ui.LoggerUIService;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.connections.jpa.updater.liquibase.conn.LiquibaseConnectionProvider;
@@ -62,6 +66,16 @@ public class QuarkusLiquibaseConnectionProvider implements LiquibaseConnectionPr
 
     protected void baseLiquibaseInitialization(KeycloakSession session) {
         resourceAccessor = new ClassLoaderResourceAccessor(getClass().getClassLoader());
+
+        // initialize Liquibase using a custom scope
+        final Map<String, Object> scopeValues = new HashMap<>();
+        scopeValues.put(Scope.Attr.ui.name(), new LoggerUIService());
+        try {
+            Scope scope = Scope.getCurrentScope();
+            scope.enter(scopeValues);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to initialize Liquibase: " + e.getMessage(), e);
+        }
 
         // disables XML validation
         for (ChangeLogParser parser : ChangeLogParserFactory.getInstance().getParsers()) {
