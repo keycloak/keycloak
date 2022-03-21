@@ -9,11 +9,8 @@ on:
   push:
     branches: [main]
   pull_request:
-    branches: [main]
     paths: 
       - 'themes/src/**'
-  schedule:
-    - cron: '0 9 * * 2'
     
 jobs:
   analyze:
