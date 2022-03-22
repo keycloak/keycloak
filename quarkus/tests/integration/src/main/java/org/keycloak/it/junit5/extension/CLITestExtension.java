@@ -114,6 +114,13 @@ public class CLITestExtension extends QuarkusMainTestExtension {
             if (distConfig.keepAlive()) {
                 dist.stop();
             }
+<<<<<<< HEAD
+=======
+
+            if (DistributionTest.ReInstall.BEFORE_TEST.equals(distConfig.reInstall())) {
+                dist = null;
+            }
+>>>>>>> ffa6df5547 (Fixes to hostname (#10820))
         }
 
         super.afterEach(context);
