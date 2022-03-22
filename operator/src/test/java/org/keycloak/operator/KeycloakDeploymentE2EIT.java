@@ -10,6 +10,7 @@ import org.keycloak.operator.utils.K8sUtils;
 import org.keycloak.operator.v2alpha1.KeycloakAdminSecret;
 import org.keycloak.operator.v2alpha1.KeycloakService;
 import org.keycloak.operator.v2alpha1.crds.Keycloak;
+import org.keycloak.operator.v2alpha1.crds.ValueOrSecret;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -65,8 +66,11 @@ public class KeycloakDeploymentE2EIT extends ClusterOperatorTest {
             var deploymentName = kc.getMetadata().getName();
             deployKeycloak(k8sclient, kc, true);
 
+            final var dbConf = new ValueOrSecret("KC_DB_PASSWORD", "Ay Caramba!");
+
             kc.getSpec().setImage("quay.io/keycloak/non-existing-keycloak");
-            kc.getSpec().getServerConfiguration().put("KC_DB_PASSWORD", "Ay Caramba!");
+            kc.getSpec().getServerConfiguration().remove(dbConf);
+            kc.getSpec().getServerConfiguration().add(dbConf);
             deployKeycloak(k8sclient, kc, false);
 
             Awaitility.await()
@@ -76,10 +80,36 @@ public class KeycloakDeploymentE2EIT extends ClusterOperatorTest {
                                 .getSpec().getTemplate().getSpec().getContainers().get(0);
                         assertThat(c.getImage()).isEqualTo("quay.io/keycloak/non-existing-keycloak");
                         assertThat(c.getEnv().stream()
-                                .anyMatch(e -> e.getName().equals("KC_DB_PASSWORD") && e.getValue().equals("Ay Caramba!")))
+                                .anyMatch(e -> e.getName().equals(dbConf.getName()) && e.getValue().equals(dbConf.getValue())))
                                 .isTrue();
                     });
 
+        } catch (Exception e) {
+            savePodLogs();
+            throw e;
+        }
+    }
+
+    @Test
+    public void testConfigInCRTakesPrecedence() {
+        try {
+            var kc = getDefaultKeycloakDeployment();
+            var health = new ValueOrSecret("KC_HEALTH_ENABLED", "false");
+            var e = new EnvVarBuilder().withName(health.getName()).withValue(health.getValue()).build();
+            kc.getSpec().getServerConfiguration().add(health);
+            deployKeycloak(k8sclient, kc, false);
+
+            assertThat(Constants.DEFAULT_DIST_CONFIG.get(health.getName())).isEqualTo("true"); // just a sanity check default values did not change
+
+            Awaitility.await()
+                    .ignoreExceptions()
+                    .untilAsserted(() -> {
+                        Log.info("Asserting default value was overwritten by CR value");
+                        var c = k8sclient.apps().deployments().inNamespace(namespace).withName(kc.getMetadata().getName()).get()
+                                .getSpec().getTemplate().getSpec().getContainers().get(0);
+
+                        assertThat(c.getEnv()).contains(e);
+                    });
         } catch (Exception e) {
             savePodLogs();
             throw e;

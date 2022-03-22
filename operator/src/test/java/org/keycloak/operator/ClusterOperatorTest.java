@@ -2,6 +2,7 @@ package org.keycloak.operator;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
+import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.ConfigBuilder;
@@ -33,6 +34,7 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.keycloak.operator.utils.K8sUtils.getResourceFromMultiResourceFile;
 
 public abstract class ClusterOperatorTest {
 
@@ -161,6 +163,12 @@ public abstract class ClusterOperatorTest {
     Log.info("Checking Postgres is running");
     Awaitility.await()
             .untilAsserted(() -> assertThat(k8sclient.apps().statefulSets().inNamespace(namespace).withName("postgresql-db").get().getStatus().getReadyReplicas()).isEqualTo(1));
+
+    deployDBSecret();
+  }
+
+  protected static void deployDBSecret() {
+    k8sclient.secrets().inNamespace(namespace).createOrReplace((Secret) getResourceFromMultiResourceFile("example-keycloak.yml", 1));
   }
 
   protected static void deleteDB() {
