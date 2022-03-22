@@ -26,6 +26,7 @@ import {
   clientScopeTypesDropdown,
 } from "../../components/client-scope/ClientScopeTypes";
 import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTable";
+import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
 import { getProtocolName } from "../utils";
 import useToggle from "../../utils/useToggle";
 
@@ -302,6 +303,12 @@ export const AddScopeDialog = ({
             name: "description",
           },
         ]}
+        emptyState={
+          <ListEmptyState
+            message={t("emptyAddClientScopes")}
+            instructions={t("emptyAddClientScopesInstructions")}
+          />
+        }
       />
     </Modal>
   );
