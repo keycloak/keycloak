@@ -11,3 +11,11 @@ Recovery Codes as another way to do two-factor authentication is now available a
 For more details, take a look at link:{adminguide_link}#_step-up-flow[{adminguide_name}].
 
 Thanks to https://github.com/CorneliaLahnsteiner[Cornelia Lahnsteiner] and https://github.com/romge[Georg Romstorfer] for the contribution.
+
+== WebAuthn improvements
+
+{project_name} now supports WebAuthn id-less authentication. This feature allows that WebAuthn Security Key will identify the user during authentication as long as the
+security key supports Resident Keys. For more details, take a look at link:{adminguide_link}#_webauthn_loginless[{adminguide_name}].
+Thanks to https://github.com/vanrar68[Joaquim Fellmann] for the contribution.
+
+There are more WebAuthn improvements and fixes in addition to that.
