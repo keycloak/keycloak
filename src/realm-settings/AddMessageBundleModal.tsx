@@ -29,14 +29,14 @@ export const AddMessageBundleModal = ({
   handleModalToggle,
   save,
 }: AddMessageBundleModalProps) => {
-  const { t } = useTranslation("groups");
+  const { t } = useTranslation("realm-settings");
   const { register, errors, handleSubmit } = useForm();
 
   return (
     <Modal
       variant={ModalVariant.small}
-      title={t("realm-settings:addMessageBundle")}
-      isOpen={true}
+      title={t("addMessageBundle")}
+      isOpen
       onClose={handleModalToggle}
       actions={[
         <Button
@@ -63,12 +63,12 @@ export const AddMessageBundleModal = ({
     >
       <Form id="bundle-form" isHorizontal onSubmit={handleSubmit(save)}>
         <FormGroup
-          label={t("realm-settings:key")}
+          label={t("common:key")}
           name="key"
-          fieldId="email-id"
-          helperTextInvalid={t("users:emailInvalid")}
+          fieldId="key"
+          helperTextInvalid={t("common:required")}
           validated={
-            errors.email ? ValidatedOptions.error : ValidatedOptions.default
+            errors.key ? ValidatedOptions.error : ValidatedOptions.default
           }
           isRequired
         >
@@ -80,29 +80,28 @@ export const AddMessageBundleModal = ({
             id="add-key"
             name="key"
             validated={
-              errors.email ? ValidatedOptions.error : ValidatedOptions.default
+              errors.key ? ValidatedOptions.error : ValidatedOptions.default
             }
           />
         </FormGroup>
         <FormGroup
-          label={t("realm-settings:value")}
+          label={t("common:value")}
           name="add-value"
           fieldId="value-id"
-          helperTextInvalid={t("users:emailInvalid")}
+          helperTextInvalid={t("common:required")}
           validated={
-            errors.email ? ValidatedOptions.error : ValidatedOptions.default
+            errors.value ? ValidatedOptions.error : ValidatedOptions.default
           }
           isRequired
         >
           <TextInput
             data-testid="value-input"
             ref={register({ required: true })}
-            autoFocus
             type="text"
             id="add-value"
             name="value"
             validated={
-              errors.email ? ValidatedOptions.error : ValidatedOptions.default
+              errors.value ? ValidatedOptions.error : ValidatedOptions.default
             }
           />
         </FormGroup>
