@@ -8,11 +8,12 @@ import type { Clients } from "@keycloak/keycloak-admin-client/lib/resources/clie
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 
 type ResourcesPolicySelectProps = {
-  name: string;
+  name: keyof PolicyRepresentation;
   clientId: string;
   searchFunction: keyof Pick<Clients, "listPolicies" | "listResources">;
   variant?: SelectVariant;
   preSelected?: string;
+  isRequired?: boolean;
 };
 
 type Policies = {
@@ -26,11 +27,12 @@ export const ResourcesPolicySelect = ({
   clientId,
   variant = SelectVariant.typeaheadMulti,
   preSelected,
+  isRequired = false,
 }: ResourcesPolicySelectProps) => {
   const { t } = useTranslation("clients");
   const adminClient = useAdminClient();
 
-  const { control } = useFormContext<PolicyRepresentation>();
+  const { control, errors } = useFormContext<PolicyRepresentation>();
   const [items, setItems] = useState<Policies[]>([]);
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
@@ -64,6 +66,7 @@ export const ResourcesPolicySelect = ({
       name={name}
       defaultValue={preSelected ? [preSelected] : []}
       control={control}
+      rules={{ validate: (value) => !isRequired || value.length > 0 }}
       render={({ onChange, value }) => (
         <Select
           toggleId={name}
@@ -89,6 +92,7 @@ export const ResourcesPolicySelect = ({
           isOpen={open}
           aria-labelledby={t(name)}
           isDisabled={!!preSelected}
+          validated={errors[name] ? "error" : "default"}
         >
           {toSelectOptions()}
         </Select>

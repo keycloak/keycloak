@@ -196,6 +196,8 @@ export default function PermissionDetails() {
             <FormGroup
               label={t("common:name")}
               isRequired
+              helperTextInvalid={t("common:required")}
+              validated={errors.name ? "error" : "default"}
               fieldId="name"
               labelIcon={
                 <HelpItem
@@ -208,6 +210,7 @@ export default function PermissionDetails() {
                 id="name"
                 name="name"
                 ref={register({ required: true })}
+                validated={errors.name ? "error" : "default"}
               />
             </FormGroup>
             <FormGroup
@@ -282,6 +285,9 @@ export default function PermissionDetails() {
                     fieldLabelId="clients:resources"
                   />
                 }
+                helperTextInvalid={t("common:required")}
+                validated={errors.resources ? "error" : "default"}
+                isRequired
               >
                 <ResourcesPolicySelect
                   name="resources"
@@ -295,6 +301,7 @@ export default function PermissionDetails() {
                       ? SelectVariant.typeahead
                       : SelectVariant.typeaheadMulti
                   }
+                  isRequired
                 />
               </FormGroup>
             )}
