@@ -19,6 +19,7 @@
 package org.keycloak.authorization.policy.evaluation;
 
 import java.util.Collection;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
@@ -67,14 +68,14 @@ public class DefaultPolicyEvaluator implements PolicyEvaluator {
         Resource resource = permission.getResource();
 
         if (resource != null) {
-            policyStore.findByResource(resource.getId(), resourceServer.getId(), policyConsumer);
+            policyStore.findByResource(resourceServer, resource, policyConsumer);
 
             if (resource.getType() != null) {
-                policyStore.findByResourceType(resource.getType(), resourceServer.getId(), policyConsumer);
+                policyStore.findByResourceType(resourceServer, resource.getType(), policyConsumer);
 
-                if (!resource.getOwner().equals(resourceServer.getId())) {
-                    for (Resource typedResource : resourceStore.findByType(resource.getType(), resourceServer.getId())) {
-                        policyStore.findByResource(typedResource.getId(), resourceServer.getId(), policyConsumer);
+                if (!resource.getOwner().equals(resourceServer.getClientId())) {
+                    for (Resource typedResource : resourceStore.findByType(resourceServer, resource.getType())) {
+                        policyStore.findByResource(resourceServer, typedResource, policyConsumer);
                     }
                 }
             }
@@ -83,7 +84,7 @@ public class DefaultPolicyEvaluator implements PolicyEvaluator {
         Collection<Scope> scopes = permission.getScopes();
 
         if (!scopes.isEmpty()) {
-            policyStore.findByScopeIds(scopes.stream().map(Scope::getId).collect(Collectors.toList()), null, resourceServer.getId(), policyConsumer);
+            policyStore.findByScopes(resourceServer, null, new LinkedList<>(scopes), policyConsumer);
         }
 
         if (verified.get()) {

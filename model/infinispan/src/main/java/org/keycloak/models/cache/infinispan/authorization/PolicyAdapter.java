@@ -85,7 +85,7 @@ public class PolicyAdapter implements Policy, CachedModel<Policy> {
     protected boolean isUpdated() {
         if (updated != null) return true;
         if (!invalidated) return false;
-        updated = cacheSession.getPolicyStoreDelegate().findById(cached.getId(), cached.getResourceServerId());
+        updated = cacheSession.getPolicyStoreDelegate().findById(cacheSession.getResourceServerStore().findById(cached.getResourceServerId()), cached.getId());
         if (updated == null) throw new IllegalStateException("Not found in database");
         return true;
     }
@@ -208,7 +208,7 @@ public class PolicyAdapter implements Policy, CachedModel<Policy> {
         PolicyStore policyStore = cacheSession.getPolicyStore();
         String resourceServerId = cached.getResourceServerId();
         for (String id : cached.getAssociatedPoliciesIds(modelSupplier)) {
-            Policy policy = policyStore.findById(id, resourceServerId);
+            Policy policy = policyStore.findById(cacheSession.getResourceServerStore().findById(resourceServerId), id);
             cacheSession.cachePolicy(policy);
             associatedPolicies.add(policy);
         }
@@ -223,9 +223,9 @@ public class PolicyAdapter implements Policy, CachedModel<Policy> {
         if (resources != null) return resources;
         resources = new HashSet<>();
         ResourceStore resourceStore = cacheSession.getResourceStore();
+        ResourceServer resourceServer = getResourceServer();
         for (String resourceId : cached.getResourcesIds(modelSupplier)) {
-            String resourceServerId = cached.getResourceServerId();
-            Resource resource = resourceStore.findById(resourceId, resourceServerId);
+            Resource resource = resourceStore.findById(resourceServer, resourceId);
             cacheSession.cacheResource(resource);
             resources.add(resource);
         }
@@ -287,10 +287,10 @@ public class PolicyAdapter implements Policy, CachedModel<Policy> {
         if (isUpdated()) return updated.getScopes();
         if (scopes != null) return scopes;
         scopes = new HashSet<>();
+        ResourceServer resourceServer = getResourceServer();
         ScopeStore scopeStore = cacheSession.getScopeStore();
-        String resourceServerId = cached.getResourceServerId();
         for (String scopeId : cached.getScopesIds(modelSupplier)) {
-            Scope scope = scopeStore.findById(scopeId, resourceServerId);
+            Scope scope = scopeStore.findById(resourceServer, scopeId);
             cacheSession.cacheScope(scope);
             scopes.add(scope);
         }
@@ -325,6 +325,6 @@ public class PolicyAdapter implements Policy, CachedModel<Policy> {
     }
 
     private Policy getPolicyModel() {
-        return cacheSession.getPolicyStoreDelegate().findById(cached.getId(), cached.getResourceServerId());
+        return cacheSession.getPolicyStoreDelegate().findById(cacheSession.getResourceServerStore().findById(cached.getResourceServerId()), cached.getId());
     }
 }

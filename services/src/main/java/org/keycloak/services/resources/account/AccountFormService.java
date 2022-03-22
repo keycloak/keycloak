@@ -25,6 +25,7 @@ import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.store.PermissionTicketStore;
 import org.keycloak.authorization.store.PolicyStore;
+import org.keycloak.authorization.store.ScopeStore;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.Time;
@@ -110,6 +111,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
@@ -760,7 +762,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
 
         AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
         PermissionTicketStore ticketStore = authorization.getStoreFactory().getPermissionTicketStore();
-        Resource resource = authorization.getStoreFactory().getResourceStore().findById(resourceId, null);
+        Resource resource = authorization.getStoreFactory().getResourceStore().findById(null, resourceId);
 
         if (resource == null) {
             return ErrorResponse.error("Invalid resource", Response.Status.BAD_REQUEST);
@@ -780,13 +782,14 @@ public class AccountFormService extends AbstractSecuredLocalService {
             List<String> ids = new ArrayList<>(Arrays.asList(permissionId));
             Iterator<String> iterator = ids.iterator();
             PolicyStore policyStore = authorization.getStoreFactory().getPolicyStore();
+            ResourceServer resourceServer = authorization.getStoreFactory().getResourceServerStore().findByClient(client);
             Policy policy = null;
 
             while (iterator.hasNext()) {
                 String id = iterator.next();
 
                 if (!id.contains(":")) {
-                    policy = policyStore.findById(id, client.getId());
+                    policy = policyStore.findById(resourceServer, id);
                     iterator.remove();
                     break;
                 }
@@ -800,7 +803,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
                 }
             } else {
                 for (String id : ids) {
-                    scopesToKeep.add(authorization.getStoreFactory().getScopeStore().findById(id.split(":")[1], client.getId()));
+                    scopesToKeep.add(authorization.getStoreFactory().getScopeStore().findById(resourceServer, id.split(":")[1]));
                 }
 
                 for (Scope scope : policy.getScopes()) {
@@ -829,7 +832,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
                 filters.put(PermissionTicket.FilterOption.GRANTED, Boolean.FALSE.toString());
             }
 
-            List<PermissionTicket> tickets = ticketStore.find(filters, resource.getResourceServer(), -1, -1);
+            List<PermissionTicket> tickets = ticketStore.find(resource.getResourceServer(), filters, null, null);
             Iterator<PermissionTicket> iterator = tickets.iterator();
 
             while (iterator.hasNext()) {
@@ -884,8 +887,9 @@ public class AccountFormService extends AbstractSecuredLocalService {
 
         AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
         PermissionTicketStore ticketStore = authorization.getStoreFactory().getPermissionTicketStore();
-        Resource resource = authorization.getStoreFactory().getResourceStore().findById(resourceId, null);
-        ResourceServer resourceServer = authorization.getStoreFactory().getResourceServerStore().findById(resource.getResourceServer());
+        ScopeStore scopeStore = authorization.getStoreFactory().getScopeStore();
+        Resource resource = authorization.getStoreFactory().getResourceStore().findById(null, resourceId);
+        ResourceServer resourceServer = resource.getResourceServer();
 
         if (resource == null) {
             return ErrorResponse.error("Invalid resource", Response.Status.BAD_REQUEST);
@@ -918,38 +922,39 @@ public class AccountFormService extends AbstractSecuredLocalService {
             filters.put(PermissionTicket.FilterOption.OWNER, auth.getUser().getId());
             filters.put(PermissionTicket.FilterOption.REQUESTER, user.getId());
 
-            List<PermissionTicket> tickets = ticketStore.find(filters, resource.getResourceServer(), -1, -1);
+            List<PermissionTicket> tickets = ticketStore.find(resourceServer, filters, null, null);
+            final String userId = user.getId();
 
             if (tickets.isEmpty()) {
                 if (scopes != null && scopes.length > 0) {
-                    for (String scope : scopes) {
-                        PermissionTicket ticket = ticketStore.create(resourceId, scope, user.getId(), resourceServer);
+                    for (String scopeId : scopes) {
+                        Scope scope = scopeStore.findById(resourceServer, scopeId);
+                        PermissionTicket ticket = ticketStore.create(resourceServer, resource, scope, userId);
                         ticket.setGrantedTimestamp(System.currentTimeMillis());
                     }
                 } else {
                     if (resource.getScopes().isEmpty()) {
-                        PermissionTicket ticket = ticketStore.create(resourceId, null, user.getId(), resourceServer);
+                        PermissionTicket ticket = ticketStore.create(resourceServer, resource, null, userId);
                         ticket.setGrantedTimestamp(System.currentTimeMillis());
                     } else {
                         for (Scope scope : resource.getScopes()) {
-                            PermissionTicket ticket = ticketStore.create(resourceId, scope.getId(), user.getId(), resourceServer);
+                            PermissionTicket ticket = ticketStore.create(resourceServer, resource, scope, userId);
                             ticket.setGrantedTimestamp(System.currentTimeMillis());
                         }
                     }
                 }
             } else if (scopes != null && scopes.length > 0) {
                 List<String> grantScopes = new ArrayList<>(Arrays.asList(scopes));
+                Set<String> alreadyGrantedScopes = tickets.stream()
+                        .map(PermissionTicket::getScope)
+                        .map(Scope::getId)
+                        .collect(Collectors.toSet());
 
-                for (PermissionTicket ticket : tickets) {
-                    Scope scope = ticket.getScope();
+                grantScopes.removeIf(alreadyGrantedScopes::contains);
 
-                    if (scope != null) {
-                        grantScopes.remove(scope.getId());
-                    }
-                }
-
-                for (String grantScope : grantScopes) {
-                    PermissionTicket ticket = ticketStore.create(resourceId, grantScope, user.getId(), resourceServer);
+                for (String scopeId : grantScopes) {
+                    Scope scope = scopeStore.findById(resourceServer, scopeId);
+                    PermissionTicket ticket = ticketStore.create(resourceServer, resource, scope, userId);
                     ticket.setGrantedTimestamp(System.currentTimeMillis());
                 }
             }
@@ -978,7 +983,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
         }
 
         for (String resourceId : resourceIds) {
-            Resource resource = authorization.getStoreFactory().getResourceStore().findById(resourceId, null);
+            Resource resource = authorization.getStoreFactory().getResourceStore().findById(null, resourceId);
 
             if (resource == null) {
                 return ErrorResponse.error("Invalid resource", Response.Status.BAD_REQUEST);
@@ -995,7 +1000,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
                 filters.put(PermissionTicket.FilterOption.GRANTED, Boolean.FALSE.toString());
             }
 
-            for (PermissionTicket ticket : ticketStore.find(filters, resource.getResourceServer(), -1, -1)) {
+            for (PermissionTicket ticket : ticketStore.find(resource.getResourceServer(), filters, null, null)) {
                 ticketStore.delete(ticket.getId());
             }
         }

@@ -60,22 +60,22 @@ public class MapScopeStore implements ScopeStore {
         return new MapScopeAdapter(origEntity, authorizationProvider.getStoreFactory());
     }
 
-    private DefaultModelCriteria<Scope> forResourceServer(String resourceServerId) {
+    private DefaultModelCriteria<Scope> forResourceServer(ResourceServer resourceServer) {
         DefaultModelCriteria<Scope> mcb = criteria();
 
-        return resourceServerId == null
+        return resourceServer == null
                 ? mcb
                 : mcb.compare(SearchableFields.RESOURCE_SERVER_ID, Operator.EQ,
-                resourceServerId);
+                resourceServer.getId());
     }
 
     @Override
-    public Scope create(String id, String name, ResourceServer resourceServer) {
+    public Scope create(ResourceServer resourceServer, String id, String name) {
         LOG.tracef("create(%s, %s, %s)%s", id, name, resourceServer, getShortStackTrace());
 
 
         // @UniqueConstraint(columnNames = {"NAME", "RESOURCE_SERVER_ID"})
-        DefaultModelCriteria<Scope> mcb = forResourceServer(resourceServer.getId())
+        DefaultModelCriteria<Scope> mcb = forResourceServer(resourceServer)
                 .compare(SearchableFields.NAME, Operator.EQ, name);
 
         if (tx.getCount(withCriteria(mcb)) > 0) {
@@ -99,10 +99,10 @@ public class MapScopeStore implements ScopeStore {
     }
 
     @Override
-    public Scope findById(String id, String resourceServerId) {
-        LOG.tracef("findById(%s, %s)%s", id, resourceServerId, getShortStackTrace());
+    public Scope findById(ResourceServer resourceServer, String id) {
+        LOG.tracef("findById(%s, %s)%s", id, resourceServer, getShortStackTrace());
 
-        return tx.read(withCriteria(forResourceServer(resourceServerId)
+        return tx.read(withCriteria(forResourceServer(resourceServer)
                 .compare(SearchableFields.ID, Operator.EQ, id)))
                 .findFirst()
                 .map(this::entityToAdapter)
@@ -110,10 +110,10 @@ public class MapScopeStore implements ScopeStore {
     }
 
     @Override
-    public Scope findByName(String name, String resourceServerId) {
-        LOG.tracef("findByName(%s, %s)%s", name, resourceServerId, getShortStackTrace());
+    public Scope findByName(ResourceServer resourceServer, String name) {
+        LOG.tracef("findByName(%s, %s)%s", name, resourceServer, getShortStackTrace());
 
-        return tx.read(withCriteria(forResourceServer(resourceServerId).compare(SearchableFields.NAME,
+        return tx.read(withCriteria(forResourceServer(resourceServer).compare(SearchableFields.NAME,
                 Operator.EQ, name)))
                 .findFirst()
                 .map(this::entityToAdapter)
@@ -121,17 +121,17 @@ public class MapScopeStore implements ScopeStore {
     }
 
     @Override
-    public List<Scope> findByResourceServer(String id) {
-        LOG.tracef("findByResourceServer(%s)%s", id, getShortStackTrace());
+    public List<Scope> findByResourceServer(ResourceServer resourceServer) {
+        LOG.tracef("findByResourceServer(%s)%s", resourceServer, getShortStackTrace());
 
-        return tx.read(withCriteria(forResourceServer(id)))
+        return tx.read(withCriteria(forResourceServer(resourceServer)))
                 .map(this::entityToAdapter)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public List<Scope> findByResourceServer(Map<Scope.FilterOption, String[]> attributes, String resourceServerId, int firstResult, int maxResult) {
-        DefaultModelCriteria<Scope> mcb = forResourceServer(resourceServerId);
+    public List<Scope> findByResourceServer(ResourceServer resourceServer, Map<Scope.FilterOption, String[]> attributes, Integer firstResult, Integer maxResults) {
+        DefaultModelCriteria<Scope> mcb = forResourceServer(resourceServer);
 
         for (Scope.FilterOption filterOption : attributes.keySet()) {
             String[] value = attributes.get(filterOption);
@@ -148,7 +148,7 @@ public class MapScopeStore implements ScopeStore {
             }
         }
 
-        return tx.read(withCriteria(mcb).pagination(firstResult, maxResult, SearchableFields.NAME))
+        return tx.read(withCriteria(mcb).pagination(firstResult, maxResults, SearchableFields.NAME))
             .map(this::entityToAdapter)
             .collect(Collectors.toList());
     }

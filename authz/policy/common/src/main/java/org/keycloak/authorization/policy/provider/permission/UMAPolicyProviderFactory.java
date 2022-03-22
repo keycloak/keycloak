@@ -28,7 +28,6 @@ import org.keycloak.authorization.policy.provider.PolicyProvider;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
@@ -397,7 +396,7 @@ public class UMAPolicyProviderFactory implements PolicyProviderFactory<UmaPermis
         rep.setName(KeycloakModelUtils.generateId());
         rep.setCode(condition);
 
-        Policy associatedPolicy = policyStore.create(rep, policy.getResourceServer());
+        Policy associatedPolicy = policyStore.create(policy.getResourceServer(), rep);
 
         associatedPolicy.setOwner(owner);
 
@@ -410,7 +409,7 @@ public class UMAPolicyProviderFactory implements PolicyProviderFactory<UmaPermis
         rep.setName(KeycloakModelUtils.generateId());
         rep.addClient(client);
 
-        Policy associatedPolicy = policyStore.create(rep, policy.getResourceServer());
+        Policy associatedPolicy = policyStore.create(policy.getResourceServer(), rep);
 
         associatedPolicy.setOwner(owner);
 
@@ -423,7 +422,7 @@ public class UMAPolicyProviderFactory implements PolicyProviderFactory<UmaPermis
         rep.setName(KeycloakModelUtils.generateId());
         rep.addGroupPath(group);
 
-        Policy associatedPolicy = policyStore.create(rep, policy.getResourceServer());
+        Policy associatedPolicy = policyStore.create(policy.getResourceServer(), rep);
 
         associatedPolicy.setOwner(owner);
 
@@ -436,7 +435,7 @@ public class UMAPolicyProviderFactory implements PolicyProviderFactory<UmaPermis
         rep.setName(KeycloakModelUtils.generateId());
         rep.addRole(role, false);
 
-        Policy associatedPolicy = policyStore.create(rep, policy.getResourceServer());
+        Policy associatedPolicy = policyStore.create(policy.getResourceServer(), rep);
 
         associatedPolicy.setOwner(owner);
 
@@ -449,7 +448,7 @@ public class UMAPolicyProviderFactory implements PolicyProviderFactory<UmaPermis
         rep.setName(KeycloakModelUtils.generateId());
         rep.addUser(user);
 
-        Policy associatedPolicy = policyStore.create(rep, policy.getResourceServer());
+        Policy associatedPolicy = policyStore.create(policy.getResourceServer(), rep);
 
         associatedPolicy.setOwner(owner);
 

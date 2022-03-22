@@ -74,7 +74,7 @@ public class ClientScopePolicyProviderFactory implements PolicyProviderFactory<C
 
                 filters.put(Policy.FilterOption.TYPE, new String[] { getId() });
 
-                policyStore.findByResourceServer(filters, null, -1, -1).forEach(new Consumer<Policy>() {
+                policyStore.findByResourceServer(null, filters, null, null).forEach(new Consumer<Policy>() {
 
                     @Override
                     public void accept(Policy policy) {

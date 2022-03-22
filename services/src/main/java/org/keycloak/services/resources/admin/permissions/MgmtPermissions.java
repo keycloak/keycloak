@@ -283,17 +283,17 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
 
     public Scope initializeRealmScope(String name) {
         ResourceServer server = initializeRealmResourceServer();
-        Scope scope  = authz.getStoreFactory().getScopeStore().findByName(name, server.getId());
+        Scope scope  = authz.getStoreFactory().getScopeStore().findByName(server, name);
         if (scope == null) {
-            scope = authz.getStoreFactory().getScopeStore().create(name, server);
+            scope = authz.getStoreFactory().getScopeStore().create(server, name);
         }
         return scope;
     }
 
     public Scope initializeScope(String name, ResourceServer server) {
-        Scope scope  = authz.getStoreFactory().getScopeStore().findByName(name, server.getId());
+        Scope scope  = authz.getStoreFactory().getScopeStore().findByName(server, name);
         if (scope == null) {
-            scope = authz.getStoreFactory().getScopeStore().create(name, server);
+            scope = authz.getStoreFactory().getScopeStore().create(server, name);
         }
         return scope;
     }
@@ -316,7 +316,7 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
     public Scope realmScope(String scope) {
         ResourceServer server = realmResourceServer();
         if (server == null) return null;
-        return authz.getStoreFactory().getScopeStore().findByName(scope, server.getId());
+        return authz.getStoreFactory().getScopeStore().findByName(server, scope);
     }
 
     public boolean evaluatePermission(Resource resource, ResourceServer resourceServer, Scope... scope) {
