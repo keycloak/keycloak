@@ -1,5 +1,4 @@
 import React, {
-  FormEvent,
   FunctionComponent,
   ReactNode,
   useState,
@@ -10,12 +9,9 @@ import {
   ToolbarContent,
   ToolbarItem,
   InputGroup,
-  TextInput,
-  Button,
-  ButtonVariant,
   Divider,
+  SearchInput,
 } from "@patternfly/react-core";
-import { SearchIcon } from "@patternfly/react-icons";
 import { useTranslation } from "react-i18next";
 
 type TableToolbarProps = {
@@ -25,10 +21,6 @@ type TableToolbarProps = {
   searchTypeComponent?: ReactNode;
   inputGroupName?: string;
   inputGroupPlaceholder?: string;
-  inputGroupOnChange?: (
-    newInput: string,
-    event: FormEvent<HTMLInputElement>
-  ) => void;
   inputGroupOnEnter?: (value: string) => void;
 };
 
@@ -40,7 +32,6 @@ export const TableToolbar: FunctionComponent<TableToolbarProps> = ({
   searchTypeComponent,
   inputGroupName,
   inputGroupPlaceholder,
-  inputGroupOnChange,
   inputGroupOnEnter,
 }) => {
   const { t } = useTranslation();
@@ -62,14 +53,6 @@ export const TableToolbar: FunctionComponent<TableToolbarProps> = ({
     }
   };
 
-  const handleInputChange = (
-    value: string,
-    event: FormEvent<HTMLInputElement>
-  ) => {
-    inputGroupOnChange?.(value, event);
-    setSearchValue(value);
-  };
-
   return (
     <>
       <Toolbar>
@@ -79,24 +62,18 @@ export const TableToolbar: FunctionComponent<TableToolbarProps> = ({
               <InputGroup>
                 {searchTypeComponent}
                 {inputGroupPlaceholder && (
-                  <>
-                    <TextInput
-                      name={inputGroupName}
-                      id={inputGroupName}
-                      type="search"
-                      aria-label={t("search")}
-                      placeholder={inputGroupPlaceholder}
-                      onChange={handleInputChange}
-                      onKeyDown={handleKeyDown}
-                    />
-                    <Button
-                      variant={ButtonVariant.control}
-                      aria-label={t("search")}
-                      onClick={onSearch}
-                    >
-                      <SearchIcon />
-                    </Button>
-                  </>
+                  <SearchInput
+                    placeholder={inputGroupPlaceholder}
+                    aria-label={t("search")}
+                    value={searchValue}
+                    onChange={setSearchValue}
+                    onSearch={onSearch}
+                    onKeyDown={handleKeyDown}
+                    onClear={() => {
+                      setSearchValue("");
+                      inputGroupOnEnter?.("");
+                    }}
+                  />
                 )}
               </InputGroup>
             </ToolbarItem>
