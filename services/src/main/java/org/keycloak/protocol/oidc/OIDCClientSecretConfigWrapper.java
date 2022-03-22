@@ -1,18 +1,19 @@
 package org.keycloak.protocol.oidc;
 
+import java.io.InvalidObjectException;
 import java.security.MessageDigest;
 import java.text.SimpleDateFormat;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Stream;
+import java.util.Objects;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.keycloak.common.util.Time;
-import org.keycloak.models.*;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientSecretConstants;
+import org.keycloak.models.delegate.ClientModelLazyDelegate;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.storage.client.AbstractReadOnlyClientStorageAdapter;
 import org.keycloak.utils.StringUtil;
 
 import static org.keycloak.models.ClientSecretConstants.CLIENT_ROTATED_SECRET;
@@ -35,8 +36,7 @@ public class OIDCClientSecretConfigWrapper extends AbstractClientConfigWrapper {
         return new OIDCClientSecretConfigWrapper(client, null);
     }
 
-    public static OIDCClientSecretConfigWrapper fromClientRepresentation(
-            ClientRepresentation clientRep) {
+    public static OIDCClientSecretConfigWrapper fromClientRepresentation(ClientRepresentation clientRep) {
         return new OIDCClientSecretConfigWrapper(null, clientRep);
     }
 
@@ -88,8 +88,7 @@ public class OIDCClientSecretConfigWrapper extends AbstractClientConfigWrapper {
     }
 
     public boolean hasRotatedSecret() {
-        return StringUtil.isNotBlank(getAttribute(CLIENT_ROTATED_SECRET)) && StringUtil.isNotBlank(
-                getAttribute(CLIENT_ROTATED_SECRET_CREATION_TIME));
+        return StringUtil.isNotBlank(getAttribute(CLIENT_ROTATED_SECRET)) && StringUtil.isNotBlank(getAttribute(CLIENT_ROTATED_SECRET_CREATION_TIME));
     }
 
     public String getClientRotatedSecret() {
@@ -123,13 +122,10 @@ public class OIDCClientSecretConfigWrapper extends AbstractClientConfigWrapper {
 
     public void updateClientRepresentationAttributes(ClientRepresentation rep) {
         rep.getAttributes().put(CLIENT_ROTATED_SECRET, getAttribute(CLIENT_ROTATED_SECRET));
-        rep.getAttributes()
-                .put(CLIENT_SECRET_CREATION_TIME, getAttribute(CLIENT_SECRET_CREATION_TIME));
+        rep.getAttributes().put(CLIENT_SECRET_CREATION_TIME, getAttribute(CLIENT_SECRET_CREATION_TIME));
         rep.getAttributes().put(CLIENT_SECRET_EXPIRATION, getAttribute(CLIENT_SECRET_EXPIRATION));
-        rep.getAttributes().put(CLIENT_ROTATED_SECRET_CREATION_TIME,
-                getAttribute(CLIENT_ROTATED_SECRET_CREATION_TIME));
-        rep.getAttributes().put(CLIENT_ROTATED_SECRET_EXPIRATION_TIME,
-                getAttribute(CLIENT_ROTATED_SECRET_EXPIRATION_TIME));
+        rep.getAttributes().put(CLIENT_ROTATED_SECRET_CREATION_TIME, getAttribute(CLIENT_ROTATED_SECRET_CREATION_TIME));
+        rep.getAttributes().put(CLIENT_ROTATED_SECRET_EXPIRATION_TIME, getAttribute(CLIENT_ROTATED_SECRET_EXPIRATION_TIME));
     }
 
     public boolean hasClientSecretExpirationTime() {
@@ -154,20 +150,17 @@ public class OIDCClientSecretConfigWrapper extends AbstractClientConfigWrapper {
 
     public int getClientRotatedSecretExpirationTime() {
         if (hasClientRotatedSecretExpirationTime()) {
-            return Integer.valueOf(
-                    getAttribute(ClientSecretConstants.CLIENT_ROTATED_SECRET_EXPIRATION_TIME));
+            return Integer.valueOf(getAttribute(ClientSecretConstants.CLIENT_ROTATED_SECRET_EXPIRATION_TIME));
         }
         return 0;
     }
 
     public void setClientRotatedSecretExpirationTime(Integer expiration) {
-        setAttribute(ClientSecretConstants.CLIENT_ROTATED_SECRET_EXPIRATION_TIME,
-                expiration != null ? String.valueOf(expiration) : null);
+        setAttribute(ClientSecretConstants.CLIENT_ROTATED_SECRET_EXPIRATION_TIME, expiration != null ? String.valueOf(expiration) : null);
     }
 
     public boolean hasClientRotatedSecretExpirationTime() {
-        return StringUtil.isNotBlank(
-                getAttribute(ClientSecretConstants.CLIENT_ROTATED_SECRET_EXPIRATION_TIME));
+        return StringUtil.isNotBlank(getAttribute(ClientSecretConstants.CLIENT_ROTATED_SECRET_EXPIRATION_TIME));
     }
 
     public boolean isClientRotatedSecretExpired() {
@@ -215,87 +208,19 @@ public class OIDCClientSecretConfigWrapper extends AbstractClientConfigWrapper {
         }
     }
 
-    public ReadOnlyRotatedSecretClientModel toRotatedClientModel() {
+    public ReadOnlyRotatedSecretClientModel toRotatedClientModel() throws InvalidObjectException {
+        if (Objects.isNull(this.clientModel))
+            throw new InvalidObjectException(getClass().getCanonicalName() + " does not have an attribute of type " + ClientModel.class.getCanonicalName());
         return new ReadOnlyRotatedSecretClientModel();
     }
 
     /**
      * Representation of a client model that passes information from a rotated secret. The goal is to act as a decorator/DTO just providing information and not updating objects persistently.
      */
-    public class ReadOnlyRotatedSecretClientModel extends AbstractReadOnlyClientStorageAdapter {
+    public class ReadOnlyRotatedSecretClientModel extends ClientModelLazyDelegate {
 
         private ReadOnlyRotatedSecretClientModel() {
-            super(null, null, null);
-        }
-
-        @Override
-        public String getClientId() {
-            return OIDCClientSecretConfigWrapper.this.getId();
-        }
-
-        @Override
-        public String getName() {
-            return null;
-        }
-
-        @Override
-        public String getDescription() {
-            return null;
-        }
-
-        @Override
-        public boolean isEnabled() {
-            return false;
-        }
-
-        @Override
-        public boolean isAlwaysDisplayInConsole() {
-            return false;
-        }
-
-        @Override
-        public Set<String> getWebOrigins() {
-            return null;
-        }
-
-        @Override
-        public Set<String> getRedirectUris() {
-            return null;
-        }
-
-        @Override
-        public String getManagementUrl() {
-            return null;
-        }
-
-        @Override
-        public String getRootUrl() {
-            return null;
-        }
-
-        @Override
-        public String getBaseUrl() {
-            return null;
-        }
-
-        @Override
-        public boolean isBearerOnly() {
-            return false;
-        }
-
-        @Override
-        public int getNodeReRegistrationTimeout() {
-            return 0;
-        }
-
-        @Override
-        public String getClientAuthenticatorType() {
-            return null;
-        }
-
-        @Override
-        public boolean validateSecret(String secret) {
-            return false;
+            super(() -> OIDCClientSecretConfigWrapper.this.clientModel);
         }
 
         @Override
@@ -303,114 +228,5 @@ public class OIDCClientSecretConfigWrapper extends AbstractClientConfigWrapper {
             return OIDCClientSecretConfigWrapper.this.getClientRotatedSecret();
         }
 
-        @Override
-        public String getRegistrationToken() {
-            return null;
-        }
-
-        @Override
-        public String getProtocol() {
-            return null;
-        }
-
-        @Override
-        public String getAttribute(String name) {
-            return OIDCClientSecretConfigWrapper.this.getAttribute(name);
-        }
-
-        @Override
-        public Map<String, String> getAttributes() {
-            return (Map<String, String>) OIDCClientSecretConfigWrapper.this.getAttributes();
-        }
-
-        @Override
-        public String getAuthenticationFlowBindingOverride(String binding) {
-            return null;
-        }
-
-        @Override
-        public Map<String, String> getAuthenticationFlowBindingOverrides() {
-            return null;
-        }
-
-        @Override
-        public boolean isFrontchannelLogout() {
-            return false;
-        }
-
-        @Override
-        public boolean isFullScopeAllowed() {
-            return false;
-        }
-
-        @Override
-        public boolean isPublicClient() {
-            return false;
-        }
-
-        @Override
-        public boolean isConsentRequired() {
-            return false;
-        }
-
-        @Override
-        public boolean isStandardFlowEnabled() {
-            return false;
-        }
-
-        @Override
-        public boolean isImplicitFlowEnabled() {
-            return false;
-        }
-
-        @Override
-        public boolean isDirectAccessGrantsEnabled() {
-            return false;
-        }
-
-        @Override
-        public boolean isServiceAccountsEnabled() {
-            return false;
-        }
-
-        @Override
-        public Map<String, ClientScopeModel> getClientScopes(boolean defaultScope) {
-            return null;
-        }
-
-        @Override
-        public int getNotBefore() {
-            return 0;
-        }
-
-        @Override
-        public Stream<ProtocolMapperModel> getProtocolMappersStream() {
-            return null;
-        }
-
-        @Override
-        public ProtocolMapperModel getProtocolMapperById(String id) {
-            return null;
-        }
-
-        @Override
-        public ProtocolMapperModel getProtocolMapperByName(String protocol, String name) {
-            return null;
-        }
-
-        @Override
-        public Stream<RoleModel> getScopeMappingsStream() {
-            return null;
-        }
-
-        @Override
-        public Stream<RoleModel> getRealmScopeMappingsStream() {
-            return null;
-        }
-
-        @Override
-        public boolean hasScope(RoleModel role) {
-            return false;
-        }
     }
 }
