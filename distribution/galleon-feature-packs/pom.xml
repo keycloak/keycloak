@@ -20,7 +20,7 @@
     <parent>
         <artifactId>keycloak-distribution-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>17.0.0</version>
+        <version>17.0.1</version>
     </parent>
 
     <name>Galleon Feature Pack Builds</name>
