@@ -12,8 +12,22 @@ Options:
 -h, --help           This help message.
 --help-all           This same help message but with additional options.
 
+Cluster:
+
+--cache <type>       Defines the cache mechanism for high-availability. By default, a 'ispn' cache
+                       is used to create a cluster between multiple server nodes. A 'local' cache
+                       disables clustering and is intended for development and testing purposes.
+                       Default: ispn.
+--cache-config-file <file>
+                     Defines the file from which cache configuration should be loaded from.
+--cache-stack <stack>
+                     Define the default stack to use for cluster communication and node discovery.
+                       This option only takes effect if 'cache' is set to 'ispn'. Default: udp.
+
 Database:
 
+--db <vendor>        The database vendor. Possible values are: dev-file, dev-mem, mariadb, mssql,
+                       mysql, oracle, postgres
 --db-password <password>
                      The password of the database user.
 --db-pool-initial-size <size>
@@ -38,15 +52,26 @@ Database:
 --db-username <username>
                      The username of the database user.
 
+Transaction:
+
+--transaction-xa-enabled <true|false>
+                     Manually override the transaction type. Transaction type XA and the
+                       appropriate driver is used by default. Default: true.
+
+Feature:
+
+--features <feature> Enables a set of one or more features.
+--features-disabled <feature>
+                     Disables a set of one or more features.
+
 Hostname:
 
 --hostname <hostname>
                      Hostname for the Keycloak server.
+--hostname-admin <url>
+                     Overrides the hostname for the admin console and APIs.
 --hostname-path <path>
                      This should be set if proxy uses a different context-path for Keycloak.
---hostname-port <port>
-                     The port used by the proxy when exposing the hostname. Set this option if the
-                       proxy uses a port other than the default HTTP and HTTPS ports. Default: -1.
 --hostname-strict <true|false>
                      Disables dynamically resolving the hostname from request headers. Should
                        always be set to true in production, unless proxy verifies the Host header.
@@ -62,6 +87,8 @@ HTTP/TLS:
                      Enables the HTTP listener. Default: false.
 --http-host <host>   The used HTTP Host. Default: 0.0.0.0.
 --http-port <port>   The used HTTP port. Default: 8080.
+--http-relative-path <path>
+                     Set the path relative to '/' for serving resources. Default: /.
 --https-certificate-file <file>
                      The file path to a server certificate or certificate chain in PEM format.
 --https-certificate-key-file <file>
@@ -91,13 +118,21 @@ HTTP/TLS:
                      The type of the trust store file. If not given, the type is automatically
                        detected based on the file name.
 
+Metrics:
+
+--metrics-enabled <true|false>
+                     If the server should expose metrics and healthcheck. If enabled, metrics are
+                       available at the '/metrics' endpoint and healthcheck at the '/health'
+                       endpoint. Default: false.
+
 Proxy:
 
 --proxy <mode>       The proxy address forwarding mode if the server is behind a reverse proxy.
-                       Possible values are: edge,reencrypt,passthrough Default: none.
+                       Possible values are: none,edge,reencrypt,passthrough Default: none.
 
 Vault:
 
+--vault <provider>   Enables a vault provider.
 --vault-dir <dir>    If set, secrets can be obtained by reading the content of files within the
                        given directory.
 
