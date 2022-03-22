@@ -35,6 +35,12 @@ public abstract class AbstractClientConfigWrapper {
         return value;
     }
 
+    protected Object getAttributes() {
+        if (clientModel != null) return clientModel.getAttributes();
+        else
+            return clientRep.getAttributes();
+    }
+
     protected void setAttribute(String attrKey, String attrValue) {
         if (clientModel != null) {
             if (attrValue != null) {

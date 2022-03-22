@@ -16,11 +16,16 @@
  */
 package org.keycloak.testsuite.oauth;
 
-import static org.junit.Assert.assertEquals;
-
+import java.io.IOException;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
+import javax.ws.rs.BadRequestException;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.http.HttpStatus;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -29,22 +34,32 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.jboss.logging.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.adapters.authentication.JWTClientSecretCredentialsProvider;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.authentication.authenticators.client.JWTClientSecretAuthenticator;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.KeycloakUriBuilder;
+import org.keycloak.common.util.Time;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.constants.ServiceUrlConstants;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.Details;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.representations.JsonWebToken;
+import org.keycloak.representations.idm.ClientPoliciesRepresentation;
+import org.keycloak.representations.idm.ClientProfilesRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.services.clientpolicy.ClientPolicyException;
+import org.keycloak.services.clientpolicy.condition.ClientAccessTypeCondition;
+import org.keycloak.services.clientpolicy.condition.ClientAccessTypeConditionFactory;
+import org.keycloak.services.clientpolicy.executor.ClientSecretRotationExecutor;
+import org.keycloak.services.clientpolicy.executor.ClientSecretRotationExecutorFactory;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
@@ -52,12 +67,29 @@ import org.keycloak.testsuite.admin.AbstractAdminTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
+import org.keycloak.testsuite.util.ClientPoliciesUtil;
 import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.util.JsonSerialization;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 @AuthServerContainerExclude(AuthServer.REMOTE)
+@EnableFeature(value = Profile.Feature.CLIENT_SECRET_ROTATION)
 public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
 
+    public static final String CLIENT_ID = "test-app";
     private static final Logger logger = Logger.getLogger(ClientAuthSecretSignedJWTTest.class);
+    private static final String REALM_NAME = "test";
+    private static final String PROFILE_NAME = "ClientSecretRotationProfile";
+    private static final String POLICY_NAME = "ClientSecretRotationPolicy";
+    private static final ObjectMapper objectMapper = new ObjectMapper();
+    public static String CLIENT_SECRET = "password";
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
@@ -107,7 +139,7 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
             }
         };
         String algorithm = Algorithm.HS256;
-        jwtProvider.setClientSecret("password", algorithm);
+        jwtProvider.setClientSecret(CLIENT_SECRET, algorithm);
         String jwt = jwtProvider.createSignedRequestToken(oauth.getClientId(), getRealmInfoUrl(), algorithm);
         OAuthClient.AccessTokenResponse response = doAccessTokenRequest(code,
                 jwt);
@@ -145,7 +177,7 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
         ClientRepresentation clientRep = null;
         final String realmName = "test";
         final String clientId = "test-app";
-        final String clientSecret = "password";
+        final String clientSecret = CLIENT_SECRET;
         try {
             clientResource = ApiUtil.findClientByClientId(adminClient.realm(realmName), clientId);
             clientRep = clientResource.toRepresentation();
@@ -169,7 +201,7 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
             clientResource.update(clientRep);
         }
     }
- 
+
     private void testCodeToTokenRequestSuccess(String algorithm) throws Exception {
         oauth.clientId("test-app");
         oauth.doLogin("test-user@localhost", "password");
@@ -178,7 +210,7 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
                 .assertEvent();
 
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        OAuthClient.AccessTokenResponse response = doAccessTokenRequest(code, getClientSignedJWT("password", 20, algorithm));
+        OAuthClient.AccessTokenResponse response = doAccessTokenRequest(code, getClientSignedJWT(CLIENT_SECRET, 20, algorithm));
 
         assertEquals(200, response.getStatusCode());
         oauth.verifyToken(response.getAccessToken());
@@ -188,6 +220,32 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
                 .detail(Details.CLIENT_AUTH_METHOD, JWTClientSecretAuthenticator.PROVIDER_ID)
                 .assertEvent();
     }
+
+    /**
+     * When there is a client secret rotation, the client must be able to authenticate itself by the rotated secret and the new secret. (As long as both secrets remain valid)
+     *
+     * @throws Exception
+     */
+    @Test
+    public void authenticateWithValidClientSecretWhenRotationPolicyIsEnable() throws Exception {
+        configureDefaultProfileAndPolicy();
+
+        ClientResource clientResource = adminClient.realm(REALM_NAME).clients().get(CLIENT_ID);
+        String firstSecret = clientResource.getSecret().getValue();
+
+        //generate new secret, rotate the secret
+        CLIENT_SECRET = clientResource.generateNewSecret().getValue();
+        assertThat(firstSecret, not(equalTo(CLIENT_SECRET)));
+
+        oauth.clientId(CLIENT_ID);
+        oauth.doLogin("test-user@localhost", "password");
+        EventRepresentation loginEvent = events.expectLogin().client(CLIENT_ID).assertEvent();
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        OAuthClient.AccessTokenResponse response = doAccessTokenRequest(code, getClientSignedJWT(firstSecret, 20, Algorithm.HS256));
+        assertThat(response.getStatusCode(), is(HttpStatus.SC_OK));
+
+    }
+
 
     // TEST ERRORS
 
@@ -201,7 +259,7 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
 
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
         OAuthClient.AccessTokenResponse response = doAccessTokenRequest(code, getClientSignedJWT("ppassswordd", 20));
-        
+
         // https://tools.ietf.org/html/rfc6749#section-5.2
         assertEquals(400, response.getStatusCode());
         assertEquals("unauthorized_client", response.getError());
@@ -216,7 +274,7 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
                 .assertEvent();
 
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        String clientSignedJWT = getClientSignedJWT("password", 20);
+        String clientSignedJWT = getClientSignedJWT(CLIENT_SECRET, 20);
 
         OAuthClient.AccessTokenResponse response = doAccessTokenRequest(code, clientSignedJWT);
         assertEquals(200, response.getStatusCode());
@@ -244,6 +302,34 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
 
         assertEquals(400, response.getStatusCode());
         assertEquals("unauthorized_client", response.getError());
+    }
+
+    /**
+     * After a secret rotation the client should not be able to authenticate after the rotated secret expires
+     *
+     * @throws Exception
+     */
+    @Test
+    public void authenticateWithInvalidRotatedClientSecretPolicyIsEnable() throws Exception {
+        configureDefaultProfileAndPolicy();
+
+        ClientResource clientResource = adminClient.realm(REALM_NAME).clients().get(CLIENT_ID);
+        String firstSecret = clientResource.getSecret().getValue();
+
+        //generate new secret, rotate the secret
+        CLIENT_SECRET = clientResource.generateNewSecret().getValue();
+        assertThat(firstSecret, not(equalTo(CLIENT_SECRET)));
+
+        //force rotated secret expiration
+        setTimeOffset(31);
+
+        oauth.clientId(CLIENT_ID);
+        oauth.doLogin("test-user@localhost", "password");
+        EventRepresentation loginEvent = events.expectLogin().client(CLIENT_ID).assertEvent();
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        OAuthClient.AccessTokenResponse response = doAccessTokenRequest(code, getClientSignedJWT(firstSecret, 20, Algorithm.HS256));
+        assertThat(response.getStatusCode(), is(HttpStatus.SC_BAD_REQUEST));
+
     }
 
     private String getClientSignedJWT(String secret, int timeout) {
@@ -285,4 +371,83 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
         }
     }
 
+    //support methods
+    private void configureDefaultProfileAndPolicy() throws Exception {
+        // register profiles
+        ClientPoliciesUtil.ClientProfileBuilder profileBuilder = new ClientPoliciesUtil.ClientProfileBuilder();
+        ClientSecretRotationExecutor.Configuration profileConfig = getClientProfileConfiguration(60, 30, 20);
+
+        doConfigProfileAndPolicy(profileBuilder, profileConfig);
+    }
+
+    private void doConfigProfileAndPolicy(ClientPoliciesUtil.ClientProfileBuilder profileBuilder,
+                                          ClientSecretRotationExecutor.Configuration profileConfig) throws Exception {
+        String json = (new ClientPoliciesUtil.ClientProfilesBuilder()).addProfile(
+                profileBuilder.createProfile(PROFILE_NAME, "Enable Client Secret Rotation")
+                        .addExecutor(ClientSecretRotationExecutorFactory.PROVIDER_ID, profileConfig)
+                        .toRepresentation()).toString();
+        updateProfiles(json);
+
+        // register policies
+        ClientAccessTypeCondition.Configuration config = new ClientAccessTypeCondition.Configuration();
+        config.setType(Arrays.asList(ClientAccessTypeConditionFactory.TYPE_CONFIDENTIAL));
+        json = (new ClientPoliciesUtil.ClientPoliciesBuilder()).addPolicy(
+                (new ClientPoliciesUtil.ClientPolicyBuilder()).createPolicy(POLICY_NAME,
+                                "Policy for Client Secret Rotation",
+                                Boolean.TRUE).addCondition(ClientAccessTypeConditionFactory.PROVIDER_ID, config)
+                        .addProfile(PROFILE_NAME).toRepresentation()).toString();
+        updatePolicies(json);
+    }
+
+    protected void updateProfiles(String json) throws ClientPolicyException {
+        try {
+            ClientProfilesRepresentation clientProfiles = JsonSerialization.readValue(json,
+                    ClientProfilesRepresentation.class);
+            adminClient.realm(REALM_NAME).clientPoliciesProfilesResource()
+                    .updateProfiles(clientProfiles);
+        } catch (BadRequestException e) {
+            throw new ClientPolicyException("update profiles failed",
+                    e.getResponse().getStatusInfo().toString());
+        } catch (Exception e) {
+            throw new ClientPolicyException("update profiles failed", e.getMessage());
+        }
+    }
+
+    protected void updateProfiles(ClientProfilesRepresentation reps) throws ClientPolicyException {
+        updateProfiles(convertToProfilesJson(reps));
+    }
+
+    protected void updatePolicies(String json) throws ClientPolicyException {
+        try {
+            ClientPoliciesRepresentation clientPolicies = json == null ? null
+                    : JsonSerialization.readValue(json, ClientPoliciesRepresentation.class);
+            adminClient.realm(REALM_NAME).clientPoliciesPoliciesResource()
+                    .updatePolicies(clientPolicies);
+        } catch (BadRequestException e) {
+            throw new ClientPolicyException("update policies failed",
+                    e.getResponse().getStatusInfo().toString());
+        } catch (IOException e) {
+            throw new ClientPolicyException("update policies failed", e.getMessage());
+        }
+    }
+
+    protected String convertToProfilesJson(ClientProfilesRepresentation reps) {
+        String json = null;
+        try {
+            json = objectMapper.writeValueAsString(reps);
+        } catch (JsonProcessingException e) {
+            fail();
+        }
+        return json;
+    }
+
+    @NotNull
+    private ClientSecretRotationExecutor.Configuration getClientProfileConfiguration(
+            int expirationPeriod, int rotatedExpirationPeriod, int remainExpirationPeriod) {
+        ClientSecretRotationExecutor.Configuration profileConfig = new ClientSecretRotationExecutor.Configuration();
+        profileConfig.setExpirationPeriod(expirationPeriod);
+        profileConfig.setRotatedExpirationPeriod(rotatedExpirationPeriod);
+        profileConfig.setRemainExpirationPeriod(remainExpirationPeriod);
+        return profileConfig;
+    }
 }
