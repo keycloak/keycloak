@@ -40,13 +40,14 @@ import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.QUARKUS;
 import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 import static org.keycloak.testsuite.util.OAuthClient.AUTH_SERVER_ROOT;
 import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 
 import javax.ws.rs.core.UriBuilder;
 
-@AuthServerContainerExclude({REMOTE})
+@AuthServerContainerExclude({REMOTE, QUARKUS})
 public class DefaultHostnameTest extends AbstractHostnameTest {
 
     @ArquillianResource
