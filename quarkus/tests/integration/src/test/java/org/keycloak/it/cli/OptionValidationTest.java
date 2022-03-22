@@ -47,4 +47,28 @@ public class OptionValidationTest {
         assertEquals("Unknown option: '--nosuch'\n" +
                 "Try 'kc.sh build --help' for more information on the available options.", result.getErrorOutput());
     }
+
+    @Test
+    @Launch({"start", "--db-pasword mytestpw"})
+    public void failUnknownOptionWhitespaceSeparatorNotShowingValue(LaunchResult result) {
+        assertEquals("Unknown option: '--db-pasword'\n" +
+                "Possible solutions: --db-username, --db-url-host, --db-pool-min-size, --db-password, --db-url-properties, --db-url-database, --db-schema, --db-pool-max-size, --db-pool-initial-size, --db-url\n" +
+                "Try 'kc.sh start --help' for more information on the available options.", result.getErrorOutput());
+    }
+
+    @Test
+    @Launch({"start", "--db-pasword=mytestpw"})
+    public void failUnknownOptionEqualsSeparatorNotShowingValue(LaunchResult result) {
+        assertEquals("Unknown option: '--db-pasword'\n" +
+                "Possible solutions: --db-username, --db-url-host, --db-pool-min-size, --db-password, --db-url-properties, --db-url-database, --db-schema, --db-pool-max-size, --db-pool-initial-size, --db-url\n" +
+                "Try 'kc.sh start --help' for more information on the available options.", result.getErrorOutput());
+    }
+
+    @Test
+    @Launch({"start", "--db-username=foobar","--db-pasword=mytestpw", "--foobar=barfoo"})
+    public void failWithFirstOptionOnMultipleUnknownOptions(LaunchResult result) {
+        assertEquals("Unknown option: '--db-pasword'\n" +
+                "Possible solutions: --db-username, --db-url-host, --db-pool-min-size, --db-password, --db-url-properties, --db-url-database, --db-schema, --db-pool-max-size, --db-pool-initial-size, --db-url\n" +
+                "Try 'kc.sh start --help' for more information on the available options.", result.getErrorOutput());
+    }
 }
