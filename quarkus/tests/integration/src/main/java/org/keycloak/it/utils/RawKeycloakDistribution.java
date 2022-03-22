@@ -265,7 +265,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
             Path distPath = distRootPath.resolve(distDirName.substring(0, distDirName.lastIndexOf('.')));
 
             if (!inited || (reCreate || !distPath.toFile().exists())) {
-                distPath.toFile().delete();
+                FileUtils.deleteDirectory(distPath.toFile());
                 ZipUtils.unzip(distFile.toPath(), distRootPath);
             }
 
@@ -318,8 +318,6 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
 
         builder.environment().put("KEYCLOAK_ADMIN", "admin");
         builder.environment().put("KEYCLOAK_ADMIN_PASSWORD", "admin");
-
-        FileUtils.deleteDirectory(distPath.resolve("data").toFile());
 
         keycloak = builder.start();
     }

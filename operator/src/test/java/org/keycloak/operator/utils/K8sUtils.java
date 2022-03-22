@@ -59,8 +59,15 @@ public final class K8sUtils {
 
 
     public static void deployKeycloak(KubernetesClient client, Keycloak kc, boolean waitUntilReady) {
+        deployKeycloak(client, kc, waitUntilReady, true);
+    }
+
+    public static void deployKeycloak(KubernetesClient client, Keycloak kc, boolean waitUntilReady, boolean deployTlsSecret) {
         client.resources(Keycloak.class).inNamespace(kc.getMetadata().getNamespace()).createOrReplace(kc);
-        client.secrets().inNamespace(kc.getMetadata().getNamespace()).createOrReplace(getDefaultTlsSecret());
+
+        if (deployTlsSecret) {
+            client.secrets().inNamespace(kc.getMetadata().getNamespace()).createOrReplace(getDefaultTlsSecret());
+        }
 
         if (waitUntilReady) {
             waitForKeycloakToBeReady(client, kc);

@@ -127,25 +127,25 @@ public class MapPolicyAdapter extends AbstractPolicyModel<MapPolicyEntity> {
         String resourceServerId = entity.getResourceServerId();
         Set<String> ids = entity.getAssociatedPolicyIds();
         return ids == null ? Collections.emptySet() : ids.stream()
-                .map(policyId -> storeFactory.getPolicyStore().findById(policyId, resourceServerId))
+                .map(policyId -> storeFactory.getPolicyStore().findById(storeFactory.getResourceServerStore().findById(resourceServerId), policyId))
                 .collect(Collectors.toSet());
     }
 
     @Override
     public Set<Resource> getResources() {
-        String resourceServerId = entity.getResourceServerId();
+        ResourceServer resourceServer = getResourceServer();
         Set<String> ids = entity.getResourceIds();
         return ids == null ? Collections.emptySet() : ids.stream()
-                .map(resourceId -> storeFactory.getResourceStore().findById(resourceId, resourceServerId))
+                .map(resourceId -> storeFactory.getResourceStore().findById(resourceServer, resourceId))
                 .collect(Collectors.toSet());
     }
 
     @Override
     public Set<Scope> getScopes() {
-        String resourceServerId = entity.getResourceServerId();
+        ResourceServer resourceServer = getResourceServer();
         Set<String> ids = entity.getScopeIds();
         return ids == null ? Collections.emptySet() : ids.stream()
-                .map(scopeId -> storeFactory.getScopeStore().findById(scopeId, resourceServerId))
+                .map(scopeId -> storeFactory.getScopeStore().findById(resourceServer, scopeId))
                 .collect(Collectors.toSet());
     }
 

@@ -7,7 +7,7 @@
     summary="An overview about how to configure relational databases"
     includedOptions="db db-* transaction-xa-enabled">
 
-In this guide, you are going to understand how to configure the server to store data using different relational databases. You should also learn
+In this guide, you are going to understand how to configure the server to store data using different relational databases.
 You will also learn what databases are supported by the server.
 
 == Querying the list of supported databases

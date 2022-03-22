@@ -13,9 +13,6 @@ For Keycloak, your choice of proxy modes depends on the TLS termination in your 
 == Proxy modes
 The following proxy modes are available:
 
-none:: Disables proxy support.
-It is the default mode.
-
 edge:: Enables communication through HTTP between the proxy and Keycloak.
 This mode is suitable for deployments with a highly secure internal network where the reverse proxy keeps a secure connection (HTTP over TLS) with clients while communicating with Keycloak using HTTP.
 

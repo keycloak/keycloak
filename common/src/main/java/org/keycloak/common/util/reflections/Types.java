@@ -163,9 +163,9 @@ public class Types {
         if (method == intfMethod) return true;
 
         if (!method.getName().equals(intfMethod.getName())) return false;
-        if (method.getParameterCount() != intfMethod.getParameterCount()) return false;
+        if (method.getParameterTypes().length != intfMethod.getParameterTypes().length) return false;
 
-        for (int i = 0; i < method.getParameterCount(); i++)
+        for (int i = 0; i < method.getParameterTypes().length; i++)
         {
             Class rootParam = method.getParameterTypes()[i];
             Class intfParam = intfMethod.getParameterTypes()[i];

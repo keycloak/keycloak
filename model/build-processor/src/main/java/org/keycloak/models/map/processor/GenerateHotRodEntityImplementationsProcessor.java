@@ -103,7 +103,8 @@ public class GenerateHotRodEntityImplementationsProcessor extends AbstractGenera
             abstractHotRodEntity = elements.getTypeElement("org.keycloak.models.map.storage.hotRod.common.AbstractHotRodEntity");
             hotRodUtils = elements.getTypeElement("org.keycloak.models.map.storage.hotRod.common.HotRodTypesUtils");
 
-            boolean hasDeepClone = allMembers.stream().filter(el -> el.getKind() == ElementKind.METHOD).anyMatch(el -> "deepClone".equals(el.getSimpleName().toString()));
+            boolean hasDeepClone = allMembers.stream()
+                    .filter(el -> el.getKind() == ElementKind.METHOD && !el.getModifiers().contains(Modifier.ABSTRACT)).anyMatch(el -> "deepClone".equals(el.getSimpleName().toString()));
             boolean needsDeepClone = fieldGetters(methodsPerAttribute)
                     .map(ExecutableElement::getReturnType)
                     .anyMatch(fieldType -> ! isKnownCollectionOfImmutableFinalTypes(fieldType) && ! isImmutableFinalType(fieldType));

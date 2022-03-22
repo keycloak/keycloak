@@ -60,8 +60,10 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
 
     @Override
     public List<EventSource> prepareEventSources(EventSourceContext<Keycloak> context) {
+        String namespace = context.getConfigurationService().getClientConfiguration().getNamespace();
+
         SharedIndexInformer<Deployment> deploymentInformer =
-                client.apps().deployments().inNamespace(context.getConfigurationService().getClientConfiguration().getNamespace())
+                client.apps().deployments().inNamespace(namespace)
                         .withLabels(Constants.DEFAULT_LABELS)
                         .runnableInformer(0);
 
@@ -79,7 +81,11 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
         EventSource servicesEvent = new InformerEventSource<>(servicesInformer, Mappers.fromOwnerReference());
         EventSource ingressesEvent = new InformerEventSource<>(ingressesInformer, Mappers.fromOwnerReference());
 
-        return List.of(deploymentEvent, servicesEvent, ingressesEvent);
+        return List.of(deploymentEvent,
+                servicesEvent,
+                ingressesEvent,
+                WatchedSecretsStore.getStoreEventSource(client, namespace),
+                WatchedSecretsStore.getWatchedSecretsEventSource(client, namespace));
     }
 
     @Override
@@ -97,8 +103,14 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
         // TODO use caches in secondary resources; this is a workaround for https://github.com/java-operator-sdk/java-operator-sdk/issues/830
         // KeycloakDeployment deployment = new KeycloakDeployment(client, config, kc, context.getSecondaryResource(Deployment.class).orElse(null));
         var kcDeployment = new KeycloakDeployment(client, config, kc, null, kcAdminSecret.getName());
-        kcDeployment.updateStatus(statusBuilder);
+        var watchedSecrets = new WatchedSecretsStore(kcDeployment.getConfigSecretsNames(), client, kc);
         kcDeployment.createOrUpdateReconciled();
+        if (watchedSecrets.changesDetected()) {
+            Log.info("Config Secrets modified, restarting deployment");
+            kcDeployment.rollingRestart();
+        }
+        kcDeployment.updateStatus(statusBuilder);
+        watchedSecrets.createOrUpdateReconciled();
 
         var kcService = new KeycloakService(client, kc);
         kcService.updateStatus(statusBuilder);

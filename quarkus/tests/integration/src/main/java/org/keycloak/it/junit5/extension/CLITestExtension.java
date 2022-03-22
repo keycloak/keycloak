@@ -113,8 +113,14 @@ public class CLITestExtension extends QuarkusMainTestExtension {
     public void afterEach(ExtensionContext context) throws Exception {
         DistributionTest distConfig = getDistributionConfig(context);
 
-        if (distConfig != null && distConfig.keepAlive()) {
-            dist.stop();
+        if (distConfig != null) {
+            if (distConfig.keepAlive()) {
+                dist.stop();
+            }
+
+            if (DistributionTest.ReInstall.BEFORE_TEST.equals(distConfig.reInstall())) {
+                dist = null;
+            }
         }
 
         super.afterEach(context);

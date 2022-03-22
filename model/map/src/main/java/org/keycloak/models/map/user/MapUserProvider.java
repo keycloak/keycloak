@@ -47,7 +47,6 @@ import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.storage.StorageId;
-import org.keycloak.storage.UserStorageManager;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.client.ClientStorageProvider;
 
@@ -684,7 +683,7 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
             authorizedGroups.removeIf(id -> {
                 Map<Resource.FilterOption, String[]> values = new EnumMap<>(Resource.FilterOption.class);
                 values.put(Resource.FilterOption.EXACT_NAME, new String[] {"group.resource." + id});
-                return resourceStore.findByResourceServer(values, null, 0, 1).isEmpty();
+                return resourceStore.findByResourceServer(null, values, 0, 1).isEmpty();
             });
 
             criteria = criteria.compare(SearchableFields.ASSIGNED_GROUP, Operator.IN, authorizedGroups);

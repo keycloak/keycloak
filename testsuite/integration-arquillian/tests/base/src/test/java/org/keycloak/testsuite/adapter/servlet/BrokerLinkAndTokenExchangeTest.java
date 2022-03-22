@@ -290,7 +290,7 @@ public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest 
         clientRep.addClient(client.getId());
         clientRep.addClient(directExchanger.getId());
         ResourceServer server = management.realmResourceServer();
-        Policy clientPolicy = management.authz().getStoreFactory().getPolicyStore().create(clientRep, server);
+        Policy clientPolicy = management.authz().getStoreFactory().getPolicyStore().create(server, clientRep);
         management.idps().exchangeToPermission(idp).addAssociatedPolicy(clientPolicy);
 
 
@@ -300,7 +300,7 @@ public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest 
         clientImpersonateRep.setName("clientImpersonators");
         clientImpersonateRep.addClient(directExchanger.getId());
         server = management.realmResourceServer();
-        Policy clientImpersonatePolicy = management.authz().getStoreFactory().getPolicyStore().create(clientImpersonateRep, server);
+        Policy clientImpersonatePolicy = management.authz().getStoreFactory().getPolicyStore().create(server, clientImpersonateRep);
         management.users().setPermissionsEnabled(true);
         management.users().adminImpersonatingPermission().addAssociatedPolicy(clientImpersonatePolicy);
         management.users().adminImpersonatingPermission().setDecisionStrategy(DecisionStrategy.AFFIRMATIVE);

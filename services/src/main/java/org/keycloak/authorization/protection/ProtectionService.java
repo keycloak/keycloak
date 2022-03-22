@@ -73,7 +73,7 @@ public class ProtectionService {
 
     private AdminEventBuilder createAdminEventBuilder(KeycloakIdentity identity, ResourceServer resourceServer) {
         RealmModel realm = authorization.getRealm();
-        ClientModel client = realm.getClientById(resourceServer.getId());
+        ClientModel client = realm.getClientById(resourceServer.getClientId());
         KeycloakSession keycloakSession = authorization.getKeycloakSession();
         UserModel serviceAccount = keycloakSession.users().getServiceAccount(client);
         AdminEventBuilder adminEvent = new AdminEventBuilder(realm, new AdminAuth(realm, identity.getAccessToken(), serviceAccount, client), keycloakSession, clientConnection);
@@ -118,7 +118,7 @@ public class ProtectionService {
         ResourceServer resourceServer = getResourceServer(identity);
         KeycloakSession keycloakSession = authorization.getKeycloakSession();
         RealmModel realm = keycloakSession.getContext().getRealm();
-        ClientModel client = realm.getClientById(resourceServer.getId());
+        ClientModel client = realm.getClientById(resourceServer.getClientId());
 
         if (checkProtectionScope) {
             if (!identity.hasClientRole(client.getClientId(), "uma_protection")) {
