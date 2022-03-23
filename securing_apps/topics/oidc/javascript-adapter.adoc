@@ -121,7 +121,7 @@ const loadData = function () {
 
     const url = 'http://localhost:8080/restful-service';
 
-    let req = new XMLHttpRequest();
+    const req = new XMLHttpRequest();
     req.open('GET', url, true);
     req.setRequestHeader('Accept', 'application/json');
     req.setRequestHeader('Authorization', 'Bearer ' + keycloak.token);
