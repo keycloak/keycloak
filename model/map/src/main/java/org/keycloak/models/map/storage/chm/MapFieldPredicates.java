@@ -491,7 +491,7 @@ public class MapFieldPredicates {
 
     private static MapModelCriteriaBuilder<Object, MapUserSessionEntity, UserSessionModel> checkUserSessionContainsAuthenticatedClientSession(MapModelCriteriaBuilder<Object, MapUserSessionEntity, UserSessionModel> mcb, Operator op, Object[] values) {
         String clientId = ensureEqSingleValue(UserSessionModel.SearchableFields.CLIENT_ID, "client_id", op, values);
-        Function<MapUserSessionEntity, ?> getter = use -> (use.getAuthenticatedClientSessions().containsKey(clientId));
+        Function<MapUserSessionEntity, ?> getter = use -> (use.getAuthenticatedClientSession(clientId) != null);
         return mcb.fieldCompare(Boolean.TRUE::equals, getter);
     }
 
