@@ -14,7 +14,7 @@
 :project_version: 7.5.0
 :keycloak_upgrade_version: 15.0.2
 :project_versionDoc: 7.5
-:project_templates_base_url: https://raw.githubusercontent.com/jboss-container-images/redhat-sso-7-openshift-image/sso75-cpaas-dev/templates
+:project_templates_base_url: https://raw.githubusercontent.com/jboss-container-images/redhat-sso-7-openshift-image/sso75-dev/templates
 :project_latest_image_tag: {project_versionDoc}
 :project_doc_base_url: https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/{project_versionDoc}/html-single
 :project_doc_base_url_latest: https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/{project_versionDoc}/html-single
