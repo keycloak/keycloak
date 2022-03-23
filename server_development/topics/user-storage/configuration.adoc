@@ -1,5 +1,5 @@
 
-=== Configuration Techniques
+=== Configuration techniques
 
 Our `PropertyFileUserStorageProvider` example is a bit contrived. It is hardcoded to a property file that is embedded in the jar of the provider, which is not terribly useful. We might want to make the location of this file configurable per instance of the provider. In other words, we might want to reuse this provider multiple times in multiple different realms and point to completely different user property files. We'll also want to perform this configuration within the Admin Console UI.
 

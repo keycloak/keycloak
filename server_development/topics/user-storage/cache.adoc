@@ -1,5 +1,5 @@
 
-=== User Caches
+=== User caches
 
 When a user object is loaded by ID, username, or email queries it is cached. When a user object is being cached, it iterates through
 the entire `UserModel` interface and pulls this information to a local in-memory-only cache. In a cluster, this cache
@@ -43,7 +43,7 @@ public interface UserCache extends UserProvider {
 
 There are methods for evicting specific users, users contained in a specific realm, or the entire cache.
 
-==== OnUserCache Callback Interface
+==== OnUserCache callback interface
 
 You might want to cache additional information that is specific to your provider implementation. The User Storage SPI
 has a callback whenever a user is cached: `org.keycloak.models.cache.OnUserCache`.

@@ -1,5 +1,5 @@
 [[_theme_resource]]
-=== Theme Resources
+=== Theme resources
 
 When implementing custom providers in {project_name} there may often be a need to add additional templates, resources and messages bundles.
 
@@ -13,8 +13,3 @@ resources in `theme-resources/resources` and messages bundles in `theme-resource
 If you want a more flexible way to load templates and resources that can be achieved through the ThemeResourceSPI.
 By implementing `ThemeResourceProviderFactory` and `ThemeResourceProvider` you can decide exactly how to load templates
 and resources.
-
-[role="_additional-resources"]
-.Additional resources
-* Follow the steps in <<_providers,Service Provider Interfaces>> for more details on how to create and deploy a custom provider.
-

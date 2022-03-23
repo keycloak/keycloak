@@ -2,25 +2,19 @@
 
 {project_name} comes with a fully functional Admin REST API with all features provided by the Admin Console.
 
-To invoke the API you need to obtain an access token with the appropriate permissions. The required permissions are described in the Server Administration Guide. 
+To invoke the API you need to obtain an access token with the appropriate permissions. The required permissions are described in the Server Administration Guide.
 
-A token can be obtained by enabling authenticating to your application with {project_name}; see the Securing Applications and Services Guide. You can also use direct access grant to obtain an access token.
-
-.Additional resources
-[role="_additional-resources"]
-* {adminguide_link}[{adminguide_name}]
-* {adapterguide_link}[{adapterguide_name}]
-* {apidocs_link}[{apidocs_name}]
+You can obtain a token by enabling authentication for your application using {project_name}; see the Securing Applications and Services Guide. You can also use direct access grant to obtain an access token.
 
 === Examples of using CURL
 
-==== Authenticate with username and password
+==== Authenticating with a username and password
 
 .Procedure
 
-. Obtain an access token for user in the realm `master` with username `admin` and password `password`:
+. Obtain an access token for the user in the realm `master` with username `admin` and password `password`:
 +
-[source,bash,subs="attributes+"]
+[source,bash,subs=+attributes]
 ----
 curl \
   -d "client_id=admin-cli" \
@@ -47,18 +41,20 @@ curl \
   "http://localhost:8080{kc_admins_path}/realms/master"
 ----
 
-==== Authenticate with a service account
+==== Authenticating with a service account
 
-Before being able to authenticate against the Admin REST API using a `client_id` and a `client_secret` you need to make sure the client is configured as it follows:
+To authenticate against the Admin REST API using a `client_id` and a `client_secret`, perform this procedure.
+
+.Procedure
+
+. Make sure the client is configured as follows:
 
 * `client_id` is a **confidential** client that belongs to the realm *master*
 * `client_id` has `Service Accounts Enabled` option enabled
 * `client_id` has a custom "Audience" mapper
   ** Included Client Audience: `security-admin-console`
 
-Finally, check that `client_id` has the role 'admin' assigned in the "Service Account Roles" tab.
-
-After that, you will be able to obtain an access token for the Admin REST API using `client_id` and `client_secret`:
+. Check that `client_id` has the role 'admin' assigned in the "Service Account Roles" tab.
 
 [source,bash,subs="attributes+"]
 ----
@@ -96,3 +92,8 @@ RealmRepresentation realm = keycloak.realm("master").toRepresentation();
 Complete Javadoc for the admin client is available at {apidocs_link}[{apidocs_name}].
 endif::[]
 
+=== Additional resources
+[role="_additional-resources"]
+* {adminguide_link}[{adminguide_name}]
+* {adapterguide_link}[{adapterguide_name}]
+* {apidocs_link}[{apidocs_name}]

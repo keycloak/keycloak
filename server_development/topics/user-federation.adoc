@@ -1,5 +1,5 @@
 [[_user_federation]]
-== User Federation SPI
+== User federation SPI
 
 The keycloak examples directory contains an example of a simple User Federation Provider backed by a simple properties file. See `providers/federation-provider`
 in the examples distribution. Most of how to create a federation provider is explained directly within the example code, but some information is here too.

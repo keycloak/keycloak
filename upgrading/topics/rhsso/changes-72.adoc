@@ -67,7 +67,7 @@ for the Google+ API in favor of the new Google Sign-in authentication system. Th
 to use the new endpoints so if this integration is in use make sure you upgrade to {project_name} version 7.2.6 or later.
 
 If you run into an error saying that the application identifier was not found in the directory, you will have to register the client application again in the
-https://console.developers.google.com/apis/credentials[Google API Console] portal to obtain a new application id and secret.
+https://console.cloud.google.com/apis/credentials[Google API Console] portal to obtain a new application id and secret.
 
 It is possible that you will need to adjust custom mappers for non-standard claims that were provided by Google+ user
 information endpoint and are provided under different name by Google Sign-in API. Please consult Google documentation
@@ -89,4 +89,3 @@ Due to these privacy restrictions imposed by LinkedIn in regards to access to me
 current member's Profile API, the LinkedIn Social Broker
 is now using the member's email address as the default username. That means that the `r_emailaddress` is always set when
 sending authorization requests during the authentication.
-

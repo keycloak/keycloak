@@ -1,5 +1,5 @@
 
-=== Augmenting External Storage
+=== Augmenting external storage
 
 The `PropertyFileUserStorageProvider` example is really limited.  While we will be able to login with users stored
 in a property file, we won't be able to do much else.  If users loaded by this provider need special role or group
@@ -37,7 +37,7 @@ the methods you need to override to delegate to your external storage representa
 suggested you read the javadoc of this class as it has smaller protected methods you may want to override.  Specifically
 surrounding group membership and role mappings.
 
-==== Augmentation Example
+==== Augmentation example
 
 In our `PropertyFileUserStorageProvider` example, we just need a simple change to our provider to use the
 `AbstractUserAdapterFederatedStorage`.

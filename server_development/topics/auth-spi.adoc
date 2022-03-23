@@ -156,7 +156,7 @@ To create an authenticator, you must at minimum implement the org.keycloak.authe
 The Authenticator interface defines the logic. The AuthenticatorFactory is responsible for creating instances of an Authenticator.
 They both extend a more generic Provider and ProviderFactory set of interfaces that other {project_name} components like User Federation do.
 
-Some authenticators, like the CookieAuthenticator don't rely on a Credential that the user has or knows to authenticate the user. 
+Some authenticators, like the CookieAuthenticator don't rely on a Credential that the user has or knows to authenticate the user.
 However, some authenticators, such as the PasswordForm authenticator or the OTPFormAuthenticator rely on the user inputting some
 information and verifying that information against some information in the
 database. For the PasswordForm for example, the authenticator will verify the hash of the password against a hash stored in the database, while the

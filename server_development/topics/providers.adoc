@@ -176,6 +176,7 @@ usage of the `KeycloakSession`, which is available to your provider as described
 {project_name} has two provider types:
 
 * *Single-implementation provider types* - There can be only a single active implementation of the particular provider type in {project_name} runtime.
++
 For example `HostnameProvider` specifies the hostname to be used by {project_name} and that is shared for the whole {project_name} server.
 Hence there can be only single implementation of this provider active for the {project_name} server. If there are multiple provider implementations available to the server runtime,
 one of them needs to be specified as the default one.
@@ -203,10 +204,14 @@ The value `default` used as the value of `default-provider` must match the ID re
 In the code, you can obtain the provider such as `keycloakSession.getProvider(HostnameProvider.class)`
 
 * *Multiple implementation provider types* - Those are provider types, that allow multiple implementations available and working together
-in the {project_name} runtime. For example `EventListener` provider allows to have multiple implementations available and registered, which means
+in the {project_name} runtime.
++
+For example `EventListener` provider allows to have multiple implementations available and registered, which means
 that particular event can be sent to all the listeners (jboss-logging, sysout etc). In the code, you can obtain a specified instance of the provider
 for example such as `session.getProvider(EventListener.class, "jboss-logging")` . You need to specify `provider_id` of the provider as the second argument
-as there can be multiple instances of this provider type as described above. The provider ID must match the ID returned by the `ProviderFactory.getId()` of the
+as there can be multiple instances of this provider type as described above.
++
+The provider ID must match the ID returned by the `ProviderFactory.getId()` of the
 particular provider factory implementation. Some provider types can be retrieved with the usage of `ComponentModel` as the second argument and some (for example `Authenticator`) even
 need to be retrieved with the usage of `KeycloakSessionFactory`. It is not recommended to implement your own providers this way as it may be deprecated in the future.
 
@@ -253,18 +258,19 @@ it really easy to use third party jars as you can just put these libraries in th
 ==== Register a provider using Modules
 
 .Procedure
-. To register a provider using Modules, create a module.
+
+. Create a module using the jboss-cli script or manually create a folder.
 +
-You can either use the jboss-cli script or manually create a folder inside `KEYCLOAK_HOME/modules` and add your jar and a `module.xml`.
-+
-For example to add the event listener sysout example provider using the `jboss-cli` script execute:
+.. For example,  to add the event listener sysout example provider using the `jboss-cli` script, execute:
 +
 [source]
 ----
 KEYCLOAK_HOME/bin/jboss-cli.sh --command="module add --name=org.acme.provider --resources=target/provider.jar --dependencies=org.keycloak.keycloak-core,org.keycloak.keycloak-server-spi"
 ----
 
-. To manually create the module, create the folder `KEYCLOAK_HOME/modules/org/acme/provider/main`. Then copy `provider.jar` to this folder and create `module.xml` with the following content:
+.. Alternatively, you can manually create the module inside `KEYCLOAK_HOME/modules` and add your jar and a `module.xml`.
++
+For example, create the folder `KEYCLOAK_HOME/modules/org/acme/provider/main`. Then copy `provider.jar` to this folder and create `module.xml` with the following content:
 +
 [source,xml]
 ----
@@ -532,7 +538,7 @@ JAR file to prevent attacks when you run scripts at runtime.
 Ability to upload scripts can be explicitly enabled. This should be used with great care and plans should be created to
 deploy all scripts directly to the server as soon as possible.
 
-For more details about how to enable the `upload_scripts` feature. Please, take a look at the link:{installguide_profile_link}[{installguide_profile_name}].
+For more details about how to enable the `upload_scripts` feature, see link:{installguide_profile_link}[{installguide_profile_name}].
 
 === Available SPIs
 

@@ -86,7 +86,7 @@ The `createAdapter()` method uses the helper class `org.keycloak.storage.adapter
 "f:" + component id + ":" + username
 ----
 
-Every get method of `AbstractUserAdapter` either returns null or empty collections. However, methods that return role and group mappings will return the default roles and groups configured for the realm for every user.  Every set method of `AbstractUserAdapter` will throw a `org.keycloak.storage.ReadOnlyException`. So if you attempt to modify the user in the admininstration console, you will get an error.
+Every get method of `AbstractUserAdapter` either returns null or empty collections. However, methods that return role and group mappings will return the default roles and groups configured for the realm for every user.  Every set method of `AbstractUserAdapter` will throw a `org.keycloak.storage.ReadOnlyException`. So if you attempt to modify the user in the Admin Console, you will get an error.
 
 The `getUserById()` method parses the `id` parameter using the `org.keycloak.storage.StorageId` helper class. The `StorageId.getExternalId()` method is invoked to obtain the username embeded in the `id` parameter. The method then delegates to `getUserByUsername()`.
 
