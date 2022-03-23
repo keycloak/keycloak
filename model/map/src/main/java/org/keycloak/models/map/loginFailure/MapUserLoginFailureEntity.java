@@ -56,11 +56,6 @@ public interface MapUserLoginFailureEntity extends AbstractEntity, UpdatableEnti
             setLastFailure(null);
             setLastIPFailure(null);
         }
-
-        @Override
-        public String toString() {
-            return String.format("%s@%08x", getId(), hashCode());
-        }
     }
 
     String getRealmId();
