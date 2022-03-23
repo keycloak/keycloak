@@ -39,7 +39,8 @@ public class MapUserLoginFailureAdapter extends AbstractUserLoginFailureModel<Ma
 
     @Override
     public int getFailedLoginNotBefore() {
-        return entity.getFailedLoginNotBefore();
+        Integer failedLoginNotBefore = entity.getFailedLoginNotBefore();
+        return failedLoginNotBefore == null ? 0 : failedLoginNotBefore;
     }
 
     @Override
@@ -49,7 +50,8 @@ public class MapUserLoginFailureAdapter extends AbstractUserLoginFailureModel<Ma
 
     @Override
     public int getNumFailures() {
-        return entity.getNumFailures();
+        Integer numFailures = entity.getNumFailures();
+        return numFailures == null ? 0 : numFailures;
     }
 
     @Override
@@ -64,7 +66,8 @@ public class MapUserLoginFailureAdapter extends AbstractUserLoginFailureModel<Ma
 
     @Override
     public long getLastFailure() {
-        return entity.getLastFailure();
+        Long lastFailure = entity.getLastFailure();
+        return lastFailure == null ? 0l : lastFailure;
     }
 
     @Override
