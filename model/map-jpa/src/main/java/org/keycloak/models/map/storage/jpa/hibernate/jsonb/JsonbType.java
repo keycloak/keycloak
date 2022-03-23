@@ -56,6 +56,27 @@ import org.keycloak.models.map.common.EntityWithAttributes;
 import org.keycloak.models.map.common.Serialization.IgnoreUpdatedMixIn;
 import org.keycloak.models.map.common.Serialization.IgnoredTypeMixIn;
 import org.keycloak.models.map.common.UpdatableEntity;
+import org.keycloak.models.map.realm.entity.MapAuthenticationExecutionEntity;
+import org.keycloak.models.map.realm.entity.MapAuthenticationExecutionEntityImpl;
+import org.keycloak.models.map.realm.entity.MapAuthenticationFlowEntity;
+import org.keycloak.models.map.realm.entity.MapAuthenticationFlowEntityImpl;
+import org.keycloak.models.map.realm.entity.MapAuthenticatorConfigEntity;
+import org.keycloak.models.map.realm.entity.MapAuthenticatorConfigEntityImpl;
+import org.keycloak.models.map.realm.entity.MapClientInitialAccessEntity;
+import org.keycloak.models.map.realm.entity.MapClientInitialAccessEntityImpl;
+import org.keycloak.models.map.realm.entity.MapIdentityProviderEntity;
+import org.keycloak.models.map.realm.entity.MapIdentityProviderEntityImpl;
+import org.keycloak.models.map.realm.entity.MapIdentityProviderMapperEntity;
+import org.keycloak.models.map.realm.entity.MapIdentityProviderMapperEntityImpl;
+import org.keycloak.models.map.realm.entity.MapOTPPolicyEntity;
+import org.keycloak.models.map.realm.entity.MapOTPPolicyEntityImpl;
+import org.keycloak.models.map.realm.entity.MapRequiredActionProviderEntity;
+import org.keycloak.models.map.realm.entity.MapRequiredActionProviderEntityImpl;
+import org.keycloak.models.map.realm.entity.MapRequiredCredentialEntity;
+import org.keycloak.models.map.realm.entity.MapRequiredCredentialEntityImpl;
+import org.keycloak.models.map.realm.entity.MapWebAuthnPolicyEntity;
+import org.keycloak.models.map.realm.entity.MapWebAuthnPolicyEntityImpl;
+
 import static org.keycloak.models.map.storage.jpa.hibernate.jsonb.JpaEntityMigration.MIGRATIONS;
 
 public class JsonbType extends AbstractSingleColumnStandardBasicType<Object> implements DynamicParameterizedType {
@@ -68,7 +89,18 @@ public class JsonbType extends AbstractSingleColumnStandardBasicType<Object> imp
             .setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.NONE)
             .setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY)
             .activateDefaultTyping(new LaissezFaireSubTypeValidator(), ObjectMapper.DefaultTyping.JAVA_LANG_OBJECT, JsonTypeInfo.As.PROPERTY)
-            .registerModule(new SimpleModule().addAbstractTypeMapping(MapProtocolMapperEntity.class, MapProtocolMapperEntityImpl.class))
+            .registerModule(new SimpleModule().addAbstractTypeMapping(MapProtocolMapperEntity.class, MapProtocolMapperEntityImpl.class)
+                    // realm abstract type mappings
+                    .addAbstractTypeMapping(MapAuthenticationExecutionEntity.class, MapAuthenticationExecutionEntityImpl.class)
+                    .addAbstractTypeMapping(MapAuthenticationFlowEntity.class, MapAuthenticationFlowEntityImpl.class)
+                    .addAbstractTypeMapping(MapAuthenticatorConfigEntity.class, MapAuthenticatorConfigEntityImpl.class)
+                    .addAbstractTypeMapping(MapClientInitialAccessEntity.class, MapClientInitialAccessEntityImpl.class)
+                    .addAbstractTypeMapping(MapIdentityProviderEntity.class, MapIdentityProviderEntityImpl.class)
+                    .addAbstractTypeMapping(MapIdentityProviderMapperEntity.class, MapIdentityProviderMapperEntityImpl.class)
+                    .addAbstractTypeMapping(MapOTPPolicyEntity.class, MapOTPPolicyEntityImpl.class)
+                    .addAbstractTypeMapping(MapRequiredActionProviderEntity.class, MapRequiredActionProviderEntityImpl.class)
+                    .addAbstractTypeMapping(MapRequiredCredentialEntity.class, MapRequiredCredentialEntityImpl.class)
+                    .addAbstractTypeMapping(MapWebAuthnPolicyEntity.class, MapWebAuthnPolicyEntityImpl.class))
             .addMixIn(UpdatableEntity.class, IgnoreUpdatedMixIn.class)
             .addMixIn(DeepCloner.class, IgnoredTypeMixIn.class)
             .addMixIn(EntityWithAttributes.class, IgnoredMetadataFieldsMixIn.class);

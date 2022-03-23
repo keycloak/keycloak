@@ -90,6 +90,7 @@ public abstract class JpaMapKeycloakTransaction<RE extends JpaRootEntity, E exte
         CriteriaQuery<RE> query = cb.createQuery(entityType);
         Root<RE> root = query.from(entityType);
         query.select(selectCbConstruct(cb, root));
+        if (mcb.isDistinct()) query.distinct(true);
 
         //ordering
         if (!queryParameters.getOrderBy().isEmpty()) {
