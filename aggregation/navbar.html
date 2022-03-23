@@ -2,7 +2,7 @@
 
 <script>
     const oldtoc = document.getElementById('toctitle').nextElementSibling;
-    let newtoc = document.createElement('div');
+    const newtoc = document.createElement('div');
     newtoc.setAttribute('id', 'tocbot');
     newtoc.setAttribute('class', 'js-toc');
     oldtoc.parentNode.replaceChild(newtoc, oldtoc);
