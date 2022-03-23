@@ -46,7 +46,7 @@ and use the library to send an authorization request as follows:
 
 ```javascript
 // prepare a authorization request with the permission ticket
-let authorizationRequest = {};
+const authorizationRequest = {};
 authorizationRequest.ticket = ticket;
 
 // send the authorization request, if successful retry the request
