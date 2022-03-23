@@ -5,6 +5,7 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.models.*;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -1745,6 +1746,16 @@ public class IdentityBrokerStateTestHelpers {
 
         @Override
         public void decreaseRemainingCount(ClientInitialAccessModel clientInitialAccess) {
+
+        }
+
+        @Override
+        public List<String> getClaimsSupported() {
+            return null;
+        }
+
+        @Override
+        public void setClaimsSupported(List<String> claimsSupported) {
 
         }
     }

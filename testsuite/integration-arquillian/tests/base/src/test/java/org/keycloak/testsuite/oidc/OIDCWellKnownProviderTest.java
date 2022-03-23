@@ -33,6 +33,7 @@ import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
+import org.keycloak.protocol.oidc.OIDCWellKnownProvider;
 import org.keycloak.protocol.oidc.OIDCWellKnownProviderFactory;
 import org.keycloak.protocol.oidc.representations.MTLSEndpointAliases;
 import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
@@ -66,6 +67,8 @@ import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -401,10 +404,30 @@ public class OIDCWellKnownProviderTest extends AbstractKeycloakTest {
         }
     }
 
+    @Test
+    public void testChangeClaimsSupported() throws IOException {
+        Client client = AdminClientUtil.createResteasyClient();
+        RealmResource testRealm = adminClient.realm("test");
+        RealmRepresentation realmRep = testRealm.toRepresentation();
+        try {
+            realmRep.setClaimsSupported(Stream.of("aud", "sub", "iss", IDToken.AUTH_TIME, IDToken.NAME, IDToken.GIVEN_NAME, IDToken.FAMILY_NAME, IDToken.PREFERRED_USERNAME, IDToken.EMAIL, IDToken.ACR,"email_verified").collect(Collectors.toList()));
+            testRealm.update(realmRep);
+
+            OIDCConfigurationRepresentation oidcConfig = getOIDCDiscoveryRepresentation(client, OAuthClient.AUTH_SERVER_ROOT);
+            Assert.assertNames(oidcConfig.getClaimsSupported(), "aud", "sub", "iss", IDToken.AUTH_TIME, IDToken.NAME, IDToken.GIVEN_NAME, IDToken.FAMILY_NAME, IDToken.PREFERRED_USERNAME, IDToken.EMAIL, IDToken.ACR,"email_verified");
+
+        } finally {
+            realmRep.setClaimsSupported(OIDCWellKnownProvider.DEFAULT_CLAIMS_SUPPORTED.stream().collect(Collectors.toList()));
+            testRealm.update(realmRep);
+            client.close();
+        }
+    }
+
     private void assertScopesSupportedMatchesWithRealm(OIDCConfigurationRepresentation oidcConfig) {
         Assert.assertNames(oidcConfig.getScopesSupported(), OAuth2Constants.SCOPE_OPENID, OAuth2Constants.OFFLINE_ACCESS,
                 OAuth2Constants.SCOPE_PROFILE, OAuth2Constants.SCOPE_EMAIL, OAuth2Constants.SCOPE_PHONE, OAuth2Constants.SCOPE_ADDRESS, OIDCLoginProtocolFactory.ACR_SCOPE,
                 OIDCLoginProtocolFactory.ROLES_SCOPE, OIDCLoginProtocolFactory.WEB_ORIGINS_SCOPE, OIDCLoginProtocolFactory.MICROPROFILE_JWT_SCOPE);
+
     }
 
     private OIDCConfigurationRepresentation getOIDCDiscoveryRepresentation(Client client, String uriTemplate) {

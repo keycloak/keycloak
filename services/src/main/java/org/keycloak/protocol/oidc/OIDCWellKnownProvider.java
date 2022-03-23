@@ -165,7 +165,7 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
         config.setAuthorizationEncryptionAlgValuesSupported(getSupportedEncryptionAlg(false));
         config.setAuthorizationEncryptionEncValuesSupported(getSupportedEncryptionEnc(false));
 
-        config.setClaimsSupported(DEFAULT_CLAIMS_SUPPORTED);
+        config.setClaimsSupported(realm.getClaimsSupported());
         config.setClaimTypesSupported(DEFAULT_CLAIM_TYPES_SUPPORTED);
         config.setClaimsParameterSupported(true);
 
