@@ -3291,5 +3291,13 @@
   "scopeTypeHelp": "Client scopes, which will be added as default scopes to each created client",
   "clientDescriptionHelp": "Specifies description of the client. For example 'My Client for TimeSheets'. Supports keys for localized values as well. For example: ${my_client_description}",
   "clientsClientTypeHelp": "'OpenID Connect' allows Clients to verify the identity of the End-User based on the authentication performed by an Authorization Server.'SAML' enables web-based authentication and authorization scenarios including cross-domain single sign-on (SSO) and uses security tokens containing assertions to pass information.",
-  "clientsClientScopesHelp": "The scopes associated with this resource."
+  "clientsClientScopesHelp": "The scopes associated with this resource.",
+  "openIdEndpointConfiguration": "OpenID Endpoint Configuration",
+  "claimsSupportedHelp": "Claims supported by this realm. Values will be shown in claims_supported",
+  "claimsSupported": "Claims supported",
+  "submit": "Submit",
+  "addClaimButton": "Add new Supported Claim Button",
+  "newClaimInput": "New Supported Claim Input",
+  "removeClaimButton":"Remove Supported Claim Button",
+  "editClaimInput" : "Edit Supported Claim Input"
 }

@@ -16,6 +16,8 @@
  */
 package org.keycloak.models.map.realm;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -86,6 +88,7 @@ public class MapRealmAdapter extends AbstractRealmModel<MapRealmEntity> implemen
     private static final String MINIMUM_QUICK_LOGIN_WAIT_SECONDS = "minimumQuickLoginWaitSeconds";
     private static final String MAX_DELTA_SECONDS = "maxDeltaTimeSeconds";
     private static final String FAILURE_FACTOR = "failureFactor";
+    private static final String CLAIMS_SUPPORTED = "claimsSupported";
 
     private PasswordPolicy passwordPolicy;
 
@@ -1714,6 +1717,20 @@ public class MapRealmAdapter extends AbstractRealmModel<MapRealmEntity> implemen
     @Override
     public void setBrowserSecurityHeaders(Map<String, String> headers) {
         entity.setBrowserSecurityHeaders(headers);
+    }
+
+    @Override
+    public List<String> getClaimsSupported() {
+        if (getAttribute(CLAIMS_SUPPORTED) != null) {
+            return new ArrayList<String>(Arrays.asList(getAttribute(CLAIMS_SUPPORTED).split(",")));
+        } else {
+            return null;
+        }
+    }
+
+    @Override
+    public void setClaimsSupported(List<String> claimsSupported) {
+        setAttribute(CLAIMS_SUPPORTED, claimsSupported.stream().collect(Collectors.joining(",")));
     }
 
     @Override

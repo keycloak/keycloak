@@ -39,6 +39,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.OAuth2DeviceConfig;
 import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.ParConfig;
+import org.keycloak.models.jpa.entities.RealmAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
@@ -242,11 +243,12 @@ public class RealmTest extends AbstractAdminTest {
 
         Set<String> attributesKeys = rep2.getAttributes().keySet();
 
-        int expectedAttributesCount = 3;
+        int expectedAttributesCount = 4;
         final Set<String> expectedAttributes = Sets.newHashSet(
                 OAuth2DeviceConfig.OAUTH2_DEVICE_CODE_LIFESPAN,
                 OAuth2DeviceConfig.OAUTH2_DEVICE_POLLING_INTERVAL,
-                ParConfig.PAR_REQUEST_URI_LIFESPAN
+                ParConfig.PAR_REQUEST_URI_LIFESPAN,
+                RealmAttributes.CLAIMS_SUPPORTED
         );
 
         // This attribute is represented in Legacy store as attribute and for Map store as a field
