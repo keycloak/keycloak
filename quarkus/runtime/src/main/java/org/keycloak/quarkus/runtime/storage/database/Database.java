@@ -105,7 +105,7 @@ public final class Database {
                     @Override
                     public String apply(String alias) {
                         if ("dev-file".equalsIgnoreCase(alias)) {
-                            return "jdbc:h2:file:${kc.home.dir:${kc.db-url-path:~}}" + File.separator + "${kc.data.dir:data}"
+                            return "jdbc:h2:file:${kc.home.dir:${kc.db-url-path:" + System.getProperty("user.home") + "}}" + File.separator + "${kc.data.dir:data}"
                                     + File.separator + "h2" + File.separator
                                     + "keycloakdb${kc.db-url-properties:;;AUTO_SERVER=TRUE}";
                         }
