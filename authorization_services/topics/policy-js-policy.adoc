@@ -134,7 +134,7 @@ To push arbitrary claims to the resource server in order to provide additional i
 enforced:
 
 ```javascript
-let permission = $evaluation.getPermission();
+const permission = $evaluation.getPermission();
 
 // decide if permission should be granted
 
