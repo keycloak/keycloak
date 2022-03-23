@@ -118,7 +118,7 @@ public class ScopeAdapter implements Scope, CachedModel<Scope> {
 
     @Override
     public ResourceServer getResourceServer() {
-        return cacheSession.getResourceServerStore().findById(cached.getResourceServerId());
+        return cacheSession.getResourceServerStore().findById(null, cached.getResourceServerId());
     }
 
     @Override

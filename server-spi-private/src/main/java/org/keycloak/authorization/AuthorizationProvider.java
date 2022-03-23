@@ -137,7 +137,6 @@ public final class AuthorizationProvider implements Provider {
      * Returns a {@link PolicyProviderFactory} given a <code>type</code>.
      *
      * @param type the type of the policy provider
-     * @param <F> the expected type of the provider
      * @return a {@link PolicyProviderFactory} with the given <code>type</code>
      */
     public PolicyProviderFactory getProviderFactory(String type) {

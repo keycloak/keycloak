@@ -26,20 +26,22 @@ import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.map.authorization.adapter.MapResourceAdapter;
 import org.keycloak.models.map.authorization.entity.MapResourceEntity;
 import org.keycloak.models.map.authorization.entity.MapResourceEntityImpl;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
-
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
+
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
@@ -51,17 +53,22 @@ public class MapResourceStore implements ResourceStore {
     private static final Logger LOG = Logger.getLogger(MapResourceStore.class);
     private final AuthorizationProvider authorizationProvider;
     final MapKeycloakTransaction<MapResourceEntity, Resource> tx;
+    private final KeycloakSession session;
 
     public MapResourceStore(KeycloakSession session, MapStorage<MapResourceEntity, Resource> resourceStore, AuthorizationProvider provider) {
         this.tx = resourceStore.createTransaction(session);
         session.getTransactionManager().enlist(tx);
         authorizationProvider = provider;
+        this.session = session;
     }
 
-    private Resource entityToAdapter(MapResourceEntity origEntity) {
-        if (origEntity == null) return null;
-        // Clone entity before returning back, to avoid giving away a reference to the live object to the caller
-        return new MapResourceAdapter(origEntity, authorizationProvider.getStoreFactory());
+    private Function<MapResourceEntity, Resource> entityToAdapterFunc(final ResourceServer resourceServer) {
+        return origEntity ->  new MapResourceAdapter(resourceServer == null ? findResourceServer(origEntity) : resourceServer, origEntity, authorizationProvider.getStoreFactory());
+    }
+
+    private ResourceServer findResourceServer(MapResourceEntity entity) {
+        RealmModel realm = session.realms().getRealm(entity.getRealmId());
+        return authorizationProvider.getStoreFactory().getResourceServerStore().findById(realm, entity.getResourceServerId());
     }
     
     private DefaultModelCriteria<Resource> forResourceServer(ResourceServer resourceServer) {
@@ -90,10 +97,11 @@ public class MapResourceStore implements ResourceStore {
         entity.setName(name);
         entity.setResourceServerId(resourceServer.getId());
         entity.setOwner(owner);
+        entity.setRealmId(resourceServer.getRealm().getId());
 
         entity = tx.create(entity);
 
-        return entityToAdapter(entity);
+        return entity == null ? null : entityToAdapterFunc(resourceServer).apply(entity);
     }
 
     @Override
@@ -110,7 +118,7 @@ public class MapResourceStore implements ResourceStore {
         return tx.read(withCriteria(forResourceServer(resourceServer)
                 .compare(SearchableFields.ID, Operator.EQ, id)))
                 .findFirst()
-                .map(this::entityToAdapter)
+                .map(entityToAdapterFunc(resourceServer))
                 .orElse(null);
     }
 
@@ -124,7 +132,7 @@ public class MapResourceStore implements ResourceStore {
 
         tx.read(withCriteria(forResourceServer(resourceServer).compare(SearchableFields.OWNER, Operator.EQ, ownerId))
                 .pagination(firstResult, maxResult, SearchableFields.ID)
-            ).map(this::entityToAdapter)
+            ).map(entityToAdapterFunc(resourceServer))
             .forEach(consumer);
     }
 
@@ -143,7 +151,7 @@ public class MapResourceStore implements ResourceStore {
 
         return tx.read(withCriteria(forResourceServer(resourceServer)
                 .compare(SearchableFields.URI, Operator.EQ, uri)))
-                .map(this::entityToAdapter)
+                .map(entityToAdapterFunc(resourceServer))
                 .collect(Collectors.toList());
     }
 
@@ -152,7 +160,7 @@ public class MapResourceStore implements ResourceStore {
         LOG.tracef("findByResourceServer(%s)%s", resourceServer, getShortStackTrace());
 
         return tx.read(withCriteria(forResourceServer(resourceServer)))
-                .map(this::entityToAdapter)
+                .map(entityToAdapterFunc(resourceServer))
                 .collect(Collectors.toList());
     }
 
@@ -166,7 +174,7 @@ public class MapResourceStore implements ResourceStore {
         );
 
         return tx.read(withCriteria(mcb).pagination(firstResult, maxResults, SearchableFields.NAME))
-                .map(this::entityToAdapter)
+                .map(entityToAdapterFunc(resourceServer))
                 .collect(Collectors.toList());
     }
 
@@ -203,7 +211,7 @@ public class MapResourceStore implements ResourceStore {
 
         tx.read(withCriteria(forResourceServer(resourceServer)
                 .compare(SearchableFields.SCOPE_ID, Operator.IN, scopes.stream().map(Scope::getId))))
-                .map(this::entityToAdapter)
+                .map(entityToAdapterFunc(resourceServer))
                 .forEach(consumer);
     }
 
@@ -214,7 +222,7 @@ public class MapResourceStore implements ResourceStore {
                 .compare(SearchableFields.OWNER, Operator.EQ, ownerId)
                 .compare(SearchableFields.NAME, Operator.EQ, name)))
                 .findFirst()
-                .map(this::entityToAdapter)
+                .map(entityToAdapterFunc(resourceServer))
                 .orElse(null);
     }
 
@@ -223,7 +231,7 @@ public class MapResourceStore implements ResourceStore {
         LOG.tracef("findByType(%s, %s, %s)%s", type, resourceServer, consumer, getShortStackTrace());
         tx.read(withCriteria(forResourceServer(resourceServer)
                 .compare(SearchableFields.TYPE, Operator.EQ, type)))
-            .map(this::entityToAdapter)
+            .map(entityToAdapterFunc(resourceServer))
             .forEach(consumer);
     }
 
@@ -239,7 +247,7 @@ public class MapResourceStore implements ResourceStore {
         }
 
         tx.read(withCriteria(mcb))
-                .map(this::entityToAdapter)
+                .map(entityToAdapterFunc(resourceServer))
                 .forEach(consumer);
     }
 
@@ -249,7 +257,22 @@ public class MapResourceStore implements ResourceStore {
         tx.read(withCriteria(forResourceServer(resourceServer)
                 .compare(SearchableFields.OWNER, Operator.NE, resourceServer.getClientId())
                 .compare(SearchableFields.TYPE, Operator.EQ, type)))
-                .map(this::entityToAdapter)
+                .map(entityToAdapterFunc(resourceServer))
                 .forEach(consumer);
+    }
+
+    public void preRemove(RealmModel realm) {
+        LOG.tracef("preRemove(%s)%s", realm, getShortStackTrace());
+
+        DefaultModelCriteria<Resource> mcb = criteria();
+        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
+
+        tx.delete(withCriteria(mcb));
+    }
+
+    public void preRemove(ResourceServer resourceServer) {
+        LOG.tracef("preRemove(%s)%s", resourceServer, getShortStackTrace());
+
+        tx.delete(withCriteria(forResourceServer(resourceServer)));
     }
 }

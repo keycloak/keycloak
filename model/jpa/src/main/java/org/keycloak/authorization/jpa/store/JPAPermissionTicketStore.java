@@ -41,6 +41,7 @@ import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.store.PermissionTicketStore;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.common.util.Time;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import javax.persistence.LockModeType;
 
@@ -290,7 +291,7 @@ public class JPAPermissionTicketStore implements PermissionTicketStore {
     }
 
     @Override
-    public List<Resource> findGrantedResources(String requester, String name, Integer first, Integer max) {
+    public List<Resource> findGrantedResources(RealmModel realm, String requester, String name, Integer first, Integer max) {
         TypedQuery<String> query = name == null ? 
                 entityManager.createNamedQuery("findGrantedResources", String.class) :
                 entityManager.createNamedQuery("findGrantedResourcesByName", String.class);
@@ -318,7 +319,7 @@ public class JPAPermissionTicketStore implements PermissionTicketStore {
     }
 
     @Override
-    public List<Resource> findGrantedOwnerResources(String owner, Integer firstResult, Integer maxResults) {
+    public List<Resource> findGrantedOwnerResources(RealmModel realm, String owner, Integer firstResult, Integer maxResults) {
         TypedQuery<String> query = entityManager.createNamedQuery("findGrantedOwnerResources", String.class);
 
         query.setFlushMode(FlushModeType.COMMIT);

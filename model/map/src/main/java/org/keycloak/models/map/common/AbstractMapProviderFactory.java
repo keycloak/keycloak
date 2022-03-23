@@ -67,6 +67,8 @@ public abstract class AbstractMapProviderFactory<T extends Provider, V extends A
         GROUP_AFTER_REMOVE,
         REALM_BEFORE_REMOVE,
         REALM_AFTER_REMOVE,
+        RESOURCE_SERVER_BEFORE_REMOVE,
+        RESOURCE_SERVER_AFTER_REMOVE,
         ROLE_BEFORE_REMOVE,
         ROLE_AFTER_REMOVE,
         USER_BEFORE_REMOVE,

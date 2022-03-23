@@ -90,7 +90,7 @@ public class ResourcesService extends AbstractResourceService {
     public Response getSharedWithMe(@QueryParam("name") String name,
             @QueryParam("first") Integer first,
             @QueryParam("max") Integer max) {
-        return queryResponse((f, m) -> toPermissions(ticketStore.findGrantedResources(auth.getUser().getId(), name, f, m), false)
+        return queryResponse((f, m) -> toPermissions(ticketStore.findGrantedResources(auth.getRealm(), auth.getUser().getId(), name, f, m), false)
                 .stream(), first, max);
     }
 
@@ -108,7 +108,7 @@ public class ResourcesService extends AbstractResourceService {
     @Produces(MediaType.APPLICATION_JSON)
     public Response getSharedWithOthers(@QueryParam("first") Integer first, @QueryParam("max") Integer max) {
         return queryResponse(
-                (f, m) -> toPermissions(ticketStore.findGrantedOwnerResources(auth.getUser().getId(), f, m), true)
+                (f, m) -> toPermissions(ticketStore.findGrantedOwnerResources(auth.getRealm(), auth.getUser().getId(), f, m), true)
                         .stream(), first, max);
     }
 

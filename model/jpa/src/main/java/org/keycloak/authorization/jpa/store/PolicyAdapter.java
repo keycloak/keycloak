@@ -153,7 +153,7 @@ public class PolicyAdapter extends AbstractAuthorizationModel implements Policy,
 
     @Override
     public ResourceServer getResourceServer() {
-        return storeFactory.getResourceServerStore().findById(entity.getResourceServer().getId());
+        return storeFactory.getResourceServerStore().findById(null, entity.getResourceServer().getId());
     }
 
     @Override
