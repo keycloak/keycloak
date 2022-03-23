@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,13 +14,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.models.map.storage.jpa;
+package org.keycloak.models.map.storage.jpa.hibernate.jsonb.migration;
 
-public interface Constants {
-    public static final Integer CURRENT_SCHEMA_VERSION_AUTH_SESSION = 1;
-    public static final Integer CURRENT_SCHEMA_VERSION_CLIENT = 1;
-    public static final Integer CURRENT_SCHEMA_VERSION_CLIENT_SCOPE = 1;
-    public static final Integer CURRENT_SCHEMA_VERSION_GROUP = 1;
-    public static final Integer CURRENT_SCHEMA_VERSION_REALM = 1;
-    public static final Integer CURRENT_SCHEMA_VERSION_ROLE = 1;
+import java.util.Arrays;
+import java.util.List;
+import java.util.function.Function;
+
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
+/**
+ * Migration functions for components.
+ *
+ * @author <a href="mailto:sguilhen@redhat.com">Stefan Guilhen</a>
+ */
+public class JpaComponentMigration {
+
+    public static final List<Function<ObjectNode, ObjectNode>> MIGRATORS = Arrays.asList(
+            o -> o // no migration yet
+    );
 }

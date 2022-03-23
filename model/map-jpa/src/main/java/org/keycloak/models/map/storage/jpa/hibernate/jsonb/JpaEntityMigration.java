@@ -22,11 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_AUTH_SESSION;
-import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_CLIENT;
-import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_CLIENT_SCOPE;
-import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_GROUP;
-import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_ROLE;
 import org.keycloak.models.map.storage.jpa.authSession.entity.JpaAuthenticationSessionMetadata;
 import org.keycloak.models.map.storage.jpa.authSession.entity.JpaRootAuthenticationSessionMetadata;
 import org.keycloak.models.map.storage.jpa.client.entity.JpaClientMetadata;
@@ -35,12 +30,21 @@ import org.keycloak.models.map.storage.jpa.group.entity.JpaGroupMetadata;
 import org.keycloak.models.map.storage.jpa.hibernate.jsonb.migration.JpaAuthenticationSessionMigration;
 import org.keycloak.models.map.storage.jpa.hibernate.jsonb.migration.JpaClientMigration;
 import org.keycloak.models.map.storage.jpa.hibernate.jsonb.migration.JpaClientScopeMigration;
+import org.keycloak.models.map.storage.jpa.hibernate.jsonb.migration.JpaComponentMigration;
 import org.keycloak.models.map.storage.jpa.hibernate.jsonb.migration.JpaGroupMigration;
+import org.keycloak.models.map.storage.jpa.hibernate.jsonb.migration.JpaRealmMigration;
 import org.keycloak.models.map.storage.jpa.hibernate.jsonb.migration.JpaRoleMigration;
 import org.keycloak.models.map.storage.jpa.hibernate.jsonb.migration.JpaRootAuthenticationSessionMigration;
+import org.keycloak.models.map.storage.jpa.realm.entity.JpaComponentMetadata;
+import org.keycloak.models.map.storage.jpa.realm.entity.JpaRealmMetadata;
 import org.keycloak.models.map.storage.jpa.role.entity.JpaRoleMetadata;
 
-
+import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_AUTH_SESSION;
+import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_CLIENT;
+import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_CLIENT_SCOPE;
+import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_GROUP;
+import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_REALM;
+import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_ROLE;
 
 public class JpaEntityMigration {
 
@@ -50,7 +54,9 @@ public class JpaEntityMigration {
         MIGRATIONS.put(JpaRootAuthenticationSessionMetadata.class,  (tree, entityVersion) -> migrateTreeTo(entityVersion, CURRENT_SCHEMA_VERSION_AUTH_SESSION, tree, JpaRootAuthenticationSessionMigration.MIGRATORS));
         MIGRATIONS.put(JpaClientMetadata.class,                     (tree, entityVersion) -> migrateTreeTo(entityVersion, CURRENT_SCHEMA_VERSION_CLIENT,       tree, JpaClientMigration.MIGRATORS));
         MIGRATIONS.put(JpaClientScopeMetadata.class,                (tree, entityVersion) -> migrateTreeTo(entityVersion, CURRENT_SCHEMA_VERSION_CLIENT_SCOPE, tree, JpaClientScopeMigration.MIGRATORS));
+        MIGRATIONS.put(JpaComponentMetadata.class,                  (tree, entityVersion) -> migrateTreeTo(entityVersion, CURRENT_SCHEMA_VERSION_REALM,        tree, JpaComponentMigration.MIGRATORS));
         MIGRATIONS.put(JpaGroupMetadata.class,                      (tree, entityVersion) -> migrateTreeTo(entityVersion, CURRENT_SCHEMA_VERSION_GROUP,        tree, JpaGroupMigration.MIGRATORS));
+        MIGRATIONS.put(JpaRealmMetadata.class,                      (tree, entityVersion) -> migrateTreeTo(entityVersion, CURRENT_SCHEMA_VERSION_REALM,        tree, JpaRealmMigration.MIGRATORS));
         MIGRATIONS.put(JpaRoleMetadata.class,                       (tree, entityVersion) -> migrateTreeTo(entityVersion, CURRENT_SCHEMA_VERSION_ROLE,         tree, JpaRoleMigration.MIGRATORS));
     }
 
