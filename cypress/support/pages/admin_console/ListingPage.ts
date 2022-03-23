@@ -26,7 +26,8 @@ export enum FilterSession {
 }
 
 export default class ListingPage {
-  private searchInput = '.pf-c-toolbar__item [type="search"]:visible';
+  private searchInput =
+    ".pf-c-toolbar__item .pf-c-search-input__text-input:visible";
   private tableToolbar = ".pf-c-toolbar";
   private itemsRows = "table:visible";
   private deleteUserButton = "delete-user-btn";
