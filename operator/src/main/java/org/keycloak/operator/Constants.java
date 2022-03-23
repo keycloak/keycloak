@@ -35,9 +35,9 @@ public final class Constants {
     );
 
     public static final Map<String, String> DEFAULT_DIST_CONFIG = Map.of(
-        "KC_HEALTH_ENABLED","true",
-        "KC_CACHE", "ispn",
-        "KC_CACHE_STACK", "kubernetes"
+        "health-enabled","true",
+        "cache", "ispn",
+        "cache-stack", "kubernetes"
     );
 
     // Init container

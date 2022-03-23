@@ -247,8 +247,8 @@ public class WatchedSecretsTestE2EIT extends ClusterOperatorTest {
     }
 
     private void hardcodeDBCredsInCR(Keycloak kc) {
-        var username = new ValueOrSecret("KC_DB_USERNAME", "postgres");
-        var password = new ValueOrSecret("KC_DB_PASSWORD", "testpassword");
+        var username = new ValueOrSecret("db-username", "postgres");
+        var password = new ValueOrSecret("db-password", "testpassword");
 
         kc.getSpec().getServerConfiguration().remove(username);
         kc.getSpec().getServerConfiguration().add(username);

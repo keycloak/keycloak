@@ -8,6 +8,7 @@ import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 import org.keycloak.operator.utils.K8sUtils;
 import org.keycloak.operator.v2alpha1.KeycloakAdminSecret;
+import org.keycloak.operator.v2alpha1.KeycloakDeployment;
 import org.keycloak.operator.v2alpha1.KeycloakService;
 import org.keycloak.operator.v2alpha1.crds.Keycloak;
 import org.keycloak.operator.v2alpha1.crds.ValueOrSecret;
@@ -66,7 +67,7 @@ public class KeycloakDeploymentE2EIT extends ClusterOperatorTest {
             var deploymentName = kc.getMetadata().getName();
             deployKeycloak(k8sclient, kc, true);
 
-            final var dbConf = new ValueOrSecret("KC_DB_PASSWORD", "Ay Caramba!");
+            final var dbConf = new ValueOrSecret("db-password", "Ay Caramba!");
 
             kc.getSpec().setImage("quay.io/keycloak/non-existing-keycloak");
             kc.getSpec().getServerConfiguration().remove(dbConf);
@@ -80,7 +81,8 @@ public class KeycloakDeploymentE2EIT extends ClusterOperatorTest {
                                 .getSpec().getTemplate().getSpec().getContainers().get(0);
                         assertThat(c.getImage()).isEqualTo("quay.io/keycloak/non-existing-keycloak");
                         assertThat(c.getEnv().stream()
-                                .anyMatch(e -> e.getName().equals(dbConf.getName()) && e.getValue().equals(dbConf.getValue())))
+                                .anyMatch(e -> e.getName().equals(KeycloakDeployment.getEnvVarName(dbConf.getName()))
+                                        && e.getValue().equals(dbConf.getValue())))
                                 .isTrue();
                     });
 
@@ -94,8 +96,11 @@ public class KeycloakDeploymentE2EIT extends ClusterOperatorTest {
     public void testConfigInCRTakesPrecedence() {
         try {
             var kc = getDefaultKeycloakDeployment();
-            var health = new ValueOrSecret("KC_HEALTH_ENABLED", "false");
-            var e = new EnvVarBuilder().withName(health.getName()).withValue(health.getValue()).build();
+            var health = new ValueOrSecret("health-enabled", "false");
+            var e = new EnvVarBuilder()
+                    .withName(KeycloakDeployment.getEnvVarName(health.getName()))
+                    .withValue(health.getValue())
+                    .build();
             kc.getSpec().getServerConfiguration().add(health);
             deployKeycloak(k8sclient, kc, false);
 
