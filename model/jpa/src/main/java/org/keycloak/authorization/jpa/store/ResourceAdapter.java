@@ -138,7 +138,7 @@ public class ResourceAdapter extends AbstractAuthorizationModel implements Resou
 
     @Override
     public ResourceServer getResourceServer() {
-        return storeFactory.getResourceServerStore().findById(entity.getResourceServer());
+        return storeFactory.getResourceServerStore().findById(null, entity.getResourceServer());
     }
 
     @Override

@@ -20,7 +20,6 @@ import static org.keycloak.authorization.UserManagedPermissionUtil.updatePolicy;
 
 import javax.persistence.EntityManager;
 
-import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.jpa.entities.PermissionTicketEntity;
 import org.keycloak.authorization.jpa.entities.PolicyEntity;
 import org.keycloak.authorization.jpa.entities.ScopeEntity;
@@ -91,7 +90,7 @@ public class PermissionTicketAdapter implements PermissionTicket, JpaModel<Permi
 
     @Override
     public ResourceServer getResourceServer() {
-        return storeFactory.getResourceServerStore().findById(entity.getResourceServer().getId());
+        return storeFactory.getResourceServerStore().findById(null, entity.getResourceServer().getId());
     }
 
     @Override
@@ -102,7 +101,7 @@ public class PermissionTicketAdapter implements PermissionTicket, JpaModel<Permi
             return null;
         }
 
-        ResourceServer resourceServer = storeFactory.getResourceServerStore().findById(entity.getResourceServer().getId());
+        ResourceServer resourceServer = storeFactory.getResourceServerStore().findById(null, entity.getResourceServer().getId());
         return storeFactory.getPolicyStore().findById(resourceServer, policy.getId());
     }
 

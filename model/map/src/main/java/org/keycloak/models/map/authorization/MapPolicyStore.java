@@ -27,6 +27,7 @@ import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.map.authorization.adapter.MapPolicyAdapter;
 import org.keycloak.models.map.authorization.entity.MapPolicyEntity;
 import org.keycloak.models.map.authorization.entity.MapPolicyEntityImpl;
@@ -41,6 +42,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
@@ -52,17 +54,22 @@ public class MapPolicyStore implements PolicyStore {
     private static final Logger LOG = Logger.getLogger(MapPolicyStore.class);
     private final AuthorizationProvider authorizationProvider;
     final MapKeycloakTransaction<MapPolicyEntity, Policy> tx;
+    private final KeycloakSession session;
 
     public MapPolicyStore(KeycloakSession session, MapStorage<MapPolicyEntity, Policy> policyStore, AuthorizationProvider provider) {
         this.authorizationProvider = provider;
         this.tx = policyStore.createTransaction(session);
         session.getTransactionManager().enlist(tx);
+        this.session = session;
     }
 
-    private Policy entityToAdapter(MapPolicyEntity origEntity) {
-        if (origEntity == null) return null;
-        // Clone entity before returning back, to avoid giving away a reference to the live object to the caller
-        return new MapPolicyAdapter(origEntity, authorizationProvider.getStoreFactory());
+    private Function<MapPolicyEntity, Policy> entityToAdapterFunc(ResourceServer resourceServer) {
+        return origEntity -> new MapPolicyAdapter(resourceServer == null ? findResourceServer(origEntity) : resourceServer, origEntity, authorizationProvider.getStoreFactory());
+    }
+
+    private ResourceServer findResourceServer(MapPolicyEntity entity) {
+        RealmModel realm = session.realms().getRealm(entity.getRealmId());
+        return authorizationProvider.getStoreFactory().getResourceServerStore().findById(realm, entity.getResourceServerId());
     }
 
     private DefaultModelCriteria<Policy> forResourceServer(ResourceServer resourceServer) {
@@ -92,10 +99,11 @@ public class MapPolicyStore implements PolicyStore {
         entity.setType(representation.getType());
         entity.setName(representation.getName());
         entity.setResourceServerId(resourceServer.getId());
-        
+        entity.setRealmId(resourceServer.getRealm().getId());
+
         entity = tx.create(entity);
 
-        return entityToAdapter(entity);
+        return entity == null ? null : entityToAdapterFunc(resourceServer).apply(entity);
     }
 
     @Override
@@ -111,7 +119,7 @@ public class MapPolicyStore implements PolicyStore {
         return tx.read(withCriteria(forResourceServer(resourceServer)
                 .compare(SearchableFields.ID, Operator.EQ, id)))
                 .findFirst()
-                .map(this::entityToAdapter)
+                .map(entityToAdapterFunc(resourceServer))
                 .orElse(null);
     }
 
@@ -122,7 +130,7 @@ public class MapPolicyStore implements PolicyStore {
         return tx.read(withCriteria(forResourceServer(resourceServer)
                 .compare(SearchableFields.NAME, Operator.EQ, name)))
                 .findFirst()
-                .map(this::entityToAdapter)
+                .map(entityToAdapterFunc(resourceServer))
                 .orElse(null);
     }
 
@@ -131,7 +139,7 @@ public class MapPolicyStore implements PolicyStore {
         LOG.tracef("findByResourceServer(%s)%s", resourceServer, getShortStackTrace());
 
         return tx.read(withCriteria(forResourceServer(resourceServer)))
-                .map(this::entityToAdapter)
+                .map(entityToAdapterFunc(resourceServer))
                 .collect(Collectors.toList());
     }
 
@@ -201,7 +209,7 @@ public class MapPolicyStore implements PolicyStore {
 
         tx.read(withCriteria(forResourceServer(resourceServer)
                 .compare(SearchableFields.RESOURCE_ID, Operator.EQ, resource.getId())))
-                .map(this::entityToAdapter)
+                .map(entityToAdapterFunc(resourceServer))
                 .forEach(consumer);
     }
 
@@ -209,7 +217,7 @@ public class MapPolicyStore implements PolicyStore {
     public void findByResourceType(ResourceServer resourceServer, String type, Consumer<Policy> policyConsumer) {
         tx.read(withCriteria(forResourceServer(resourceServer)
                 .compare(SearchableFields.CONFIG, Operator.LIKE, (Object[]) new String[]{"defaultResourceType", type})))
-                .map(this::entityToAdapter)
+                .map(entityToAdapterFunc(resourceServer))
                 .forEach(policyConsumer);
     }
 
@@ -217,7 +225,7 @@ public class MapPolicyStore implements PolicyStore {
     public List<Policy> findByScopes(ResourceServer resourceServer, List<Scope> scopes) {
         return tx.read(withCriteria(forResourceServer(resourceServer)
                 .compare(SearchableFields.SCOPE_ID, Operator.IN, scopes.stream().map(Scope::getId))))
-                .map(this::entityToAdapter)
+                .map(entityToAdapterFunc(resourceServer))
                 .collect(Collectors.toList());
     }
 
@@ -235,14 +243,14 @@ public class MapPolicyStore implements PolicyStore {
                     .compare(SearchableFields.CONFIG, Operator.NOT_EXISTS, (Object[]) new String[] {"defaultResourceType"});
         }
 
-        tx.read(withCriteria(mcb)).map(this::entityToAdapter).forEach(consumer);
+        tx.read(withCriteria(mcb)).map(entityToAdapterFunc(resourceServer)).forEach(consumer);
     }
 
     @Override
     public List<Policy> findByType(ResourceServer resourceServer, String type) {
         return tx.read(withCriteria(forResourceServer(resourceServer)
                 .compare(SearchableFields.TYPE, Operator.EQ, type)))
-                .map(this::entityToAdapter)
+                .map(entityToAdapterFunc(resourceServer))
                 .collect(Collectors.toList());
     }
 
@@ -250,7 +258,22 @@ public class MapPolicyStore implements PolicyStore {
     public List<Policy> findDependentPolicies(ResourceServer resourceServer, String id) {
         return tx.read(withCriteria(forResourceServer(resourceServer)
                 .compare(SearchableFields.ASSOCIATED_POLICY_ID, Operator.EQ, id)))
-                    .map(this::entityToAdapter)
+                    .map(entityToAdapterFunc(resourceServer))
                     .collect(Collectors.toList());
+    }
+
+    public void preRemove(RealmModel realm) {
+        LOG.tracef("preRemove(%s)%s", realm, getShortStackTrace());
+
+        DefaultModelCriteria<Policy> mcb = criteria();
+        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
+
+        tx.delete(withCriteria(mcb));
+    }
+
+    public void preRemove(ResourceServer resourceServer) {
+        LOG.tracef("preRemove(%s)%s", resourceServer, getShortStackTrace());
+
+        tx.delete(withCriteria(forResourceServer(resourceServer)));
     }
 }

@@ -18,14 +18,19 @@
 package org.keycloak.models.map.authorization.adapter;
 
 
+import java.util.Objects;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.models.map.authorization.entity.MapScopeEntity;
 
 public class MapScopeAdapter extends AbstractScopeModel<MapScopeEntity> {
 
-    public MapScopeAdapter(MapScopeEntity entity, StoreFactory storeFactory) {
+    private final ResourceServer resourceServer;
+
+    public MapScopeAdapter(ResourceServer resourceServer, MapScopeEntity entity, StoreFactory storeFactory) {
         super(entity, storeFactory);
+        Objects.requireNonNull(resourceServer);
+        this.resourceServer = resourceServer;
     }
 
     @Override
@@ -68,7 +73,7 @@ public class MapScopeAdapter extends AbstractScopeModel<MapScopeEntity> {
 
     @Override
     public ResourceServer getResourceServer() {
-        return storeFactory.getResourceServerStore().findById(entity.getResourceServerId());
+        return resourceServer;
     }
 
     @Override

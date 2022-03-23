@@ -47,6 +47,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.ModelException;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.cache.authorization.CachedStoreFactoryProvider;
 import org.keycloak.models.cache.infinispan.authorization.entities.CachedPermissionTicket;
 import org.keycloak.models.cache.infinispan.authorization.entities.CachedPolicy;
@@ -309,7 +310,7 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
             return Collections.emptySet();
         }
 
-        ResourceServer resourceServer = getResourceServerStore().findById(serverId);
+        ResourceServer resourceServer = getResourceServerStore().findById(null, serverId);
         return resources.stream().map(resourceId -> {
             Resource resource = getResourceStore().findById(resourceServer, resourceId);
             String type = resource.getType();
@@ -450,7 +451,7 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         public void delete(ClientModel client) {
             String id = client.getId();
             if (id == null) return;
-            ResourceServer server = findById(id);
+            ResourceServer server = findById(null, id);
             if (server == null) return;
 
             cache.invalidateObject(id);
@@ -461,7 +462,7 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         }
 
         @Override
-        public ResourceServer findById(String id) {
+        public ResourceServer findById(RealmModel realm, String id) {
             if (id == null) return null;
             CachedResourceServer cached = cache.get(id, CachedResourceServer.class);
             if (cached != null) {
@@ -471,7 +472,7 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
             if (cached == null) {
                 Long loaded = cache.getCurrentRevision(id);
                 if (! modelMightExist(id)) return null;
-                ResourceServer model = getResourceServerStoreDelegate().findById(id);
+                ResourceServer model = getResourceServerStoreDelegate().findById(realm, id);
                 if (model == null) {
                     setModelDoesNotExists(id, loaded);
                     return null;
@@ -480,7 +481,7 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
                 cached = new CachedResourceServer(loaded, model);
                 cache.addRevisioned(cached, startupRevision);
             } else if (invalidations.contains(id)) {
-                return getResourceServerStoreDelegate().findById(id);
+                return getResourceServerStoreDelegate().findById(realm, id);
             } else if (managedResourceServers.containsKey(id)) {
                 return managedResourceServers.get(id);
             }
@@ -491,7 +492,7 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
 
         @Override
         public ResourceServer findByClient(ClientModel client) {
-            return findById(client.getId());
+            return findById(null, client.getId());
         }
     }
 
@@ -1238,13 +1239,13 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
         }
 
         @Override
-        public List<Resource> findGrantedResources(String requester, String name, Integer first, Integer max) {
-            return getPermissionTicketStoreDelegate().findGrantedResources(requester, name, first, max);
+        public List<Resource> findGrantedResources(RealmModel realm, String requester, String name, Integer first, Integer max) {
+            return getPermissionTicketStoreDelegate().findGrantedResources(realm, requester, name, first, max);
         }
 
         @Override
-        public List<Resource> findGrantedOwnerResources(String owner, Integer firstResult, Integer maxResults) {
-            return getPermissionTicketStoreDelegate().findGrantedOwnerResources(owner, firstResult, maxResults);
+        public List<Resource> findGrantedOwnerResources(RealmModel realm, String owner, Integer firstResult, Integer maxResults) {
+            return getPermissionTicketStoreDelegate().findGrantedOwnerResources(realm, owner, firstResult, maxResults);
         }
 
         @Override

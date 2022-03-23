@@ -24,6 +24,7 @@ import org.keycloak.authorization.model.PermissionTicket;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
+import org.keycloak.models.RealmModel;
 
 /**
  * A {@link PermissionTicketStore} is responsible to manage the persistence of {@link org.keycloak.authorization.model.PermissionTicket} instances.
@@ -145,21 +146,25 @@ public interface PermissionTicketStore {
     /**
      * Returns a list of {@link Resource} granted to the given {@code requester}
      *
+     *
+     * @param realm
      * @param requester the requester
      * @param name the keyword to query resources by name or null if any resource
      * @param firstResult first result to return. Ignored if negative or {@code null}.
      * @param maxResults maximum number of results to return. Ignored if negative or {@code null}.
      * @return a list of {@link Resource} granted to the given {@code requester}
      */
-    List<Resource> findGrantedResources(String requester, String name, Integer firstResult, Integer maxResults);
+    List<Resource> findGrantedResources(RealmModel realm, String requester, String name, Integer firstResult, Integer maxResults);
 
     /**
      * Returns a list of {@link Resource} granted by the owner to other users
      *
+     *
+     * @param realm
      * @param owner the owner
      * @param firstResult first result to return. Ignored if negative or {@code null}.
      * @param maxResults maximum number of results to return. Ignored if negative or {@code null}.
      * @return a list of {@link Resource} granted by the owner
      */
-    List<Resource> findGrantedOwnerResources(String owner, Integer firstResult, Integer maxResults);
+    List<Resource> findGrantedOwnerResources(RealmModel realm, String owner, Integer firstResult, Integer maxResults);
 }
