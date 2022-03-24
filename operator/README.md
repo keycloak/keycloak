@@ -94,7 +94,7 @@ On Linux or on Mac using `minikube` on a VM, instead you should pass this additi
 To avoid skipping tests that are depending on custom Keycloak images, you need to build those first:
 
 ```bash
-./build-testing-docker-images.sh <optional/keycloak-version> <optional/keycloak-image-name>
+./build-testing-docker-images.sh [SOURCE KEYCLOAK IMAGE TAG] [SOURCE KEYCLOAK IMAGE]
 ```
 
 And run the tests passing an extra Java property:
