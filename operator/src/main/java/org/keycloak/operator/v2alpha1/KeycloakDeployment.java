@@ -17,7 +17,6 @@
 package org.keycloak.operator.v2alpha1;
 
 import io.fabric8.kubernetes.api.model.Container;
-import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.EnvVarSourceBuilder;
@@ -40,7 +39,6 @@ import org.keycloak.operator.v2alpha1.crds.KeycloakStatusBuilder;
 import org.keycloak.operator.v2alpha1.crds.ValueOrSecret;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -114,60 +112,6 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
                 .inNamespace(getNamespace())
                 .withName(getName())
                 .get();
-    }
-
-    private void addInitContainer(Deployment baseDeployment, List<String> extensions) {
-        var skipExtensions = Optional
-                .ofNullable(extensions)
-                .map(e -> e.isEmpty())
-                .orElse(true);
-
-        if (skipExtensions) {
-            return;
-        }
-
-        // Add emptyDir Volume
-        var volumes = baseDeployment.getSpec().getTemplate().getSpec().getVolumes();
-
-        var extensionVolume = new VolumeBuilder()
-                .withName(Constants.EXTENSIONS_VOLUME_NAME)
-                .withNewEmptyDir()
-                .endEmptyDir()
-                .build();
-
-        volumes.add(extensionVolume);
-        baseDeployment.getSpec().getTemplate().getSpec().setVolumes(volumes);
-
-        // Add the main deployment Volume Mount
-        var container = baseDeployment.getSpec().getTemplate().getSpec().getContainers().get(0);
-        var containerVolumeMounts = container.getVolumeMounts();
-
-        var extensionVM = new VolumeMountBuilder()
-                .withName(Constants.EXTENSIONS_VOLUME_NAME)
-                .withMountPath(Constants.KEYCLOAK_PROVIDERS_FOLDER)
-                .withReadOnly(true)
-                .build();
-        containerVolumeMounts.add(extensionVM);
-
-        container.setVolumeMounts(containerVolumeMounts);
-
-        // Add the Extensions downloader init container
-        var extensionsValue = extensions.stream().collect(Collectors.joining(","));
-        var initContainer = new ContainerBuilder()
-                .withName(Constants.INIT_CONTAINER_NAME)
-                .withImage(config.keycloak().initContainerImage())
-                .withImagePullPolicy(config.keycloak().initContainerImagePullPolicy())
-                .addNewVolumeMount()
-                .withName(Constants.EXTENSIONS_VOLUME_NAME)
-                .withMountPath(Constants.INIT_CONTAINER_EXTENSIONS_FOLDER)
-                .endVolumeMount()
-                .addNewEnv()
-                .withName(Constants.INIT_CONTAINER_EXTENSIONS_ENV_VAR)
-                .withValue(extensionsValue)
-                .endEnv()
-                .build();
-
-        baseDeployment.getSpec().getTemplate().getSpec().setInitContainers(Collections.singletonList(initContainer));
     }
 
     public void validatePodTemplate(KeycloakStatusBuilder status) {
@@ -465,7 +409,6 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
 
         configureHostname(baseDeployment);
         configureTLS(baseDeployment);
-        addInitContainer(baseDeployment, keycloakCR.getSpec().getExtensions());
         mergePodTemplate(baseDeployment.getSpec().getTemplate());
 
         return baseDeployment;
