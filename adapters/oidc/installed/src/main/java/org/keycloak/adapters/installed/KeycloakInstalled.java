@@ -567,10 +567,11 @@ public class KeycloakInstalled {
     }
 
     protected ResteasyClient createResteasyClient() {
-        return new ResteasyClientBuilder()
+        return ((ResteasyClientBuilder) ResteasyClientBuilder.newBuilder())
                 .connectionCheckoutTimeout(1, TimeUnit.HOURS)
                 .connectionTTL(1, TimeUnit.HOURS)
-                .socketTimeout(1, TimeUnit.HOURS)
+                .connectTimeout(1, TimeUnit.HOURS)
+                .readTimeout(1, TimeUnit.HOURS)
                 .disableTrustManager().build();
     }
 

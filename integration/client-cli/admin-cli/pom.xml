@@ -135,7 +135,7 @@
                                     </includes>
                                 </filter>
                                 <filter>
-                                    <artifact>org.jboss.resteasy:resteasy-jaxrs</artifact>
+                                    <artifact>org.jboss.resteasy:resteasy-core</artifact>
                                     <includes>
                                         <include>**/**</include>
                                     </includes>
