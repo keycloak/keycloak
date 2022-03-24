@@ -135,6 +135,7 @@ export default class AuthorizationTab {
 
   copy() {
     grantClipboardAccess();
+    cy.get("#authorizationDetails").focus();
     cy.findByTestId(this.exportCopyButton).click();
     return this;
   }
