@@ -24,6 +24,8 @@ import static org.keycloak.models.utils.KeycloakModelUtils.runJobInTransaction;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
@@ -32,6 +34,7 @@ import java.sql.Statement;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.StringTokenizer;
 
 import javax.enterprise.inject.Instance;
@@ -49,6 +52,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.ServerStartupError;
 import org.keycloak.common.Version;
+import org.keycloak.common.util.StringPropertyReplacer;
 import org.keycloak.connections.jpa.DefaultJpaConnectionProvider;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.connections.jpa.updater.JpaUpdaterProvider;
@@ -134,6 +138,8 @@ public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionPr
 
         if (schemaChanged || Environment.isImportExportMode()) {
             runJobInTransaction(factory, this::initSchema);
+        } else if (System.getProperty("keycloak.import") != null) {
+            importRealms();
         } else {
             //KEYCLOAK-19521 - We should think about a solution which doesn't involve another db lookup in the future.
             MigrationModel model = session.getProvider(DeploymentStateProvider.class).getMigrationModel();
@@ -277,9 +283,15 @@ public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionPr
                 String file = tokenizer.nextToken().trim();
                 RealmRepresentation rep;
                 try {
-                    rep = JsonSerialization.readValue(new FileInputStream(file), RealmRepresentation.class);
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
+                    rep = JsonSerialization.readValue(StringPropertyReplacer.replaceProperties(
+                            Files.readString(Paths.get(file)), new StringPropertyReplacer.PropertyResolver() {
+                                @Override
+                                public String resolve(String property) {
+                                    return Optional.ofNullable(System.getenv(property)).orElse(null);
+                                }
+                            }), RealmRepresentation.class);
+                } catch (Exception cause) {
+                    throw new RuntimeException("Failed to parse realm configuration file: " + file, cause);
                 }
                 importRealm(rep, "file " + file);
             }
@@ -300,7 +312,7 @@ public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionPr
                     exists = true;
                 }
 
-                if (manager.getRealmByName(rep.getRealm()) != null) {
+                if (!exists && manager.getRealmByName(rep.getRealm()) != null) {
                     ServicesLogger.LOGGER.realmExists(rep.getRealm(), from);
                     exists = true;
                 }
@@ -309,10 +321,10 @@ public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionPr
                     ServicesLogger.LOGGER.importedRealm(realm.getName(), from);
                 }
                 session.getTransactionManager().commit();
-            } catch (Throwable t) {
+            } catch (Throwable cause) {
                 session.getTransactionManager().rollback();
                 if (!exists) {
-                    ServicesLogger.LOGGER.unableToImportRealm(t, rep.getRealm(), from);
+                    throw new RuntimeException("Failed to import realm: " + rep.getRealm(), cause);
                 }
             }
         } finally {

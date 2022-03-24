@@ -14,6 +14,8 @@ Options:
                        the server. Use this configuration carefully in production as it might
                        impact the startup time.
 -h, --help           This help message.
+--import-realm       Import realms during startup by reading any realm configuration file from the
+                       'data/import' directory.
 
 Database:
 

@@ -345,6 +345,8 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     public void copyOrReplaceFileFromClasspath(String file, Path targetFile) {
         File targetDir = distPath.resolve(targetFile).toFile();
 
+        targetDir.mkdirs();
+
         try {
             Files.copy(getClass().getResourceAsStream(file), targetDir.toPath(), StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException cause) {

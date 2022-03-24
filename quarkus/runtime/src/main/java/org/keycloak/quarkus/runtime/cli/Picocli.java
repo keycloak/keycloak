@@ -44,8 +44,8 @@ import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
-import io.quarkus.runtime.Quarkus;
 import org.keycloak.quarkus.runtime.cli.command.Build;
+import org.keycloak.quarkus.runtime.cli.command.ImportRealmMixin;
 import org.keycloak.quarkus.runtime.cli.command.Main;
 import org.keycloak.quarkus.runtime.cli.command.Start;
 import org.keycloak.quarkus.runtime.cli.command.StartDev;
@@ -170,6 +170,7 @@ public final class Picocli {
 
         configArgsList.remove(AUTO_BUILD_OPTION_LONG);
         configArgsList.remove(AUTO_BUILD_OPTION_SHORT);
+        configArgsList.remove(ImportRealmMixin.IMPORT_REALM);
 
         configArgsList.replaceAll(new UnaryOperator<String>() {
             @Override

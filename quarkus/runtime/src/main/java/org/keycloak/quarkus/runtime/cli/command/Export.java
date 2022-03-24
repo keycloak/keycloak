@@ -43,7 +43,7 @@ public final class Export extends AbstractExportImportCommand implements Runnabl
 
     @Option(names = "--realm",
             arity = "1",
-            description = "Set the name of the realm to export",
+            description = "Set the name of the realm to export. If not set, all realms are going to be exported.",
             paramLabel = "<realm>")
     String realm;
 
