@@ -1,8 +1,8 @@
 // The Webpack preprocessor does not include any types so it will have to be ignored.
 // @ts-ignore
 import webpackPreprocessor from "@cypress/webpack-batteries-included-preprocessor";
+import del from "del";
 import ForkTsCheckerWebpackPlugin from "fork-ts-checker-webpack-plugin";
-import fs from "fs";
 import path from "path";
 
 // ***********************************************************
@@ -37,7 +37,8 @@ const configurePlugins: Cypress.PluginConfig = (on) => {
       webpackOptions,
     })
   );
-  on("after:spec", (spec, results) => {
+
+  on("after:spec", async (spec, results) => {
     if (!results.video) {
       return;
     }
@@ -47,9 +48,9 @@ const configurePlugins: Cypress.PluginConfig = (on) => {
       attempts.some(({ state }) => state === "failed")
     );
 
-    // delete the video if the spec passed and no tests retried
+    // Delete the video if the spec passed and no tests were retried.
     if (!failures) {
-      fs.rmSync(results.video);
+      await del(results.video);
     }
   });
 };
