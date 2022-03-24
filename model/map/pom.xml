@@ -64,7 +64,7 @@
             <!-- needed for MapExportImportManager that is calling ValidationUtil.validateClient (which is in server-spi-private) might throw a BadRequestException -->
             <!-- see: https://github.com/hmlnarik/keycloak/pull/23#discussion_r862293798 -->
             <groupId>org.jboss.resteasy</groupId>
-            <artifactId>resteasy-jaxrs</artifactId>
+            <artifactId>resteasy-core</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
