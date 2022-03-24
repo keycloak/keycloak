@@ -43,7 +43,7 @@ describe("User profile tabs", () => {
       getUserProfileTab();
       getAttributesTab();
       clickCreateAttributeButton();
-      cy.get("p").should("have.text", "Create attribute");
+      cy.get("p").should("have.text", "Create a new attribute");
     });
   });
 

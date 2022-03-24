@@ -180,8 +180,6 @@ export default class RealmSettingsPage {
   private createClientDrpDwn = ".pf-c-dropdown.pf-m-align-right";
   private clientPolicyDrpDwn = '[data-testid="action-dropdown"] button';
   private deleteclientPolicyDrpDwn = "deleteClientPolicyDropdown";
-  private searchFld = "[id^=realm-settings][id$=profilesinput]";
-  private searchFldPolicies = "[id^=realm-settings][id$=clientPoliciesinput]";
   private clientProfileOne =
     'a[href*="realm-settings/clientPolicies/Test/edit-profile"]';
   private clientProfileTwo =
@@ -617,9 +615,7 @@ export default class RealmSettingsPage {
   }
 
   shouldSearchClientProfile() {
-    cy.get(this.searchFld).click({ force: true }).type("Test").click();
-    cy.get("table").should("be.visible").contains("td", "Test");
-    cy.get(this.searchFld).click({ force: true }).clear();
+    new ListingPage().searchItem("Test", false).itemExist("Test");
     return this;
   }
 
@@ -912,16 +908,12 @@ export default class RealmSettingsPage {
   }
 
   searchClientPolicy(name: string) {
-    cy.get(this.searchFldPolicies).click({ force: true }).type(name).click();
-    cy.get("table").should("be.visible").contains("td", name);
-    cy.get(this.searchFldPolicies).click({ force: true }).clear();
+    new ListingPage().searchItem(name, false).itemExist(name);
     return this;
   }
 
   searchClientProfile(name: string) {
-    cy.get(this.searchFld).click({ force: true }).type(name).click();
-    cy.get("table").should("be.visible").contains("td", name);
-    cy.get(this.searchFld).click({ force: true }).clear();
+    new ListingPage().searchItem(name, false).itemExist(name);
     return this;
   }
 
