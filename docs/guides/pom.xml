@@ -65,7 +65,7 @@
                             <goal>process-asciidoc</goal>
                         </goals>
                         <configuration>
-                            <sourceDirectory>${basedir}/target/generated-guides/server</sourceDirectory>
+                            <sourceDirectory>${basedir}/target/generated-guides/*</sourceDirectory>
                             <sourceDocumentName>index.adoc</sourceDocumentName>
                             <backend>html5</backend>
                             <sourceHighlighter>coderay</sourceHighlighter>
