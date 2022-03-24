@@ -276,12 +276,6 @@ public class GenerateHotRodEntityImplementationsProcessor extends AbstractGenera
                             .filter(variableElement -> variableElement.getSimpleName().toString().equals(hotRodEntityFieldName))
                             .findFirst();
 
-                    if (!hasField(e, hotRodEntityFieldName)) {
-                        // throw an error when no variable found
-                        processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, "Cannot find " + e.getSimpleName().toString() + " field for methods: [" + me.getValue().stream().map(ee -> ee.getSimpleName().toString()).collect(Collectors.joining(", ")) + "]", parentInterfaceElement);
-                        return;
-                    }
-
                     // Implement each method
                     for (ExecutableElement method : methods) {
                         FieldAccessorType fat = FieldAccessorType.determineType(method, me.getKey(), types, fieldType);

@@ -21,6 +21,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.component.AmphibianProviderFactory;
+import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.GroupModel;
@@ -30,6 +31,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.map.authSession.MapAuthenticationSessionEntity;
 import org.keycloak.models.map.authSession.MapRootAuthenticationSessionEntity;
 import org.keycloak.models.map.clientscope.MapClientScopeEntity;
@@ -87,10 +89,16 @@ import org.keycloak.models.map.storage.hotRod.user.HotRodUserCredentialEntityDel
 import org.keycloak.models.map.storage.hotRod.user.HotRodUserEntity;
 import org.keycloak.models.map.storage.hotRod.user.HotRodUserEntityDelegate;
 import org.keycloak.models.map.storage.hotRod.user.HotRodUserFederatedIdentityEntityDelegate;
+import org.keycloak.models.map.storage.hotRod.userSession.HotRodAuthenticatedClientSessionEntity;
+import org.keycloak.models.map.storage.hotRod.userSession.HotRodAuthenticatedClientSessionEntityDelegate;
+import org.keycloak.models.map.storage.hotRod.userSession.HotRodUserSessionEntity;
+import org.keycloak.models.map.storage.hotRod.userSession.HotRodUserSessionEntityDelegate;
 import org.keycloak.models.map.user.MapUserConsentEntity;
 import org.keycloak.models.map.user.MapUserCredentialEntity;
 import org.keycloak.models.map.user.MapUserEntity;
 import org.keycloak.models.map.user.MapUserFederatedIdentityEntity;
+import org.keycloak.models.map.userSession.MapAuthenticatedClientSessionEntity;
+import org.keycloak.models.map.userSession.MapUserSessionEntity;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 
@@ -128,7 +136,8 @@ public class HotRodMapStorageProviderFactory implements AmphibianProviderFactory
             .constructor(MapRequiredActionProviderEntity.class,     HotRodRequiredActionProviderEntityDelegate::new)
             .constructor(MapRequiredCredentialEntity.class,         HotRodRequiredCredentialEntityDelegate::new)
             .constructor(MapWebAuthnPolicyEntity.class,             HotRodWebAuthnPolicyEntityDelegate::new)
-
+            .constructor(MapUserSessionEntity.class,                HotRodUserSessionEntityDelegate::new)
+            .constructor(MapAuthenticatedClientSessionEntity.class, HotRodAuthenticatedClientSessionEntityDelegate::new)
             .build();
 
     public static final Map<Class<?>, HotRodEntityDescriptor<?, ?>> ENTITY_DESCRIPTOR_MAP = new HashMap<>();
@@ -179,6 +188,18 @@ public class HotRodMapStorageProviderFactory implements AmphibianProviderFactory
                 new HotRodEntityDescriptor<>(RealmModel.class,
                         HotRodRealmEntity.class,
                         HotRodRealmEntityDelegate::new));
+
+       // User sessions descriptor
+        ENTITY_DESCRIPTOR_MAP.put(UserSessionModel.class,
+                new HotRodEntityDescriptor<>(UserSessionModel.class,
+                        HotRodUserSessionEntity.class,
+                        HotRodUserSessionEntityDelegate::new));
+
+        // Client sessions descriptor
+        ENTITY_DESCRIPTOR_MAP.put(AuthenticatedClientSessionModel.class,
+                new HotRodEntityDescriptor<>(AuthenticatedClientSessionModel.class,
+                        HotRodAuthenticatedClientSessionEntity.class,
+                        HotRodAuthenticatedClientSessionEntityDelegate::new));
     }
 
     @Override
