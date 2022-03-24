@@ -15,6 +15,8 @@ RUN (cd /tmp/keycloak && \
 
 RUN mv /tmp/keycloak/keycloak-* /opt/keycloak && mkdir -p /opt/keycloak/data
 
+COPY docker-entrypoint.sh /opt/keycloak/bin/docker-entrypoint.sh
+
 RUN chmod -R g+rwX /opt/keycloak
 
 FROM registry.access.redhat.com/ubi8-minimal
@@ -32,4 +34,6 @@ USER 1000
 EXPOSE 8080
 EXPOSE 8443
 
-ENTRYPOINT [ "/opt/keycloak/bin/kc.sh" ]
+
+
+ENTRYPOINT [ "/opt/keycloak/bin/docker-entrypoint.sh" ]
