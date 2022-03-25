@@ -15,10 +15,12 @@ import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { useParams } from "react-router-dom";
 import FileSaver from "file-saver";
 import { prettyPrintJSON } from "../../util";
-import "./authorization-details.css";
 import { useAlerts } from "../../components/alert/Alerts";
 import type { ClientParams } from "../routes/Client";
 import type ResourceServerRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceServerRepresentation";
+import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
+
+import "./authorization-details.css";
 
 export const AuthorizationExport = () => {
   const { t } = useTranslation("clients");
@@ -56,6 +58,10 @@ export const AuthorizationExport = () => {
       addError("exportAuthDetailsError", error);
     }
   };
+
+  if (!code) {
+    return <KeycloakSpinner />;
+  }
 
   return (
     <PageSection>
