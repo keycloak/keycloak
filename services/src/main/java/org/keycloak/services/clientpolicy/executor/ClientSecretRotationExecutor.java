@@ -101,7 +101,7 @@ public class ClientSecretRotationExecutor implements
                 || !clientConfigWrapper.hasClientSecretExpirationTime()) {
             rotateSecret(adminContext, clientConfigWrapper);
         } else {
-            //TODO validation for client dynamic registration
+
             if (adminContext instanceof DynamicClientUpdatedContext) {
                 int startRemainingWindow = clientConfigWrapper.getClientSecretExpirationTime()
                         - configuration.remainExpirationPeriod;
