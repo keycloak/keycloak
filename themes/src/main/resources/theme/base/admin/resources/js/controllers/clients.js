@@ -1497,6 +1497,13 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
             }
         }
 
+        if ($scope.client.attributes["frontchannel.logout.session.required"]) {
+            if ($scope.client.attributes["frontchannel.logout.session.required"] == "true") {
+                $scope.frontchannelLogoutSessionRequired = true;
+            } else {
+                $scope.frontchannelLogoutSessionRequired = false;
+            }
+        }
 
         if ($scope.client.attributes["request.uris"] && $scope.client.attributes["request.uris"].length > 0) {
             $scope.client.requestUris = $scope.client.attributes["request.uris"].split("##");
@@ -2044,6 +2051,12 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
             $scope.clientEdit.attributes["backchannel.logout.revoke.offline.tokens"] = "true";
         } else {
             $scope.clientEdit.attributes["backchannel.logout.revoke.offline.tokens"] = "false";
+        }
+
+        if ($scope.frontchannelLogoutSessionRequired == true) {
+            $scope.clientEdit.attributes["frontchannel.logout.session.required"] = "true";
+        } else {
+            $scope.clientEdit.attributes["frontchannel.logout.session.required"] = "false";
         }
 
         $scope.clientEdit.attributes["acr.loa.map"] = JSON.stringify($scope.acrLoaMap);

@@ -234,6 +234,11 @@ public class DescriptionConverter {
         }
 
         configWrapper.setFrontChannelLogoutUrl(Optional.ofNullable(clientOIDC.getFrontChannelLogoutUri()).orElse(null));
+        if (clientOIDC.getFrontchannelLogoutSessionRequired() == null) {
+            configWrapper.setFrontChannelLogoutSessionRequired(true);
+        } else {
+            configWrapper.setFrontChannelLogoutSessionRequired(clientOIDC.getFrontchannelLogoutSessionRequired());
+        }        
 
         if (clientOIDC.getDefaultAcrValues() != null) {
             configWrapper.setAttributeMultivalued(Constants.DEFAULT_ACR_VALUES, clientOIDC.getDefaultAcrValues());
@@ -419,6 +424,7 @@ public class DescriptionConverter {
         }
 
         response.setFrontChannelLogoutUri(config.getFrontChannelLogoutUrl());
+        response.setFrontchannelLogoutSessionRequired(config.isFrontChannelLogoutSessionRequired());
 
         List<String> defaultAcrValues = config.getAttributeMultivalued(Constants.DEFAULT_ACR_VALUES);
         if (!defaultAcrValues.isEmpty()) {

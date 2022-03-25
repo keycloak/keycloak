@@ -92,6 +92,7 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         client.setClientUri("http://root");
         client.setRedirectUris(Collections.singletonList("http://redirect"));
         client.setFrontChannelLogoutUri("http://frontchannel");
+        client.setFrontchannelLogoutSessionRequired(true);
         return client;
     }
 
@@ -161,6 +162,7 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         assertEquals(OIDCLoginProtocol.CLIENT_SECRET_BASIC, response.getTokenEndpointAuthMethod());
         Assert.assertNull(response.getUserinfoSignedResponseAlg());
         assertEquals("http://frontchannel", response.getFrontChannelLogoutUri());
+        assertTrue(response.getFrontchannelLogoutSessionRequired());
     }
 
     @Test
