@@ -323,6 +323,11 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     }
 
     @Override
+    public void setManualStop(boolean manualStop) {
+        this.manualStop = manualStop;
+    }
+
+    @Override
     public void setProperty(String key, String value) {
         setProperty(key, value, distPath.resolve("conf").resolve("keycloak.conf").toFile());
     }
