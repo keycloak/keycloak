@@ -16,7 +16,6 @@ import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.ClientCRUDContext;
 import org.keycloak.services.clientpolicy.context.ClientSecretRotationContext;
-import org.keycloak.services.clientpolicy.context.DynamicClientUpdateContext;
 import org.keycloak.services.clientpolicy.context.DynamicClientUpdatedContext;
 
 import static org.keycloak.services.clientpolicy.executor.ClientSecretRotationExecutorFactory.DEFAULT_SECRET_EXPIRATION_PERIOD;
