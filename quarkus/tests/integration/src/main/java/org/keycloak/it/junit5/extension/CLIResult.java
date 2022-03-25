@@ -93,6 +93,10 @@ public interface CLIResult extends LaunchResult {
         assertFalse(getOutput().contains("Server configuration updated and persisted"));
     }
 
+    default void assertBuildRuntimeMismatchWarning(String quarkusBuildtimePropKey) {
+        assertTrue(getOutput().contains(" - " + quarkusBuildtimePropKey + " is set to 'false' but it is build time fixed to 'true'. Did you change the property " + quarkusBuildtimePropKey + " after building the application?"));
+    }
+
     default boolean isClustered() {
         return getOutput().contains("Starting JGroups channel `ISPN`");
     }

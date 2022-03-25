@@ -17,6 +17,8 @@
 
 package org.keycloak.it.cli.dist;
 
+import static io.restassured.RestAssured.when;
+import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -28,6 +30,7 @@ import org.junit.jupiter.api.TestMethodOrder;
 import org.keycloak.it.junit5.extension.BeforeStartDistribution;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.junit5.extension.KeepServerAlive;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.utils.KeycloakDistribution;
 
@@ -35,21 +38,23 @@ import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
 
 @DistributionTest(reInstall = DistributionTest.ReInstall.NEVER)
-@BeforeStartDistribution(QuarkusPropertiesDistTest.UpdateConsoleLogLevelToWarn.class)
 @RawDistOnly(reason = "Containers are immutable")
 @TestMethodOrder(OrderAnnotation.class)
 public class QuarkusPropertiesDistTest {
+
+    private static final String QUARKUS_BUILDTIME_HIBERNATE_METRICS_KEY = "quarkus.hibernate-orm.metrics.enabled";
+    private static final String QUARKUS_RUNTIME_CONSOLE_LOGLVL_KEY = "quarkus.log.console.level";
 
     @Test
     @Launch({ "build", "--cache=local" })
     @Order(1)
     void testBuildWithPropertyFromQuarkusProperties(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        assertFalse(cliResult.getOutput().contains("INFO"));
         cliResult.assertBuild();
     }
 
     @Test
+    @BeforeStartDistribution(QuarkusPropertiesDistTest.UpdateConsoleLogLevelToWarnFromQuarkusProps.class)
     @Launch({ "start", "--http-enabled=true", "--hostname-strict=false" })
     @Order(2)
     void testPropertyEnabledAtRuntime(LaunchResult result) {
@@ -75,7 +80,7 @@ public class QuarkusPropertiesDistTest {
     }
 
     @Test
-    @BeforeStartDistribution(UpdateConsoleLogLevelToInfo.class)
+    @BeforeStartDistribution(UpdateConsoleLogLevelToInfoFromKeycloakConf.class)
     @Launch({ "build" })
     @Order(5)
     void testIgnoreQuarkusPropertyFromKeycloakConf(LaunchResult result) {
@@ -84,20 +89,76 @@ public class QuarkusPropertiesDistTest {
         cliResult.assertBuild();
     }
 
-    public static class UpdateConsoleLogLevelToWarn implements Consumer<KeycloakDistribution> {
+    @Test
+    @BeforeStartDistribution(UpdateConsoleLogLevelToInfoFromQuarkusProps.class)
+    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false" })
+    @Order(6)
+    void testRuntimePropFromQuarkusPropsIsAppliedWithoutRebuild(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        assertTrue(cliResult.getOutput().contains("INFO"));
+        cliResult.assertNoBuild();
+    }
 
+    @Test
+    @BeforeStartDistribution(UpdateHibernateMetricsFromQuarkusProps.class)
+    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false" })
+    @Order(7)
+    void testBuildRunTimeMismatchOnQuarkusBuildPropWarning(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertBuildRuntimeMismatchWarning(QUARKUS_BUILDTIME_HIBERNATE_METRICS_KEY);
+    }
+
+    @Test
+    @BeforeStartDistribution(UpdateHibernateMetricsFromQuarkusProps.class)
+    @Launch({ "build", "--metrics-enabled=true" })
+    @Order(8)
+    void buildFirstWithUnknownQuarkusBuildProperty(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertBuild();
+    }
+
+    @Test
+    @KeepServerAlive
+    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false" })
+    @Order(9)
+    void testUnknownQuarkusBuildTimePropertyApplied(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertNoBuild();
+        when().get("/metrics").then().statusCode(200)
+                .body(containsString("vendor_hibernate_cache_query_plan_total"));
+    }
+
+    public static class UpdateConsoleLogLevelToWarnFromQuarkusProps implements Consumer<KeycloakDistribution> {
         @Override
         public void accept(KeycloakDistribution distribution) {
-            distribution.setQuarkusProperty("quarkus.log.console.level", "WARN");
+            distribution.setQuarkusProperty(QUARKUS_RUNTIME_CONSOLE_LOGLVL_KEY, "WARN");
         }
     }
 
-    public static class UpdateConsoleLogLevelToInfo implements Consumer<KeycloakDistribution> {
+    public static class UpdateConsoleLogLevelToInfoFromKeycloakConf implements Consumer<KeycloakDistribution> {
 
         @Override
         public void accept(KeycloakDistribution distribution) {
             distribution.deleteQuarkusProperties();
-            distribution.setProperty("quarkus.log.console.level", "INFO");
+            distribution.setProperty(QUARKUS_RUNTIME_CONSOLE_LOGLVL_KEY, "INFO");
+        }
+    }
+
+    public static class UpdateConsoleLogLevelToInfoFromQuarkusProps implements Consumer<KeycloakDistribution> {
+
+        @Override
+        public void accept(KeycloakDistribution distribution) {
+            distribution.deleteQuarkusProperties();
+            distribution.setQuarkusProperty(QUARKUS_RUNTIME_CONSOLE_LOGLVL_KEY, "INFO");
+        }
+    }
+
+    public static class UpdateHibernateMetricsFromQuarkusProps implements Consumer<KeycloakDistribution> {
+
+        @Override
+        public void accept(KeycloakDistribution distribution) {
+            distribution.deleteQuarkusProperties();
+            distribution.setQuarkusProperty(QUARKUS_BUILDTIME_HIBERNATE_METRICS_KEY, "true");
         }
     }
 }
