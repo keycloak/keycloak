@@ -7,7 +7,7 @@ name: "CodeQL Themes"
 
 on:
   push:
-    branches: [main]
+    branches-ignore: [main]
   pull_request:
     branches: [main]
     paths: 
