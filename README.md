@@ -26,7 +26,7 @@ Please remember to provide a good summary, description as well as steps to repro
 
 To run Keycloak download the distribution from our [website](https://www.keycloak.org/downloads.html). Unzip and run:
 
-    bin/standalone.[sh|bat] 
+    bin/kc.[sh|bat] start-dev
 
 Alternatively, you can use the Docker image by running:
 
