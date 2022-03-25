@@ -25,6 +25,12 @@
     <description>Keycloak Administration UI</description>
     
     <properties>
+        <jboss.repo.nexusUrl>https://s01.oss.sonatype.org/</jboss.repo.nexusUrl>
+        <jboss.releases.repo.id>jboss-releases-repository</jboss.releases.repo.id>
+        <jboss.releases.repo.url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</jboss.releases.repo.url>
+        <jboss.snapshots.repo.id>jboss-snapshots-repository</jboss.snapshots.repo.id>
+        <jboss.snapshots.repo.url>https://s01.oss.sonatype.org/content/repositories/snapshots/</jboss.snapshots.repo.url>
+
         <nexus.staging.plugin.version>1.6.12</nexus.staging.plugin.version>
     </properties>
 
@@ -64,16 +70,51 @@
             <id>nexus-staging</id>
             <distributionManagement>
                 <repository>
-                    <id>jboss-releases-repository</id>
+                    <id>${jboss.releases.repo.id}</id>
                     <name>JBoss Releases Repository</name>
-                    <url>https://repository.jboss.org/nexus/service/local/staging/deploy/maven2/</url>
+                    <url>${jboss.releases.repo.url}</url>
                 </repository>
+                <snapshotRepository>
+                    <id>${jboss.snapshots.repo.id}</id>
+                    <name>JBoss Snapshots Repository</name>
+                    <url>${jboss.snapshots.repo.url}</url>
+                </snapshotRepository>
             </distributionManagement>
             <build>
                 <plugins>
                     <plugin>
                         <groupId>org.sonatype.plugins</groupId>
                         <artifactId>nexus-staging-maven-plugin</artifactId>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>gpg</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>3.0.1</version>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                                <configuration>
+                                    <gpgArguments>
+                                        <arg>--batch</arg>
+                                        <arg>--pinentry-mode</arg>
+                                        <arg>loopback</arg>
+                                    </gpgArguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                        <configuration>
+                        </configuration>
                     </plugin>
                 </plugins>
             </build>
@@ -89,8 +130,8 @@
                     <version>${nexus.staging.plugin.version}</version>
                     <extensions>true</extensions>
                     <configuration>
-                        <nexusUrl>https://repository.jboss.org/nexus</nexusUrl>
-                        <serverId>jboss-releases-repository</serverId>
+                        <serverId>${jboss.releases.repo.id}</serverId>
+                        <nexusUrl>${jboss.repo.nexusUrl}</nexusUrl>
                     </configuration>
                 </plugin>
             </plugins>
