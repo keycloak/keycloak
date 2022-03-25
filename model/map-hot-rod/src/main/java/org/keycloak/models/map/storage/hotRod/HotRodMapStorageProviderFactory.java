@@ -27,15 +27,19 @@ import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.map.authSession.MapAuthenticationSessionEntity;
 import org.keycloak.models.map.authSession.MapRootAuthenticationSessionEntity;
 import org.keycloak.models.map.clientscope.MapClientScopeEntity;
 import org.keycloak.models.map.group.MapGroupEntity;
+import org.keycloak.models.map.loginFailure.MapUserLoginFailureEntity;
 import org.keycloak.models.map.role.MapRoleEntity;
 import org.keycloak.models.map.storage.hotRod.authSession.HotRodAuthenticationSessionEntityDelegate;
 import org.keycloak.models.map.storage.hotRod.authSession.HotRodRootAuthenticationSessionEntity;
 import org.keycloak.models.map.storage.hotRod.authSession.HotRodRootAuthenticationSessionEntityDelegate;
+import org.keycloak.models.map.storage.hotRod.loginFailure.HotRodUserLoginFailureEntity;
+import org.keycloak.models.map.storage.hotRod.loginFailure.HotRodUserLoginFailureEntityDelegate;
 import org.keycloak.models.map.storage.hotRod.role.HotRodRoleEntity;
 import org.keycloak.models.map.storage.hotRod.role.HotRodRoleEntityDelegate;
 import org.keycloak.models.map.storage.hotRod.client.HotRodClientEntity;
@@ -84,6 +88,7 @@ public class HotRodMapStorageProviderFactory implements AmphibianProviderFactory
             .constructor(MapUserCredentialEntity.class,             HotRodUserCredentialEntityDelegate::new)
             .constructor(MapUserFederatedIdentityEntity.class,      HotRodUserFederatedIdentityEntityDelegate::new)
             .constructor(MapUserConsentEntity.class,                HotRodUserConsentEntityDelegate::new)
+            .constructor(MapUserLoginFailureEntity.class,           HotRodUserLoginFailureEntityDelegate::new)
             .build();
 
     public static final Map<Class<?>, HotRodEntityDescriptor<?, ?>> ENTITY_DESCRIPTOR_MAP = new HashMap<>();
@@ -122,6 +127,12 @@ public class HotRodMapStorageProviderFactory implements AmphibianProviderFactory
                 new HotRodEntityDescriptor<>(UserModel.class,
                         HotRodUserEntity.class,
                         HotRodUserEntityDelegate::new));
+
+        // Login failure descriptor
+        ENTITY_DESCRIPTOR_MAP.put(UserLoginFailureModel.class,
+                new HotRodEntityDescriptor<>(UserLoginFailureModel.class,
+                        HotRodUserLoginFailureEntity.class,
+                        HotRodUserLoginFailureEntityDelegate::new));
     }
 
     @Override
