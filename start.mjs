@@ -63,8 +63,7 @@ const run = () => {
     [
       "start-dev",
       "--http-port=8180",
-      "-Dkeycloak.profile.feature.admin2=enabled",
-      "-Dkeycloak.profile.feature.declarative_user_profile=enabled",
+      "--features=admin2,admin-fine-grained-authz,declarative-user-profile",
       ...args,
     ],
     {

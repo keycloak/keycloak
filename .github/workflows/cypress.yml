@@ -52,7 +52,7 @@ jobs:
 
       - name: Start Keycloak Server
         working-directory: ${{ env.KEYCLOAK_SERVER_BIN }}
-        run: ./kc.sh start-dev -Dkeycloak.profile.feature.admin2=enabled -Dkeycloak.profile.feature.declarative_user_profile=enabled &
+        run: ./kc.sh start-dev --features=admin2,admin-fine-grained-authz,declarative-user-profile &
         env:
           KEYCLOAK_ADMIN: admin
           KEYCLOAK_ADMIN_PASSWORD: admin
