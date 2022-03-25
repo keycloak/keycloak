@@ -96,7 +96,7 @@ For more details on how to invoke on this endpoint, see https://datatracker.ietf
 
 ===== Device Authorization endpoint
 ....
-/realms/{realm-name}/protocol/openid-connectauth/device
+/realms/{realm-name}/protocol/openid-connect/auth/device
 ....
 
 The device authorization endpoint is used to obtain a device code and a user code. It can be invoked by confidential or public clients.
