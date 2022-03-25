@@ -317,7 +317,9 @@ public class DescriptionConverter {
         if (client.getClientAuthenticatorType().equals(ClientIdAndSecretAuthenticator.PROVIDER_ID)) {
             response.setClientSecret(client.getSecret());
             response.setClientSecretExpiresAt(
-                OIDCClientSecretConfigWrapper.fromClientRepresentation(client).getClientSecretExpirationTime());
+                    OIDCClientSecretConfigWrapper.fromClientRepresentation(client).getClientSecretExpirationTime());
+        }else{
+            throw new RuntimeException("Não era pra entrar aqui!!!");
         }
 
         response.setClientName(client.getName());
