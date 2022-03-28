@@ -409,7 +409,11 @@ export const UserForm = ({
       <ActionGroup>
         <Button
           data-testid={!user?.id ? "create-user" : "save-user"}
-          isDisabled={!user?.id && !watchUsernameInput}
+          isDisabled={
+            !user?.id &&
+            !watchUsernameInput &&
+            !realm?.registrationEmailAsUsername
+          }
           variant="primary"
           type="submit"
         >

@@ -152,9 +152,7 @@ const UsersTabs = () => {
       <ImpersonateConfirm />
       <DeleteConfirm />
       <ViewHeader
-        titleKey={
-          userForm.getValues().username || user?.username || t("createUser")
-        }
+        titleKey={user?.id ? user.username! : t("createUser")}
         divider={!id}
         dropdownItems={[
           <DropdownItem
