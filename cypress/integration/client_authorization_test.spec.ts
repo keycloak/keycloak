@@ -7,7 +7,7 @@ import SidebarPage from "../support/pages/admin_console/SidebarPage";
 import AuthorizationTab from "../support/pages/admin_console/manage/clients/AuthorizationTab";
 import ModalUtils from "../support/util/ModalUtils";
 
-describe("Client authentication subtab", () => {
+describe.skip("Client authentication subtab", () => {
   const loginPage = new LoginPage();
   const listingPage = new ListingPage();
   const masthead = new Masthead();
