@@ -3,7 +3,9 @@ export default class InitialAccessTokenTab {
 
   private emptyAction = "no-initial-access-tokens-empty-action";
 
-  private expirationInput = "expiration";
+  private expirationNumberInput = "expiration";
+  private expirationInput = 'input[name="count"]';
+  private expirationText = "#expiration-helper";
   private countInput = "count";
   private countPlusBtn = '[data-testid="count"] [aria-label="Plus"]';
   private saveBtn = "save";
@@ -38,7 +40,7 @@ export default class InitialAccessTokenTab {
   }
 
   fillNewTokenData(expiration: number, count: number) {
-    cy.findByTestId(this.expirationInput).clear().type(`${expiration}`);
+    cy.findByTestId(this.expirationNumberInput).clear().type(`${expiration}`);
     cy.findByTestId(this.countInput).clear();
 
     for (let i = 0; i < count; i++) {
@@ -50,6 +52,24 @@ export default class InitialAccessTokenTab {
 
   save() {
     cy.findByTestId(this.saveBtn).click();
+    return this;
+  }
+
+  checkExpirationGreaterThanZeroError() {
+    cy.get(this.expirationText).should(
+      "have.text",
+      "Value should should be greater or equal to 1"
+    );
+    return this;
+  }
+
+  checkCountValue(value: number) {
+    cy.get(this.expirationInput).should("have.value", value);
+    return this;
+  }
+
+  checkSaveButtonIsDisabled() {
+    cy.findByTestId(this.saveBtn).should("be.disabled");
     return this;
   }
 }

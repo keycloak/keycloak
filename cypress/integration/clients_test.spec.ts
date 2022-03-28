@@ -226,6 +226,30 @@ describe("Clients test", () => {
       cy.url().should("not.include", "/add-client");
     });
 
+    it("Should check settings elements", () => {
+      listingPage.goToCreateItem();
+      const clientId = "Test settings";
+
+      createClientPage
+        .fillClientData(clientId)
+        .continue()
+        .checkCapabilityConfigElements()
+        .save();
+
+      masthead.checkNotificationMessage("Client created successfully");
+      sidebarPage.waitForPageLoad();
+
+      createClientPage
+        .checkCapabilityConfigElements()
+        .checkAccessSettingsElements()
+        .checkLoginSettingsElements()
+        .checkLogoutSettingsElements()
+        .deleteClientFromActionDropdown();
+
+      modalUtils.confirmModal();
+      listingPage.itemExist(clientId, false);
+    });
+
     it("Should navigate to previous using 'back' button", () => {
       listingPage.goToCreateItem();
 
@@ -263,6 +287,8 @@ describe("Clients test", () => {
 
       // Create
       listingPage.itemExist(itemId, false).goToCreateItem();
+      createClientPage.cancel();
+      listingPage.itemExist(itemId, false).goToCreateItem();
 
       createClientPage
         .selectClientType("openid-connect")
@@ -293,6 +319,18 @@ describe("Clients test", () => {
       masthead.checkNotificationMessage("The client has been deleted");
 
       listingPage.itemExist(itemId, false);
+    });
+
+    it("Initial access token can't be created with 0 days and count", () => {
+      const initialAccessTokenTab = new InitialAccessTokenTab();
+      initialAccessTokenTab
+        .goToInitialAccessTokenTab()
+        .shouldBeEmpty()
+        .goToCreateFromEmptyList()
+        .fillNewTokenData(0, 0)
+        .checkExpirationGreaterThanZeroError()
+        .checkCountValue(1)
+        .checkSaveButtonIsDisabled();
     });
 
     it.skip("Initial access token", () => {
@@ -562,8 +600,11 @@ describe("Clients test", () => {
       createClientPage
         .selectClientType("openid-connect")
         .fillClientData(client)
-        .continue()
-        .save();
+        .continue();
+
+      sidebarPage.waitForPageLoad();
+
+      createClientPage.save();
 
       advancedTab.goToAdvancedTab();
     });
