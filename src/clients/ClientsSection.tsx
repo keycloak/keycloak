@@ -191,14 +191,15 @@ export default function ClientsSection() {
                         !client.rootUrl.startsWith("http") ||
                         client.rootUrl.includes("$")
                       ) {
-                        client.rootUrl =
+                        return (
                           client.rootUrl
                             .replace("${authBaseUrl}", baseUrl)
                             .replace("${authAdminUrl}", baseUrl) +
-                          (client.baseUrl ? client.baseUrl.substr(1) : "");
+                          (client.baseUrl ? client.baseUrl.substring(1) : "")
+                        );
                       }
                     }
-                    return client.rootUrl;
+                    return client.baseUrl;
                   },
                 },
               ]}
