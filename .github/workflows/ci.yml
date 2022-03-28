@@ -21,15 +21,15 @@ jobs:
     if: ${{ ( github.event_name != 'schedule' ) || ( github.event_name == 'schedule' && github.repository == 'keycloak/keycloak' ) }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-java@v1
+      - uses: actions/checkout@v3
+      - uses: actions/setup-java@v2
         with:
           java-version: ${{ env.DEFAULT_JDK_VERSION }}
       - name: Update maven settings
         run: mkdir -p ~/.m2 ; cp .github/settings.xml ~/.m2/
       - name: Cache Maven packages
         id: cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             ~/.m2/repository
@@ -46,7 +46,7 @@ jobs:
 
       - name: Store Keycloak artifacts
         id: store-keycloak
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: keycloak-artifacts.zip
           retention-days: 1
@@ -65,14 +65,14 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-java@v1
+      - uses: actions/checkout@v3
+      - uses: actions/setup-java@v2
         with:
           java-version: ${{ env.DEFAULT_JDK_VERSION }}
       - name: Update maven settings
         run: mkdir -p ~/.m2 ; cp .github/settings.xml ~/.m2/
       - name: Cache Maven packages
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/.m2/repository
           key: cache-2-${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
@@ -81,7 +81,7 @@ jobs:
         run: rm -rf ~/.m2/repository/org/keycloak >/dev/null || true
       - name: Download built keycloak
         id: download-keycloak
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           path: ~/.m2/repository/org/keycloak/
           name: keycloak-artifacts.zip
@@ -93,7 +93,7 @@ jobs:
           fi
 
       - name: Unit test reports
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         if: failure()
         with:
           name: reports-unit-tests
@@ -106,14 +106,14 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-java@v1
+      - uses: actions/checkout@v3
+      - uses: actions/setup-java@v2
         with:
           java-version: ${{ env.DEFAULT_JDK_VERSION }}
       - name: Update maven settings
         run: mkdir -p ~/.m2 ; cp .github/settings.xml ~/.m2/
       - name: Cache Maven packages
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/.m2/repository
           key: cache-2-${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
@@ -122,7 +122,7 @@ jobs:
         run: rm -rf ~/.m2/repository/org/keycloak >/dev/null || true
       - name: Download built keycloak
         id: download-keycloak
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           path: ~/.m2/repository/org/keycloak/
           name: keycloak-artifacts.zip
@@ -134,7 +134,7 @@ jobs:
           fi
 
       - name: Model test reports
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         if: failure()
         with:
           name: reports-model-tests
@@ -152,7 +152,7 @@ jobs:
         tests: ['group1','group2','group3']
       fail-fast: false
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 2
 
@@ -161,7 +161,7 @@ jobs:
 
       - name: Cache Maven packages
         if: ${{ github.event_name != 'pull_request' || matrix.server != 'undertow-map-hot-rod' || env.GIT_HOTROD_RELEVANT_DIFF != 0 }}
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/.m2/repository
           key: cache-2-${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
@@ -170,7 +170,7 @@ jobs:
       - name: Download built keycloak
         if: ${{ github.event_name != 'pull_request' || matrix.server != 'undertow-map-hot-rod' || env.GIT_HOTROD_RELEVANT_DIFF != 0 }}
         id: download-keycloak
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           path: ~/.m2/repository/org/keycloak/
           name: keycloak-artifacts.zip
@@ -180,7 +180,7 @@ jobs:
       #     find ~ -name *dist*.zip
       #     ls -lR ~/.m2/repository
 
-      - uses: actions/setup-java@v1
+      - uses: actions/setup-java@v2
         if: ${{ github.event_name != 'pull_request' || matrix.server != 'undertow-map-hot-rod' || env.GIT_HOTROD_RELEVANT_DIFF != 0 }}
         with:
           java-version: ${{ env.DEFAULT_JDK_VERSION }}
@@ -207,7 +207,7 @@ jobs:
           exit $TEST_RESULT
 
       - name: Base test reports
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         if: failure()
         with:
           name: reports-${{ matrix.server }}-base-tests-${{ matrix.tests }}
@@ -220,7 +220,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 2
 
@@ -229,7 +229,7 @@ jobs:
 
       - name: Cache Maven packages
         if: ${{ github.event_name != 'pull_request' || env.GIT_DIFF != 0 }}
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/.m2/repository
           key: cache-2-${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
@@ -242,12 +242,12 @@ jobs:
       - name: Download built keycloak
         if: ${{ github.event_name != 'pull_request' || env.GIT_DIFF != 0 }}
         id: download-keycloak
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           path: ~/.m2/repository/org/keycloak/
           name: keycloak-artifacts.zip
 
-      - uses: actions/setup-java@v1
+      - uses: actions/setup-java@v2
         if: ${{ github.event_name != 'pull_request' || env.GIT_DIFF != 0 }}
         with:
           java-version: ${{ env.DEFAULT_JDK_VERSION }}
@@ -265,7 +265,7 @@ jobs:
 
       - name: Cluster test reports
         if: failure()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: reports-cluster-tests
           retention-days: 14
@@ -279,14 +279,14 @@ jobs:
     env:
       MAVEN_OPTS: -Xmx1024m
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 2
 
       - name: Check whether this phase should run
         run: echo "GIT_DIFF=$[ $( git diff --name-only HEAD^ | egrep -ic 'crossdc|infinispan' ) + $( git diff HEAD^ pom.xml | egrep -ic '\+\s+<wildfly.version>' ) ]" >> $GITHUB_ENV
 
-      - uses: actions/setup-java@v1
+      - uses: actions/setup-java@v2
         if: ${{ github.event_name != 'pull_request' || env.GIT_DIFF != 0 }}
         with:
           java-version: ${{ env.DEFAULT_JDK_VERSION }}
@@ -296,7 +296,7 @@ jobs:
 
       - name: Cache Maven packages
         if: ${{ github.event_name != 'pull_request' || env.GIT_DIFF != 0 }}
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/.m2/repository
           key: cache-2-${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
@@ -309,7 +309,7 @@ jobs:
       - name: Download built keycloak
         if: ${{ github.event_name != 'pull_request' || env.GIT_DIFF != 0 }}
         id: download-keycloak
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           path: ~/.m2/repository/org/keycloak/
           name: keycloak-artifacts.zip
@@ -328,7 +328,7 @@ jobs:
 
       - name: Cross-DC test reports
         if: failure()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: reports-cross-dc-tests
           retention-days: 14
@@ -344,9 +344,9 @@ jobs:
     env:
       MAVEN_OPTS: -Xmx1024m
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Cache Maven packages
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/.m2/repository
           key: cache-2-${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
@@ -356,11 +356,11 @@ jobs:
 
       - name: Download built keycloak
         id: download-keycloak
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           path: ~/.m2/repository/org/keycloak/
           name: keycloak-artifacts.zip
-      - uses: actions/setup-java@v1
+      - uses: actions/setup-java@v2
         with:
           java-version: ${{ env.DEFAULT_JDK_VERSION }}
       - name: Update maven settings
@@ -376,7 +376,7 @@ jobs:
           exit $TEST_RESULT
 
       - name: Quarkus cluster test reports
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         if: failure()
         with:
           name: reports-quarkus-cluster-tests
@@ -393,9 +393,9 @@ jobs:
     env:
       MAVEN_OPTS: -Xmx1024m
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Cache Maven packages
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/.m2/repository
           key: cache-2-${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
@@ -405,11 +405,11 @@ jobs:
 
       - name: Download built keycloak
         id: download-keycloak
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           path: ~/.m2/repository/org/keycloak/
           name: keycloak-artifacts.zip
-      - uses: actions/setup-java@v1
+      - uses: actions/setup-java@v2
         with:
           java-version: ${{ env.DEFAULT_JDK_VERSION }}
       - name: Update maven settings
@@ -439,7 +439,7 @@ jobs:
           exit $TEST_RESULT
 
       - name: Quarkus test reports
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         if: failure()
         with:
           name: reports-quarkus-tests
@@ -452,22 +452,22 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           repository: keycloak/keycloak-quickstarts
           ref: main # default is "latest"
 
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           path: keycloak
 
-      - uses: actions/setup-java@v1
+      - uses: actions/setup-java@v2
         with:
           java-version: 8
       - name: Update maven settings
         run: mkdir -p ~/.m2 ; cp .github/settings.xml ~/.m2/
       - name: Cache Maven packages
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/.m2/repository
           key: cache-2-${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
@@ -476,7 +476,7 @@ jobs:
         run: rm -rf ~/.m2/repository/org/keycloak >/dev/null || true
       - name: Download built keycloak
         id: download-keycloak
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           path: ~/.m2/repository/org/keycloak/
           name: keycloak-artifacts.zip
@@ -495,7 +495,7 @@ jobs:
 
       - name: Archive logs
         if: ${{ always() }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: quickstarts-test-logs
           retention-days: 2
