@@ -729,44 +729,57 @@ public class RepresentationToModel {
             // assume this is an old version being imported
             DefaultAuthenticationFlows.migrateFlows(newRealm);
         } else {
-            for (AuthenticatorConfigRepresentation configRep : rep.getAuthenticatorConfig()) {
-                if (configRep.getAlias() == null) {
-                    // this can happen only during import json files from keycloak 3.4.0 and older
-                    throw new IllegalStateException("Provided realm contains authenticator config with null alias. "
-                            + "It should be resolved by adding alias to the authenticator config before exporting the realm.");
+            if (rep.getAuthenticatorConfig() != null) {
+                for (AuthenticatorConfigRepresentation configRep : rep.getAuthenticatorConfig()) {
+                    if (configRep.getAlias() == null) {
+                        // this can happen only during import json files from keycloak 3.4.0 and older
+                        throw new IllegalStateException("Provided realm contains authenticator config with null alias. "
+                                + "It should be resolved by adding alias to the authenticator config before exporting the realm.");
+                    }
+                    AuthenticatorConfigModel model = toModel(configRep);
+                    newRealm.addAuthenticatorConfig(model);
                 }
-                AuthenticatorConfigModel model = toModel(configRep);
-                newRealm.addAuthenticatorConfig(model);
             }
-            for (AuthenticationFlowRepresentation flowRep : rep.getAuthenticationFlows()) {
-                AuthenticationFlowModel model = toModel(flowRep);
-                // make sure new id is generated for new AuthenticationFlowModel instance
-                String previousId = model.getId();
-                model.setId(null);
-                model = newRealm.addAuthenticationFlow(model);
-                // store the mapped ids so that clients can reference the correct flow when importing the authenticationFlowBindingOverrides
-                mappedFlows.put(previousId, model.getId());
-            }
-            for (AuthenticationFlowRepresentation flowRep : rep.getAuthenticationFlows()) {
-                AuthenticationFlowModel model = newRealm.getFlowByAlias(flowRep.getAlias());
-                for (AuthenticationExecutionExportRepresentation exeRep : flowRep.getAuthenticationExecutions()) {
-                    AuthenticationExecutionModel execution = toModel(newRealm, model, exeRep);
-                    newRealm.addAuthenticatorExecution(execution);
+            if (rep.getAuthenticationFlows() != null) {
+                for (AuthenticationFlowRepresentation flowRep : rep.getAuthenticationFlows()) {
+                    AuthenticationFlowModel model = toModel(flowRep);
+                    // make sure new id is generated for new AuthenticationFlowModel instance
+                    String previousId = model.getId();
+                    model.setId(null);
+                    model = newRealm.addAuthenticationFlow(model);
+                    // store the mapped ids so that clients can reference the correct flow when importing the authenticationFlowBindingOverrides
+                    mappedFlows.put(previousId, model.getId());
+                }
+                for (AuthenticationFlowRepresentation flowRep : rep.getAuthenticationFlows()) {
+                    AuthenticationFlowModel model = newRealm.getFlowByAlias(flowRep.getAlias());
+                    for (AuthenticationExecutionExportRepresentation exeRep : flowRep.getAuthenticationExecutions()) {
+                        AuthenticationExecutionModel execution = toModel(newRealm, model, exeRep);
+                        newRealm.addAuthenticatorExecution(execution);
+                    }
                 }
             }
         }
         if (rep.getBrowserFlow() == null) {
-            newRealm.setBrowserFlow(newRealm.getFlowByAlias(DefaultAuthenticationFlows.BROWSER_FLOW));
+            AuthenticationFlowModel defaultFlow = newRealm.getFlowByAlias(DefaultAuthenticationFlows.BROWSER_FLOW);
+            if (defaultFlow != null) {
+                newRealm.setBrowserFlow(defaultFlow);
+            }
         } else {
             newRealm.setBrowserFlow(newRealm.getFlowByAlias(rep.getBrowserFlow()));
         }
         if (rep.getRegistrationFlow() == null) {
-            newRealm.setRegistrationFlow(newRealm.getFlowByAlias(DefaultAuthenticationFlows.REGISTRATION_FLOW));
+            AuthenticationFlowModel defaultFlow = newRealm.getFlowByAlias(DefaultAuthenticationFlows.REGISTRATION_FLOW);
+            if (defaultFlow != null) {
+                newRealm.setRegistrationFlow(defaultFlow);
+            }
         } else {
             newRealm.setRegistrationFlow(newRealm.getFlowByAlias(rep.getRegistrationFlow()));
         }
         if (rep.getDirectGrantFlow() == null) {
-            newRealm.setDirectGrantFlow(newRealm.getFlowByAlias(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW));
+            AuthenticationFlowModel defaultFlow = newRealm.getFlowByAlias(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW);
+            if (defaultFlow != null) {
+                newRealm.setDirectGrantFlow(defaultFlow);
+            }
         } else {
             newRealm.setDirectGrantFlow(newRealm.getFlowByAlias(rep.getDirectGrantFlow()));
         }
