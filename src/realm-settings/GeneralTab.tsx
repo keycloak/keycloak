@@ -150,7 +150,7 @@ export const RealmSettingsGeneralTab = ({
               fieldLabelId="realm-settings:userManagedAccess"
             />
           }
-          fieldId="kc-user-manged-access"
+          fieldId="kc-user-managed-access"
         >
           <Controller
             name="userManagedAccessAllowed"

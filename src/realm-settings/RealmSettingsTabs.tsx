@@ -278,11 +278,7 @@ export const RealmSettingsTabs = ({
               data-testid="rs-login-tab"
               {...route("login")}
             >
-              <RealmSettingsLoginTab
-                refresh={refresh}
-                save={save}
-                realm={realm}
-              />
+              <RealmSettingsLoginTab refresh={refresh} realm={realm} />
             </Tab>
             <Tab
               title={<TabTitleText>{t("email")}</TabTitleText>}

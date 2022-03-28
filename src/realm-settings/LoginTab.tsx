@@ -1,35 +1,55 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { FormGroup, PageSection, Switch } from "@patternfly/react-core";
+import {
+  AlertVariant,
+  FormGroup,
+  PageSection,
+  Switch,
+} from "@patternfly/react-core";
 import { FormAccess } from "../components/form-access/FormAccess";
 import { HelpItem } from "../components/help-enabler/HelpItem";
 import { FormPanel } from "../components/scroll-form/FormPanel";
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import { Controller, useForm } from "react-hook-form";
+import { useAdminClient } from "../context/auth/AdminClient";
+import { useAlerts } from "../components/alert/Alerts";
+import { useRealm } from "../context/realm-context/RealmContext";
 
 type RealmSettingsLoginTabProps = {
-  save: (realm: RealmRepresentation) => void;
   realm: RealmRepresentation;
   refresh: () => void;
 };
 
 export const RealmSettingsLoginTab = ({
-  save,
   realm,
   refresh,
 }: RealmSettingsLoginTabProps) => {
   const { t } = useTranslation("realm-settings");
 
   const form = useForm<RealmRepresentation>({ mode: "onChange" });
+  const { addAlert, addError } = useAlerts();
+  const adminClient = useAdminClient();
+  const { realm: realmName } = useRealm();
 
-  const updateSwitchValue = (
+  const updateSwitchValue = async (
     onChange: (newValue: boolean) => void,
-    value: boolean,
-    name: string
+    value: boolean
   ) => {
-    save({ ...realm, [name as keyof typeof realm]: value });
     onChange(value);
-    refresh();
+    const switchValues = form.getValues();
+
+    try {
+      await adminClient.realms.update(
+        {
+          realm: realmName,
+        },
+        switchValues
+      );
+      addAlert(t("deleteClientPolicySuccess"), AlertVariant.success);
+      refresh();
+    } catch (error) {
+      addError(t("deleteClientPolicyError"), error);
+    }
   };
 
   return (
@@ -58,12 +78,12 @@ export const RealmSettingsLoginTab = ({
                 <Switch
                   id="kc-user-reg-switch"
                   data-testid="user-reg-switch"
-                  name="registrationAllowed"
+                  value={value ? "on" : "off"}
                   label={t("common:on")}
                   labelOff={t("common:off")}
                   isChecked={value}
                   onChange={(value) => {
-                    updateSwitchValue(onChange, value, "registrationAllowed");
+                    updateSwitchValue(onChange, value);
                   }}
                 />
               )}
@@ -89,11 +109,12 @@ export const RealmSettingsLoginTab = ({
                   id="kc-forgot-pw-switch"
                   data-testid="forgot-pw-switch"
                   name="resetPasswordAllowed"
+                  value={value ? "on" : "off"}
                   label={t("common:on")}
                   labelOff={t("common:off")}
                   isChecked={value}
                   onChange={(value) => {
-                    updateSwitchValue(onChange, value, "resetPasswordAllowed");
+                    updateSwitchValue(onChange, value);
                   }}
                 />
               )}
@@ -118,12 +139,12 @@ export const RealmSettingsLoginTab = ({
                 <Switch
                   id="kc-remember-me-switch"
                   data-testid="remember-me-switch"
-                  name="rememberMe"
+                  value={value ? "on" : "off"}
                   label={t("common:on")}
                   labelOff={t("common:off")}
                   isChecked={value}
                   onChange={(value) => {
-                    updateSwitchValue(onChange, value, "rememberMe");
+                    updateSwitchValue(onChange, value);
                   }}
                 />
               )}
@@ -152,16 +173,12 @@ export const RealmSettingsLoginTab = ({
                 <Switch
                   id="kc-email-as-username-switch"
                   data-testid="email-as-username-switch"
-                  name="registrationEmailAsUsername"
+                  value={value ? "on" : "off"}
                   label={t("common:on")}
                   labelOff={t("common:off")}
                   isChecked={value}
                   onChange={(value) => {
-                    updateSwitchValue(
-                      onChange,
-                      value,
-                      "registrationEmailAsUsername"
-                    );
+                    updateSwitchValue(onChange, value);
                   }}
                 />
               )}
@@ -186,12 +203,12 @@ export const RealmSettingsLoginTab = ({
                 <Switch
                   id="kc-login-with-email-switch"
                   data-testid="login-with-email-switch"
-                  name="loginWithEmailAllowed"
+                  value={value ? "on" : "off"}
                   label={t("common:on")}
                   labelOff={t("common:off")}
                   isChecked={value}
                   onChange={(value) => {
-                    updateSwitchValue(onChange, value, "loginWithEmailAllowed");
+                    updateSwitchValue(onChange, value);
                   }}
                 />
               )}
@@ -218,18 +235,13 @@ export const RealmSettingsLoginTab = ({
                   data-testid="duplicate-emails-switch"
                   label={t("common:on")}
                   labelOff={t("common:off")}
-                  name="duplicateEmailsAllowed"
                   isChecked={
                     form.getValues().duplicateEmailsAllowed &&
                     !form.getValues().loginWithEmailAllowed &&
                     !form.getValues().registrationEmailAsUsername
                   }
                   onChange={(value) => {
-                    updateSwitchValue(
-                      onChange,
-                      value,
-                      "duplicateEmailsAllowed"
-                    );
+                    updateSwitchValue(onChange, value);
                   }}
                   isDisabled={
                     form.getValues().loginWithEmailAllowed ||
@@ -259,11 +271,12 @@ export const RealmSettingsLoginTab = ({
                   id="kc-verify-email-switch"
                   data-testid="verify-email-switch"
                   name="verifyEmail"
+                  value={value ? "on" : "off"}
                   label={t("common:on")}
                   labelOff={t("common:off")}
                   isChecked={value}
                   onChange={(value) => {
-                    updateSwitchValue(onChange, value, "verifyEmail");
+                    updateSwitchValue(onChange, value);
                   }}
                 />
               )}
@@ -295,12 +308,12 @@ export const RealmSettingsLoginTab = ({
                 <Switch
                   id="kc-edit-username-switch"
                   data-testid="edit-username-switch"
-                  name="editUsernameAllowed"
+                  value={value ? "on" : "off"}
                   label={t("common:on")}
                   labelOff={t("common:off")}
                   isChecked={value}
                   onChange={(value) => {
-                    updateSwitchValue(onChange, value, "editUsernameAllowed");
+                    updateSwitchValue(onChange, value);
                   }}
                 />
               )}

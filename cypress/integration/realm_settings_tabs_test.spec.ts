@@ -63,14 +63,16 @@ describe("Realm settings tabs tests", () => {
     sidebarPage.goToRealmSettings();
     cy.findByTestId("rs-login-tab").click();
     realmSettingsPage.toggleSwitch(realmSettingsPage.userRegSwitch);
+
     realmSettingsPage.toggleSwitch(realmSettingsPage.forgotPwdSwitch);
+
     realmSettingsPage.toggleSwitch(realmSettingsPage.rememberMeSwitch);
-  });
 
-  it("Check login tab values", () => {
-    sidebarPage.goToRealmSettings();
-    cy.findByTestId("rs-login-tab").click();
+    realmSettingsPage.toggleSwitch(realmSettingsPage.loginWithEmailSwitch);
 
+    realmSettingsPage.toggleSwitch(realmSettingsPage.duplicateEmailsSwitch);
+
+    // Check values
     cy.findByTestId(realmSettingsPage.userRegSwitch).should("have.value", "on");
     cy.findByTestId(realmSettingsPage.forgotPwdSwitch).should(
       "have.value",
@@ -79,6 +81,24 @@ describe("Realm settings tabs tests", () => {
     cy.findByTestId(realmSettingsPage.rememberMeSwitch).should(
       "have.value",
       "on"
+    );
+    cy.findByTestId(realmSettingsPage.emailAsUsernameSwitch).should(
+      "have.value",
+      "off"
+    );
+    cy.findByTestId(realmSettingsPage.loginWithEmailSwitch).should(
+      "have.value",
+      "off"
+    );
+
+    cy.findByTestId(realmSettingsPage.duplicateEmailsSwitch).should(
+      "have.value",
+      "on"
+    );
+
+    cy.findByTestId(realmSettingsPage.verifyEmailSwitch).should(
+      "have.value",
+      "off"
     );
   });
 
