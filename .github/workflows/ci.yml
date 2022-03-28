@@ -24,6 +24,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-java@v2
         with:
+          distribution: 'zulu'
           java-version: ${{ env.DEFAULT_JDK_VERSION }}
       - name: Update maven settings
         run: mkdir -p ~/.m2 ; cp .github/settings.xml ~/.m2/
@@ -68,6 +69,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-java@v2
         with:
+          distribution: 'zulu'
           java-version: ${{ env.DEFAULT_JDK_VERSION }}
       - name: Update maven settings
         run: mkdir -p ~/.m2 ; cp .github/settings.xml ~/.m2/
@@ -109,6 +111,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-java@v2
         with:
+          distribution: 'zulu'
           java-version: ${{ env.DEFAULT_JDK_VERSION }}
       - name: Update maven settings
         run: mkdir -p ~/.m2 ; cp .github/settings.xml ~/.m2/
@@ -183,6 +186,7 @@ jobs:
       - uses: actions/setup-java@v2
         if: ${{ github.event_name != 'pull_request' || matrix.server != 'undertow-map-hot-rod' || env.GIT_HOTROD_RELEVANT_DIFF != 0 }}
         with:
+          distribution: 'zulu'
           java-version: ${{ env.DEFAULT_JDK_VERSION }}
       - name: Update maven settings
         if: ${{ github.event_name != 'pull_request' || matrix.server != 'undertow-map-hot-rod' || env.GIT_HOTROD_RELEVANT_DIFF != 0 }}
@@ -250,6 +254,7 @@ jobs:
       - uses: actions/setup-java@v2
         if: ${{ github.event_name != 'pull_request' || env.GIT_DIFF != 0 }}
         with:
+          distribution: 'zulu'
           java-version: ${{ env.DEFAULT_JDK_VERSION }}
       - name: Update maven settings
         if: ${{ github.event_name != 'pull_request' || env.GIT_DIFF != 0 }}
@@ -289,6 +294,7 @@ jobs:
       - uses: actions/setup-java@v2
         if: ${{ github.event_name != 'pull_request' || env.GIT_DIFF != 0 }}
         with:
+          distribution: 'zulu'
           java-version: ${{ env.DEFAULT_JDK_VERSION }}
       - name: Update maven settings
         if: ${{ github.event_name != 'pull_request' || env.GIT_DIFF != 0 }}
@@ -362,6 +368,7 @@ jobs:
           name: keycloak-artifacts.zip
       - uses: actions/setup-java@v2
         with:
+          distribution: 'zulu'
           java-version: ${{ env.DEFAULT_JDK_VERSION }}
       - name: Update maven settings
         run: mkdir -p ~/.m2 ; cp .github/settings.xml ~/.m2/
@@ -411,6 +418,7 @@ jobs:
           name: keycloak-artifacts.zip
       - uses: actions/setup-java@v2
         with:
+          distribution: 'zulu'
           java-version: ${{ env.DEFAULT_JDK_VERSION }}
       - name: Update maven settings
         run: mkdir -p ~/.m2 ; cp .github/settings.xml ~/.m2/
@@ -463,6 +471,7 @@ jobs:
 
       - uses: actions/setup-java@v2
         with:
+          distribution: 'zulu'
           java-version: 8
       - name: Update maven settings
         run: mkdir -p ~/.m2 ; cp .github/settings.xml ~/.m2/
