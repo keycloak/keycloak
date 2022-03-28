@@ -216,6 +216,7 @@ export default function ClientDetails() {
   });
 
   const setupForm = (client: ClientRepresentation) => {
+    form.reset({ ...client });
     convertToFormValues(client, form.setValue);
     form.setValue(
       "attributes.request.uris",
@@ -383,7 +384,11 @@ export default function ClientDetails() {
                 title={<TabTitleText>{t("credentials")}</TabTitleText>}
                 {...route("credentials")}
               >
-                <Credentials clientId={clientId} save={() => save()} />
+                <Credentials
+                  form={form}
+                  clientId={clientId}
+                  save={() => save()}
+                />
               </Tab>
             )}
             <Tab
