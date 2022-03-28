@@ -16,6 +16,7 @@
  */
 package org.keycloak.operator.v2alpha1.crds;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 
 import org.keycloak.operator.Constants;
@@ -53,6 +54,7 @@ public class KeycloakSpec {
         this.hostname = hostname;
     }
 
+    @JsonIgnore
     public boolean isHostnameDisabled() {
         return this.hostname.equals(Constants.INSECURE_DISABLE);
     }
@@ -73,6 +75,7 @@ public class KeycloakSpec {
         this.tlsSecret = tlsSecret;
     }
 
+    @JsonIgnore
     public boolean isHttp() {
         return this.tlsSecret.equals(Constants.INSECURE_DISABLE);
     }
