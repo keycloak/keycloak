@@ -36,6 +36,7 @@ import org.hibernate.annotations.TypeDef;
 import org.hibernate.annotations.TypeDefs;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.UpdatableEntity;
+import org.keycloak.models.map.common.UuidValidator;
 import org.keycloak.models.map.realm.entity.MapComponentEntity;
 import org.keycloak.models.map.storage.jpa.JpaRootVersionedEntity;
 import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
@@ -45,6 +46,16 @@ import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSI
 /**
  * JPA {@link MapComponentEntity} implementation. Some fields are annotated with {@code @Column(insertable = false, updatable = false)}
  * to indicate that they are automatically generated from json fields. As such, these fields are non-insertable and non-updatable.
+ * <p/>
+ * Components are independent (i.e. a component doesn't depend on another component) and can be manipulated directly via
+ * the component endpoints. Because of that, this entity  implements {@link JpaRootVersionedEntity} instead of
+ * {@link org.keycloak.models.map.storage.jpa.JpaChildEntity}. This prevents {@link javax.persistence.OptimisticLockException}s
+ * when different components in the same realm are being manipulated at the same time - for example, when multiple components
+ * are being added to the realm by different threads.
+ * <p/>
+ * By implementing {@link JpaRootVersionedEntity}, this entity will enforce optimistic locking, which can lead to
+ * {@link javax.persistence.OptimisticLockException} if more than one thread attempts to modify the <b>same</b> component
+ * at the same time.
  *
  * @author <a href="mailto:sguilhen@redhat.com">Stefan Guilhen</a>
  */
@@ -100,7 +111,8 @@ public class JpaComponentEntity extends UpdatableEntity.Impl implements MapCompo
 
     @Override
     public void setId(String id) {
-        this.id = id == null ? null : UUID.fromString(id);
+        String validatedId = UuidValidator.validateAndConvert(id);
+        this.id = UUID.fromString(validatedId);
     }
 
     @Override

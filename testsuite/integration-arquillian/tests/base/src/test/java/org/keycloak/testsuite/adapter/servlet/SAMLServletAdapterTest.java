@@ -658,7 +658,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
 
         ComponentRepresentation rep = new ComponentRepresentation();
         rep.setName("mycomponent");
-        rep.setParentId("demo");
+        rep.setParentId(adminClient.realm(DEMO).toRepresentation().getId());
         rep.setProviderId(ImportedRsaKeyProviderFactory.ID);
         rep.setProviderType(KeyProvider.class.getName());
 
@@ -673,7 +673,8 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
     }
 
     private void dropKeys(String priority) {
-        for (ComponentRepresentation c : testRealmResource().components().query("demo", KeyProvider.class.getName())) {
+        String parentId = adminClient.realm(DEMO).toRepresentation().getId();
+        for (ComponentRepresentation c : testRealmResource().components().query(parentId, KeyProvider.class.getName())) {
             if (c.getConfig().getFirst("priority").equals(priority)) {
                 testRealmResource().components().component(c.getId()).remove();
                 return;

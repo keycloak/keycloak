@@ -18,6 +18,7 @@
 package org.keycloak.testsuite.federation.kerberos;
 
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
+import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 
 import java.net.URI;
 import java.security.Principal;
@@ -143,8 +144,8 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
     public void beforeAbstractKeycloakTest() throws Exception {
         super.beforeAbstractKeycloakTest();
 
-        testRealmPage.setAuthRealm(AuthRealm.TEST);
-        changePasswordPage.realm(AuthRealm.TEST);
+        testRealmPage.setAuthRealm(TEST);
+        changePasswordPage.realm(TEST);
 
         getKerberosRule().setKrb5ConfPath(testingClient.testing());
 
@@ -353,7 +354,8 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
      *
      */
     protected void updateUserStorageProvider(Consumer<ComponentRepresentation> updater) {
-        List<ComponentRepresentation> reps = testRealmResource().components().query("test", UserStorageProvider.class.getName());
+        String parentId = testRealmResource().toRepresentation().getId();
+        List<ComponentRepresentation> reps = testRealmResource().components().query(parentId, UserStorageProvider.class.getName());
         Assert.assertEquals(1, reps.size());
         ComponentRepresentation kerberosProvider = reps.get(0);
 

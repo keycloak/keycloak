@@ -78,7 +78,6 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
     public  void before() {
         testingClient.server().run( session -> {
             RealmModel realm = session.realms().getRealmByName("test");
-            realm = session.realms().getRealm("test");
             session.users().addUser(realm, "user1").setEmail("user1@localhost");
             session.users().addUser(realm, "user2").setEmail("user2@localhost");
         });

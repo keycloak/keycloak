@@ -40,6 +40,8 @@ import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.util.KerberosRule;
 import org.keycloak.testsuite.KerberosEmbeddedServer;
 
+import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
+
 /**
  * Test for the KerberosFederationProvider (kerberos without LDAP integration)
  *
@@ -82,7 +84,8 @@ public class KerberosStandaloneTest extends AbstractKerberosSingleRealmTest {
     @Test
     public void updateProfileEnabledTest() throws Exception {
         // Switch updateProfileOnFirstLogin to on
-        List<ComponentRepresentation> reps = testRealmResource().components().query("test", UserStorageProvider.class.getName());
+        String parentId = testRealmResource().toRepresentation().getId();
+        List<ComponentRepresentation> reps = testRealmResource().components().query(parentId, UserStorageProvider.class.getName());
         org.keycloak.testsuite.Assert.assertEquals(1, reps.size());
         ComponentRepresentation kerberosProvider = reps.get(0);
         kerberosProvider.getConfig().putSingle(KerberosConstants.UPDATE_PROFILE_FIRST_LOGIN, "true");
@@ -114,7 +117,8 @@ public class KerberosStandaloneTest extends AbstractKerberosSingleRealmTest {
      */
     @Test
     public void noProvider() throws Exception {
-        List<ComponentRepresentation> reps = testRealmResource().components().query("test", UserStorageProvider.class.getName());
+        String parentId = testRealmResource().toRepresentation().getId();
+        List<ComponentRepresentation> reps = testRealmResource().components().query(parentId, UserStorageProvider.class.getName());
         org.keycloak.testsuite.Assert.assertEquals(1, reps.size());
         ComponentRepresentation kerberosProvider = reps.get(0);
         testRealmResource().components().component(kerberosProvider.getId()).remove();
@@ -159,8 +163,9 @@ public class KerberosStandaloneTest extends AbstractKerberosSingleRealmTest {
     @Test
     @UncaughtServerErrorExpected
     public void handleUnknownKerberosRealm() throws Exception {
-        // Switch kerberos realm to "unavailable"
-        List<ComponentRepresentation> reps = testRealmResource().components().query("test", UserStorageProvider.class.getName());
+        // Switch kerberos realm to "unavailable
+        String parentId = testRealmResource().toRepresentation().getId();
+        List<ComponentRepresentation> reps = testRealmResource().components().query(parentId, UserStorageProvider.class.getName());
         org.keycloak.testsuite.Assert.assertEquals(1, reps.size());
         ComponentRepresentation kerberosProvider = reps.get(0);
         kerberosProvider.getConfig().putSingle(KerberosConstants.KERBEROS_REALM, "unavailable");

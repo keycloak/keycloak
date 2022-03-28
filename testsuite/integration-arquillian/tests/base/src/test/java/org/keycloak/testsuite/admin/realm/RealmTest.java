@@ -35,6 +35,7 @@ import org.keycloak.models.CibaConfig;
 import org.keycloak.models.Constants;
 import org.keycloak.models.OAuth2DeviceConfig;
 import org.keycloak.models.ParConfig;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
@@ -289,6 +290,7 @@ public class RealmTest extends AbstractAdminTest {
     @Test
     public void createRealmWithPasswordPolicyFromJsonWithValidPasswords() {
         RealmRepresentation rep = loadJson(getClass().getResourceAsStream("/import/testrealm-keycloak-6146.json"), RealmRepresentation.class);
+        rep.setId(KeycloakModelUtils.generateId());
         try (Creator<RealmResource> c = Creator.create(adminClient, rep)) {
             RealmRepresentation created = c.resource().toRepresentation();
             assertRealm(rep, created);

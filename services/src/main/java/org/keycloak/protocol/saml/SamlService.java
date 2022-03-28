@@ -1352,7 +1352,7 @@ public class SamlService extends AuthorizationEndpointBase {
             Resteasy.pushContext(ClientConnection.class, connection);
 
             RealmManager realmManager = new RealmManager(session);
-            RealmModel realm = realmManager.getRealmByName(realmId);
+            RealmModel realm = realmManager.getRealm(realmId);
             if (realm == null) {
                 throw new NotFoundException("Realm does not exist");
             }
