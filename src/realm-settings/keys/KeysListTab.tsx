@@ -18,13 +18,16 @@ import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState
 import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTable";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { emptyFormatter } from "../../util";
-import { useAdminClient } from "../../context/auth/AdminClient";
-import { useRealm } from "../../context/realm-context/RealmContext";
+import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { toKeysTab } from "../routes/KeysTab";
+import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
+import { useRealm } from "../../context/realm-context/RealmContext";
+import useToggle from "../../utils/useToggle";
 
 import "../realm-settings-section.css";
 
 const FILTER_OPTIONS = ["ACTIVE", "PASSIVE", "DISABLED"] as const;
+type FilterType = typeof FILTER_OPTIONS[number];
 
 type KeyData = KeyMetadataRepresentation & {
   provider?: string;
@@ -34,43 +37,74 @@ type KeysListTabProps = {
   realmComponents: ComponentRepresentation[];
 };
 
+type SelectFilterProps = {
+  onFilter: (filter: FilterType) => void;
+};
+
+const SelectFilter = ({ onFilter }: SelectFilterProps) => {
+  const { t } = useTranslation("realm-settings");
+  const [filterType, setFilterType] = useState<FilterType>(FILTER_OPTIONS[0]);
+
+  const [filterDropdownOpen, toggleFilter] = useToggle();
+  return (
+    <Select
+      width={300}
+      data-testid="filter-type-select"
+      isOpen={filterDropdownOpen}
+      className="kc-filter-type-select"
+      variant={SelectVariant.single}
+      onToggle={toggleFilter}
+      toggleIcon={<FilterIcon />}
+      onSelect={(_, value) => {
+        const filter =
+          FILTER_OPTIONS.find((o) => o === value.toString()) ||
+          FILTER_OPTIONS[0];
+        setFilterType(filter);
+        onFilter(filter);
+        toggleFilter();
+      }}
+      selections={filterType}
+    >
+      {FILTER_OPTIONS.map((option) => (
+        <SelectOption
+          key={option}
+          data-testid={`${option}-option`}
+          value={option}
+        >
+          {t(`keysFilter.${option}`)}
+        </SelectOption>
+      ))}
+    </Select>
+  );
+};
+
 export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
   const { t } = useTranslation("realm-settings");
   const history = useHistory();
 
-  const [key, setKey] = useState(0);
   const [publicKey, setPublicKey] = useState("");
   const [certificate, setCertificate] = useState("");
-  const [filterDropdownOpen, setFilterDropdownOpen] = useState(false);
-  const [filterType, setFilterType] = useState<typeof FILTER_OPTIONS[number]>(
-    FILTER_OPTIONS[0]
-  );
-
-  const refresh = () => {
-    setKey(key + 1);
-  };
 
   const adminClient = useAdminClient();
-  const { realm: realmName } = useRealm();
+  const { realm } = useRealm();
 
-  const loader = async () => {
-    const keysMetaData = await adminClient.realms.getKeys({
-      realm: realmName,
-    });
+  const [keyData, setKeyData] = useState<KeyData[]>();
+  const [filteredKeyData, setFilteredKeyData] = useState<KeyData[]>();
 
-    const keys = keysMetaData.keys;
-    const filtered =
-      filterType !== FILTER_OPTIONS[0]
-        ? keys?.filter(({ status }) => status === filterType)
-        : keys;
-
-    return filtered?.map((key) => {
-      const provider = realmComponents.find(
-        (component: ComponentRepresentation) => component.id === key.providerId
-      );
-      return { ...key, provider: provider?.name } as KeyData;
-    })!;
-  };
+  useFetch(
+    async () => {
+      const keysMetaData = await adminClient.realms.getKeys({ realm });
+      return keysMetaData.keys?.map((key) => {
+        const provider = realmComponents.find(
+          (component: ComponentRepresentation) =>
+            component.id === key.providerId
+        );
+        return { ...key, provider: provider?.name } as KeyData;
+      })!;
+    },
+    setKeyData,
+    []
+  );
 
   const [togglePublicKeyDialog, PublicKeyDialog] = useConfirmDialog({
     titleKey: t("publicKeys").slice(0, -1),
@@ -132,51 +166,35 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
     }
   };
 
+  if (!keyData) {
+    return <KeycloakSpinner />;
+  }
+
   return (
     <PageSection variant="light" padding={{ default: "noPadding" }}>
       <PublicKeyDialog />
       <CertificateDialog />
       <KeycloakDataTable
-        isNotCompact={true}
-        key={key}
-        loader={loader}
-        ariaLabelKey="keysList"
+        isNotCompact
+        loader={filteredKeyData || keyData}
+        ariaLabelKey="realm-settings:keysList"
         searchPlaceholderKey="realm-settings:searchKey"
         searchTypeComponent={
-          <Select
-            width={300}
-            data-testid="filter-type-select"
-            isOpen={filterDropdownOpen}
-            className="kc-filter-type-select"
-            variant={SelectVariant.single}
-            onToggle={() => setFilterDropdownOpen(!filterDropdownOpen)}
-            toggleIcon={<FilterIcon />}
-            onSelect={(_, value) => {
-              setFilterType(
-                FILTER_OPTIONS.find((o) => o === value.toString()) ||
-                  FILTER_OPTIONS[0]
-              );
-              refresh();
-              setFilterDropdownOpen(false);
-            }}
-            selections={filterType}
-          >
-            {FILTER_OPTIONS.map((option) => (
-              <SelectOption
-                key={option}
-                data-testid={`${option}-option`}
-                value={option}
-              >
-                {t(`keysFilter.${option}`)}
-              </SelectOption>
-            ))}
-          </Select>
+          <SelectFilter
+            onFilter={(filterType) =>
+              setFilteredKeyData(
+                filterType !== FILTER_OPTIONS[0]
+                  ? keyData!.filter(({ status }) => status === filterType)
+                  : undefined
+              )
+            }
+          />
         }
         canSelectAll
         columns={[
           {
             name: "algorithm",
-            displayKey: "algorithm",
+            displayKey: "realm-settings:algorithm",
             cellFormatters: [emptyFormatter()],
             transforms: [cellWidth(15)],
           },
@@ -188,26 +206,26 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
           },
           {
             name: "kid",
-            displayKey: "kid",
+            displayKey: "realm-settings:kid",
             cellFormatters: [emptyFormatter()],
             transforms: [cellWidth(10)],
           },
           {
             name: "provider",
-            displayKey: "provider",
+            displayKey: "realm-settings:provider",
             cellRenderer: ProviderRenderer,
             cellFormatters: [emptyFormatter()],
             transforms: [cellWidth(10)],
           },
           {
             name: "publicKeys",
-            displayKey: "publicKeys",
+            displayKey: "realm-settings:publicKeys",
             cellRenderer: ButtonRenderer,
             cellFormatters: [],
             transforms: [cellWidth(20)],
           },
         ]}
-        isSearching={filterType !== FILTER_OPTIONS[0]}
+        isSearching={!!filteredKeyData}
         emptyState={
           <ListEmptyState
             hasIcon
@@ -215,7 +233,7 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
             instructions={t("noKeysDescription")}
             primaryActionText={t("addProvider")}
             onPrimaryAction={() =>
-              history.push(toKeysTab({ realm: realmName, tab: "providers" }))
+              history.push(toKeysTab({ realm, tab: "providers" }))
             }
           />
         }

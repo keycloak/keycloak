@@ -121,11 +121,17 @@ export type Action<T> = IAction & {
   onRowClick?: (row: T) => Promise<boolean> | void;
 };
 
+type LoaderFunction<T> = (
+  first?: number,
+  max?: number,
+  search?: string
+) => Promise<T[]>;
+
 export type DataListProps<T> = Omit<
   TableProps,
   "rows" | "cells" | "onSelect"
 > & {
-  loader: (first?: number, max?: number, search?: string) => Promise<T[]>;
+  loader: T[] | LoaderFunction<T>;
   onSelect?: (value: T[]) => void;
   canSelectAll?: boolean;
   detailColumns?: DetailField<T>[];
@@ -290,7 +296,9 @@ export function KeycloakDataTable<T>({
   useFetch(
     async () => {
       setLoading(true);
-      return unPaginatedData || (await loader(first, max + 1, search));
+      return typeof loader === "function"
+        ? unPaginatedData || (await loader(first, max + 1, search))
+        : loader;
     },
     (data) => {
       if (!isPaginated) {
@@ -302,7 +310,7 @@ export function KeycloakDataTable<T>({
       setRows(result);
       setLoading(false);
     },
-    [key, first, max, search]
+    [key, first, max, search, typeof loader !== "function" ? loader : undefined]
   );
 
   const convertAction = () =>
