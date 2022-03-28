@@ -20,8 +20,9 @@ import { AddRoleMappingModal } from "../../../components/role-mapping/AddRoleMap
 
 export const Role = () => {
   const { t } = useTranslation("clients");
-  const { control, getValues, setValue, errors } =
-    useFormContext<{ roles?: RequiredIdValue[] }>();
+  const { control, getValues, setValue, errors } = useFormContext<{
+    roles?: RequiredIdValue[];
+  }>();
   const values = getValues("roles");
 
   const [open, setOpen] = useState(false);

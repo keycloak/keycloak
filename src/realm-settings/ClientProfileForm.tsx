@@ -76,8 +76,10 @@ export default function ClientProfileForm() {
       ],
     []
   );
-  const [executorToDelete, setExecutorToDelete] =
-    useState<{ idx: number; name: string }>();
+  const [executorToDelete, setExecutorToDelete] = useState<{
+    idx: number;
+    name: string;
+  }>();
   const editMode = profileName ? true : false;
   const [key, setKey] = useState(0);
   const reload = () => setKey(new Date().getTime());

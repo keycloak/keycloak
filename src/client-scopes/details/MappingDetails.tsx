@@ -40,8 +40,10 @@ export default function MappingDetails() {
   const form = useForm();
   const { register, setValue, errors, handleSubmit } = form;
   const [mapping, setMapping] = useState<ProtocolMapperTypeRepresentation>();
-  const [config, setConfig] =
-    useState<{ protocol?: string; protocolMapper?: string }>();
+  const [config, setConfig] = useState<{
+    protocol?: string;
+    protocolMapper?: string;
+  }>();
 
   const history = useHistory();
   const { realm } = useRealm();

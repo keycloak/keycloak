@@ -63,8 +63,10 @@ export const AuthorizationPermissions = ({ clientId }: PermissionsProps) => {
     useState<PolicyRepresentation>();
   const [policyProviders, setPolicyProviders] =
     useState<PolicyProviderRepresentation[]>();
-  const [disabledCreate, setDisabledCreate] =
-    useState<{ resources: boolean; scopes: boolean }>();
+  const [disabledCreate, setDisabledCreate] = useState<{
+    resources: boolean;
+    scopes: boolean;
+  }>();
   const [createOpen, toggleCreate] = useToggle();
   const [search, setSearch] = useState<SearchForm>({});
 

@@ -24,8 +24,9 @@ export type GroupValue = {
 
 export const Group = () => {
   const { t } = useTranslation("clients");
-  const { control, register, getValues, setValue, errors } =
-    useFormContext<{ groups?: GroupValue[] }>();
+  const { control, register, getValues, setValue, errors } = useFormContext<{
+    groups?: GroupValue[];
+  }>();
   const values = getValues("groups");
 
   const [open, setOpen] = useState(false);
