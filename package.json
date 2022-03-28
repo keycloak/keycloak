@@ -84,7 +84,7 @@
     "jest": "^27.5.1",
     "lint-staged": "^12.3.7",
     "postcss": "^8.4.12",
-    "postcss-import": "^14.0.2",
+    "postcss-import": "^14.1.0",
     "postcss-svg": "^3.0.0",
     "prettier": "^2.6.0",
     "progress-promise": "^0.0.6",
