@@ -347,7 +347,7 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
               setIsOpen(true);
             }}
           >
-            {t("savePassword")}
+            {t("setPassword")}
           </Button>
           <Divider />
         </>
