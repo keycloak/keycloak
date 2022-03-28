@@ -35,6 +35,7 @@ import org.keycloak.events.EventType;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
@@ -79,7 +80,7 @@ public class UserStorageOTPTest extends AbstractTestRealmKeycloakTest {
 
     protected TimeBasedOTP totp = new TimeBasedOTP();
 
-
+    protected String componentId = KeycloakModelUtils.generateId();
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
@@ -90,7 +91,7 @@ public class UserStorageOTPTest extends AbstractTestRealmKeycloakTest {
     public void addProvidersBeforeTest() throws URISyntaxException, IOException {
         ComponentRepresentation dummyProvider = new ComponentRepresentation();
         dummyProvider.setName("dummy");
-        dummyProvider.setId(DummyUserFederationProviderFactory.PROVIDER_NAME);
+        dummyProvider.setId(componentId);
         dummyProvider.setProviderId(DummyUserFederationProviderFactory.PROVIDER_NAME);
         dummyProvider.setProviderType(UserStorageProvider.class.getName());
         dummyProvider.setConfig(new MultivaluedHashMap<>());
@@ -113,7 +114,7 @@ public class UserStorageOTPTest extends AbstractTestRealmKeycloakTest {
     public void testCredentialsThroughRESTAPI() {
         // Test that test-user has federation link on him
         UserResource user = ApiUtil.findUserByUsernameId(testRealm(), "test-user");
-        Assert.assertEquals(DummyUserFederationProviderFactory.PROVIDER_NAME, user.toRepresentation().getFederationLink());
+        Assert.assertEquals(componentId, user.toRepresentation().getFederationLink());
 
         // Test that both "password" and "otp" are configured for the test-user
         List<String> userStorageCredentialTypes = user.getConfiguredUserStorageCredentialTypes();
@@ -214,7 +215,7 @@ public class UserStorageOTPTest extends AbstractTestRealmKeycloakTest {
 
         // Assert he has federation link on him
         UserResource userResource = ApiUtil.findUserByUsernameId(testRealm(), "test-user2");
-        Assert.assertEquals(DummyUserFederationProviderFactory.PROVIDER_NAME, userResource.toRepresentation().getFederationLink());
+        Assert.assertEquals(componentId, userResource.toRepresentation().getFederationLink());
 
         // Assert no userStorage supported credentials shown through admin REST API for that user. For this user, the validation of password and OTP is not delegated
         // to the dummy user storage provider

@@ -136,7 +136,7 @@ public class TokenSignatureUtil {
     private static void registerKeyProvider(String realm, String providerSpecificKey, String providerSpecificValue, String providerId, Keycloak adminClient, TestContext testContext) {
         long priority = System.currentTimeMillis();
 
-        ComponentRepresentation rep = createKeyRep("valid", providerId);
+        ComponentRepresentation rep = createKeyRep("valid", providerId, adminClient);
         rep.setConfig(new MultivaluedHashMap<>());
         rep.getConfig().putSingle("priority", Long.toString(priority));
         rep.getConfig().putSingle(providerSpecificKey, providerSpecificValue);
@@ -147,10 +147,10 @@ public class TokenSignatureUtil {
         }
     }
 
-    private static ComponentRepresentation createKeyRep(String name, String providerId) {
+    private static ComponentRepresentation createKeyRep(String name, String providerId, Keycloak adminClient) {
         ComponentRepresentation rep = new ComponentRepresentation();
         rep.setName(name);
-        rep.setParentId(TEST_REALM_NAME);
+        rep.setParentId(adminClient.realm(TEST_REALM_NAME).toRepresentation().getId());
         rep.setProviderId(providerId);
         rep.setProviderType(KeyProvider.class.getName());
         rep.setConfig(new MultivaluedHashMap<>());

@@ -612,7 +612,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Path("/valid-credentials")
     @Produces(MediaType.APPLICATION_JSON)
     public boolean validCredentials(@QueryParam("realmName") String realmName, @QueryParam("userName") String userName, @QueryParam("password") String password) {
-        RealmModel realm = session.realms().getRealm(realmName);
+        RealmModel realm = session.realms().getRealmByName(realmName);
         if (realm == null) return false;
         UserProvider userProvider = session.getProvider(UserProvider.class);
         UserModel user = userProvider.getUserByUsername(realm, userName);

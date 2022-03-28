@@ -300,7 +300,7 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
         // Add client-disabled policy
         ComponentRepresentation rep = new ComponentRepresentation();
         rep.setName("Clients disabled");
-        rep.setParentId(REALM_NAME);
+        rep.setParentId(adminClient.realm(REALM_NAME).toRepresentation().getId());
         rep.setProviderId(ClientDisabledClientRegistrationPolicyFactory.PROVIDER_ID);
         rep.setProviderType(ClientRegistrationPolicy.class.getName());
         rep.setSubType(getPolicyAnon());
@@ -642,7 +642,8 @@ public class ClientRegistrationPoliciesTest extends AbstractClientRegistrationTe
 
     private ComponentRepresentation findPolicyByProviderAndAuth(String providerId, String authType) {
         // Change the policy to avoid checking hosts
-        List<ComponentRepresentation> reps = realmResource().components().query(REALM_NAME, ClientRegistrationPolicy.class.getName());
+        String parentId = realmResource().toRepresentation().getId();
+        List<ComponentRepresentation> reps = realmResource().components().query(parentId, ClientRegistrationPolicy.class.getName());
         for (ComponentRepresentation rep : reps) {
             if (rep.getSubType().equals(authType) && rep.getProviderId().equals(providerId)) {
                 return rep;

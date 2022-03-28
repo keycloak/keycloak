@@ -52,7 +52,7 @@ public class ShiftRequiredActionTest extends AbstractAuthenticationTest {
 
         // shift last required action up
         authMgmtResource.raiseRequiredActionPriority(last.getAlias());
-        assertAdminEvents.assertEvent(REALM_NAME, OperationType.UPDATE, AdminEventPaths.authRaiseRequiredActionPath(last.getAlias()), ResourceType.REQUIRED_ACTION);
+        assertAdminEvents.assertEvent(testRealmId, OperationType.UPDATE, AdminEventPaths.authRaiseRequiredActionPath(last.getAlias()), ResourceType.REQUIRED_ACTION);
 
         List<RequiredActionProviderRepresentation> actions2 = authMgmtResource.getRequiredActions();
 
@@ -72,7 +72,7 @@ public class ShiftRequiredActionTest extends AbstractAuthenticationTest {
 
         // shift one before last down
         authMgmtResource.lowerRequiredActionPriority(oneButLast2.getAlias());
-        assertAdminEvents.assertEvent(REALM_NAME, OperationType.UPDATE, AdminEventPaths.authLowerRequiredActionPath(oneButLast2.getAlias()), ResourceType.REQUIRED_ACTION);
+        assertAdminEvents.assertEvent(testRealmId, OperationType.UPDATE, AdminEventPaths.authLowerRequiredActionPath(oneButLast2.getAlias()), ResourceType.REQUIRED_ACTION);
 
         actions2 = authMgmtResource.getRequiredActions();
 

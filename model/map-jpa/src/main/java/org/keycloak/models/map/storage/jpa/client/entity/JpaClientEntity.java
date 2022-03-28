@@ -43,6 +43,8 @@ import org.keycloak.models.map.client.MapClientEntity.AbstractClientEntity;
 import org.keycloak.models.map.client.MapProtocolMapperEntity;
 import org.keycloak.models.map.common.DeepCloner;
 import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_CLIENT;
+
+import org.keycloak.models.map.common.UuidValidator;
 import org.keycloak.models.map.storage.jpa.JpaRootVersionedEntity;
 import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
 
@@ -156,7 +158,8 @@ public class JpaClientEntity extends AbstractClientEntity implements JpaRootVers
 
     @Override
     public void setId(String id) {
-        this.id = id == null ? null : UUID.fromString(id);
+        String validatedId = UuidValidator.validateAndConvert(id);
+        this.id = UUID.fromString(validatedId);
     }
 
     @Override

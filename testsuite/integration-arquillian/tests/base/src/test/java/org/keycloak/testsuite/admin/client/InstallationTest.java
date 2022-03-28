@@ -48,6 +48,7 @@ import javax.ws.rs.NotFoundException;
 import static org.junit.Assert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.keycloak.common.Profile.Feature.AUTHORIZATION;
+import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 
 import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.METADATA_NSURI;
@@ -214,7 +215,7 @@ public class InstallationTest extends AbstractClientTest {
 
     @Test
     public void testSamlMetadataSpDescriptorPost() throws Exception {
-        try (ClientAttributeUpdater updater = ClientAttributeUpdater.forClient(adminClient, getRealmId(), SAML_NAME)) {
+        try (ClientAttributeUpdater updater = ClientAttributeUpdater.forClient(adminClient, TEST, SAML_NAME)) {
 
             assertThat(updater.getResource().toRepresentation().getAttributes().get(SamlConfigAttributes.SAML_FORCE_POST_BINDING), equalTo("true"));
 
@@ -259,7 +260,7 @@ public class InstallationTest extends AbstractClientTest {
 
     @Test
     public void testSamlMetadataSpDescriptorRedirect() throws Exception {
-        try (ClientAttributeUpdater updater = ClientAttributeUpdater.forClient(adminClient, getRealmId(), SAML_NAME)
+        try (ClientAttributeUpdater updater = ClientAttributeUpdater.forClient(adminClient, TEST, SAML_NAME)
                 .setAttribute(SamlConfigAttributes.SAML_FORCE_POST_BINDING, "false")
                 .update()) {
 

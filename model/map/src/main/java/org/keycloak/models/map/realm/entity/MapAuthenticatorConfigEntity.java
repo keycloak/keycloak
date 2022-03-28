@@ -45,7 +45,9 @@ public interface MapAuthenticatorConfigEntity extends UpdatableEntity, AbstractE
         AuthenticatorConfigModel model = new AuthenticatorConfigModel();
         model.setId(entity.getId());
         model.setAlias(entity.getAlias());
-        model.setConfig(entity.getConfig());
+        Map<String, String> config = new HashMap<>();
+        if (entity.getConfig() != null) config.putAll(entity.getConfig());
+        model.setConfig(config);
         return model;
     }
 

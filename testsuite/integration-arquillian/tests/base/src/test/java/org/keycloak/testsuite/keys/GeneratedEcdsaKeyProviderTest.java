@@ -217,7 +217,7 @@ public class GeneratedEcdsaKeyProviderTest extends AbstractKeycloakTest {
     protected ComponentRepresentation createRep(String name, String providerId) {
         ComponentRepresentation rep = new ComponentRepresentation();
         rep.setName(name);
-        rep.setParentId(TEST_REALM_NAME);
+        rep.setParentId(adminClient.realm(TEST_REALM_NAME).toRepresentation().getId());
         rep.setProviderId(providerId);
         rep.setProviderType(KeyProvider.class.getName());
         rep.setConfig(new MultivaluedHashMap<>());

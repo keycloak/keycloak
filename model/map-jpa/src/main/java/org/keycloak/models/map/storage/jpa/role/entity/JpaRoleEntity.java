@@ -39,6 +39,7 @@ import org.hibernate.annotations.Type;
 import org.hibernate.annotations.TypeDef;
 import org.hibernate.annotations.TypeDefs;
 import org.keycloak.models.map.common.DeepCloner;
+import org.keycloak.models.map.common.UuidValidator;
 import org.keycloak.models.map.role.MapRoleEntity.AbstractRoleEntity;
 import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_ROLE;
 import org.keycloak.models.map.storage.jpa.JpaRootVersionedEntity;
@@ -148,7 +149,8 @@ public class JpaRoleEntity extends AbstractRoleEntity implements JpaRootVersione
 
     @Override
     public void setId(String id) {
-        this.id = id == null ? null : UUID.fromString(id);
+        String validatedId = UuidValidator.validateAndConvert(id);
+        this.id = UUID.fromString(validatedId);
     }
 
     @Override

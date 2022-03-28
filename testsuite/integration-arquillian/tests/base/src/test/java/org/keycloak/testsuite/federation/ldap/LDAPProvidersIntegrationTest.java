@@ -161,7 +161,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
 
         testingClient.server().run(session -> {
             RealmManager manager = new RealmManager(session);
-            RealmModel appRealm = manager.getRealm("test");
+            RealmModel appRealm = manager.getRealmByName("test");
             UserModel user = session.userLocalStorage().getUserByUsername(appRealm, "johnkeycloak");
             Assert.assertNull(user);
         });

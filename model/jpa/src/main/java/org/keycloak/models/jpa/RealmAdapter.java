@@ -1165,7 +1165,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         }
         RealmModel masterRealm = getName().equals(Config.getAdminRealm())
           ? this
-          : session.realms().getRealm(Config.getAdminRealm());
+          : session.realms().getRealmByName(Config.getAdminRealm());
         return session.clients().getClientById(masterRealm, masterAdminClientId);
     }
 

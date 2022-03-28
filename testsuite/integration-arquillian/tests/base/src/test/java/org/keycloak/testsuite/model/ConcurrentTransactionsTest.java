@@ -65,7 +65,7 @@ public class ConcurrentTransactionsTest extends AbstractTestRealmKeycloakTest {
         try {
             KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionSetup) -> {
 
-                RealmModel realm = sessionSetup.realms().getRealm("test");
+                RealmModel realm = sessionSetup.realms().getRealmByName("test");
                 sessionSetup.users().addUser(realm, "user1").setEmail("user1@localhost");
                 sessionSetup.users().addUser(realm, "user2").setEmail("user2@localhost");
 

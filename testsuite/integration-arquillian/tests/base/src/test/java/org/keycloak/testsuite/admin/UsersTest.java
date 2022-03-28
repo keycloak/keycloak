@@ -66,8 +66,8 @@ public class UsersTest extends AbstractAdminTest {
     @Test
     public void findUsersByEmailVerifiedStatus() {
 
-        createUser(realmId, "user1", "password", "user1FirstName", "user1LastName", "user1@example.com", rep -> rep.setEmailVerified(true));
-        createUser(realmId, "user2", "password", "user2FirstName", "user2LastName", "user2@example.com", rep -> rep.setEmailVerified(false));
+        createUser(REALM_NAME, "user1", "password", "user1FirstName", "user1LastName", "user1@example.com", rep -> rep.setEmailVerified(true));
+        createUser(REALM_NAME, "user2", "password", "user2FirstName", "user2LastName", "user2@example.com", rep -> rep.setEmailVerified(false));
 
         boolean emailVerified;
         emailVerified = true;
@@ -87,9 +87,9 @@ public class UsersTest extends AbstractAdminTest {
     @Test
     public void countUsersByEmailVerifiedStatus() {
 
-        createUser(realmId, "user1", "password", "user1FirstName", "user1LastName", "user1@example.com", rep -> rep.setEmailVerified(true));
-        createUser(realmId, "user2", "password", "user2FirstName", "user2LastName", "user2@example.com", rep -> rep.setEmailVerified(false));
-        createUser(realmId, "user3", "password", "user3FirstName", "user3LastName", "user3@example.com", rep -> rep.setEmailVerified(true));
+        createUser(REALM_NAME, "user1", "password", "user1FirstName", "user1LastName", "user1@example.com", rep -> rep.setEmailVerified(true));
+        createUser(REALM_NAME, "user2", "password", "user2FirstName", "user2LastName", "user2@example.com", rep -> rep.setEmailVerified(false));
+        createUser(REALM_NAME, "user3", "password", "user3FirstName", "user3LastName", "user3@example.com", rep -> rep.setEmailVerified(true));
 
         boolean emailVerified;
         emailVerified = true;
@@ -103,16 +103,16 @@ public class UsersTest extends AbstractAdminTest {
 
     @Test
     public void countUsersWithViewPermission() {
-        createUser(realmId, "user1", "password", "user1FirstName", "user1LastName", "user1@example.com");
-        createUser(realmId, "user2", "password", "user2FirstName", "user2LastName", "user2@example.com");
+        createUser(REALM_NAME, "user1", "password", "user1FirstName", "user1LastName", "user1@example.com");
+        createUser(REALM_NAME, "user2", "password", "user2FirstName", "user2LastName", "user2@example.com");
         assertThat(realm.users().count(), is(2));
     }
 
     @Test
     public void countUsersBySearchWithViewPermission() {
-        createUser(realmId, "user1", "password", "user1FirstName", "user1LastName", "user1@example.com", rep -> rep.setEmailVerified(true));
-        createUser(realmId, "user2", "password", "user2FirstName", "user2LastName", "user2@example.com", rep -> rep.setEmailVerified(false));
-        createUser(realmId, "user3", "password", "user3FirstName", "user3LastName", "user3@example.com", rep -> rep.setEmailVerified(true));
+        createUser(REALM_NAME, "user1", "password", "user1FirstName", "user1LastName", "user1@example.com", rep -> rep.setEmailVerified(true));
+        createUser(REALM_NAME, "user2", "password", "user2FirstName", "user2LastName", "user2@example.com", rep -> rep.setEmailVerified(false));
+        createUser(REALM_NAME, "user3", "password", "user3FirstName", "user3LastName", "user3@example.com", rep -> rep.setEmailVerified(true));
 
         // Prefix search count
         Integer count = realm.users().count("user");
@@ -189,8 +189,8 @@ public class UsersTest extends AbstractAdminTest {
 
     @Test
     public void countUsersByFiltersWithViewPermission() {
-        createUser(realmId, "user1", "password", "user1FirstName", "user1LastName", "user1@example.com");
-        createUser(realmId, "user2", "password", "user2FirstName", "user2LastName", "user2@example.com");
+        createUser(REALM_NAME, "user1", "password", "user1FirstName", "user1LastName", "user1@example.com");
+        createUser(REALM_NAME, "user2", "password", "user2FirstName", "user2LastName", "user2@example.com");
         //search username
         assertThat(realm.users().count(null, null, null, "user"), is(2));
         assertThat(realm.users().count(null, null, null, "user1"), is(1));
@@ -362,7 +362,7 @@ public class UsersTest extends AbstractAdminTest {
     }
 
     private RealmResource setupTestEnvironmentWithPermissions(boolean grp1ViewPermissions) throws CertificateException, NoSuchAlgorithmException, KeyStoreException, KeyManagementException, IOException {
-        String testUserId = createUser(realmId, "test-user", "password", "", "", "");
+        String testUserId = createUser(REALM_NAME, "test-user", "password", "", "", "");
         //assign 'query-users' role to test user
         ClientRepresentation clientRepresentation = realm.clients().findByClientId("realm-management").get(0);
         String realmManagementId = clientRepresentation.getId();
@@ -401,10 +401,10 @@ public class UsersTest extends AbstractAdminTest {
         GroupRepresentation grp1 = createGroupWithPermissions("grp1");
         GroupRepresentation grp2 = createGroupWithPermissions("grp2");
         //create test users
-        String user1Id = createUser(realmId, "user1", "password", "user1FirstName", "user1LastName", "user1@example.com");
-        String user2Id = createUser(realmId, "user2", "password", "user2FirstName", "user2LastName", "user2@example.com");
-        String user3Id = createUser(realmId, "user3", "password", "user3FirstName", "user3LastName", "user3@example.com");
-        String user4Id = createUser(realmId, "user4", "password", "user4FirstName", "user4LastName", "user4@example.com");
+        String user1Id = createUser(REALM_NAME, "user1", "password", "user1FirstName", "user1LastName", "user1@example.com");
+        String user2Id = createUser(REALM_NAME, "user2", "password", "user2FirstName", "user2LastName", "user2@example.com");
+        String user3Id = createUser(REALM_NAME, "user3", "password", "user3FirstName", "user3LastName", "user3@example.com");
+        String user4Id = createUser(REALM_NAME, "user4", "password", "user4FirstName", "user4LastName", "user4@example.com");
         //add users to groups
         realm.users().get(user1Id).joinGroup(grp1.getId());
         realm.users().get(user2Id).joinGroup(grp1.getId());

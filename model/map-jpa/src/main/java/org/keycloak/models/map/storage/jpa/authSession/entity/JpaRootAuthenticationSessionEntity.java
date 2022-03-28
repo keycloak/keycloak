@@ -39,6 +39,8 @@ import org.keycloak.models.map.authSession.MapRootAuthenticationSessionEntity.Ab
 import org.keycloak.models.map.common.DeepCloner;
 import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_AUTH_SESSION;
 import static org.keycloak.models.map.storage.jpa.JpaMapStorageProviderFactory.CLONER;
+
+import org.keycloak.models.map.common.UuidValidator;
 import org.keycloak.models.map.storage.jpa.JpaRootVersionedEntity;
 import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
 
@@ -143,7 +145,8 @@ public class JpaRootAuthenticationSessionEntity extends AbstractRootAuthenticati
 
     @Override
     public void setId(String id) {
-        this.id = id == null ? null : UUID.fromString(id);
+        String validatedId = UuidValidator.validateAndConvert(id);
+        this.id = UUID.fromString(validatedId);
     }
 
     @Override

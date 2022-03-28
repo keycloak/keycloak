@@ -44,6 +44,7 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
+
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
@@ -180,7 +181,7 @@ public class GeneratedHmacKeyProviderTest extends AbstractKeycloakTest {
     protected ComponentRepresentation createRep(String name, String providerId) {
         ComponentRepresentation rep = new ComponentRepresentation();
         rep.setName(name);
-        rep.setParentId("test");
+        rep.setParentId(adminClient.realm("test").toRepresentation().getId());
         rep.setProviderId(providerId);
         rep.setProviderType(KeyProvider.class.getName());
         rep.setConfig(new MultivaluedHashMap<>());

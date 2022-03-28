@@ -42,6 +42,7 @@ import org.hibernate.annotations.Type;
 import org.hibernate.annotations.TypeDef;
 import org.hibernate.annotations.TypeDefs;
 import org.keycloak.models.map.common.DeepCloner;
+import org.keycloak.models.map.common.UuidValidator;
 import org.keycloak.models.map.realm.MapRealmEntity;
 import org.keycloak.models.map.realm.entity.MapAuthenticationExecutionEntity;
 import org.keycloak.models.map.realm.entity.MapAuthenticationFlowEntity;
@@ -74,6 +75,7 @@ import static org.keycloak.models.map.storage.jpa.JpaMapStorageProviderFactory.C
         )
 })
 @TypeDefs({@TypeDef(name = "jsonb", typeClass = JsonbType.class)})
+@SuppressWarnings("ConstantConditions")
 public class JpaRealmEntity extends MapRealmEntity.AbstractRealmEntity implements JpaRootVersionedEntity {
 
     @Id
@@ -174,7 +176,8 @@ public class JpaRealmEntity extends MapRealmEntity.AbstractRealmEntity implement
 
     @Override
     public void setId(String id) {
-        this.id = id == null ? null : UUID.fromString(id);
+        String validatedId = UuidValidator.validateAndConvert(id);
+        this.id = UUID.fromString(validatedId);
     }
 
     @Override
@@ -190,7 +193,7 @@ public class JpaRealmEntity extends MapRealmEntity.AbstractRealmEntity implement
 
     @Override
     public String getDisplayName() {
-        if (isMetadataInitialized()) this.metadata.getDisplayName();
+        if (isMetadataInitialized()) return this.metadata.getDisplayName();
         return this.displayName;
     }
 
@@ -482,12 +485,12 @@ public class JpaRealmEntity extends MapRealmEntity.AbstractRealmEntity implement
     }
 
     @Override
-    public Integer getNotBefore() {
+    public Long getNotBefore() {
         return this.metadata.getNotBefore();
     }
 
     @Override
-    public void setNotBefore(Integer notBefore) {
+    public void setNotBefore(Long notBefore) {
         this.metadata.setNotBefore(notBefore);
     }
 

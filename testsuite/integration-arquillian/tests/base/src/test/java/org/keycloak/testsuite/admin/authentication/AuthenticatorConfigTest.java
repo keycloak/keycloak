@@ -52,7 +52,7 @@ public class AuthenticatorConfigTest extends AbstractAuthenticationTest {
         HashMap<String, String> params = new HashMap<>();
         params.put("provider", IdpCreateUserIfUniqueAuthenticatorFactory.PROVIDER_ID);
         authMgmtResource.addExecution("firstBrokerLogin2", params);
-        assertAdminEvents.assertEvent(REALM_NAME, OperationType.CREATE, AdminEventPaths.authAddExecutionPath("firstBrokerLogin2"), params, ResourceType.AUTH_EXECUTION);
+        assertAdminEvents.assertEvent(testRealmId, OperationType.CREATE, AdminEventPaths.authAddExecutionPath("firstBrokerLogin2"), params, ResourceType.AUTH_EXECUTION);
 
         List<AuthenticationExecutionInfoRepresentation> executionReps = authMgmtResource.getExecutions("firstBrokerLogin2");
         AuthenticationExecutionInfoRepresentation exec = findExecutionByProvider(IdpCreateUserIfUniqueAuthenticatorFactory.PROVIDER_ID, executionReps);
@@ -85,7 +85,7 @@ public class AuthenticatorConfigTest extends AbstractAuthenticationTest {
 
         // Cleanup
         authMgmtResource.removeAuthenticatorConfig(cfgId);
-        assertAdminEvents.assertEvent(REALM_NAME, OperationType.DELETE, AdminEventPaths.authExecutionConfigPath(cfgId), ResourceType.AUTHENTICATOR_CONFIG);
+        assertAdminEvents.assertEvent(testRealmId, OperationType.DELETE, AdminEventPaths.authExecutionConfigPath(cfgId), ResourceType.AUTHENTICATOR_CONFIG);
     }
 
     @Test (expected = BadRequestException.class)
@@ -120,7 +120,7 @@ public class AuthenticatorConfigTest extends AbstractAuthenticationTest {
         cfgRep.setAlias("foo2");
         cfgRep.getConfig().put("configKey2", "configValue2");
         authMgmtResource.updateAuthenticatorConfig(cfgRep.getId(), cfgRep);
-        assertAdminEvents.assertEvent(REALM_NAME, OperationType.UPDATE, AdminEventPaths.authExecutionConfigPath(cfgId), cfgRep, ResourceType.AUTHENTICATOR_CONFIG);
+        assertAdminEvents.assertEvent(testRealmId, OperationType.UPDATE, AdminEventPaths.authExecutionConfigPath(cfgId), cfgRep, ResourceType.AUTHENTICATOR_CONFIG);
 
         // Assert updated
         cfgRep = authMgmtResource.getAuthenticatorConfig(cfgRep.getId());
@@ -152,7 +152,7 @@ public class AuthenticatorConfigTest extends AbstractAuthenticationTest {
 
         // Test remove our config
         authMgmtResource.removeAuthenticatorConfig(cfgId);
-        assertAdminEvents.assertEvent(REALM_NAME, OperationType.DELETE, AdminEventPaths.authExecutionConfigPath(cfgId), ResourceType.AUTHENTICATOR_CONFIG);
+        assertAdminEvents.assertEvent(testRealmId, OperationType.DELETE, AdminEventPaths.authExecutionConfigPath(cfgId), ResourceType.AUTHENTICATOR_CONFIG);
 
         // Assert config not found
         try {
@@ -183,7 +183,7 @@ public class AuthenticatorConfigTest extends AbstractAuthenticationTest {
         Assert.assertEquals(201, resp.getStatus());
         String cfgId = ApiUtil.getCreatedId(resp);
         Assert.assertNotNull(cfgId);
-        assertAdminEvents.assertEvent(REALM_NAME, OperationType.CREATE, AdminEventPaths.authAddExecutionConfigPath(executionId), cfg, ResourceType.AUTH_EXECUTION);
+        assertAdminEvents.assertEvent(testRealmId, OperationType.CREATE, AdminEventPaths.authAddExecutionConfigPath(executionId), cfg, ResourceType.AUTH_EXECUTION);
         return cfgId;
     }
 

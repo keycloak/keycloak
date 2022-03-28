@@ -35,6 +35,7 @@ import org.keycloak.testsuite.util.OAuthClient.AccessTokenResponse;
 import java.security.PublicKey;
 import java.util.List;
 
+import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 import static org.keycloak.testsuite.utils.io.IOUtil.loadRealm;
 import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
 
@@ -43,11 +44,19 @@ import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
  */
 public abstract class AbstractGroupTest extends AbstractKeycloakTest {
 
+    protected String testRealmId;
+
     @Rule
     public AssertEvents events = new AssertEvents(this);
 
     @Rule
     public AssertAdminEvents assertAdminEvents = new AssertAdminEvents(this);
+
+    @Override
+    public void beforeAbstractKeycloakTest() throws Exception {
+        super.beforeAbstractKeycloakTest();
+        this.testRealmId = adminClient.realm(TEST).toRepresentation().getId();
+    }
 
     AccessToken login(String login, String clientId, String clientSecret, String userId) throws Exception {
         AccessTokenResponse tokenResponse = oauth.doGrantAccessTokenRequest("test", login, "password", null, clientId, clientSecret);

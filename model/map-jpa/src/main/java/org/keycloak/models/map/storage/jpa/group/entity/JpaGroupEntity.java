@@ -39,6 +39,7 @@ import org.hibernate.annotations.Type;
 import org.hibernate.annotations.TypeDef;
 import org.hibernate.annotations.TypeDefs;
 import org.keycloak.models.map.common.DeepCloner;
+import org.keycloak.models.map.common.UuidValidator;
 import org.keycloak.models.map.group.MapGroupEntity.AbstractGroupEntity;
 import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_GROUP;
 import org.keycloak.models.map.storage.jpa.JpaRootVersionedEntity;
@@ -144,7 +145,8 @@ public class JpaGroupEntity extends AbstractGroupEntity implements JpaRootVersio
 
     @Override
     public void setId(String id) {
-        this.id = id == null ? null : UUID.fromString(id);
+        String validatedId = UuidValidator.validateAndConvert(id);
+        this.id = UUID.fromString(validatedId);
     }
 
     @Override

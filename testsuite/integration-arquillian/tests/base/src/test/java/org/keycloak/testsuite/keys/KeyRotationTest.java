@@ -272,9 +272,10 @@ public class KeyRotationTest extends AbstractKeycloakTest {
         String privateKeyPem = PemUtils.encodeKey(keyPair.getPrivate());
         PublicKey publicKey = keyPair.getPublic();
 
+        String testRealmId = adminClient.realm("test").toRepresentation().getId();
         ComponentRepresentation rep = new ComponentRepresentation();
         rep.setName("mycomponent");
-        rep.setParentId("test");
+        rep.setParentId(testRealmId);
         rep.setProviderId(ImportedRsaKeyProviderFactory.ID);
         rep.setProviderType(KeyProvider.class.getName());
 
@@ -288,7 +289,7 @@ public class KeyRotationTest extends AbstractKeycloakTest {
 
         rep = new ComponentRepresentation();
         rep.setName("mycomponent2");
-        rep.setParentId("test");
+        rep.setParentId(testRealmId);
         rep.setProviderId(GeneratedHmacKeyProviderFactory.ID);
         rep.setProviderType(KeyProvider.class.getName());
 
@@ -312,7 +313,8 @@ public class KeyRotationTest extends AbstractKeycloakTest {
 
     private void dropKeys(String priority) {
         int r = 0;
-        for (ComponentRepresentation c : adminClient.realm("test").components().query("test", KeyProvider.class.getName())) {
+        String parentId = adminClient.realm("test").toRepresentation().getId();
+        for (ComponentRepresentation c : adminClient.realm("test").components().query(parentId, KeyProvider.class.getName())) {
             if (c.getConfig().getFirst("priority").equals(priority)) {
                 adminClient.realm("test").components().component(c.getId()).remove();
                 r++;

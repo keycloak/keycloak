@@ -289,8 +289,8 @@ public class ExportImportTest extends AbstractKeycloakTest {
         }
     }
 
-    private boolean isRealmPresent(String realmId) {
-        return adminClient.realms().findAll().stream().anyMatch(realm -> realmId.equals(realm.getId()));
+    private boolean isRealmPresent(String realmName) {
+        return adminClient.realms().findAll().stream().anyMatch(realm -> realmName.equals(realm.getRealm()));
     }
 
     /*

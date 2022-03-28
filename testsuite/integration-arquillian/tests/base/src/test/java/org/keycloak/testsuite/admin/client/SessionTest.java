@@ -27,6 +27,7 @@ import org.keycloak.events.admin.ResourceType;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
+import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.auth.page.account.AccountManagement;
 import org.keycloak.testsuite.util.AdminEventPaths;
 
@@ -34,6 +35,7 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 
 /**
  *
@@ -59,8 +61,8 @@ public class SessionTest extends AbstractClientTest {
     @Override
     public void setDefaultPageUriParameters() {
         super.setDefaultPageUriParameters();
-        testRealmAccountManagementPage.setAuthRealm(getRealmId());
-        loginPage.setAuthRealm(getRealmId());
+        testRealmAccountManagementPage.setAuthRealm(TEST);
+        loginPage.setAuthRealm(TEST);
     }
 
     @Test

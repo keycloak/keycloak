@@ -59,13 +59,11 @@ public class JpaRealmDelegateProvider extends JpaDelegateProvider<JpaRealmEntity
                         return getDelegate();
 
                     case ATTRIBUTES:
-                        CriteriaBuilder cb = em.getCriteriaBuilder();
-                        CriteriaQuery<JpaRealmEntity> query = cb.createQuery(JpaRealmEntity.class);
-                        Root<JpaRealmEntity> root = query.from(JpaRealmEntity.class);
-                        root.fetch("attributes", JoinType.LEFT);
-                        query.select(root).where(cb.equal(root.get("id"), UUID.fromString(getDelegate().getId())));
+                        this.setDelegateWithAssociation("attributes");
+                        break;
 
-                        setDelegate(em.createQuery(query).getSingleResult());
+                    case COMPONENTS:
+                        this.setDelegateWithAssociation("components");
                         break;
 
                     default:
@@ -77,5 +75,15 @@ public class JpaRealmDelegateProvider extends JpaDelegateProvider<JpaRealmEntity
         } else {
             setDelegate(em.find(JpaRealmEntity.class, UUID.fromString(getDelegate().getId())));
         }
-        return getDelegate();    }
+        return getDelegate();
+    }
+
+    protected void setDelegateWithAssociation(final String associationName) {
+        CriteriaBuilder cb = em.getCriteriaBuilder();
+        CriteriaQuery<JpaRealmEntity> query = cb.createQuery(JpaRealmEntity.class);
+        Root<JpaRealmEntity> root = query.from(JpaRealmEntity.class);
+        root.fetch(associationName, JoinType.LEFT);
+        query.select(root).where(cb.equal(root.get("id"), UUID.fromString(getDelegate().getId())));
+        setDelegate(em.createQuery(query).getSingleResult());
+    }
 }

@@ -46,7 +46,7 @@ public class RegistrationFlowTest extends AbstractAuthenticationTest {
         data.put("description", "registrationForm2 flow");
         data.put("provider", "registration-page-form");
         authMgmtResource.addExecutionFlow("registration2", data);
-        assertAdminEvents.assertEvent(REALM_NAME, OperationType.CREATE, AdminEventPaths.authAddExecutionFlowPath("registration2"), data, ResourceType.AUTH_EXECUTION_FLOW);
+        assertAdminEvents.assertEvent(testRealmId, OperationType.CREATE, AdminEventPaths.authAddExecutionFlowPath("registration2"), data, ResourceType.AUTH_EXECUTION_FLOW);
 
         // Should fail to add execution under top level flow
         Map<String, String> data2 = new HashMap<>();
@@ -59,7 +59,7 @@ public class RegistrationFlowTest extends AbstractAuthenticationTest {
 
         // Should success to add execution under form flow
         authMgmtResource.addExecution("registrationForm2", data2);
-        assertAdminEvents.assertEvent(REALM_NAME, OperationType.CREATE, AdminEventPaths.authAddExecutionPath("registrationForm2"), data2, ResourceType.AUTH_EXECUTION);
+        assertAdminEvents.assertEvent(testRealmId, OperationType.CREATE, AdminEventPaths.authAddExecutionPath("registrationForm2"), data2, ResourceType.AUTH_EXECUTION);
     }
 
     // TODO: More type-safety instead of passing generic maps

@@ -46,6 +46,7 @@ import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -520,18 +521,19 @@ public class UserTest extends AbstractAdminTest {
 
         // add a dummy federation provider
         ComponentRepresentation dummyFederationProvider = new ComponentRepresentation();
-        dummyFederationProvider.setId(DummyUserFederationProviderFactory.PROVIDER_NAME);
+        String componentId = KeycloakModelUtils.generateId();
+        dummyFederationProvider.setId(componentId);
         dummyFederationProvider.setName(DummyUserFederationProviderFactory.PROVIDER_NAME);
         dummyFederationProvider.setProviderId(DummyUserFederationProviderFactory.PROVIDER_NAME);
         dummyFederationProvider.setProviderType(UserStorageProvider.class.getName());
         adminClient.realms().realm(REALM_NAME).components().add(dummyFederationProvider);
 
-        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.componentPath(DummyUserFederationProviderFactory.PROVIDER_NAME), dummyFederationProvider, ResourceType.COMPONENT);
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.componentPath(componentId), dummyFederationProvider, ResourceType.COMPONENT);
 
         UserRepresentation user = new UserRepresentation();
         user.setUsername("user1");
         user.setEmail("user1@localhost");
-        user.setFederationLink(DummyUserFederationProviderFactory.PROVIDER_NAME);
+        user.setFederationLink(componentId);
 
         String userId = createUser(user);
 
@@ -2288,6 +2290,7 @@ public class UserTest extends AbstractAdminTest {
     @Test
     public void roleMappings() {
         RealmResource realm = adminClient.realms().realm("test");
+        String realmId = realm.toRepresentation().getId();
 
         // Enable events
         RealmRepresentation realmRep = RealmBuilder.edit(realm.toRepresentation()).testEventListener().build();
@@ -2331,16 +2334,16 @@ public class UserTest extends AbstractAdminTest {
         l.add(realm.roles().get("realm-role").toRepresentation());
         l.add(realm.roles().get("realm-composite").toRepresentation());
         roles.realmLevel().add(l);
-        assertAdminEvents.assertEvent("test", OperationType.CREATE, AdminEventPaths.userRealmRoleMappingsPath(userId), l, ResourceType.REALM_ROLE_MAPPING);
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.userRealmRoleMappingsPath(userId), l, ResourceType.REALM_ROLE_MAPPING);
 
         // Add client roles
         List<RoleRepresentation> list = Collections.singletonList(realm.clients().get(clientUuid).roles().get("client-role").toRepresentation());
         roles.clientLevel(clientUuid).add(list);
-        assertAdminEvents.assertEvent("test", OperationType.CREATE, AdminEventPaths.userClientRoleMappingsPath(userId, clientUuid), list, ResourceType.CLIENT_ROLE_MAPPING);
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.userClientRoleMappingsPath(userId, clientUuid), list, ResourceType.CLIENT_ROLE_MAPPING);
 
         list = Collections.singletonList(realm.clients().get(clientUuid).roles().get("client-composite").toRepresentation());
         roles.clientLevel(clientUuid).add(list);
-        assertAdminEvents.assertEvent("test", OperationType.CREATE, AdminEventPaths.userClientRoleMappingsPath(userId, clientUuid), ResourceType.CLIENT_ROLE_MAPPING);
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.userClientRoleMappingsPath(userId, clientUuid), ResourceType.CLIENT_ROLE_MAPPING);
 
         // List realm roles
         assertNames(roles.realmLevel().listAll(), "realm-role", "realm-composite", Constants.DEFAULT_ROLES_ROLE_PREFIX + "-test");
@@ -2373,14 +2376,14 @@ public class UserTest extends AbstractAdminTest {
         // Remove realm role
         RoleRepresentation realmRoleRep = realm.roles().get("realm-role").toRepresentation();
         roles.realmLevel().remove(Collections.singletonList(realmRoleRep));
-        assertAdminEvents.assertEvent("test", OperationType.DELETE, AdminEventPaths.userRealmRoleMappingsPath(userId), Collections.singletonList(realmRoleRep), ResourceType.REALM_ROLE_MAPPING);
+        assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.userRealmRoleMappingsPath(userId), Collections.singletonList(realmRoleRep), ResourceType.REALM_ROLE_MAPPING);
 
         assertNames(roles.realmLevel().listAll(), "realm-composite", Constants.DEFAULT_ROLES_ROLE_PREFIX + "-test");
 
         // Remove client role
         RoleRepresentation clientRoleRep = realm.clients().get(clientUuid).roles().get("client-role").toRepresentation();
         roles.clientLevel(clientUuid).remove(Collections.singletonList(clientRoleRep));
-        assertAdminEvents.assertEvent("test", OperationType.DELETE, AdminEventPaths.userClientRoleMappingsPath(userId, clientUuid), Collections.singletonList(clientRoleRep), ResourceType.CLIENT_ROLE_MAPPING);
+        assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.userClientRoleMappingsPath(userId, clientUuid), Collections.singletonList(clientRoleRep), ResourceType.CLIENT_ROLE_MAPPING);
 
         assertNames(roles.clientLevel(clientUuid).listAll(), "client-composite");
     }
