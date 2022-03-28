@@ -93,6 +93,16 @@ export const ResetPasswordDialog = ({
           value: password,
         },
       });
+      const { id } = (
+        await adminClient.users.getCredentials({ id: user.id! })
+      ).find((c) => c.type === "password")!;
+      await adminClient.users.updateCredentialLabel(
+        {
+          id: user.id!,
+          credentialId: id!,
+        },
+        t("defaultPasswordLabel")
+      );
       addAlert(
         isResetPassword
           ? t("resetCredentialsSuccess")

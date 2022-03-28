@@ -54,7 +54,11 @@ export const InlineLabelEdit = ({
   };
 
   return (
-    <Form isHorizontal className="kc-form-userLabel">
+    <Form
+      isHorizontal
+      className="kc-form-userLabel"
+      onSubmit={handleSubmit(saveUserLabel)}
+    >
       <FormGroup fieldId="kc-userLabel" className="kc-userLabel-row">
         <div className="kc-form-group-userLabel">
           {isEditable ? (
@@ -73,9 +77,7 @@ export const InlineLabelEdit = ({
                   data-testid="editUserLabelAcceptBtn"
                   variant="link"
                   className="kc-editUserLabelAcceptBtn"
-                  onClick={() => {
-                    handleSubmit(saveUserLabel)();
-                  }}
+                  type="submit"
                   icon={<CheckIcon />}
                 />
                 <Button

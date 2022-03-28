@@ -124,6 +124,7 @@ export default {
       "This user does not have any credentials. You can set password for this user.",
     setPassword: "Set password",
     setPasswordFor: "Set password for {{username}}",
+    defaultPasswordLabel: "My password",
     save: "Save",
     cancel: "Cancel",
     savePasswordSuccess: "The password has been set successfully.",

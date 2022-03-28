@@ -77,7 +77,7 @@ export const CredentialRow = ({
         </Button>
       </Td>
       {credential.type === "password" ? (
-        <Td>
+        <Td isActionCell>
           <Button
             variant="secondary"
             data-testid="resetPasswordBtn"
@@ -89,7 +89,7 @@ export const CredentialRow = ({
       ) : (
         <Td />
       )}
-      <Td>
+      <Td isActionCell>
         <Dropdown
           isPlain
           position={DropdownPosition.right}

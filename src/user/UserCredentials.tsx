@@ -24,10 +24,11 @@ import type CredentialRepresentation from "@keycloak/keycloak-admin-client/lib/d
 import { ResetPasswordDialog } from "./user-credentials/ResetPasswordDialog";
 import { ResetCredentialDialog } from "./user-credentials/ResetCredentialDialog";
 import { InlineLabelEdit } from "./user-credentials/InlineLabelEdit";
-import "./user-credentials.css";
 import styles from "@patternfly/react-styles/css/components/Table/table";
 import { CredentialRow } from "./user-credentials/CredentialRow";
 import { toUpperCase } from "../util";
+
+import "./user-credentials.css";
 
 type UserCredentialsProps = {
   user: UserRepresentation;
@@ -394,12 +395,15 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
                 <Fragment key={groupedCredential.key}>
                   <Tr
                     id={groupedCredential.value.map(({ id }) => id).toString()}
-                    draggable
+                    draggable={groupedUserCredentials.length > 1}
                     onDrop={onDrop}
                     onDragEnd={onDragEnd}
                     onDragStart={onDragStart}
                   >
                     <Td
+                      className={
+                        groupedUserCredentials.length === 1 ? "one-row" : ""
+                      }
                       draggableRow={{
                         id: `draggable-row-${groupedCredential.value.map(
                           ({ id }) => id
