@@ -17,6 +17,10 @@
     <name>KeyCloak AuthZ: Provider Parent</name>
     <description>KeyCloak AuthZ: Provider Parent</description>
 
+    <properties>
+        <animal-sniffer-signature-version>java18</animal-sniffer-signature-version>
+    </properties>
+
     <modules>
         <module>common</module>
     </modules>

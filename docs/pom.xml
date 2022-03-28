@@ -29,6 +29,10 @@
     <artifactId>keycloak-docs-parent</artifactId>
     <packaging>pom</packaging>
 
+    <properties>
+        <animal-sniffer-signature-version>java18</animal-sniffer-signature-version>
+    </properties>
+
     <profiles>
         <profile>
             <id>quarkus</id>

@@ -16,6 +16,7 @@
  */
 package org.keycloak.vault;
 
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
@@ -87,7 +88,10 @@ public class DefaultVaultRawSecret implements VaultRawSecret {
             ThreadLocalRandom.current().nextBytes(this.secretArray);
             this.secretArray = null;    // dispose of secretArray
         }
-        rawSecret.clear();
+        // Cast as a Buffer to ensure that it compiles to JDK 1.7 compatible bytecode,
+        // as otherwise the method in ByteBuffer (available from Java 9 onwards) is put into the bytecode.
+        // Remove once everything uses JDK 11.
+        ((Buffer) rawSecret).clear();
         rawSecret = EMPTY_BUFFER;
     }
 }

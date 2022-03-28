@@ -135,6 +135,8 @@
         <apacheds.codec.version>2.0.0</apacheds.codec.version>
         <google.zxing.version>3.4.0</google.zxing.version>
         <freemarker.version>2.3.31</freemarker.version>
+        <!-- as long as maven.compiler.target is set to 1.7 -->
+        <animal-sniffer-signature-version>java17</animal-sniffer-signature-version>
 
         <jetty9.version>${jetty92.version}</jetty9.version>
         <liquibase.version>4.8.0</liquibase.version>
@@ -1903,6 +1905,30 @@
                 </plugin>
             </plugins>
         </pluginManagement>
+        <plugins>
+            <plugin>
+                <!-- to be removed completely once JDK 11+ is used to build the project,
+                as the -release parameter to javac supersedes Animal Sniffer -->
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>animal-sniffer-maven-plugin</artifactId>
+                <version>1.20</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                        <phase>process-test-classes</phase>
+                        <configuration>
+                            <signature>
+                                <groupId>org.codehaus.mojo.signature</groupId>
+                                <artifactId>${animal-sniffer-signature-version}</artifactId>
+                                <version>1.0</version>
+                            </signature>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
     </build>
 
     <profiles>

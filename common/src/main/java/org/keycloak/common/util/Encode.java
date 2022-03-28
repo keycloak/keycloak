@@ -20,6 +20,7 @@ package org.keycloak.common.util;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
@@ -240,7 +241,10 @@ public class Encode
          int b = Integer.parseInt(matcher.group(1), 16);
          bytes.put((byte) b);
       }
-      bytes.flip();
+      // Cast as a Buffer to ensure that it compiles to JDK 1.7 compatible bytecode,
+      // as otherwise the method in ByteBuffer (available from Java 9 onwards) is put into the bytecode.
+      // Remove once everything uses JDK 11.
+      ((Buffer) bytes).flip();
       try
       {
          return decoder.decode(bytes).toString();

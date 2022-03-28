@@ -17,6 +17,7 @@
 
 package org.keycloak.vault;
 
+import java.nio.Buffer;
 import java.nio.CharBuffer;
 import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
@@ -90,6 +91,9 @@ public class DefaultVaultCharSecret implements VaultCharSecret {
                 this.secretArray[i] = (char) ThreadLocalRandom.current().nextInt();
             }
         }
-        this.buffer.clear();
+        // Cast as a Buffer to ensure that it compiles to JDK 1.7 compatible bytecode,
+        // as otherwise the method in ByteBuffer (available from Java 9 onwards) is put into the bytecode.
+        // Remove once everything uses JDK 11.
+        ((Buffer) this.buffer).clear();
     }
 }

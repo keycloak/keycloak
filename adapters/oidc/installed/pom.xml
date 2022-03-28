@@ -30,6 +30,10 @@
     <name>Keycloak Installed Application</name>
     <description/>
 
+    <properties>
+        <animal-sniffer-signature-version>java18</animal-sniffer-signature-version>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>

@@ -31,6 +31,10 @@
     <name>Keycloak Wildfly Elytron OIDC Adapter</name>
     <description/>
 
+    <properties>
+        <animal-sniffer-signature-version>java18</animal-sniffer-signature-version>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.wildfly.common</groupId>

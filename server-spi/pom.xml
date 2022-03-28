@@ -30,6 +30,10 @@
     <name>Keycloak Server SPI</name>
     <description/>
 
+    <properties>
+        <animal-sniffer-signature-version>java18</animal-sniffer-signature-version>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.jboss.spec.javax.transaction</groupId>

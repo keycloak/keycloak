@@ -32,6 +32,10 @@
     <name>Keycloak Federation</name>
     <description />
 
+    <properties>
+        <animal-sniffer-signature-version>java18</animal-sniffer-signature-version>
+    </properties>
+
     <modules>
         <module>kerberos</module>
         <module>ldap</module>

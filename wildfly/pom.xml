@@ -30,6 +30,10 @@
     <artifactId>keycloak-wildfly-parent</artifactId>
     <packaging>pom</packaging>
 
+    <properties>
+        <animal-sniffer-signature-version>java18</animal-sniffer-signature-version>
+    </properties>
+
     <modules>
         <module>adduser</module>
         <module>extensions</module>
