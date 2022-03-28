@@ -1,6 +1,8 @@
 import React, { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { AlertVariant } from "@patternfly/react-core";
+import { Link } from "react-router-dom";
+import { Trans, useTranslation } from "react-i18next";
+import { AlertVariant, PageSection } from "@patternfly/react-core";
+import { InfoCircleIcon } from "@patternfly/react-icons";
 
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import type { RoleMappingPayload } from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
@@ -12,6 +14,11 @@ import {
   RoleMapping,
   Row,
 } from "../../components/role-mapping/RoleMapping";
+import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
+import { toUser } from "../../user/routes/User";
+import { useRealm } from "../../context/realm-context/RealmContext";
+
+import "./service-account.css";
 
 type ServiceAccountProps = {
   client: ClientRepresentation;
@@ -21,6 +28,7 @@ export const ServiceAccount = ({ client }: ServiceAccountProps) => {
   const { t } = useTranslation("clients");
   const adminClient = useAdminClient();
   const { addAlert, addError } = useAlerts();
+  const { realm } = useRealm();
 
   const [hide, setHide] = useState(false);
   const [serviceAccount, setServiceAccount] = useState<UserRepresentation>();
@@ -98,13 +106,30 @@ export const ServiceAccount = ({ client }: ServiceAccountProps) => {
     }
   };
   return serviceAccount ? (
-    <RoleMapping
-      name={client.clientId!}
-      id={serviceAccount.id!}
-      type="users"
-      loader={loader}
-      save={assignRoles}
-      onHideRolesToggle={() => setHide(!hide)}
-    />
-  ) : null;
+    <>
+      <PageSection className="pf-u-pb-0">
+        <InfoCircleIcon className="pf-c-alert__icon keycloak--service-account--info-text" />
+        <span className="pf-u-pl-sm">
+          <Trans i18nKey="clients-help:manageServiceAccountUser">
+            {""}
+            <Link
+              to={toUser({ realm, id: serviceAccount.id!, tab: "settings" })}
+            >
+              {{ link: serviceAccount.username }}
+            </Link>
+          </Trans>
+        </span>
+      </PageSection>
+      <RoleMapping
+        name={client.clientId!}
+        id={serviceAccount.id!}
+        type="users"
+        loader={loader}
+        save={assignRoles}
+        onHideRolesToggle={() => setHide(!hide)}
+      />
+    </>
+  ) : (
+    <KeycloakSpinner />
+  );
 };
