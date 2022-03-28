@@ -118,7 +118,7 @@ public class WatchedSecretsStore extends OperatorManagedResource {
                         .endMetadata()
                         .build();
 
-                client.secrets().patch(secret);
+                client.secrets().inNamespace(secret.getMetadata().getNamespace()).withName(secret.getMetadata().getName()).patch(secret);
             }
         }
     }
@@ -200,7 +200,7 @@ public class WatchedSecretsStore extends OperatorManagedResource {
 
     private static void cleanObsoleteLabelFromSecret(KubernetesClient client, Secret secret) {
         secret.getMetadata().getLabels().remove(Constants.KEYCLOAK_COMPONENT_LABEL);
-        client.secrets().patch(secret);
+        client.secrets().inNamespace(secret.getMetadata().getNamespace()).withName(secret.getMetadata().getName()).patch(secret);
     }
 
     public static EventSource getWatchedSecretsEventSource(KubernetesClient client, String namespace) {
