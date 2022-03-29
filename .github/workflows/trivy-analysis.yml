@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   # Run the job twice a day  
   schedule:
-    - cron: "0 0,12 * * *"
+    - cron: "0 0 * * *"
 
 jobs:
   quarkus-dist:
