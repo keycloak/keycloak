@@ -6,10 +6,6 @@
   display: contents;
 }
 
-.error {
-  color: red;
-}
-
 .keycloak__user-federation__assign-role {
   display: flex;
   flex-direction: row;

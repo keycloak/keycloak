@@ -113,6 +113,8 @@ export const LdapSettingsGeneral = ({
           }
           fieldId="kc-console-display-name"
           isRequired
+          validated={form.errors.name ? "error" : "default"}
+          helperTextInvalid={form.errors.name?.message}
         >
           {/* These hidden fields are required so data object written back matches data retrieved */}
           <TextInput hidden type="text" id="kc-console-id" name="id" />
@@ -153,10 +155,8 @@ export const LdapSettingsGeneral = ({
               },
             })}
             data-testid="ldap-name"
+            validated={form.errors.name ? "error" : "default"}
           />
-          {form.errors.name && (
-            <div className="error">{form.errors.name.message}</div>
-          )}
         </FormGroup>
         <FormGroup
           label={t("vendor")}

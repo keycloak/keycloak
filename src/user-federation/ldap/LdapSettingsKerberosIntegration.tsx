@@ -77,6 +77,10 @@ export const LdapSettingsKerberosIntegration = ({
               }
               fieldId="kc-kerberos-realm"
               isRequired
+              validated={
+                form.errors.config?.kerberosRealm?.[0] ? "error" : "default"
+              }
+              helperTextInvalid={form.errors.config?.kerberosRealm?.[0].message}
             >
               <TextInput
                 isRequired
@@ -90,12 +94,10 @@ export const LdapSettingsKerberosIntegration = ({
                   },
                 })}
                 data-testid="kerberos-realm"
+                validated={
+                  form.errors.config?.kerberosRealm?.[0] ? "error" : "default"
+                }
               />
-              {form.errors.config?.kerberosRealm?.[0] && (
-                <div className="error">
-                  {form.errors.config.kerberosRealm[0].message}
-                </div>
-              )}
             </FormGroup>
 
             <FormGroup
@@ -108,6 +110,12 @@ export const LdapSettingsKerberosIntegration = ({
               }
               fieldId="kc-server-principal"
               isRequired
+              validated={
+                form.errors.config?.serverPrincipal?.[0] ? "error" : "default"
+              }
+              helperTextInvalid={
+                form.errors.config?.serverPrincipal?.[0].message
+              }
             >
               <TextInput
                 isRequired
@@ -121,12 +129,10 @@ export const LdapSettingsKerberosIntegration = ({
                   },
                 })}
                 data-testid="kerberos-principal"
+                validated={
+                  form.errors.config?.serverPrincipal?.[0] ? "error" : "default"
+                }
               />
-              {form.errors.config?.serverPrincipal?.[0] && (
-                <div className="error">
-                  {form.errors.config.serverPrincipal[0].message}
-                </div>
-              )}
             </FormGroup>
 
             <FormGroup
@@ -139,6 +145,8 @@ export const LdapSettingsKerberosIntegration = ({
               }
               fieldId="kc-key-tab"
               isRequired
+              validated={form.errors.config?.keyTab?.[0] ? "error" : "default"}
+              helperTextInvalid={form.errors.config?.keyTab?.[0].message}
             >
               <TextInput
                 isRequired
@@ -152,12 +160,10 @@ export const LdapSettingsKerberosIntegration = ({
                   },
                 })}
                 data-testid="kerberos-keytab"
+                validated={
+                  form.errors.config?.keyTab?.[0] ? "error" : "default"
+                }
               />
-              {form.errors.config?.keyTab?.[0] && (
-                <div className="error">
-                  {form.errors.config.keyTab[0].message}
-                </div>
-              )}
             </FormGroup>
 
             <FormGroup

@@ -52,6 +52,8 @@ export const LdapSettingsSearching = ({
           }
           fieldId="kc-edit-mode"
           isRequired
+          validated={form.errors.config?.editMode?.[0] ? "error" : "default"}
+          helperTextInvalid={form.errors.config?.editMode?.[0].message}
         >
           <Controller
             name="config.editMode[0]"
@@ -74,6 +76,9 @@ export const LdapSettingsSearching = ({
                 }}
                 selections={value}
                 variant={SelectVariant.single}
+                validated={
+                  form.errors.config?.editMode?.[0] ? "error" : "default"
+                }
               >
                 <SelectOption value="" isPlaceholder />
                 <SelectOption value="READ_ONLY" />
@@ -82,11 +87,6 @@ export const LdapSettingsSearching = ({
               </Select>
             )}
           />
-          {form.errors.config?.editMode?.[0] && (
-            <div className="error">
-              {form.errors.config.editMode[0].message}
-            </div>
-          )}
         </FormGroup>
         <FormGroup
           label={t("usersDN")}
@@ -98,6 +98,8 @@ export const LdapSettingsSearching = ({
           }
           fieldId="kc-console-users-dn"
           isRequired
+          validated={form.errors.config?.usersDn?.[0] ? "error" : "default"}
+          helperTextInvalid={form.errors.config?.usersDn?.[0].message}
         >
           <TextInput
             isRequired
@@ -112,10 +114,8 @@ export const LdapSettingsSearching = ({
                 message: `${t("validateUsersDn")}`,
               },
             })}
+            validated={form.errors.config?.usersDn?.[0] ? "error" : "default"}
           />
-          {form.errors.config?.usersDn?.[0] && (
-            <div className="error">{form.errors.config.usersDn[0].message}</div>
-          )}
         </FormGroup>
         <FormGroup
           label={t("usernameLdapAttribute")}
@@ -127,6 +127,12 @@ export const LdapSettingsSearching = ({
           }
           fieldId="kc-username-ldap-attribute"
           isRequired
+          validated={
+            form.errors.config?.usernameLDAPAttribute?.[0] ? "error" : "default"
+          }
+          helperTextInvalid={
+            form.errors.config?.usernameLDAPAttribute?.[0].message
+          }
         >
           <TextInput
             isRequired
@@ -141,12 +147,12 @@ export const LdapSettingsSearching = ({
                 message: `${t("validateUsernameLDAPAttribute")}`,
               },
             })}
+            validated={
+              form.errors.config?.usernameLDAPAttribute?.[0]
+                ? "error"
+                : "default"
+            }
           />
-          {form.errors.config?.usernameLDAPAttribute?.[0] && (
-            <div className="error">
-              {form.errors.config.usernameLDAPAttribute[0].message}
-            </div>
-          )}
         </FormGroup>
         <FormGroup
           label={t("rdnLdapAttribute")}
@@ -158,6 +164,10 @@ export const LdapSettingsSearching = ({
           }
           fieldId="kc-rdn-ldap-attribute"
           isRequired
+          validated={
+            form.errors.config?.rdnLDAPAttribute?.[0] ? "error" : "default"
+          }
+          helperTextInvalid={form.errors.config?.rdnLDAPAttribute?.[0].message}
         >
           <TextInput
             isRequired
@@ -172,12 +182,10 @@ export const LdapSettingsSearching = ({
                 message: `${t("validateRdnLdapAttribute")}`,
               },
             })}
+            validated={
+              form.errors.config?.rdnLDAPAttribute?.[0] ? "error" : "default"
+            }
           />
-          {form.errors.config?.rdnLDAPAttribute?.[0] && (
-            <div className="error">
-              {form.errors.config.rdnLDAPAttribute[0].message}
-            </div>
-          )}
         </FormGroup>
         <FormGroup
           label={t("uuidLdapAttribute")}
@@ -189,6 +197,10 @@ export const LdapSettingsSearching = ({
           }
           fieldId="kc-uuid-ldap-attribute"
           isRequired
+          validated={
+            form.errors.config?.uuidLDAPAttribute?.[0] ? "error" : "default"
+          }
+          helperTextInvalid={form.errors.config?.uuidLDAPAttribute?.[0].message}
         >
           <TextInput
             isRequired
@@ -203,12 +215,10 @@ export const LdapSettingsSearching = ({
                 message: `${t("validateUuidLDAPAttribute")}`,
               },
             })}
+            validated={
+              form.errors.config?.uuidLDAPAttribute?.[0] ? "error" : "default"
+            }
           />
-          {form.errors.config?.uuidLDAPAttribute?.[0] && (
-            <div className="error">
-              {form.errors.config.uuidLDAPAttribute[0].message}
-            </div>
-          )}
         </FormGroup>
         <FormGroup
           label={t("userObjectClasses")}
@@ -220,6 +230,10 @@ export const LdapSettingsSearching = ({
           }
           fieldId="kc-user-object-classes"
           isRequired
+          validated={
+            form.errors.config?.userObjectClasses?.[0] ? "error" : "default"
+          }
+          helperTextInvalid={form.errors.config?.userObjectClasses?.[0].message}
         >
           <TextInput
             isRequired
@@ -234,12 +248,10 @@ export const LdapSettingsSearching = ({
                 message: `${t("validateUserObjectClasses")}`,
               },
             })}
+            validated={
+              form.errors.config?.userObjectClasses?.[0] ? "error" : "default"
+            }
           />
-          {form.errors.config?.userObjectClasses?.[0] && (
-            <div className="error">
-              {form.errors.config.userObjectClasses[0].message}
-            </div>
-          )}
         </FormGroup>
         <FormGroup
           label={t("userLdapFilter")}
@@ -250,6 +262,14 @@ export const LdapSettingsSearching = ({
             />
           }
           fieldId="kc-user-ldap-filter"
+          validated={
+            form.errors.config?.customUserSearchFilter?.[0]
+              ? "error"
+              : "default"
+          }
+          helperTextInvalid={
+            form.errors.config?.customUserSearchFilter?.[0].message
+          }
         >
           <TextInput
             type="text"
@@ -261,12 +281,12 @@ export const LdapSettingsSearching = ({
                 message: `${t("validateCustomUserSearchFilter")}`,
               },
             })}
+            validated={
+              form.errors.config?.customUserSearchFilter?.[0]
+                ? "error"
+                : "default"
+            }
           />
-          {form.errors.config?.customUserSearchFilter?.[0] && (
-            <div className="error">
-              {form.errors.config.customUserSearchFilter[0].message}
-            </div>
-          )}
         </FormGroup>
 
         <FormGroup

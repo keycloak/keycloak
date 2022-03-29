@@ -70,6 +70,8 @@ export const KerberosSettingsRequired = ({
           }
           fieldId="kc-console-display-name"
           isRequired
+          validated={form.errors.name ? "error" : "default"}
+          helperTextInvalid={form.errors.name?.message}
         >
           {/* These hidden fields are required so data object written back matches data retrieved */}
           <TextInput
@@ -109,10 +111,8 @@ export const KerberosSettingsRequired = ({
               },
             })}
             data-testid="kerberos-name"
+            validated={form.errors.name ? "error" : "default"}
           />
-          {form.errors.name && (
-            <div className="error">{form.errors.name.message}</div>
-          )}
         </FormGroup>
 
         <FormGroup
@@ -125,6 +125,10 @@ export const KerberosSettingsRequired = ({
           }
           fieldId="kc-kerberos-realm"
           isRequired
+          validated={
+            form.errors.config?.kerberosRealm?.[0] ? "error" : "default"
+          }
+          helperTextInvalid={form.errors.config?.kerberosRealm?.[0].message}
         >
           <TextInput
             isRequired
@@ -138,12 +142,10 @@ export const KerberosSettingsRequired = ({
               },
             })}
             data-testid="kerberos-realm"
+            validated={
+              form.errors.config?.kerberosRealm?.[0] ? "error" : "default"
+            }
           />
-          {form.errors.config?.kerberosRealm?.[0] && (
-            <div className="error">
-              {form.errors.config.kerberosRealm[0].message}
-            </div>
-          )}
         </FormGroup>
 
         <FormGroup
@@ -156,6 +158,10 @@ export const KerberosSettingsRequired = ({
           }
           fieldId="kc-server-principal"
           isRequired
+          validated={
+            form.errors.config?.serverPrincipal?.[0] ? "error" : "default"
+          }
+          helperTextInvalid={form.errors.config?.serverPrincipal?.[0].message}
         >
           <TextInput
             isRequired
@@ -169,12 +175,10 @@ export const KerberosSettingsRequired = ({
               },
             })}
             data-testid="kerberos-principal"
+            validated={
+              form.errors.config?.serverPrincipal?.[0] ? "error" : "default"
+            }
           />
-          {form.errors.config?.serverPrincipal?.[0] && (
-            <div className="error">
-              {form.errors.config.serverPrincipal[0].message}
-            </div>
-          )}
         </FormGroup>
 
         <FormGroup
@@ -187,6 +191,8 @@ export const KerberosSettingsRequired = ({
           }
           fieldId="kc-key-tab"
           isRequired
+          validated={form.errors.config?.keyTab?.[0] ? "error" : "default"}
+          helperTextInvalid={form.errors.config?.keyTab?.[0].message}
         >
           <TextInput
             isRequired
@@ -200,10 +206,8 @@ export const KerberosSettingsRequired = ({
               },
             })}
             data-testid="kerberos-keytab"
+            validated={form.errors.config?.keyTab?.[0] ? "error" : "default"}
           />
-          {form.errors.config?.keyTab?.[0] && (
-            <div className="error">{form.errors.config.keyTab[0].message}</div>
-          )}
         </FormGroup>
 
         <FormGroup
