@@ -33,6 +33,29 @@ export default class AssociatedRolesPage {
     return this;
   }
 
+  addAssociatedRoleFromSearchBar(roleName: string, isClientRole?: boolean) {
+    cy.findByTestId(this.addRoleToolbarButton).click();
+
+    if (isClientRole) {
+      cy.findByTestId(this.filterTypeDropdown).click();
+      cy.findByTestId(this.filterTypeDropdownItem).click();
+    }
+
+    cy.findByTestId(".pf-c-spinner__tail-ball").should("not.exist");
+
+    cy.get('[data-testid="addAssociatedRole"] td[data-label="Role name"]')
+      .contains(roleName)
+      .parent()
+      .within(() => {
+        cy.get("input").click();
+      });
+
+    cy.findByTestId(this.addAssociatedRolesModalButton).contains("Add").click();
+
+    cy.contains("Users in role").click();
+    cy.findByTestId(this.usersPage).should("exist");
+  }
+
   addAssociatedClientRole(roleName: string) {
     cy.findByTestId(this.addRoleToolbarButton).click();
 
@@ -57,6 +80,14 @@ export default class AssociatedRolesPage {
 
   removeAssociatedRoles() {
     cy.findByTestId(this.removeRolesButton).click();
+    return this;
+  }
+
+  isRemoveAssociatedRolesBtnDisabled() {
+    cy.findByTestId(this.removeRolesButton).should(
+      "have.class",
+      "pf-m-disabled"
+    );
     return this;
   }
 }
