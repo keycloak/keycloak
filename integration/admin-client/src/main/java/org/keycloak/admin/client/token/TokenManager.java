@@ -35,6 +35,8 @@ import static org.keycloak.OAuth2Constants.CLIENT_ID;
 import static org.keycloak.OAuth2Constants.GRANT_TYPE;
 import static org.keycloak.OAuth2Constants.PASSWORD;
 import static org.keycloak.OAuth2Constants.REFRESH_TOKEN;
+import static org.keycloak.OAuth2Constants.SCOPE;
+import static org.keycloak.OAuth2Constants.USERNAME;
 
 /**
  * @author rodrigo.sasaki@icarros.com.br
@@ -79,8 +81,12 @@ public class TokenManager {
     public AccessTokenResponse grantToken() {
         Form form = new Form().param(GRANT_TYPE, accessTokenGrantType);
         if (PASSWORD.equals(accessTokenGrantType)) {
-            form.param("username", config.getUsername())
-                .param("password", config.getPassword());
+            form.param(USERNAME, config.getUsername())
+                .param(PASSWORD, config.getPassword());
+        }
+
+        if (config.getScope() != null) {
+            form.param(SCOPE, config.getScope());
         }
 
         if (config.isPublicClient()) {
