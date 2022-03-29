@@ -529,6 +529,8 @@ export default {
     accessTokenLifespan: "Access Token Lifespan",
     oAuthMutual: "OAuth 2.0 Mutual TLS Certificate Bound Access Tokens Enabled",
     keyForCodeExchange: "Proof Key for Code Exchange Code Challenge Method",
+    pushedAuthorizationRequestRequired: "Pushed authorization request required",
+    acrToLoAMapping: "ACR to LoA Mapping",
     authenticationOverrides: "Authentication flow overrides",
     browserFlow: "Browser Flow",
     directGrant: "Direct Grant Flow",

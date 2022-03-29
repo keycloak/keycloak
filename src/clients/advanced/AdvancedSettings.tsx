@@ -15,6 +15,7 @@ import { FormAccess } from "../../components/form-access/FormAccess";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { TimeSelector } from "../../components/time-selector/TimeSelector";
 import { TokenLifespan } from "./TokenLifespan";
+import { AttributeInput } from "../../components/attribute-input/AttributeInput";
 
 type AdvancedSettingsProps = {
   control: Control<Record<string, any>>;
@@ -129,6 +130,43 @@ export const AdvancedSettings = ({
                 </Select>
               )}
             />
+          </FormGroup>
+          <FormGroup
+            label={t("pushedAuthorizationRequestRequired")}
+            fieldId="pushedAuthorizationRequestRequired"
+            labelIcon={
+              <HelpItem
+                helpText="clients-help:pushedAuthorizationRequestRequired"
+                fieldLabelId="clients:pushedAuthorizationRequestRequired"
+              />
+            }
+          >
+            <Controller
+              name="attributes.require.pushed.authorization.requests"
+              defaultValue="false"
+              control={control}
+              render={({ onChange, value }) => (
+                <Switch
+                  id="pushedAuthorizationRequestRequired"
+                  label={t("common:on")}
+                  labelOff={t("common:off")}
+                  isChecked={value === "true"}
+                  onChange={(value) => onChange(value.toString())}
+                />
+              )}
+            />
+          </FormGroup>
+          <FormGroup
+            label={t("acrToLoAMapping")}
+            fieldId="acrToLoAMapping"
+            labelIcon={
+              <HelpItem
+                helpText="clients-help:acrToLoAMapping"
+                fieldLabelId="clients:acrToLoAMapping"
+              />
+            }
+          >
+            <AttributeInput name="attributes.acr.loa.map" />
           </FormGroup>
         </>
       )}
