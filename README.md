@@ -1,20 +1,31 @@
 # Keycloak Admin Console V2
+
 This project is the next generation of the Keycloak Administration Console.  It is written with React and [PatternFly 4][1].
 
 ## Development Instructions
 
 For development on this project you will need a running Keycloak server listening on port 8180.
 
-1. Start keycloak
+1. Install modules
+
+      ```bash
+      $> npm install
+      ```
+
+1. Start Keycloak
     * Download and run with one command
-        ```bash
-        $> ./start.mjs
-        ```
+
+      ```bash
+      $> ./start.mjs
+      ```
+
     * or download Keycloak server from [keycloak downloads page][2] unpack and run it like:
-        ```bash
-        $> cd <unpacked download folder>/bin
-        $> standalone -Djboss.socket.binding.port-offset=100
-        ```
+
+      ```bash
+      $> cd <unpacked download folder>/bin
+      $> standalone -Djboss.socket.binding.port-offset=100
+      ```
+
 1. Go to the clients section of the existing Keycloak Admin Console and add the client
     * like this:
     ![realm settings](./realm-settings.png "Realm Settings")
@@ -22,10 +33,11 @@ For development on this project you will need a running Keycloak server listenin
     * or run `$> ./import.mjs`
 
 1. Install dependencies and run:
-    ```bash
-    $> npm install
-    $> npm run start
-    ```
+
+      ```bash
+      $> npm install
+      $> npm run start
+      ```
 
 ## Building as a Keycloak theme
 
@@ -72,7 +84,9 @@ All themes are located in the `themes/` directory of the project, if you want to
 ## Keycloak UI Test Suite in Cypress
 
 This repository contains the UI tests for Keycloak developed with Cypress framework
+
 ### Prerequisites
+
 * `Keycloak distribution` has to be [downloaded](https://www.keycloak.org/downloads) and started on 8081 port.  
 **note**: the port in at the test suite side in [cypress.json](cypress.json) or at the Keycloak side, see [Keycloak Getting Started Guide](https://www.keycloak.org/docs/latest/getting_started/#starting-the-keycloak-server),
 * `npm package manager` has to be [downloaded](https://nodejs.org/en/download/) and installed.
@@ -110,11 +124,13 @@ $(npm bin)/cypress run
 ```shell
 npx cypress run
 ```
+
 **To execute a specific test on a specific browser run:**
 
 ```shell
 cypress run --spec "cypress/integration/example-test.spec.js" --browser chrome
 ```
+
 **note**: the complete list of parameters can be found in the [official Cypress documentation](https://docs.cypress.io/guides/guides/command-line.html#Commands).
 
 Read more about [how to write tests](./cypress/WRITING_TESTS.md)
@@ -137,11 +153,12 @@ Read more about [how to write tests](./cypress/WRITING_TESTS.md)
 /cypress.json - Cypress configuration file
 /jsconfig.json - Cypress code autocompletion is enabled here
 ```
+
 **note**: More about the project structure in the [official Cypress documentation](https://docs.cypress.io/guides/core-concepts/writing-and-organizing-tests.html#Folder-Structure).
+
 ## License
 
 * [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0)
-
 
 [1]: https://www.patternfly.org/v4/
 [2]: https://www.keycloak.org/downloads
