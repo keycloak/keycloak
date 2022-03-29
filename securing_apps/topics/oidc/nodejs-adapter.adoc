@@ -313,3 +313,7 @@ to the root URL of `/` but can be changed by providing an `admin` parameter
 to the `middleware()` call:
 [source,javascript]
     app.use( keycloak.middleware( { admin: '/callbacks' } );
+
+==== Complete example 
+
+A complete example using the Node.js adapter usage can be found in https://github.com/keycloak/keycloak-quickstarts/tree/latest/service-nodejs/[Keycloak quickstarts for Node.js]
