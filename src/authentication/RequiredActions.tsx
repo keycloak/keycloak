@@ -154,12 +154,8 @@ export const RequiredActions = () => {
             <Switch
               id={`default-${row.name}`}
               label={t("common:on")}
-              isDisabled={!!isUnregisteredAction(row.data)}
-              labelOff={
-                isUnregisteredAction(row.data)
-                  ? t("disabledOff")
-                  : t("common:off")
-              }
+              isDisabled={!row.enabled}
+              labelOff={!row.enabled ? t("disabledOff") : t("common:off")}
               isChecked={row.defaultAction}
               onChange={() => {
                 updateAction(row.data, "defaultAction");
