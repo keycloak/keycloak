@@ -84,8 +84,8 @@ public class Keycloak implements AutoCloseable {
     private final Client client;
     private boolean closed = false;
 
-    Keycloak(String serverUrl, String realm, String username, String password, String clientId, String clientSecret, String grantType, Client resteasyClient, String authtoken) {
-        config = new Config(serverUrl, realm, username, password, clientId, clientSecret, grantType);
+    Keycloak(String serverUrl, String realm, String username, String password, String clientId, String clientSecret, String grantType, Client resteasyClient, String authtoken, String scope) {
+        config = new Config(serverUrl, realm, username, password, clientId, clientSecret, grantType, scope);
         client = resteasyClient != null ? resteasyClient : newRestEasyClient(null, null, false);
         authToken = authtoken;
         tokenManager = authtoken == null ? new TokenManager(config, client) : null;
@@ -101,9 +101,13 @@ public class Keycloak implements AutoCloseable {
     private BearerAuthFilter newAuthFilter() {
         return authToken != null ? new BearerAuthFilter(authToken) : new BearerAuthFilter(tokenManager);
     }
+    
+    public static Keycloak getInstance(String serverUrl, String realm, String username, String password, String clientId, String clientSecret, SSLContext sslContext, Object customJacksonProvider, boolean disableTrustManager, String authToken, String scope) {
+        return new Keycloak(serverUrl, realm, username, password, clientId, clientSecret, PASSWORD, newRestEasyClient(customJacksonProvider, sslContext, disableTrustManager), authToken, scope);
+    }
 
     public static Keycloak getInstance(String serverUrl, String realm, String username, String password, String clientId, String clientSecret, SSLContext sslContext, Object customJacksonProvider, boolean disableTrustManager, String authToken) {
-        return new Keycloak(serverUrl, realm, username, password, clientId, clientSecret, PASSWORD, newRestEasyClient(customJacksonProvider, sslContext, disableTrustManager), authToken);
+        return new Keycloak(serverUrl, realm, username, password, clientId, clientSecret, PASSWORD, newRestEasyClient(customJacksonProvider, sslContext, disableTrustManager), authToken, null);
     }
 
     public static Keycloak getInstance(String serverUrl, String realm, String username, String password, String clientId, String clientSecret) {
