@@ -4,6 +4,7 @@ import org.keycloak.admin.client.resource.IdentityProviderResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
 import com.google.common.collect.ImmutableMap;
+import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
 import org.keycloak.broker.saml.mappers.AttributeToRoleMapper;
 import org.keycloak.broker.saml.mappers.UserAttributeMapper;
 import org.keycloak.dom.saml.v2.assertion.AssertionType;
@@ -25,9 +26,12 @@ import org.keycloak.saml.processing.api.saml.v2.request.SAML2Request;
 import org.keycloak.saml.processing.core.parsers.saml.protocol.SAMLProtocolQNames;
 import org.keycloak.saml.processing.core.saml.v2.common.SAMLDocumentHolder;
 import org.keycloak.testsuite.saml.AbstractSamlTest;
+import org.keycloak.testsuite.updaters.IdentityProviderAttributeUpdater;
 import org.keycloak.testsuite.util.SamlClient;
 import org.keycloak.testsuite.util.SamlClient.Binding;
 import org.keycloak.testsuite.util.SamlClientBuilder;
+
+import java.io.Closeable;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -340,6 +344,70 @@ public final class KcSamlBrokerTest extends AbstractAdvancedBrokerTest {
 
         assertThat(attributeValues, hasItems(EMPTY_ATTRIBUTE_ROLE));
 
+    }
+
+    // Issue #10982
+    @Test
+    public void loginWithIdpEntityIdCorrect() throws Exception {
+      // Set the expected IDP Entity ID to the correct value
+      try (Closeable idpUpdater = new IdentityProviderAttributeUpdater(identityProviderResource)
+          .setAttribute(SAMLIdentityProviderConfig.IDP_ENTITY_ID, "https://localhost:8543/auth/realms/provider")
+          .update())
+      {
+        AuthnRequestType loginRep = SamlClient.createLoginRequestDocument(AbstractSamlTest.SAML_CLIENT_ID_SALES_POST + ".dot/ted", getConsumerRoot() + "/sales-post/saml", null);
+
+        Document doc = SAML2Request.convert(loginRep);
+
+        SAMLDocumentHolder samlResponse = new SamlClientBuilder()
+          .authnRequest(getConsumerSamlEndpoint(bc.consumerRealmName()), doc, Binding.POST).build()   // Request to consumer IdP
+          .login().idp(bc.getIDPAlias()).build()
+
+          .processSamlResponse(Binding.POST)    // AuthnRequest to producer IdP
+            .targetAttributeSamlRequest()
+            .build()
+
+          .login().user(bc.getUserLogin(), bc.getUserPassword()).build()
+
+          .processSamlResponse(Binding.POST)    // Response from producer IdP
+            .build()
+
+          // first-broker flow
+          .updateProfile().firstName("a").lastName("b").email(bc.getUserEmail()).username(bc.getUserLogin()).build()
+          .followOneRedirect()
+
+          .getSamlResponse(Binding.POST);       // Response from consumer IdP
+
+        Assert.assertThat(samlResponse, Matchers.notNullValue());
+        Assert.assertThat(samlResponse.getSamlObject(), isSamlResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
+      }
+    }
+
+    // Issue #10982
+    @Test
+    public void loginWithIdpEntityIdMismatchResponse() throws Exception {
+      // Set the expected IDP Entity ID to a wrong value
+      try (Closeable idpUpdater = new IdentityProviderAttributeUpdater(identityProviderResource)
+          .setAttribute(SAMLIdentityProviderConfig.IDP_ENTITY_ID, "http://my.custom.idp.entity.id")
+          .update())
+      {
+        AuthnRequestType loginRep = SamlClient.createLoginRequestDocument(AbstractSamlTest.SAML_CLIENT_ID_SALES_POST + ".dot/ted", getConsumerRoot() + "/sales-post/saml", null);
+
+        Document doc = SAML2Request.convert(loginRep);
+
+        new SamlClientBuilder()
+          .authnRequest(getConsumerSamlEndpoint(bc.consumerRealmName()), doc, Binding.POST).build()   // Request to consumer IdP
+          .login().idp(bc.getIDPAlias()).build()
+
+          .processSamlResponse(Binding.POST)    // AuthnRequest to producer IdP
+            .targetAttributeSamlRequest()
+            .build()
+
+          .login().user(bc.getUserLogin(), bc.getUserPassword()).build()
+
+          .processSamlResponse(Binding.POST)    // Response from producer IdP
+          .build()
+          .execute(hr -> assertThat(hr, statusCodeIsHC(Response.Status.BAD_REQUEST)));       // Response from consumer IdP
+      }
     }
 
     // KEYCLOAK-17935
