@@ -14,15 +14,17 @@ import { ListEmptyState } from "../../../components/list-empty-state/ListEmptySt
 import { useAlerts } from "../../../components/alert/Alerts";
 import { useAdminClient } from "../../../context/auth/AdminClient";
 import { useConfirmDialog } from "../../../components/confirm-dialog/ConfirmDialog";
+import { useWhoAmI } from "../../../context/whoami/WhoAmI";
 
 export const LdapMapperList = () => {
   const history = useHistory();
   const { t } = useTranslation("user-federation");
   const adminClient = useAdminClient();
   const { addAlert, addError } = useAlerts();
+  const { whoAmI } = useWhoAmI();
   const { url } = useRouteMatch();
   const [key, setKey] = useState(0);
-  const refresh = () => setKey(new Date().getTime());
+  const refresh = () => setKey(key + 1);
 
   const { id } = useParams<{ id: string }>();
 
@@ -46,7 +48,9 @@ export const LdapMapperList = () => {
         } as ComponentRepresentation;
       }
     );
-    return mappersList;
+    return mappersList.sort((a, b) =>
+      a.name!.localeCompare(b.name!, whoAmI.getLocale())
+    );
   };
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
