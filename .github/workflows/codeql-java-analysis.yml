@@ -7,7 +7,7 @@ name: "CodeQL Java"
 
 on:
   push:
-    branches: [main]
+    branches-ignore: [main]
   pull_request:
     branches: [main]
     paths: 

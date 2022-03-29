@@ -1,6 +1,11 @@
 name: Keycloak CI
 
-on: [push, pull_request]
+on:
+  push:
+    branches-ignore: [main]
+  pull_request:
+  schedule:
+    - cron: '0 0 * * *'
 
 env:
   DEFAULT_JDK_VERSION: 11
@@ -13,6 +18,7 @@ concurrency:
 jobs:
   build:
     name: Build
+    if: ${{ ( github.event_name != 'schedule' ) || ( github.event_name == 'schedule' && github.repository == 'keycloak/keycloak' ) }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
