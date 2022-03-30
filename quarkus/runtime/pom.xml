@@ -292,6 +292,16 @@
             </exclusions>
         </dependency>
         <dependency>
+            <groupId>org.apache.kerby</groupId>
+            <artifactId>kerby-asn1</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
             <groupId>org.freemarker</groupId>
             <artifactId>freemarker</artifactId>
             <exclusions>
