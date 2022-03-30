@@ -4,18 +4,29 @@
 
 Recovery Codes as another way to do two-factor authentication is now available as a preview feature.
 
+== OpenID Connect Logout Improvements
+
+Some fixes and improvements were made to make sure that {project_name} is now fully compliant with all the OpenID Connect logout specifications:
+
+* OpenID Connect RP-Initiated Logout 1.0
+* OpenID Connect Front-Channel Logout 1.0
+* OpenID Connect Back-Channel Logout 1.0
+* OpenID Connect Session Management 1.0
+
+For more details, see link:{adminguide_link}#_oidc-logout[{adminguide_name}].
+
 == Step-up authentication
 
 {project_name} now supports Step-up authentication. This feature was added in Keycloak 17 and it was further polished in this version.
 
-For more details, take a look at link:{adminguide_link}#_step-up-flow[{adminguide_name}].
+For more details, see link:{adminguide_link}#_step-up-flow[{adminguide_name}].
 
 Thanks to https://github.com/CorneliaLahnsteiner[Cornelia Lahnsteiner] and https://github.com/romge[Georg Romstorfer] for the contribution.
 
 == WebAuthn improvements
 
 {project_name} now supports WebAuthn id-less authentication. This feature allows that WebAuthn Security Key will identify the user during authentication as long as the
-security key supports Resident Keys. For more details, take a look at link:{adminguide_link}#_webauthn_loginless[{adminguide_name}].
+security key supports Resident Keys. For more details, see link:{adminguide_link}#_webauthn_loginless[{adminguide_name}].
 Thanks to https://github.com/vanrar68[Joaquim Fellmann] for the contribution.
 
 There are more WebAuthn improvements and fixes in addition to that.

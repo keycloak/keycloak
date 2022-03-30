@@ -312,9 +312,10 @@ User Resolver Provider is provided as SPI provider so that users of {project_nam
 
 ==== OIDC Logout
 
-OIDC has three different specifications relevant to logout mechanisms, all of these are currently in draft status:
+OIDC has four specifications relevant to logout mechanisms. These specifications are in draft status:
 
 . https://openid.net/specs/openid-connect-session-1_0.html[Session Management]
+. https://openid.net/specs/openid-connect-rpinitiated-1_0.html[RP-Initiated Logout]
 . https://openid.net/specs/openid-connect-frontchannel-1_0.html[Front-Channel Logout]
 . https://openid.net/specs/openid-connect-backchannel-1_0.html[Back-Channel Logout]
 
@@ -325,15 +326,21 @@ Again since all of this is described in the OIDC specification we will only give
 This is a browser-based logout. The application obtains session status information from {project_name} at a regular basis.
 When the session is terminated at {project_name} the application will notice and trigger it's own logout.
 
-===== Frontchannel Logout
+===== RP-Initiated Logout
 
 This is also a browser-based logout where the logout starts by redirecting the user to a specific endpoint at {project_name}.
+This redirect usually happens when the user clicks the `Log Out` link on the page of some application, which previously used {project_name} to authenticate the user.
 
 Once the user is redirected to the logout endpoint, {project_name} is going to send logout requests to
 clients to let them to invalidate their local user sessions, and potentially redirect the user to some URL
-once the logout process is finished.
+once the logout process is finished. The user might be optionally requested to confirm the logout in case that `id_token_hint` parameter was not used
+or the client referenced in the ID Token from `id_token_hint` has `Consent Required` enabled.
 
-Depending on the client configuration, logout requests can be sent to clients through the front-channel or through the back-channel.
+Depending on the client configuration, logout requests can be sent to clients through the front-channel or through the back-channel. For the frontend browser clients, which rely on the
+Session Management described in the previous section, {project_name} does not need to send any logout requests to them; these clients automatically detect that SSO session
+in the browser is logged out.
+
+===== Frontchannel Logout
 
 To configure clients to receive logout requests through the front-channel, look at the <<_front-channel-logout, Front-Channel Logout>> client setting. When using this method, consider the following:
 
