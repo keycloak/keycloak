@@ -331,13 +331,9 @@ public class AuthenticationManager {
         }
 
         ClientModel client = session.getContext().getClient();
-        boolean useSystemClient;
-        if (client != null) {
-            useSystemClient = false;
-        } else {
+        if (client == null) {
             // Account management client is used as a placeholder
             client = SystemClientUtil.getSystemClient(realm);
-            useSystemClient = true;
         }
 
         String authSessionId;
@@ -374,14 +370,12 @@ public class AuthenticationManager {
         AuthenticationSessionModel logoutAuthSession;
         if (found.isPresent()) {
             logoutAuthSession = found.get();
-            logger.tracef("Found existing logout session for client '%s'. System client=%s, Authentication session id: %s", client.getClientId(),
-                    "true".equals(logoutAuthSession.getAuthNote(AuthenticationManager.LOGOUT_WITH_SYSTEM_CLIENT)), rootLogoutSession.getId());
+            logger.tracef("Found existing logout session for client '%s'. Authentication session id: %s", client.getClientId(), rootLogoutSession.getId());
         } else {
             logoutAuthSession = rootLogoutSession.createAuthenticationSession(client);
-            logoutAuthSession.setAuthNote(AuthenticationManager.LOGOUT_WITH_SYSTEM_CLIENT, String.valueOf(useSystemClient));
             logoutAuthSession.setAction(AuthenticationSessionModel.Action.LOGGING_OUT.name());
             session.getContext().setClient(client);
-            logger.tracef("Creating logout session for client '%s'. System client=%s, Authentication session id: %s", client.getClientId(), useSystemClient, rootLogoutSession.getId());
+            logger.tracef("Creating logout session for client '%s'. Authentication session id: %s", client.getClientId(), rootLogoutSession.getId());
         }
         session.getContext().setAuthenticationSession(logoutAuthSession);
 

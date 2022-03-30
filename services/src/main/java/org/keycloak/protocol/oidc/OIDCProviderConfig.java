@@ -25,13 +25,13 @@ import org.keycloak.Config;
  */
 public class OIDCProviderConfig {
 
-    private final Config.Scope config;
+    private final boolean legacyLogoutRedirectUri;
 
     public OIDCProviderConfig(Config.Scope config) {
-        this.config = config;
+        this.legacyLogoutRedirectUri = config.getBoolean(OIDCLoginProtocolFactory.CONFIG_LEGACY_LOGOUT_REDIRECT_URI, false);
     }
 
     public boolean isLegacyLogoutRedirectUri() {
-        return config.getBoolean(OIDCLoginProtocolFactory.CONFIG_LEGACY_LOGOUT_REDIRECT_URI, false);
+        return legacyLogoutRedirectUri;
     }
 }

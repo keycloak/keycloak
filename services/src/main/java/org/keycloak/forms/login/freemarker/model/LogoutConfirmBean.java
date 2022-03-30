@@ -18,8 +18,7 @@
 
 package org.keycloak.forms.login.freemarker.model;
 
-import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.services.managers.AuthenticationSessionManager;
+import org.keycloak.models.utils.SystemClientUtil;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
 /**
@@ -40,6 +39,6 @@ public class LogoutConfirmBean {
     }
 
     public boolean isSkipLink() {
-        return logoutSession == null || "true".equals(logoutSession.getAuthNote(AuthenticationManager.LOGOUT_WITH_SYSTEM_CLIENT));
+        return logoutSession == null || logoutSession.getClient().equals(SystemClientUtil.getSystemClient(logoutSession.getRealm()));
     }
 }

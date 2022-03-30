@@ -39,6 +39,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.utils.SystemClientUtil;
 import org.keycloak.protocol.oidc.BackchannelLogoutResponse;
 import org.keycloak.protocol.oidc.LogoutTokenValidationCode;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -264,7 +265,7 @@ public class LogoutEndpoint {
             logger.debugf("Failed verification during logout. logoutSessionId=%s, clientId=%s, tabId=%s",
                     logoutSession != null ? logoutSession.getParentSession().getId() : "unknown", clientId, tabId);
 
-            if (logoutSession == null || "true".equals(logoutSession.getAuthNote(AuthenticationManager.LOGOUT_WITH_SYSTEM_CLIENT))) {
+            if (logoutSession == null || logoutSession.getClient().equals(SystemClientUtil.getSystemClient(logoutSession.getRealm()))) {
                 // Cleanup system client URL to avoid links to account management
                 session.getProvider(LoginFormsProvider.class).setAttribute(Constants.SKIP_LINK, true);
             }
@@ -273,8 +274,8 @@ public class LogoutEndpoint {
         }
 
         AuthenticationSessionModel logoutSession = checks.getAuthenticationSession();
-        logger.tracef("Logout code successfully verified. Logout Session is '%s'. Client ID is '%s'. System client: %s", logoutSession.getParentSession().getId(),
-                logoutSession.getClient().getClientId(), logoutSession.getAuthNote(AuthenticationManager.LOGOUT_WITH_SYSTEM_CLIENT));
+        logger.tracef("Logout code successfully verified. Logout Session is '%s'. Client ID is '%s'.", logoutSession.getParentSession().getId(),
+                logoutSession.getClient().getClientId());
         return doBrowserLogout(logoutSession);
     }
 

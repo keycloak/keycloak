@@ -98,8 +98,8 @@ public class LegacyLogoutTest extends AbstractTestRealmKeycloakTest {
 
     @Before
     public void configLegacyRedirectUriEnabled() {
-        getTestingClient().testing().reinitializeProviderFactoryWithSystemPropertiesScope(LoginProtocol.class.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL, "oidc.");
         getTestingClient().testing().setSystemPropertyOnServer("oidc." + OIDCLoginProtocolFactory.CONFIG_LEGACY_LOGOUT_REDIRECT_URI, "true");
+        getTestingClient().testing().reinitializeProviderFactoryWithSystemPropertiesScope(LoginProtocol.class.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL, "oidc.");
 
         APP_REDIRECT_URI = oauth.APP_AUTH_ROOT;
     }
@@ -107,6 +107,7 @@ public class LegacyLogoutTest extends AbstractTestRealmKeycloakTest {
     @After
     public void revertConfiguration() {
         getTestingClient().testing().setSystemPropertyOnServer("oidc." + OIDCLoginProtocolFactory.CONFIG_LEGACY_LOGOUT_REDIRECT_URI, "false");
+        getTestingClient().testing().reinitializeProviderFactoryWithSystemPropertiesScope(LoginProtocol.class.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL, "oidc.");
     }
 
 
