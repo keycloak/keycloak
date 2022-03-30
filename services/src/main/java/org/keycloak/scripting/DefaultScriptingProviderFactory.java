@@ -16,10 +16,16 @@
  */
 package org.keycloak.scripting;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.protocol.oidc.OIDCWellKnownProviderFactory;
 
+import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
 /**
@@ -27,20 +33,40 @@ import javax.script.ScriptEngineManager;
  */
 public class DefaultScriptingProviderFactory implements ScriptingProviderFactory {
 
+    private static final Logger logger = Logger.getLogger(DefaultScriptingProviderFactory.class);
+
     static final String ID = "script-based-auth";
 
     private ScriptEngineManager scriptEngineManager;
+
+    private boolean enableScriptEngineCache;
+
+    // Key is mime-type. Value is engine for the particular mime-type. Cache can be used when the scriptEngine can be shared across multiple threads / requests (which is the case for nashorn)
+    private Map<String, ScriptEngine> scriptEngineCache;
 
     @Override
     public ScriptingProvider create(KeycloakSession session) {
         lazyInit();
 
-        return new DefaultScriptingProvider(scriptEngineManager);
+        return new DefaultScriptingProvider(this);
     }
 
     @Override
     public void init(Config.Scope config) {
-        //NOOP
+        this.enableScriptEngineCache = config.getBoolean("enable-script-engine-cache", true);
+        logger.debugf("Enable script engine cache: %b", this.enableScriptEngineCache);
+    }
+
+    ScriptEngineManager getScriptEngineManager() {
+        return scriptEngineManager;
+    }
+
+    boolean isEnableScriptEngineCache() {
+        return enableScriptEngineCache;
+    }
+
+    Map<String, ScriptEngine> getScriptEngineCache() {
+        return scriptEngineCache;
     }
 
     @Override
@@ -63,6 +89,9 @@ public class DefaultScriptingProviderFactory implements ScriptingProviderFactory
             synchronized (this) {
                 if (scriptEngineManager == null) {
                     scriptEngineManager = new ScriptEngineManager();
+                    if (enableScriptEngineCache) {
+                        scriptEngineCache = new ConcurrentHashMap<>();
+                    }
                 }
             }
         }
