@@ -442,6 +442,7 @@ export default {
     accessTokenSuccess: "Access token regenerated",
     accessTokenError: "Could not regenerate access token due to: {{error}}",
     signatureAlgorithm: "Signature algorithm",
+    allowRegexComparison: "Allow regex pattern comparison",
     subject: "Subject DN",
     searchForClient: "Search for client",
     advanced: "Advanced",

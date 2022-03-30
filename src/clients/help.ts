@@ -92,6 +92,8 @@ export default {
       "The registration access token provides access for clients to the client registration service.",
     "signature-algorithm":
       "JWA algorithm, which the client needs to use when signing a JWT for authentication. If left blank, the client is allowed to use any algorithm.",
+    allowRegexComparison:
+      "If OFF, then the Subject DN from given client certificate must exactly match the given DN from the 'Subject DN' property as described in the RFC8705 specification. The Subject DN can be in the RFC2553 or RFC1779 format. If ON, then the Subject DN from given client certificate should match regex specified by 'Subject DN' property.",
     subject:
       'A regular expression for validating Subject DN in the Client Certificate. Use "(.*?)(?:$)" to match all kind of expressions.',
     evaluateExplain:
