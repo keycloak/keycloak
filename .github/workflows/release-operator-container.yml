@@ -37,7 +37,7 @@ jobs:
 
       - uses: actions/setup-java@v2
         with:
-          distribution: 'zulu'
+          distribution: 'temurin'
           java-version: ${{ env.JDK_VERSION }}
 
       - name: Cache Maven packages
