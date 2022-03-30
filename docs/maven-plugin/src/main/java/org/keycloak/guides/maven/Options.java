@@ -1,6 +1,7 @@
 package org.keycloak.guides.maven;
 
 import org.keycloak.quarkus.runtime.configuration.mappers.ConfigCategory;
+import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 
 import java.util.Collection;
@@ -8,6 +9,8 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -18,6 +21,7 @@ public class Options {
     public Options() {
         options = PropertyMappers.getMappers().stream()
                 .filter(m -> !m.isHidden())
+                .filter(propertyMapper -> Objects.nonNull(propertyMapper.getDescription()))
                 .map(m -> new Option(m.getFrom(), m.getCategory(), m.isBuildTime(), m.getDescription(), m.getDefaultValue(), m.getExpectedValues()))
                 .sorted(Comparator.comparing(Option::getKey))
                 .collect(Collectors.toMap(Option::getKey, o -> o, (o1, o2) -> o1, LinkedHashMap::new)); // Need to ignore duplicate keys??
