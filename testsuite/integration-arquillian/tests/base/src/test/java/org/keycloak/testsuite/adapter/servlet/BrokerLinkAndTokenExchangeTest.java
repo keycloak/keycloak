@@ -87,6 +87,7 @@ import java.util.List;
 import static org.keycloak.testsuite.admin.ApiUtil.createUserAndResetPasswordWithAdminClient;
 
 /**
+ *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
@@ -422,6 +423,7 @@ public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest 
             Assert.assertNotEquals(externalToken, tokenResponse.getToken());
 
 
+            resetTimeOffset();
             logoutAll();
 
 
@@ -475,7 +477,7 @@ public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest 
         Assert.assertTrue(loginPage.isCurrent(CHILD_IDP));
         Assert.assertTrue(driver.getPageSource().contains(PARENT_IDP));
         loginPage.login("child", "password");
-        Assert.assertTrue(loginPage.isCurrent(PARENT_IDP));
+        Assert.assertTrue("Unexpected page. Current Page URL: " + driver.getCurrentUrl(),loginPage.isCurrent(PARENT_IDP));
         loginPage.login(PARENT_USERNAME, "password");
         System.out.println("After linking: " + driver.getCurrentUrl());
         System.out.println(driver.getPageSource());
@@ -764,10 +766,8 @@ public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest 
     }
 
     public void logoutAll() {
-        String logoutUri = OIDCLoginProtocolService.logoutUrl(authServerPage.createUriBuilder()).build(CHILD_IDP).toString();
-        navigateTo(logoutUri);
-        logoutUri = OIDCLoginProtocolService.logoutUrl(authServerPage.createUriBuilder()).build(PARENT_IDP).toString();
-        navigateTo(logoutUri);
+        adminClient.realm(CHILD_IDP).logoutAll();
+        adminClient.realm(PARENT_IDP).logoutAll();
     }
 
     private void navigateTo(String uri) {

@@ -229,7 +229,7 @@ public abstract class AbstractBasePhotozExampleAdapterTest extends AbstractPhoto
         log.debugf("--logging in as '%s' with password: '%s'; scopes: %s", user.getUsername(), user.getCredentials().get(0).getValue(), Arrays.toString(scopes));
 
         if (testExecutor.isLoggedIn()) {
-            testExecutor.logout(this::assertOnTestAppUrl);
+            testExecutor.logout(this::assertOnTestAppUrl, logoutConfirmPage);
             jsDriver.manage().deleteAllCookies();
 
             jsDriver.navigate().to(testRealmLoginPage.toString());

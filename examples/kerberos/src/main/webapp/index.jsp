@@ -17,7 +17,7 @@
 
 <%
     String logoutUri = KeycloakUriBuilder.fromUri("/auth").path(ServiceUrlConstants.TOKEN_SERVICE_LOGOUT_PATH)
-            .queryParam("redirect_uri", "/kerberos-portal").build("kerberos-demo").toString();
+            .build("kerberos-demo").toString();
 %>
         <b>Details about user from LDAP</b> | <a href="<%=logoutUri%>">Logout</a><br />
         <hr />

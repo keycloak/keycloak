@@ -298,7 +298,7 @@ public class AdminConsole {
         URI redirect = AdminRoot.adminConsoleUrl(session.getContext().getUri(UrlType.ADMIN)).build(realm.getName());
 
         return Response.status(302).location(
-                OIDCLoginProtocolService.logoutUrl(session.getContext().getUri(UrlType.ADMIN)).queryParam("redirect_uri", redirect.toString()).build(realm.getName())
+                OIDCLoginProtocolService.logoutUrl(session.getContext().getUri(UrlType.ADMIN)).queryParam("post_logout_redirect_uri", redirect.toString()).build(realm.getName())
         ).build();
     }
 

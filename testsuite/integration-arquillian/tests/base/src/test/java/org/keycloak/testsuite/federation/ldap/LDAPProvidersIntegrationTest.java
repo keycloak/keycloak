@@ -27,6 +27,7 @@ import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.Profile;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialModel;
+import org.keycloak.events.EventType;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
@@ -41,6 +42,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.RealmManager;
@@ -206,11 +208,14 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
     }
 
     private void loginSuccessAndLogout(String username, String password) {
+        events.clear();
         loginPage.open();
         loginPage.login(username, password);
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
-        oauth.openLogout();
+
+        OAuthClient.AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(events.poll());
+        oauth.idTokenHint(tokenResponse.getIdToken()).openLogout();
+        events.poll();
     }
 
     @Test
@@ -371,10 +376,16 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
 
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        appPage.logout();
+        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), username);
+        String userId = user.toRepresentation().getId();
+
+        events.expectRegister(username, email).assertEvent();
+        EventRepresentation loginEvent = events.expectLogin().user(userId).assertEvent();
+        OAuthClient.AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
+        appPage.logout(tokenResponse.getIdToken());
+        events.expectLogout(loginEvent.getSessionId()).user(userId).assertEvent();
 
         // Test admin endpoint. Assert federated endpoint returns password in LDAP "supportedCredentials", but there is no stored password
-        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), username);
         assertPasswordConfiguredThroughLDAPOnly(user);
 
         // Update password through admin REST endpoint. Assert user can authenticate with the new password
@@ -401,7 +412,11 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
             requiredActionChangePasswordPage.changePassword("Password1-updated2", "Password1-updated2");
 
             appPage.assertCurrent();
-            appPage.logout();
+            events.expect(EventType.UPDATE_PASSWORD).user(userId).assertEvent();
+            loginEvent = events.expectLogin().user(userId).assertEvent();
+            tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
+            appPage.logout(tokenResponse.getIdToken());
+            events.expectLogout(loginEvent.getSessionId()).user(userId);
 
             // Assert user can authenticate with the new password
             loginSuccessAndLogout(username, "Password1-updated2");

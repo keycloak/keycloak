@@ -2720,9 +2720,9 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         ).toString();
         updateProfiles(json);
 
-        successfulLogin(clientId, clientSecret);
+        OAuthClient.AccessTokenResponse response = successfulLogin(clientId, clientSecret);
 
-        oauth.openLogout();
+        oauth.idTokenHint(response.getIdToken()).openLogout();
 
         assertTrue(driver.getPageSource().contains("Front-channel logout is not allowed for this client"));
     }
@@ -2939,6 +2939,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         } catch (IOException ioe) {
             throw new RuntimeException(ioe);
         }
+        String idTokenHint = accessTokenResponse.getIdToken();
         assertEquals(200, accessTokenResponse.getStatusCode());
 
         // Check token refresh.
@@ -2995,7 +2996,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         assertEquals(OAuthErrorException.INVALID_GRANT, accessTokenResponse.getError());
 
         // Check frontchannel logout and login.
-        oauth.openLogout();
+        oauth.idTokenHint(idTokenHint).openLogout();
         loginResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
         Assert.assertNull(loginResponse.getError());
 
@@ -3183,7 +3184,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         assertEquals("PKCE code verifier not specified", res.getErrorDescription());
         events.expect(EventType.CODE_TO_TOKEN_ERROR).client(clientId).session(sessionId).clearDetails().error(Errors.CODE_VERIFIER_MISSING).assertEvent();
 
-        oauth.openLogout();
+        oauth.idTokenHint(res.getIdToken()).openLogout();
         events.expectLogout(sessionId).clearDetails().assertEvent();
     }
 

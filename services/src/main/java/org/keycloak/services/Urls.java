@@ -16,10 +16,12 @@
  */
 package org.keycloak.services;
 
+import org.keycloak.OAuth2Constants;
 import org.keycloak.common.Version;
 import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
+import org.keycloak.protocol.oidc.endpoints.LogoutEndpoint;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.services.resources.account.AccountFormService;
 import org.keycloak.services.resources.IdentityBrokerService;
@@ -139,8 +141,12 @@ public class Urls {
         return accountBase(baseUri).path(AccountFormService.class, "sessionsPage").build(realmName);
     }
 
-    public static URI accountLogout(URI baseUri, URI redirectUri, String realmName) {
-        return realmLogout(baseUri).queryParam("redirect_uri", redirectUri).build(realmName);
+    public static URI accountLogout(URI baseUri, URI redirectUri, String realmName, String idTokenHint) {
+        return realmLogout(baseUri).queryParam(OAuth2Constants.POST_LOGOUT_REDIRECT_URI, redirectUri).queryParam(OAuth2Constants.ID_TOKEN_HINT, idTokenHint).build(realmName);
+    }
+
+    public static URI logoutConfirm(URI baseUri, String realmName) {
+        return realmLogout(baseUri).path(LogoutEndpoint.class, "logoutConfirmAction").build(realmName);
     }
 
     public static URI accountResourcesPage(URI baseUri, String realmName) {
