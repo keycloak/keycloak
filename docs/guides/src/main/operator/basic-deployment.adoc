@@ -160,7 +160,7 @@ CONDITION: RollingUpdate
   MESSAGE:
 ----
 
-==== Accessing the Keycloak Deployment
+=== Accessing the Keycloak Deployment
 
 The Keycloak deployment is, by default, exposed through a basic nginx ingress and it will be accessible through the provided hostname.
 
