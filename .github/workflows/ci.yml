@@ -39,11 +39,11 @@ jobs:
 
       - name: Build Keycloak
         run: |
-           mvn clean install -nsu -B -e -DskipTests -Pdistribution
-           mvn clean install -nsu -B -e -f testsuite/integration-arquillian/servers/auth-server -Pauth-server-quarkus
-           mvn clean install -nsu -B -e -f testsuite/integration-arquillian/servers/auth-server -Pauth-server-wildfly
-           mvn clean install -nsu -B -e -f testsuite/integration-arquillian/servers/auth-server -Pauth-server-undertow
-           mvn clean install -nsu -B -e -f testsuite/integration-arquillian/servers/cache-server -Pcache-server-infinispan
+           ./mvnw clean install -nsu -B -e -DskipTests -Pdistribution
+          ./mvnw clean install -nsu -B -e -f testsuite/integration-arquillian/servers/auth-server -Pauth-server-quarkus
+          ./mvnw clean install -nsu -B -e -f testsuite/integration-arquillian/servers/auth-server -Pauth-server-wildfly
+          ./mvnw clean install -nsu -B -e -f testsuite/integration-arquillian/servers/auth-server -Pauth-server-undertow
+          ./mvnw clean install -nsu -B -e -f testsuite/integration-arquillian/servers/cache-server -Pcache-server-infinispan
 
       - name: Store Keycloak artifacts
         id: store-keycloak
@@ -89,7 +89,7 @@ jobs:
           name: keycloak-artifacts.zip
       - name: Run unit tests
         run: |
-          if ! mvn install -nsu -B -DskipTestsuite -DskipQuarkus -DskipExamples -f pom.xml; then
+          if ! ./mvnw install -nsu -B -DskipTestsuite -DskipQuarkus -DskipExamples -f pom.xml; then
             find . -path '*/target/surefire-reports/*.xml' | zip -q reports-unit-tests.zip -@
             exit 1
           fi
@@ -204,7 +204,7 @@ jobs:
           TESTGROUP["group2"]="-Dtest=!**.crossdc.**,!**.cluster.**,%regex[org.keycloak.testsuite.(ad[^a-l]|a[^a-d]|b).*]"      # Admin tests and those starting with "b"
           TESTGROUP["group3"]="-Dtest=!**.crossdc.**,!**.cluster.**,%regex[org.keycloak.testsuite.([c-q]).*]"                   # All the rest
 
-          mvn clean install -nsu -B ${PARAMS["${{ matrix.server }}"]} ${TESTGROUP["${{ matrix.tests }}"]} -f testsuite/integration-arquillian/tests/base/pom.xml | misc/log/trimmer.sh
+          ./mvnw clean install -nsu -B ${PARAMS["${{ matrix.server }}"]} ${TESTGROUP["${{ matrix.tests }}"]} -f testsuite/integration-arquillian/tests/base/pom.xml | misc/log/trimmer.sh
 
           TEST_RESULT=${PIPESTATUS[0]}
           find . -path '*/target/surefire-reports/*.xml' | zip -q reports-${{ matrix.server }}-base-tests-${{ matrix.tests }}.zip -@
@@ -263,7 +263,7 @@ jobs:
       - name: Run cluster tests
         if: ${{ github.event_name != 'pull_request' || env.GIT_DIFF != 0 }}
         run: |
-          mvn clean install -nsu -B -Pauth-server-wildfly,auth-server-cluster,db-mysql,jpa -Dsession.cache.owners=2 -Dbackends.console.output=true -Dauth.server.log.check=false -Dfrontend.console.output=true -Dtest=org.keycloak.testsuite.cluster.**.*Test -f testsuite/integration-arquillian/pom.xml | misc/log/trimmer.sh
+          ./mvnw clean install -nsu -B -Pauth-server-wildfly,auth-server-cluster,db-mysql,jpa -Dsession.cache.owners=2 -Dbackends.console.output=true -Dauth.server.log.check=false -Dfrontend.console.output=true -Dtest=org.keycloak.testsuite.cluster.**.*Test -f testsuite/integration-arquillian/pom.xml | misc/log/trimmer.sh
           TEST_RESULT=${PIPESTATUS[0]}
           find . -path '*/target/surefire-reports/*.xml' | zip -q reports-cluster-tests.zip -@
           exit $TEST_RESULT
@@ -325,9 +325,9 @@ jobs:
         shell: bash
         run: |
           echo '::group::Compiling testsuite'
-          mvn clean install -B -nsu -Pauth-servers-crossdc-jboss,auth-server-wildfly,cache-server-infinispan,app-server-wildfly -DskipTests
+          ./mvnw clean install -B -nsu -Pauth-servers-crossdc-jboss,auth-server-wildfly,cache-server-infinispan,app-server-wildfly -DskipTests
           echo '::endgroup::'
-          mvn clean install -B -nsu -f testsuite/integration-arquillian/tests/base/pom.xml -Pcache-server-infinispan,auth-servers-crossdc-jboss,auth-server-wildfly "-Dtest=org.keycloak.testsuite.crossdc.**.*,org.keycloak.testsuite.adapter.**.crossdc.**.*" | misc/log/trimmer.sh
+          ./mvnw clean install -B -nsu -f testsuite/integration-arquillian/tests/base/pom.xml -Pcache-server-infinispan,auth-servers-crossdc-jboss,auth-server-wildfly "-Dtest=org.keycloak.testsuite.crossdc.**.*,org.keycloak.testsuite.adapter.**.crossdc.**.*" | misc/log/trimmer.sh
           TEST_RESULT=${PIPESTATUS[0]}
           find . -path '*/target/surefire-reports/*.xml' | zip -q reports-cross-dc-tests.zip -@
           exit $TEST_RESULT
@@ -375,9 +375,9 @@ jobs:
       - name: Run Quarkus cluster tests
         run: |
           echo '::group::Compiling testsuite'
-          mvn clean install -nsu -B -Pauth-server-quarkus -DskipTests -f testsuite/pom.xml
+          ./mvnw clean install -nsu -B -Pauth-server-quarkus -DskipTests -f testsuite/pom.xml
           echo '::endgroup::'
-          mvn clean install -nsu -B -Pauth-server-cluster-quarkus -Dsession.cache.owners=2 -Dtest=**.cluster.** -f testsuite/integration-arquillian/pom.xml  | misc/log/trimmer.sh
+          ./mvnw clean install -nsu -B -Pauth-server-cluster-quarkus -Dsession.cache.owners=2 -Dtest=**.cluster.** -f testsuite/integration-arquillian/pom.xml  | misc/log/trimmer.sh
           TEST_RESULT=${PIPESTATUS[0]}
           find . -path '*/target/surefire-reports/*.xml' | zip -q reports-quarkus-cluster-tests.zip -@
           exit $TEST_RESULT
@@ -424,25 +424,25 @@ jobs:
         run: mkdir -p ~/.m2 ; cp .github/settings.xml ~/.m2/
 
       - name: Prepare the local distribution archives
-        run: mvn clean install -DskipTests -Pdistribution
+        run: ./mvnw clean install -DskipTests -Pdistribution
 
       - name: Run Quarkus Integration Tests
         run: |
-          mvn clean install -nsu -B -f quarkus/tests/pom.xml | misc/log/trimmer.sh
+          ./mvnw clean install -nsu -B -f quarkus/tests/pom.xml | misc/log/trimmer.sh
           TEST_RESULT=${PIPESTATUS[0]}
           find . -path '*/target/surefire-reports/*.xml' | zip -q reports-quarkus-tests.zip -@
           exit $TEST_RESULT
 
       - name: Run Quarkus Storage Tests
         run: |
-          mvn clean install -nsu -B -f quarkus/tests/pom.xml -Ptest-database -Dtest=PostgreSQLStartDatabaseTest | misc/log/trimmer.sh
+          ./mvnw clean install -nsu -B -f quarkus/tests/pom.xml -Ptest-database -Dtest=PostgreSQLStartDatabaseTest | misc/log/trimmer.sh
           TEST_RESULT=${PIPESTATUS[0]}
           find . -path '*/target/surefire-reports/*.xml' | zip -q reports-quarkus-tests.zip -@
           exit $TEST_RESULT
 
       - name: Run Quarkus Tests in Docker
         run: |
-          mvn clean install -nsu -B -f quarkus/tests/pom.xml -Dkc.quarkus.tests.dist=docker | misc/log/trimmer.sh
+          ./mvnw clean install -nsu -B -f quarkus/tests/pom.xml -Dkc.quarkus.tests.dist=docker | misc/log/trimmer.sh
           TEST_RESULT=${PIPESTATUS[0]}
           exit $TEST_RESULT
 
