@@ -35,7 +35,11 @@ The existing deployments are affected in the following ways:
   and that one was not changed.
 - If you use the latest javascript adapter, you are also not affected. However if your application uses an older version of the JavaScript adapter, you are affected as this
   adapter uses the variant of the logout endpoint with the deprecated `redirect_uri` parameter. In this case, you may need to upgrade to the latest version of the JavaScript adapter.
-  The same applies for the Node.js adapter.
+- For the Node.js adapter, the same guideline applies as for the JavaScript adapter. You are encouraged to update to the latest version as the older version of the adapter uses the deprecated `redirect_uri` parameter.
+  With the latest Node.js adapter, you are not affected as long as you use the logout based on the `/logout` URL as described in the documentation or in the Node.js adapter example. However, in the case
+  when your application directly uses the method `keycloak.logoutUrl`, you can consider adding `idTokenHint` as the second argument to this method. The possibility to add `idTokenHint` as second argument was newly
+  added in this version. The `idTokenHint` needs to be a valid ID Token that was obtained during the login. Adding `idTokenHint` is optional, but if you omit it, your users will need to confirm the logout screen as
+  described earlier. Also they will not be redirected back to the application after logout.
 
 There is a backwards compatibility option, which allows your application to still use the old format of the `redirect_uri` parameter.
 
