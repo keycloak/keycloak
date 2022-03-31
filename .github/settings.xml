@@ -2,6 +2,14 @@
           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
           xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
                       https://maven.apache.org/xsd/settings-1.0.0.xsd">
+    <mirrors>
+        <mirror>
+            <id>secure-repository-jboss</id>
+            <name>Secure mirror for repository.jboss.org</name>
+            <url>https://repository.jboss.org/nexus/content/groups/public/</url>
+            <mirrorOf>jboss-public-repository-group</mirrorOf>
+        </mirror>
+    </mirrors>
     <profiles>
         <profile>
             <id>update-policy</id>
