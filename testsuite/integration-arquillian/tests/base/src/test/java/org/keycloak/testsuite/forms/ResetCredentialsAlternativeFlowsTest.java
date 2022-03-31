@@ -53,6 +53,7 @@ import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.MailUtils;
+import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.URLUtils;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.openqa.selenium.By;
@@ -357,13 +358,16 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractTestRealmKeycl
             // Login & set up the initial OTP code for the user
             loginPage.open();
             loginPage.login("login@test.com", "password");
+            String code = new OAuthClient.AuthorizationEndpointResponse(oauth).getCode();
+            OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+
             accountTotpPage.open();
             Assert.assertTrue(accountTotpPage.isCurrent());
             String customOtpLabel = "my-original-otp-label";
             accountTotpPage.configure(totp.generateTOTP(accountTotpPage.getTotpSecret()), customOtpLabel);
 
             // Logout
-            oauth.openLogout();
+            oauth.idTokenHint(response.getIdToken()).openLogout();
 
             // Go to login page & click "Forgot password" link to perform the custom 'Reset Credential' flow
             loginPage.open();

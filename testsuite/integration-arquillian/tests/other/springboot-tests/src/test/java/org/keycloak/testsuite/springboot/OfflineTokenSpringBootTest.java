@@ -85,7 +85,7 @@ public class OfflineTokenSpringBootTest extends AbstractSpringBootTest {
 
         setAdapterAndServerTimeOffset(0, SERVLET_URL);
 
-        driver.navigate().to(logoutPage(SERVLET_URL));
+        logout(SERVLET_URL);
         waitForPageToLoad();
         assertCurrentUrlStartsWith(testRealmLoginPage);
     }
@@ -146,7 +146,7 @@ public class OfflineTokenSpringBootTest extends AbstractSpringBootTest {
         tokenPage.assertIsCurrent();
 
         setAdapterAndServerTimeOffset(0, SERVLET_URL);
-        driver.navigate().to(logoutPage(SERVLET_URL));
+        logout(SERVLET_URL);
     }
 
     @Test
@@ -183,7 +183,7 @@ public class OfflineTokenSpringBootTest extends AbstractSpringBootTest {
         assertThat(offlineClient.getAdditionalGrants(), hasItem("Offline Token"));
 
         //This was necessary to be introduced, otherwise other testcases will fail
-        driver.navigate().to(logoutPage(SERVLET_URL));
+        logout(SERVLET_URL);
         assertCurrentUrlStartsWith(testRealmLoginPage);
 
         events.clear();

@@ -102,19 +102,25 @@ public abstract class AbstractTestRealmKeycloakTest extends AbstractKeycloakTest
 
     protected OAuthClient.AccessTokenResponse sendTokenRequestAndGetResponse(EventRepresentation loginEvent) {
 
+        Field eventsField = Reflections.findDeclaredField(this.getClass(), "events");
+        AssertEvents events = null;
+        if(eventsField != null) {
+            events = Reflections.getFieldValue(eventsField, this, AssertEvents.class);
+        }
+
         String sessionId = loginEvent.getSessionId();
         String codeId = loginEvent.getDetails().get(Details.CODE_ID);
 
+        if(eventsField != null) {
+            events.clear();
+        }
         String code = new OAuthClient.AuthorizationEndpointResponse(oauth).getCode();
         OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
 
         Assert.assertEquals(200, response.getStatusCode());
 
-
-        Field eventsField = Reflections.findDeclaredField(this.getClass(), "events");
         if (eventsField != null) {
-            AssertEvents events = Reflections.getFieldValue(eventsField, this, AssertEvents.class);
-            events.expectCodeToToken(codeId, sessionId).assertEvent();
+            events.expectCodeToToken(codeId, sessionId).user(loginEvent.getUserId()).session(sessionId).assertEvent();
         }
 
         return response;

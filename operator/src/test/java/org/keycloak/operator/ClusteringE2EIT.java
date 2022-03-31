@@ -39,8 +39,8 @@ public class ClusteringE2EIT extends ClusterOperatorTest {
 
         Keycloak keycloak = crSelector.get();
 
-        // when scale it to 10
-        keycloak.getSpec().setInstances(10);
+        // when scale it to 3
+        keycloak.getSpec().setInstances(3);
         k8sclient.resources(Keycloak.class).inNamespace(namespace).createOrReplace(keycloak);
 
         Awaitility.await()
@@ -51,13 +51,15 @@ public class ClusteringE2EIT extends ClusterOperatorTest {
 
         Awaitility.await()
                 .atMost(Duration.ofSeconds(5))
-                .untilAsserted(() -> assertThat(kcPodsSelector.list().getItems().size()).isEqualTo(10));
+                .ignoreExceptions()
+                .untilAsserted(() -> assertThat(kcPodsSelector.list().getItems().size()).isEqualTo(3));
 
         // when scale it down to 2
         keycloak.getSpec().setInstances(2);
         k8sclient.resources(Keycloak.class).inNamespace(namespace).createOrReplace(keycloak);
         Awaitility.await()
                 .atMost(Duration.ofSeconds(180))
+                .ignoreExceptions()
                 .untilAsserted(() -> assertThat(kcPodsSelector.list().getItems().size()).isEqualTo(2));
 
         Awaitility.await()

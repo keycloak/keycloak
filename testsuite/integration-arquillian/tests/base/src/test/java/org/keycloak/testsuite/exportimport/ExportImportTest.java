@@ -239,6 +239,12 @@ public class ExportImportTest extends AbstractKeycloakTest {
     }
 
     @Test
+    public void testImportWithNullAuthenticatorConfigAndNoDefaultBrowserFlow() {
+        importRealmFromFile("/import/testrealm-authenticator-config-null.json");
+        Assert.assertTrue("Imported realm hasn't been found!", isRealmPresent("cez"));
+    }
+
+    @Test
     public void testImportIgnoreExistingMissingClientId() {
         TestingExportImportResource resource = testingClient.testing().exportImport();
 

@@ -1,0 +1,5 @@
+ARG IMAGE=keycloak
+ARG VERSION=latest
+FROM $IMAGE:$VERSION
+
+RUN /opt/keycloak/bin/kc.sh build --db=postgres --health-enabled=true

@@ -53,7 +53,7 @@ public interface MapComponentEntity extends UpdatableEntity, AbstractEntity {
         model.setSubType(entity.getSubType());
         model.setParentId(entity.getParentId());
         Map<String, List<String>> config = entity.getConfig();
-        model.setConfig(config == null ? null : new MultivaluedHashMap<>(config));
+        model.setConfig(config == null ? new MultivaluedHashMap<>() : new MultivaluedHashMap<>(config));
         return model;
     }
 

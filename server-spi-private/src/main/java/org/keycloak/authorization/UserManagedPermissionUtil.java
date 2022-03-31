@@ -46,7 +46,7 @@ public class UserManagedPermissionUtil {
             filter.put(PermissionTicket.FilterOption.RESOURCE_ID, ticket.getResource().getId());
             filter.put(PermissionTicket.FilterOption.POLICY_IS_NOT_NULL, Boolean.TRUE.toString());
 
-            List<PermissionTicket> tickets = storeFactory.getPermissionTicketStore().find(filter, ticket.getResourceServer().getId(), -1, 1);
+            List<PermissionTicket> tickets = storeFactory.getPermissionTicketStore().find(ticket.getResourceServer(), filter, null,  null);
 
             if (!tickets.isEmpty()) {
                 policy = tickets.iterator().next().getPolicy();
@@ -80,7 +80,7 @@ public class UserManagedPermissionUtil {
             filter.put(PermissionTicket.FilterOption.RESOURCE_ID, ticket.getResource().getId());
             filter.put(PermissionTicket.FilterOption.GRANTED, Boolean.TRUE.toString());
 
-            List<PermissionTicket> tickets = storeFactory.getPermissionTicketStore().find(filter, ticket.getResourceServer().getId(), -1, -1);
+            List<PermissionTicket> tickets = storeFactory.getPermissionTicketStore().find(ticket.getResourceServer(), filter, null, null);
 
             if (tickets.isEmpty()) {
                 PolicyStore policyStore = storeFactory.getPolicyStore();
@@ -103,7 +103,7 @@ public class UserManagedPermissionUtil {
         userPolicyRep.setName(KeycloakModelUtils.generateId());
         userPolicyRep.addUser(ticket.getRequester());
 
-        Policy userPolicy = policyStore.create(userPolicyRep, ticket.getResourceServer());
+        Policy userPolicy = policyStore.create(ticket.getResourceServer(), userPolicyRep);
 
         userPolicy.setOwner(ticket.getOwner());
 
@@ -113,7 +113,7 @@ public class UserManagedPermissionUtil {
         policyRep.setType("uma");
         policyRep.addPolicy(userPolicy.getId());
 
-        Policy policy = policyStore.create(policyRep, ticket.getResourceServer());
+        Policy policy = policyStore.create(ticket.getResourceServer(), policyRep);
 
         policy.setOwner(ticket.getOwner());
         policy.addResource(ticket.getResource());

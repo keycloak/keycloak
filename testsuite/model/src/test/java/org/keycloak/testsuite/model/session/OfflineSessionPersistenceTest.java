@@ -138,7 +138,7 @@ public class OfflineSessionPersistenceTest extends KeycloakModelTest {
     public void testPersistenceMultipleNodesClientSessionAtSameNode() throws InterruptedException {
         List<String> clientIds = withRealm(realmId, (session, realm) -> {
             return IntStream.range(0, 5)
-              .mapToObj(cid -> (ClientModel) session.clients().addClient(realm, "client-" + cid))
+              .mapToObj(cid -> session.clients().addClient(realm, "client-" + cid))
               .map(ClientModel::getId)
               .collect(Collectors.toList());
         });
@@ -146,7 +146,10 @@ public class OfflineSessionPersistenceTest extends KeycloakModelTest {
         // Shutdown factory -> enforce session persistence
         closeKeycloakSessionFactory();
         Set<String> clientSessionIds = Collections.newSetFromMap(new ConcurrentHashMap<>());
-        inIndependentFactories(3, 60, () -> {
+
+        int NUM_FACTORIES = 3;
+        CountDownLatch intermediate = new CountDownLatch(NUM_FACTORIES);
+        inIndependentFactories(NUM_FACTORIES, 60, () -> {
             withRealm(realmId, (session, realm) -> {
                 // Create offline sessions
                 userIds.forEach(userId -> createOfflineSessions(session, realm, userId, offlineUserSession -> {
@@ -160,6 +163,27 @@ public class OfflineSessionPersistenceTest extends KeycloakModelTest {
                 }).forEach(userSessionModel -> clientSessionIds.add(userSessionModel.getId())));
                 return null;
             });
+
+            // ensure that all session have been created on all nodes
+            intermediate.countDown();
+            try {
+                intermediate.await();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException(e);
+            }
+
+            // defer the shutdown and check if all sessions exist to ensure that they replicate across the different nodes
+            // this should avoid an "org.infinispan.remoting.transport.jgroups.SuspectException: ISPN000400: Node node-XX was suspected"
+            while (true) {
+                try {
+                    assertOfflineSessionsExist(realmId, clientSessionIds);
+                    break;
+                } catch (AssertionError e) {
+                    log.warn("assertion failed, retrying to see if all sessions exist.");
+                    sleep(1000);
+                }
+            }
         });
 
         reinitializeKeycloakSessionFactory();
@@ -172,7 +196,7 @@ public class OfflineSessionPersistenceTest extends KeycloakModelTest {
     public void testPersistenceMultipleNodesClientSessionsAtRandomNode() throws InterruptedException {
         List<String> clientIds = withRealm(realmId, (session, realm) -> {
             return IntStream.range(0, 5)
-              .mapToObj(cid -> (ClientModel) session.clients().addClient(realm, "client-" + cid))
+              .mapToObj(cid -> session.clients().addClient(realm, "client-" + cid))
               .map(ClientModel::getId)
               .collect(Collectors.toList());
         });
@@ -189,7 +213,22 @@ public class OfflineSessionPersistenceTest extends KeycloakModelTest {
                 int oid = index % offlineSessionIds.size();
                 String offlineSessionId = offlineSessionIds.get(oid);
                 int cid = index % clientIds.size();
-                String clientSessionId = createOfflineClientSession(offlineSessionId, clientIds.get(cid));
+                String clientSessionId;
+                while (true) {
+                    try {
+                        clientSessionId = createOfflineClientSession(offlineSessionId, clientIds.get(cid));
+                        break;
+                    } catch (RuntimeException ex) {
+                        // invocation can fail when remote cache is stopping, this is actually part of this test:
+                        // "ISPN000217: Received exception from node-8, see cause for remote stack trace
+                        // IllegalLifecycleStateException: ISPN000324: Cache 'clientSessions' is in 'STOPPING' state and this is an invocation not belonging to an
+                        // on-going transaction, so it does not accept new invocations."
+                        if (ex.getCause() != null && ex.getCause().getMessage().contains("ISPN000324")) {
+                            log.warn("invocation failed, retrying", ex);
+                            sleep(1000);
+                        }
+                    }
+                }
                 clientSessionIds.computeIfAbsent(offlineSessionId, a -> new LinkedList<>()).add(clientSessionId);
                 if (index % 100 == 0) {
                     // don't re-initialize all caches at the same time to avoid an unstable cluster with no leader

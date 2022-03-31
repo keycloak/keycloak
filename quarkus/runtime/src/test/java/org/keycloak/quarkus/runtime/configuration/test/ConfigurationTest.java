@@ -237,7 +237,7 @@ public class ConfigurationTest {
         System.setProperty(CLI_ARGS, "--db=dev-file");
         SmallRyeConfig config = createConfig();
         assertEquals(QuarkusH2Dialect.class.getName(), config.getConfigValue("quarkus.hibernate-orm.dialect").getValue());
-        assertEquals("jdbc:h2:file:~/data/h2/keycloakdb;;AUTO_SERVER=TRUE", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
+        assertEquals("jdbc:h2:file:" + System.getProperty("user.home") + File.separator + "data" + File.separator + "h2" + File.separator + "keycloakdb;;AUTO_SERVER=TRUE", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
 
         System.setProperty(CLI_ARGS, "--db=dev-mem");
         config = createConfig();
@@ -387,6 +387,12 @@ public class ConfigurationTest {
         assertEquals("mssql", config.getConfigValue("quarkus.datasource.db-kind").getValue());
         assertEquals("com.microsoft.sqlserver.jdbc.SQLServerDriver", config.getConfigValue("quarkus.datasource.jdbc.driver").getValue());
         assertEquals("enabled", config.getConfigValue("quarkus.datasource.jdbc.transactions").getValue());
+    }
+
+    @Test
+    public void testDatabaseDialectSetExplicitly() {
+        System.setProperty(CLI_ARGS, "--db-dialect=user-defined");
+        assertEquals("user-defined", createConfig().getRawValue("quarkus.hibernate-orm.dialect"));
     }
 
     @Test

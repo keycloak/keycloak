@@ -145,7 +145,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
         policyRepresentation.setNotOnOrAfter(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(notOnOrAfterDate));
 
         // evaluation should succeed with the default context as it uses the current time as the date to be compared.
-        Policy policy = storeFactory.getPolicyStore().create(policyRepresentation, resourceServer);
+        Policy policy = storeFactory.getPolicyStore().create(resourceServer, policyRepresentation);
         PolicyProvider provider = authorization.getProvider(policy.getType());
         DefaultEvaluation evaluation = createEvaluation(session, authorization, resourceServer, policy);
         provider.evaluate(evaluation);
@@ -181,7 +181,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
 
         policyRepresentation.setCode(builder.toString());
 
-        Policy policy = storeFactory.getPolicyStore().create(policyRepresentation, resourceServer);
+        Policy policy = storeFactory.getPolicyStore().create(resourceServer, policyRepresentation);
         PolicyProvider provider = authorization.getProvider(policy.getType());
 
         DefaultEvaluation evaluation = createEvaluation(session, authorization, resourceServer, policy);
@@ -340,7 +340,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
 
         policyRepresentation.setCode(builder.toString());
 
-        Policy policy = storeFactory.getPolicyStore().create(policyRepresentation, resourceServer);
+        Policy policy = storeFactory.getPolicyStore().create(resourceServer, policyRepresentation);
         PolicyProvider provider = authorization.getProvider(policy.getType());
 
         DefaultEvaluation evaluation = createEvaluation(session, authorization, resourceServer, policy);
@@ -387,7 +387,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
 
         policyRepresentation.setCode(builder.toString());
 
-        Policy policy = storeFactory.getPolicyStore().create(policyRepresentation, resourceServer);
+        Policy policy = storeFactory.getPolicyStore().create(resourceServer, policyRepresentation);
         PolicyProvider provider = authorization.getProvider(policy.getType());
 
         DefaultEvaluation evaluation = createEvaluation(session, authorization, resourceServer, policy);
@@ -434,7 +434,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
 
         policyRepresentation.setCode(builder.toString());
 
-        Policy policy = storeFactory.getPolicyStore().create(policyRepresentation, resourceServer);
+        Policy policy = storeFactory.getPolicyStore().create(resourceServer, policyRepresentation);
         PolicyProvider provider = authorization.getProvider(policy.getType());
 
         DefaultEvaluation evaluation = createEvaluation(session, authorization, resourceServer, policy);
@@ -482,7 +482,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
 
         policyRepresentation.setCode(builder.toString());
 
-        Policy policy = storeFactory.getPolicyStore().create(policyRepresentation, resourceServer);
+        Policy policy = storeFactory.getPolicyStore().create(resourceServer, policyRepresentation);
         PolicyProvider provider = authorization.getProvider(policy.getType());
 
         DefaultEvaluation evaluation = createEvaluation(session, authorization, resourceServer, policy);
@@ -514,7 +514,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
 
         policyRepresentation.setCode(builder.toString());
 
-        Policy policy = storeFactory.getPolicyStore().create(policyRepresentation, resourceServer);
+        Policy policy = storeFactory.getPolicyStore().create(resourceServer, policyRepresentation);
         PolicyProvider provider = authorization.getProvider(policy.getType());
 
         DefaultEvaluation evaluation = createEvaluation(session, authorization, resourceServer, policy);
@@ -546,7 +546,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
 
         policyRepresentation.setCode(builder.toString());
 
-        Policy policy = storeFactory.getPolicyStore().create(policyRepresentation, resourceServer);
+        Policy policy = storeFactory.getPolicyStore().create(resourceServer, policyRepresentation);
         PolicyProvider provider = authorization.getProvider(policy.getType());
 
         DefaultEvaluation evaluation = createEvaluation(session, authorization, resourceServer, policy);
@@ -584,7 +584,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
 
         policyRepresentation.setCode(builder.toString());
 
-        Policy policy = storeFactory.getPolicyStore().create(policyRepresentation, resourceServer);
+        Policy policy = storeFactory.getPolicyStore().create(resourceServer, policyRepresentation);
         PolicyProvider provider = authorization.getProvider(policy.getType());
 
         DefaultEvaluation evaluation = createEvaluation(session, authorization, resourceServer, policy);
@@ -617,9 +617,9 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
 
         policyRepresentation.setCode(builder.toString());
 
-        Policy policy = storeFactory.getPolicyStore().create(policyRepresentation, resourceServer);
+        Policy policy = storeFactory.getPolicyStore().create(resourceServer, policyRepresentation);
         PolicyProvider provider = authorization.getProvider(policy.getType());
-        Resource resource = storeFactory.getResourceStore().create("testCheckResourceAttributesResource", resourceServer, resourceServer.getId());
+        Resource resource = storeFactory.getResourceStore().create(resourceServer, "testCheckResourceAttributesResource", resourceServer.getClientId());
 
         resource.setAttribute("a1", Arrays.asList("1", "2"));
         resource.setAttribute("a2", Arrays.asList("3"));
@@ -651,10 +651,10 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
 
         policyRepresentation.setCode(builder.toString());
 
-        Policy policy = storeFactory.getPolicyStore().create(policyRepresentation, resourceServer);
+        Policy policy = storeFactory.getPolicyStore().create(resourceServer, policyRepresentation);
 
-        Resource resource = storeFactory.getResourceStore().create("Resource A", resourceServer, resourceServer.getId());
-        Scope scope = storeFactory.getScopeStore().create("Scope A", resourceServer);
+        Resource resource = storeFactory.getResourceStore().create(resourceServer, "Resource A", resourceServer.getClientId());
+        Scope scope = storeFactory.getScopeStore().create(resourceServer, "Scope A");
 
         resource.updateScopes(new HashSet<>(Arrays.asList(scope)));
 
@@ -664,7 +664,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
         permission.addPolicy(policy.getId());
         permission.addResource(resource.getId());
 
-        storeFactory.getPolicyStore().create(permission, resourceServer);
+        storeFactory.getPolicyStore().create(resourceServer, permission);
 
         session.getTransactionManager().commit();
 
@@ -689,8 +689,8 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
         StoreFactory storeFactory = authorization.getStoreFactory();
         ResourceServer resourceServer = storeFactory.getResourceServerStore().findByClient(clientModel);
 
-        Scope readScope = storeFactory.getScopeStore().create("read", resourceServer);
-        Scope writeScope = storeFactory.getScopeStore().create("write", resourceServer);
+        Scope readScope = storeFactory.getScopeStore().create(resourceServer, "read");
+        Scope writeScope = storeFactory.getScopeStore().create(resourceServer, "write");
 
         JSPolicyRepresentation policy = new JSPolicyRepresentation();
 
@@ -698,7 +698,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
         policy.setCode("$evaluation.grant()");
         policy.setLogic(Logic.NEGATIVE);
 
-        storeFactory.getPolicyStore().create(policy, resourceServer);
+        storeFactory.getPolicyStore().create(resourceServer, policy);
 
         ScopePermissionRepresentation readPermission = new ScopePermissionRepresentation();
 
@@ -706,7 +706,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
         readPermission.addScope(readScope.getId());
         readPermission.addPolicy(policy.getName());
 
-        storeFactory.getPolicyStore().create(readPermission, resourceServer);
+        storeFactory.getPolicyStore().create(resourceServer, readPermission);
 
         ScopePermissionRepresentation writePermission = new ScopePermissionRepresentation();
 
@@ -714,9 +714,9 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
         writePermission.addScope(writeScope.getId());
         writePermission.addPolicy(policy.getName());
 
-        storeFactory.getPolicyStore().create(writePermission, resourceServer);
+        storeFactory.getPolicyStore().create(resourceServer, writePermission);
 
-        Resource resource = storeFactory.getResourceStore().create(KeycloakModelUtils.generateId(), resourceServer, resourceServer.getId());
+        Resource resource = storeFactory.getResourceStore().create(resourceServer, KeycloakModelUtils.generateId(), resourceServer.getClientId());
 
         PermissionEvaluator evaluator = authorization.evaluators().from(Arrays.asList(new ResourcePermission(resource, Arrays.asList(readScope, writeScope), resourceServer)), createEvaluationContext(session, Collections.emptyMap()));
         Collection<Permission> permissions = evaluator.evaluate(resourceServer, null);

@@ -18,6 +18,7 @@
 package org.keycloak.models.map.authorization.adapter;
 
 import org.keycloak.authorization.model.PermissionTicket;
+import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.store.PermissionTicketStore;
 import org.keycloak.authorization.store.PolicyStore;
@@ -90,9 +91,10 @@ public class MapResourceAdapter extends AbstractResourceModel<MapResourceEntity>
     @Override
     public List<Scope> getScopes() {
         Set<String> ids = entity.getScopeIds();
+        ResourceServer resourceServer = getResourceServer();
         return ids == null ? Collections.emptyList() : ids.stream()
                 .map(id -> storeFactory
-                        .getScopeStore().findById(id, entity.getResourceServerId()))
+                        .getScopeStore().findById(resourceServer, id))
                 .collect(Collectors.toList());
     }
 
@@ -108,8 +110,8 @@ public class MapResourceAdapter extends AbstractResourceModel<MapResourceEntity>
     }
 
     @Override
-    public String getResourceServer() {
-        return entity.getResourceServerId();
+    public ResourceServer getResourceServer() {
+        return storeFactory.getResourceServerStore().findById(entity.getResourceServerId());
     }
 
     @Override
@@ -141,13 +143,13 @@ public class MapResourceAdapter extends AbstractResourceModel<MapResourceEntity>
                 // The scope^ was removed from the Resource
 
                 // Remove permission tickets based on the scope
-                List<PermissionTicket> permissions = permissionStore.findByScope(scope.getId(), getResourceServer());
+                List<PermissionTicket> permissions = permissionStore.findByScope(getResourceServer(), scope);
                 for (PermissionTicket permission : permissions) {
                     permissionStore.delete(permission.getId());
                 }
 
                 // Remove the scope from each Policy for this Resource
-                policyStore.findByResource(getId(), getResourceServer(), policy -> policy.removeScope(scope));
+                policyStore.findByResource(getResourceServer(), this, policy -> policy.removeScope(scope));
             }
         }
 

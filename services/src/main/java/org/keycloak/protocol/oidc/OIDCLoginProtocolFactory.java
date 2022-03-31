@@ -17,6 +17,7 @@
 package org.keycloak.protocol.oidc;
 
 import org.jboss.logging.Logger;
+import org.keycloak.Config;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.Profile;
 import org.keycloak.common.constants.KerberosConstants;
@@ -102,6 +103,17 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
     public static final String OFFLINE_ACCESS_SCOPE_CONSENT_TEXT = Constants.OFFLINE_ACCESS_SCOPE_CONSENT_TEXT;
     public static final String ROLES_SCOPE_CONSENT_TEXT = "${rolesScopeConsentText}";
 
+    public static final String CONFIG_LEGACY_LOGOUT_REDIRECT_URI = "legacy-logout-redirect-uri";
+
+    private OIDCProviderConfig providerConfig;
+
+    @Override
+    public void init(Config.Scope config) {
+        this.providerConfig = new OIDCProviderConfig(config);
+        if (providerConfig.isLegacyLogoutRedirectUri()) {
+            logger.warnf("Deprecated switch '%s' is enabled. Please try to disable it and update your clients to use OpenID Connect compliant way for RP-initiated logout.", CONFIG_LEGACY_LOGOUT_REDIRECT_URI);
+        }
+    }
 
     @Override
     public LoginProtocol create(KeycloakSession session) {
@@ -379,7 +391,7 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
 
     @Override
     public Object createProtocolEndpoint(RealmModel realm, EventBuilder event) {
-        return new OIDCLoginProtocolService(realm, event);
+        return new OIDCLoginProtocolService(realm, event, providerConfig);
     }
 
     @Override

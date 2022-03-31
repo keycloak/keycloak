@@ -6,19 +6,25 @@ import io.quarkus.logging.Log;
 import io.quarkus.test.junit.QuarkusTest;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.keycloak.operator.utils.K8sUtils;
+import org.keycloak.operator.v2alpha1.KeycloakAdminSecret;
+import org.keycloak.operator.v2alpha1.KeycloakDeployment;
 import org.keycloak.operator.v2alpha1.KeycloakService;
 import org.keycloak.operator.v2alpha1.crds.Keycloak;
+import org.keycloak.operator.v2alpha1.crds.ValueOrSecret;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.Collections;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.keycloak.operator.Constants.DEFAULT_LABELS;
 import static org.keycloak.operator.utils.K8sUtils.deployKeycloak;
 import static org.keycloak.operator.utils.K8sUtils.getDefaultKeycloakDeployment;
 import static org.keycloak.operator.utils.K8sUtils.waitForKeycloakToBeReady;
@@ -60,8 +66,11 @@ public class KeycloakDeploymentE2EIT extends ClusterOperatorTest {
             var deploymentName = kc.getMetadata().getName();
             deployKeycloak(k8sclient, kc, true);
 
+            final var dbConf = new ValueOrSecret("db-password", "Ay Caramba!");
+
             kc.getSpec().setImage("quay.io/keycloak/non-existing-keycloak");
-            kc.getSpec().getServerConfiguration().put("KC_DB_PASSWORD", "Ay Caramba!");
+            kc.getSpec().getServerConfiguration().remove(dbConf);
+            kc.getSpec().getServerConfiguration().add(dbConf);
             deployKeycloak(k8sclient, kc, false);
 
             Awaitility.await()
@@ -71,10 +80,40 @@ public class KeycloakDeploymentE2EIT extends ClusterOperatorTest {
                                 .getSpec().getTemplate().getSpec().getContainers().get(0);
                         assertThat(c.getImage()).isEqualTo("quay.io/keycloak/non-existing-keycloak");
                         assertThat(c.getEnv().stream()
-                                .anyMatch(e -> e.getName().equals("KC_DB_PASSWORD") && e.getValue().equals("Ay Caramba!")))
+                                .anyMatch(e -> e.getName().equals(KeycloakDeployment.getEnvVarName(dbConf.getName()))
+                                        && e.getValue().equals(dbConf.getValue())))
                                 .isTrue();
                     });
 
+        } catch (Exception e) {
+            savePodLogs();
+            throw e;
+        }
+    }
+
+    @Test
+    public void testConfigInCRTakesPrecedence() {
+        try {
+            var kc = getDefaultKeycloakDeployment();
+            var health = new ValueOrSecret("health-enabled", "false");
+            var e = new EnvVarBuilder()
+                    .withName(KeycloakDeployment.getEnvVarName(health.getName()))
+                    .withValue(health.getValue())
+                    .build();
+            kc.getSpec().getServerConfiguration().add(health);
+            deployKeycloak(k8sclient, kc, false);
+
+            assertThat(Constants.DEFAULT_DIST_CONFIG.get(health.getName())).isEqualTo("true"); // just a sanity check default values did not change
+
+            Awaitility.await()
+                    .ignoreExceptions()
+                    .untilAsserted(() -> {
+                        Log.info("Asserting default value was overwritten by CR value");
+                        var c = k8sclient.apps().deployments().inNamespace(namespace).withName(kc.getMetadata().getName()).get()
+                                .getSpec().getTemplate().getSpec().getContainers().get(0);
+
+                        assertThat(c.getEnv()).contains(e);
+                    });
         } catch (Exception e) {
             savePodLogs();
             throw e;
@@ -111,36 +150,6 @@ public class KeycloakDeploymentE2EIT extends ClusterOperatorTest {
                         var d = k8sclient.apps().deployments().withName(deploymentName).get();
                         assertThat(d.getMetadata().getLabels().entrySet().containsAll(labels.entrySet())).isTrue(); // additional labels should not be overwritten
                         assertThat(d.getSpec()).isEqualTo(origSpecs); // specs should be reconciled back to original values
-                    });
-        } catch (Exception e) {
-            savePodLogs();
-            throw e;
-        }
-    }
-
-    @Test
-    public void testExtensions() {
-        try {
-            var kc = getDefaultKeycloakDeployment();
-            kc.getSpec().setExtensions(
-                    Collections.singletonList(
-                            "https://github.com/aerogear/keycloak-metrics-spi/releases/download/2.5.3/keycloak-metrics-spi-2.5.3.jar"));
-            deployKeycloak(k8sclient, kc, true);
-
-            var kcPod = k8sclient
-                    .pods()
-                    .inNamespace(namespace)
-                    .withLabels(DEFAULT_LABELS)
-                    .list()
-                    .getItems()
-                    .get(0);
-
-            Awaitility.await()
-                    .ignoreExceptions()
-                    .untilAsserted(() -> {
-                        var logs = k8sclient.pods().inNamespace(namespace).withName(kcPod.getMetadata().getName()).getLog();
-
-                        assertTrue(logs.contains("metrics-listener (org.jboss.aerogear.keycloak.metrics.MetricsEventListenerFactory) is implementing the internal SPI"));
                     });
         } catch (Exception e) {
             savePodLogs();
@@ -207,13 +216,13 @@ public class KeycloakDeploymentE2EIT extends ClusterOperatorTest {
             Awaitility.await()
                     .ignoreExceptions()
                     .untilAsserted(() -> {
-                        String url = "https://" + service.getName() + "." + namespace + ":" + Constants.KEYCLOAK_HTTPS_PORT;
+                        String url = "https://" + service.getName() + "." + namespace + ":" + Constants.KEYCLOAK_HTTPS_PORT + "/admin/master/console/";
                         Log.info("Checking url: " + url);
 
-                        var curlOutput = K8sUtils.inClusterCurl(k8sclient, namespace, "--insecure", "-H", "Host: foo.bar", url);
+                        var curlOutput = K8sUtils.inClusterCurl(k8sclient, namespace, "-s", "--insecure", "-H", "Host: foo.bar", url);
                         Log.info("Curl Output: " + curlOutput);
 
-                        assertTrue(curlOutput.contains("<a href=\"https://example.com/admin/\">"));
+                        assertTrue(curlOutput.contains("var authServerUrl = 'https://example.com:8443';"));
                     });
         } catch (Exception e) {
             savePodLogs();
@@ -232,14 +241,108 @@ public class KeycloakDeploymentE2EIT extends ClusterOperatorTest {
             Awaitility.await()
                     .ignoreExceptions()
                     .untilAsserted(() -> {
-                        String url = "https://" + service.getName() + "." + namespace + ":" + Constants.KEYCLOAK_HTTPS_PORT;
+                        String url = "https://" + service.getName() + "." + namespace + ":" + Constants.KEYCLOAK_HTTPS_PORT + "/admin/master/console/";
                         Log.info("Checking url: " + url);
 
-                        var curlOutput = K8sUtils.inClusterCurl(k8sclient, namespace, "--insecure", "-H", "Host: foo.bar", url);
+                        var curlOutput = K8sUtils.inClusterCurl(k8sclient, namespace, "-s", "--insecure", "-H", "Host: foo.bar", url);
                         Log.info("Curl Output: " + curlOutput);
 
-                        assertTrue(curlOutput.contains("<a href=\"https://foo.bar/admin/\">"));
+                        assertTrue(curlOutput.contains("var authServerUrl = 'https://foo.bar:8443';"));
                     });
+        } catch (Exception e) {
+            savePodLogs();
+            throw e;
+        }
+    }
+
+    // Reference curl command:
+    // curl --insecure --data "grant_type=password&client_id=admin-cli&username=admin&password=adminPassword" https://localhost:8443/realms/master/protocol/openid-connect/token
+    @Test
+    public void testInitialAdminUser() {
+        try {
+            // Recreating the database to keep this test isolated
+            deleteDB();
+            deployDB();
+            var kc = getDefaultKeycloakDeployment();
+            deployKeycloak(k8sclient, kc, true);
+
+            var decoder = Base64.getDecoder();
+            var service = new KeycloakService(k8sclient, kc);
+            var kcAdminSecret = new KeycloakAdminSecret(k8sclient, kc);
+
+            AtomicReference<String> adminUsername = new AtomicReference<>();
+            AtomicReference<String> adminPassword = new AtomicReference<>();
+            Awaitility.await()
+                    .ignoreExceptions()
+                    .untilAsserted(() -> {
+                        Log.info("Checking secret, ns: " + namespace + ", name: " + kcAdminSecret.getName());
+                        var adminSecret = k8sclient
+                                .secrets()
+                                .inNamespace(namespace)
+                                .withName(kcAdminSecret.getName())
+                                .get();
+
+                        adminUsername.set(new String(decoder.decode(adminSecret.getData().get("username").getBytes(StandardCharsets.UTF_8))));
+                        adminPassword.set(new String(decoder.decode(adminSecret.getData().get("password").getBytes(StandardCharsets.UTF_8))));
+
+                        String url = "https://" + service.getName() + "." + namespace + ":" + Constants.KEYCLOAK_HTTPS_PORT + "/realms/master/protocol/openid-connect/token";
+                        Log.info("Checking url: " + url);
+
+                        var curlOutput = K8sUtils.inClusterCurl(k8sclient, namespace, "--insecure", "-s", "--data", "grant_type=password&client_id=admin-cli&username=" + adminUsername.get() + "&password=" + adminPassword.get(), url);
+                        Log.info("Curl Output: " + curlOutput);
+
+                        assertTrue(curlOutput.contains("\"access_token\""));
+                        assertTrue(curlOutput.contains("\"token_type\":\"Bearer\""));
+                    });
+
+            // Redeploy the same Keycloak without redeploying the Database
+            k8sclient.resource(kc).delete();
+            deployKeycloak(k8sclient, kc, true);
+            Awaitility.await()
+                    .ignoreExceptions()
+                    .untilAsserted(() -> {
+                        Log.info("Checking secret, ns: " + namespace + ", name: " + kcAdminSecret.getName());
+                        var adminSecret = k8sclient
+                                .secrets()
+                                .inNamespace(namespace)
+                                .withName(kcAdminSecret.getName())
+                                .get();
+
+                        var newPassword = new String(decoder.decode(adminSecret.getData().get("password").getBytes(StandardCharsets.UTF_8)));
+
+                        String url = "https://" + service.getName() + "." + namespace + ":" + Constants.KEYCLOAK_HTTPS_PORT + "/realms/master/protocol/openid-connect/token";
+                        Log.info("Checking url: " + url);
+
+                        var curlOutput = K8sUtils.inClusterCurl(k8sclient, namespace, "--insecure", "-s", "--data", "grant_type=password&client_id=admin-cli&username=" + adminUsername.get() + "&password=" + adminPassword.get(), url);
+                        Log.info("Curl Output: " + curlOutput);
+
+                        assertTrue(curlOutput.contains("\"access_token\""));
+                        assertTrue(curlOutput.contains("\"token_type\":\"Bearer\""));
+                        assertNotEquals(adminPassword.get(), newPassword);
+                    });
+        } catch (Exception e) {
+            savePodLogs();
+            throw e;
+        }
+    }
+
+    @Test
+    @EnabledIfSystemProperty(named = OPERATOR_CUSTOM_IMAGE, matches = ".+")
+    public void testCustomImage() {
+        try {
+            var kc = getDefaultKeycloakDeployment();
+            kc.getSpec().setImage(customImage);
+            deployKeycloak(k8sclient, kc, true);
+
+            var pods = k8sclient
+                    .pods()
+                    .inNamespace(namespace)
+                    .withLabels(Constants.DEFAULT_LABELS)
+                    .list()
+                    .getItems();
+
+            assertEquals(1, pods.get(0).getSpec().getContainers().get(0).getArgs().size());
+            assertEquals("start", pods.get(0).getSpec().getContainers().get(0).getArgs().get(0));
         } catch (Exception e) {
             savePodLogs();
             throw e;

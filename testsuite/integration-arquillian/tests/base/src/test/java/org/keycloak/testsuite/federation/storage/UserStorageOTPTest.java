@@ -26,20 +26,24 @@ import java.util.List;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.events.EventType;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.ComponentRepresentation;
+import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.federation.DummyUserFederationProvider;
 import org.keycloak.testsuite.federation.DummyUserFederationProviderFactory;
@@ -69,6 +73,9 @@ public class UserStorageOTPTest extends AbstractTestRealmKeycloakTest {
 
     @Page
     protected AppPage appPage;
+
+    @Rule
+    public AssertEvents events = new AssertEvents(this);
 
     protected TimeBasedOTP totp = new TimeBasedOTP();
 
@@ -164,7 +171,11 @@ public class UserStorageOTPTest extends AbstractTestRealmKeycloakTest {
         appPage.assertCurrent();
 
         // Logout
-        appPage.logout();
+        events.expect(EventType.UPDATE_TOTP).user(userRep.getId()).assertEvent(); //remove the UPDATE_TOTP event
+        EventRepresentation loginEvent = events.expectLogin().user(userRep.getId()).assertEvent();
+        String idTokenHint = sendTokenRequestAndGetResponse(loginEvent).getIdToken();
+        appPage.logout(idTokenHint);
+        events.expectLogout(loginEvent.getSessionId()).user(userRep.getId()).assertEvent();
 
         // Authenticate as the user again with the dummy OTP should still work
         loginPage.open();
@@ -173,7 +184,10 @@ public class UserStorageOTPTest extends AbstractTestRealmKeycloakTest {
         loginTotpPage.login(DummyUserFederationProvider.HARDCODED_OTP);
 
         appPage.assertCurrent();
-        appPage.logout();
+        loginEvent = events.expectLogin().user(userRep.getId()).assertEvent();
+        idTokenHint = sendTokenRequestAndGetResponse(loginEvent).getIdToken();
+        appPage.logout(idTokenHint);
+        events.expectLogout(loginEvent.getSessionId()).user(userRep.getId()).assertEvent();
 
         // Authenticate with the new OTP code should work as well
         loginPage.open();
@@ -182,7 +196,10 @@ public class UserStorageOTPTest extends AbstractTestRealmKeycloakTest {
         loginTotpPage.login(totp.generateTOTP(totpSecret));
 
         appPage.assertCurrent();
-        appPage.logout();
+        loginEvent = events.expectLogin().user(userRep.getId()).assertEvent();
+        idTokenHint = sendTokenRequestAndGetResponse(loginEvent).getIdToken();
+        appPage.logout(idTokenHint);
+        events.expectLogout(loginEvent.getSessionId()).user(userRep.getId()).assertEvent();
     }
 
     @Test

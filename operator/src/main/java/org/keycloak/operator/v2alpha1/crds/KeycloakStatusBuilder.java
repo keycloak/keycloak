@@ -26,9 +26,11 @@ import java.util.List;
 public class KeycloakStatusBuilder {
     private final KeycloakStatusCondition readyCondition;
     private final KeycloakStatusCondition hasErrorsCondition;
+    private final KeycloakStatusCondition rollingUpdate;
 
     private final List<String> notReadyMessages = new ArrayList<>();
     private final List<String> errorMessages = new ArrayList<>();
+    private final List<String> rollingUpdateMessages = new ArrayList<>();
 
     public KeycloakStatusBuilder() {
         readyCondition = new KeycloakStatusCondition();
@@ -38,6 +40,10 @@ public class KeycloakStatusBuilder {
         hasErrorsCondition = new KeycloakStatusCondition();
         hasErrorsCondition.setType(KeycloakStatusCondition.HAS_ERRORS);
         hasErrorsCondition.setStatus(false);
+
+        rollingUpdate = new KeycloakStatusCondition();
+        rollingUpdate.setType(KeycloakStatusCondition.ROLLING_UPDATE);
+        rollingUpdate.setStatus(false);
     }
 
     public KeycloakStatusBuilder addNotReadyMessage(String message) {
@@ -57,12 +63,19 @@ public class KeycloakStatusBuilder {
         return this;
     }
 
+    public KeycloakStatusBuilder addRollingUpdateMessage(String message) {
+        rollingUpdate.setStatus(true);
+        rollingUpdateMessages.add(message);
+        return this;
+    }
+
     public KeycloakStatus build() {
         readyCondition.setMessage(String.join("\n", notReadyMessages));
         hasErrorsCondition.setMessage(String.join("\n", errorMessages));
+        rollingUpdate.setMessage(String.join("\n", rollingUpdateMessages));
 
         KeycloakStatus status = new KeycloakStatus();
-        status.setConditions(List.of(readyCondition, hasErrorsCondition));
+        status.setConditions(List.of(readyCondition, hasErrorsCondition, rollingUpdate));
         return status;
     }
 }

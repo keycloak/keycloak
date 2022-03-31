@@ -112,7 +112,7 @@ public class ClientPolicyProviderFactory implements PolicyProviderFactory<Client
                 ResourceServer resourceServer = resourceServerStore.findByClient(removedClient);
 
                 if (resourceServer != null) {
-                    policyStore.findByType(getId(), resourceServer.getId()).forEach(policy -> {
+                    policyStore.findByType(resourceServer, getId()).forEach(policy -> {
                         List<String> clients = new ArrayList<>();
 
                         for (String clientId : getClients(policy)) {

@@ -67,7 +67,7 @@ public class BasicSpringBootTest extends AbstractSpringBootTest {
         adminPage.assertIsCurrent();
         assertThat(driver.getPageSource(), containsString("You are now admin"));
 
-        driver.navigate().to(logoutPage(BASE_URL));
+        logout(BASE_URL);
         waitForPageToLoad();
 
         assertCurrentUrlStartsWith(testRealmLoginPage);
@@ -87,7 +87,7 @@ public class BasicSpringBootTest extends AbstractSpringBootTest {
 
         assertThat(driver.getPageSource(), containsString("Forbidden"));
 
-        driver.navigate().to(logoutPage(BASE_URL));
+        logout(BASE_URL);
         waitForPageToLoad();
     }
 

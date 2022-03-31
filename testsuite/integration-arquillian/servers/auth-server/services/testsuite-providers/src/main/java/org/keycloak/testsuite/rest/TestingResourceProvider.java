@@ -19,6 +19,7 @@ package org.keycloak.testsuite.rest;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.HtmlUtils;
 import org.keycloak.common.util.Time;
@@ -49,6 +50,7 @@ import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.ResetTimeOffsetEvent;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper;
+import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.AuthDetailsRepresentation;
@@ -964,6 +966,16 @@ public class TestingResourceProvider implements RealmResourceProvider {
         } else {
             System.setProperty(propertyName, propertyValue);
         }
+    }
+
+    @GET
+    @Path("/reinitialize-provider-factory-with-system-properties-scope")
+    @Consumes(MediaType.TEXT_HTML_UTF_8)
+    public void reinitializeProviderFactoryWithSystemPropertiesScope(@QueryParam("provider-type") String providerType, @QueryParam("provider-id") String providerId,
+                                                              @QueryParam("system-properties-prefix") String systemPropertiesPrefix) throws Exception {
+        Class<? extends Provider> providerClass = (Class<? extends Provider>) Class.forName(providerType);
+        ProviderFactory factory = session.getKeycloakSessionFactory().getProviderFactory(providerClass, providerId);
+        factory.init(new Config.SystemPropertiesScope(systemPropertiesPrefix));
     }
 
     /**

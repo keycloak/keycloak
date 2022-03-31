@@ -5,10 +5,14 @@ metadata:
 spec:
   instances: 1
   serverConfiguration:
-    KC_DB: postgres
-    KC_DB_URL_HOST: postgres-db
-    KC_DB_USERNAME: postgres
-    KC_DB_PASSWORD: testpassword
+    - name: db
+      value: postgres
+    - name: db-url-host
+      value: postgres-db
+    - name: db-username
+      value: postgres
+    - name: db-password
+      value: testpassword
   hostname: example.com
   tlsSecret: INSECURE-DISABLE
   unsupported:

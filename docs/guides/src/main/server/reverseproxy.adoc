@@ -13,9 +13,6 @@ For Keycloak, your choice of proxy modes depends on the TLS termination in your 
 == Proxy modes
 The following proxy modes are available:
 
-none:: Disables proxy support.
-It is the default mode.
-
 edge:: Enables communication through HTTP between the proxy and Keycloak.
 This mode is suitable for deployments with a highly secure internal network where the reverse proxy keeps a secure connection (HTTP over TLS) with clients while communicating with Keycloak using HTTP.
 
@@ -66,7 +63,7 @@ The following table shows the recommended paths to expose.
 |/js/
 | -
 |No
-|A good practice is to not use external js for the javascript client, but bake it into your public client instead.
+|A good practice is to not use external js for the JavaScript client, but add it into your public client using a package manager like NPM or Yarn instead.
 
 |/welcome/
 | -

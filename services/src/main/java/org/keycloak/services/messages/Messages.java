@@ -237,6 +237,8 @@ public class Messages {
 
     public static final String INSUFFICIENT_LEVEL_OF_AUTHENTICATION = "insufficientLevelOfAuthentication";
 
+    public static final String SUCCESS_LOGOUT = "successLogout";
+
     public static final String FAILED_LOGOUT = "failedLogout";
 
     public static final String CONSENT_DENIED="consentDenied";

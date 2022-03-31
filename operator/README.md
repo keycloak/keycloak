@@ -80,3 +80,25 @@ mvn clean verify \
   -Dquarkus.kubernetes.deployment-target=kubernetes \
   -Dtest.operator.deployment=remote
 ```
+
+To run tests on Mac with `minikube` and the `docker` driver you should run `minikube tunnel` in a separate shell and configure the Java properties as follows:
+```bash
+-Dtest.operator.kubernetes.ip=localhost
+```
+
+On Linux or on Mac using `minikube` on a VM, instead you should pass this additional property:
+```bash
+-Dtest.operator.kubernetes.ip=$(minikube ip)
+```
+
+To avoid skipping tests that are depending on custom Keycloak images, you need to build those first:
+
+```bash
+./build-testing-docker-images.sh [SOURCE KEYCLOAK IMAGE TAG] [SOURCE KEYCLOAK IMAGE]
+```
+
+And run the tests passing an extra Java property:
+
+```bash
+-Dtest.operator.custom.image=custom-keycloak:latest
+```

@@ -95,6 +95,10 @@ public class UrlBean {
         return Urls.firstBrokerLoginProcessor(baseURI, realm).toString();
     }
 
+    public String getLogoutConfirmAction() {
+        return Urls.logoutConfirm(baseURI, realm).toString();
+    }
+
     public String getResourcesUrl() {
         return Urls.themeRoot(baseURI).toString() + "/" + theme.getType().toString().toLowerCase() +"/" + theme.getName();
     }

@@ -46,7 +46,7 @@ public interface MapIdentityProviderEntity extends UpdatableEntity, AbstractEnti
         entity.setLinkOnly(model.isLinkOnly());
         entity.setAddReadTokenRoleOnCreate(model.isAddReadTokenRoleOnCreate());
         entity.setAuthenticateByDefault(model.isAuthenticateByDefault());
-        entity.setConfig(model.getConfig() == null ? null : new HashMap<>(model.getConfig()));
+        entity.setConfig(model.getConfig());
         return entity;
     }
 
@@ -71,7 +71,8 @@ public interface MapIdentityProviderEntity extends UpdatableEntity, AbstractEnti
         model.setAddReadTokenRoleOnCreate(addReadTokenRoleOnCreate == null ? false : addReadTokenRoleOnCreate);
         Boolean authenticateByDefault = entity.isAuthenticateByDefault();
         model.setAuthenticateByDefault(authenticateByDefault == null ? false : authenticateByDefault);
-        model.setConfig(entity.getConfig() == null ? null : new HashMap<>(entity.getConfig()));
+        Map<String, String> config = entity.getConfig();
+        model.setConfig(config == null ? new HashMap<>() : new HashMap<>(config));
         return model;
     }
 

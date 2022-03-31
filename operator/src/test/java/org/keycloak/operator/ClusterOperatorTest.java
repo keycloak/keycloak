@@ -2,6 +2,7 @@ package org.keycloak.operator;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
+import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.ConfigBuilder;
@@ -33,12 +34,15 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.keycloak.operator.utils.K8sUtils.getResourceFromMultiResourceFile;
 
 public abstract class ClusterOperatorTest {
 
   public static final String QUARKUS_KUBERNETES_DEPLOYMENT_TARGET = "quarkus.kubernetes.deployment-target";
   public static final String OPERATOR_DEPLOYMENT_PROP = "test.operator.deployment";
   public static final String TARGET_KUBERNETES_GENERATED_YML_FOLDER = "target/kubernetes/";
+  public static final String OPERATOR_KUBERNETES_IP = "test.operator.kubernetes.ip";
+  public static final String OPERATOR_CUSTOM_IMAGE = "test.operator.custom.image";
 
   public static final String TEST_RESULTS_DIR = "target/operator-test-results/";
   public static final String POD_LOGS_DIR = TEST_RESULTS_DIR + "pod-logs/";
@@ -51,6 +55,8 @@ public abstract class ClusterOperatorTest {
   protected static KubernetesClient k8sclient;
   protected static String namespace;
   protected static String deploymentTarget;
+  protected static String kubernetesIp;
+  protected static String customImage;
   private static Operator operator;
 
 
@@ -60,6 +66,8 @@ public abstract class ClusterOperatorTest {
     reconcilers = CDI.current().select(new TypeLiteral<>() {});
     operatorDeployment = ConfigProvider.getConfig().getOptionalValue(OPERATOR_DEPLOYMENT_PROP, OperatorDeployment.class).orElse(OperatorDeployment.local);
     deploymentTarget = ConfigProvider.getConfig().getOptionalValue(QUARKUS_KUBERNETES_DEPLOYMENT_TARGET, String.class).orElse("kubernetes");
+    kubernetesIp = ConfigProvider.getConfig().getOptionalValue(OPERATOR_KUBERNETES_IP, String.class).orElse("localhost");
+    customImage = ConfigProvider.getConfig().getOptionalValue(OPERATOR_CUSTOM_IMAGE, String.class).orElse(null);
 
     setDefaultAwaitilityTimings();
     calculateNamespace();
@@ -158,6 +166,17 @@ public abstract class ClusterOperatorTest {
     Log.info("Checking Postgres is running");
     Awaitility.await()
             .untilAsserted(() -> assertThat(k8sclient.apps().statefulSets().inNamespace(namespace).withName("postgresql-db").get().getStatus().getReadyReplicas()).isEqualTo(1));
+
+    deployDBSecret();
+  }
+
+  protected static void deployDBSecret() {
+    k8sclient.secrets().inNamespace(namespace).createOrReplace((Secret) getResourceFromMultiResourceFile("example-keycloak.yml", 1));
+  }
+
+  protected static void deleteDB() {
+    // Delete the Postgres StatefulSet
+    k8sclient.apps().statefulSets().inNamespace(namespace).withName("postgresql-db").delete();
   }
 
   // TODO improve this (preferably move to JOSDK)

@@ -41,7 +41,7 @@ import org.hibernate.annotations.TypeDefs;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.group.MapGroupEntity.AbstractGroupEntity;
 import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_GROUP;
-import org.keycloak.models.map.storage.jpa.JpaRootEntity;
+import org.keycloak.models.map.storage.jpa.JpaRootVersionedEntity;
 import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
 
 /**
@@ -52,7 +52,7 @@ import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
 @Entity
 @Table(name = "kc_group", uniqueConstraints = {@UniqueConstraint(columnNames = {"realmId", "name", "parentId"})})
 @TypeDefs({@TypeDef(name = "jsonb", typeClass = JsonbType.class)})
-public class JpaGroupEntity extends AbstractGroupEntity implements JpaRootEntity {
+public class JpaGroupEntity extends AbstractGroupEntity implements JpaRootVersionedEntity {
 
     @Id
     @Column

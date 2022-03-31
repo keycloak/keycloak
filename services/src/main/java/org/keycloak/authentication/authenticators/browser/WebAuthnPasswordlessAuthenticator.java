@@ -80,4 +80,9 @@ public class WebAuthnPasswordlessAuthenticator extends WebAuthnAuthenticator {
         return (WebAuthnPasswordlessCredentialProvider)session.getProvider(CredentialProvider.class, WebAuthnPasswordlessCredentialProviderFactory.PROVIDER_ID);
     }
 
+    @Override
+    public boolean requiresUser() {
+        return false;
+    }
+
 }

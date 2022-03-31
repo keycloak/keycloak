@@ -1,6 +1,6 @@
 FROM registry.access.redhat.com/ubi8-minimal AS build-env
 
-ENV KEYCLOAK_VERSION 18.0.0-SNAPSHOT
+ENV KEYCLOAK_VERSION 999-SNAPSHOT
 ARG KEYCLOAK_DIST=https://github.com/keycloak/keycloak/releases/download/$KEYCLOAK_VERSION/keycloak-$KEYCLOAK_VERSION.tar.gz
 
 RUN microdnf install -y tar gzip
@@ -13,7 +13,7 @@ RUN (cd /tmp/keycloak && \
     tar -xvf /tmp/keycloak/keycloak-*.tar.gz && \
     rm /tmp/keycloak/keycloak-*.tar.gz) || true
 
-RUN mv /tmp/keycloak/keycloak-* /opt/keycloak
+RUN mv /tmp/keycloak/keycloak-* /opt/keycloak && mkdir -p /opt/keycloak/data
 
 RUN chmod -R g+rwX /opt/keycloak
 

@@ -18,7 +18,6 @@ package org.keycloak.admin.client.resource;
 
 import java.util.List;
 
-import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 
@@ -37,7 +36,6 @@ public interface ResourceScopeResource {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @NoCache
     ScopeRepresentation toRepresentation();
 
     @PUT

@@ -60,6 +60,7 @@ import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.DroneUtils;
+import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
 import org.keycloak.testsuite.util.JavascriptBrowser;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.Matchers;
@@ -87,7 +88,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
-import static org.keycloak.common.Profile.Feature.AUTHORIZATION;
 import static org.keycloak.common.Profile.Feature.DYNAMIC_SCOPES;
 import static org.keycloak.testsuite.admin.ApiUtil.findClientByClientId;
 import static org.keycloak.testsuite.util.OAuthClient.AUTH_SERVER_ROOT;
@@ -164,6 +164,9 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
 
     @Page
     protected LoginPasswordUpdatePage updatePasswordPage;
+
+    @Rule
+    public InfinispanTestTimeServiceRule ispnTestTimeService = new InfinispanTestTimeServiceRule(this);
 
     private static String userId;
 
@@ -762,9 +765,8 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void loginExpiredCode() {
         loginPage.open();
+        // authSession expired and removed from the storage
         setTimeOffset(5000);
-        // No explicitly call "removeExpired". Hence authSession will still exists, but will be expired
-        //testingClient.testing().removeExpired("test");
 
         loginPage.login("login@test.com", "password");
         loginPage.assertCurrent();
@@ -772,35 +774,28 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
         Assert.assertEquals("Your login attempt timed out. Login will start from the beginning.", loginPage.getError());
         setTimeOffset(0);
 
-        events.expectLogin().user((String) null).session((String) null).error(Errors.EXPIRED_CODE).clearDetails()
+        events.expectLogin().client((String) null).user((String) null).session((String) null).error(Errors.EXPIRED_CODE).clearDetails()
                 .assertEvent();
     }
 
     // KEYCLOAK-1037
     @Test
     public void loginExpiredCodeWithExplicitRemoveExpired() {
-        getTestingClient().testing().setTestingInfinispanTimeService();
+        loginPage.open();
+        setTimeOffset(5000);
 
-        try {
-            loginPage.open();
-            setTimeOffset(5000);
-            // Explicitly call "removeExpired". Hence authSession won't exist, but will be restarted from the KC_RESTART
-            testingClient.testing().removeExpired("test");
+        loginPage.login("login@test.com", "password");
 
-            loginPage.login("login@test.com", "password");
+        loginPage.assertCurrent();
 
-            //loginPage.assertCurrent();
-            loginPage.assertCurrent();
+        Assert.assertEquals("Your login attempt timed out. Login will start from the beginning.", loginPage.getError());
 
-            Assert.assertEquals("Your login attempt timed out. Login will start from the beginning.", loginPage.getError());
+        setTimeOffset(0);
 
-            events.expectLogin().user((String) null).session((String) null).error(Errors.EXPIRED_CODE).clearDetails()
-                    .detail(Details.RESTART_AFTER_TIMEOUT, "true")
-                    .client((String) null)
-                    .assertEvent();
-        } finally {
-            getTestingClient().testing().revertTestingInfinispanTimeService();
-        }
+        events.expectLogin().user((String) null).session((String) null).error(Errors.EXPIRED_CODE).clearDetails()
+                .detail(Details.RESTART_AFTER_TIMEOUT, "true")
+                .client((String) null)
+                .assertEvent();
     }
 
     @Test

@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian</artifactId>
-        <version>18.0.0-SNAPSHOT</version>
+        <version>999-SNAPSHOT</version>
     </parent>
 
     <packaging>pom</packaging>
@@ -1496,6 +1496,7 @@
                             <artifactId>maven-surefire-plugin</artifactId>
                             <configuration>
                                 <systemPropertyVariables>
+                                    <keycloak.authSession.map.storage.provider>hotrod</keycloak.authSession.map.storage.provider>
                                     <keycloak.client.map.storage.provider>hotrod</keycloak.client.map.storage.provider>
                                     <keycloak.clientScope.map.storage.provider>hotrod</keycloak.clientScope.map.storage.provider>
                                     <keycloak.group.map.storage.provider>hotrod</keycloak.group.map.storage.provider>

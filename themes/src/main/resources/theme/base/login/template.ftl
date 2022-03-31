@@ -1,4 +1,4 @@
-<#macro registrationLayout bodyClass="" displayInfo=false displayMessage=true displayRequiredFields=false showAnotherWayIfPresent=true>
+<#macro registrationLayout bodyClass="" displayInfo=false displayMessage=true displayRequiredFields=false>
 <!DOCTYPE html>
 <html class="${properties.kcHtmlClass!}">
 
@@ -125,15 +125,17 @@
 
           <#nested "form">
 
-            <#if auth?has_content && auth.showTryAnotherWayLink() && showAnotherWayIfPresent>
-                <form id="kc-select-try-another-way-form" action="${url.loginAction}" method="post">
-                    <div class="${properties.kcFormGroupClass!}">
-                        <input type="hidden" name="tryAnotherWay" value="on"/>
-                        <a href="#" id="try-another-way"
-                           onclick="document.forms['kc-select-try-another-way-form'].submit();return false;">${msg("doTryAnotherWay")}</a>
-                    </div>
-                </form>
-            </#if>
+          <#if auth?has_content && auth.showTryAnotherWayLink()>
+              <form id="kc-select-try-another-way-form" action="${url.loginAction}" method="post">
+                  <div class="${properties.kcFormGroupClass!}">
+                      <input type="hidden" name="tryAnotherWay" value="on"/>
+                      <a href="#" id="try-another-way"
+                         onclick="document.forms['kc-select-try-another-way-form'].submit();return false;">${msg("doTryAnotherWay")}</a>
+                  </div>
+              </form>
+          </#if>
+
+          <#nested "socialProviders">
 
           <#if displayInfo>
               <div id="kc-info" class="${properties.kcSignUpClass!}">

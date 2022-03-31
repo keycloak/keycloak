@@ -1,16 +1,21 @@
-Start the server in development mode.
+Start the server.
 
 Usage:
 
-kc.sh start-dev [OPTIONS]
+kc.sh start [OPTIONS]
 
-Use this command if you want to run the server locally for development or
-testing purposes.
+Use this command to run the server in production.
 
 Options:
 
+-b, --auto-build     Automatically detects whether the server configuration changed and a new
+                       server image must be built prior to starting the server. This option
+                       provides an alternative to manually running the 'build' prior to starting
+                       the server. Use this configuration carefully in production as it might
+                       impact the startup time.
 -h, --help           This help message.
---help-all           This same help message but with additional options.
+--import-realm       Import realms during startup by reading any realm configuration file from the
+                       'data/import' directory.
 
 Database:
 
@@ -42,10 +47,11 @@ Hostname:
 
 --hostname <hostname>
                      Hostname for the Keycloak server.
---hostname-admin <url>
-                     Overrides the hostname for the admin console and APIs.
 --hostname-path <path>
                      This should be set if proxy uses a different context-path for Keycloak.
+--hostname-port <port>
+                     The port used by the proxy when exposing the hostname. Set this option if the
+                       proxy uses a port other than the default HTTP and HTTPS ports. Default: -1.
 --hostname-strict <true|false>
                      Disables dynamically resolving the hostname from request headers. Should
                        always be set to true in production, unless proxy verifies the Host header.
@@ -93,7 +99,7 @@ HTTP/TLS:
 Proxy:
 
 --proxy <mode>       The proxy address forwarding mode if the server is behind a reverse proxy.
-                       Possible values are: none,edge,reencrypt,passthrough Default: none.
+                       Possible values are: edge,reencrypt,passthrough Default: none.
 
 Vault:
 
@@ -123,7 +129,10 @@ Logging:
                        categories and their levels. For the root category, you don't need to
                        specify a category. Default: info.
 
-Do NOT start the server using this command when deploying to production.
+You may use the "--auto-build" option when starting the server to avoid running
+the "build" command everytime you need to change a static property:
 
-Use 'kc.sh start-dev --help-all' to list all available options, including build
-options.
+      $ kc.sh start --auto-build <OPTIONS>
+
+By doing that you have an additional overhead when the server is starting. Run
+"kc.sh build -h" for more details.

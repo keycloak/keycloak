@@ -21,10 +21,12 @@ import java.util.List;
 import java.util.Map;
 
 import org.jboss.arquillian.graphene.page.Page;
+import org.junit.Rule;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.pages.AccountPasswordPage;
@@ -46,6 +48,9 @@ public abstract class AbstractLDAPTest extends AbstractTestRealmKeycloakTest {
     static final String TEST_REALM_NAME = "test";
 
     protected static String ldapModelId;
+
+    @Rule
+    public AssertEvents events = new AssertEvents(this);
 
     @Page
     protected AppPage appPage;
