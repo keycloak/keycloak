@@ -80,7 +80,7 @@ For development purposes we will use from now on `test.keycloak.org`.
 
 ==== TLS Certificate and key
 
-Please refer to Certification Authority of choiche to obtain the certificate and the key.
+Please refer to Certification Authority of choice to obtain the certificate and the key.
 
 For development purposes you can use this command to obtain a self-signed certificate:
 
