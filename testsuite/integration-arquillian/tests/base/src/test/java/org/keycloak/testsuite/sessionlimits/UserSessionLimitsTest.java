@@ -22,44 +22,46 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.authentication.authenticators.browser.UsernamePasswordFormFactory;
 import org.keycloak.authentication.authenticators.sessionlimits.UserSessionLimitsAuthenticatorFactory;
+import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
+import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
+import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.utils.DefaultAuthenticationFlows;
+import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.pages.LoginPage;
-import org.keycloak.testsuite.util.RealmBuilder;
-import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testsuite.pages.LoginPasswordResetPage;
+import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
+import org.keycloak.testsuite.util.GreenMailRule;
+import org.keycloak.testsuite.util.MailUtils;
+import org.keycloak.testsuite.util.OAuthClient;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.junit.Assert;
-import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+
+import javax.mail.internet.MimeMessage;
+
+import static org.junit.Assert.assertEquals;
 import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 
 @AuthServerContainerExclude(REMOTE)
 public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
 
-    private static final String LOGINTEST1 = "login-test-1";
-    private static final String PASSWORD1 = "password1";
-
     private static final String ERROR_TO_DISPLAY = "This account has too many sessions";
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
-        UserRepresentation user1 = UserBuilder.create()
-                .id(LOGINTEST1)
-                .username(LOGINTEST1)
-                .email("login1@test.com")
-                .enabled(true)
-                .password(PASSWORD1)
-                .build();
-        RealmBuilder.edit(testRealm).user(user1);
+        findTestApp(testRealm).setDirectAccessGrantsEnabled(true);
     }
 
     @Before
@@ -71,78 +73,409 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName("test");
 
-            if (realm.getBrowserFlow().getAlias().equals("parent-flow")) {
-                return;
-            }
-            // Parent flow
-            AuthenticationFlowModel browser = new AuthenticationFlowModel();
-            browser.setAlias("parent-flow");
-            browser.setDescription("browser based authentication");
-            browser.setProviderId("basic-flow");
-            browser.setTopLevel(true);
-            browser.setBuiltIn(true);
-            browser = realm.addAuthenticationFlow(browser);
-            realm.setBrowserFlow(browser);
+            AuthenticationFlowModel browser = realm.getBrowserFlow();
+            configureUsernamePassword(realm, browser);
+            configureSessionLimits(realm, browser);
 
-            //  username password
-            AuthenticationExecutionModel execution = new AuthenticationExecutionModel();
-            execution.setParentFlow(browser.getId());
-            execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
-            execution.setAuthenticator(UsernamePasswordFormFactory.PROVIDER_ID);
-            execution.setPriority(20);
-            execution.setAuthenticatorFlow(false);
-            realm.addAuthenticatorExecution(execution);
+            AuthenticationFlowModel directGrant = realm.getDirectGrantFlow();
+            configureSessionLimits(realm, directGrant);
 
-            // user session limits authenticator
-            execution = new AuthenticationExecutionModel();
-            execution.setParentFlow(browser.getId());
-            execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
-            execution.setAuthenticator(UserSessionLimitsAuthenticatorFactory.USER_SESSION_LIMITS);
-            execution.setPriority(30);
-            execution.setAuthenticatorFlow(false);
-
-            AuthenticatorConfigModel configModel = new AuthenticatorConfigModel();
-            Map<String, String> sessionAuthenticatorConfig = new HashMap<>();
-            sessionAuthenticatorConfig.put(UserSessionLimitsAuthenticatorFactory.BEHAVIOR, UserSessionLimitsAuthenticatorFactory.DENY_NEW_SESSION);
-            sessionAuthenticatorConfig.put(UserSessionLimitsAuthenticatorFactory.USER_REALM_LIMIT, "1");
-            sessionAuthenticatorConfig.put(UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT, "1");
-            sessionAuthenticatorConfig.put(UserSessionLimitsAuthenticatorFactory.ERROR_MESSAGE, ERROR_TO_DISPLAY);
-            configModel.setConfig(sessionAuthenticatorConfig);
-            configModel.setAlias("user-session-limits");
-            configModel = realm.addAuthenticatorConfig(configModel);
-            execution.setAuthenticatorConfig(configModel.getId());
-            realm.addAuthenticatorExecution(execution);
+            AuthenticationFlowModel resetPasswordFlow = realm.getResetCredentialsFlow();
+            configureSessionLimits(realm, resetPasswordFlow);
         });
         testContext.setInitialized(true);
+    }
+
+    private static void configureUsernamePassword(RealmModel realm, AuthenticationFlowModel flow) {
+        AuthenticationExecutionModel execution = new AuthenticationExecutionModel();
+        execution.setParentFlow(flow.getId());
+        execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
+        execution.setAuthenticator(UsernamePasswordFormFactory.PROVIDER_ID);
+        execution.setPriority(20);
+        execution.setAuthenticatorFlow(false);
+        realm.addAuthenticatorExecution(execution);
+    }
+
+    private static void configureSessionLimits(RealmModel realm, AuthenticationFlowModel flow) {
+        AuthenticationExecutionModel execution = new AuthenticationExecutionModel();
+        execution.setParentFlow(flow.getId());
+        execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
+        execution.setAuthenticator(UserSessionLimitsAuthenticatorFactory.USER_SESSION_LIMITS);
+        execution.setPriority(30);
+        execution.setAuthenticatorFlow(false);
+
+        AuthenticatorConfigModel configModel = new AuthenticatorConfigModel();
+        Map<String, String> sessionAuthenticatorConfig = new HashMap<>();
+        sessionAuthenticatorConfig.put(UserSessionLimitsAuthenticatorFactory.BEHAVIOR, UserSessionLimitsAuthenticatorFactory.DENY_NEW_SESSION);
+        sessionAuthenticatorConfig.put(UserSessionLimitsAuthenticatorFactory.USER_REALM_LIMIT, "0");
+        sessionAuthenticatorConfig.put(UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT, "1");
+        sessionAuthenticatorConfig.put(UserSessionLimitsAuthenticatorFactory.ERROR_MESSAGE, ERROR_TO_DISPLAY);
+        configModel.setConfig(sessionAuthenticatorConfig);
+        configModel.setAlias("user-session-limits-" + flow.getId());
+        configModel = realm.addAuthenticatorConfig(configModel);
+        execution.setAuthenticatorConfig(configModel.getId());
+        realm.addAuthenticatorExecution(execution);
     }
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
 
+    @Rule
+    public GreenMailRule greenMail = new GreenMailRule();
+
     @Page
     protected LoginPage loginPage;
-    @Page
-    protected AppPage appPage;
+
     @Page
     protected ErrorPage errorPage;
 
+    @Page
+    protected LoginPasswordResetPage resetPasswordPage;
+
+    @Page
+    protected LoginPasswordUpdatePage updatePasswordPage;
+
     @Test
-    public void testSessionCountExceededAndNewSessionDenied() throws InterruptedException {
-        // Login and verify login was succesfull
+    public void testClientSessionCountExceededAndNewSessionDeniedBrowserFlow() throws Exception {
+        // Login and verify login was successful
         loginPage.open();
-        loginPage.login(LOGINTEST1, PASSWORD1);
-        appPage.assertCurrent();
-        appPage.openAccount();
-        
+        loginPage.login("test-user@localhost", "password");
+        events.expectLogin().assertEvent();
+
         // Delete the cookies, while maintaining the server side session active
         super.deleteCookies();
         
         // Login the same user again and verify the configured error message is shown
         loginPage.open();
-        loginPage.login(LOGINTEST1, PASSWORD1);
+        loginPage.login("test-user@localhost", "password");
+        events.expect(EventType.LOGIN_ERROR).user((String) null).error(Errors.GENERIC_AUTHENTICATION_ERROR).assertEvent();
         errorPage.assertCurrent();
-
-        Assert.assertEquals(ERROR_TO_DISPLAY, errorPage.getError());
+        assertEquals(ERROR_TO_DISPLAY, errorPage.getError());
     }
 
+    @Test
+    public void testClientSessionCountExceededAndOldestSessionRemovedBrowserFlow() throws Exception {
+        try {
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.BROWSER_FLOW, UserSessionLimitsAuthenticatorFactory.BEHAVIOR, UserSessionLimitsAuthenticatorFactory.TERMINATE_OLDEST_SESSION);
+
+            // Login and verify login was successful
+            loginPage.open();
+            loginPage.login("test-user@localhost", "password");
+            events.expectLogin().assertEvent();
+
+            // Delete the cookies, while maintaining the server side session active
+            super.deleteCookies();
+
+            loginPage.open();
+            loginPage.login("test-user@localhost", "password");
+            events.expectLogin().assertEvent();
+            assertSessionCount(1);
+        } finally {
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.BROWSER_FLOW, UserSessionLimitsAuthenticatorFactory.BEHAVIOR, UserSessionLimitsAuthenticatorFactory.DENY_NEW_SESSION);
+        }
+    }
+
+    @Test
+    public void testRealmSessionCountExceededAndNewSessionDeniedBrowserFlow() throws Exception {
+        try {
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.BROWSER_FLOW, UserSessionLimitsAuthenticatorFactory.USER_REALM_LIMIT, "1");
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.BROWSER_FLOW, UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT, "0");
+            loginPage.open();
+            loginPage.login("test-user@localhost", "password");
+            events.expectLogin().assertEvent();
+
+            // Delete the cookies, while maintaining the server side session active
+            super.deleteCookies();
+
+            // Login the same user again and verify the configured error message is shown
+            loginPage.open();
+            loginPage.login("test-user@localhost", "password");
+            events.expect(EventType.LOGIN_ERROR).user((String) null).error(Errors.GENERIC_AUTHENTICATION_ERROR).assertEvent();
+            errorPage.assertCurrent();
+            assertEquals(ERROR_TO_DISPLAY, errorPage.getError());
+        } finally {
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.BROWSER_FLOW, UserSessionLimitsAuthenticatorFactory.USER_REALM_LIMIT, "0");
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.BROWSER_FLOW, UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT, "1");
+        }
+    }
+
+    @Test
+    public void testRealmSessionCountExceededAndOldestSessionRemovedBrowserFlow() throws Exception {
+        try {
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.BROWSER_FLOW, UserSessionLimitsAuthenticatorFactory.BEHAVIOR, UserSessionLimitsAuthenticatorFactory.TERMINATE_OLDEST_SESSION);
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.BROWSER_FLOW, UserSessionLimitsAuthenticatorFactory.USER_REALM_LIMIT, "1");
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.BROWSER_FLOW, UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT, "0");
+            loginPage.open();
+            loginPage.login("test-user@localhost", "password");
+            events.expectLogin().assertEvent();
+
+            // Delete the cookies, while maintaining the server side session active
+            super.deleteCookies();
+
+            loginPage.open();
+            loginPage.login("test-user@localhost", "password");
+            events.expectLogin().assertEvent();
+            assertSessionCount(1);
+        } finally {
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.BROWSER_FLOW, UserSessionLimitsAuthenticatorFactory.BEHAVIOR, UserSessionLimitsAuthenticatorFactory.DENY_NEW_SESSION);
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.BROWSER_FLOW, UserSessionLimitsAuthenticatorFactory.USER_REALM_LIMIT, "0");
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.BROWSER_FLOW, UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT, "1");
+        }
+    }
+
+    @Test
+    public void testClientSessionCountExceededAndNewSessionDeniedDirectGrantFlow() throws Exception {
+        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
+        assertEquals(200, response.getStatusCode());
+
+        response = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
+        assertEquals(401, response.getStatusCode());
+        assertEquals(Errors.GENERIC_AUTHENTICATION_ERROR, response.getError());
+        assertEquals(ERROR_TO_DISPLAY, response.getErrorDescription());
+    }
+
+    @Test
+    public void testClientSessionCountExceededAndOldestSessionRemovedDirectGrantFlow() throws Exception {
+        try {
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, UserSessionLimitsAuthenticatorFactory.BEHAVIOR, UserSessionLimitsAuthenticatorFactory.TERMINATE_OLDEST_SESSION);
+            OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
+            assertEquals(200, response.getStatusCode());
+
+            response = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
+            assertEquals(200, response.getStatusCode());
+            assertSessionCount(1);
+        } finally {
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, UserSessionLimitsAuthenticatorFactory.BEHAVIOR, UserSessionLimitsAuthenticatorFactory.DENY_NEW_SESSION);
+        }
+    }
+
+    @Test
+    public void testRealmSessionCountExceededAndNewSessionDeniedDirectGrantFlow() throws Exception {
+        try {
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, UserSessionLimitsAuthenticatorFactory.USER_REALM_LIMIT, "1");
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT, "0");
+            OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
+            assertEquals(200, response.getStatusCode());
+
+            response = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
+            assertEquals(401, response.getStatusCode());
+            assertEquals(Errors.GENERIC_AUTHENTICATION_ERROR, response.getError());
+            assertEquals(ERROR_TO_DISPLAY, response.getErrorDescription());
+        } finally {
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, UserSessionLimitsAuthenticatorFactory.USER_REALM_LIMIT, "0");
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT, "1");
+        }
+    }
+
+    @Test
+    public void testRealmSessionCountExceededAndOldestSessionRemovedDirectGrantFlow() throws Exception {
+        try {
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, UserSessionLimitsAuthenticatorFactory.USER_REALM_LIMIT, "1");
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT, "0");
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, UserSessionLimitsAuthenticatorFactory.BEHAVIOR, UserSessionLimitsAuthenticatorFactory.TERMINATE_OLDEST_SESSION);
+            OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
+            assertEquals(200, response.getStatusCode());
+
+            response = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
+            assertEquals(200, response.getStatusCode());
+            assertSessionCount(1);
+        } finally {
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, UserSessionLimitsAuthenticatorFactory.BEHAVIOR, UserSessionLimitsAuthenticatorFactory.DENY_NEW_SESSION);
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, UserSessionLimitsAuthenticatorFactory.USER_REALM_LIMIT, "0");
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT, "1");
+        }
+    }
+
+    @Test
+    public void testClientSessionCountExceededAndNewSessionDeniedResetPasswordFlow() throws Exception {
+        try {
+            // Login and verify login was successful
+            String redirect_uri = oauth.AUTH_SERVER_ROOT + "/realms/test/account";
+            oauth.clientId("account");
+            oauth.redirectUri(redirect_uri);
+            oauth.doLogin("test-user@localhost", "password");
+            EventRepresentation loginEvent = events.expectLogin().client("account").detail(Details.REDIRECT_URI, redirect_uri).assertEvent();
+
+            // Delete the cookies, while maintaining the server side session active
+            super.deleteCookies();
+
+            String resetUri = oauth.AUTH_SERVER_ROOT + "/realms/test/login-actions/reset-credentials";
+            driver.navigate().to(resetUri);
+
+            resetPasswordPage.assertCurrent();
+            resetPasswordPage.changePassword("test-user@localhost");
+            loginPage.assertCurrent();
+            assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage());
+            events.expectRequiredAction(EventType.SEND_RESET_PASSWORD)
+                    .user(loginEvent.getUserId())
+                    .detail(Details.REDIRECT_URI,  oauth.AUTH_SERVER_ROOT + "/realms/test/account/")
+                    .client("account")
+                    .detail(Details.USERNAME, "test-user@localhost")
+                    .detail(Details.EMAIL, "test-user@localhost")
+                    .session((String)null)
+                    .assertEvent();
+            assertEquals(1, greenMail.getReceivedMessages().length);
+
+            MimeMessage message = greenMail.getReceivedMessages()[0];
+            String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);
+            driver.navigate().to(changePasswordUrl.trim());
+
+            events.expect(EventType.RESET_PASSWORD_ERROR).client("account").error(Errors.GENERIC_AUTHENTICATION_ERROR).assertEvent();
+        } finally {
+            testRealm().clients().findByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).get(0).setDirectAccessGrantsEnabled(false);
+            ApiUtil.resetUserPassword(testRealm().users().get(findUser("test-user@localhost").getId()), "password", false);
+        }
+    }
+
+    @Test
+    public void testClientSessionCountExceededAndOldestSessionRemovedResetPasswordFlow() throws Exception {
+        try {
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.RESET_CREDENTIALS_FLOW, UserSessionLimitsAuthenticatorFactory.BEHAVIOR, UserSessionLimitsAuthenticatorFactory.TERMINATE_OLDEST_SESSION);
+
+            // Login and verify login was successful
+            String redirect_uri = oauth.AUTH_SERVER_ROOT + "/realms/test/account";
+            oauth.clientId("account");
+            oauth.redirectUri(redirect_uri);
+            oauth.doLogin("test-user@localhost", "password");
+            EventRepresentation loginEvent = events.expectLogin().client("account").detail(Details.REDIRECT_URI, redirect_uri).assertEvent();
+
+            // Delete the cookies, while maintaining the server side session active
+            super.deleteCookies();
+
+            String resetUri = oauth.AUTH_SERVER_ROOT + "/realms/test/login-actions/reset-credentials";
+            driver.navigate().to(resetUri);
+
+            resetPasswordPage.assertCurrent();
+            resetPasswordPage.changePassword("test-user@localhost");
+            loginPage.assertCurrent();
+            assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage());
+            events.expectRequiredAction(EventType.SEND_RESET_PASSWORD)
+                    .user(loginEvent.getUserId())
+                    .detail(Details.REDIRECT_URI,  oauth.AUTH_SERVER_ROOT + "/realms/test/account/")
+                    .client("account")
+                    .detail(Details.USERNAME, "test-user@localhost")
+                    .detail(Details.EMAIL, "test-user@localhost")
+                    .session((String)null)
+                    .assertEvent();
+
+            assertEquals(1, greenMail.getReceivedMessages().length);
+            MimeMessage message = greenMail.getReceivedMessages()[0];
+            String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);
+            driver.navigate().to(changePasswordUrl.trim());
+            updatePasswordPage.assertCurrent();
+            updatePasswordPage.changePassword("resetPassword", "resetPassword");
+
+            assertSessionCount(1);
+        } finally {
+            ApiUtil.resetUserPassword(testRealm().users().get(findUser("test-user@localhost").getId()), "password", false);
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.RESET_CREDENTIALS_FLOW, UserSessionLimitsAuthenticatorFactory.BEHAVIOR, UserSessionLimitsAuthenticatorFactory.DENY_NEW_SESSION);
+        }
+    }
+
+    @Test
+    public void testRealmSessionCountExceededAndNewSessionDeniedResetPasswordFlow() throws Exception {
+        try {
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.RESET_CREDENTIALS_FLOW, UserSessionLimitsAuthenticatorFactory.USER_REALM_LIMIT, "1");
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.RESET_CREDENTIALS_FLOW, UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT, "0");
+
+            // Login and verify login was successful
+            loginPage.open();
+            loginPage.login("test-user@localhost", "password");
+            EventRepresentation loginEvent = events.expectLogin().assertEvent();
+
+            // Delete the cookies, while maintaining the server side session active
+            super.deleteCookies();
+
+            String resetUri = oauth.AUTH_SERVER_ROOT + "/realms/test/login-actions/reset-credentials";
+            driver.navigate().to(resetUri);
+
+            resetPasswordPage.assertCurrent();
+            resetPasswordPage.changePassword("test-user@localhost");
+            loginPage.assertCurrent();
+            assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage());
+            events.expectRequiredAction(EventType.SEND_RESET_PASSWORD)
+                    .user(loginEvent.getUserId())
+                    .detail(Details.REDIRECT_URI,  oauth.AUTH_SERVER_ROOT + "/realms/test/account/")
+                    .client("account")
+                    .detail(Details.USERNAME, "test-user@localhost")
+                    .detail(Details.EMAIL, "test-user@localhost")
+                    .session((String)null)
+                    .assertEvent();
+
+            assertEquals(1, greenMail.getReceivedMessages().length);
+            MimeMessage message = greenMail.getReceivedMessages()[0];
+            String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);
+            driver.navigate().to(changePasswordUrl.trim());
+
+            events.expect(EventType.RESET_PASSWORD_ERROR).client("account").error(Errors.GENERIC_AUTHENTICATION_ERROR).assertEvent();
+        } finally {
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.RESET_CREDENTIALS_FLOW, UserSessionLimitsAuthenticatorFactory.USER_REALM_LIMIT, "0");
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.RESET_CREDENTIALS_FLOW, UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT, "1");
+        }
+    }
+
+    @Test
+    public void testRealmSessionCountExceededAndOldestSessionRemovedResetPasswordFlow() throws Exception {
+        try {
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.RESET_CREDENTIALS_FLOW, UserSessionLimitsAuthenticatorFactory.BEHAVIOR, UserSessionLimitsAuthenticatorFactory.TERMINATE_OLDEST_SESSION);
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.RESET_CREDENTIALS_FLOW, UserSessionLimitsAuthenticatorFactory.USER_REALM_LIMIT, "1");
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.RESET_CREDENTIALS_FLOW, UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT, "0");
+
+            // Login and verify login was successful
+            loginPage.open();
+            loginPage.login("test-user@localhost", "password");
+            EventRepresentation loginEvent = events.expectLogin().assertEvent();
+
+            // Delete the cookies, while maintaining the server side session active
+            super.deleteCookies();
+
+            String resetUri = oauth.AUTH_SERVER_ROOT + "/realms/test/login-actions/reset-credentials";
+            driver.navigate().to(resetUri);
+
+            resetPasswordPage.assertCurrent();
+            resetPasswordPage.changePassword("test-user@localhost");
+            loginPage.assertCurrent();
+            assertEquals("You should receive an email shortly with further instructions.", loginPage.getSuccessMessage());
+            events.expectRequiredAction(EventType.SEND_RESET_PASSWORD)
+                    .user(loginEvent.getUserId())
+                    .detail(Details.REDIRECT_URI,  oauth.AUTH_SERVER_ROOT + "/realms/test/account/")
+                    .client("account")
+                    .detail(Details.USERNAME, "test-user@localhost")
+                    .detail(Details.EMAIL, "test-user@localhost")
+                    .session((String)null)
+                    .assertEvent();
+
+            assertEquals(1, greenMail.getReceivedMessages().length);
+            MimeMessage message = greenMail.getReceivedMessages()[0];
+            String changePasswordUrl = MailUtils.getPasswordResetEmailLink(message);
+            driver.navigate().to(changePasswordUrl.trim());
+            updatePasswordPage.assertCurrent();
+            updatePasswordPage.changePassword("resetPassword", "resetPassword");
+
+            assertSessionCount(1);
+        } finally {
+            ApiUtil.resetUserPassword(testRealm().users().get(findUser("test-user@localhost").getId()), "password", false);
+
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.RESET_CREDENTIALS_FLOW, UserSessionLimitsAuthenticatorFactory.BEHAVIOR, UserSessionLimitsAuthenticatorFactory.DENY_NEW_SESSION);
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.RESET_CREDENTIALS_FLOW, UserSessionLimitsAuthenticatorFactory.USER_REALM_LIMIT, "0");
+            setAuthenticatorConfigItem(DefaultAuthenticationFlows.RESET_CREDENTIALS_FLOW, UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT, "1");
+        }
+    }
+
+    private void setAuthenticatorConfigItem(String alias, String key, String value) {
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+            AuthenticationFlowModel flow = realm.getFlowByAlias(alias);
+            AuthenticatorConfigModel configModel = realm.getAuthenticatorConfigByAlias("user-session-limits-" + flow.getId());
+            configModel.getConfig().put(key, value);
+        });
+    }
+
+    private void assertSessionCount(int count) {
+        testingClient.server().run(session -> {
+            RealmModel realm = session.realms().getRealmByName("test");
+            UserModel user = session.users().getUserByUsername(realm, "test-user@localhost");
+            assertEquals(count, session.sessions().getUserSessionsStream(realm, user).count());
+        });
+    }
 }
