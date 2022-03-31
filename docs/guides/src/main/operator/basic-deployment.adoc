@@ -21,7 +21,7 @@ We assume that the Operator is correctly installed and running in the cluster na
 
 A database should be available and accessible from the cluster namespace where you want to install Keycloak.
 Please refer to <@links.server id="db"/> for the list of supported databases.
-The Keycloak Operator does not manage the database and you need to provision it yourself, we suggest to verify your cloud provider offering or use a database Operator such as Crunchy[https://access.crunchydata.com/documentation/postgres-operator/latest/].
+The Keycloak Operator does not manage the database and you need to provision it yourself, we suggest to verify your cloud provider offering or use a database Operator such as https://access.crunchydata.com/documentation/postgres-operator/latest/[Crunchy].
 
 
 For development purposes you can use an ephemeral Postgres pod installation.
