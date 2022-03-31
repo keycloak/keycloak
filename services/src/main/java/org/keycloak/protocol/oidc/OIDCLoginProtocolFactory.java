@@ -161,7 +161,7 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
         createUserAttributeMapper(GENDER, "gender", IDToken.GENDER, "String");
         createUserAttributeMapper(BIRTHDATE, "birthdate", IDToken.BIRTHDATE, "String");
         createUserAttributeMapper(ZONEINFO, "zoneinfo", IDToken.ZONEINFO, "String");
-        createUserAttributeMapper(UPDATED_AT, "updatedAt", IDToken.UPDATED_AT, "String");
+        createUserAttributeMapper(UPDATED_AT, "updatedAt", IDToken.UPDATED_AT, "long");
         createUserAttributeMapper(LOCALE, "locale", IDToken.LOCALE, "String");
 
         createUserAttributeMapper(PHONE_NUMBER, "phoneNumber", IDToken.PHONE_NUMBER, "String");
