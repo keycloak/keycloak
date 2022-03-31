@@ -59,8 +59,6 @@ export const AttributesTab = () => {
     );
   };
 
-  const goToCreate = () => history.push(toAddAttribute({ realm: realmName }));
-
   const updatedAttributes = config?.attributes!.filter(
     (attribute) => attribute.name !== attributeToDelete
   );
@@ -173,7 +171,14 @@ export const AttributesTab = () => {
         actions={[
           {
             title: t("common:edit"),
-            onClick: goToCreate,
+            onClick: (_key, _idx, component) => {
+              history.push(
+                toAttribute({
+                  realm: realmName,
+                  attributeName: component.name,
+                })
+              );
+            },
           },
           {
             title: t("common:delete"),

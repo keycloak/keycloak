@@ -11,7 +11,7 @@ export type AttributeParams = {
 export const AttributeRoute: RouteDef = {
   path: "/:realm/realm-settings/userProfile/attributes/:attributeName/edit-attribute",
   component: lazy(() => import("../NewAttributeSettings")),
-  breadcrumb: (t) => t("realm-settings:createAttribute"),
+  breadcrumb: (t) => t("realm-settings:editAttribute"),
   access: "manage-realm",
 };
 

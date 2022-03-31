@@ -8,33 +8,32 @@ import {
 } from "@patternfly/react-core";
 import { FormProvider, useForm, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { Link, useHistory } from "react-router-dom";
+import { Link, useHistory, useParams } from "react-router-dom";
 import { ScrollForm } from "../components/scroll-form/ScrollForm";
-import { useRealm } from "../context/realm-context/RealmContext";
 import type UserProfileConfig from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
 import { AttributeGeneralSettings } from "./user-profile/attribute/AttributeGeneralSettings";
 import { AttributePermission } from "./user-profile/attribute/AttributePermission";
 import { AttributeValidations } from "./user-profile/attribute/AttributeValidations";
 import { toUserProfile } from "./routes/UserProfile";
-import "./realm-settings-section.css";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { AttributeAnnotations } from "./user-profile/attribute/AttributeAnnotations";
 import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useAlerts } from "../components/alert/Alerts";
 import { UserProfileProvider } from "./user-profile/UserProfileContext";
 import type { UserProfileAttribute } from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
+import type { AttributeParams } from "./routes/Attribute";
 import type { KeyValueType } from "../components/attribute-form/attribute-convert";
-import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientScopeRepresentation";
+import { convertToFormValues } from "../util";
+import { flatten } from "flat";
 
-type UserProfileAttributeType = UserProfileAttribute &
-  AttributeRequired &
-  Permission;
+import "./realm-settings-section.css";
 
-type AttributeRequired = {
+type UserProfileAttributeType = UserProfileAttribute & Attribute & Permission;
+
+type Attribute = {
   roles: string[];
-  scopeRequired: string[];
-  enabledWhen: boolean;
-  requiredWhen: boolean;
+  scopes: string[];
+  isRequired: boolean;
 };
 
 type Permission = {
@@ -63,7 +62,8 @@ const CreateAttributeFormContent = ({
 }) => {
   const { t } = useTranslation("realm-settings");
   const form = useFormContext();
-  const { realm } = useRealm();
+  const { realm, attributeName } = useParams<AttributeParams>();
+  const editMode = attributeName ? true : false;
 
   return (
     <UserProfileProvider>
@@ -87,7 +87,7 @@ const CreateAttributeFormContent = ({
             type="submit"
             data-testid="attribute-create"
           >
-            {t("common:create")}
+            {editMode ? t("common:save") : t("common:create")}
           </Button>
           <Link
             to={toUserProfile({ realm, tab: "attributes" })}
@@ -103,51 +103,51 @@ const CreateAttributeFormContent = ({
 };
 
 export default function NewAttributeSettings() {
-  const { realm: realmName } = useRealm();
+  const { realm, attributeName } = useParams<AttributeParams>();
   const adminClient = useAdminClient();
-  const form = useForm<UserProfileConfig>();
+  const form = useForm<UserProfileConfig>({ shouldUnregister: false });
   const { t } = useTranslation("realm-settings");
   const history = useHistory();
   const { addAlert, addError } = useAlerts();
   const [config, setConfig] = useState<UserProfileConfig | null>(null);
-  const [clientScopes, setClientScopes] =
-    useState<ClientScopeRepresentation[]>();
+  const editMode = attributeName ? true : false;
+
+  const convert = (obj: Record<string, unknown>[] | undefined) =>
+    Object.entries(obj || []).map(([key, value]) => ({
+      key,
+      value,
+    }));
 
   useFetch(
-    () =>
-      Promise.all([
-        adminClient.users.getProfile({ realm: realmName }),
-        adminClient.clientScopes.find(),
-      ]),
-    ([config, clientScopes]) => {
+    () => adminClient.users.getProfile({ realm }),
+    (config) => {
       setConfig(config);
-      setClientScopes(clientScopes);
+      const {
+        annotations,
+        validations,
+        permissions,
+        selector,
+        required,
+        ...values
+      } = config.attributes!.find(
+        (attribute) => attribute.name === attributeName
+      )!;
+      convertToFormValues(values, form.setValue);
+      Object.entries(
+        flatten({ permissions, selector, required }, { safe: true })
+      ).map(([key, value]) => form.setValue(key, value));
+      form.setValue("annotations", convert(annotations));
+      form.setValue("validations", convert(validations));
+      form.setValue("isRequired", required !== undefined);
     },
     []
   );
 
   const save = async (profileConfig: UserProfileAttributeType) => {
-    const scopeNames = clientScopes?.map((clientScope) => clientScope.name);
-
-    const selector = {
-      scopes: profileConfig.enabledWhen
-        ? scopeNames
-        : profileConfig.selector?.scopes,
-    };
-
-    const required = {
-      roles: profileConfig.roles,
-      scopes: profileConfig.requiredWhen
-        ? scopeNames
-        : profileConfig.scopeRequired,
-    };
-
     const validations = profileConfig.validations?.reduce(
       (prevValidations: any, currentValidations: any) => {
-        prevValidations[currentValidations.name] =
-          currentValidations.config.length === 0
-            ? {}
-            : currentValidations.config;
+        prevValidations[currentValidations.key] =
+          currentValidations.value.length === 0 ? {} : currentValidations.value;
         return prevValidations;
       },
       {}
@@ -158,29 +158,55 @@ export default function NewAttributeSettings() {
       {}
     );
 
-    const newAttribute = [
-      {
-        name: profileConfig.name,
-        displayName: profileConfig.displayName,
-        required,
-        validations,
-        selector,
-        permissions: profileConfig.permissions,
-        annotations,
-      },
-    ];
+    const patchAttributes = () =>
+      config?.attributes!.map((attribute) => {
+        if (attribute.name !== attributeName) {
+          return attribute;
+        }
 
-    const newAttributesList = config?.attributes!.concat(
-      newAttribute as UserProfileAttribute
-    );
+        return Object.assign(
+          {
+            ...attribute,
+            name: attributeName,
+            displayName: profileConfig.displayName!,
+            validations,
+            selector: profileConfig.selector,
+            permissions: profileConfig.permissions!,
+            annotations,
+          },
+          profileConfig.isRequired
+            ? { required: profileConfig.required }
+            : undefined
+        );
+      });
+
+    const addAttribute = () =>
+      config?.attributes!.concat([
+        Object.assign(
+          {
+            name: profileConfig.name,
+            displayName: profileConfig.displayName!,
+            required: profileConfig.isRequired ? profileConfig.required : {},
+            validations,
+            selector: profileConfig.selector,
+            permissions: profileConfig.permissions!,
+            annotations,
+          },
+          profileConfig.isRequired
+            ? { required: profileConfig.required }
+            : undefined
+        ),
+      ] as UserProfileAttribute);
+
+    const updatedAttributes = editMode ? patchAttributes() : addAttribute();
 
     try {
       await adminClient.users.updateProfile({
-        attributes: newAttributesList,
-        realm: realmName,
+        attributes: updatedAttributes as UserProfileAttribute[],
+        realm,
       });
 
-      history.push(toUserProfile({ realm: realmName, tab: "attributes" }));
+      history.push(toUserProfile({ realm, tab: "attributes" }));
 
       addAlert(
         t("realm-settings:createAttributeSuccess"),
@@ -194,8 +220,8 @@ export default function NewAttributeSettings() {
   return (
     <FormProvider {...form}>
       <ViewHeader
-        titleKey={t("createAttribute")}
-        subKey={t("createAttributeSubTitle")}
+        titleKey={editMode ? attributeName : t("createAttribute")}
+        subKey={editMode ? "" : t("createAttributeSubTitle")}
       />
       <PageSection variant="light">
         <CreateAttributeFormContent save={() => form.handleSubmit(save)()} />

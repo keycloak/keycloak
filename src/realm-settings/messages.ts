@@ -404,6 +404,7 @@ export default {
     updatedUserProfileSuccess: "User Profile configuration has been saved",
     updatedUserProfileError: "User Profile configuration hasn't been saved",
     createAttribute: "Create attribute",
+    editAttribute: "Edit attribute",
     createAttributeSubTitle: "Create a new attribute",
     createAttributeSuccess:
       "Success! User Profile configuration has been saved.",
@@ -415,6 +416,8 @@ export default {
       "Are you sure you want to permanently delete the attribute {{attributeName}}?",
     deleteAttributeSuccess: "Attribute deleted",
     deleteAttributeError: "Attribute not deleted",
+    always: "Always",
+    scopesAsRequested: "Scopes are requested",
     generalSettings: "General settings",
     permission: "Permission",
     validations: "Validations",

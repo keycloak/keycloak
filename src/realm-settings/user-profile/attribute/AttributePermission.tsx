@@ -9,57 +9,53 @@ import "../../realm-settings-section.css";
 const Permissions = ({ name }: { name: string }) => {
   const { t } = useTranslation("realm-settings");
   const { control } = useFormContext();
+
   return (
     <Grid>
-      <GridItem lg={4} sm={6}>
-        <Controller
-          name={`permissions.${name}`}
-          control={control}
-          defaultValue={[]}
-          render={({ onChange, value }) => (
-            <Checkbox
-              id={`user-${name}`}
-              label={t("user")}
-              value="user"
-              data-testid={`user-${name}`}
-              isChecked={value.includes("user")}
-              onChange={() => {
-                const option = "user";
-                const changedValue = value.includes(option)
-                  ? value.filter((item: string) => item !== option)
-                  : [option];
+      <Controller
+        name={`permissions.${name}`}
+        control={control}
+        defaultValue={[]}
+        render={({ onChange, value }) => (
+          <>
+            <GridItem lg={4} sm={6}>
+              <Checkbox
+                id={`user-${name}`}
+                label={t("user")}
+                value="user"
+                data-testid={`user-${name}`}
+                isChecked={value.includes("user")}
+                onChange={() => {
+                  const option = "user";
+                  const changedValue = value.includes(option)
+                    ? value.filter((item: string) => item !== option)
+                    : [option];
 
-                onChange(changedValue);
-              }}
-              isDisabled={value.includes("admin")}
-            />
-          )}
-        />
-      </GridItem>
-      <GridItem lg={8} sm={6}>
-        <Controller
-          name={`permissions.${name}`}
-          control={control}
-          defaultValue={[]}
-          render={({ onChange, value }) => (
-            <Checkbox
-              id={`admin-${name}`}
-              label={t("admin")}
-              value="admin"
-              data-testid={`admin-${name}`}
-              isChecked={value.includes("admin")}
-              onChange={() => {
-                const option = "admin";
-                const changedValue = value.includes(option)
-                  ? value.filter((item: string) => item !== option)
-                  : ["user", option];
+                  onChange(changedValue);
+                }}
+                isDisabled={value.includes("admin")}
+              />
+            </GridItem>
+            <GridItem lg={8} sm={6}>
+              <Checkbox
+                id={`admin-${name}`}
+                label={t("admin")}
+                value="admin"
+                data-testid={`admin-${name}`}
+                isChecked={value.includes("admin")}
+                onChange={() => {
+                  const option = "admin";
+                  const changedValue = value.includes(option)
+                    ? value.filter((item: string) => item !== option)
+                    : ["user", option];
 
-                onChange(changedValue);
-              }}
-            />
-          )}
-        />
-      </GridItem>
+                  onChange(changedValue);
+                }}
+              />
+            </GridItem>
+          </>
+        )}
+      />
     </Grid>
   );
 };
