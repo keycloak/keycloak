@@ -129,9 +129,10 @@ export default function NewAttributeSettings() {
         selector,
         required,
         ...values
-      } = config.attributes!.find(
-        (attribute) => attribute.name === attributeName
-      )!;
+      } =
+        config.attributes!.find(
+          (attribute) => attribute.name === attributeName
+        ) || {};
       convertToFormValues(values, form.setValue);
       Object.entries(
         flatten({ permissions, selector, required }, { safe: true })
