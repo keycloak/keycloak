@@ -235,7 +235,8 @@ public class DescriptionConverter {
 
         configWrapper.setFrontChannelLogoutUrl(Optional.ofNullable(clientOIDC.getFrontChannelLogoutUri()).orElse(null));
         if (clientOIDC.getFrontchannelLogoutSessionRequired() == null) {
-            configWrapper.setFrontChannelLogoutSessionRequired(true);
+            // False by default per OIDC FrontChannel Logout specification
+            configWrapper.setFrontChannelLogoutSessionRequired(false);
         } else {
             configWrapper.setFrontChannelLogoutSessionRequired(clientOIDC.getFrontchannelLogoutSessionRequired());
         }        

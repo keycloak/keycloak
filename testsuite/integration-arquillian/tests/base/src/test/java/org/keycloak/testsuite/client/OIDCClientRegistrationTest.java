@@ -283,6 +283,19 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         Assert.assertNull(kcClientRep.getSecret());
     }
 
+    @Test
+    public void createClientFrontchannelLogoutSettings() throws ClientRegistrationException {
+        // When frontchannelLogutSessionRequired is not set, it should be false by default per OIDC Client registration specification
+        OIDCClientRepresentation clientRep = createRep();
+        clientRep.setFrontchannelLogoutSessionRequired(null);
+        OIDCClientRepresentation response = reg.oidc().create(clientRep);
+        Assert.assertEquals(false, response.getFrontchannelLogoutSessionRequired());
+
+        String clientId = response.getClientId();
+        ClientRepresentation kcClientRep = getKeycloakClient(clientId);
+        Assert.assertFalse(OIDCAdvancedConfigWrapper.fromClientRepresentation(kcClientRep).isFrontChannelLogoutSessionRequired());
+    }
+
     // KEYCLOAK-6771 Certificate Bound Token
     // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-6.5
     @Test
