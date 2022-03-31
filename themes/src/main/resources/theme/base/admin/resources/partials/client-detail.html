@@ -285,6 +285,13 @@
                 </div>
                 <kc-tooltip>{{:: 'front-channel-logout-url.tooltip' | translate}}</kc-tooltip>
             </div>
+            <div class="form-group clearfix block" data-ng-show="protocol == 'openid-connect' && clientEdit.frontchannelLogout">
+                <label class="col-md-2 control-label" for="frontchannelLogoutSessionRequired">{{:: 'front-channel-logout-session-required' | translate}}</label>
+                <div class="col-sm-6">
+                    <input ng-model="frontchannelLogoutSessionRequired" name="frontchannelLogoutSessionRequired" id="frontchannelLogoutSessionRequired" onoffswitch ng-click="switchChange()" on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
+                </div>
+                <kc-tooltip>{{:: 'front-channel-logout-session-required.tooltip' | translate}}</kc-tooltip>
+            </div>
             <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
                 <label class="col-md-2 control-label" for="samlForceNameIdFormat">{{:: 'force-name-id-format' | translate}}</label>
                 <div class="col-sm-6">

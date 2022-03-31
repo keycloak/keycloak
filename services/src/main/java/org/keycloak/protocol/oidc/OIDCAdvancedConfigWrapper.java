@@ -321,6 +321,17 @@ public class OIDCAdvancedConfigWrapper extends AbstractClientConfigWrapper {
         return getAttribute(OIDCConfigAttributes.FRONT_CHANNEL_LOGOUT_URI);
     }
 
+    public boolean isFrontChannelLogoutSessionRequired() {
+        String frontChannelLogoutSessionRequired = getAttribute(OIDCConfigAttributes.FRONT_CHANNEL_LOGOUT_SESSION_REQUIRED);
+        // Include session by default for backwards compatibility
+        return frontChannelLogoutSessionRequired == null ? true : Boolean.parseBoolean(frontChannelLogoutSessionRequired);
+    }
+
+    public void setFrontChannelLogoutSessionRequired(boolean frontChannelLogoutSessionRequired) {
+        String val = String.valueOf(frontChannelLogoutSessionRequired);
+        setAttribute(OIDCConfigAttributes.FRONT_CHANNEL_LOGOUT_SESSION_REQUIRED, val);
+    }
+
     public void setLogoUri(String logoUri) {
         setAttribute(ClientModel.LOGO_URI, logoUri);
     }

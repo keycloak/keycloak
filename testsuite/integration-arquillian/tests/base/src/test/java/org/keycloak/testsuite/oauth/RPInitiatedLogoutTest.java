@@ -628,6 +628,36 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
     }
 
     @Test
+    public void testFrontChannelLogoutWithoutSessionRequired() throws Exception {
+        ClientsResource clients = adminClient.realm(oauth.getRealm()).clients();
+        ClientRepresentation rep = clients.findByClientId(oauth.getClientId()).get(0);
+        rep.setFrontchannelLogout(true);
+        rep.getAttributes().put(OIDCConfigAttributes.FRONT_CHANNEL_LOGOUT_URI, oauth.APP_ROOT + "/admin/frontchannelLogout");
+        rep.getAttributes().put(OIDCConfigAttributes.FRONT_CHANNEL_LOGOUT_SESSION_REQUIRED, "false");
+        clients.get(rep.getId()).update(rep);
+        try {
+            oauth.clientSessionState("client-session");
+            oauth.doLogin("test-user@localhost", "password");
+            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+            String idTokenString = tokenResponse.getIdToken();
+            String logoutUrl = oauth.getLogoutUrl().idTokenHint(idTokenString)
+                    .postLogoutRedirectUri(oauth.APP_AUTH_ROOT).build();
+            driver.navigate().to(logoutUrl);
+            LogoutToken logoutToken = testingClient.testApp().getFrontChannelLogoutToken();
+            Assert.assertNotNull(logoutToken);
+
+            Assert.assertNull(logoutToken.getIssuer());
+            Assert.assertNull(logoutToken.getSid());
+        } finally {
+            rep.setFrontchannelLogout(false);
+            rep.getAttributes().put(OIDCConfigAttributes.FRONT_CHANNEL_LOGOUT_URI, "");
+            rep.getAttributes().put(OIDCConfigAttributes.FRONT_CHANNEL_LOGOUT_SESSION_REQUIRED, "true");
+            clients.get(rep.getId()).update(rep);
+        }
+    }
+
+    @Test
     public void testFrontChannelLogout() throws Exception {
         ClientsResource clients = adminClient.realm(oauth.getRealm()).clients();
         ClientRepresentation rep = clients.findByClientId(oauth.getClientId()).get(0);

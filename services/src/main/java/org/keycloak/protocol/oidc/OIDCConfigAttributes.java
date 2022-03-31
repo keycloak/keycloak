@@ -78,6 +78,7 @@ public final class OIDCConfigAttributes {
     public static final String AUTHORIZATION_ENCRYPTED_RESPONSE_ALG = "authorization.encrypted.response.alg";
     public static final String AUTHORIZATION_ENCRYPTED_RESPONSE_ENC = "authorization.encrypted.response.enc";
     public static final String FRONT_CHANNEL_LOGOUT_URI = "frontchannel.logout.url";
+    public static final String FRONT_CHANNEL_LOGOUT_SESSION_REQUIRED = "frontchannel.logout.session.required";
 
     private OIDCConfigAttributes() {
     }

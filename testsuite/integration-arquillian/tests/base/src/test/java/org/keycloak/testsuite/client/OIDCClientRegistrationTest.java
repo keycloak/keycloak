@@ -92,6 +92,7 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         client.setClientUri("http://root");
         client.setRedirectUris(Collections.singletonList("http://redirect"));
         client.setFrontChannelLogoutUri("http://frontchannel");
+        client.setFrontchannelLogoutSessionRequired(true);
         return client;
     }
 
@@ -161,6 +162,7 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         assertEquals(OIDCLoginProtocol.CLIENT_SECRET_BASIC, response.getTokenEndpointAuthMethod());
         Assert.assertNull(response.getUserinfoSignedResponseAlg());
         assertEquals("http://frontchannel", response.getFrontChannelLogoutUri());
+        assertTrue(response.getFrontchannelLogoutSessionRequired());
     }
 
     @Test
@@ -279,6 +281,19 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         ClientRepresentation kcClientRep = getKeycloakClient(clientId);
         Assert.assertTrue(kcClientRep.isPublicClient());
         Assert.assertNull(kcClientRep.getSecret());
+    }
+
+    @Test
+    public void createClientFrontchannelLogoutSettings() throws ClientRegistrationException {
+        // When frontchannelLogutSessionRequired is not set, it should be false by default per OIDC Client registration specification
+        OIDCClientRepresentation clientRep = createRep();
+        clientRep.setFrontchannelLogoutSessionRequired(null);
+        OIDCClientRepresentation response = reg.oidc().create(clientRep);
+        Assert.assertEquals(false, response.getFrontchannelLogoutSessionRequired());
+
+        String clientId = response.getClientId();
+        ClientRepresentation kcClientRep = getKeycloakClient(clientId);
+        Assert.assertFalse(OIDCAdvancedConfigWrapper.fromClientRepresentation(kcClientRep).isFrontChannelLogoutSessionRequired());
     }
 
     // KEYCLOAK-6771 Certificate Bound Token
