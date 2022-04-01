@@ -171,4 +171,24 @@ For debugging and development purposes we suggest you to directly connect to the
 kubectl port-forward service/example-kc-service 8443:8443
 ----
 
+==== Accessing the Admin Console
+
+When deploying Keycloak, the operator generates an arbitrary initial admin `username` and `password` and stores those credentials as a Kubernetes basic-auth Secret in the same namespace as the CR.
+
+.Warning:
+[NOTE]
+Change the default admin credentials and enable MFA in Keycloak before going to production.
+
+To fetch the initial admin credentials you have to read and decode a Kubernetes Secret.
+The Secret name is derived from the Keycloak CR name plus the fixed suffix `-initial-admin`.
+To get the username and password for the `example-kc` CR use the following command:
+
+[source,bash]
+----
+kubectl get secret example-kc-initial-admin -o jsonpath='{.data.username}' | base64 --decode
+kubectl get secret example-kc-initial-admin -o jsonpath='{.data.password}' | base64 --decode
+----
+
+You can use those credentials to access the Admin Console or the Admin REST API.
+
 </@tmpl.guide>
