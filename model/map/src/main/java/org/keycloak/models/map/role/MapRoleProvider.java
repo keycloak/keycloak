@@ -17,29 +17,28 @@
 
 package org.keycloak.models.map.role;
 
+import java.util.Objects;
+import java.util.function.Function;
+import java.util.stream.Stream;
 import org.jboss.logging.Logger;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
-
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
-
-import java.util.Objects;
-import java.util.function.Function;
-import java.util.stream.Stream;
 import org.keycloak.models.map.storage.MapStorage;
-import static org.keycloak.common.util.StackUtil.getShortStackTrace;
-import static org.keycloak.models.map.storage.QueryParameters.Order.ASCENDING;
-import static org.keycloak.models.map.storage.QueryParameters.withCriteria;
-import static org.keycloak.models.map.storage.criteria.DefaultModelCriteria.criteria;
-
-import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel.SearchableFields;
 import org.keycloak.models.RoleProvider;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
+
+import static org.keycloak.common.util.StackUtil.getShortStackTrace;
+import static org.keycloak.models.map.common.AbstractMapProviderFactory.MapProviderObjectType.ROLE_AFTER_REMOVE;
+import static org.keycloak.models.map.common.AbstractMapProviderFactory.MapProviderObjectType.ROLE_BEFORE_REMOVE;
+import static org.keycloak.models.map.storage.QueryParameters.Order.ASCENDING;
+import static org.keycloak.models.map.storage.QueryParameters.withCriteria;
+import static org.keycloak.models.map.storage.criteria.DefaultModelCriteria.criteria;
 
 public class MapRoleProvider implements RoleProvider {
 
@@ -161,23 +160,11 @@ public class MapRoleProvider implements RoleProvider {
 
         RealmModel realm = role.isClientRole() ? ((ClientModel)role.getContainer()).getRealm() : (RealmModel)role.getContainer();
 
-        session.users().preRemove(realm, role);
-
-        // TODO: Sending an event should be extracted to store layer
-        session.getKeycloakSessionFactory().publish(new RoleContainerModel.RoleRemovedEvent() {
-            @Override
-            public RoleModel getRole() {
-                return role;
-            }
-
-            @Override
-            public KeycloakSession getKeycloakSession() {
-                return session;
-            }
-        });
-        // TODO: ^^^^^^^ Up to here
+        session.invalidate(ROLE_BEFORE_REMOVE, realm, role);
 
         tx.delete(role.getId());
+
+        session.invalidate(ROLE_AFTER_REMOVE, realm, role);
 
         return true;
     }
@@ -282,6 +269,14 @@ public class MapRoleProvider implements RoleProvider {
 
         return tx.read(withCriteria(mcb).pagination(first, max, SearchableFields.NAME))
                 .map(entityToAdapterFunc(client.getRealm()));
+    }
+
+    public void preRemove(RealmModel realm) {
+        LOG.tracef("preRemove(%s)%s", realm, getShortStackTrace());
+        DefaultModelCriteria<RoleModel> mcb = criteria();
+        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
+
+        tx.delete(withCriteria(mcb));
     }
 
     @Override

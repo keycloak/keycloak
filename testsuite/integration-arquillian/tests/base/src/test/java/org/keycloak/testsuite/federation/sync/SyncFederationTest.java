@@ -39,6 +39,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import org.junit.Assume;
+import org.junit.Before;
 
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
@@ -52,6 +54,11 @@ import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.A
 public class SyncFederationTest extends AbstractAuthTest {
 
     private static final Logger log = Logger.getLogger(SyncFederationTest.class);
+
+    @Before
+    public void enabled() {
+        Assume.assumeTrue("RealmProvider is not 'jpa'", isJpaRealmProvider());
+    }
 
     /**
      * Test that period sync is triggered when creating a synchronized User Storage Provider

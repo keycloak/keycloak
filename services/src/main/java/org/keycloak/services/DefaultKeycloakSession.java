@@ -41,10 +41,11 @@ import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.cache.CacheRealmProvider;
 import org.keycloak.models.cache.UserCache;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.provider.InvalidationHandler.InvalidableObjectType;
+import org.keycloak.provider.InvalidationHandler.ObjectType;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.services.clientpolicy.ClientPolicyManager;
-import org.keycloak.services.clientpolicy.DefaultClientPolicyManager;
 import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.storage.ClientStorageManager;
 import org.keycloak.storage.ClientScopeStorageManager;
@@ -169,8 +170,10 @@ public class DefaultKeycloakSession implements KeycloakSession {
 
     @Override
     public void invalidate(InvalidableObjectType type, Object... ids) {
-        factory.invalidate(type, ids);
-        invalidationMap.computeIfAbsent(type, o -> new HashSet<>()).addAll(Arrays.asList(ids));
+        factory.invalidate(this, type, ids);
+        if (type == ObjectType.PROVIDER_FACTORY) {
+            invalidationMap.computeIfAbsent(type, o -> new HashSet<>()).addAll(Arrays.asList(ids));
+        }
     }
 
     @Override
@@ -524,7 +527,7 @@ public class DefaultKeycloakSession implements KeycloakSession {
         providers.values().forEach(safeClose);
         closable.forEach(safeClose);
         for (Entry<InvalidableObjectType, Set<Object>> me : invalidationMap.entrySet()) {
-            factory.invalidate(me.getKey(), me.getValue().toArray());
+            factory.invalidate(this, me.getKey(), me.getValue().toArray());
         }
     }
 

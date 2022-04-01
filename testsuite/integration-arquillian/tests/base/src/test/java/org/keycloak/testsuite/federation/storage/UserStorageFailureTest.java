@@ -57,7 +57,10 @@ import org.keycloak.testsuite.util.OAuthClient;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Stream;
+import org.junit.Assume;
+import org.keycloak.models.RealmProvider;
 
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.util.ContainerAssume;
@@ -95,6 +98,8 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
 
     @Before
     public void addProvidersBeforeTest() {
+        Assume.assumeTrue("RealmProvider is not 'jpa'", isJpaRealmProvider());
+
         ComponentRepresentation memProvider = new ComponentRepresentation();
         memProvider.setName("failure");
         memProvider.setProviderId(FailableHardcodedStorageProviderFactory.PROVIDER_ID);
