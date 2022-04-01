@@ -18,12 +18,14 @@
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
 
     <changeSet author="keycloak" id="9.0.1-add-index-to-client.client_id">
+        <validCheckSum>7:45d9b25fc3b455d522d8dcc10a0f4c80</validCheckSum>
         <createIndex indexName="IDX_CLIENT_ID" tableName="CLIENT">
             <column name="CLIENT_ID" type="VARCHAR(255)"/>
         </createIndex>
     </changeSet>
 
     <changeSet author="keycloak" id="9.0.1-KEYCLOAK-12579-drop-constraints">
+        <validCheckSum>7:890ae73712bc187a66c2813a724d037f</validCheckSum>
         <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
             <!-- sql server needs drop and re-create the constraint SIBLING_NAMES -->
             <dbms type="mssql"/>
@@ -32,12 +34,14 @@
     </changeSet>
 
     <changeSet author="keycloak" id="9.0.1-KEYCLOAK-12579-add-not-null-constraint">
+        <validCheckSum>7:0a211980d27fafe3ff50d19a3a29b538</validCheckSum>
         <!-- Now the parent group cannot be NULL to make SIBLING_NAMES unique constraint work -->
         <!-- Top level groups are now marked with the " " (one space) string -->
         <addNotNullConstraint tableName="KEYCLOAK_GROUP" columnName="PARENT_GROUP" columnDataType="VARCHAR(36)" defaultNullValue=" "/>
     </changeSet>
 
     <changeSet author="keycloak" id="9.0.1-KEYCLOAK-12579-recreate-constraints">
+        <validCheckSum>7:a161e2ae671a9020fff61e996a207377</validCheckSum>
         <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
             <!-- sql server needs drop and re-create the constraint SIBLING_NAMES -->
             <dbms type="mssql"/>
@@ -46,6 +50,7 @@
     </changeSet>
 
     <changeSet author="keycloak" id="9.0.1-add-index-to-events">
+        <validCheckSum>7:01c49302201bdf815b0a18d1f98a55dc</validCheckSum>
         <createIndex indexName="IDX_EVENT_TIME" tableName="EVENT_ENTITY">
             <column name="REALM_ID" type="VARCHAR(255)"/>
             <column name="EVENT_TIME" type="BIGINT"/>

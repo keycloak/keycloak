@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,35 +17,22 @@
 
 package org.keycloak.models.map.realm.entity;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
 import org.keycloak.models.IdentityProviderModel;
+import org.keycloak.models.map.annotations.GenerateEntityImplementations;
+import org.keycloak.models.map.common.AbstractEntity;
+import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.UpdatableEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
-public class MapIdentityProviderEntity extends UpdatableEntity.Impl {
+import java.util.HashMap;
+import java.util.Map;
 
-    private String id;
-    private String alias;
-    private String displayName;
-    private String providerId;
-    private String firstBrokerLoginFlowId;
-    private String postBrokerLoginFlowId;
-    private Boolean enabled = false;
-    private Boolean trustEmail = false;
-    private Boolean storeToken = false;
-    private Boolean linkOnly = false;
-    private Boolean addReadTokenRoleOnCreate = false;
-    private Boolean authenticateByDefault = false;
-    private Map<String, String> config = new HashMap<>();
-
-
-    private MapIdentityProviderEntity() {}
-
-    public static MapIdentityProviderEntity fromModel(IdentityProviderModel model) {
+@GenerateEntityImplementations
+@DeepCloner.Root
+public interface MapIdentityProviderEntity extends UpdatableEntity, AbstractEntity {
+    static MapIdentityProviderEntity fromModel(IdentityProviderModel model) {
         if (model == null) return null;
-        MapIdentityProviderEntity entity = new MapIdentityProviderEntity();
+        MapIdentityProviderEntity entity = new MapIdentityProviderEntityImpl();
         String id = model.getInternalId() == null ? KeycloakModelUtils.generateId() : model.getInternalId();
         entity.setId(id);
         entity.setAlias(model.getAlias());
@@ -59,11 +46,11 @@ public class MapIdentityProviderEntity extends UpdatableEntity.Impl {
         entity.setLinkOnly(model.isLinkOnly());
         entity.setAddReadTokenRoleOnCreate(model.isAddReadTokenRoleOnCreate());
         entity.setAuthenticateByDefault(model.isAuthenticateByDefault());
-        entity.setConfig(model.getConfig() == null ? null : new HashMap<>(model.getConfig()));
+        entity.setConfig(model.getConfig());
         return entity;
     }
 
-    public static IdentityProviderModel toModel(MapIdentityProviderEntity entity) {
+    static IdentityProviderModel toModel(MapIdentityProviderEntity entity) {
         if (entity == null) return null;
         IdentityProviderModel model = new IdentityProviderModel();
         model.setInternalId(entity.getId());
@@ -72,143 +59,56 @@ public class MapIdentityProviderEntity extends UpdatableEntity.Impl {
         model.setProviderId(entity.getProviderId());
         model.setFirstBrokerLoginFlowId(entity.getFirstBrokerLoginFlowId());
         model.setPostBrokerLoginFlowId(entity.getPostBrokerLoginFlowId());
-        model.setEnabled(entity.isEnabled());
-        model.setTrustEmail(entity.isTrustEmail());
-        model.setStoreToken(entity.isStoreToken());
-        model.setLinkOnly(entity.isLinkOnly());
-        model.setAddReadTokenRoleOnCreate(entity.isAddReadTokenRoleOnCreate());
-        model.setAuthenticateByDefault(entity.isAuthenticateByDefault());
-        model.setConfig(entity.getConfig() == null ? null : new HashMap<>(entity.getConfig()));
+        Boolean enabled = entity.isEnabled();
+        model.setEnabled(enabled == null ? false : enabled);
+        Boolean trustEmail = entity.isTrustEmail();
+        model.setTrustEmail(trustEmail == null ? false : trustEmail);
+        Boolean storeToken = entity.isStoreToken();
+        model.setStoreToken(storeToken == null ? false : storeToken);
+        Boolean linkOnly = entity.isLinkOnly();
+        model.setLinkOnly(linkOnly == null ? false : linkOnly);
+        Boolean addReadTokenRoleOnCreate = entity.isAddReadTokenRoleOnCreate();
+        model.setAddReadTokenRoleOnCreate(addReadTokenRoleOnCreate == null ? false : addReadTokenRoleOnCreate);
+        Boolean authenticateByDefault = entity.isAuthenticateByDefault();
+        model.setAuthenticateByDefault(authenticateByDefault == null ? false : authenticateByDefault);
+        Map<String, String> config = entity.getConfig();
+        model.setConfig(config == null ? new HashMap<>() : new HashMap<>(config));
         return model;
     }
 
-    public String getId() {
-        return id;
-    }
+    String getAlias();
+    void setAlias(String alias);
 
-    public void setId(String id) {
-        this.updated = !Objects.equals(this.id, id);
-        this.id = id;
-    }
+    String getDisplayName();
+    void setDisplayName(String displayName);
 
-    public String getAlias() {
-        return alias;
-    }
+    String getProviderId();
+    void setProviderId(String providerId);
 
-    public void setAlias(String alias) {
-        this.updated = !Objects.equals(this.alias, alias);
-        this.alias = alias;
-    }
+    String getFirstBrokerLoginFlowId();
+    void setFirstBrokerLoginFlowId(String firstBrokerLoginFlowId);
 
-    public String getDisplayName() {
-        return displayName;
-    }
+    String getPostBrokerLoginFlowId();
+    void setPostBrokerLoginFlowId(String postBrokerLoginFlowId);
 
-    public void setDisplayName(String displayName) {
-        this.updated = !Objects.equals(this.displayName, displayName);
-        this.displayName = displayName;
-    }
+    Boolean isEnabled();
+    void setEnabled(Boolean enabled);
 
-    public String getProviderId() {
-        return providerId;
-    }
+    Boolean isTrustEmail();
+    void setTrustEmail(Boolean trustEmail);
 
-    public void setProviderId(String providerId) {
-        this.updated = !Objects.equals(this.providerId, providerId);
-        this.providerId = providerId;
-    }
+    Boolean isStoreToken();
+    void setStoreToken(Boolean storeToken);
 
-    public String getFirstBrokerLoginFlowId() {
-        return firstBrokerLoginFlowId;
-    }
+    Boolean isLinkOnly();
+    void setLinkOnly(Boolean linkOnly);
 
-    public void setFirstBrokerLoginFlowId(String firstBrokerLoginFlowId) {
-        this.updated = !Objects.equals(this.firstBrokerLoginFlowId, firstBrokerLoginFlowId);
-        this.firstBrokerLoginFlowId = firstBrokerLoginFlowId;
-    }
+    Boolean isAddReadTokenRoleOnCreate();
+    void setAddReadTokenRoleOnCreate(Boolean addReadTokenRoleOnCreate);
 
-    public String getPostBrokerLoginFlowId() {
-        return postBrokerLoginFlowId;
-    }
+    Boolean isAuthenticateByDefault();
+    void setAuthenticateByDefault(Boolean authenticateByDefault);
 
-    public void setPostBrokerLoginFlowId(String postBrokerLoginFlowId) {
-        this.updated = !Objects.equals(this.postBrokerLoginFlowId, postBrokerLoginFlowId);
-        this.postBrokerLoginFlowId = postBrokerLoginFlowId;
-    }
-
-    public Boolean isEnabled() {
-        return enabled;
-    }
-
-    public void setEnabled(boolean enabled) {
-        this.updated = !Objects.equals(this.enabled, enabled);
-        this.enabled = enabled;
-    }
-
-    public Boolean isTrustEmail() {
-        return trustEmail;
-    }
-
-    public void setTrustEmail(boolean trustEmail) {
-        this.updated = !Objects.equals(this.trustEmail, trustEmail);
-        this.trustEmail = trustEmail;
-    }
-
-    public Boolean isStoreToken() {
-        return storeToken;
-    }
-
-    public void setStoreToken(boolean storeToken) {
-        this.updated = !Objects.equals(this.storeToken, storeToken);
-        this.storeToken = storeToken;
-    }
-
-    public Boolean isLinkOnly() {
-        return linkOnly;
-    }
-
-    public void setLinkOnly(boolean linkOnly) {
-        this.updated = !Objects.equals(this.linkOnly, linkOnly);
-        this.linkOnly = linkOnly;
-    }
-
-    public Boolean isAddReadTokenRoleOnCreate() {
-        return addReadTokenRoleOnCreate;
-    }
-
-    public void setAddReadTokenRoleOnCreate(boolean addReadTokenRoleOnCreate) {
-        this.updated = !Objects.equals(this.addReadTokenRoleOnCreate, addReadTokenRoleOnCreate);
-        this.addReadTokenRoleOnCreate = addReadTokenRoleOnCreate;
-    }
-
-    public Boolean isAuthenticateByDefault() {
-        return authenticateByDefault;
-    }
-
-    public void setAuthenticateByDefault(boolean authenticateByDefault) {
-        this.updated = !Objects.equals(this.authenticateByDefault, authenticateByDefault);
-        this.authenticateByDefault = authenticateByDefault;
-    }
-
-    public Map<String, String> getConfig() {
-        return config;
-    }
-
-    public void setConfig(Map<String, String> config) {
-        this.updated = !Objects.equals(this.config, config);
-        this.config = config;
-    }
-
-    @Override
-    public int hashCode() {
-        return getId().hashCode();
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) return true;
-        if (!(obj instanceof MapIdentityProviderEntity)) return false;
-        final MapIdentityProviderEntity other = (MapIdentityProviderEntity) obj;
-        return Objects.equals(other.getId(), getId());
-    }
+    Map<String, String> getConfig();
+    void setConfig(Map<String, String> config);
 }

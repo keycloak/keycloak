@@ -132,7 +132,7 @@ public class UserManagedPermissionService {
     }
 
     private Policy getPolicy(@PathParam("policyId") String policyId) {
-        Policy existing = authorization.getStoreFactory().getPolicyStore().findById(policyId, resourceServer.getId());
+        Policy existing = authorization.getStoreFactory().getPolicyStore().findById(resourceServer, policyId);
 
         if (existing == null) {
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Policy with [" + policyId + "] does not exist", Status.NOT_FOUND);
@@ -143,7 +143,7 @@ public class UserManagedPermissionService {
 
     private void checkRequest(String resourceId, UmaPermissionRepresentation representation) {
         ResourceStore resourceStore = this.authorization.getStoreFactory().getResourceStore();
-        Resource resource = resourceStore.findById(resourceId, resourceServer.getId());
+        Resource resource = resourceStore.findById(resourceServer, resourceId);
 
         if (resource == null) {
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Resource [" + resourceId + "] cannot be found", Response.Status.BAD_REQUEST);

@@ -41,6 +41,7 @@ import org.keycloak.authorization.client.resource.ProtectionResource;
 import org.keycloak.authorization.client.util.HttpResponseException;
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
+import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.common.Profile;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -916,13 +917,14 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
         ClientModel client = realm.getClientByClientId("resource-server-test");
         AuthorizationProvider provider = session.getProvider(AuthorizationProvider.class);
         UserModel user = session.users().getUserByUsername(realm, "marta");
+        ResourceServer resourceServer = provider.getStoreFactory().getResourceServerStore().findByClient(client);
         Map<Policy.FilterOption, String[]> filters = new HashMap<>();
 
         filters.put(Policy.FilterOption.TYPE, new String[] {"uma"});
         filters.put(OWNER, new String[] {user.getId()});
 
         List<Policy> policies = provider.getStoreFactory().getPolicyStore()
-                .findByResourceServer(filters, client.getId(), -1, -1);
+                .findByResourceServer(resourceServer, filters, null, null);
         assertEquals(1, policies.size());
 
         Policy policy = policies.get(0);
@@ -937,7 +939,7 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
 
         filters.put(OWNER, new String[] {user.getId()});
         policies = provider.getStoreFactory().getPolicyStore()
-                .findByResourceServer(filters, client.getId(), -1, -1);
+                .findByResourceServer(resourceServer, filters, null, null);
         assertTrue(policies.isEmpty());
     }
 
@@ -969,13 +971,14 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
         ClientModel client = realm.getClientByClientId("resource-server-test");
         AuthorizationProvider provider = session.getProvider(AuthorizationProvider.class);
         UserModel user = session.users().getUserByUsername(realm, "marta");
+        ResourceServer resourceServer = provider.getStoreFactory().getResourceServerStore().findByClient(client);
         Map<Policy.FilterOption, String[]> filters = new HashMap<>();
 
         filters.put(Policy.FilterOption.TYPE, new String[] {"uma"});
         filters.put(OWNER, new String[] {user.getId()});
 
         List<Policy> policies = provider.getStoreFactory().getPolicyStore()
-                .findByResourceServer(filters, client.getId(), -1, -1);
+                .findByResourceServer(resourceServer, filters, null, null);
         assertEquals(1, policies.size());
 
         Policy policy = policies.get(0);
@@ -991,7 +994,7 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
         filters.put(OWNER, new String[] {user.getId()});
 
         policies = provider.getStoreFactory().getPolicyStore()
-                .findByResourceServer(filters, client.getId(), -1, -1);
+                .findByResourceServer(resourceServer, filters, null, null);
         assertTrue(policies.isEmpty());
     }
 
@@ -1023,13 +1026,14 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
         ClientModel client = realm.getClientByClientId("resource-server-test");
         AuthorizationProvider provider = session.getProvider(AuthorizationProvider.class);
         UserModel user = session.users().getUserByUsername(realm, "marta");
+        ResourceServer resourceServer = provider.getStoreFactory().getResourceServerStore().findByClient(client);
         Map<Policy.FilterOption, String[]> filters = new HashMap<>();
 
         filters.put(Policy.FilterOption.TYPE, new String[] {"uma"});
         filters.put(OWNER, new String[] {user.getId()});
 
         List<Policy> policies = provider.getStoreFactory().getPolicyStore()
-            .findByResourceServer(filters, client.getId(), -1, -1);
+            .findByResourceServer(resourceServer, filters, null, null);
         assertEquals(1, policies.size());
 
         Policy policy = policies.get(0);
@@ -1045,7 +1049,7 @@ public class UserManagedPermissionServiceTest extends AbstractResourceServerTest
         filters.put(OWNER, new String[] {user.getId()});
 
         policies = provider.getStoreFactory().getPolicyStore()
-            .findByResourceServer(filters, client.getId(), -1, -1);
+            .findByResourceServer(resourceServer, filters, null, null);
         assertTrue(policies.isEmpty());
     }
 

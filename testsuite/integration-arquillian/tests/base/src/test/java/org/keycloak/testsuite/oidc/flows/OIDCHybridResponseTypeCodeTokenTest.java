@@ -76,7 +76,7 @@ public class OIDCHybridResponseTypeCodeTokenTest extends AbstractOIDCResponseTyp
 
     @Test
     public void nonceNotUsedErrorExpected() {
-        super.validateNonceNotUsedErrorExpected();
+        super.validateNonceNotUsedSuccessExpected();
     }
 
     @Test

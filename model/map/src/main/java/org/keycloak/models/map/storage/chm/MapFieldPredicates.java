@@ -141,7 +141,7 @@ public class MapFieldPredicates {
         put(USER_PREDICATES, UserModel.SearchableFields.SERVICE_ACCOUNT_CLIENT,   MapUserEntity::getServiceAccountClientLink);
 
         put(AUTHENTICATION_SESSION_PREDICATES, RootAuthenticationSessionModel.SearchableFields.REALM_ID,    MapRootAuthenticationSessionEntity::getRealmId);
-        put(AUTHENTICATION_SESSION_PREDICATES, RootAuthenticationSessionModel.SearchableFields.TIMESTAMP,   MapRootAuthenticationSessionEntity::getTimestamp);
+        put(AUTHENTICATION_SESSION_PREDICATES, RootAuthenticationSessionModel.SearchableFields.EXPIRATION,  MapRootAuthenticationSessionEntity::getExpiration);
 
         put(AUTHZ_RESOURCE_SERVER_PREDICATES, ResourceServer.SearchableFields.ID, predicateForKeyField(MapResourceServerEntity::getId));
 
@@ -485,7 +485,7 @@ public class MapFieldPredicates {
 
     private static MapModelCriteriaBuilder<Object, MapRealmEntity, RealmModel> checkRealmsWithComponentType(MapModelCriteriaBuilder<Object, MapRealmEntity, RealmModel> mcb, Operator op, Object[] values) {
         String providerType = ensureEqSingleValue(RealmModel.SearchableFields.COMPONENT_PROVIDER_TYPE, "component_provider_type", op, values);
-        Function<MapRealmEntity, ?> getter = realmEntity -> realmEntity.getComponents().anyMatch(component -> component.getProviderType().equals(providerType));
+        Function<MapRealmEntity, ?> getter = realmEntity -> Optional.ofNullable(realmEntity.getComponents()).orElseGet(Collections::emptySet).stream().anyMatch(component -> component.getProviderType().equals(providerType));
         return mcb.fieldCompare(Boolean.TRUE::equals, getter);
     }
 

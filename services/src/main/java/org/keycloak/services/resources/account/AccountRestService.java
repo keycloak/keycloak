@@ -138,7 +138,7 @@ public class AccountRestService {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @NoCache
-    public UserRepresentation account(final @PathParam("userProfileMetadata") Boolean userProfileMetadata) {
+    public UserRepresentation account(final @QueryParam("userProfileMetadata") Boolean userProfileMetadata) {
         auth.requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.VIEW_PROFILE);
 
         UserModel user = auth.getUser();

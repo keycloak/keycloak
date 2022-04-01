@@ -30,6 +30,7 @@ import javax.lang.model.element.Modifier;
 import javax.lang.model.element.Name;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
@@ -102,12 +103,17 @@ public class GenerateHotRodEntityImplementationsProcessor extends AbstractGenera
             abstractHotRodEntity = elements.getTypeElement("org.keycloak.models.map.storage.hotRod.common.AbstractHotRodEntity");
             hotRodUtils = elements.getTypeElement("org.keycloak.models.map.storage.hotRod.common.HotRodTypesUtils");
 
-            boolean hasDeepClone = allMembers.stream().filter(el -> el.getKind() == ElementKind.METHOD).anyMatch(el -> "deepClone".equals(el.getSimpleName().toString()));
+            boolean hasDeepClone = allMembers.stream()
+                    .filter(el -> el.getKind() == ElementKind.METHOD && !el.getModifiers().contains(Modifier.ABSTRACT)).anyMatch(el -> "deepClone".equals(el.getSimpleName().toString()));
             boolean needsDeepClone = fieldGetters(methodsPerAttribute)
                     .map(ExecutableElement::getReturnType)
                     .anyMatch(fieldType -> ! isKnownCollectionOfImmutableFinalTypes(fieldType) && ! isImmutableFinalType(fieldType));
             boolean usingGeneratedCloner = ! hasDeepClone && needsDeepClone;
             boolean hasId = methodsPerAttribute.containsKey("Id") || allMembers.stream().anyMatch(el -> "getId".equals(el.getSimpleName().toString()));
+            boolean hasFieldId = elements.getAllMembers(e).stream()
+                    .filter(VariableElement.class::isInstance)
+                    .map(VariableElement.class::cast)
+                    .anyMatch(variableElement -> variableElement.getSimpleName().toString().equals("id"));
 
             JavaFileObject file = processingEnv.getFiler().createSourceFile(hotRodImplClassName);
             try (PrintWriter pw = new PrintWriterNoJavaLang(file.openWriter())) {
@@ -218,6 +224,7 @@ public class GenerateHotRodEntityImplementationsProcessor extends AbstractGenera
 
                 pw.print("        return ");
                 pw.println(elements.getAllMembers(e).stream()
+                        .filter(Util::isNotIgnored)
                         .filter(VariableElement.class::isInstance)
                         .map(VariableElement.class::cast)
                         .map(var -> "Objects.equals(e1." + var.getSimpleName().toString() + ", e2." + var.getSimpleName().toString() + ")")
@@ -227,13 +234,13 @@ public class GenerateHotRodEntityImplementationsProcessor extends AbstractGenera
 
                 pw.println("    public static int entityHashCode(" + className + " e) {");
                 pw.println("        return "
-                        + (hasId
+                        + (hasFieldId
                         ? "(e.id == null ? Objects.hash(e) : e.id.hashCode())"
                         : "Objects.hash("
                         + elements.getAllMembers(e).stream()
                         .filter(VariableElement.class::isInstance)
                         .map(VariableElement.class::cast)
-                        .map(var -> var.getSimpleName().toString())
+                        .map(var -> "e." + var.getSimpleName().toString())
                         .collect(Collectors.joining(",\n          "))
                         + ")")
                         + ";"
@@ -268,7 +275,7 @@ public class GenerateHotRodEntityImplementationsProcessor extends AbstractGenera
                             .filter(variableElement -> variableElement.getSimpleName().toString().equals(hotRodEntityFieldName))
                             .findFirst();
 
-                    if (!hotRodVariable.isPresent()) {
+                    if (!hasField(e, hotRodEntityFieldName)) {
                         // throw an error when no variable found
                         processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, "Cannot find " + e.getSimpleName().toString() + " field for methods: [" + me.getValue().stream().map(ee -> ee.getSimpleName().toString()).collect(Collectors.joining(", ")) + "]", parentInterfaceElement);
                         return;
@@ -326,7 +333,10 @@ public class GenerateHotRodEntityImplementationsProcessor extends AbstractGenera
                 case SETTER:
                     pw.println("    @SuppressWarnings(\"unchecked\") @Override public " + method.getReturnType() + " " + method.getSimpleName() + "(" + firstParameterType + " p0) {");
                     if (! isImmutableFinalType(firstParameterType)) {
-                        pw.println("        p0 = " + deepClone(fieldType, "p0") + ";");
+                        pw.println("        p0 = " + deepClone(firstParameterType, "p0") + ";");
+                    }
+                    if (isCollection(firstParameterType)) {
+                        pw.println("        if (p0 != null) " + removeUndefined(firstParameterType, "p0") + ";");
                     }
                     pw.println("        " + hotRodFieldType.toString() + " migrated = " + migrateToType(hotRodFieldType, firstParameterType, "p0") + ";");
                     pw.println("        " + hotRodEntityField("updated") + " |= ! Objects.equals(" + hotRodEntityField(fieldName) + ", migrated);");
@@ -336,10 +346,14 @@ public class GenerateHotRodEntityImplementationsProcessor extends AbstractGenera
                 case COLLECTION_ADD:
                     TypeMirror collectionItemType = getGenericsDeclaration(hotRodFieldType).get(0);
                     pw.println("    @SuppressWarnings(\"unchecked\") @Override public " + method.getReturnType() + " " + method.getSimpleName() + "(" + firstParameterType + " p0) {");
-                    pw.println("        if (" + hotRodEntityField(fieldName) + " == null) { " + hotRodEntityField(fieldName) + " = " + interfaceToImplementation(typeElement, "") + "; }");
                     if (! isImmutableFinalType(firstParameterType)) {
-                        pw.println("        p0 = " + deepClone(fieldType, "p0") + ";");
+                        pw.println("        p0 = " + deepClone(firstParameterType, "p0") + ";");
                     }
+                    if (isCollection(firstParameterType)) {
+                        pw.println("        if (p0 != null) " + removeUndefined(firstParameterType, "p0") + ";");
+                    }
+                    pw.println("        if (" + isUndefined("p0") + ") return;");
+                    pw.println("        if (" + hotRodEntityField(fieldName) + " == null) { " + hotRodEntityField(fieldName) + " = " + interfaceToImplementation(typeElement, "") + "; }");
                     pw.println("        " + collectionItemType.toString() + " migrated = " + migrateToType(collectionItemType, firstParameterType, "p0") + ";");
                     if (isSetType(typeElement)) {
                         pw.println("        " + hotRodEntityField("updated") + " |= " + hotRodEntityField(fieldName) + ".add(migrated);");
@@ -351,19 +365,22 @@ public class GenerateHotRodEntityImplementationsProcessor extends AbstractGenera
                     return true;
                 case COLLECTION_DELETE:
                     collectionItemType = getGenericsDeclaration(hotRodFieldType).get(0);
+                    boolean needsReturn = method.getReturnType().getKind() != TypeKind.VOID;
                     pw.println("    @SuppressWarnings(\"unchecked\") @Override public " + method.getReturnType() + " " + method.getSimpleName() + "(" + firstParameterType + " p0) {");
                     if (isMapType(typeElement)) {
                         // Maps are stored as sets
-                        pw.println("        " + hotRodEntityField("updated") + " |= " + hotRodUtils.getQualifiedName().toString() + ".removeFromSetByMapKey("
+                        pw.println("        boolean removed = " + hotRodUtils.getQualifiedName().toString() + ".removeFromSetByMapKey("
                                 + hotRodEntityField(fieldName) + ", "
                                 + "p0, "
                                 + keyGetterReference(collectionItemType) + ");"
                         );
+                        pw.println("        " + hotRodEntityField("updated") + " |= removed;");
                     } else {
-                        pw.println("        if (" + hotRodEntityField(fieldName) + " == null) { return; }");
+                        pw.println("        if (" + hotRodEntityField(fieldName) + " == null) { return" + (needsReturn ? " false" : "") + "; }");
                         pw.println("        boolean removed = " + hotRodEntityField(fieldName) + ".remove(p0);");
                         pw.println("        " + hotRodEntityField("updated") + " |= removed;");
                     }
+                    if (needsReturn) pw.println("        return removed;");
                     pw.println("    }");
                     return true;
                 case MAP_ADD:
@@ -371,10 +388,13 @@ public class GenerateHotRodEntityImplementationsProcessor extends AbstractGenera
                     TypeMirror secondParameterType = method.getParameters().get(1).asType();
                     pw.println("    @SuppressWarnings(\"unchecked\") @Override public " + method.getReturnType() + " " + method.getSimpleName() + "(" + firstParameterType + " p0, " + secondParameterType + " p1) {");
                     pw.println("        if (" + hotRodEntityField(fieldName) + " == null) { " + hotRodEntityField(fieldName) + " = " + interfaceToImplementation((TypeElement) types.asElement(types.erasure(hotRodFieldType)), "") + "; }");
-                    pw.println("        boolean valueUndefined = p1 == null" + (isCollection(secondParameterType) ? " || p1.isEmpty()" : "") + ";");
                     if (! isImmutableFinalType(secondParameterType)) {
                         pw.println("        p1 = " + deepClone(secondParameterType, "p1") + ";");
                     }
+                    if (isCollection(secondParameterType)) {
+                        pw.println("        if (p1 != null) " + removeUndefined(secondParameterType, "p1") + ";");
+                    }
+                    pw.println("        boolean valueUndefined = " + isUndefined("p1") + ";");
                     pw.println("        " + hotRodEntityField("updated") + " |= " + hotRodUtils.getQualifiedName().toString() + ".removeFromSetByMapKey("
                             + hotRodEntityField(fieldName) + ", "
                             + "p0, "
@@ -409,8 +429,20 @@ public class GenerateHotRodEntityImplementationsProcessor extends AbstractGenera
             return e.getSimpleName().toString();
         }
 
+        private boolean hasField(TypeElement type, String fieldName) {
+            Optional<VariableElement> hotRodVariable = elements.getAllMembers(type).stream()
+                    .filter(VariableElement.class::isInstance)
+                    .map(VariableElement.class::cast)
+                    .filter(variableElement -> variableElement.getSimpleName().toString().equals(fieldName))
+                    .findFirst();
+
+            return hotRodVariable.isPresent();
+        }
+
         private String keyGetterReference(TypeMirror type) {
-            if (types.isAssignable(type, abstractHotRodEntity.asType())) {
+            TypeElement typeElement = elements.getTypeElement(types.erasure(type).toString());
+
+            if (hasField(typeElement, "id")) {
                 return "e -> e.id";
             }
             return hotRodUtils.getQualifiedName().toString() + "::getKey";
@@ -423,15 +455,29 @@ public class GenerateHotRodEntityImplementationsProcessor extends AbstractGenera
             return hotRodUtils.getQualifiedName().toString() + "::getValue";
         }
 
+        private boolean isAssignable(TypeMirror fromType, TypeMirror toType) {
+            return types.isAssignable(types.erasure(fromType), types.erasure(toType));
+        }
+
         private String migrateToType(TypeMirror toType, TypeMirror[] fromType, String[] fieldNames) {
             // No migration needed, fromType is assignable to toType directly
-            if (fromType.length == 1 && types.isAssignable(types.erasure(fromType[0]), types.erasure(toType))) {
+            if (fromType.length == 1 && isAssignable(fromType[0], toType) && !isCollection(fromType[0])) {
                 return fieldNames[0];
             }
 
-            // HotRod entities are not allowed to use Maps, therefore we often need to migrate from Map to Set and the other way around
+            // Solve migration of data within collections
             if (fromType.length == 1) {
-                if (isSetType((TypeElement) types.asElement(types.erasure(toType)))
+                if (isAssignable(fromType[0], toType)) { // First case, the collection is the same
+                    TypeMirror fromGeneric = getGenericsDeclaration(fromType[0]).get(0);
+                    TypeMirror toGeneric = getGenericsDeclaration(toType).get(0);
+
+                    // Generics are assignable too, so we can just assign the same value
+                    if (isAssignable(fromGeneric, toGeneric)) return fieldNames[0];
+
+                    return hotRodUtils.getQualifiedName().toString() + ".migrate" + toSimpleName(fromType[0]) + "("
+                            + fieldNames[0] + ", "
+                            + "collectionItem -> " + migrateToType(toGeneric, fromGeneric, "collectionItem") + ")";
+                } else if (isSetType((TypeElement) types.asElement(types.erasure(toType)))
                         && isMapType((TypeElement) types.asElement(types.erasure(fromType[0])))) {
                     TypeMirror setType = getGenericsDeclaration(toType).get(0);
 
@@ -456,19 +502,19 @@ public class GenerateHotRodEntityImplementationsProcessor extends AbstractGenera
                 return "new " + toType.toString() + "(" + String.join(", ", fieldNames) + ")";
             }
 
-            // Check if any of parameters is another Map*Entity
-            OptionalInt anotherMapEntityIndex = IntStream.range(0, fromType.length)
-                    .filter(i -> types.isAssignable(fromType[i], abstractEntity.asType()))
-                    .findFirst();
+            if (isAssignable(toType, abstractHotRodEntity.asType())) {
+                // Check if any of parameters is another Map*Entity
+                OptionalInt anotherMapEntityIndex = IntStream.range(0, fromType.length)
+                        .filter(i -> isAssignable(fromType[i], abstractEntity.asType()))
+                        .findFirst();
 
-            if (anotherMapEntityIndex.isPresent()) {
                 // If yes, we can be sure that it implements HotRodEntityDelegate (this is achieved by HotRod cloner settings) so we can just call getHotRodEntity method
-                return "((" + generalHotRodDelegate.getQualifiedName().toString() + "<" + toType.toString() + ">) " + fieldNames[anotherMapEntityIndex.getAsInt()] + ").getHotRodEntity()";
+                return "((" + generalHotRodDelegate.getQualifiedName().toString() + "<" + toType.toString() + ">) " + fieldNames[anotherMapEntityIndex.orElse(0)] + ").getHotRodEntity()";
             }
 
             // Check if any of parameters is another HotRod*Entity
             OptionalInt anotherHotRodEntityIndex = IntStream.range(0, fromType.length)
-                    .filter(i -> types.isAssignable(fromType[i], abstractHotRodEntity.asType()))
+                    .filter(i -> isAssignable(fromType[i], abstractHotRodEntity.asType()))
                     .findFirst();
 
             if (anotherHotRodEntityIndex.isPresent()) {
@@ -476,7 +522,8 @@ public class GenerateHotRodEntityImplementationsProcessor extends AbstractGenera
                 return "new " + fromType[anotherHotRodEntityIndex.getAsInt()] + "Delegate(" + String.join(", ", fieldNames) + ")";
             }
 
-            throw new CannotMigrateTypeException(toType, fromType);
+            int last = fromType.length -1 ;
+            return hotRodUtils.getQualifiedName().toString() + ".migrate" + toSimpleName(fromType[last]) + "To" + toSimpleName(toType) + "(" + fieldNames[last] + ")";
         }
 
         private Optional<ExecutableElement> findSuitableConstructor(TypeMirror desiredType, TypeMirror[] parameters) {

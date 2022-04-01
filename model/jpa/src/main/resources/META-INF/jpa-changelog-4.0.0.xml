@@ -18,6 +18,7 @@
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
 
     <changeSet author="bburke@redhat.com" id="4.0.0-KEYCLOAK-6335">
+        <validCheckSum>7:d8dc5d89c789105cfa7ca0e82cba60af</validCheckSum>
         <createTable tableName="CLIENT_AUTH_FLOW_BINDINGS">
             <column name="CLIENT_ID" type="VARCHAR(36)">
                 <constraints nullable="false"/>
@@ -30,9 +31,11 @@
         <addPrimaryKey columnNames="CLIENT_ID, BINDING_NAME" constraintName="C_CLI_FLOW_BIND" tableName="CLIENT_AUTH_FLOW_BINDINGS"/>
     </changeSet>
     <changeSet author="bburke@redhat.com" id="4.0.0-CLEANUP-UNUSED-TABLE">
+        <validCheckSum>7:7822e0165097182e8f653c35517656a3</validCheckSum>
         <dropTable tableName="CLIENT_IDENTITY_PROV_MAPPING"/>
     </changeSet>
     <changeSet author="bburke@redhat.com" id="4.0.0-KEYCLOAK-6228">
+        <validCheckSum>7:c6538c29b9c9a08f9e9ea2de5c2b6375</validCheckSum>
         <!-- Modifying some columns so that CLIENT_ID is 255.  Drop foreign key constraints too that referenced CLIENT tablename.
              This is needed for client storage SPI but only needed for tables that might reference a federated client -->
 
@@ -86,6 +89,7 @@
      </changeSet>
 
     <changeSet author="mposolda@redhat.com" id="4.0.0-KEYCLOAK-5579-fixed">
+        <validCheckSum>7:6d4893e36de22369cf73bcb051ded875</validCheckSum>
         <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
             <not>
                 <changeSetExecuted id="4.0.0-KEYCLOAK-5579" author="mposolda@redhat.com" changeLogFile="META-INF/jpa-changelog-4.0.0.xml" />

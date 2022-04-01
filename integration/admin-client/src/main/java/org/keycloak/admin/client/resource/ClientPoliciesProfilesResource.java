@@ -7,7 +7,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
-import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.representations.idm.ClientProfilesRepresentation;
 
 /**
@@ -16,7 +15,6 @@ import org.keycloak.representations.idm.ClientProfilesRepresentation;
 public interface ClientPoliciesProfilesResource {
 
     @GET
-    @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     ClientProfilesRepresentation getProfiles(@QueryParam("include-global-profiles") Boolean includeGlobalProfiles);
 

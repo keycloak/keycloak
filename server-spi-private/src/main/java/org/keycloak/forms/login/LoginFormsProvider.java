@@ -68,6 +68,8 @@ public interface LoginFormsProvider extends Provider {
 
     Response createLoginTotp();
 
+    Response createLoginRecoveryAuthnCode();
+
     Response createLoginWebAuthn();
 
     Response createRegistration();
@@ -99,6 +101,8 @@ public interface LoginFormsProvider extends Provider {
     Response createSamlPostForm();
 
     Response createFrontChannelLogoutPage();
+
+    Response createLogoutConfirmPage();
 
     LoginFormsProvider setAuthenticationSession(AuthenticationSessionModel authenticationSession);
 

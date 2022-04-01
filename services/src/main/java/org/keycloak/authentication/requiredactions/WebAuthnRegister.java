@@ -31,7 +31,6 @@ import javax.ws.rs.core.Response;
 
 import com.webauthn4j.WebAuthnRegistrationManager;
 import com.webauthn4j.data.AuthenticatorTransport;
-import org.apache.commons.collections4.CollectionUtils;
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.WebAuthnConstants;
@@ -40,6 +39,7 @@ import org.keycloak.authentication.InitiatedActionSupport;
 import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.common.util.Base64Url;
+import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.credential.CredentialProvider;
 import org.keycloak.credential.WebAuthnCredentialModelInput;
@@ -327,7 +327,7 @@ public class WebAuthnRegister implements RequiredActionProvider, CredentialRegis
         logger.debugv("aaguid = {0}", attestedCredentialData.getAaguid().toString());
         logger.debugv("attestation format = {0}", attestationStatement.getFormat());
 
-        if (CollectionUtils.isNotEmpty(transports)) {
+        if (CollectionUtil.isNotEmpty(transports)) {
             logger.debugv("transports = [{0}]", transports.stream()
                     .map(AuthenticatorTransport::getValue)
                     .collect(Collectors.joining(",")));

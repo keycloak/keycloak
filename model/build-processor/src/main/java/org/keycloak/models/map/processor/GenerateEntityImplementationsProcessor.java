@@ -424,7 +424,13 @@ public class GenerateEntityImplementationsProcessor extends AbstractGenerateEnti
                 case SETTER:
                     pw.println("    @SuppressWarnings(\"unchecked\") @Override public " + method.getReturnType() + " " + method.getSimpleName() + "(" + firstParameterType + " p0) {");
                     if (! isImmutableFinalType(fieldType)) {
-                        pw.println("        p0 = " + deepClone(fieldType, "p0") + ";");
+                        pw.println("        p0 = " + deepClone(firstParameterType, "p0") + ";");
+                    }
+                    if (isCollection(firstParameterType)) {
+                        pw.println("        if (p0 != null) {");
+                        pw.println("            " + removeUndefined(firstParameterType, "p0") + ";");
+                        pw.println("            if (" + isUndefined("p0") + ") p0 = null;");
+                        pw.println("        }");
                     }
                     pw.println("        updated |= ! Objects.equals(" + fieldName + ", p0);");
                     pw.println("        " + fieldName + " = p0;");
@@ -432,10 +438,14 @@ public class GenerateEntityImplementationsProcessor extends AbstractGenerateEnti
                     return true;
                 case COLLECTION_ADD:
                     pw.println("    @SuppressWarnings(\"unchecked\") @Override public " + method.getReturnType() + " " + method.getSimpleName() + "(" + firstParameterType + " p0) {");
-                    pw.println("        if (" + fieldName + " == null) { " + fieldName + " = " + interfaceToImplementation(typeElement, "") + "; }");
                     if (! isImmutableFinalType(firstParameterType)) {
-                        pw.println("        p0 = " + deepClone(fieldType, "p0") + ";");
+                        pw.println("        p0 = " + deepClone(firstParameterType, "p0") + ";");
                     }
+                    if (isCollection(firstParameterType)) {
+                        pw.println("        if (p0 != null) " + removeUndefined(firstParameterType, "p0") + ";");
+                    }
+                    pw.println("        if (" + isUndefined("p0") + ") return;");
+                    pw.println("        if (" + fieldName + " == null) { " + fieldName + " = " + interfaceToImplementation(typeElement, "") + "; }");
                     if (isSetType(typeElement)) {
                         pw.println("        updated |= " + fieldName + ".add(p0);");
                     } else {
@@ -456,10 +466,16 @@ public class GenerateEntityImplementationsProcessor extends AbstractGenerateEnti
                 case MAP_ADD:
                     TypeMirror secondParameterType = method.getParameters().get(1).asType();
                     pw.println("    @SuppressWarnings(\"unchecked\") @Override public " + method.getReturnType() + " " + method.getSimpleName() + "(" + firstParameterType + " p0, " + secondParameterType + " p1) {");
-                    pw.println("        if (" + fieldName + " == null) { " + fieldName + " = " + interfaceToImplementation(typeElement, "") + "; }");
                     if (! isImmutableFinalType(secondParameterType)) {
                         pw.println("        p1 = " + deepClone(secondParameterType, "p1") + ";");
                     }
+                    if (isCollection(secondParameterType)) {
+                        pw.println("        if (p1 != null) " + removeUndefined(secondParameterType, "p1") + ";");
+                    }
+                    pw.println("        boolean valueUndefined = " + isUndefined("p1") + ";");
+                    pw.println("        if (valueUndefined) { if (" + fieldName + " != null) { updated |= " + fieldName + ".remove(p0) != null; } return; }");
+                    pw.println("        if (" + fieldName + " == null) { " + fieldName + " = " + interfaceToImplementation(typeElement, "") + "; }");
+
                     pw.println("        Object v = " + fieldName + ".put(p0, p1);");
                     pw.println("        updated |= ! Objects.equals(v, p1);");
                     pw.println("    }");

@@ -52,6 +52,7 @@ public class JsonFileImport903MigrationTest extends AbstractJsonFileImportMigrat
     public void migration9_0_3Test() throws Exception {
         checkRealmsImported();
         testMigrationTo12_x(true);
+        testMigrationTo18_x();
     }
 
 }

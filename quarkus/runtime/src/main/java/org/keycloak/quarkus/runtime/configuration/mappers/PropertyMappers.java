@@ -1,5 +1,7 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
+import io.quarkus.runtime.QuarkusApplication;
+import io.quarkus.runtime.configuration.ConfigurationRuntimeConfig;
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
 import org.keycloak.quarkus.runtime.Environment;
@@ -26,11 +28,13 @@ public final class PropertyMappers {
         MAPPERS.addAll(DatabasePropertyMappers.getDatabasePropertyMappers());
         MAPPERS.addAll(HostnamePropertyMappers.getHostnamePropertyMappers());
         MAPPERS.addAll(HttpPropertyMappers.getHttpPropertyMappers());
+        MAPPERS.addAll(HealthPropertyMappers.getHealthPropertyMappers());
         MAPPERS.addAll(MetricsPropertyMappers.getMetricsPropertyMappers());
         MAPPERS.addAll(ProxyPropertyMappers.getProxyPropertyMappers());
         MAPPERS.addAll(VaultPropertyMappers.getVaultPropertyMappers());
         MAPPERS.addAll(FeaturePropertyMappers.getMappers());
         MAPPERS.addAll(LoggingPropertyMappers.getMappers());
+        MAPPERS.addAll(TransactionPropertyMappers.getTransactionPropertyMappers());
     }
 
     public static ConfigValue getValue(ConfigSourceInterceptorContext context, String name) {
@@ -51,12 +55,8 @@ public final class PropertyMappers {
     }
 
     public static boolean isBuildTimeProperty(String name) {
-        if (isFeaturesBuildTimeProperty(name) || isSpiBuildTimeProperty(name) || name.startsWith(MicroProfileConfigProvider.NS_QUARKUS_PREFIX)) {
+        if (isFeaturesBuildTimeProperty(name) || isSpiBuildTimeProperty(name)) {
             return true;
-        }
-
-        if (!name.startsWith(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX)) {
-            return false;
         }
 
         boolean isBuildTimeProperty = MAPPERS.entrySet().stream()

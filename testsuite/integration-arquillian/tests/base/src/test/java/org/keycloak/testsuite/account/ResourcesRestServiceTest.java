@@ -62,6 +62,7 @@ import java.util.function.Consumer;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -129,6 +130,7 @@ public class ResourcesRestServiceTest extends AbstractRestServiceTest {
 
             try (Response response1 = authorization.resources().create(resource)) {
                 resource.setId(response1.readEntity(ResourceRepresentation.class).getId());
+                assertTrue(resource.getId() != null);
             }
 
             for (String scope : Arrays.asList("Scope A", "Scope B")) {

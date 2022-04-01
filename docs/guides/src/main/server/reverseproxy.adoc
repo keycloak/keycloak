@@ -13,9 +13,6 @@ For Keycloak, your choice of proxy modes depends on the TLS termination in your 
 == Proxy modes
 The following proxy modes are available:
 
-none:: Disables proxy support.
-It is the default mode.
-
 edge:: Enables communication through HTTP between the proxy and Keycloak.
 This mode is suitable for deployments with a highly secure internal network where the reverse proxy keeps a secure connection (HTTP over TLS) with clients while communicating with Keycloak using HTTP.
 
@@ -66,7 +63,7 @@ The following table shows the recommended paths to expose.
 |/js/
 | -
 |No
-|A good practice is to not use external js for the javascript client, but bake it into your public client instead.
+|A good practice is to not use external js for the JavaScript client, but add it into your public client using a package manager like NPM or Yarn instead.
 
 |/welcome/
 | -
@@ -88,8 +85,66 @@ The following table shows the recommended paths to expose.
 |Yes
 |Search engine rules
 
+|/metrics
+|-
+|No
+|Exposed metrics lead to an unnecessary attack vector.
+
+|/health
+|-
+|No
+|Exposed health checks lead to an unnecessary attack vector.
+
 |===
 We assume you run Keycloak on the root path `/` on your reverse proxy/gateway's public API.
 If not, prefix the path with your desired one.
+
+=== Enabling client certificate lookup
+
+When the proxy is configured as a TLS termination proxy the client certificate information can be forwarded to the server through specific HTTP request headers and then used to authenticate
+clients. You are able to configure how the server is going to retrieve client certificate information depending on the proxy you are using.
+
+The server supports some of the most commons TLS termination proxies such as:
+
+|===
+|Proxy|Provider
+
+|Apache HTTP Server
+|apache
+
+|HAProxy
+|haproxy
+
+|NGINX
+|nginx
+|===
+
+To configure how client certificates are retrieved from the requests you need to:
+
+.Enable the corresponding proxy provider
+<@kc.build parameters="--spi-x509cert-lookup-provider=<provider>"/>
+
+.Configure the HTTP headers
+<@kc.start parameters="--spi-x509cert-lookup-<provider>-ssl-client-cert=SSL_CLIENT_CERT --spi-x509cert-lookup-<provider>-ssl-cert-chain-prefix=CERT_CHAIN --spi-x509cert-lookup-<provider>-certificate-chain-length=10"/>
+
+When configuring the HTTP headers, you need to make sure the values you are using correspond to the name of the headers
+forwarded by the proxy with the client certificate information.
+
+The available options for configuring a provider are:
+
+|===
+|Option|Description
+
+|ssl-client-cert
+| The name of the header holding the client certificate
+
+|ssl-cert-chain-prefix
+| The prefix of the headers holding additional certificates in the chain and used to retrieve individual
+certificates accordingly to the length of the chain. For instance, a value `CERT_CHAIN` will tell the server
+to load additional certificates from headers `CERT_CHAIN_0` to `CERT_CHAIN_9` if `certificate-chain-length` is set to `10`.
+
+|certificate-chain-length
+| The maximum length of the certificate chain.
+|===
 
 </@tmpl.guide>

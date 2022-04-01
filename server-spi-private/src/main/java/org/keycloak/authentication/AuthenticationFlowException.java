@@ -30,9 +30,17 @@ public class AuthenticationFlowException extends RuntimeException {
     private AuthenticationFlowError error;
     private Response response;
     private List<AuthenticationFlowException> afeList;
+    private String eventDetails;
+    private String userErrorMessage;
 
     public AuthenticationFlowException(AuthenticationFlowError error) {
         this.error = error;
+    }
+    
+    public AuthenticationFlowException(AuthenticationFlowError error, String eventDetails, String userErrorMessage) {
+        this.error = error;
+        this.eventDetails = eventDetails;
+        this.userErrorMessage = userErrorMessage;
     }
 
     public AuthenticationFlowException(AuthenticationFlowError error, Response response) {
@@ -75,5 +83,13 @@ public class AuthenticationFlowException extends RuntimeException {
 
     public List<AuthenticationFlowException> getAfeList() {
         return afeList;
+    }
+
+    public String getEventDetails() {
+        return eventDetails;
+    }
+    
+    public String getUserErrorMessage() {
+        return userErrorMessage;
     }
 }

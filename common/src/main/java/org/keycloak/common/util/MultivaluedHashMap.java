@@ -123,7 +123,7 @@ public class MultivaluedHashMap<K, V> extends HashMap<K, List<V>>
       for (Map.Entry<K, List<V>> e : entrySet()) {
           List<V> list = e.getValue();
           List<V> olist = omap.get(e.getKey());
-          if (!(list.size() == olist.size() && list.containsAll(olist) && olist.containsAll(list))) {
+          if (!CollectionUtil.collectionEquals(list, olist)) {
               return false;
           }
       }

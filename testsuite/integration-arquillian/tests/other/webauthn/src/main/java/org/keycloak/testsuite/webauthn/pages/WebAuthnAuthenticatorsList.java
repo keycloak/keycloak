@@ -28,7 +28,7 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
+import static org.keycloak.testsuite.util.UIUtils.getTextFromElementOrNull;
 
 /**
  * Helper class for getting available authenticators on WebAuthnLogin page
@@ -44,10 +44,10 @@ public class WebAuthnAuthenticatorsList {
         try {
             List<WebAuthnAuthenticatorItem> items = new ArrayList<>();
             for (WebElement auth : authenticators) {
-                String name = getTextFromElement(auth.findElement(By.id("kc-webauthn-authenticator-label")));
-                String createdAt = getTextFromElement(auth.findElement(By.id("kc-webauthn-authenticator-created")));
-                String createdAtLabel = getTextFromElement(auth.findElement(By.id("kc-webauthn-authenticator-created-label")));
-                String transport = getTextFromElement(auth.findElement(By.id("kc-webauthn-authenticator-transport")));
+                String name = getTextFromElementOrNull(() -> auth.findElement(By.id("kc-webauthn-authenticator-label")));
+                String createdAt = getTextFromElementOrNull(() -> auth.findElement(By.id("kc-webauthn-authenticator-created")));
+                String createdAtLabel = getTextFromElementOrNull(() -> auth.findElement(By.id("kc-webauthn-authenticator-created-label")));
+                String transport = getTextFromElementOrNull(() -> auth.findElement(By.id("kc-webauthn-authenticator-transport")));
                 items.add(new WebAuthnAuthenticatorItem(name, createdAt, createdAtLabel, transport));
             }
             return items;

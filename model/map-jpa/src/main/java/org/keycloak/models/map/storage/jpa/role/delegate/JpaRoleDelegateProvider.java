@@ -55,7 +55,7 @@ public class JpaRoleDelegateProvider extends JpaDelegateProvider<JpaRoleEntity> 
                         CriteriaBuilder cb = em.getCriteriaBuilder();
                         CriteriaQuery<JpaRoleEntity> query = cb.createQuery(JpaRoleEntity.class);
                         Root<JpaRoleEntity> root = query.from(JpaRoleEntity.class);
-                        root.fetch("attributes", JoinType.INNER);
+                        root.fetch("attributes", JoinType.LEFT);
                         query.select(root).where(cb.equal(root.get("id"), UUID.fromString(getDelegate().getId())));
 
                         setDelegate(em.createQuery(query).getSingleResult());
@@ -64,7 +64,9 @@ public class JpaRoleDelegateProvider extends JpaDelegateProvider<JpaRoleEntity> 
                     default:
                         setDelegate(em.find(JpaRoleEntity.class, UUID.fromString(getDelegate().getId())));
                 }
-            } else throw new IllegalStateException("Not a valid role field: " + field);
+            } else {
+                throw new IllegalStateException("Not a valid role field: " + field);
+            }
         } else {
             setDelegate(em.find(JpaRoleEntity.class, UUID.fromString(getDelegate().getId())));
         }

@@ -72,6 +72,26 @@
                 </div>
                 <kc-tooltip>{{:: 'sslRequired.tooltip' | translate}}</kc-tooltip>
             </div>
+            <div class="form-group clearfix block" data-ng-show="serverInfo.featureEnabled('STEP_UP_AUTHENTICATION')">
+                <label class="col-md-2 control-label" for="newAcr">{{:: 'acr-loa-map' | translate}}</label>
+                <div class="col-sm-6">
+                    <div class="input-group input-map" ng-repeat="(acr, loa) in acrLoaMap">
+                        <input class="form-control" readonly value="{{acr}}">
+                        <input class="form-control" ng-model="acrLoaMap[acr]">
+                        <div class="input-group-btn">
+                            <button class="btn btn-default" type="button" data-ng-click="deleteAcrLoaMapping(acr)"><span class="fa fa-minus"></span></button>
+                        </div>
+                    </div>
+                    <div class="input-group input-map">
+                        <input class="form-control" ng-model="newAcr" id="newAcr" placeholder="ACR">
+                        <input class="form-control" ng-model="newLoa" id="newLoa" placeholder="LOA">
+                        <div class="input-group-btn">
+                            <button class="btn btn-default" type="button" data-ng-click="checkAddAcrLoaMapping()"><span class="fa fa-plus"></span></button>
+                        </div>
+                    </div>
+                </div>
+                <kc-tooltip>{{:: 'acr-loa-map.tooltip' | translate}}</kc-tooltip>
+            </div>
         </fieldset>
 
         <div class="form-group" data-ng-show="access.manageRealm">

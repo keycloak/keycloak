@@ -222,6 +222,7 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
 
             OAuthClient.AuthorizationEndpointResponse resp = oauth1.doLogin("test-user@localhost", "password");
             String code = resp.getCode();
+            String idTokenHint = oauth1.doAccessTokenRequest(code, "password").getIdToken();
             Assert.assertNotNull(code);
             String codeURL = driver.getCurrentUrl();
 
@@ -247,11 +248,11 @@ public class ConcurrentLoginTest extends AbstractConcurrencyTest {
 
             run(DEFAULT_THREADS, DEFAULT_THREADS, codeToTokenTask);
 
-            oauth1.openLogout();
+            oauth1.idTokenHint(idTokenHint).openLogout();
 
             // Code should be successfully exchanged for the token at max once. In some cases (EG. Cross-DC) it may not be even successfully exchanged
-            Assert.assertThat(codeToTokenSuccessCount.get(), Matchers.lessThanOrEqualTo(1));
-            Assert.assertThat(codeToTokenErrorsCount.get(), Matchers.greaterThanOrEqualTo(DEFAULT_THREADS - 1));
+            Assert.assertThat(codeToTokenSuccessCount.get(), Matchers.lessThanOrEqualTo(0));
+            Assert.assertThat(codeToTokenErrorsCount.get(), Matchers.greaterThanOrEqualTo(DEFAULT_THREADS));
 
             log.infof("Iteration %d passed successfully", i);
         }

@@ -2,6 +2,7 @@ package org.keycloak.quarkus.runtime.configuration.mappers;
 
 import io.quarkus.datasource.common.runtime.DatabaseKind;
 import io.smallrye.config.ConfigSourceInterceptorContext;
+import io.smallrye.config.ConfigValue;
 import org.keycloak.quarkus.runtime.storage.database.Database;
 
 import java.util.Optional;
@@ -21,14 +22,14 @@ final class DatabasePropertyMappers {
                         .mapFrom("db")
                         .to("quarkus.hibernate-orm.dialect")
                         .isBuildTimeProperty(true)
-                        .transformer((db, context) -> Database.getDialect(db).orElse(Database.getDialect("dev-file").get()))
+                        .transformer(DatabasePropertyMappers::transformDialect)
                         .hidden(true)
                         .build(),
                 builder().from("db-driver")
                         .mapFrom("db")
-                        .defaultValue(Database.getDriver("dev-file").get())
+                        .defaultValue(Database.getDriver("dev-file", true).get())
                         .to("quarkus.datasource.jdbc.driver")
-                        .transformer((db, context) -> Database.getDriver(db).orElse(db))
+                        .transformer(DatabasePropertyMappers::getXaOrNonXaDriver)
                         .hidden(true)
                         .build(),
                 builder().from("db").
@@ -38,11 +39,6 @@ final class DatabasePropertyMappers {
                         .description("The database vendor. Possible values are: " + String.join(", ", Database.getAliases()))
                         .paramLabel("vendor")
                         .expectedValues(asList(Database.getAliases()))
-                        .build(),
-                builder().from("db-tx-type")
-                        .defaultValue("xa")
-                        .to("quarkus.datasource.jdbc.transactions")
-                        .hidden(true)
                         .build(),
                 builder().from("db-url")
                         .to("quarkus.datasource.jdbc.url")
@@ -106,6 +102,14 @@ final class DatabasePropertyMappers {
         };
     }
 
+    private static String getXaOrNonXaDriver(String db, ConfigSourceInterceptorContext context) {
+        ConfigValue xaEnabledConfigValue = context.proceed("kc.transaction-xa-enabled");
+
+        boolean isXaEnabled = xaEnabledConfigValue == null || Boolean.parseBoolean(xaEnabledConfigValue.getValue());
+
+        return Database.getDriver(db, isXaEnabled).orElse(db);
+    }
+
     private static BiFunction<String, ConfigSourceInterceptorContext, String> toDatabaseKind() {
         return (db, context) -> {
             Optional<String> databaseKind = Database.getDatabaseKind(db);
@@ -143,5 +147,15 @@ final class DatabasePropertyMappers {
     private static boolean isDevModeDatabase(ConfigSourceInterceptorContext context) {
         String db = context.proceed("kc.db").getValue();
         return Database.getDatabaseKind(db).get().equals(DatabaseKind.H2);
+    }
+
+    private static String transformDialect(String db, ConfigSourceInterceptorContext context) {
+        Optional<String> databaseKind = Database.getDatabaseKind(db);
+
+        if (databaseKind.isEmpty()) {
+            return db;
+        }
+
+        return Database.getDialect(db).orElse(Database.getDialect("dev-file").get());
     }
 }

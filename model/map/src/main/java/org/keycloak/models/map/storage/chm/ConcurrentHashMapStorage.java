@@ -16,7 +16,7 @@
  */
 package org.keycloak.models.map.storage.chm;
 
-import org.keycloak.models.map.common.StringKeyConvertor;
+import org.keycloak.models.map.common.StringKeyConverter;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.common.AbstractEntity;
@@ -54,22 +54,22 @@ public class ConcurrentHashMapStorage<K, V extends AbstractEntity & UpdatableEnt
     protected final ConcurrentMap<K, V> store = new ConcurrentHashMap<>();
 
     protected final Map<SearchableModelField<? super M>, UpdatePredicatesFunc<K, V, M>> fieldPredicates;
-    protected final StringKeyConvertor<K> keyConvertor;
+    protected final StringKeyConverter<K> keyConverter;
     protected final DeepCloner cloner;
 
     @SuppressWarnings("unchecked")
-    public ConcurrentHashMapStorage(Class<M> modelClass, StringKeyConvertor<K> keyConvertor, DeepCloner cloner) {
+    public ConcurrentHashMapStorage(Class<M> modelClass, StringKeyConverter<K> keyConverter, DeepCloner cloner) {
         this.fieldPredicates = MapFieldPredicates.getPredicates(modelClass);
-        this.keyConvertor = keyConvertor;
+        this.keyConverter = keyConverter;
         this.cloner = cloner;
     }
 
     @Override
     public V create(V value) {
-        K key = keyConvertor.fromStringSafe(value.getId());
+        K key = keyConverter.fromStringSafe(value.getId());
         if (key == null) {
-            key = keyConvertor.yieldNewUniqueKey();
-            value = cloner.from(keyConvertor.keyToString(key), value);
+            key = keyConverter.yieldNewUniqueKey();
+            value = cloner.from(keyConverter.keyToString(key), value);
         }
         store.putIfAbsent(key, value);
         return value;
@@ -78,19 +78,19 @@ public class ConcurrentHashMapStorage<K, V extends AbstractEntity & UpdatableEnt
     @Override
     public V read(String key) {
         Objects.requireNonNull(key, "Key must be non-null");
-        K k = keyConvertor.fromStringSafe(key);
+        K k = keyConverter.fromStringSafe(key);
         return store.get(k);
     }
 
     @Override
     public V update(V value) {
-        K key = getKeyConvertor().fromStringSafe(value.getId());
+        K key = getKeyConverter().fromStringSafe(value.getId());
         return store.replace(key, value);
     }
 
     @Override
     public boolean delete(String key) {
-        K k = getKeyConvertor().fromStringSafe(key);
+        K k = getKeyConverter().fromStringSafe(key);
         return store.remove(k) != null;
     }
 
@@ -129,15 +129,15 @@ public class ConcurrentHashMapStorage<K, V extends AbstractEntity & UpdatableEnt
     @SuppressWarnings("unchecked")
     public MapKeycloakTransaction<V, M> createTransaction(KeycloakSession session) {
         MapKeycloakTransaction<V, M> sessionTransaction = session.getAttribute("map-transaction-" + hashCode(), MapKeycloakTransaction.class);
-        return sessionTransaction == null ? new ConcurrentHashMapKeycloakTransaction<>(this, keyConvertor, cloner, fieldPredicates) : sessionTransaction;
+        return sessionTransaction == null ? new ConcurrentHashMapKeycloakTransaction<>(this, keyConverter, cloner, fieldPredicates) : sessionTransaction;
     }
 
     public MapModelCriteriaBuilder<K, V, M> createCriteriaBuilder() {
-        return new MapModelCriteriaBuilder<>(keyConvertor, fieldPredicates);
+        return new MapModelCriteriaBuilder<>(keyConverter, fieldPredicates);
     }
 
-    public StringKeyConvertor<K> getKeyConvertor() {
-        return keyConvertor;
+    public StringKeyConverter<K> getKeyConverter() {
+        return keyConverter;
     }
 
     @Override

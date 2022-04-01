@@ -33,11 +33,14 @@ import org.keycloak.services.managers.RealmManager;
 import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -130,44 +133,70 @@ public class OfflineSessionPersistenceTest extends KeycloakModelTest {
     }
 
     @Test(timeout = 90 * 1000)
+    @RequireProvider(UserSessionPersisterProvider.class)
+    @RequireProvider(value = UserSessionProvider.class, only = InfinispanUserSessionProviderFactory.PROVIDER_ID)
     public void testPersistenceMultipleNodesClientSessionAtSameNode() throws InterruptedException {
         List<String> clientIds = withRealm(realmId, (session, realm) -> {
             return IntStream.range(0, 5)
-              .mapToObj(cid -> (ClientModel) session.clients().addClient(realm, "client-" + cid))
+              .mapToObj(cid -> session.clients().addClient(realm, "client-" + cid))
               .map(ClientModel::getId)
               .collect(Collectors.toList());
         });
 
         // Shutdown factory -> enforce session persistence
         closeKeycloakSessionFactory();
+        Set<String> clientSessionIds = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
-        Map<String, List<String>> clientSessionIds = new ConcurrentHashMap<>();
-        inIndependentFactories(3, 30, () -> {
+        int NUM_FACTORIES = 3;
+        CountDownLatch intermediate = new CountDownLatch(NUM_FACTORIES);
+        inIndependentFactories(NUM_FACTORIES, 60, () -> {
             withRealm(realmId, (session, realm) -> {
                 // Create offline sessions
                 userIds.forEach(userId -> createOfflineSessions(session, realm, userId, offlineUserSession -> {
-                  List<String> innerClientSessionIds = IntStream.range(0, 5)
+                  IntStream.range(0, 5)
                     .mapToObj(cid -> session.clients().getClientById(realm, clientIds.get(cid)))
                     // TODO in the future: The following two lines are weird. Why an online client session needs to exist in order to create an offline one?
                     .map(client -> session.sessions().createClientSession(realm, client, offlineUserSession))
                     .map(clientSession -> session.sessions().createOfflineClientSession(clientSession, offlineUserSession))
                     .map(AuthenticatedClientSessionModel::getId)
-                    .collect(Collectors.toList());
-                  clientSessionIds.put(offlineUserSession.getId(), innerClientSessionIds);
-                }));
+                    .forEach(s -> {}); // ensure that stream is consumed
+                }).forEach(userSessionModel -> clientSessionIds.add(userSessionModel.getId())));
                 return null;
             });
+
+            // ensure that all session have been created on all nodes
+            intermediate.countDown();
+            try {
+                intermediate.await();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException(e);
+            }
+
+            // defer the shutdown and check if all sessions exist to ensure that they replicate across the different nodes
+            // this should avoid an "org.infinispan.remoting.transport.jgroups.SuspectException: ISPN000400: Node node-XX was suspected"
+            while (true) {
+                try {
+                    assertOfflineSessionsExist(realmId, clientSessionIds);
+                    break;
+                } catch (AssertionError e) {
+                    log.warn("assertion failed, retrying to see if all sessions exist.");
+                    sleep(1000);
+                }
+            }
         });
 
         reinitializeKeycloakSessionFactory();
-        inIndependentFactories(4, 30, () -> assertOfflineSessionsExist(realmId, clientSessionIds.keySet()));
+        inIndependentFactories(4, 30, () -> assertOfflineSessionsExist(realmId, clientSessionIds));
     }
 
     @Test(timeout = 90 * 1000)
+    @RequireProvider(UserSessionPersisterProvider.class)
+    @RequireProvider(value = UserSessionProvider.class, only = InfinispanUserSessionProviderFactory.PROVIDER_ID)
     public void testPersistenceMultipleNodesClientSessionsAtRandomNode() throws InterruptedException {
         List<String> clientIds = withRealm(realmId, (session, realm) -> {
             return IntStream.range(0, 5)
-              .mapToObj(cid -> (ClientModel) session.clients().addClient(realm, "client-" + cid))
+              .mapToObj(cid -> session.clients().addClient(realm, "client-" + cid))
               .map(ClientModel::getId)
               .collect(Collectors.toList());
         });
@@ -178,16 +207,35 @@ public class OfflineSessionPersistenceTest extends KeycloakModelTest {
 
         Map<String, List<String>> clientSessionIds = new ConcurrentHashMap<>();
         AtomicInteger i = new AtomicInteger();
-        inIndependentFactories(3, 30, () -> {
+        inIndependentFactories(3, 60, () -> {
             for (int j = 0; j < USER_COUNT * 3; j ++) {
                 int index = i.incrementAndGet();
                 int oid = index % offlineSessionIds.size();
                 String offlineSessionId = offlineSessionIds.get(oid);
                 int cid = index % clientIds.size();
-                String clientSessionId = createOfflineClientSession(offlineSessionId, clientIds.get(cid));
+                String clientSessionId;
+                while (true) {
+                    try {
+                        clientSessionId = createOfflineClientSession(offlineSessionId, clientIds.get(cid));
+                        break;
+                    } catch (RuntimeException ex) {
+                        // invocation can fail when remote cache is stopping, this is actually part of this test:
+                        // "ISPN000217: Received exception from node-8, see cause for remote stack trace
+                        // IllegalLifecycleStateException: ISPN000324: Cache 'clientSessions' is in 'STOPPING' state and this is an invocation not belonging to an
+                        // on-going transaction, so it does not accept new invocations."
+                        if (ex.getCause() != null && ex.getCause().getMessage().contains("ISPN000324")) {
+                            log.warn("invocation failed, retrying", ex);
+                            sleep(1000);
+                        }
+                    }
+                }
                 clientSessionIds.computeIfAbsent(offlineSessionId, a -> new LinkedList<>()).add(clientSessionId);
                 if (index % 100 == 0) {
-                    reinitializeKeycloakSessionFactory();
+                    // don't re-initialize all caches at the same time to avoid an unstable cluster with no leader
+                    // otherwise seen CacheInitializer#loadSessions to loop sleeping
+                    synchronized (OfflineSessionPersistenceTest.class) {
+                        reinitializeKeycloakSessionFactory();
+                    }
                 }
             }
         });
@@ -282,6 +330,8 @@ public class OfflineSessionPersistenceTest extends KeycloakModelTest {
     }
 
     @Test(timeout = 90 * 1000)
+    @RequireProvider(UserSessionPersisterProvider.class)
+    @RequireProvider(value = UserSessionProvider.class, only = InfinispanUserSessionProviderFactory.PROVIDER_ID)
     public void testPersistenceClientSessionsMultipleNodes() throws InterruptedException {
         // Create offline sessions
         List<String> offlineSessionIds = createOfflineSessions(realmId, userIds);
@@ -294,19 +344,16 @@ public class OfflineSessionPersistenceTest extends KeycloakModelTest {
 
     /**
      * Assert that all the offline sessions passed in the {@code offlineSessionIds} parameter exist
-     * @param factory
-     * @param offlineSessionIds
-     * @return
      */
-    private Void assertOfflineSessionsExist(String realmId, Collection<String> offlineSessionIds) {
+    private void assertOfflineSessionsExist(String realmId, Collection<String> offlineSessionIds) {
         int foundOfflineSessions = withRealm(realmId, (session, realm) -> offlineSessionIds.stream()
           .map(offlineSessionId -> session.sessions().getOfflineUserSession(realm, offlineSessionId))
           .map(ous -> ous == null ? 0 : 1)
           .reduce(0, Integer::sum));
 
-        assertThat(foundOfflineSessions, Matchers.is(USER_COUNT * OFFLINE_SESSION_COUNT_PER_USER));
-
-        return null;
+        assertThat(foundOfflineSessions, Matchers.is(offlineSessionIds.size()));
+        // catch a programming error where an empty collection of offline session IDs is passed
+        assertThat(foundOfflineSessions, Matchers.greaterThan(0));
     }
 
     // ***************** Helper methods *****************

@@ -19,6 +19,7 @@
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
 
      <changeSet author="bburke@redhat.com" id="2.3.0">
+         <validCheckSum>7:d6e6f3bc57a0c5586737d1351725d4d4</validCheckSum>
         <createTable tableName="FEDERATED_USER">
             <column name="ID" type="VARCHAR(255)">
                 <constraints nullable="false"/>

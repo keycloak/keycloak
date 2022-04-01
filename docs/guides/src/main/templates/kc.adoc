@@ -18,3 +18,17 @@ bin/kc.[sh|bat]<#if rootParameters?has_content> ${rootParameters}</#if> start<#i
 bin/kc.[sh|bat] start-dev ${parameters}
 ----
 </#macro>
+
+<#macro export parameters>
+[source,bash]
+----
+bin/kc.[sh|bat] export ${parameters}
+----
+</#macro>
+
+<#macro import parameters>
+[source,bash]
+----
+bin/kc.[sh|bat] import ${parameters}
+----
+</#macro>

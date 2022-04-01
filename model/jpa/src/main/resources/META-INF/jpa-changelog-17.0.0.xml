@@ -18,6 +18,7 @@
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
 
     <changeSet author="keycloak" id="17.0.0-9562">
+        <validCheckSum>7:467c7f7d35d0697dde968b1be60730a6</validCheckSum>
         <createIndex indexName="IDX_USER_SERVICE_ACCOUNT" tableName="USER_ENTITY">
             <column name="REALM_ID" type="VARCHAR(255)"/>
             <column name="SERVICE_ACCOUNT_CLIENT_LINK" type="VARCHAR(36)"/>

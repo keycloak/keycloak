@@ -16,93 +16,18 @@
  */
 package org.keycloak.models.map.storage.jpa.role.entity;
 
-import java.util.Objects;
-import java.util.UUID;
-import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
 import javax.persistence.Table;
-import org.hibernate.annotations.Nationalized;
-import org.keycloak.models.map.storage.jpa.JpaChildEntity;
+import org.keycloak.models.map.storage.jpa.JpaAttributeEntity;
 
 @Entity
-@Table(name = "role_attribute")
-public class JpaRoleAttributeEntity implements JpaChildEntity<JpaRoleEntity> {
-
-    @Id
-    @Column
-    @GeneratedValue
-    private UUID id;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name="fk_role")
-    private JpaRoleEntity role;
-
-    @Column
-    private String name;
-
-    @Nationalized
-    @Column
-    private String value;
+@Table(name = "kc_role_attribute")
+public class JpaRoleAttributeEntity extends JpaAttributeEntity<JpaRoleEntity> {
 
     public JpaRoleAttributeEntity() {
     }
 
-    public JpaRoleAttributeEntity(JpaRoleEntity role, String name, String value) {
-        this.role = role;
-        this.name = name;
-        this.value = value;
-    }
-
-    public UUID getId() {
-        return id;
-    }
-
-    public JpaRoleEntity getRole() {
-        return role;
-    }
-
-    public void setRole(JpaRoleEntity role) {
-        this.role = role;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getValue() {
-        return value;
-    }
-
-    public void setValue(String value) {
-        this.value = value;
-    }
- 
-    @Override
-    public int hashCode() {
-        return getClass().hashCode();
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) return true;
-        if (!(obj instanceof JpaRoleAttributeEntity)) return false;
-        JpaRoleAttributeEntity that = (JpaRoleAttributeEntity) obj;
-        return Objects.equals(getRole(), that.getRole()) &&
-               Objects.equals(getName(), that.getName()) &&
-               Objects.equals(getValue(), that.getValue());
-    }
-
-    @Override
-    public JpaRoleEntity getParent() {
-        return role;
+    public JpaRoleAttributeEntity(JpaRoleEntity root, String name, String value) {
+        super(root, name, value);
     }
 }

@@ -1,7 +1,6 @@
 package org.keycloak.guides.maven;
 
 import org.apache.maven.plugin.AbstractMojo;
-import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
@@ -23,17 +22,20 @@ public class GuideMojo extends AbstractMojo {
     public void execute() throws MojoFailureException {
         try {
             Log log = getLog();
-            File srcDir = new File(sourceDir).getParentFile();
-            File targetDir = new File(this.targetDir, "generated-guides");
-            if (!targetDir.isDirectory()) {
-                targetDir.mkdirs();
+            File topDir = new File(sourceDir).getParentFile();
+
+            for (File srcDir: topDir.listFiles(d -> d.isDirectory() && !d.getName().equals("templates"))) {
+                File targetDir = new File(new File(this.targetDir, "generated-guides"), srcDir.getName());
+                if (!targetDir.isDirectory()) {
+                    targetDir.mkdirs();
+                }
+
+                log.info("Guide dir: " + srcDir.getAbsolutePath());
+                log.info("Target dir: " + targetDir.getAbsolutePath());
+
+                GuideBuilder g = new GuideBuilder(srcDir, targetDir, log);
+                g.build();
             }
-
-            log.info("Guide dir: " + srcDir.getAbsolutePath());
-            log.info("Target dir: " + targetDir.getAbsolutePath());
-
-            GuideBuilder g = new GuideBuilder(srcDir, targetDir, log);
-            g.server();
         } catch (Exception e) {
             e.printStackTrace();
             throw new MojoFailureException("Failed to generated asciidoc files", e);

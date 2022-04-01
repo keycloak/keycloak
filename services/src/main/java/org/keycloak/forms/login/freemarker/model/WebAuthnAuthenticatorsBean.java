@@ -16,8 +16,8 @@
 package org.keycloak.forms.login.freemarker.model;
 
 import com.webauthn4j.data.AuthenticatorTransport;
-import org.apache.commons.collections4.CollectionUtils;
 import org.keycloak.common.util.Base64Url;
+import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -56,6 +56,7 @@ public class WebAuthnAuthenticatorsBean {
 
     public static class WebAuthnAuthenticatorBean {
         public static final String DEFAULT_ICON = "kcWebAuthnDefaultIcon";
+        public static final String UNKNOWN_AUTH_ICON = "kcWebAuthnUnknownIcon";
 
         private final String credentialId;
         private final String label;
@@ -117,7 +118,7 @@ public class WebAuthnAuthenticatorsBean {
              * @return TransportBean
              */
             public static TransportsBean convertFromSet(Set<String> transports) {
-                if (CollectionUtils.isEmpty(transports)) {
+                if (CollectionUtil.isEmpty(transports)) {
                     return new TransportsBean(Transport.UNKNOWN);
                 }
 
@@ -135,6 +136,7 @@ public class WebAuthnAuthenticatorsBean {
                 } else {
                     final Set<String> displayNameProperties = trans.stream()
                             .map(Transport::getDisplayNameProperty)
+                            .filter(StringUtil::isNotBlank)
                             .collect(Collectors.toSet());
 
                     return new TransportsBean(displayNameProperties, DEFAULT_ICON);
@@ -146,7 +148,7 @@ public class WebAuthnAuthenticatorsBean {
                 NFC("nfc", AuthenticatorTransport.NFC.getValue(), "kcWebAuthnNFC"),
                 BLE("bluetooth", AuthenticatorTransport.BLE.getValue(), "kcWebAuthnBLE"),
                 INTERNAL("internal", AuthenticatorTransport.INTERNAL.getValue(), "kcWebAuthnInternal"),
-                UNKNOWN("unknown", null, DEFAULT_ICON);
+                UNKNOWN("", "", UNKNOWN_AUTH_ICON);
 
                 private final String displayNameProperty;
                 private final String mapperName;
@@ -154,8 +156,8 @@ public class WebAuthnAuthenticatorsBean {
 
                 /**
                  * @param displayNameProperty Message property - defined in messages_xx.properties
-                 * @param mapperName used for mapping transport media name
-                 * @param iconClass icon class for particular transport media - defined in theme.properties
+                 * @param mapperName          used for mapping transport media name
+                 * @param iconClass           icon class for particular transport media - defined in theme.properties
                  */
                 Transport(String displayNameProperty, String mapperName, String iconClass) {
                     this.displayNameProperty = displayNameProperty;
@@ -186,7 +188,7 @@ public class WebAuthnAuthenticatorsBean {
                     if (StringUtil.isBlank(mapperName)) return UNKNOWN;
 
                     return Arrays.stream(Transport.values())
-                            .filter(f -> Objects.nonNull(f.getMapperName()))
+                            .filter(f -> StringUtil.isNotBlank(f.getMapperName()))
                             .filter(f -> f.getMapperName().equals(mapperName))
                             .findFirst()
                             .orElse(UNKNOWN);

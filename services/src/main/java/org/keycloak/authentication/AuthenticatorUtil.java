@@ -17,34 +17,97 @@
 
 package org.keycloak.authentication;
 
-import org.keycloak.models.AuthenticatedClientSessionModel;
+import com.google.common.collect.Sets;
+import org.jboss.logging.Logger;
+import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.RealmModel;
 import org.keycloak.sessions.AuthenticationSessionModel;
-import org.keycloak.sessions.CommonClientSessionModel;
+import org.keycloak.utils.StringUtil;
+
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
+
+import static org.keycloak.services.managers.AuthenticationManager.FORCED_REAUTHENTICATION;
+import static org.keycloak.services.managers.AuthenticationManager.SSO_AUTH;
 
 public class AuthenticatorUtil {
 
-    public static boolean isLevelOfAuthenticationForced(AuthenticationSessionModel authSession) {
-        return Boolean.parseBoolean(authSession.getClientNote(Constants.FORCE_LEVEL_OF_AUTHENTICATION));
+    private static final Logger logger = Logger.getLogger(AuthenticatorUtil.class);
+
+    // It is used for identification of note included in authentication session for storing callback provider factories
+    public static String CALLBACKS_FACTORY_IDS_NOTE = "callbacksFactoryProviderIds";
+
+
+    public static boolean isSSOAuthentication(AuthenticationSessionModel authSession) {
+        return "true".equals(authSession.getAuthNote(SSO_AUTH));
     }
 
-    public static int getRequestedLevelOfAuthentication(AuthenticationSessionModel authSession) {
-        String requiredLoa = authSession.getClientNote(Constants.REQUESTED_LEVEL_OF_AUTHENTICATION);
-        return requiredLoa == null ? Constants.NO_LOA : Integer.parseInt(requiredLoa);
+    public static boolean isForcedReauthentication(AuthenticationSessionModel authSession) {
+        return "true".equals(authSession.getAuthNote(FORCED_REAUTHENTICATION));
     }
 
-    public static int getCurrentLevelOfAuthentication(AuthenticationSessionModel authSession) {
-        String authSessionLoaNote = authSession.getAuthNote(Constants.LEVEL_OF_AUTHENTICATION);
-        return authSessionLoaNote == null ? Constants.NO_LOA : Integer.parseInt(authSessionLoaNote);
+    /**
+     * Set authentication session note for callbacks defined for {@link AuthenticationFlowCallbackFactory) factories
+     *
+     * @param authSession   authentication session
+     * @param authFactoryId authentication factory ID which should be added to the authentication session note
+     */
+    public static void setAuthCallbacksFactoryIds(AuthenticationSessionModel authSession, String authFactoryId) {
+        if (authSession == null || StringUtil.isBlank(authFactoryId)) return;
+
+        final String callbacksFactories = authSession.getAuthNote(CALLBACKS_FACTORY_IDS_NOTE);
+
+        if (StringUtil.isNotBlank(callbacksFactories)) {
+            boolean containsProviderId = callbacksFactories.equals(authFactoryId) ||
+                    callbacksFactories.contains(Constants.CFG_DELIMITER + authFactoryId) ||
+                    callbacksFactories.contains(authFactoryId + Constants.CFG_DELIMITER);
+
+            if (!containsProviderId) {
+                authSession.setAuthNote(CALLBACKS_FACTORY_IDS_NOTE, callbacksFactories + Constants.CFG_DELIMITER + authFactoryId);
+            }
+        } else {
+            authSession.setAuthNote(CALLBACKS_FACTORY_IDS_NOTE, authFactoryId);
+        }
     }
 
-    public static boolean isLevelOfAuthenticationSatisfied(AuthenticationSessionModel authSession) {
-        return AuthenticatorUtil.getRequestedLevelOfAuthentication(authSession)
-            <= AuthenticatorUtil.getCurrentLevelOfAuthentication(authSession);
+    /**
+     * Get set of Authentication factories IDs defined in authentication session as CALLBACKS_FACTORY_IDS_NOTE
+     *
+     * @param authSession authentication session
+     * @return set of factories IDs
+     */
+    public static Set<String> getAuthCallbacksFactoryIds(AuthenticationSessionModel authSession) {
+        if (authSession == null) return Collections.emptySet();
+
+        final String callbacksFactories = authSession.getAuthNote(CALLBACKS_FACTORY_IDS_NOTE);
+
+        if (StringUtil.isNotBlank(callbacksFactories)) {
+            return Sets.newHashSet(callbacksFactories.split(Constants.CFG_DELIMITER));
+        } else {
+            return Collections.emptySet();
+        }
     }
 
-    public static int getCurrentLevelOfAuthentication(AuthenticatedClientSessionModel clientSession) {
-        String clientSessionLoaNote = clientSession.getNote(Constants.LEVEL_OF_AUTHENTICATION);
-        return clientSessionLoaNote == null ? Constants.NO_LOA : Integer.parseInt(clientSessionLoaNote);
+
+    /**
+     * @param realm
+     * @param flowId
+     * @param providerId
+     * @return all executions of given "provider_id" type. This is deep (recursive) obtain of executions of the particular flow
+     */
+    public static List<AuthenticationExecutionModel> getExecutionsByType(RealmModel realm, String flowId, String providerId) {
+        List<AuthenticationExecutionModel> executions = new LinkedList<>();
+        realm.getAuthenticationExecutionsStream(flowId).forEach(authExecution -> {
+            if (providerId.equals(authExecution.getAuthenticator())) {
+                executions.add(authExecution);
+            } else if (authExecution.isAuthenticatorFlow() && authExecution.getFlowId() != null) {
+                executions.addAll(getExecutionsByType(realm, authExecution.getFlowId(), providerId));
+            }
+        });
+        return executions;
     }
+
 }

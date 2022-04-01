@@ -19,7 +19,6 @@ package org.keycloak.models.map.storage.jpa.client.entity;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -44,7 +43,7 @@ import org.keycloak.models.map.client.MapClientEntity.AbstractClientEntity;
 import org.keycloak.models.map.client.MapProtocolMapperEntity;
 import org.keycloak.models.map.common.DeepCloner;
 import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_CLIENT;
-import org.keycloak.models.map.storage.jpa.JpaRootEntity;
+import org.keycloak.models.map.storage.jpa.JpaRootVersionedEntity;
 import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
 
 /**
@@ -53,14 +52,14 @@ import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
  * therefore marked as non-insertable and non-updatable to instruct hibernate.
  */
 @Entity
-@Table(name = "client",
+@Table(name = "kc_client",
     uniqueConstraints = {
             @UniqueConstraint(
                     columnNames = {"realmId", "clientId"}
             )
 })
 @TypeDefs({@TypeDef(name = "jsonb", typeClass = JsonbType.class)})
-public class JpaClientEntity extends AbstractClientEntity implements JpaRootEntity {
+public class JpaClientEntity extends AbstractClientEntity implements JpaRootVersionedEntity {
 
     @Id
     @Column
@@ -95,7 +94,7 @@ public class JpaClientEntity extends AbstractClientEntity implements JpaRootEnti
     @Basic(fetch = FetchType.LAZY)
     private Boolean enabled;
 
-    @OneToMany(mappedBy = "client", cascade = CascadeType.PERSIST, orphanRemoval = true)
+    @OneToMany(mappedBy = "root", cascade = CascadeType.PERSIST, orphanRemoval = true)
     private final Set<JpaClientAttributeEntity> attributes = new HashSet<>();
 
     /**
@@ -536,12 +535,7 @@ public class JpaClientEntity extends AbstractClientEntity implements JpaRootEnti
 
     @Override
     public void removeAttribute(String name) {
-        for (Iterator<JpaClientAttributeEntity> iterator = attributes.iterator(); iterator.hasNext();) {
-            JpaClientAttributeEntity attr = iterator.next();
-            if (Objects.equals(attr.getName(), name)) {
-                iterator.remove();
-            }
-        }
+        attributes.removeIf(attr -> Objects.equals(attr.getName(), name));
     }
 
     @Override
@@ -574,9 +568,7 @@ public class JpaClientEntity extends AbstractClientEntity implements JpaRootEnti
 
     @Override
     public void setAttributes(Map<String, List<String>> attributes) {
-        for (Iterator<JpaClientAttributeEntity> iterator = this.attributes.iterator(); iterator.hasNext();) {
-            iterator.remove();
-        }
+        this.attributes.clear();
         if (attributes != null) {
             for (Map.Entry<String, List<String>> attrEntry : attributes.entrySet()) {
                 setAttribute(attrEntry.getKey(), attrEntry.getValue());

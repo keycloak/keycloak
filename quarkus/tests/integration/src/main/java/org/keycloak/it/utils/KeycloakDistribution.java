@@ -1,5 +1,6 @@
 package org.keycloak.it.utils;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -39,6 +40,10 @@ public interface KeycloakDistribution {
         return commands.toArray(new String[0]);
     }
 
+    default void setManualStop(boolean manualStop) {
+        throw new RuntimeException("Not implemented");
+    }
+
     default void setQuarkusProperty(String key, String value) {
         throw new RuntimeException("Not implemented");
     }
@@ -48,6 +53,10 @@ public interface KeycloakDistribution {
     }
 
     default void deleteQuarkusProperties() {
+        throw new RuntimeException("Not implemented");
+    }
+
+    default void copyOrReplaceFileFromClasspath(String file, Path distDir) {
         throw new RuntimeException("Not implemented");
     }
 }

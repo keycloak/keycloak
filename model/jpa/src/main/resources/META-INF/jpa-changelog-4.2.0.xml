@@ -18,6 +18,7 @@
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
 
     <changeSet author="wadahiro@gmail.com" id="4.2.0-KEYCLOAK-6313">
+        <validCheckSum>7:14d407c35bc4fe1976867756bcea0c36</validCheckSum>
         <addColumn tableName="REQUIRED_ACTION_PROVIDER">
             <column name="PRIORITY" type="INT"/>
         </addColumn>

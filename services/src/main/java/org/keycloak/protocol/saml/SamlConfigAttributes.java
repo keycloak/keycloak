@@ -44,4 +44,5 @@ public interface SamlConfigAttributes {
     String SAML_ENCRYPTION_PRIVATE_KEY_ATTRIBUTE = "saml.encryption." + CertificateInfoHelper.PRIVATE_KEY;
     String SAML_ASSERTION_LIFESPAN = "saml.assertion.lifespan";
     String SAML_ARTIFACT_BINDING_IDENTIFIER = "saml.artifact.binding.identifier";
+    String SAML_ALLOW_ECP_FLOW = "saml.allow.ecp.flow";
 }

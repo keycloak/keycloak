@@ -17,8 +17,8 @@ function defineOptions({
   name,
   amdId,
 }: DefineOptionsArgs): RollupOptions[] {
-  const sourceDir = "src/main/js";
-  const targetDir = "target/classes";
+  const sourceDir = "src";
+  const targetDir = "dist";
   const commonOptions: RollupOptions = {
     input: path.join(sourceDir, `${file}.js`),
     plugins: [commonjs(), nodeResolve()],

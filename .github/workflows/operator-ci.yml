@@ -1,6 +1,11 @@
 name: Keycloak Operator CI
 
-on: [push, pull_request]
+on:
+  push:
+    branches-ignore: [main]
+  pull_request:
+  schedule:
+    - cron: '0 0 * * *'
 
 env:
   JDK_VERSION: 11
@@ -13,17 +18,19 @@ concurrency:
 jobs:
   build:
     name: Build
+    if: ${{ ( github.event_name != 'schedule' ) || ( github.event_name == 'schedule' && github.repository == 'keycloak/keycloak' ) }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Update maven settings
         run: mkdir -p ~/.m2 ; cp .github/settings.xml ~/.m2/
-      - uses: actions/setup-java@v1
+      - uses: actions/setup-java@v2
         with:
+          distribution: 'temurin'
           java-version: ${{ env.JDK_VERSION }}
       - name: Cache Maven packages
         id: cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             ~/.m2/repository
@@ -32,7 +39,7 @@ jobs:
 
       - name: Create the Keycloak distribution
         run: |
-          mvn clean install -DskipTests -DskipExamples -DskipTestsuite
+          mvn clean install -Pdistribution -DskipTests -DskipExamples -DskipTestsuite
 
       - name: Setup Minikube-Kubernetes
         uses: manusa/actions-setup-minikube@v2.4.3
@@ -41,11 +48,40 @@ jobs:
           kubernetes version: v1.22.3
           github token: ${{ secrets.GITHUB_TOKEN }}
           driver: docker
-      - name: Build , deploy and test operator in minikube
+          start args: '--addons=ingress'
+
+      - name: Build the Keycloak Docker image
         run: |
-          cd operator
-          eval $(minikube -p minikube docker-env) 
+          cd quarkus
+          cp dist/target/keycloak-*.tar.gz container/
+          cd container
+          eval $(minikube -p minikube docker-env)
+          docker build --build-arg KEYCLOAK_DIST=$(ls keycloak-*.tar.gz) . -t keycloak:${GITHUB_SHA}
+
+      - name: Build a custom pre-augmented Keycloak Docker image
+        working-directory: operator
+        run: |
+          eval $(minikube -p minikube docker-env)
+          ./scripts/build-testing-docker-images.sh ${GITHUB_SHA} keycloak
+
+      - name: Test operator running locally
+        working-directory: operator
+        run: |
+          mvn clean verify \
+              -Dquarkus.kubernetes.deployment-target=kubernetes \
+              -Doperator.keycloak.image=keycloak:${GITHUB_SHA} \
+              -Doperator.keycloak.image-pull-policy=Never \
+              -Dtest.operator.kubernetes.ip=$(minikube ip) \
+              -Dtest.operator.custom.image=custom-keycloak:${GITHUB_SHA}
+
+      - name: Test operator running in cluster
+        working-directory: operator
+        run: |
+          eval $(minikube -p minikube docker-env)
           mvn clean verify \
               -Dquarkus.container-image.build=true -Dquarkus.container-image.tag=test \
               -Dquarkus.kubernetes.deployment-target=kubernetes \
-              --no-transfer-progress -Dtest.operator.deployment=remote
+              -Dquarkus.jib.jvm-arguments="-Djava.util.logging.manager=org.jboss.logmanager.LogManager","-Doperator.keycloak.image=keycloak:${GITHUB_SHA}","-Doperator.keycloak.image-pull-policy=Never" \
+              --no-transfer-progress -Dtest.operator.deployment=remote \
+              -Dtest.operator.kubernetes.ip=$(minikube ip) \
+              -Dtest.operator.custom.image=custom-keycloak:${GITHUB_SHA}

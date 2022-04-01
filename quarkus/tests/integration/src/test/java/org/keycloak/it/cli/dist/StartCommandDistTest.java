@@ -35,7 +35,7 @@ public class StartCommandDistTest extends StartCommandTest {
     @Test
     @Launch({ "-pf=dev", "start", "--auto-build", "--http-enabled=true", "--hostname-strict=false" })
     void failIfAutoBuildUsingDevProfile(LaunchResult result) {
-        assertTrue(result.getErrorOutput().contains("ERROR: You can not 'start' the server using the 'dev' configuration profile. Please re-build the server first, using 'kc.sh build' for the default production profile, or using 'kc.sh build --profile=<profile>' with a profile more suitable for production."),
+        assertTrue(result.getErrorOutput().contains("You can not 'start' the server in development mode. Please re-build the server first, using 'kc.sh build' for the default production mode."),
                 () -> "The Output:\n" + result.getErrorOutput() + "doesn't contains the expected string.");
         assertEquals(4, result.getErrorStream().size());
     }

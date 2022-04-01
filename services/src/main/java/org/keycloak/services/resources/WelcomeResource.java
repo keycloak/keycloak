@@ -181,7 +181,6 @@ public class WelcomeResource {
 
             map.put("properties", theme.getProperties());
             map.put("adminUrl", session.getContext().getUri(UrlType.ADMIN).getBaseUriBuilder().path("/admin/").build());
-
             map.put("resourcesPath", "resources/" + Version.RESOURCES_VERSION + "/" + theme.getType().toString().toLowerCase() +"/" + theme.getName());
             map.put("resourcesCommonPath", "resources/" + Version.RESOURCES_VERSION + "/common/keycloak");
 
@@ -190,6 +189,8 @@ public class WelcomeResource {
             if (bootstrap) {
                 boolean isLocal = isLocal();
                 map.put("localUser", isLocal);
+                map.put("localAdminUrl", "http://localhost:8080/auth");
+                map.put("adminUserCreationMessage","or use the add-user-keycloak script");
 
                 if (isLocal) {
                     String stateChecker = setCsrfCookie();

@@ -302,6 +302,8 @@ public class AuthenticationProcessor {
         FormMessage errorMessage;
         FormMessage successMessage;
         List<AuthenticationSelectionOption> authenticationSelections;
+        String eventDetails;
+        String userErrorMessage;
 
         private Result(AuthenticationExecutionModel execution, Authenticator authenticator, List<AuthenticationExecutionModel> currentExecutions) {
             this.execution = execution;
@@ -399,6 +401,15 @@ public class AuthenticationProcessor {
             this.status = FlowStatus.FAILED;
             this.challenge = challenge;
 
+        }
+        
+        @Override
+        public void failure(AuthenticationFlowError error, Response challenge, String eventDetails, String userErrorMessage) {
+            this.error = error;
+            this.status = FlowStatus.FAILED;
+            this.challenge = challenge;
+            this.eventDetails = eventDetails;
+            this.userErrorMessage = userErrorMessage;
         }
 
         @Override
@@ -672,6 +683,16 @@ public class AuthenticationProcessor {
         public FormMessage getSuccessMessage() {
             return successMessage;
         }
+
+        @Override
+        public String getEventDetails() {
+            return eventDetails;
+        }
+
+        @Override
+        public String getUserErrorMessage() {
+            return userErrorMessage;
+        }
     }
 
     public void logFailure() {
@@ -687,18 +708,6 @@ public class AuthenticationProcessor {
         AuthenticationSessionModel.ExecutionStatus status = authenticationSession.getExecutionStatus().get(model.getId());
         if (status == null) return false;
         return status == AuthenticationSessionModel.ExecutionStatus.SUCCESS;
-    }
-
-    public boolean isEvaluatedTrue(AuthenticationExecutionModel model) {
-        AuthenticationSessionModel.ExecutionStatus status = authenticationSession.getExecutionStatus().get(model.getId());
-        if (status == null) return false;
-        return status == AuthenticationSessionModel.ExecutionStatus.EVALUATED_TRUE;
-    }
-
-    public boolean isEvaluatedFalse(AuthenticationExecutionModel model) {
-        AuthenticationSessionModel.ExecutionStatus status = authenticationSession.getExecutionStatus().get(model.getId());
-        if (status == null) return false;
-        return status == AuthenticationSessionModel.ExecutionStatus.EVALUATED_FALSE;
     }
 
     public Response handleBrowserExceptionList(AuthenticationFlowException e) {
@@ -811,6 +820,14 @@ public class AuthenticationProcessor {
                 event.error(Errors.INVALID_USER_CREDENTIALS);
                 if (e.getResponse() != null) return e.getResponse();
                 return ErrorPage.error(session, authenticationSession, Response.Status.BAD_REQUEST, Messages.CREDENTIAL_SETUP_REQUIRED);
+            } else if (e.getError() == AuthenticationFlowError.GENERIC_AUTHENTICATION_ERROR) {
+                ServicesLogger.LOGGER.failedAuthentication(e);
+                if (e.getEventDetails() != null) {
+                    event.detail(Details.AUTHENTICATION_ERROR_DETAIL, e.getEventDetails());
+                }
+                event.error(Errors.GENERIC_AUTHENTICATION_ERROR);
+                if (e.getResponse() != null) return e.getResponse();
+                return ErrorPage.error(session, authenticationSession, Response.Status.BAD_REQUEST, e.getUserErrorMessage());
             } else {
                 ServicesLogger.LOGGER.failedAuthentication(e);
                 event.error(Errors.INVALID_USER_CREDENTIALS);

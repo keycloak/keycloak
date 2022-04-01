@@ -240,7 +240,7 @@ public class OfflineServletsAdapterTest extends AbstractServletsAdapterTest {
             assertThat(offlineClient.getAdditionalGrants(), Matchers.hasItem("Offline Token"));
 
             //This was necessary to be introduced, otherwise other testcases will fail
-            offlineTokenPage.logout();
+            accountAppPage.logout();
             assertCurrentUrlDoesntStartWith(offlineTokenPage);
             loginPage.assertCurrent();
         } finally {
@@ -274,7 +274,8 @@ public class OfflineServletsAdapterTest extends AbstractServletsAdapterTest {
         if (loginPage.isCurrent()) {
             loginPage.login(username, password);
             waitForPageToLoad();
-            offlineTokenPage.logout();
+            accountAppPage.open();
+            accountAppPage.logout();
         }
         setTimeOffset(0);
     }

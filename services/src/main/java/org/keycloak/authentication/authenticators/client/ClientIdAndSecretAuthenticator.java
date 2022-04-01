@@ -22,6 +22,7 @@ import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.ClientAuthenticationFlowContext;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.ClientModel;
+import org.keycloak.protocol.oidc.OIDCClientSecretConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.idm.CredentialRepresentation;
@@ -127,14 +128,21 @@ public class ClientIdAndSecretAuthenticator extends AbstractClientAuthenticator 
         }
 
         if (client.getSecret() == null) {
-            Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "unauthorized_client", "Invalid client secret");
-            context.failure(AuthenticationFlowError.INVALID_CLIENT_CREDENTIALS, challengeResponse);
+            reportFailedAuth(context);
             return;
         }
 
+        OIDCClientSecretConfigWrapper wrapper = OIDCClientSecretConfigWrapper.fromClientModel(client);
+
         if (!client.validateSecret(clientSecret)) {
-            Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "unauthorized_client", "Invalid client secret");
-            context.failure(AuthenticationFlowError.INVALID_CLIENT_CREDENTIALS, challengeResponse);
+            if (!wrapper.validateRotatedSecret(clientSecret)){
+                reportFailedAuth(context);
+                return;
+            }
+        }
+
+        if (wrapper.isClientSecretExpired()){
+            reportFailedAuth(context);
             return;
         }
 
@@ -194,5 +202,10 @@ public class ClientIdAndSecretAuthenticator extends AbstractClientAuthenticator 
         } else {
             return Collections.emptySet();
         }
+    }
+
+    private void reportFailedAuth(ClientAuthenticationFlowContext context) {
+        Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "unauthorized_client", "Invalid client secret");
+        context.failure(AuthenticationFlowError.INVALID_CLIENT_CREDENTIALS, challengeResponse);
     }
 }

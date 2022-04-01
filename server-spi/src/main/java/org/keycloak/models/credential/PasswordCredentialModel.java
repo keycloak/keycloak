@@ -45,7 +45,6 @@ public class PasswordCredentialModel extends CredentialModel {
             PasswordCredentialData credentialData = JsonSerialization.readValue(credentialModel.getCredentialData(),
                     PasswordCredentialData.class);
             PasswordSecretData secretData = JsonSerialization.readValue(credentialModel.getSecretData(), PasswordSecretData.class);
-
             PasswordCredentialModel passwordCredentialModel = new PasswordCredentialModel(credentialData, secretData);
             passwordCredentialModel.setCreatedDate(credentialModel.getCreatedDate());
             passwordCredentialModel.setCredentialData(credentialModel.getCredentialData());

@@ -128,7 +128,7 @@ public interface AuthenticationSessionModel extends CommonClientSessionModel {
      * Retrieves value of the given authentication note to the given value. Authentication notes are notes
      * used typically by authenticators and authentication flows. They are cleared when
      * authentication session is restarted.
-     * @param name {@code String} If {@code null} if provided then the method will return {@code null}.
+     * @param name {@code String} If {@code null} is provided then the method will return {@code null}.
      * @return {@code String} or {@code null} if no authentication note is set.
      */
     String getAuthNote(String name);

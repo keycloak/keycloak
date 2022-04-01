@@ -34,6 +34,7 @@ import static picocli.CommandLine.Model.UsageMessageSpec.SECTION_KEY_COMMAND_LIS
 import java.io.File;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -42,15 +43,18 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import io.quarkus.runtime.Quarkus;
+import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.keycloak.quarkus.runtime.cli.command.Build;
+import org.keycloak.quarkus.runtime.cli.command.ImportRealmMixin;
 import org.keycloak.quarkus.runtime.cli.command.Main;
 import org.keycloak.quarkus.runtime.cli.command.Start;
 import org.keycloak.quarkus.runtime.cli.command.StartDev;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
+import org.keycloak.quarkus.runtime.configuration.QuarkusPropertiesConfigSource;
 import org.keycloak.quarkus.runtime.configuration.mappers.ConfigCategory;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
@@ -65,9 +69,9 @@ import picocli.CommandLine.Model.ArgGroupSpec;
 public final class Picocli {
 
     public static final String ARG_PREFIX = "--";
-    private static final String ARG_KEY_VALUE_SEPARATOR = "=";
     public static final String ARG_SHORT_PREFIX = "-";
     public static final String NO_PARAM_LABEL = "none";
+    private static final String ARG_KEY_VALUE_SEPARATOR = "=";
 
     private Picocli() {
     }
@@ -94,6 +98,7 @@ public final class Picocli {
 
     private static int runReAugmentationIfNeeded(List<String> cliArgs, CommandLine cmd) {
         int exitCode = 0;
+
         if (hasAutoBuildOption(cliArgs) && !isHelpCommand(cliArgs)) {
             if (cliArgs.contains(StartDev.NAME)) {
                 String profile = Environment.getProfile();
@@ -170,6 +175,7 @@ public final class Picocli {
 
         configArgsList.remove(AUTO_BUILD_OPTION_LONG);
         configArgsList.remove(AUTO_BUILD_OPTION_SHORT);
+        configArgsList.remove(ImportRealmMixin.IMPORT_REALM);
 
         configArgsList.replaceAll(new UnaryOperator<String>() {
             @Override
@@ -268,7 +274,63 @@ public final class Picocli {
             }
         }
 
+        //check for defined quarkus raw build properties for UserStorageProvider extensions
+        if (QuarkusPropertiesConfigSource.getConfigurationFile() != null) {
+            Optional<ConfigSource> quarkusPropertiesConfigSource = getConfig().getConfigSource(QuarkusPropertiesConfigSource.NAME);
+
+            if (quarkusPropertiesConfigSource.isPresent()) {
+                Map<String, String> foundQuarkusBuildProperties = findSupportedRawQuarkusBuildProperties(quarkusPropertiesConfigSource.get().getProperties().entrySet());
+
+                //only check if buildProps are found in quarkus properties file.
+                if (!foundQuarkusBuildProperties.isEmpty()) {
+                    Optional<ConfigSource> persistedConfigSource = getConfig().getConfigSource(PersistedConfigSource.NAME);
+
+                    if(persistedConfigSource.isPresent()) {
+                        for(String key : foundQuarkusBuildProperties.keySet()) {
+                            if (notContainsKey(persistedConfigSource.get(), key)) {
+                                //if persisted cs does not contain raw quarkus key from quarkus.properties, assume build is needed as the key is new.
+                                return true;
+                            }
+                        }
+
+                        //if it contains the key, check if the value actually changed from the persisted one.
+                        return hasAtLeastOneChangedBuildProperty(foundQuarkusBuildProperties, persistedConfigSource.get().getProperties().entrySet());
+                    }
+                }
+            }
+        }
+
         return false;
+    }
+
+    private static boolean hasAtLeastOneChangedBuildProperty(Map<String, String> foundQuarkusBuildProperties, Set<Map.Entry<String, String>> persistedEntries) {
+        for(Map.Entry<String, String> persistedEntry : persistedEntries) {
+            if (foundQuarkusBuildProperties.containsKey(persistedEntry.getKey())) {
+                return isChangedValue(foundQuarkusBuildProperties, persistedEntry);
+            }
+        }
+
+        return false;
+    }
+
+    private static boolean notContainsKey(ConfigSource persistedConfigSource, String key) {
+        return !persistedConfigSource.getProperties().containsKey(key);
+    }
+
+    private static Map<String, String> findSupportedRawQuarkusBuildProperties(Set<Map.Entry<String, String>> entries) {
+        Pattern buildTimePattern = Pattern.compile(QuarkusPropertiesConfigSource.QUARKUS_DATASOURCE_BUILDTIME_REGEX);
+        Map<String, String> result = new HashMap<>();
+
+        for(Map.Entry<String, String> entry : entries) {
+            if (buildTimePattern.matcher(entry.getKey()).matches()) {
+                result.put(entry.getKey(), entry.getValue());
+            }
+        }
+        return result;
+    }
+
+    private static boolean isChangedValue(Map<String, String> foundQuarkusBuildProps, Map.Entry<String, String> persistedEntry) {
+        return !foundQuarkusBuildProps.get(persistedEntry.getKey()).equals(persistedEntry.getValue());
     }
 
     private static boolean isProviderKey(String key) {

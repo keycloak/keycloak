@@ -20,7 +20,7 @@
 	<parent>
 		<artifactId>keycloak-parent</artifactId>
 		<groupId>org.keycloak</groupId>
-		<version>17.0.0-SNAPSHOT</version>
+		<version>999-SNAPSHOT</version>
 		<relativePath>../../../pom.xml</relativePath>
 	</parent>
 	<modelVersion>4.0.0</modelVersion>
@@ -29,7 +29,29 @@
 	<name>Keycloak JS Integration</name>
 
 	<build>
+		<resources>
+			<resource>
+				<directory>static</directory>
+			</resource>
+			<resource>
+				<directory>dist</directory>
+			</resource>
+		</resources>
 		<plugins>
+			<plugin>
+				<artifactId>maven-clean-plugin</artifactId>
+				<version>3.1.0</version>
+				<configuration>
+					<filesets>
+						<fileset>
+							<directory>dist</directory>
+							<excludes>
+								<exclude>*.d.ts</exclude>
+							</excludes>
+						</fileset>
+					</filesets>
+				</configuration>
+			</plugin>
 			<plugin>
 				<groupId>com.github.eirslett</groupId>
 				<artifactId>frontend-maven-plugin</artifactId>
