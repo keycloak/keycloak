@@ -31,8 +31,9 @@ import "../../realm-settings-section.css";
 export const AttributeValidations = () => {
   const { t } = useTranslation("realm-settings");
   const [addValidatorModalOpen, toggleModal] = useToggle();
-  const [validatorToDelete, setValidatorToDelete] =
-    useState<{ name: string }>();
+  const [validatorToDelete, setValidatorToDelete] = useState<{
+    name: string;
+  }>();
   const { setValue, control, register } = useFormContext();
 
   const validators = useWatch<KeyValueType[]>({
