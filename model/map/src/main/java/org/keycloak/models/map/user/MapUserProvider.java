@@ -72,6 +72,8 @@ import static org.keycloak.models.UserModel.EMAIL_VERIFIED;
 import static org.keycloak.models.UserModel.FIRST_NAME;
 import static org.keycloak.models.UserModel.LAST_NAME;
 import static org.keycloak.models.UserModel.USERNAME;
+import static org.keycloak.models.map.common.AbstractMapProviderFactory.MapProviderObjectType.USER_AFTER_REMOVE;
+import static org.keycloak.models.map.common.AbstractMapProviderFactory.MapProviderObjectType.USER_BEFORE_REMOVE;
 import static org.keycloak.models.map.storage.QueryParameters.Order.ASCENDING;
 import static org.keycloak.models.map.storage.QueryParameters.withCriteria;
 import static org.keycloak.models.map.storage.criteria.DefaultModelCriteria.criteria;
@@ -727,7 +729,11 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
         String userId = user.getId();
         Optional<MapUserEntity> userById = getEntityById(realm, userId);
         if (userById.isPresent()) {
+            session.invalidate(USER_BEFORE_REMOVE, realm, user);
+
             tx.delete(userId);
+
+            session.invalidate(USER_AFTER_REMOVE, realm, user);
             return true;
         }
 

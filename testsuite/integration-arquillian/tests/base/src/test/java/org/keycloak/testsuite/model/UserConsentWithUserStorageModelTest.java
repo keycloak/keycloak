@@ -19,6 +19,7 @@ package org.keycloak.testsuite.model;
 
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.component.ComponentModel;
@@ -59,6 +60,7 @@ public class UserConsentWithUserStorageModelTest extends AbstractTestRealmKeyclo
 
     @Before
     public void before() {
+        Assume.assumeTrue("RealmProvider is not 'jpa'", isJpaRealmProvider());
         testingClient.server().run(UserConsentWithUserStorageModelTest::setupEnv);
     }
 
