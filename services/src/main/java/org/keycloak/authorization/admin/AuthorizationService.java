@@ -43,7 +43,7 @@ public class AuthorizationService {
         this.client = client;
         this.authorization = session.getProvider(AuthorizationProvider.class);
         this.adminEvent = adminEvent;
-        this.resourceServer = this.authorization.getStoreFactory().getResourceServerStore().findById(this.client.getId());
+        this.resourceServer = this.authorization.getStoreFactory().getResourceServerStore().findByClient(this.client);
         this.auth = auth;
     }
 

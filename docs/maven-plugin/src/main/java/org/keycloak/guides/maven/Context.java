@@ -25,11 +25,10 @@ public class Context {
         this.guides = new LinkedList<>();
 
         GuideParser parser = new GuideParser();
-        File serverDir = new File(srcDir, "server");
 
-        Map<String, Integer> guidePriorities = loadPinnedGuides(new File(serverDir, "pinned-guides"));
+        Map<String, Integer> guidePriorities = loadPinnedGuides(new File(srcDir, "pinned-guides"));
 
-        for (File f : serverDir.listFiles((dir, f) -> f.endsWith(".adoc") && !f.equals("index.adoc"))) {
+        for (File f : srcDir.listFiles((dir, f) -> f.endsWith(".adoc") && !f.equals("index.adoc"))) {
             Guide guide = parser.parse(f);
 
             if (guidePriorities != null) {

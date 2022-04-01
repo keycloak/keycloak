@@ -51,7 +51,7 @@ public class GroupSynchronizer implements Synchronizer<GroupModel.GroupRemovedEv
         attributes.put(Policy.FilterOption.CONFIG, new String[] {"groups", group.getId()});
         attributes.put(Policy.FilterOption.ANY_OWNER, Policy.FilterOption.EMPTY_FILTER);
 
-        List<Policy> search = policyStore.findByResourceServer(attributes, null, -1, -1);
+        List<Policy> search = policyStore.findByResourceServer(null, attributes, null, null);
 
         for (Policy policy : search) {
             PolicyProviderFactory policyFactory = authorizationProvider.getProviderFactory(policy.getType());

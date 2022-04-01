@@ -26,8 +26,10 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -135,8 +137,11 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     public String[] getCliArgs(List<String> arguments) {
         this.relativePath = arguments.stream().filter(arg -> arg.startsWith("--http-relative-path")).map(arg -> arg.substring(arg.indexOf('=') + 1)).findAny().orElse("/");
         this.httpPort = Integer.parseInt(arguments.stream().filter(arg -> arg.startsWith("--http-port")).map(arg -> arg.substring(arg.indexOf('=') + 1)).findAny().orElse("8080"));
+        List<String> args = new ArrayList<>();
+        args.add("-Dkc.home.dir=" + distPath + File.separator);
+        args.addAll(arguments);
 
-        return KeycloakDistribution.super.getCliArgs(arguments);
+        return KeycloakDistribution.super.getCliArgs(args);
     }
 
     private void waitForReadiness() throws MalformedURLException {
@@ -260,7 +265,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
             Path distPath = distRootPath.resolve(distDirName.substring(0, distDirName.lastIndexOf('.')));
 
             if (!inited || (reCreate || !distPath.toFile().exists())) {
-                distPath.toFile().delete();
+                FileUtils.deleteDirectory(distPath.toFile());
                 ZipUtils.unzip(distFile.toPath(), distRootPath);
             }
 
@@ -314,9 +319,12 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         builder.environment().put("KEYCLOAK_ADMIN", "admin");
         builder.environment().put("KEYCLOAK_ADMIN_PASSWORD", "admin");
 
-        FileUtils.deleteDirectory(distPath.resolve("data").toFile());
-
         keycloak = builder.start();
+    }
+
+    @Override
+    public void setManualStop(boolean manualStop) {
+        this.manualStop = manualStop;
     }
 
     @Override
@@ -335,6 +343,19 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
 
         if (file.exists()) {
             file.delete();
+        }
+    }
+
+    @Override
+    public void copyOrReplaceFileFromClasspath(String file, Path targetFile) {
+        File targetDir = distPath.resolve(targetFile).toFile();
+
+        targetDir.mkdirs();
+
+        try {
+            Files.copy(getClass().getResourceAsStream(file), targetDir.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException cause) {
+            throw new RuntimeException("Failed to copy file", cause);
         }
     }
 
@@ -364,5 +385,9 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
 
     private File getQuarkusPropertiesFile() {
         return distPath.resolve("conf").resolve("quarkus.properties").toFile();
+    }
+
+    public Path getDistPath() {
+        return distPath;
     }
 }

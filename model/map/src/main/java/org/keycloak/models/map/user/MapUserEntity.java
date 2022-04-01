@@ -200,12 +200,6 @@ public interface MapUserEntity extends UpdatableEntity, AbstractEntity, EntityWi
     String getEmailConstraint();
     void setEmailConstraint(String emailConstraint);
 
-    Map<String, List<String>> getAttributes();
-    List<String> getAttribute(String name);
-    void setAttributes(Map<String, List<String>> attributes);
-    void setAttribute(String name, List<String> value);
-    void removeAttribute(String name);
-
     Set<String> getRequiredActions();
     void setRequiredActions(Set<String> requiredActions);
     void addRequiredAction(String requiredAction);

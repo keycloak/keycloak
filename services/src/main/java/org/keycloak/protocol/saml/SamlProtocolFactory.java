@@ -154,6 +154,10 @@ public class SamlProtocolFactory extends AbstractLoginProtocolFactory {
             client.setForceNameIDFormat(false);
         }
 
+        if (rep.getAllowEcpFlow() == null) {
+            client.setAllowECPFlow(false);
+        }
+
         if (rep.getSamlServerSignature() == null) {
             client.setRequiresRealmSignature(true);
         }

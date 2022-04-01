@@ -17,15 +17,8 @@
 
 package org.keycloak.admin.client.resource;
 
-import org.jboss.resteasy.annotations.cache.NoCache;
-import org.keycloak.representations.adapters.action.GlobalRequestResult;
-import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.ClientScopeRepresentation;
-import org.keycloak.representations.idm.CredentialRepresentation;
-import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.representations.idm.UserSessionRepresentation;
-import org.keycloak.representations.idm.ManagementPermissionReference;
-import org.keycloak.representations.idm.ManagementPermissionRepresentation;
+import java.util.List;
+import java.util.Map;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -37,8 +30,15 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
-import java.util.List;
-import java.util.Map;
+
+import org.keycloak.representations.adapters.action.GlobalRequestResult;
+import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
+import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.ManagementPermissionReference;
+import org.keycloak.representations.idm.ManagementPermissionRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.representations.idm.UserSessionRepresentation;
 
 /**
  * @author rodrigo.sasaki@icarros.com.br
@@ -114,7 +114,6 @@ public interface ClientResource {
     ClientAttributeCertificateResource getCertficateResource(@PathParam("attr") String attributePrefix);
 
     @GET
-    @NoCache
     @Path("installation/providers/{providerId}")
     String getInstallationProvider(@PathParam("providerId") String providerId);
 
@@ -187,7 +186,6 @@ public interface ClientResource {
 
     @Path("/service-account-user")
     @GET
-    @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     UserRepresentation getServiceAccountUser();
 
@@ -207,4 +205,16 @@ public interface ClientResource {
 
     @Path("/authz/resource-server")
     AuthorizationResource authorization();
+
+
+    @Path("client-secret/rotated")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public CredentialRepresentation getClientRotatedSecret();
+
+    @Path("client-secret/rotated")
+    @DELETE
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    public void invalidateRotatedSecret();
 }

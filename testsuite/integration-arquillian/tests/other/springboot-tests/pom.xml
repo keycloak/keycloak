@@ -5,7 +5,7 @@
     <parent>
         <artifactId>integration-arquillian-tests-other</artifactId>
         <groupId>org.keycloak.testsuite</groupId>
-        <version>17.0.0-SNAPSHOT</version>
+        <version>999-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -15,7 +15,7 @@
         <adapter.container>tomcat</adapter.container>
 
         <maven.settings.file/>
-        <springboot.version.option>1.5</springboot.version.option>
+        <springboot.version.option>2.4</springboot.version.option>
 
         <app.server.debug.port>5006</app.server.debug.port>
         <app.server.debug.suspend>n</app.server.debug.suspend>
@@ -201,24 +201,18 @@
                 </plugins>
             </build>
         </profile>
+
         <profile>
-            <id>springboot21</id>
+            <id>springboot24</id>
             <properties>
-                <springboot.version.option>2.1</springboot.version.option>
+                <springboot.version.option>2.4</springboot.version.option>
             </properties>
         </profile>
 
         <profile>
-            <id>springboot22</id>
+            <id>springboot26</id>
             <properties>
-                <springboot.version.option>2.2</springboot.version.option>
-            </properties>
-        </profile>
-
-        <profile>
-            <id>springboot23</id>
-            <properties>
-                <springboot.version.option>2.3</springboot.version.option>
+                <springboot.version.option>2.6</springboot.version.option>
             </properties>
         </profile>
 

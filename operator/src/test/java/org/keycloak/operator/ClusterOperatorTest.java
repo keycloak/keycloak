@@ -2,6 +2,7 @@ package org.keycloak.operator;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
+import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.Config;
 import io.fabric8.kubernetes.client.ConfigBuilder;
@@ -12,25 +13,39 @@ import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.quarkiverse.operatorsdk.runtime.OperatorProducer;
 import io.quarkiverse.operatorsdk.runtime.QuarkusConfigurationService;
 import io.quarkus.logging.Log;
+import org.awaitility.Awaitility;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.keycloak.operator.v2alpha1.crds.Keycloak;
 
 import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.spi.CDI;
 import javax.enterprise.util.TypeLiteral;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.keycloak.operator.utils.K8sUtils.getResourceFromMultiResourceFile;
 
 public abstract class ClusterOperatorTest {
 
   public static final String QUARKUS_KUBERNETES_DEPLOYMENT_TARGET = "quarkus.kubernetes.deployment-target";
   public static final String OPERATOR_DEPLOYMENT_PROP = "test.operator.deployment";
   public static final String TARGET_KUBERNETES_GENERATED_YML_FOLDER = "target/kubernetes/";
+  public static final String OPERATOR_KUBERNETES_IP = "test.operator.kubernetes.ip";
+  public static final String OPERATOR_CUSTOM_IMAGE = "test.operator.custom.image";
+
+  public static final String TEST_RESULTS_DIR = "target/operator-test-results/";
+  public static final String POD_LOGS_DIR = TEST_RESULTS_DIR + "pod-logs/";
 
   public enum OperatorDeployment {local,remote}
 
@@ -40,6 +55,8 @@ public abstract class ClusterOperatorTest {
   protected static KubernetesClient k8sclient;
   protected static String namespace;
   protected static String deploymentTarget;
+  protected static String kubernetesIp;
+  protected static String customImage;
   private static Operator operator;
 
 
@@ -49,13 +66,16 @@ public abstract class ClusterOperatorTest {
     reconcilers = CDI.current().select(new TypeLiteral<>() {});
     operatorDeployment = ConfigProvider.getConfig().getOptionalValue(OPERATOR_DEPLOYMENT_PROP, OperatorDeployment.class).orElse(OperatorDeployment.local);
     deploymentTarget = ConfigProvider.getConfig().getOptionalValue(QUARKUS_KUBERNETES_DEPLOYMENT_TARGET, String.class).orElse("kubernetes");
+    kubernetesIp = ConfigProvider.getConfig().getOptionalValue(OPERATOR_KUBERNETES_IP, String.class).orElse("localhost");
+    customImage = ConfigProvider.getConfig().getOptionalValue(OPERATOR_CUSTOM_IMAGE, String.class).orElse(null);
 
+    setDefaultAwaitilityTimings();
     calculateNamespace();
     createK8sClient();
+    createCRDs();
     createNamespace();
 
     if (operatorDeployment == OperatorDeployment.remote) {
-      createCRD();
       createRBACresourcesAndOperatorDeployment();
     } else {
       createOperator();
@@ -63,6 +83,12 @@ public abstract class ClusterOperatorTest {
       operator.start();
     }
 
+    deployDB();
+  }
+
+  @BeforeEach
+  public void beforeEach() {
+    Log.info(((operatorDeployment == OperatorDeployment.remote) ? "Remote " : "Local ") + "Run Test :" + namespace);
   }
 
   private static void createK8sClient() {
@@ -90,9 +116,19 @@ public abstract class ClusterOperatorTest {
     k8sclient.load(new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER +deploymentTarget+".yml"))
             .inNamespace(namespace).delete();
   }
-  private static void createCRD() throws FileNotFoundException {
-    Log.info("Creating CRD ");
-    k8sclient.load(new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + "keycloaks.keycloak.org-v1.yml")).createOrReplace();
+  private static void createCRDs() {
+    Log.info("Creating CRDs");
+    try {
+      var deploymentCRD = k8sclient.load(new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + "keycloaks.keycloak.org-v1.yml"));
+      deploymentCRD.createOrReplace();
+      deploymentCRD.waitUntilReady(5, TimeUnit.SECONDS);
+      var realmImportCRD = k8sclient.load(new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + "keycloakrealmimports.keycloak.org-v1.yml"));
+      realmImportCRD.createOrReplace();
+      realmImportCRD.waitUntilReady(5, TimeUnit.SECONDS);
+    } catch (Exception e) {
+      Log.warn("Failed to create Keycloak CRD, retrying", e);
+      createCRDs();
+    }
   }
 
   private static void registerReconcilers() {
@@ -119,6 +155,69 @@ public abstract class ClusterOperatorTest {
 
   private static void calculateNamespace() {
     namespace = "keycloak-test-" + UUID.randomUUID();
+  }
+
+  protected static void deployDB() {
+    // DB
+    Log.info("Creating new PostgreSQL deployment");
+    k8sclient.load(ClusterOperatorTest.class.getResourceAsStream("/example-postgres.yaml")).inNamespace(namespace).createOrReplace();
+
+    // Check DB has deployed and ready
+    Log.info("Checking Postgres is running");
+    Awaitility.await()
+            .untilAsserted(() -> assertThat(k8sclient.apps().statefulSets().inNamespace(namespace).withName("postgresql-db").get().getStatus().getReadyReplicas()).isEqualTo(1));
+
+    deployDBSecret();
+  }
+
+  protected static void deployDBSecret() {
+    k8sclient.secrets().inNamespace(namespace).createOrReplace((Secret) getResourceFromMultiResourceFile("example-keycloak.yml", 1));
+  }
+
+  protected static void deleteDB() {
+    // Delete the Postgres StatefulSet
+    k8sclient.apps().statefulSets().inNamespace(namespace).withName("postgresql-db").delete();
+  }
+
+  // TODO improve this (preferably move to JOSDK)
+  protected void savePodLogs() {
+    Log.infof("Saving pod logs to %s", POD_LOGS_DIR);
+    for (var pod : k8sclient.pods().inNamespace(namespace).list().getItems()) {
+      try {
+        String podName = pod.getMetadata().getName();
+        Log.infof("Processing %s", podName);
+        String podLog = k8sclient.pods().inNamespace(namespace).withName(podName).getLog();
+        File file = new File(POD_LOGS_DIR + String.format("%s-%s.txt", namespace, podName)); // using namespace for now, if more tests fail, the log might get overwritten
+        file.getAbsoluteFile().getParentFile().mkdirs();
+        try (var fw = new FileWriter(file, false)) {
+          fw.write(podLog);
+        }
+      } catch (Exception e) {
+        Log.error(e.getStackTrace());
+      }
+    }
+  }
+
+  private static void setDefaultAwaitilityTimings() {
+    Awaitility.setDefaultPollInterval(Duration.ofSeconds(1));
+    Awaitility.setDefaultTimeout(Duration.ofSeconds(360));
+  }
+
+  @AfterEach
+  public void cleanup() {
+    Log.info("Deleting Keycloak CR");
+    k8sclient.resources(Keycloak.class).delete();
+    Awaitility.await()
+            .untilAsserted(() -> {
+              var kcDeployments = k8sclient
+                      .apps()
+                      .deployments()
+                      .inNamespace(namespace)
+                      .withLabels(Constants.DEFAULT_LABELS)
+                      .list()
+                      .getItems();
+              assertThat(kcDeployments.size()).isEqualTo(0);
+            });
   }
 
   @AfterAll

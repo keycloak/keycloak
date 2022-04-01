@@ -7,7 +7,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>17.0.0-SNAPSHOT</version>
+        <version>999-SNAPSHOT</version>
     </parent>
     
     <name>Keycloak Operator</name>
@@ -20,10 +20,10 @@
             See https://github.com/quarkusio/quarkus/blob/<versionTag>/bom/application/pom.xml
             for reference
         -->
-        <resteasy.version>4.7.4.Final</resteasy.version>
+        <resteasy.version>4.7.5.Final</resteasy.version>
         <wildfly.common.version>1.5.4.Final-format-001</wildfly.common.version>
         <jackson.version>2.13.1</jackson.version>
-        <kubernetes-client.version>5.12.0</kubernetes-client.version>
+        <kubernetes-client.version>5.12.1</kubernetes-client.version>
 
         <compiler-plugin.version>3.8.1</compiler-plugin.version>
         <maven.compiler.parameters>true</maven.compiler.parameters>
@@ -32,20 +32,12 @@
         <maven.compiler.target>11</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <quarkus.operator.sdk.version>3.0.2</quarkus.operator.sdk.version>
-        <quarkus.version>2.6.1.Final</quarkus.version>
+        <quarkus.operator.sdk.version>3.0.6</quarkus.operator.sdk.version>
+        <quarkus.version>2.7.5.Final</quarkus.version>
         <quarkus.container-image.group>keycloak</quarkus.container-image.group>
-        <quarkus.jib.base-jvm-image>eclipse-temurin:11</quarkus.jib.base-jvm-image>
-        <quarkus.kubernetes.image-pull-policy>Never</quarkus.kubernetes.image-pull-policy>
+        <quarkus.jib.base-jvm-image>registry.access.redhat.com/ubi8/openjdk-11-runtime</quarkus.jib.base-jvm-image>
         <maven-failsafe-plugin.version>2.22.0</maven-failsafe-plugin.version>
     </properties>
-    
-    <repositories>
-        <repository>
-        <id>s01.oss.sonatype</id>
-        <url>https://s01.oss.sonatype.org/content/repositories/snapshots/</url>
-        </repository>
-    </repositories>
     
     <dependencyManagement>
         <dependencies>
@@ -142,6 +134,11 @@
             <groupId>org.awaitility</groupId>
             <artifactId>awaitility</artifactId>
             <version>${awaitility.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.rest-assured</groupId>
+            <artifactId>rest-assured</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

@@ -135,7 +135,6 @@ public class SAMLClockSkewAdapterTest extends AbstractSAMLServletAdapterTest {
     }
 
     @Test
-    @AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT7)
     @AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT8)
     @AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT9)
     @AppServerContainer(value = ContainerConstants.APP_SERVER_UNDERTOW, skip = true)

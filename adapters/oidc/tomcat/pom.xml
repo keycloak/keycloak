@@ -20,7 +20,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>17.0.0-SNAPSHOT</version>
+        <version>999-SNAPSHOT</version>
         <relativePath>../../../pom.xml</relativePath>
     </parent>
     <name>Keycloak Tomcat Integration</name>
@@ -35,17 +35,4 @@
         <module>tomcat</module>
     </modules>
 
-    <profiles>
-        <profile>
-            <id>community</id>
-            <activation>
-                <property>
-                    <name>!product</name>
-                </property>
-            </activation>
-            <modules>
-                <module>tomcat7</module>
-            </modules>
-        </profile>
-    </profiles>
 </project>

@@ -36,7 +36,7 @@ import org.keycloak.storage.SearchableModelField;
  * @param <M> Model
  * @param <Self> specific implementation of this class
  */
-public abstract class JpaModelCriteriaBuilder<E, M, Self extends ModelCriteriaBuilder<M, Self>> implements ModelCriteriaBuilder<M, Self> {
+public abstract class JpaModelCriteriaBuilder<E, M, Self extends JpaModelCriteriaBuilder<E, M, Self>> implements ModelCriteriaBuilder<M, Self> {
 
     private final Function<BiFunction<CriteriaBuilder, Root<E>, Predicate>, Self> instantiator;
     private BiFunction<CriteriaBuilder, Root<E>, Predicate> predicateFunc = null;
@@ -51,7 +51,7 @@ public abstract class JpaModelCriteriaBuilder<E, M, Self extends ModelCriteriaBu
         this.predicateFunc = predicateFunc;
     }
 
-    protected void validateValue(Object[] value, SearchableModelField field, ModelCriteriaBuilder.Operator op, Class<?>... expectedTypes) {
+    protected void validateValue(Object[] value, SearchableModelField<? super M> field, ModelCriteriaBuilder.Operator op, Class<?>... expectedTypes) {
         if (value == null || expectedTypes == null || value.length != expectedTypes.length) {
             throw new CriterionNotSupportedException(field, op, "Invalid argument: " + Arrays.toString(value));
         }
@@ -71,29 +71,21 @@ public abstract class JpaModelCriteriaBuilder<E, M, Self extends ModelCriteriaBu
         }
     }
 
+    @SafeVarargs
     @Override
-    public Self and(Self... builders) {
-        return instantiator.apply((cb, root) -> cb.and(Stream.of(builders).map((Self b) -> {
-            if ( !(b instanceof JpaModelCriteriaBuilder)) throw new IllegalStateException("Invalid type of ModelCriteriaBuilder.");
-            return ((JpaModelCriteriaBuilder) b).getPredicateFunc().apply(cb, root);
-        }).toArray(Predicate[]::new)));
+    public final Self and(Self... builders) {
+        return instantiator.apply((cb, root) -> cb.and(Stream.of(builders).map((Self b) -> b.getPredicateFunc().apply(cb, root)).toArray(Predicate[]::new)));
     }
 
+    @SafeVarargs
     @Override
-    public Self or(Self... builders) {
-        return instantiator.apply((cb, root) -> cb.or(Stream.of(builders).map((Self b) -> {
-            if ( !(b instanceof JpaModelCriteriaBuilder)) throw new IllegalStateException("Invalid type of ModelCriteriaBuilder.");
-            return ((JpaModelCriteriaBuilder) b).getPredicateFunc().apply(cb, root);
-        }).toArray(Predicate[]::new)));
+    public final Self or(Self... builders) {
+        return instantiator.apply((cb, root) -> cb.or(Stream.of(builders).map((Self b) -> (b).getPredicateFunc().apply(cb, root)).toArray(Predicate[]::new)));
     }
 
     @Override
     public Self not(Self builder) {
-        return instantiator.apply((cb, root) -> {
-            if ( !(builder instanceof JpaModelCriteriaBuilder)) throw new IllegalStateException("Invalid type of ModelCriteriaBuilder.");
-            BiFunction<CriteriaBuilder, Root<E>, Predicate> predFunc = ((JpaModelCriteriaBuilder) builder).getPredicateFunc();
-            return cb.not(predFunc.apply(cb, root));
-        });
+        return instantiator.apply((cb, root) -> cb.not(builder.getPredicateFunc().apply(cb, root)));
     }
 
     public BiFunction<CriteriaBuilder, Root<E>, Predicate> getPredicateFunc() {

@@ -1,5 +1,6 @@
 package org.keycloak.testsuite.springboot;
 
+import static org.hamcrest.Matchers.is;
 import static org.keycloak.testsuite.admin.ApiUtil.assignRealmRoles;
 import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
 import static org.keycloak.testsuite.admin.ApiUtil.resetUserPassword;
@@ -16,7 +17,6 @@ import javax.ws.rs.core.UriBuilder;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.logging.Logger;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
@@ -27,13 +27,18 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.SuiteContext;
 import org.keycloak.testsuite.auth.page.login.OIDCLogin;
+import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.pages.LoginPage;
+import org.keycloak.testsuite.pages.LogoutConfirmPage;
+import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.util.TokenUtil;
 import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
 
 public abstract class AbstractSpringBootTest extends AbstractKeycloakTest {
 
@@ -72,6 +77,12 @@ public abstract class AbstractSpringBootTest extends AbstractKeycloakTest {
 
     @Page
     protected OIDCLogin testRealmLoginPage;
+
+    @Page
+    protected LogoutConfirmPage logoutConfirmPage;
+
+    @Page
+    protected InfoPage infoPage;
 
     @Page
     SpringApplicationPage applicationPage;
@@ -147,12 +158,23 @@ public abstract class AbstractSpringBootTest extends AbstractKeycloakTest {
 
         return result;
     }
-    
-    String logoutPage(String redirectUrl) {
-    	return getAuthRoot(suiteContext)
+
+    String getLogoutUrl() {
+        return getAuthRoot(suiteContext)
                 + "/auth/realms/" + REALM_NAME
                 + "/protocol/" + "openid-connect"
-                + "/logout?redirect_uri=" + encodeUrl(redirectUrl);
+                + "/logout";
+    }
+
+    void logout(String redirectUrl) {
+    	String logoutUrl = getLogoutUrl();
+    	driver.navigate().to(logoutUrl);
+
+        logoutConfirmPage.assertCurrent();
+        logoutConfirmPage.confirmLogout();
+        infoPage.assertCurrent();
+
+        driver.navigate().to(redirectUrl);
     }
 
     void setAdapterAndServerTimeOffset(int timeOffset, String url) {

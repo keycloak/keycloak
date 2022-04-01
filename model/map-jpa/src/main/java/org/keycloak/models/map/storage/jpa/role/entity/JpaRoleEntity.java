@@ -18,7 +18,6 @@ package org.keycloak.models.map.storage.jpa.role.entity;
 
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -42,7 +41,7 @@ import org.hibernate.annotations.TypeDefs;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.role.MapRoleEntity.AbstractRoleEntity;
 import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_ROLE;
-import org.keycloak.models.map.storage.jpa.JpaRootEntity;
+import org.keycloak.models.map.storage.jpa.JpaRootVersionedEntity;
 import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
 
 /**
@@ -51,9 +50,9 @@ import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
  * therefore marked as non-insertable and non-updatable to instruct hibernate.
  */
 @Entity
-@Table(name = "role", uniqueConstraints = {@UniqueConstraint(columnNames = {"realmId", "clientId", "name"})})
+@Table(name = "kc_role", uniqueConstraints = {@UniqueConstraint(columnNames = {"realmId", "clientId", "name"})})
 @TypeDefs({@TypeDef(name = "jsonb", typeClass = JsonbType.class)})
-public class JpaRoleEntity extends AbstractRoleEntity implements JpaRootEntity {
+public class JpaRoleEntity extends AbstractRoleEntity implements JpaRootVersionedEntity {
 
     @Id
     @Column
@@ -88,7 +87,7 @@ public class JpaRoleEntity extends AbstractRoleEntity implements JpaRootEntity {
     @Basic(fetch = FetchType.LAZY)
     private String description;
 
-    @OneToMany(mappedBy = "role", cascade = CascadeType.PERSIST, orphanRemoval = true)
+    @OneToMany(mappedBy = "root", cascade = CascadeType.PERSIST, orphanRemoval = true)
     private final Set<JpaRoleAttributeEntity> attributes = new HashSet<>();
 
     /**
@@ -242,9 +241,7 @@ public class JpaRoleEntity extends AbstractRoleEntity implements JpaRootEntity {
 
     @Override
     public void setAttributes(Map<String, List<String>> attributes) {
-        for (Iterator<JpaRoleAttributeEntity> iterator = this.attributes.iterator(); iterator.hasNext();) {
-            iterator.remove();
-        }
+        this.attributes.clear();
         if (attributes != null) {
             for (Map.Entry<String, List<String>> entry : attributes.entrySet()) {
                 setAttribute(entry.getKey(), entry.getValue());
@@ -263,12 +260,7 @@ public class JpaRoleEntity extends AbstractRoleEntity implements JpaRootEntity {
 
     @Override
     public void removeAttribute(String name) {
-        for (Iterator<JpaRoleAttributeEntity> iterator = attributes.iterator(); iterator.hasNext();) {
-            JpaRoleAttributeEntity attr = iterator.next();
-            if (Objects.equals(attr.getName(), name)) {
-                iterator.remove();
-            }
-        }
+        attributes.removeIf(attr -> Objects.equals(attr.getName(), name));
     }
 
     @Override

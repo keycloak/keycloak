@@ -18,6 +18,7 @@
 
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
     <changeSet author="bburke@redhat.com" id="2.1.0-KEYCLOAK-5461">
+        <validCheckSum>7:f1f9fd8710399d725b780f463c6b21cd</validCheckSum>
         <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
             <not>
                 <changeSetExecuted id="2.1.0" author="bburke@redhat.com" changeLogFile="META-INF/jpa-changelog-2.1.0.xml"/>

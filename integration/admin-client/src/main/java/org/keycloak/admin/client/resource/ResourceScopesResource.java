@@ -16,7 +16,6 @@
  */
 package org.keycloak.admin.client.resource;
 
-import org.jboss.resteasy.annotations.cache.NoCache;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 
 import javax.ws.rs.Consumes;
@@ -44,13 +43,11 @@ public interface ResourceScopesResource {
     ResourceScopeResource scope(@PathParam("id") String id);
 
     @GET
-    @NoCache
     @Produces(MediaType.APPLICATION_JSON)
     List<ScopeRepresentation> scopes();
 
     @Path("/search")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @NoCache
     ScopeRepresentation findByName(@QueryParam("name") String name);
 }

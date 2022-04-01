@@ -18,6 +18,7 @@
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
 
     <changeSet author="sguilhen@redhat.com" id="4.7.0-KEYCLOAK-1267">
+        <validCheckSum>7:c7aa4c8d9573500c2d347c1941ff0301</validCheckSum>
         <addColumn tableName="REALM">
             <column name="SSO_MAX_LIFESPAN_REMEMBER_ME" type="INT" defaultValueNumeric="0"/>
             <column name="SSO_IDLE_TIMEOUT_REMEMBER_ME" type="INT" defaultValueNumeric="0"/>
@@ -26,6 +27,7 @@
 
 
     <changeSet author="keycloak" id="4.7.0-KEYCLOAK-7275">
+        <validCheckSum>7:b207faee394fc074a442ecd42185a5dd</validCheckSum>
         <renameColumn tableName="OFFLINE_USER_SESSION" oldColumnName="LAST_SESSION_REFRESH" newColumnName="CREATED_ON" columnDataType="INT" />
 
         <addNotNullConstraint tableName="OFFLINE_USER_SESSION" columnName="CREATED_ON" columnDataType="INT" defaultNullValue="0" />

@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-distribution-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>17.0.0-SNAPSHOT</version>
+        <version>999-SNAPSHOT</version>
     </parent>
 
     <artifactId>keycloak-api-docs-dist</artifactId>
@@ -44,6 +44,8 @@
                     <maxmemory>2400m</maxmemory>
                     <encoding>UTF-8</encoding>
                     <includeDependencySources>true</includeDependencySources>
+                    <source>${maven.compiler.source}</source>
+                    <failOnError>true</failOnError>
                 </configuration>
                 <executions>
                     <execution>
@@ -97,6 +99,37 @@
                 <dependency>
                     <groupId>org.keycloak</groupId>
                     <artifactId>keycloak-authz-client</artifactId>
+                </dependency>
+                <!-- Include all classes that are marked "provided" and therefore not included in the dependencies above.
+                This avoids warnings when generating the JavaDoc -->
+                <dependency>
+                    <groupId>org.keycloak</groupId>
+                    <artifactId>keycloak-model-build-processor</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.jboss.logging</groupId>
+                    <artifactId>jboss-logging-annotations</artifactId>
+                </dependency>
+                <dependency>
+                    <groupId>net.java.dev.jna</groupId>
+                    <artifactId>jna</artifactId>
+                </dependency>
+                <dependency>
+                    <!-- Included here as it provides Nonnull from com.google.code.findbugs:jsr305.
+                    That is used in annotations in FilesPlainTextVaultProvider -->
+                    <groupId>com.googlecode.owasp-java-html-sanitizer</groupId>
+                    <artifactId>owasp-java-html-sanitizer</artifactId>
+                </dependency>
+                <dependency>
+                    <groupId>org.infinispan.protostream</groupId>
+                    <artifactId>protostream-processor</artifactId>
+                    <version>${infinispan.protostream.processor.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.infinispan</groupId>
+                    <artifactId>infinispan-component-annotations</artifactId>
+                    <version>${infinispan.version}</version>
                 </dependency>
             </dependencies>
             <build>

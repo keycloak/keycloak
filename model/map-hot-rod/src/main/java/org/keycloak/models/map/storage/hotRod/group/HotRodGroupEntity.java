@@ -21,6 +21,7 @@ import org.infinispan.protostream.annotations.ProtoDoc;
 import org.infinispan.protostream.annotations.ProtoField;
 import org.keycloak.models.map.annotations.GenerateHotRodEntityImplementation;
 import org.keycloak.models.map.group.MapGroupEntity;
+import org.keycloak.models.map.storage.hotRod.client.HotRodProtocolMapperEntityDelegate;
 import org.keycloak.models.map.storage.hotRod.common.AbstractHotRodEntity;
 import org.keycloak.models.map.storage.hotRod.common.HotRodAttributeEntityNonIndexed;
 import org.keycloak.models.map.storage.hotRod.common.UpdatableHotRodEntityDelegateImpl;
@@ -92,4 +93,14 @@ public class HotRodGroupEntity extends AbstractHotRodEntity {
     @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
     @ProtoField(number = 8)
     public Set<String> grantedRoles;
+
+    @Override
+    public boolean equals(Object o) {
+        return HotRodGroupEntityDelegate.entityEquals(this, o);
+    }
+
+    @Override
+    public int hashCode() {
+        return HotRodGroupEntityDelegate.entityHashCode(this);
+    }
 }

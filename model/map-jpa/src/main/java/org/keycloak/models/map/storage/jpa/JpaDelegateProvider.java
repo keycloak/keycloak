@@ -44,8 +44,10 @@ public abstract class JpaDelegateProvider<T extends JpaRootEntity & AbstractEnti
         if (newDelegate == null) {
             throw new ModelIllegalStateException("Unable to retrieve entity: " + delegate.getClass().getName() + "#" + delegate.getId());
         }
-        if (newDelegate.getVersion() != delegate.getVersion()) {
-            throw new ModelIllegalStateException("Version of entity changed between two loads: " + delegate.getClass().getName() + "#" + delegate.getId());
+        if (newDelegate instanceof JpaRootVersionedEntity && delegate instanceof JpaRootVersionedEntity) {
+            if (((JpaRootVersionedEntity) newDelegate).getVersion() != ((JpaRootVersionedEntity) delegate).getVersion()) {
+                throw new ModelIllegalStateException("Version of entity changed between two loads: " + delegate.getClass().getName() + "#" + delegate.getId());
+            }
         }
         this.delegate = newDelegate;
     }

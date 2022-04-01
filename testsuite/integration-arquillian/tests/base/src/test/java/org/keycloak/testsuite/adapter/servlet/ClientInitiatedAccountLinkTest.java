@@ -446,10 +446,8 @@ public class ClientInitiatedAccountLinkTest extends AbstractServletsAdapterTest 
     }
 
     public void logoutAll() {
-        String logoutUri = OIDCLoginProtocolService.logoutUrl(authServerPage.createUriBuilder()).build(CHILD_IDP).toString();
-        navigateTo(logoutUri);
-        logoutUri = OIDCLoginProtocolService.logoutUrl(authServerPage.createUriBuilder()).build(PARENT_IDP).toString();
-        navigateTo(logoutUri);
+        adminClient.realm(CHILD_IDP).logoutAll();
+        adminClient.realm(PARENT_IDP).logoutAll();
     }
 
     @Test

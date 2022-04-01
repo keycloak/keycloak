@@ -41,12 +41,22 @@ public final class Export extends AbstractExportImportCommand implements Runnabl
             defaultValue = "50")
     Integer usersPerFile;
 
+    @Option(names = "--realm",
+            arity = "1",
+            description = "Set the name of the realm to export. If not set, all realms are going to be exported.",
+            paramLabel = "<realm>")
+    String realm;
+
     public Export() {
         super(ACTION_EXPORT);
     }
 
     @Override
     protected void doBeforeRun() {
+        if (realm != null) {
+            System.setProperty("keycloak.migration.realmName", realm);
+        }
+
         System.setProperty("keycloak.migration.usersExportStrategy", users.toUpperCase());
 
         if (usersPerFile != null) {

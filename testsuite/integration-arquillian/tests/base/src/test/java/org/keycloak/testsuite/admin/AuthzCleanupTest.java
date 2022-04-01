@@ -81,7 +81,7 @@ public class AuthzCleanupTest extends AbstractKeycloakTest {
         session.getContext().setRealm(realm);
         AuthorizationProvider authz = session.getProvider(AuthorizationProvider.class);
         ClientModel myclient = realm.getClientByClientId("myclient");
-        ResourceServer resourceServer = authz.getStoreFactory().getResourceServerStore().findById(myclient.getId());
+        ResourceServer resourceServer = authz.getStoreFactory().getResourceServerStore().findByClient(myclient);
         createRolePolicy(authz, resourceServer, myclient.getClientId() + "/client-role-1");
         createRolePolicy(authz, resourceServer, myclient.getClientId() + "/client-role-2");
     }
@@ -95,7 +95,7 @@ public class AuthzCleanupTest extends AbstractKeycloakTest {
         representation.setLogic(Logic.POSITIVE);
         representation.addRole(roleName, true);
 
-        return authz.getStoreFactory().getPolicyStore().create(representation, resourceServer);
+        return authz.getStoreFactory().getPolicyStore().create(resourceServer, representation);
     }
 
 

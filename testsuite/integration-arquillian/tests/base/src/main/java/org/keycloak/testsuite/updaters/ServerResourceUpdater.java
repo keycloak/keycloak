@@ -124,21 +124,21 @@ public abstract class ServerResourceUpdater<T extends ServerResourceUpdater, Res
      * @param <V> Type of the objects required by add/remove functions (e.g. IDs)
      * @param from Initial collection
      * @param to Target collection
-     * @param client2ServerConvertorGenerator Producer of the convertor. If not needed, just use {@code () -> Functions::identity}.
+     * @param client2ServerConverterGenerator Producer of the converter. If not needed, just use {@code () -> Functions::identity}.
      *    This is intentionally a lazy-evaluated function variable because the conversion map often needs to be obtained from the
      *    server which can be slow operation. This function is called only if the two collections differ.
      * @param add Function to add
      * @param remove Function to remove
      */
-    public static <T, V> void updateViaAddRemove(Collection<T> from, Collection<T> to, Supplier<Function<T, V>> client2ServerConvertorGenerator, Consumer<V> add, Consumer<V> remove) {
+    public static <T, V> void updateViaAddRemove(Collection<T> from, Collection<T> to, Supplier<Function<T, V>> client2ServerConverterGenerator, Consumer<V> add, Consumer<V> remove) {
         if (Objects.equals(from, to)) {
             return;
         }
 
-        Function<T, V> client2ServerConvertor = client2ServerConvertorGenerator.get();
+        Function<T, V> client2ServerConverter = client2ServerConverterGenerator.get();
 
-        Set<V> current = from == null ? Collections.EMPTY_SET : from.stream().map(client2ServerConvertor).collect(Collectors.toSet());
-        Set<V> expected = to == null ? Collections.EMPTY_SET : to.stream().map(client2ServerConvertor).collect(Collectors.toSet());
+        Set<V> current = from == null ? Collections.EMPTY_SET : from.stream().map(client2ServerConverter).collect(Collectors.toSet());
+        Set<V> expected = to == null ? Collections.EMPTY_SET : to.stream().map(client2ServerConverter).collect(Collectors.toSet());
 
         expected.stream()
           .filter(role -> ! current.contains(role))

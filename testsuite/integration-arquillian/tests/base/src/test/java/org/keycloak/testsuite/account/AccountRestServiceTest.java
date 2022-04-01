@@ -90,7 +90,6 @@ import static org.junit.Assert.assertTrue;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 @AuthServerContainerExclude(AuthServer.REMOTE)
-@EnableFeature(value = Profile.Feature.WEB_AUTHN, skipRestart = true, onlyForProduct = true)
 public class AccountRestServiceTest extends AbstractRestServiceTest {
     
     @Rule
@@ -106,7 +105,13 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         assertUserProfileAttributeMetadata(user, "firstName", "${firstName}", true, false);
         assertUserProfileAttributeMetadata(user, "lastName", "${lastName}", true, false);
     }
-    
+
+    @Test
+    public void testGetUserProfileWithoutMetadata() throws IOException {
+        UserRepresentation user = getUser(false);
+        assertNull(user.getUserProfileMetadata());
+    }
+
     @Test
     public void testGetUserProfileMetadata_EditUsernameDisallowed() throws IOException {
         
@@ -462,7 +467,13 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
     }
 
     protected UserRepresentation getUser() throws IOException {
-        SimpleHttp a = SimpleHttp.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken());
+        return getUser(true);
+    }
+
+    protected UserRepresentation getUser(boolean fetchMetadata) throws IOException {
+        String accountUrl = getAccountUrl(null) + "?userProfileMetadata=" + fetchMetadata;
+        SimpleHttp a = SimpleHttp.doGet(accountUrl, httpClient).auth(tokenUtil.getToken());
+
         try {
             return a.asJson(UserRepresentation.class);
         } catch (IOException e) {
@@ -541,7 +552,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
                 "password-display-name", "password-help-text", "kcAuthenticatorPasswordClass",
                 null, UserModel.RequiredAction.UPDATE_PASSWORD.toString(), false, 1);
 
-        CredentialRepresentation password1 = password.getUserCredentials().get(0);
+        CredentialRepresentation password1 = password.getUserCredentialMetadatas().get(0).getCredential();
         assertNull(password1.getSecretData());
         Assert.assertNotNull(password1.getCredentialData());
 
@@ -580,7 +591,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         Assert.assertEquals(1, credentials.size());
         password = credentials.get(0);
         Assert.assertEquals(PasswordCredentialModel.TYPE, password.getType());
-        Assert.assertEquals(1, password.getUserCredentials().size());
+        Assert.assertEquals(1, password.getUserCredentialMetadatas().size());
 
         // Test password-only and user-credentials
         credentials = SimpleHttp.doGet(getAccountUrl("credentials?" + AccountCredentialResource.TYPE + "=password&" +
@@ -589,7 +600,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         Assert.assertEquals(1, credentials.size());
         password = credentials.get(0);
         Assert.assertEquals(PasswordCredentialModel.TYPE, password.getType());
-        assertNull(password.getUserCredentials());
+        assertNull(password.getUserCredentialMetadatas());
     }
 
 
@@ -808,7 +819,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         Assert.assertEquals(createAction, credential.getCreateAction());
         Assert.assertEquals(updateAction, credential.getUpdateAction());
         Assert.assertEquals(removeable, credential.isRemoveable());
-        Assert.assertEquals(userCredentialsCount, credential.getUserCredentials().size());
+        Assert.assertEquals(userCredentialsCount, credential.getUserCredentialMetadatas().size());
     }
 
     public void testDeleteSessions() throws IOException {

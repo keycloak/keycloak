@@ -54,6 +54,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
@@ -144,9 +145,11 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
             events.clear();
 
             // logout by user
-            appPage.logout();
+            logout();
+
             // confirm logout event
             events.expectLogout(sessionId)
+                    .removeDetail(Details.REDIRECT_URI)
                     .user(userId)
                     .assertEvent();
 
@@ -175,9 +178,11 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
 
             events.clear();
             // logout by user
-            appPage.logout();
+            logout();
+
             // confirm logout event
             events.expectLogout(sessionId)
+                    .removeDetail(Details.REDIRECT_URI)
                     .user(userId)
                     .assertEvent();
         } finally {
@@ -247,9 +252,10 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
 
             events.clear();
 
-            appPage.logout();
+            logout();
 
             events.expectLogout(sessionID)
+                    .removeDetail(Details.REDIRECT_URI)
                     .user(userId)
                     .assertEvent();
 
@@ -270,7 +276,7 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
             webAuthnLoginPage.clickAuthenticate();
 
             appPage.assertCurrent();
-            appPage.logout();
+            logout();
 
             // Only passwordless login
             loginUsernamePage.open();
@@ -291,7 +297,7 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
             webAuthnLoginPage.clickAuthenticate();
 
             appPage.assertCurrent();
-            appPage.logout();
+            logout();
         } finally {
             removeFirstCredentialForUser(userId, WebAuthnCredentialModel.TYPE_TWOFACTOR, WEBAUTHN_LABEL);
             removeFirstCredentialForUser(userId, WebAuthnCredentialModel.TYPE_PASSWORDLESS, PASSWORDLESS_LABEL);
@@ -413,13 +419,16 @@ public class WebAuthnRegisterAndLoginTest extends AbstractWebAuthnVirtualTest {
 
         final CredentialRepresentation credentialRep = userResource.credentials()
                 .stream()
+                .filter(Objects::nonNull)
                 .filter(credential -> credentialType.equals(credential.getType()))
-                .findFirst().orElse(null);
+                .findFirst()
+                .orElse(null);
 
-        assertThat(credentialRep, notNullValue());
-        if (assertUserLabel != null) {
-            assertThat(credentialRep.getUserLabel(), is(assertUserLabel));
+        if (credentialRep != null) {
+            if (assertUserLabel != null) {
+                assertThat(credentialRep.getUserLabel(), is(assertUserLabel));
+            }
+            userResource.removeCredential(credentialRep.getId());
         }
-        userResource.removeCredential(credentialRep.getId());
     }
 }

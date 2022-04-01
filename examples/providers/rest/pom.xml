@@ -20,7 +20,7 @@
     <parent>
         <artifactId>keycloak-examples-providers-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>17.0.0-SNAPSHOT</version>
+        <version>999-SNAPSHOT</version>
     </parent>
 
     <name>REST Example</name>

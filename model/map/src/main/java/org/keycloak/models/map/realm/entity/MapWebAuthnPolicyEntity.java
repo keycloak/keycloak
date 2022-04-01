@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,36 +17,22 @@
 
 package org.keycloak.models.map.realm.entity;
 
+import org.keycloak.models.Constants;
+import org.keycloak.models.WebAuthnPolicy;
+import org.keycloak.models.map.annotations.GenerateEntityImplementations;
+import org.keycloak.models.map.common.DeepCloner;
+import org.keycloak.models.map.common.UpdatableEntity;
+
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Objects;
-import org.keycloak.models.Constants;
-import org.keycloak.models.WebAuthnPolicy;
-import org.keycloak.models.map.common.UpdatableEntity;
 
-public class MapWebAuthnPolicyEntity extends UpdatableEntity.Impl {
-
-    // mandatory
-    private String rpEntityName;
-    private List<String> signatureAlgorithms = new LinkedList<>();
-
-    // optional
-    private String rpId;
-    private String attestationConveyancePreference;
-    private String authenticatorAttachment;
-    private String requireResidentKey;
-    private String userVerificationRequirement;
-    private Integer createTimeout = 0;
-    private Boolean avoidSameAuthenticatorRegister = false;
-    private List<String> acceptableAaguids = new LinkedList<>();
-
-
-    private MapWebAuthnPolicyEntity() {}
-
-    public static MapWebAuthnPolicyEntity fromModel(WebAuthnPolicy model) {
+@GenerateEntityImplementations
+@DeepCloner.Root
+public interface MapWebAuthnPolicyEntity extends UpdatableEntity {
+    static MapWebAuthnPolicyEntity fromModel(WebAuthnPolicy model) {
         if (model == null) return null;
-        MapWebAuthnPolicyEntity entity = new MapWebAuthnPolicyEntity();
+        MapWebAuthnPolicyEntity entity = new MapWebAuthnPolicyEntityImpl();
         entity.setRpEntityName(model.getRpEntityName());
         entity.setSignatureAlgorithms(model.getSignatureAlgorithm());
         entity.setRpId(model.getRpId());
@@ -56,11 +42,11 @@ public class MapWebAuthnPolicyEntity extends UpdatableEntity.Impl {
         entity.setUserVerificationRequirement(model.getUserVerificationRequirement());
         entity.setCreateTimeout(model.getCreateTimeout());
         entity.setAvoidSameAuthenticatorRegister(model.isAvoidSameAuthenticatorRegister());
-        entity.setAcceptableAaguids(model.getAcceptableAaguids() == null ? null : new LinkedList<>(model.getAcceptableAaguids()));
+        entity.setAcceptableAaguids(model.getAcceptableAaguids());
         return entity;
     }
 
-    public static WebAuthnPolicy toModel(MapWebAuthnPolicyEntity entity) {
+    static WebAuthnPolicy toModel(MapWebAuthnPolicyEntity entity) {
         if (entity == null) return null;
         WebAuthnPolicy model = new WebAuthnPolicy();
         model.setRpEntityName(entity.getRpEntityName());
@@ -72,12 +58,13 @@ public class MapWebAuthnPolicyEntity extends UpdatableEntity.Impl {
         model.setUserVerificationRequirement(entity.getUserVerificationRequirement());
         model.setCreateTimeout(entity.getCreateTimeout());
         model.setAvoidSameAuthenticatorRegister(entity.isAvoidSameAuthenticatorRegister());
-        model.setAcceptableAaguids(entity.getAcceptableAaguids() == null ? null : new LinkedList<>(entity.getAcceptableAaguids()));
+        List<String> acceptableAaguids = entity.getAcceptableAaguids();
+        model.setAcceptableAaguids(acceptableAaguids == null ? new LinkedList<>() : new LinkedList<>(acceptableAaguids));
         return model;
     }
 
-    public static MapWebAuthnPolicyEntity defaultWebAuthnPolicy() {
-        MapWebAuthnPolicyEntity entity = new MapWebAuthnPolicyEntity();
+    static MapWebAuthnPolicyEntity defaultWebAuthnPolicy() {
+        MapWebAuthnPolicyEntity entity = new MapWebAuthnPolicyEntityImpl();
         entity.setRpEntityName(Constants.DEFAULT_WEBAUTHN_POLICY_RP_ENTITY_NAME);
         entity.setSignatureAlgorithms(Arrays.asList(Constants.DEFAULT_WEBAUTHN_POLICY_SIGNATURE_ALGORITHMS.split(",")));
         entity.setRpId("");
@@ -91,106 +78,33 @@ public class MapWebAuthnPolicyEntity extends UpdatableEntity.Impl {
         return entity;
     }
 
-    public String getRpEntityName() {
-        return rpEntityName;
-    }
+    String getRpEntityName();
+    void setRpEntityName(String rpEntityName);
 
-    public void setRpEntityName(String rpEntityName) {
-        this.updated = !Objects.equals(this.rpEntityName, rpEntityName);
-        this.rpEntityName = rpEntityName;
-    }
+    List<String> getSignatureAlgorithms();
+    void setSignatureAlgorithms(List<String> signatureAlgorithms);
 
-    public List<String> getSignatureAlgorithms() {
-        return signatureAlgorithms;
-    }
+    String getRpId();
+    void setRpId(String rpId);
 
-    public void setSignatureAlgorithms(List<String> signatureAlgorithms) {
-        this.updated = !Objects.equals(this.signatureAlgorithms, signatureAlgorithms);
-        this.signatureAlgorithms = signatureAlgorithms;
-    }
+    String getAttestationConveyancePreference();
+    void setAttestationConveyancePreference(String attestationConveyancePreference);
 
-    public String getRpId() {
-        return rpId;
-    }
+    String getAuthenticatorAttachment();
+    void setAuthenticatorAttachment(String authenticatorAttachment);
 
-    public void setRpId(String rpId) {
-        this.updated = !Objects.equals(this.rpId, rpId);
-        this.rpId = rpId;
-    }
+    String getRequireResidentKey();
+    void setRequireResidentKey(String requireResidentKey);
 
-    public String getAttestationConveyancePreference() {
-        return attestationConveyancePreference;
-    }
+    String getUserVerificationRequirement();
+    void setUserVerificationRequirement(String userVerificationRequirement);
 
-    public void setAttestationConveyancePreference(String attestationConveyancePreference) {
-        this.updated = !Objects.equals(this.attestationConveyancePreference, attestationConveyancePreference);
-        this.attestationConveyancePreference = attestationConveyancePreference;
-    }
+    Integer getCreateTimeout();
+    void setCreateTimeout(Integer createTimeout);
 
-    public String getAuthenticatorAttachment() {
-        return authenticatorAttachment;
-    }
+    Boolean isAvoidSameAuthenticatorRegister();
+    void setAvoidSameAuthenticatorRegister(Boolean avoidSameAuthenticatorRegister);
 
-    public void setAuthenticatorAttachment(String authenticatorAttachment) {
-        this.updated = !Objects.equals(this.authenticatorAttachment, authenticatorAttachment);
-        this.authenticatorAttachment = authenticatorAttachment;
-    }
-
-    public String getRequireResidentKey() {
-        return requireResidentKey;
-    }
-
-    public void setRequireResidentKey(String requireResidentKey) {
-        this.updated = !Objects.equals(this.requireResidentKey, requireResidentKey);
-        this.requireResidentKey = requireResidentKey;
-    }
-
-    public String getUserVerificationRequirement() {
-        return userVerificationRequirement;
-    }
-
-    public void setUserVerificationRequirement(String userVerificationRequirement) {
-        this.updated = !Objects.equals(this.userVerificationRequirement, userVerificationRequirement);
-        this.userVerificationRequirement = userVerificationRequirement;
-    }
-
-    public Integer getCreateTimeout() {
-        return createTimeout;
-    }
-
-    public void setCreateTimeout(int createTimeout) {
-        this.updated = !Objects.equals(this.createTimeout, createTimeout);
-        this.createTimeout = createTimeout;
-    }
-
-    public Boolean isAvoidSameAuthenticatorRegister() {
-        return avoidSameAuthenticatorRegister;
-    }
-
-    public void setAvoidSameAuthenticatorRegister(boolean avoidSameAuthenticatorRegister) {
-        this.updated = !Objects.equals(this.avoidSameAuthenticatorRegister, avoidSameAuthenticatorRegister);
-        this.avoidSameAuthenticatorRegister = avoidSameAuthenticatorRegister;
-    }
-
-    public List<String> getAcceptableAaguids() {
-        return acceptableAaguids;
-    }
-
-    public void setAcceptableAaguids(List<String> acceptableAaguids) {
-        this.updated = !Objects.equals(this.acceptableAaguids, acceptableAaguids);
-        this.acceptableAaguids = acceptableAaguids;
-    }
-
-    @Override
-    public int hashCode() {
-        return getRpEntityName().hashCode();
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) return true;
-        if (!(obj instanceof MapWebAuthnPolicyEntity)) return false;
-        final MapWebAuthnPolicyEntity other = (MapWebAuthnPolicyEntity) obj;
-        return Objects.equals(other.getRpEntityName(), getRpEntityName());
-    }
+    List<String> getAcceptableAaguids();
+    void setAcceptableAaguids(List<String> acceptableAaguids);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,30 +17,22 @@
 
 package org.keycloak.models.map.realm.entity;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
 import org.keycloak.models.RequiredActionProviderModel;
+import org.keycloak.models.map.annotations.GenerateEntityImplementations;
+import org.keycloak.models.map.common.AbstractEntity;
+import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.UpdatableEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
-public class MapRequiredActionProviderEntity extends UpdatableEntity.Impl {
+import java.util.HashMap;
+import java.util.Map;
 
-    private String id;
-    private String alias;
-    private String name;
-    private String providerId;
-    private Integer priority = 0;
-    private Boolean enabled = false;
-    private Boolean defaultAction = false;
-    private Map<String, String> config = new HashMap<>();
-
-
-    private MapRequiredActionProviderEntity() {}
-
-    public static MapRequiredActionProviderEntity fromModel(RequiredActionProviderModel model) {
+@GenerateEntityImplementations
+@DeepCloner.Root
+public interface MapRequiredActionProviderEntity extends UpdatableEntity, AbstractEntity {
+    static MapRequiredActionProviderEntity fromModel(RequiredActionProviderModel model) {
         if (model == null) return null;
-        MapRequiredActionProviderEntity entity = new MapRequiredActionProviderEntity();
+        MapRequiredActionProviderEntity entity = new MapRequiredActionProviderEntityImpl();
         String id = model.getId() == null ? KeycloakModelUtils.generateId() : model.getId();
         entity.setId(id);
         entity.setAlias(model.getAlias());
@@ -49,106 +41,46 @@ public class MapRequiredActionProviderEntity extends UpdatableEntity.Impl {
         entity.setPriority(model.getPriority());
         entity.setEnabled(model.isEnabled());
         entity.setDefaultAction(model.isDefaultAction());
-        entity.setConfig(model.getConfig() == null ? null : new HashMap<>(model.getConfig()));
+        entity.setConfig(model.getConfig());
         return entity;
     }
 
-    public static RequiredActionProviderModel toModel(MapRequiredActionProviderEntity entity) {
+    static RequiredActionProviderModel toModel(MapRequiredActionProviderEntity entity) {
         if (entity == null) return null;
         RequiredActionProviderModel model = new RequiredActionProviderModel();
         model.setId(entity.getId());
         model.setAlias(entity.getAlias());
         model.setName(entity.getName());
         model.setProviderId(entity.getProviderId());
-        model.setPriority(entity.getPriority());
-        model.setEnabled(entity.isEnabled());
-        model.setDefaultAction(entity.isDefaultAction());
-        model.setConfig(entity.getConfig() == null ? null : new HashMap<>(entity.getConfig()));
+        Integer priority = entity.getPriority();
+        model.setPriority(priority == null ? 0 : priority);
+        Boolean enabled = entity.isEnabled();
+        model.setEnabled(enabled == null ? false : enabled);
+        Boolean defaultAction = entity.isDefaultAction();
+        model.setDefaultAction(defaultAction == null ? false : defaultAction);
+        Map<String, String> config = entity.getConfig();
+        model.setConfig(config == null ? new HashMap<>() : new HashMap<>(config));
         return model;
     }
 
-    public String getId() {
-        return id;
-    }
+    String getAlias();
+    void setAlias(String alias);
 
-    public void setId(String id) {
-        this.updated = !Objects.equals(this.id, id);
-        this.id = id;
-    }
+    String getName();
+    void setName(String name);
 
-    public String getAlias() {
-        return alias;
-    }
+    String getProviderId();
+    void setProviderId(String providerId);
 
-    public void setAlias(String alias) {
-        this.updated = !Objects.equals(this.alias, alias);
-        this.alias = alias;
-    }
+    Integer getPriority();
+    void setPriority(Integer priority);
 
-    public String getName() {
-        return name;
-    }
+    Boolean isEnabled();
+    void setEnabled(Boolean enabled);
 
-    public void setName(String name) {
-        this.updated = !Objects.equals(this.name, name);
-        this.name = name;
-    }
+    Boolean isDefaultAction();
+    void setDefaultAction(Boolean defaultAction);
 
-    public String getProviderId() {
-        return providerId;
-    }
-
-    public void setProviderId(String providerId) {
-        this.updated = !Objects.equals(this.providerId, providerId);
-        this.providerId = providerId;
-    }
-
-    public Integer getPriority() {
-        return priority;
-    }
-
-    public void setPriority(int priority) {
-        this.updated = !Objects.equals(this.priority, priority);
-        this.priority = priority;
-    }
-
-    public Boolean isEnabled() {
-        return enabled;
-    }
-
-    public void setEnabled(boolean enabled) {
-        this.updated = !Objects.equals(this.enabled, enabled);
-        this.enabled = enabled;
-    }
-
-    public Boolean isDefaultAction() {
-        return defaultAction;
-    }
-
-    public void setDefaultAction(boolean defaultAction) {
-        this.updated = !Objects.equals(this.defaultAction, defaultAction);
-        this.defaultAction = defaultAction;
-    }
-
-    public Map<String, String> getConfig() {
-        return config;
-    }
-
-    public void setConfig(Map<String, String> config) {
-        this.updated = !Objects.equals(this.config, config);
-        this.config = config;
-    }
-
-    @Override
-    public int hashCode() {
-        return getId().hashCode();
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) return true;
-        if (!(obj instanceof MapRequiredActionProviderEntity)) return false;
-        final MapRequiredActionProviderEntity other = (MapRequiredActionProviderEntity) obj;
-        return Objects.equals(other.getId(), getId());
-    }
+    Map<String, String> getConfig();
+    void setConfig(Map<String, String> config);
 }

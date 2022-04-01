@@ -46,6 +46,7 @@ import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.pages.AccountApplicationsPage;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.ErrorPage;
+import org.keycloak.testsuite.pages.LogoutConfirmPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.ProtocolMapperUtil;
@@ -76,6 +77,10 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
     protected OAuthGrantPage grantPage;
     @Page
     protected AccountApplicationsPage accountAppsPage;
+
+    @Page
+    protected LogoutConfirmPage logoutConfirmPage;
+
     @Page
     protected AppPage appPage;
 
@@ -360,9 +365,12 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
                 .client(THIRD_PARTY_APP)
                 .assertEvent();
 
-        oauth.openLogout();
+        String logoutUrl = oauth.getLogoutUrl().idTokenHint(res.getIdToken()).build();
+        driver.navigate().to(logoutUrl);
+        logoutConfirmPage.assertCurrent();
+        logoutConfirmPage.confirmLogout();
 
-        events.expectLogout(loginEvent.getSessionId()).assertEvent();
+        events.expectLogout(loginEvent.getSessionId()).removeDetail(Details.REDIRECT_URI).assertEvent();
 
         // login again to check whether the Dynamic scope and only the dynamic scope is requested again
         oauth.scope("foo-dynamic-scope:withparam");

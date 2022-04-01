@@ -33,7 +33,6 @@ import org.keycloak.models.map.storage.QueryParameters;
 
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 
-import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
@@ -122,7 +121,7 @@ public class MapGroupProvider implements GroupProvider {
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
 
         if (Objects.equals(onlyTopGroups, Boolean.TRUE)) {
-            mcb = mcb.compare(SearchableFields.PARENT_ID, Operator.EQ, (Object) null);
+            mcb = mcb.compare(SearchableFields.PARENT_ID, Operator.NOT_EXISTS);
         }
 
         return tx.getCount(withCriteria(mcb));
@@ -185,11 +184,13 @@ public class MapGroupProvider implements GroupProvider {
     public GroupModel createGroup(RealmModel realm, String id, String name, GroupModel toParent) {
         LOG.tracef("createGroup(%s, %s, %s, %s)%s", realm, id, name, toParent, getShortStackTrace());
         // Check Db constraint: uniqueConstraints = { @UniqueConstraint(columnNames = {"REALM_ID", "PARENT_GROUP", "NAME"})}
-        String parentId = toParent == null ? null : toParent.getId();
         DefaultModelCriteria<GroupModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
-          .compare(SearchableFields.PARENT_ID, Operator.EQ, parentId)
           .compare(SearchableFields.NAME, Operator.EQ, name);
+
+        mcb = toParent == null ? 
+                mcb.compare(SearchableFields.PARENT_ID, Operator.NOT_EXISTS) : 
+                mcb.compare(SearchableFields.PARENT_ID, Operator.EQ, toParent.getId());
 
         if (tx.getCount(withCriteria(mcb)) > 0) {
             throw new ModelDuplicateException("Group with name '" + name + "' in realm " + realm.getName() + " already exists for requested parent" );
@@ -254,11 +255,13 @@ public class MapGroupProvider implements GroupProvider {
             return;
         }
         
-        String parentId = toParent == null ? null : toParent.getId();
         DefaultModelCriteria<GroupModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
-          .compare(SearchableFields.PARENT_ID, Operator.EQ, parentId)
           .compare(SearchableFields.NAME, Operator.EQ, group.getName());
+
+        mcb = toParent == null ? 
+                mcb.compare(SearchableFields.PARENT_ID, Operator.NOT_EXISTS) : 
+                mcb.compare(SearchableFields.PARENT_ID, Operator.EQ, toParent.getId());
 
         try (Stream<MapGroupEntity> possibleSiblings = tx.read(withCriteria(mcb))) {
             if (possibleSiblings.findAny().isPresent()) {

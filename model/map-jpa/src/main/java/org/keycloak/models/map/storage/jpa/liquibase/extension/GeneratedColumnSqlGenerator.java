@@ -80,7 +80,7 @@ public class GeneratedColumnSqlGenerator extends AddColumnGenerator {
         List<Sql> returnSql = new ArrayList<>();
         returnSql.add(new UnparsedSql(sqlBuilder.toString(), super.getAffectedColumn(statement)));
 
-        super.addUniqueConstrantStatements(statement, database, returnSql);
+        super.addUniqueConstraintStatements(statement, database, returnSql);
         super.addForeignKeyStatements(statement, database, returnSql);
 
         return returnSql.toArray(new Sql[0]);

@@ -8,12 +8,17 @@ import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 import java.util.List;
 
 import org.junit.Assert;
+import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
 
 public class KcOidcBrokerWithConsentTest extends AbstractInitializedBaseBrokerTest {
+
+    @Rule
+    public InfinispanTestTimeServiceRule ispnTestTimeService = new InfinispanTestTimeServiceRule(this);
 
     @Override
     protected BrokerConfiguration getBrokerConfiguration() {
@@ -35,8 +40,8 @@ public class KcOidcBrokerWithConsentTest extends AbstractInitializedBaseBrokerTe
         // Change timeouts on realm-with-broker to lower values
         RealmResource realmWithBroker = adminClient.realm(bc.consumerRealmName());
         RealmRepresentation realmRep = realmWithBroker.toRepresentation();
-        realmRep.setAccessCodeLifespanLogin(30);;
-        realmRep.setAccessCodeLifespan(30);
+        realmRep.setAccessCodeLifespanLogin(30);
+        realmRep.setAccessCodeLifespan(300);
         realmRep.setAccessCodeLifespanUserAction(30);
         realmWithBroker.update(realmRep);
     }

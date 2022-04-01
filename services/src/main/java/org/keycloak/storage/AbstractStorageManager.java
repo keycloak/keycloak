@@ -228,7 +228,7 @@ public abstract class AbstractStorageManager<ProviderType extends Provider,
 
         instance = factory.create(session, model);
         if (instance == null) {
-            throw new IllegalStateException("StorageProvideFactory (of type " + factory.getClass().getName() + ") produced a null instance");
+            throw new IllegalStateException("StorageProviderFactory (of type " + factory.getClass().getName() + ") produced a null instance");
         }
         session.enlistForClose(instance);
         session.setAttribute(model.getId(), instance);

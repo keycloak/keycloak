@@ -89,6 +89,9 @@ public class OIDCAttributeMapperHelper {
         tmpToken.put("azp", (claim, mapperName, token, value) -> {
             token.issuedFor(value.toString());
         });
+        tmpToken.put(IDToken.ACR, (claim, mapperName, token, value) -> {
+            token.setAcr(value.toString());
+        });
         tmpToken.put("aud", (claim, mapperName, token, value) -> {
             if (value instanceof Collection) {
                 String[] audiences = ((Collection<?>) value).stream().map(Object::toString).toArray(String[]::new);
@@ -108,7 +111,6 @@ public class OIDCAttributeMapperHelper {
         tmpToken.put("iss", notAllowedInToken);
         tmpToken.put("scope", notAllowedInToken);
         tmpToken.put(IDToken.NONCE, notAllowedInToken);
-        tmpToken.put(IDToken.ACR, notAllowedInToken);
         tmpToken.put(IDToken.AUTH_TIME, notAllowedInToken);
         tmpToken.put(IDToken.SESSION_STATE, notAllowedInToken);
         tokenPropertySetters = Collections.unmodifiableMap(tmpToken);

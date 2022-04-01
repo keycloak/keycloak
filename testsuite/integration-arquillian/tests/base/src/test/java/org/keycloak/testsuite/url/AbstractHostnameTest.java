@@ -83,10 +83,6 @@ public abstract class AbstractHostnameTest extends AbstractKeycloakTest {
                 additionalArgs.add("--hostname-strict-https=true");
             }
             additionalArgs.add("--hostname-strict-backchannel="+ forceBackendUrlToFrontendUrl);
-            if (adminUrl != null) {
-                URI adminUri = URI.create(adminUrl);
-                additionalArgs.add("--hostname-admin=" + adminUri.getHost());
-            }
             container.setAdditionalBuildArgs(additionalArgs);
             controller.start(suiteContext.getAuthServerInfo().getQualifier());
         } else {

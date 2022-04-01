@@ -163,7 +163,7 @@ public interface Resource {
      *
      * @return the resource server associated with this resource
      */
-     String getResourceServer();
+     ResourceServer getResourceServer();
 
     /**
      * Returns the resource's owner, which is usually an identifier that uniquely identifies the resource's owner.

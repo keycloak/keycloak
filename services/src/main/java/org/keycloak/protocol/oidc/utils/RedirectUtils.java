@@ -41,6 +41,12 @@ public class RedirectUtils {
 
     private static final Logger logger = Logger.getLogger(RedirectUtils.class);
 
+    /**
+     * This method is deprecated for performance and security reasons and it is available just for the
+     * backwards compatibility. It is recommended to use some other methods of this class where the client is given as an argument
+     * to the method, so we know the client, which redirect-uri we are trying to resolve.
+     */
+    @Deprecated
     public static String verifyRealmRedirectUri(KeycloakSession session, String redirectUri) {
         Set<String> validRedirects = getValidateRedirectUris(session);
         return verifyRedirectUri(session, null, redirectUri, validRedirects, true);
@@ -71,6 +77,7 @@ public class RedirectUtils {
         return resolveValidRedirects;
     }
 
+    @Deprecated
     private static Set<String> getValidateRedirectUris(KeycloakSession session) {
         RealmModel realm = session.getContext().getRealm();
         return session.clientStorageManager().getAllRedirectUrisOfEnabledClients(realm).entrySet().stream()

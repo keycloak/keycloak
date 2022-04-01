@@ -22,6 +22,7 @@ import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.utils.Serialization;
 import io.quarkus.logging.Log;
 
 import java.util.Collections;
@@ -43,16 +44,23 @@ public abstract class OperatorManagedResource {
         this.cr = cr;
     }
 
-    protected abstract HasMetadata getReconciledResource();
+    protected abstract Optional<HasMetadata> getReconciledResource();
 
     public void createOrUpdateReconciled() {
-        HasMetadata resource = getReconciledResource();
-        setDefaultLabels(resource);
-        setOwnerReferences(resource);
+        getReconciledResource().ifPresent(resource -> {
+            try {
+                setDefaultLabels(resource);
+                setOwnerReferences(resource);
 
-        Log.debugf("Creating or updating resource: %s", resource);
-        resource = client.resource(resource).createOrReplace();
-        Log.debugf("Successfully created or updated resource: %s", resource);
+                Log.debugf("Creating or updating resource: %s", resource);
+                resource = client.resource(resource).createOrReplace();
+                Log.debugf("Successfully created or updated resource: %s", resource);
+            } catch (Exception e) {
+                Log.error("Failed to create or update resource");
+                Log.error(Serialization.asYaml(resource));
+                throw e;
+            }
+        });
     }
 
     protected void setDefaultLabels(HasMetadata resource) {
@@ -77,4 +85,10 @@ public abstract class OperatorManagedResource {
 
         resource.getMetadata().setOwnerReferences(Collections.singletonList(owner));
     }
+
+    protected String getNamespace() {
+        return cr.getMetadata().getNamespace();
+    }
+
+    protected abstract String getName();
 }

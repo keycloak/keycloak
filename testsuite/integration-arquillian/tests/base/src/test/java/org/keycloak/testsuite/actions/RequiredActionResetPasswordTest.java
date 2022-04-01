@@ -96,7 +96,8 @@ public class RequiredActionResetPasswordTest extends AbstractTestRealmKeycloakTe
 
         EventRepresentation loginEvent = events.expectLogin().assertEvent();
 
-        oauth.openLogout();
+        OAuthClient.AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
+        oauth.idTokenHint(tokenResponse.getIdToken()).openLogout();
 
         events.expectLogout(loginEvent.getSessionId()).assertEvent();
 

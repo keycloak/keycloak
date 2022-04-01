@@ -20,9 +20,11 @@ package org.keycloak.testsuite.webauthn.registration;
 import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.webauthn.AbstractWebAuthnVirtualTest;
 import org.keycloak.testsuite.webauthn.utils.PropertyRequirement;
 import org.keycloak.testsuite.webauthn.utils.WebAuthnRealmData;
+import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.virtualauthenticator.Credential;
 
 import java.io.Closeable;
@@ -40,6 +42,7 @@ import static org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthO
 /**
  * @author <a href="mailto:mabartos@redhat.com">Martin Bartos</a>
  */
+@IgnoreBrowserDriver(FirefoxDriver.class)
 public class ResidentKeyRegisterTest extends AbstractWebAuthnVirtualTest {
 
     @Test

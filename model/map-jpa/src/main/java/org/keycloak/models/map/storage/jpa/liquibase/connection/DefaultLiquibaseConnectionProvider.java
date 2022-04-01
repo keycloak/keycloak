@@ -18,25 +18,16 @@
 package org.keycloak.models.map.storage.jpa.liquibase.connection;
 
 import java.sql.Connection;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import liquibase.Liquibase;
-import liquibase.change.ChangeFactory;
 import liquibase.database.Database;
 import liquibase.database.DatabaseFactory;
 import liquibase.database.jvm.JdbcConnection;
-import liquibase.datatype.DataTypeFactory;
 import liquibase.exception.LiquibaseException;
 import liquibase.resource.ClassLoaderResourceAccessor;
 import liquibase.resource.ResourceAccessor;
-import liquibase.sqlgenerator.SqlGeneratorFactory;
 import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.map.storage.jpa.liquibase.extension.GeneratedColumnSqlGenerator;
-import org.keycloak.models.map.storage.jpa.liquibase.extension.CreateJsonIndexChange;
-import org.keycloak.models.map.storage.jpa.liquibase.extension.CreateJsonIndexGenerator;
-import org.keycloak.models.map.storage.jpa.liquibase.extension.GeneratedColumnChange;
-import org.keycloak.models.map.storage.jpa.liquibase.extension.JsonDataType;
 
 /**
  * A {@link MapLiquibaseConnectionProvider} implementation for the map-jpa module. This provider registers the custom {@code Liquibase}
@@ -53,35 +44,8 @@ public class DefaultLiquibaseConnectionProvider implements MapLiquibaseConnectio
 
     private static final Logger logger = Logger.getLogger(DefaultLiquibaseConnectionProvider.class);
 
-    private static final AtomicBoolean INITIALIZED = new AtomicBoolean(false);
-
+    @SuppressWarnings("unused")
     public DefaultLiquibaseConnectionProvider(final KeycloakSession session) {
-        if (! INITIALIZED.get()) {
-            // TODO: all liquibase providers should probably synchronize on the same object.
-            synchronized (INITIALIZED) {
-                if (! INITIALIZED.get()) {
-                    initializeLiquibase();
-                    INITIALIZED.set(true);
-                }
-            }
-        }
-    }
-
-    /**
-     * Registers the custom changes/types so we can work with data stored in JSON format.
-     */
-    protected void initializeLiquibase() {
-
-        // Add custom JSON data type
-        DataTypeFactory.getInstance().register(JsonDataType.class);
-
-        // Add custom change to generate columns from properties in JSON files stored in the DB.
-        ChangeFactory.getInstance().register(GeneratedColumnChange.class);
-        SqlGeneratorFactory.getInstance().register(new GeneratedColumnSqlGenerator());
-
-        // Add custom change to create indexes for properties in JSON files stored in the DB.
-        ChangeFactory.getInstance().register(CreateJsonIndexChange.class);
-        SqlGeneratorFactory.getInstance().register(new CreateJsonIndexGenerator());
     }
 
     @Override

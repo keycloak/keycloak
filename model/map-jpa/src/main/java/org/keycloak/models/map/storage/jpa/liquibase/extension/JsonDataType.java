@@ -17,6 +17,7 @@
 
 package org.keycloak.models.map.storage.jpa.liquibase.extension;
 
+import liquibase.change.core.LoadDataChange;
 import liquibase.database.Database;
 import liquibase.database.core.PostgresDatabase;
 import liquibase.datatype.DataTypeInfo;
@@ -38,5 +39,10 @@ public class JsonDataType extends LiquibaseDataType {
             return new DatabaseDataType("JSONB", super.getParameters());
         }
         return super.toDatabaseDataType(database);
+    }
+
+    @Override
+    public LoadDataChange.LOAD_DATA_TYPE getLoadTypeName() {
+        return LoadDataChange.LOAD_DATA_TYPE.UNKNOWN;
     }
 }

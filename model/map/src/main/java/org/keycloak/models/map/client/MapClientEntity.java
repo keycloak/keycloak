@@ -20,9 +20,11 @@ import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.EntityWithAttributes;
 import org.keycloak.models.map.common.UpdatableEntity;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 import org.keycloak.models.map.annotations.GenerateEntityImplementations;
@@ -52,6 +54,12 @@ public interface MapClientEntity extends AbstractEntity, UpdatableEntity, Entity
             if (this.id != null) throw new IllegalStateException("Id cannot be changed");
             this.id = id;
             this.updated |= id != null;
+        }
+
+        @Override
+        public boolean isUpdated() {
+            return this.updated
+                    || Optional.ofNullable(getProtocolMappers()).orElseGet(Collections::emptyMap).values().stream().anyMatch(MapProtocolMapperEntity::isUpdated);
         }
 
         @Override

@@ -1,6 +1,14 @@
 <infinispan>
     <cache-container>
         <transport stack="udp"/>
+        <distributed-cache name="auth-sessions" mode="SYNC">
+            <indexing>
+                <indexed-entities>
+                    <indexed-entity>kc.HotRodRootAuthenticationSessionEntity</indexed-entity>
+                </indexed-entities>
+            </indexing>
+            <encoding media-type="application/x-protostream"/>
+        </distributed-cache>
         <distributed-cache name="clients" mode="SYNC">
             <indexing>
                 <indexed-entities>
@@ -10,10 +18,36 @@
             </indexing>
             <encoding media-type="application/x-protostream"/>
         </distributed-cache>
+        <distributed-cache name="client-scopes" mode="SYNC">
+            <indexing>
+                <indexed-entities>
+                    <indexed-entity>kc.HotRodClientScopeEntity</indexed-entity>
+                </indexed-entities>
+            </indexing>
+            <encoding media-type="application/x-protostream"/>
+        </distributed-cache>
         <distributed-cache name="groups" mode="SYNC">
             <indexing>
                 <indexed-entities>
                     <indexed-entity>kc.HotRodGroupEntity</indexed-entity>
+                </indexed-entities>
+            </indexing>
+            <encoding media-type="application/x-protostream"/>
+        </distributed-cache>
+        <distributed-cache name="roles" mode="SYNC">
+            <indexing>
+                <indexed-entities>
+                    <indexed-entity>kc.HotRodRoleEntity</indexed-entity>
+                </indexed-entities>
+            </indexing>
+            <encoding media-type="application/x-protostream"/>
+        </distributed-cache>
+        <distributed-cache name="users" mode="SYNC">
+            <indexing>
+                <indexed-entities>
+                    <indexed-entity>kc.HotRodUserEntity</indexed-entity>
+                    <indexed-entity>kc.HotRodAttributeEntity</indexed-entity>
+                    <indexed-entity>kc.HotRodUserFederatedIdentityEntity</indexed-entity>
                 </indexed-entities>
             </indexing>
             <encoding media-type="application/x-protostream"/>

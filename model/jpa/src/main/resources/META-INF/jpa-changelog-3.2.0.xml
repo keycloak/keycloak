@@ -25,6 +25,7 @@
     -->
     
     <changeSet author="keycloak" id="3.2.0-fix">
+        <validCheckSum>7:550300617e3b59e8af3a6294df8248a3</validCheckSum>
         <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
             <changeSetExecuted id="3.2.0" author="keycloak" changeLogFile="META-INF/jpa-changelog-3.2.0.xml"/>
             <not>
@@ -36,6 +37,7 @@
     </changeSet>
 
     <changeSet author="keycloak" id="3.2.0-fix-with-keycloak-5416">
+        <validCheckSum>7:e3a9482b8931481dc2772a5c07c44f17</validCheckSum>
         <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
             <changeSetExecuted id="3.2.0" author="keycloak" changeLogFile="META-INF/jpa-changelog-3.2.0.xml"/>
             <dbms type="mssql"/>
@@ -49,6 +51,7 @@
     </changeSet>
     
     <changeSet author="hmlnarik" id="3.2.0-fix-offline-sessions">
+        <validCheckSum>7:72b07d85a2677cb257edb02b408f332d</validCheckSum>
         <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
             <not>
                 <changeSetExecuted id="3.2.0-fixed" author="keycloak" changeLogFile="META-INF/jpa-changelog-3.2.0.xml"/>
@@ -62,6 +65,7 @@
     </changeSet>
 
     <changeSet author="keycloak" id="3.2.0-fixed">
+        <validCheckSum>7:a72a7858967bd414835d19e04d880312</validCheckSum>
         <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
             <not>
                 <changeSetExecuted id="3.2.0" author="keycloak" changeLogFile="META-INF/jpa-changelog-3.2.0.xml"/>

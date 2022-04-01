@@ -20,9 +20,11 @@ package org.keycloak.testsuite.webauthn.registration;
 import com.webauthn4j.data.UserVerificationRequirement;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.webauthn.AbstractWebAuthnVirtualTest;
 import org.keycloak.testsuite.webauthn.utils.WebAuthnRealmData;
+import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.virtualauthenticator.VirtualAuthenticatorOptions;
 
 import java.io.Closeable;
@@ -36,6 +38,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 /**
  * @author <a href="mailto:mabartos@redhat.com">Martin Bartos</a>
  */
+@IgnoreBrowserDriver(FirefoxDriver.class)
 public class UserVerificationRegisterTest extends AbstractWebAuthnVirtualTest {
 
     @Test

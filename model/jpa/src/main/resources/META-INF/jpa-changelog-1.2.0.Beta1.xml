@@ -18,6 +18,7 @@
 
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
     <changeSet author="psilva@redhat.com" id="1.2.0.Beta1">
+        <validCheckSum>7:c7a54a1041d58eb3817a4a883b4d4e84</validCheckSum>
         <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
             <not>
                 <dbms type="db2" />

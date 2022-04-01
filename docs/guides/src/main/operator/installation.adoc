@@ -1,0 +1,18 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/kc.adoc" as kc>
+<#import "/templates/options.adoc" as opts>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Keycloak Operator Installation"
+summary="How to install the Keycloak Operator on Kubernetes">
+
+TODO: https://github.com/keycloak/keycloak/issues/10786
+
+== Keycloak Operator Installation
+
+=== OpenShift Installation
+
+=== Vanilla Kubernetes Installation
+
+</@tmpl.guide>

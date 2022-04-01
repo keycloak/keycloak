@@ -23,19 +23,18 @@ public class GuideBuilder {
         Map<String, Object> globalAttributes = new HashMap<>();
         globalAttributes.put("ctx", new Context(srcDir));
 
-        this.freeMarker = new FreeMarker(srcDir, targetDir, globalAttributes);
+        this.freeMarker = new FreeMarker(srcDir.getParentFile(), targetDir.getParentFile(), globalAttributes);
     }
 
-    public void server() throws TemplateException, IOException {
-        File serverGuidesDir = new File(srcDir, "server");
-        if (!serverGuidesDir.isDirectory()) {
-            serverGuidesDir.mkdir();
+    public void build() throws TemplateException, IOException {
+        if (!srcDir.isDirectory()) {
+            srcDir.mkdir();
         }
 
-        for (String t : serverGuidesDir.list((dir, name) -> name.endsWith(".adoc"))) {
-            freeMarker.template("server/" + t);
+        for (String t : srcDir.list((dir, name) -> name.endsWith(".adoc"))) {
+            freeMarker.template(srcDir.getName() + "/" + t);
             if (log != null) {
-                log.info("Templated: server/" + t);
+                log.info("Templated: " + srcDir.getName() + "/" + t);
             }
         }
     }

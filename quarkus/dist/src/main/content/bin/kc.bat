@@ -23,6 +23,7 @@ set "SERVER_OPTS=-Djava.util.logging.manager=org.jboss.logmanager.LogManager -Dq
 
 set DEBUG_MODE=false
 set DEBUG_PORT_VAR=8787
+set DEBUG_SUSPEND_VAR=n
 
 rem Read command-line args, the ~ removes the quotes from the parameter
 :READ-ARGS
@@ -36,13 +37,15 @@ if "%KEY%" == "--debug" (
   if "%DEBUG_PORT_VAR%" == "" (
      set DEBUG_PORT_VAR=8787
   )
+  if "%DEBUG_SUSPEND_VAR%" == "" (
+     set DEBUG_SUSPEND_VAR=n
+  )
   shift
   shift
   goto READ-ARGS
 )
 if "%KEY%" == "start-dev" (
   set "CONFIG_ARGS=%CONFIG_ARGS% --profile=dev %KEY% --auto-build"
-  shift
   shift
   goto READ-ARGS
 )
@@ -84,11 +87,16 @@ if NOT "x%DEBUG%" == "x" (
 if NOT "x%DEBUG_PORT%" == "x" (
   set DEBUG_PORT_VAR=%DEBUG_PORT%
 )
+
+if NOT "x%DEBUG_SUSPEND%" == "x" (
+  set DEBUG_SUSPEND_VAR=%DEBUG_SUSPEND%
+)
+
 rem Set debug settings if not already set
 if "%DEBUG_MODE%" == "true" (
    echo "%JAVA_OPTS%" | findstr /I "\-agentlib:jdwp" > nul
   if errorlevel == 1 (
-     set "JAVA_OPTS=%JAVA_OPTS% -agentlib:jdwp=transport=dt_socket,address=%DEBUG_PORT_VAR%,server=y,suspend=n"
+     set "JAVA_OPTS=%JAVA_OPTS% -agentlib:jdwp=transport=dt_socket,address=%DEBUG_PORT_VAR%,server=y,suspend=%DEBUG_SUSPEND_VAR%"
   ) else (
      echo Debug already enabled in JAVA_OPTS, ignoring --debug argument
   )
@@ -123,7 +131,7 @@ SetLocal EnableDelayedExpansion
 set "AUTO_BUILD_OPTION=auto-build"
 
 if not "!CONFIG_ARGS:%AUTO_BUILD_OPTION%=!"=="!CONFIG_ARGS!" (
-  %JAVA% -Dkc.config.rebuild-and-exit=true %JAVA_RUN_OPTS%
+  "%JAVA%" -Dkc.config.rebuild-and-exit=true %JAVA_RUN_OPTS%
 )
 
 "%JAVA%" %JAVA_RUN_OPTS%

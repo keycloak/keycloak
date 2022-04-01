@@ -28,6 +28,7 @@ import org.hibernate.event.spi.PreUpdateEventListener;
 import org.keycloak.models.map.storage.jpa.JpaChildEntity;
 
 import javax.persistence.LockModeType;
+import java.util.Objects;
 
 /**
  * Listen on changes on child entities and forces an optimistic locking increment on the topmost parent aka root.
@@ -46,8 +47,15 @@ public class JpaOptimisticLockingListener implements PreInsertEventListener, Pre
             Object root = entity;
             while (root instanceof JpaChildEntity) {
                 root = ((JpaChildEntity<?>) entity).getParent();
+                Objects.requireNonNull(root, "children must always return their parent, never null");
             }
-            session.lock(root, LockModeType.OPTIMISTIC_FORCE_INCREMENT);
+
+            // a session would not contain the entity if it has been deleted
+            // if the entity has been deleted JPA would throw an IllegalArgumentException with the message
+            // "entity not in the persistence context".
+            if (session.contains(root)) {
+                session.lock(root, LockModeType.OPTIMISTIC_FORCE_INCREMENT);
+            }
         }
     }
 

@@ -54,4 +54,5 @@ List of organization names below is based on information collected using Keycloa
 * TrackingSport
 * TRT9 - Brasil
 * UnitedHealthcare
+* Wayfair LLC
 * ...More individuals

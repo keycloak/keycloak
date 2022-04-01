@@ -50,6 +50,9 @@ public final class Start extends AbstractStartCommand implements Runnable {
             order = 1)
     Boolean autoConfig;
 
+    @CommandLine.Mixin
+    ImportRealmMixin importRealmMixin;
+
     @Override
     protected void doBeforeRun() {
         devProfileNotAllowedError();

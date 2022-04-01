@@ -24,6 +24,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
@@ -48,6 +50,7 @@ import org.keycloak.component.AmphibianProviderFactory;
 import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.map.storage.jpa.client.entity.JpaClientEntity;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -59,9 +62,14 @@ import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorageProvider;
 import org.keycloak.models.map.storage.MapStorageProviderFactory;
+import org.keycloak.models.map.storage.jpa.authSession.JpaRootAuthenticationSessionMapKeycloakTransaction;
+import org.keycloak.models.map.storage.jpa.authSession.entity.JpaAuthenticationSessionEntity;
+import org.keycloak.models.map.storage.jpa.authSession.entity.JpaRootAuthenticationSessionEntity;
 import org.keycloak.models.map.storage.jpa.client.JpaClientMapKeycloakTransaction;
 import org.keycloak.models.map.storage.jpa.clientscope.JpaClientScopeMapKeycloakTransaction;
 import org.keycloak.models.map.storage.jpa.clientscope.entity.JpaClientScopeEntity;
+import org.keycloak.models.map.storage.jpa.group.JpaGroupMapKeycloakTransaction;
+import org.keycloak.models.map.storage.jpa.group.entity.JpaGroupEntity;
 import org.keycloak.models.map.storage.jpa.hibernate.listeners.JpaEntityVersionListener;
 import org.keycloak.models.map.storage.jpa.hibernate.listeners.JpaOptimisticLockingListener;
 import org.keycloak.models.map.storage.jpa.role.JpaRoleMapKeycloakTransaction;
@@ -70,6 +78,7 @@ import org.keycloak.models.map.storage.jpa.updater.MapJpaUpdaterProvider;
 import static org.keycloak.models.map.storage.jpa.updater.MapJpaUpdaterProvider.Status.VALID;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
+import org.keycloak.sessions.RootAuthenticationSessionModel;
 
 public class JpaMapStorageProviderFactory implements 
         AmphibianProviderFactory<MapStorageProvider>,
@@ -77,26 +86,34 @@ public class JpaMapStorageProviderFactory implements
         EnvironmentDependentProviderFactory {
 
     public static final String PROVIDER_ID = "jpa-map-storage";
-
-    private volatile EntityManagerFactory emf;
-    private Config.Scope config;
     private static final Logger logger = Logger.getLogger(JpaMapStorageProviderFactory.class);
 
+    private volatile EntityManagerFactory emf;
+    private final Set<Class<?>> validatedModels = ConcurrentHashMap.newKeySet();
+    private Config.Scope config;
+
     public final static DeepCloner CLONER = new DeepCloner.Builder()
-            //client
-            .constructor(JpaClientEntity.class,                 JpaClientEntity::new)
-            .constructor(MapProtocolMapperEntity.class,         MapProtocolMapperEntityImpl::new)
-            //client-scope
-            .constructor(JpaClientScopeEntity.class,            JpaClientScopeEntity::new)
-            //role
-            .constructor(JpaRoleEntity.class,                   JpaRoleEntity::new)
-            .build();
+        //auth-session
+        .constructor(JpaRootAuthenticationSessionEntity.class,  JpaRootAuthenticationSessionEntity::new)
+        .constructor(JpaAuthenticationSessionEntity.class,      JpaAuthenticationSessionEntity::new)
+        //client
+        .constructor(JpaClientEntity.class,                     JpaClientEntity::new)
+        .constructor(MapProtocolMapperEntity.class,             MapProtocolMapperEntityImpl::new)
+        //client-scope
+        .constructor(JpaClientScopeEntity.class,                JpaClientScopeEntity::new)
+        //group
+        .constructor(JpaGroupEntity.class,                      JpaGroupEntity::new)
+        //role
+        .constructor(JpaRoleEntity.class,                       JpaRoleEntity::new)
+        .build();
 
     private static final Map<Class<?>, Function<EntityManager, MapKeycloakTransaction>> MODEL_TO_TX = new HashMap<>();
     static {
-        MODEL_TO_TX.put(ClientScopeModel.class,     JpaClientScopeMapKeycloakTransaction::new);
-        MODEL_TO_TX.put(ClientModel.class,          JpaClientMapKeycloakTransaction::new);
-        MODEL_TO_TX.put(RoleModel.class,            JpaRoleMapKeycloakTransaction::new);
+        MODEL_TO_TX.put(RootAuthenticationSessionModel.class,   JpaRootAuthenticationSessionMapKeycloakTransaction::new);
+        MODEL_TO_TX.put(ClientScopeModel.class,                 JpaClientScopeMapKeycloakTransaction::new);
+        MODEL_TO_TX.put(ClientModel.class,                      JpaClientMapKeycloakTransaction::new);
+        MODEL_TO_TX.put(GroupModel.class,                       JpaGroupMapKeycloakTransaction::new);
+        MODEL_TO_TX.put(RoleModel.class,                        JpaRoleMapKeycloakTransaction::new);
     }
 
     public MapKeycloakTransaction createTransaction(Class<?> modelType, EntityManager em) {
@@ -138,6 +155,7 @@ public class JpaMapStorageProviderFactory implements
         if (emf != null) {
             emf.close();
         }
+        this.validatedModels.clear();
     }
 
     private void lazyInit() {
@@ -225,23 +243,24 @@ public class JpaMapStorageProviderFactory implements
     }
 
     public void validateAndUpdateSchema(KeycloakSession session, Class<?> modelType) {
-        Connection connection = getConnection();
+        if (this.validatedModels.add(modelType)) {
+            Connection connection = getConnection();
+            try {
+                if (logger.isDebugEnabled()) printOperationalInfo(connection);
 
-        try {
-            if (logger.isDebugEnabled()) printOperationalInfo(connection);
+                MapJpaUpdaterProvider updater = session.getProvider(MapJpaUpdaterProvider.class);
+                MapJpaUpdaterProvider.Status status = updater.validate(modelType, connection, config.get("schema"));
 
-            MapJpaUpdaterProvider updater = session.getProvider(MapJpaUpdaterProvider.class);
-            MapJpaUpdaterProvider.Status status = updater.validate(modelType, connection, config.get("schema"));
-
-            if (! status.equals(VALID)) {
-                update(modelType, connection, session);
-            }
-        } finally {
-            if (connection != null) {
-                try {
-                    connection.close();
-                } catch (SQLException e) {
-                    logger.warn("Can't close connection", e);
+                if (!status.equals(VALID)) {
+                    update(modelType, connection, session);
+                }
+            } finally {
+                if (connection != null) {
+                    try {
+                        connection.close();
+                    } catch (SQLException e) {
+                        logger.warn("Can't close connection", e);
+                    }
                 }
             }
         }
