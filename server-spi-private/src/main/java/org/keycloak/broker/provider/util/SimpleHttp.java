@@ -316,7 +316,7 @@ public class SimpleHttp {
         return new UrlEncodedFormEntity(urlParameters);
     }
 
-    public static class Response {
+    public static class Response implements AutoCloseable {
 
         private final HttpResponse response;
         private int statusCode = -1;
