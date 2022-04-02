@@ -380,4 +380,66 @@ public class KcSamlSpDescriptorTest extends AbstractBrokerTest {
         }
     }
 
+    @Test
+    public void testMetadataBindingEqualsKeycloakPOSTBindingSettingsOn()
+            throws IOException, ParsingException, URISyntaxException {
+    try (Closeable idpUpdater = new IdentityProviderAttributeUpdater(identityProviderResource)
+            .setAttribute(SAMLIdentityProviderConfig.POST_BINDING_AUTHN_REQUEST, "true")
+            .setAttribute(SAMLIdentityProviderConfig.POST_BINDING_LOGOUT, "true")
+            //To ensure that backward compatibility is maintained, the value is intentionally reversed from isPostBindingAuthnRequest.
+            .setAttribute(SAMLIdentityProviderConfig.POST_BINDING_RESPONSE, "false")
+            .update())
+        {
+
+            String spDescriptorString = identityProviderResource.export(null).readEntity(String.class);
+            SAMLParser parser = SAMLParser.getInstance();
+            EntityDescriptorType o = (EntityDescriptorType) parser.parse(new StringInputStream(spDescriptorString));
+            SPSSODescriptorType spDescriptor = o.getChoiceType().get(0).getDescriptors().get(0).getSpDescriptor();
+
+            assertThat(spDescriptor.getSingleLogoutService().get(0).getBinding().toString(),
+                    is(JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get()));
+            assertThat(spDescriptor.getAssertionConsumerService().get(0).getBinding().toString(),
+                    is(JBossSAMLURIConstants.SAML_HTTP_POST_BINDING.get()));
+
+        }
+    }
+
+    @Test
+    public void testMetadataBindingEqualsKeycloakPOSTBindingSettingsOff()
+            throws IOException, ParsingException, URISyntaxException {
+        try (Closeable idpUpdater = new IdentityProviderAttributeUpdater(identityProviderResource)
+                .setAttribute(SAMLIdentityProviderConfig.POST_BINDING_AUTHN_REQUEST, "false")
+                .setAttribute(SAMLIdentityProviderConfig.POST_BINDING_LOGOUT, "false")
+                //To ensure that backward compatibility is maintained, the value is intentionally reversed from isPostBindingAuthnRequest.
+                .setAttribute(SAMLIdentityProviderConfig.POST_BINDING_RESPONSE, "true")
+                .update()) {
+
+            String spDescriptorString = identityProviderResource.export(null).readEntity(String.class);
+            SAMLParser parser = SAMLParser.getInstance();
+            EntityDescriptorType o = (EntityDescriptorType) parser.parse(new StringInputStream(spDescriptorString));
+            SPSSODescriptorType spDescriptor = o.getChoiceType().get(0).getDescriptors().get(0).getSpDescriptor();
+
+            assertThat(spDescriptor.getSingleLogoutService().get(0).getBinding().toString(),
+                    is(JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.get()));
+            assertThat(spDescriptor.getAssertionConsumerService().get(0).getBinding().toString(),
+                    is(JBossSAMLURIConstants.SAML_HTTP_REDIRECT_BINDING.get()));
+
+        }
+    }
+
+    @Test
+    public void testMetadataBindingEqualsKeycloakSLOBindingSettingsIsDefault()
+            throws IOException, ParsingException, URISyntaxException {
+        try (Closeable idpUpdater = new IdentityProviderAttributeUpdater(identityProviderResource).update()){
+
+            String spDescriptorString = identityProviderResource.export(null).readEntity(String.class);
+            SAMLParser parser = SAMLParser.getInstance();
+            EntityDescriptorType o = (EntityDescriptorType) parser.parse(new StringInputStream(spDescriptorString));
+            SPSSODescriptorType spDescriptor = o.getChoiceType().get(0).getDescriptors().get(0).getSpDescriptor();
+
+            assertThat(spDescriptor.getSingleLogoutService().get(0).getBinding().toString(),
+                    is(spDescriptor.getAssertionConsumerService().get(0).getBinding().toString()));
+
+        }
+    }
 }
