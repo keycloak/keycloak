@@ -58,7 +58,7 @@ jobs:
           KEYCLOAK_ADMIN_PASSWORD: admin
 
       - name: Set up Node
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v3.1.0
         with:
           node-version: 16
           check-latest: true

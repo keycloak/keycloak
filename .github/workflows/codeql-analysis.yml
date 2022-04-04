@@ -27,7 +27,7 @@ jobs:
           languages: javascript
 
       - name: Set up Node
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v3.1.0
         with:
           node-version: ${{ env.NODE_VERSION }}
           check-latest: true
