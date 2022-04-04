@@ -49,6 +49,8 @@ The `Keycloak` class provides a central point for configuration
 and integration with your application.  The simplest creation
 involves no arguments.
 
+In the root directory of your project create a file called `server.js` and add the following code:
+
 [source,javascript]
 ----
     const session = require('express-session');
@@ -58,10 +60,39 @@ involves no arguments.
     const keycloak = new Keycloak({ store: memoryStore });
 ----
 
+Install the `express-session` dependency:
+
+----
+    npm install express-session
+----
+
+To start the `server.js` script, add the following command in the 'scripts' section of the `package.json`:
+
+----
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "start" "node server.js"
+    },
+----
+
+Now we have the ability to run our server with following command:
+
+----
+    npm run start
+----
+
 By default, this will locate a file named `keycloak.json` alongside
-the main executable of your application to initialize keycloak-specific
-settings (public key, realm name, various URLs).  The `keycloak.json` file
-is obtained from the {project_name} Admin Console.
+the main executable of your application, in our case on the root folder, to initialize keycloak-specific
+settings such as public key, realm name, various URLs.
+
+In that case a Keycloak deployment is necessary to access Keycloak admin console.
+
+Please visit links on how to deploy a Keycloak admin console with 
+https://www.keycloak.org/getting-started/getting-started-podman[Podman] or https://www.keycloak.org/getting-started/getting-started-docker[Docker]
+
+Now we are ready to obtain the `keycloak.json` file by visiting the {project_name} Admin Console -> clients (left sidebar) -> choose your client -> Installation -> Format Option -> Keycloak OIDC JSON -> Download
+
+Paste the downloaded file on the root folder of our project.
 
 Instantiation with this method results in all of the reasonable defaults
 being used. As alternative, it's also possible to provide a configuration
@@ -97,6 +128,16 @@ session store that `express-session` is using.
     const session = require('express-session');
     const memoryStore = new session.MemoryStore();
 
+    // Configure session
+    app.use(
+      session({
+        secret: 'mySecret',
+        resave: false,
+        saveUninitialized: true,
+        store: memoryStore,
+      })
+    );
+
     const keycloak = new Keycloak({ store: memoryStore });
 ----
 Passing a custom scope value::
@@ -109,11 +150,34 @@ By default, the scope value `openid` is passed as a query parameter to {project_
 
 Once instantiated, install the middleware into your connect-capable app:
 
+In order to do so, first we have to install Express:
+----
+    npm install express
+----
+
+then require Express in our project as outlined below:
+
 [source,javascript]
 ----
+    const express = require('express');
     const app = express();
+----
 
+
+and configure Keycloak middleware in Express, by adding at the code below:
+
+[source,javascript]
+----
     app.use( keycloak.middleware() );
+----
+
+Last but not least, let's set up our server to listen for HTTP requests on port 3000 by adding the following code to `main.js`:
+
+[source,javascript]
+----
+    app.listen(3000, function () {
+        console.log('App listening on port 3000');
+    });
 ----
 
 ==== Configuration for proxies
