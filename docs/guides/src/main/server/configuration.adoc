@@ -105,7 +105,7 @@ Most optimizations to startup and memory footprint can be achieved by using the 
 db-url-host=keycloak-postgres
 db-username=keycloak
 db-password=change_me
-hostname mykeycloak.acme.com
+hostname=mykeycloak.acme.com
 ```
 
 .Start the server
