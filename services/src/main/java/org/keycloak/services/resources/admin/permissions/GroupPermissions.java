@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -28,6 +28,7 @@ import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.common.Profile;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.services.ForbiddenException;
 
@@ -443,27 +444,30 @@ class GroupPermissions implements GroupPermissionEvaluator, GroupPermissionManag
     private void deletePermissions(GroupModel group) {
         ResourceServer server = root.realmResourceServer();
         if (server == null) return;
+
+        RealmModel realm = server.getRealm();
+
         Policy managePermission = managePermission(group);
         if (managePermission != null) {
-            policyStore.delete(managePermission.getId());
+            policyStore.delete(realm, managePermission.getId());
         }
         Policy viewPermission = viewPermission(group);
         if (viewPermission != null) {
-            policyStore.delete(viewPermission.getId());
+            policyStore.delete(realm, viewPermission.getId());
         }
         Policy manageMembersPermission = manageMembersPermission(group);
         if (manageMembersPermission != null) {
-            policyStore.delete(manageMembersPermission.getId());
+            policyStore.delete(realm, manageMembersPermission.getId());
         }
         Policy viewMembersPermission = viewMembersPermission(group);
         if (viewMembersPermission != null) {
-            policyStore.delete(viewMembersPermission.getId());
+            policyStore.delete(realm, viewMembersPermission.getId());
         }
         Policy manageMembershipPermission = manageMembershipPermission(group);
         if (manageMembershipPermission != null) {
-            policyStore.delete(manageMembershipPermission.getId());
+            policyStore.delete(realm, manageMembershipPermission.getId());
         }
         Resource resource = groupResource(group);
-        if (resource != null) resourceStore.delete(resource.getId());
+        if (resource != null) resourceStore.delete(realm, resource.getId());
     }
 }

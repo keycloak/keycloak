@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -503,6 +503,7 @@ public class AuthorizationTokenService {
                                                    Map<String, ResourcePermission> permissionsToEvaluate, ResourceStore resourceStore, ScopeStore scopeStore,
                                                    AtomicInteger limit) {
         AccessToken rpt = request.getRpt();
+        RealmModel realm = resourceServer.getRealm();
 
         if (rpt != null && rpt.isActive()) {
             Authorization authorizationData = rpt.getAuthorization();
@@ -516,7 +517,7 @@ public class AuthorizationTokenService {
                             break;
                         }
 
-                        Resource resource = resourceStore.findById(resourceServer, grantedPermission.getResourceId());
+                        Resource resource = resourceStore.findById(realm, resourceServer, grantedPermission.getResourceId());
 
                         if (resource != null) {
                             ResourcePermission permission = permissionsToEvaluate.get(resource.getId());
@@ -600,7 +601,7 @@ public class AuthorizationTokenService {
         Resource resource;
 
         if (resourceId.indexOf('-') != -1) {
-            resource = resourceStore.findById(resourceServer, resourceId);
+            resource = resourceStore.findById(resourceServer.getRealm(), resourceServer, resourceId);
         } else {
             resource = null;
         }

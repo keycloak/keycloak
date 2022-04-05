@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -54,26 +54,20 @@ public class MapPolicyStore implements PolicyStore {
     private static final Logger LOG = Logger.getLogger(MapPolicyStore.class);
     private final AuthorizationProvider authorizationProvider;
     final MapKeycloakTransaction<MapPolicyEntity, Policy> tx;
-    private final KeycloakSession session;
 
     public MapPolicyStore(KeycloakSession session, MapStorage<MapPolicyEntity, Policy> policyStore, AuthorizationProvider provider) {
         this.authorizationProvider = provider;
         this.tx = policyStore.createTransaction(session);
         session.getTransactionManager().enlist(tx);
-        this.session = session;
     }
 
-    private Function<MapPolicyEntity, Policy> entityToAdapterFunc(ResourceServer resourceServer) {
-        return origEntity -> new MapPolicyAdapter(resourceServer == null ? findResourceServer(origEntity) : resourceServer, origEntity, authorizationProvider.getStoreFactory());
+    private Function<MapPolicyEntity, Policy> entityToAdapterFunc(RealmModel realm, ResourceServer resourceServer) {
+        return origEntity -> new MapPolicyAdapter(realm, resourceServer, origEntity, authorizationProvider.getStoreFactory());
     }
 
-    private ResourceServer findResourceServer(MapPolicyEntity entity) {
-        RealmModel realm = session.realms().getRealm(entity.getRealmId());
-        return authorizationProvider.getStoreFactory().getResourceServerStore().findById(realm, entity.getResourceServerId());
-    }
-
-    private DefaultModelCriteria<Policy> forResourceServer(ResourceServer resourceServer) {
-        DefaultModelCriteria<Policy> mcb = criteria();
+    private DefaultModelCriteria<Policy> forRealmAndResourceServer(RealmModel realm, ResourceServer resourceServer) {
+        DefaultModelCriteria<Policy> mcb = DefaultModelCriteria.<Policy>criteria()
+                .compare(Policy.SearchableFields.REALM_ID, Operator.EQ, realm.getId());
 
         return resourceServer == null
                 ? mcb
@@ -84,9 +78,10 @@ public class MapPolicyStore implements PolicyStore {
     @Override
     public Policy create(ResourceServer resourceServer, AbstractPolicyRepresentation representation) {
         LOG.tracef("create(%s, %s, %s)%s", representation.getId(), resourceServer.getId(), resourceServer, getShortStackTrace());
+        RealmModel realm = resourceServer.getRealm();
 
         // @UniqueConstraint(columnNames = {"NAME", "RESOURCE_SERVER_ID"})
-        DefaultModelCriteria<Policy> mcb = forResourceServer(resourceServer)
+        DefaultModelCriteria<Policy> mcb = forRealmAndResourceServer(realm, resourceServer)
                 .compare(SearchableFields.NAME, Operator.EQ, representation.getName());
 
         if (tx.getCount(withCriteria(mcb)) > 0) {
@@ -103,51 +98,57 @@ public class MapPolicyStore implements PolicyStore {
 
         entity = tx.create(entity);
 
-        return entity == null ? null : entityToAdapterFunc(resourceServer).apply(entity);
+        return entity == null ? null : entityToAdapterFunc(realm, resourceServer).apply(entity);
     }
 
     @Override
-    public void delete(String id) {
+    public void delete(RealmModel realm, String id) {
         LOG.tracef("delete(%s)%s", id, getShortStackTrace());
+
+        Policy policyEntity = findById(realm, null, id);
+        if (policyEntity == null) return;
+
         tx.delete(id);
     }
 
     @Override
-    public Policy findById(ResourceServer resourceServer, String id) {
+    public Policy findById(RealmModel realm, ResourceServer resourceServer, String id) {
         LOG.tracef("findById(%s, %s)%s", id, resourceServer, getShortStackTrace());
 
-        return tx.read(withCriteria(forResourceServer(resourceServer)
+        return tx.read(withCriteria(forRealmAndResourceServer(realm, resourceServer)
                 .compare(SearchableFields.ID, Operator.EQ, id)))
                 .findFirst()
-                .map(entityToAdapterFunc(resourceServer))
+                .map(entityToAdapterFunc(realm, resourceServer))
                 .orElse(null);
     }
 
     @Override
     public Policy findByName(ResourceServer resourceServer, String name) {
         LOG.tracef("findByName(%s, %s)%s", name, resourceServer, getShortStackTrace());
+        RealmModel realm = resourceServer.getRealm();
 
-        return tx.read(withCriteria(forResourceServer(resourceServer)
+        return tx.read(withCriteria(forRealmAndResourceServer(realm, resourceServer)
                 .compare(SearchableFields.NAME, Operator.EQ, name)))
                 .findFirst()
-                .map(entityToAdapterFunc(resourceServer))
+                .map(entityToAdapterFunc(realm, resourceServer))
                 .orElse(null);
     }
 
     @Override
     public List<Policy> findByResourceServer(ResourceServer resourceServer) {
         LOG.tracef("findByResourceServer(%s)%s", resourceServer, getShortStackTrace());
+        RealmModel realm = resourceServer.getRealm();
 
-        return tx.read(withCriteria(forResourceServer(resourceServer)))
-                .map(entityToAdapterFunc(resourceServer))
+        return tx.read(withCriteria(forRealmAndResourceServer(realm, resourceServer)))
+                .map(entityToAdapterFunc(realm, resourceServer))
                 .collect(Collectors.toList());
     }
 
     @Override
-    public List<Policy> findByResourceServer(ResourceServer resourceServer, Map<Policy.FilterOption, String[]> attributes, Integer firstResult, Integer maxResults) {
+    public List<Policy> find(RealmModel realm, ResourceServer resourceServer, Map<Policy.FilterOption, String[]> attributes, Integer firstResult, Integer maxResults) {
         LOG.tracef("findByResourceServer(%s, %s, %d, %d)%s", attributes, resourceServer, firstResult, maxResults, getShortStackTrace());
 
-        DefaultModelCriteria<Policy> mcb = forResourceServer(resourceServer).and(
+        DefaultModelCriteria<Policy> mcb = forRealmAndResourceServer(realm, resourceServer).and(
                 attributes.entrySet().stream()
                         .map(this::filterEntryToDefaultModelCriteria)
                         .filter(Objects::nonNull)
@@ -161,7 +162,7 @@ public class MapPolicyStore implements PolicyStore {
         return tx.read(withCriteria(mcb).pagination(firstResult, maxResults, SearchableFields.NAME))
             .map(MapPolicyEntity::getId)
             // We need to go through cache
-            .map(id -> authorizationProvider.getStoreFactory().getPolicyStore().findById(resourceServer, id))
+            .map(id -> authorizationProvider.getStoreFactory().getPolicyStore().findById(realm, resourceServer, id))
             .collect(Collectors.toList());
     }
 
@@ -206,32 +207,40 @@ public class MapPolicyStore implements PolicyStore {
     @Override
     public void findByResource(ResourceServer resourceServer, Resource resource, Consumer<Policy> consumer) {
         LOG.tracef("findByResource(%s, %s, %s)%s", resourceServer, resource, consumer, getShortStackTrace());
-
-        tx.read(withCriteria(forResourceServer(resourceServer)
+        RealmModel realm = resourceServer.getRealm();
+        tx.read(withCriteria(forRealmAndResourceServer(realm, resourceServer)
                 .compare(SearchableFields.RESOURCE_ID, Operator.EQ, resource.getId())))
-                .map(entityToAdapterFunc(resourceServer))
+                .map(entityToAdapterFunc(realm, resourceServer))
                 .forEach(consumer);
     }
 
     @Override
     public void findByResourceType(ResourceServer resourceServer, String type, Consumer<Policy> policyConsumer) {
-        tx.read(withCriteria(forResourceServer(resourceServer)
+        LOG.tracef("findByResourceType(%s, %s)%s", resourceServer, type, getShortStackTrace());
+        RealmModel realm = resourceServer.getRealm();
+
+        tx.read(withCriteria(forRealmAndResourceServer(realm, resourceServer)
                 .compare(SearchableFields.CONFIG, Operator.LIKE, (Object[]) new String[]{"defaultResourceType", type})))
-                .map(entityToAdapterFunc(resourceServer))
+                .map(entityToAdapterFunc(realm, resourceServer))
                 .forEach(policyConsumer);
     }
 
     @Override
     public List<Policy> findByScopes(ResourceServer resourceServer, List<Scope> scopes) {
-        return tx.read(withCriteria(forResourceServer(resourceServer)
+        LOG.tracef("findByScopes(%s, %s)%s", resourceServer, scopes, getShortStackTrace());
+        RealmModel realm = resourceServer.getRealm();
+
+        return tx.read(withCriteria(forRealmAndResourceServer(realm, resourceServer)
                 .compare(SearchableFields.SCOPE_ID, Operator.IN, scopes.stream().map(Scope::getId))))
-                .map(entityToAdapterFunc(resourceServer))
+                .map(entityToAdapterFunc(realm, resourceServer))
                 .collect(Collectors.toList());
     }
 
     @Override
     public void findByScopes(ResourceServer resourceServer, Resource resource, List<Scope> scopes, Consumer<Policy> consumer) {
-        DefaultModelCriteria<Policy> mcb = forResourceServer(resourceServer)
+        LOG.tracef("findByResourceType(%s, %s, %s)%s", resourceServer, resource, scopes, getShortStackTrace());
+        RealmModel realm = resourceServer.getRealm();
+        DefaultModelCriteria<Policy> mcb = forRealmAndResourceServer(realm, resourceServer)
                 .compare(SearchableFields.TYPE, Operator.EQ, "scope")
                 .compare(SearchableFields.SCOPE_ID, Operator.IN, scopes.stream().map(Scope::getId));
 
@@ -243,22 +252,26 @@ public class MapPolicyStore implements PolicyStore {
                     .compare(SearchableFields.CONFIG, Operator.NOT_EXISTS, (Object[]) new String[] {"defaultResourceType"});
         }
 
-        tx.read(withCriteria(mcb)).map(entityToAdapterFunc(resourceServer)).forEach(consumer);
+        tx.read(withCriteria(mcb)).map(entityToAdapterFunc(realm, resourceServer)).forEach(consumer);
     }
 
     @Override
     public List<Policy> findByType(ResourceServer resourceServer, String type) {
-        return tx.read(withCriteria(forResourceServer(resourceServer)
+        LOG.tracef("findByType(%s, %s)%s", resourceServer, type, getShortStackTrace());
+        RealmModel realm = resourceServer.getRealm();
+
+        return tx.read(withCriteria(forRealmAndResourceServer(realm, resourceServer)
                 .compare(SearchableFields.TYPE, Operator.EQ, type)))
-                .map(entityToAdapterFunc(resourceServer))
+                .map(entityToAdapterFunc(realm, resourceServer))
                 .collect(Collectors.toList());
     }
 
     @Override
     public List<Policy> findDependentPolicies(ResourceServer resourceServer, String id) {
-        return tx.read(withCriteria(forResourceServer(resourceServer)
+        RealmModel realm = resourceServer.getRealm();
+        return tx.read(withCriteria(forRealmAndResourceServer(realm, resourceServer)
                 .compare(SearchableFields.ASSOCIATED_POLICY_ID, Operator.EQ, id)))
-                    .map(entityToAdapterFunc(resourceServer))
+                    .map(entityToAdapterFunc(realm, resourceServer))
                     .collect(Collectors.toList());
     }
 
@@ -274,6 +287,6 @@ public class MapPolicyStore implements PolicyStore {
     public void preRemove(ResourceServer resourceServer) {
         LOG.tracef("preRemove(%s)%s", resourceServer, getShortStackTrace());
 
-        tx.delete(withCriteria(forResourceServer(resourceServer)));
+        tx.delete(withCriteria(forRealmAndResourceServer(resourceServer.getRealm(), resourceServer)));
     }
 }

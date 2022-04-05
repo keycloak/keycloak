@@ -1,13 +1,12 @@
 /*
- * JBoss, Home of Professional Open Source.
- * Copyright 2016 Red Hat, Inc., and individual contributors
- * as indicated by the @author tags.
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -141,7 +140,7 @@ public class ResourceSetService {
         resource.setId(id);
         StoreFactory storeFactory = this.authorization.getStoreFactory();
         ResourceStore resourceStore = storeFactory.getResourceStore();
-        Resource model = resourceStore.findById(resourceServer, resource.getId());
+        Resource model = resourceStore.findById(resourceServer.getRealm(), resourceServer, resource.getId());
 
         if (model == null) {
             return Response.status(Status.NOT_FOUND).build();
@@ -159,13 +158,13 @@ public class ResourceSetService {
     public Response delete(@PathParam("id") String id) {
         requireManage();
         StoreFactory storeFactory = authorization.getStoreFactory();
-        Resource resource = storeFactory.getResourceStore().findById(resourceServer, id);
+        Resource resource = storeFactory.getResourceStore().findById(resourceServer.getRealm(), resourceServer, id);
 
         if (resource == null) {
             return Response.status(Status.NOT_FOUND).build();
         }
 
-        storeFactory.getResourceStore().delete(id);
+        storeFactory.getResourceStore().delete(resourceServer.getRealm(), id);
 
         audit(toRepresentation(resource, resourceServer, authorization), OperationType.DELETE);
 
@@ -183,7 +182,7 @@ public class ResourceSetService {
     public Response findById(String id, Function<Resource, ? extends ResourceRepresentation> toRepresentation) {
         requireView();
         StoreFactory storeFactory = authorization.getStoreFactory();
-        Resource model = storeFactory.getResourceStore().findById(resourceServer, id);
+        Resource model = storeFactory.getResourceStore().findById(resourceServer.getRealm(), resourceServer, id);
 
         if (model == null) {
             return Response.status(Status.NOT_FOUND).build();
@@ -199,7 +198,7 @@ public class ResourceSetService {
     public Response getScopes(@PathParam("id") String id) {
         requireView();
         StoreFactory storeFactory = authorization.getStoreFactory();
-        Resource model = storeFactory.getResourceStore().findById(resourceServer, id);
+        Resource model = storeFactory.getResourceStore().findById(resourceServer.getRealm(), resourceServer, id);
 
         if (model == null) {
             return Response.status(Status.NOT_FOUND).build();
@@ -243,7 +242,7 @@ public class ResourceSetService {
         requireView();
         StoreFactory storeFactory = authorization.getStoreFactory();
         ResourceStore resourceStore = storeFactory.getResourceStore();
-        Resource model = resourceStore.findById(resourceServer, id);
+        Resource model = resourceStore.findById(resourceServer.getRealm(), resourceServer, id);
 
         if (model == null) {
             return Response.status(Status.NOT_FOUND).build();
@@ -264,10 +263,10 @@ public class ResourceSetService {
                 resourceFilter.put(Resource.FilterOption.OWNER, new String[]{resourceServer.getClientId()});
                 resourceFilter.put(Resource.FilterOption.TYPE, new String[]{model.getType()});
 
-                for (Resource resourceType : resourceStore.findByResourceServer(resourceServer, resourceFilter, null, null)) {
-                    policies.addAll(policyStore.findByResource(resourceServer, resourceType));
-                }
+            for (Resource resourceType : resourceStore.find(resourceServer.getRealm(), resourceServer, resourceFilter, null, null)) {
+                policies.addAll(policyStore.findByResource(resourceServer, resourceType));
             }
+        }
 
         }
 
@@ -300,7 +299,7 @@ public class ResourceSetService {
     public Response getAttributes(@PathParam("id") String id) {
         requireView();
         StoreFactory storeFactory = authorization.getStoreFactory();
-        Resource model = storeFactory.getResourceStore().findById(resourceServer, id);
+        Resource model = storeFactory.getResourceStore().findById(resourceServer.getRealm(), resourceServer, id);
 
         if (model == null) {
             return Response.status(Status.NOT_FOUND).build();
@@ -416,7 +415,7 @@ public class ResourceSetService {
             search.put(Resource.FilterOption.SCOPE_ID, scopes.stream().map(Scope::getId).toArray(String[]::new));
         }
 
-        List<Resource> resources = storeFactory.getResourceStore().findByResourceServer(this.resourceServer, search, firstResult != null ? firstResult : -1, maxResult != null ? maxResult : Constants.DEFAULT_MAX_RESULTS);
+        List<Resource> resources = storeFactory.getResourceStore().find(resourceServer.getRealm(), this.resourceServer, search, firstResult != null ? firstResult : -1, maxResult != null ? maxResult : Constants.DEFAULT_MAX_RESULTS);
 
         if (matchingUri != null && matchingUri && resources.isEmpty()) {
             Map<Resource.FilterOption, String[]> attributes = new EnumMap<>(Resource.FilterOption.class);
@@ -424,7 +423,7 @@ public class ResourceSetService {
             attributes.put(Resource.FilterOption.URI_NOT_NULL, new String[] {"true"});
             attributes.put(Resource.FilterOption.OWNER, new String[] {resourceServer.getClientId()});
 
-            List<Resource> serverResources = storeFactory.getResourceStore().findByResourceServer(this.resourceServer, attributes, firstResult != null ? firstResult : -1, maxResult != null ? maxResult : -1);
+            List<Resource> serverResources = storeFactory.getResourceStore().find(resourceServer.getRealm(), this.resourceServer, attributes, firstResult != null ? firstResult : -1, maxResult != null ? maxResult : -1);
 
             PathMatcher<Map.Entry<String, Resource>> pathMatcher = new PathMatcher<Map.Entry<String, Resource>>() {
                 @Override

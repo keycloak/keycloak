@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -58,17 +58,13 @@ public class MapScopeStore implements ScopeStore {
         this.session = session;
     }
 
-    private Function<MapScopeEntity, Scope> entityToAdapterFunc(ResourceServer resourceServer) {
-        return origEntity -> new MapScopeAdapter(resourceServer == null ? findResourceServer(origEntity) : resourceServer, origEntity, authorizationProvider.getStoreFactory());
+    private Function<MapScopeEntity, Scope> entityToAdapterFunc(RealmModel realm, ResourceServer resourceServer) {
+        return origEntity -> new MapScopeAdapter(realm, resourceServer, origEntity, authorizationProvider.getStoreFactory());
     }
 
-    private ResourceServer findResourceServer(MapScopeEntity entity) {
-        RealmModel realm = session.realms().getRealm(entity.getRealmId());
-        return authorizationProvider.getStoreFactory().getResourceServerStore().findById(realm, entity.getResourceServerId());
-    }
-
-    private DefaultModelCriteria<Scope> forResourceServer(ResourceServer resourceServer) {
-        DefaultModelCriteria<Scope> mcb = criteria();
+    private DefaultModelCriteria<Scope> forRealmAndResourceServer(RealmModel realm, ResourceServer resourceServer) {
+        DefaultModelCriteria<Scope> mcb = DefaultModelCriteria.<Scope>criteria()
+                .compare(Scope.SearchableFields.REALM_ID, Operator.EQ, realm.getId());
 
         return resourceServer == null
                 ? mcb
@@ -80,9 +76,9 @@ public class MapScopeStore implements ScopeStore {
     public Scope create(ResourceServer resourceServer, String id, String name) {
         LOG.tracef("create(%s, %s, %s)%s", id, name, resourceServer, getShortStackTrace());
 
-
+        RealmModel realm = resourceServer.getRealm();
         // @UniqueConstraint(columnNames = {"NAME", "RESOURCE_SERVER_ID"})
-        DefaultModelCriteria<Scope> mcb = forResourceServer(resourceServer)
+        DefaultModelCriteria<Scope> mcb = forRealmAndResourceServer(realm, resourceServer)
                 .compare(SearchableFields.NAME, Operator.EQ, name);
 
         if (tx.getCount(withCriteria(mcb)) > 0) {
@@ -97,49 +93,54 @@ public class MapScopeStore implements ScopeStore {
 
         entity = tx.create(entity);
 
-        return entity == null ? null : entityToAdapterFunc(resourceServer).apply(entity);
+        return entity == null ? null : entityToAdapterFunc(realm, resourceServer).apply(entity);
     }
 
     @Override
-    public void delete(String id) {
+    public void delete(RealmModel realm, String id) {
         LOG.tracef("delete(%s)%s", id, getShortStackTrace());
+        Scope scope = findById(realm, null, id);
+        if (scope == null) return;
+
         tx.delete(id);
     }
 
     @Override
-    public Scope findById(ResourceServer resourceServer, String id) {
+    public Scope findById(RealmModel realm, ResourceServer resourceServer, String id) {
         LOG.tracef("findById(%s, %s)%s", id, resourceServer, getShortStackTrace());
 
-        return tx.read(withCriteria(forResourceServer(resourceServer)
+        return tx.read(withCriteria(forRealmAndResourceServer(realm, resourceServer)
                 .compare(SearchableFields.ID, Operator.EQ, id)))
                 .findFirst()
-                .map(entityToAdapterFunc(resourceServer))
+                .map(entityToAdapterFunc(realm, resourceServer))
                 .orElse(null);
     }
 
     @Override
     public Scope findByName(ResourceServer resourceServer, String name) {
         LOG.tracef("findByName(%s, %s)%s", name, resourceServer, getShortStackTrace());
+        RealmModel realm = resourceServer.getRealm();
 
-        return tx.read(withCriteria(forResourceServer(resourceServer).compare(SearchableFields.NAME,
+        return tx.read(withCriteria(forRealmAndResourceServer(realm, resourceServer).compare(SearchableFields.NAME,
                 Operator.EQ, name)))
                 .findFirst()
-                .map(entityToAdapterFunc(resourceServer))
+                .map(entityToAdapterFunc(realm, resourceServer))
                 .orElse(null);
     }
 
     @Override
     public List<Scope> findByResourceServer(ResourceServer resourceServer) {
         LOG.tracef("findByResourceServer(%s)%s", resourceServer, getShortStackTrace());
-
-        return tx.read(withCriteria(forResourceServer(resourceServer)))
-                .map(entityToAdapterFunc(resourceServer))
+        RealmModel realm = resourceServer.getRealm();
+        return tx.read(withCriteria(forRealmAndResourceServer(realm, resourceServer)))
+                .map(entityToAdapterFunc(realm, resourceServer))
                 .collect(Collectors.toList());
     }
 
     @Override
     public List<Scope> findByResourceServer(ResourceServer resourceServer, Map<Scope.FilterOption, String[]> attributes, Integer firstResult, Integer maxResults) {
-        DefaultModelCriteria<Scope> mcb = forResourceServer(resourceServer);
+        RealmModel realm = resourceServer.getRealm();
+        DefaultModelCriteria<Scope> mcb = forRealmAndResourceServer(realm, resourceServer);
 
         for (Scope.FilterOption filterOption : attributes.keySet()) {
             String[] value = attributes.get(filterOption);
@@ -157,7 +158,7 @@ public class MapScopeStore implements ScopeStore {
         }
 
         return tx.read(withCriteria(mcb).pagination(firstResult, maxResults, SearchableFields.NAME))
-            .map(entityToAdapterFunc(resourceServer))
+            .map(entityToAdapterFunc(realm, resourceServer))
             .collect(Collectors.toList());
     }
 
@@ -173,6 +174,6 @@ public class MapScopeStore implements ScopeStore {
     public void preRemove(ResourceServer resourceServer) {
         LOG.tracef("preRemove(%s)%s", resourceServer, getShortStackTrace());
 
-        tx.delete(withCriteria(forResourceServer(resourceServer)));
+        tx.delete(withCriteria(forRealmAndResourceServer(resourceServer.getRealm(), resourceServer)));
     }
 }

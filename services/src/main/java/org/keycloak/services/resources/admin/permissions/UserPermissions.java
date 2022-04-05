@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -35,6 +35,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.ImpersonationConstants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.services.ForbiddenException;
@@ -526,39 +527,42 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
     private void deletePermissionSetup() {
         ResourceServer server = root.realmResourceServer();
         if (server == null) return;
+
+        RealmModel realm = server.getRealm();
+
         Policy policy = managePermission();
         if (policy != null) {
-            policyStore.delete(policy.getId());
+            policyStore.delete(realm, policy.getId());
 
         }
         policy = viewPermission();
         if (policy != null) {
-            policyStore.delete(policy.getId());
+            policyStore.delete(realm, policy.getId());
 
         }
         policy = mapRolesPermission();
         if (policy != null) {
-            policyStore.delete(policy.getId());
+            policyStore.delete(realm, policy.getId());
 
         }
         policy = manageGroupMembershipPermission();
         if (policy != null) {
-            policyStore.delete(policy.getId());
+            policyStore.delete(realm, policy.getId());
 
         }
         policy = adminImpersonatingPermission();
         if (policy != null) {
-            policyStore.delete(policy.getId());
+            policyStore.delete(realm, policy.getId());
 
         }
         policy = userImpersonatedPermission();
         if (policy != null) {
-            policyStore.delete(policy.getId());
+            policyStore.delete(realm, policy.getId());
 
         }
         Resource usersResource = resourceStore.findByName(server, USERS_RESOURCE);
         if (usersResource != null) {
-            resourceStore.delete(usersResource.getId());
+            resourceStore.delete(realm, usersResource.getId());
         }
     }
 

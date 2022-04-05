@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -111,7 +111,7 @@ public class PolicyResourceService {
             resource.onRemove(policy, authorization);
         }
 
-        policyStore.delete(policy.getId());
+        policyStore.delete(resourceServer.getRealm(), policy.getId());
 
         audit(toRepresentation(policy, authorization), OperationType.DELETE);
 
