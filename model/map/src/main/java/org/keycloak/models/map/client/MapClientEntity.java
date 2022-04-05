@@ -63,6 +63,12 @@ public interface MapClientEntity extends AbstractEntity, UpdatableEntity, Entity
         }
 
         @Override
+        public void clearUpdatedFlag() {
+            this.updated = false;
+            Optional.ofNullable(getProtocolMappers()).orElseGet(Collections::emptyMap).values().forEach(UpdatableEntity::clearUpdatedFlag);
+        }
+
+        @Override
         public Stream<String> getClientScopes(boolean defaultScope) {
             final Map<String, Boolean> clientScopes = getClientScopes();
             return clientScopes == null ? Stream.empty() : clientScopes.entrySet().stream()
