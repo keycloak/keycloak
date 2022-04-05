@@ -140,9 +140,10 @@ export default class ProviderPage {
     return this;
   }
 
-  fillMaxLifespanData(lifespan: string) {
-    cy.findByTestId(this.maxLifespan).type("x");
-    cy.findByTestId(this.maxLifespan).clear().type(lifespan).blur();
+  fillMaxLifespanData(lifespan: number) {
+    for (let i = 0; i < lifespan; i++) {
+      cy.findByTestId(this.maxLifespan).click();
+    }
     return this;
   }
 

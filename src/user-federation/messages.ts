@@ -64,6 +64,7 @@ export default {
     evictionHour: "Eviction hour",
     evictionMinute: "Eviction minute",
     maxLifespan: "Max lifespan",
+    ms: "milliseconds",
 
     advancedSettings: "Advanced settings",
     enableLdapv3Password:

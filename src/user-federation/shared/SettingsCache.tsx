@@ -1,9 +1,9 @@
 import {
   FormGroup,
+  NumberInput,
   Select,
   SelectOption,
   SelectVariant,
-  TextInput,
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
 import React from "react";
@@ -248,12 +248,32 @@ const CacheFields = ({ form }: { form: UseFormMethods }) => {
           }
           fieldId="kc-max-lifespan"
         >
-          <TextInput
-            type="text"
-            id="kc-max-lifespan"
+          <Controller
             name="config.maxLifespan[0]"
-            ref={form.register}
-            data-testid="kerberos-cache-lifespan"
+            defaultValue={0}
+            control={form.control}
+            render={({ onChange, value }) => {
+              const MIN_VALUE = 0;
+              const setValue = (newValue: number) =>
+                onChange(Math.max(newValue, MIN_VALUE));
+
+              return (
+                <NumberInput
+                  id="kc-max-lifespan"
+                  data-testid="kerberos-cache-lifespan"
+                  value={value}
+                  min={MIN_VALUE}
+                  unit={t("ms")}
+                  type="text"
+                  onPlus={() => onChange(Number(value) + 1)}
+                  onMinus={() => onChange(Number(value) - 1)}
+                  onChange={(event) => {
+                    const newValue = Number(event.currentTarget.value);
+                    setValue(!isNaN(newValue) ? newValue : 0);
+                  }}
+                />
+              );
+            }}
           />
         </FormGroup>
       ) : null}

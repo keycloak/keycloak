@@ -42,7 +42,7 @@ const defaultKerberosMinute = "00";
 const newKerberosDay = "Wednesday";
 const newKerberosHour = "15";
 const newKerberosMinute = "55";
-const maxLifespan = "60000";
+const maxLifespan = 5;
 
 const addProviderMenu = "Add new provider";
 const createdSuccessMessage = "User federation provider successfully created";
@@ -143,23 +143,6 @@ describe("User Fed Kerberos tests", () => {
     expect(cy.contains(defaultPolicy).should("not.exist"));
   });
 
-  it("Should edit existing Kerberos provider and cancel", () => {
-    providersPage.clickExistingCard(firstKerberosName);
-    providersPage.selectCacheType(weeklyPolicy);
-
-    providersPage.changeCacheTime("day", defaultKerberosDay);
-    providersPage.changeCacheTime("hour", defaultKerberosHour);
-    providersPage.changeCacheTime("minute", defaultKerberosMinute);
-
-    providersPage.cancel(provider);
-
-    providersPage.clickExistingCard(firstKerberosName);
-    providersPage.selectCacheType(weeklyPolicy);
-
-    providersPage.verifyChangedHourInput(newKerberosHour, defaultKerberosHour);
-    sidebarPage.goToUserFederation();
-  });
-
   it("Should set cache policy to max_lifespan", () => {
     providersPage.clickExistingCard(firstKerberosName);
     providersPage.selectCacheType(lifespanPolicy);
@@ -187,7 +170,24 @@ describe("User Fed Kerberos tests", () => {
     expect(cy.contains(lifespanPolicy).should("not.exist"));
   });
 
-  it("Disable an existing Kerberos provider", () => {
+  it("Should edit existing Kerberos provider and cancel", () => {
+    providersPage.clickExistingCard(firstKerberosName);
+    providersPage.selectCacheType(weeklyPolicy);
+
+    providersPage.changeCacheTime("day", defaultKerberosDay);
+    providersPage.changeCacheTime("hour", defaultKerberosHour);
+    providersPage.changeCacheTime("minute", defaultKerberosMinute);
+
+    providersPage.cancel(provider);
+
+    providersPage.clickExistingCard(firstKerberosName);
+    providersPage.selectCacheType(weeklyPolicy);
+
+    providersPage.verifyChangedHourInput(newKerberosHour, defaultKerberosHour);
+    sidebarPage.goToUserFederation();
+  });
+
+  it("Should disable an existing Kerberos provider", () => {
     providersPage.clickExistingCard(firstKerberosName);
     providersPage.disableEnabledSwitch(initCapProvider);
 
@@ -201,7 +201,7 @@ describe("User Fed Kerberos tests", () => {
     expect(cy.contains("Disabled").should("exist"));
   });
 
-  it("Enable an existing previously-disabled Kerberos provider", () => {
+  it("Should enable an existing previously-disabled Kerberos provider", () => {
     providersPage.clickExistingCard(firstKerberosName);
     providersPage.enableEnabledSwitch(initCapProvider);
 
@@ -211,7 +211,7 @@ describe("User Fed Kerberos tests", () => {
     expect(cy.contains("Enabled").should("exist"));
   });
 
-  it("Create new Kerberos provider using the New Provider dropdown", () => {
+  it("Should create new Kerberos provider using the New Provider dropdown", () => {
     providersPage.clickMenuCommand(addProviderMenu, initCapProvider);
 
     providersPage.fillKerberosRequiredData(
@@ -226,7 +226,7 @@ describe("User Fed Kerberos tests", () => {
     sidebarPage.goToUserFederation();
   });
 
-  it.skip("Change the priority order of Kerberos providers", () => {
+  it.skip("Should change the priority order of Kerberos providers", () => {
     const priorityDialog = new PriorityDialog();
     const providers = [firstKerberosName, secondKerberosName];
 
@@ -239,13 +239,13 @@ describe("User Fed Kerberos tests", () => {
     masthead.checkNotificationMessage(changeSuccessMsg, true);
   });
 
-  it("Delete a Kerberos provider from card view using the card's menu", () => {
+  it("Should delete a Kerberos provider from card view using the card's menu", () => {
     providersPage.deleteCardFromCard(secondKerberosName);
     modalUtils.checkModalTitle(deleteModalTitle).confirmModal();
     masthead.checkNotificationMessage(deletedSuccessMessage);
   });
 
-  it("Delete a Kerberos provider using the Settings view's Action menu", () => {
+  it("Should delete a Kerberos provider using the Settings view's Action menu", () => {
     providersPage.deleteCardFromMenu(firstKerberosName);
     modalUtils.checkModalTitle(deleteModalTitle).confirmModal();
     masthead.checkNotificationMessage(deletedSuccessMessage);
