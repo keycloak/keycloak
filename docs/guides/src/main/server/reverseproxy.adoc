@@ -44,7 +44,7 @@ If this header is incorrectly configured, rogue clients can set this header and 
 This precaution can more be critical if you do any deny or allow listing of IP addresses.
 
 === Exposed path recommendations
-When using a reverse proxy, Keylcoak only requires certain paths need to be exposed.
+When using a reverse proxy, Keycloak only requires certain paths need to be exposed.
 The following table shows the recommended paths to expose.
 
 |===
