@@ -52,7 +52,7 @@ jobs:
 
       - name: Start Keycloak Server
         working-directory: ${{ env.KEYCLOAK_SERVER_BIN }}
-        run: ./kc.sh start-dev --features=admin2,admin-fine-grained-authz,declarative-user-profile &
+        run: ./kc.sh start-dev --features=admin2,admin-fine-grained-authz,declarative-user-profile &> ~/server.log &
         env:
           KEYCLOAK_ADMIN: admin
           KEYCLOAK_ADMIN_PASSWORD: admin
@@ -86,3 +86,9 @@ jobs:
         with:
           name: cypress-screenshots
           path: ${{ env.ADMIN_UI_PATH }}/assets/screenshots
+
+      - name: Upload server logs
+        uses: actions/upload-artifact@v2
+        with:
+          name: server-log
+          path: ~/server.log

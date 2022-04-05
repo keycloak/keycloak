@@ -10,7 +10,7 @@ export type Environment = {
   resourceUrl: string;
   /** The name of the master realm. */
   masterRealm: string;
-  /** The version hash of the auth sever. */
+  /** The version hash of the auth server. */
   resourceVersion: string;
   /** The hash of the commit the Admin UI was built on, useful to determine the exact version the user is running. */
   commitHash: string;
