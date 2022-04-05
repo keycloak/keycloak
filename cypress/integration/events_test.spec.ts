@@ -14,7 +14,7 @@ const realmSettingsPage = new RealmSettingsPage();
 const masthead = new Masthead();
 
 describe("Events tests", () => {
-  describe("Search user events", () => {
+  describe.skip("Search user events", () => {
     beforeEach(() => {
       keycloakBefore();
       loginPage.logIn();
@@ -50,7 +50,7 @@ describe("Events tests", () => {
       userEventsTab.shouldHaveSearchBtnDisabled();
     });
 
-    it("Check user events search and removal work", () => {
+    it.skip("Check user events search and removal work", () => {
       userEventsTab.shouldDoSearchAndRemoveChips();
     });
 

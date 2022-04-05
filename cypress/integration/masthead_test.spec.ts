@@ -24,7 +24,7 @@ const goToAcctMgtTest = () => {
   masthead.checkIsAdminConsole();
 };
 
-describe("Masthead tests in desktop mode", () => {
+describe.skip("Masthead tests in desktop mode", () => {
   beforeEach(() => {
     keycloakBefore();
     loginPage.logIn();
@@ -48,7 +48,7 @@ describe("Masthead tests in desktop mode", () => {
   });
 });
 
-describe("Masthead tests with kebab menu", () => {
+describe.skip("Masthead tests with kebab menu", () => {
   beforeEach(() => {
     keycloakBefore();
     loginPage.logIn();

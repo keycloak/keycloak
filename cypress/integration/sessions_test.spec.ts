@@ -30,7 +30,7 @@ describe("Sessions test", () => {
     sessionsPage.checkNotBeforeCleared();
   });
 
-  it("logout all sessions", () => {
+  it.skip("logout all sessions", () => {
     sessionsPage.logoutAllSessions();
 
     cy.get("#kc-page-title").contains("Sign in to your account");
