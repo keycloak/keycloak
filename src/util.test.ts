@@ -99,4 +99,16 @@ describe("Tests the form convert util functions", () => {
       },
     });
   });
+
+  it("convert empty to empty object", () => {
+    const given = { attributes: [{ key: "", value: "" }] };
+
+    //when
+    const values = convertFormValuesToObject(given);
+
+    //then
+    expect(values).toEqual({
+      attributes: {},
+    });
+  });
 });
