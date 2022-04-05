@@ -58,4 +58,9 @@ export default {
       "openid-connect": "openid-connect",
     },
   },
+  clientScopes: {
+    noRoles: "No roles for this client scope",
+    noRolesInstructions:
+      "You haven't created any roles for this client scope. Create a role to get started.",
+  },
 };

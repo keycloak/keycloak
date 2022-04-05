@@ -55,7 +55,7 @@ export const AddRoleMappingModal = ({
   onAssign,
   onClose,
 }: AddRoleMappingModalProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation("common");
   const adminClient = useAdminClient();
 
   const [clients, setClients] = useState<ClientRole[]>([]);
@@ -228,7 +228,7 @@ export const AddRoleMappingModal = ({
               hasInlineFilter
               placeholderText={
                 <>
-                  <FilterIcon /> {t("filterByOrigin")}
+                  <FilterIcon /> {t("clients:filterByOrigin")}
                 </>
               }
               isGrouped

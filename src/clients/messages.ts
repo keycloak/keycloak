@@ -99,8 +99,6 @@ export default {
     password: "Password",
     oneTimePassword: "One-Time Password",
     kerberos: "Kerberos",
-    assignRole: "Assign role",
-    unAssignRole: "Unassign",
     removeMappingTitle: "Remove mapping?",
     removeMappingConfirm_one: "Are you sure you want to remove this mapping?",
     removeMappingConfirm_other:
@@ -265,8 +263,6 @@ export default {
     policySaveError: "Could not update the policy due to {{error}}",
     assignedClientScope: "Assigned client scope",
     assignedType: "Assigned type",
-    hideInheritedRoles: "Hide inherited roles",
-    inherentFrom: "Inherited from",
     emptyClientScopes: "This client doesn't have any added client scopes",
     emptyClientScopesInstructions:
       "There are currently no client scopes linked to this client. You can add existing client scopes to this client to share protocol mappers and roles.",
@@ -355,7 +351,6 @@ export default {
     oauthDeviceAuthorizationGrant: "OAuth 2.0 Device Authorization Grant",
     oidcCibaGrant: "OIDC CIBA Grant",
     enableServiceAccount: "Enable service account roles",
-    assignRolesTo: "Assign roles to {{client}} account",
     searchByRoleName: "Search by role name",
     filterByOrigin: "Filter by Origin",
     realmRoles: "Realm roles",

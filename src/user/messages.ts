@@ -113,6 +113,9 @@ export default {
     deleteGrantsSuccess: "Grants successfully revoked.",
     deleteGrantsError: "Error deleting grants.",
     roleMapping: "Role mapping",
+    noRoles: "No roles for this user",
+    noRolesInstructions:
+      "You haven't assigned any roles to this user. Assign a role to get started.",
     unlockAllUsers: "Unlock all users",
     unlockUsersConfirm:
       "All the users that are temporarily locked will be unlocked.",

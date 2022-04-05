@@ -1,14 +1,20 @@
 const expect = chai.expect;
 export default class RoleMappingTab {
+  private type = "client";
   private tab = "serviceAccountTab";
   private scopeTab = "scopeTab";
-  private assignEmptyRoleBtn = "no-roles-for-this-client-empty-action";
+  private assignEmptyRoleBtn = (type: string) =>
+    `no-roles-for-this-${type}-empty-action`;
   private assignRoleBtn = "assignRole";
   private unAssignBtn = "unAssignRole";
   private assignBtn = "assign";
   private hideInheritedRolesBtn = "#hideInheritedRoles";
   private assignedRolesTable = "assigned-roles";
   private namesColumn = 'td[data-label="Name"]:visible';
+
+  constructor(type: string) {
+    this.type = type;
+  }
 
   goToServiceAccountTab() {
     cy.findByTestId(this.tab).click();
@@ -22,7 +28,7 @@ export default class RoleMappingTab {
 
   assignRole(notEmpty = true) {
     cy.findByTestId(
-      notEmpty ? this.assignEmptyRoleBtn : this.assignRoleBtn
+      notEmpty ? this.assignEmptyRoleBtn(this.type) : this.assignRoleBtn
     ).click();
     return this;
   }

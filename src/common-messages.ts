@@ -115,6 +115,13 @@ export default {
     Friday: "Friday",
     Saturday: "Saturday",
 
+    assignRole: "Assign role",
+    assign: "Assign",
+    unAssignRole: "Unassign",
+    hideInheritedRoles: "Hide inherited roles",
+    assignRolesTo: "Assign roles to {{client}} account",
+    inherentFrom: "Inherited from",
+
     unitLabel: "Select a time unit",
     times: {
       seconds: "Seconds",

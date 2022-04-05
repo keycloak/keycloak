@@ -316,7 +316,7 @@ describe("Client Scopes test", () => {
   });
 
   describe("Scope test", () => {
-    const scopeTab = new RoleMappingTab();
+    const scopeTab = new RoleMappingTab("client-scope");
     const scopeName = "address";
     it("Assign role", () => {
       const role = "admin";

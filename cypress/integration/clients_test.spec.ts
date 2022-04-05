@@ -637,7 +637,7 @@ describe("Clients test", () => {
   });
 
   describe("Service account tab test", () => {
-    const serviceAccountTab = new RoleMappingTab();
+    const serviceAccountTab = new RoleMappingTab("user");
     const serviceAccountName = "service-account-client";
 
     before(() => {

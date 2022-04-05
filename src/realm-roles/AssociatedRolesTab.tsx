@@ -310,7 +310,7 @@ export const AssociatedRolesTab = ({
         ]}
         emptyState={
           <ListEmptyState
-            hasIcon={true}
+            hasIcon
             message={t("noRolesAssociated")}
             instructions={t("noRolesAssociatedInstructions")}
             primaryActionText={t("addRole")}
