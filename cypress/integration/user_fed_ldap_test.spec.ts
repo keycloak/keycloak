@@ -17,12 +17,22 @@ const allCapProvider = provider.toUpperCase();
 const firstLdapName = "my-ldap";
 const firstLdapVendor = "Active Directory";
 
-const connectionUrl = "ldap://";
-const firstBindType = "simple";
-const firstBindDn = "user-1";
-const firstBindCreds = "password1";
+// connection and authentication settings
+const connectionUrlValid = "ldap://ldap.forumsys.com:389";
+const bindTypeSimple = "simple";
+const truststoreSpiOnlyLdaps = "Only for ldaps";
+const connectionTimeoutTwoSecs = "2000";
+const bindDnCnDc = "cn=read-only-admin,dc=example,dc=com";
+const bindCredsValid = "password";
 
-const firstEditMode = "READ_ONLY";
+const connectionUrlInvalid = "ldap://nowhere.com";
+const bindTypeNone = "none";
+const truststoreSpiNever = "Never";
+const bindDnCnOnly = "cn=read-only-admin";
+const bindCredsInvalid = "not-my-password";
+
+// ldap searching and updating
+const editModeReadOnly = "READ_ONLY";
 const firstUsersDn = "user-dn-1";
 const firstUserLdapAtt = "uid";
 const firstRdnLdapAtt = "uid";
@@ -32,14 +42,15 @@ const firstUserObjClasses = "inetOrgPerson, organizationalPerson";
 const secondLdapName = `${firstLdapName}-2`;
 const secondLdapVendor = "Other";
 
-const secondBindType = "none";
+const editModeWritable = "WRITABLE";
 
-const secondEditMode = "WRITABLE";
 const secondUsersDn = "user-dn-2";
 const secondUserLdapAtt = "cn";
 const secondRdnLdapAtt = "cn";
 const secondUuidLdapAtt = "objectGUID";
 const secondUserObjClasses = "person, organizationalPerson, user";
+
+const updatedLdapName = `${firstLdapName}-updated`;
 
 const defaultPolicy = "DEFAULT";
 const newPolicy = "EVICT_WEEKLY";
@@ -57,11 +68,16 @@ const deletedSuccessMessage = "The user federation provider has been deleted.";
 const deleteModalTitle = "Delete user federation provider?";
 const disableModalTitle = "Disable user federation provider?";
 
+const ldapTestSuccessMsg = "Successfully connected to LDAP";
+const ldapTestFailMsg =
+  "Error when trying to connect to LDAP. See server.log for details. LDAP test error";
+
 describe("User Fed LDAP tests", () => {
   beforeEach(() => {
     keycloakBefore();
     loginPage.logIn();
     sidebarPage.goToUserFederation();
+    cy.intercept("GET", "/admin/realms/master").as("getProvider");
   });
 
   it("Create Ldap provider from empty state", () => {
@@ -74,24 +90,24 @@ describe("User Fed LDAP tests", () => {
         providersPage.clickMenuCommand(addProviderMenu, allCapProvider);
       }
     });
-    providersPage.fillLdapRequiredGeneralData(firstLdapName, firstLdapVendor);
-    providersPage.fillLdapRequiredConnectionData(
-      connectionUrl,
-      firstBindType,
-      firstBindDn,
-      firstBindCreds
+    providersPage.fillLdapGeneralData(firstLdapName, firstLdapVendor);
+    providersPage.fillLdapConnectionData(
+      connectionUrlInvalid,
+      bindTypeSimple,
+      truststoreSpiNever,
+      connectionTimeoutTwoSecs,
+      bindDnCnOnly,
+      bindCredsInvalid
     );
-    providersPage.fillLdapRequiredSearchingData(
-      firstEditMode,
+    providersPage.fillLdapSearchingData(
+      editModeReadOnly,
       firstUsersDn,
       firstUserLdapAtt,
       firstRdnLdapAtt,
       firstUuidLdapAtt,
       firstUserObjClasses
     );
-
     providersPage.save(provider);
-
     masthead.checkNotificationMessage(createdSuccessMessage);
     sidebarPage.goToUserFederation();
   });
@@ -114,8 +130,94 @@ describe("User Fed LDAP tests", () => {
     expect(cy.contains(defaultPolicy).should("not.exist"));
   });
 
-  it("Change existing LDAP provider and click button to cancel", () => {
+  it("Update connection and authentication settings and save", () => {
     providersPage.clickExistingCard(firstLdapName);
+
+    providersPage.fillLdapConnectionData(
+      connectionUrlInvalid,
+      bindTypeNone,
+      truststoreSpiNever,
+      connectionTimeoutTwoSecs
+    );
+    providersPage.toggleSwitch(providersPage.enableStartTls);
+    providersPage.toggleSwitch(providersPage.connectionPooling);
+
+    providersPage.save(provider);
+    masthead.checkNotificationMessage(savedSuccessMessage);
+
+    // now verify
+    sidebarPage.goToUserFederation();
+    providersPage.clickExistingCard(firstLdapName);
+    providersPage.verifyTextField(
+      providersPage.connectionUrlInput,
+      connectionUrlInvalid
+    );
+    providersPage.verifyTextField(
+      providersPage.connectionTimeoutInput,
+      connectionTimeoutTwoSecs
+    );
+    providersPage.verifySelect(
+      providersPage.truststoreSpiInput,
+      truststoreSpiNever
+    );
+    providersPage.verifySelect(providersPage.bindTypeInput, bindTypeNone);
+    providersPage.verifyToggle(providersPage.enableStartTls, "on");
+    providersPage.verifyToggle(providersPage.connectionPooling, "on");
+    sidebarPage.goToUserFederation();
+  });
+
+  it("Should fail connection and authentication tests", () => {
+    providersPage.clickExistingCard(firstLdapName);
+
+    providersPage.testConnection();
+    masthead.checkNotificationMessage(ldapTestFailMsg);
+
+    providersPage.testAuthorization();
+    masthead.checkNotificationMessage(ldapTestFailMsg);
+
+    sidebarPage.goToUserFederation();
+  });
+
+  it("Should make changes and pass connection and authentication tests", () => {
+    providersPage.clickExistingCard(firstLdapName);
+
+    providersPage.fillLdapConnectionData(
+      connectionUrlValid,
+      bindTypeSimple,
+      truststoreSpiOnlyLdaps,
+      connectionTimeoutTwoSecs,
+      bindDnCnDc,
+      bindCredsValid
+    );
+    providersPage.toggleSwitch(providersPage.enableStartTls);
+    providersPage.toggleSwitch(providersPage.connectionPooling);
+
+    providersPage.save(provider);
+
+    providersPage.testConnection();
+    masthead.checkNotificationMessage(ldapTestSuccessMsg);
+
+    providersPage.testAuthorization();
+    masthead.checkNotificationMessage(ldapTestSuccessMsg);
+
+    sidebarPage.goToUserFederation();
+  });
+
+  it("Should update display name", () => {
+    providersPage.clickExistingCard(firstLdapName);
+    providersPage.fillLdapGeneralData(updatedLdapName);
+
+    providersPage.save(provider);
+    masthead.checkNotificationMessage(savedSuccessMessage);
+
+    sidebarPage.goToUserFederation();
+    providersPage.clickExistingCard(updatedLdapName);
+
+    sidebarPage.goToUserFederation();
+  });
+
+  it("Change existing LDAP provider and click button to cancel", () => {
+    providersPage.clickExistingCard(updatedLdapName);
     providersPage.selectCacheType(newPolicy);
 
     providersPage.changeCacheTime("day", defaultLdapDay);
@@ -123,9 +225,8 @@ describe("User Fed LDAP tests", () => {
     providersPage.changeCacheTime("minute", defaultLdapMinute);
 
     providersPage.cancel(provider);
-    cy.wait(1000);
 
-    providersPage.clickExistingCard(firstLdapName);
+    providersPage.clickExistingCard(updatedLdapName);
     providersPage.selectCacheType(newPolicy);
 
     providersPage.verifyChangedHourInput(newLdapHour, defaultLdapHour);
@@ -133,36 +234,38 @@ describe("User Fed LDAP tests", () => {
     sidebarPage.goToUserFederation();
   });
 
-  it("Disable an existing LDAP provider", () => {
+  it("Should disable an existing LDAP provider", () => {
     providersPage.clickExistingCard(firstLdapName);
+    cy.wait("@getProvider");
     providersPage.disableEnabledSwitch(allCapProvider);
-
     modalUtils.checkModalTitle(disableModalTitle).confirmModal();
-
     masthead.checkNotificationMessage(savedSuccessMessage);
-    sidebarPage.goToUserFederation();
-    masthead.checkNotificationMessage(savedSuccessMessage);
-
     sidebarPage.goToUserFederation();
     expect(cy.contains("Disabled").should("exist"));
   });
 
-  it("Enable an existing previously-disabled LDAP provider", () => {
+  it("Should enable a previously-disabled LDAP provider", () => {
     providersPage.clickExistingCard(firstLdapName);
+    cy.wait("@getProvider");
     providersPage.enableEnabledSwitch(allCapProvider);
-
     masthead.checkNotificationMessage(savedSuccessMessage);
-
     sidebarPage.goToUserFederation();
     expect(cy.contains("Enabled").should("exist"));
   });
 
   it("Create new LDAP provider using the New Provider dropdown", () => {
     providersPage.clickMenuCommand(addProviderMenu, allCapProvider);
-    providersPage.fillLdapRequiredGeneralData(secondLdapName, secondLdapVendor);
-    providersPage.fillLdapRequiredConnectionData(connectionUrl, secondBindType);
-    providersPage.fillLdapRequiredSearchingData(
-      secondEditMode,
+    providersPage.fillLdapGeneralData(secondLdapName, secondLdapVendor);
+    providersPage.fillLdapConnectionData(
+      connectionUrlValid,
+      bindTypeSimple,
+      truststoreSpiNever,
+      connectionTimeoutTwoSecs,
+      bindDnCnOnly,
+      bindCredsInvalid
+    );
+    providersPage.fillLdapSearchingData(
+      editModeWritable,
       secondUsersDn,
       secondUserLdapAtt,
       secondRdnLdapAtt,
@@ -181,7 +284,7 @@ describe("User Fed LDAP tests", () => {
   });
 
   it("Delete an LDAP provider using the Settings view's Action menu", () => {
-    providersPage.deleteCardFromMenu(firstLdapName);
+    providersPage.deleteCardFromMenu(updatedLdapName);
     modalUtils.checkModalTitle(deleteModalTitle).confirmModal();
     masthead.checkNotificationMessage(deletedSuccessMessage);
   });

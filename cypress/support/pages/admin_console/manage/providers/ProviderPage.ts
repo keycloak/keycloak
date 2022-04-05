@@ -1,30 +1,35 @@
 export default class ProviderPage {
-  // KerberosSettingsRequired required input values
-  private kerberosNameInput = "data-testid=kerberos-name";
-  private kerberosRealmInput = "data-testid=kerberos-realm";
-  private kerberosPrincipalInput = "data-testid=kerberos-principal";
-  private kerberosKeytabInput = "data-testid=kerberos-keytab";
+  // KerberosSettingsRequired input values
+  private kerberosNameInput = "kerberos-name";
+  private kerberosRealmInput = "kerberos-realm";
+  private kerberosPrincipalInput = "kerberos-principal";
+  private kerberosKeytabInput = "kerberos-keytab";
 
-  // LdapSettingsGeneral required input values
-  private ldapNameInput = "data-testid=ldap-name";
+  // LdapSettingsGeneral input values
+  private ldapNameInput = "ldap-name";
   private ldapVendorInput = "#kc-vendor";
   private ldapVendorList = "#kc-vendor + ul";
 
-  // LdapSettingsConnection required input values
-  private ldapConnectionUrlInput = "data-testid=ldap-connection-url";
-  private ldapBindTypeInput = "#kc-bind-type";
-  private ldapBindTypeList = "#kc-bind-type + ul";
-  private ldapBindDnInput = "data-testid=ldap-bind-dn";
-  private ldapBindCredsInput = "data-testid=ldap-bind-credentials";
+  // LdapSettingsConnection input values
+  connectionUrlInput = "ldap-connection-url";
+  truststoreSpiInput = "#kc-use-truststore-spi";
+  truststoreSpiList = "#kc-use-truststore-spi + ul";
+  connectionTimeoutInput = "connection-timeout";
+  bindTypeInput = "#kc-bind-type";
+  private bindTypeList = "#kc-bind-type + ul";
+  bindDnInput = "ldap-bind-dn";
+  bindCredsInput = "ldap-bind-credentials";
+  private testConnectionBtn = "test-connection-button";
+  private testAuthBtn = "test-auth-button";
 
-  // LdapSettingsSearching required input values
+  // LdapSettingsSearching input values
   private ldapEditModeInput = "#kc-edit-mode";
   private ldapEditModeList = "#kc-edit-mode + ul";
-  private ldapUsersDnInput = "data-testid=ldap-users-dn";
-  private ldapUserLdapAttInput = "data-testid=ldap-username-attribute";
-  private ldapRdnLdapAttInput = "data-testid=ldap-rdn-attribute";
-  private ldapUuidLdapAttInput = "data-testid=ldap-uuid-attribute";
-  private ldapUserObjClassesInput = "data-testid=ldap-user-object-classes";
+  private ldapUsersDnInput = "ldap-users-dn";
+  private ldapUserLdapAttInput = "ldap-username-attribute";
+  private ldapRdnLdapAttInput = "ldap-rdn-attribute";
+  private ldapUuidLdapAttInput = "ldap-uuid-attribute";
+  private ldapUserObjClassesInput = "ldap-user-object-classes";
 
   // SettingsCache input values
   private cacheDayInput = "#kc-eviction-day";
@@ -36,7 +41,7 @@ export default class ProviderPage {
   private cachePolicyInput = "#kc-cache-policy";
   private cachePolicyList = "#kc-cache-policy + ul";
 
-  // Mapper required input values
+  // Mapper input values
   private userModelAttInput = "user.model.attribute";
   private ldapAttInput = "ldap.attribute";
   private userModelAttNameInput = "user.model.attribute";
@@ -61,9 +66,13 @@ export default class ProviderPage {
   private roleLdapMapper = "role-ldap-mapper";
   private hcLdapRoleMapper = "hardcoded-ldap-role-mapper";
 
+  private actionDropdown = "action-dropdown";
+  private deleteCmd = "delete-cmd";
+
+  private mappersTab = "ldap-mappers-tab";
   private rolesTab = "rolesTab";
-  private createRoleBtn = "data-testid=no-roles-for-this-client-empty-action";
-  private realmRolesSaveBtn = "data-testid=realm-roles-save-button";
+  private createRoleBtn = "no-roles-for-this-client-empty-action";
+  private realmRolesSaveBtn = "realm-roles-save-button";
   private roleNameField = "#kc-name";
   private clientIdSelect = "#client\\.id-select-typeahead";
 
@@ -76,6 +85,10 @@ export default class ProviderPage {
   debugSwitch = "debug";
   firstLoginSwitch = "update-first-login";
   passwordAuthSwitch = "allow-password-authentication";
+
+  // LDAP switch input values
+  enableStartTls = "enable-start-tls";
+  connectionPooling = "connection-pooling";
 
   changeCacheTime(unit: string, time: string) {
     switch (unit) {
@@ -107,15 +120,15 @@ export default class ProviderPage {
   }
 
   deleteCardFromCard(card: string) {
-    cy.get(`[data-testid=${card}-dropdown]`).click();
-    cy.get('[data-testid="card-delete"]').click();
+    cy.findByTestId(`${card}-dropdown`).click();
+    cy.findByTestId("card-delete").click();
     return this;
   }
 
   deleteCardFromMenu(card: string) {
     this.clickExistingCard(card);
-    cy.get('[data-testid="action-dropdown"]').click();
-    cy.get(`[data-testid="delete-cmd"]`).click();
+    cy.findByTestId(this.actionDropdown).click();
+    cy.findByTestId(this.deleteCmd).click();
     return this;
   }
 
@@ -126,16 +139,16 @@ export default class ProviderPage {
     keytab: string
   ) {
     if (name) {
-      cy.get(`[${this.kerberosNameInput}]`).type(name);
+      cy.findByTestId(this.kerberosNameInput).clear().type(name);
     }
     if (realm) {
-      cy.get(`[${this.kerberosRealmInput}]`).type(realm);
+      cy.findByTestId(this.kerberosRealmInput).clear().type(realm);
     }
     if (principal) {
-      cy.get(`[${this.kerberosPrincipalInput}]`).type(principal);
+      cy.findByTestId(this.kerberosPrincipalInput).clear().type(principal);
     }
     if (keytab) {
-      cy.get(`[${this.kerberosKeytabInput}]`).type(keytab);
+      cy.findByTestId(this.kerberosKeytabInput).clear().type(keytab);
     }
     return this;
   }
@@ -157,10 +170,16 @@ export default class ProviderPage {
     return this;
   }
 
-  fillLdapRequiredGeneralData(name: string, vendor: string) {
-    if (name) {
-      cy.get(`[${this.ldapNameInput}]`).clear().type(name);
-    }
+  verifyTextField(fieldName: string, value: string) {
+    cy.findByTestId(fieldName).should("have.value", value);
+  }
+
+  verifySelect(selectInput: string, value: string) {
+    cy.get(selectInput).should("contain", value);
+  }
+
+  fillLdapGeneralData(name: string, vendor?: string) {
+    cy.findByTestId(this.ldapNameInput).clear().type(name);
     if (vendor) {
       cy.get(this.ldapVendorInput).click();
       cy.get(this.ldapVendorList).contains(vendor).click();
@@ -168,55 +187,62 @@ export default class ProviderPage {
     return this;
   }
 
-  fillLdapRequiredConnectionData(
+  fillLdapConnectionData(
     connectionUrl: string,
     bindType: string,
+    truststoreSpi?: string,
+    connectionTimeout?: string,
     bindDn?: string,
     bindCreds?: string
   ) {
-    if (connectionUrl) {
-      cy.get(`[${this.ldapConnectionUrlInput}]`).type(connectionUrl);
+    cy.findByTestId(this.connectionUrlInput).clear().type(connectionUrl);
+
+    cy.get(this.bindTypeInput).click();
+    cy.get(this.bindTypeList).contains(bindType).click();
+
+    if (truststoreSpi) {
+      cy.get(this.truststoreSpiInput).click();
+      cy.get(this.truststoreSpiList).contains(truststoreSpi).click();
     }
-    if (bindType) {
-      cy.get(this.ldapBindTypeInput).click();
-      cy.get(this.ldapBindTypeList).contains(bindType).click();
+    if (connectionTimeout) {
+      cy.findByTestId(this.connectionTimeoutInput)
+        .clear()
+        .type(connectionTimeout);
     }
     if (bindDn) {
-      cy.get(`[${this.ldapBindDnInput}]`).type(bindDn);
+      cy.findByTestId(this.bindDnInput).clear().type(bindDn);
     }
     if (bindCreds) {
-      cy.get(`[${this.ldapBindCredsInput}]`).type(bindCreds);
+      cy.findByTestId(this.bindCredsInput).clear().type(bindCreds);
     }
     return this;
   }
 
-  fillLdapRequiredSearchingData(
+  fillLdapSearchingData(
     editMode: string,
     usersDn: string,
-    userLdapAtt: string,
-    rdnLdapAtt: string,
-    uuidLdapAtt: string,
-    userObjClasses: string
+    userLdapAtt?: string,
+    rdnLdapAtt?: string,
+    uuidLdapAtt?: string,
+    userObjClasses?: string
   ) {
-    if (editMode) {
-      cy.get(this.ldapEditModeInput).click();
-      cy.get(this.ldapEditModeList).contains(editMode).click();
-    }
+    cy.get(this.ldapEditModeInput).click();
+    cy.get(this.ldapEditModeList).contains(editMode).click();
 
-    if (usersDn) {
-      cy.get(`[${this.ldapUsersDnInput}]`).type(usersDn);
-    }
+    cy.findByTestId(this.ldapUsersDnInput).clear().type(usersDn);
     if (userLdapAtt) {
-      cy.get(`[${this.ldapUserLdapAttInput}]`).type(userLdapAtt);
+      cy.findByTestId(this.ldapUserLdapAttInput).clear().type(userLdapAtt);
     }
     if (rdnLdapAtt) {
-      cy.get(`[${this.ldapRdnLdapAttInput}]`).type(rdnLdapAtt);
+      cy.findByTestId(this.ldapRdnLdapAttInput).clear().type(rdnLdapAtt);
     }
     if (uuidLdapAtt) {
-      cy.get(`[${this.ldapUuidLdapAttInput}]`).type(uuidLdapAtt);
+      cy.findByTestId(this.ldapUuidLdapAttInput).clear().type(uuidLdapAtt);
     }
     if (userObjClasses) {
-      cy.get(`[${this.ldapUserObjClassesInput}]`).type(userObjClasses);
+      cy.findByTestId(this.ldapUserObjClassesInput)
+        .clear()
+        .type(userObjClasses);
     }
     return this;
   }
@@ -228,17 +254,17 @@ export default class ProviderPage {
   }
 
   goToMappers() {
-    cy.get(`[data-testid="ldap-mappers-tab"]`).click();
+    cy.findByTestId(this.mappersTab).click();
   }
 
   createRole(roleName: string) {
     cy.findByTestId(this.rolesTab).click();
     cy.wait(1000);
-    cy.get(`[${this.createRoleBtn}]`).click();
+    cy.findByTestId(this.createRoleBtn).click();
     cy.wait(1000);
-    cy.get(this.roleNameField).type(roleName);
+    cy.get(this.roleNameField).clear().type(roleName);
     cy.wait(1000);
-    cy.get(`[${this.realmRolesSaveBtn}]`).click();
+    cy.findByTestId(this.realmRolesSaveBtn).click();
     cy.wait(1000);
   }
 
@@ -253,7 +279,7 @@ export default class ProviderPage {
     cy.get("#kc-providerId").click();
     cy.get("button").contains(mapperType).click();
 
-    cy.get(`[data-testid="ldap-mapper-name"]`).type(`${mapperType}-test`);
+    cy.findByTestId("ldap-mapper-name").clear().type(`${mapperType}-test`);
 
     switch (mapperType) {
       case this.msadUserAcctMapper:
@@ -261,30 +287,31 @@ export default class ProviderPage {
         break;
       case this.userAttLdapMapper:
       case this.certLdapMapper:
-        cy.findByTestId(this.userModelAttInput).type(userModelAttValue);
-        cy.findByTestId(this.ldapAttInput).type(ldapAttValue);
+        cy.findByTestId(this.userModelAttInput).clear().type(userModelAttValue);
+        cy.findByTestId(this.ldapAttInput).clear().type(ldapAttValue);
         break;
       case this.hcAttMapper:
-        cy.findByTestId(this.userModelAttNameInput).type(userModelAttValue);
-        cy.findByTestId(this.attValueInput).type(ldapAttValue);
+        cy.findByTestId(this.userModelAttNameInput)
+          .clear()
+          .type(userModelAttValue);
+        cy.findByTestId(this.attValueInput).clear().type(ldapAttValue);
         break;
       case this.fullNameLdapMapper:
-        cy.findByTestId(this.ldapFullNameAttInput).type(ldapAttValue);
+        cy.findByTestId(this.ldapFullNameAttInput).clear().type(ldapAttValue);
         break;
       case this.hcLdapAttMapper:
-        cy.findByTestId(this.ldapAttNameInput).type(userModelAttValue);
-        cy.findByTestId(this.ldapAttValueInput).type(ldapAttValue);
+        cy.findByTestId(this.ldapAttNameInput).clear().type(userModelAttValue);
+        cy.findByTestId(this.ldapAttValueInput).clear().type(ldapAttValue);
         break;
       case this.hcLdapGroupMapper:
-        cy.findByTestId(this.groupInput).type(this.groupName);
+        cy.findByTestId(this.groupInput).clear().type(this.groupName);
         break;
       case this.groupLdapMapper:
-        cy.findByTestId(this.ldapGroupsDnInput).type(ldapDnValue);
+        cy.findByTestId(this.ldapGroupsDnInput).clear().type(ldapDnValue);
         break;
 
       case this.roleLdapMapper:
-        cy.findByTestId(this.ldapRolesDnInput).type(ldapDnValue);
-        // cy select clientID dropdown and choose clientName (var)
+        cy.findByTestId(this.ldapRolesDnInput).clear().type(ldapDnValue);
         cy.get(this.clientIdSelect).click();
         cy.get("button").contains(this.clientName).click({ force: true });
         break;
@@ -300,7 +327,6 @@ export default class ProviderPage {
           .get(".pf-c-select__menu-item")
           .first()
           .click();
-
         break;
       default:
         console.log("Invalid mapper type.");
@@ -341,7 +367,7 @@ export default class ProviderPage {
   }
 
   clickExistingCard(cardName: string) {
-    cy.get('[data-testid="keycloak-card-title"]').contains(cardName).click();
+    cy.findByTestId("keycloak-card-title").contains(cardName).click();
     cy.wait(1000);
     return this;
   }
@@ -353,7 +379,7 @@ export default class ProviderPage {
   }
 
   clickNewCard(providerType: string) {
-    cy.get(`[data-testid=${providerType}-card]`).click();
+    cy.findByTestId(`${providerType}-card`).click();
     cy.wait(1000);
     return this;
   }
@@ -369,12 +395,22 @@ export default class ProviderPage {
   }
 
   save(providerType: string) {
-    cy.get(`[data-testid=${providerType}-save]`).click();
+    cy.findByTestId(`${providerType}-save`).click();
     return this;
   }
 
   cancel(providerType: string) {
-    cy.get(`[data-testid=${providerType}-cancel]`).click();
+    cy.findByTestId(`${providerType}-cancel`).click();
+    return this;
+  }
+
+  testConnection() {
+    cy.findByTestId(this.testConnectionBtn).click();
+    return this;
+  }
+
+  testAuthorization() {
+    cy.findByTestId(this.testAuthBtn).click();
     return this;
   }
 }

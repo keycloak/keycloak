@@ -24,12 +24,16 @@ const allCapProvider = provider.toUpperCase();
 const ldapName = "ldap-mappers-testing";
 const ldapVendor = "Active Directory";
 
-const connectionUrl = "ldap://";
-const firstBindType = "simple";
-const firstBindDn = "user-1";
-const firstBindCreds = "password1";
+// connection and authentication settings
+const connectionUrlValid = "ldap://ldap.forumsys.com:389";
+const bindTypeSimple = "simple";
+const truststoreSpiOnlyLdaps = "Only for ldaps";
+const connectionTimeoutTwoSecs = "2000";
+const bindDnCnDc = "cn=read-only-admin,dc=example,dc=com";
+const bindCredsValid = "password";
 
-const firstEditMode = "READ_ONLY";
+// ldap searching and updating
+const editModeReadOnly = "READ_ONLY";
 const firstUsersDn = "user-dn-1";
 const firstUserLdapAtt = "uid";
 const firstRdnLdapAtt = "uid";
@@ -83,15 +87,20 @@ describe("User Fed LDAP mapper tests", () => {
         providersPage.clickMenuCommand(addProviderMenu, allCapProvider);
       }
     });
-    providersPage.fillLdapRequiredGeneralData(ldapName, ldapVendor);
-    providersPage.fillLdapRequiredConnectionData(
-      connectionUrl,
-      firstBindType,
-      firstBindDn,
-      firstBindCreds
+    providersPage.fillLdapGeneralData(ldapName, ldapVendor);
+    providersPage.fillLdapConnectionData(
+      connectionUrlValid,
+      bindTypeSimple,
+      truststoreSpiOnlyLdaps,
+      connectionTimeoutTwoSecs,
+      bindDnCnDc,
+      bindCredsValid
     );
-    providersPage.fillLdapRequiredSearchingData(
-      firstEditMode,
+    providersPage.toggleSwitch(providersPage.enableStartTls);
+    providersPage.toggleSwitch(providersPage.connectionPooling);
+
+    providersPage.fillLdapSearchingData(
+      editModeReadOnly,
       firstUsersDn,
       firstUserLdapAtt,
       firstRdnLdapAtt,

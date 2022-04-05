@@ -154,6 +154,7 @@ export const LdapSettingsConnection = ({
             render={({ onChange, value }) => (
               <Switch
                 id={"kc-enable-start-tls"}
+                data-testid="enable-start-tls"
                 isDisabled={false}
                 onChange={(value) => onChange([`${value}`])}
                 isChecked={value[0] === "true"}
@@ -216,6 +217,7 @@ export const LdapSettingsConnection = ({
             render={({ onChange, value }) => (
               <Switch
                 id={"kc-connection-pooling"}
+                data-testid="connection-pooling"
                 isDisabled={false}
                 onChange={(value) => onChange([`${value}`])}
                 isChecked={value[0] === "true"}
@@ -239,14 +241,16 @@ export const LdapSettingsConnection = ({
             type="number"
             min={0}
             id="kc-console-connection-timeout"
+            data-testid="connection-timeout"
             name="config.connectionTimeout[0]"
             ref={form.register}
           />
         </FormGroup>
-        <FormGroup fieldId="kc-test-button">
+        <FormGroup fieldId="kc-test-connection-button">
           <Button
             variant="secondary"
-            id="kc-connection-test-button"
+            id="kc-test-connection-button"
+            data-testid="test-connection-button"
             onClick={() => testLdap("testConnection")}
           >
             {t("common:testConnection")}
@@ -357,10 +361,11 @@ export const LdapSettingsConnection = ({
             </FormGroup>
           </>
         )}
-        <FormGroup fieldId="kc-test-button">
+        <FormGroup fieldId="kc-test-auth-button">
           <Button
             variant="secondary"
-            id="kc-test-button"
+            id="kc-test-auth-button"
+            data-testid="test-auth-button"
             onClick={() => testLdap("testAuthentication")}
           >
             {t("testAuthentication")}
