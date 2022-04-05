@@ -27,6 +27,7 @@ import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.cache.authorization.CachedStoreFactoryProvider;
 import org.keycloak.models.cache.authorization.CachedStoreProviderFactory;
 import org.keycloak.models.cache.infinispan.entities.Revisioned;
@@ -43,6 +44,15 @@ public class InfinispanCacheStoreFactoryProviderFactory implements CachedStorePr
     public static final String AUTHORIZATION_INVALIDATION_EVENTS = "AUTHORIZATION_INVALIDATION_EVENTS";
 
     protected volatile StoreFactoryCacheManager storeCache;
+
+    /**
+     * Legacy store doesn't store realm id for any entity and no method there is using new introduced RealmModel parameter.
+     * The parameter was introduced for usage only in the new storage. Therefore, in some cases we may break our rule specified in JavaDoc
+     * and use {@code null} value as parameter that otherwise cannot be {@code null}. We need to be careful and place such value only to a method call
+     * that cannot end up in the new store because it would end with {@link NullPointerException}. To mark all places where we do this,
+     * we use this variable so it is easily searchable.
+     */
+    public static final RealmModel NULL_REALM = null;
 
     @Override
     public CachedStoreFactoryProvider create(KeycloakSession session) {

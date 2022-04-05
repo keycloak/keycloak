@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Red Hat, Inc. and/or its affiliates
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -32,6 +32,7 @@ import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.ScopeStore;
 import org.keycloak.authorization.store.StoreFactory;
+import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.authorization.AuthorizationRequest;
 import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.representations.idm.authorization.PermissionTicketToken;
@@ -90,10 +91,11 @@ public class PermissionTicketAwareDecisionResultCollector extends DecisionPermis
             StoreFactory storeFactory = authorization.getStoreFactory();
             ResourceStore resourceStore = storeFactory.getResourceStore();
             List<Permission> permissions = ticket.getPermissions();
+            RealmModel realm = resourceServer.getRealm();
 
             if (permissions != null) {
                 for (Permission permission : permissions) {
-                    Resource resource = resourceStore.findById(resourceServer, permission.getResourceId());
+                    Resource resource = resourceStore.findById(realm, resourceServer, permission.getResourceId());
 
                     if (resource == null) {
                         resource = resourceStore.findByName(resourceServer, permission.getResourceId(), identity.getId());
@@ -116,7 +118,7 @@ public class PermissionTicketAwareDecisionResultCollector extends DecisionPermis
                         filters.put(PermissionTicket.FilterOption.REQUESTER, identity.getId());
                         filters.put(PermissionTicket.FilterOption.SCOPE_IS_NULL, Boolean.TRUE.toString());
 
-                        List<PermissionTicket> tickets = authorization.getStoreFactory().getPermissionTicketStore().find(resource.getResourceServer(), filters, null, null);
+                        List<PermissionTicket> tickets = authorization.getStoreFactory().getPermissionTicketStore().find(realm, resourceServer, filters, null, null);
 
                         if (tickets.isEmpty()) {
                             authorization.getStoreFactory().getPermissionTicketStore().create(resourceServer, resource, null, identity.getId());
@@ -128,7 +130,7 @@ public class PermissionTicketAwareDecisionResultCollector extends DecisionPermis
                             Scope scope = scopeStore.findByName(resourceServer, scopeId);
 
                             if (scope == null) {
-                                scope = scopeStore.findById(resourceServer, scopeId);
+                                scope = scopeStore.findById(realm, resourceServer, scopeId);
                             }
 
                             Map<PermissionTicket.FilterOption, String> filters = new EnumMap<>(PermissionTicket.FilterOption.class);
@@ -137,7 +139,7 @@ public class PermissionTicketAwareDecisionResultCollector extends DecisionPermis
                             filters.put(PermissionTicket.FilterOption.REQUESTER, identity.getId());
                             filters.put(PermissionTicket.FilterOption.SCOPE_ID, scope.getId());
 
-                            List<PermissionTicket> tickets = authorization.getStoreFactory().getPermissionTicketStore().find(resource.getResourceServer(), filters, null, null);
+                            List<PermissionTicket> tickets = authorization.getStoreFactory().getPermissionTicketStore().find(realm, resourceServer, filters, null, null);
 
                             if (tickets.isEmpty()) {
                                 authorization.getStoreFactory().getPermissionTicketStore().create(resourceServer, resource, scope, identity.getId());

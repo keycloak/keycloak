@@ -1,13 +1,12 @@
 /*
- * JBoss, Home of Professional Open Source.
- * Copyright 2016 Red Hat, Inc., and individual contributors
- * as indicated by the @author tags.
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -74,7 +73,7 @@ public final class Permissions {
         }
 
         // obtain all resources where owner is the resource server
-        resourceStore.findByOwner(resourceServer, resourceServer.getClientId(), resource -> {
+        resourceStore.findByOwner(resourceServer.getRealm(), resourceServer, resourceServer.getClientId(), resource -> {
             if (limit.decrementAndGet() >= 0) {
                 evaluator.accept(createResourcePermissions(resource, resourceServer, resource.getScopes(), authorization, request));
             }
@@ -83,7 +82,7 @@ public final class Permissions {
         // resource server isn't current user
         if (!Objects.equals(resourceServer.getClientId(), identity.getId())) {
             // obtain all resources where owner is the current user
-            resourceStore.findByOwner(resourceServer, identity.getId(), resource -> {
+            resourceStore.findByOwner(resourceServer.getRealm(), resourceServer, identity.getId(), resource -> {
                 if (limit.decrementAndGet() >= 0) {
                     evaluator.accept(createResourcePermissions(resource, resourceServer, resource.getScopes(), authorization, request));
                 }

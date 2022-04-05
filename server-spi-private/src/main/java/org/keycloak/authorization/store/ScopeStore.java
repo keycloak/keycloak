@@ -1,13 +1,12 @@
 /*
- * JBoss, Home of Professional Open Source.
- * Copyright 2016 Red Hat, Inc., and individual contributors
- * as indicated by the @author tags.
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,6 +19,7 @@ package org.keycloak.authorization.store;
 
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
+import org.keycloak.models.RealmModel;
 
 import java.util.List;
 import java.util.Map;
@@ -35,8 +35,7 @@ public interface ScopeStore {
      * Creates a new {@link Scope} instance. The new instance is not necessarily persisted though, which may require
      * a call to the {#save} method to actually make it persistent.
      *
-     * @param resourceServer the resource server to which this scope belongs
-     *
+     * @param resourceServer the resource server to which this scope belongs. Cannot be {@code null}.
      * @param name the name of the scope
      * @return a new instance of {@link Scope}
      */
@@ -48,8 +47,7 @@ public interface ScopeStore {
      * Creates a new {@link Scope} instance. The new instance is not necessarily persisted though, which may require
      * a call to the {#save} method to actually make it persistent.
      *
-     * @param resourceServer the resource server to which this scope belongs
-     *
+     * @param resourceServer the resource server to which this scope belongs. Cannot be {@code null}.
      * @param id the id of the scope. Is generated randomly when null
      * @param name the name of the scope
      * @return a new instance of {@link Scope}
@@ -59,23 +57,25 @@ public interface ScopeStore {
     /**
      * Deletes a scope from the underlying persistence mechanism.
      *
+     * @param realm the realm. Cannot be {@code null}.
      * @param id the id of the scope to delete
      */
-    void delete(String id);
+    void delete(RealmModel realm, String id);
 
     /**
      * Returns a {@link Scope} with the given <code>id</code>
      *
-     * @param resourceServer the resource server id
+     * @param realm the realm. Cannot be {@code null}.
+     * @param resourceServer the resource server id. Ignored if {@code null}.
      * @param id the identifier of the scope
      * @return a scope with the given identifier.
      */
-    Scope findById(ResourceServer resourceServer, String id);
+    Scope findById(RealmModel realm, ResourceServer resourceServer, String id);
 
     /**
      * Returns a {@link Scope} with the given <code>name</code>
      *
-     * @param resourceServer the resource server
+     * @param resourceServer the resource server. Cannot be {@code null}.
      * @param name the name of the scope
      *
      * @return a scope with the given name.
@@ -83,9 +83,9 @@ public interface ScopeStore {
     Scope findByName(ResourceServer resourceServer, String name);
 
     /**
-     * Returns a list of {@link Scope} associated with a {@link ResourceServer} with the given <code>resourceServer</code>.
+     * Returns a list of {@link Scope} associated with the {@link ResourceServer}.
      *
-     * @param resourceServer the identifier of a resource server
+     * @param resourceServer the resource server. Cannot be {@code null}.
      *
      * @return a list of scopes that belong to the given resource server
      */
@@ -94,7 +94,7 @@ public interface ScopeStore {
     /**
      * Returns a list of {@link Scope} associated with a {@link ResourceServer} with the given <code>resourceServerId</code>.
      *
-     * @param resourceServer the resource server
+     * @param resourceServer the resource server. Cannot be {@code null}.
      * @param attributes a map holding the attributes that will be used as a filter; possible filter options are given by {@link Scope.FilterOption}
      * @param firstResult first result to return. Ignored if negative or {@code null}.
      * @param maxResults maximum number of results to return. Ignored if negative or {@code null}.

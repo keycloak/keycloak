@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,6 +22,7 @@ import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.store.StoreFactory;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.map.authorization.entity.MapPolicyEntity;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.Logic;
@@ -34,11 +35,13 @@ import java.util.stream.Collectors;
 
 public class MapPolicyAdapter extends AbstractPolicyModel<MapPolicyEntity> {
 
-    private final ResourceServer resourceServer;
+    private final RealmModel realm;
+    private ResourceServer resourceServer;
 
-    public MapPolicyAdapter(ResourceServer resourceServer, MapPolicyEntity entity, StoreFactory storeFactory) {
+    public MapPolicyAdapter(RealmModel realm, ResourceServer resourceServer, MapPolicyEntity entity, StoreFactory storeFactory) {
         super(entity, storeFactory);
-        Objects.requireNonNull(resourceServer);
+        Objects.requireNonNull(realm);
+        this.realm = realm;
         this.resourceServer = resourceServer;
     }
 
@@ -124,14 +127,18 @@ public class MapPolicyAdapter extends AbstractPolicyModel<MapPolicyEntity> {
 
     @Override
     public ResourceServer getResourceServer() {
+        if (resourceServer == null) {
+            resourceServer = storeFactory.getResourceServerStore().findById(realm, entity.getResourceServerId());
+        }
         return resourceServer;
     }
 
     @Override
     public Set<Policy> getAssociatedPolicies() {
         Set<String> ids = entity.getAssociatedPolicyIds();
+        ResourceServer resourceServer = getResourceServer();
         return ids == null ? Collections.emptySet() : ids.stream()
-                .map(policyId -> storeFactory.getPolicyStore().findById(resourceServer, policyId))
+                .map(policyId -> storeFactory.getPolicyStore().findById(realm, resourceServer, policyId))
                 .collect(Collectors.toSet());
     }
 
@@ -139,7 +146,7 @@ public class MapPolicyAdapter extends AbstractPolicyModel<MapPolicyEntity> {
     public Set<Resource> getResources() {
         Set<String> ids = entity.getResourceIds();
         return ids == null ? Collections.emptySet() : ids.stream()
-                .map(resourceId -> storeFactory.getResourceStore().findById(resourceServer, resourceId))
+                .map(resourceId -> storeFactory.getResourceStore().findById(realm, getResourceServer(), resourceId))
                 .collect(Collectors.toSet());
     }
 
@@ -147,7 +154,7 @@ public class MapPolicyAdapter extends AbstractPolicyModel<MapPolicyEntity> {
     public Set<Scope> getScopes() {
         Set<String> ids = entity.getScopeIds();
         return ids == null ? Collections.emptySet() : ids.stream()
-                .map(scopeId -> storeFactory.getScopeStore().findById(resourceServer, scopeId))
+                .map(scopeId -> storeFactory.getScopeStore().findById(realm, getResourceServer(), scopeId))
                 .collect(Collectors.toSet());
     }
 
