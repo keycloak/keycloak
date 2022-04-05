@@ -34,8 +34,7 @@ Some Keycloak features rely on the assumption that the remote address of the HTT
 
 When you have a reverse proxy or loadbalancer in front of Keycloak, this might not be the case, so please make sure your reverse proxy is configured correctly by performing these actions:
 
-* Set the X-Forwarded-For and X-Forwarded-Proto HTTP headers.
-* Preserve the original 'Host' HTTP header.
+* Set the X-Forwarded-For, X-Forwarded-Proto, and X-Forwarded-Host HTTP headers.
 
 To set these headers, consult the documentation for your reverse proxy.
 
