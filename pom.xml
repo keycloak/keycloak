@@ -1397,7 +1397,7 @@
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-admin-ui</artifactId>
-                <version>999-SNAPSHOT</version>
+                <version>${project.version}</version>
             </dependency>
 
             <!-- Openshift -->
