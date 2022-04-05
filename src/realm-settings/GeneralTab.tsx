@@ -64,7 +64,9 @@ export const RealmSettingsGeneralTab = ({
             control={control}
             defaultValue=""
             render={({ onChange, value }) => (
-              <ClipboardCopy onChange={onChange}>{value}</ClipboardCopy>
+              <ClipboardCopy data-testid="realmName" onChange={onChange}>
+                {value}
+              </ClipboardCopy>
             )}
           />
         </FormGroup>
@@ -232,7 +234,11 @@ export const RealmSettingsGeneralTab = ({
           >
             {t("common:save")}
           </Button>
-          <Button variant="link" onClick={reset}>
+          <Button
+            data-testid="general-tab-revert"
+            variant="link"
+            onClick={reset}
+          >
             {t("common:revert")}
           </Button>
         </ActionGroup>
