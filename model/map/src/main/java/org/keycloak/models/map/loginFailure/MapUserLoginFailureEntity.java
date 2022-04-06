@@ -64,8 +64,8 @@ public interface MapUserLoginFailureEntity extends AbstractEntity, UpdatableEnti
     String getUserId();
     void setUserId(String userId);
 
-    Integer getFailedLoginNotBefore();
-    void setFailedLoginNotBefore(Integer failedLoginNotBefore);
+    Long getFailedLoginNotBefore();
+    void setFailedLoginNotBefore(Long failedLoginNotBefore);
 
     Integer getNumFailures();
     void setNumFailures(Integer numFailures);

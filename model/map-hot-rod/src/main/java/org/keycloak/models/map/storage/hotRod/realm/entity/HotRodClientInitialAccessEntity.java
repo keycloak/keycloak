@@ -13,11 +13,11 @@ public class HotRodClientInitialAccessEntity extends AbstractHotRodEntity {
     @ProtoField(number = 2)
     public Integer count;
     @ProtoField(number = 3)
-    public Integer expiration;
+    public Long expiration;
     @ProtoField(number = 4)
     public Integer remainingCount;
     @ProtoField(number = 5)
-    public Integer timestamp;
+    public Long timestamp;
     @Override
     public boolean equals(Object o) {
         return HotRodClientInitialAccessEntityDelegate.entityEquals(this, o);

@@ -44,8 +44,8 @@ public interface MapAuthenticationSessionEntity extends UpdatableEntity {
     String getAuthUserId();
     void setAuthUserId(String authUserId);
 
-    Integer getTimestamp();
-    void setTimestamp(Integer timestamp);
+    Long getTimestamp();
+    void setTimestamp(Long timestamp);
 
     String getRedirectUri();
     void setRedirectUri(String redirectUri);

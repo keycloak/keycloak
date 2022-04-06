@@ -363,12 +363,12 @@ public class JpaClientEntity extends AbstractClientEntity implements JpaRootVers
     }
 
     @Override
-    public Integer getNotBefore() {
+    public Long getNotBefore() {
         return metadata.getNotBefore();
     }
 
     @Override
-    public void setNotBefore(Integer notBefore) {
+    public void setNotBefore(Long notBefore) {
         metadata.setNotBefore(notBefore);
     }
 
