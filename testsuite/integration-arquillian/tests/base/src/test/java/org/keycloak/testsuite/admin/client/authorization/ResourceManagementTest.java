@@ -71,6 +71,21 @@ public class ResourceManagementTest extends AbstractAuthorizationTest {
     }
 
     @Test
+    public void testCreateWithResourceType() {
+        ResourceRepresentation newResource = new ResourceRepresentation();
+
+        newResource.setName("test");
+        newResource.setDisplayName("display");
+        newResource.setType("some-type");
+
+        newResource = doCreateResource(newResource);
+
+        ResourceResource resource = getClientResource().authorization().resources().resource(newResource.getId());
+
+        assertTrue(resource.permissions().isEmpty());
+    }
+
+    @Test
     public void failCreateWithSameName() {
         ResourceRepresentation newResource = createResource();
 
