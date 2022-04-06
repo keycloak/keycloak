@@ -120,6 +120,7 @@ public class AuthServerTestEnricher {
     private Event<StopContainer> stopContainerEvent;
 
     private JavaArchive testsuiteProvidersArchive;
+    private JavaArchive testsuiteProvidersDeploymentArchive;
     private String currentContainerName;
 
     public static final String AUTH_SERVER_CONTAINER_DEFAULT = "auth-server-undertow";
@@ -423,14 +424,25 @@ public class AuthServerTestEnricher {
                         .asSingleFile()
                     ).as(JavaArchive.class)
                     .addAsManifestResource("jboss-deployment-structure.xml");
-                    
             event.getDeployableContainer().deploy(testsuiteProvidersArchive);
+
+            this.testsuiteProvidersDeploymentArchive = ShrinkWrap.create(ZipImporter.class, "testsuiteProvidersDeployment.jar")
+                    .importFrom(Maven.configureResolverViaPlugin()
+                        .resolve("org.keycloak.testsuite:integration-arquillian-testsuite-providers-deployment")
+                        .withoutTransitivity()
+                        .asSingleFile()
+                    ).as(JavaArchive.class)
+                    .addAsManifestResource("jboss-deployment-structure.xml");
+            event.getDeployableContainer().deploy(testsuiteProvidersDeploymentArchive);
         }
     }
 
     public void unDeployProviders(@Observes(precedence = 20) BeforeStop event) throws DeploymentException {
         if (testsuiteProvidersArchive != null) {
             event.getDeployableContainer().undeploy(testsuiteProvidersArchive);
+        }
+        if (testsuiteProvidersDeploymentArchive != null) {
+            event.getDeployableContainer().undeploy(testsuiteProvidersDeploymentArchive);
         }
     }
 

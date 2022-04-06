@@ -48,7 +48,6 @@ import java.util.List;
 
 import static org.junit.Assert.assertFalse;
 import static org.keycloak.common.Profile.Feature.AUTHORIZATION;
-import static org.keycloak.common.Profile.Feature.UPLOAD_SCRIPTS;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 import static org.keycloak.testsuite.utils.io.IOUtil.loadJson;
 import static org.keycloak.testsuite.utils.io.IOUtil.loadRealm;
@@ -57,7 +56,6 @@ import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-@EnableFeature(value = UPLOAD_SCRIPTS, skipRestart = true)
 public abstract class AbstractBaseServletAuthzAdapterTest extends AbstractExampleAdapterTest {
 
     protected static final String REALM_NAME = "servlet-authz";

@@ -173,12 +173,6 @@ public class UserManagedPermissionService {
             if (!resourceScopes.containsAll(scopes)) {
                 throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Some of the scopes [" + scopes + "] are not valid for resource [" + resourceId + "]", Response.Status.BAD_REQUEST);
             }
-
-            if (representation.getCondition() != null) {
-                if (!Profile.isFeatureEnabled(Profile.Feature.UPLOAD_SCRIPTS)) {
-                    throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Script upload not supported", Status.BAD_REQUEST);
-                }
-            }
         }
     }
 

@@ -174,12 +174,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
         JSPolicyRepresentation policyRepresentation = new JSPolicyRepresentation();
 
         policyRepresentation.setName("testCheckUserInGroup");
-        StringBuilder builder = new StringBuilder();
-
-        builder.append("var realm = $evaluation.getRealm();");
-        builder.append("if (realm.isUserInGroup('marta', 'Group C')) { $evaluation.grant(); }");
-
-        policyRepresentation.setCode(builder.toString());
+        policyRepresentation.setType("script-scripts/allow-group-name-in-role-policy.js");
 
         Policy policy = storeFactory.getPolicyStore().create(resourceServer, policyRepresentation);
         PolicyProvider provider = authorization.getProvider(policy.getType());
@@ -190,15 +185,12 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
 
         Assert.assertNull(evaluation.getEffect());
 
-        builder = new StringBuilder();
-
-        builder.append("var realm = $evaluation.getRealm();");
-        builder.append("if (realm.isUserInGroup('marta', 'Group A')) { $evaluation.grant(); }");
-
-        policyRepresentation.setCode(builder.toString());
-
-        policyRepresentation.setId(policy.getId());
-        policy = RepresentationToModel.toModel(policyRepresentation, authorization, policy);
+        policyRepresentation = new JSPolicyRepresentation();
+        policyRepresentation.setId(KeycloakModelUtils.generateId());
+        policyRepresentation.setName(policyRepresentation.getId());
+        policyRepresentation.setType("script-scripts/allow-user-in-group-name-a-policy.js");
+        policy = storeFactory.getPolicyStore().create(resourceServer, policyRepresentation);
+        provider = authorization.getProvider(policy.getType());
 
         evaluation = createEvaluation(session, authorization, resourceServer, policy);
 
@@ -206,15 +198,11 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
 
         Assert.assertEquals(Effect.PERMIT, evaluation.getEffect());
 
-        builder = new StringBuilder();
-
-        builder.append("var realm = $evaluation.getRealm();");
-        builder.append("if (realm.isUserInGroup('marta', '/Group A')) { $evaluation.grant(); }");
-
-        policyRepresentation.setCode(builder.toString());
-
-        policyRepresentation.setId(policy.getId());
-        policy = RepresentationToModel.toModel(policyRepresentation, authorization, policy);
+        policyRepresentation = new JSPolicyRepresentation();
+        policyRepresentation.setName("allow-user-in-group-path-a-policy");
+        policyRepresentation.setType("script-scripts/allow-user-in-group-path-a-policy.js");
+        policy = storeFactory.getPolicyStore().create(resourceServer, policyRepresentation);
+        provider = authorization.getProvider(policy.getType());
 
         evaluation = createEvaluation(session, authorization, resourceServer, policy);
 
@@ -222,15 +210,11 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
 
         Assert.assertEquals(Effect.PERMIT, evaluation.getEffect());
 
-        builder = new StringBuilder();
-
-        builder.append("var realm = $evaluation.getRealm();");
-        builder.append("if (realm.isUserInGroup('marta', '/Group A/Group B')) { $evaluation.grant(); }");
-
-        policyRepresentation.setCode(builder.toString());
-
-        policyRepresentation.setId(policy.getId());
-        policy = RepresentationToModel.toModel(policyRepresentation, authorization, policy);
+        policyRepresentation = new JSPolicyRepresentation();
+        policyRepresentation.setName("allow-user-in-group-path-b-policy");
+        policyRepresentation.setType("script-scripts/allow-user-in-group-path-b-policy.js");
+        policy = storeFactory.getPolicyStore().create(resourceServer, policyRepresentation);
+        provider = authorization.getProvider(policy.getType());
 
         evaluation = createEvaluation(session, authorization, resourceServer, policy);
 
@@ -238,15 +222,11 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
 
         Assert.assertNull(evaluation.getEffect());
 
-        builder = new StringBuilder();
-
-        builder.append("var realm = $evaluation.getRealm();");
-        builder.append("if (realm.isUserInGroup('alice', '/Group A/Group B/Group E')) { $evaluation.grant(); }");
-
-        policyRepresentation.setCode(builder.toString());
-
-        policyRepresentation.setId(policy.getId());
-        policy = RepresentationToModel.toModel(policyRepresentation, authorization, policy);
+        policyRepresentation = new JSPolicyRepresentation();
+        policyRepresentation.setName("allow-user-in-group-path-e-policy");
+        policyRepresentation.setType("script-scripts/allow-alice-in-group-child-e-policy.js");
+        policy = storeFactory.getPolicyStore().create(resourceServer, policyRepresentation);
+        provider = authorization.getProvider(policy.getType());
 
         evaluation = createEvaluation(session, authorization, resourceServer, policy);
 
@@ -254,15 +234,11 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
 
         Assert.assertEquals(Effect.PERMIT, evaluation.getEffect());
 
-        builder = new StringBuilder();
-
-        builder.append("var realm = $evaluation.getRealm();");
-        builder.append("if (realm.isUserInGroup('alice', '/Group A')) { $evaluation.grant(); }");
-
-        policyRepresentation.setCode(builder.toString());
-
-        policyRepresentation.setId(policy.getId());
-        policy = RepresentationToModel.toModel(policyRepresentation, authorization, policy);
+        policyRepresentation = new JSPolicyRepresentation();
+        policyRepresentation.setName("allow-alice-in-group-path-a-policy");
+        policyRepresentation.setType("script-scripts/allow-alice-in-group-path-a-policy.js");
+        policy = storeFactory.getPolicyStore().create(resourceServer, policyRepresentation);
+        provider = authorization.getProvider(policy.getType());
 
         evaluation = createEvaluation(session, authorization, resourceServer, policy);
 
@@ -270,15 +246,11 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
 
         Assert.assertEquals(Effect.PERMIT, evaluation.getEffect());
 
-        builder = new StringBuilder();
-
-        builder.append("var realm = $evaluation.getRealm();");
-        builder.append("if (!realm.isUserInGroup('alice', '/Group A', false)) { $evaluation.grant(); }");
-
-        policyRepresentation.setCode(builder.toString());
-
-        policyRepresentation.setId(policy.getId());
-        policy = RepresentationToModel.toModel(policyRepresentation, authorization, policy);
+        policyRepresentation = new JSPolicyRepresentation();
+        policyRepresentation.setName("allow-alice-in-group-path-a-no-parent-policy.js");
+        policyRepresentation.setType("script-scripts/allow-alice-in-group-path-a-no-parent-policy.js");
+        policy = storeFactory.getPolicyStore().create(resourceServer, policyRepresentation);
+        provider = authorization.getProvider(policy.getType());
 
         evaluation = createEvaluation(session, authorization, resourceServer, policy);
 
@@ -286,15 +258,11 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
 
         Assert.assertNull(evaluation.getEffect());
 
-        builder = new StringBuilder();
-
-        builder.append("var realm = $evaluation.getRealm();");
-        builder.append("if (realm.isUserInGroup('alice', '/Group E')) { $evaluation.grant(); }");
-
-        policyRepresentation.setCode(builder.toString());
-
-        policyRepresentation.setId(policy.getId());
-        policy = RepresentationToModel.toModel(policyRepresentation, authorization, policy);
+        policyRepresentation = new JSPolicyRepresentation();
+        policyRepresentation.setName("allow-alice-in-group-path-e-policy.js");
+        policyRepresentation.setType("script-scripts/allow-alice-in-group-path-e-policy.js");
+        policy = storeFactory.getPolicyStore().create(resourceServer, policyRepresentation);
+        provider = authorization.getProvider(policy.getType());
 
         evaluation = createEvaluation(session, authorization, resourceServer, policy);
 
@@ -302,15 +270,11 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
 
         Assert.assertNull(evaluation.getEffect());
 
-        builder = new StringBuilder();
-
-        builder.append("var realm = $evaluation.getRealm();");
-        builder.append("if (realm.isUserInGroup('alice', 'Group E')) { $evaluation.grant(); }");
-
-        policyRepresentation.setCode(builder.toString());
-
-        policyRepresentation.setId(policy.getId());
-        policy = RepresentationToModel.toModel(policyRepresentation, authorization, policy);
+        policyRepresentation = new JSPolicyRepresentation();
+        policyRepresentation.setName("allow-alice-in-group-name-e-policy.js");
+        policyRepresentation.setType("script-scripts/allow-alice-in-group-name-e-policy.js");
+        policy = storeFactory.getPolicyStore().create(resourceServer, policyRepresentation);
+        provider = authorization.getProvider(policy.getType());
 
         evaluation = createEvaluation(session, authorization, resourceServer, policy);
 
@@ -332,13 +296,8 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
         ResourceServer resourceServer = storeFactory.getResourceServerStore().findByClient(clientModel);
         JSPolicyRepresentation policyRepresentation = new JSPolicyRepresentation();
 
-        policyRepresentation.setName("testCheckUserInRole");
-        StringBuilder builder = new StringBuilder();
-
-        builder.append("var realm = $evaluation.getRealm();");
-        builder.append("if (realm.isUserInRealmRole('marta', 'role-a')) { $evaluation.grant(); }");
-
-        policyRepresentation.setCode(builder.toString());
+        policyRepresentation.setName("testCheckUserInRoleA");
+        policyRepresentation.setType("script-scripts/allow-marta-in-role-a-policy.js");
 
         Policy policy = storeFactory.getPolicyStore().create(resourceServer, policyRepresentation);
         PolicyProvider provider = authorization.getProvider(policy.getType());
@@ -349,15 +308,12 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
 
         Assert.assertEquals(Effect.PERMIT, evaluation.getEffect());
 
-        builder = new StringBuilder();
-
-        builder.append("var realm = $evaluation.getRealm();");
-        builder.append("if (realm.isUserInRealmRole('marta', 'role-b')) { $evaluation.grant(); }");
-
-        policyRepresentation.setCode(builder.toString());
-
-        policyRepresentation.setId(policy.getId());
-        policy = RepresentationToModel.toModel(policyRepresentation, authorization, policy);
+        policyRepresentation = new JSPolicyRepresentation();
+        policyRepresentation.setId(null);
+        policyRepresentation.setName("testCheckUserInRoleB");
+        policyRepresentation.setType("script-scripts/allow-marta-in-role-b-policy.js");
+        policy = storeFactory.getPolicyStore().create(resourceServer, policyRepresentation);
+        provider = authorization.getProvider(policy.getType());
 
         evaluation = createEvaluation(session, authorization, resourceServer, policy);
 
@@ -380,12 +336,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
         JSPolicyRepresentation policyRepresentation = new JSPolicyRepresentation();
 
         policyRepresentation.setName("testCheckUserInClientRole");
-        StringBuilder builder = new StringBuilder();
-
-        builder.append("var realm = $evaluation.getRealm();");
-        builder.append("if (realm.isUserInClientRole('trinity', 'role-mapping-client', 'client-role-a')) { $evaluation.grant(); }");
-
-        policyRepresentation.setCode(builder.toString());
+        policyRepresentation.setType("script-scripts/allow-trinity-in-client-roles-policy.js");
 
         Policy policy = storeFactory.getPolicyStore().create(resourceServer, policyRepresentation);
         PolicyProvider provider = authorization.getProvider(policy.getType());
@@ -396,15 +347,11 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
 
         Assert.assertEquals(Effect.PERMIT, evaluation.getEffect());
 
-        builder = new StringBuilder();
-
-        builder.append("var realm = $evaluation.getRealm();");
-        builder.append("if (realm.isUserInRealmRole('trinity', 'client-role-b')) { $evaluation.grant(); }");
-
-        policyRepresentation.setCode(builder.toString());
-
-        policyRepresentation.setId(policy.getId());
-        policy = RepresentationToModel.toModel(policyRepresentation, authorization, policy);
+        policyRepresentation = new JSPolicyRepresentation();
+        policyRepresentation.setName("allow-trinity-in-client-role-b-policy");
+        policyRepresentation.setType("script-scripts/allow-trinity-in-client-role-b-policy.js");
+        policy = storeFactory.getPolicyStore().create(resourceServer, policyRepresentation);
+        provider = authorization.getProvider(policy.getType());
 
         evaluation = createEvaluation(session, authorization, resourceServer, policy);
 
@@ -427,12 +374,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
         JSPolicyRepresentation policyRepresentation = new JSPolicyRepresentation();
 
         policyRepresentation.setName("testCheckGroupInRole");
-        StringBuilder builder = new StringBuilder();
-
-        builder.append("var realm = $evaluation.getRealm();");
-        builder.append("if (realm.isGroupInRole('/Group A/Group D', 'role-a')) { $evaluation.grant(); }");
-
-        policyRepresentation.setCode(builder.toString());
+        policyRepresentation.setType("script-scripts/allow-group-in-role-policy.js");
 
         Policy policy = storeFactory.getPolicyStore().create(resourceServer, policyRepresentation);
         PolicyProvider provider = authorization.getProvider(policy.getType());
@@ -443,15 +385,12 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
 
         Assert.assertEquals(Effect.PERMIT, evaluation.getEffect());
 
-        builder = new StringBuilder();
-
-        builder.append("var realm = $evaluation.getRealm();");
-        builder.append("if (realm.isGroupInRole('/Group A/Group D', 'role-b')) { $evaluation.grant(); }");
-
-        policyRepresentation.setCode(builder.toString());
-
-        policyRepresentation.setId(policy.getId());
-        policy = RepresentationToModel.toModel(policyRepresentation, authorization, policy);
+        policyRepresentation = new JSPolicyRepresentation();
+        policyRepresentation.setType("script-scripts/allow-child-group-in-role-policy.js");
+        policyRepresentation.setId(KeycloakModelUtils.generateId());
+        policyRepresentation.setName(policyRepresentation.getId());
+        policy = storeFactory.getPolicyStore().create(resourceServer, policyRepresentation);
+        provider = authorization.getProvider(policy.getType());
 
         evaluation = createEvaluation(session, authorization, resourceServer, policy);
 
@@ -474,13 +413,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
         JSPolicyRepresentation policyRepresentation = new JSPolicyRepresentation();
 
         policyRepresentation.setName("testCheckUserRealmRoles");
-        StringBuilder builder = new StringBuilder();
-
-        builder.append("var realm = $evaluation.getRealm();");
-        builder.append("var roles = realm.getUserRealmRoles('marta');");
-        builder.append("if (roles.size() == 2 && roles.contains('uma_authorization') && roles.contains('role-a')) { $evaluation.grant(); }");
-
-        policyRepresentation.setCode(builder.toString());
+        policyRepresentation.setType("script-scripts/allow-user-realm-roles-policy.js");
 
         Policy policy = storeFactory.getPolicyStore().create(resourceServer, policyRepresentation);
         PolicyProvider provider = authorization.getProvider(policy.getType());
@@ -506,13 +439,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
         JSPolicyRepresentation policyRepresentation = new JSPolicyRepresentation();
 
         policyRepresentation.setName("testCheckUserClientRoles");
-        StringBuilder builder = new StringBuilder();
-
-        builder.append("var realm = $evaluation.getRealm();");
-        builder.append("var roles = realm.getUserClientRoles('trinity', 'role-mapping-client');");
-        builder.append("if (roles.size() == 1 && roles.contains('client-role-a')) { $evaluation.grant(); }");
-
-        policyRepresentation.setCode(builder.toString());
+        policyRepresentation.setType("script-scripts/allow-user-client-roles-policy.js");
 
         Policy policy = storeFactory.getPolicyStore().create(resourceServer, policyRepresentation);
         PolicyProvider provider = authorization.getProvider(policy.getType());
@@ -538,13 +465,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
         JSPolicyRepresentation policyRepresentation = new JSPolicyRepresentation();
 
         policyRepresentation.setName("testCheckUserGroups");
-        StringBuilder builder = new StringBuilder();
-
-        builder.append("var realm = $evaluation.getRealm();");
-        builder.append("var groups = realm.getUserGroups('jdoe');");
-        builder.append("if (groups.size() == 2 && groups.contains('/Group A/Group B') && groups.contains('/Group A/Group D')) { $evaluation.grant(); }");
-
-        policyRepresentation.setCode(builder.toString());
+        policyRepresentation.setType("script-scripts/allow-user-from-groups-policy.js");
 
         Policy policy = storeFactory.getPolicyStore().create(resourceServer, policyRepresentation);
         PolicyProvider provider = authorization.getProvider(policy.getType());
@@ -576,13 +497,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
         JSPolicyRepresentation policyRepresentation = new JSPolicyRepresentation();
 
         policyRepresentation.setName("testCheckUserAttributes");
-        StringBuilder builder = new StringBuilder();
-
-        builder.append("var realm = $evaluation.getRealm();");
-        builder.append("var attributes = realm.getUserAttributes('jdoe');");
-        builder.append("if (attributes.size() == 6 && attributes.containsKey('a1') && attributes.containsKey('a2') && attributes.get('a1').size() == 2 && attributes.get('a2').get(0).equals('3')) { $evaluation.grant(); }");
-
-        policyRepresentation.setCode(builder.toString());
+        policyRepresentation.setType("script-scripts/allow-user-with-attributes.js");
 
         Policy policy = storeFactory.getPolicyStore().create(resourceServer, policyRepresentation);
         PolicyProvider provider = authorization.getProvider(policy.getType());
@@ -608,14 +523,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
         JSPolicyRepresentation policyRepresentation = new JSPolicyRepresentation();
 
         policyRepresentation.setName("testCheckResourceAttributes");
-        StringBuilder builder = new StringBuilder();
-
-        builder.append("var permission = $evaluation.getPermission();");
-        builder.append("var resource = permission.getResource();");
-        builder.append("var attributes = resource.getAttributes();");
-        builder.append("if (attributes.size() == 2 && attributes.containsKey('a1') && attributes.containsKey('a2') && attributes.get('a1').size() == 2 && attributes.get('a2').get(0).equals('3') && resource.getAttribute('a1').size() == 2 && resource.getSingleAttribute('a2').equals('3')) { $evaluation.grant(); }");
-
-        policyRepresentation.setCode(builder.toString());
+        policyRepresentation.setType("script-scripts/allow-resources-with-attributes.js");
 
         Policy policy = storeFactory.getPolicyStore().create(resourceServer, policyRepresentation);
         PolicyProvider provider = authorization.getProvider(policy.getType());
@@ -645,11 +553,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
         JSPolicyRepresentation policyRepresentation = new JSPolicyRepresentation();
 
         policyRepresentation.setName("testCheckReadOnlyInstances");
-        StringBuilder builder = new StringBuilder();
-
-        builder.append("$evaluation.getPermission().getResource().setName('test')");
-
-        policyRepresentation.setCode(builder.toString());
+        policyRepresentation.setType("script-scripts/check-readonly-context-policy.js");
 
         Policy policy = storeFactory.getPolicyStore().create(resourceServer, policyRepresentation);
 
@@ -695,7 +599,7 @@ public class PolicyEvaluationTest extends AbstractAuthzTest {
         JSPolicyRepresentation policy = new JSPolicyRepresentation();
 
         policy.setName(KeycloakModelUtils.generateId());
-        policy.setCode("$evaluation.grant()");
+        policy.setType("script-scripts/default-policy.js");
         policy.setLogic(Logic.NEGATIVE);
 
         storeFactory.getPolicyStore().create(resourceServer, policy);
