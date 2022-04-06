@@ -188,6 +188,7 @@ public class MapResourceStore implements ResourceStore {
             case EXACT_NAME:
                 return mcb.compare(SearchableFields.NAME, Operator.EQ, value[0]);
             case NAME:
+            case TYPE:
                 return mcb.compare(SearchableFields.NAME, Operator.ILIKE, "%" + value[0] + "%");
             default:
                 throw new IllegalArgumentException("Unsupported filter [" + name + "]");
