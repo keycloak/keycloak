@@ -16,12 +16,13 @@
  */
 package org.keycloak.models.map.storage.jpa.hibernate.jsonb;
 
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.keycloak.models.map.storage.jpa.authSession.entity.JpaAuthenticationSessionMetadata;
 import org.keycloak.models.map.storage.jpa.authSession.entity.JpaRootAuthenticationSessionMetadata;
 import org.keycloak.models.map.storage.jpa.client.entity.JpaClientMetadata;
@@ -35,6 +36,8 @@ import org.keycloak.models.map.storage.jpa.hibernate.jsonb.migration.JpaGroupMig
 import org.keycloak.models.map.storage.jpa.hibernate.jsonb.migration.JpaRealmMigration;
 import org.keycloak.models.map.storage.jpa.hibernate.jsonb.migration.JpaRoleMigration;
 import org.keycloak.models.map.storage.jpa.hibernate.jsonb.migration.JpaRootAuthenticationSessionMigration;
+import org.keycloak.models.map.storage.jpa.hibernate.jsonb.migration.JpaUserLoginFailureMigration;
+import org.keycloak.models.map.storage.jpa.loginFailure.entity.JpaUserLoginFailureMetadata;
 import org.keycloak.models.map.storage.jpa.realm.entity.JpaComponentMetadata;
 import org.keycloak.models.map.storage.jpa.realm.entity.JpaRealmMetadata;
 import org.keycloak.models.map.storage.jpa.role.entity.JpaRoleMetadata;
@@ -45,19 +48,21 @@ import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSI
 import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_GROUP;
 import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_REALM;
 import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_ROLE;
+import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_USER_LOGIN_FAILURE;
 
 public class JpaEntityMigration {
 
     static final Map<Class<?>, BiFunction<ObjectNode, Integer, ObjectNode>> MIGRATIONS = new HashMap<>();
     static {
-        MIGRATIONS.put(JpaAuthenticationSessionMetadata.class,      (tree, entityVersion) -> migrateTreeTo(entityVersion, CURRENT_SCHEMA_VERSION_AUTH_SESSION, tree, JpaAuthenticationSessionMigration.MIGRATORS));
-        MIGRATIONS.put(JpaRootAuthenticationSessionMetadata.class,  (tree, entityVersion) -> migrateTreeTo(entityVersion, CURRENT_SCHEMA_VERSION_AUTH_SESSION, tree, JpaRootAuthenticationSessionMigration.MIGRATORS));
-        MIGRATIONS.put(JpaClientMetadata.class,                     (tree, entityVersion) -> migrateTreeTo(entityVersion, CURRENT_SCHEMA_VERSION_CLIENT,       tree, JpaClientMigration.MIGRATORS));
-        MIGRATIONS.put(JpaClientScopeMetadata.class,                (tree, entityVersion) -> migrateTreeTo(entityVersion, CURRENT_SCHEMA_VERSION_CLIENT_SCOPE, tree, JpaClientScopeMigration.MIGRATORS));
-        MIGRATIONS.put(JpaComponentMetadata.class,                  (tree, entityVersion) -> migrateTreeTo(entityVersion, CURRENT_SCHEMA_VERSION_REALM,        tree, JpaComponentMigration.MIGRATORS));
-        MIGRATIONS.put(JpaGroupMetadata.class,                      (tree, entityVersion) -> migrateTreeTo(entityVersion, CURRENT_SCHEMA_VERSION_GROUP,        tree, JpaGroupMigration.MIGRATORS));
-        MIGRATIONS.put(JpaRealmMetadata.class,                      (tree, entityVersion) -> migrateTreeTo(entityVersion, CURRENT_SCHEMA_VERSION_REALM,        tree, JpaRealmMigration.MIGRATORS));
-        MIGRATIONS.put(JpaRoleMetadata.class,                       (tree, entityVersion) -> migrateTreeTo(entityVersion, CURRENT_SCHEMA_VERSION_ROLE,         tree, JpaRoleMigration.MIGRATORS));
+        MIGRATIONS.put(JpaAuthenticationSessionMetadata.class,      (tree, entityVersion) -> migrateTreeTo(entityVersion, CURRENT_SCHEMA_VERSION_AUTH_SESSION,      tree, JpaAuthenticationSessionMigration.MIGRATORS));
+        MIGRATIONS.put(JpaRootAuthenticationSessionMetadata.class,  (tree, entityVersion) -> migrateTreeTo(entityVersion, CURRENT_SCHEMA_VERSION_AUTH_SESSION,      tree, JpaRootAuthenticationSessionMigration.MIGRATORS));
+        MIGRATIONS.put(JpaClientMetadata.class,                     (tree, entityVersion) -> migrateTreeTo(entityVersion, CURRENT_SCHEMA_VERSION_CLIENT,            tree, JpaClientMigration.MIGRATORS));
+        MIGRATIONS.put(JpaClientScopeMetadata.class,                (tree, entityVersion) -> migrateTreeTo(entityVersion, CURRENT_SCHEMA_VERSION_CLIENT_SCOPE,      tree, JpaClientScopeMigration.MIGRATORS));
+        MIGRATIONS.put(JpaComponentMetadata.class,                  (tree, entityVersion) -> migrateTreeTo(entityVersion, CURRENT_SCHEMA_VERSION_REALM,             tree, JpaComponentMigration.MIGRATORS));
+        MIGRATIONS.put(JpaGroupMetadata.class,                      (tree, entityVersion) -> migrateTreeTo(entityVersion, CURRENT_SCHEMA_VERSION_GROUP,             tree, JpaGroupMigration.MIGRATORS));
+        MIGRATIONS.put(JpaRealmMetadata.class,                      (tree, entityVersion) -> migrateTreeTo(entityVersion, CURRENT_SCHEMA_VERSION_REALM,             tree, JpaRealmMigration.MIGRATORS));
+        MIGRATIONS.put(JpaRoleMetadata.class,                       (tree, entityVersion) -> migrateTreeTo(entityVersion, CURRENT_SCHEMA_VERSION_ROLE,              tree, JpaRoleMigration.MIGRATORS));
+        MIGRATIONS.put(JpaUserLoginFailureMetadata.class,           (tree, entityVersion) -> migrateTreeTo(entityVersion, CURRENT_SCHEMA_VERSION_USER_LOGIN_FAILURE,tree, JpaUserLoginFailureMigration.MIGRATORS));
     }
 
     private static ObjectNode migrateTreeTo(int entityVersion, Integer supportedVersion, ObjectNode node, List<Function<ObjectNode, ObjectNode>> migrators) {
