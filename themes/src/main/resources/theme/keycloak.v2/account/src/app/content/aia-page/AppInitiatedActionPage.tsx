@@ -23,12 +23,12 @@ import {Msg} from '../../widgets/Msg';
 
 import {
   Title,
-  TitleLevel,
   Button,
   EmptyState,
   EmptyStateVariant,
   EmptyStateIcon,
-  EmptyStateBody
+  EmptyStateBody,
+  TitleSizes
 } from '@patternfly/react-core';
 import { PassportIcon } from '@patternfly/react-icons';
 import { KeycloakService } from '../../keycloak-service/keycloak.service';
@@ -67,7 +67,7 @@ class ApplicationInitiatedActionPage extends React.Component<AppInitiatedActionP
         return (
             <EmptyState variant={EmptyStateVariant.full}>
                 <EmptyStateIcon icon={PassportIcon} />
-                <Title headingLevel={TitleLevel.h5} size="lg">
+                <Title headingLevel="h5" size={TitleSizes.lg}>
                   <Msg msgKey={this.props.pageDef.label} params={this.props.pageDef.labelParams}/>
                 </Title>
                 <EmptyStateBody>

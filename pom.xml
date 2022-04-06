@@ -149,7 +149,7 @@
         <mysql.version>8.0.23</mysql.version>
         <mysql.driver.version>8.0.23</mysql.driver.version>
         <postgresql.version>13.2</postgresql.version>
-        <postgresql.driver.version>42.2.18</postgresql.driver.version>
+        <postgresql.driver.version>42.3.3</postgresql.driver.version>
         <mariadb.version>10.3.27</mariadb.version>
         <mariadb.driver.version>2.7.2</mariadb.driver.version>
         <mssql.version>2019-CU10-ubuntu-20.04</mssql.version>
@@ -1397,7 +1397,7 @@
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-admin-ui</artifactId>
-                <version>999-SNAPSHOT</version>
+                <version>${project.version}</version>
             </dependency>
 
             <!-- Openshift -->

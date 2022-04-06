@@ -38,14 +38,14 @@
             for reference
         -->
         <resteasy.version>4.7.5.Final</resteasy.version>
-        <jackson.version>2.13.1</jackson.version>
-        <jackson.databind.version>${jackson.version}</jackson.databind.version>
+        <jackson.version>2.13.2</jackson.version>
+        <jackson.databind.version>2.13.2.2</jackson.databind.version>
         <hibernate.core.version>5.6.5.Final</hibernate.core.version>
         <mysql.driver.version>8.0.28</mysql.driver.version>
         <postgresql.version>42.3.3</postgresql.version>
         <microprofile-metrics-api.version>3.0.1</microprofile-metrics-api.version>
         <wildfly.common.version>1.5.4.Final-format-001</wildfly.common.version>
-        <infinispan.version>13.0.6.Final</infinispan.version>
+        <infinispan.version>13.0.8.Final</infinispan.version>
 
         <!--
             Java EE dependencies. Not available from JDK 11+.

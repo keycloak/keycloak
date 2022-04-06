@@ -56,14 +56,21 @@ public class AdminClientUtil {
     public static final int NUMBER_OF_CONNECTIONS = 10;
 
     public static Keycloak createAdminClient(boolean ignoreUnknownProperties, String authServerContextRoot) throws Exception {
-        return createAdminClient(ignoreUnknownProperties, authServerContextRoot, MASTER, ADMIN, ADMIN, Constants.ADMIN_CLI_CLIENT_ID, null);
+        return createAdminClient(ignoreUnknownProperties, authServerContextRoot, MASTER, ADMIN, ADMIN,
+            Constants.ADMIN_CLI_CLIENT_ID, null, null);
 
     }
-    public static Keycloak createAdminClient(boolean ignoreUnknownProperties, String realmName, String username, String password, String clientId, String clientSecret) throws CertificateException, NoSuchAlgorithmException, KeyStoreException, IOException, KeyManagementException {
-        return createAdminClient(ignoreUnknownProperties, getAuthServerContextRoot(), realmName, username, password, clientId, clientSecret);
+
+    public static Keycloak createAdminClient(boolean ignoreUnknownProperties, String realmName, String username,
+        String password, String clientId, String clientSecret) throws CertificateException, NoSuchAlgorithmException, KeyStoreException, IOException, KeyManagementException {
+        return createAdminClient(ignoreUnknownProperties, getAuthServerContextRoot(), realmName, username, password,
+            clientId, clientSecret, null);
     }
 
-    public static Keycloak createAdminClient(boolean ignoreUnknownProperties, String authServerContextRoot, String realmName, String username, String password, String clientId, String clientSecret) throws CertificateException, NoSuchAlgorithmException, KeyStoreException, IOException, KeyManagementException {
+    public static Keycloak createAdminClient(boolean ignoreUnknownProperties, String authServerContextRoot, String realmName,
+        String username, String password, String clientId, String clientSecret, String scope)
+        throws CertificateException, NoSuchAlgorithmException, KeyStoreException, IOException, KeyManagementException {
+
         ResteasyClient resteasyClient = createResteasyClient(ignoreUnknownProperties, null);
 
         return KeycloakBuilder.builder()
@@ -73,10 +80,13 @@ public class AdminClientUtil {
                 .password(password)
                 .clientId(clientId)
                 .clientSecret(clientSecret)
-                .resteasyClient(resteasyClient).build();
+                .resteasyClient(resteasyClient)
+                .scope(scope).build();
     }
 
-    public static Keycloak createAdminClientWithClientCredentials(String realmName, String clientId, String clientSecret) throws CertificateException, NoSuchAlgorithmException, KeyStoreException, IOException, KeyManagementException {
+    public static Keycloak createAdminClientWithClientCredentials(String realmName, String clientId, String clientSecret, String scope)
+        throws CertificateException, NoSuchAlgorithmException, KeyStoreException, IOException, KeyManagementException {
+
         boolean ignoreUnknownProperties = false;
         ResteasyClient resteasyClient = createResteasyClient(ignoreUnknownProperties, null);
 
@@ -86,7 +96,8 @@ public class AdminClientUtil {
                 .grantType(OAuth2Constants.CLIENT_CREDENTIALS)
                 .clientId(clientId)
                 .clientSecret(clientSecret)
-                .resteasyClient(resteasyClient).build();
+                .resteasyClient(resteasyClient)
+                .scope(scope).build();
     }
 
     public static Keycloak createAdminClient() throws Exception {
