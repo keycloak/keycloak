@@ -126,7 +126,7 @@ public interface PolicyStore {
     default List<Policy> findByResourceType(ResourceServer resourceServer, String resourceType) {
         List<Policy> result = new LinkedList<>();
 
-        findByResourceType((ResourceServer) null, resourceType, result::add);
+        findByResourceType(resourceServer, resourceType, result::add);
 
         return result;
     }
