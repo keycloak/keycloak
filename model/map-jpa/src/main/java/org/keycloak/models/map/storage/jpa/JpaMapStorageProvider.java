@@ -17,7 +17,10 @@
 package org.keycloak.models.map.storage.jpa;
 
 import javax.persistence.EntityManager;
+
+import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
@@ -25,6 +28,8 @@ import org.keycloak.models.map.storage.MapStorageProvider;
 import org.keycloak.models.map.storage.MapStorageProviderFactory.Flag;
 
 public class JpaMapStorageProvider implements MapStorageProvider {
+
+    private static final Logger logger = Logger.getLogger(JpaMapStorageProvider.class);
 
     private final String SESSION_TX_PREFIX = "jpa-map-tx-";
 
@@ -46,6 +51,9 @@ public class JpaMapStorageProvider implements MapStorageProvider {
     @Override
     @SuppressWarnings("unchecked")
     public <V extends AbstractEntity, M> MapStorage<V, M> getStorage(Class<M> modelType, Flag... flags) {
+        if (modelType == UserLoginFailureModel.class) {
+            logger.warn("Enabling JPA storage for user login failures will result in testsuite failures until GHI #11230 is resolved");
+        }
         factory.validateAndUpdateSchema(session, modelType);
         return new MapStorage<V, M>() {
             @Override

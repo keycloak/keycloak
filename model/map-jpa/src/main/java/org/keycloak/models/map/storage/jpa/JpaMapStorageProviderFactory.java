@@ -56,6 +56,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.dblock.DBLockProvider;
 import org.keycloak.models.map.client.MapProtocolMapperEntity;
 import org.keycloak.models.map.client.MapProtocolMapperEntityImpl;
@@ -94,6 +95,8 @@ import org.keycloak.models.map.storage.jpa.group.JpaGroupMapKeycloakTransaction;
 import org.keycloak.models.map.storage.jpa.group.entity.JpaGroupEntity;
 import org.keycloak.models.map.storage.jpa.hibernate.listeners.JpaEntityVersionListener;
 import org.keycloak.models.map.storage.jpa.hibernate.listeners.JpaOptimisticLockingListener;
+import org.keycloak.models.map.storage.jpa.loginFailure.JpaUserLoginFailureMapKeycloakTransaction;
+import org.keycloak.models.map.storage.jpa.loginFailure.entity.JpaUserLoginFailureEntity;
 import org.keycloak.models.map.storage.jpa.realm.JpaRealmMapKeycloakTransaction;
 import org.keycloak.models.map.storage.jpa.realm.entity.JpaComponentEntity;
 import org.keycloak.models.map.storage.jpa.realm.entity.JpaRealmEntity;
@@ -129,7 +132,7 @@ public class JpaMapStorageProviderFactory implements
         .constructor(JpaClientScopeEntity.class,                JpaClientScopeEntity::new)
         //group
         .constructor(JpaGroupEntity.class,                      JpaGroupEntity::new)
-        // realm
+        //realm
         .constructor(JpaRealmEntity.class,                      JpaRealmEntity::new)
         .constructor(JpaComponentEntity.class,                  JpaComponentEntity::new)
         .constructor(MapAuthenticationExecutionEntity.class,    MapAuthenticationExecutionEntityImpl::new)
@@ -144,6 +147,8 @@ public class JpaMapStorageProviderFactory implements
         .constructor(MapWebAuthnPolicyEntity.class,             MapWebAuthnPolicyEntityImpl::new)
         //role
         .constructor(JpaRoleEntity.class,                       JpaRoleEntity::new)
+        //user login-failure
+        .constructor(JpaUserLoginFailureEntity.class,           JpaUserLoginFailureEntity::new)
         .build();
 
     private static final Map<Class<?>, Function<EntityManager, MapKeycloakTransaction>> MODEL_TO_TX = new HashMap<>();
@@ -154,6 +159,7 @@ public class JpaMapStorageProviderFactory implements
         MODEL_TO_TX.put(GroupModel.class,                       JpaGroupMapKeycloakTransaction::new);
         MODEL_TO_TX.put(RealmModel.class,                       JpaRealmMapKeycloakTransaction::new);
         MODEL_TO_TX.put(RoleModel.class,                        JpaRoleMapKeycloakTransaction::new);
+        MODEL_TO_TX.put(UserLoginFailureModel.class,            JpaUserLoginFailureMapKeycloakTransaction::new);
     }
 
     public MapKeycloakTransaction createTransaction(Class<?> modelType, EntityManager em) {
