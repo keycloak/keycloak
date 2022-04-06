@@ -18,8 +18,10 @@
 package org.keycloak.it.cli.dist;
 
 import static io.restassured.RestAssured.when;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import org.junit.Assert;
+import io.quarkus.test.junit.main.LaunchResult;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.keycloak.it.cli.dist.util.CopyTLSKeystore;
@@ -104,10 +106,17 @@ public class HostnameDistTest {
     @Test
     @Launch({ "start-dev", "--hostname=mykeycloak.127.0.0.1.nip.io", "--hostname-strict-https=true", "--hostname-port=8543" })
     public void testWelcomePageAdminUrl() {
-        Assert.assertTrue(when().get("http://mykeycloak.127.0.0.1.nip.io:8080").asString().contains("http://mykeycloak.127.0.0.1.nip.io:8080/admin/"));
-        Assert.assertTrue(when().get("https://mykeycloak.127.0.0.1.nip.io:8443").asString().contains("https://mykeycloak.127.0.0.1.nip.io:8443/admin/"));
-        Assert.assertTrue(when().get("http://localhost:8080").asString().contains("http://localhost:8080/admin/"));
-        Assert.assertTrue(when().get("https://localhost:8443").asString().contains("https://localhost:8443/admin/"));
+        assertTrue(when().get("http://mykeycloak.127.0.0.1.nip.io:8080").asString().contains("http://mykeycloak.127.0.0.1.nip.io:8080/admin/"));
+        assertTrue(when().get("https://mykeycloak.127.0.0.1.nip.io:8443").asString().contains("https://mykeycloak.127.0.0.1.nip.io:8443/admin/"));
+        assertTrue(when().get("http://localhost:8080").asString().contains("http://localhost:8080/admin/"));
+        assertTrue(when().get("https://localhost:8443").asString().contains("https://localhost:8443/admin/"));
+    }
+
+    @Test
+    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--hostname=LOCALHOST" })
+    void testHostnameGetsLoweredAndAppliedIfValid(LaunchResult result) {
+        assertTrue(result.getOutput().contains("Hostname settings: FrontEnd: localhost,"),
+                () -> "The Output:\n" + result.getOutput() + "doesn't contains the expected string. ");
     }
 
     private OIDCConfigurationRepresentation getServerMetadata(String baseUrl) {
@@ -115,12 +124,12 @@ public class HostnameDistTest {
     }
 
     private void assertFrontEndUrl(String requestBaseUrl, String expectedBaseUrl) {
-        Assert.assertEquals(expectedBaseUrl + "realms/master/protocol/openid-connect/auth", getServerMetadata(requestBaseUrl)
+        assertEquals(expectedBaseUrl + "realms/master/protocol/openid-connect/auth", getServerMetadata(requestBaseUrl)
                 .getAuthorizationEndpoint());
     }
 
     private void assertBackEndUrl(String requestBaseUrl, String expectedBaseUrl) {
-        Assert.assertEquals(expectedBaseUrl + "realms/master/protocol/openid-connect/token", getServerMetadata(requestBaseUrl)
+        assertEquals(expectedBaseUrl + "realms/master/protocol/openid-connect/token", getServerMetadata(requestBaseUrl)
                 .getTokenEndpoint());
     }
 }

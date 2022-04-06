@@ -1,6 +1,14 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
 
+import com.google.common.net.InternetDomainName;
+import io.smallrye.config.ConfigSourceInterceptorContext;
+import org.keycloak.quarkus.runtime.Messages;
+
+import java.util.Locale;
+
+import static org.keycloak.quarkus.runtime.integration.QuarkusPlatform.addInitializationException;
+
 final class HostnamePropertyMappers {
 
     private HostnamePropertyMappers(){}
@@ -11,6 +19,7 @@ final class HostnamePropertyMappers {
                         .to("kc.spi-hostname-default-hostname")
                         .description("Hostname for the Keycloak server.")
                         .paramLabel("hostname")
+                        .transformer(HostnamePropertyMappers::getValidatedLowercaseHostname)
                         .build(),
                 builder().from("hostname-strict")
                         .to("kc.spi-hostname-default-strict")
@@ -42,6 +51,17 @@ final class HostnamePropertyMappers {
                         .paramLabel("port")
                         .build()
         };
+    }
+
+    private static String getValidatedLowercaseHostname(String value, ConfigSourceInterceptorContext configSourceInterceptorContext) {
+
+        String hostnameVal = value.toLowerCase(Locale.ENGLISH);
+
+        if (!InternetDomainName.isValid(hostnameVal)) {
+            addInitializationException(Messages.hostnameNotValid(hostnameVal));
+        }
+
+        return hostnameVal;
     }
 
     private static PropertyMapper.Builder builder() {
