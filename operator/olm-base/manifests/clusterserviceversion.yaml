@@ -53,6 +53,11 @@ spec:
         kind: Keycloak
         name: keycloaks.keycloak.org
         version: v2alpha1
+      - description: "Deprecated - Represents a Keycloak Instance"
+        displayName: "Deprecated - Keycloak"
+        kind: Keycloak
+        name: keycloaks.keycloak.org
+        version: v1alpha1
       - description: "Represents a Keycloak Realm Import"
         displayName: "KeycloakRealmImport"
         kind: KeycloakRealmImport

@@ -181,7 +181,7 @@ jobs:
       - name: Prepare resources for testing on OLM
         working-directory: operator
         run: |
-          ./scripts/prepare-olm-test.sh ${{ secrets.TEST_DOCKER_REGISTRY }}/${{ secrets.TEST_DOCKER_REPOSITORY }} ${{ steps.vars.outputs.version }} 0.0.1
+          ./scripts/prepare-olm-test.sh ${{ secrets.TEST_DOCKER_REGISTRY }}/${{ secrets.TEST_DOCKER_REPOSITORY }} ${{ steps.vars.outputs.version }} NONE
 
       - name: Install the operator with OLM
         working-directory: operator

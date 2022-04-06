@@ -7,24 +7,34 @@ OPERATOR_DOCKER_IMAGE=$3
 
 CREATED_AT=$(date "+%D %T")
 
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
 echo "Creating OLM bundle for version $VERSION replacing version $REPLACES_VERSION"
 
-rm -rf olm/$VERSION
-mkdir -p olm/$VERSION
+rm -rf $SCRIPT_DIR/../olm/$VERSION
+mkdir -p $SCRIPT_DIR/../olm/$VERSION
 
-cp -r olm-base/* olm/$VERSION
+cp -r $SCRIPT_DIR/../olm-base/* $SCRIPT_DIR/../olm/$VERSION
 
 # Inject RBAC rules
-yq ea '.rules as $item ireduce ({}; .rules += $item)' target/kubernetes/kubernetes.yml | \
-  yq ea -i 'select(fileIndex==0).spec.install.spec.permissions[0] = select(fileIndex==1) | select(fileIndex==0)' olm/$VERSION/manifests/clusterserviceversion.yaml - && \
-yq ea -i '.spec.install.spec.permissions[0].serviceAccountName = "keycloak-operator"' olm/$VERSION/manifests/clusterserviceversion.yaml && \
-yq ea -i ".metadata.annotations.containerImage = \"$OPERATOR_DOCKER_IMAGE:$VERSION\"" olm/$VERSION/manifests/clusterserviceversion.yaml && \
-yq ea -i ".metadata.annotations.createdAt = \"$CREATED_AT\"" olm/$VERSION/manifests/clusterserviceversion.yaml && \
-yq ea -i ".metadata.name = \"keycloak-operator.v$VERSION\"" olm/$VERSION/manifests/clusterserviceversion.yaml && \
-yq ea -i ".spec.install.spec.deployments[0].spec.template.spec.containers[0].image = \"$OPERATOR_DOCKER_IMAGE:$VERSION\"" olm/$VERSION/manifests/clusterserviceversion.yaml && \
-yq ea -i ".spec.replaces = \"keycloak-operator.v$REPLACES_VERSION\"" olm/$VERSION/manifests/clusterserviceversion.yaml && \
-yq ea -i ".spec.version = \"$VERSION\"" olm/$VERSION/manifests/clusterserviceversion.yaml
+yq ea '.rules as $item ireduce ({}; .rules += $item)' $SCRIPT_DIR/../target/kubernetes/kubernetes.yml | \
+  yq ea -i 'select(fileIndex==0).spec.install.spec.permissions[0] = select(fileIndex==1) | select(fileIndex==0)' $SCRIPT_DIR/../olm/$VERSION/manifests/clusterserviceversion.yaml - && \
+yq ea -i '.spec.install.spec.permissions[0].serviceAccountName = "keycloak-operator"' $SCRIPT_DIR/../olm/$VERSION/manifests/clusterserviceversion.yaml && \
+yq ea -i ".metadata.annotations.containerImage = \"$OPERATOR_DOCKER_IMAGE:$VERSION\"" $SCRIPT_DIR/../olm/$VERSION/manifests/clusterserviceversion.yaml && \
+yq ea -i ".metadata.annotations.createdAt = \"$CREATED_AT\"" $SCRIPT_DIR/../olm/$VERSION/manifests/clusterserviceversion.yaml && \
+yq ea -i ".metadata.name = \"keycloak-operator.v$VERSION\"" $SCRIPT_DIR/../olm/$VERSION/manifests/clusterserviceversion.yaml && \
+yq ea -i ".spec.install.spec.deployments[0].spec.template.spec.containers[0].image = \"$OPERATOR_DOCKER_IMAGE:$VERSION\"" $SCRIPT_DIR/../olm/$VERSION/manifests/clusterserviceversion.yaml && \
+yq ea -i ".spec.version = \"$VERSION\"" $SCRIPT_DIR/../olm/$VERSION/manifests/clusterserviceversion.yaml
 
-mv olm/$VERSION/manifests/clusterserviceversion.yaml "olm/$VERSION/manifests/keycloak-operator.v$VERSION.clusterserviceversion.yaml"
+if [[ $REPLACES_VERSION = "NONE" ]]
+then
+  yq ea -i "del(.spec.replaces)" $SCRIPT_DIR/../olm/$VERSION/manifests/clusterserviceversion.yaml
+else
+  yq ea -i ".spec.replaces = \"keycloak-operator.v$REPLACES_VERSION\"" $SCRIPT_DIR/../olm/$VERSION/manifests/clusterserviceversion.yaml
+fi
 
-cp target/kubernetes/*.keycloak.org-v1.yml olm/$VERSION/manifests
+mv $SCRIPT_DIR/../olm/$VERSION/manifests/clusterserviceversion.yaml "$SCRIPT_DIR/../olm/$VERSION/manifests/keycloak-operator.v$VERSION.clusterserviceversion.yaml"
+
+# Include the old CRD version
+( cd $SCRIPT_DIR/../ && kubectl kustomize target | yq ea "select(.metadata.name == \"keycloaks.keycloak.org\")" > $SCRIPT_DIR/../olm/$VERSION/manifests/keycloaks.keycloak.org-v1.yml )
+cp $SCRIPT_DIR/../target/kubernetes/keycloakrealmimports.keycloak.org-v1.yml $SCRIPT_DIR/../olm/$VERSION/manifests
