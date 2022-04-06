@@ -133,7 +133,7 @@ public class HotRodRealmEntity extends AbstractHotRodEntity {
     @ProtoField(number = 29)
     public Integer clientSessionMaxLifespan;
     @ProtoField(number = 30)
-    public Integer notBefore;
+    public Long notBefore;
     @ProtoField(number = 31)
     public Integer offlineSessionIdleTimeout;
     @ProtoField(number = 32)

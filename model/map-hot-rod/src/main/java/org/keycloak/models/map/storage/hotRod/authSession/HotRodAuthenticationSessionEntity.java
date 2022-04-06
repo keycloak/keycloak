@@ -49,7 +49,7 @@ public class HotRodAuthenticationSessionEntity extends AbstractHotRodEntity {
     public String authUserId;
 
     @ProtoField(number = 4)
-    public Integer timestamp;
+    public Long timestamp;
 
     @ProtoField(number = 5)
     public String redirectUri;

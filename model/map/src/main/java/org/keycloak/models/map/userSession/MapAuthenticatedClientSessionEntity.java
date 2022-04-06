@@ -32,7 +32,7 @@ import java.util.Map;
 @DeepCloner.Root
 public interface MapAuthenticatedClientSessionEntity extends AbstractEntity, UpdatableEntity {
 
-    public abstract class AbstractAuthenticatedClientSessionEntity extends UpdatableEntity.Impl implements MapAuthenticatedClientSessionEntity {
+    abstract class AbstractAuthenticatedClientSessionEntity extends UpdatableEntity.Impl implements MapAuthenticatedClientSessionEntity {
 
         private String id;
 
@@ -64,8 +64,8 @@ public interface MapAuthenticatedClientSessionEntity extends AbstractEntity, Upd
     String getRedirectUri();
     void setRedirectUri(String redirectUri);
 
-    Integer getTimestamp();
-    void setTimestamp(Integer timestamp);
+    Long getTimestamp();
+    void setTimestamp(Long timestamp);
 
     Long getExpiration();
     void setExpiration(Long expiration);

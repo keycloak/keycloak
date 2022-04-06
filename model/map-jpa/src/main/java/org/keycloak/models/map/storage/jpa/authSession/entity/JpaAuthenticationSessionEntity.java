@@ -153,12 +153,12 @@ public class JpaAuthenticationSessionEntity extends UpdatableEntity.Impl impleme
     }
 
     @Override
-    public Integer getTimestamp() {
+    public Long getTimestamp() {
         return metadata.getTimestamp();
     }
 
     @Override
-    public void setTimestamp(Integer timestamp) {
+    public void setTimestamp(Long timestamp) {
         metadata.setTimestamp(timestamp);
     }
 
