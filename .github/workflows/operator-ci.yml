@@ -190,8 +190,8 @@ jobs:
       - name: Deploy an example Keycloak and wait for it to be ready
         working-directory: operator
         run: |
-          ./scripts/check-crds-installed.sh
           kubectl apply -f src/main/resources/example-postgres.yaml
+          ./scripts/check-crds-installed.sh
           kubectl apply -f src/main/resources/example-keycloak.yml
           kubectl apply -f src/main/resources/example-realm.yaml
           # Wait for the CRs to be ready
