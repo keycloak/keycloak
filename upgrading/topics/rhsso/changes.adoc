@@ -1,7 +1,9 @@
-[[_release_changes]]
-== Changes
+[id="release_changes"]
+
+== Release-specific changes
 
 Review these changes carefully before upgrading.
+
 
 include::changes-75.adoc[leveloffset=1]
 include::changes-74.adoc[leveloffset=1]

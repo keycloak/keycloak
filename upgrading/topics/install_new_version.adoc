@@ -2,20 +2,28 @@
 
 == Upgrading the {project_name} server
 
+Follow these guidelines to be sure the server upgrade is successful:
+
+* Test the upgrade in a non-production environment first to prevent any installation issues in production,
+* Upgrade the {project_name} server before upgrading the adapters. Also ensure the upgraded server is functional in production before upgrading adapters.
+
 [WARNING]
 ====
-The steps covered in this section are the default upgrade procedure, and may not always be possible due to manual changes required to the configuration guide.
-
-Please refer to the migration changes for details on the version you are upgrading to.
+This upgrade procedure may require modification due to manual changes that are specific to your installation. For details on manual changes that might affect the upgrade, see xref:release_changes[Release-specific changes].
 ====
 
-It is important that you upgrade {project_name} server before upgrading the adapters.
+ifeval::[{project_product}==true]
+Upgrade the server from a xref:upgrade-zip[ZIP file] or an xref:rpm-upgrade[RPM] based on the method you had used for installation.
+
+[id="upgrade-zip"]
+=== Upgrading the server from a ZIP file
+endif::[]
 
 .Prerequisites
 * Handle any open transactions and delete the data/tx-object-store/ transaction directory.
 
 .Procedure
-. Download the new server archive
+. Download the new server archive.
 . Move the downloaded archive to the desired location.
 . Extract the archive. This step installs a clean instance of the latest {project_name} release.
 . For standalone installations, copy the `{project_dirref}/standalone/` directory from the previous installation over the
@@ -30,32 +38,19 @@ NOTE:
 Files in the bin directory should not be overwritten by the files from previous versions. Changes should be made manually.
 
 . Copy any custom modules that have been added to the modules directory.
-. Run the applicable upgrade script below.
-
-[id="upgrade-script"]
-== Run the server upgrade script
-
-Based on your previous installation, run the appropriate upgrade script that applies to your situation:
-
-ifeval::[{project_product}==true]
-* xref:rpm-upgrade[RPM distribution]
-endif::[]
-* xref:standalone-mode[Standalone mode]
-* xref:standalone-ha[Standalone high availability mode]
-* xref:domain-mode[Domain mode]
-* xref:domain-clustered[Domain-clustered mode]
+. Continue with the section, xref:upgrade-script[Running the server upgrade script].
 
 ifeval::[{project_product}==true]
 
 [id="rpm-upgrade"]
-=== Run the RPM distribution script
+=== Upgrading the server from an RPM
 
 .Prerequisites
 * Handle any open transactions and delete the /var/opt/rh/rh-sso7/lib/keycloak/standalone/data/tx-object-store/ transaction directory.
 
 .Procedure
 
-. Make sure you have subscribed to the proper repositories containing JBOSS EAP and {project_name}.
+. Subscribe to the proper repositories containing JBOSS EAP and {project_name}.
 +
 For Red Hat Enterprise Linux 7:
 +
@@ -65,22 +60,43 @@ For Red Hat Enterprise Linux 8:
 +
  subscription-manager repos --enable=rh-sso-7.5-for-rhel-8-x86_64-rpms
 +
-[NOTE]
-====
-To disable older product repositories for both JBOSS EAP and {project_name} use:
 
- subscription-manager repos --disable=<OLDER_PRODUCT_REPO>
+. Disable older product repositories for both JBOSS EAP and {project_name}:
 
-To check the repositories use:
+ subscription-manager repos --disable=jb-eap-7.3-for-rhel-8-x86_64-rpms
+ subscription-manager repos --disable=rh-sso-7.4-for-rhel-8-x86_64-rpms
 
- yum repolist
-====
-. The RPM upgrade process will not replace any of your modified configuration files, and will instead create .rpmnew files for the default configuration of the new {project_name} version.
+. Check the list of repositories:
+
+ dnf repolist
+
+ Updating Subscription Management repositories.
+ repo id repo name
+ rh-sso-7.5-for-rhel-8-x86_64-rpms Single Sign-On 7.5 for RHEL 8 x86_64 (RPMs)
+ rhel-8-for-x86_64-appstream-rpms Red Hat Enterprise Linux 8 for x86_64 - AppStream (RPMs)
+ rhel-8-for-x86_64-baseos-rpms Red Hat Enterprise Linux 8 for x86_64 - BaseOS (RPMs)
+
+. Back up any modified configuration files and custom modules.
+
+. Remove packages for RH-SSO 7.4.
 +
-To activate any new features in the new release, such as new subsystems, you must manually merge each .rpmnew file into your existing configuration files
+Normally the old packages are removed by `dnf upgrade`. However, the RH-SSO 7.5 packages use a format that conflicts with files handled by the JBoss EAP 7.3 package. Therefore, the RH-SSO 7.4 and JBoss EAP 7.3 packages must be removed.
 +
+ dnf remove --exclude java-1.8.0-openjdk rh-sso7-keycloak
++
+Removing of java-1.8.0-openjdk is unnecessary, but this step saves the additional download of the same set of related packages later in the procedure.
+
+. Install the new version of RH-SSO.
++
+ dnf groupinstall rh-sso7
++
+ dnf install rh-sso7-keycloak-15.0.2-3.redhat_00002.1.el8sso rh-sso7-keycloak-server-15.0.2-3.redhat_00002.1.el8sso
+
+. To activate any new features in the new release, such as new subsystems, you must manually merge each backup configuration file into your existing configuration files.
+
 . Copy any custom modules that have been added to the modules directory.
-. Run the applicable upgrade script as described below.
+
+. Continue with the section, xref:upgrade-script[Running the server upgrade script].
 +
 [NOTE]
 ====
@@ -90,7 +106,18 @@ To activate any new features in the new release, such as new subsystems, you mus
 
 Use it when calling migration scripts below.
 ====
+
 endif::[]
+
+[id="upgrade-script"]
+== Running the server upgrade script
+
+Based on your previous installation, run the appropriate upgrade script that applies to your situation:
+
+* xref:standalone-mode[Standalone mode]
+* xref:standalone-ha[Standalone high availability mode]
+* xref:domain-mode[Domain mode]
+* xref:domain-clustered[Domain-clustered mode]
 
 [id="standalone-mode"]
 === Running the Standalone Mode upgrade script
