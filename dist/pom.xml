@@ -9,29 +9,27 @@
         <relativePath>../</relativePath>
     </parent>
 
-    <name>Release Notes</name>
-    <artifactId>release-notes</artifactId>
+    <name>Keycloak Documentation dist</name>
+    <artifactId>keycloak-documentation</artifactId>
     <packaging>pom</packaging>
 
     <build>
         <plugins>
             <plugin>
-                <groupId>org.asciidoctor</groupId>
-                <artifactId>asciidoctor-maven-plugin</artifactId>
+                <artifactId>maven-assembly-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>asciidoc-to-html</id>
+                        <id>assemble</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
                         <configuration>
-                            <sourceDirectory>${basedir}</sourceDirectory>
+                            <descriptors>
+                                <descriptor>assembly.xml</descriptor>
+                            </descriptors>
+                            <appendAssemblyId>false</appendAssemblyId>
                         </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <artifactId>maven-antrun-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>echo-output</id>
                     </execution>
                 </executions>
             </plugin>

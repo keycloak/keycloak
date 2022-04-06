@@ -5,7 +5,7 @@
     <name>Keycloak Documentation Parent</name>
     <groupId>org.keycloak.documentation</groupId>
     <artifactId>documentation-parent</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>999-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <properties>
@@ -40,6 +40,7 @@
         <module>release_notes</module>
         <module>upgrading</module>
         <module>aggregation</module>
+        <module>dist</module>
   </modules>
 
     <profiles>
@@ -138,7 +139,7 @@
                 <plugin>
                     <groupId>org.keycloak.documentation</groupId>
                     <artifactId>header-maven-plugin</artifactId>
-                    <version>1.0.0-SNAPSHOT</version>
+                    <version>999-SNAPSHOT</version>
                     <executions>
                         <execution>
                             <id>add-file-headers</id>
@@ -218,22 +219,6 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-assembly-plugin</artifactId>
                     <version>${version.plugin.assembly}</version>
-                    <executions>
-                        <execution>
-                            <id>asciidoc-html-zip</id>
-                            <phase>package</phase>
-                            <goals>
-                                <goal>single</goal>
-                            </goals>
-                            <configuration>
-                                <appendAssemblyId>false</appendAssemblyId>
-                                <attach>true</attach>
-                                <descriptors>
-                                    <descriptor>../assembly.xml</descriptor>
-                                </descriptors>
-                            </configuration>
-                        </execution>
-                    </executions>
                 </plugin>
             </plugins>
         </pluginManagement>
