@@ -28,7 +28,7 @@ For development on this project you will need a running Keycloak server listenin
 
 1. Go to the clients section of the existing Keycloak Admin Console and add the client
     * like this:
-    ![realm settings](./realm-settings.png "Realm Settings")
+    ![realm settings](images/realm-settings.png "Realm Settings")
     * or click on the "Select file" button and import `security-admin-console-v2.json`
     * or run `$> ./import.mjs`
 
@@ -103,7 +103,7 @@ npx cypress open
 
 After a moment, the Cypress Test Runner will launch:
 
- ![image](https://drive.google.com/uc?export=view&id=1i4_VABpM29VwrrAcvEY31w7EuymifcwV)
+ ![test_runner](images/cypress-test-runner.png)
 
 ### via terminal
 
