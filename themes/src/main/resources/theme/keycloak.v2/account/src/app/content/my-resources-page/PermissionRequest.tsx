@@ -27,7 +27,8 @@ import {
     DataListCell,
     Chip,
     Split,
-    SplitItem
+    SplitItem,
+    ModalVariant
 } from '@patternfly/react-core';
 import { UserCheckIcon } from '@patternfly/react-icons';
 
@@ -35,7 +36,7 @@ import { HttpResponse } from '../../account-service/account.service';
 import { AccountServiceContext } from '../../account-service/AccountServiceContext';
 import { Msg } from '../../widgets/Msg';
 import { ContentAlert } from '../ContentAlert';
-import { Resource, Scope, Permission } from './resource-model';
+import { Resource, Scope, Permission, Permissions } from './resource-model';
 
 
 interface PermissionRequestProps {
@@ -48,7 +49,7 @@ interface PermissionRequestState {
 }
 
 export class PermissionRequest extends React.Component<PermissionRequestProps, PermissionRequestState> {
-    protected static defaultProps = { permissions: [], row: 0 };
+    protected static defaultProps:Permissions = { permissions: [], row: 0 };
     static contextType = AccountServiceContext;
     context: React.ContextType<typeof AccountServiceContext>;
 
@@ -107,7 +108,7 @@ export class PermissionRequest extends React.Component<PermissionRequestProps, P
                 <Modal
                     id={`modal-${id}`}
                     title={Msg.localize('permissionRequests') + ' - ' + this.props.resource.name}
-                    isLarge={true}
+                    variant={ModalVariant.large}
                     isOpen={this.state.isOpen}
                     onClose={this.handleToggleDialog}
                     actions={[
@@ -146,7 +147,7 @@ export class PermissionRequest extends React.Component<PermissionRequestProps, P
                                                 {(shareRequest.scopes as Scope[]).map((scope, j) => <Chip key={j} isReadOnly>{scope}</Chip>)}
                                             </DataListCell>,
                                             <DataListCell key={`actions${i}`}>
-                                                <Split gutter="sm">
+                                                <Split hasGutter>
                                                     <SplitItem>
                                                         <Button
                                                             id={`accept-${i}-${id}`}

@@ -48,7 +48,7 @@
     <form action="${url.loginAction}" class="${properties.kcFormClass!}" id="kc-recovery-codes-settings-form" method="post">
         <input type="hidden" name="generatedRecoveryAuthnCodes" value="${recoveryAuthnCodesConfigBean.generatedRecoveryAuthnCodesAsString}" />
         <input type="hidden" name="generatedAt" value="${recoveryAuthnCodesConfigBean.generatedAt?c}" />
-        <input type="hidden" name="userLabel" value=" " />
+        <input type="hidden" id="userLabel" name="userLabel" value="${msg("recovery-codes-label-default")}" />
 
         <#if isAppInitiatedAction??>
             <input type="submit"
