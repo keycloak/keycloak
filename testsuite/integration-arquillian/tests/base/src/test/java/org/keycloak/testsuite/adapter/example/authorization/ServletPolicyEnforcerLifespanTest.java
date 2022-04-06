@@ -16,8 +16,6 @@
  */
 package org.keycloak.testsuite.adapter.example.authorization;
 
-import static org.keycloak.common.Profile.Feature.UPLOAD_SCRIPTS;
-
 import java.io.File;
 
 import org.jboss.arquillian.container.test.api.Deployment;
@@ -37,7 +35,6 @@ import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP71)
 @AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT8)
 @AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT9)
-@EnableFeature(value = UPLOAD_SCRIPTS, skipRestart = true)
 public class ServletPolicyEnforcerLifespanTest extends AbstractServletPolicyEnforcerTest {
 
     @Deployment(name = RESOURCE_SERVER_ID, managed = false)

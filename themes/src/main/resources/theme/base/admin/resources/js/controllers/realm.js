@@ -3268,8 +3268,8 @@ module.controller('AuthenticationConfigCtrl', function($scope, realm, flow, conf
         }, configCopy, function() {
             $scope.changed = false;
             config = angular.copy($scope.config);
-            $location.url("/realms/" + realm.realm + '/authentication/flows/' + flow.id + '/config/' + configType.providerId + "/" + config.id);
             Notifications.success("Your changes have been saved.");
+            $location.reload();
         });
     };
 
