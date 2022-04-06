@@ -70,3 +70,53 @@ With this configuration, you can still use the format with the `redirect_uri` pa
 
 WARNING: The backwards compatibility switch will be removed in some future version - probably Keycloak 21. You are encouraged to update your clients as soon as possible
 as described above rather than rely on this switch.
+
+= Account console Patternfly upgrade
+
+The Patternfly (PF) React libraries have been updated updated, `@patternfly/react-core` from v3.153.3 to v4.147.0, `@patternfly/react-icons` from v3.15.16 to v 4.11.8, and `@patternfly/react-styles` from v3.7.14 to v4.11.8. Several minor UI updates were made to bring the account console into alignment with PF design standards.
+
+Custom developed account UIs might not be compatible with these updates due to the breaking changes in PF. Most breaking changes should be resovlable by updating props on PF components.
+
+Resources:
+
+- [Patternfly docs](https://patternfly.org)
+  
+
+Components known to have breaking changes:
+
+- Alert
+  
+  - `action` prop changed to `actionClose`
+    
+- Expandable
+  
+  - renamed to `ExpandableSection`
+    
+- Title
+  
+  - size attr now uses `TitleSizes`
+    
+- DataListContent
+  
+  - `noPadding` changed to `hasNoPadding`
+    
+- Grid, Stack, Level, Gallery
+  
+  - `gutter` attr changed to `hasGutter`
+    
+- Modal
+  
+  - sizing control changed from, e.g. `isLarge`, to use `ModalVariant`, e.g. `variant={ModalVariant.large}`
+    
+- Select
+  
+  - `ariaLabelTypeAhead` to `typeAheadAriaLabel`
+    
+  - `isExpanded` to `isOpen`
+    
+  - `ariaLabelledBy` to `aria-labelledby`
+    
+- DataListContent
+  
+  - `noPadding` to `hasNoPadding`
+
