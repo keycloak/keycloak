@@ -108,7 +108,9 @@ export default function PolicyDetails() {
     // remove entries that only have the boolean set and no id
     policy.groups = policy.groups?.filter((g) => g.id);
     policy.clientScopes = policy.clientScopes?.filter((c) => c.id);
-    policy.roles = policy.roles?.filter((r) => r.id);
+    policy.roles = policy.roles
+      ?.filter((r) => r.id)
+      .map((r) => ({ ...r, required: r.required || false }));
 
     try {
       if (policyId) {
