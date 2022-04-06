@@ -84,6 +84,7 @@ export const FileUploadForm = ({
             <Button
               key="confirm"
               variant="primary"
+              data-testid="clear-button"
               onClick={() => {
                 setFileUpload(defaultUpload);
                 onChange("");
@@ -91,7 +92,12 @@ export const FileUploadForm = ({
             >
               {t("clear")}
             </Button>,
-            <Button key="cancel" variant="link" onClick={removeDialog}>
+            <Button
+              data-testid="cancel"
+              key="cancel"
+              variant="link"
+              onClick={removeDialog}
+            >
               {t("cancel")}
             </Button>,
           ]}
