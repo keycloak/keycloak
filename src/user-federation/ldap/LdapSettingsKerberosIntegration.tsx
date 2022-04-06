@@ -54,7 +54,8 @@ export const LdapSettingsKerberosIntegration = ({
             control={form.control}
             render={({ onChange, value }) => (
               <Switch
-                id={"kc-allow-kerberos-authentication"}
+                id="kc-allow-kerberos-authentication"
+                data-testid="allow-kerberos-auth"
                 isDisabled={false}
                 onChange={(value) => onChange([`${value}`])}
                 isChecked={value[0] === "true"}
@@ -184,7 +185,8 @@ export const LdapSettingsKerberosIntegration = ({
                 control={form.control}
                 render={({ onChange, value }) => (
                   <Switch
-                    id={"kc-debug"}
+                    id="kc-debug"
+                    data-testid="debug"
                     isDisabled={false}
                     onChange={(value) => onChange([`${value}`])}
                     isChecked={value[0] === "true"}
@@ -213,7 +215,8 @@ export const LdapSettingsKerberosIntegration = ({
             control={form.control}
             render={({ onChange, value }) => (
               <Switch
-                id={"kc-use-kerberos-password-authentication"}
+                id="kc-use-kerberos-password-authentication"
+                data-testid="use-kerberos-pw-auth"
                 isDisabled={false}
                 onChange={(value) => onChange([`${value}`])}
                 isChecked={value[0] === "true"}

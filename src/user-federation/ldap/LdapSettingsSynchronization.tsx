@@ -50,7 +50,8 @@ export const LdapSettingsSynchronization = ({
             control={form.control}
             render={({ onChange, value }) => (
               <Switch
-                id={"kc-import-users"}
+                id="kc-import-users"
+                data-testid="import-users"
                 name="importEnabled"
                 label={t("common:on")}
                 labelOff={t("common:off")}
@@ -75,6 +76,7 @@ export const LdapSettingsSynchronization = ({
             type="number"
             min={0}
             id="kc-batch-size"
+            data-testid="batch-size"
             name="config.batchSizeForSync[0]"
             ref={form.register}
           />
@@ -96,7 +98,8 @@ export const LdapSettingsSynchronization = ({
             control={form.control}
             render={({ onChange, value }) => (
               <Switch
-                id={"kc-periodic-full-sync"}
+                id="kc-periodic-full-sync"
+                data-testid="periodic-full-sync"
                 isDisabled={false}
                 onChange={(value) => onChange(value)}
                 isChecked={value === true}
@@ -124,6 +127,7 @@ export const LdapSettingsSynchronization = ({
               min={-1}
               defaultValue={604800}
               id="kc-full-sync-period"
+              data-testid="full-sync-period"
               name="config.fullSyncPeriod[0]"
               ref={form.register}
             />
@@ -146,7 +150,8 @@ export const LdapSettingsSynchronization = ({
             control={form.control}
             render={({ onChange, value }) => (
               <Switch
-                id={"kc-periodic-changed-users-sync"}
+                id="kc-periodic-changed-users-sync"
+                data-testid="periodic-changed-users-sync"
                 isDisabled={false}
                 onChange={(value) => onChange(value)}
                 isChecked={value === true}
@@ -174,6 +179,7 @@ export const LdapSettingsSynchronization = ({
               min={-1}
               defaultValue={86400}
               id="kc-changed-users-sync-period"
+              data-testid="changed-users-sync-period"
               name="config.changedSyncPeriod[0]"
               ref={form.register}
             />

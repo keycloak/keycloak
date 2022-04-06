@@ -31,6 +31,22 @@ export default class ProviderPage {
   private ldapUuidLdapAttInput = "ldap-uuid-attribute";
   private ldapUserObjClassesInput = "ldap-user-object-classes";
 
+  // LdapSettingsKerberosIntegration input values
+  ldapKerberosRealmInput = "kerberos-realm";
+  ldapServerPrincipalInput = "kerberos-principal";
+  ldapKeyTabInput = "kerberos-keytab";
+  allowKerberosAuth = "allow-kerberos-auth";
+  debug = "debug";
+  useKerberosForPwAuth = "use-kerberos-pw-auth";
+
+  // LdapSettingsSynchronization input values
+  ldapBatchSizeInput = "batch-size";
+  ldapFullSyncPeriodInput = "full-sync-period";
+  ldapUsersSyncPeriodInput = "changed-users-sync-period";
+  importUsers = "import-users";
+  periodicFullSync = "periodic-full-sync";
+  periodicUsersSync = "periodic-changed-users-sync";
+
   // SettingsCache input values
   private cacheDayInput = "#kc-eviction-day";
   private cacheDayList = "#kc-eviction-day + ul";
@@ -157,6 +173,12 @@ export default class ProviderPage {
     for (let i = 0; i < lifespan; i++) {
       cy.findByTestId(this.maxLifespan).click();
     }
+    return this;
+  }
+
+  fillTextField(textField: string, value: string) {
+    cy.findByTestId(textField).type("x");
+    cy.findByTestId(textField).clear().type(value).blur();
     return this;
   }
 

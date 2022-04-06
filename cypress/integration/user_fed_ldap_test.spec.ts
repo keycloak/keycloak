@@ -31,6 +31,16 @@ const truststoreSpiNever = "Never";
 const bindDnCnOnly = "cn=read-only-admin";
 const bindCredsInvalid = "not-my-password";
 
+// kerberos integration settings
+const kerberosRealm = "FOO.ORG";
+const serverPrincipal = "HTTP/host.foo.org@FOO.ORG";
+const keyTab = "/etc/krb5.keytab";
+
+// ldap synchronization settings
+const batchSize = "100";
+const fullSyncPeriod = "604800";
+const userSyncPeriod = "86400";
+
 // ldap searching and updating
 const editModeReadOnly = "READ_ONLY";
 const firstUsersDn = "user-dn-1";
@@ -200,6 +210,83 @@ describe("User Fed LDAP tests", () => {
     providersPage.testAuthorization();
     masthead.checkNotificationMessage(ldapTestSuccessMsg);
 
+    sidebarPage.goToUserFederation();
+  });
+
+  it("Should update Kerberos integration settings and save", () => {
+    providersPage.clickExistingCard(firstLdapName);
+
+    providersPage.toggleSwitch(providersPage.allowKerberosAuth);
+    providersPage.toggleSwitch(providersPage.debug);
+    providersPage.toggleSwitch(providersPage.useKerberosForPwAuth);
+
+    providersPage.fillTextField(
+      providersPage.ldapKerberosRealmInput,
+      kerberosRealm
+    );
+    providersPage.fillTextField(
+      providersPage.ldapServerPrincipalInput,
+      serverPrincipal
+    );
+    providersPage.fillTextField(providersPage.ldapKeyTabInput, keyTab);
+
+    providersPage.save(provider);
+    masthead.checkNotificationMessage(savedSuccessMessage);
+
+    // now verify
+    sidebarPage.goToUserFederation();
+    providersPage.clickExistingCard(firstLdapName);
+    providersPage.verifyTextField(
+      providersPage.ldapKerberosRealmInput,
+      kerberosRealm
+    );
+    providersPage.verifyTextField(
+      providersPage.ldapServerPrincipalInput,
+      serverPrincipal
+    );
+    providersPage.verifyTextField(providersPage.ldapKeyTabInput, keyTab);
+    providersPage.verifyToggle(providersPage.allowKerberosAuth, "on");
+    providersPage.verifyToggle(providersPage.debug, "on");
+    providersPage.verifyToggle(providersPage.useKerberosForPwAuth, "on");
+
+    sidebarPage.goToUserFederation();
+  });
+
+  it("Should update Synchronization settings and save", () => {
+    providersPage.clickExistingCard(firstLdapName);
+
+    providersPage.toggleSwitch(providersPage.importUsers);
+    providersPage.toggleSwitch(providersPage.periodicFullSync);
+    providersPage.toggleSwitch(providersPage.periodicUsersSync);
+
+    providersPage.fillTextField(providersPage.ldapBatchSizeInput, batchSize);
+    providersPage.fillTextField(
+      providersPage.ldapFullSyncPeriodInput,
+      fullSyncPeriod
+    );
+    providersPage.fillTextField(
+      providersPage.ldapUsersSyncPeriodInput,
+      userSyncPeriod
+    );
+
+    providersPage.save(provider);
+    masthead.checkNotificationMessage(savedSuccessMessage);
+
+    // now verify
+    sidebarPage.goToUserFederation();
+    providersPage.clickExistingCard(firstLdapName);
+    providersPage.verifyTextField(providersPage.ldapBatchSizeInput, batchSize);
+    providersPage.verifyTextField(
+      providersPage.ldapFullSyncPeriodInput,
+      fullSyncPeriod
+    );
+    providersPage.verifyTextField(
+      providersPage.ldapUsersSyncPeriodInput,
+      userSyncPeriod
+    );
+    providersPage.verifyToggle(providersPage.periodicFullSync, "on");
+    providersPage.verifyToggle(providersPage.periodicUsersSync, "on");
+    providersPage.verifyToggle(providersPage.importUsers, "on");
     sidebarPage.goToUserFederation();
   });
 
