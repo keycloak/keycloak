@@ -73,6 +73,13 @@ public class LdapUserStorage extends KeycloakModelParameters {
             }
             config.putSingle(LDAPConstants.SYNC_REGISTRATIONS, "true");
             config.putSingle(LDAPConstants.EDIT_MODE, UserStorageProvider.EditMode.WRITABLE.toString());
+            // ApacheDS has a problem when processing an unbind request just before closing the connection, it will print
+            // "ignoring the message ... received from null session" and drop the message. To work around this:
+            // (1) enable connection pooling, to avoid short-lived connections
+            config.putSingle(LDAPConstants.CONNECTION_POOLING, "true");
+            // (2) set pref size to max size so that there are no connections that are opened and then closed immediately again
+            config.putSingle(LDAPConstants.CONNECTION_POOLING_PREFSIZE, "1000");
+            config.putSingle(LDAPConstants.CONNECTION_POOLING_MAXSIZE, "1000");
 
             UserStorageProviderModel federatedStorage = new UserStorageProviderModel();
             federatedStorage.setName(LDAPStorageProviderFactory.PROVIDER_NAME + ":" + counter.getAndIncrement());

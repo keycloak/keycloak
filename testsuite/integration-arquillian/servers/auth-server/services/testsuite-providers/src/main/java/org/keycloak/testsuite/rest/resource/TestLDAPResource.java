@@ -74,7 +74,13 @@ public class TestLDAPResource {
         MultivaluedHashMap<String, String> ldapConfig = toComponentConfig(ldapCfg);
         ldapConfig.putSingle(LDAPConstants.SYNC_REGISTRATIONS, "true");
         ldapConfig.putSingle(LDAPConstants.EDIT_MODE, UserStorageProvider.EditMode.WRITABLE.toString());
-
+        // ApacheDS has a problem when processing an unbind request just before closing the connection, it will print
+        // "ignoring the message ... received from null session" and drop the message. To work around this:
+        // (1) enable connection pooling, to avoid short-lived connections
+        ldapConfig.putSingle(LDAPConstants.CONNECTION_POOLING, "true");
+        // (2) set pref size to max size so that there are no connections that are opened and then closed immediately again
+        ldapConfig.putSingle(LDAPConstants.CONNECTION_POOLING_PREFSIZE, "100");
+        ldapConfig.putSingle(LDAPConstants.CONNECTION_POOLING_MAXSIZE, "100");
         UserStorageProviderModel model = new UserStorageProviderModel();
         model.setLastSync(0);
         model.setChangedSyncPeriod(-1);

@@ -64,7 +64,7 @@ import java.util.stream.Collectors;
  * @author Anil Saldhana
  * @author <a href="mailto:psilva@redhat.com">Pedro Silva</a>
  */
-public class LdapMapIdentityStore {
+public class LdapMapIdentityStore implements AutoCloseable {
 
     private static final Logger logger = Logger.getLogger(LdapMapIdentityStore.class);
     private static final Pattern rangePattern = Pattern.compile("([^;]+);range=([0-9]+)-([0-9]+|\\*)");
@@ -529,5 +529,10 @@ public class LdapMapIdentityStore {
         } catch (NamingException ne) {
             throw new ModelException("Could not retrieve identifier for entry [" + ldapObject.getDn().toString() + "].");
         }
+    }
+
+    @Override
+    public void close() {
+        operationManager.close();
     }
 }
