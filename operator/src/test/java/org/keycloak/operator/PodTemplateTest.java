@@ -51,6 +51,12 @@ public class PodTemplateTest {
         // Arrange
         PodTemplateSpec additionalPodTemplate = null;
 
+        try {
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
         // Act
         var podTemplate = getDeployment(additionalPodTemplate).getSpec().getTemplate();
 
