@@ -136,7 +136,13 @@
             "role.object.classes": "groupOfNames",
             "role.attributes": "ou",
             "mode": "LDAP_ONLY",
-            "use.realm.roles.mapping": "true"
+            "use.realm.roles.mapping": "true",
+            "//connectionPooling": "ApacheDS has a problem when processing an unbind request just before closing the connection, therefore enable connection pooling to avoid short-lived connections",
+            "connectionPooling": "true",
+            "//connectionPoolingPrefSize": "ApacheDS has a problem when processing an unbind request just before closing the connection, therefore set max=preferred to avoid short-lived connections",
+            "connectionPoolingPrefSize": "1000",
+            "//connectionPoolingMaxSize": "ApacheDS has a problem when processing an unbind request just before closing the connection, therefore set max=preferred to avoid short-lived connections",
+            "connectionPoolingMaxSize": "1000"
         }
     },
 

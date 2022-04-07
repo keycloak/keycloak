@@ -392,6 +392,8 @@ public class LdapRoleMapKeycloakTransaction extends LdapMapKeycloakTransaction<L
                 identityStore.update(entity.getLdapMapObject());
             }
         });
+
+        identityStore.close();
     }
 
     @Override

@@ -81,6 +81,11 @@ public class LDAPTestConfiguration {
         DEFAULT_VALUES.put(LDAPConstants.BIND_CREDENTIAL, "secret");
         DEFAULT_VALUES.put(LDAPConstants.VENDOR, LDAPConstants.VENDOR_OTHER);
         DEFAULT_VALUES.put(LDAPConstants.CONNECTION_POOLING, "true");
+        // ApacheDS has a problem when processing an unbind request just before closing the connection, it will print
+        // "ignoring the message ... received from null session" and drop the message. To work around this:
+        // set pref size to max size so that there are no connections that are opened and then closed immediately again
+        DEFAULT_VALUES.put(LDAPConstants.CONNECTION_POOLING_MAXSIZE, "100");
+        DEFAULT_VALUES.put(LDAPConstants.CONNECTION_POOLING_PREFSIZE, "100");
         DEFAULT_VALUES.put(LDAPConstants.PAGINATION, "true");
         DEFAULT_VALUES.put(LDAPConstants.BATCH_SIZE_FOR_SYNC, String.valueOf(LDAPConstants.DEFAULT_BATCH_SIZE_FOR_SYNC));
         DEFAULT_VALUES.put(LDAPConstants.USERNAME_LDAP_ATTRIBUTE, null);

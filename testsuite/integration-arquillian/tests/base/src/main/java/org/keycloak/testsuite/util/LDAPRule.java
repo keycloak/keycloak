@@ -75,7 +75,7 @@ public class LDAPRule extends ExternalResource {
     }
 
     @Override
-    protected void before() throws Throwable {
+    public void before() throws Throwable {
         String connectionPropsLocation = getConnectionPropertiesLocation();
         ldapTestConfiguration = LDAPTestConfiguration.readConfiguration(connectionPropsLocation);
 
@@ -92,6 +92,13 @@ public class LDAPRule extends ExternalResource {
     public Statement apply(Statement base, Description description) {
         // Default bind credential value
         defaultProperties.setProperty(LDAPConstants.BIND_CREDENTIAL, "secret");
+        // ApacheDS has a problem when processing an unbind request just before closing the connection, it will print
+        // "ignoring the message ... received from null session" and drop the message. To work around this:
+        // (1) enable connection pooling, to avoid short-lived connections
+        defaultProperties.setProperty(LDAPConstants.CONNECTION_POOLING, "true");
+        // (2) set pref size to max size so that there are no connections that are opened and then closed immediately again
+        defaultProperties.setProperty(LDAPConstants.CONNECTION_POOLING_MAXSIZE, "100");
+        defaultProperties.setProperty(LDAPConstants.CONNECTION_POOLING_PREFSIZE, "100");
         // Default values of the authentication / access control method and connection encryption to use on the embedded
         // LDAP server upon start if not (re)set later via the LDAPConnectionParameters annotation directly on the test
         defaultProperties.setProperty(LDAPEmbeddedServer.PROPERTY_ENABLE_ACCESS_CONTROL, "true");
@@ -163,7 +170,7 @@ public class LDAPRule extends ExternalResource {
     }
 
     @Override
-    protected void after() {
+    public void after() {
         try {
             if (ldapEmbeddedServer != null) {
                 ldapEmbeddedServer.stop();
