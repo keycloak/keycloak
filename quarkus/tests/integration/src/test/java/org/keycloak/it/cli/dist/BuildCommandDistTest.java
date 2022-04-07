@@ -26,6 +26,7 @@ import org.keycloak.it.junit5.extension.DistributionTest;
 
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
+import org.keycloak.it.utils.KeycloakDistribution;
 
 @DistributionTest
 class BuildCommandDistTest {
@@ -39,7 +40,7 @@ class BuildCommandDistTest {
                 () -> "The Output:\n" + result.getOutput() + "doesn't contains the expected string.");
         assertTrue(result.getOutput().contains("Server configuration updated and persisted. Run the following command to review the configuration:"),
                 () -> "The Output:\n" + result.getOutput() + "doesn't contains the expected string.");
-        assertTrue(result.getOutput().contains("kc.sh show-config"),
+        assertTrue(result.getOutput().contains(KeycloakDistribution.SCRIPT_CMD + " show-config"),
                 () -> "The Output:\n" + result.getOutput() + "doesn't contains the expected string.");
     }
 
