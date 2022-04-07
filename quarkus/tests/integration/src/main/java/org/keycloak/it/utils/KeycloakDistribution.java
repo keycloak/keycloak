@@ -1,12 +1,13 @@
 package org.keycloak.it.utils;
 
+import org.keycloak.quarkus.runtime.Environment;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 
-import static org.keycloak.quarkus.runtime.Environment.LAUNCH_MODE;
-
 public interface KeycloakDistribution {
+
+    String SCRIPT_CMD = Environment.isWindows() ? "kc.bat" : "kc.sh";
+    String SCRIPT_CMD_INVOKABLE = Environment.isWindows() ? SCRIPT_CMD : "./"+SCRIPT_CMD;
 
     void start(List<String> arguments);
 
@@ -23,21 +24,7 @@ public interface KeycloakDistribution {
     boolean isManualStop();
 
     default String[] getCliArgs(List<String> arguments) {
-        List<String> commands = new ArrayList<>();
-
-        commands.add("./kc.sh");
-
-        if (this.isDebug()) {
-            commands.add("--debug");
-        }
-
-        if (!this.isManualStop()) {
-            commands.add("-D" + LAUNCH_MODE + "=test");
-        }
-
-        commands.addAll(arguments);
-
-        return commands.toArray(new String[0]);
+        throw new RuntimeException("Not implemented");
     }
 
     default void setManualStop(boolean manualStop) {

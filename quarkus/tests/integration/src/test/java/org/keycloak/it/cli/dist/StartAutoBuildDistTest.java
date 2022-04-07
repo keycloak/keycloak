@@ -30,6 +30,7 @@ import org.keycloak.it.junit5.extension.RawDistOnly;
 
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
+import org.keycloak.it.utils.KeycloakDistribution;
 
 @DistributionTest(reInstall = DistributionTest.ReInstall.NEVER)
 @RawDistOnly(reason = "Containers are immutable")
@@ -44,9 +45,9 @@ public class StartAutoBuildDistTest {
         cliResult.assertMessage("Changes detected in configuration. Updating the server image.");
         cliResult.assertMessage("Updating the configuration and installing your custom providers, if any. Please wait.");
         cliResult.assertMessage("Server configuration updated and persisted. Run the following command to review the configuration:");
-        cliResult.assertMessage("kc.sh show-config");
+        cliResult.assertMessage(KeycloakDistribution.SCRIPT_CMD + " show-config");
         cliResult.assertMessage("Next time you run the server, just run:");
-        cliResult.assertMessage("kc.sh start --http-enabled=true --hostname-strict=false");
+        cliResult.assertMessage(KeycloakDistribution.SCRIPT_CMD + " start --http-enabled=true --hostname-strict=false");
         assertFalse(cliResult.getOutput().contains("--cache"));
         cliResult.assertStarted();
     }
