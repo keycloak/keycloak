@@ -254,6 +254,12 @@
             <artifactId>mssql-jdbc</artifactId>
             <version>${mssql.driver.version}</version>
         </dependency>
+
+        <!-- Nashorn -->
+        <dependency>
+            <groupId>org.openjdk.nashorn</groupId>
+            <artifactId>nashorn-core</artifactId>
+        </dependency>
     </dependencies>
 
 
