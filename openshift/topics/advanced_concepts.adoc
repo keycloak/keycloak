@@ -69,7 +69,7 @@ See the https://access.redhat.com/documentation/en-us/jboss_enterprise_applicati
 ----
 $ openssl req -new -newkey rsa:4096 -x509 -keyout xpaas.key -out xpaas.crt -days 365 -subj "/CN=xpaas-sso-demo.ca"
 ----
-.. Generate a private key for the HTTPS keystore. Provide `mykeystorepass` as the keystore password:
+. Generate a private key for the HTTPS keystore. Provide `mykeystorepass` as the keystore password:
 +
 [source,bash,subs="attributes+,macros+"]
 ----
@@ -88,8 +88,13 @@ $ keytool -certreq -keyalg rsa -alias jboss -keystore keystore.jks -file sso.csr
 +
 [source,bash,subs="attributes+,macros+"]
 ----
-$ openssl x509 -req -CA xpaas.crt -CAkey xpaas.key -in sso.csr -out sso.crt -days 365 -CAcreateserial
+$ openssl x509 -req <(printf "subjectAltName=DNS:secure-sso-sso-app-demo.openshift.example.com") -CA xpaas.crt -CAkey xpaas.key -in sso.csr -out sso.crt -days 365 -CAcreateserial
 ----
++
+[NOTE]
+====
+To make the preceding command work on one line, the command includes the process substitution (`<() syntax`). Be sure that your current shell environment supports such syntax. Otherwise, you can encounter a `syntax error near unexpected token `('` message.
+====
 . Import the CA certificate into the HTTPS keystore. Provide `mykeystorepass` as the keystore password. Reply `yes` to `Trust this certificate? [no]:` question:
 +
 [source,bash,subs="attributes+,macros+"]
