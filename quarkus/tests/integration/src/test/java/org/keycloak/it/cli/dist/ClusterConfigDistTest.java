@@ -22,6 +22,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.nio.file.Path;
 import java.util.function.Consumer;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.keycloak.it.junit5.extension.BeforeStartDistribution;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
@@ -69,12 +71,23 @@ public class ClusterConfigDistTest {
     }
 
     @Test
-    @Launch({ "start", "--auto-build", "--http-enabled=true", "--hostname-strict false" })
+    @EnabledOnOs(value = { OS.LINUX, OS.MAC }, disabledReason = "different shell escaping behaviour on Windows.")
+    @Launch({ "start", "--auto-build", "--log-level=info,org.infinispan.remoting.transport.jgroups.JGroupsTransport:debug","--http-enabled=true", "--hostname-strict=false" })
     void testStartDefaultsToClustering(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertStarted();
         cliResult.assertClusteredCache();
-        assertTrue(cliResult.getOutput().contains("org.jgroups.protocols.UDP"));
+        assertTrue(cliResult.getOutput().contains("JGroups protocol stack: UDP"));
+    }
+
+    @Test
+    @EnabledOnOs(value = { OS.WINDOWS }, disabledReason = "different shell behaviour on Windows.")
+    @Launch({ "start", "--auto-build", "--log-level=\"info,org.infinispan.remoting.transport.jgroups.JGroupsTransport:debug","--http-enabled=true\"", "--hostname-strict=false" })
+    void testWinStartDefaultsToClustering(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertStarted();
+        cliResult.assertClusteredCache();
+        assertTrue(cliResult.getOutput().contains("JGroups protocol stack: UDP"));
     }
 
     @Test

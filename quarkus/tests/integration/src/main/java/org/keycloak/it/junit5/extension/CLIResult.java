@@ -20,6 +20,8 @@ package org.keycloak.it.junit5.extension;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.testcontainers.shaded.org.hamcrest.MatcherAssert.assertThat;
+import static org.testcontainers.shaded.org.hamcrest.Matchers.containsString;
 
 import java.util.List;
 
@@ -38,6 +40,11 @@ public interface CLIResult extends LaunchResult {
             @Override
             public List<String> getOutputStream() {
                 return outputStream;
+            }
+
+            @Override
+            public String getErrorOutput() {
+                return String.join("\n", errStream).replace("\r","");
             }
 
             @Override
@@ -82,7 +89,7 @@ public interface CLIResult extends LaunchResult {
     }
 
     default void assertMessage(String message) {
-        assertTrue(getOutput().contains(message));
+        assertThat(getOutput(), containsString(message));
     }
 
     default void assertBuild() {
@@ -112,7 +119,7 @@ public interface CLIResult extends LaunchResult {
     default void assertJsonLogDefaultsApplied() throws JsonProcessingException {
         ObjectMapper objectMapper = new ObjectMapper();
 
-        String[] splittedOutput = getOutput().split(System.lineSeparator());
+        String[] splittedOutput = getOutput().split("\n");
 
         int counter = 0;
 
