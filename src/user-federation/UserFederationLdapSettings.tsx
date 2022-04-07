@@ -65,7 +65,7 @@ const AddLdapFormContent = ({
         ]}
       >
         <LdapSettingsGeneral form={form} vendorEdit={!!id} />
-        <LdapSettingsConnection form={form} edit={!!id} />
+        <LdapSettingsConnection form={form} id={id} />
         <LdapSettingsSearching form={form} />
         <LdapSettingsSynchronization form={form} />
         <LdapSettingsKerberosIntegration form={form} />

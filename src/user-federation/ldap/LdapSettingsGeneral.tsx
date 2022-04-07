@@ -117,7 +117,6 @@ export const LdapSettingsGeneral = ({
           helperTextInvalid={form.errors.name?.message}
         >
           {/* These hidden fields are required so data object written back matches data retrieved */}
-          <TextInput hidden type="text" id="kc-console-id" name="id" />
           <TextInput
             hidden
             type="text"

@@ -25,9 +25,9 @@ import { useAlerts } from "../../components/alert/Alerts";
 
 export type LdapSettingsConnectionProps = {
   form: UseFormMethods;
+  id?: string;
   showSectionHeading?: boolean;
   showSectionDescription?: boolean;
-  edit?: boolean;
 };
 
 const testLdapProperties: Array<keyof TestLdapConnectionRepresentation> = [
@@ -50,22 +50,21 @@ const convertFormToSettings = (form: UseFormMethods) => {
     settings[key] = Array.isArray(value) ? value[0] : "";
   });
 
-  settings["componentId"] = get(form.getValues(), "id");
-
   return settings;
 };
 
 export const LdapSettingsConnection = ({
   form,
+  id,
   showSectionHeading = false,
   showSectionDescription = false,
-  edit = false,
 }: LdapSettingsConnectionProps) => {
   const { t } = useTranslation("user-federation");
   const { t: helpText } = useTranslation("user-federation-help");
   const adminClient = useAdminClient();
   const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();
+  const edit = !!id;
 
   const testLdap = async (testType: TestTypes) => {
     if (!(await form.trigger())) return;
@@ -73,7 +72,7 @@ export const LdapSettingsConnection = ({
       const settings = convertFormToSettings(form);
       await adminClient.realms.testLDAPConnection(
         { realm },
-        { ...settings, action: testType }
+        { ...settings, action: testType, componentId: id }
       );
       addAlert(t("testSuccess"), AlertVariant.success);
     } catch (error) {
