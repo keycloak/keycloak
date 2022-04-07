@@ -608,7 +608,7 @@ public class SAMLEndpoint {
                     && statusResponse.getDestination() == null && containsUnencryptedSignature(holder)) {
                 event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
                 event.detail(Details.REASON, Errors.MISSING_REQUIRED_DESTINATION);
-                event.error(Errors.INVALID_SAML_LOGOUT_RESPONSE);
+                event.error(Errors.INVALID_SAML_RESPONSE);
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_REQUEST);
             }
             if (! destinationValidator.validate(getExpectedDestination(config.getAlias(), clientId), statusResponse.getDestination())) {
