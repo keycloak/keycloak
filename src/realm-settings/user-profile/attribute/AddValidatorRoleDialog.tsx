@@ -23,16 +23,8 @@ export const AddValidatorRoleDialog = ({
   const { handleSubmit } = form;
   const selectedRoleValidator = selected;
 
-  const save = () => {
-    const formValues = form.getValues();
-    formValues.name = selectedRoleValidator.name;
-
-    const newValidator = {
-      name: formValues.name,
-      config: formValues.config ?? [],
-    };
-
-    onConfirm(newValidator);
+  const save = (newValidator: Validator) => {
+    onConfirm({ ...newValidator, name: selected.name });
     toggleDialog();
   };
 
