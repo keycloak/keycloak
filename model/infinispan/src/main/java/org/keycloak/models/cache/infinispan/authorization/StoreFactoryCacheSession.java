@@ -1055,7 +1055,7 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
             String resourceServerId = resourceServer == null ? null : resourceServer.getId();
 
             for (Scope scope : scopes) {
-                String cacheKey = getPolicyByResourceScope(scope.getId(), resource.getId(), resourceServerId);
+                String cacheKey = getPolicyByResourceScope(scope.getId(), resource == null ? null : resource.getId(), resourceServerId);
                 result.addAll(cacheQuery(cacheKey, PolicyScopeListQuery.class, () -> getPolicyStoreDelegate().findByScopes(resourceServer, resource, Collections.singletonList(scope)), (revision, resources) -> new PolicyScopeListQuery(revision, cacheKey, scope.getId(), resources.stream().map(Policy::getId).collect(Collectors.toSet()), resourceServerId), resourceServer));
             }
 
