@@ -50,7 +50,7 @@ public class Options {
                         .map(m -> new Option(Configuration.toDashCase(optionPrefix.concat("-") + m.getName()), ConfigCategory.GENERAL, false,
                                 m.getHelpText(),
                                 m.getDefaultValue() == null ? "none" : m.getDefaultValue().toString(),
-                                m.getOptions() == null ? Collections.emptyList() : m.getOptions()))
+                                m.getOptions() == null ? (m.getType() == null ? Collections.emptyList() : Collections.singletonList(m.getType())) : m.getOptions()))
                         .sorted(Comparator.comparing(Option::getKey)).collect(Collectors.toList());
 
                 if (!options.isEmpty()) {

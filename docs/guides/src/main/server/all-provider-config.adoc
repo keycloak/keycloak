@@ -9,7 +9,7 @@ summary="Complete list of all the available provider configuration options">
 == ${spi}
 <#list providers as provider, options>
 === ${provider}
-<@opts.list options=options></@opts.list>
+<@opts.list options=options buildIcon=false></@opts.list>
 </#list>
 </#list>
 
