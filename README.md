@@ -1,43 +1,60 @@
-# Keycloak Admin Console V2
+# Keycloak Admin UI
 
-This project is the next generation of the Keycloak Administration Console.  It is written with React and [PatternFly 4][1].
+This project is the next generation of the Keycloak Administration UI. It is written with React and [PatternFly 4](https://www.patternfly.org/v4/).
 
-## Development Instructions
+## Development
 
-For development on this project you will need a running Keycloak server listening on port 8180.
+### Prerequisites
 
-1. Install modules
+Make sure that you have Node.js version 16 (or later) installed on your system. If you do not have Node.js installed we recommend using [Node Version Manager](https://github.com/nvm-sh/nvm) to install it.
 
-      ```bash
-      $> npm install
-      ```
+You can find out which version of Node.js you are using by running the following command:
 
-1. Start Keycloak
-    * Download and run with one command
+```bash
+node --version
+```
 
-      ```bash
-      $> ./start.mjs
-      ```
+In order to run the Keycloak server you will also have to install the Java Development Kit (JDK). We recommend that you use the same version of the JDK as [required by the Keycloak server]((https://github.com/keycloak/keycloak/blob/main/docs/building.md#building-from-source)).
 
-    * or download Keycloak server from [keycloak downloads page][2] unpack and run it like:
+### Running the Keycloak server
 
-      ```bash
-      $> cd <unpacked download folder>/bin
-      $> standalone -Djboss.socket.binding.port-offset=100
-      ```
+First, ensure that all dependencies are installed locally using NPM by running:
 
-1. Go to the clients section of the existing Keycloak Admin Console and add the client
-    * like this:
-    ![realm settings](images/realm-settings.png "Realm Settings")
-    * or click on the "Select file" button and import `security-admin-console-v2.json`
-    * or run `$> ./import.mjs`
+```bash
+npm install
+```
 
-1. Install dependencies and run:
+After the dependencies are installed we can start the Keycloak server by running the following command:
 
-      ```bash
-      $> npm install
-      $> npm run start
-      ```
+```bash
+npm run server:start
+```
+
+This will download the [Nightly version](https://github.com/keycloak/keycloak/releases/tag/nightly) of the Keycloak server and run it locally on port `8180`. If a previously downloaded version was found in the `server/` directory then that one will be used instead. If you want to download the latest Nightly version you can remove the server directory before running the command to start the server.
+
+In order for the development version of the Admin UI to work you will have to import a custom client to the Keycloak server. This is only required during development as the development server for the Admin UI runs on a different port (more on that later).
+
+Wait for the Keycloak server to be up and running and run the following command in a new terminal:
+
+```bash
+npm run server:import-client
+```
+
+You'll only have to run this command once, unless you remove the server directory or Keycloak server data.
+
+### Running the development server
+
+Now that the Keycloak sever is running it's time to run the development server for the Admin UI. This server is used to build the Admin UI in a manner that it can be iterated on quickly in a browser, using features such as [Hot Module Replacement (HMR) and Fast Refresh](https://www.snowpack.dev/concepts/hot-module-replacement).
+
+To start the development server run the following command:
+
+```bash
+npm run start
+```
+
+Once the process of optimization is done your browser will automatically open your local host on port `8080`. From here you will be redirected to the Keycloak server to authenticate, which you can do with the default username and password (`admin`).
+
+You can now start making changes to the source code, and they will be reflected in your browser.
 
 ## Building as a Keycloak theme
 
@@ -159,6 +176,3 @@ Read more about [how to write tests](./cypress/WRITING_TESTS.md)
 ## License
 
 * [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0)
-
-[1]: https://www.patternfly.org/v4/
-[2]: https://www.keycloak.org/downloads
