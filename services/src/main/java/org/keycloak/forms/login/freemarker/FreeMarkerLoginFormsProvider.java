@@ -43,6 +43,7 @@ import org.keycloak.forms.login.freemarker.model.RealmBean;
 import org.keycloak.forms.login.freemarker.model.RegisterBean;
 import org.keycloak.forms.login.freemarker.model.RequiredActionUrlFormatterMethod;
 import org.keycloak.forms.login.freemarker.model.SAMLPostFormBean;
+import org.keycloak.forms.login.freemarker.model.ScriptBean;
 import org.keycloak.forms.login.freemarker.model.TotpBean;
 import org.keycloak.forms.login.freemarker.model.TotpLoginBean;
 import org.keycloak.forms.login.freemarker.model.UrlBean;
@@ -136,11 +137,16 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         this.uriInfo = session.getContext().getUri();
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public void addScript(String scriptUrl) {
-        List<String> scripts = (List<String>) this.attributes.get("scripts");
-        scripts.add(scriptUrl);
+        addScript(scriptUrl, false, false);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public void addScript(final String scriptUrl, final boolean async, final boolean defer) {
+        List<ScriptBean> scripts = (List<ScriptBean>) this.attributes.get("scripts");
+        scripts.add(new ScriptBean(scriptUrl, async, defer));
     }
 
     @Override

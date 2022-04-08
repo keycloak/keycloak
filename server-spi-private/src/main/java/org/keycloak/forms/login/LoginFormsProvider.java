@@ -50,6 +50,10 @@ public interface LoginFormsProvider extends Provider {
      */
     void addScript(String scriptUrl);
 
+    default void addScript(String scriptUrl, boolean async, boolean defer) {
+        addScript(scriptUrl);
+    }
+
     Response createResponse(UserModel.RequiredAction action);
 
     Response createForm(String form);

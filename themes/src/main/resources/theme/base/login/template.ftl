@@ -29,9 +29,19 @@
             <script src="${url.resourcesPath}/${script}" type="text/javascript"></script>
         </#list>
     </#if>
+    <#if properties.asyncScripts?has_content>
+        <#list properties.asyncScripts?split(' ') as script>
+            <script src="${url.resourcesPath}/${script}" type="text/javascript" async></script>
+        </#list>
+    </#if>
+    <#if properties.deferScripts?has_content>
+        <#list properties.deferScripts?split(' ') as script>
+            <script src="${url.resourcesPath}/${script}" type="text/javascript" defer></script>
+        </#list>
+    </#if>
     <#if scripts??>
         <#list scripts as script>
-            <script src="${script}" type="text/javascript"></script>
+            <script src="${script.url}" type="text/javascript" ${script.async?then('async', '')} ${script.defer?then('defer', '')}></script>
         </#list>
     </#if>
 </head>
