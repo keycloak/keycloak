@@ -30,6 +30,7 @@ import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.jose.JOSEParser;
 import org.keycloak.jose.JOSE;
 import org.keycloak.jose.jwe.JWE;
+import org.keycloak.jose.jwe.JWEConstants;
 import org.keycloak.jose.jwe.JWEException;
 import org.keycloak.jose.jwe.alg.JWEAlgorithmProvider;
 import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
@@ -301,19 +302,23 @@ public class DefaultTokenManager implements TokenManager {
             case AUTHORIZATION_RESPONSE:
                 return getEncryptAlgorithm(OIDCConfigAttributes.AUTHORIZATION_ENCRYPTED_RESPONSE_ENC);
             case USERINFO:
-                return getEncryptAlgorithm(OIDCConfigAttributes.USER_INFO_ENCRYPTED_RESPONSE_ENC);
+                return getEncryptAlgorithm(OIDCConfigAttributes.USER_INFO_ENCRYPTED_RESPONSE_ENC, JWEConstants.A128CBC_HS256);
             default:
                 return null;
         }
     }
 
     private String getEncryptAlgorithm(String clientAttribute) {
+        return getEncryptAlgorithm(clientAttribute, null);
+    }
+
+    private String getEncryptAlgorithm(String clientAttribute, String defaultValue) {
         ClientModel client = session.getContext().getClient();
         String algorithm = client != null && clientAttribute != null ? client.getAttribute(clientAttribute) : null;
         if (algorithm != null && !algorithm.equals("")) {
             return algorithm;
         }
-        return null;
+        return defaultValue;
     }
 
     public LogoutToken initLogoutToken(ClientModel client, UserModel user,

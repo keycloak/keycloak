@@ -85,7 +85,7 @@ public class OIDCAdvancedConfigWrapper {
     }
 
     public boolean isUserInfoEncryptionRequired() {
-        return getUserInfoEncryptedResponseAlg() != null && getUserInfoEncryptedResponseEnc() != null;
+        return getUserInfoEncryptedResponseAlg() != null;
     }
 
     public Algorithm getRequestObjectSignatureAlg() {

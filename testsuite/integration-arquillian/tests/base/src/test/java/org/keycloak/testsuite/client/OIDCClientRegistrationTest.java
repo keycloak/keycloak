@@ -330,8 +330,6 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
             OIDCClientRepresentation clientRep = createRep();
 
             response = reg.oidc().create(clientRep);
-            Assert.assertEquals(Boolean.FALSE, response.getTlsClientCertificateBoundAccessTokens());
-            Assert.assertNotNull(response.getClientSecret());
 
             // Test Keycloak representation
             ClientRepresentation kcClient = getClient(response.getClientId());

@@ -25,7 +25,12 @@ import org.keycloak.TokenVerifier;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.constants.ServiceAccountConstants;
-import org.keycloak.crypto.*;
+import org.keycloak.crypto.ContentEncryptionProvider;
+import org.keycloak.crypto.CekManagementProvider;
+import org.keycloak.crypto.KeyWrapper;
+import org.keycloak.crypto.SignatureProvider;
+import org.keycloak.crypto.SignatureSignerContext;
+import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
@@ -253,22 +258,37 @@ public class UserInfoEndpoint {
 
             String signedUserInfo = new JWSBuilder().type("JWT").jsonContent(claims).sign(signer);
 
-            responseBuilder = Response.ok(cfg.isUserInfoEncryptionRequired() ? jweFromContent(signedUserInfo, "JWT") :
-                    signedUserInfo).header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JWT);
-
+            try {
+                responseBuilder = Response.ok(cfg.isUserInfoEncryptionRequired() ? jweFromContent(signedUserInfo, "JWT") :
+                        signedUserInfo).header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JWT);
+            } catch (RuntimeException re) {
+                if ("can not get encryption KEK".equals(re.getMessage())) {
+                    throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
+                            "can not get encryption KEK", Response.Status.BAD_REQUEST);
+                } else {
+                    throw re;
+                }
+            }
             event.detail(Details.SIGNATURE_REQUIRED, "true");
             event.detail(Details.SIGNATURE_ALGORITHM, cfg.getUserInfoSignedResponseAlg().toString());
-        } else {
-            if(cfg.isUserInfoEncryptionRequired()) {
-                try {
-                    responseBuilder = Response.ok(jweFromContent(JsonSerialization.writeValueAsString(claims), null))
-                            .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JWT);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
+        } else if (cfg.isUserInfoEncryptionRequired()) {
+            try {
+                responseBuilder = Response.ok(jweFromContent(JsonSerialization.writeValueAsString(claims), null))
+                        .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JWT);
+            } catch (RuntimeException re) {
+                if ("can not get encryption KEK".equals(re.getMessage())) {
+                    throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
+                            "can not get encryption KEK", Response.Status.BAD_REQUEST);
+                } else {
+                    throw re;
                 }
-            } else {
-                responseBuilder = Response.ok(claims).header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
+
+            event.detail(Details.SIGNATURE_REQUIRED, "false");
+        } else {
+            responseBuilder = Response.ok(claims).header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
 
             event.detail(Details.SIGNATURE_REQUIRED, "false");
         }
