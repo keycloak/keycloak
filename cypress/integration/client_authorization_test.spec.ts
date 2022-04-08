@@ -7,7 +7,7 @@ import SidebarPage from "../support/pages/admin_console/SidebarPage";
 import AuthorizationTab from "../support/pages/admin_console/manage/clients/AuthorizationTab";
 import ModalUtils from "../support/util/ModalUtils";
 
-describe.skip("Client authentication subtab", () => {
+describe("Client authentication subtab", () => {
   const loginPage = new LoginPage();
   const listingPage = new ListingPage();
   const masthead = new Masthead();
@@ -56,6 +56,7 @@ describe.skip("Client authentication subtab", () => {
       .save();
 
     masthead.checkNotificationMessage("Resource created successfully", true);
+    sidebarPage.waitForPageLoad();
     authenticationTab.cancel();
   });
 
@@ -96,6 +97,7 @@ describe.skip("Client authentication subtab", () => {
 
     cy.wait(["@get"]);
     masthead.checkNotificationMessage("Successfully created the policy", true);
+    sidebarPage.waitForPageLoad();
     authenticationTab.cancel();
   });
 
@@ -124,6 +126,7 @@ describe.skip("Client authentication subtab", () => {
 
     cy.wait(["@get"]);
     masthead.checkNotificationMessage("Successfully created the policy", true);
+    sidebarPage.waitForPageLoad();
     authenticationTab.cancel();
   });
 
@@ -146,17 +149,20 @@ describe.skip("Client authentication subtab", () => {
       true
     );
     cy.wait(["@load"]);
+    sidebarPage.waitForPageLoad();
     authenticationTab.cancel();
   });
 
-  it("Should copy auth details", () => {
+  it.skip("Should copy auth details", () => {
     authenticationTab.goToExportSubTab();
+    sidebarPage.waitForPageLoad();
     authenticationTab.copy();
     masthead.checkNotificationMessage("Authorization details copied.", true);
   });
 
   it("Should export auth details", () => {
     authenticationTab.goToExportSubTab();
+    sidebarPage.waitForPageLoad();
     authenticationTab.export();
 
     masthead.checkNotificationMessage(

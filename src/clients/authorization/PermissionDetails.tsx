@@ -33,6 +33,7 @@ import { ResourcesPolicySelect } from "./ResourcesPolicySelect";
 import { toAuthorizationTab } from "../routes/AuthenticationTab";
 import { ScopeSelect } from "./ScopeSelect";
 import { toUpperCase } from "../../util";
+import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
 
 const DECISION_STRATEGIES = ["UNANIMOUS", "AFFIRMATIVE", "CONSENSUS"] as const;
 
@@ -163,13 +164,17 @@ export default function PermissionDetails() {
     defaultValue: [],
   });
 
+  if (!permission) {
+    return <KeycloakSpinner />;
+  }
+
   return (
     <>
       <DeleteConfirm />
       <ViewHeader
         titleKey={
           permissionId
-            ? permission?.name!
+            ? permission.name!
             : `clients:create${toUpperCase(permissionType)}BasedPermission`
         }
         dropdownItems={
