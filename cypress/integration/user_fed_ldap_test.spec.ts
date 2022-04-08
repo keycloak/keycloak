@@ -16,6 +16,9 @@ const allCapProvider = provider.toUpperCase();
 
 const firstLdapName = "my-ldap";
 const firstLdapVendor = "Active Directory";
+const secondLdapName = `${firstLdapName}-2`;
+const secondLdapVendor = "Other";
+const updatedLdapName = `${firstLdapName}-updated`;
 
 // connection and authentication settings
 const connectionUrlValid = "ldap://ldap.forumsys.com:389";
@@ -43,24 +46,27 @@ const userSyncPeriod = "86400";
 
 // ldap searching and updating
 const editModeReadOnly = "READ_ONLY";
+const editModeWritable = "WRITABLE";
+const editModeUnsynced = "UNSYNCED";
+
 const firstUsersDn = "user-dn-1";
 const firstUserLdapAtt = "uid";
 const firstRdnLdapAtt = "uid";
 const firstUuidLdapAtt = "entryUUID";
 const firstUserObjClasses = "inetOrgPerson, organizationalPerson";
+const firstUserLdapFilter = "(first-filter)";
+const firstReadTimeout = "5000";
 
-const secondLdapName = `${firstLdapName}-2`;
-const secondLdapVendor = "Other";
-
-const editModeWritable = "WRITABLE";
+const searchScopeOneLevel = "One Level";
+const searchScopeSubtree = "Subtree";
 
 const secondUsersDn = "user-dn-2";
 const secondUserLdapAtt = "cn";
 const secondRdnLdapAtt = "cn";
 const secondUuidLdapAtt = "objectGUID";
 const secondUserObjClasses = "person, organizationalPerson, user";
-
-const updatedLdapName = `${firstLdapName}-updated`;
+const secondUserLdapFilter = "(second-filter)";
+const secondReadTimeout = "5000";
 
 const defaultPolicy = "DEFAULT";
 const newPolicy = "EVICT_WEEKLY";
@@ -115,7 +121,10 @@ describe("User Fed LDAP tests", () => {
       firstUserLdapAtt,
       firstRdnLdapAtt,
       firstUuidLdapAtt,
-      firstUserObjClasses
+      firstUserObjClasses,
+      firstUserLdapFilter,
+      searchScopeOneLevel,
+      firstReadTimeout
     );
     providersPage.save(provider);
     masthead.checkNotificationMessage(createdSuccessMessage);
@@ -288,6 +297,86 @@ describe("User Fed LDAP tests", () => {
     providersPage.verifyToggle(providersPage.periodicUsersSync, "on");
     providersPage.verifyToggle(providersPage.importUsers, "on");
     sidebarPage.goToUserFederation();
+  });
+
+  it("Should update LDAP searching and updating settings and save", () => {
+    providersPage.clickExistingCard(firstLdapName);
+
+    providersPage.fillLdapSearchingData(
+      editModeWritable,
+      secondUsersDn,
+      secondUserLdapAtt,
+      secondRdnLdapAtt,
+      secondUuidLdapAtt,
+      secondUserObjClasses,
+      secondUserLdapFilter,
+      searchScopeSubtree,
+      secondReadTimeout
+    );
+    providersPage.toggleSwitch(providersPage.ldapPagination);
+
+    providersPage.save(provider);
+    masthead.checkNotificationMessage(savedSuccessMessage);
+
+    // now verify
+    sidebarPage.goToUserFederation();
+    providersPage.clickExistingCard(firstLdapName);
+
+    providersPage.verifySelect(
+      providersPage.ldapEditModeInput,
+      editModeWritable
+    );
+    providersPage.verifyTextField(
+      providersPage.ldapUsersDnInput,
+      secondUsersDn
+    );
+    providersPage.verifyTextField(
+      providersPage.ldapUserLdapAttInput,
+      secondUserLdapAtt
+    );
+    providersPage.verifyTextField(
+      providersPage.ldapRdnLdapAttInput,
+      secondRdnLdapAtt
+    );
+    providersPage.verifyTextField(
+      providersPage.ldapUuidLdapAttInput,
+      secondUuidLdapAtt
+    );
+    providersPage.verifyTextField(
+      providersPage.ldapUserObjClassesInput,
+      secondUserObjClasses
+    );
+    providersPage.verifyTextField(
+      providersPage.ldapUserLdapFilter,
+      secondUserLdapFilter
+    );
+    providersPage.verifySelect(
+      providersPage.ldapSearchScopeInput,
+      searchScopeSubtree
+    );
+    providersPage.verifyTextField(
+      providersPage.ldapReadTimeout,
+      secondReadTimeout
+    );
+    providersPage.verifyToggle(providersPage.ldapPagination, "on");
+
+    sidebarPage.goToUserFederation();
+    providersPage.clickExistingCard(firstLdapName);
+
+    providersPage.fillSelect(providersPage.ldapEditModeInput, editModeUnsynced);
+    providersPage.toggleSwitch(providersPage.importUsers);
+
+    providersPage.save(provider);
+    masthead.checkNotificationMessage(savedSuccessMessage);
+
+    // now verify
+    sidebarPage.goToUserFederation();
+    providersPage.clickExistingCard(firstLdapName);
+
+    providersPage.verifySelect(
+      providersPage.ldapEditModeInput,
+      editModeUnsynced
+    );
   });
 
   it("Should update display name", () => {

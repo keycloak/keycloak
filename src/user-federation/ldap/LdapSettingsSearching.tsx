@@ -274,6 +274,7 @@ export const LdapSettingsSearching = ({
           <TextInput
             type="text"
             id="kc-user-ldap-filter"
+            data-testid="user-ldap-filter"
             name="config.customUserSearchFilter[0]"
             ref={form.register({
               pattern: {
@@ -342,6 +343,7 @@ export const LdapSettingsSearching = ({
             type="number"
             min={0}
             id="kc-read-timeout"
+            data-testid="ldap-read-timeout"
             name="config.readTimeout[0]"
             ref={form.register}
           />
@@ -363,7 +365,8 @@ export const LdapSettingsSearching = ({
             control={form.control}
             render={({ onChange, value }) => (
               <Switch
-                id={"kc-console-pagination"}
+                id="kc-console-pagination"
+                data-testid="console-pagination"
                 isDisabled={false}
                 onChange={(value) => onChange([`${value}`])}
                 isChecked={value[0] === "true"}
