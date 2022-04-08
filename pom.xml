@@ -88,7 +88,7 @@
         <infinispan.protostream.processor.version>4.4.1.Final</infinispan.protostream.processor.version>
         <javax.annotation-api.version>1.3.2</javax.annotation-api.version>
         <jackson.version>2.12.1</jackson.version>
-        <jackson.databind.version>${jackson.version}</jackson.databind.version>
+        <jackson.databind.version>2.12.6.1</jackson.databind.version>
         <jackson.annotations.version>${jackson.databind.version}</jackson.annotations.version>
         <jakarta.mail.version>1.6.5</jakarta.mail.version>
         <jboss-jaxrs-api_2.1_spec>2.0.1.Final</jboss-jaxrs-api_2.1_spec>
