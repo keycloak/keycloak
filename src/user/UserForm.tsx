@@ -60,8 +60,14 @@ export const UserForm = ({
   const adminClient = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
-  const { handleSubmit, register, errors, watch, control, reset } =
-    useFormContext();
+  const {
+    handleSubmit,
+    register,
+    watch,
+    control,
+    reset,
+    formState: { errors },
+  } = useFormContext();
   const watchUsernameInput = watch("username");
   const [selectedGroups, setSelectedGroups] = useState<GroupRepresentation[]>(
     []

@@ -16,7 +16,10 @@ type NameDescriptionProps = {
 
 export const NameDescription = ({ prefix }: NameDescriptionProps) => {
   const { t } = useTranslation("clients");
-  const { register, errors } = useFormContext();
+  const {
+    register,
+    formState: { errors },
+  } = useFormContext();
 
   return (
     <>

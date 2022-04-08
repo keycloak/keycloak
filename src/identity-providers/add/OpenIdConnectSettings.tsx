@@ -17,7 +17,12 @@ export const OpenIdConnectSettings = () => {
 
   const adminClient = useAdminClient();
   const { realm } = useRealm();
-  const { setValue, errors, setError, clearErrors } = useFormContext();
+  const {
+    setValue,
+    setError,
+    clearErrors,
+    formState: { errors },
+  } = useFormContext();
 
   const setupForm = (result: any) => {
     Object.keys(result).map((k) => setValue(`config.${k}`, result[k]));

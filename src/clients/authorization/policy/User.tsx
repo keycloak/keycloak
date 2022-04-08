@@ -15,7 +15,11 @@ import { useTranslation } from "react-i18next";
 
 export const User = () => {
   const { t } = useTranslation("clients");
-  const { control, getValues, errors } = useFormContext();
+  const {
+    control,
+    getValues,
+    formState: { errors },
+  } = useFormContext();
   const values: string[] | undefined = getValues("users");
 
   const [open, setOpen] = useState(false);

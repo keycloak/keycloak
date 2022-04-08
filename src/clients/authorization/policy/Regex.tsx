@@ -7,7 +7,10 @@ import { HelpItem } from "../../../components/help-enabler/HelpItem";
 
 export const Regex = () => {
   const { t } = useTranslation("clients");
-  const { register, errors } = useFormContext();
+  const {
+    register,
+    formState: { errors },
+  } = useFormContext();
 
   return (
     <>

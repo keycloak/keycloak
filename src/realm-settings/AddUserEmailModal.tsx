@@ -30,7 +30,12 @@ export const AddUserEmailModal = ({ callback }: AddUserEmailModalProps) => {
   const { t } = useTranslation("groups");
   const adminClient = useAdminClient();
   const { whoAmI } = useWhoAmI();
-  const { register, errors, handleSubmit, watch } = useForm<AddUserEmailForm>({
+  const {
+    register,
+    handleSubmit,
+    watch,
+    formState: { errors },
+  } = useForm<AddUserEmailForm>({
     defaultValues: { email: "" },
   });
 

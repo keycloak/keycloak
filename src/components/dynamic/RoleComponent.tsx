@@ -34,7 +34,11 @@ export const RoleComponent = ({
 
   const adminClient = useAdminClient();
   const { realm } = useRealm();
-  const { control, errors, getValues } = useFormContext();
+  const {
+    control,
+    getValues,
+    formState: { errors },
+  } = useFormContext();
 
   const [roleOpen, setRoleOpen] = useState(false);
   const [clientsOpen, setClientsOpen] = useState(false);

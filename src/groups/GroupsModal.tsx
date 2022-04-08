@@ -33,7 +33,11 @@ export const GroupsModal = ({
   const { t } = useTranslation("groups");
   const adminClient = useAdminClient();
   const { addAlert, addError } = useAlerts();
-  const { register, errors, handleSubmit } = useForm({
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
     defaultValues: { name: rename },
   });
 

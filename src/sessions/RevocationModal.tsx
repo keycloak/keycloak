@@ -37,7 +37,11 @@ export const RevocationModal = ({
 
   const { realm: realmName } = useRealm();
   const adminClient = useAdminClient();
-  const { register, errors, handleSubmit } = useForm();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm();
   const [realm, setRealm] = useState<RealmRepresentation>();
 
   const [key, setKey] = useState(0);

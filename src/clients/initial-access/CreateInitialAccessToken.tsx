@@ -27,8 +27,7 @@ export default function CreateInitialAccessToken() {
   const {
     handleSubmit,
     control,
-    errors,
-    formState: { isValid },
+    formState: { isValid, errors },
   } = useForm({ mode: "onChange" });
 
   const adminClient = useAdminClient();

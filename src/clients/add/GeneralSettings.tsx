@@ -16,7 +16,10 @@ import { getProtocolName } from "../utils";
 
 export const GeneralSettings = () => {
   const { t } = useTranslation("clients");
-  const { errors, control } = useFormContext();
+  const {
+    control,
+    formState: { errors },
+  } = useFormContext();
 
   const providers = useLoginProviders();
   const [open, isOpen] = useState(false);

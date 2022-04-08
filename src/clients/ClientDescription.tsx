@@ -19,7 +19,11 @@ type ClientDescriptionProps = {
 
 export const ClientDescription = ({ protocol }: ClientDescriptionProps) => {
   const { t } = useTranslation("clients");
-  const { register, errors, control } = useFormContext<ClientRepresentation>();
+  const {
+    register,
+    control,
+    formState: { errors },
+  } = useFormContext<ClientRepresentation>();
   return (
     <FormAccess role="manage-clients" unWrap>
       <FormGroup

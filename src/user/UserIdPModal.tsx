@@ -35,7 +35,11 @@ export const UserIdpModal = ({
   const { t } = useTranslation("users");
   const adminClient = useAdminClient();
   const { addAlert, addError } = useAlerts();
-  const { register, errors, handleSubmit, formState } = useForm({
+  const {
+    register,
+    handleSubmit,
+    formState: { isValid, errors },
+  } = useForm({
     mode: "onChange",
   });
 
@@ -71,7 +75,7 @@ export const UserIdpModal = ({
           variant="primary"
           type="submit"
           form="group-form"
-          isDisabled={!formState.isValid}
+          isDisabled={!isValid}
         >
           {t("link")}
         </Button>,

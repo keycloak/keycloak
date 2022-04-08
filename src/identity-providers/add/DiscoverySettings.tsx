@@ -19,7 +19,11 @@ type DiscoverySettingsProps = {
 
 const Fields = ({ readOnly }: DiscoverySettingsProps) => {
   const { t } = useTranslation("identity-providers");
-  const { register, control, errors } = useFormContext();
+  const {
+    register,
+    control,
+    formState: { errors },
+  } = useFormContext();
 
   const validateSignature = useWatch({
     control: control,

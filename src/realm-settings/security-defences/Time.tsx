@@ -14,7 +14,10 @@ export const Time = ({
   style?: CSSProperties;
 }) => {
   const { t } = useTranslation("realm-settings");
-  const { control, errors } = useFormContext();
+  const {
+    control,
+    formState: { errors },
+  } = useFormContext();
   return (
     <FormGroup
       style={style}

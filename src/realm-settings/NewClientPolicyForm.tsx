@@ -65,7 +65,10 @@ type PolicyDetailAttributes = {
 
 export default function NewClientPolicyForm() {
   const { t } = useTranslation("realm-settings");
-  const { errors, reset: resetForm } = useForm<NewClientPolicyForm>({
+  const {
+    reset: resetForm,
+    formState: { errors },
+  } = useForm<NewClientPolicyForm>({
     defaultValues,
   });
   const { realm } = useRealm();

@@ -24,7 +24,11 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
   const { t } = useTranslation("identity-providers");
   const { t: th } = useTranslation("identity-providers-help");
 
-  const { register, control, errors } = useFormContext();
+  const {
+    register,
+    control,
+    formState: { errors },
+  } = useFormContext();
   const [namedPolicyDropdownOpen, setNamedPolicyDropdownOpen] = useState(false);
   const [principalTypeDropdownOpen, setPrincipalTypeDropdownOpen] =
     useState(false);

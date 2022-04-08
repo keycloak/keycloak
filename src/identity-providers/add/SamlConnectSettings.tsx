@@ -20,8 +20,13 @@ export const SamlConnectSettings = () => {
 
   const adminClient = useAdminClient();
   const { realm } = useRealm();
-  const { setValue, register, errors, setError, clearErrors } =
-    useFormContext();
+  const {
+    setValue,
+    register,
+    setError,
+    clearErrors,
+    formState: { errors },
+  } = useFormContext();
 
   const setupForm = (result: IdentityProviderRepresentation) => {
     Object.entries(result).map(([key, value]) =>

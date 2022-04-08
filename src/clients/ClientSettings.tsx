@@ -38,8 +38,12 @@ export const ClientSettings = ({
   save,
   reset,
 }: ClientSettingsProps) => {
-  const { register, control, watch, errors } =
-    useFormContext<ClientRepresentation>();
+  const {
+    register,
+    control,
+    watch,
+    formState: { errors },
+  } = useFormContext<ClientRepresentation>();
   const { t } = useTranslation("clients");
   const { realm } = useRealm();
 

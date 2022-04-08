@@ -14,7 +14,10 @@ export const OIDCGeneralSettings = ({ id }: { id: string }) => {
   const { t } = useTranslation("identity-providers");
   const { tab } = useParams<IdentityProviderParams>();
 
-  const { register, errors } = useFormContext();
+  const {
+    register,
+    formState: { errors },
+  } = useFormContext();
 
   return (
     <>

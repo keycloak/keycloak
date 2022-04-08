@@ -20,7 +20,11 @@ export const ScopeSelect = ({
   const { t } = useTranslation("clients");
   const adminClient = useAdminClient();
 
-  const { control, errors, setValue } = useFormContext();
+  const {
+    control,
+    setValue,
+    formState: { errors },
+  } = useFormContext();
 
   const [scopes, setScopes] = useState<ScopeRepresentation[]>([]);
   const [search, setSearch] = useState("");

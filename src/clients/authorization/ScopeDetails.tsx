@@ -35,10 +35,14 @@ export default function ScopeDetails() {
 
   const [deleteDialog, toggleDeleteDialog] = useToggle();
   const [scope, setScope] = useState<ScopeRepresentation>();
-  const { register, errors, reset, handleSubmit } =
-    useForm<ScopeRepresentation>({
-      mode: "onChange",
-    });
+  const {
+    register,
+    reset,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<ScopeRepresentation>({
+    mode: "onChange",
+  });
 
   useFetch(
     async () => {

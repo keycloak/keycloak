@@ -22,8 +22,14 @@ export const DiscoveryEndpointField = ({
 
   const adminClient = useAdminClient();
 
-  const { setValue, register, errors, setError, watch, clearErrors } =
-    useFormContext();
+  const {
+    setValue,
+    register,
+    setError,
+    watch,
+    clearErrors,
+    formState: { errors },
+  } = useFormContext();
   const discoveryUrl = watch("discoveryEndpoint");
 
   const [discovery, setDiscovery] = useState(true);

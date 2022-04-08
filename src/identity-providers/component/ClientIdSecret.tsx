@@ -15,7 +15,10 @@ export const ClientIdSecret = ({
 }) => {
   const { t } = useTranslation("identity-providers");
 
-  const { register, errors } = useFormContext();
+  const {
+    register,
+    formState: { errors },
+  } = useFormContext();
 
   return (
     <>

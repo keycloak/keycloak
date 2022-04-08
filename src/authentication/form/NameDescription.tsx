@@ -12,7 +12,10 @@ import { HelpItem } from "../../components/help-enabler/HelpItem";
 
 export const NameDescription = () => {
   const { t } = useTranslation("authentication");
-  const { register, errors } = useFormContext();
+  const {
+    register,
+    formState: { errors },
+  } = useFormContext();
 
   return (
     <>

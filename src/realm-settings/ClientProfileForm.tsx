@@ -54,8 +54,7 @@ export default function ClientProfileForm() {
     handleSubmit,
     setValue,
     register,
-    errors,
-    formState: { isDirty },
+    formState: { isDirty, errors },
   } = useForm<ClientProfileForm>({
     defaultValues,
     mode: "onChange",

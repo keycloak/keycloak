@@ -27,7 +27,11 @@ export const PolicyRow = ({
   onRemove,
 }: PolicyRowProps) => {
   const { t } = useTranslation("authentication");
-  const { control, register, errors } = useFormContext();
+  const {
+    control,
+    register,
+    formState: { errors },
+  } = useFormContext();
   return (
     <FormGroup
       label={displayName}

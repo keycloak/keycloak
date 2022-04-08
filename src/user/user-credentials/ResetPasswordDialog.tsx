@@ -50,8 +50,7 @@ export const ResetPasswordDialog = ({
   const {
     register,
     control,
-    errors,
-    formState: { isValid },
+    formState: { isValid, errors },
     watch,
     handleSubmit,
   } = useForm<CredentialsForm>({

@@ -32,7 +32,10 @@ export const ResourcesPolicySelect = ({
   const { t } = useTranslation("clients");
   const adminClient = useAdminClient();
 
-  const { control, errors } = useFormContext<PolicyRepresentation>();
+  const {
+    control,
+    formState: { errors },
+  } = useFormContext<PolicyRepresentation>();
   const [items, setItems] = useState<Policies[]>([]);
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);

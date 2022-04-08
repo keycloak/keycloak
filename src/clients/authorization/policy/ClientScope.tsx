@@ -25,7 +25,12 @@ export type RequiredIdValue = {
 
 export const ClientScope = () => {
   const { t } = useTranslation("clients");
-  const { control, getValues, setValue, errors } = useFormContext<{
+  const {
+    control,
+    getValues,
+    setValue,
+    formState: { errors },
+  } = useFormContext<{
     clientScopes: RequiredIdValue[];
   }>();
 

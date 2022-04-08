@@ -44,10 +44,10 @@ export const RealmSettingsEmailTab = ({
     register,
     control,
     handleSubmit,
-    errors,
     watch,
     reset: resetForm,
     getValues,
+    formState: { errors },
   } = useForm<RealmRepresentation>({ defaultValues: realm });
 
   const reset = () => resetForm(realm);

@@ -20,7 +20,11 @@ export const SamlGeneralSettings = ({ id }: { id: string }) => {
   const { realm } = useRealm();
   const { tab } = useParams<IdentityProviderParams>();
 
-  const { register, errors, watch } = useFormContext();
+  const {
+    register,
+    watch,
+    formState: { errors },
+  } = useFormContext();
 
   const alias = watch("alias");
 

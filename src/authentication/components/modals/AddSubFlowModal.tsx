@@ -40,7 +40,12 @@ export const AddSubFlowModal = ({
   onCancel,
 }: AddSubFlowProps) => {
   const { t } = useTranslation("authentication");
-  const { register, control, errors, handleSubmit } = useForm<Flow>();
+  const {
+    register,
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<Flow>();
   const [open, setOpen] = useState(false);
   const [openProvider, setOpenProvider] = useState(false);
   const [formProviders, setFormProviders] =

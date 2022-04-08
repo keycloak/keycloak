@@ -11,7 +11,11 @@ import { HelpItem } from "../../components/help-enabler/HelpItem";
 
 export const X509 = () => {
   const { t } = useTranslation("clients");
-  const { register, control, errors } = useFormContext();
+  const {
+    register,
+    control,
+    formState: { errors },
+  } = useFormContext();
   return (
     <>
       <FormGroup
