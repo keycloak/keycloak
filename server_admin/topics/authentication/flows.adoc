@@ -406,6 +406,34 @@ Note when the login request initiates a request with the `claims` parameter requ
 one of the specified levels. If it is not able to return one of the specified levels (For example if the requested level is unknown or bigger than configured conditions
 in the authentication flow), then {project_name} will throw an error.
 
+[[_user_session_limits]]
+*User session limits*
+
+Limits on the number of session that a user can have can be configured. Sessions can be limited per realm or per client.
+
+To add session limits to a flow, perform the following steps.
+
+. Click *Add execution* for the flow.
+. Select *User Session Count Limiter* from the item list.
+. Click *Save*.
+. Click *Required* for the *User Session Count Limiter* authentication type to set its requirement to required.
+. Click *Actions* for the *User Session Count Limiter*.
+. Click *Config*.
+. Enter an alias for this config.
+. Enter the required maximum number of sessions a user can have in this realm. If a value of 0 is used, this check is disabled.
+. Enter the required maximum number of sessions a user can have for the client. If a value of 0 is used, this check is disabled.
+. Select the behavior that is required when the user tries to create a session after the limit is reached. Available bahaviors are:
+
+  Deny new session - when a new session is requested and the session limit is reached, no new sessions can be created.
+  Terminate oldest session - when a new session is requested and the session limit has been reached, the oldest session will be removed and the new session created.
+
+. Optionally, add a custom error message to be displayed when the limit is reached.
+
+Note that the user session limits should be added to your bound *Browser Flow*, *Direct Grant Flow*, *Reset Credentials* and also to any *Post Broker Login Flow*.
+Currently, the administrator is responsible for maintaining consistency between the different configurations.
+
+Note also that the user session limit feature is not available for CIBA.
+
 ifeval::[{project_community}==true]
 === Script Authenticator
 

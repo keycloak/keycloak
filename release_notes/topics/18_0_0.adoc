@@ -31,6 +31,12 @@ Thanks to https://github.com/vanrar68[Joaquim Fellmann] for the contribution.
 
 There are more WebAuthn improvements and fixes in addition to that.
 
+== Session limits
+
+{project_name} now supports limits on the number of sessions a user can have. Limits can be placed at the realm level or at the client level.
+For more details, see link:{adminguide_link}#_user_session_limits[{adminguide_name}].
+Thanks to https://github.com/mfdewit[Mauro de Wit] for the contribution.
+
 == Other improvements
 
 * Support for encrypted User Info endpoint response. Thanks to https://github.com/giacomoa[Giacomo Altiero]
