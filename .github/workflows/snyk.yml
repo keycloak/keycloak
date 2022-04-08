@@ -26,7 +26,7 @@ jobs:
 
       - uses: snyk/actions/setup@master
       - name: Check for vulnerabilities
-        run: snyk test --policy-path=.snyk --all-projects --prune-repeated-subdependencies --exclude=tests --sarif-file-output=quarkus-report.sarif quarkus
+        run: snyk test --policy-path=${GITHUB_WORKSPACE}/.github/snyk/.snyk --all-projects --prune-repeated-subdependencies --exclude=tests --sarif-file-output=quarkus-report.sarif quarkus
         continue-on-error: true
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
@@ -54,7 +54,7 @@ jobs:
 
       - uses: snyk/actions/setup@master    
       - name: Check for vulnerabilities for the Operator
-        run: snyk test --policy-path=.snyk --all-projects --prune-repeated-subdependencies --exclude=tests --sarif-file-output=operator-report.sarif operator
+        run: snyk test --policy-path=${GITHUB_WORKSPACE}/.github/snyk/.snyk --all-projects --prune-repeated-subdependencies --exclude=tests --sarif-file-output=operator-report.sarif operator
         continue-on-error: true
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
