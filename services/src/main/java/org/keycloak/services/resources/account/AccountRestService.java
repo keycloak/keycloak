@@ -123,6 +123,7 @@ public class AccountRestService {
         this.event = event;
         this.locale = session.getContext().resolveLocale(user);
         this.version = version;
+        event.client(auth.getClient()).user(auth.getUser());
     }
     
     public void init() {
@@ -201,7 +202,7 @@ public class AccountRestService {
     public Response updateAccount(UserRepresentation rep) {
         auth.require(AccountRoles.MANAGE_ACCOUNT);
 
-        event.event(EventType.UPDATE_PROFILE).client(auth.getClient()).user(auth.getUser()).detail(Details.CONTEXT, UserProfileContext.ACCOUNT.name());
+        event.event(EventType.UPDATE_PROFILE).detail(Details.CONTEXT, UserProfileContext.ACCOUNT.name());
 
         UserProfileProvider profileProvider = session.getProvider(UserProfileProvider.class);
         UserProfile profile = profileProvider.create(UserProfileContext.ACCOUNT, rep.toAttributes(), auth.getUser());
@@ -350,14 +351,13 @@ public class AccountRestService {
         event.event(EventType.REVOKE_GRANT);
         ClientModel client = realm.getClientByClientId(clientId);
         if (client == null) {
-            event.event(EventType.REVOKE_GRANT_ERROR);
             String msg = String.format("No client with clientId: %s found.", clientId);
             event.error(msg);
             return ErrorResponse.error(msg, Response.Status.NOT_FOUND);
         }
 
         UserConsentManager.revokeConsentToClient(session, client, user);
-        event.success();
+        event.detail(Details.REVOKED_CLIENT, client.getClientId()).success();
 
         return Response.noContent().build();
     }
@@ -375,6 +375,7 @@ public class AccountRestService {
     @Produces(MediaType.APPLICATION_JSON)
     public Response grantConsent(final @PathParam("clientId") String clientId,
                                  final ConsentRepresentation consent) {
+        event.event(EventType.GRANT_CONSENT);
         return upsert(clientId, consent);
     }
 
@@ -391,6 +392,7 @@ public class AccountRestService {
     @Produces(MediaType.APPLICATION_JSON)
     public Response updateConsent(final @PathParam("clientId") String clientId,
                                   final ConsentRepresentation consent) {
+        event.event(EventType.UPDATE_CONSENT);
         return upsert(clientId, consent);
     }
 
@@ -406,10 +408,8 @@ public class AccountRestService {
         checkAccountApiEnabled();
         auth.requireOneOf(AccountRoles.MANAGE_ACCOUNT, AccountRoles.MANAGE_CONSENT);
 
-        event.event(EventType.GRANT_CONSENT);
         ClientModel client = realm.getClientByClientId(clientId);
         if (client == null) {
-            event.event(EventType.GRANT_CONSENT_ERROR);
             String msg = String.format("No client with clientId: %s found.", clientId);
             event.error(msg);
             return ErrorResponse.error(msg, Response.Status.NOT_FOUND);
@@ -419,10 +419,14 @@ public class AccountRestService {
             UserConsentModel grantedConsent = createConsent(client, consent);
             if (session.users().getConsentByClient(realm, user.getId(), client.getId()) == null) {
                 session.users().addConsent(realm, user.getId(), grantedConsent);
+                event.event(EventType.GRANT_CONSENT);
             } else {
                 session.users().updateConsent(realm, user.getId(), grantedConsent);
+                event.event(EventType.UPDATE_CONSENT);
             }
-            event.success();
+            event.detail(Details.GRANTED_CLIENT,client.getClientId());
+            String scopeString = grantedConsent.getGrantedClientScopes().stream().map(cs->cs.getName()).collect(Collectors.joining(" "));
+            event.detail(Details.SCOPE, scopeString).success();
             grantedConsent = session.users().getConsentByClient(realm, user.getId(), client.getId());
             return Response.ok(modelToRepresentation(grantedConsent)).build();
         } catch (IllegalArgumentException e) {
