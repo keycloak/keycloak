@@ -36,12 +36,12 @@ public class MicrosoftIdentityProviderFactory extends AbstractIdentityProviderFa
 
     @Override
     public MicrosoftIdentityProvider create(KeycloakSession session, IdentityProviderModel model) {
-        return new MicrosoftIdentityProvider(session, new OAuth2IdentityProviderConfig(model));
+        return new MicrosoftIdentityProvider(session, new MicrosoftIdentityProviderConfig(model));
     }
 
     @Override
     public OAuth2IdentityProviderConfig createConfig() {
-        return new OAuth2IdentityProviderConfig();
+        return new MicrosoftIdentityProviderConfig();
     }
 
     @Override
