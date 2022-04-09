@@ -520,8 +520,14 @@ public class SamlService extends AuthorizationEndpointBase {
         }
 
         private boolean isSupportedNameIdFormat(String nameIdFormat) {
-            if (nameIdFormat.equals(JBossSAMLURIConstants.NAMEID_FORMAT_EMAIL.get()) || nameIdFormat.equals(JBossSAMLURIConstants.NAMEID_FORMAT_TRANSIENT.get()) || nameIdFormat.equals(JBossSAMLURIConstants.NAMEID_FORMAT_PERSISTENT.get())
-                    || nameIdFormat.equals(JBossSAMLURIConstants.NAMEID_FORMAT_UNSPECIFIED.get())) {
+            if (nameIdFormat.equals(JBossSAMLURIConstants.NAMEID_FORMAT_EMAIL.get()) 
+                    || nameIdFormat.equals(JBossSAMLURIConstants.NAMEID_FORMAT_TRANSIENT.get()) 
+                    || nameIdFormat.equals(JBossSAMLURIConstants.NAMEID_FORMAT_PERSISTENT.get())
+                    || nameIdFormat.equals(JBossSAMLURIConstants.NAMEID_FORMAT_UNSPECIFIED.get())
+                    || nameIdFormat.equals(JBossSAMLURIConstants.NAMEID_FORMAT_WINDOWS_DOMAIN_NAME.get())
+                    || nameIdFormat.equals(JBossSAMLURIConstants.NAMEID_FORMAT_X509SUBJECTNAME.get())
+                    || nameIdFormat.equals(JBossSAMLURIConstants.NAMEID_FORMAT_KERBEROS.get())                
+                ) {
                 return true;
             }
             return false;

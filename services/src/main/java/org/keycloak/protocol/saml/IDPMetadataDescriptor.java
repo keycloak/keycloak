@@ -46,6 +46,9 @@ import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.NAMEID_FO
 import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.NAMEID_FORMAT_TRANSIENT;
 import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.NAMEID_FORMAT_UNSPECIFIED;
 import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.NAMEID_FORMAT_EMAIL;
+import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.NAMEID_FORMAT_X509SUBJECTNAME;
+import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.NAMEID_FORMAT_WINDOWS_DOMAIN_NAME;
+import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.NAMEID_FORMAT_KERBEROS;
 import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.XMLDSIG_NSURI;
 import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.PROTOCOL_NSURI;
 
@@ -71,6 +74,9 @@ public class IDPMetadataDescriptor {
         spIDPDescriptor.addNameIDFormat(NAMEID_FORMAT_TRANSIENT.get());
         spIDPDescriptor.addNameIDFormat(NAMEID_FORMAT_UNSPECIFIED.get());
         spIDPDescriptor.addNameIDFormat(NAMEID_FORMAT_EMAIL.get());
+        spIDPDescriptor.addNameIDFormat(NAMEID_FORMAT_X509SUBJECTNAME.get());
+        spIDPDescriptor.addNameIDFormat(NAMEID_FORMAT_WINDOWS_DOMAIN_NAME.get());
+        spIDPDescriptor.addNameIDFormat(NAMEID_FORMAT_KERBEROS.get());
 
         spIDPDescriptor.addSingleLogoutService(new EndpointType(SAML_HTTP_POST_BINDING.getUri(), logoutEndpoint));
         spIDPDescriptor.addSingleLogoutService(new EndpointType(SAML_HTTP_REDIRECT_BINDING.getUri(), logoutEndpoint));

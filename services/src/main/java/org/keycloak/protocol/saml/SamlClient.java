@@ -76,6 +76,12 @@ public class SamlClient extends ClientConfigResolver {
                 nameIdFormat = JBossSAMLURIConstants.NAMEID_FORMAT_TRANSIENT.get();
             } else if (configuredNameIdFormat.equals("username")) {
                 nameIdFormat = JBossSAMLURIConstants.NAMEID_FORMAT_UNSPECIFIED.get();
+            } else if (configuredNameIdFormat.equals("windowsDomainQN")) {
+                nameIdFormat = JBossSAMLURIConstants.NAMEID_FORMAT_WINDOWS_DOMAIN_NAME.get();
+            } else if (configuredNameIdFormat.equals("x509")) {
+                nameIdFormat = JBossSAMLURIConstants.NAMEID_FORMAT_X509SUBJECTNAME.get();
+            } else if (configuredNameIdFormat.equals("kerberos")) {
+                nameIdFormat = JBossSAMLURIConstants.NAMEID_FORMAT_KERBEROS.get();
             } else {
                 nameIdFormat = JBossSAMLURIConstants.NAMEID_FORMAT_UNSPECIFIED.get();
             }
@@ -93,6 +99,12 @@ public class SamlClient extends ClientConfigResolver {
             return "transient";
         } else if (nameIdFormat.equals(JBossSAMLURIConstants.NAMEID_FORMAT_UNSPECIFIED.get())) {
             return "username";
+        } else if (nameIdFormat.equals(JBossSAMLURIConstants.NAMEID_FORMAT_WINDOWS_DOMAIN_NAME.get())) {
+            return "windowsDomainQN";
+        } else if (nameIdFormat.equals(JBossSAMLURIConstants.NAMEID_FORMAT_X509SUBJECTNAME.get())) {
+            return "x509";
+        } else if (nameIdFormat.equals(JBossSAMLURIConstants.NAMEID_FORMAT_KERBEROS.get())) {
+            return "kerberos";
         }
         return null;
 

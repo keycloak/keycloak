@@ -62,6 +62,11 @@ public class AuthnRequestNameIdFormatTest extends AbstractSamlTest {
         assertThat(rt.getAssertions().get(0).getAssertion().getSubject().getSubType().getBaseID(), instanceOf(NameIDType.class));
         NameIDType nameId = (NameIDType) rt.getAssertions().get(0).getAssertion().getSubject().getSubType().getBaseID();
         assertThat(nameId.getValue(), nameIdMatcher);
+        if (nameIDPolicy == null) {
+            assertThat(nameId.getFormat().toString(), is(JBossSAMLURIConstants.NAMEID_FORMAT_UNSPECIFIED.get()));
+        } else {
+            assertThat(nameId.getFormat().toString(), is(nameIDPolicy.getFormat().toString()));
+        }
     }
 
     @Test
@@ -84,6 +89,27 @@ public class AuthnRequestNameIdFormatTest extends AbstractSamlTest {
         nameIdPolicy.setFormat(JBossSAMLURIConstants.NAMEID_FORMAT_PERSISTENT.getUri());
         testLoginWithNameIdPolicy(Binding.POST, Binding.POST, nameIdPolicy, startsWith("G-"));
     }
+
+    @Test
+    public void testPostLoginNameIdPolicyWindowsDomainQN() throws Exception {
+        NameIDPolicyType nameIdPolicy = new NameIDPolicyType();
+        nameIdPolicy.setFormat(JBossSAMLURIConstants.NAMEID_FORMAT_WINDOWS_DOMAIN_NAME.getUri());
+        testLoginWithNameIdPolicy(Binding.POST, Binding.POST, nameIdPolicy, startsWith("bburke"));
+    }    
+
+    @Test
+    public void testPostLoginNameIdPolicyX509() throws Exception {
+        NameIDPolicyType nameIdPolicy = new NameIDPolicyType();
+        nameIdPolicy.setFormat(JBossSAMLURIConstants.NAMEID_FORMAT_X509SUBJECTNAME.getUri());
+        testLoginWithNameIdPolicy(Binding.POST, Binding.POST, nameIdPolicy, startsWith("bburke"));
+    }
+
+    @Test
+    public void testPostLoginNameIdPolicyKerberos() throws Exception {
+        NameIDPolicyType nameIdPolicy = new NameIDPolicyType();
+        nameIdPolicy.setFormat(JBossSAMLURIConstants.NAMEID_FORMAT_KERBEROS.getUri());
+        testLoginWithNameIdPolicy(Binding.POST, Binding.POST, nameIdPolicy, startsWith("bburke"));
+    }    
 
     @Test
     public void testPostLoginNoNameIdPolicyUnset() throws Exception {
@@ -109,6 +135,27 @@ public class AuthnRequestNameIdFormatTest extends AbstractSamlTest {
         NameIDPolicyType nameIdPolicy = new NameIDPolicyType();
         nameIdPolicy.setFormat(JBossSAMLURIConstants.NAMEID_FORMAT_PERSISTENT.getUri());
         testLoginWithNameIdPolicy(Binding.REDIRECT, Binding.REDIRECT, nameIdPolicy, startsWith("G-"));
+    }
+
+    @Test
+    public void testRedirectLoginNameIdPolicyWindowsDomainQN() throws Exception {
+        NameIDPolicyType nameIdPolicy = new NameIDPolicyType();
+        nameIdPolicy.setFormat(JBossSAMLURIConstants.NAMEID_FORMAT_WINDOWS_DOMAIN_NAME.getUri());
+        testLoginWithNameIdPolicy(Binding.REDIRECT, Binding.REDIRECT, nameIdPolicy, startsWith("bburke"));
+    }
+
+    @Test
+    public void testRedirectLoginNameIdPolicyX509() throws Exception {
+        NameIDPolicyType nameIdPolicy = new NameIDPolicyType();
+        nameIdPolicy.setFormat(JBossSAMLURIConstants.NAMEID_FORMAT_X509SUBJECTNAME.getUri());
+        testLoginWithNameIdPolicy(Binding.REDIRECT, Binding.REDIRECT, nameIdPolicy, startsWith("bburke"));
+    }
+
+    @Test
+    public void testRedirectLoginNameIdPolicyKerberos() throws Exception {
+        NameIDPolicyType nameIdPolicy = new NameIDPolicyType();
+        nameIdPolicy.setFormat(JBossSAMLURIConstants.NAMEID_FORMAT_KERBEROS.getUri());
+        testLoginWithNameIdPolicy(Binding.REDIRECT, Binding.REDIRECT, nameIdPolicy, startsWith("bburke"));
     }
 
     @Test

@@ -1157,7 +1157,10 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
         "username",
         "email",
         "transient",
-        "persistent"
+        "persistent",
+        "windowsDomainQN",
+        "x509",
+        "kerberos"
     ];
     $scope.xmlKeyNameTranformers = [
         "NONE",
@@ -1277,6 +1280,12 @@ module.controller('ClientDetailCtrl', function($scope, realm, client, flows, $ro
             $scope.nameIdFormat = $scope.nameIdFormats[2];
         } else if ($scope.client.attributes['saml_name_id_format'] == 'persistent') {
             $scope.nameIdFormat = $scope.nameIdFormats[3];
+        } else if ($scope.client.attributes['saml_name_id_format'] == 'windowsDomainQN') {
+            $scope.nameIdFormat = $scope.nameIdFormats[4];
+        } else if ($scope.client.attributes['saml_name_id_format'] == 'x509') {
+            $scope.nameIdFormat = $scope.nameIdFormats[5];
+        } else if ($scope.client.attributes['saml_name_id_format'] == 'kerberos') {
+            $scope.nameIdFormat = $scope.nameIdFormats[6];
         }
 
 

@@ -73,6 +73,16 @@ public class NameIdMapperTest extends AbstractSamlTest {
         testExpectedStatusCode(JBossSAMLURIConstants.STATUS_INVALID_NAMEIDPOLICY.get());
     }
 
+    @Test
+    public void testNameIdMapperExtendedSupportNameIDFormat() {
+        cau.setAttribute(SamlConfigAttributes.SAML_NAME_ID_FORMAT_ATTRIBUTE, "kerberos").update();
+        pmu.add(createSamlProtocolMapper(UserAttributeNameIdMapper.PROVIDER_ID,
+                NameIdMapperHelper.MAPPER_NAMEID_FORMAT, JBossSAMLURIConstants.NAMEID_FORMAT_KERBEROS.get(),
+                ProtocolMapperUtils.USER_ATTRIBUTE, "email"))
+                .update();
+        testExpectedNameId(bburkeUser.getEmail());
+    }
+
     private void testExpectedNameId(String expectedNameId) {
         ResponseType rt = getSamlResponseObject();
         NameIDType nameId = (NameIDType) rt.getAssertions().get(0).getAssertion().getSubject().getSubType().getBaseID();
