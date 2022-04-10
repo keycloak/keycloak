@@ -199,8 +199,6 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
                         <FormGroup
                             label={Msg.localize('email')}
                             fieldId="email-address"
-                            helperTextInvalid={this.state.errors.email}
-                            isValid={this.state.errors.email === ''}
                         >
                             <InputGroup>
                                 <TextInput
