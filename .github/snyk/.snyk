@@ -1,7 +1,7 @@
 version: v1.22.2
 ignore:
   SNYK-JAVA-ORGKEYCLOAK-1062507:
-    - '*':
+    - "*":
         reason: >
           The Keycloak core module is not affected by Open Redirect
           Vulnerability (CVE-2020-1723),  that relates to Gatekeeper, an old
@@ -10,13 +10,13 @@ ignore:
             - https://www.keycloak.org/2020/08/sunsetting-louketo-project.adoc
             - https://hub.docker.com/r/keycloak/keycloak-gatekeeper
   SNYK-JAVA-ORGKEYCLOAK-1088339:
-    - '*':
+    - "*":
         reason: >
           The Keycloak services module is not affected by CVE-2021-3461 anymore,  
           the issue was fixed on Keycloak 14.0.0 last year. More details:
             - https://issues.redhat.com/browse/KEYCLOAK-17495
   SNYK-JAVA-IONETTY-1042268:
-    - '*':
+    - "*":
         reason: >
           There is no fixed version for io.netty:netty-handler. More details:
             - https://github.com/netty/netty/issues/10806
@@ -26,5 +26,44 @@ ignore:
           Netty Handler is a transitive dependency coming from Quarkus,
           according to the Netty team, the fix should be available on Netty 5.
           The expiry date was set as a reminder for us to upgrade, once they
-          provide the fix.  
+          provide the fix.
         expires: 2022-05-31T00:00:00.000Z
+
+  # License warnings
+  snyk:lic:maven:org.eclipse.sisu:org.eclipse.sisu.plexus:EPL-1.0:
+    - "*":
+        reason: >
+          Suppress Snyk license compliance warnings for EPL. Transitive dependency from arquillian-phantom-driver.
+  snyk:lic:maven:org.eclipse.sisu:org.eclipse.sisu.inject:EPL-1.0:
+    - "*":
+        reason: >
+          Suppress Snyk license compliance warnings for EPL. Transitive dependency from arquillian-phantom-driver.
+  snyk:lic:maven:com.openshift:openshift-restclient-java:EPL-1.0:
+    - "*":
+        reason: >
+          Suppress Snyk license compliance warnings for EPL. Required by keycloak-services.
+  snyk:lic:maven:org.mariadb.jdbc:mariadb-java-client:LGPL-2.1:
+    - "*":
+        reason: >
+          Suppress Snyk license compliance warnings for EPL. Transitive dependency from quarkus-jdbc-mariadb.
+  snyk:lic:maven:org.jboss.narayana.jts:narayana-jts-integration:LGPL-2.1:
+    - "*":
+        reason: >
+          Suppress Snyk license compliance warnings for EPL. Transitive dependency from quarkus-hibernate-orm.
+  snyk:lic:maven:org.jboss.narayana.jta:narayana-jta:LGPL-2.1:
+    - "*":
+        reason: >
+          Suppress Snyk license compliance warnings for EPL. Transitive dependency from quarkus-hibernate-orm.
+
+  snyk:lic:maven:org.hibernate:hibernate-graalvm:LGPL-2.1:
+    - "*":
+        reason: >
+          Suppress Snyk license compliance warnings for EPL. Transitive dependency from quarkus-hibernate-orm.
+  snyk:lic:maven:org.hibernate:hibernate-core:LGPL-2.1:
+    - "*":
+        reason: >
+          Suppress Snyk license compliance warnings for EPL. Required by keycloak-model-jpa.
+  snyk:lic:maven:org.hibernate.common:hibernate-commons-annotations:LGPL-2.1:
+    - "*":
+        reason: >
+          Suppress Snyk license compliance warnings for EPL. Required by keycloak-model-jpa.
