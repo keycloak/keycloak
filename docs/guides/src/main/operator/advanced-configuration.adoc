@@ -20,7 +20,7 @@ e.g:
 
 [source,yaml]
 ----
-apiVersion: keycloak.org/v2alpha1
+apiVersion: k8s.keycloak.org/v2alpha1
 kind: Keycloak
 metadata:
   name: example-kc
@@ -67,7 +67,7 @@ As an example you can inject labels, annotations, or even volumes and volume mou
 
 [source,yaml]
 ----
-apiVersion: keycloak.org/v2alpha1
+apiVersion: k8s.keycloak.org/v2alpha1
 kind: Keycloak
 metadata:
   name: example-kc
@@ -98,7 +98,7 @@ Specifically, you can disable the required fields with a special value `INSECURE
 
 [source,yaml]
 ----
-apiVersion: keycloak.org/v2alpha1
+apiVersion: k8s.keycloak.org/v2alpha1
 kind: Keycloak
 metadata:
   name: example-kc
