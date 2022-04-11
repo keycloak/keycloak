@@ -11,10 +11,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out Admin UI
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Set up Node
-        uses: actions/setup-node@v3.1.0
+        uses: actions/setup-node@v3
         with:
           node-version: ${{ env.NODE_VERSION }}
           check-latest: true
@@ -22,7 +22,7 @@ jobs:
 
       - name: Cache Node modules
         id: cache-node-modules
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: node_modules
           key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
@@ -32,7 +32,7 @@ jobs:
         run: npm ci
 
       - name: Cache setup
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ./*
           key: ${{ github.sha }}
@@ -45,13 +45,13 @@ jobs:
         command: [lint, test, build]
     steps:
       - name: Restore setup
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ./*
           key: ${{ github.sha }}
 
       - name: Set up Node
-        uses: actions/setup-node@v3.1.0
+        uses: actions/setup-node@v3
         with:
           node-version: ${{ env.NODE_VERSION }}
 

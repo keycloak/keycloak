@@ -12,12 +12,12 @@ jobs:
       KEYCLOAK_SERVER_PATH: keycloak-server
     steps:
       - name: Check out Admin UI
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           path: ${{ env.ADMIN_UI_PATH }}
 
       - name: Check out Keycloak Server
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           repository: keycloak/keycloak
           path: ${{ env.KEYCLOAK_SERVER_PATH }}
@@ -58,7 +58,7 @@ jobs:
           KEYCLOAK_ADMIN_PASSWORD: admin
 
       - name: Set up Node
-        uses: actions/setup-node@v3.1.0
+        uses: actions/setup-node@v3
         with:
           node-version: 16
           check-latest: true
