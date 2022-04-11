@@ -74,21 +74,21 @@ jobs:
         run: CYPRESS_BASE_URL=http://localhost:8080/admin/ CYPRESS_KEYCLOAK_SERVER=http://localhost:8080 npm run start:cypress-tests
 
       - name: Add Cypress videos artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         if: failure()
         with:
           name: cypress-videos
           path: ${{ env.ADMIN_UI_PATH }}/assets/videos
 
       - name: Add Cypress screenshots artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         if: failure()
         with:
           name: cypress-screenshots
           path: ${{ env.ADMIN_UI_PATH }}/assets/screenshots
 
       - name: Upload server logs
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: server-log
           path: ~/server.log
