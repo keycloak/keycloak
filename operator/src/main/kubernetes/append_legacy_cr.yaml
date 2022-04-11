@@ -1092,7 +1092,7 @@
             - version
             type: object
         type: object
-    served: true
+    served: false
     storage: false
     subresources:
       status: {}

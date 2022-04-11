@@ -5,7 +5,6 @@ namespace: keycloak
 
 resources:
   - kubernetes/keycloaks.keycloak.org-v1.yml
-  - kubernetes/keycloakrealmimports.keycloak.org-v1.yml
   - kubernetes/kubernetes.yml
 
 # patchesStrategicMerge
