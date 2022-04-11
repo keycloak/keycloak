@@ -269,8 +269,93 @@ public class UserInfoTest extends AbstractKeycloakTest {
     }
 
     @Test
-    public void testSuccessEncryptedResponse() throws Exception {
+    public void testSuccessEncryptedResponseAlgRSA_OAEPEncA256GCM() throws Exception {
         testUserInfoSignatureAndEncryption(null, JWEConstants.RSA_OAEP, JWEConstants.A256GCM);
+    }
+
+    @Test
+    public void testSuccessEncryptedResponseAlgRSA_OAEPEncA192GCM() throws Exception {
+        testUserInfoSignatureAndEncryption(null, JWEConstants.RSA_OAEP, JWEConstants.A192GCM);
+    }
+
+    @Test
+    public void testSuccessEncryptedResponseAlgRSA_OAEPEncA128GCM() throws Exception {
+        testUserInfoSignatureAndEncryption(null, JWEConstants.RSA_OAEP, JWEConstants.A128GCM);
+    }
+
+    @Test
+    public void testSuccessEncryptedResponseAlgRSA_OAEPEncA128CBC_HS256() throws Exception {
+        testUserInfoSignatureAndEncryption(null, JWEConstants.RSA_OAEP, JWEConstants.A128CBC_HS256);
+    }
+
+    @Test
+    public void testSuccessEncryptedResponseAlgRSA_OAEPEncA192CBC_HS384() throws Exception {
+        testUserInfoSignatureAndEncryption(null, JWEConstants.RSA_OAEP, JWEConstants.A192CBC_HS384);
+    }
+
+    @Test
+    public void testSuccessEncryptedResponseAlgRSA_OAEPEncA256CBC_HS512() throws Exception {
+        testUserInfoSignatureAndEncryption(null, JWEConstants.RSA_OAEP, JWEConstants.A256CBC_HS512);
+    }
+
+    @Test
+    public void testSuccessEncryptedResponseAlgRSA_OAEP256EncA256GCM() throws Exception {
+        testUserInfoSignatureAndEncryption(null, JWEConstants.RSA_OAEP_256, JWEConstants.A256GCM);
+    }
+
+    @Test
+    public void testSuccessEncryptedResponseAlgRSA_OAEP256EncA192GCM() throws Exception {
+        testUserInfoSignatureAndEncryption(null, JWEConstants.RSA_OAEP_256, JWEConstants.A192GCM);
+    }
+
+    @Test
+    public void testSuccessEncryptedResponseAlgRSA_OAEP256EncA128GCM() throws Exception {
+        testUserInfoSignatureAndEncryption(null, JWEConstants.RSA_OAEP_256, JWEConstants.A128GCM);
+    }
+
+    @Test
+    public void testSuccessEncryptedResponseAlgRSA_OAEP256EncA128CBC_HS256() throws Exception {
+        testUserInfoSignatureAndEncryption(null, JWEConstants.RSA_OAEP_256, JWEConstants.A128CBC_HS256);
+    }
+
+    @Test
+    public void testSuccessEncryptedResponseAlgRSA_OAEP256EncA192CBC_HS384() throws Exception {
+        testUserInfoSignatureAndEncryption(null, JWEConstants.RSA_OAEP_256, JWEConstants.A192CBC_HS384);
+    }
+
+    @Test
+    public void testSuccessEncryptedResponseAlgRSA_OAEP256EncA256CBC_HS512() throws Exception {
+        testUserInfoSignatureAndEncryption(null, JWEConstants.RSA_OAEP_256, JWEConstants.A256CBC_HS512);
+    }
+
+    @Test
+    public void testSuccessEncryptedResponseAlgRSA1_5EncA256GCM() throws Exception {
+        testUserInfoSignatureAndEncryption(null, JWEConstants.RSA1_5, JWEConstants.A256GCM);
+    }
+
+    @Test
+    public void testSuccessEncryptedResponseAlgRSA1_5EncA192GCM() throws Exception {
+        testUserInfoSignatureAndEncryption(null, JWEConstants.RSA1_5, JWEConstants.A192GCM);
+    }
+
+    @Test
+    public void testSuccessEncryptedResponseAlgRSA1_5EncA128GCM() throws Exception {
+        testUserInfoSignatureAndEncryption(null, JWEConstants.RSA1_5, JWEConstants.A128GCM);
+    }
+
+    @Test
+    public void testSuccessEncryptedResponseAlgRSA1_5EncA128CBC_HS256() throws Exception {
+        testUserInfoSignatureAndEncryption(null, JWEConstants.RSA1_5, JWEConstants.A128CBC_HS256);
+    }
+
+    @Test
+    public void testSuccessEncryptedResponseAlgRSA1_5EncA192CBC_HS384() throws Exception {
+        testUserInfoSignatureAndEncryption(null, JWEConstants.RSA1_5, JWEConstants.A192CBC_HS384);
+    }
+
+    @Test
+    public void testSuccessEncryptedResponseAlgRSA1_5EncA256CBC_HS512() throws Exception {
+        testUserInfoSignatureAndEncryption(null, JWEConstants.RSA1_5, JWEConstants.A256CBC_HS512);
     }
 
     private void testUserInfoSignatureAndEncryption(String sigAlgorithm, String algAlgorithm, String encAlgorithm) {
