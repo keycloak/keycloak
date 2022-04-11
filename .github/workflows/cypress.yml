@@ -5,8 +5,10 @@ on:
   pull_request:
     branches: [main]
 jobs:
-  cypress-run:
+  setup:
     runs-on: ubuntu-latest
+    outputs:
+      server-path: ${{ steps.extract-server.outputs.path }}
     env:
       ADMIN_UI_PATH: admin-ui
       KEYCLOAK_SERVER_PATH: keycloak-server
@@ -41,21 +43,33 @@ jobs:
 
       - name: Build Keycloak Server
         working-directory: ${{ env.KEYCLOAK_SERVER_PATH }}
-        run: mvn clean install --no-snapshot-updates --batch-mode --errors -DskipTests -DskipAccount2 -Pdistribution,admin-preview
+        run: mvn clean install --no-snapshot-updates --batch-mode --errors -DskipTests -DskipCommon -DskipAccount2 -Pdistribution,admin-preview
 
-      - name: Configure distribution path
+      - name: Extract Keycloak server
+        id: extract-server
         working-directory: ${{ env.KEYCLOAK_SERVER_PATH }}
         run: |
           VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
-          tar -xvf quarkus/dist/target/keycloak-$VERSION.tar.gz -C quarkus/dist/target/
-          echo "KEYCLOAK_SERVER_BIN=keycloak-server/quarkus/dist/target/keycloak-$VERSION/bin" >> $GITHUB_ENV
+          mkdir ../server
+          tar -xvf quarkus/dist/target/keycloak-$VERSION.tar.gz -C ../server
+          echo "::set-output name=path::server/keycloak-$VERSION"
 
-      - name: Start Keycloak Server
-        working-directory: ${{ env.KEYCLOAK_SERVER_BIN }}
-        run: ./kc.sh start-dev --features=admin2,admin-fine-grained-authz,declarative-user-profile &> ~/server.log &
-        env:
-          KEYCLOAK_ADMIN: admin
-          KEYCLOAK_ADMIN_PASSWORD: admin
+      - name: Cache Keycloak server
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.extract-server.outputs.path }}
+          key: ${{ github.sha }}
+
+  test:
+    needs: setup
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        containers: [1, 2, 3, 4, 5]
+    steps:
+      - name: Check out Admin UI
+        uses: actions/checkout@v3
 
       - name: Set up Node
         uses: actions/setup-node@v3
@@ -63,29 +77,68 @@ jobs:
           node-version: 16
           check-latest: true
           cache: npm
-          cache-dependency-path: ${{ env.ADMIN_UI_PATH }}/package-lock.json
+
+      - name: Cache Node modules
+        id: cache-node-modules
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/Cypress
+            node_modules
+          key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
 
       - name: Install dependencies
-        working-directory: ${{ env.ADMIN_UI_PATH }}
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
         run: npm ci
 
+      - name: Set up Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: 11
+          check-latest: true
+          cache: maven
+
+      - name: Restore Keycloak server
+        uses: actions/cache@v3
+        with:
+          path: ${{ needs.setup.outputs.server-path }}
+          key: ${{ github.sha }}
+
+      - name: Start Keycloak Server
+        working-directory: ${{ needs.setup.outputs.server-path }}/bin
+        run: ./kc.sh start-dev --features=admin2,admin-fine-grained-authz,declarative-user-profile &> ~/server.log &
+        env:
+          KEYCLOAK_ADMIN: admin
+          KEYCLOAK_ADMIN_PASSWORD: admin
+
       - name: Run Cypress
-        working-directory: ${{ env.ADMIN_UI_PATH }}
-        run: CYPRESS_BASE_URL=http://localhost:8080/admin/ CYPRESS_KEYCLOAK_SERVER=http://localhost:8080 npm run start:cypress-tests
+        uses: cypress-io/github-action@v2
+        with:
+          install: false
+          record: true
+          parallel: true
+          browser: chrome
+          wait-on: http://localhost:8080
+        env:
+          CYPRESS_BASE_URL: http://localhost:8080/admin/
+          CYPRESS_KEYCLOAK_SERVER: http://localhost:8080
+          CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Add Cypress videos artifacts
         uses: actions/upload-artifact@v3
         if: failure()
         with:
           name: cypress-videos
-          path: ${{ env.ADMIN_UI_PATH }}/assets/videos
+          path: assets/videos
 
       - name: Add Cypress screenshots artifacts
         uses: actions/upload-artifact@v3
         if: failure()
         with:
           name: cypress-screenshots
-          path: ${{ env.ADMIN_UI_PATH }}/assets/screenshots
+          path: assets/screenshots
 
       - name: Upload server logs
         uses: actions/upload-artifact@v3
