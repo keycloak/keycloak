@@ -24,6 +24,7 @@ import { GroupPickerDialog } from "../components/group/GroupPickerDialog";
 import { useSubGroups } from "./SubGroupsContext";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { toGroups } from "./routes/Groups";
+import { useAccess } from "../context/access/Access";
 
 export const GroupTable = () => {
   const { t } = useTranslation("groups");
@@ -44,6 +45,9 @@ export const GroupTable = () => {
   const history = useHistory();
   const location = useLocation();
   const id = getLastId(location.pathname);
+
+  const { hasAccess } = useAccess();
+  const isManager = hasAccess("manage-users", "query-clients");
 
   const loader = async () => {
     let groupsData = undefined;
@@ -85,17 +89,21 @@ export const GroupTable = () => {
     refresh();
   };
 
-  const GroupNameCell = (group: GroupRepresentation) => (
-    <Link
-      key={group.id}
-      to={`${location.pathname}/${group.id}`}
-      onClick={() => {
-        setSubGroups([...subGroups, group]);
-      }}
-    >
-      {group.name}
-    </Link>
-  );
+  const GroupNameCell = (group: GroupRepresentation) => {
+    if (!isManager) return <span>{group.name}</span>;
+
+    return (
+      <Link
+        key={group.id}
+        to={`${location.pathname}/${group.id}`}
+        onClick={() => {
+          setSubGroups([...subGroups, group]);
+        }}
+      >
+        {group.name}
+      </Link>
+    );
+  };
 
   const handleModalToggle = () => {
     setIsCreateModalOpen(!isCreateModalOpen);
@@ -120,59 +128,65 @@ export const GroupTable = () => {
         ariaLabelKey="groups:groups"
         searchPlaceholderKey="groups:searchForGroups"
         toolbarItem={
-          <>
-            <ToolbarItem>
-              <Button
-                data-testid="openCreateGroupModal"
-                variant="primary"
-                onClick={handleModalToggle}
-              >
-                {t("createGroup")}
-              </Button>
-            </ToolbarItem>
-            <ToolbarItem>
-              <Dropdown
-                toggle={
-                  <KebabToggle
-                    onToggle={() => setIsKebabOpen(!isKebabOpen)}
-                    isDisabled={selectedRows!.length === 0}
-                  />
-                }
-                isOpen={isKebabOpen}
-                isPlain
-                dropdownItems={[
-                  <DropdownItem
-                    key="action"
-                    component="button"
-                    onClick={() => {
-                      toggleDeleteDialog();
-                      setIsKebabOpen(false);
-                    }}
-                  >
-                    {t("common:delete")}
-                  </DropdownItem>,
-                ]}
-              />
-            </ToolbarItem>
-          </>
+          isManager && (
+            <>
+              <ToolbarItem>
+                <Button
+                  data-testid="openCreateGroupModal"
+                  variant="primary"
+                  onClick={handleModalToggle}
+                >
+                  {t("createGroup")}
+                </Button>
+              </ToolbarItem>
+              <ToolbarItem>
+                <Dropdown
+                  toggle={
+                    <KebabToggle
+                      onToggle={() => setIsKebabOpen(!isKebabOpen)}
+                      isDisabled={selectedRows!.length === 0}
+                    />
+                  }
+                  isOpen={isKebabOpen}
+                  isPlain
+                  dropdownItems={[
+                    <DropdownItem
+                      key="action"
+                      component="button"
+                      onClick={() => {
+                        toggleDeleteDialog();
+                        setIsKebabOpen(false);
+                      }}
+                    >
+                      {t("common:delete")}
+                    </DropdownItem>,
+                  ]}
+                />
+              </ToolbarItem>
+            </>
+          )
         }
-        actions={[
-          {
-            title: t("moveTo"),
-            onRowClick: async (group) => {
-              setMove(group);
-              return false;
-            },
-          },
-          {
-            title: t("common:delete"),
-            onRowClick: async (group: GroupRepresentation) => {
-              setSelectedRows([group]);
-              toggleDeleteDialog();
-              return true;
-            },
-          },
-        ]}
+        actions={
+          !isManager
+            ? []
+            : [
+                {
+                  title: t("moveTo"),
+                  onRowClick: async (group) => {
+                    setMove(group);
+                    return false;
+                  },
+                },
+                {
+                  title: t("common:delete"),
+                  onRowClick: async (group: GroupRepresentation) => {
+                    setSelectedRows([group]);
+                    toggleDeleteDialog();
+                    return true;
+                  },
+                },
+              ]
+        }
         columns={[
           {
             name: "name",

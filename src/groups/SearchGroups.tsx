@@ -24,6 +24,7 @@ import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { GroupPath } from "../components/group/GroupPath";
 import { useSubGroups } from "./SubGroupsContext";
 import { ViewHeader } from "../components/view-header/ViewHeader";
+import { useAccess } from "../context/access/Access";
 
 type SearchGroup = GroupRepresentation & {
   link?: string;
@@ -39,6 +40,9 @@ export default function SearchGroups() {
 
   const [key, setKey] = useState(0);
   const refresh = () => setKey(new Date().getTime());
+
+  const { hasAccess } = useAccess();
+  const isManager = hasAccess("manage-users", "query-clients");
 
   const { setSubGroups } = useSubGroups();
   useEffect(
@@ -61,17 +65,21 @@ export default function SearchGroups() {
     }
   };
 
-  const GroupNameCell = (group: SearchGroup) => (
-    <Link
-      key={group.id}
-      to={`/${realm}/groups/search/${group.link}`}
-      onClick={() =>
-        setSubGroups([{ name: t("searchGroups"), id: "search" }, group])
-      }
-    >
-      {group.name}
-    </Link>
-  );
+  const GroupNameCell = (group: SearchGroup) => {
+    if (!isManager) return <span>{group.name}</span>;
+
+    return (
+      <Link
+        key={group.id}
+        to={`/${realm}/groups/search/${group.link}`}
+        onClick={() =>
+          setSubGroups([{ name: t("searchGroups"), id: "search" }, group])
+        }
+      >
+        {group.name}
+      </Link>
+    );
+  };
 
   const flatten = (
     groups: GroupRepresentation[],
