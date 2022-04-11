@@ -46,7 +46,12 @@ export const AddValidatorRoleDialog = ({
         >
           {t("common:save")}
         </Button>,
-        <Button key="cancel" variant="link" onClick={toggleDialog}>
+        <Button
+          key="cancel"
+          data-testid="cancel-validator-role-button"
+          variant="link"
+          onClick={toggleDialog}
+        >
           {t("common:cancel")}
         </Button>,
       ]}

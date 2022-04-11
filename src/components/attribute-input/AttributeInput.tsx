@@ -30,7 +30,7 @@ export const AttributeInput = ({ name }: AttributeInputProps) => {
 
   useEffect(() => {
     if (!fields.length) {
-      append({ key: "", value: "" });
+      append({ key: "", value: "" }, false);
     }
   }, [fields]);
 
