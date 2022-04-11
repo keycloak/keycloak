@@ -255,16 +255,20 @@ public class ResourceSetService {
         policies.addAll(policyStore.findByResource(resourceServer, model));
 
         if (model.getType() != null) {
-            policies.addAll(policyStore.findByResourceType(resourceServer, model.getType()));
+            if (!model.getOwner().equals(resourceServer.getClientId())) {
+                // only add policies if the resource is a resource type instance
+                policies.addAll(policyStore.findByResourceType(resourceServer, model.getType()));
 
-            Map<Resource.FilterOption, String[]> resourceFilter = new EnumMap<>(Resource.FilterOption.class);
+                Map<Resource.FilterOption, String[]> resourceFilter = new EnumMap<>(Resource.FilterOption.class);
 
-            resourceFilter.put(Resource.FilterOption.OWNER, new String[]{resourceServer.getClientId()});
-            resourceFilter.put(Resource.FilterOption.TYPE, new String[]{model.getType()});
+                resourceFilter.put(Resource.FilterOption.OWNER, new String[]{resourceServer.getClientId()});
+                resourceFilter.put(Resource.FilterOption.TYPE, new String[]{model.getType()});
 
-            for (Resource resourceType : resourceStore.findByResourceServer(resourceServer, resourceFilter, null, null)) {
-                policies.addAll(policyStore.findByResource(resourceServer, resourceType));
+                for (Resource resourceType : resourceStore.findByResourceServer(resourceServer, resourceFilter, null, null)) {
+                    policies.addAll(policyStore.findByResource(resourceServer, resourceType));
+                }
             }
+
         }
 
         policies.addAll(policyStore.findByScopes(resourceServer, model, model.getScopes()));
