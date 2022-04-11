@@ -71,7 +71,7 @@
     "@types/snowpack-env": "^2.3.4",
     "@types/tar-fs": "^2.0.1",
     "@typescript-eslint/eslint-plugin": "^5.17.0",
-    "@typescript-eslint/parser": "^5.17.0",
+    "@typescript-eslint/parser": "^5.18.0",
     "cli-progress": "^3.10.0",
     "cypress": "^9.5.3",
     "cypress-file-upload": "^5.0.8",
