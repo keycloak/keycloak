@@ -13,7 +13,7 @@ metadata:
     alm-examples: |-
       [
         {
-          "apiVersion": "keycloak.org/v2alpha1",
+          "apiVersion": "k8s.keycloak.org/v2alpha1",
           "kind": "Keycloak",
           "metadata": {
             "name": "example-keycloak",
@@ -28,7 +28,7 @@ metadata:
           }
         },
         {
-          "apiVersion": "keycloak.org/v2alpha1",
+          "apiVersion": "k8s.keycloak.org/v2alpha1",
           "kind": "KeycloakRealmImport",
           "metadata": {
             "name": "example-keycloak-realm-import",
@@ -51,17 +51,12 @@ spec:
       - description: "Represents a Keycloak Instance"
         displayName: "Keycloak"
         kind: Keycloak
-        name: keycloaks.keycloak.org
+        name: keycloaks.k8s.keycloak.org
         version: v2alpha1
-      - description: "Deprecated - Represents a Keycloak Instance"
-        displayName: "Deprecated - Keycloak"
-        kind: Keycloak
-        name: keycloaks.keycloak.org
-        version: v1alpha1
       - description: "Represents a Keycloak Realm Import"
         displayName: "KeycloakRealmImport"
         kind: KeycloakRealmImport
-        name: keycloakrealmimports.keycloak.org
+        name: keycloakrealmimports.k8s.keycloak.org
         version: v2alpha1
   description: |
     A Kubernetes Operator based on the Operator SDK for installing and managing Keycloak.
