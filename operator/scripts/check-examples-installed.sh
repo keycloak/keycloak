@@ -1,7 +1,7 @@
 #! /bin/bash
 set -euxo pipefail
 
-max_retries=240
+max_retries=500
 c=0
 while [[ $(kubectl get keycloaks/example-kc -o jsonpath="{.status.conditions[?(@.type == 'Ready')].status}") != "true" ]]
 do
