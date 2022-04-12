@@ -337,6 +337,45 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
     }
 
     @Test
+    public void testUserInfoEncryptedResponse() throws Exception {
+        OIDCClientRepresentation response = null;
+        OIDCClientRepresentation updated = null;
+        try {
+            // create (no specification)
+            OIDCClientRepresentation clientRep = createRep();
+
+            response = reg.oidc().create(clientRep);
+
+            // Test Keycloak representation
+            ClientRepresentation kcClient = getClient(response.getClientId());
+            OIDCAdvancedConfigWrapper config = OIDCAdvancedConfigWrapper.fromClientRepresentation(kcClient);
+            Assert.assertNull(config.getUserInfoEncryptedResponseAlg());
+            Assert.assertNull(config.getUserInfoEncryptedResponseEnc());
+
+            // update (alg RSA1_5, enc A128CBC-HS256)
+            reg.auth(Auth.token(response));
+            response.setUserinfoEncryptedResponseAlg(JWEConstants.RSA1_5);
+            response.setUserinfoEncryptedResponseEnc(JWEConstants.A128CBC_HS256);
+            updated = reg.oidc().update(response);
+            Assert.assertEquals(JWEConstants.RSA1_5, updated.getUserinfoEncryptedResponseAlg());
+            Assert.assertEquals(JWEConstants.A128CBC_HS256, updated.getUserinfoEncryptedResponseEnc());
+
+            // Test Keycloak representation
+            kcClient = getClient(updated.getClientId());
+            config = OIDCAdvancedConfigWrapper.fromClientRepresentation(kcClient);
+            Assert.assertEquals(JWEConstants.RSA1_5, config.getUserInfoEncryptedResponseAlg());
+            Assert.assertEquals(JWEConstants.A128CBC_HS256, config.getUserInfoEncryptedResponseEnc());
+
+        } finally {
+            // revert
+            reg.auth(Auth.token(updated));
+            updated.setUserinfoEncryptedResponseAlg(null);
+            updated.setUserinfoEncryptedResponseEnc(null);
+            reg.oidc().update(updated);
+        }
+    }
+
+    @Test
     public void testIdTokenEncryptedResponse() throws Exception {
         OIDCClientRepresentation response = null;
         OIDCClientRepresentation updated = null;

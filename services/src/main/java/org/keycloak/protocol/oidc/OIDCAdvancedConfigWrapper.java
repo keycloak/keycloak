@@ -63,6 +63,26 @@ public class OIDCAdvancedConfigWrapper extends AbstractClientConfigWrapper {
         return getUserInfoSignedResponseAlg() != null;
     }
 
+    public void setUserInfoEncryptedResponseAlg(String algorithm) {
+        setAttribute(OIDCConfigAttributes.USER_INFO_ENCRYPTED_RESPONSE_ALG, algorithm);
+    }
+
+    public String getUserInfoEncryptedResponseAlg() {
+        return getAttribute(OIDCConfigAttributes.USER_INFO_ENCRYPTED_RESPONSE_ALG);
+    }
+
+    public String getUserInfoEncryptedResponseEnc() {
+        return getAttribute(OIDCConfigAttributes.USER_INFO_ENCRYPTED_RESPONSE_ENC);
+    }
+
+    public void setUserInfoEncryptedResponseEnc(String algorithm) {
+        setAttribute(OIDCConfigAttributes.USER_INFO_ENCRYPTED_RESPONSE_ENC, algorithm);
+    }
+
+    public boolean isUserInfoEncryptionRequired() {
+        return getUserInfoEncryptedResponseAlg() != null;
+    }
+
     public Algorithm getRequestObjectSignatureAlg() {
         String alg = getAttribute(OIDCConfigAttributes.REQUEST_OBJECT_SIGNATURE_ALG);
         return alg==null ? null : Enum.valueOf(Algorithm.class, alg);

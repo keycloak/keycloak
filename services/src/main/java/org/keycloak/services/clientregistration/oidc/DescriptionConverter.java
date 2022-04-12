@@ -142,6 +142,14 @@ public class DescriptionConverter {
             configWrapper.setRequestObjectSignatureAlg(algorithm);
         }
 
+        if (clientOIDC.getUserinfoEncryptedResponseAlg() != null) {
+            configWrapper.setUserInfoEncryptedResponseAlg(clientOIDC.getUserinfoEncryptedResponseAlg());
+        }
+
+        if (clientOIDC.getUserinfoEncryptedResponseEnc() != null) {
+            configWrapper.setUserInfoEncryptedResponseEnc(clientOIDC.getUserinfoEncryptedResponseEnc());
+        }
+
         // KEYCLOAK-6771 Certificate Bound Token
         // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-6.5
         Boolean tlsClientCertificateBoundAccessTokens = clientOIDC.getTlsClientCertificateBoundAccessTokens();
@@ -340,6 +348,12 @@ public class DescriptionConverter {
         OIDCAdvancedConfigWrapper config = OIDCAdvancedConfigWrapper.fromClientRepresentation(client);
         if (config.isUserInfoSignatureRequired()) {
             response.setUserinfoSignedResponseAlg(config.getUserInfoSignedResponseAlg().toString());
+        }
+        if (config.getUserInfoEncryptedResponseAlg() != null) {
+            response.setUserinfoEncryptedResponseAlg(config.getUserInfoEncryptedResponseAlg());
+        }
+        if (config.getUserInfoEncryptedResponseEnc() != null) {
+            response.setUserinfoEncryptedResponseEnc(config.getUserInfoEncryptedResponseEnc());
         }
         if (config.getRequestObjectSignatureAlg() != null) {
             response.setRequestObjectSigningAlg(config.getRequestObjectSignatureAlg().toString());

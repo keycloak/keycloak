@@ -85,6 +85,12 @@ public class OIDCConfigurationRepresentation {
     @JsonProperty("userinfo_signing_alg_values_supported")
     private List<String> userInfoSigningAlgValuesSupported;
 
+    @JsonProperty("userinfo_encryption_alg_values_supported")
+    private List<String> userInfoEncryptionAlgValuesSupported;
+
+    @JsonProperty("userinfo_encryption_enc_values_supported")
+    private List<String> userInfoEncryptionEncValuesSupported;
+
     @JsonProperty("request_object_signing_alg_values_supported")
     private List<String> requestObjectSigningAlgValuesSupported;
 
@@ -315,6 +321,22 @@ public class OIDCConfigurationRepresentation {
 
     public void setUserInfoSigningAlgValuesSupported(List<String> userInfoSigningAlgValuesSupported) {
         this.userInfoSigningAlgValuesSupported = userInfoSigningAlgValuesSupported;
+    }
+
+    public List<String> getUserInfoEncryptionAlgValuesSupported() {
+        return userInfoEncryptionAlgValuesSupported;
+    }
+
+    public void setUserInfoEncryptionAlgValuesSupported(List<String> userInfoEncryptionAlgValuesSupported) {
+        this.userInfoEncryptionAlgValuesSupported = userInfoEncryptionAlgValuesSupported;
+    }
+
+    public List<String> getUserInfoEncryptionEncValuesSupported() {
+        return userInfoEncryptionEncValuesSupported;
+    }
+
+    public void setUserInfoEncryptionEncValuesSupported(List<String> userInfoEncryptionEncValuesSupported) {
+        this.userInfoEncryptionEncValuesSupported = userInfoEncryptionEncValuesSupported;
     }
 
     public List<String> getRequestObjectSigningAlgValuesSupported() {
