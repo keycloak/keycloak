@@ -10,5 +10,8 @@
     "slowTestThreshold": 30000,
     "videoCompression": false,
     "numTestsKeptInMemory": 30,
-    "videoUploadOnPasses": false
+    "videoUploadOnPasses": false,
+    "retries": {
+        "runMode": 3
+    }
 }
