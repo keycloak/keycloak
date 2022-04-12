@@ -30,3 +30,8 @@ security key supports Resident Keys. For more details, see link:{adminguide_link
 Thanks to https://github.com/vanrar68[Joaquim Fellmann] for the contribution.
 
 There are more WebAuthn improvements and fixes in addition to that.
+
+== Other improvements
+
+* Support for encrypted User Info endpoint response. Thanks to https://github.com/giacomoa[Giacomo Altiero]
+* Support for the algorithm RSA-OAEP with A256GCM used for encryption keys. Thanks to https://github.com/fbrissi[Filipe Bojikian Rissi ]
