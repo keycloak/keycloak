@@ -50,6 +50,7 @@ import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -262,100 +263,112 @@ public class UserInfoTest extends AbstractKeycloakTest {
         }
     }
 
-
     @Test
-    public void testSuccessEncryptedAndSignedResponse() throws Exception {
-        testUserInfoSignatureAndEncryption(org.keycloak.crypto.Algorithm.RS256, JWEConstants.RSA_OAEP, JWEConstants.A256GCM);
+    public void testSuccessEncryptedResponseSigAlgPS384AlgRSA_OAEPEncA256GCM() throws Exception {
+        testUserInfoSignatureAndEncryption(org.keycloak.crypto.Algorithm.PS384, JWEConstants.RSA_OAEP, JWEConstants.A256GCM);
     }
 
     @Test
-    public void testSuccessEncryptedResponseAlgRSA_OAEPEncA256GCM() throws Exception {
-        testUserInfoSignatureAndEncryption(null, JWEConstants.RSA_OAEP, JWEConstants.A256GCM);
+    public void testSuccessEncryptedResponseSigAlgES384AlgRSA_OAEPEncA192GCM() throws Exception {
+        testUserInfoSignatureAndEncryption(org.keycloak.crypto.Algorithm.ES384, JWEConstants.RSA_OAEP, JWEConstants.A192GCM);
     }
 
     @Test
-    public void testSuccessEncryptedResponseAlgRSA_OAEPEncA192GCM() throws Exception {
-        testUserInfoSignatureAndEncryption(null, JWEConstants.RSA_OAEP, JWEConstants.A192GCM);
+    public void testSuccessEncryptedResponseSigAlgRS384AlgRSA_OAEPEncA128GCM() throws Exception {
+        testUserInfoSignatureAndEncryption(org.keycloak.crypto.Algorithm.RS384, JWEConstants.RSA_OAEP, JWEConstants.A128GCM);
     }
 
     @Test
-    public void testSuccessEncryptedResponseAlgRSA_OAEPEncA128GCM() throws Exception {
-        testUserInfoSignatureAndEncryption(null, JWEConstants.RSA_OAEP, JWEConstants.A128GCM);
+    public void testSuccessEncryptedResponseSigAlgES256AlgRSA_OAEPEncA128CBC_HS256() throws Exception {
+        testUserInfoSignatureAndEncryption(org.keycloak.crypto.Algorithm.ES256, JWEConstants.RSA_OAEP, JWEConstants.A128CBC_HS256);
     }
 
     @Test
-    public void testSuccessEncryptedResponseAlgRSA_OAEPEncA128CBC_HS256() throws Exception {
-        testUserInfoSignatureAndEncryption(null, JWEConstants.RSA_OAEP, JWEConstants.A128CBC_HS256);
+    public void testSuccessEncryptedResponseSigAlgRS256AlgRSA_OAEPEncA192CBC_HS384() throws Exception {
+        testUserInfoSignatureAndEncryption(org.keycloak.crypto.Algorithm.RS256, JWEConstants.RSA_OAEP, JWEConstants.A192CBC_HS384);
     }
 
     @Test
-    public void testSuccessEncryptedResponseAlgRSA_OAEPEncA192CBC_HS384() throws Exception {
-        testUserInfoSignatureAndEncryption(null, JWEConstants.RSA_OAEP, JWEConstants.A192CBC_HS384);
+    public void testSuccessEncryptedResponseSigAlgES512AlgRSA_OAEPEncA256CBC_HS512() throws Exception {
+        testUserInfoSignatureAndEncryption(org.keycloak.crypto.Algorithm.ES512, JWEConstants.RSA_OAEP, JWEConstants.A256CBC_HS512);
     }
 
     @Test
-    public void testSuccessEncryptedResponseAlgRSA_OAEPEncA256CBC_HS512() throws Exception {
-        testUserInfoSignatureAndEncryption(null, JWEConstants.RSA_OAEP, JWEConstants.A256CBC_HS512);
+    public void testSuccessEncryptedResponseSigAlgNoneAlgRSA_OAEPEncDefault() throws Exception {
+        // if enc algorithm is not specified the default for this value is A128CBC-HS256
+        testUserInfoSignatureAndEncryption(null, JWEConstants.RSA_OAEP, null);
     }
 
     @Test
-    public void testSuccessEncryptedResponseAlgRSA_OAEP256EncA256GCM() throws Exception {
+    public void testSuccessEncryptedResponseSigAlgNoneAlgRSA_OAEP256EncA256GCM() throws Exception {
         testUserInfoSignatureAndEncryption(null, JWEConstants.RSA_OAEP_256, JWEConstants.A256GCM);
     }
 
     @Test
-    public void testSuccessEncryptedResponseAlgRSA_OAEP256EncA192GCM() throws Exception {
-        testUserInfoSignatureAndEncryption(null, JWEConstants.RSA_OAEP_256, JWEConstants.A192GCM);
+    public void testSuccessEncryptedResponseSigAlgPS256AlgRSA_OAEP256EncA192GCM() throws Exception {
+        testUserInfoSignatureAndEncryption(org.keycloak.crypto.Algorithm.PS256, JWEConstants.RSA_OAEP_256, JWEConstants.A192GCM);
     }
 
     @Test
-    public void testSuccessEncryptedResponseAlgRSA_OAEP256EncA128GCM() throws Exception {
-        testUserInfoSignatureAndEncryption(null, JWEConstants.RSA_OAEP_256, JWEConstants.A128GCM);
+    public void testSuccessEncryptedResponseSigAlgPS512AlgRSA_OAEP256EncA128GCM() throws Exception {
+        testUserInfoSignatureAndEncryption(org.keycloak.crypto.Algorithm.PS512, JWEConstants.RSA_OAEP_256, JWEConstants.A128GCM);
     }
 
     @Test
-    public void testSuccessEncryptedResponseAlgRSA_OAEP256EncA128CBC_HS256() throws Exception {
-        testUserInfoSignatureAndEncryption(null, JWEConstants.RSA_OAEP_256, JWEConstants.A128CBC_HS256);
+    public void testSuccessEncryptedResponseSigAlgRS512AlgRSA_OAEP256EncA128CBC_HS256() throws Exception {
+        testUserInfoSignatureAndEncryption(org.keycloak.crypto.Algorithm.RS512, JWEConstants.RSA_OAEP_256, JWEConstants.A128CBC_HS256);
     }
 
     @Test
-    public void testSuccessEncryptedResponseAlgRSA_OAEP256EncA192CBC_HS384() throws Exception {
-        testUserInfoSignatureAndEncryption(null, JWEConstants.RSA_OAEP_256, JWEConstants.A192CBC_HS384);
+    public void testSuccessEncryptedResponseSigAlgPS384AlgRSA_OAEP256EncA192CBC_HS384() throws Exception {
+        testUserInfoSignatureAndEncryption(org.keycloak.crypto.Algorithm.PS384, JWEConstants.RSA_OAEP_256, JWEConstants.A192CBC_HS384);
     }
 
     @Test
-    public void testSuccessEncryptedResponseAlgRSA_OAEP256EncA256CBC_HS512() throws Exception {
-        testUserInfoSignatureAndEncryption(null, JWEConstants.RSA_OAEP_256, JWEConstants.A256CBC_HS512);
+    public void testSuccessEncryptedResponseSigAlgES384AlgRSA_OAEP256EncA256CBC_HS512() throws Exception {
+        testUserInfoSignatureAndEncryption(org.keycloak.crypto.Algorithm.ES384, JWEConstants.RSA_OAEP_256, JWEConstants.A256CBC_HS512);
     }
 
     @Test
-    public void testSuccessEncryptedResponseAlgRSA1_5EncA256GCM() throws Exception {
-        testUserInfoSignatureAndEncryption(null, JWEConstants.RSA1_5, JWEConstants.A256GCM);
+    public void testSuccessEncryptedResponseSigAlgRS384AlgRSA_OAEP256EncDefault() throws Exception {
+        // if enc algorithm is not specified the default for this value is A128CBC-HS256
+        testUserInfoSignatureAndEncryption(org.keycloak.crypto.Algorithm.RS384, JWEConstants.RSA_OAEP_256, null);
     }
 
     @Test
-    public void testSuccessEncryptedResponseAlgRSA1_5EncA192GCM() throws Exception {
+    public void testSuccessEncryptedResponseSigAlgES256AlgRSA1_5EncA256GCM() throws Exception {
+        testUserInfoSignatureAndEncryption(org.keycloak.crypto.Algorithm.ES256, JWEConstants.RSA1_5, JWEConstants.A256GCM);
+    }
+
+    @Test
+    public void testSuccessEncryptedResponseSigAlgNoneAlgRSA1_5EncA192GCM() throws Exception {
         testUserInfoSignatureAndEncryption(null, JWEConstants.RSA1_5, JWEConstants.A192GCM);
     }
 
     @Test
-    public void testSuccessEncryptedResponseAlgRSA1_5EncA128GCM() throws Exception {
-        testUserInfoSignatureAndEncryption(null, JWEConstants.RSA1_5, JWEConstants.A128GCM);
+    public void testSuccessEncryptedResponseSigAlgRS256AlgRSA1_5EncA128GCM() throws Exception {
+        testUserInfoSignatureAndEncryption(org.keycloak.crypto.Algorithm.RS256, JWEConstants.RSA1_5, JWEConstants.A128GCM);
     }
 
     @Test
-    public void testSuccessEncryptedResponseAlgRSA1_5EncA128CBC_HS256() throws Exception {
-        testUserInfoSignatureAndEncryption(null, JWEConstants.RSA1_5, JWEConstants.A128CBC_HS256);
+    public void testSuccessEncryptedResponseSigAlgES512AlgRSA1_5EncA128CBC_HS256() throws Exception {
+        testUserInfoSignatureAndEncryption(org.keycloak.crypto.Algorithm.ES512, JWEConstants.RSA1_5, JWEConstants.A128CBC_HS256);
     }
 
     @Test
-    public void testSuccessEncryptedResponseAlgRSA1_5EncA192CBC_HS384() throws Exception {
-        testUserInfoSignatureAndEncryption(null, JWEConstants.RSA1_5, JWEConstants.A192CBC_HS384);
+    public void testSuccessEncryptedResponseSigAlgPS256AlgRSA1_5EncA192CBC_HS384() throws Exception {
+        testUserInfoSignatureAndEncryption(org.keycloak.crypto.Algorithm.PS256, JWEConstants.RSA1_5, JWEConstants.A192CBC_HS384);
     }
 
     @Test
-    public void testSuccessEncryptedResponseAlgRSA1_5EncA256CBC_HS512() throws Exception {
-        testUserInfoSignatureAndEncryption(null, JWEConstants.RSA1_5, JWEConstants.A256CBC_HS512);
+    public void testSuccessEncryptedResponseSigAlgPS512AlgRSA1_5EncA256CBC_HS512() throws Exception {
+        testUserInfoSignatureAndEncryption(org.keycloak.crypto.Algorithm.PS512, JWEConstants.RSA1_5, JWEConstants.A256CBC_HS512);
+    }
+
+    @Test
+    public void testSuccessEncryptedResponseSigAlgRS512AlgRSA1_5EncDefault() throws Exception {
+        // if enc algorithm is not specified the default for this value is A128CBC-HS256
+        testUserInfoSignatureAndEncryption(org.keycloak.crypto.Algorithm.RS512, JWEConstants.RSA1_5, null);
     }
 
     private void testUserInfoSignatureAndEncryption(String sigAlgorithm, String algAlgorithm, String encAlgorithm) {
@@ -401,22 +414,31 @@ public class UserInfoTest extends AbstractKeycloakTest {
 
             // a nested JWT (signed and encrypted JWT) needs to set "JWT" to its JOSE Header's "cty" field
             JWEHeader jweHeader = (JWEHeader) getHeader(parts[0]);
+            Assert.assertEquals(algAlgorithm, jweHeader.getAlgorithm());
+            if(encAlgorithm != null) {
+                Assert.assertEquals(encAlgorithm, jweHeader.getEncryptionAlgorithm());
+            } else {
+                // if enc algorithm is not specified the default for this value is A128CBC-HS256
+                Assert.assertEquals(JWEConstants.A128CBC_HS256, jweHeader.getEncryptionAlgorithm());
+            }
             if(sigAlgorithm != null) {
                 Assert.assertEquals("JWT", jweHeader.getContentType());
             }
 
             // verify and decrypt JWE
             JWEAlgorithmProvider algorithmProvider = getJweAlgorithmProvider(algAlgorithm);
-            JWEEncryptionProvider encryptionProvider = getJweEncryptionProvider(encAlgorithm);
+            // if enc algorithm is not specified the default for this value is A128CBC-HS256
+            JWEEncryptionProvider encryptionProvider = encAlgorithm != null ? getJweEncryptionProvider(encAlgorithm) :
+                    getJweEncryptionProvider(JWEConstants.A128CBC_HS256);
             byte[] decodedString = TokenUtil.jweKeyEncryptionVerifyAndDecode(decryptionKEK, encryptedResponse, algorithmProvider, encryptionProvider);
             String jwePayload = new String(decodedString, "UTF-8");
 
             UserInfo userInfo = null;
             // verify JWS
             if (sigAlgorithm != null) {
-                PublicKey publicKey = PemUtils.decodePublicKey(ApiUtil.findActiveSigningKey(adminClient.realm("test")).getPublicKey());
+                // verify signature
+                JsonWebToken jsonWebToken = oauth.verifyToken(jwePayload, JsonWebToken.class);
                 JWSInput jwsInput = new JWSInput(jwePayload);
-                Assert.assertTrue(RSAProvider.verify(jwsInput, publicKey));
                 userInfo = JsonSerialization.readValue(jwsInput.getContent(), UserInfo.class);
             } else {
                 userInfo = JsonSerialization.readValue(jwePayload, UserInfo.class);
