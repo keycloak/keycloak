@@ -19,10 +19,6 @@
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-quarkus-server</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-quarkus-server-deployment</artifactId>
-        </dependency>
     </dependencies>
 
     <build>
