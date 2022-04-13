@@ -28,6 +28,16 @@ ignore:
           The expiry date was set as a reminder for us to upgrade, once they
           provide the fix.
         expires: 2022-05-31T00:00:00.000Z
+  SNYK-JAVA-ORGWILDFLYSECURITY-1316682:
+    - "*":
+        reason: >
+          WildFly Elytron was upgraded and Keycloak is no longer affected 
+          by CVE-2021-3642. The issue was fixed on Elytron 1.10.14.Final, 
+          1.15.5.Final and 1.16.1.Final last year. More details:
+            - https://issues.redhat.com/browse/ELY-2147   
+            - https://nvd.nist.gov/vuln/detail/CVE-2021-3642
+            - https://github.com/keycloak/keycloak/pull/11250
+            - https://github.com/keycloak/keycloak/pull/11197
 
   # License warnings
   snyk:lic:maven:org.eclipse.sisu:org.eclipse.sisu.plexus:EPL-1.0:
