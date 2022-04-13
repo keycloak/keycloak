@@ -55,7 +55,7 @@ public class MapDeploymentStateProviderFactory implements DeploymentStateProvide
             seed = SecretGenerator.getInstance().randomString(10);
         }
         try {
-            Version.RESOURCES_VERSION = Base64Url.encode(MessageDigest.getInstance("MD5")
+            Version.RESOURCES_VERSION = Base64Url.encode(MessageDigest.getInstance("SHA-256")
                     .digest((seed + new ModelVersion(Version.VERSION_KEYCLOAK).toString()).getBytes()))
                     .substring(0, 5);
         } catch (NoSuchAlgorithmException e) {
