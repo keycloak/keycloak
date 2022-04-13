@@ -1,6 +1,5 @@
 export default class CreateProviderPage {
   private github = "github";
-  private addProviderDropdown = "addProviderDropdown";
   private clientIdField = "clientId";
   private clientIdError = "#kc-client-secret-helper";
   private clientSecretField = "clientSecret";

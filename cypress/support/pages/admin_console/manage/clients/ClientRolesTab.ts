@@ -1,7 +1,6 @@
 export default class ClientRolesTab {
   private createRoleBtn = "create-role";
   private createRoleEmptyStateBtn = "no-roles-for-this-client-empty-action";
-  private actionsDropdown = `[aria-label="Actions"]`;
   private hideInheritedRolesChkBox = "#kc-hide-inherited-roles-checkbox";
 
   private rolesTab = "rolesTab";

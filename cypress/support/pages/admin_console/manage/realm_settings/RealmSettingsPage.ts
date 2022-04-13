@@ -169,8 +169,6 @@ export default class RealmSettingsPage {
   private saveNewClientPolicyBtn = "saveCreatePolicy";
   private cancelNewClientPolicyBtn = "cancelCreatePolicy";
   private alertMessage = ".pf-c-alert__title";
-  private moreDrpDwn = ".pf-c-dropdown__toggle.pf-m-plain";
-  private moreDrpDwnItems = ".pf-c-dropdown__menu-item";
   private modalDialogTitle = ".pf-c-modal-box__title-text";
   private modalDialogBodyText = ".pf-c-modal-box__body";
   private deleteDialogCancelBtn = "#modal-cancel";
@@ -178,7 +176,6 @@ export default class RealmSettingsPage {
   private jsonEditorSavePoliciesBtn = "jsonEditor-policies-saveBtn";
   private jsonEditorReloadBtn = "jsonEditor-reloadBtn";
   private jsonEditor = ".monaco-scrollable-element.editor-scrollable.vs";
-  private createClientDrpDwn = ".pf-c-dropdown.pf-m-align-right";
   private clientPolicyDrpDwn = '[data-testid="action-dropdown"] button';
   private deleteclientPolicyDrpDwn = "deleteClientPolicyDropdown";
   private clientProfileOne =
@@ -204,7 +201,6 @@ export default class RealmSettingsPage {
   private addConditionDrpDwnOption = "conditionType-select";
   private addConditionCancelBtn = "addCondition-cancelBtn";
   private addConditionSaveBtn = "addCondition-saveBtn";
-  private conditionTypeLink = "condition-type-link";
   private clientRolesConditionLink = "client-roles-condition-link";
   private clientScopesConditionLink = "client-scopes-condition-link";
   private eventListenersFormLabel = ".pf-c-form__label-text";
@@ -222,7 +218,6 @@ export default class RealmSettingsPage {
   private deleteClientRolesConditionBtn = "delete-client-roles-condition";
   private deleteClientScopesConditionBtn = "delete-client-scopes-condition";
   private realmDisplayName = "#kc-display-name";
-  private displayNameHTML = "#kc-html-display-name";
   private frontEndURL = "#kc-frontend-url";
   private requireSSL = "#kc-require-ssl";
 

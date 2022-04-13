@@ -1,5 +1,4 @@
 export default class Masthead {
-  private menuBtn = "#nav-toggle";
   private logoBtn = "#masthead-logo";
   private helpBtn = "#help";
   private closeAlertMessageBtn = ".pf-c-alert__action button";

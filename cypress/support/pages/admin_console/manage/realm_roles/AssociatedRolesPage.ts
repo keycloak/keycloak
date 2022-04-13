@@ -2,7 +2,6 @@ export default class AssociatedRolesPage {
   private actionDropdown = "action-dropdown";
   private addRolesDropdownItem = "add-roles";
   private addRoleToolbarButton = "add-role-button";
-  private checkbox = "[type=checkbox]";
   private addAssociatedRolesModalButton = "add-associated-roles-button";
   private compositeRoleBadge = "composite-role-badge";
   private filterTypeDropdown = "filter-type-dropdown";

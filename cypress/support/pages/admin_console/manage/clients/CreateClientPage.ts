@@ -1,6 +1,5 @@
 export default class CreateClientPage {
   private clientTypeDrpDwn = ".pf-c-select__toggle";
-  private clientTypeError = ".pf-c-select + div";
   private clientTypeList = ".pf-c-select__toggle + ul";
   private clientIdInput = "#kc-client-id";
   private clientIdError = "#kc-client-id + div";
@@ -44,8 +43,6 @@ export default class CreateClientPage {
   private frontChannelLogoutSwitchInput = "#frontchannelLogout";
   private frontChannelLogoutInput = "#frontchannelLogoutUrl";
   private backChannelLogoutInput = "#backchannelLogoutUrl";
-  private backChannelLogoutRequiredSwitch =
-    '[for="backchannelLogoutSessionRequired"] > .pf-c-switch__toggle';
   private backChannelLogoutRequiredSwitchInput =
     "#backchannelLogoutSessionRequired";
   private backChannelLogoutRevoqueSwitch =

@@ -6,13 +6,10 @@ export default class AddMapperPage {
   private addMapperButton = "#add-mapper-button";
 
   private mapperNameInput = "#kc-name";
-  private mapperRoleInput = "mapper-role-input";
   private attribute = "user.attribute";
   private attributeName = "attribute.name";
   private attributeFriendlyName = "attribute.friendly.name";
-  private attributeValue = "attribute-value";
   private claimInput = "claim";
-  private claimValueInput = "claim-value-input";
   private socialProfileJSONfieldPath = "jsonField";
   private userAttribute = "attribute";
   private userAttributeName = "userAttribute";
@@ -26,7 +23,6 @@ export default class AddMapperPage {
   private attributesValueInput = 'input[name="config.attributes[0].value"]';
   private template = "template";
   private target = "#target";
-  private targetDropdown = "#target-dropdown";
 
   goToMappersTab() {
     cy.findByTestId(this.mappersTab).click();

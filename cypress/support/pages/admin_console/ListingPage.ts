@@ -34,7 +34,6 @@ export default class ListingPage {
   private emptyListImg =
     '[role="tabpanel"]:not([hidden]) [data-testid="empty-state"]';
   public emptyState = "empty-state";
-  private progressBar = '[role="progressbar"]';
   private itemRowDrpDwn = ".pf-c-dropdown__toggle";
   private itemRowSelect = ".pf-c-select__toggle:nth-child(1)";
   private itemRowSelectItem = ".pf-c-select__menu-item";

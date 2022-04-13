@@ -66,6 +66,7 @@ describe("Realms test", () => {
 
     it("should create Test Disabled realm", () => {
       sidebarPage.goToCreateRealm();
+      sidebarPage.waitForPageLoad();
       createRealmPage.fillRealmName("Test Disabled").createRealm();
       createRealmPage.disableRealm();
 
