@@ -119,21 +119,21 @@ public final class Database {
                 "com.mysql.cj.jdbc.MysqlXADataSource",
                 "com.mysql.cj.jdbc.Driver",
                 "org.hibernate.dialect.MySQL8Dialect",
-                "jdbc:mysql://${kc.db-url-host:localhost}/${kc.db-url-database:keycloak}${kc.db-url-properties:}",
+                "jdbc:mysql://${kc.db-url-host:localhost}:${kc.db-url-port:3306}/${kc.db-url-database:keycloak}${kc.db-url-properties:}",
                 asList("org.keycloak.connections.jpa.updater.liquibase.UpdatedMySqlDatabase")
         ),
         MARIADB("mariadb",
                 "org.mariadb.jdbc.MySQLDataSource",
                 "org.mariadb.jdbc.Driver",
                 "org.hibernate.dialect.MariaDBDialect",
-                "jdbc:mariadb://${kc.db-url-host:localhost}/${kc.db-url-database:keycloak}${kc.db-url-properties:}",
+                "jdbc:mariadb://${kc.db-url-host:localhost}:${kc.db-url-port:3306}/${kc.db-url-database:keycloak}${kc.db-url-properties:}",
                 asList("org.keycloak.connections.jpa.updater.liquibase.UpdatedMariaDBDatabase")
         ),
         POSTGRES("postgresql",
                 "org.postgresql.xa.PGXADataSource",
                 "org.postgresql.Driver",
                 "io.quarkus.hibernate.orm.runtime.dialect.QuarkusPostgreSQL10Dialect",
-                "jdbc:postgresql://${kc.db-url-host:localhost}/${kc.db-url-database:keycloak}${kc.db-url-properties:}",
+                "jdbc:postgresql://${kc.db-url-host:localhost}:${kc.db-url-port:5432}/${kc.db-url-database:keycloak}${kc.db-url-properties:}",
                 asList("liquibase.database.core.PostgresDatabase",
                         "org.keycloak.connections.jpa.updater.liquibase.PostgresPlusDatabase"),
                 "postgres"
@@ -142,7 +142,7 @@ public final class Database {
                 "com.microsoft.sqlserver.jdbc.SQLServerXADataSource",
                 "com.microsoft.sqlserver.jdbc.SQLServerDriver",
                 "org.hibernate.dialect.SQLServer2016Dialect",
-                "jdbc:sqlserver://${kc.db-url-host:localhost}:1433;databaseName=${kc.db-url-database:keycloak}${kc.db-url-properties:}",
+                "jdbc:sqlserver://${kc.db-url-host:localhost}:${kc.db-url-port:1433};databaseName=${kc.db-url-database:keycloak}${kc.db-url-properties:}",
                 asList("org.keycloak.quarkus.runtime.storage.database.liquibase.database.CustomMSSQLDatabase"),
                 "mssql"
         ),
@@ -150,7 +150,7 @@ public final class Database {
                 "oracle.jdbc.xa.client.OracleXADataSource",
                 "oracle.jdbc.driver.OracleDriver",
                 "org.hibernate.dialect.Oracle12cDialect",
-                "jdbc:oracle:thin:@//${kc.db-url-host:localhost}:1521/${kc.db-url-database:keycloak}",
+                "jdbc:oracle:thin:@//${kc.db-url-host:localhost}:${kc.db-url-port:1521}/${kc.db-url-database:keycloak}",
                 asList("liquibase.database.core.OracleDatabase")
         );
 
