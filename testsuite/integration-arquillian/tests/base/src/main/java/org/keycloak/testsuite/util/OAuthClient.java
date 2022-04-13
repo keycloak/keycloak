@@ -655,7 +655,10 @@ public class OAuthClient {
             parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE));
             parameters.add(new BasicNameValuePair(OAuth2Constants.SUBJECT_TOKEN, token));
             parameters.add(new BasicNameValuePair(OAuth2Constants.SUBJECT_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE));
-            parameters.add(new BasicNameValuePair(OAuth2Constants.AUDIENCE, targetAudience));
+
+            if (targetAudience != null) {
+                parameters.add(new BasicNameValuePair(OAuth2Constants.AUDIENCE, targetAudience));
+            }
 
             if (additionalParams != null) {
                 for (Map.Entry<String, String> entry : additionalParams.entrySet()) {
