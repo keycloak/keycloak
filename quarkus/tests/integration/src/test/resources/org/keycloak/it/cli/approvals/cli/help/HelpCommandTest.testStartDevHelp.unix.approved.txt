@@ -34,6 +34,8 @@ Database:
 --db-url-host <hostname>
                      Sets the hostname of the default JDBC URL of the chosen vendor. If the
                        `db-url` option is set, this option is ignored.
+--db-url-port <port> Sets the port of the default JDBC URL of the chosen vendor. If the `db-url`
+                       option is set, this option is ignored.
 --db-url-properties <properties>
                      Sets the properties of the default JDBC URL of the chosen vendor. If the
                        `db-url` option is set, this option is ignored.
