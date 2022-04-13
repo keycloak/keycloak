@@ -627,6 +627,44 @@ public class UserTest extends AbstractAdminTest {
         return ids;
     }
 
+  @Test
+  public void countUsersByEnabledFilter() {
+
+    // create 2 enabled and 1 disabled user
+    UserRepresentation enabledUser1 = new UserRepresentation();
+    enabledUser1.setUsername("enabled1");
+    enabledUser1.setEmail("enabled1@enabledfilter.com");
+    enabledUser1.setEnabled(true);
+    createUser(enabledUser1);
+
+    UserRepresentation enabledUser2 = new UserRepresentation();
+    enabledUser2.setUsername("enabled2");
+    enabledUser2.setEmail("enabled2@enabledfilter.com");
+    enabledUser2.setEnabled(true);
+    createUser(enabledUser2);
+
+    UserRepresentation disabledUser1 = new UserRepresentation();
+    disabledUser1.setUsername("disabled1");
+    disabledUser1.setEmail("disabled1@enabledfilter.com");
+    disabledUser1.setEnabled(false);
+    createUser(disabledUser1);
+
+    Boolean enabled = true;
+    Boolean disabled = false;
+
+    // count all users with @enabledfilter.com
+    assertThat(realm.users().count(null, null, null, "@enabledfilter.com", null, null, null), is(3));
+
+    // count users that are enabled and have username enabled1
+    assertThat(realm.users().count(null, null, null, "@enabledfilter.com", null, "enabled1", enabled),is(1));
+
+    // count users that are disabled
+    assertThat(realm.users().count(null, null, null, "@enabledfilter.com", null, null, disabled), is(1));
+
+    // count users that are enabled
+    assertThat(realm.users().count(null, null, null, "@enabledfilter.com", null, null, enabled), is(2));
+  }
+
     @Test
     public void searchByEmail() {
         createUsers();
