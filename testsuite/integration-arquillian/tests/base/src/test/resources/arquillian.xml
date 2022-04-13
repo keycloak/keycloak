@@ -45,10 +45,6 @@
         <property name="chromeArguments">${chromeArguments}</property>
         <property name="chromeDriverVersion">${chromeDriverVersion}</property>
 
-        <!-- internet explorer -->
-        <property name="ieDriverArch">${ieDriverArch}</property>
-        <property name="ieDriverVersion">${ieDriverVersion}</property>
-
         <!-- appium -->
         <property name="appium.platformName">${appium.platformName}</property>
         <property name="appium.deviceName">${appium.deviceName}</property>
