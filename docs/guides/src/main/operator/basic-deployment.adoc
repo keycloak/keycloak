@@ -68,7 +68,7 @@ spec:
   - port: 5432
     targetPort: 5432
 EOF
-kubectl|oc apply -f example-postgres.yaml
+kubectl apply -f example-postgres.yaml
 ----
 
 ==== Hostname
@@ -135,7 +135,7 @@ spec:
   hostname: test.keycloak.org
   tlsSecret: example-tls-secret
 EOF
-kubectl|oc apply -f example-kc.yaml
+kubectl apply -f example-kc.yaml
 ----
 
 And you can check that the Keycloak instance has been provisioned in the cluster by looking at the status of the created CR:
