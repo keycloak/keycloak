@@ -6,6 +6,7 @@ import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.codehaus.plexus.util.FileUtils;
 
 import java.io.File;
 
@@ -30,11 +31,15 @@ public class GuideMojo extends AbstractMojo {
                     targetDir.mkdirs();
                 }
 
-                log.info("Guide dir: " + srcDir.getAbsolutePath());
-                log.info("Target dir: " + targetDir.getAbsolutePath());
+                if (srcDir.getName().equals("images")) {
+                    FileUtils.copyDirectory(srcDir, targetDir);
+                } else {
+                    log.info("Guide dir: " + srcDir.getAbsolutePath());
+                    log.info("Target dir: " + targetDir.getAbsolutePath());
 
-                GuideBuilder g = new GuideBuilder(srcDir, targetDir, log);
-                g.build();
+                    GuideBuilder g = new GuideBuilder(srcDir, targetDir, log);
+                    g.build();
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();

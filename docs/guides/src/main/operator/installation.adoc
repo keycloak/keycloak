@@ -5,14 +5,48 @@
 
 <@tmpl.guide
 title="Keycloak Operator Installation"
-summary="How to install the Keycloak Operator on Kubernetes">
-
-TODO: https://github.com/keycloak/keycloak/issues/10786
+summary="How to install the Keycloak Operator on Kubernetes and OpenShift">
 
 == Keycloak Operator Installation
+In this guide we will show how to install the Keycloak Operator in your Kubernetes or OpenShift cluster.
 
-=== OpenShift Installation
+=== OLM Installation
+
+You can install the Keycloak Operator in Kubernetes environment is to use Operator Lifecycle Manager (OLM).
+Before moving on, make sure you have OLM installed, if not follow this https://github.com/operator-framework/operator-lifecycle-manager/blob/master/doc/install/install.md#install-a-release[guide].
+
+To install the Keycloak Operator follow the https://olm.operatorframework.io/docs/tasks/install-operator-with-olm/[instructions].
+In the default Catalogs the Keycloak Operator is named `keycloak-operator` and make sure to use the `candidate` channel.
+
+==== OpenShift UI
+
+On OpenShift you can use a conveninet UI on top of OLM.
+Navigate `Home` → `Operators` → `OperatorHub` in the menu on the left side of the OpenShift Console.
+Then, focus on the search input box and type "keycloak":
+
+image::{generatedGuideImages}/select-operator.jpeg["Select the Keycloak Operator in the UI"]
+
+Next, navigate to Keycloak Operator and click on it. Next, follow the instructions on the screen, make sure you are installing from the `candidate` channel:
+
+image::{generatedGuideImages}/configure-operator.jpeg["Configure Keycloak Operator"]
 
 === Vanilla Kubernetes Installation
+
+To install the operator on a vanilla Kubernetes cluster, you need first to install the CRDs:
+
+[source,bash,subs="attributes+"]
+----
+kubectl apply -f https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/{version}/kubernetes/keycloaks.k8s.keycloak.org-v1.yml
+kubectl apply -f https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/{version}/kubernetes/keycloakrealmimports.k8s.keycloak.org-v1.yml
+----
+
+And then install the Keycloak Operator deployment:
+
+[source,bash,subs="attributes+"]
+----
+kubectl apply -f https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/{version}/kubernetes/kubernetes.yml
+----
+
+Currently the operator watches only the same namespace as it's installed.
 
 </@tmpl.guide>
