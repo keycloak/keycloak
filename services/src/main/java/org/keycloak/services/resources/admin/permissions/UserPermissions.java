@@ -41,6 +41,7 @@ import org.keycloak.services.ForbiddenException;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -355,16 +356,20 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
     }
 
     @Override
-    public boolean canImpersonate(UserModel user) {
+    public boolean canImpersonate(UserModel user, ClientModel requester) {
         if (!canImpersonate()) {
             return false;
         }
 
-        return isImpersonatable(user);
+        return isImpersonatable(user, requester);
+    }
+
+    private boolean canImpersonate(UserModel user) {
+        return canImpersonate(user, null);
     }
 
     @Override
-    public boolean isImpersonatable(UserModel user) {
+    public boolean isImpersonatable(UserModel user, ClientModel requester) {
         ResourceServer server = root.realmResourceServer();
 
         if (server == null) {
@@ -389,7 +394,20 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
             return true;
         }
 
-        return hasPermission(new DefaultEvaluationContext(new UserModelIdentity(root.realm, user), session), USER_IMPERSONATED_SCOPE);
+        Map<String, List<String>> additionalClaims = Collections.emptyMap();
+
+        if (requester != null) {
+            // make sure the requesting client id is available from the context as we are using a user identity that does not rely on token claims
+            additionalClaims = new HashMap<>();
+            additionalClaims.put("kc.client.id", Arrays.asList(requester.getClientId()));
+        }
+
+        return hasPermission(new DefaultEvaluationContext(new UserModelIdentity(root.realm, user), additionalClaims, session), USER_IMPERSONATED_SCOPE);
+    }
+
+    @Override
+    public boolean isImpersonatable(UserModel user) {
+        return isImpersonatable(user, null);
     }
 
     @Override
