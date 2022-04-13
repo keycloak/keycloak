@@ -9,22 +9,30 @@ import {
   Thead,
   Tr,
 } from "@patternfly/react-table";
+
+import type { KeyValueType } from "../../../components/attribute-form/attribute-convert";
 import { AddValidatorRoleDialog } from "./AddValidatorRoleDialog";
 import { Validator, validators as allValidator } from "./Validators";
 import useToggle from "../../../utils/useToggle";
 
 export type AddValidatorDialogProps = {
+  selectedValidators: KeyValueType[];
   toggleDialog: () => void;
   onConfirm: (newValidator: Validator) => void;
 };
 
 export const AddValidatorDialog = ({
+  selectedValidators,
   toggleDialog,
   onConfirm,
 }: AddValidatorDialogProps) => {
   const { t } = useTranslation("realm-settings");
   const [selectedValidator, setSelectedValidator] = useState<Validator>();
-  const [validators, setValidators] = useState(allValidator);
+  const [validators, setValidators] = useState(() =>
+    allValidator.filter(
+      ({ name }) => !selectedValidators.map(({ key }) => key).includes(name)
+    )
+  );
   const [addValidatorRoleModalOpen, toggleModal] = useToggle();
 
   return (

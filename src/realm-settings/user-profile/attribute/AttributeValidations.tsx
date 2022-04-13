@@ -66,6 +66,7 @@ export const AttributeValidations = () => {
     <>
       {addValidatorModalOpen && (
         <AddValidatorDialog
+          selectedValidators={validators}
           onConfirm={(newValidator) => {
             setValue("validations", [
               ...validators,
