@@ -91,14 +91,6 @@ jobs:
         if: steps.cache-node-modules.outputs.cache-hit != 'true'
         run: npm ci
 
-      - name: Set up Java
-        uses: actions/setup-java@v3
-        with:
-          distribution: temurin
-          java-version: 11
-          check-latest: true
-          cache: maven
-
       - name: Restore Keycloak server
         uses: actions/cache@v3
         with:
