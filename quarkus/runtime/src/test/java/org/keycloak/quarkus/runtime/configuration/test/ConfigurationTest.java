@@ -122,6 +122,13 @@ public class ConfigurationTest {
     }
 
     @Test
+    public void testKeycloakConfPlaceholder() {
+        assertEquals("warn", createConfig().getRawValue("kc.log-level"));
+        putEnvVar("SOME_LOG_LEVEL", "debug");
+        assertEquals("debug", createConfig().getRawValue("kc.log-level"));
+    }
+
+    @Test
     public void testEnvVarAvailableFromPropertyNames() {
         putEnvVar("KC_VAULT_DIR", "/foo/bar");
         Config.Scope config = initConfig("vault", FilesPlainTextVaultProviderFactory.ID);

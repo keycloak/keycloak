@@ -162,6 +162,24 @@ To add the initial admin user using environment variables, set `KEYCLOAK_ADMIN` 
 Keycloak uses them at the first startup to create an initial user with administration rights.
 Once the first user with administrative rights exists, you can use the UI or the command line tool `kcadm.[sh|bat]` to create additional users.
 
+== Using placeholders
+
+You are able to use placeholders to resolve the configuration option value from environment variables.
+
+.Using a placeholder to resolve the host from an environment variable
+[source, bash]
+----
+db-url-host=${r"${MY_DB_HOST}"}
+----
+
+You are also able to default to a specific value if the environment variable can not be resolved:
+
+.Setting a default value
+[source, bash]
+----
+db-url-host=${r"${MY_DB_HOST:mydb}"}
+----
+
 == Unsupported server options
 
 In most cases, the available options from the server configuration should suffice to configure the server.
