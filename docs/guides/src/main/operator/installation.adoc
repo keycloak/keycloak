@@ -5,6 +5,7 @@
 
 <@tmpl.guide
 title="Keycloak Operator Installation"
+priority=10
 summary="How to install the Keycloak Operator on Kubernetes and OpenShift">
 
 == Keycloak Operator Installation

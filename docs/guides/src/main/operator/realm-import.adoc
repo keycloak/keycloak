@@ -5,6 +5,7 @@
 
 <@tmpl.guide
 title="Keycloak Realm Import"
+priority=30
 summary="How to perform an automated Keyacloak Realm Import">
 
 == Keycloak Realm Import
