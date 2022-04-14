@@ -49,6 +49,7 @@ export const LdapSettingsAdvanced = ({
             render={({ onChange, value }) => (
               <Switch
                 id={"kc-enable-ldapv3-password"}
+                data-testid="ldapv3-password"
                 isDisabled={false}
                 onChange={(value) => onChange([`${value}`])}
                 isChecked={value[0] === "true"}
@@ -77,6 +78,7 @@ export const LdapSettingsAdvanced = ({
             render={({ onChange, value }) => (
               <Switch
                 id={"kc-validate-password-policy"}
+                data-testid="password-policy"
                 isDisabled={false}
                 onChange={(value) => onChange([`${value}`])}
                 isChecked={value[0] === "true"}
@@ -105,6 +107,7 @@ export const LdapSettingsAdvanced = ({
             render={({ onChange, value }) => (
               <Switch
                 id={"kc-trust-email"}
+                data-testid="trust-email"
                 isDisabled={false}
                 onChange={(value) => onChange([`${value}`])}
                 isChecked={value[0] === "true"}

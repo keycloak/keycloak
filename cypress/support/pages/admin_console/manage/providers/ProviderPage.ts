@@ -111,6 +111,11 @@ export default class ProviderPage {
   enableStartTls = "enable-start-tls";
   connectionPooling = "connection-pooling";
 
+  // LDAP advanced settings switch input values
+  ldapv3PwSwitch = "ldapv3-password";
+  validatePwPolicySwitch = "password-policy";
+  trustEmailSwitch = "trust-email";
+
   changeCacheTime(unit: string, time: string) {
     switch (unit) {
       case "day":

@@ -69,13 +69,17 @@ const secondUserLdapFilter = "(second-filter)";
 const secondReadTimeout = "5000";
 
 const defaultPolicy = "DEFAULT";
-const newPolicy = "EVICT_WEEKLY";
+const weeklyPolicy = "EVICT_WEEKLY";
+const dailyPolicy = "EVICT_DAILY";
+const lifespanPolicy = "MAX_LIFESPAN";
+const noCachePolicy = "NO_CACHE";
 const defaultLdapDay = "Sunday";
 const defaultLdapHour = "00";
 const defaultLdapMinute = "00";
 const newLdapDay = "Wednesday";
 const newLdapHour = "15";
 const newLdapMinute = "55";
+const maxLifespan = 5;
 
 const addProviderMenu = "Add new provider";
 const createdSuccessMessage = "User federation provider successfully created";
@@ -83,12 +87,13 @@ const savedSuccessMessage = "User federation provider successfully saved";
 const deletedSuccessMessage = "The user federation provider has been deleted.";
 const deleteModalTitle = "Delete user federation provider?";
 const disableModalTitle = "Disable user federation provider?";
+const nonWritableFailMessage = "User federation provider could not be saved:";
 
 const ldapTestSuccessMsg = "Successfully connected to LDAP";
 const ldapTestFailMsg =
   "Error when trying to connect to LDAP. See server.log for details. LDAP test error";
 
-describe("User Fed LDAP tests", () => {
+describe("User Federation LDAP tests", () => {
   beforeEach(() => {
     keycloakBefore();
     loginPage.logIn();
@@ -96,7 +101,7 @@ describe("User Fed LDAP tests", () => {
     cy.intercept("GET", "/admin/realms/master").as("getProvider");
   });
 
-  it("Create Ldap provider from empty state", () => {
+  it("Should create LDAP provider from empty state", () => {
     // if tests don't start at empty state, e.g. user has providers configured locally,
     // create a new card from the card view instead
     cy.get("body").then(($body) => {
@@ -131,21 +136,79 @@ describe("User Fed LDAP tests", () => {
     sidebarPage.goToUserFederation();
   });
 
-  it("Update an existing LDAP provider and save", () => {
+  it("Should fail updating advanced settings", () => {
     providersPage.clickExistingCard(firstLdapName);
-    providersPage.selectCacheType(newPolicy);
+    providersPage.toggleSwitch(providersPage.ldapv3PwSwitch);
+    providersPage.toggleSwitch(providersPage.validatePwPolicySwitch);
+    providersPage.toggleSwitch(providersPage.trustEmailSwitch);
+    providersPage.save(provider);
+    masthead.checkNotificationMessage(nonWritableFailMessage);
+    sidebarPage.goToUserFederation();
+  });
 
-    providersPage.changeCacheTime("day", newLdapDay);
-    providersPage.changeCacheTime("hour", newLdapHour);
-    providersPage.changeCacheTime("minute", newLdapMinute);
-
+  it("Should update advanced settings", () => {
+    providersPage.clickExistingCard(firstLdapName);
+    providersPage.toggleSwitch(providersPage.ldapv3PwSwitch);
+    providersPage.toggleSwitch(providersPage.validatePwPolicySwitch);
+    providersPage.toggleSwitch(providersPage.trustEmailSwitch);
+    providersPage.fillLdapSearchingData(
+      editModeWritable,
+      secondUsersDn,
+      secondUserLdapAtt,
+      secondRdnLdapAtt,
+      secondUuidLdapAtt,
+      secondUserObjClasses
+    );
     providersPage.save(provider);
     masthead.checkNotificationMessage(savedSuccessMessage);
+    sidebarPage.goToUserFederation();
+    providersPage.clickExistingCard(firstLdapName);
+    providersPage.verifyToggle(providersPage.ldapv3PwSwitch, "on");
+    providersPage.verifyToggle(providersPage.validatePwPolicySwitch, "on");
+    providersPage.verifyToggle(providersPage.trustEmailSwitch, "on");
+  });
 
+  it("Should set cache policy to evict_daily", () => {
+    providersPage.clickExistingCard(firstLdapName);
+    providersPage.selectCacheType(dailyPolicy);
+    providersPage.changeCacheTime("hour", newLdapHour);
+    providersPage.changeCacheTime("minute", newLdapMinute);
+    providersPage.save(provider);
+
+    masthead.checkNotificationMessage(savedSuccessMessage);
     sidebarPage.goToUserFederation();
     providersPage.clickExistingCard(firstLdapName);
 
-    expect(cy.contains(newPolicy).should("exist"));
+    expect(cy.contains(dailyPolicy).should("exist"));
+    expect(cy.contains(defaultPolicy).should("not.exist"));
+  });
+
+  it("Should set cache policy to default", () => {
+    providersPage.clickExistingCard(firstLdapName);
+    providersPage.selectCacheType(defaultPolicy);
+    providersPage.save(provider);
+
+    masthead.checkNotificationMessage(savedSuccessMessage);
+    sidebarPage.goToUserFederation();
+    providersPage.clickExistingCard(firstLdapName);
+
+    expect(cy.contains(defaultPolicy).should("exist"));
+    expect(cy.contains(dailyPolicy).should("not.exist"));
+  });
+
+  it("Should set cache policy to evict_weekly", () => {
+    providersPage.clickExistingCard(firstLdapName);
+    providersPage.selectCacheType(weeklyPolicy);
+    providersPage.changeCacheTime("day", newLdapDay);
+    providersPage.changeCacheTime("hour", newLdapHour);
+    providersPage.changeCacheTime("minute", newLdapMinute);
+    providersPage.save(provider);
+
+    masthead.checkNotificationMessage(savedSuccessMessage);
+    sidebarPage.goToUserFederation();
+    providersPage.clickExistingCard(firstLdapName);
+
+    expect(cy.contains(weeklyPolicy).should("exist"));
     expect(cy.contains(defaultPolicy).should("not.exist"));
   });
 
@@ -365,6 +428,7 @@ describe("User Fed LDAP tests", () => {
 
     providersPage.fillSelect(providersPage.ldapEditModeInput, editModeUnsynced);
     providersPage.toggleSwitch(providersPage.importUsers);
+    providersPage.toggleSwitch(providersPage.validatePwPolicySwitch);
 
     providersPage.save(provider);
     masthead.checkNotificationMessage(savedSuccessMessage);
@@ -392,9 +456,9 @@ describe("User Fed LDAP tests", () => {
     sidebarPage.goToUserFederation();
   });
 
-  it("Change existing LDAP provider and click button to cancel", () => {
-    providersPage.clickExistingCard(updatedLdapName);
-    providersPage.selectCacheType(newPolicy);
+  it("Should update existing LDAP provider and cancel", () => {
+    providersPage.clickExistingCard(firstLdapName);
+    providersPage.selectCacheType(weeklyPolicy);
 
     providersPage.changeCacheTime("day", defaultLdapDay);
     providersPage.changeCacheTime("hour", defaultLdapHour);
@@ -403,11 +467,38 @@ describe("User Fed LDAP tests", () => {
     providersPage.cancel(provider);
 
     providersPage.clickExistingCard(updatedLdapName);
-    providersPage.selectCacheType(newPolicy);
+    providersPage.selectCacheType(weeklyPolicy);
 
     providersPage.verifyChangedHourInput(newLdapHour, defaultLdapHour);
 
     sidebarPage.goToUserFederation();
+  });
+
+  it("Should set cache policy to max_lifespan", () => {
+    providersPage.clickExistingCard(firstLdapName);
+    providersPage.selectCacheType(lifespanPolicy);
+    providersPage.fillMaxLifespanData(maxLifespan);
+    providersPage.save(provider);
+
+    masthead.checkNotificationMessage(savedSuccessMessage);
+    sidebarPage.goToUserFederation();
+    providersPage.clickExistingCard(firstLdapName);
+
+    expect(cy.contains(lifespanPolicy).should("exist"));
+    expect(cy.contains(weeklyPolicy).should("not.exist"));
+  });
+
+  it("Should set cache policy to no_cache", () => {
+    providersPage.clickExistingCard(firstLdapName);
+    providersPage.selectCacheType(noCachePolicy);
+    providersPage.save(provider);
+
+    masthead.checkNotificationMessage(savedSuccessMessage);
+    sidebarPage.goToUserFederation();
+    providersPage.clickExistingCard(firstLdapName);
+
+    expect(cy.contains(noCachePolicy).should("exist"));
+    expect(cy.contains(lifespanPolicy).should("not.exist"));
   });
 
   it("Should disable an existing LDAP provider", () => {
@@ -429,7 +520,7 @@ describe("User Fed LDAP tests", () => {
     expect(cy.contains("Enabled").should("exist"));
   });
 
-  it("Create new LDAP provider using the New Provider dropdown", () => {
+  it("Should create new LDAP provider using New Provider dropdown", () => {
     providersPage.clickMenuCommand(addProviderMenu, allCapProvider);
     providersPage.fillLdapGeneralData(secondLdapName, secondLdapVendor);
     providersPage.fillLdapConnectionData(
@@ -453,14 +544,14 @@ describe("User Fed LDAP tests", () => {
     sidebarPage.goToUserFederation();
   });
 
-  it("Delete an LDAP provider from card view using the card's menu", () => {
+  it("Should delete LDAP provider from card view using card menu", () => {
     providersPage.deleteCardFromCard(secondLdapName);
     modalUtils.checkModalTitle(deleteModalTitle).confirmModal();
     masthead.checkNotificationMessage(deletedSuccessMessage);
   });
 
-  it("Delete an LDAP provider using the Settings view's Action menu", () => {
-    providersPage.deleteCardFromMenu(updatedLdapName);
+  it("Should delete LDAP provider using Settings view Action menu", () => {
+    providersPage.deleteCardFromMenu(firstLdapName);
     modalUtils.checkModalTitle(deleteModalTitle).confirmModal();
     masthead.checkNotificationMessage(deletedSuccessMessage);
   });
