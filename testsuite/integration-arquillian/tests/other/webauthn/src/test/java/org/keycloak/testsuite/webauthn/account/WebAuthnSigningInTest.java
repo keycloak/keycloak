@@ -62,8 +62,8 @@ public class WebAuthnSigningInTest extends AbstractWebAuthnAccountTest {
         testContext.setTestRealmReps(emptyList()); // reimport realm after this test
 
         assertThat(signingInPage.getCategoriesCount(), is(3));
-        assertThat(signingInPage.getCategoryTitle("basic-authentication"), is("Basic Authentication"));
-        assertThat(signingInPage.getCategoryTitle("two-factor"), is("Two-Factor Authentication"));
+        assertThat(signingInPage.getCategoryTitle("basic-authentication"), is("Basic authentication"));
+        assertThat(signingInPage.getCategoryTitle("two-factor"), is("Two-factor authentication"));
         assertThat(signingInPage.getCategoryTitle("passwordless"), is("Passwordless"));
 
         // Delete WebAuthn flow ==> Passwordless category should disappear
@@ -419,7 +419,7 @@ public class WebAuthnSigningInTest extends AbstractWebAuthnAccountTest {
         // no way to simulate registration cancellation
 
         assertThat("Set up link for \"" + credentialType.getType() + "\" is not visible", credentialType.isSetUpLinkVisible(), is(true));
-        assertThat(credentialType.getTitle(), is("Security Key"));
+        assertThat(credentialType.getTitle(), is("Security key"));
         assertThat(credentialType.getHelpText(), is(expectedHelpText));
 
         final String label1 = "WebAuthn is convenient";
