@@ -17,6 +17,10 @@
 
 package org.keycloak.models.map.storage.jpa.liquibase.updater;
 
+import liquibase.database.Database;
+import liquibase.database.DatabaseFactory;
+import liquibase.database.core.CockroachDatabase;
+import liquibase.database.jvm.JdbcConnection;
 import org.keycloak.models.map.storage.jpa.liquibase.connection.MapLiquibaseConnectionProvider;
 import java.io.File;
 import java.io.FileWriter;
@@ -186,7 +190,9 @@ public class MapJpaLiquibaseUpdaterProvider implements MapJpaUpdaterProvider {
         if (modelName == null) {
             throw new IllegalStateException("Cannot find changlelog for modelClass " + modelType.getName());
         }
-        String changelog = "META-INF/jpa-" + modelName + "-changelog.xml";
+        Database database = DatabaseFactory.getInstance().findCorrectDatabaseImplementation(new JdbcConnection(connection));
+        // if database is cockroachdb, use the aggregate changelog (see GHI #11230).
+        String changelog = database instanceof CockroachDatabase ? "META-INF/jpa-aggregate-changelog.xml" : "META-INF/jpa-" + modelName + "-changelog.xml";
         return liquibaseProvider.getLiquibaseForCustomUpdate(connection, defaultSchema, changelog, this.getClass().getClassLoader(), "databasechangelog");
     }
 

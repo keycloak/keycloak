@@ -166,24 +166,17 @@ public abstract class JpaMapKeycloakTransaction<RE extends JpaRootEntity, E exte
 
     @Override
     public void begin() {
-        logger.tracef("tx %d: begin", hashCode());
-        em.getTransaction().begin();
+        // no-op: rely on JPA transaction enlisted by the JPA storage provider.
     }
 
     @Override
     public void commit() {
-        try {
-            logger.tracef("tx %d: commit", hashCode());
-            em.getTransaction().commit();
-        } catch (PersistenceException e) {
-            throw PersistenceExceptionConverter.convert(e.getCause() != null ? e.getCause() : e);
-        }
+        // no-op: rely on JPA transaction enlisted by the JPA storage provider.
     }
 
     @Override
     public void rollback() {
-        logger.tracef("tx %d: rollback", hashCode());
-        em.getTransaction().rollback();
+        // no-op: rely on JPA transaction enlisted by the JPA storage provider.
     }
 
     @Override
