@@ -843,6 +843,8 @@
                                 <keycloak.loginFailure.provider>map</keycloak.loginFailure.provider>
                                 <keycloak.authorization.provider>map</keycloak.authorization.provider>
                                 <keycloak.eventsStore.provider>map</keycloak.eventsStore.provider>
+                                <keycloak.actionToken.provider>map</keycloak.actionToken.provider>
+                                <keycloak.singleUseObject.provider>map</keycloak.singleUseObject.provider>
                                 <keycloak.authorizationCache.enabled>false</keycloak.authorizationCache.enabled>
                                 <keycloak.realmCache.enabled>false</keycloak.realmCache.enabled>
                                 <keycloak.userCache.enabled>false</keycloak.userCache.enabled>

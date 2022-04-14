@@ -387,6 +387,7 @@ public class AccessTokenTest extends AbstractKeycloakTest {
 
     @Test
     public void accessTokenCodeExpired() {
+        getTestingClient().testing().setTestingInfinispanTimeService();
         RealmManager.realm(adminClient.realm("test")).accessCodeLifeSpan(1);
         oauth.doLogin("test-user@localhost", "password");
 
@@ -397,15 +398,18 @@ public class AccessTokenTest extends AbstractKeycloakTest {
 
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
 
-        setTimeOffset(2);
+        try {
+            setTimeOffset(2);
 
-        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
-        Assert.assertEquals(400, response.getStatusCode());
-
-        setTimeOffset(0);
+            OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+            Assert.assertEquals(400, response.getStatusCode());
+        } finally {
+            getTestingClient().testing().revertTestingInfinispanTimeService();
+            resetTimeOffset();
+        }
 
         AssertEvents.ExpectedEvent expectedEvent = events.expectCodeToToken(codeId, codeId);
-        expectedEvent.error("expired_code")
+        expectedEvent.error("invalid_code")
                 .removeDetail(Details.TOKEN_ID)
                 .removeDetail(Details.REFRESH_TOKEN_ID)
                 .removeDetail(Details.REFRESH_TOKEN_TYPE)

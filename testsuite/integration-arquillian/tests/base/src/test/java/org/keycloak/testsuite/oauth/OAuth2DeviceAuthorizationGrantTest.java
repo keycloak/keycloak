@@ -469,6 +469,7 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
 
     @Test
     public void testExpiredUserCodeTest() throws Exception {
+        getTestingClient().testing().setTestingInfinispanTimeService();
         // Device Authorization Request from device
         oauth.realm(REALM_NAME);
         oauth.clientId(DEVICE_APP);
@@ -486,10 +487,12 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
             setTimeOffset(610);
             openVerificationPage(response.getVerificationUriComplete());
         } finally {
+            getTestingClient().testing().revertTestingInfinispanTimeService();
             resetTimeOffset();
         }
 
-        verificationPage.assertExpiredUserCodePage();
+        // device code not found in the cache because of expiration => invalid_grant error and redirection to the login page
+        loginPage.assertCurrent();
     }
 
     @Test
@@ -561,6 +564,7 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
 
     @Test
     public void testExpiredDeviceCode() throws Exception {
+        getTestingClient().testing().setTestingInfinispanTimeService();
         // Device Authorization Request from device
         oauth.realm(REALM_NAME);
         oauth.clientId(DEVICE_APP);
@@ -581,8 +585,9 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
                 response.getDeviceCode());
 
             Assert.assertEquals(400, tokenResponse.getStatusCode());
-            Assert.assertEquals("expired_token", tokenResponse.getError());
+            Assert.assertEquals("invalid_grant", tokenResponse.getError());
         } finally {
+            getTestingClient().testing().revertTestingInfinispanTimeService();
             resetTimeOffset();
         }
     }
@@ -600,6 +605,7 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
 
     @Test
     public void testDeviceCodeLifespanPerClient() throws Exception {
+        getTestingClient().testing().setTestingInfinispanTimeService();
         ClientResource client = ApiUtil.findClientByClientId(adminClient.realm(REALM_NAME), DEVICE_APP);
         ClientRepresentation clientRepresentation = client.toRepresentation();
         // Device Authorization Request from device
@@ -638,6 +644,7 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
             Assert.assertEquals(400, tokenResponse.getStatusCode());
             Assert.assertEquals("expired_token", tokenResponse.getError());
         } finally {
+            getTestingClient().testing().revertTestingInfinispanTimeService();
             resetTimeOffset();
         }
 
