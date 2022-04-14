@@ -21,7 +21,9 @@ import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 import org.keycloak.authorization.store.StoreFactorySpi;
 import org.keycloak.events.EventStoreSpi;
+import org.keycloak.models.ActionTokenStoreSpi;
 import org.keycloak.models.DeploymentStateSpi;
+import org.keycloak.models.SingleUseObjectSpi;
 import org.keycloak.models.UserLoginFailureSpi;
 import org.keycloak.models.UserSessionSpi;
 import org.keycloak.models.dblock.NoLockingDBLockProviderFactory;
@@ -30,6 +32,7 @@ import org.keycloak.models.map.authorization.MapAuthorizationStoreFactory;
 import org.keycloak.models.map.client.MapClientProviderFactory;
 import org.keycloak.models.map.clientscope.MapClientScopeProviderFactory;
 import org.keycloak.models.map.events.MapEventStoreProviderFactory;
+import org.keycloak.models.map.singleUseObject.MapSingleUseObjectProviderFactory;
 import org.keycloak.models.map.storage.hotRod.connections.DefaultHotRodConnectionProviderFactory;
 import org.keycloak.models.map.storage.hotRod.connections.HotRodConnectionProviderFactory;
 import org.keycloak.models.map.storage.hotRod.connections.HotRodConnectionSpi;
@@ -73,6 +76,8 @@ public class HotRodMapStorage extends KeycloakModelParameters {
     @Override
     public void updateConfig(Config cf) {
         cf.spi(AuthenticationSessionSpi.PROVIDER_ID).provider(MapRootAuthenticationSessionProviderFactory.PROVIDER_ID).config(STORAGE_CONFIG, HotRodMapStorageProviderFactory.PROVIDER_ID)
+          .spi(ActionTokenStoreSpi.NAME).provider(MapSingleUseObjectProviderFactory.PROVIDER_ID).config(STORAGE_CONFIG, ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
+          .spi(SingleUseObjectSpi.NAME).provider(MapSingleUseObjectProviderFactory.PROVIDER_ID).config(STORAGE_CONFIG, ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
           .spi("client").provider(MapClientProviderFactory.PROVIDER_ID).config(STORAGE_CONFIG, HotRodMapStorageProviderFactory.PROVIDER_ID)
           .spi("clientScope").provider(MapClientScopeProviderFactory.PROVIDER_ID).config(STORAGE_CONFIG, HotRodMapStorageProviderFactory.PROVIDER_ID)
           .spi("group").provider(MapGroupProviderFactory.PROVIDER_ID).config(STORAGE_CONFIG, HotRodMapStorageProviderFactory.PROVIDER_ID)
@@ -90,7 +95,8 @@ public class HotRodMapStorage extends KeycloakModelParameters {
 
         cf.spi(MapStorageSpi.NAME)
                 .provider(ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
-                .config("dir", "${project.build.directory:target}");
+                .config("dir", "${project.build.directory:target}")
+                .config("keyType.single-use-objects", "string");
 
         cf.spi(HotRodConnectionSpi.NAME).provider(DefaultHotRodConnectionProviderFactory.PROVIDER_ID)
                 .config("enableSecurity", "false")

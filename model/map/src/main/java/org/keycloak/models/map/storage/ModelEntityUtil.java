@@ -22,6 +22,7 @@ import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.events.Event;
 import org.keycloak.events.admin.AdminEvent;
+import org.keycloak.models.ActionTokenValueModel;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
@@ -31,6 +32,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.map.singleUseObject.MapSingleUseObjectEntity;
 import org.keycloak.models.map.authSession.MapRootAuthenticationSessionEntity;
 import org.keycloak.models.map.authorization.entity.MapPermissionTicketEntity;
 import org.keycloak.models.map.authorization.entity.MapPolicyEntity;
@@ -64,6 +66,7 @@ public class ModelEntityUtil {
 
     private static final Map<Class<?>, String> MODEL_TO_NAME = new HashMap<>();
     static {
+        MODEL_TO_NAME.put(ActionTokenValueModel.class, "single-use-objects");
         MODEL_TO_NAME.put(AuthenticatedClientSessionModel.class, "client-sessions");
         MODEL_TO_NAME.put(ClientScopeModel.class, "client-scopes");
         MODEL_TO_NAME.put(ClientModel.class, "clients");
@@ -90,6 +93,7 @@ public class ModelEntityUtil {
 
     private static final Map<Class<?>, Class<? extends AbstractEntity>> MODEL_TO_ENTITY_TYPE = new HashMap<>();
     static {
+        MODEL_TO_ENTITY_TYPE.put(ActionTokenValueModel.class, MapSingleUseObjectEntity.class);
         MODEL_TO_ENTITY_TYPE.put(AuthenticatedClientSessionModel.class, MapAuthenticatedClientSessionEntity.class);
         MODEL_TO_ENTITY_TYPE.put(ClientScopeModel.class, MapClientScopeEntity.class);
         MODEL_TO_ENTITY_TYPE.put(ClientModel.class, MapClientEntity.class);

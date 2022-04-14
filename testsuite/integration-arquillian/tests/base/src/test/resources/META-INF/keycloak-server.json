@@ -142,9 +142,28 @@
         }
     },
 
+    "actionToken": {
+        "provider": "${keycloak.actionToken.provider:infinispan}",
+        "map": {
+            "storage": {
+                "provider": "${keycloak.actionToken.map.storage.provider:concurrenthashmap}"
+            }
+        }
+    },
+
+    "singleUseObject": {
+        "provider": "${keycloak.singleUseObject.provider:infinispan}",
+        "map": {
+            "storage": {
+                "provider": "${keycloak.singleUseObject.map.storage.provider:concurrenthashmap}"
+            }
+        }
+    },
+
     "mapStorage": {
         "concurrenthashmap": {
             "dir": "${project.build.directory:target}",
+            "keyType.single-use-objects": "string",
             "keyType.realms": "string",
             "keyType.authz-resource-servers": "string"
         },
