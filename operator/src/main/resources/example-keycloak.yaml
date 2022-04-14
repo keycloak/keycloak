@@ -1,0 +1,21 @@
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+  instances: 1
+  serverConfiguration:
+    - name: db
+      value: postgres
+    - name: db-url-host
+      value: postgres-db
+    - name: db-username
+      secret:
+        name: keycloak-db-secret
+        key: username
+    - name: db-password
+      secret:
+        name: keycloak-db-secret
+        key: password
+  hostname: example.com
+  tlsSecret: example-tls-secret
