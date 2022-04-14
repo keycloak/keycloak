@@ -26,6 +26,7 @@ jobs:
       with:
         distribution: 'temurin'
         java-version: '11'
+        cache: 'maven'
 
     - name: Update maven settings
       run: mkdir -p ~/.m2 ; cp .github/settings.xml ~/.m2/
