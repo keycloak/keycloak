@@ -13,6 +13,7 @@ import org.keycloak.operator.v2alpha1.crds.KeycloakSpec;
 import org.keycloak.operator.v2alpha1.crds.keycloakspec.Unsupported;
 
 import java.net.URL;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -26,8 +27,17 @@ public class PodTemplateTest {
             public Keycloak keycloak() {
                 return new Keycloak() {
                     @Override
-                    public String image() {
-                        return "dummy-image";
+                    public Image image() {
+                        return new Image() {
+                            @Override
+                            public String name() {
+                                return "dummy-image";
+                            }
+                            @Override
+                            public Optional<String> tag() {
+                                return Optional.empty();
+                            }
+                        };
                     }
                     @Override
                     public String imagePullPolicy() {

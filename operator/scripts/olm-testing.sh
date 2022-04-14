@@ -18,10 +18,16 @@ VERSION="86400000.0.0"
 
 # Build the operator Docker image
 (
-  cd $SCRIPT_DIR/../
-  mvn clean package \
+  cd $SCRIPT_DIR/../../
+
+  # Here we test the operand image selection logic for actual releases in the operator
+  mvn versions:set -DnewVersion=${VERSION} -DprocessAllModules -DgenerateBackupPoms=false
+
+  mvn clean package -P operator -pl operator -am \
     -Dquarkus.container-image.build=true \
-    -Dquarkus.container-image.image="ttl.sh/${UUID}keycloak-operator:${VERSION}" \
+    -Dquarkus.container-image.registry="ttl.sh" \
+    -Dquarkus.container-image.group="" \
+    -Dquarkus.container-image.name="${UUID}keycloak-operator" \
     -DskipTests
   # JIB patching on images doesn't work reliably with ttl.sh
   docker push "ttl.sh/${UUID}keycloak-operator:${VERSION}"

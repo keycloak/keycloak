@@ -18,6 +18,9 @@
 package org.keycloak.operator;
 
 import io.smallrye.config.ConfigMapping;
+import org.eclipse.microprofile.config.ConfigProvider;
+
+import java.util.Optional;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
@@ -27,7 +30,37 @@ public interface Config {
     Keycloak keycloak();
 
     interface Keycloak {
-        String image();
+        Image image();
         String imagePullPolicy();
+
+        interface Image {
+            String name();
+            Optional<String> tag();
+
+            default String getFinalTag() {
+                String applicationVersion =
+                        ConfigProvider
+                                .getConfig()
+                                .getConfigValue("quarkus.application.version")
+                                .getValue();
+
+                if (tag().isPresent()) {
+                    return tag().get();
+                } else if (applicationVersion != null && applicationVersion.endsWith("SNAPSHOT")) {
+                    return Constants.DEFAULT_KEYCLOAK_SNAPSHOT_IMAGE_TAG;
+                } else {
+                    return applicationVersion;
+                }
+            }
+
+            default String getFullImage() {
+                String tag = getFinalTag();
+                if (tag.startsWith("sha")) {
+                    return name() + "@" + tag;
+                } else {
+                    return name() + ":" + tag;
+                }
+            }
+        }
     }
 }

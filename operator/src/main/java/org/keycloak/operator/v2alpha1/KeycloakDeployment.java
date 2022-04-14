@@ -403,7 +403,7 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
 
         Container container = baseDeployment.getSpec().getTemplate().getSpec().getContainers().get(0);
         var customImage = Optional.ofNullable(keycloakCR.getSpec().getImage());
-        container.setImage(customImage.orElse(config.keycloak().image()));
+        container.setImage(customImage.orElse(config.keycloak().image().getFullImage()));
         if (customImage.isEmpty()) {
             container.getArgs().add("--auto-build");
         }

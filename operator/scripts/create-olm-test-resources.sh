@@ -24,7 +24,7 @@ spec:
   publisher: Me
   updateStrategy:
     registryPoll:
-      interval: 2m
+      interval: 10m
 EOF
 
 cat << EOF >> $SCRIPT_DIR/../olm/testing-resources/operatorgroup.yaml
@@ -52,6 +52,6 @@ spec:
   startingCSV: keycloak-operator.v$VERSION
   config:
     env:
-    - name: "OPERATOR_KEYCLOAK_IMAGE"
-      value: "$DOCKER_REGISTRY/${UUID}keycloak:$VERSION"
+    - name: "OPERATOR_KEYCLOAK_IMAGE_NAME"
+      value: "$DOCKER_REGISTRY/${UUID}keycloak"
 EOF
