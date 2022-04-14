@@ -51,7 +51,18 @@ import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 
+import org.apache.http.NameValuePair;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.keycloak.util.BasicAuthHelper;
+
 import java.util.List;
+import java.util.LinkedList;
+
+import java.io.UnsupportedEncodingException;
 
 /**
  * @author <a href="mailto:h2-wada@nri.co.jp">Hiroyuki Wada</a>
@@ -577,6 +588,17 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
     }
 
     @Test
+    public void testDuplicatedRequestParams() throws Exception {
+        oauth.realm(REALM_NAME);
+        oauth.clientId(DEVICE_APP_PUBLIC);
+        OAuthClient.DeviceAuthorizationResponse response = doDeviceAuthorizationWithDuplicatedParams(DEVICE_APP_PUBLIC, null);
+        
+        Assert.assertEquals(400, response.getStatusCode());
+        Assert.assertEquals("invalid_grant", response.getError());
+        Assert.assertEquals("duplicated parameter", response.getErrorDescription());
+    }
+
+    @Test
     public void testDeviceCodeLifespanPerClient() throws Exception {
         ClientResource client = ApiUtil.findClientByClientId(adminClient.realm(REALM_NAME), DEVICE_APP);
         ClientRepresentation clientRepresentation = client.toRepresentation();
@@ -824,5 +846,32 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
 
     private void openVerificationPage(String verificationUri) {
         driver.navigate().to(verificationUri);
+    }
+
+    private OAuthClient.DeviceAuthorizationResponse doDeviceAuthorizationWithDuplicatedParams(String clientId, String clientSecret) throws Exception {
+        try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
+            HttpPost post = new HttpPost(oauth.getDeviceAuthorizationUrl());
+
+            List<NameValuePair> parameters = new LinkedList<>();
+            if (clientSecret != null) {
+                String authorization = BasicAuthHelper.createHeader(clientId, clientSecret);
+                post.setHeader("Authorization", authorization);
+            } else {
+                parameters.add(new BasicNameValuePair("client_id", clientId));
+            }
+
+            parameters.add(new BasicNameValuePair(OAuth2Constants.SCOPE, "profile"));
+            parameters.add(new BasicNameValuePair(OAuth2Constants.SCOPE, "foo"));
+
+            UrlEncodedFormEntity formEntity;
+            try {
+                formEntity = new UrlEncodedFormEntity(parameters, "UTF-8");
+            } catch (UnsupportedEncodingException e) {
+                throw new RuntimeException(e);
+            }
+            post.setEntity(formEntity);
+
+            return new OAuthClient.DeviceAuthorizationResponse(client.execute(post));
+        }
     }
 }
