@@ -18,7 +18,6 @@ package org.keycloak.testsuite.webauthn;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.logging.Logger;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.WebAuthnConstants;
@@ -38,18 +37,16 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.AbstractAdminTest;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.pages.*;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.webauthn.pages.WebAuthnLoginPage;
 import org.keycloak.testsuite.webauthn.pages.WebAuthnRegisterPage;
-import org.openqa.selenium.virtualauthenticator.Credential;
+import org.openqa.selenium.firefox.FirefoxDriver;
 
 import java.io.IOException;
-import java.security.spec.PKCS8EncodedKeySpec;
-import java.util.Base64;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -64,7 +61,7 @@ import static org.keycloak.testsuite.webauthn.utils.PropertyRequirement.YES;
 import static org.openqa.selenium.virtualauthenticator.VirtualAuthenticatorOptions.Protocol;
 import static org.openqa.selenium.virtualauthenticator.VirtualAuthenticatorOptions.Transport;
 
-
+@IgnoreBrowserDriver(FirefoxDriver.class)
 public class WebAuthnIdlessTest extends AbstractWebAuthnVirtualTest {
 
     @Rule
