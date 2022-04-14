@@ -25,6 +25,7 @@ describe("Partial import test", () => {
     createRealmPage.fillRealmName(TEST_REALM).createRealm();
 
     sidebarPage.goToRealmSettings();
+    sidebarPage.waitForPageLoad();
     realmSettings.clickActionMenu();
   });
 
