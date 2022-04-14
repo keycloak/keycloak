@@ -28,6 +28,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
 import javax.naming.InitialContext;
@@ -94,6 +95,7 @@ import org.keycloak.models.map.storage.jpa.clientscope.JpaClientScopeMapKeycloak
 import org.keycloak.models.map.storage.jpa.clientscope.entity.JpaClientScopeEntity;
 import org.keycloak.models.map.storage.jpa.group.JpaGroupMapKeycloakTransaction;
 import org.keycloak.models.map.storage.jpa.group.entity.JpaGroupEntity;
+import org.keycloak.models.map.storage.jpa.hibernate.listeners.JpaAutoFlushListener;
 import org.keycloak.models.map.storage.jpa.hibernate.listeners.JpaEntityVersionListener;
 import org.keycloak.models.map.storage.jpa.hibernate.listeners.JpaOptimisticLockingListener;
 import org.keycloak.models.map.storage.jpa.loginFailure.JpaUserLoginFailureMapKeycloakTransaction;
@@ -114,6 +116,8 @@ public class JpaMapStorageProviderFactory implements
         EnvironmentDependentProviderFactory {
 
     public static final String PROVIDER_ID = "jpa-map-storage";
+    private static final String SESSION_TX_PREFIX = "jpa-map-tx-";
+    private static final AtomicInteger ENUMERATOR = new AtomicInteger(0);
     private static final Logger logger = Logger.getLogger(JpaMapStorageProviderFactory.class);
 
     public static final String HIBERNATE_DEFAULT_SCHEMA = "hibernate.default_schema";
@@ -121,6 +125,8 @@ public class JpaMapStorageProviderFactory implements
     private volatile EntityManagerFactory emf;
     private final Set<Class<?>> validatedModels = ConcurrentHashMap.newKeySet();
     private Config.Scope config;
+    private final String sessionProviderKey;
+    private final String sessionTxKey;
 
     public final static DeepCloner CLONER = new DeepCloner.Builder()
         //auth-session
@@ -163,6 +169,12 @@ public class JpaMapStorageProviderFactory implements
         MODEL_TO_TX.put(UserLoginFailureModel.class,            JpaUserLoginFailureMapKeycloakTransaction::new);
     }
 
+    public JpaMapStorageProviderFactory() {
+        int index = ENUMERATOR.getAndIncrement();
+        this.sessionProviderKey = PROVIDER_ID + "-" + index;
+        this.sessionTxKey = SESSION_TX_PREFIX + index;
+    }
+
     public MapKeycloakTransaction createTransaction(Class<?> modelType, EntityManager em) {
         return MODEL_TO_TX.get(modelType).apply(em);
     }
@@ -170,7 +182,13 @@ public class JpaMapStorageProviderFactory implements
     @Override
     public MapStorageProvider create(KeycloakSession session) {
         lazyInit();
-        return new JpaMapStorageProvider(this, session, emf.createEntityManager());
+        // check the session for a cached provider before creating a new one.
+        JpaMapStorageProvider provider = session.getAttribute(this.sessionProviderKey, JpaMapStorageProvider.class);
+        if (provider == null) {
+            provider = new JpaMapStorageProvider(this, session, emf.createEntityManager(), this.sessionTxKey);
+            session.setAttribute(this.sessionProviderKey, provider);
+        }
+        return provider;
     }
 
     @Override
@@ -259,6 +277,9 @@ public class JpaMapStorageProviderFactory implements
                                             eventListenerRegistry.appendListeners(EventType.PRE_INSERT, JpaEntityVersionListener.INSTANCE);
                                             eventListenerRegistry.appendListeners(EventType.PRE_UPDATE, JpaEntityVersionListener.INSTANCE);
                                             eventListenerRegistry.appendListeners(EventType.PRE_DELETE, JpaEntityVersionListener.INSTANCE);
+
+                                            // replace auto-flush listener
+                                            eventListenerRegistry.setListeners(EventType.AUTO_FLUSH, JpaAutoFlushListener.INSTANCE);
                                         }
 
                                         @Override
