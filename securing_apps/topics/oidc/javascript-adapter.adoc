@@ -580,7 +580,7 @@ Invoking this results in onAuthLogout callback listener being invoked.
 
 ===== Callback Events
 
-The adapter supports setting callback listeners for certain events.
+The adapter supports setting callback listeners for certain events. Keep in mind that these have to be set before the call to the `init` function.
 
 For example:
 [source,javascript]
