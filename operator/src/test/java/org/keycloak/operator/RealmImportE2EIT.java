@@ -12,11 +12,12 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.keycloak.operator.Constants.KEYCLOAK_HTTPS_PORT;
+import static org.keycloak.operator.utils.K8sUtils.deployKeycloak;
 import static org.keycloak.operator.utils.K8sUtils.getDefaultKeycloakDeployment;
 import static org.keycloak.operator.utils.K8sUtils.inClusterCurl;
 import static org.keycloak.operator.v2alpha1.crds.KeycloakRealmImportStatusCondition.DONE;
-import static org.keycloak.operator.v2alpha1.crds.KeycloakRealmImportStatusCondition.STARTED;
 import static org.keycloak.operator.v2alpha1.crds.KeycloakRealmImportStatusCondition.HAS_ERRORS;
+import static org.keycloak.operator.v2alpha1.crds.KeycloakRealmImportStatusCondition.STARTED;
 
 @QuarkusTest
 public class RealmImportE2EIT extends ClusterOperatorTest {
@@ -24,7 +25,7 @@ public class RealmImportE2EIT extends ClusterOperatorTest {
     @Test
     public void testWorkingRealmImport() {
         // Arrange
-        k8sclient.load(getClass().getResourceAsStream("/example-keycloak.yml")).inNamespace(namespace).createOrReplace();
+        deployKeycloak(k8sclient, getDefaultKeycloakDeployment(), false);
 
         // Act
         k8sclient.load(getClass().getResourceAsStream("/example-realm.yaml")).inNamespace(namespace).createOrReplace();
@@ -69,7 +70,7 @@ public class RealmImportE2EIT extends ClusterOperatorTest {
     @Test
     public void testNotWorkingRealmImport() {
         // Arrange
-        k8sclient.load(getClass().getResourceAsStream("/example-keycloak.yml")).inNamespace(namespace).createOrReplace();
+        deployKeycloak(k8sclient, getDefaultKeycloakDeployment(), true); // make sure there are no errors due to missing KC Deployment
 
         // Act
         k8sclient.load(getClass().getResourceAsStream("/incorrect-realm.yaml")).inNamespace(namespace).createOrReplace();
