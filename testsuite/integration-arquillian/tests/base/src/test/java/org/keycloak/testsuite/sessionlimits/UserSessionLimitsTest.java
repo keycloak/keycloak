@@ -468,6 +468,7 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
             AuthenticationFlowModel flow = realm.getFlowByAlias(alias);
             AuthenticatorConfigModel configModel = realm.getAuthenticatorConfigByAlias("user-session-limits-" + flow.getId());
             configModel.getConfig().put(key, value);
+            realm.updateAuthenticatorConfig(configModel);
         });
     }
 

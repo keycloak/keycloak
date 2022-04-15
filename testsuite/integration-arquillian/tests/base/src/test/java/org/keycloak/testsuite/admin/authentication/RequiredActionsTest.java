@@ -19,15 +19,14 @@ package org.keycloak.testsuite.admin.authentication;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.keycloak.common.Profile;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderSimpleRepresentation;
 import org.keycloak.testsuite.actions.DummyRequiredActionFactory;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.util.AdminEventPaths;
 
+import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.NotFoundException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -93,6 +92,13 @@ public class RequiredActionsTest extends AbstractAuthenticationTest {
         // Register it
         authMgmtResource.registerRequiredAction(action);
         assertAdminEvents.assertEvent(testRealmId, OperationType.CREATE, AdminEventPaths.authMgmtBasePath() + "/register-required-action", action, ResourceType.REQUIRED_ACTION);
+
+        // Try to register 2nd time
+        try {
+            authMgmtResource.registerRequiredAction(action);
+        } catch (ClientErrorException ex) {
+            // Expected
+        }
 
         // Try to find not-existent action - should fail
         try {

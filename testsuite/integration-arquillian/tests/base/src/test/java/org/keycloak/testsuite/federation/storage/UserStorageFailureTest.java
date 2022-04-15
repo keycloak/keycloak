@@ -20,6 +20,7 @@ import org.jboss.arquillian.container.test.api.ContainerController;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -155,6 +156,8 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
 
         ContainerAssume.assumeNotAuthServerRemote();
 
+        Assume.assumeTrue("User cache disabled.", isUserCacheEnabled());
+
         oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
         oauth.clientId("offline-client");
         oauth.redirectUri(OAuthClient.AUTH_SERVER_ROOT + "/offline-client");
@@ -255,6 +258,8 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testKeycloak5926() {
+        Assume.assumeTrue("User cache disabled.", isUserCacheEnabled());
+
         oauth.clientId("test-app");
         oauth.redirectUri(OAuthClient.APP_AUTH_ROOT);
 

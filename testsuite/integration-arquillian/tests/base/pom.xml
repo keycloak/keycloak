@@ -1140,6 +1140,8 @@
                                 <keycloak.loginFailure.provider>map</keycloak.loginFailure.provider>
                                 <keycloak.authorization.provider>map</keycloak.authorization.provider>
                                 <keycloak.authorizationCache.enabled>false</keycloak.authorizationCache.enabled>
+                                <keycloak.realmCache.enabled>false</keycloak.realmCache.enabled>
+                                <keycloak.userCache.enabled>false</keycloak.userCache.enabled>
                           </systemPropertyVariables>
                       </configuration>
                     </plugin>
