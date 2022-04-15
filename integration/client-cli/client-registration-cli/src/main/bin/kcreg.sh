@@ -19,5 +19,13 @@ if [ "x$RESOLVED_NAME" = "x" ]; then
     RESOLVED_NAME="$0"
 fi
 
+if [ "x$JAVA" = "x" ]; then
+    if [ "x$JAVA_HOME" != "x" ]; then
+        JAVA="$JAVA_HOME/bin/java"
+    else
+        JAVA="java"
+    fi
+fi
+
 DIRNAME=`dirname "$RESOLVED_NAME"`
-java $KC_OPTS -cp $DIRNAME/client/keycloak-client-registration-cli-${project.version}.jar org.keycloak.client.registration.cli.KcRegMain "$@"
+"$JAVA" $KC_OPTS -cp $DIRNAME/client/keycloak-client-registration-cli-${project.version}.jar org.keycloak.client.registration.cli.KcRegMain "$@"

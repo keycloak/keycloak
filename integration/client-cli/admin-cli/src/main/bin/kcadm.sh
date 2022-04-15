@@ -21,6 +21,12 @@ fi
 
 DIRNAME=`dirname "$RESOLVED_NAME"`
 
+if [ "x$JAVA" = "x" ]; then
+    if [ "x$JAVA_HOME" != "x" ]; then
+        JAVA="$JAVA_HOME/bin/java"
+    else
+        JAVA="java"
+    fi
+fi
 
-java $KC_OPTS -cp $DIRNAME/client/keycloak-admin-cli-${project.version}.jar org.keycloak.client.admin.cli.KcAdmMain "$@"
-
+"$JAVA" $KC_OPTS -cp $DIRNAME/client/keycloak-admin-cli-${project.version}.jar org.keycloak.client.admin.cli.KcAdmMain "$@"
