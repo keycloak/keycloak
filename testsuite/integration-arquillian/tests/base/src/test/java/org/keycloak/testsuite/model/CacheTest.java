@@ -17,7 +17,7 @@
 
 package org.keycloak.testsuite.model;
 
-
+import org.junit.Assume;
 import org.junit.Test;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
@@ -58,6 +58,7 @@ public class CacheTest extends AbstractTestRealmKeycloakTest {
 
 	 @Test
 	    public void testStaleCache() throws Exception {
+            Assume.assumeTrue("Realm cache disabled.", isRealmCacheEnabled());
 		 testingClient.server().run(session -> {
 		 	String appId = null;
 	        {

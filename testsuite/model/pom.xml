@@ -285,14 +285,6 @@
         </profile>
 
         <profile>
-            <id>map+infinispan</id>
-            <properties>
-                <keycloak.profile.feature.map_storage>enabled</keycloak.profile.feature.map_storage>
-                <keycloak.model.parameters>Infinispan,Jpa,Map,ConcurrentHashMapStorage</keycloak.model.parameters>
-            </properties>
-        </profile>
-
-        <profile>
             <id>map</id>
             <properties>
                 <keycloak.profile.feature.map_storage>enabled</keycloak.profile.feature.map_storage>

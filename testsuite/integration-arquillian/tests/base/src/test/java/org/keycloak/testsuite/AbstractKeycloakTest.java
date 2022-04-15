@@ -36,6 +36,8 @@ import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.common.util.Time;
+import org.keycloak.models.cache.CacheRealmProvider;
+import org.keycloak.models.cache.UserCache;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
@@ -77,6 +79,7 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Scanner;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
@@ -715,5 +718,17 @@ public abstract class AbstractKeycloakTest {
     protected String getProjectName() {
         final boolean isProduct = adminClient.serverInfo().getInfo().getProfileInfo().getName().equals("product");
         return isProduct ? Profile.PRODUCT_NAME : Profile.PROJECT_NAME;
+    }
+
+    protected boolean isRealmCacheEnabled() {
+        String realmCache = testingClient.server()
+                .fetchString(s -> s.getKeycloakSessionFactory().getProviderFactory(CacheRealmProvider.class));
+        return Objects.nonNull(realmCache);
+    }
+
+    protected boolean isUserCacheEnabled() {
+        String userCache = testingClient.server()
+                .fetchString(s -> s.getKeycloakSessionFactory().getProviderFactory(UserCache.class));
+        return Objects.nonNull(userCache);
     }
 }

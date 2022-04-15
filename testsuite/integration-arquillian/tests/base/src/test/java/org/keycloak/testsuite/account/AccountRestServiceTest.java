@@ -27,7 +27,6 @@ import org.keycloak.authentication.authenticators.browser.WebAuthnPasswordlessAu
 import org.keycloak.authentication.requiredactions.WebAuthnPasswordlessRegisterFactory;
 import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
 import org.keycloak.broker.provider.util.SimpleHttp;
-import org.keycloak.common.Profile;
 import org.keycloak.common.enums.AccountRestApiVersion;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.credential.CredentialTypeMetadata;
@@ -63,7 +62,6 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.admin.authentication.AbstractAuthenticationTest;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.TokenUtil;
 import org.keycloak.testsuite.util.UserBuilder;
@@ -536,12 +534,14 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         requiredAction.setName(WebAuthnRegisterFactory.PROVIDER_ID);
         requiredAction.setProviderId(WebAuthnRegisterFactory.PROVIDER_ID);
         testRealm().flows().registerRequiredAction(requiredAction);
+        getCleanup().addRequiredAction(requiredAction.getProviderId());
 
         requiredAction = new RequiredActionProviderSimpleRepresentation();
         requiredAction.setId("6789");
         requiredAction.setName(WebAuthnPasswordlessRegisterFactory.PROVIDER_ID);
         requiredAction.setProviderId(WebAuthnPasswordlessRegisterFactory.PROVIDER_ID);
         testRealm().flows().registerRequiredAction(requiredAction);
+        getCleanup().addRequiredAction(requiredAction.getProviderId());
 
         List<AccountCredentialResource.CredentialContainer> credentials = getCredentials();
 
