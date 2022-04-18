@@ -1640,7 +1640,7 @@ public class DefaultPicketLinkLogger implements PicketLinkLogger {
      */
     @Override
     public void samlBase64DecodingError(Throwable t) {
-        error("Error in base64 decoding saml message: " + t);
+        logger.error("Error in base64 decoding saml message.", t);
     }
 
     /*

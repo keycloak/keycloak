@@ -73,7 +73,7 @@ public class ResourcesService extends AbstractResourceService {
             filters.put(org.keycloak.authorization.model.Resource.FilterOption.NAME, new String[] { name });
         }
 
-        return queryResponse((f, m) -> resourceStore.findByResourceServer(filters, null, f, m).stream()
+        return queryResponse((f, m) -> resourceStore.findByResourceServer(null, filters, f, m).stream()
                 .map(resource -> new Resource(resource, user, provider)), first, max);
     }
 
@@ -123,7 +123,7 @@ public class ResourcesService extends AbstractResourceService {
         filters.put(PermissionTicket.FilterOption.REQUESTER, user.getId());
         filters.put(PermissionTicket.FilterOption.GRANTED, Boolean.FALSE.toString());
 
-        final List<PermissionTicket> permissionTickets = ticketStore.find(filters, null, -1, -1);
+        final List<PermissionTicket> permissionTickets = ticketStore.find(null, filters, null, null);
 
         final List<ResourcePermission> resourceList = new ArrayList<>(permissionTickets.size());
         for (PermissionTicket ticket : permissionTickets) {
@@ -138,7 +138,7 @@ public class ResourcesService extends AbstractResourceService {
 
     @Path("{id}")
     public Object getResource(@PathParam("id") String id) {
-        org.keycloak.authorization.model.Resource resource = resourceStore.findById(id, null);
+        org.keycloak.authorization.model.Resource resource = resourceStore.findById(null, id);
 
         if (resource == null) {
             throw new NotFoundException("resource_not_found");
@@ -167,9 +167,9 @@ public class ResourcesService extends AbstractResourceService {
                 filters.put(PermissionTicket.FilterOption.GRANTED, Boolean.TRUE.toString());
                 filters.put(PermissionTicket.FilterOption.RESOURCE_ID, resource.getId());
 
-                tickets = ticketStore.find(filters, null, -1, -1);
+                tickets = ticketStore.find(resource.getResourceServer(), filters, null, null);
             } else {
-                tickets = ticketStore.findGranted(resource.getName(), user.getId(), null);
+                tickets = ticketStore.findGranted(resource.getResourceServer(), resource.getName(), user.getId());
             }
 
             for (PermissionTicket ticket : tickets) {

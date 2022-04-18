@@ -12,11 +12,6 @@ final class HostnamePropertyMappers {
                         .description("Hostname for the Keycloak server.")
                         .paramLabel("hostname")
                         .build(),
-                builder().from("hostname-admin")
-                        .to("kc.spi-hostname-default-admin")
-                        .description("Overrides the hostname for the admin console and APIs.")
-                        .paramLabel("url")
-                        .build(),
                 builder().from("hostname-strict")
                         .to("kc.spi-hostname-default-strict")
                         .description("Disables dynamically resolving the hostname from request headers. Should always be set to true in production, unless proxy verifies the Host header.")
@@ -32,13 +27,19 @@ final class HostnamePropertyMappers {
                         .build(),
                 builder().from("hostname-strict-backchannel")
                         .to("kc.spi-hostname-default-strict-backchannel")
-                        .description("By default backchannel URLs are dynamically resolved from request headers to allow internal an external applications. If all applications use the public URL this option should be enabled.")
+                        .description("By default backchannel URLs are dynamically resolved from request headers to allow internal and external applications. If all applications use the public URL this option should be enabled.")
                         .type(Boolean.class)
                         .build(),
                 builder().from("hostname-path")
                         .to("kc.spi-hostname-default-path")
                         .description("This should be set if proxy uses a different context-path for Keycloak.")
                         .paramLabel("path")
+                        .build(),
+                builder().from("hostname-port")
+                        .to("kc.spi-hostname-default-hostname-port")
+                        .defaultValue("-1")
+                        .description("The port used by the proxy when exposing the hostname. Set this option if the proxy uses a port other than the default HTTP and HTTPS ports.")
+                        .paramLabel("port")
                         .build()
         };
     }

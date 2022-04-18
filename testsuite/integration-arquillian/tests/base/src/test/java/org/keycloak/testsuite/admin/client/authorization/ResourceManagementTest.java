@@ -24,6 +24,7 @@ import org.keycloak.admin.client.resource.ResourcesResource;
 import org.keycloak.authorization.client.util.HttpResponseException;
 import org.keycloak.representations.idm.authorization.ResourceOwnerRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
+import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 
 import javax.ws.rs.NotFoundException;
@@ -68,6 +69,45 @@ public class ResourceManagementTest extends AbstractAuthorizationTest {
         assertEquals(3, attributes.get("a").size());
         assertTrue(attributes.get("b").containsAll(Arrays.asList("b1")));
         assertEquals(1, attributes.get("b").size());
+    }
+
+    @Test
+    public void testCreateWithResourceType() {
+        ResourceRepresentation newResource = new ResourceRepresentation();
+
+        newResource.setName("test");
+        newResource.setDisplayName("display");
+        newResource.setType("some-type");
+
+        newResource = doCreateResource(newResource);
+
+        ResourceResource resource = getClientResource().authorization().resources().resource(newResource.getId());
+
+        assertTrue(resource.permissions().isEmpty());
+    }
+
+    @Test
+    public void testQueryAssociatedPermissions() {
+        ResourceRepresentation newResource = new ResourceRepresentation();
+
+        newResource.setName("test");
+        newResource.setDisplayName("display");
+        newResource.setType("some-type");
+        newResource.addScope("GET");
+
+        newResource = doCreateResource(newResource);
+
+        ResourceResource resource = getClientResource().authorization().resources().resource(newResource.getId());
+
+        ScopePermissionRepresentation permission = new ScopePermissionRepresentation();
+
+        permission.setName(newResource.getName());
+        permission.addResource(newResource.getName());
+        permission.addScope("GET");
+
+        getClientResource().authorization().permissions().scope().create(permission);
+
+        assertFalse(resource.permissions().isEmpty());
     }
 
     @Test

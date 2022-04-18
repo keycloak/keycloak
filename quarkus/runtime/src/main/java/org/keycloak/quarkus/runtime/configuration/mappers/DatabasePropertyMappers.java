@@ -5,7 +5,6 @@ import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
 import org.keycloak.quarkus.runtime.storage.database.Database;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.function.BiFunction;
 
@@ -23,7 +22,7 @@ final class DatabasePropertyMappers {
                         .mapFrom("db")
                         .to("quarkus.hibernate-orm.dialect")
                         .isBuildTimeProperty(true)
-                        .transformer((db, context) -> Database.getDialect(db).orElse(Database.getDialect("dev-file").get()))
+                        .transformer(DatabasePropertyMappers::transformDialect)
                         .hidden(true)
                         .build(),
                 builder().from("db-driver")
@@ -58,6 +57,11 @@ final class DatabasePropertyMappers {
                         .to("kc.db-url-database")
                         .description("Sets the database name of the default JDBC URL of the chosen vendor. If the `db-url` option is set, this option is ignored.")
                         .paramLabel("dbname")
+                        .build(),
+                builder().from("db-url-port")
+                        .to("kc.db-url-port")
+                        .description("Sets the port of the default JDBC URL of the chosen vendor. If the `db-url` option is set, this option is ignored.")
+                        .paramLabel("port")
                         .build(),
                 builder().from("db-url-properties")
                         .to("kc.db-url-properties")
@@ -148,5 +152,15 @@ final class DatabasePropertyMappers {
     private static boolean isDevModeDatabase(ConfigSourceInterceptorContext context) {
         String db = context.proceed("kc.db").getValue();
         return Database.getDatabaseKind(db).get().equals(DatabaseKind.H2);
+    }
+
+    private static String transformDialect(String db, ConfigSourceInterceptorContext context) {
+        Optional<String> databaseKind = Database.getDatabaseKind(db);
+
+        if (databaseKind.isEmpty()) {
+            return db;
+        }
+
+        return Database.getDialect(db).orElse(Database.getDialect("dev-file").get());
     }
 }

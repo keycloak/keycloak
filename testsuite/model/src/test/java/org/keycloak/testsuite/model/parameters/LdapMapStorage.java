@@ -17,10 +17,14 @@
 package org.keycloak.testsuite.model.parameters;
 
 import com.google.common.collect.ImmutableSet;
+import org.jboss.logging.Logger;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 import org.keycloak.authorization.store.StoreFactorySpi;
 import org.keycloak.models.DeploymentStateSpi;
+import org.keycloak.models.LDAPConstants;
+import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.UserLoginFailureSpi;
 import org.keycloak.models.UserSessionSpi;
 import org.keycloak.models.map.storage.MapStorageSpi;
@@ -33,12 +37,15 @@ import org.keycloak.testsuite.model.KeycloakModelParameters;
 import org.keycloak.testsuite.util.LDAPRule;
 import org.keycloak.util.ldap.LDAPEmbeddedServer;
 
+import javax.naming.NamingException;
 import java.util.Set;
 
 /**
  * @author Alexander Schwartz
  */
 public class LdapMapStorage extends KeycloakModelParameters {
+
+    private static final Logger LOG = Logger.getLogger(LdapMapStorage.class.getName());
 
     static final Set<Class<? extends Spi>> ALLOWED_SPIS = ImmutableSet.<Class<? extends Spi>>builder()
             .build();
@@ -79,7 +86,8 @@ public class LdapMapStorage extends KeycloakModelParameters {
                 .config("role.object.classes", "groupOfNames")
                 .config("role.attributes", "ou")
                 .config("mode", "LDAP_ONLY")
-                .config("use.realm.roles.mapping", "true");
+                .config("use.realm.roles.mapping", "true")
+                .config(LDAPConstants.CONNECTION_POOLING, "true");
 
         cf.spi("client").config("map.storage.provider", ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
                 .spi("clientScope").config("map.storage.provider", ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)

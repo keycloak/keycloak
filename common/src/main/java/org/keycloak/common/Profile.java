@@ -153,7 +153,7 @@ public class Profile {
         ACCOUNT2("New Account Management Console", Type.DEFAULT),
         ACCOUNT_API("Account Management REST API", Type.DEFAULT),
         ADMIN_FINE_GRAINED_AUTHZ("Fine-Grained Admin Permissions", Type.PREVIEW),
-        ADMIN2("New Admin Console", Type.EXPERIMENTAL),
+        ADMIN2("New Admin Console", Type.PREVIEW),
         DOCKER("Docker Registry protocol", Type.DISABLED_BY_DEFAULT),
         IMPERSONATION("Ability for admins to impersonate users", Type.DEFAULT),
         OPENSHIFT_INTEGRATION("Extension to enable securing OpenShift", Type.PREVIEW),

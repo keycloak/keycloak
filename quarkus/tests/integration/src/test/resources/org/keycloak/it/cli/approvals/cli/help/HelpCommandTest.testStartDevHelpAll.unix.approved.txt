@@ -1,22 +1,35 @@
-Start the server.
+Start the server in development mode.
 
 Usage:
 
-kc.sh start [OPTIONS]
+kc.sh start-dev [OPTIONS]
 
-Use this command to run the server in production.
+Use this command if you want to run the server locally for development or
+testing purposes.
 
 Options:
 
--b, --auto-build     Automatically detects whether the server configuration changed and a new
-                       server image must be built prior to starting the server. This option
-                       provides an alternative to manually running the 'build' prior to starting
-                       the server. Use this configuration carefully in production as it might
-                       impact the startup time.
 -h, --help           This help message.
+--help-all           This same help message but with additional options.
+--import-realm       Import realms during startup by reading any realm configuration file from the
+                       'data/import' directory.
+
+Cluster:
+
+--cache <type>       Defines the cache mechanism for high-availability. By default, a 'ispn' cache
+                       is used to create a cluster between multiple server nodes. A 'local' cache
+                       disables clustering and is intended for development and testing purposes.
+                       Default: ispn.
+--cache-config-file <file>
+                     Defines the file from which cache configuration should be loaded from.
+--cache-stack <stack>
+                     Define the default stack to use for cluster communication and node discovery.
+                       This option only takes effect if 'cache' is set to 'ispn'. Default: udp.
 
 Database:
 
+--db <vendor>        The database vendor. Possible values are: dev-file, dev-mem, mariadb, mssql,
+                       mysql, oracle, postgres
 --db-password <password>
                      The password of the database user.
 --db-pool-initial-size <size>
@@ -35,20 +48,35 @@ Database:
 --db-url-host <hostname>
                      Sets the hostname of the default JDBC URL of the chosen vendor. If the
                        `db-url` option is set, this option is ignored.
+--db-url-port <port> Sets the port of the default JDBC URL of the chosen vendor. If the `db-url`
+                       option is set, this option is ignored.
 --db-url-properties <properties>
                      Sets the properties of the default JDBC URL of the chosen vendor. If the
                        `db-url` option is set, this option is ignored.
 --db-username <username>
                      The username of the database user.
 
+Transaction:
+
+--transaction-xa-enabled <true|false>
+                     Manually override the transaction type. Transaction type XA and the
+                       appropriate driver is used by default. Default: true.
+
+Feature:
+
+--features <feature> Enables a set of one or more features.
+--features-disabled <feature>
+                     Disables a set of one or more features.
+
 Hostname:
 
 --hostname <hostname>
                      Hostname for the Keycloak server.
---hostname-admin <url>
-                     Overrides the hostname for the admin console and APIs.
 --hostname-path <path>
                      This should be set if proxy uses a different context-path for Keycloak.
+--hostname-port <port>
+                     The port used by the proxy when exposing the hostname. Set this option if the
+                       proxy uses a port other than the default HTTP and HTTPS ports. Default: -1.
 --hostname-strict <true|false>
                      Disables dynamically resolving the hostname from request headers. Should
                        always be set to true in production, unless proxy verifies the Host header.
@@ -64,6 +92,8 @@ HTTP/TLS:
                      Enables the HTTP listener. Default: false.
 --http-host <host>   The used HTTP Host. Default: 0.0.0.0.
 --http-port <port>   The used HTTP port. Default: 8080.
+--http-relative-path <path>
+                     Set the path relative to '/' for serving resources. Default: /.
 --https-certificate-file <file>
                      The file path to a server certificate or certificate chain in PEM format.
 --https-certificate-key-file <file>
@@ -93,13 +123,27 @@ HTTP/TLS:
                      The type of the trust store file. If not given, the type is automatically
                        detected based on the file name.
 
+Health:
+
+--health-enabled <true|false>
+                     If the server should expose health check endpoints. If enabled, health checks
+                       are available at the '/health', '/health/ready' and '/health/live'
+                       endpoints. Default: false.
+
+Metrics:
+
+--metrics-enabled <true|false>
+                     If the server should expose metrics. If enabled, metrics are available at the
+                       '/metrics' endpoint. Default: false.
+
 Proxy:
 
 --proxy <mode>       The proxy address forwarding mode if the server is behind a reverse proxy.
-                       Possible values are: none,edge,reencrypt,passthrough Default: none.
+                       Possible values are: edge,reencrypt,passthrough Default: none.
 
 Vault:
 
+--vault <provider>   Enables a vault provider.
 --vault-dir <dir>    If set, secrets can be obtained by reading the content of files within the
                        given directory.
 
@@ -126,10 +170,7 @@ Logging:
                        categories and their levels. For the root category, you don't need to
                        specify a category. Default: info.
 
-You may use the "--auto-build" option when starting the server to avoid running
-the "build" command everytime you need to change a static property:
+Do NOT start the server using this command when deploying to production.
 
-      $ kc.sh start --auto-build <OPTIONS>
-
-By doing that you have an additional overhead when the server is starting. Run
-"kc.sh build -h" for more details.
+Use 'kc.sh start-dev --help-all' to list all available options, including build
+options.

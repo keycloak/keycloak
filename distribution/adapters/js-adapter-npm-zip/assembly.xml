@@ -29,6 +29,10 @@
             <outputDirectory>/</outputDirectory>
             <filtered>true</filtered>
         </file>
+        <file>
+            <source>../../../adapters/oidc/js/README.md</source>
+            <outputDirectory>/</outputDirectory>
+        </file>
     </files>
 
     <fileSets>

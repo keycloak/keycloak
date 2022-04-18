@@ -85,7 +85,8 @@ function createNavItems(activePage: PageDef, contentParam: ContentItem[], groupN
                                   groupId={item.groupId}
                                   key={item.groupId}
                                   title={Msg.localize(item.label, item.labelParams)}
-                                  isExpanded={isChildOf(item, activePage)}>
+                                  isExpanded={isChildOf(item, activePage)}
+                                  >
                         {createNavItems(activePage, item.content, groupNum + 1)}
                     </NavExpandable>
         } else {

@@ -74,7 +74,7 @@ public class TestLDAPResource {
         MultivaluedHashMap<String, String> ldapConfig = toComponentConfig(ldapCfg);
         ldapConfig.putSingle(LDAPConstants.SYNC_REGISTRATIONS, "true");
         ldapConfig.putSingle(LDAPConstants.EDIT_MODE, UserStorageProvider.EditMode.WRITABLE.toString());
-
+        ldapConfig.putSingle(LDAPConstants.CONNECTION_POOLING, "true");
         UserStorageProviderModel model = new UserStorageProviderModel();
         model.setLastSync(0);
         model.setChangedSyncPeriod(-1);

@@ -33,10 +33,6 @@ public class PodTemplateTest {
                     public String imagePullPolicy() {
                         return "Never";
                     }
-                    @Override
-                    public String initContainerImage() { return "quay.io/keycloak/keycloak-init-container:legacy"; }
-                    @Override
-                    public String initContainerImagePullPolicy() { return "Always"; }
                 };
             }
         };

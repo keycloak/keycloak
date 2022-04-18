@@ -23,7 +23,6 @@ import {
     DataListCell,
     DataListItemCells,
     ChipGroup,
-    ChipGroupToolbarItem,
     Chip
   } from '@patternfly/react-core';
 import { RepositoryIcon } from '@patternfly/react-icons';
@@ -85,30 +84,26 @@ export class SharedResourcesTable extends AbstractResourcesTable<ResourcesTableS
                                     </DataListCell>,
                                     <DataListCell key={'permissions-' + row} width={2}>
                                         { resource.scopes.length > 0 &&
-                                        <ChipGroup withToolbar>
-                                            <ChipGroupToolbarItem key='permissions' categoryName={Msg.localize('permissions')}>
-                                                {
-                                                    resource.scopes.map(scope => (
-                                                        <Chip key={scope.name} isReadOnly>
-                                                            {scope.displayName || scope.name}
-                                                        </Chip>
-                                                    ))
-                                                }
-                                            </ChipGroupToolbarItem>
+                                        <ChipGroup categoryName={Msg.localize('permissions')}>
+                                            {
+                                                resource.scopes.map(scope => (
+                                                    <Chip key={scope.name} isReadOnly>
+                                                        {scope.displayName || scope.name}
+                                                    </Chip>
+                                                ))
+                                            }
                                         </ChipGroup>}
                                     </DataListCell>,
                                     <DataListCell key={'pending-' + row} width={2}>
                                         {resource.shareRequests.length > 0 &&
-                                        <ChipGroup withToolbar>
-                                            <ChipGroupToolbarItem key='permissions' categoryName={Msg.localize('pending')}>
-                                                {
-                                                    (resource.shareRequests[0].scopes as Scope[]).map(scope => (
-                                                        <Chip key={scope.name} isReadOnly>
-                                                            {scope.displayName || scope.name}
-                                                        </Chip>
-                                                    ))
-                                                }
-                                            </ChipGroupToolbarItem>
+                                        <ChipGroup categoryName={Msg.localize('pending')}>
+                                            {
+                                                (resource.shareRequests[0].scopes as Scope[]).map(scope => (
+                                                    <Chip key={scope.name} isReadOnly>
+                                                        {scope.displayName || scope.name}
+                                                    </Chip>
+                                                ))
+                                            }
                                         </ChipGroup>
                                         }
                                     </DataListCell>

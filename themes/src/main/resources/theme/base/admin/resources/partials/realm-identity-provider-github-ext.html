@@ -1,0 +1,14 @@
+<div class="form-group clearfix block">
+    <label class="col-md-2 control-label" for="baseUrl">{{:: 'identity-provider.base-url' | translate}}</label>
+    <div class="col-md-6">
+        <input class="form-control" id="baseUrl" type="text" ng-model="identityProvider.config.baseUrl">
+    </div>
+    <kc-tooltip>{{:: 'identity-provider.base-url.tooltip' | translate}}</kc-tooltip>
+</div>
+<div class="form-group clearfix block">
+    <label class="col-md-2 control-label" for="apiUrl">{{:: 'identity-provider.api-url' | translate}}</label>
+    <div class="col-md-6">
+        <input class="form-control" id="apiUrl" type="text" ng-model="identityProvider.config.apiUrl">
+    </div>
+    <kc-tooltip>{{:: 'identity-provider.api-url.tooltip' | translate}}</kc-tooltip>
+</div>

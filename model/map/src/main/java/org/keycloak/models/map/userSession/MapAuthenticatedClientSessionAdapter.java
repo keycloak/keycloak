@@ -20,7 +20,9 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.map.common.TimeAdapter;
 
+import java.util.Collections;
 import java.util.Map;
 
 /**
@@ -40,12 +42,13 @@ public abstract class MapAuthenticatedClientSessionAdapter extends AbstractAuthe
 
     @Override
     public int getTimestamp() {
-        return entity.getTimestamp();
+        Long timestamp = entity.getTimestamp();
+        return timestamp != null ? TimeAdapter.fromLongWithTimeInSecondsToIntegerWithTimeInSeconds(timestamp) : 0;
     }
 
     @Override
     public void setTimestamp(int timestamp) {
-        entity.setTimestamp(timestamp);
+        entity.setTimestamp(TimeAdapter.fromIntegerWithTimeInSecondsToLongWithTimeAsInSeconds(timestamp));
     }
 
     @Override
@@ -65,7 +68,8 @@ public abstract class MapAuthenticatedClientSessionAdapter extends AbstractAuthe
 
     @Override
     public int getCurrentRefreshTokenUseCount() {
-        return entity.getCurrentRefreshTokenUseCount();
+        Integer currentRefreshTokenUseCount = entity.getCurrentRefreshTokenUseCount();
+        return currentRefreshTokenUseCount != null ? currentRefreshTokenUseCount : 0;
     }
 
     @Override
@@ -75,7 +79,7 @@ public abstract class MapAuthenticatedClientSessionAdapter extends AbstractAuthe
 
     @Override
     public String getNote(String name) {
-        return (name != null) ? entity.getNotes().get(name) : null;
+        return (name != null) ? entity.getNote(name) : null;
     }
 
     @Override
@@ -84,7 +88,7 @@ public abstract class MapAuthenticatedClientSessionAdapter extends AbstractAuthe
             if (value == null) {
                 entity.removeNote(name);
             } else {
-                entity.addNote(name, value);
+                entity.setNote(name, value);
             }
         }
     }
@@ -98,7 +102,8 @@ public abstract class MapAuthenticatedClientSessionAdapter extends AbstractAuthe
 
     @Override
     public Map<String, String> getNotes() {
-        return entity.getNotes();
+        Map<String, String> notes = entity.getNotes();
+        return notes == null ? Collections.emptyMap() : Collections.unmodifiableMap(notes);
     }
 
     @Override

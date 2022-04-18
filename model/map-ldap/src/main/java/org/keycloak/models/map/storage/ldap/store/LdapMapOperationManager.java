@@ -57,7 +57,7 @@ import java.util.Set;
  * @author Anil Saldhana
  * @author <a href="mailto:psilva@redhat.com">Pedro Silva</a>
  */
-public class LdapMapOperationManager {
+public class LdapMapOperationManager implements AutoCloseable {
 
     private static final Logger logger = Logger.getLogger(LdapMapOperationManager.class);
 
@@ -65,6 +65,7 @@ public class LdapMapOperationManager {
 
     private final KeycloakSession session;
     private final LdapMapConfig config;
+    private LdapMapContextManager ldapMapContextManager;
 
     public LdapMapOperationManager(KeycloakSession session, LdapMapConfig config) {
         this.session = session;
@@ -191,7 +192,6 @@ public class LdapMapOperationManager {
                             }
                         }
                     }
-
                     throw new ModelException("Could not rename entry from DN [" + oldDn + "] to new DN [" + newDn + "]. All fallbacks failed");
                 }
 
@@ -580,9 +580,14 @@ public class LdapMapOperationManager {
     }
 
     private <R> R execute(LdapOperation<R> operation, LdapMapOperationDecorator decorator) throws NamingException {
-        try (LdapMapContextManager ldapMapContextManager = LdapMapContextManager.create(session, config)) {
-            return execute(operation, ldapMapContextManager.getLdapContext(), decorator);
+        return execute(operation, getLdapContextManager().getLdapContext(), decorator);
+    }
+
+    private LdapMapContextManager getLdapContextManager() {
+        if (ldapMapContextManager == null) {
+            ldapMapContextManager = LdapMapContextManager.create(session, config);
         }
+        return ldapMapContextManager;
     }
 
     private <R> R execute(LdapOperation<R> operation, LdapContext context, LdapMapOperationDecorator decorator) throws NamingException {
@@ -613,6 +618,11 @@ public class LdapMapOperationManager {
                 }
             }
         }
+    }
+
+    @Override
+    public void close() {
+        ldapMapContextManager.close();
     }
 
     public interface LdapOperation<R> {

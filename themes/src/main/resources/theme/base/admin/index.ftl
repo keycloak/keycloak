@@ -48,7 +48,7 @@
     <script src="${resourceCommonUrl}/lib/ui-ace/min/ace.js"></script>
     <script src="${resourceCommonUrl}/lib/ui-ace/ui-ace.min.js"></script>
 
-    <script src="${authUrl}/js/keycloak.js?version=${resourceVersion}" type="text/javascript"></script>
+    <script src="${keycloakJsUrl}" type="text/javascript"></script>
 
     <script src="${resourceUrl}/js/app.js" type="text/javascript"></script>
     <script src="${resourceUrl}/js/controllers/realm.js" type="text/javascript"></script>

@@ -332,8 +332,8 @@ public interface MapRealmEntity extends UpdatableEntity, AbstractEntity, EntityW
     Integer getAccessCodeLifespanLogin();
     void setAccessCodeLifespanLogin(Integer accessCodeLifespanLogin);
 
-    Integer getNotBefore();
-    void setNotBefore(Integer notBefore);
+    Long getNotBefore();
+    void setNotBefore(Long notBefore);
 
     Integer getClientSessionIdleTimeout();
     void setClientSessionIdleTimeout(Integer clientSessionIdleTimeout);

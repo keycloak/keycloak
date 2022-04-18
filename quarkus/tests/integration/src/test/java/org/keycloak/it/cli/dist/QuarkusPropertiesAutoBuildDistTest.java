@@ -17,6 +17,7 @@
 
 package org.keycloak.it.cli.dist;
 
+import static io.restassured.RestAssured.when;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -35,7 +36,6 @@ import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
 
 @DistributionTest(reInstall = DistributionTest.ReInstall.NEVER)
-@BeforeStartDistribution(QuarkusPropertiesAutoBuildDistTest.UpdateConsoleLogLevelToWarn.class)
 @RawDistOnly(reason = "Containers are immutable")
 @TestMethodOrder(OrderAnnotation.class)
 public class QuarkusPropertiesAutoBuildDistTest {
@@ -43,16 +43,16 @@ public class QuarkusPropertiesAutoBuildDistTest {
     @Test
     @Launch({ "start", "--auto-build", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
     @Order(1)
-    void testReAugOnFirstRun(LaunchResult result) {
+    void reAugOnFirstRun(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertBuild();
-        assertFalse(cliResult.getOutput().contains("INFO  [io.quarkus]"));
     }
 
     @Test
+    @BeforeStartDistribution(QuarkusPropertiesAutoBuildDistTest.UpdateConsoleLogLevelToWarn.class)
     @Launch({ "start", "--auto-build", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
     @Order(2)
-    void testSecondStartDoNotTriggerReAug(LaunchResult result) {
+    void testQuarkusRuntimePropDoesNotTriggerReAug(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertNoBuild();
         assertFalse(cliResult.getOutput().contains("INFO  [io.quarkus]"));
@@ -62,14 +62,60 @@ public class QuarkusPropertiesAutoBuildDistTest {
     @BeforeStartDistribution(UpdateConsoleLogLevelToInfo.class)
     @Launch({ "start", "--auto-build", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
     @Order(3)
-    void testReAugAfterChangingProperty(LaunchResult result) {
+    void testNoReAugAfterChangingRuntimeProperty(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        cliResult.assertBuild();
+        cliResult.assertNoBuild();
         assertTrue(cliResult.getOutput().contains("INFO  [io.quarkus]"));
     }
 
-    public static class UpdateConsoleLogLevelToWarn implements Consumer<KeycloakDistribution> {
+    @Test
+    @BeforeStartDistribution(AddAdditionalDatasource.class)
+    @Launch({ "start", "--auto-build", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
+    @Order(4)
+    void testReAugForAdditionalDatasource(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertBuild();
+    }
 
+    @Test
+    @BeforeStartDistribution(ChangeAdditionalDatasourceUsername.class)
+    @Launch({ "start", "--auto-build", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
+    @Order(5)
+    void testNoReAugForAdditionalDatasourceRuntimeProperty(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertNoBuild();
+    }
+
+    @Test
+    @BeforeStartDistribution(ChangeAdditionalDatasourceDbKind.class)
+    @Launch({ "start", "--auto-build", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
+    @Order(6)
+    void testNoReAugWhenBuildTimePropertiesAreTheSame(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertNoBuild();
+    }
+
+    @Test
+    @BeforeStartDistribution(AddAdditionalDatasource2.class)
+    @Launch({ "start", "--auto-build", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
+    @Order(7)
+    void testReAugWhenAnotherDatasourceAdded(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertBuild();
+    }
+
+    @Test
+    @BeforeStartDistribution(EnableDatasourceMetrics.class)
+    @Launch({ "start", "--auto-build", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
+    @Order(8)
+    void testWrappedBuildPropertyTriggersBuildButGetsIgnoredWhenSetByQuarkus(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertBuild();
+        when().get("/metrics").then()
+                .statusCode(404);
+    }
+
+    public static class UpdateConsoleLogLevelToWarn implements Consumer<KeycloakDistribution> {
         @Override
         public void accept(KeycloakDistribution distribution) {
             distribution.setQuarkusProperty("quarkus.log.console.level", "WARN");
@@ -84,4 +130,44 @@ public class QuarkusPropertiesAutoBuildDistTest {
         }
     }
 
+    public static class AddAdditionalDatasource implements Consumer<KeycloakDistribution> {
+        @Override
+        public void accept(KeycloakDistribution distribution) {
+            distribution.setQuarkusProperty("quarkus.datasource.user-store.db-kind", "h2");
+            distribution.setQuarkusProperty("quarkus.datasource.user-store.username","sa");
+            distribution.setQuarkusProperty("quarkus.datasource.user-store.jdbc.url","jdbc:h2:mem:user-store;DB_CLOSE_DELAY=-1");
+        }
+    }
+
+    public static class AddAdditionalDatasource2 implements Consumer<KeycloakDistribution> {
+        @Override
+        public void accept(KeycloakDistribution distribution) {
+            distribution.setQuarkusProperty("quarkus.datasource.user-store2.db-kind", "h2");
+            distribution.setQuarkusProperty("quarkus.datasource.user-store2.db-transactions", "enabled");
+            distribution.setQuarkusProperty("quarkus.datasource.user-store2.username","sa");
+            distribution.setQuarkusProperty("quarkus.datasource.user-store2.jdbc.url","jdbc:h2:mem:user-store2;DB_CLOSE_DELAY=-1");
+        }
+    }
+
+    public static class ChangeAdditionalDatasourceUsername implements Consumer<KeycloakDistribution> {
+        @Override
+        public void accept(KeycloakDistribution distribution) {
+            distribution.setQuarkusProperty("quarkus.datasource.user-store.username","foo");
+        }
+    }
+
+    public static class ChangeAdditionalDatasourceDbKind implements Consumer<KeycloakDistribution> {
+        @Override
+        public void accept(KeycloakDistribution distribution) {
+            distribution.setQuarkusProperty("quarkus.datasource.user-store.db-kind","h2");
+        }
+    }
+
+    public static class EnableDatasourceMetrics implements Consumer<KeycloakDistribution> {
+        @Override
+        public void accept(KeycloakDistribution distribution) {
+            distribution.setManualStop(true);
+            distribution.setQuarkusProperty("quarkus.datasource.metrics.enabled","true");
+        }
+    }
 }

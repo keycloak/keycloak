@@ -19,15 +19,14 @@ import * as React from 'react';
 import {KeycloakService} from './keycloak-service/keycloak.service';
 
 import {PageNav} from './PageNav';
-import {PageToolbar} from './PageToolbar';
+import {PageHeaderTool} from './PageHeaderTool';
 import {makeRoutes} from './ContentPages';
 
 import {
     Brand,
     Page,
     PageHeader,
-    PageSection,
-    PageSidebar,
+    PageSidebar
 } from '@patternfly/react-core';
 
 import { KeycloakContext } from './keycloak-service/KeycloakContext';
@@ -61,11 +60,11 @@ export class App extends React.Component<AppProps> {
         const username = (
             <span style={{marginLeft: '10px'}} id="loggedInUser">{loggedInUserName()}</span>
         );
+
         const Header = (
             <PageHeader
                 logo={<a id="brandLink" href={brandUrl}><Brand src={brandImg} alt="Logo" className="brand"/></a>}
-                toolbar={<PageToolbar/>}
-                avatar={username}
+                headerTools={<PageHeaderTool/>}
                 showNavToggle
             />
         );
@@ -73,13 +72,9 @@ export class App extends React.Component<AppProps> {
         const Sidebar = <PageSidebar nav={<PageNav/>} />;
 
         return (
-            <span style={{ height: '100%'}}>
-                <Page header={Header} sidebar={Sidebar} isManagedSidebar>
-                    <PageSection>
-                        {makeRoutes()}
-                    </PageSection>
-                </Page>
-            </span>
+            <Page header={Header} sidebar={Sidebar} isManagedSidebar>
+                {makeRoutes()}
+            </Page>
         );
     }
 };

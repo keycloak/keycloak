@@ -39,6 +39,7 @@ import org.keycloak.models.map.storage.ldap.model.LdapMapObject;
 import org.keycloak.models.map.storage.ldap.model.LdapMapQuery;
 import org.keycloak.models.map.storage.ldap.role.config.LdapMapRoleMapperConfig;
 import org.keycloak.models.map.storage.ldap.role.entity.LdapRoleEntity;
+import org.keycloak.provider.Provider;
 
 import javax.naming.NamingException;
 import java.util.Arrays;
@@ -53,9 +54,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class LdapRoleMapKeycloakTransaction extends LdapMapKeycloakTransaction<LdapMapRoleEntityFieldDelegate, MapRoleEntity, RoleModel> {
+public class LdapRoleMapKeycloakTransaction extends LdapMapKeycloakTransaction<LdapMapRoleEntityFieldDelegate, MapRoleEntity, RoleModel> implements Provider {
 
-    private final KeycloakSession session;
     private final StringKeyConverter<String> keyConverter = new StringKeyConverter.StringKey();
     private final Set<String> deletedKeys = new HashSet<>();
     private final LdapMapRoleMapperConfig roleMapperConfig;
@@ -63,10 +63,10 @@ public class LdapRoleMapKeycloakTransaction extends LdapMapKeycloakTransaction<L
     private final LdapMapIdentityStore identityStore;
 
     public LdapRoleMapKeycloakTransaction(KeycloakSession session, Config.Scope config) {
-        this.session = session;
         this.roleMapperConfig = new LdapMapRoleMapperConfig(config);
         this.ldapMapConfig = new LdapMapConfig(config);
         this.identityStore = new LdapMapIdentityStore(session, ldapMapConfig);
+        session.enlistForClose(this);
     }
 
     // interface matching the constructor of this class
@@ -193,13 +193,18 @@ public class LdapRoleMapKeycloakTransaction extends LdapMapKeycloakTransaction<L
         if (read == null) {
             throw new ModelException("unable to read entity with key " + key);
         }
-        deletedKeys.add(key);
-        tasksOnCommit.add(new DeleteOperation() {
-            @Override
-            public void execute() {
-                identityStore.remove(read.getLdapMapObject());
-            }
-        });
+        if (!deletedKeys.contains((key))) {
+            // avoid enlisting LDAP removal twice if client calls it twice
+            deletedKeys.add(key);
+            tasksOnCommit.add(new DeleteOperation() {
+                @Override
+                public void execute() {
+                    identityStore.remove(read.getLdapMapObject());
+                    // once removed from LDAP, avoid updating a modified entity in LDAP.
+                    entities.remove(read.getId());
+                }
+            });
+        }
         return true;
     }
 
@@ -392,6 +397,11 @@ public class LdapRoleMapKeycloakTransaction extends LdapMapKeycloakTransaction<L
                 identityStore.update(entity.getLdapMapObject());
             }
         });
+        // once the commit is complete, clear the local storage to avoid problems when rollback() is called later
+        // due to a different transaction failing.
+        tasksOnCommit.clear();
+        entities.clear();
+        tasksOnRollback.clear();
     }
 
     @Override
@@ -405,6 +415,11 @@ public class LdapRoleMapKeycloakTransaction extends LdapMapKeycloakTransaction<L
 
     protected LdapRoleModelCriteriaBuilder createLdapModelCriteriaBuilder() {
         return new LdapRoleModelCriteriaBuilder(roleMapperConfig);
+    }
+
+    @Override
+    public void close() {
+        identityStore.close();
     }
 
 }

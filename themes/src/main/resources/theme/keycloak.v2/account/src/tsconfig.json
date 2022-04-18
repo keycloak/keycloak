@@ -11,7 +11,8 @@
     "noImplicitAny": true,
     "strictNullChecks": true,
     "jsx": "react",
-    "suppressImplicitAnyIndexErrors": true
+    "suppressImplicitAnyIndexErrors": true,
+    "skipLibCheck": true
   },
   "include": [
     "./app/**/*.ts?"

@@ -1,0 +1,49 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/kc.adoc" as kc>
+<#import "/templates/options.adoc" as opts>
+<#import "/templates/links.adoc" as links>
+
+<@tmpl.guide
+title="Using custom Keycloak images"
+summary="How to customize and optimize the Keycloak Container">
+
+== Keycloak custom image with Operator
+
+The Keycloak Custom Resource (CR) give you the possibility to specify a custom container image for the Keycloak server.
+
+.Note:
+[NOTE]
+To ensure full compatibility of Operator and Operand,
+make sure that the version of Keycloak release used in the custom image is aligned with the version of the operator.
+
+=== Best Practice
+
+When using the default Keycloak image the server will perform a costly re-augmentation every time a Pod starts.
+This can be avoided by providing a Custom Image where the augmentation already happened during the build time of the image.
+
+A custom image additionally allows to specify Keycloak's "build-time" configurations and extensions during the build of the container.
+
+For instructions on how to build such image refer to <@links.server id="containers"/>.
+
+=== Providing Custom Keycloak image
+
+To provide a custom image you have to define the `image` field in the Keycloak CR, for example:
+
+[source,yaml]
+----
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+  instances: 1
+  image: quay.io/my-company/my-keycloak:latest
+  hostname: example.com
+  tlsSecret: example-tls-secret
+----
+
+.Note:
+[NOTE]
+Using custom images, every build time configuration passed through the `serverConfiguration` key will be ignored.
+
+</@tmpl.guide>

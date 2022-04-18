@@ -17,10 +17,13 @@
 
 package org.keycloak.models.map.storage.hotRod;
 
+import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.models.map.storage.hotRod.common.AbstractHotRodEntity;
 import org.keycloak.storage.SearchableModelField;
@@ -68,6 +71,13 @@ public class IckleQueryMapModelCriteriaBuilder<E extends AbstractHotRodEntity, M
         INFINISPAN_NAME_OVERRIDES.put(UserModel.SearchableFields.ASSIGNED_GROUP, "groupsMembership");
         INFINISPAN_NAME_OVERRIDES.put(UserModel.SearchableFields.ATTRIBUTE, "attributes");
         INFINISPAN_NAME_OVERRIDES.put(UserModel.SearchableFields.IDP_AND_USER, "federatedIdentities");
+
+        INFINISPAN_NAME_OVERRIDES.put(RealmModel.SearchableFields.CLIENT_INITIAL_ACCESS, "clientInitialAccesses");
+        INFINISPAN_NAME_OVERRIDES.put(RealmModel.SearchableFields.COMPONENT_PROVIDER_TYPE, "components.providerType");
+
+        INFINISPAN_NAME_OVERRIDES.put(UserSessionModel.SearchableFields.IS_OFFLINE, "offline");
+        INFINISPAN_NAME_OVERRIDES.put(UserSessionModel.SearchableFields.CLIENT_ID, "authenticatedClientSessions.key");
+        INFINISPAN_NAME_OVERRIDES.put(AuthenticatedClientSessionModel.SearchableFields.IS_OFFLINE, "offline");
     }
 
     static {

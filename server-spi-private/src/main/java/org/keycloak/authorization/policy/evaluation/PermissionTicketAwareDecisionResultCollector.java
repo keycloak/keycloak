@@ -93,13 +93,13 @@ public class PermissionTicketAwareDecisionResultCollector extends DecisionPermis
 
             if (permissions != null) {
                 for (Permission permission : permissions) {
-                    Resource resource = resourceStore.findById(permission.getResourceId(), resourceServer.getId());
+                    Resource resource = resourceStore.findById(resourceServer, permission.getResourceId());
 
                     if (resource == null) {
-                        resource = resourceStore.findByName(permission.getResourceId(), identity.getId(), resourceServer.getId());
+                        resource = resourceStore.findByName(resourceServer, permission.getResourceId(), identity.getId());
                     }
 
-                    if (resource == null || !resource.isOwnerManagedAccess() || resource.getOwner().equals(identity.getId()) || resource.getOwner().equals(resourceServer.getId())) {
+                    if (resource == null || !resource.isOwnerManagedAccess() || resource.getOwner().equals(identity.getId()) || resource.getOwner().equals(resourceServer.getClientId())) {
                         continue;
                     }
 
@@ -116,19 +116,19 @@ public class PermissionTicketAwareDecisionResultCollector extends DecisionPermis
                         filters.put(PermissionTicket.FilterOption.REQUESTER, identity.getId());
                         filters.put(PermissionTicket.FilterOption.SCOPE_IS_NULL, Boolean.TRUE.toString());
 
-                        List<PermissionTicket> tickets = authorization.getStoreFactory().getPermissionTicketStore().find(filters, resource.getResourceServer(), -1, -1);
+                        List<PermissionTicket> tickets = authorization.getStoreFactory().getPermissionTicketStore().find(resource.getResourceServer(), filters, null, null);
 
                         if (tickets.isEmpty()) {
-                            authorization.getStoreFactory().getPermissionTicketStore().create(resource.getId(), null, identity.getId(), resourceServer);
+                            authorization.getStoreFactory().getPermissionTicketStore().create(resourceServer, resource, null, identity.getId());
                         }
                     } else {
                         ScopeStore scopeStore = authorization.getStoreFactory().getScopeStore();
 
                         for (String scopeId : scopes) {
-                            Scope scope = scopeStore.findByName(scopeId, resourceServer.getId());
+                            Scope scope = scopeStore.findByName(resourceServer, scopeId);
 
                             if (scope == null) {
-                                scope = scopeStore.findById(scopeId, resourceServer.getId());
+                                scope = scopeStore.findById(resourceServer, scopeId);
                             }
 
                             Map<PermissionTicket.FilterOption, String> filters = new EnumMap<>(PermissionTicket.FilterOption.class);
@@ -137,10 +137,10 @@ public class PermissionTicketAwareDecisionResultCollector extends DecisionPermis
                             filters.put(PermissionTicket.FilterOption.REQUESTER, identity.getId());
                             filters.put(PermissionTicket.FilterOption.SCOPE_ID, scope.getId());
 
-                            List<PermissionTicket> tickets = authorization.getStoreFactory().getPermissionTicketStore().find(filters, resource.getResourceServer(), -1, -1);
+                            List<PermissionTicket> tickets = authorization.getStoreFactory().getPermissionTicketStore().find(resource.getResourceServer(), filters, null, null);
 
                             if (tickets.isEmpty()) {
-                                authorization.getStoreFactory().getPermissionTicketStore().create(resource.getId(), scope.getId(), identity.getId(), resourceServer);
+                                authorization.getStoreFactory().getPermissionTicketStore().create(resourceServer, resource, scope, identity.getId());
                             }
                         }
                     }

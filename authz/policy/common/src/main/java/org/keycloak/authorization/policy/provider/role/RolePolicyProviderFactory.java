@@ -223,7 +223,7 @@ public class RolePolicyProviderFactory implements PolicyProviderFactory<RolePoli
         ResourceServer resourceServer = resourceServerStore.findByClient(clientModel);
 
         if (resourceServer != null) {
-            policyStore.findByType(getId(), resourceServer.getId()).forEach(policy -> {
+            policyStore.findByType(resourceServer, getId()).forEach(policy -> {
                 List<Map> roles = new ArrayList<>();
 
                 for (Map<String,Object> role : getRoles(policy)) {

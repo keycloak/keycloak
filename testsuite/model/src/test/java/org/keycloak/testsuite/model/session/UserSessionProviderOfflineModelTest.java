@@ -344,7 +344,7 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
                 InfinispanConnectionProvider provider = session.getProvider(InfinispanConnectionProvider.class);
                 Cache<String, Object> cache = provider.getCache(InfinispanConnectionProvider.WORK_CACHE_NAME);
                 while (! cache.getAdvancedCache().getDistributionManager().isJoinComplete()) {
-                    try { Thread.sleep(1000); } catch (InterruptedException ex) { Thread.currentThread().interrupt(); throw new RuntimeException(ex); }
+                    sleep(1000);
                 }
                 cache.keySet().forEach(s -> {});
             });
@@ -354,7 +354,7 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
                 final UserModel user = session.users().getUserByUsername(realm, "user1");
                 // it might take a moment to propagate, therefore loop
                 while (! assertOfflineSession(offlineUserSessions, session.sessions().getOfflineUserSessionsStream(realm, user).collect(Collectors.toList()))) {
-                    try { Thread.sleep(1000); } catch (InterruptedException ex) { Thread.currentThread().interrupt(); throw new RuntimeException(ex); }
+                    sleep(1000);
                 }
                 return null;
             });

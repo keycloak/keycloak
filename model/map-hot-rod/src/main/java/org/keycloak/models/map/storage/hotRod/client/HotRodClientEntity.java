@@ -108,7 +108,7 @@ public class HotRodClientEntity extends AbstractHotRodEntity {
     public Boolean frontchannelLogout;
 
     @ProtoField(number = 20)
-    public Integer notBefore;
+    public Long notBefore;
 
     @ProtoField(number = 21)
     public Set<String> scope;

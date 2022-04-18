@@ -31,7 +31,7 @@
     </description>
     <groupId>org.keycloak</groupId>
     <artifactId>keycloak-parent</artifactId>
-    <version>18.0.0-SNAPSHOT</version>
+    <version>999-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <properties>
@@ -82,13 +82,13 @@
         <dom4j.version>2.1.3</dom4j.version>
         <h2.version>1.4.197</h2.version>
         <jakarta.persistence.version>2.2.3</jakarta.persistence.version>
-        <hibernate.core.version>5.3.20.Final</hibernate.core.version>
-        <hibernate.c3p0.version>5.3.20.Final</hibernate.c3p0.version>
+        <hibernate.core.version>5.3.24.Final</hibernate.core.version>
+        <hibernate.c3p0.version>5.3.24.Final</hibernate.c3p0.version>
         <infinispan.version>12.1.7.Final</infinispan.version>
         <infinispan.protostream.processor.version>4.4.1.Final</infinispan.protostream.processor.version>
         <javax.annotation-api.version>1.3.2</javax.annotation-api.version>
         <jackson.version>2.12.1</jackson.version>
-        <jackson.databind.version>${jackson.version}</jackson.databind.version>
+        <jackson.databind.version>2.12.6.1</jackson.databind.version>
         <jackson.annotations.version>${jackson.databind.version}</jackson.annotations.version>
         <jakarta.mail.version>1.6.5</jakarta.mail.version>
         <jboss-jaxrs-api_2.1_spec>2.0.1.Final</jboss-jaxrs-api_2.1_spec>
@@ -111,7 +111,7 @@
         <sun.activation.version>1.2.2</sun.activation.version>
         <org.glassfish.jaxb.xsom.version>2.3.3-b02</org.glassfish.jaxb.xsom.version>
         <undertow.version>2.2.5.Final</undertow.version>
-        <elytron.version>1.15.3.Final</elytron.version>
+        <elytron.version>1.18.3.Final</elytron.version>
         <elytron.undertow-server.version>1.9.0.Final</elytron.undertow-server.version>
         <jetty92.version>9.2.4.v20141103</jetty92.version>
         <jetty93.version>9.3.29.v20201019</jetty93.version>
@@ -149,7 +149,7 @@
         <mysql.version>8.0.23</mysql.version>
         <mysql.driver.version>8.0.23</mysql.driver.version>
         <postgresql.version>13.2</postgresql.version>
-        <postgresql.driver.version>42.2.18</postgresql.driver.version>
+        <postgresql.driver.version>42.3.3</postgresql.driver.version>
         <mariadb.version>10.3.27</mariadb.version>
         <mariadb.driver.version>2.7.2</mariadb.driver.version>
         <mssql.version>2019-CU10-ubuntu-20.04</mssql.version>
@@ -1397,7 +1397,7 @@
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-admin-ui</artifactId>
-                <version>18.0.0-SNAPSHOT</version>
+                <version>${project.version}</version>
             </dependency>
 
             <!-- Openshift -->

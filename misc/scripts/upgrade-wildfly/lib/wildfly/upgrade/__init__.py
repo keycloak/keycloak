@@ -49,7 +49,7 @@ __all__ = [
     'isWellFormedWildflyTag',
     'loadGavDictionaryFromGavFile',
     'loadGavDictionaryFromXmlFile',
-    'saveUrlToNamedTemporaryFile'
+    'saveUrlToNamedTemporaryFile',
     'updateAdapterLicenseFile',
     'performMainKeycloakPomFileUpdateTask',
     'performAdapterGalleonPackPomFileUpdateTask',

@@ -22,9 +22,9 @@ import org.keycloak.models.RealmModel;
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class RealmInfoUtil {
+public class SessionExpiration {
 
-    public static int getDettachedClientSessionLifespan(RealmModel realm) {
+    public static int getAuthSessionLifespan(RealmModel realm) {
         int lifespan = realm.getAccessCodeLifespanLogin();
         if (realm.getAccessCodeLifespanUserAction() > lifespan) {
             lifespan = realm.getAccessCodeLifespanUserAction();
@@ -33,6 +33,10 @@ public class RealmInfoUtil {
             lifespan = realm.getAccessCodeLifespan();
         }
         return lifespan;
+    }
+
+    public static long getAuthSessionExpiration(RealmModel realm, int timestamp) {
+        return (long) timestamp + getAuthSessionLifespan(realm);
     }
 
 }

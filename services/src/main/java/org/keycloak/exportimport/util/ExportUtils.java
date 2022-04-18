@@ -309,11 +309,11 @@ public class ExportUtils {
         representation.setName(null);
         representation.setClientId(null);
 
-        List<ResourceRepresentation> resources = storeFactory.getResourceStore().findByResourceServer(settingsModel.getId())
+        List<ResourceRepresentation> resources = storeFactory.getResourceStore().findByResourceServer(settingsModel)
                 .stream().map(resource -> {
-                    ResourceRepresentation rep = toRepresentation(resource, settingsModel.getId(), authorization);
+                    ResourceRepresentation rep = toRepresentation(resource, settingsModel, authorization);
 
-                    if (rep.getOwner().getId().equals(settingsModel.getId())) {
+                    if (rep.getOwner().getId().equals(settingsModel.getClientId())) {
                         rep.setOwner((ResourceOwnerRepresentation) null);
                     } else {
                         rep.getOwner().setId(null);
@@ -331,16 +331,16 @@ public class ExportUtils {
         List<PolicyRepresentation> policies = new ArrayList<>();
         PolicyStore policyStore = storeFactory.getPolicyStore();
 
-        policies.addAll(policyStore.findByResourceServer(settingsModel.getId())
+        policies.addAll(policyStore.findByResourceServer(settingsModel)
                 .stream().filter(policy -> !policy.getType().equals("resource") && !policy.getType().equals("scope") && policy.getOwner() == null)
                 .map(policy -> createPolicyRepresentation(authorization, policy)).collect(Collectors.toList()));
-        policies.addAll(policyStore.findByResourceServer(settingsModel.getId())
+        policies.addAll(policyStore.findByResourceServer(settingsModel)
                 .stream().filter(policy -> (policy.getType().equals("resource") || policy.getType().equals("scope") && policy.getOwner() == null))
                 .map(policy -> createPolicyRepresentation(authorization, policy)).collect(Collectors.toList()));
 
         representation.setPolicies(policies);
 
-        List<ScopeRepresentation> scopes = storeFactory.getScopeStore().findByResourceServer(settingsModel.getId()).stream().map(scope -> {
+        List<ScopeRepresentation> scopes = storeFactory.getScopeStore().findByResourceServer(settingsModel).stream().map(scope -> {
             ScopeRepresentation rep = toRepresentation(scope);
 
             rep.setPolicies(null);

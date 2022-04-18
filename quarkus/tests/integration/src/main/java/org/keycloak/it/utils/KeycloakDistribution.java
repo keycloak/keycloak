@@ -40,6 +40,10 @@ public interface KeycloakDistribution {
         return commands.toArray(new String[0]);
     }
 
+    default void setManualStop(boolean manualStop) {
+        throw new RuntimeException("Not implemented");
+    }
+
     default void setQuarkusProperty(String key, String value) {
         throw new RuntimeException("Not implemented");
     }

@@ -59,6 +59,6 @@ class BuildCommandDistTest {
     @Launch({ "build", "--db=postgres", "--db-username=myuser", "--db-password=mypassword", "--http-enabled=true" })
     void testFailRuntimeOptions(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        cliResult.assertError("Unknown options: '--db-username=myuser', '--db-password=mypassword', '--http-enabled=true'");
+        cliResult.assertError("Unknown option: '--db-username'");
     }
 }

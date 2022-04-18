@@ -82,6 +82,8 @@ public class CLITestExtension extends QuarkusMainTestExtension {
         }
 
         if (distConfig != null) {
+            onKeepServerAlive(context.getRequiredTestMethod().getAnnotation(KeepServerAlive.class));
+
             if (launch != null) {
                 if (dist == null) {
                     dist = createDistribution(distConfig);
@@ -109,12 +111,28 @@ public class CLITestExtension extends QuarkusMainTestExtension {
         }
     }
 
+    private void onKeepServerAlive(KeepServerAlive annotation) {
+        if(annotation != null && dist != null) {
+            try {
+                dist.setManualStop(true);
+            } catch (Exception cause) {
+                throw new RuntimeException("Error when invoking " + annotation, cause);
+            }
+        }
+    }
+
     @Override
     public void afterEach(ExtensionContext context) throws Exception {
         DistributionTest distConfig = getDistributionConfig(context);
 
-        if (distConfig != null && distConfig.keepAlive()) {
-            dist.stop();
+        if (distConfig != null) {
+            if (distConfig.keepAlive()) {
+                dist.stop();
+            }
+
+            if (DistributionTest.ReInstall.BEFORE_TEST.equals(distConfig.reInstall())) {
+                dist = null;
+            }
         }
 
         super.afterEach(context);

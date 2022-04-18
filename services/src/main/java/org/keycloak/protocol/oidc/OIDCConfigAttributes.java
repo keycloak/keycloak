@@ -19,6 +19,8 @@ package org.keycloak.protocol.oidc;
 public final class OIDCConfigAttributes {
 
     public static final String USER_INFO_RESPONSE_SIGNATURE_ALG = "user.info.response.signature.alg";
+    public static final String USER_INFO_ENCRYPTED_RESPONSE_ALG = "user.info.encrypted.response.alg";
+    public static final String USER_INFO_ENCRYPTED_RESPONSE_ENC = "user.info.encrypted.response.enc";
 
     public static final String REQUEST_OBJECT_SIGNATURE_ALG = "request.object.signature.alg";
     public static final String REQUEST_OBJECT_ENCRYPTION_ALG = "request.object.encryption.alg";
@@ -78,6 +80,7 @@ public final class OIDCConfigAttributes {
     public static final String AUTHORIZATION_ENCRYPTED_RESPONSE_ALG = "authorization.encrypted.response.alg";
     public static final String AUTHORIZATION_ENCRYPTED_RESPONSE_ENC = "authorization.encrypted.response.enc";
     public static final String FRONT_CHANNEL_LOGOUT_URI = "frontchannel.logout.url";
+    public static final String FRONT_CHANNEL_LOGOUT_SESSION_REQUIRED = "frontchannel.logout.session.required";
 
     private OIDCConfigAttributes() {
     }
