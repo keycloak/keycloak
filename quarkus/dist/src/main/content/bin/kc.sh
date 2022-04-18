@@ -23,7 +23,7 @@ fi
 GREP="grep"
 DIRNAME=`dirname "$RESOLVED_NAME"`
 
-SERVER_OPTS="-Dkc.home.dir=$DIRNAME/../ -Djboss.server.config.dir=$DIRNAME/../conf -Djava.util.logging.manager=org.jboss.logmanager.LogManager -Dquarkus-log-max-startup-records=10000"
+SERVER_OPTS="-Dkc.home.dir='$DIRNAME'/../ -Djboss.server.config.dir='$DIRNAME'/../conf -Djava.util.logging.manager=org.jboss.logmanager.LogManager -Dquarkus-log-max-startup-records=10000"
 
 DEBUG_MODE="${DEBUG:-false}"
 DEBUG_PORT="${DEBUG_PORT:-8787}"
@@ -84,7 +84,7 @@ if [ "$DEBUG_MODE" = "true" ]; then
     fi
 fi
 
-CLASSPATH_OPTS="$DIRNAME/../lib/quarkus-run.jar"
+CLASSPATH_OPTS="'$DIRNAME'/../lib/quarkus-run.jar"
 
 JAVA_RUN_OPTS="$JAVA_OPTS $SERVER_OPTS -cp $CLASSPATH_OPTS io.quarkus.bootstrap.runner.QuarkusEntryPoint ${CONFIG_ARGS#?}"
 
