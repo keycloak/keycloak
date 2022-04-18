@@ -73,7 +73,7 @@
     "@typescript-eslint/eslint-plugin": "^5.18.0",
     "@typescript-eslint/parser": "^5.18.0",
     "cli-progress": "^3.10.0",
-    "cypress": "^9.5.3",
+    "cypress": "^9.5.4",
     "cypress-file-upload": "^5.0.8",
     "decompress": "^4.2.1",
     "del": "^6.0.0",
