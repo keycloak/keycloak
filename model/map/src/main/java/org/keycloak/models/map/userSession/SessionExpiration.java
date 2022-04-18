@@ -27,7 +27,7 @@ import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 public class SessionExpiration {
 
     public static void setClientSessionExpiration(MapAuthenticatedClientSessionEntity entity, RealmModel realm, ClientModel client) {
-        long timestamp = entity.getTimestamp() != null ? entity.getTimestamp() : 0l;
+        long timestamp = entity.getTimestamp() != null ? entity.getTimestamp() : 0L;
         if (Boolean.TRUE.equals(entity.isOffline())) {
             long sessionExpires = timestamp + realm.getOfflineSessionIdleTimeout();
             if (realm.isOfflineSessionMaxLifespanEnabled()) {
@@ -101,8 +101,8 @@ public class SessionExpiration {
     }
 
     public static void setUserSessionExpiration(MapUserSessionEntity entity, RealmModel realm) {
-        int started = entity.getStarted() != null ? entity.getStarted() : 0;
-        long lastSessionRefresh = entity.getLastSessionRefresh() != null ? entity.getLastSessionRefresh() : 0l;
+        long started = entity.getStarted() != null ? entity.getStarted() : 0L;
+        long lastSessionRefresh = entity.getLastSessionRefresh() != null ? entity.getLastSessionRefresh() : 0L;
         if (Boolean.TRUE.equals(entity.isOffline())) {
             long sessionExpires = lastSessionRefresh + realm.getOfflineSessionIdleTimeout();
             if (realm.isOfflineSessionMaxLifespanEnabled()) {
@@ -127,7 +127,7 @@ public class SessionExpiration {
 
             entity.setExpiration(Math.min(expiration, sessionExpires));
         } else {
-            long sessionExpires = (long) started
+            long sessionExpires = started
                     + (Boolean.TRUE.equals(entity.isRememberMe()) && realm.getSsoSessionMaxLifespanRememberMe() > 0
                     ? realm.getSsoSessionMaxLifespanRememberMe()
                     : realm.getSsoSessionMaxLifespan());

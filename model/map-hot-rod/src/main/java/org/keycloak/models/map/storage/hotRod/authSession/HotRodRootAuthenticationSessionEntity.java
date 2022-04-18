@@ -49,7 +49,7 @@ public class HotRodRootAuthenticationSessionEntity extends AbstractHotRodEntity 
     public String realmId;
 
     @ProtoField(number = 4)
-    public Integer timestamp;
+    public Long timestamp;
 
     @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
     @ProtoField(number = 5)

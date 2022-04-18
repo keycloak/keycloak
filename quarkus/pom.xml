@@ -46,6 +46,7 @@
         <microprofile-metrics-api.version>3.0.1</microprofile-metrics-api.version>
         <wildfly.common.version>1.5.4.Final-format-001</wildfly.common.version>
         <infinispan.version>13.0.8.Final</infinispan.version>
+        <wildfly-elytron.version>1.18.3.Final</wildfly-elytron.version>
 
         <!--
             Java EE dependencies. Not available from JDK 11+.

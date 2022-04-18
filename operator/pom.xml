@@ -22,8 +22,9 @@
         -->
         <resteasy.version>4.7.5.Final</resteasy.version>
         <wildfly.common.version>1.5.4.Final-format-001</wildfly.common.version>
-        <jackson.version>2.13.1</jackson.version>
-        <kubernetes-client.version>5.12.1</kubernetes-client.version>
+        <jackson.version>2.13.2</jackson.version>
+        <jackson.databind.version>2.13.2.2</jackson.databind.version>
+        <kubernetes-client.version>5.12.2</kubernetes-client.version>
 
         <compiler-plugin.version>3.8.1</compiler-plugin.version>
         <maven.compiler.parameters>true</maven.compiler.parameters>

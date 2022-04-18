@@ -718,7 +718,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
 
     @Override
     public CredentialValidationOutput authenticate(RealmModel realm, CredentialInput cred) {
-        if (!(cred instanceof UserCredentialModel)) CredentialValidationOutput.failed();
+        if (!(cred instanceof UserCredentialModel)) return CredentialValidationOutput.failed();
         UserCredentialModel credential = (UserCredentialModel)cred;
         if (credential.getType().equals(UserCredentialModel.KERBEROS)) {
             if (kerberosConfig.isAllowKerberosAuthentication()) {

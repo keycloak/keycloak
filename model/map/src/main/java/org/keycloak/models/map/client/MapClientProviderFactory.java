@@ -37,7 +37,7 @@ import java.util.concurrent.ConcurrentMap;
  */
 public class MapClientProviderFactory extends AbstractMapProviderFactory<ClientProvider, MapClientEntity, ClientModel> implements ClientProviderFactory, ProviderEventListener {
 
-    private final ConcurrentHashMap<String, ConcurrentMap<String, Integer>> REGISTERED_NODES_STORE = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, ConcurrentMap<String, Long>> REGISTERED_NODES_STORE = new ConcurrentHashMap<>();
 
     private Runnable onClose;
 

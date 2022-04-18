@@ -46,6 +46,9 @@ import org.keycloak.models.map.storage.hotRod.user.HotRodUserConsentEntity;
 import org.keycloak.models.map.storage.hotRod.user.HotRodUserCredentialEntity;
 import org.keycloak.models.map.storage.hotRod.user.HotRodUserEntity;
 import org.keycloak.models.map.storage.hotRod.user.HotRodUserFederatedIdentityEntity;
+import org.keycloak.models.map.storage.hotRod.userSession.HotRodAuthenticatedClientSessionEntity;
+import org.keycloak.models.map.storage.hotRod.userSession.HotRodSessionState;
+import org.keycloak.models.map.storage.hotRod.userSession.HotRodUserSessionEntity;
 
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
@@ -95,8 +98,16 @@ import org.keycloak.models.map.storage.hotRod.user.HotRodUserFederatedIdentityEn
                 HotRodWebAuthnPolicyEntity.class,
                 HotRodRealmEntity.class,
 
+                // User sessions
+                HotRodUserSessionEntity.class,
+                HotRodSessionState.class,
+
+                // Client sessions
+                HotRodAuthenticatedClientSessionEntity.class,
+
                 // Common
                 HotRodPair.class,
+                HotRodStringPair.class,
                 HotRodAttributeEntity.class,
                 HotRodAttributeEntityNonIndexed.class
         },

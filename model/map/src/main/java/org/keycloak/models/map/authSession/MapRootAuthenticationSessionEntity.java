@@ -84,8 +84,8 @@ public interface MapRootAuthenticationSessionEntity extends AbstractEntity, Upda
     String getRealmId();
     void setRealmId(String realmId);
 
-    Integer getTimestamp();
-    void setTimestamp(Integer timestamp);
+    Long getTimestamp();
+    void setTimestamp(Long timestamp);
 
     Long getExpiration();
     void setExpiration(Long expiration);

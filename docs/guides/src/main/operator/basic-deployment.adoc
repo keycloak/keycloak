@@ -113,7 +113,7 @@ The Keycloak CRD allow you to customize several fields but, for a simple deploym
 [source,bash]
 ----
 cat <<EOF >> example-kc.yaml
-apiVersion: keycloak.org/v2alpha1
+apiVersion: k8s.keycloak.org/v2alpha1
 kind: Keycloak
 metadata:
   name: example-kc

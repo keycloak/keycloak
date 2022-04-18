@@ -35,6 +35,4 @@ fi
 
 mv $SCRIPT_DIR/../olm/$VERSION/manifests/clusterserviceversion.yaml "$SCRIPT_DIR/../olm/$VERSION/manifests/keycloak-operator.v$VERSION.clusterserviceversion.yaml"
 
-# Include the old CRD version
-( cd $SCRIPT_DIR/../ && kubectl kustomize target | yq ea "select(.metadata.name == \"keycloaks.keycloak.org\")" > $SCRIPT_DIR/../olm/$VERSION/manifests/keycloaks.keycloak.org-v1.yml )
-cp $SCRIPT_DIR/../target/kubernetes/keycloakrealmimports.keycloak.org-v1.yml $SCRIPT_DIR/../olm/$VERSION/manifests
+cp target/kubernetes/*.keycloak.org-v1.yml olm/$VERSION/manifests

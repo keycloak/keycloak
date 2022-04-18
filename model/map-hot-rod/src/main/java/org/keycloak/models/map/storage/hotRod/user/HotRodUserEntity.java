@@ -153,7 +153,7 @@ public class HotRodUserEntity extends AbstractHotRodEntity {
     public String serviceAccountClientLink;
 
     @ProtoField(number = 21)
-    public Integer notBefore;
+    public Long notBefore;
 
     public static abstract class AbstractHotRodUserEntityDelegate extends UpdatableHotRodEntityDelegateImpl<HotRodUserEntity> implements MapUserEntity {
 

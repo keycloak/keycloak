@@ -18,12 +18,14 @@
 package org.keycloak.models.map.storage.hotRod.common;
 
 import org.keycloak.models.AuthenticationExecutionModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.storage.hotRod.authSession.HotRodAuthenticationSessionEntity;
 import org.keycloak.models.map.storage.hotRod.realm.entity.HotRodLocalizationTexts;
 import org.keycloak.models.map.storage.hotRod.realm.entity.HotRodRequirement;
 import org.keycloak.models.map.storage.hotRod.user.HotRodUserConsentEntity;
 import org.keycloak.models.map.storage.hotRod.user.HotRodUserFederatedIdentityEntity;
+import org.keycloak.models.map.storage.hotRod.userSession.HotRodSessionState;
 
 import java.util.HashMap;
 import java.util.List;
@@ -48,6 +50,10 @@ public class HotRodTypesUtils {
 
     public static <T, V> HotRodPair<T, V> createHotRodPairFromMapEntry(Map.Entry<T, V> entry) {
         return new HotRodPair<>(entry.getKey(), entry.getValue());
+    }
+
+    public static HotRodStringPair createHotRodStringPairFromMapEntry(Map.Entry<String, String> entry) {
+        return new HotRodStringPair(entry.getKey(), entry.getValue());
     }
 
     public static HotRodAttributeEntity createHotRodAttributeEntityFromMapEntry(Map.Entry<String, List<String>> entry) {
@@ -76,6 +82,14 @@ public class HotRodTypesUtils {
     }
 
     public static <K, V> V getValue(HotRodPair<K, V> hotRodPair) {
+        return hotRodPair.getValue();
+    }
+
+    public static String getKey(HotRodStringPair hotRodPair) {
+        return hotRodPair.getKey();
+    }
+
+    public static String getValue(HotRodStringPair hotRodPair) {
         return hotRodPair.getValue();
     }
 
@@ -142,5 +156,13 @@ public class HotRodTypesUtils {
         hotRodLocalizationTexts.setValues(migrateMapToSet(p1, HotRodTypesUtils::createHotRodPairFromMapEntry));
 
         return hotRodLocalizationTexts;
+    }
+
+    public static UserSessionModel.State migrateHotRodSessionStateToState(HotRodSessionState hotRodState) {
+        return UserSessionModel.State.valueOf(hotRodState.name());
+    }
+
+    public static HotRodSessionState migrateStateToHotRodSessionState(UserSessionModel.State state) {
+        return HotRodSessionState.valueOf(state.name());
     }
 }

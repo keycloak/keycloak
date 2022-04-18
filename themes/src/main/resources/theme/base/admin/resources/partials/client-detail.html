@@ -586,6 +586,35 @@
                 </div>
                 <kc-tooltip>{{:: 'user-info-signed-response-alg.tooltip' | translate}}</kc-tooltip>
             </div>
+            <div class="form-group clearfix block">
+                <label class="col-md-2 control-label" for="userInfoEncryptedResponseAlg">{{:: 'user-info-encrypted-response-alg' | translate}}</label>
+                <div class="col-sm-6">
+                    <div>
+                        <select class="form-control" id="userInfoEncryptedResponseAlg"
+                                ng-change="changeUserInfoEncryptedResponseAlg()"
+                                ng-model="userInfoEncryptedResponseAlg">
+                            <option value=""></option>
+                            <option ng-repeat="provider in serverInfo.listProviderIds('cekmanagement')" value="{{provider}}">{{provider}}</option>
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>{{:: 'user-info-encrypted-response-alg.tooltip' | translate}}</kc-tooltip>
+            </div>
+
+            <div class="form-group clearfix block">
+                <label class="col-md-2 control-label" for="userInfoEncryptedResponseEnc">{{:: 'user-info-encrypted-response-enc' | translate}}</label>
+                <div class="col-sm-6">
+                    <div>
+                        <select class="form-control" id="userInfoEncryptedResponseEnc"
+                                ng-change="changeUserInfoEncryptedResponseEnc()"
+                                ng-model="userInfoEncryptedResponseEnc">
+                            <option value=""></option>
+                            <option ng-repeat="provider in serverInfo.listProviderIds('contentencryption')" value="{{provider}}">{{provider}}</option>
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>{{:: 'user-info-encrypted-response-enc.tooltip' | translate}}</kc-tooltip>
+            </div>
             <div class="form-group clearfix block" data-ng-show="protocol == 'openid-connect'">
                 <label class="col-md-2 control-label" for="requestObjectSignatureAlg">{{:: 'request-object-signature-alg' | translate}}</label>
                 <div class="col-sm-6">

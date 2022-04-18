@@ -46,7 +46,7 @@ public class HotRodUserLoginFailureEntity extends AbstractHotRodEntity {
     public String userId;
 
     @ProtoField(number = 5)
-    public Integer failedLoginNotBefore;
+    public Long failedLoginNotBefore;
 
     @ProtoField(number = 6)
     public Integer numFailures;

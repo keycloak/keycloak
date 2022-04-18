@@ -34,7 +34,7 @@ import java.util.Map;
 @DeepCloner.Root
 public interface MapUserSessionEntity extends AbstractEntity, UpdatableEntity {
 
-    public abstract class AbstractUserSessionEntity extends UpdatableEntity.Impl implements MapUserSessionEntity {
+    abstract class AbstractUserSessionEntity extends UpdatableEntity.Impl implements MapUserSessionEntity {
 
         private String id;
 
@@ -75,12 +75,11 @@ public interface MapUserSessionEntity extends AbstractEntity, UpdatableEntity {
     Boolean isRememberMe();
     void setRememberMe(Boolean rememberMe);
 
-    Integer getStarted();
-    void setStarted(Integer started);
+    Long getStarted();
+    void setStarted(Long started);
 
-    Integer getLastSessionRefresh();
-
-    void setLastSessionRefresh(Integer lastSessionRefresh);
+    Long getLastSessionRefresh();
+    void setLastSessionRefresh(Long lastSessionRefresh);
 
     Long getExpiration();
     void setExpiration(Long expiration);

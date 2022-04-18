@@ -37,7 +37,7 @@ limitations under the License.
         <ext:addGeneratedColumn tableName="kc_auth_root_session">
             <ext:column name="entityversion" type="INTEGER" jsonColumn="metadata" jsonProperty="entityVersion"/>
             <ext:column name="realmid" type="VARCHAR(36)" jsonColumn="metadata" jsonProperty="fRealmId"/>
-            <ext:column name="timestamp" type="INTEGER" jsonColumn="metadata" jsonProperty="fTimestamp"/>
+            <ext:column name="timestamp" type="BIGINT" jsonColumn="metadata" jsonProperty="fTimestamp"/>
             <ext:column name="expiration" type="BIGINT" jsonColumn="metadata" jsonProperty="fExpiration"/>
         </ext:addGeneratedColumn>
         <createIndex tableName="kc_auth_root_session" indexName="auth_root_session_entityVersion">

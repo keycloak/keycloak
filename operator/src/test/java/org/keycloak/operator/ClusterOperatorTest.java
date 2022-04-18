@@ -119,10 +119,10 @@ public abstract class ClusterOperatorTest {
   private static void createCRDs() {
     Log.info("Creating CRDs");
     try {
-      var deploymentCRD = k8sclient.load(new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + "keycloaks.keycloak.org-v1.yml"));
+      var deploymentCRD = k8sclient.load(new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + "keycloaks.k8s.keycloak.org-v1.yml"));
       deploymentCRD.createOrReplace();
       deploymentCRD.waitUntilReady(5, TimeUnit.SECONDS);
-      var realmImportCRD = k8sclient.load(new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + "keycloakrealmimports.keycloak.org-v1.yml"));
+      var realmImportCRD = k8sclient.load(new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + "keycloakrealmimports.k8s.keycloak.org-v1.yml"));
       realmImportCRD.createOrReplace();
       realmImportCRD.waitUntilReady(5, TimeUnit.SECONDS);
     } catch (Exception e) {

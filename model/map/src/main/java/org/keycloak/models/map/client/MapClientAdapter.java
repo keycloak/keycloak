@@ -22,6 +22,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.map.common.TimeAdapter;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import java.security.MessageDigest;
 import java.util.Collection;
@@ -418,13 +419,13 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
 
     @Override
     public int getNotBefore() {
-        final Integer notBefore = entity.getNotBefore();
-        return notBefore == null ? 0 : notBefore;
+        final Long notBefore = entity.getNotBefore();
+        return notBefore == null ? 0 : TimeAdapter.fromLongWithTimeInSecondsToIntegerWithTimeInSeconds(notBefore);
     }
 
     @Override
     public void setNotBefore(int notBefore) {
-        entity.setNotBefore(notBefore);
+        entity.setNotBefore(TimeAdapter.fromIntegerWithTimeInSecondsToLongWithTimeAsInSeconds(notBefore));
     }
 
     /*************** Scopes mappings ****************/

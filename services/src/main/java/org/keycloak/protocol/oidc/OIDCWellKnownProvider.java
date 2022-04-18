@@ -140,6 +140,8 @@ public class OIDCWellKnownProvider implements WellKnownProvider {
         config.setIdTokenEncryptionAlgValuesSupported(getSupportedEncryptionAlg(false));
         config.setIdTokenEncryptionEncValuesSupported(getSupportedEncryptionEnc(false));
         config.setUserInfoSigningAlgValuesSupported(getSupportedSigningAlgorithms(true));
+        config.setUserInfoEncryptionAlgValuesSupported(getSupportedEncryptionAlgorithms());
+        config.setUserInfoEncryptionEncValuesSupported(getSupportedContentEncryptionAlgorithms());
         config.setRequestObjectSigningAlgValuesSupported(getSupportedClientSigningAlgorithms(true));
         config.setRequestObjectEncryptionAlgValuesSupported(getSupportedEncryptionAlgorithms());
         config.setRequestObjectEncryptionEncValuesSupported(getSupportedContentEncryptionAlgorithms());
