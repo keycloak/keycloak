@@ -1,12 +1,12 @@
 [[_policy_aggregated]]
-= Aggregated Policy
+= Aggregated policy
 
 As mentioned previously, {project_name} allows you to build a policy of policies, a concept referred to as policy aggregation. You can use policy aggregation to reuse existing policies to build more complex ones and keep your permissions even more decoupled from the policies that are evaluated during the processing of authorization requests.
 
-To create a new aggregated policy, select *Aggregated* in the dropdown list located in the right upper corner of the policy listing.
+To create a new aggregated policy, select *Aggregated* in the item list located in the right upper corner of the policy listing.
 
-.Add an Aggregated Policy
-image:{project_images}/policy/create-aggregated.png[alt="Add Aggregated Policy"]
+.Add an aggregated policy
+image:{project_images}/policy/create-aggregated.png[alt="Add aggregated policy"]
 
 Let's suppose you have a resource called _Confidential Resource_ that can be accessed only by users from the _keycloak.org_ domain and from a certain range of IP addresses.
 You can create a single policy with both conditions. However, you want to reuse the domain part of this policy to apply to permissions that operates regardless of the originating network.
@@ -38,9 +38,13 @@ The decision strategy for this permission.
 +
 * *Logic*
 +
-The <<_policy_logic, Logic>> of this policy to apply after the other conditions have been evaluated.
+The logic of this policy to apply after the other conditions have been evaluated.
 
-== Decision Strategy for Aggregated Policies
+[role="_additional-resources"]
+.Additional resources
+* <<_policy_logic, Positive and negative logic>>
+
+== Decision strategy for aggregated policies
 
 When creating aggregated policies, you can also define the decision strategy that will be used to determine the final decision based on the outcome from each policy.
 

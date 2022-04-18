@@ -1,11 +1,11 @@
 [[_policy_rbac_required]]
-= Defining a Role as Required
+= Defining a role as required
 
 When creating a role-based policy, you can specify a specific role as `Required`. When you do that, the policy will grant access
 only if the user requesting access has been granted *all* the *required* roles. Both realm and client roles can be configured as such.
 
-.Example of Required Role
-image:{project_images}/policy/create-role.png[alt="Example of Required Role"]
+.Example of a required role
+image:{project_images}/policy/create-role.png[alt="Example of a required role"]
 
 To specify a role as required, select the `Required` checkbox for the role you want to configure as required.
 

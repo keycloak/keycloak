@@ -1,9 +1,9 @@
 [[_policy_time]]
-= Time-Based Policy
+= Time-based policy
 
 You can use this type of policy to define time conditions for your permissions.
 
-To create a new time-based policy, select *Time* in the dropdown list in the upper right corner of the policy listing.
+To create a new time-based policy, select *Time* in the item list in the upper right corner of the policy listing.
 
 .Add Time Policy
 image:{project_images}/policy/create-time.png[alt="Add Time Policy"]
@@ -50,6 +50,10 @@ Defines the minute that access must be granted. You can also specify a range of 
 +
 * *Logic*
 +
-The <<_policy_logic, Logic>> of this policy to apply after the other conditions have been evaluated.
+The logic of this policy to apply after the other conditions have been evaluated.
 
 Access is only granted if all conditions are satisfied. {project_name} will perform an _AND_ based on the outcome of each condition.
+
+[role="_additional-resources"]
+.Additional resources
+* <<_policy_logic, Positive and negative logic>>

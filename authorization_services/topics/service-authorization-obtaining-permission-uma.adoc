@@ -1,5 +1,5 @@
 [[_service_user_managed_access]]
-= User-Managed Access
+= User-managed access
 
 {project_name} Authorization Services is based on User-Managed Access or UMA for short. UMA is a specification that
 enhances OAuth2 capabilities in the following ways:

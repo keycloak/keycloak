@@ -1,5 +1,5 @@
 [[_permission_overview]]
-= Managing Permissions
+= Managing permissions
 
 A permission associates the object being protected and the policies that must be evaluated to decide whether access should be granted.
 
@@ -14,4 +14,4 @@ Permissions can be created to protect two main types of objects:
 * *Resources*
 * *Scopes*
 
-To create a permission, select the permission type you want to create from the dropdown list in the upper right corner of the permission listing. The following sections describe these two types of objects in more detail.
+To create a permission, select the permission type you want to create from the item list in the upper right corner of the permission listing. The following sections describe these two types of objects in more detail.

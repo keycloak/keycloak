@@ -1,5 +1,5 @@
 [[_policy_logic]]
-= Positive and Negative Logic
+= Positive and negative logic
 
 Policies can be configured with positive or negative logic. Briefly, you can use this option to define whether the policy result should be kept as it is or be negated.
 

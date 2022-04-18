@@ -1,5 +1,5 @@
 [[_policy_rbac]]
-= Role-Based Policy
+= Role-based policy
 
 You can use this type of policy to define conditions for your permissions where a set of one or more roles is permitted to access an object.
 
@@ -7,10 +7,10 @@ By default, roles added to this policy are not specified as required and the pol
 
 Role policies can be useful when you need more restricted role-based access control (RBAC), where specific roles must be enforced to grant access to an object. For instance, you can enforce that a user must consent to allowing a client application (which is acting on the user's behalf) to access the user's resources. You can use {project_name} Client Scope Mapping to enable consent pages or even enforce clients to explicitly provide a scope when obtaining access tokens from a {project_name} server.
 
-To create a new role-based policy, select *Role* in the dropdown list in the upper right corner of the policy listing.
+To create a new role-based policy, select *Role* in the item list in the upper right corner of the policy listing.
 
-.Add Role-Based Policy
-image:{project_images}/policy/create-role.png[alt="Add Role-Based Policy"]
+.Add Role Policy
+image:{project_images}/policy/create-role.png[alt="Add Role Policy"]
 
 == Configuration
 
@@ -33,4 +33,8 @@ Specifies which *client* roles are permitted by this policy. To enable this fiel
 +
 * *Logic*
 +
-The <<_policy_logic, Logic>> of this policy to apply after the other conditions have been evaluated.
+The logic of this policy to apply after the other conditions have been evaluated.
+
+[role="_additional-resources"]
+.Additional resources
+* <<_policy_logic, Positive and negative logic>>

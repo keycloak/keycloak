@@ -1,5 +1,5 @@
 [[_policy_evaluation_api]]
-= Policy Evaluation API
+= Policy evaluation API
 
 When writing rule-based policies using JavaScript, {project_name} provides an Evaluation API that provides useful information to help determine whether a permission should be granted.
 
@@ -52,9 +52,11 @@ When processing an authorization request, {project_name} creates an `Evaluation`
 
 Policies determine this by invoking the `grant()` or `deny()` methods on an `Evaluation` instance. By default, the state of the `Evaluation` instance is denied, which means that your policies must explicitly invoke the `grant()` method to indicate to the policy evaluation engine that permission should be granted.
 
-For more information about the Evaluation API see the {apidocs_link}[JavaDocs].
+.Additional resources
 
-== The Evaluation Context
+* {apidocs_link}[JavaDocs Documentation].
+
+== The evaluation context
 
 The evaluation context provides useful information to policies during their evaluation.
 

@@ -1,5 +1,5 @@
 [[_resource_server_overview]]
-= Managing Resource Servers
+= Managing resource servers
 
 According to the OAuth2 specification, a resource server is a server hosting the protected resources and capable of accepting and responding to protected resource requests.
 

@@ -1,5 +1,5 @@
 [[_service_obtaining_permissions]]
-= Obtaining Permissions
+= Obtaining permissions
 
 To obtain permissions from {project_name} you send an authorization request to the token endpoint. As a result, {project_name} will
 evaluate all policies associated with the resource(s) and scope(s) being requested and issue an RPT with all permissions

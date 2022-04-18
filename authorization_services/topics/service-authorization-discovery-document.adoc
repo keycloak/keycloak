@@ -1,5 +1,5 @@
 [[_service_authorization_api]]
-= Discovering Authorization Services Endpoints and Metadata
+= Discovering authorization services endpoints and metadata
 
 {project_name} provides a discovery document from which clients can obtain all necessary information to interact with
 {project_name} Authorization Services, including endpoint locations and capabilities.

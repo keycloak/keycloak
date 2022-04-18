@@ -14,7 +14,7 @@ When pushing claims to the {project_name} server, policies can base decisions no
 context and contents into account, based on who, what, why, when, where, and which for a given transaction. It is all about
 Contextual-based Authorization and how to use runtime information in order to support fine-grained authorization decisions.
 
-== Obtaining information from the HTTP Request
+== Obtaining information from the HTTP request
 
 Here are several examples showing how you can extract claims from an HTTP request:
 
@@ -47,7 +47,7 @@ Here are several examples showing how you can extract claims from an HTTP reques
   }
 ```
 
-== Obtaining information from an External HTTP Service
+== Obtaining information from an external HTTP service
 
 Here are several examples showing how you can extract claims from an external HTTP Service:
 
@@ -85,7 +85,7 @@ Here are several examples showing how you can extract claims from an external HT
   }
 ```
 
-== Static Claims
+== Static claims
 
 .keycloak.json
 ```json
@@ -104,7 +104,7 @@ Here are several examples showing how you can extract claims from an external HT
   }
 ```
 
-== Claim Information Provider SPI
+== Claim information provider SPI
 
 The Claim Information Provider SPI can be used by developers to support different claim information points in case none of the
 built-ins providers are enough to address their requirements.

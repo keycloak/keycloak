@@ -1,5 +1,5 @@
 [[_service_overview]]
-= Authorization Services
+= Authorization services
 
 {project_name} Authorization Services are built on top of well-known standards such as the OAuth2 and User-Managed Access specifications.
 

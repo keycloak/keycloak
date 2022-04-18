@@ -1,5 +1,5 @@
 [[_overview]]
-= Overview
+= Authorization services overview
 
 :tech_feature_name: Authorization Services
 

@@ -1,5 +1,5 @@
 [[_getting_started_hello_world_overview]]
-= Securing a Servlet Application
+= Securing a servlet application
 
 The purpose of this getting started guide is to get you up and running as quickly as possible so that you can experiment with and test various authorization features provided by {project_name}.
 This quick tour relies heavily on the default database and server configurations and does not cover complex deployment options.

@@ -1,12 +1,12 @@
 [[_policy_group]]
-= Group-Based Policy
+= Group-based policy
 
 You can use this type of policy to define conditions for your permissions where a set of one or more groups (and their hierarchies) is permitted to access an object.
 
-To create a new group-based policy, select *Group* in the dropdown list in the upper right corner of the policy listing.
+To create a new group-based policy, select *Group* in the item list in the upper right corner of the policy listing.
 
-.Add Group-Based Policy
-image:{project_images}/policy/create-group.png[alt="Add Group-Based Policy"]
+Group Policy
+image:{project_images}/policy/create-group.png[alt="Add Group Policy"]
 
 == Configuration
 
@@ -32,4 +32,8 @@ by marking the checkbox *Extend to Children*. If left unmarked, access restricti
 +
 * *Logic*
 +
-The <<_policy_logic, Logic>> of this policy to apply after the other conditions have been evaluated.
+The logic of this policy to apply after the other conditions have been evaluated.
+
+[role="_additional-resources"]
+.Additional resources
+* <<_policy_logic, Positive and negative logic>>

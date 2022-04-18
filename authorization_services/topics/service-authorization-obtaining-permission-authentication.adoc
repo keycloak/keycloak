@@ -1,5 +1,5 @@
 [[_authentication_methods]]
-= Client Authentication Methods
+= Client authentication methods
 
 Clients need to authenticate to the token endpoint in order to obtain an RPT. When using the `urn:ietf:params:oauth:grant-type:uma-ticket`
 grant type, clients can use any of these authentication methods:

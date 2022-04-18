@@ -1,12 +1,12 @@
 [[_policy_client]]
-= Client-Based Policy
+= Client-based policy
 
 You can use this type of policy to define conditions for your permissions where a set of one or more clients is permitted to access an object.
 
-To create a new client-based policy, select *Client* in the dropdown list in the upper right corner of the policy listing.
+To create a new client-based policy, select *Client* in the item list in the upper right corner of the policy listing.
 
-.Add a Client-Based Policy
-image:images/policy/create-client.png[alt="Add Client-Based Policy"]
+.Add a Client Policy
+image:images/policy/create-client.png[alt="Add a Client Policy"]
 
 == Configuration
 
@@ -25,4 +25,8 @@ Specifies which clients are given access by this policy.
 +
 * *Logic*
 +
-The <<_policy_logic, Logic>> of this policy to apply after the other conditions have been evaluated.
+The logic of this policy to apply after the other conditions have been evaluated.
+
+[role="_additional-resources"]
+.Additional resources
+* <<_policy_logic, Positive and negative logic>>

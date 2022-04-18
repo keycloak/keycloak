@@ -1,5 +1,5 @@
 [[_policy_js]]
-= JavaScript-Based Policy
+= JavaScript-based policy
 
 WARNING: If your policy implementation is using Attribute based access control (ABAC) as in the examples below, then please make sure that
 users are not able to edit the protected attributes and the corresponding attributes are read-only. See the details in the link:{adminguide_link}#_read_only_user_attributes[Threat model mitigation chapter].
@@ -7,14 +7,14 @@ users are not able to edit the protected attributes and the corresponding attrib
 You can use this type of policy to define conditions for your permissions using JavaScript. It is one of the rule-based policy types
 supported by {project_name}, and provides flexibility to write any policy based on the <<_policy_evaluation_api, Evaluation API>>.
 
-To create a new JavaScript-based policy, select *JavaScript* in the dropdown list in the upper right corner of the policy listing.
+To create a new JavaScript-based policy, select *JavaScript* in the item list in the upper right corner of the policy listing.
 
 NOTE: By default, JavaScript Policies can not be uploaded to the server. You should prefer deploying your JS Policies directly to
-the server as described in link:{developerguide_jsproviders_link}[{developerguide_jsproviders_name}]. If you still want to use the 
+the server as described in link:{developerguide_jsproviders_link}[{developerguide_jsproviders_name}]. If you still want to use the
 {project_name} Administration Console to manage your JS policies you should enable the `Upload Scripts` feature.
 
-.Add JavaScript Policy
-image:{project_images}/policy/create-js.png[alt="Add JavaScript Policy"]
+.Add JavaScript policy
+image:{project_images}/policy/create-js.png[alt="Add JavaScript policy"]
 
 == Configuration
 
@@ -33,9 +33,13 @@ The JavaScript code providing the conditions for this policy.
 +
 * *Logic*
 +
-The <<_policy_logic, Logic>> of this policy to apply after the other conditions have been evaluated.
+The logic of this policy to apply after the other conditions have been evaluated.
 
-== Creating a JS Policy from a Deployed JAR File
+[role="_additional-resources"]
+.Additional resources
+* <<_policy_logic, Positive and negative logic>>
+
+== Creating a JS policy from a deployed JAR file
 
 {project_name} allows you to deploy a JAR file in order to deploy scripts to the server. Please, take a look at link:{developerguide_jsproviders_link}[{developerguide_jsproviders_name}]
 for more details.

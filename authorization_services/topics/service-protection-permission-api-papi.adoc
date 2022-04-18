@@ -1,5 +1,5 @@
 [[_service_protection_permission_api_papi]]
-= Managing Permission Requests
+= Managing permission requests
 
 Resource servers using the UMA protocol can use a specific endpoint to manage permission requests. This endpoint provides a UMA-compliant flow for registering permission requests and obtaining a permission ticket.
 
@@ -31,7 +31,7 @@ Client wise, a permission ticket has also important aspects that its worthy to h
 These are just some of the benefits brought by UMA where other aspects of UMA are strongly based on permission tickets, specially regarding
 privacy and user controlled access to their resources.
 
-== Creating Permission Ticket
+== Creating permission ticket
 
 To create a permission ticket, send an HTTP POST request as follows:
 

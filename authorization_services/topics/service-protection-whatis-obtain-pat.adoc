@@ -1,5 +1,5 @@
 [[_service_protection_whatis_obtain_pat]]
-= What is a PAT and How to Obtain It
+= What is a PAT and how to obtain it
 
 A *protection API token* (PAT) is a special OAuth2 access token with a scope defined as  *uma_protection*. When you create a resource server, {project_name} automatically
 creates a role, _uma_protection_, for the corresponding client application and associates it with the client's service account.

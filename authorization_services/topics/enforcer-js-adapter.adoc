@@ -1,5 +1,5 @@
 [[_enforcer_js_adapter]]
-= JavaScript Integration
+= JavaScript integration
 
 The {project_name} Server comes with a JavaScript library you can use to interact with a resource server protected by a policy enforcer.
 This library is based on the {project_name} JavaScript adapter, which can be integrated to allow your client to obtain permissions from a {project_name} Server.
@@ -25,7 +25,7 @@ The *keycloak-authz.js* library provides two main features:
 In both cases, the library allows you to easily interact with both resource server and {project_name} Authorization Services to obtain tokens with
 permissions your client can use as bearer tokens to access the protected resources on a resource server.
 
-== Handling Authorization Responses from a UMA-Protected Resource Server
+== Handling authorization responses from a UMA-Protected resource server
 
 If a resource server is protected by a policy enforcer, it responds to client requests based on the permissions carried along with a bearer token.
 Typically, when you try to access a resource server with a bearer token that is lacking permissions to access a protected resource, the resource server
@@ -67,7 +67,7 @@ The `authorize` function is completely asynchronous and supports a few callback 
 
 Most applications should use the `onGrant` callback to retry a request after a 401 response. Subsequent requests should include the RPT as a bearer token for retries.
 
-== Obtaining Entitlements
+== Obtaining entitlements
 
 The ```keycloak-authz.js``` library provides an `entitlement` function that you can use to obtain an RPT from the server by providing
 the resources and scopes your client wants to access.
@@ -102,7 +102,7 @@ The `entitlement` function is completely asynchronous and supports a few callbac
 * `onDeny`: The second argument of the function. Only called if the server has denied the authorization request.
 * `onError`: The third argument of the function. Only called if the server responds unexpectedly.
 
-== Authorization Request
+== Authorization request
 
 Both ```authorize``` and ```entitlement``` functions accept an authorization request object. This object can be set with the following
 properties:

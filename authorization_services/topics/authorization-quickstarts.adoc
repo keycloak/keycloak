@@ -1,5 +1,5 @@
 [[_authorization_quickstarts]]
-= Authorization Quickstarts
+= Authorization quickstarts
 
 In addition to the *app-authz-jee-vanilla* quickstart that was used as a sample application in the previous section, the
 link:{quickstartRepo_link}[{quickstartRepo_name}] contains other applications that make use of the authorization services
@@ -13,21 +13,21 @@ can be used in their own applications.
 Each quickstart has a `README` file with instructions on how to build, deploy, and test the sample application. The following
 table provides a brief description of the available authorization quickstarts:
 
-.Authorization Quickstarts
+.Authorization quickstarts
 |===
 |Name |Description
 
 | https://github.com/keycloak/keycloak-quickstarts/tree/latest/app-authz-jee-servlet[app-authz-jee-servlet]
-| Demonstrates how to enable fine-grained authorization to a Jakarta EE application in order to protect specific resources and build a dynamic menu based on the permissions obtained from a Keycloak Server.
+| Demonstrates how to enable fine-grained authorization to a Jakarta EE application in order to protect specific resources and build a dynamic menu based on the permissions obtained from a {Project_Name} Server.
 
 | https://github.com/keycloak/keycloak-quickstarts/tree/latest/app-authz-jee-vanilla[app-authz-jee-vanilla]
 | Demonstrates how to enable fine-grained authorization to a Jakarta EE application and use the default authorization settings to protect all resources in the application.
 
 | https://github.com/keycloak/keycloak-quickstarts/tree/latest/app-authz-rest-springboot[app-authz-rest-springboot]
-| Demonstrates how to protect a SpringBoot REST service using Keycloak Authorization Services.
+| Demonstrates how to protect a SpringBoot REST service using {Project_Name} Authorization Services.
 
 | https://github.com/keycloak/keycloak-quickstarts/tree/latest/app-authz-springboot[app-authz-springboot]
-| Demonstrates how to write a SpringBoot Web application where both authentication and authorization aspects are managed by Keycloak.
+| Demonstrates how to write a SpringBoot Web application where both authentication and authorization aspects are managed by {Project_Name}.
 
 | https://github.com/keycloak/keycloak-quickstarts/tree/latest/app-authz-uma-photoz[app-authz-uma-photoz]
 | A simple application based on HTML5+AngularJS+JAX-RS that demonstrates how to enable User-Managed Access to your application and let users to manage permissions for their resources.

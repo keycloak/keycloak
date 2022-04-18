@@ -1,5 +1,5 @@
 [[_service_uma_authorization_process]]
-= Authorization Process
+= Authorization process
 
 In UMA, the authorization process starts when a client tries to access a UMA protected resource server.
 

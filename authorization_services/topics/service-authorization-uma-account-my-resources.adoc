@@ -1,14 +1,21 @@
 [[_service_authorization_my_resources]]
-= Managing Access to Users Resources
+= Managing access to users resources
 
 Users can manage access to their resources using the {project_name} User Account Service. To enable
-this functionality, you must first enable User-Managed Access for your realm. To do so,
-open the realm settings page in {project_name} Administration Console and enable the User-Managed Access switch.
+this functionality, you must first enable User-Managed Access for your realm.
 
+.Procedure
+
+. Log into the Admin Console.
+
+. Click *Realm Settings* in the menu.
+
+. Toggle *User-Managed Access* to *ON*.
++
 image:{project_images}/service/account-my-resource.png[alt="My Resources"]
 
-On the left side menu, the `My Resources` option leads to a page where users are able to:
-
+. Click *My Resources* in the menu option. A page displays with the following options.
++
 * Manage Permission Requests that *Need my approval*
 +
 This section contains a list of all permission requests awaiting approval. These requests are connected to the parties (users) requesting access to
@@ -28,12 +35,11 @@ This section contains a list of all resources shared with the user.
 This section contains a list of permission requests sent by the user that are waiting for the approval of another user or
 resource owner.
 
-When the user choose to detail own of his resources by clicking on any resource in the "My resources" listing, he is redirected to a
-page as follows:
+When you click on a specific resource to make changes, the following page displays:
 
 image:{project_images}/service/account-my-resource-detail.png[alt="Resource Detail"]
 
-From this page the users are able to:
+This page provides the following options:
 
 * Manage *People with access to this resource*
 +

@@ -1,4 +1,4 @@
-= Before You Start
+= Before you start
 
 This guide is based on the *{project_name} Demo Distribution*. Download the demo distribution before proceeding.
 
@@ -8,8 +8,8 @@ This guide assumes that you are already familiar with {project_name} and that yo
 Ensure you have a {project_name} instance running; the default configuration is http://localhost:8080/auth[http://localhost:8080/auth]. After logging in to the
 Administration Console, a page similar to this one is displayed:
 
-.{project_name} Administration Console
-image:{project_images}/getting-started/kc-start-page.png[alt="{project_name} Administration Console"]
+.{project_name} Admin Console
+image:{project_images}/getting-started/kc-start-page.png[alt="{project_name} Admin Console"]
 
 The source code for the getting started tutorials can be obtained from the demo distributions. The authorization-related examples
 are located at *${KEYCLOAK_DEMO_SERVER_DIR}/examples/authz*.

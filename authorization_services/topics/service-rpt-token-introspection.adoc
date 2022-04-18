@@ -1,5 +1,5 @@
 [[_service_protection_token_introspection]]
-= Introspecting a Requesting Party Token
+= Introspecting a requesting party token
 
 Sometimes you might want to introspect a requesting party token (RPT) to check its validity or obtain the permissions within the token to enforce authorization decisions on the resource server side.
 
@@ -67,15 +67,20 @@ If the RPT is not active, this response is returned instead:
 }
 ```
 
-= Do I Need to Invoke the Server Every Time I Want to Introspect an RPT?
+= Do I need to invoke the server every time I want to introspect an RPT?
 
 No. Just like a regular access token issued by a {project_name} server, RPTs also use the
- https://datatracker.ietf.org/doc/html/rfc7519[JSON web token (JWT)] specification as the default format.
+JSON web token (JWT) specification as the default format.
 
 If you want to validate these tokens without a call to the remote introspection endpoint, you can decode the RPT and query for its validity locally. Once you decode the token,
 you can also use the permissions within the token to enforce authorization decisions.
 
-This is essentially what the <<_enforcer_overview, policy enforcers>> do. Be sure to:
+This is essentially what the policy enforcers do. Be sure to:
 
 * Validate the signature of the RPT (based on the realm's public key)
 * Query for token validity based on its _exp_, _iat_, and _aud_ claims
+
+[role="_additional-resources"]
+.Additional resources
+* https://datatracker.ietf.org/doc/html/rfc7519[JSON web token (JWT)]
+* <<_enforcer_overview, policy enforcers>>

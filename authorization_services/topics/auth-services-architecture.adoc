@@ -1,7 +1,7 @@
 [[_overview_architecture]]
 = Architecture
 
-image:images/authz-arch-overview.png[alt="{project_name} AuthZ Architecture Overview"]
+image:images/authz-arch-overview.png[alt="{project_name} AuthZ architecture overview"]
 
 From a design perspective, Authorization Services is based on a well-defined set of authorization patterns providing these capabilities:
 
@@ -27,7 +27,7 @@ Provides implementations for different environments to actually enforce authoriz
 +
 Being based on {project_name} Authentication Server, you can obtain attributes from identities and runtime environment during the evaluation of authorization policies.
 
-== The Authorization Process
+== The authorization process
 
 Three main processes define the necessary steps to understand how to use {project_name} to enable fine-grained authorization to your applications:
 
@@ -35,17 +35,17 @@ Three main processes define the necessary steps to understand how to use {projec
 * *Permission and Policy Management*
 * *Policy Enforcement*
 
-=== Resource Management
+=== Resource management
 
 *Resource Management* involves all the necessary steps to define what is being protected.
 
-image:images/resource-mgmt-process.png[alt="Resource Management Overview"]
+image:images/resource-mgmt-process.png[alt="Resource management overview"]
 
 First, you need to specify {project_name} what are you looking to protect, which usually represents a web application or a set of one or more services. For more information on resource servers see <<_overview_terminology, Terminology>>.
 
 Resource servers are managed using the {project_name} Administration Console. There you can enable any registered client application as a resource server and start managing the resources and scopes you want to protect.
 
-image:images/rs-r-scopes.png[alt="Resource Server Overview"]
+image:images/rs-r-scopes.png[alt="Resource Server overview"]
 
 A resource can be a web page, a RESTFul resource, a file in your file system, an EJB, and so on. They can represent a group of resources (just like a Class in Java) or they can represent a single and specific resource.
 
@@ -55,13 +55,13 @@ Resources can be managed using the {project_name} Administration Console or the 
 
 Scopes usually represent the actions that can be performed on a resource, but they are not limited to that. You can also use scopes to represent one or more attributes within a resource.
 
-=== Permission and Policy Management
+=== Permission and policy management
 
 Once you have defined your resource server and all the resources you want to protect, you must set up permissions and policies.
 
 This process involves all the necessary steps to actually define the security and access requirements that govern your resources.
 
-image:images/policy-mgmt-process.png[alt="Permission and Policy Management Overview"]
+image:images/policy-mgmt-process.png[alt="Permission and policy management overview"]
 
 Policies define the conditions that must be satisfied to access or perform operations on something (resource or scope), but they are not tied to what they are protecting. They are generic and can be reused to build permissions or even more complex policies.
 
@@ -72,16 +72,16 @@ For instance, to allow access to a group of resources only for users granted wit
 Once you have your policies defined, you can start defining your permissions. Permissions are coupled with the resource they are protecting. Here you specify
 what you want to protect (resource or scope) and the policies that must be satisfied to grant or deny permission.
 
-=== Policy Enforcement
+=== Policy enforcement
 
 *Policy Enforcement* involves the necessary steps to actually enforce authorization decisions to a resource server. This is achieved by enabling a *Policy Enforcement Point* or PEP at the resource server that is capable of communicating with the authorization server, ask for authorization data and control access to protected resources based on the decisions and permissions returned by the server.
 
-image:images/pep-pattern-diagram.png[alt="PEP Overview"]
+image:images/pep-pattern-diagram.png[alt="PEP overview"]
 
 {project_name} provides some built-in <<_enforcer_overview, Policy Enforcers>> implementations that you can use to protect your applications depending on the platform they are running on.
 
 
-== Authorization Services
+== Authorization services
 
 Authorization services consist of the following RESTFul endpoints:
 
@@ -91,7 +91,7 @@ Authorization services consist of the following RESTFul endpoints:
 
 Each of these services provides a specific API covering the different steps involved in the authorization process.
 
-=== Token Endpoint
+=== Token endpoint
 
 OAuth2 clients (such as front end applications) can obtain access tokens from the server using the token endpoint and use
 these same tokens to access resources protected by a resource server (such as back end services). In the same way,
@@ -100,7 +100,9 @@ of all policies associated with the resource(s) or scope(s) being requested. Thi
 to their protected resources based on the permissions granted by the server and held by an access token. In {project_name} Authorization Services
 the access token with permissions is called a Requesting Party Token or RPT for short.
 
-For more information, see <<_service_obtaining_permissions, Obtaining Permissions>>.
+[role="_additional-resources"]
+.Additional resources
+* <<_service_obtaining_permissions, Obtaining Permissions>>
 
 === Protection API
 
@@ -123,4 +125,6 @@ By default, Remote Resource Management is enabled. You can change that using the
 
 When using the UMA protocol, the issuance of Permission Tickets by the Protection API is an important part of the whole authorization process. As described in a subsequent section, they represent the permissions being requested by the client and that are sent to the server to obtain a final token with all permissions granted during the evaluation of the permissions and policies associated with the resources and scopes being requested.
 
-For more information, see <<_service_protection_api, Protection API>>.
+[role="_additional-resources"]
+.Additional resources
+* <<_service_protection_api, Protection API>>

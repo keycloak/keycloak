@@ -1,5 +1,5 @@
 [[_permission_decision_strategies]]
-= Policy Decision Strategies
+= Policy decision strategies
 
 When associating policies with a permission, you can also define a decision strategy to specify how to evaluate the outcome of the associated policies to determine access.
 

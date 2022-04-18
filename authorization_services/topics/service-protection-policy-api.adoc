@@ -1,5 +1,5 @@
 [[_service_authorization_uma_policy_api]]
-= Managing Resource Permissions using the Policy API
+= Managing resource permissions using the Policy API
 
 {project_name} leverages the UMA Protection API to allow resource servers to manage permissions for their users. In addition
 to the Resource and Permission APIs, {project_name} provides a Policy API from where permissions can be set to resources by resource
@@ -19,7 +19,7 @@ token endpoint using:
 * Token Exchange, in order to exchange an access token granted to some client (public client) for a token
 where audience is the resource server
 
-== Associating a Permission with a Resource
+== Associating a permission with a resource
 
 To associate a permission with a specific resource you must send a HTTP POST request as follows:
 
@@ -122,7 +122,8 @@ curl -X PUT \
     ]
 }'
 ----
-== Removing a Permission
+
+== Removing a permission
 
 To remove a permission associated with a resource, send an HTTP DELETE request as follows:
 
@@ -133,7 +134,7 @@ curl -X DELETE \
   -H 'Authorization: Bearer '$access_token
 ----
 
-== Querying Permission
+== Querying permission
 
 To query the permissions associated with a resource, send an HTTP GET request as follows:
 

@@ -1,5 +1,5 @@
 [[_enforcer_filter_using_https]]
-= Setting Up TLS/HTTPS
+= Configuring TLS/HTTPS
 
 When the server is using HTTPS, ensure your adapter is configured as follows:
 

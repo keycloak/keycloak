@@ -1,29 +1,40 @@
 [[_getting_started_hello_world_enabling_authz_services]]
-= Enabling Authorization Services
+= Enabling authorization services
 
-You can enable authorization services in an existing client application configured to use the OpenID Connect Protocol. You can also create a new client.
+You can enable authorization services in an existing client application configured to use the OpenID Connect Protocol. You can also create a client using the following procedure.
 
-To create a new client, complete the following steps:
+.Procedure
 
-. Click *Clients* to start creating a new client application and fill in the *Client ID*, *Client Protocol*, and *Root URL* fields.
+. Click *Clients* to start creating a client application.
+
+. Fill in the *Client ID*, *Client Protocol*, and *Root URL* fields.
 +
-.Create Client Application
-image:{project_images}/getting-started/hello-world/create-client.png[alt="Create Client Application"]
+.Create client application
+image:{project_images}/getting-started/hello-world/create-client.png[alt="Create client application"]
 
-. Click *Save*. The Client Details page is displayed.
-
-. On the Client Details page, select *confidential* in the *Access Type* field, change the *Authorization Enabled* switch to *ON*, and then click *Save*. A new *Authorization* tab is displayed for the client.
-
+. Click *Save*.
 +
-.Client Details
-image:{project_images}/getting-started/hello-world/enable-authz.png[alt="Client Details"]
+The Client Settings page is displayed.
 
+. Select *confidential* in the *Access Type* field and toggle *Authorization Enabled* to *ON*
 
-. Click the *Authorization* tab and an Authorization Settings page similar to the following is displayed:
+. Click *Save*.
 +
-.Authorization Settings
-image:{project_images}/getting-started/hello-world/authz-settings.png[alt="Authorization Settings"]
+A new *Authorization* tab is displayed for the client.
++
+.Client Settings
+image:{project_images}/getting-started/hello-world/enable-authz.png[alt="Client Settings"]
 
-When you enable authorization services for a client application, {project_name} automatically creates several <<_resource_server_default_config, default settings>> for your client authorization configuration.
+. Click the *Authorization* tab.
++
+An Authorization Settings page similar to the following is displayed:
++
+.Authorization settings
+image:{project_images}/getting-started/hello-world/authz-settings.png[alt="Authorization settings"]
 
-For more information about authorization configuration, see <<_resource_server_enable_authorization, Enabling Authorization Services>>.
+When you enable authorization services for a client application, {project_name} automatically creates several default settings for your client authorization configuration.
+
+[role="_additional-resources"]
+.Additional resources
+* <<_resource_server_enable_authorization, Enabling authorization services>>
+* <<_resource_server_default_config, Default configuration>>

@@ -1,12 +1,12 @@
 [[_permission_create_resource]]
-= Creating Resource-Based Permissions
+= Creating resource-based permission
 
 A resource-based permission defines a set of one or more resources to protect using a set of one or more authorization policies.
 
-To create a new resource-based permission, select *Resource-based* in the dropdown list in the upper right corner of the permission listing.
+To create a new resource-based permission, select *Resource-based* in the item list in the upper right corner of the permission listing.
 
-.Add Resource-Based Permission
-image:{project_images}/permission/create-resource.png[alt="Add Resource-Based Permission"]
+.Add Resource Permission
+image:{project_images}/permission/create-resource.png[alt="Add Resource Permission"]
 
 == Configuration
 

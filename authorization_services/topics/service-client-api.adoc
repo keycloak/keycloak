@@ -1,12 +1,12 @@
 [[_service_client_api]]
-= Authorization Client Java API
+= Authorization client java API
 
 Depending on your requirements, a resource server should be able to manage resources remotely or even check for permissions programmatically.
 If you are using Java, you can access the {project_name} Authorization Services using the Authorization Client API.
 
 It is targeted for resource servers that want to access the different endpoints provided by the server such as the Token Endpoint, Resource, and Permission management endpoints.
 
-== Maven Dependency
+== Maven dependency
 
 ```xml
 <dependencies>
@@ -52,7 +52,7 @@ Specifies the credentials of the application. This is an object notation where t
 
 The configuration file is usually located in your application's classpath, the default location from where the client is going to try to find a ```keycloak.json``` file.
 
-== Creating the Authorization Client
+== Creating the authorization client
 
 Considering you have a ```keycloak.json``` file in your classpath, you can create a new ```AuthzClient``` instance as follows:
 
@@ -61,7 +61,7 @@ Considering you have a ```keycloak.json``` file in your classpath, you can creat
     AuthzClient authzClient = AuthzClient.create();
 ```
 
-== Obtaining User Entitlements
+== Obtaining user entitlements
 
 Here is an example illustrating how to obtain user entitlements:
 
@@ -104,7 +104,7 @@ System.out.println("You got an RPT: " + rpt);
 // now you can use the RPT to access protected resources on the resource server
 ```
 
-== Creating a Resource Using the Protection API
+== Creating a resource using the protection API
 
 ```java
 // create a new instance based on the configuration defined in keycloak.json

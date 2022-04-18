@@ -1,5 +1,5 @@
 [[_service_protection_resources_api]]
-= Managing Resources
+= Managing resources
 
 Resource servers can manage their resources remotely using a UMA-compliant endpoint.
 
@@ -18,7 +18,7 @@ This endpoint provides operations outlined as follows (entire path omitted for c
 
 For more information about the contract for each of these operations, see https://docs.kantarainitiative.org/uma/wg/oauth-uma-federated-authz-2.0-09.html#reg-api[UMA Resource Registration API].
 
-== Creating a Resource
+== Creating a resource
 
 To create a resource you must send an HTTP POST request as follows:
 
@@ -58,7 +58,7 @@ curl -v -X POST \
 
 Where the property `owner` can be set with the username or the identifier of the user.
 
-== Creating User-Managed Resources
+== Creating user-managed resources
 
 By default, resources created via Protection API can not be managed by resource owners through the <<_service_authorization_my_resources, User Account Service>>.
 
@@ -77,7 +77,7 @@ curl -v -X POST \
   }'
 ----
 
-== Updating Resources
+== Updating resources
 
 To update an existing resource, send an HTTP PUT request as follows:
 
@@ -96,7 +96,7 @@ curl -v -X PUT \
   }'
 ----
 
-== Deleting Resources
+== Deleting resources
 
 To delete an existing resource, send an HTTP DELETE request as follows:
 
@@ -107,7 +107,7 @@ curl -v -X DELETE \
   -H 'Authorization: Bearer '$pat
 ----
 
-== Querying Resources
+== Querying resources
 
 To query the resources by `id`, send an HTTP GET request as follows:
 

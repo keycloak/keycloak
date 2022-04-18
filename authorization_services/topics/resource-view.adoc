@@ -1,5 +1,5 @@
 [[_resource_view]]
-= Viewing Resources
+= Viewing resources
 
 On the *Resource* page, you see a list of the resources associated with a resource server.
 

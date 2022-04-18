@@ -5,8 +5,8 @@ You can use this type of policy to define regex conditions for your permissions.
 
 To create a new regex-based policy, select *Regex* in the item list in the upper right corner of the policy listing.
 
-.Add Regex-Based Policy
-image:images/policy/create-regex.png[alt="Add Regex-Based Policy"]
+.Add Regex Policy
+image:images/policy/create-regex.png[alt="Add Regex Policy"]
 
 == Configuration
 

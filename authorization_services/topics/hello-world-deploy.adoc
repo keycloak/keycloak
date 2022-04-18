@@ -1,5 +1,5 @@
 [[_getting_started_hello_world_deploy]]
-= Build, Deploy, and Test Your Application
+= Build, deploy, and test your application
 
 Now that the *app-authz-vanilla* resource server (or client) is properly configured and authorization services are enabled, it can be deployed to the server.
 
@@ -33,25 +33,37 @@ The application we are about to build and deploy is located at
 $ cd {quickstartRepo_dir}/app-authz-jee-vanilla
 ----
 
-== Obtaining the Adapter Configuration
+== Obtaining the adapter configuration
 
 You must first obtain the adapter configuration before building and deploying the application.
 
-To obtain the adapter configuration from the {project_name} Administration Console, complete the following steps.
+.Procedure
 
-. Click *Clients*. In the client listing, click the *app-authz-vanilla* client application. The Client Details page opens.
-+
-.Client Details
-image:{project_images}/getting-started/hello-world/enable-authz.png[alt="Client Details"]
+. Log into the Admin Console.
 
-. Click the *Installation* tab. From the Format Option dropdown list, select *Keycloak OIDC JSON*. The adapter configuration is displayed in JSON format. Click *Download*.
+. Click *Clients* in the menu.
+
+. In the client listing, click the *app-authz-vanilla* client application. The Client Settings page opens.
 +
-.Adapter Configuration
-image:{project_images}/getting-started/hello-world/adapter-config.png[alt="Adapter Configuration"]
+.Client Settings
+image:{project_images}/getting-started/hello-world/enable-authz.png[alt="Client Settings"]
+
+. Click the *Installation* tab.
+
+. From the Format Option item list, select *Keycloak OIDC JSON*.
++
+The adapter configuration is displayed in JSON format.
+
+. Click *Download*.
++
+.Adapter configuration
+image:{project_images}/getting-started/hello-world/adapter-config.png[alt="Adapter configuration"]
 
 . Move the file `keycloak.json` to the `app-authz-jee-vanilla/config` directory.
 
-. (optional) By default, the policy enforcer responds with a `403` status code when the user lacks permission to access protected resources on the resource server. However, you can also specify a redirection URL for unauthorized users. To specify a redirection URL, edit the *keycloak.json* file you updated in step 3 and replace the `policy-enforcer` configuration with the following:
+. Optionally, specify a redirection URL.
++
+By default, the policy enforcer responds with a `403` status code when the user lacks permission to access protected resources on the resource server. However, you can also specify a redirection URL for unauthorized users. To specify a redirection URL, edit the *keycloak.json* file that you updated and replace the `policy-enforcer` configuration with the following:
 +
 ```json
 "policy-enforcer": {
@@ -61,7 +73,7 @@ image:{project_images}/getting-started/hello-world/adapter-config.png[alt="Adapt
 +
 This change specifies to the policy enforcer to redirect users to a `/app-authz-vanilla/error.jsp` page if a user does not have the necessary permissions to access a protected resource, rather than an unhelpful `403 Unauthorized` message.
 
-== Building and Deploying the Application
+== Building and deploying the application
 
 To build and deploy the application execute the following command:
 
@@ -71,26 +83,27 @@ $ cd {quickstartRepo_dir}/app-authz-jee-vanilla
 $ mvn clean package wildfly:deploy
 ----
 
-== Testing the Application
+== Testing the application
 
-If your application was successfully deployed you can access it at http://localhost:8080/app-authz-vanilla[http://localhost:8080/app-authz-vanilla]. The {project_name} Login page opens.
+If your application was successfully deployed, you can access it at http://localhost:8080/app-authz-vanilla[http://localhost:8080/app-authz-vanilla]. The {project_name} Login page opens.
 
-.Login Page
-image:{project_images}/getting-started/hello-world/login-page.png[alt="Login Page"]
+.Login page
+image:{project_images}/getting-started/hello-world/login-page.png[alt="Login page"]
 
-Log in as *alice* using the password you specified for that user. After authenticating, the following page is displayed:
+.Procedure
 
-.Hello World Authz Main Page
-image:{project_images}/getting-started/hello-world/main-page.png[alt="Hello World Authz Main Page"]
-
+. Log in as *alice* using the password you specified for that user. The following page is displayed:
++
+.Hello World Authz main page
+image:{project_images}/getting-started/hello-world/main-page.png[alt="Hello World Authz main page"]
++
 The <<_resource_server_default_config, default settings>> defined by {project_name} when you enable authorization services for a client application provide a simple
 policy that always grants access to the resources protected by this policy.
 
-You can start by changing the default permissions and policies and test how your application responds, or even create new policies using the different
-<<_policy_overview, policy types>> provided by {project_name}.
-
-There are a plenty of things you can do now to test this application. For example, you can change the default policy by clicking the Authorization tab for the client, then `Policies` tab, then click on `Default Policy` in the list to allow you to change it as follows:
-
+. Change the default permissions and policies and test how your application responds. You could also create new policies using the different policy types provided by {project_name}.
++
+You  have many options to test this application. For example, you can change the default policy by clicking the *Authorization* tab for the client, then *Policies* tab, then click the *Default Policy* in the list to allow you to change it as follows:
++
 ```js
 // The default value is $evaluation.grant(),
 // let's see what happens when we change it to $evaluation.deny()
@@ -98,18 +111,28 @@ $evaluation.deny();
 
 ```
 
-Now, log out of the demo application and log in again. You can no longer access the application.
+. Log out of the demo application and log in again.
++
+You can no longer access the application.
++
+image:{project_images}/getting-started/hello-world/access-denied-page.png[alt="Access Denied page"]
 
-image:{project_images}/getting-started/hello-world/access-denied-page.png[alt="Access Denied Page"]
-
-Let's fix that now, but instead of changing the `Default Policy` code we are going to change the `Logic` to `Negative` using the dropdown list below the policy code text area.
+. Correct that problem by changing the *Logic* to *Negative* using the item list below the policy code text area.
++
 That re-enables access to the application as we are negating the result of that policy, which is by default denying all requests for access. Again, before testing this change, be sure to log out and log in again.
 
-== Next Steps
+[role="_additional-resources"]
+.Additional resources
+* <<_policy_overview, Policy types>>
+
+== Next steps
 
 There are additional things you can do, such as:
 
-* Create a scope, define a policy and permission for it, and test it on the application side. Can the user perform an action (or anything else represented by the scope you created)?
+* Create a scope, define a policy and permission for it, and test it on the application side. Can the user perform an action or anything else represented by the scope you created?
 * Create different types of policies such as <<_policy_js, JavaScript-based>>, and associate these policies with the `Default Permission`.
 * Apply multiple policies to the `Default Permission` and test the behavior. For example, combine multiple policies and change the `Decision Strategy` accordingly.
-* For more information about how to view and test permissions inside your application see <<_enforcer_authorization_context, Obtaining the Authorization Context>>.
+
+[role="_additional-resources"]
+.Additional resources
+* For more information about how to view and test permissions inside your application see <<_enforcer_authorization_context, Obtaining the authorization context>>.

@@ -1,5 +1,5 @@
 [[_service_rpt_overview]]
-= Requesting Party Token
+= Requesting party token
 
 A requesting party token (RPT) is a https://datatracker.ietf.org/doc/html/rfc7519[JSON web token (JWT)] digitally signed using https://datatracker.ietf.org/doc/html/rfc7515[JSON web signature (JWS)]. The token is built based on the OAuth2 access token previously issued by {project_name} to a specific client acting on behalf of a user
 or on its own behalf.

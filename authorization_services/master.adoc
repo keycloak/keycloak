@@ -6,7 +6,13 @@
 include::topics/templates/document-attributes-product.adoc[]
 
 :authorization_services_guide:
+:context: authorization_services_guide
 
 = {authorizationguide_name}
 
+include::topics/templates/making-open-source-more-inclusive.adoc[]
+
 include::topics.adoc[]
+
+:context:
+

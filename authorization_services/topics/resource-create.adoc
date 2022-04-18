@@ -1,13 +1,13 @@
 [[_resource_create]]
-= Creating Resources
+= Creating resources
 
 Creating a resource is straightforward and generic. Your main concern is the granularity of the resources you create. In other words, resources can
 be created to represent a set of one or more resources and the way you define them is crucial to managing permissions.
 
 To create a new resource, click *Create* in the right upper corner of the resource listing.
 
-.Add Resource
-image:{project_images}/resource/create.png[alt="Add Resource"]
+.Add resource
+image:{project_images}/resource/create.png[alt="Add resource"]
 
 In {project_name}, a resource defines a small set of information that is common to different types of resources, such as:
 
@@ -31,7 +31,7 @@ are usually the relative paths used to serve these resources.
 +
 One or more scopes to associate with the resource.
 
-== Resource Attributes
+== Resource attributes
 
 Resources may have attributes associated with them. These attributes can be used to provide additional information about
 a resource and to provide additional information to policies when evaluating permissions associated with a resource.
@@ -39,17 +39,17 @@ a resource and to provide additional information to policies when evaluating per
 Each attribute is a key and value pair where the value can be a set of one or many strings. Multiple values can be defined for an attribute by separating each value with a comma.
 
 
-== Typed Resources
+== Typed resources
 
 The type field of a resource can be used to group different resources together, so they can be protected using a common set of permissions.
 
-== Resource Owners
+== Resource owners
 
 Resources also have an owner. By default, resources are owned by the resource server.
 
 However, resources can also be associated with users, so you can create permissions based on the resource owner. For example, only the resource owner is allowed to delete or update a given resource.
 
-== Managing Resources Remotely
+== Managing resources remotely
 
 Resource management is also exposed through the <<_service_protection_api, Protection API>> to allow resource servers to remotely manage their resources.
 

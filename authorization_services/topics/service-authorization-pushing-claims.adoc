@@ -1,5 +1,5 @@
 [[_service_pushing_claims]]
-= Pushing Claims
+= Pushing claims
 
 When obtaining permissions from the server you can push arbitrary claims in order to have these
 claims available to your policies when evaluating permissions.
@@ -29,6 +29,6 @@ The `claim_token` parameter expects a BASE64 encoded JSON with a format similar 
 
 The format expects one or more claims where the value for each claim must be an array of strings.
 
-== Pushing Claims Using UMA
+== Pushing claims Using UMA
 
 For more details about how to push claims when using UMA and permission tickets, please take a look at <<_service_protection_permission_api_papi, Permission API>>

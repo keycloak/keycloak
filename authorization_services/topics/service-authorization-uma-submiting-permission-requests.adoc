@@ -1,5 +1,5 @@
 [[_service_authorization_aat]]
-= Submitting Permission Requests
+= Submitting permission requests
 
 As part of the authorization process, clients need first to obtain a permission ticket from a UMA protected resource server in order
 to exchange it with an RPT at the {project_name} Token Endpoint.
