@@ -59,6 +59,7 @@ public class UserSynchronizer implements Synchronizer<UserRemovedEvent> {
 
         attributes.put(Policy.FilterOption.TYPE, new String[] {"user"});
         attributes.put(Policy.FilterOption.CONFIG, new String[] {"users", userModel.getId()});
+        attributes.put(Policy.FilterOption.ANY_OWNER, new String[] {Boolean.TRUE.toString()});
 
         List<Policy> search = policyStore.findByResourceServer(null, attributes, null, null);
 
