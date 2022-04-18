@@ -27,7 +27,7 @@ final class HostnamePropertyMappers {
                         .build(),
                 builder().from("hostname-strict-backchannel")
                         .to("kc.spi-hostname-default-strict-backchannel")
-                        .description("By default backchannel URLs are dynamically resolved from request headers to allow internal an external applications. If all applications use the public URL this option should be enabled.")
+                        .description("By default backchannel URLs are dynamically resolved from request headers to allow internal and external applications. If all applications use the public URL this option should be enabled.")
                         .type(Boolean.class)
                         .build(),
                 builder().from("hostname-path")
