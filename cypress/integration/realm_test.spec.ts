@@ -14,7 +14,7 @@ const createRealmPage = new CreateRealmPage();
 const realmSettings = new RealmSettings();
 const modalUtils = new ModalUtils();
 
-describe("Realms test", () => {
+describe.skip("Realms test", () => {
   const testRealmName =
     "Test realm " + (Math.random() + 1).toString(36).substring(7);
   const newRealmName =
