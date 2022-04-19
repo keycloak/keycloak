@@ -23,7 +23,7 @@ In the default Catalog, the Keycloak Operator is named `keycloak-operator`. Make
 ==== OpenShift UI
 
 On OpenShift you can use a conveninet UI on top of OLM.
-Navigate `Home` → `Operators` → `OperatorHub` in the menu on the left side of the OpenShift Console.
+Navigate to `Home` → `Operators` → `OperatorHub` using the menu on the left side of the OpenShift Console.
 Then, focus on the search input box and type "keycloak":
 
 image::{generatedGuideImages}/select-operator.jpeg["Select the Keycloak Operator in the UI"]
