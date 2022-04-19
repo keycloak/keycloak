@@ -131,7 +131,8 @@ jobs:
           mvn clean verify \
               -Dquarkus.container-image.build=true \
               -Dquarkus.kubernetes.deployment-target=kubernetes \
-              -Dquarkus.jib.jvm-arguments="-Djava.util.logging.manager=org.jboss.logmanager.LogManager","-Doperator.keycloak.image=keycloak:${{ steps.vars.outputs.version }}",-Doperator.keycloak.image-pull-policy=Never \
+              -Doperator.keycloak.image=keycloak:${{ steps.vars.outputs.version }} \
+              -Dquarkus.jib.jvm-arguments="-Djava.util.logging.manager=org.jboss.logmanager.LogManager","-Doperator.keycloak.image-pull-policy=Never" \
               -Dtest.operator.custom.image=custom-keycloak:${{ steps.vars.outputs.version }} \
               --no-transfer-progress -Dtest.operator.deployment=remote \
               -Dtest.operator.kubernetes.ip=$(minikube ip)
