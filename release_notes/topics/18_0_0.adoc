@@ -1,14 +1,28 @@
 = Highlights
 
-== Recovery Codes
+== New Admin Console preview
 
-Recovery Codes as another way to do two-factor authentication is now available as a preview feature.
+The new Admin Console is now graduated to preview, with the plan for it to become the default admin console in Keycloak 19.
+
+If you find any issues with the new console, or have some suggestions for improvements, please let us know through https://github.com/keycloak/keycloak/discussions/categories/new-admin-console[GitHub Discussions].
+
+== Step-up authentication
+
+{project_name} now supports Step-up authentication. This feature was added in Keycloak 17, and was further polished in this version.
+
+For more details, see link:{adminguide_link}#_step-up-flow[{adminguide_name}].
+
+Thanks to https://github.com/CorneliaLahnsteiner[Cornelia Lahnsteiner] and https://github.com/romge[Georg Romstorfer] for the contribution.
 
 == Client secret rotation
 
 {project_name} now supports Client Secret Rotation through customer policies. This feature is now available as a preview feature and allows that confidential clients can be provided with realm policies allowing the use up to two secrets simultaneously.
 
 For more details, see link:{adminguide_link}#_secret_rotation[{adminguide_name}].
+
+== Recovery Codes
+
+Recovery Codes as another way to do two-factor authentication is now available as a preview feature.
 
 == OpenID Connect Logout Improvements
 
@@ -21,14 +35,6 @@ Some fixes and improvements were made to make sure that {project_name} is now fu
 
 For more details, see link:{adminguide_link}#_oidc-logout[{adminguide_name}].
 
-== Step-up authentication
-
-{project_name} now supports Step-up authentication. This feature was added in Keycloak 17 and it was further polished in this version.
-
-For more details, see link:{adminguide_link}#_step-up-flow[{adminguide_name}].
-
-Thanks to https://github.com/CorneliaLahnsteiner[Cornelia Lahnsteiner] and https://github.com/romge[Georg Romstorfer] for the contribution.
-
 == WebAuthn improvements
 
 {project_name} now supports WebAuthn id-less authentication. This feature allows that WebAuthn Security Key will identify the user during authentication as long as the
@@ -40,10 +46,13 @@ There are more WebAuthn improvements and fixes in addition to that.
 == Session limits
 
 {project_name} now supports limits on the number of sessions a user can have. Limits can be placed at the realm level or at the client level.
+
 For more details, see link:{adminguide_link}#_user_session_limits[{adminguide_name}].
 Thanks to https://github.com/mfdewit[Mauro de Wit] for the contribution.
 
 == Other improvements
 
+* Account console alignments with latest PatternFly release.
 * Support for encrypted User Info endpoint response. Thanks to https://github.com/giacomoa[Giacomo Altiero]
-* Support for the algorithm RSA-OAEP with A256GCM used for encryption keys. Thanks to https://github.com/fbrissi[Filipe Bojikian Rissi ]
+* Support for the algorithm RSA-OAEP with A256GCM used for encryption keys. Thanks to https://github.com/fbrissi[Filipe Bojikian Rissi]
+* Support for login with GitHub Enterprise server. Thanks to https://github.com/nngo[Neon Ngo]
