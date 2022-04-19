@@ -1,3 +1,5 @@
+import CommonElements from "../CommonElements";
+
 export enum Filter {
   Name = "Name",
   AssignedType = "Assigned type",
@@ -25,7 +27,7 @@ export enum FilterSession {
   ServiceAccount = "Service account",
 }
 
-export default class ListingPage {
+export default class ListingPage extends CommonElements {
   private searchInput =
     ".pf-c-toolbar__item .pf-c-search-input__text-input:visible";
   private tableToolbar = ".pf-c-toolbar";
@@ -57,6 +59,7 @@ export default class ListingPage {
   private dropdownItem = ".pf-c-dropdown__menu-item";
   private changeTypeToButton = ".pf-c-select__toggle";
   private toolbarChangeType = "#change-type-dropdown";
+  private tableNameColumnPrefix = "name-column-";
 
   showPreviousPageTableItems() {
     cy.get(this.previousPageBtn).first().click();
@@ -339,6 +342,25 @@ export default class ListingPage {
     }
     cy.get(this.table).should(condition);
 
+    return this;
+  }
+
+  private getResourceLink(name: string) {
+    return cy.findByTestId(this.tableNameColumnPrefix + name);
+  }
+
+  goToResourceDetails(name: string) {
+    this.getResourceLink(name).click();
+    return this;
+  }
+
+  assertDefaultResource() {
+    this.assertResource("Default Resource");
+    return this;
+  }
+
+  assertResource(name: string) {
+    this.getResourceLink(name).should("exist");
     return this;
   }
 }

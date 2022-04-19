@@ -1,16 +1,35 @@
-export default class ClientRolesTab {
+import CommonPage from "../../../CommonPage";
+
+enum ClientRolesTabItems {
+  Details = "Details",
+  Attributes = "Attributes",
+  UsersInRole = "Users in role",
+}
+
+export default class ClientRolesTab extends CommonPage {
   private createRoleBtn = "create-role";
   private createRoleEmptyStateBtn = "no-roles-for-this-client-empty-action";
   private hideInheritedRolesChkBox = "#kc-hide-inherited-roles-checkbox";
-
   private rolesTab = "rolesTab";
   private associatedRolesTab = ".kc-associated-roles-tab > button";
-  private attributesTab = ".kc-attributes-tab > button";
   private attributeKeyInput = "attribute-key-input";
   private attributeValueInput = "attribute-value-input";
-  private addAttributeButton = "attribute-add-row";
   private removeFirstAttributeButton = "#minus-button-0";
-  private saveAttributesButton = "save-attributes";
+
+  goToDetailsTab() {
+    this.tabUtils().clickTab(ClientRolesTabItems.Details);
+    return this;
+  }
+
+  goToAttributesTab() {
+    this.tabUtils().clickTab(ClientRolesTabItems.Attributes);
+    return this;
+  }
+
+  goToUsersInRoleTab() {
+    this.tabUtils().clickTab(ClientRolesTabItems.UsersInRole);
+    return this;
+  }
 
   goToRolesTab() {
     cy.findByTestId(this.rolesTab).click();
@@ -19,11 +38,6 @@ export default class ClientRolesTab {
 
   goToAssociatedRolesTab() {
     cy.get(this.associatedRolesTab).click();
-    return this;
-  }
-
-  goToAttributesTab() {
-    cy.get(this.attributesTab).click();
     return this;
   }
 
@@ -42,34 +56,32 @@ export default class ClientRolesTab {
     return this;
   }
 
-  saveAttribute() {
-    cy.findByTestId(this.saveAttributesButton).click();
+  clickAddAnAttributeButton() {
+    this.tableUtils().clickRowItemByItemName("Add an attribute", 1, "button");
     return this;
   }
 
-  addAttribute() {
-    cy.findByTestId(this.attributeKeyInput).type("crud_attribute_key");
-
-    cy.findByTestId(this.attributeValueInput).type("crud_attribute_value");
-
-    cy.findByTestId(this.addAttributeButton).click();
-
-    this.saveAttribute();
-
-    cy.get("table")
-      .should("have.class", "kc-attributes__table")
-      .get("tbody")
-      .children()
-      .should("have.length", 2);
-
+  clickDeleteAttributeButton(row: number) {
+    this.tableUtils().clickRowItemByIndex(row, 3, "button");
     return this;
   }
 
-  deleteAttribute() {
-    cy.get(this.removeFirstAttributeButton).click();
-    this.saveAttribute();
-    cy.findByTestId(this.attributeKeyInput).should("have.value", "");
-    cy.findByTestId(this.attributeValueInput).should("have.value", "");
+  addAttribute(rowIndex: number, key: string, value: string) {
+    this.tableUtils()
+      .typeValueToRowItem(rowIndex, 1, key)
+      .typeValueToRowItem(rowIndex, 2, value);
+    this.clickAddAnAttributeButton();
+    this.formUtils().save();
+    return this;
+  }
+
+  deleteAttribute(rowIndex: number) {
+    this.clickDeleteAttributeButton(rowIndex);
+    this.formUtils().save();
+    this.tableUtils()
+      .checkRowItemValueByIndex(rowIndex, 1, "", "input")
+      .checkRowItemValueByIndex(rowIndex, 2, "", "input");
+    return this;
   }
 
   hideInheritedRoles() {

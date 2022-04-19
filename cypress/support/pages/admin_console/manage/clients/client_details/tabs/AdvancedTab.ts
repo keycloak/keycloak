@@ -1,6 +1,7 @@
 import moment from "moment";
+import CommonPage from "../../../../../CommonPage";
 
-export default class AdvancedTab {
+export default class AdvancedTab extends CommonPage {
   private setToNowBtn = "#setToNow";
   private clearBtn = "#clear";
   private pushBtn = "#push";
@@ -16,13 +17,6 @@ export default class AdvancedTab {
   private accessTokenSignatureAlgorithmInput = "#accessTokenSignatureAlgorithm";
   private fineGrainSaveBtn = "#fineGrainSave";
   private fineGrainRevertBtn = "#fineGrainRevert";
-
-  private advancedTab = "advancedTab";
-
-  goToAdvancedTab() {
-    cy.findByTestId(this.advancedTab).click();
-    return this;
-  }
 
   setRevocationToNow() {
     cy.get(this.setToNowBtn).click();

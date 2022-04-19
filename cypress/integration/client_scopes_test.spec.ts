@@ -25,7 +25,6 @@ describe("Client Scopes test", () => {
     "Are you sure you want to delete this client scope";
   const notificationMessageDeletionConfirmation =
     "The client scope has been deleted";
-
   const clientScopeName = "client-scope-test";
   const openIDConnectItemText = "OpenID Connect";
   const clientScope = {

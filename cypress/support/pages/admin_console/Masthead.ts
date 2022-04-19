@@ -1,4 +1,5 @@
-export default class Masthead {
+import CommonElements from "../CommonElements";
+export default class Masthead extends CommonElements {
   private logoBtn = "#masthead-logo";
   private helpBtn = "#help";
   private closeAlertMessageBtn = ".pf-c-alert__action button";

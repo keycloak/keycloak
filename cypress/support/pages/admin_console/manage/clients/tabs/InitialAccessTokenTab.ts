@@ -1,4 +1,6 @@
-export default class InitialAccessTokenTab {
+import CommonPage from "../../../../CommonPage";
+
+export default class InitialAccessTokenTab extends CommonPage {
   private initialAccessTokenTab = "initialAccessToken";
 
   private emptyAction = "no-initial-access-tokens-empty-action";

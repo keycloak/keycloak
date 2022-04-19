@@ -1,4 +1,6 @@
-export default class CreateClientPage {
+import CommonPage from "../../../CommonPage";
+
+export default class CreateClientPage extends CommonPage {
   private clientTypeDrpDwn = ".pf-c-select__toggle";
   private clientTypeList = ".pf-c-select__toggle + ul";
   private clientIdInput = "#kc-client-id";

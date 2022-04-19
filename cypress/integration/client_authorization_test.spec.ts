@@ -4,8 +4,11 @@ import LoginPage from "../support/pages/LoginPage";
 import ListingPage from "../support/pages/admin_console/ListingPage";
 import Masthead from "../support/pages/admin_console/Masthead";
 import SidebarPage from "../support/pages/admin_console/SidebarPage";
-import AuthorizationTab from "../support/pages/admin_console/manage/clients/AuthorizationTab";
+import AuthorizationTab from "../support/pages/admin_console/manage/clients/client_details/tabs/AuthorizationTab";
 import ModalUtils from "../support/util/ModalUtils";
+import ClientDetailsPage from "../support/pages/admin_console/manage/clients/client_details/ClientDetailsPage";
+import PoliciesTab from "../support/pages/admin_console/manage/clients/client_details/tabs/authorization_subtabs/PoliciesTab";
+import PermissionsTab from "../support/pages/admin_console/manage/clients/client_details/tabs/authorization_subtabs/PermissionsTab";
 
 describe("Client authentication subtab", () => {
   const loginPage = new LoginPage();
@@ -13,6 +16,9 @@ describe("Client authentication subtab", () => {
   const masthead = new Masthead();
   const sidebarPage = new SidebarPage();
   const authenticationTab = new AuthorizationTab();
+  const clientDetailsPage = new ClientDetailsPage();
+  const policiesSubTab = new PoliciesTab();
+  const permissionsSubTab = new PermissionsTab();
   const clientId =
     "client-authentication-" + (Math.random() + 1).toString(36).substring(7);
 
@@ -25,11 +31,14 @@ describe("Client authentication subtab", () => {
       serviceAccountsEnabled: true,
       standardFlowEnabled: true,
     });
+  });
+
+  beforeEach(() => {
     keycloakBefore();
     loginPage.logIn();
     sidebarPage.goToClients();
     listingPage.searchItem(clientId).goToItemDetails(clientId);
-    authenticationTab.goToAuthenticationTab();
+    clientDetailsPage.goToAuthorizationTab();
   });
 
   after(() => {
@@ -37,72 +46,74 @@ describe("Client authentication subtab", () => {
   });
 
   it("Should update the resource server settings", () => {
-    authenticationTab.setPolicy("DISABLED").saveSettings();
+    policiesSubTab.setPolicy("DISABLED").formUtils().save();
     masthead.checkNotificationMessage("Resource successfully updated", true);
   });
 
   it("Should create a resource", () => {
-    authenticationTab.goToResourceSubTab();
-    authenticationTab.assertDefaultResource();
-
-    authenticationTab
-      .goToCreateResource()
+    const resourcesSubtab = authenticationTab.goToResourcesSubTab();
+    listingPage.assertDefaultResource();
+    resourcesSubtab
+      .createResource()
       .fillResourceForm({
         name: "Resource",
         displayName: "The display name",
         type: "type",
         uris: ["one", "two"],
       })
+      .formUtils()
       .save();
-
     masthead.checkNotificationMessage("Resource created successfully", true);
     sidebarPage.waitForPageLoad();
-    authenticationTab.cancel();
+    authenticationTab.formUtils().cancel();
   });
 
   it("Should create a scope", () => {
-    authenticationTab.goToScopeSubTab();
     authenticationTab
-      .goToCreateScope()
+      .goToScopesSubTab()
+      .createAuthorizationScope()
       .fillScopeForm({
         name: "The scope",
         displayName: "Display something",
         iconUri: "res://something",
       })
+      .formUtils()
       .save();
 
     masthead.checkNotificationMessage(
       "Authorization scope created successfully",
       true
     );
-    authenticationTab.goToScopeSubTab();
+    authenticationTab.goToScopesSubTab();
     listingPage.itemExist("The scope");
   });
 
   it("Should create a policy", () => {
-    authenticationTab.goToPolicySubTab();
+    authenticationTab.goToPoliciesSubTab();
     cy.intercept(
       "GET",
       "/admin/realms/master/clients/*/authz/resource-server/policy/regex/*"
     ).as("get");
-    authenticationTab
-      .goToCreatePolicy("regex")
+    policiesSubTab
+      .createPolicy("regex")
       .fillBasePolicyForm({
         name: "Regex policy",
         description: "Policy for regex",
         targetClaim: "I don't know",
         regexPattern: ".*?",
       })
+      .formUtils()
       .save();
 
     cy.wait(["@get"]);
     masthead.checkNotificationMessage("Successfully created the policy", true);
+
     sidebarPage.waitForPageLoad();
-    authenticationTab.cancel();
+    authenticationTab.formUtils().cancel();
   });
 
   it("Should delete a policy", () => {
-    authenticationTab.goToPolicySubTab();
+    authenticationTab.goToPoliciesSubTab();
     listingPage.deleteItem("Regex policy");
     new ModalUtils().confirmModal();
 
@@ -110,37 +121,35 @@ describe("Client authentication subtab", () => {
   });
 
   it("Should create a client policy", () => {
-    authenticationTab.goToPolicySubTab();
+    authenticationTab.goToPoliciesSubTab();
     cy.intercept(
       "GET",
       "/admin/realms/master/clients/*/authz/resource-server/policy/client/*"
     ).as("get");
-    authenticationTab
-      .goToCreatePolicy("client")
+    policiesSubTab
+      .createPolicy("client")
       .fillBasePolicyForm({
         name: "Client policy",
         description: "Extra client field",
       })
       .inputClient("master-realm")
+      .formUtils()
       .save();
-
     cy.wait(["@get"]);
     masthead.checkNotificationMessage("Successfully created the policy", true);
+
     sidebarPage.waitForPageLoad();
-    authenticationTab.cancel();
+    authenticationTab.formUtils().cancel();
   });
 
   it("Should create a permission", () => {
     authenticationTab.goToPermissionsSubTab();
-    authenticationTab
-      .goToCreatePermission("resource")
-      .fillPermissionForm({
-        name: "Permission name",
-        description: "Something describing this permission",
-      })
-      .selectResource("Default Resource")
-      .save();
 
+    permissionsSubTab.createPermission("resource").fillPermissionForm({
+      name: "Permission name",
+      description: "Something describing this permission",
+    });
+    permissionsSubTab.selectResource("Default Resource").formUtils().save();
     cy.intercept(
       "/admin/realms/master/clients/*/authz/resource-server/resource?first=0&max=10"
     ).as("load");
@@ -149,21 +158,22 @@ describe("Client authentication subtab", () => {
       true
     );
     cy.wait(["@load"]);
+
     sidebarPage.waitForPageLoad();
-    authenticationTab.cancel();
+    authenticationTab.formUtils().cancel();
   });
 
   it.skip("Should copy auth details", () => {
-    authenticationTab.goToExportSubTab();
+    const exportTab = authenticationTab.goToExportSubTab();
     sidebarPage.waitForPageLoad();
-    authenticationTab.copy();
+    exportTab.copy();
     masthead.checkNotificationMessage("Authorization details copied.", true);
   });
 
   it("Should export auth details", () => {
-    authenticationTab.goToExportSubTab();
+    const exportTab = authenticationTab.goToExportSubTab();
     sidebarPage.waitForPageLoad();
-    authenticationTab.export();
+    exportTab.export();
 
     masthead.checkNotificationMessage(
       "Successfully exported authorization details.",

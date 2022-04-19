@@ -1,4 +1,6 @@
-export default class SidebarPage {
+import CommonElements from "../CommonElements";
+
+export default class SidebarPage extends CommonElements {
   private realmsDrpDwn = "#realm-select button.pf-c-dropdown__toggle";
   private realmsList = '#realm-select ul[role="menu"]';
   private createRealmBtn = "add-realm";

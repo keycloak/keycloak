@@ -1,24 +1,12 @@
-export default class KeysTab {
-  private tabName = "keysTab";
+import CommonPage from "../../../../../CommonPage";
+
+export default class KeysTab extends CommonPage {
+  private generateBtn = "generate";
+  private confirmBtn = "confirm";
   private useJwksUrl = "useJwksUrl";
-  private saveKeys = "saveKeys";
-  private generate = "generate";
   private keyAlias = "keyAlias";
   private keyPassword = "keyPassword";
   private storePassword = "storePassword";
-  private confirm = "confirm";
-
-  goToTab() {
-    cy.findByTestId(this.tabName).click();
-    return this;
-  }
-
-  checkSaveDisabled(disabled = true) {
-    cy.findByTestId(this.saveKeys).should(
-      (!disabled ? "not." : "") + "be.disabled"
-    );
-    return this;
-  }
 
   toggleUseJwksUrl() {
     cy.findByTestId(this.useJwksUrl).click({ force: true });
@@ -26,12 +14,12 @@ export default class KeysTab {
   }
 
   clickGenerate() {
-    cy.findByTestId(this.generate).click();
+    cy.findByTestId(this.generateBtn).click();
     return this;
   }
 
   clickConfirm() {
-    cy.findByTestId(this.confirm).click();
+    cy.findByTestId(this.confirmBtn).click();
     return this;
   }
 

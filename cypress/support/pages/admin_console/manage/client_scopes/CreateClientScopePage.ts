@@ -1,4 +1,6 @@
-export default class CreateClientScopePage {
+import CommonPage from "../../../CommonPage";
+
+export default class CreateClientScopePage extends CommonPage {
   settingsTab: string;
   mappersTab: string;
   clientScopeNameInput: string;
@@ -14,6 +16,7 @@ export default class CreateClientScopePage {
   cancelBtn: string;
 
   constructor() {
+    super();
     this.settingsTab = ".pf-c-tabs__item:nth-child(1)";
     this.mappersTab = ".pf-c-tabs__item:nth-child(2)";
 

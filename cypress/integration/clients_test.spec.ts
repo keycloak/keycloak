@@ -1,36 +1,32 @@
 import LoginPage from "../support/pages/LoginPage";
-import Masthead from "../support/pages/admin_console/Masthead";
-import ListingPage, {
+import {
   Filter,
   FilterAssignedType,
 } from "../support/pages/admin_console/ListingPage";
-import SidebarPage from "../support/pages/admin_console/SidebarPage";
 import CreateClientPage from "../support/pages/admin_console/manage/clients/CreateClientPage";
-import ModalUtils from "../support/util/ModalUtils";
-import AdvancedTab from "../support/pages/admin_console/manage/clients/AdvancedTab";
 import adminClient from "../support/util/AdminClient";
-import InitialAccessTokenTab from "../support/pages/admin_console/manage/clients/InitialAccessTokenTab";
 import { keycloakBefore } from "../support/util/keycloak_hooks";
 import RoleMappingTab from "../support/pages/admin_console/manage/RoleMappingTab";
-import KeysTab from "../support/pages/admin_console/manage/clients/KeysTab";
-import ClientScopesTab from "../support/pages/admin_console/manage/clients/ClientScopesTab";
 import CreateRealmRolePage from "../support/pages/admin_console/manage/realm_roles/CreateRealmRolePage";
 import AssociatedRolesPage from "../support/pages/admin_console/manage/realm_roles/AssociatedRolesPage";
 import ClientRolesTab from "../support/pages/admin_console/manage/clients/ClientRolesTab";
+import InitialAccessTokenTab from "../support/pages/admin_console/manage/clients/tabs/InitialAccessTokenTab";
+import AdvancedTab from "../support/pages/admin_console/manage/clients/client_details/tabs/AdvancedTab";
+import ClientDetailsPage, {
+  ClientsDetailsTab,
+} from "../support/pages/admin_console/manage/clients/client_details/ClientDetailsPage";
+import CommonPage from "../support/pages/CommonPage";
 
 let itemId = "client_crud";
 const loginPage = new LoginPage();
 const associatedRolesPage = new AssociatedRolesPage();
-const masthead = new Masthead();
-const sidebarPage = new SidebarPage();
-const listingPage = new ListingPage();
 const createClientPage = new CreateClientPage();
-const modalUtils = new ModalUtils();
+const clientDetailsPage = new ClientDetailsPage();
 const createRealmRolePage = new CreateRealmRolePage();
+const commonPage = new CommonPage();
 
 describe("Clients test", () => {
   describe("Client details - Client scopes subtab", () => {
-    const clientScopesTab = new ClientScopesTab();
     const clientId = "client-scopes-subtab-test";
     const clientScopeName = "client-scope-test";
     const clientScopeNameDefaultType = "client-scope-test-default-type";
@@ -71,11 +67,12 @@ describe("Clients test", () => {
     beforeEach(() => {
       keycloakBefore();
       loginPage.logIn();
-      sidebarPage.goToClients();
+      commonPage.sidebar().goToClients();
       cy.intercept("/admin/realms/master/clients/*").as("fetchClient");
-      listingPage.searchItem(clientId).goToItemDetails(clientId);
+      commonPage.tableToolbarUtils().searchItem(clientId);
+      commonPage.tableUtils().clickRowItemLink(clientId);
       cy.wait("@fetchClient");
-      clientScopesTab.goToClientScopesTab();
+      clientDetailsPage.goToClientScopesTab();
     });
 
     after(async () => {
@@ -88,38 +85,50 @@ describe("Clients test", () => {
     });
 
     it("Should list client scopes", () => {
-      listingPage.itemsGreaterThan(1).itemExist(clientScopeName + 0);
+      commonPage
+        .tableUtils()
+        .checkRowItemsGreaterThan(1)
+        .checkRowItemExists(clientScopeName + 0);
     });
 
     it("Should search existing client scope by name", () => {
-      listingPage
-        .searchItem(clientScopeName + 0, false)
-        .itemExist(clientScopeName + 0)
-        .itemsEqualTo(2);
+      commonPage.tableToolbarUtils().searchItem(clientScopeName + 0, false);
+      commonPage
+        .tableUtils()
+        .checkRowItemExists(clientScopeName + 0)
+        .checkRowItemsEqualTo(2);
     });
 
     it("Should search non-existent client scope by name", () => {
-      const itemName = "non-existent-item";
-      listingPage.searchItem(itemName, false).checkTableExists(false);
+      commonPage.tableToolbarUtils().searchItem("non-existent-item", false);
+      commonPage.tableUtils().checkIfExists(false);
+      commonPage.emptyState().checkIfExists(true);
     });
 
     it("Should search existing client scope by assigned type", () => {
-      listingPage
-        .selectFilter(Filter.AssignedType)
-        .selectSecondaryFilterAssignedType(FilterAssignedType.Default)
-        .itemExist(FilterAssignedType.Default)
-        .itemExist(FilterAssignedType.Optional, false)
-        .selectSecondaryFilterAssignedType(FilterAssignedType.Optional)
-        .itemExist(FilterAssignedType.Default, false)
-        .itemExist(FilterAssignedType.Optional)
-        .selectSecondaryFilterAssignedType(FilterAssignedType.AllTypes)
-        .itemExist(FilterAssignedType.Default)
-        .itemExist(FilterAssignedType.Optional);
+      commonPage
+        .tableToolbarUtils()
+        .selectSearchType(Filter.AssignedType)
+        .selectSecondarySearchType(FilterAssignedType.Default);
+      commonPage
+        .tableUtils()
+        .checkRowItemExists(FilterAssignedType.Default)
+        .checkRowItemExists(FilterAssignedType.Optional, false);
+      commonPage
+        .tableToolbarUtils()
+        .selectSecondarySearchType(FilterAssignedType.Optional);
+      commonPage
+        .tableUtils()
+        .checkRowItemExists(FilterAssignedType.Default, false)
+        .checkRowItemExists(FilterAssignedType.Optional);
+      commonPage
+        .tableToolbarUtils()
+        .selectSecondarySearchType(FilterAssignedType.AllTypes);
+      commonPage
+        .tableUtils()
+        .checkRowItemExists(FilterAssignedType.Default)
+        .checkRowItemExists(FilterAssignedType.Optional);
     });
-
-    /*it("Should empty search", () => {
-
-    });*/
 
     const newItemsWithExpectedAssignedTypes = [
       [clientScopeNameOptionalType, FilterAssignedType.Optional],
@@ -128,15 +137,20 @@ describe("Clients test", () => {
     newItemsWithExpectedAssignedTypes.forEach(($type) => {
       const [itemName, assignedType] = $type;
       it(`Should add client scope ${itemName} with ${assignedType} assigned type`, () => {
-        listingPage.clickPrimaryButton();
-        modalUtils.checkModalTitle("Add client scopes to " + clientId);
-        listingPage.clickItemCheckbox(itemName);
-        modalUtils.confirmModalWithItem(assignedType);
-        masthead.checkNotificationMessage("Scope mapping successfully updated");
-        listingPage
-          .searchItem(itemName, false)
-          .itemExist(itemName)
-          .itemExist(assignedType);
+        commonPage.tableToolbarUtils().addClientScope();
+        commonPage
+          .modalUtils()
+          .checkModalTitle("Add client scopes to " + clientId);
+        commonPage.tableUtils().selectRowItemCheckbox(itemName);
+        commonPage.modalUtils().confirmModalWithItem(assignedType);
+        commonPage
+          .masthead()
+          .checkNotificationMessage("Scope mapping successfully updated");
+        commonPage.tableToolbarUtils().searchItem(itemName, false);
+        commonPage
+          .tableUtils()
+          .checkRowItemExists(itemName)
+          .checkRowItemExists(assignedType);
       });
     });
 
@@ -147,60 +161,64 @@ describe("Clients test", () => {
     expectedItemAssignedTypes.forEach(($assignedType) => {
       const itemName = clientScopeName + 0;
       it(`Should change item ${itemName} AssignedType to ${$assignedType} from search bar`, () => {
-        listingPage
-          .searchItem(itemName, false)
-          .clickItemCheckbox(itemName)
-          .changeTypeToOfSelectedItems($assignedType);
-        masthead.checkNotificationMessage("Scope mapping updated");
-        listingPage.searchItem(itemName, false).itemExist($assignedType);
+        commonPage.tableToolbarUtils().searchItem(itemName, false);
+        commonPage.tableUtils().selectRowItemCheckbox(itemName);
+        commonPage.tableToolbarUtils().changeTypeTo($assignedType);
+        commonPage.masthead().checkNotificationMessage("Scope mapping updated");
+        commonPage.tableToolbarUtils().searchItem(itemName, false);
+        commonPage.tableUtils().checkRowItemExists($assignedType);
       });
     });
 
     it("Should show items on next page are more than 11", () => {
-      listingPage.showNextPageTableItems().itemsGreaterThan(1);
+      commonPage.sidebar().waitForPageLoad();
+      commonPage.tableToolbarUtils().clickNextPageButton();
+      commonPage.tableUtils().checkRowItemsGreaterThan(1);
     });
 
     it("Should remove client scope from item bar", () => {
       const itemName = clientScopeName + 0;
-      listingPage.searchItem(itemName, false).removeItem(itemName);
-      masthead.checkNotificationMessage(msgScopeMappingRemoved);
-      listingPage.searchItem(itemName, false).checkTableExists(false);
+      commonPage.tableToolbarUtils().searchItem(itemName, false);
+      commonPage.tableUtils().selectRowItemAction(itemName, "Remove");
+      commonPage.masthead().checkNotificationMessage(msgScopeMappingRemoved);
+      commonPage.tableToolbarUtils().searchItem(itemName, false);
+      commonPage.tableUtils().checkRowItemExists(itemName, false);
     });
-
-    /*it("Should remove client scope from search bar", () => {
-      //covered by next test
-    });*/
 
     // TODO: https://github.com/keycloak/keycloak-admin-ui/issues/1854
     it("Should remove multiple client scopes from search bar", () => {
       const itemName1 = clientScopeName + 1;
       const itemName2 = clientScopeName + 2;
-      listingPage
-        .clickSearchBarActionButton()
-        .checkDropdownItemIsDisabled("Remove")
-        .searchItem(clientScopeName, false)
-        .clickItemCheckbox(itemName1)
-        .clickItemCheckbox(itemName2)
-        .clickSearchBarActionButton()
-        .clickSearchBarActionItem("Remove");
-      masthead.checkNotificationMessage(msgScopeMappingRemoved);
-      listingPage
-        .searchItem(clientScopeName, false)
-        .itemExist(itemName1, false)
-        .itemExist(itemName2, false)
-        .clickSearchBarActionButton();
-      //.checkDropdownItemIsDisabled("Remove");
+      commonPage.tableToolbarUtils().clickSearchButton();
+      commonPage.tableToolbarUtils().checkActionItemIsEnabled("Remove", false);
+      commonPage.tableToolbarUtils().searchItem(clientScopeName, false);
+      commonPage
+        .tableUtils()
+        .selectRowItemCheckbox(itemName1)
+        .selectRowItemCheckbox(itemName2);
+      commonPage.tableToolbarUtils().clickSearchButton();
+      commonPage.tableToolbarUtils().clickActionItem("Remove");
+      commonPage.masthead().checkNotificationMessage(msgScopeMappingRemoved);
+      commonPage.tableToolbarUtils().searchItem(clientScopeName, false);
+      commonPage
+        .tableUtils()
+        .checkRowItemExists(itemName1, false)
+        .checkRowItemExists(itemName2, false);
+      commonPage.tableToolbarUtils().clickSearchButton();
     });
 
-    //TODO: https://github.com/keycloak/keycloak-admin-ui/issues/1874
-    /* it("Should show initial items after filtering", () => { 
-      listingPage
-        .selectFilter(Filter.AssignedType)
-        .selectFilterAssignedType(FilterAssignedType.Optional)
-        .selectFilter(Filter.Name)
-        .itemExist(FilterAssignedType.Default)
-        .itemExist(FilterAssignedType.Optional);
-    });*/
+    //fails, issue https://github.com/keycloak/keycloak-admin-ui/issues/1874
+    it.skip("Should show initial items after filtering", () => {
+      commonPage
+        .tableToolbarUtils()
+        .selectSearchType(Filter.AssignedType)
+        .selectSecondarySearchType(FilterAssignedType.Optional)
+        .selectSearchType(Filter.Name);
+      commonPage
+        .tableUtils()
+        .checkRowItemExists(FilterAssignedType.Default)
+        .checkRowItemExists(FilterAssignedType.Optional);
+    });
   });
 
   describe("Client creation", () => {
@@ -210,11 +228,11 @@ describe("Clients test", () => {
     });
 
     beforeEach(() => {
-      sidebarPage.goToClients();
+      commonPage.sidebar().goToClients();
     });
 
     it("Should cancel creating client", () => {
-      listingPage.goToCreateItem();
+      commonPage.tableToolbarUtils().createClient();
 
       createClientPage.continue().checkClientIdRequiredMessage();
 
@@ -227,7 +245,7 @@ describe("Clients test", () => {
     });
 
     it("Should check settings elements", () => {
-      listingPage.goToCreateItem();
+      commonPage.tableToolbarUtils().clickPrimaryButton();
       const clientId = "Test settings";
 
       createClientPage
@@ -236,8 +254,10 @@ describe("Clients test", () => {
         .checkCapabilityConfigElements()
         .save();
 
-      masthead.checkNotificationMessage("Client created successfully");
-      sidebarPage.waitForPageLoad();
+      commonPage
+        .masthead()
+        .checkNotificationMessage("Client created successfully");
+      commonPage.sidebar().waitForPageLoad();
 
       createClientPage
         .checkCapabilityConfigElements()
@@ -246,12 +266,12 @@ describe("Clients test", () => {
         .checkLogoutSettingsElements()
         .deleteClientFromActionDropdown();
 
-      modalUtils.confirmModal();
-      listingPage.itemExist(clientId, false);
+      commonPage.modalUtils().confirmModal();
+      commonPage.tableUtils().checkRowItemExists(clientId, false);
     });
 
     it("Should navigate to previous using 'back' button", () => {
-      listingPage.goToCreateItem();
+      commonPage.tableToolbarUtils().createClient();
 
       createClientPage.continue().checkClientIdRequiredMessage();
 
@@ -264,7 +284,7 @@ describe("Clients test", () => {
     });
 
     it("Should fail creating client", () => {
-      listingPage.goToCreateItem();
+      commonPage.tableToolbarUtils().createClient();
 
       createClientPage.continue().checkClientIdRequiredMessage();
 
@@ -277,18 +297,22 @@ describe("Clients test", () => {
       createClientPage.fillClientData("account").continue().save();
 
       // The error should inform about duplicated name/id
-      masthead.checkNotificationMessage(
-        "Could not create client: 'Client account already exists'"
-      );
+      commonPage
+        .masthead()
+        .checkNotificationMessage(
+          "Could not create client: 'Client account already exists'"
+        );
     });
 
     it("Client CRUD test", () => {
       itemId += "_" + (Math.random() + 1).toString(36).substring(7);
 
       // Create
-      listingPage.itemExist(itemId, false).goToCreateItem();
+      commonPage.tableUtils().checkRowItemExists(itemId, false);
+      commonPage.tableToolbarUtils().clickPrimaryButton();
       createClientPage.cancel();
-      listingPage.itemExist(itemId, false).goToCreateItem();
+      commonPage.tableUtils().checkRowItemExists(itemId, false);
+      commonPage.tableToolbarUtils().clickPrimaryButton();
 
       createClientPage
         .selectClientType("openid-connect")
@@ -303,22 +327,30 @@ describe("Clients test", () => {
         .clickStandardFlow()
         .save();
 
-      masthead.checkNotificationMessage("Client created successfully");
+      commonPage
+        .masthead()
+        .checkNotificationMessage("Client created successfully");
 
-      sidebarPage.goToClients();
+      commonPage.sidebar().goToClients();
 
-      listingPage.searchItem("John Doe", false).checkEmptyList();
-      listingPage.searchItem("").itemExist("account");
-      listingPage.searchItem(itemId).itemExist(itemId);
+      commonPage.tableToolbarUtils().searchItem("John Doe", false);
+      commonPage.emptyState().checkIfExists(true);
+      commonPage.tableToolbarUtils().searchItem("");
+      commonPage.tableUtils().checkRowItemExists("account");
+      commonPage.tableToolbarUtils().searchItem(itemId);
+      commonPage.tableUtils().checkRowItemExists(itemId);
 
       // Delete
-      listingPage.deleteItem(itemId);
-      sidebarPage.waitForPageLoad();
-      modalUtils.checkModalTitle(`Delete ${itemId} ?`).confirmModal();
-
-      masthead.checkNotificationMessage("The client has been deleted");
-
-      listingPage.itemExist(itemId, false);
+      commonPage.tableUtils().selectRowItemAction(itemId, "Delete");
+      commonPage.sidebar().waitForPageLoad();
+      commonPage
+        .modalUtils()
+        .checkModalTitle(`Delete ${itemId} ?`)
+        .confirmModal();
+      commonPage
+        .masthead()
+        .checkNotificationMessage("The client has been deleted");
+      commonPage.tableUtils().checkRowItemExists(itemId, false);
     });
 
     it("Initial access token can't be created with 0 days and count", () => {
@@ -342,45 +374,52 @@ describe("Clients test", () => {
         .fillNewTokenData(1, 3)
         .save();
 
-      modalUtils.checkModalTitle("Initial access token details").closeModal();
+      commonPage
+        .modalUtils()
+        .checkModalTitle("Initial access token details")
+        .closeModal();
 
-      masthead.checkNotificationMessage(
-        "New initial access token has been created"
-      );
+      commonPage
+        .masthead()
+        .checkNotificationMessage("New initial access token has been created");
 
       initialAccessTokenTab.shouldNotBeEmpty();
 
-      listingPage
-        .searchItem("John Doe", false)
-        .checkEmptyList()
-        .searchItem("", false);
+      commonPage.tableToolbarUtils().searchItem("John Doe", false);
+      commonPage.emptyState().checkIfExists(true);
+      commonPage.tableToolbarUtils().searchItem("", false);
 
       initialAccessTokenTab.getFirstId((id) => {
-        listingPage.checkRowColumnValue(id, 4, "4").itemExist(id);
+        commonPage
+          .tableUtils()
+          .checkRowItemValueByItemName(id, 4, "4")
+          .checkRowItemValueByItemName(id, 5, "4")
+          .checkRowItemExists(id);
       });
 
-      listingPage.goToCreateItem();
+      commonPage.tableToolbarUtils().clickPrimaryButton("Create");
       initialAccessTokenTab.fillNewTokenData(1, 3).save();
 
-      modalUtils.closeModal();
+      commonPage.modalUtils().closeModal();
 
       initialAccessTokenTab.getFirstId((id) => {
-        listingPage.deleteItem(id);
-        sidebarPage.waitForPageLoad();
-        modalUtils
+        commonPage.tableUtils().selectRowItemAction(id, "Delete");
+        commonPage.sidebar().waitForPageLoad();
+        commonPage
+          .modalUtils()
           .checkModalTitle("Delete initial access token?")
           .confirmModal();
       });
 
-      masthead.checkNotificationMessage(
-        "Initial access token deleted successfully"
-      );
+      commonPage
+        .masthead()
+        .checkNotificationMessage("Initial access token deleted successfully");
       initialAccessTokenTab.shouldNotBeEmpty();
 
       initialAccessTokenTab.getFirstId((id) => {
-        listingPage.deleteItem(id);
-        sidebarPage.waitForPageLoad();
-        modalUtils.confirmModal();
+        commonPage.tableUtils().selectRowItemAction(id, "Delete");
+        commonPage.sidebar().waitForPageLoad();
+        commonPage.modalUtils().confirmModal();
       });
       initialAccessTokenTab.shouldBeEmpty();
     });
@@ -393,25 +432,28 @@ describe("Clients test", () => {
     before(() => {
       keycloakBefore();
       loginPage.logIn();
-      sidebarPage.goToClients();
+      commonPage.sidebar().goToClients();
 
       client = "client_" + (Math.random() + 1).toString(36).substring(7);
 
-      listingPage.goToCreateItem();
+      commonPage.tableToolbarUtils().createClient();
 
       createClientPage
         .selectClientType("openid-connect")
         .fillClientData(client)
         .continue()
         .save();
-      masthead.checkNotificationMessage("Client created successfully", true);
+      commonPage
+        .masthead()
+        .checkNotificationMessage("Client created successfully", true);
     });
 
     beforeEach(() => {
       keycloakBefore();
       loginPage.logIn();
-      sidebarPage.goToClients();
-      listingPage.searchItem(client).goToItemDetails(client);
+      commonPage.sidebar().goToClients();
+      commonPage.tableToolbarUtils().searchItem(client);
+      commonPage.tableUtils().clickRowItemLink(client);
       rolesTab.goToRolesTab();
     });
 
@@ -428,81 +470,90 @@ describe("Clients test", () => {
     it("Should create client role", () => {
       rolesTab.goToCreateRoleFromEmptyState();
       createRealmRolePage.fillRealmRoleData(itemId).save();
-      masthead.checkNotificationMessage("Role created", true);
+      commonPage.masthead().checkNotificationMessage("Role created", true);
     });
 
     it("Should update client role description", () => {
-      listingPage.searchItem(itemId, false).goToItemDetails(itemId);
       const updateDescription = "updated description";
+      commonPage.tableToolbarUtils().searchItem(itemId, false);
+      commonPage.tableUtils().clickRowItemLink(itemId);
       createRealmRolePage.updateDescription(updateDescription).save();
-      masthead.checkNotificationMessage("The role has been saved", true);
+      commonPage
+        .masthead()
+        .checkNotificationMessage("The role has been saved", true);
       createRealmRolePage.checkDescription(updateDescription);
     });
 
     it("Should add attribute to client role", () => {
       cy.intercept("/admin/realms/master/roles-by-id/*").as("load");
-      listingPage.goToItemDetails(itemId);
+      commonPage.tableUtils().clickRowItemLink(itemId);
       rolesTab.goToAttributesTab();
       cy.wait(["@load", "@load"]);
-      rolesTab.addAttribute();
-
-      masthead.checkNotificationMessage("The role has been saved", true);
+      rolesTab.addAttribute(1, "crud_attribute_key", "crud_attribute_value");
+      rolesTab.tableUtils().checkRowItemsEqualTo(2);
+      commonPage
+        .masthead()
+        .checkNotificationMessage("The role has been saved", true);
     });
 
     it("Should delete attribute from client role", () => {
       cy.intercept("/admin/realms/master/roles-by-id/*").as("load");
-      listingPage.goToItemDetails(itemId);
+      commonPage.tableUtils().clickRowItemLink(itemId);
       rolesTab.goToAttributesTab();
       cy.wait(["@load", "@load"]);
-      rolesTab.deleteAttribute();
-      masthead.checkNotificationMessage("The role has been saved", true);
+      rolesTab.deleteAttribute(1);
+      commonPage
+        .masthead()
+        .checkNotificationMessage("The role has been saved", true);
     });
 
     it("Should create client role to be deleted", () => {
       rolesTab.goToCreateRoleFromToolbar();
       createRealmRolePage.fillRealmRoleData("client_role_to_be_deleted").save();
-      masthead.checkNotificationMessage("Role created", true);
+      commonPage.masthead().checkNotificationMessage("Role created", true);
     });
 
     it("Should fail to create duplicate client role", () => {
       rolesTab.goToCreateRoleFromToolbar();
       createRealmRolePage.fillRealmRoleData(itemId).save();
-      masthead.checkNotificationMessage(
-        `Could not create role: Role with name ${itemId} already exists`,
-        true
-      );
+      commonPage
+        .masthead()
+        .checkNotificationMessage(
+          `Could not create role: Role with name ${itemId} already exists`,
+          true
+        );
     });
 
     it("Should search existing client role", () => {
-      listingPage.searchItem(itemId, false).itemExist(itemId);
+      commonPage.tableToolbarUtils().searchItem(itemId, false);
+      commonPage.tableUtils().checkRowItemExists(itemId);
     });
 
     it("Should search non-existing role test", () => {
-      listingPage.searchItem("role_DNE", false);
-      cy.findByTestId(listingPage.emptyState).should("exist");
+      commonPage.tableToolbarUtils().searchItem("role_DNE", false);
+      commonPage.emptyState().checkIfExists(true);
     });
 
     it("roles empty search test", () => {
-      listingPage.searchItem("", false);
-      cy.get("table:visible");
+      commonPage.tableToolbarUtils().searchItem("", false);
+      commonPage.tableUtils().checkIfExists(true);
     });
 
     it("Add associated roles test", () => {
-      listingPage.searchItem(itemId, false).goToItemDetails(itemId);
+      commonPage.tableToolbarUtils().searchItem(itemId, false);
+      commonPage.tableUtils().clickRowItemLink(itemId);
 
       // Add associated realm role
       associatedRolesPage.addAssociatedRealmRole("create-realm");
-      masthead.checkNotificationMessage(
-        "Associated roles have been added",
-        true
-      );
+      commonPage
+        .masthead()
+        .checkNotificationMessage("Associated roles have been added", true);
 
       // Add associated client role
       associatedRolesPage.addAssociatedRoleFromSearchBar("create-client", true);
-      masthead.checkNotificationMessage(
-        "Associated roles have been added",
-        true
-      );
+      commonPage
+        .masthead()
+        .checkNotificationMessage("Associated roles have been added", true);
 
       rolesTab.goToAssociatedRolesTab();
 
@@ -511,39 +562,45 @@ describe("Clients test", () => {
         "manage-consent",
         true
       );
-      masthead.checkNotificationMessage(
-        "Associated roles have been added",
-        true
-      );
+      commonPage
+        .masthead()
+        .checkNotificationMessage("Associated roles have been added", true);
     });
 
     it("Should hide inherited roles test", () => {
-      listingPage.searchItem(itemId, false).goToItemDetails(itemId);
-      rolesTab.goToAssociatedRolesTab();
-      rolesTab.hideInheritedRoles();
+      commonPage.tableToolbarUtils().searchItem(itemId, false);
+      commonPage.tableUtils().clickRowItemLink(itemId);
+      rolesTab.goToAssociatedRolesTab().hideInheritedRoles();
     });
 
     it("Should delete associated roles test", () => {
-      listingPage.searchItem(itemId, false).goToItemDetails(itemId);
+      commonPage.tableToolbarUtils().searchItem(itemId, false);
+      commonPage.tableUtils().clickRowItemLink(itemId);
       rolesTab.goToAssociatedRolesTab();
-      listingPage.removeItem("create-realm");
-      sidebarPage.waitForPageLoad();
-      modalUtils.checkModalTitle("Remove associated role?").confirmModal();
-      sidebarPage.waitForPageLoad();
+      commonPage.tableUtils().selectRowItemAction("create-realm", "Remove");
+      commonPage.sidebar().waitForPageLoad();
+      commonPage
+        .modalUtils()
+        .checkModalTitle("Remove associated role?")
+        .confirmModal();
+      commonPage.sidebar().waitForPageLoad();
 
-      masthead.checkNotificationMessage(
-        "Associated roles have been removed",
-        true
-      );
+      commonPage
+        .masthead()
+        .checkNotificationMessage("Associated roles have been removed", true);
 
-      listingPage.removeItem("manage-consent");
-      sidebarPage.waitForPageLoad();
-      modalUtils.checkModalTitle("Remove associated role?").confirmModal();
+      commonPage.tableUtils().selectRowItemAction("manage-consent", "Remove");
+      commonPage.sidebar().waitForPageLoad();
+      commonPage
+        .modalUtils()
+        .checkModalTitle("Remove associated role?")
+        .confirmModal();
     });
 
     it("Should delete associated role from search bar test", () => {
-      listingPage.searchItem(itemId, false).goToItemDetails(itemId);
-      sidebarPage.waitForPageLoad();
+      commonPage.tableToolbarUtils().searchItem(itemId, false);
+      commonPage.tableUtils().clickRowItemLink(itemId);
+      commonPage.sidebar().waitForPageLoad();
       rolesTab.goToAssociatedRolesTab();
 
       cy.get('td[data-label="Role name"]')
@@ -555,29 +612,34 @@ describe("Clients test", () => {
 
       associatedRolesPage.removeAssociatedRoles();
 
-      sidebarPage.waitForPageLoad();
-      modalUtils.checkModalTitle("Remove associated roles?").confirmModal();
-      sidebarPage.waitForPageLoad();
+      commonPage.sidebar().waitForPageLoad();
+      commonPage
+        .modalUtils()
+        .checkModalTitle("Remove associated roles?")
+        .confirmModal();
+      commonPage.sidebar().waitForPageLoad();
 
-      masthead.checkNotificationMessage(
-        "Associated roles have been removed",
-        true
-      );
+      commonPage
+        .masthead()
+        .checkNotificationMessage("Associated roles have been removed", true);
     });
 
     it("Should delete client role test", () => {
-      listingPage.deleteItem(itemId);
-      sidebarPage.waitForPageLoad();
-      modalUtils.checkModalTitle("Delete role?").confirmModal();
+      commonPage.tableUtils().selectRowItemAction(itemId, "Delete");
+      commonPage.sidebar().waitForPageLoad();
+      commonPage.modalUtils().checkModalTitle("Delete role?").confirmModal();
     });
 
     it("Should delete client role from role details test", () => {
-      listingPage
-        .searchItem("client_role_to_be_deleted", false)
-        .goToItemDetails("client_role_to_be_deleted");
+      commonPage
+        .tableToolbarUtils()
+        .searchItem("client_role_to_be_deleted", false);
+      commonPage.tableUtils().clickRowItemLink("client_role_to_be_deleted");
       createRealmRolePage.clickActionMenu("Delete this role");
-      modalUtils.confirmModal();
-      masthead.checkNotificationMessage("The role has been deleted", true);
+      commonPage.modalUtils().confirmModal();
+      commonPage
+        .masthead()
+        .checkNotificationMessage("The role has been deleted", true);
     });
   });
 
@@ -591,22 +653,19 @@ describe("Clients test", () => {
     });
 
     beforeEach(() => {
-      sidebarPage.goToClients();
-
+      commonPage.sidebar().goToClients();
       client = "client_" + (Math.random() + 1).toString(36).substring(7);
-
-      listingPage.goToCreateItem();
-
+      commonPage.tableToolbarUtils().createClient();
       createClientPage
         .selectClientType("openid-connect")
         .fillClientData(client)
         .continue();
 
-      sidebarPage.waitForPageLoad();
+      commonPage.sidebar().waitForPageLoad();
 
       createClientPage.save();
 
-      advancedTab.goToAdvancedTab();
+      clientDetailsPage.goToAdvancedTab();
     });
 
     afterEach(() => {
@@ -651,7 +710,7 @@ describe("Clients test", () => {
     });
 
     beforeEach(() => {
-      sidebarPage.goToClients();
+      commonPage.sidebar().goToClients();
     });
 
     after(() => {
@@ -659,37 +718,38 @@ describe("Clients test", () => {
     });
 
     it("List", () => {
-      listingPage
-        .searchItem(serviceAccountName)
-        .goToItemDetails(serviceAccountName);
+      commonPage.tableToolbarUtils().searchItem(serviceAccountName);
+      commonPage.tableUtils().clickRowItemLink(serviceAccountName);
       serviceAccountTab
         .goToServiceAccountTab()
         .checkRoles(["manage-account", "offline_access", "uma_authorization"]);
     });
 
     it.skip("Assign", () => {
-      listingPage.goToItemDetails(serviceAccountName);
+      commonPage.tableUtils().clickRowItemLink(serviceAccountName);
       serviceAccountTab
         .goToServiceAccountTab()
         .assignRole(false)
         .selectRow("create-realm")
         .assign();
-      masthead.checkNotificationMessage("Role mapping updated");
+      commonPage.masthead().checkNotificationMessage("Role mapping updated");
       serviceAccountTab.selectRow("create-realm").unAssign();
-      sidebarPage.waitForPageLoad();
-      modalUtils.checkModalTitle("Remove mapping?").confirmModal();
-      masthead.checkNotificationMessage("Scope mapping successfully removed");
+      commonPage.sidebar().waitForPageLoad();
+      commonPage.modalUtils().checkModalTitle("Remove mapping?").confirmModal();
+      commonPage
+        .masthead()
+        .checkNotificationMessage("Scope mapping successfully removed");
     });
   });
 
   describe("Mapping tab", () => {
-    const clientScopeTab = new ClientScopesTab();
     const mappingClient = "mapping-client";
     beforeEach(() => {
       keycloakBefore();
       loginPage.logIn();
-      sidebarPage.goToClients();
-      listingPage.searchItem(mappingClient).goToItemDetails(mappingClient);
+      commonPage.sidebar().goToClients();
+      commonPage.tableToolbarUtils().searchItem(mappingClient);
+      commonPage.tableUtils().clickRowItemLink(mappingClient);
     });
 
     before(() => {
@@ -705,17 +765,22 @@ describe("Clients test", () => {
     });
 
     it("Add mapping to openid client", () => {
-      clientScopeTab.goToClientScopesTab().clickDedicatedScope(mappingClient);
-      cy.findByTestId("mappersTab").click();
-      cy.findByText("Add predefined mapper").click();
-      cy.get("table input").first().click();
-      cy.findByTestId("confirm").click();
-      masthead.checkNotificationMessage("Mapping successfully created");
+      clientDetailsPage
+        .goToClientScopesTab()
+        .clickDedicatedScope(mappingClient)
+        .goToMappersTab()
+        .addPredefinedMapper();
+      clientDetailsPage.modalUtils().table().clickHeaderItem(1, "input");
+      clientDetailsPage.modalUtils().add();
+      clientDetailsPage
+        .masthead()
+        .checkNotificationMessage("Mapping successfully created");
     });
   });
 
   describe("Keys tab test", () => {
     const keysName = "keys-client";
+
     before(() => {
       keycloakBefore();
       loginPage.logIn();
@@ -727,8 +792,9 @@ describe("Clients test", () => {
     });
 
     beforeEach(() => {
-      sidebarPage.goToClients();
-      listingPage.searchItem(keysName).goToItemDetails(keysName);
+      commonPage.sidebar().goToClients();
+      commonPage.tableToolbarUtils().searchItem(keysName);
+      commonPage.tableUtils().clickRowItemLink(keysName);
     });
 
     after(() => {
@@ -736,20 +802,21 @@ describe("Clients test", () => {
     });
 
     it("Change use JWKS Url", () => {
-      const keysTab = new KeysTab();
-      keysTab.goToTab().checkSaveDisabled();
-      keysTab.toggleUseJwksUrl().checkSaveDisabled(false);
+      const keysTab = clientDetailsPage.goToKeysTab();
+      keysTab.formUtils().checkSaveButtonIsDisabled(true);
+      keysTab.toggleUseJwksUrl().formUtils().checkSaveButtonIsDisabled(false);
     });
 
     it("Generate new keys", () => {
-      const keysTab = new KeysTab();
-      keysTab.goToTab().clickGenerate();
-
+      const keysTab = clientDetailsPage.goToKeysTab();
+      keysTab.clickGenerate();
       keysTab.fillGenerateModal("keyname", "123", "1234").clickConfirm();
 
-      masthead.checkNotificationMessage(
-        "New key pair and certificate generated successfully"
-      );
+      commonPage
+        .masthead()
+        .checkNotificationMessage(
+          "New key pair and certificate generated successfully"
+        );
     });
   });
 
@@ -759,27 +826,26 @@ describe("Clients test", () => {
     before(() => {
       keycloakBefore();
       loginPage.logIn();
-      sidebarPage.goToClients();
-      listingPage.searchItem(clientName).goToItemDetails(clientName);
+      commonPage.sidebar().goToClients();
+      commonPage.tableToolbarUtils().searchItem(clientName);
+      commonPage.tableUtils().clickRowItemLink(clientName);
     });
 
     it("Displays the correct tabs", () => {
-      cy.findByTestId("client-tabs")
-        .findByTestId("clientSettingsTab")
-        .should("exist");
-
-      cy.findByTestId("client-tabs").findByTestId("rolesTab").should("exist");
-
-      cy.findByTestId("client-tabs")
-        .findByTestId("advancedTab")
-        .should("exist");
-
-      cy.findByTestId("client-tabs").find("li").should("have.length", 3);
+      clientDetailsPage
+        .goToSettingsTab()
+        .tabUtils()
+        .checkTabExists(ClientsDetailsTab.Settings, true)
+        .checkTabExists(ClientsDetailsTab.Roles, true)
+        .checkTabExists(ClientsDetailsTab.Advanced, true)
+        .checkNumberOfTabsIsEqual(3);
     });
 
     it("Hides the delete action", () => {
-      cy.findByTestId("action-dropdown").click();
-      cy.findByTestId("delete-client").should("not.exist");
+      commonPage
+        .actionToolbarUtils()
+        .clickActionToggleButton()
+        .checkActionItemExists("Delete", false);
     });
   });
 
@@ -795,9 +861,10 @@ describe("Clients test", () => {
         publicClient: false,
         bearerOnly: true,
       });
-      sidebarPage.goToClients();
+      commonPage.sidebar().goToClients();
       cy.intercept("/admin/realms/master/clients/*").as("fetchClient");
-      listingPage.searchItem(clientId).goToItemDetails(clientId);
+      commonPage.tableToolbarUtils().searchItem(clientId);
+      commonPage.tableUtils().clickRowItemLink(clientId);
       cy.wait("@fetchClient");
     });
 
@@ -806,8 +873,12 @@ describe("Clients test", () => {
     });
 
     it("Shows an explainer text for bearer only clients", () => {
-      cy.findByTestId("bearer-only-explainer-label").trigger("mouseenter");
-      cy.findByTestId("bearer-only-explainer-tooltip").should("exist");
+      commonPage
+        .actionToolbarUtils()
+        .bearerOnlyExplainerLabelElement.trigger("mouseenter");
+      commonPage
+        .actionToolbarUtils()
+        .bearerOnlyExplainerTooltipElement.should("exist");
     });
 
     it("Hides the capability config section", () => {
