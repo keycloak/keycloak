@@ -22,6 +22,7 @@ import org.junit.Test;
 import org.keycloak.admin.client.resource.ResourceResource;
 import org.keycloak.admin.client.resource.ResourcesResource;
 import org.keycloak.authorization.client.util.HttpResponseException;
+import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceOwnerRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopePermissionRepresentation;
@@ -90,8 +91,7 @@ public class ResourceManagementTest extends AbstractAuthorizationTest {
     public void testQueryAssociatedPermissions() {
         ResourceRepresentation newResource = new ResourceRepresentation();
 
-        newResource.setName("test");
-        newResource.setDisplayName("display");
+        newResource.setName("r1");
         newResource.setType("some-type");
         newResource.addScope("GET");
 
@@ -108,6 +108,113 @@ public class ResourceManagementTest extends AbstractAuthorizationTest {
         getClientResource().authorization().permissions().scope().create(permission);
 
         assertFalse(resource.permissions().isEmpty());
+    }
+
+    @Test
+    public void testQueryTypedResourcePermissions() {
+        ResourceRepresentation r1 = new ResourceRepresentation();
+
+        r1.setName("r1");
+        r1.setType("some-type");
+        r1.addScope("GET");
+
+        r1 = doCreateResource(r1);
+
+        ScopePermissionRepresentation permission = new ScopePermissionRepresentation();
+
+        permission.setName(r1.getName());
+        permission.addResource(r1.getName());
+        permission.addScope("GET");
+
+        getClientResource().authorization().permissions().scope().create(permission);
+
+        ResourceRepresentation r2 = new ResourceRepresentation();
+
+        r2.setName("r2");
+        r2.setType("some-type");
+        r2.addScope("GET");
+
+        r2 = doCreateResource(r2);
+
+        permission = new ScopePermissionRepresentation();
+
+        permission.setName(r2.getName());
+        permission.addResource(r2.getName());
+        permission.addScope("GET");
+
+        getClientResource().authorization().permissions().scope().create(permission);
+
+        ResourceResource resource2 = getClientResource().authorization().resources().resource(r2.getId());
+        List<PolicyRepresentation> permissions = resource2.permissions();
+
+        assertEquals(1, permissions.size());
+        assertEquals(r2.getName(), permissions.get(0).getName());
+
+        ResourceResource resource1 = getClientResource().authorization().resources().resource(r1.getId());
+
+        permissions = resource1.permissions();
+
+        assertEquals(1, permissions.size());
+        assertEquals(r1.getName(), permissions.get(0).getName());
+    }
+
+    @Test
+    public void testQueryTypedResourcePermissionsForResourceInstances() {
+        ResourceRepresentation r1 = new ResourceRepresentation();
+
+        r1.setName("r1");
+        r1.setType("some-type");
+        r1.addScope("GET");
+
+        r1 = doCreateResource(r1);
+
+        ScopePermissionRepresentation permission = new ScopePermissionRepresentation();
+
+        permission.setName(r1.getName());
+        permission.addResource(r1.getName());
+        permission.addScope("GET");
+
+        getClientResource().authorization().permissions().scope().create(permission);
+
+        ResourceRepresentation r2 = new ResourceRepresentation();
+
+        r2.setName("r2");
+        r2.setType("some-type");
+        r2.addScope("GET");
+
+        r2 = doCreateResource(r2);
+
+        permission = new ScopePermissionRepresentation();
+
+        permission.setName(r2.getName());
+        permission.addResource(r2.getName());
+        permission.addScope("GET");
+
+        getClientResource().authorization().permissions().scope().create(permission);
+
+        ResourceRepresentation rInstance = new ResourceRepresentation();
+
+        rInstance.setName("rInstance");
+        rInstance.setType("some-type");
+        rInstance.setOwner("marta");
+        rInstance.addScope("GET", "POST");
+
+        rInstance = doCreateResource(rInstance);
+
+        List<PolicyRepresentation> permissions = getClientResource().authorization().resources().resource(rInstance.getId()).permissions();
+
+        assertEquals(2, permissions.size());
+
+        permission = new ScopePermissionRepresentation();
+
+        permission.setName("POST permission");
+        permission.addScope("POST");
+
+        getClientResource().authorization().permissions().scope().create(permission);
+
+        permissions = getClientResource().authorization().resources().resource(rInstance.getId()).permissions();
+
+        assertEquals(3, permissions.size());
     }
 
     @Test

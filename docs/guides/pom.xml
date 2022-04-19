@@ -59,14 +59,40 @@
                 <version>1.5.5</version>
                 <executions>
                     <execution>
-                        <id>asciidoc-to-html</id>
+                        <id>server-asciidoc-to-html</id>
                         <phase>generate-resources</phase>
                         <goals>
                             <goal>process-asciidoc</goal>
                         </goals>
                         <configuration>
-                            <sourceDirectory>${basedir}/target/generated-guides/*</sourceDirectory>
+                            <sourceDirectory>${basedir}/target/generated-guides/server</sourceDirectory>
                             <sourceDocumentName>index.adoc</sourceDocumentName>
+                            <outputDirectory>${project.build.directory}/generated-docs/server</outputDirectory>
+                            <backend>html5</backend>
+                            <sourceHighlighter>coderay</sourceHighlighter>
+
+                            <attributes>
+                                <imagesdir>./</imagesdir>
+                                <toc>left</toc>
+                                <toc>left</toc>
+                                <icons>font</icons>
+                                <sectanchors>true</sectanchors>
+                                <idprefix/>
+                                <idseparator>-</idseparator>
+                                <docinfo1>true</docinfo1>
+                            </attributes>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>operator-asciidoc-to-html</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>process-asciidoc</goal>
+                        </goals>
+                        <configuration>
+                            <sourceDirectory>${basedir}/target/generated-guides/operator</sourceDirectory>
+                            <sourceDocumentName>index.adoc</sourceDocumentName>
+                            <outputDirectory>${project.build.directory}/generated-docs/operator</outputDirectory>
                             <backend>html5</backend>
                             <sourceHighlighter>coderay</sourceHighlighter>
 
