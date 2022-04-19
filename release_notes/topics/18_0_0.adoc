@@ -4,6 +4,12 @@
 
 Recovery Codes as another way to do two-factor authentication is now available as a preview feature.
 
+== Client secret rotation
+
+{project_name} now supports Client Secret Rotation through customer policies. This feature is now available as a preview feature and allows that confidential clients can be provided with realm policies allowing the use up to two secrets simultaneously.
+
+For more details, see link:{adminguide_link}#_secret_rotation[{adminguide_name}].
+
 == OpenID Connect Logout Improvements
 
 Some fixes and improvements were made to make sure that {project_name} is now fully compliant with all the OpenID Connect logout specifications:

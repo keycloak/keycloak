@@ -122,6 +122,7 @@ One of several purposes for this executor is to realize the security requirement
 * Enforce more secure `state` and `nonce` parameters treatment for preventing CSRF
 * Enforce more secure signature algorithm when client registration
 * Enforce `binding_message` parameter is used for CIBA requests
+* Enforce <<_secret_rotation, Client Secret Rotation>>
 
 [[_client_policy_profile]]
 === Profile
@@ -155,3 +156,6 @@ client registration policies are applied.
 
 The current plans are for the Client Registration Policies feature to be removed and the existing client registration policies will be migrated into new client policies automatically.
 
+== Client Secret Rotation Example
+
+See an example configuration for <<_proc-secret-rotation,client secret rotation>>.

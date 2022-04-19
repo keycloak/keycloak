@@ -39,6 +39,11 @@ The features that can be enabled and disabled are:
 |Yes
 |Supported
 
+|client_secret_rotation
+|Enables client secret rotation for confidential clients
+|Yes
+|Preview
+
 |par
 |OAuth 2.0 Pushed Authorization Requests (PAR)
 |Yes
