@@ -79,7 +79,7 @@ Custom developed account UIs might not be compatible with these updates due to t
 
 Resources:
 
-- [Patternfly docs](https://patternfly.org)
+- [Patternfly docs](https://www.patternfly.org)
   
 
 Components known to have breaking changes:
