@@ -24,7 +24,7 @@ spec:
   publisher: Me
   updateStrategy:
     registryPoll:
-      interval: 2m
+      interval: 10m
 EOF
 
 cat << EOF >> $SCRIPT_DIR/../olm/testing-resources/operatorgroup.yaml

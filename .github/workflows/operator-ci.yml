@@ -183,7 +183,9 @@ jobs:
         run: |
           kubectl apply -f src/main/resources/example-postgres.yaml
           ./scripts/check-crds-installed.sh
-          kubectl apply -f src/main/resources/example-keycloak.yml
+          kubectl apply -f src/main/resources/example-db-secret.yaml
+          kubectl apply -f src/main/resources/example-tls-secret.yaml
+          kubectl apply -f src/main/resources/example-keycloak.yaml
           kubectl apply -f src/main/resources/example-realm.yaml
           # Wait for the CRs to be ready
           ./scripts/check-examples-installed.sh
