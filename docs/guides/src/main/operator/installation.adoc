@@ -17,7 +17,7 @@ You can install the Keycloak Operator in Kubernetes environment is to use Operat
 ==== Prerequisites
 Make sure OLM is installed in your environment. For Guidance on how to install OLM, follow this https://github.com/operator-framework/operator-lifecycle-manager/blob/master/doc/install/install.md#install-a-release[guide].
 
-To install the Keycloak Operator follow the https://olm.operatorframework.io/docs/tasks/install-operator-with-olm/[instructions].
+The Keycloak Operator OLM package can be installed from the OLM catalog. For general instructions on how to install operators using OLM, follow the https://olm.operatorframework.io/docs/tasks/install-operator-with-olm/[instructions] on the OLM page.
 In the default Catalogs the Keycloak Operator is named `keycloak-operator` and make sure to use the `candidate` channel.
 
 ==== OpenShift UI
