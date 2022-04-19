@@ -12,7 +12,7 @@ In this guide we will show how to install the Keycloak Operator in your Kubernet
 
 === OLM Installation
 
-You can install the Keycloak Operator in Kubernetes environment is to use Operator Lifecycle Manager (OLM).
+The recommended way to install the Keycloak Operator in Kubernetes environments is to use the Operator Lifecycle Manager (OLM).
 
 ==== Prerequisites
 Make sure OLM is installed in your environment. For Guidance on how to install OLM, follow this https://github.com/operator-framework/operator-lifecycle-manager/blob/master/doc/install/install.md#install-a-release[guide].
