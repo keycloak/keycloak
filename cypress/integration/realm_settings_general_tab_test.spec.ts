@@ -119,7 +119,9 @@ describe("Realm settings general tab tests", () => {
       .should(
         "have.attr",
         "href",
-        `http://localhost:8080/realms/${realmName}/.well-known/openid-configuration`
+        `${Cypress.env(
+          "KEYCLOAK_SERVER"
+        )}/realms/${realmName}/.well-known/openid-configuration`
       )
       .should("have.attr", "target", "_blank")
       .should("have.attr", "rel", "noreferrer noopener");
@@ -142,7 +144,9 @@ describe("Realm settings general tab tests", () => {
       .should(
         "have.attr",
         "href",
-        `http://localhost:8080/realms/${realmName}/protocol/saml/descriptor`
+        `${Cypress.env(
+          "KEYCLOAK_SERVER"
+        )}/realms/${realmName}/protocol/saml/descriptor`
       )
       .should("have.attr", "target", "_blank")
       .should("have.attr", "rel", "noreferrer noopener");
