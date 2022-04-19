@@ -34,7 +34,7 @@ image::{generatedGuideImages}/configure-operator.jpeg["Configure Keycloak Operat
 
 === Vanilla Kubernetes Installation
 
-To install the operator on a vanilla Kubernetes cluster, you need first to install the CRDs:
+To install the operator on a vanilla Kubernetes cluster, you first need to install its CRDs by running the following commands:
 
 [source,bash,subs="attributes+"]
 ----
