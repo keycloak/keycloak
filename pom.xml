@@ -118,7 +118,7 @@
         <jetty94.version>9.4.40.v20210413</jetty94.version>
         <woodstox.version>6.0.3</woodstox.version>
         <xmlsec.version>2.2.3</xmlsec.version>
-        <glassfish.json.version>1.1.6</glassfish.json.version>
+        <glassfish.json.version>2.0.1</glassfish.json.version>
         <wildfly.common.version>1.5.4.Final</wildfly.common.version>
         <ua-parser.version>1.5.2</ua-parser.version>
         <picketbox.version>5.0.3.Final</picketbox.version>
