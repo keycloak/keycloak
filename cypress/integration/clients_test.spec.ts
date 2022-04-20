@@ -7,7 +7,7 @@ import CreateClientPage from "../support/pages/admin_console/manage/clients/Crea
 import adminClient from "../support/util/AdminClient";
 import { keycloakBefore } from "../support/util/keycloak_hooks";
 import RoleMappingTab from "../support/pages/admin_console/manage/RoleMappingTab";
-import CreateRealmRolePage from "../support/pages/admin_console/manage/realm_roles/CreateRealmRolePage";
+import createRealmRolePage from "../support/pages/admin_console/manage/realm_roles/CreateRealmRolePage";
 import AssociatedRolesPage from "../support/pages/admin_console/manage/realm_roles/AssociatedRolesPage";
 import ClientRolesTab from "../support/pages/admin_console/manage/clients/ClientRolesTab";
 import InitialAccessTokenTab from "../support/pages/admin_console/manage/clients/tabs/InitialAccessTokenTab";
@@ -22,7 +22,6 @@ const loginPage = new LoginPage();
 const associatedRolesPage = new AssociatedRolesPage();
 const createClientPage = new CreateClientPage();
 const clientDetailsPage = new ClientDetailsPage();
-const createRealmRolePage = new CreateRealmRolePage();
 const commonPage = new CommonPage();
 
 describe("Clients test", () => {

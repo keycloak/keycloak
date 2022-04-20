@@ -1,18 +1,9 @@
-export default class CreateRealmRolePage {
-  realmRoleNameInput: string;
-  realmRoleNameError: string;
-  realmRoleDescriptionInput: string;
-  saveBtn: string;
-  cancelBtn: string;
-
-  constructor() {
-    this.realmRoleNameInput = "#kc-name";
-    this.realmRoleNameError = "#kc-name-helper";
-    this.realmRoleDescriptionInput = "#kc-role-description";
-
-    this.saveBtn = "realm-roles-save-button";
-    this.cancelBtn = '[type="button"]';
-  }
+class CreateRealmRolePage {
+  private realmRoleNameInput = "#kc-name";
+  private realmRoleNameError = "#kc-name-helper";
+  private realmRoleDescriptionInput = "#kc-role-description";
+  private saveBtn = "realm-roles-save-button";
+  private cancelBtn = "cancel";
 
   //#region General Settings
   fillRealmRoleData(name: string, description = "") {
@@ -66,8 +57,17 @@ export default class CreateRealmRolePage {
   }
 
   cancel() {
-    cy.get(this.cancelBtn).click();
+    cy.findByTestId(this.cancelBtn).click();
 
     return this;
   }
+
+  goToAttributesTab() {
+    cy.intercept("admin/realms/master/roles-by-id/*").as("load");
+    cy.get(".kc-attributes-tab > button").click();
+    cy.wait(["@load", "@load"]);
+    return this;
+  }
 }
+
+export default new CreateRealmRolePage();

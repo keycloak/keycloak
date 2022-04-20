@@ -100,6 +100,7 @@ export const RealmRoleForm = ({
               {t("common:save")}
             </Button>
             <Button
+              data-testid="cancel"
               onClick={() =>
                 editMode ? reset() : history.push(`/${realmName}/roles`)
               }

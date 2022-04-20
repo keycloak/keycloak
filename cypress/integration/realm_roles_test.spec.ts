@@ -3,11 +3,12 @@ import Masthead from "../support/pages/admin_console/Masthead";
 import ModalUtils from "../support/util/ModalUtils";
 import ListingPage from "../support/pages/admin_console/ListingPage";
 import SidebarPage from "../support/pages/admin_console/SidebarPage";
-import CreateRealmRolePage from "../support/pages/admin_console/manage/realm_roles/CreateRealmRolePage";
+import createRealmRolePage from "../support/pages/admin_console/manage/realm_roles/CreateRealmRolePage";
 import AssociatedRolesPage from "../support/pages/admin_console/manage/realm_roles/AssociatedRolesPage";
 import { keycloakBefore } from "../support/util/keycloak_hooks";
 import adminClient from "../support/util/AdminClient";
 import ClientRolesTab from "../support/pages/admin_console/manage/clients/ClientRolesTab";
+import KeyValueInput from "../support/pages/admin_console/manage/KeyValueInput";
 
 let itemId = "realm_role_crud";
 const loginPage = new LoginPage();
@@ -15,7 +16,6 @@ const masthead = new Masthead();
 const modalUtils = new ModalUtils();
 const sidebarPage = new SidebarPage();
 const listingPage = new ListingPage();
-const createRealmRolePage = new CreateRealmRolePage();
 const associatedRolesPage = new AssociatedRolesPage();
 const rolesTab = new ClientRolesTab();
 
@@ -224,6 +224,8 @@ describe("Realm roles test", () => {
   describe("edit role details", () => {
     const editRoleName = "going to edit";
     const description = "some description";
+    const updateDescription = "updated description";
+
     before(() =>
       adminClient.createRealmRole({
         name: editRoleName,
@@ -236,10 +238,45 @@ describe("Realm roles test", () => {
     it("should edit realm role details", () => {
       listingPage.itemExist(editRoleName).goToItemDetails(editRoleName);
       createRealmRolePage.checkNameDisabled().checkDescription(description);
-      const updateDescription = "updated description";
       createRealmRolePage.updateDescription(updateDescription).save();
       masthead.checkNotificationMessage("The role has been saved", true);
       createRealmRolePage.checkDescription(updateDescription);
+    });
+
+    it("should revert realm role", () => {
+      listingPage.itemExist(editRoleName).goToItemDetails(editRoleName);
+      createRealmRolePage.checkDescription(updateDescription);
+      createRealmRolePage.updateDescription("going to revert").cancel();
+      createRealmRolePage.checkDescription(updateDescription);
+    });
+
+    const keyValue = new KeyValueInput("attribute");
+    it("should add attribute", () => {
+      listingPage.itemExist(editRoleName).goToItemDetails(editRoleName);
+
+      createRealmRolePage.goToAttributesTab();
+      keyValue.fillKeyValue({ key: "one", value: "1" }).validateRows(2);
+      keyValue.save();
+      masthead.checkNotificationMessage("The role has been saved", true);
+      keyValue.validateRows(1);
+    });
+
+    it("should add attribute multiple", () => {
+      listingPage.itemExist(editRoleName).goToItemDetails(editRoleName);
+
+      createRealmRolePage.goToAttributesTab();
+      keyValue
+        .fillKeyValue({ key: "two", value: "2" }, 1)
+        .fillKeyValue({ key: "three", value: "3" }, 2)
+        .save()
+        .validateRows(3);
+    });
+
+    it("should delete attribute", () => {
+      listingPage.itemExist(editRoleName).goToItemDetails(editRoleName);
+      createRealmRolePage.goToAttributesTab();
+
+      keyValue.deleteRow(1).save().validateRows(2);
     });
   });
 });
