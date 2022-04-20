@@ -67,6 +67,13 @@ There are more WebAuthn improvements and fixes in addition to that.
 For more details, see link:{adminguide_link}#_user_session_limits[{adminguide_name}].
 Thanks to https://github.com/mfdewit[Mauro de Wit] for the contribution.
 
+== SAML ECP Profile is disabled by default
+
+To mitigate the risk of abusing SAML ECP Profile, {project_name} now blocks
+this flow for all SAML clients that do not allow it explicitly. The profile
+can be enabled using _Allow ECP Flow_ flag within client configuration,
+see  link:{adminguide_link}#_client-saml-configuration[{adminguide_name}].
+
 == Quarkus distribution
 
 === Import realms at startup

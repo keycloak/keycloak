@@ -72,6 +72,8 @@ This option is used when {project_name} server and adapter provide the IDP and S
 
 *Force Name ID Format*:: If a request has a name ID policy, ignore it and use the value configured in the Admin Console under *Name ID Format*.
 
+*Allow ECP Flow*:: If true, this application is allowed to use SAML ECP profile for authentication.
+
 *Name ID Format*:: The Name ID Format for the subject. This format is used if no name ID policy is specified in a request, or if the Force Name ID Format attribute is set to ON.
 
 *Root URL*:: When {project_name} uses a configured relative URL, this value is prepended to the URL.
