@@ -48,6 +48,7 @@ import type { EditableTextCellProps } from "@patternfly/react-table/dist/esm/com
 import { PaginatingTableToolbar } from "../components/table-toolbar/PaginatingTableToolbar";
 import { SearchIcon } from "@patternfly/react-icons";
 import { useWhoAmI } from "../context/whoami/WhoAmI";
+import type { KeyValueType } from "../components/key-value-form/key-value-convert";
 
 type LocalizationTabProps = {
   save: (realm: RealmRepresentation) => void;
@@ -55,8 +56,6 @@ type LocalizationTabProps = {
   refresh: () => void;
   realm: RealmRepresentation;
 };
-
-export type KeyValueType = { key: string; value: string };
 
 export enum RowEditAction {
   Save = "save",

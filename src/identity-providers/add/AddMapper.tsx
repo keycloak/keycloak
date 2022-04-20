@@ -31,7 +31,7 @@ import type { IdentityProviderMapperTypeRepresentation } from "@keycloak/keycloa
 import { AddMapperForm } from "./AddMapperForm";
 import { DynamicComponents } from "../../components/dynamic/DynamicComponents";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
-import type { AttributeForm } from "../../components/attribute-form/AttributeForm";
+import type { AttributeForm } from "../../components/key-value-form/AttributeForm";
 
 export type IdPMapperRepresentationWithAttributes =
   IdentityProviderMapperRepresentation & AttributeForm;

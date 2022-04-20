@@ -12,7 +12,7 @@ import { useTranslation } from "react-i18next";
 import type { UseFormMethods } from "react-hook-form";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { FormAccess } from "../components/form-access/FormAccess";
-import type { AttributeForm } from "../components/attribute-form/AttributeForm";
+import type { AttributeForm } from "../components/key-value-form/AttributeForm";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useHistory } from "react-router-dom";
 

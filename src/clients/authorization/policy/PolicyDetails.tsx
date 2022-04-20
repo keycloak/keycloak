@@ -37,7 +37,7 @@ import { JavaScript } from "./JavaScript";
 
 import "./policy-details.css";
 
-type Policy = PolicyRepresentation & {
+type Policy = Omit<PolicyRepresentation, "roles"> & {
   groups?: GroupValue[];
   clientScopes?: RequiredIdValue[];
   roles?: RequiredIdValue[];

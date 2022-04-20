@@ -12,9 +12,6 @@ export default class ClientRolesTab extends CommonPage {
   private hideInheritedRolesChkBox = "#kc-hide-inherited-roles-checkbox";
   private rolesTab = "rolesTab";
   private associatedRolesTab = ".kc-associated-roles-tab > button";
-  private attributeKeyInput = "attribute-key-input";
-  private attributeValueInput = "attribute-value-input";
-  private removeFirstAttributeButton = "#minus-button-0";
 
   goToDetailsTab() {
     this.tabUtils().clickTab(ClientRolesTabItems.Details);
@@ -57,19 +54,18 @@ export default class ClientRolesTab extends CommonPage {
   }
 
   clickAddAnAttributeButton() {
-    this.tableUtils().clickRowItemByItemName("Add an attribute", 1, "button");
+    cy.findByTestId("attributes-add-row").click();
     return this;
   }
 
   clickDeleteAttributeButton(row: number) {
-    this.tableUtils().clickRowItemByIndex(row, 3, "button");
+    cy.findByTestId(`attributes[${row - 1}].remove`).click();
     return this;
   }
 
   addAttribute(rowIndex: number, key: string, value: string) {
-    this.tableUtils()
-      .typeValueToRowItem(rowIndex, 1, key)
-      .typeValueToRowItem(rowIndex, 2, value);
+    cy.findAllByTestId(`attributes[${rowIndex - 1}].key`).type(key);
+    cy.findAllByTestId(`attributes[${rowIndex - 1}].value`).type(value);
     this.clickAddAnAttributeButton();
     this.formUtils().save();
     return this;
@@ -78,9 +74,20 @@ export default class ClientRolesTab extends CommonPage {
   deleteAttribute(rowIndex: number) {
     this.clickDeleteAttributeButton(rowIndex);
     this.formUtils().save();
-    this.tableUtils()
-      .checkRowItemValueByIndex(rowIndex, 1, "", "input")
-      .checkRowItemValueByIndex(rowIndex, 2, "", "input");
+
+    cy.findAllByTestId(`attributes[${rowIndex - 1}].key`).should(
+      "have.value",
+      ""
+    );
+    cy.findAllByTestId(`attributes[${rowIndex - 1}].value`).should(
+      "have.value",
+      ""
+    );
+    return this;
+  }
+
+  checkRowItemsEqualTo(amount: number) {
+    cy.findAllByTestId("row").its("length").should("be.eq", amount);
     return this;
   }
 

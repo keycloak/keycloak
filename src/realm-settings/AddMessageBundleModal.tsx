@@ -11,6 +11,7 @@ import {
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
 import { useForm, UseFormMethods } from "react-hook-form";
+import type { KeyValueType } from "../components/key-value-form/key-value-convert";
 
 type AddMessageBundleModalProps = {
   id?: string;
@@ -18,8 +19,6 @@ type AddMessageBundleModalProps = {
   save: (model: BundleForm) => void;
   handleModalToggle: () => void;
 };
-
-export type KeyValueType = { key: string; value: string };
 
 export type BundleForm = {
   messageBundle: KeyValueType;

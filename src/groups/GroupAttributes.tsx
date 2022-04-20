@@ -11,11 +11,11 @@ import { useAlerts } from "../components/alert/Alerts";
 import {
   AttributeForm,
   AttributesForm,
-} from "../components/attribute-form/AttributeForm";
+} from "../components/key-value-form/AttributeForm";
 import {
-  arrayToAttributes,
-  attributesToArray,
-} from "../components/attribute-form/attribute-convert";
+  keyValueToArray,
+  arrayToKeyValue,
+} from "../components/key-value-form/key-value-convert";
 import { useAdminClient } from "../context/auth/AdminClient";
 
 import { getLastId } from "./groupIdUtils";
@@ -36,7 +36,7 @@ export const GroupAttributes = () => {
   const { currentGroup, subGroups, setSubGroups } = useSubGroups();
 
   const convertAttributes = (attr?: Record<string, any>) => {
-    return attributesToArray(attr || currentGroup()?.attributes!);
+    return arrayToKeyValue(attr || currentGroup()?.attributes!);
   };
 
   useEffect(() => {
@@ -46,7 +46,7 @@ export const GroupAttributes = () => {
   const save = async (attributeForm: AttributeForm) => {
     try {
       const group = currentGroup();
-      const attributes = arrayToAttributes(attributeForm.attributes!);
+      const attributes = keyValueToArray(attributeForm.attributes!);
       await adminClient.groups.update({ id: id! }, { ...group, attributes });
 
       setSubGroups([

@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { FormGroup, Grid, GridItem } from "@patternfly/react-core";
 
 import { FormAccess } from "../../../components/form-access/FormAccess";
-import { AttributeInput } from "../../../components/attribute-input/AttributeInput";
+import { KeyValueInput } from "../../../components/key-value-form/KeyValueInput";
 
 import "../../realm-settings-section.css";
 
@@ -20,7 +20,7 @@ export const AttributeAnnotations = () => {
       >
         <Grid className="kc-annotations">
           <GridItem>
-            <AttributeInput name="annotations" />
+            <KeyValueInput name="annotations" />
           </GridItem>
         </Grid>
       </FormGroup>

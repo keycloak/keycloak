@@ -22,7 +22,7 @@ import type ResourceRepresentation from "@keycloak/keycloak-admin-client/lib/def
 import { defaultContextAttributes } from "../utils";
 import { camelCase } from "lodash-es";
 
-import "../../components/attribute-form/attribute-form.css";
+import "./key-based-attribute-input.css";
 
 export type AttributeType = {
   key?: string;

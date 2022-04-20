@@ -424,7 +424,7 @@ describe("Clients test", () => {
     });
   });
 
-  describe("Roles tab test", () => {
+  describe.only("Roles tab test", () => {
     const rolesTab = new ClientRolesTab();
     let client: string;
 
@@ -489,7 +489,7 @@ describe("Clients test", () => {
       rolesTab.goToAttributesTab();
       cy.wait(["@load", "@load"]);
       rolesTab.addAttribute(1, "crud_attribute_key", "crud_attribute_value");
-      rolesTab.tableUtils().checkRowItemsEqualTo(2);
+      rolesTab.checkRowItemsEqualTo(1);
       commonPage
         .masthead()
         .checkNotificationMessage("The role has been saved", true);

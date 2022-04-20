@@ -4,7 +4,7 @@ import { FormGroup } from "@patternfly/react-core";
 
 import type { ComponentProps } from "./components";
 import { HelpItem } from "../help-enabler/HelpItem";
-import { AttributeInput } from "../attribute-input/AttributeInput";
+import { KeyValueInput } from "../key-value-form/KeyValueInput";
 
 export const MapComponent = ({ name, label, helpText }: ComponentProps) => {
   const { t } = useTranslation("dynamic");
@@ -17,7 +17,7 @@ export const MapComponent = ({ name, label, helpText }: ComponentProps) => {
       }
       fieldId={name!}
     >
-      <AttributeInput name={`config.${name}`} />
+      <KeyValueInput name={`config.${name}`} />
     </FormGroup>
   );
 };

@@ -250,7 +250,7 @@ describe("Realm roles test", () => {
       createRealmRolePage.checkDescription(updateDescription);
     });
 
-    const keyValue = new KeyValueInput("attribute");
+    const keyValue = new KeyValueInput("attributes");
     it("should add attribute", () => {
       listingPage.itemExist(editRoleName).goToItemDetails(editRoleName);
 

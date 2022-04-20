@@ -1,6 +1,5 @@
 export default {
   roles: {
-    addAttributeText: "Add an attribute",
     deleteAttributeText: "Delete an attribute",
     associatedRolesText: "Associated roles",
     addAssociatedRolesText: "Add associated roles",

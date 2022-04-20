@@ -13,11 +13,11 @@ import { useAlerts } from "../components/alert/Alerts";
 import {
   AttributeForm,
   AttributesForm,
-} from "../components/attribute-form/AttributeForm";
+} from "../components/key-value-form/AttributeForm";
 import {
-  attributesToArray,
-  arrayToAttributes,
-} from "../components/attribute-form/attribute-convert";
+  arrayToKeyValue,
+  keyValueToArray,
+} from "../components/key-value-form/key-value-convert";
 import { useAdminClient } from "../context/auth/AdminClient";
 
 type UserAttributesProps = {
@@ -32,7 +32,7 @@ export const UserAttributes = ({ user: defaultUser }: UserAttributesProps) => {
   const form = useForm<AttributeForm>({ mode: "onChange" });
 
   const convertAttributes = (attr?: Record<string, any>) => {
-    return attributesToArray(attr || user.attributes!);
+    return arrayToKeyValue(attr || user.attributes!);
   };
 
   useEffect(() => {
@@ -41,7 +41,7 @@ export const UserAttributes = ({ user: defaultUser }: UserAttributesProps) => {
 
   const save = async (attributeForm: AttributeForm) => {
     try {
-      const attributes = arrayToAttributes(attributeForm.attributes!);
+      const attributes = keyValueToArray(attributeForm.attributes!);
       await adminClient.users.update({ id: user.id! }, { ...user, attributes });
 
       setUser({ ...user, attributes });

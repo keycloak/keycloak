@@ -27,12 +27,12 @@ import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form-access/FormAccess";
-import type { KeyValueType } from "../../components/attribute-form/attribute-convert";
+import type { KeyValueType } from "../../components/key-value-form/key-value-convert";
 import { convertFormValuesToObject, convertToFormValues } from "../../util";
 import { MultiLineInput } from "../../components/multi-line-input/MultiLineInput";
 import { toAuthorizationTab } from "../routes/AuthenticationTab";
 import { ScopePicker } from "./ScopePicker";
-import { AttributeInput } from "../../components/attribute-input/AttributeInput";
+import { KeyValueInput } from "../../components/key-value-form/KeyValueInput";
 
 import "./resource-details.css";
 
@@ -309,7 +309,7 @@ export default function ResourceDetails() {
               }
               fieldId="resourceAttribute"
             >
-              <AttributeInput name="attributes" />
+              <KeyValueInput name="attributes" />
             </FormGroup>
             <ActionGroup>
               <div className="pf-u-mt-md">

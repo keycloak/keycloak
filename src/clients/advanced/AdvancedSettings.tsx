@@ -15,7 +15,7 @@ import { FormAccess } from "../../components/form-access/FormAccess";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { TimeSelector } from "../../components/time-selector/TimeSelector";
 import { TokenLifespan } from "./TokenLifespan";
-import { AttributeInput } from "../../components/attribute-input/AttributeInput";
+import { KeyValueInput } from "../../components/key-value-form/KeyValueInput";
 
 type AdvancedSettingsProps = {
   control: Control<Record<string, any>>;
@@ -166,7 +166,7 @@ export const AdvancedSettings = ({
               />
             }
           >
-            <AttributeInput name="attributes.acr.loa.map" />
+            <KeyValueInput name="attributes.acr.loa.map" />
           </FormGroup>
         </>
       )}

@@ -10,7 +10,7 @@ import {
   Tr,
 } from "@patternfly/react-table";
 
-import type { KeyValueType } from "../../../components/attribute-form/attribute-convert";
+import type { KeyValueType } from "../../../components/key-value-form/key-value-convert";
 import { AddValidatorRoleDialog } from "./AddValidatorRoleDialog";
 import { Validator, validators as allValidator } from "./Validators";
 import useToggle from "../../../utils/useToggle";

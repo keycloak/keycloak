@@ -18,11 +18,11 @@ import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/ro
 import {
   AttributesForm,
   AttributeForm,
-} from "../components/attribute-form/AttributeForm";
+} from "../components/key-value-form/AttributeForm";
 import {
-  attributesToArray,
-  arrayToAttributes,
-} from "../components/attribute-form/attribute-convert";
+  arrayToKeyValue,
+  keyValueToArray,
+} from "../components/key-value-form/key-value-convert";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
@@ -69,7 +69,7 @@ export default function RealmRoleTabs() {
   const convert = (role: RoleRepresentation) => {
     const { attributes, ...rest } = role;
     return {
-      attributes: attributesToArray(attributes),
+      attributes: arrayToKeyValue(attributes),
       ...rest,
     };
   };
@@ -125,7 +125,7 @@ export default function RealmRoleTabs() {
 
       if (id) {
         if (attributes) {
-          roleRepresentation.attributes = arrayToAttributes(attributes);
+          roleRepresentation.attributes = keyValueToArray(attributes);
         }
         roleRepresentation = {
           ...omit(role!, "attributes"),

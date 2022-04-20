@@ -24,7 +24,7 @@ import { useConfirmDialog } from "../../../components/confirm-dialog/ConfirmDial
 import useToggle from "../../../utils/useToggle";
 import { useFormContext, useWatch } from "react-hook-form";
 
-import type { KeyValueType } from "../../../components/attribute-form/attribute-convert";
+import type { KeyValueType } from "../../../components/key-value-form/key-value-convert";
 
 import "../../realm-settings-section.css";
 

@@ -29,7 +29,7 @@ import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { emptyFormatter } from "../util";
 import { AssociatedRolesModal } from "./AssociatedRolesModal";
 import { useAdminClient } from "../context/auth/AdminClient";
-import type { AttributeForm } from "../components/attribute-form/AttributeForm";
+import type { AttributeForm } from "../components/key-value-form/AttributeForm";
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 
 type AssociatedRolesTabProps = {

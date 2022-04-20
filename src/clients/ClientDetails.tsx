@@ -68,9 +68,9 @@ import {
 } from "./routes/AuthenticationTab";
 import { toClientScopesTab } from "./routes/ClientScopeTab";
 import { AuthorizationExport } from "./authorization/AuthorizationExport";
-import { arrayToAttributes } from "../components/attribute-form/attribute-convert";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { PermissionsTab } from "./permissions/PermissionTab";
+import { keyValueToArray } from "../components/key-value-form/key-value-convert";
 
 type ClientDetailHeaderProps = {
   onChange: (value: boolean) => void;
@@ -277,7 +277,7 @@ export default function ClientDetails() {
 
       if (submittedClient.attributes?.["acr.loa.map"]) {
         submittedClient.attributes["acr.loa.map"] = JSON.stringify(
-          arrayToAttributes(submittedClient.attributes["acr.loa.map"])
+          keyValueToArray(submittedClient.attributes["acr.loa.map"])
         );
       }
 

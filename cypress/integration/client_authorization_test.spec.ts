@@ -142,7 +142,7 @@ describe("Client authentication subtab", () => {
     authenticationTab.formUtils().cancel();
   });
 
-  it("Should create a permission", () => {
+  it.skip("Should create a permission", () => {
     authenticationTab.goToPermissionsSubTab();
 
     permissionsSubTab.createPermission("resource").fillPermissionForm({

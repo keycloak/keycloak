@@ -8,10 +8,10 @@ import type { ProviderRepresentation } from "@keycloak/keycloak-admin-client/lib
 import type KeycloakAdminClient from "@keycloak/keycloak-admin-client";
 
 import {
-  arrayToAttributes,
-  attributesToArray,
+  keyValueToArray,
+  arrayToKeyValue,
   KeyValueType,
-} from "./components/attribute-form/attribute-convert";
+} from "./components/key-value-form/key-value-convert";
 
 export const sortProviders = (providers: {
   [index: string]: ProviderRepresentation;
@@ -87,7 +87,7 @@ export const convertToFormValues = (
 ) => {
   Object.entries(obj).map(([key, value]) => {
     if (key === "attributes" && isAttributesObject(value)) {
-      setValue(key, attributesToArray(value as Record<string, string[]>));
+      setValue(key, arrayToKeyValue(value as Record<string, string[]>));
     } else if (key === "config" || key === "attributes") {
       setValue(key, !isEmpty(value) ? unflatten(value) : undefined);
     } else {
@@ -100,7 +100,7 @@ export function convertFormValuesToObject<T, G = T>(obj: T): G {
   const result: any = {};
   Object.entries(obj).map(([key, value]) => {
     if (isAttributeArray(value)) {
-      result[key] = arrayToAttributes(value as KeyValueType[]);
+      result[key] = keyValueToArray(value as KeyValueType[]);
     } else if (key === "config" || key === "attributes") {
       result[key] = flatten(value as Record<string, any>, { safe: true });
     } else {

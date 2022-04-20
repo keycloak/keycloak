@@ -4,8 +4,8 @@ import { FormProvider, UseFormMethods } from "react-hook-form";
 import { ActionGroup, Button } from "@patternfly/react-core";
 
 import type { RoleRepresentation } from "../../model/role-model";
-import type { KeyValueType } from "./attribute-convert";
-import { AttributeInput } from "../attribute-input/AttributeInput";
+import type { KeyValueType } from "./key-value-convert";
+import { KeyValueInput } from "./KeyValueInput";
 import { FormAccess } from "../form-access/FormAccess";
 
 export type AttributeForm = Omit<RoleRepresentation, "attributes"> & {
@@ -32,7 +32,7 @@ export const AttributesForm = ({ form, reset, save }: AttributesFormProps) => {
       onSubmit={save ? handleSubmit(save) : undefined}
     >
       <FormProvider {...form}>
-        <AttributeInput name="attributes" />
+        <KeyValueInput name="attributes" />
       </FormProvider>
       {!noSaveCancelButtons && (
         <ActionGroup className="kc-attributes__action-group">

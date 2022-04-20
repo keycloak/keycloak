@@ -34,7 +34,7 @@ import { defaultContextAttributes } from "../utils";
 import type EvaluationResultRepresentation from "@keycloak/keycloak-admin-client/lib/defs/evaluationResultRepresentation";
 import type ResourceRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceRepresentation";
 import type ScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/scopeRepresentation";
-import type { KeyValueType } from "../../components/attribute-form/attribute-convert";
+import type { KeyValueType } from "../../components/key-value-form/key-value-convert";
 import { TableComposable, Th, Thead, Tr } from "@patternfly/react-table";
 import "./auth-evaluate.css";
 import { AuthorizationEvaluateResource } from "./AuthorizationEvaluateResource";

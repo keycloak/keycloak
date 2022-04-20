@@ -132,6 +132,11 @@ export default {
     },
 
     attributes: "Attributes",
+    addAttribute: "Add an attribute",
+    removeAttribute: "Remove attribute",
+    keyPlaceholder: "Type a key",
+    valuePlaceholder: "Type a value",
+
     credentials: "Credentials",
     clientId: "Client ID",
     id: "ID",

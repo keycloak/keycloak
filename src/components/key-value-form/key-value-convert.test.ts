@@ -1,8 +1,8 @@
 import {
-  arrayToAttributes,
-  attributesToArray,
+  arrayToKeyValue,
+  keyValueToArray,
   KeyValueType,
-} from "./attribute-convert";
+} from "./key-value-convert";
 
 jest.mock("react");
 
@@ -11,7 +11,7 @@ describe("Tests the convert functions for attribute input", () => {
     const given: KeyValueType[] = [];
 
     //when
-    const result = arrayToAttributes(given);
+    const result = keyValueToArray(given);
 
     //then
     expect(result).toEqual({});
@@ -21,7 +21,7 @@ describe("Tests the convert functions for attribute input", () => {
     const given = [{ key: "theKey", value: "theValue" }];
 
     //when
-    const result = arrayToAttributes(given);
+    const result = keyValueToArray(given);
 
     //then
     expect(result).toEqual({ theKey: ["theValue"] });
@@ -34,7 +34,7 @@ describe("Tests the convert functions for attribute input", () => {
     ];
 
     //when
-    const result = arrayToAttributes(given);
+    const result = keyValueToArray(given);
 
     //then
     expect(result).toEqual({ theKey: ["theValue"] });
@@ -46,7 +46,7 @@ describe("Tests the convert functions for attribute input", () => {
     } = {};
 
     //when
-    const result = attributesToArray(given);
+    const result = arrayToKeyValue(given);
 
     //then
     expect(result).toEqual([{ key: "", value: "" }]);
@@ -56,7 +56,7 @@ describe("Tests the convert functions for attribute input", () => {
     const given = { one: ["1"], two: ["2"] };
 
     //when
-    const result = attributesToArray(given);
+    const result = arrayToKeyValue(given);
 
     //then
     expect(result).toEqual([

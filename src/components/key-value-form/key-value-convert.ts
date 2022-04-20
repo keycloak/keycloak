@@ -1,6 +1,6 @@
 export type KeyValueType = { key: string; value: string };
 
-export const arrayToAttributes = (
+export const keyValueToArray = (
   attributeArray: KeyValueType[] = []
 ): Record<string, string[]> =>
   Object.fromEntries(
@@ -9,7 +9,7 @@ export const arrayToAttributes = (
       .map(({ key, value }) => [key, [value]])
   );
 
-export const attributesToArray = (
+export const arrayToKeyValue = (
   attributes: Record<string, string[]> = {}
 ): KeyValueType[] => {
   const result = Object.entries(attributes).flatMap(([key, value]) =>

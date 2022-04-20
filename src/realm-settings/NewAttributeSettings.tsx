@@ -22,7 +22,7 @@ import { useAlerts } from "../components/alert/Alerts";
 import { UserProfileProvider } from "./user-profile/UserProfileContext";
 import type { UserProfileAttribute } from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
 import type { AttributeParams } from "./routes/Attribute";
-import type { KeyValueType } from "../components/attribute-form/attribute-convert";
+import type { KeyValueType } from "../components/key-value-form/key-value-convert";
 import { convertToFormValues } from "../util";
 import { flatten } from "flat";
 
