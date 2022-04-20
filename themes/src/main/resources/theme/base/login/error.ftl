@@ -1,10 +1,10 @@
 <#import "template.ftl" as layout>
 <@layout.registrationLayout displayMessage=false; section>
     <#if section = "header">
-        ${msg("errorTitle")}
+        ${kcSanitize(msg("errorTitle"))?no_esc}
     <#elseif section = "form">
         <div id="kc-error-message">
-            <p class="instruction">${message.summary?no_esc}</p>
+            <p class="instruction">${kcSanitize(message.summary)?no_esc}</p>
             <#if skipLink??>
             <#else>
                 <#if client?? && client.baseUrl?has_content>

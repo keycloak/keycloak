@@ -379,4 +379,13 @@ public interface TestingResource {
     Response simulatePostRequest(@QueryParam("postRequestUrl") String postRequestUrl,
                                          @QueryParam("encodedFormParameters") String encodedFormParameters);
 
+    /**
+     * Display message to Error Page - for testing purposes
+     *
+     * @param message message
+     */
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/display-error-message")
+    Response displayErrorMessage(@QueryParam("message") String message);
 }
