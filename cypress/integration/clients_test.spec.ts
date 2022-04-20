@@ -837,7 +837,7 @@ describe("Clients test", () => {
         .checkTabExists(ClientsDetailsTab.Settings, true)
         .checkTabExists(ClientsDetailsTab.Roles, true)
         .checkTabExists(ClientsDetailsTab.Advanced, true)
-        .checkNumberOfTabsIsEqual(3);
+        .checkNumberOfTabsIsEqual(4);
     });
 
     it("Hides the delete action", () => {

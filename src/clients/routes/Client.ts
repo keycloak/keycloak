@@ -12,7 +12,8 @@ export type ClientTab =
   | "advanced"
   | "mappers"
   | "authorization"
-  | "serviceAccount";
+  | "serviceAccount"
+  | "permissions";
 
 export type ClientParams = {
   realm: string;

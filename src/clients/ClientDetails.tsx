@@ -69,6 +69,8 @@ import {
 import { toClientScopesTab } from "./routes/ClientScopeTab";
 import { AuthorizationExport } from "./authorization/AuthorizationExport";
 import { arrayToAttributes } from "../components/attribute-form/attribute-convert";
+import { useServerInfo } from "../context/server-info/ServerInfoProvider";
+import { PermissionsTab } from "./permissions/PermissionTab";
 
 type ClientDetailHeaderProps = {
   onChange: (value: boolean) => void;
@@ -178,6 +180,7 @@ export default function ClientDetails() {
   const adminClient = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
+  const { profileInfo } = useServerInfo();
 
   const history = useHistory();
 
@@ -555,6 +558,19 @@ export default function ClientDetails() {
                 <ServiceAccount client={client} />
               </Tab>
             )}
+            {!profileInfo?.disabledFeatures?.includes(
+              "ADMIN_FINE_GRAINED_AUTHZ"
+            ) &&
+              client.access?.manage && (
+                <Tab
+                  id="permissions"
+                  data-testid="permissionsTab"
+                  title={<TabTitleText>{t("permissions")}</TabTitleText>}
+                  {...route("permissions")}
+                >
+                  <PermissionsTab clientId={client.id!} />
+                </Tab>
+              )}
             <Tab
               id="advanced"
               data-testid="advancedTab"
