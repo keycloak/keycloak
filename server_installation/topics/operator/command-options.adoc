@@ -18,5 +18,10 @@ A window opens where you can make changes.
 
 [NOTE]
 ====
-You can update the YAML file and changes appear in the {project_name} admin console, however changes to the admin console do not update the custom resource.
+You can update the Keycloak CR YAML file and changes will be applied to the deployment.
+
+Updates to the other resources are limited:
+
+Keycloak Realm CR only supports basic creation and deletion without sync options.
+Keycloak User and Client CRs support unidirectional updates (changes to the CR are reflected in Keycloak but changes done in Keycloak are not updated in the CR).
 ====

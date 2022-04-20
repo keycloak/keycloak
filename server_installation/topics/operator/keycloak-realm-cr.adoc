@@ -6,7 +6,7 @@ You can use the Operator to create realms in {project_name} as defined by a cust
 
 [NOTE]
 ====
-You can update the YAML file and changes appear in the {project_name} admin console, however changes to the admin console do not update the custom resource.
+You can only create or delete realms by creating or deleting the YAML file, and changes appear in the {project_name} admin console. However changes to the admin console are not reflected back and updates of the CR after the realm is created are not supported.
 ====
 
 .Example YAML file for a `Realm` custom resource
