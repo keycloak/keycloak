@@ -17,6 +17,7 @@
 
 package org.keycloak.models.sessions.infinispan;
 
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
@@ -49,7 +50,43 @@ public class InfinispanSingleUseTokenStoreProvider implements SingleUseTokenStor
     }
 
     @Override
-    public boolean putIfAbsent(String tokenId, int lifespanInSeconds) {
+    public void put(String codeId, long lifespanSeconds, Map<String, String> codeData) {
+        ActionTokenValueEntity tokenValue = new ActionTokenValueEntity(codeData);
+
+        try {
+            BasicCache<String, ActionTokenValueEntity> cache = tokenCache.get();
+            long lifespanMs = InfinispanUtil.toHotrodTimeMs(cache, Time.toMillis(lifespanSeconds));
+            cache.put(codeId, tokenValue, lifespanMs, TimeUnit.MILLISECONDS);
+        } catch (HotRodClientException re) {
+            // No need to retry. The hotrod (remoteCache) has some retries in itself in case of some random network error happened.
+            if (logger.isDebugEnabled()) {
+                logger.debugf(re, "Failed when adding code %s", codeId);
+            }
+
+            throw re;
+        }
+    }
+
+
+    @Override
+    public Map<String, String> remove(String codeId) {
+        try {
+            BasicCache<String, ActionTokenValueEntity> cache = tokenCache.get();
+            ActionTokenValueEntity existing = cache.remove(codeId);
+            return existing == null ? null : existing.getNotes();
+        } catch (HotRodClientException re) {
+            // No need to retry. The hotrod (remoteCache) has some retries in itself in case of some random network error happened.
+            // In case of lock conflict, we don't want to retry anyway as there was likely an attempt to remove the code from different place.
+            if (logger.isDebugEnabled()) {
+                logger.debugf(re, "Failed when removing code %s", codeId);
+            }
+
+            return null;
+        }
+    }
+
+    @Override
+    public boolean putIfAbsent(String tokenId, long lifespanInSeconds) {
         ActionTokenValueEntity tokenValue = new ActionTokenValueEntity(null);
 
         // Rather keep the items in the cache for a bit longer
@@ -68,6 +105,12 @@ public class InfinispanSingleUseTokenStoreProvider implements SingleUseTokenStor
             return false;
         }
 
+    }
+
+    @Override
+    public boolean contains(String tokenId) {
+        BasicCache<String, ActionTokenValueEntity> cache = tokenCache.get();
+        return cache.containsKey(tokenId);
     }
 
     @Override

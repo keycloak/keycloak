@@ -17,6 +17,7 @@
 
 package org.keycloak.protocol.oidc.endpoints;
 
+import java.util.HashMap;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -41,7 +42,7 @@ import org.keycloak.headers.SecurityHeadersProvider;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.TokenRevocationStoreProvider;
+import org.keycloak.models.SingleUseTokenStoreProvider;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.oidc.TokenManager;
@@ -257,9 +258,9 @@ public class TokenRevocationEndpoint {
     }
 
     private void revokeAccessToken() {
-        TokenRevocationStoreProvider revocationStore = session.getProvider(TokenRevocationStoreProvider.class);
+        SingleUseTokenStoreProvider singleUseTokenStore = session.getProvider(SingleUseTokenStoreProvider.class);
         int currentTime = Time.currentTime();
         long lifespanInSecs = Math.max(token.getExp() - currentTime, 10);
-        revocationStore.putRevokedToken(token.getId(), lifespanInSecs);
+        singleUseTokenStore.put(token.getId(), lifespanInSecs, new HashMap<>());
     }
 }

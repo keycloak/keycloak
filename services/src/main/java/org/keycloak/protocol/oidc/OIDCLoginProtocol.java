@@ -231,7 +231,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
         // Standard or hybrid flow
         String code = null;
         if (responseType.hasResponseType(OIDCResponseType.CODE)) {
-            OAuth2Code codeData = new OAuth2Code(UUID.randomUUID(),
+            OAuth2Code codeData = new OAuth2Code(UUID.randomUUID().toString(),
                     Time.currentTime() + userSession.getRealm().getAccessCodeLifespan(),
                     nonce,
                     authSession.getClientNote(OAuth2Constants.SCOPE),
