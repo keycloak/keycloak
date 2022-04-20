@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Controller, useFieldArray, useFormContext } from "react-hook-form";
 import {
@@ -56,7 +56,6 @@ const ValueInput = ({
 }: ValueInputProps) => {
   const { t } = useTranslation("common");
   const { control, register, getValues } = useFormContext();
-
   const [isValueOpenArray, setIsValueOpenArray] = useState([false]);
 
   const toggleValueSelect = (rowIndex: number, open: boolean) => {
@@ -65,19 +64,23 @@ const ValueInput = ({
     setIsValueOpenArray(arr);
   };
 
-  let attributeValues: { key: string; name: string }[] | undefined = [];
+  const attributeValues = useMemo(() => {
+    let values: AttributeType[] | undefined = [];
 
-  const scopeValues = resources?.find(
-    (resource) => resource.name === getValues().resources[rowIndex]?.key
-  )?.scopes;
+    if (selectableValues) {
+      values = defaultContextAttributes.find(
+        (attr) => attr.key === getValues().context?.[rowIndex]?.key
+      )?.values;
+    }
 
-  if (selectableValues) {
-    attributeValues = defaultContextAttributes.find(
-      (attr) => attr.key === getValues().context[rowIndex]?.key
-    )?.values;
-  }
+    return values;
+  }, [getValues]);
 
   const renderSelectOptionType = () => {
+    const scopeValues = resources?.find(
+      (resource) => resource.name === getValues().resources?.[rowIndex]?.key
+    )?.scopes;
+
     if (attributeValues?.length && !resources) {
       return attributeValues.map((attr) => (
         <SelectOption key={attr.key} value={attr.key}>
@@ -165,7 +168,7 @@ export const KeyBasedAttributeInput = ({
 
   useEffect(() => {
     if (!fields.length) {
-      append({ key: "", value: "" });
+      append({ key: "", value: "" }, false);
     }
   }, [fields]);
 
