@@ -201,6 +201,14 @@
                                     <overWrite>false</overWrite>
                                     <outputDirectory>${auth.server.home}/providers</outputDirectory>
                                 </artifactItem>
+                                <artifactItem>
+                                    <groupId>org.keycloak.testsuite</groupId>
+                                    <artifactId>integration-arquillian-testsuite-providers-deployment</artifactId>
+                                    <version>${project.version}</version>
+                                    <type>jar</type>
+                                    <overWrite>false</overWrite>
+                                    <outputDirectory>${auth.server.home}/providers</outputDirectory>
+                                </artifactItem>
                             </artifactItems>
                         </configuration>
                     </execution>

@@ -17,6 +17,8 @@
 
 package org.keycloak.testsuite.arquillian.undertow;
 
+import static org.keycloak.testsuite.KeycloakServer.registerScriptProviders;
+
 import io.undertow.Undertow;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.handlers.PathHandler;
@@ -45,7 +47,7 @@ import org.jboss.shrinkwrap.descriptor.api.Descriptor;
 import org.jboss.shrinkwrap.undertow.api.UndertowWebArchive;
 import org.keycloak.common.util.reflections.Reflections;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.services.DefaultKeycloakSessionFactory;
 import org.keycloak.services.managers.ApplianceBootstrap;
 import org.keycloak.services.resources.KeycloakApplication;
 import org.keycloak.testsuite.JsonConfigProviderFactory;
@@ -74,7 +76,7 @@ public class KeycloakOnUndertow implements DeployableContainer<KeycloakOnUnderto
 
     private KeycloakUndertowJaxrsServer undertow;
     private KeycloakOnUndertowConfiguration configuration;
-    private KeycloakSessionFactory sessionFactory;
+    private DefaultKeycloakSessionFactory sessionFactory;
 
     Map<String, String> deployedArchivesToContextPath = new ConcurrentHashMap<>();
 
@@ -221,7 +223,9 @@ public class KeycloakOnUndertow implements DeployableContainer<KeycloakOnUnderto
 
         DeploymentInfo di = createAuthServerDeploymentInfo();
         undertow.deploy(di);
-        sessionFactory = KeycloakApplication.getSessionFactory();
+        sessionFactory = (DefaultKeycloakSessionFactory) KeycloakApplication.getSessionFactory();
+
+        registerScriptProviders(sessionFactory);
 
         setupDevConfig();
 

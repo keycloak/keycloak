@@ -18,21 +18,14 @@ package org.keycloak.testsuite.console.authorization;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import static org.keycloak.common.Profile.Feature.UPLOAD_SCRIPTS;
-
-import javax.ws.rs.core.Response;
-
-import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.representations.idm.authorization.JSPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.Logic;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.console.page.clients.authorization.policy.JSPolicy;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-@EnableFeature(value = UPLOAD_SCRIPTS, skipRestart = true)
 public class JSPolicyManagementTest extends AbstractAuthorizationSettingsTest {
 
     @Test
@@ -40,9 +33,9 @@ public class JSPolicyManagementTest extends AbstractAuthorizationSettingsTest {
         authorizationPage.navigateTo();
         JSPolicyRepresentation expected = new JSPolicyRepresentation();
 
-        expected.setName("Test JS Policy");
+        expected.setName("Deny Policy");
+        expected.setType("script-scripts/always-deny-policy.js");
         expected.setDescription("description");
-        expected.setCode("$evaluation.grant();");
 
         expected = createPolicy(expected);
 
@@ -51,7 +44,6 @@ public class JSPolicyManagementTest extends AbstractAuthorizationSettingsTest {
         expected.setName("Changed Test JS Policy");
         expected.setDescription("Changed description");
         expected.setLogic(Logic.NEGATIVE);
-        expected.setCode("$evaluation.deny();");
 
         authorizationPage.navigateTo();
         authorizationPage.authorizationTabs().policies().update(previousName, expected);
@@ -68,9 +60,9 @@ public class JSPolicyManagementTest extends AbstractAuthorizationSettingsTest {
         authorizationPage.navigateTo();
         JSPolicyRepresentation expected = new JSPolicyRepresentation();
 
-        expected.setName("Test JS Policy");
+        expected.setName("Deny Policy");
+        expected.setType("script-scripts/always-deny-policy.js");
         expected.setDescription("description");
-        expected.setCode("$evaluation.deny();");
 
         expected = createPolicy(expected);
         authorizationPage.navigateTo();
@@ -85,9 +77,9 @@ public class JSPolicyManagementTest extends AbstractAuthorizationSettingsTest {
         authorizationPage.navigateTo();
         JSPolicyRepresentation expected = new JSPolicyRepresentation();
 
-        expected.setName("Test JS Policy");
+        expected.setName("Deny Policy");
+        expected.setType("script-scripts/always-deny-policy.js");
         expected.setDescription("description");
-        expected.setCode("$evaluation.deny();");
 
         expected = createPolicy(expected);
         authorizationPage.navigateTo();
@@ -97,9 +89,9 @@ public class JSPolicyManagementTest extends AbstractAuthorizationSettingsTest {
     }
 
     private JSPolicyRepresentation createPolicy(JSPolicyRepresentation expected) {
-        JSPolicy policy = authorizationPage.authorizationTabs().policies().create(expected);
+        authorizationPage.authorizationTabs().policies().create(expected);
         assertAlertSuccess();
-        return assertPolicy(expected, policy);
+        return expected;
     }
 
     private JSPolicyRepresentation assertPolicy(JSPolicyRepresentation expected, JSPolicy policy) {
@@ -108,7 +100,10 @@ public class JSPolicyManagementTest extends AbstractAuthorizationSettingsTest {
         assertEquals(expected.getName(), actual.getName());
         assertEquals(expected.getDescription(), actual.getDescription());
         assertEquals(expected.getLogic(), actual.getLogic());
-        assertEquals(expected.getCode(), actual.getCode());
+
+        if (actual.getCode() != null) {
+            assertEquals("$evaluation.deny();", actual.getCode());
+        }
 
         return actual;
     }

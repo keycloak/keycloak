@@ -444,16 +444,6 @@
         ],
         "policies": [
             {
-                "name": "Default Policy",
-                "description": "A policy that grants access only for users within this realm",
-                "type": "js",
-                "logic": "POSITIVE",
-                "decisionStrategy": "AFFIRMATIVE",
-                "config": {
-                    "code": "// by default, grants any permission associated with this policy\n$evaluation.grant();\n"
-                }
-            },
-            {
                 "name": "Resource 1 Policy",
                 "type": "role",
                 "logic": "POSITIVE",

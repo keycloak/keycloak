@@ -67,7 +67,6 @@ import org.keycloak.partialimport.ResourceType;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 
 import static org.keycloak.common.Profile.Feature.AUTHORIZATION;
-import static org.keycloak.common.Profile.Feature.UPLOAD_SCRIPTS;
 import static org.keycloak.testsuite.auth.page.AuthRealm.MASTER;
 import org.keycloak.util.JsonSerialization;
 
@@ -468,7 +467,6 @@ public class PartialImportTest extends AbstractAuthTest {
         }
     }
 
-    @EnableFeature(value = UPLOAD_SCRIPTS, skipRestart = true)
     @Test
     public void testAddClientsWithServiceAccountsAndAuthorization() throws IOException {
         setFail();
@@ -622,7 +620,6 @@ public class PartialImportTest extends AbstractAuthTest {
         testSkip();
     }
 
-    @EnableFeature(value = UPLOAD_SCRIPTS, skipRestart = true)
     @Test
     public void testAddClientsSkipWithServiceAccountsAndAuthorization() throws IOException {
         addClients(true);
@@ -679,7 +676,6 @@ public class PartialImportTest extends AbstractAuthTest {
         testOverwrite();
     }
 
-    @EnableFeature(value = UPLOAD_SCRIPTS, skipRestart = true)
     @Test
     public void testAddClientsOverwriteWithServiceAccountsAndAuthorization() throws IOException {
         addClients(true);
@@ -691,7 +687,6 @@ public class PartialImportTest extends AbstractAuthTest {
         assertEquals(NUM_ENTITIES * 2, results.getOverwritten());
     }
 
-    @EnableFeature(value = UPLOAD_SCRIPTS, skipRestart = true)
     @Test
     public void testAddClientsOverwriteServiceAccountsWithNoServiceAccounts() throws IOException {
         addClients(true);
@@ -767,7 +762,6 @@ public class PartialImportTest extends AbstractAuthTest {
         assertEquals(NUM_ENTITIES * NUM_RESOURCE_TYPES, results.getSkipped());
     }
 
-    @EnableFeature(value = UPLOAD_SCRIPTS, skipRestart = true)
     @Test
     public void testEverythingSkipWithServiceAccounts() throws IOException {
         setSkip();
@@ -784,7 +778,6 @@ public class PartialImportTest extends AbstractAuthTest {
         assertEquals(NUM_ENTITIES * NUM_RESOURCE_TYPES, results.getOverwritten());
     }
 
-    @EnableFeature(value = UPLOAD_SCRIPTS, skipRestart = true)
     @Test
     public void testEverythingOverwriteWithServiceAccounts() throws IOException {
         setOverwrite();

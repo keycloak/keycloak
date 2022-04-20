@@ -140,16 +140,17 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
     }
 
     @Test
-    @EnableFeature(value = Profile.Feature.UPLOAD_SCRIPTS, skipRestart = true) // This requires also SCRIPTS feature, therefore we need to restart container
-    public void testTokenScriptMapping() {
+    @EnableFeature(value = Profile.Feature.SCRIPTS) // This requires also SCRIPTS feature, therefore we need to restart container
+    public void testTokenScriptMapping() throws Exception {
         {
+            reconnectAdminClient();
             ClientResource app = findClientResourceByClientId(adminClient.realm("test"), "test-app");
 
-            app.getProtocolMappers().createMapper(createScriptMapper("test-script-mapper1","computed-via-script", "computed-via-script", "String", true, true, "'hello_' + user.username", false)).close();
-            app.getProtocolMappers().createMapper(createScriptMapper("test-script-mapper2","multiValued-via-script", "multiValued-via-script", "String", true, true, "new java.util.ArrayList(['A','B'])", true)).close();
-            app.getProtocolMappers().createMapper(createScriptMapper("test-script-mapper3","computed-json-via-script", "computed-json-via-script", "JSON", true, true, "var x = {'int':42, 'bool': true, 'string': 'test'}; x", false)).close();
+            app.getProtocolMappers().createMapper(createScriptMapper("test-script-mapper1","computed-via-script", "computed-via-script", "String", true, true, "script-scripts/test-script-mapper1.js", false)).close();
+            app.getProtocolMappers().createMapper(createScriptMapper("test-script-mapper2","multiValued-via-script", "multiValued-via-script", "String", true, true, "script-scripts/test-script-mapper2.js", true)).close();
+            app.getProtocolMappers().createMapper(createScriptMapper("test-script-mapper3","computed-json-via-script", "computed-json-via-script", "JSON", true, true, "script-scripts/test-script-mapper3.js", false)).close();
 
-            Response response = app.getProtocolMappers().createMapper(createScriptMapper("test-script-mapper3", "syntax-error-script", "syntax-error-script", "String", true, true, "func_tion foo(){ return 'fail';} foo()", false));
+            Response response = app.getProtocolMappers().createMapper(createScriptMapper("test-script-mapper3", "syntax-error-script", "syntax-error-script", "String", true, true, "script-scripts/test-bad-script-mapper3.js", false));
             assertThat(response.getStatusInfo().getFamily(), is(Response.Status.Family.CLIENT_ERROR));
             response.close();
         }

@@ -70,11 +70,6 @@ public class Profile {
                         disabledFeatures.add(f);
                     } else if (DEPRECATED.equals(type)) {
                         logger.warnf("Deprecated feature enabled: " + f.name().toLowerCase());
-                        if (Feature.UPLOAD_SCRIPTS.equals(f)) {
-                            previewFeatures.add(Feature.SCRIPTS);
-                            disabledFeatures.remove(Feature.SCRIPTS);
-                            logger.warnf("Preview feature enabled: " + Feature.SCRIPTS.name().toLowerCase());
-                        }
                     }
                     break;
                 case PREVIEW:
@@ -159,7 +154,6 @@ public class Profile {
         OPENSHIFT_INTEGRATION("Extension to enable securing OpenShift", Type.PREVIEW),
         SCRIPTS("Write custom authenticators using JavaScript", Type.PREVIEW),
         TOKEN_EXCHANGE("Token Exchange Service", Type.PREVIEW),
-        UPLOAD_SCRIPTS("Ability to upload custom JavaScript through Admin REST API", DEPRECATED),
         WEB_AUTHN("W3C Web Authentication (WebAuthn)", Type.DEFAULT),
         CLIENT_POLICIES("Client configuration policies", Type.DEFAULT),
         CIBA("OpenID Connect Client Initiated Backchannel Authentication (CIBA)", Type.DEFAULT),
