@@ -20,9 +20,11 @@ package org.keycloak.testsuite.events;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.common.util.Time;
+import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.EventType;
 import org.keycloak.events.log.JBossLoggingEventListenerProviderFactory;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -209,6 +211,7 @@ public class EventStoreProviderTest extends AbstractEventsTest {
 
     @Test
     public void clearOld() {
+        Assume.assumeTrue("Map storage event store provider does not support changing expiration of existing events", keycloakUsingProviderWithId(EventStoreProvider.class, "jpa"));
         testing().onEvent(create(System.currentTimeMillis() - 300000, EventType.LOGIN, realmId, "clientId", "userId", "127.0.0.1", "error"));
         testing().onEvent(create(System.currentTimeMillis() - 200000, EventType.LOGIN, realmId, "clientId", "userId", "127.0.0.1", "error"));
         testing().onEvent(create(System.currentTimeMillis(), EventType.LOGIN, realmId, "clientId", "userId", "127.0.0.1", "error"));

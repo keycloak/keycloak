@@ -45,6 +45,7 @@ class CriteriaOperator {
 
     private static final Predicate<Object> ALWAYS_FALSE = o -> false;
     private static final Predicate<Object> ALWAYS_TRUE = o -> true;
+    private static final Pattern LIKE_PATTERN_DELIMITER = Pattern.compile("%+");
 
     static {
         OPERATORS.put(Operator.EQ, CriteriaOperator::eq);
@@ -196,20 +197,18 @@ class CriteriaOperator {
                 return ALWAYS_TRUE;
             }
 
-            boolean anyBeginning = sValue.startsWith("%");
-            boolean anyEnd = sValue.endsWith("%");
-
-            Pattern pValue = Pattern.compile(
-              (anyBeginning ? ".*" : "")
-              + Pattern.quote(sValue.substring(anyBeginning ? 1 : 0, sValue.length() - (anyEnd ? 1 : 0)))
-              + (anyEnd ? ".*" : ""),
-              Pattern.DOTALL
-            );
+            Pattern pValue = Pattern.compile(quoteRegex(sValue), Pattern.DOTALL);
             return o -> {
                 return o instanceof String && pValue.matcher((String) o).matches();
             };
         }
         return ALWAYS_FALSE;
+    }
+
+    private static String quoteRegex(String pattern) {
+        return LIKE_PATTERN_DELIMITER.splitAsStream(pattern).map(Pattern::quote)
+                .collect(Collectors.joining(".*"))
+                + (pattern.endsWith("%") ? ".*" : "");
     }
 
     public static Predicate<Object> ilike(Object[] value) {
@@ -221,15 +220,7 @@ class CriteriaOperator {
                 return ALWAYS_TRUE;
             }
 
-            boolean anyBeginning = sValue.startsWith("%");
-            boolean anyEnd = sValue.endsWith("%");
-
-            Pattern pValue = Pattern.compile(
-              (anyBeginning ? ".*" : "")
-              + Pattern.quote(sValue.substring(anyBeginning ? 1 : 0, sValue.length() - (anyEnd ? 1 : 0)))
-              + (anyEnd ? ".*" : ""),
-              Pattern.CASE_INSENSITIVE + Pattern.DOTALL
-            );
+            Pattern pValue = Pattern.compile(quoteRegex(sValue), Pattern.CASE_INSENSITIVE + Pattern.DOTALL);
             return o -> {
                 return o instanceof String && pValue.matcher((String) o).matches();
             };
