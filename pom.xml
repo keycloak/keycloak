@@ -59,10 +59,10 @@
         <product.rhsso.version>7.5.0.GA</product.rhsso.version>
 
         <product.build-time>${timestamp}</product.build-time>
-        <wildfly.version>26.0.1.Final</wildfly.version>
+        <wildfly.version>26.1.0.Final</wildfly.version>
         <wildfly.build-tools.version>1.2.13.Final</wildfly.build-tools.version>
         <eap.version>7.4.0.GA-redhat-00005</eap.version>
-        <wildfly.core.version>18.0.4.Final</wildfly.core.version>
+        <wildfly.core.version>18.1.0.Final</wildfly.core.version>
 
         <jboss.as.version>7.2.0.Final</jboss.as.version>
         <jboss.as.subsystem.test.version>7.5.22.Final-redhat-1</jboss.as.subsystem.test.version>
@@ -119,7 +119,7 @@
         <woodstox.version>6.0.3</woodstox.version>
         <xmlsec.version>2.2.3</xmlsec.version>
         <glassfish.json.version>1.1.6</glassfish.json.version>
-        <wildfly.common.version>1.5.4.Final</wildfly.common.version>
+        <wildfly.common.version>1.6.0.Final</wildfly.common.version>
         <ua-parser.version>1.5.2</ua-parser.version>
         <picketbox.version>5.0.3.Final</picketbox.version>
         <google.guava.version>30.1-jre</google.guava.version>
