@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useForm } from "react-hook-form";
+import { FormProvider, useForm } from "react-hook-form";
 import {
   ActionGroup,
   AlertVariant,
@@ -22,9 +22,11 @@ import type { ExpandableExecution } from "../execution-model";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { useAlerts } from "../../components/alert/Alerts";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { DynamicComponents } from "../../components/dynamic/DynamicComponents";
 
 type ExecutionConfigModalForm = {
-  [index: string]: string;
+  alias: string;
+  config: { [index: string]: string };
 };
 
 type ExecutionConfigModalProps = {
@@ -43,12 +45,13 @@ export const ExecutionConfigModal = ({
   const [configDescription, setConfigDescription] =
     useState<AuthenticatorConfigInfoRepresentation>();
 
+  const form = useForm<ExecutionConfigModalForm>();
   const {
     register,
     setValue,
     handleSubmit,
     formState: { errors },
-  } = useForm<ExecutionConfigModalForm>();
+  } = form;
 
   const setupForm = (
     configDescription: AuthenticatorConfigInfoRepresentation,
@@ -57,7 +60,7 @@ export const ExecutionConfigModal = ({
     configDescription.properties!.map(
       (property: ConfigPropertyRepresentation) => {
         setValue(
-          property.name!,
+          `config.${property.name}`,
           config?.config?.[property.name!] || property.defaultValue || ""
         );
       }
@@ -98,20 +101,20 @@ export const ExecutionConfigModal = ({
       if (config) {
         const newConfig = {
           ...config,
-          config: changedConfig,
+          config: changedConfig.config,
         };
         await adminClient.authenticationManagement.updateConfig(newConfig);
-        setConfig(newConfig);
+        setConfig({ ...newConfig.config });
       } else {
         const newConfig = {
           id: execution.id!,
           alias: changedConfig.alias,
-          config: changedConfig,
+          config: changedConfig.config,
         };
         const { id } = await adminClient.authenticationManagement.createConfig(
           newConfig
         );
-        setConfig({ ...newConfig, id });
+        setConfig({ ...newConfig.config, id, alias: newConfig.alias });
       }
       addAlert(t("configSaveSuccess"), AlertVariant.success);
       setShow(false);
@@ -166,26 +169,11 @@ export const ExecutionConfigModal = ({
                 }
               />
             </FormGroup>
-            {configDescription.properties?.map((property) => (
-              <FormGroup
-                key={property.name}
-                label={property.label}
-                fieldId={property.name!}
-                labelIcon={
-                  <HelpItem
-                    helpText={property.helpText}
-                    fieldLabelId={property.name!}
-                  />
-                }
-              >
-                <TextInput
-                  type="text"
-                  id={property.name}
-                  name={property.name}
-                  ref={register}
-                />
-              </FormGroup>
-            ))}
+            <FormProvider {...form}>
+              <DynamicComponents
+                properties={configDescription.properties || []}
+              />
+            </FormProvider>
             <ActionGroup>
               <Button data-testid="save" variant="primary" type="submit">
                 {t("common:save")}

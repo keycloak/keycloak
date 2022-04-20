@@ -7,6 +7,12 @@ export default {
     roleGroup: "Use a realm role from:",
     clientGroup: "Use a client role from:",
     selectGroup: "Select group",
+    "loa-condition-level": "Level of Authentication (LoA)",
+    "loa-condition-level.tooltip":
+      "The number value, usually 1 or bigger, which specifies level of authentication. Condition evaluates to true if user does not yet have this authentication level and this level is requested. This level of authentication will be set to the session after the subflow, where this condition is configured, is successfully finished.",
+    "loa-max-age": "Max Age",
+    "loa-max-age.tooltip":
+      "Maximum age in seconds for which this level is considered valid after successful authentication. For example if this is set to 300 and user authenticated with this level and then tries to authenticate again in less than 300 second, then this level will be automatically considered as authenticated without need of user to re-authenticate. If it is set to 0, then the authenticated level is valid just for this authentication and next authentication will always need to re-authenticate. Default value is 10 hours, which is same as default SSO session timeout and it means that level is valid until end of SSO session and user doesn't need to re-authenticate.",
     usermodel: {
       prop: {
         label: "Property",
