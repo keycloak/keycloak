@@ -101,7 +101,7 @@ jobs:
           mapi-token: ${{ secrets.MAPI_TOKEN }}
           api-url: http://localhost:8080/admin/realms
           api-spec: .github/api/openapi_16.0.yml
-          target: makesoftwaresafe/keycloak-quarkus
+          target: mayhemheroes/keycloak-quarkus
           duration: 1min
           sarif-report: mapi.sarif
           html-report: mapi.html
