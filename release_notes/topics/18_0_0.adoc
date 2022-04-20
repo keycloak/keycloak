@@ -60,6 +60,19 @@ Thanks to https://github.com/vanrar68[Joaquim Fellmann] for the contribution.
 
 There are more WebAuthn improvements and fixes in addition to that.
 
+== The deprecated `upload-script` feature was removed
+
+The `upload-script` feature has been marked as deprecated for a very long time. In this release, it was completely removed, and it is no longer supported.
+
+If you are using any of these capabilities:
+
+* OpenID Connect Script Mapper
+* Script Authenticator (Authentication Execution)
+* JavaScript Policies
+
+You should consider reading this https://www.keycloak.org/docs/latest/server_development/#_script_providers[documentation] in order to understand how to still rely
+on these capabilities but deploying your scripts to the server rather than managing them through the management interfaces.
+
 == Session limits
 
 {project_name} now supports limits on the number of sessions a user can have. Limits can be placed at the realm level or at the client level.

@@ -100,26 +100,18 @@ image:{project_images}/getting-started/hello-world/main-page.png[alt="Hello Worl
 The <<_resource_server_default_config, default settings>> defined by {project_name} when you enable authorization services for a client application provide a simple
 policy that always grants access to the resources protected by this policy.
 
-. Change the default permissions and policies and test how your application responds. You could also create new policies using the different policy types provided by {project_name}.
-+
-You  have many options to test this application. For example, you can change the default policy by clicking the *Authorization* tab for the client, then *Policies* tab, then click the *Default Policy* in the list to allow you to change it as follows:
-+
-```js
-// The default value is $evaluation.grant(),
-// let's see what happens when we change it to $evaluation.deny()
-$evaluation.deny();
+You can start by changing the default permissions and policies and test how your application responds, or even create new policies using the different
+<<_policy_overview, policy types>> provided by {project_name}.
 
-```
+There are a plenty of things you can do now to test this application. For example, you can change the default policy by clicking
+the `Authorization` tab for the client, then client on the `Policies` tab, then click on the `Default Policy` in the list.
+Now we are going to change the `Logic` to `Negative` using the dropdown list in this page.
 
 . Log out of the demo application and log in again.
 +
 You can no longer access the application.
 +
 image:{project_images}/getting-started/hello-world/access-denied-page.png[alt="Access Denied page"]
-
-. Correct that problem by changing the *Logic* to *Negative* using the item list below the policy code text area.
-+
-That re-enables access to the application as we are negating the result of that policy, which is by default denying all requests for access. Again, before testing this change, be sure to log out and log in again.
 
 [role="_additional-resources"]
 .Additional resources
@@ -129,8 +121,8 @@ That re-enables access to the application as we are negating the result of that 
 
 There are additional things you can do, such as:
 
-* Create a scope, define a policy and permission for it, and test it on the application side. Can the user perform an action or anything else represented by the scope you created?
-* Create different types of policies such as <<_policy_js, JavaScript-based>>, and associate these policies with the `Default Permission`.
+* Create a scope, define a policy and permission for it, and test it on the application side. Can the user perform an action (or anything else represented by the scope you created)?
+* Create different types of policies and associate these policies with the `Default Permission`.
 * Apply multiple policies to the `Default Permission` and test the behavior. For example, combine multiple policies and change the `Decision Strategy` accordingly.
 
 [role="_additional-resources"]

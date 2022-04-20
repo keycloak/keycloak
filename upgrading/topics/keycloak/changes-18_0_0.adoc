@@ -71,6 +71,30 @@ With this configuration, you can still use the format with the `redirect_uri` pa
 WARNING: The backwards compatibility switch will be removed in some future version - probably Keycloak 21. You are encouraged to update your clients as soon as possible
 as described above rather than rely on this switch.
 
+= Removal of the `upload-scripts` feature
+
+Previous versions of {project_name} had supported managing JavaScript code through the management interfaces like the administrations console and REST API. Starting from this version
+this is no longer possible, and you should now deploy your scripts to the server in order to configure the following providers:
+
+* OpenID Connect Script Mapper
+* Script Authenticator (Authentication Execution)
+* JavaScript Policies
+
+More details about how to deploy scripts to the server are available in the https://www.keycloak.org/docs/latest/server_development/#_script_providers[documentation]. Note that to use scripts, you are still
+required to enable the `scripts` technology preview feature.
+
+```
+kc.[sh|bat] start --auto-build --features=preview
+```
+
+When deploying scripts, the server is going to automatically create their corresponding providers so that you can select them when configuring authentication flows, mappers, and authorization policies.
+
+In general, the steps to update your realms are the following:
+
+* Before upgrading, remove any script provider you are using.
+* After the upgrade, deploy your scripts following the instructions in the https://www.keycloak.org/docs/latest/server_development/#_script_providers[documentation].
+* Update your authentication flows, mappers, and the client authorization settings to use the providers created from the scripts deployed to the server.
+
 = Account console Patternfly upgrade
 
 The Patternfly (PF) React libraries have been updated updated, `@patternfly/react-core` from v3.153.3 to v4.147.0, `@patternfly/react-icons` from v3.15.16 to v 4.11.8, and `@patternfly/react-styles` from v3.7.14 to v4.11.8. Several minor UI updates were made to bring the account console into alignment with PF design standards.
@@ -80,44 +104,44 @@ Custom developed account UIs might not be compatible with these updates due to t
 Resources:
 
 - [Patternfly docs](https://www.patternfly.org)
-  
+
 
 Components known to have breaking changes:
 
 - Alert
-  
+
   - `action` prop changed to `actionClose`
-    
+
 - Expandable
-  
+
   - renamed to `ExpandableSection`
-    
+
 - Title
-  
+
   - size attr now uses `TitleSizes`
-    
+
 - DataListContent
-  
+
   - `noPadding` changed to `hasNoPadding`
-    
+
 - Grid, Stack, Level, Gallery
-  
+
   - `gutter` attr changed to `hasGutter`
-    
+
 - Modal
-  
+
   - sizing control changed from, e.g. `isLarge`, to use `ModalVariant`, e.g. `variant={ModalVariant.large}`
-    
+
 - Select
-  
+
   - `ariaLabelTypeAhead` to `typeAheadAriaLabel`
-    
+
   - `isExpanded` to `isOpen`
-    
+
   - `ariaLabelledBy` to `aria-labelledby`
-    
+
 - DataListContent
-  
+
   - `noPadding` to `hasNoPadding`
 
 = Quarkus distribution: Split metrics-enabled option into health-enabled and metrics-enabled

@@ -10,34 +10,7 @@ supported by {project_name}, and provides flexibility to write any policy based 
 To create a new JavaScript-based policy, select *JavaScript* in the item list in the upper right corner of the policy listing.
 
 NOTE: By default, JavaScript Policies can not be uploaded to the server. You should prefer deploying your JS Policies directly to
-the server as described in link:{developerguide_jsproviders_link}[{developerguide_jsproviders_name}]. If you still want to use the
-{project_name} Administration Console to manage your JS policies you should enable the `Upload Scripts` feature.
-
-.Add JavaScript policy
-image:{project_images}/policy/create-js.png[alt="Add JavaScript policy"]
-
-== Configuration
-
-* *Name*
-+
-A human-readable and unique string describing the policy. A best practice is to use names that are closely related to your business and security requirements, so you
-can identify them more easily.
-+
-* *Description*
-+
-A string containing details about this policy.
-+
-* *Code*
-+
-The JavaScript code providing the conditions for this policy.
-+
-* *Logic*
-+
-The logic of this policy to apply after the other conditions have been evaluated.
-
-[role="_additional-resources"]
-.Additional resources
-* <<_policy_logic, Positive and negative logic>>
+the server as described in link:{developerguide_jsproviders_link}[{developerguide_jsproviders_name}].
 
 == Creating a JS policy from a deployed JAR file
 

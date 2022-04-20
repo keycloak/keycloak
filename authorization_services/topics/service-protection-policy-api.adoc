@@ -92,7 +92,7 @@ curl -X POST \
 	"name": "Any people manager",
 	"description": "Allow access to any people manager",
 	"scopes": ["read"],
-	"condition": "if (isPeopleManager()) {$evaluation.grant()}"
+	"condition": "my-deployed-script.js"
 }'
 ----
 
