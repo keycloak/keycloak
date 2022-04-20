@@ -200,6 +200,16 @@ public class AssertEvents implements TestRule {
                 .detail(Details.REDIRECT_URI, Matchers.equalTo(DEFAULT_REDIRECT_URI));
     }
 
+    public ExpectedEvent expectRegisterError(String username, String email) {
+        UserRepresentation user = username != null ? getUser(username) : null;
+        return expect(EventType.REGISTER_ERROR)
+                .user(user != null ? user.getId() : null)
+                .detail(Details.USERNAME, username)
+                .detail(Details.EMAIL, email)
+                .detail(Details.REGISTER_METHOD, "form")
+                .detail(Details.REDIRECT_URI, Matchers.equalTo(DEFAULT_REDIRECT_URI));
+    }
+
     public ExpectedEvent expectAccount(EventType event) {
         return expect(event).client("account");
     }

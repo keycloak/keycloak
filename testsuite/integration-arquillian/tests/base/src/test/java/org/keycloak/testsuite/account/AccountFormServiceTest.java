@@ -1350,6 +1350,16 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
         }
     }
 
+    //KEYCLOAK-17256
+    @Test
+    public void testHomographicUsername() {
+        loginPage.open();
+        loginPage.clickRegister();
+        String username = "b"+"\u043E"+"b";
+        registerPage.register("bob", "spoof", "bob@spoof.com", username, "password", "password");
+        events.expectRegisterError(username, "bob@spoof.com").error("invalid_registration").assertEvent();
+    }
+
     // KEYCLOAK-5155
     @Test
     public void testConsoleListedInApplications() {
