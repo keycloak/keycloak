@@ -120,3 +120,6 @@ Components known to have breaking changes:
   
   - `noPadding` to `hasNoPadding`
 
+= Quarkus distribution: Split metrics-enabled option into health-enabled and metrics-enabled
+
+The `metrics-enabled` option now only enables the metrics for {project_name}. To enable the readiness and liveness health endpoints, there's a new boolean option `health-enabled`. This allows more fine-grained usage of these options, e.g. enabling metrics but not enabling readiness/liveness probes for on-premise use cases. In order to keep the same behaviour as before when `metrics-enabled=true` was set, you need to additionally set `health-enabled=true` when building {project_name}.
