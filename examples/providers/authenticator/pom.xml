@@ -20,7 +20,7 @@
     <parent>
         <artifactId>keycloak-examples-providers-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>999-SNAPSHOT</version>
+        <version>18.0.0</version>
     </parent>
 
     <name>Authenticator Example</name>

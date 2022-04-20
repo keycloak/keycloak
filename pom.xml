@@ -31,7 +31,7 @@
     </description>
     <groupId>org.keycloak</groupId>
     <artifactId>keycloak-parent</artifactId>
-    <version>999-SNAPSHOT</version>
+    <version>18.0.0</version>
     <packaging>pom</packaging>
 
     <properties>

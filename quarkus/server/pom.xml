@@ -7,7 +7,7 @@
     <parent>
         <artifactId>keycloak-quarkus-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>999-SNAPSHOT</version>
+        <version>18.0.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     

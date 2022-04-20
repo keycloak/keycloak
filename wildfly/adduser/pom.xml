@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.keycloak</groupId>
         <artifactId>keycloak-wildfly-parent</artifactId>
-        <version>999-SNAPSHOT</version>
+        <version>18.0.0</version>
     </parent>
 
     <artifactId>keycloak-wildfly-adduser</artifactId>

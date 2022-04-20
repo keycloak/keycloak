@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-distribution-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>999-SNAPSHOT</version>
+        <version>18.0.0</version>
     </parent>
 
     <artifactId>keycloak-server-legacy-dist</artifactId>
