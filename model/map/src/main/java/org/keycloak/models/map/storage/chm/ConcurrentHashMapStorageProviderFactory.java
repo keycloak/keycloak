@@ -45,6 +45,10 @@ import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.Serialization;
 import org.keycloak.models.map.common.UpdatableEntity;
+import org.keycloak.models.map.events.MapAdminEventEntity;
+import org.keycloak.models.map.events.MapAdminEventEntityImpl;
+import org.keycloak.models.map.events.MapAuthEventEntity;
+import org.keycloak.models.map.events.MapAuthEventEntityImpl;
 import org.keycloak.models.map.group.MapGroupEntityImpl;
 import org.keycloak.models.map.loginFailure.MapUserLoginFailureEntity;
 import org.keycloak.models.map.loginFailure.MapUserLoginFailureEntityImpl;
@@ -137,6 +141,8 @@ public class ConcurrentHashMapStorageProviderFactory implements AmphibianProvide
       .constructor(MapUserLoginFailureEntity.class,                 MapUserLoginFailureEntityImpl::new)
       .constructor(MapUserSessionEntity.class,                      MapUserSessionEntityImpl::new)
       .constructor(MapAuthenticatedClientSessionEntity.class,       MapAuthenticatedClientSessionEntityImpl::new)
+      .constructor(MapAuthEventEntity.class,                        MapAuthEventEntityImpl::new)
+      .constructor(MapAdminEventEntity.class,                       MapAdminEventEntityImpl::new)
       .build();
 
     private static final Map<String, StringKeyConverter> KEY_CONVERTERS = new HashMap<>();

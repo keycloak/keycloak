@@ -39,6 +39,7 @@ import org.keycloak.common.util.Time;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.cache.CacheRealmProvider;
 import org.keycloak.models.cache.UserCache;
+import org.keycloak.provider.Provider;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
@@ -735,9 +736,13 @@ public abstract class AbstractKeycloakTest {
      * returns true if realm provider is "jpa" to be able to skip particular tests.
      */
     protected boolean isJpaRealmProvider() {
-        String realmProvider = testingClient.server()
-                .fetchString(s -> s.getKeycloakSessionFactory().getProviderFactory(RealmProvider.class).getId());
-        return Objects.equals(realmProvider, "\"jpa\"");
+        return keycloakUsingProviderWithId(RealmProvider.class, "jpa");
+    }
+
+    protected boolean keycloakUsingProviderWithId(Class<? extends Provider> providerClass, String requiredId) {
+        String providerId = testingClient.server()
+                .fetchString(s -> s.getKeycloakSessionFactory().getProviderFactory(providerClass).getId());
+        return Objects.equals(providerId, "\"" + requiredId + "\"");
     }
 
     protected boolean isRealmCacheEnabled() {

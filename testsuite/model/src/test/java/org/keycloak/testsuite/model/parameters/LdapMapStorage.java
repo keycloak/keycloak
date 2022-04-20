@@ -21,6 +21,7 @@ import org.jboss.logging.Logger;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 import org.keycloak.authorization.store.StoreFactorySpi;
+import org.keycloak.events.EventStoreSpi;
 import org.keycloak.models.DeploymentStateSpi;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelDuplicateException;
@@ -101,7 +102,9 @@ public class LdapMapStorage extends KeycloakModelParameters {
                 .spi(UserSessionSpi.NAME).config("map.storage-client-sessions.provider", ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
                 .spi(UserLoginFailureSpi.NAME).config("map.storage.provider", ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
                 .spi("authorizationPersister").config("map.storage.provider", ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
-                .spi("authenticationSessions").config("map.storage.provider", ConcurrentHashMapStorageProviderFactory.PROVIDER_ID);
+                .spi("authenticationSessions").config("map.storage.provider", ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
+                .spi(EventStoreSpi.NAME).config("map.storage-admin-events.provider", ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
+                .spi(EventStoreSpi.NAME).config("map.storage-auth-events.provider", ConcurrentHashMapStorageProviderFactory.PROVIDER_ID);
 
     }
 
