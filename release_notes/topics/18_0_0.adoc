@@ -1,5 +1,22 @@
 = Highlights
 
+== New Operator preview
+
+With this release, we're introducing a brand new {project_operator} as a preview. Apart from being rewritten from
+scratch, the main user-facing change from the legacy Operator is the used {project_name} distribution – the new Operator
+uses the Quarkus distribution of {project_name}. With that, the API (in form of Custom Resource Definitions) has changed.
+For details, incl. installation and migration instructions, see the https://www.keycloak.org/guides#operator[Operator related guides].
+
+The link:{operatorRepo_link}[legacy Operator] will receive updates until Keycloak 20 when the {project_name} WildFly
+distribution reaches EOL.
+
+=== OperatorHub versioning scheme
+To avoid version conflicts with the legacy Operator, the 18.0.0 version of the new Operator is released as version
+`20.0.0-alpha.1` on OperatorHub. The legacy Operator versioning scheme remains the same, i.e. it is released as 18.0.0.
+
+The same pattern will apply for future {project_name} 18 and 19 releases, until version 20 where the legacy Operator
+reaches EOL.
+
 == New Admin Console preview
 
 The new Admin Console is now graduated to preview, with the plan for it to become the default admin console in Keycloak 19.
