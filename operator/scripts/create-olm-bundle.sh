@@ -24,6 +24,8 @@ yq ea -i ".metadata.annotations.containerImage = \"$OPERATOR_DOCKER_IMAGE:$VERSI
 yq ea -i ".metadata.annotations.createdAt = \"$CREATED_AT\"" $SCRIPT_DIR/../olm/$VERSION/manifests/clusterserviceversion.yaml && \
 yq ea -i ".metadata.name = \"keycloak-operator.v$VERSION\"" $SCRIPT_DIR/../olm/$VERSION/manifests/clusterserviceversion.yaml && \
 yq ea -i ".spec.install.spec.deployments[0].spec.template.spec.containers[0].image = \"$OPERATOR_DOCKER_IMAGE:$VERSION\"" $SCRIPT_DIR/../olm/$VERSION/manifests/clusterserviceversion.yaml && \
+yq ea 'select(.spec.template.spec.containers[0].env) | .spec.template.spec.containers[0].env[-1]' $SCRIPT_DIR/../target/kubernetes/kubernetes.yml | \
+  yq ea -i 'select(fileIndex==0).spec.install.spec.deployments[0].spec.template.spec.containers[0].env += select(fileIndex==1) | select(fileIndex==0)' $SCRIPT_DIR/../olm/$VERSION/manifests/clusterserviceversion.yaml - && \
 yq ea -i ".spec.version = \"$VERSION\"" $SCRIPT_DIR/../olm/$VERSION/manifests/clusterserviceversion.yaml
 
 if [[ $REPLACES_VERSION = "NONE" ]]
