@@ -176,6 +176,7 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
       <CertificateDialog />
       <KeycloakDataTable
         isNotCompact
+        className="kc-keys-list"
         loader={filteredKeyData || keyData}
         ariaLabelKey="realm-settings:keysList"
         searchPlaceholderKey="realm-settings:searchKey"

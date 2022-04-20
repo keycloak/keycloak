@@ -148,12 +148,14 @@ describe("Realm settings events tab tests", () => {
 
     cy.findByTestId("option-ecdsa-generated").click();
     realmSettingsPage.enterConsoleDisplayName("test_ecdsa-generated");
+    realmSettingsPage.toggleSwitch("active");
     realmSettingsPage.addProvider();
 
     realmSettingsPage.toggleAddProviderDropdown();
 
     cy.findByTestId("option-hmac-generated").click();
     realmSettingsPage.enterConsoleDisplayName("test_hmac-generated");
+    realmSettingsPage.toggleSwitch("enabled");
     realmSettingsPage.addProvider();
 
     realmSettingsPage.toggleAddProviderDropdown();
@@ -169,6 +171,19 @@ describe("Realm settings events tab tests", () => {
     realmSettingsPage.addProvider();
   });
 
+  it("search providers", () => {
+    sidebarPage.goToRealmSettings();
+
+    cy.findByTestId("rs-keys-tab").click();
+
+    cy.findByTestId("rs-providers-tab").click();
+
+    // search providers
+    cy.findByTestId("provider-search-input").type("rsa{enter}");
+    listingPage.checkTableLength(4, "kc-draggable-table");
+    cy.findByTestId("provider-search-input").clear().type("{enter}");
+  });
+
   it("go to details", () => {
     sidebarPage.goToRealmSettings();
     goToDetails();
@@ -179,6 +194,43 @@ describe("Realm settings events tab tests", () => {
     goToKeys();
 
     realmSettingsPage.testSelectFilter();
+  });
+
+  it.skip("Should search active keys", () => {
+    sidebarPage.goToRealmSettings();
+    goToKeys();
+
+    realmSettingsPage.switchToActiveFilter();
+    listingPage.searchItem("rs", false);
+    listingPage.checkTableLength(3, "kc-keys-list");
+  });
+
+  it("Should search passive keys", () => {
+    sidebarPage.goToRealmSettings();
+    goToKeys();
+
+    realmSettingsPage.switchToPassiveFilter();
+    listingPage.searchItem("ec", false);
+    listingPage.checkTableLength(1, "kc-keys-list");
+  });
+
+  it("Should search disabled keys", () => {
+    sidebarPage.goToRealmSettings();
+    goToKeys();
+
+    realmSettingsPage.switchToDisabledFilter();
+    listingPage.searchItem("hs", false);
+    listingPage.checkTableLength(1, "kc-keys-list");
+  });
+
+  it("delete provider", () => {
+    sidebarPage.goToRealmSettings();
+
+    cy.findByTestId("rs-keys-tab").click();
+
+    cy.findByTestId("rs-providers-tab").click();
+
+    realmSettingsPage.deleteProvider("test_aes-generated");
   });
 
   it("add locale", () => {

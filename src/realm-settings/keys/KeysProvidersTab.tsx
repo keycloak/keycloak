@@ -160,6 +160,7 @@ export const KeysProvidersTab = ({
                 <TextInput
                   name={"inputGroupName"}
                   id={"inputGroupName"}
+                  data-testid="provider-search-input"
                   type="search"
                   aria-label={t("common:search")}
                   placeholder={t("common:search")}
@@ -210,6 +211,7 @@ export const KeysProvidersTab = ({
         </Toolbar>
         <DraggableTable
           variant="compact"
+          className="kc-draggable-table"
           keyField="id"
           data={
             filteredComponents.length === 0 ? components : filteredComponents
