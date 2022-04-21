@@ -11,7 +11,7 @@ on:
       - cypress/**
       - mocks/**
 env:
-  NODE_VERSION: 16
+  NODE_VERSION: 18
 jobs:
   analyze:
     runs-on: ubuntu-latest

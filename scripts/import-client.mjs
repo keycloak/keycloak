@@ -12,7 +12,7 @@ await importClient();
 
 async function importClient() {
   const adminClient = new KcAdminClient.default({
-    baseUrl: "http://localhost:8180",
+    baseUrl: "http://127.0.0.1:8180",
     realmName: "master",
   });
 

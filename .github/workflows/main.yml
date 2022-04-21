@@ -5,7 +5,7 @@ on:
   pull_request:
     branches: [main]
 env:
-  NODE_VERSION: 16
+  NODE_VERSION: 18
 jobs:
   setup:
     runs-on: ubuntu-latest

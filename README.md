@@ -6,7 +6,7 @@ This project is the next generation of the Keycloak Administration UI. It is wri
 
 ### Prerequisites
 
-Make sure that you have Node.js version 16 (or later) installed on your system. If you do not have Node.js installed we recommend using [Node Version Manager](https://github.com/nvm-sh/nvm) to install it.
+Make sure that you have Node.js version 18 (or later) installed on your system. If you do not have Node.js installed we recommend using [Node Version Manager](https://github.com/nvm-sh/nvm) to install it.
 
 You can find out which version of Node.js you are using by running the following command:
 
