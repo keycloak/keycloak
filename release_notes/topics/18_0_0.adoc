@@ -101,7 +101,7 @@ For more information on the improvements, check the corresponding https://www.ke
 
 === Environment variable expansion for values in keycloak.conf
 
-The {project_name} Quarkus distribution now supports expanding values in keycloak.conf from environment variables, e.g. `log-level=${ROOT_LOG_LVL:info}` would look for an environment variable names `ROOT_LOG_LVL` first and default to info if it could not find it.
+The {project_name} Quarkus distribution now supports expanding values in keycloak.conf from environment variables.
 
 For more information, check the corresponding https://www.keycloak.org/server/configuration[guide].
 
