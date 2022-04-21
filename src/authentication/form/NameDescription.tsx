@@ -1,14 +1,10 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useFormContext } from "react-hook-form";
-import {
-  FormGroup,
-  TextArea,
-  TextInput,
-  ValidatedOptions,
-} from "@patternfly/react-core";
+import { FormGroup, TextArea, ValidatedOptions } from "@patternfly/react-core";
 
 import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 
 export const NameDescription = () => {
   const { t } = useTranslation("authentication");
@@ -31,7 +27,7 @@ export const NameDescription = () => {
           <HelpItem helpText="authentication-help:name" fieldLabelId="name" />
         }
       >
-        <TextInput
+        <KeycloakTextInput
           type="text"
           id="kc-name"
           name="alias"

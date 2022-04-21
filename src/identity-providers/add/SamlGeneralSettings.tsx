@@ -1,7 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useFormContext } from "react-hook-form";
-import { FormGroup, TextInput, ValidatedOptions } from "@patternfly/react-core";
+import { FormGroup, ValidatedOptions } from "@patternfly/react-core";
 
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { RedirectUrl } from "../component/RedirectUrl";
@@ -10,6 +10,7 @@ import { DisplayOrder } from "../component/DisplayOrder";
 import { useParams } from "react-router";
 import type { IdentityProviderParams } from "../routes/IdentityProvider";
 import { FormattedLink } from "../../components/external-link/FormattedLink";
+import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import environment from "../../environment";
 
@@ -47,7 +48,7 @@ export const SamlGeneralSettings = ({ id }: { id: string }) => {
         }
         helperTextInvalid={t("common:required")}
       >
-        <TextInput
+        <KeycloakTextInput
           isRequired
           type="text"
           id="alias"

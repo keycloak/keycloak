@@ -7,11 +7,11 @@ import {
   Button,
   Flex,
   FlexItem,
-  TextInput,
 } from "@patternfly/react-core";
 import { MinusCircleIcon, PlusCircleIcon } from "@patternfly/react-icons";
 
 import type { KeyValueType } from "./key-value-convert";
+import { KeycloakTextInput } from "../keycloak-text-input/KeycloakTextInput";
 
 type KeyValueInputProps = {
   name: string;
@@ -58,7 +58,7 @@ export const KeyValueInput = ({ name }: KeyValueInputProps) => {
         {fields.map((attribute, index) => (
           <Flex key={attribute.id} data-testid="row">
             <FlexItem grow={{ default: "grow" }}>
-              <TextInput
+              <KeycloakTextInput
                 name={`${name}[${index}].key`}
                 ref={register()}
                 placeholder={t("keyPlaceholder")}
@@ -71,7 +71,7 @@ export const KeyValueInput = ({ name }: KeyValueInputProps) => {
               grow={{ default: "grow" }}
               spacer={{ default: "spacerNone" }}
             >
-              <TextInput
+              <KeycloakTextInput
                 name={`${name}[${index}].value`}
                 ref={register()}
                 placeholder={t("valuePlaceholder")}

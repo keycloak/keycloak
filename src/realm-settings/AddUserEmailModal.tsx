@@ -7,7 +7,6 @@ import {
   Modal,
   ModalVariant,
   TextContent,
-  TextInput,
   ValidatedOptions,
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
@@ -16,6 +15,7 @@ import { useForm } from "react-hook-form";
 import { emailRegexPattern } from "../util";
 import { useAdminClient } from "../context/auth/AdminClient";
 import { useWhoAmI } from "../context/whoami/WhoAmI";
+import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 import type { EmailRegistrationCallback } from "./EmailTab";
 
 type AddUserEmailModalProps = {
@@ -90,7 +90,7 @@ export const AddUserEmailModal = ({ callback }: AddUserEmailModalProps) => {
           }
           isRequired
         >
-          <TextInput
+          <KeycloakTextInput
             data-testid="email-address-input"
             ref={register({ required: true, pattern: emailRegexPattern })}
             autoFocus

@@ -10,7 +10,6 @@ import {
   FormGroup,
   Modal,
   ModalVariant,
-  TextInput,
   ValidatedOptions,
 } from "@patternfly/react-core";
 import { CogIcon, TrashIcon } from "@patternfly/react-icons";
@@ -23,6 +22,7 @@ import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { useAlerts } from "../../components/alert/Alerts";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { DynamicComponents } from "../../components/dynamic/DynamicComponents";
+import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 
 type ExecutionConfigModalForm = {
   alias: string;
@@ -155,7 +155,7 @@ export const ExecutionConfigModal = ({
                 />
               }
             >
-              <TextInput
+              <KeycloakTextInput
                 isReadOnly={!!config}
                 type="text"
                 id="alias"

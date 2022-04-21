@@ -1,11 +1,12 @@
 /**
  * @jest-environment jsdom
  */
-import { FormGroup, Switch, TextInput } from "@patternfly/react-core";
+import { FormGroup, Switch } from "@patternfly/react-core";
 import { render, screen } from "@testing-library/react";
 import type WhoAmIRepresentation from "@keycloak/keycloak-admin-client/lib/defs/whoAmIRepresentation";
 import React from "react";
 import { Controller, useForm } from "react-hook-form";
+import { KeycloakTextInput } from "../keycloak-text-input/KeycloakTextInput";
 import { AccessContextProvider } from "../../context/access/Access";
 import { RealmContext } from "../../context/realm-context/RealmContext";
 import { WhoAmI, WhoAmIContext } from "../../context/whoami/WhoAmI";
@@ -26,7 +27,7 @@ describe("FormAccess", () => {
           <AccessContextProvider>
             <FormAccess role="manage-clients">
               <FormGroup label="test" fieldId="field">
-                <TextInput
+                <KeycloakTextInput
                   type="text"
                   id="field"
                   data-testid="field"

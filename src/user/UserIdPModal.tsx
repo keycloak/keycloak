@@ -7,7 +7,6 @@ import {
   FormGroup,
   Modal,
   ModalVariant,
-  TextInput,
   ValidatedOptions,
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
@@ -20,6 +19,7 @@ import { capitalize } from "lodash-es";
 import { useParams } from "react-router-dom";
 import type FederatedIdentityRepresentation from "@keycloak/keycloak-admin-client/lib/defs/federatedIdentityRepresentation";
 import type { UserParams } from "./routes/User";
+import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 
 type UserIdpModalProps = {
   federatedId?: string;
@@ -104,7 +104,7 @@ export const UserIdpModal = ({
               : ValidatedOptions.default
           }
         >
-          <TextInput
+          <KeycloakTextInput
             data-testid="idpNameInput"
             aria-label="Identity provider name input"
             ref={register({ required: true })}
@@ -132,7 +132,7 @@ export const UserIdpModal = ({
           }
           isRequired
         >
-          <TextInput
+          <KeycloakTextInput
             data-testid="userIdInput"
             aria-label="user ID input"
             ref={register({ required: true })}
@@ -156,7 +156,7 @@ export const UserIdpModal = ({
           }
           isRequired
         >
-          <TextInput
+          <KeycloakTextInput
             data-testid="usernameInput"
             aria-label="username input"
             ref={register({ required: true })}

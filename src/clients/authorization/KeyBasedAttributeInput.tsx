@@ -6,7 +6,6 @@ import {
   Select,
   SelectOption,
   SelectVariant,
-  TextInput,
 } from "@patternfly/react-core";
 import {
   TableComposable,
@@ -17,10 +16,11 @@ import {
   Tr,
 } from "@patternfly/react-table";
 import { MinusCircleIcon, PlusCircleIcon } from "@patternfly/react-icons";
+import { camelCase } from "lodash-es";
 
 import type ResourceRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceRepresentation";
 import { defaultContextAttributes } from "../utils";
-import { camelCase } from "lodash-es";
+import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 
 import "./key-based-attribute-input.css";
 
@@ -134,7 +134,7 @@ const ValueInput = ({
           )}
         />
       ) : (
-        <TextInput
+        <KeycloakTextInput
           id={`${getMessageBundleKey(attribute.key)}-value`}
           className="value-input"
           name={`${name}[${rowIndex}].value`}

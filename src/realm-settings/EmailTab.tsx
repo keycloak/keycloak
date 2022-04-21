@@ -6,7 +6,6 @@ import {
   FormGroup,
   PageSection,
   Switch,
-  TextInput,
 } from "@patternfly/react-core";
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import React, { useState } from "react";
@@ -16,6 +15,7 @@ import { useAlerts } from "../components/alert/Alerts";
 import { FormAccess } from "../components/form-access/FormAccess";
 import { HelpItem } from "../components/help-enabler/HelpItem";
 import { FormPanel } from "../components/scroll-form/FormPanel";
+import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 import { useAdminClient } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useWhoAmI } from "../context/whoami/WhoAmI";
@@ -161,7 +161,7 @@ export const RealmSettingsEmailTab = ({
               validated={errors.smtpServer?.from ? "error" : "default"}
               helperTextInvalid={t("users:emailInvalid")}
             >
-              <TextInput
+              <KeycloakTextInput
                 type="email"
                 id="kc-sender-email-address"
                 data-testid="sender-email-address"
@@ -184,7 +184,7 @@ export const RealmSettingsEmailTab = ({
                 />
               }
             >
-              <TextInput
+              <KeycloakTextInput
                 type="text"
                 id="kc-from-display-name"
                 data-testid="from-display-name"
@@ -199,7 +199,7 @@ export const RealmSettingsEmailTab = ({
               validated={errors.smtpServer?.replyTo ? "error" : "default"}
               helperTextInvalid={t("users:emailInvalid")}
             >
-              <TextInput
+              <KeycloakTextInput
                 type="email"
                 id="kc-reply-to"
                 name="smtpServer.replyTo"
@@ -220,7 +220,7 @@ export const RealmSettingsEmailTab = ({
                 />
               }
             >
-              <TextInput
+              <KeycloakTextInput
                 type="text"
                 id="kc-reply-to-display-name"
                 name="smtpServer.replyToDisplayName"
@@ -238,7 +238,7 @@ export const RealmSettingsEmailTab = ({
                 />
               }
             >
-              <TextInput
+              <KeycloakTextInput
                 type="text"
                 id="kc-envelope-from"
                 name="smtpServer.envelopeFrom"
@@ -265,7 +265,7 @@ export const RealmSettingsEmailTab = ({
               validated={errors.smtpServer?.host ? "error" : "default"}
               helperTextInvalid={t("common:required")}
             >
-              <TextInput
+              <KeycloakTextInput
                 type="text"
                 id="kc-host"
                 name="smtpServer.host"
@@ -275,7 +275,7 @@ export const RealmSettingsEmailTab = ({
               />
             </FormGroup>
             <FormGroup label={t("port")} fieldId="kc-port">
-              <TextInput
+              <KeycloakTextInput
                 type="text"
                 id="kc-port"
                 name="smtpServer.port"
@@ -347,7 +347,7 @@ export const RealmSettingsEmailTab = ({
                   validated={errors.smtpServer?.user ? "error" : "default"}
                   helperTextInvalid={t("common:required")}
                 >
-                  <TextInput
+                  <KeycloakTextInput
                     type="text"
                     id="kc-username"
                     data-testid="username-input"
@@ -370,7 +370,7 @@ export const RealmSettingsEmailTab = ({
                     />
                   }
                 >
-                  <TextInput
+                  <KeycloakTextInput
                     type="password"
                     id="kc-password"
                     data-testid="password-input"

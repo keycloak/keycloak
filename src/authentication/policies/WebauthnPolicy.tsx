@@ -20,7 +20,6 @@ import {
   Switch,
   Text,
   TextContent,
-  TextInput,
 } from "@patternfly/react-core";
 import { QuestionCircleIcon } from "@patternfly/react-icons";
 
@@ -34,6 +33,7 @@ import { useHelp } from "../../components/help-enabler/HelpHeader";
 import { useAlerts } from "../../components/alert/Alerts";
 import { TimeSelector } from "../../components/time-selector/TimeSelector";
 import { MultiLineInput } from "../../components/multi-line-input/MultiLineInput";
+import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 
 import "./webauthn-policy.css";
 
@@ -222,7 +222,7 @@ export const WebauthnPolicy = ({
             />
           }
         >
-          <TextInput
+          <KeycloakTextInput
             ref={register({ required: true })}
             name={`${namePrefix}RpEntityName`}
             id="webAuthnPolicyRpEntityName"
@@ -247,7 +247,7 @@ export const WebauthnPolicy = ({
             }
             fieldId="webAuthnPolicyRpId"
           >
-            <TextInput
+            <KeycloakTextInput
               id="webAuthnPolicyRpId"
               name={`${namePrefix}RpId`}
               ref={register()}

@@ -10,7 +10,6 @@ import {
   Select,
   SelectOption,
   Switch,
-  TextInput,
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
 import { Controller, useFormContext } from "react-hook-form";
@@ -23,6 +22,7 @@ import { useRealm } from "../context/realm-context/RealmContext";
 import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
 import { useAlerts } from "../components/alert/Alerts";
+import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 import { emailRegexPattern } from "../util";
 import { GroupPickerDialog } from "../components/group/GroupPickerDialog";
 import moment from "moment";
@@ -173,10 +173,15 @@ export const UserForm = ({
       {user?.id && (
         <>
           <FormGroup label={t("common:id")} fieldId="kc-id" isRequired>
-            <TextInput id={user.id} value={user.id} type="text" isReadOnly />
+            <KeycloakTextInput
+              id={user.id}
+              value={user.id}
+              type="text"
+              isReadOnly
+            />
           </FormGroup>
           <FormGroup label={t("createdAt")} fieldId="kc-created-at" isRequired>
-            <TextInput
+            <KeycloakTextInput
               value={moment(user.createdTimestamp).format(
                 "MM/DD/YY hh:MM:ss A"
               )}
@@ -196,7 +201,7 @@ export const UserForm = ({
           validated={errors.username ? "error" : "default"}
           helperTextInvalid={t("common:required")}
         >
-          <TextInput
+          <KeycloakTextInput
             ref={register()}
             type="text"
             id="kc-username"
@@ -211,7 +216,7 @@ export const UserForm = ({
         validated={errors.email ? "error" : "default"}
         helperTextInvalid={t("users:emailInvalid")}
       >
-        <TextInput
+        <KeycloakTextInput
           ref={register({
             pattern: emailRegexPattern,
           })}
@@ -256,7 +261,7 @@ export const UserForm = ({
         validated={errors.firstName ? "error" : "default"}
         helperTextInvalid={t("common:required")}
       >
-        <TextInput
+        <KeycloakTextInput
           ref={register()}
           data-testid="firstName-input"
           type="text"
@@ -269,7 +274,7 @@ export const UserForm = ({
         fieldId="kc-name"
         validated={errors.lastName ? "error" : "default"}
       >
-        <TextInput
+        <KeycloakTextInput
           ref={register()}
           data-testid="lastName-input"
           type="text"

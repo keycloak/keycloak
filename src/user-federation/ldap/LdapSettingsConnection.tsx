@@ -6,7 +6,6 @@ import {
   SelectOption,
   SelectVariant,
   Switch,
-  TextInput,
   ValidatedOptions,
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
@@ -22,6 +21,7 @@ import { PasswordInput } from "../../components/password-input/PasswordInput";
 import { useAdminClient } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useAlerts } from "../../components/alert/Alerts";
+import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 
 export type LdapSettingsConnectionProps = {
   form: UseFormMethods;
@@ -118,7 +118,7 @@ export const LdapSettingsConnection = ({
           }
           helperTextInvalid={form.errors.config?.connectionUrl?.[0].message}
         >
-          <TextInput
+          <KeycloakTextInput
             isRequired
             type="text"
             id="kc-console-connection-url"
@@ -236,7 +236,7 @@ export const LdapSettingsConnection = ({
           }
           fieldId="kc-console-connection-timeout"
         >
-          <TextInput
+          <KeycloakTextInput
             type="number"
             min={0}
             id="kc-console-connection-timeout"
@@ -312,7 +312,7 @@ export const LdapSettingsConnection = ({
               }
               isRequired
             >
-              <TextInput
+              <KeycloakTextInput
                 type="text"
                 id="kc-console-bind-dn"
                 data-testid="ldap-bind-dn"

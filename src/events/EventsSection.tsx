@@ -19,7 +19,6 @@ import {
   SelectVariant,
   Tab,
   TabTitleText,
-  TextInput,
   Tooltip,
 } from "@patternfly/react-core";
 import { CheckCircleIcon, WarningTriangleIcon } from "@patternfly/react-icons";
@@ -37,6 +36,7 @@ import { KeycloakTabs } from "../components/keycloak-tabs/KeycloakTabs";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { ViewHeader } from "../components/view-header/ViewHeader";
+import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { toRealmSettings } from "../realm-settings/routes/RealmSettings";
@@ -224,7 +224,7 @@ export default function EventsSection() {
                 fieldId="kc-userId"
                 className="keycloak__events_search__form_label"
               >
-                <TextInput
+                <KeycloakTextInput
                   ref={register()}
                   type="text"
                   id="kc-userId"
@@ -302,7 +302,7 @@ export default function EventsSection() {
                 fieldId="kc-client"
                 className="keycloak__events_search__form_label"
               >
-                <TextInput
+                <KeycloakTextInput
                   ref={register()}
                   type="text"
                   id="kc-client"
@@ -315,7 +315,7 @@ export default function EventsSection() {
                 fieldId="kc-dateFrom"
                 className="keycloak__events_search__form_label"
               >
-                <TextInput
+                <KeycloakTextInput
                   ref={register()}
                   type="text"
                   id="kc-dateFrom"
@@ -330,7 +330,7 @@ export default function EventsSection() {
                 fieldId="kc-dateTo"
                 className="keycloak__events_search__form_label"
               >
-                <TextInput
+                <KeycloakTextInput
                   ref={register()}
                   type="text"
                   id="kc-dateTo"

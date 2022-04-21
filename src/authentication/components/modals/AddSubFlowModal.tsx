@@ -11,12 +11,12 @@ import {
   Select,
   SelectOption,
   SelectVariant,
-  TextInput,
   ValidatedOptions,
 } from "@patternfly/react-core";
 
 import type { AuthenticationProviderRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigRepresentation";
 import { HelpItem } from "../../../components/help-enabler/HelpItem";
+import { KeycloakTextInput } from "../../../components/keycloak-text-input/KeycloakTextInput";
 import { useAdminClient, useFetch } from "../../../context/auth/AdminClient";
 
 type AddSubFlowProps = {
@@ -100,7 +100,7 @@ export const AddSubFlowModal = ({
             <HelpItem helpText="authentication-help:name" fieldLabelId="name" />
           }
         >
-          <TextInput
+          <KeycloakTextInput
             type="text"
             id="name"
             name="name"
@@ -121,7 +121,7 @@ export const AddSubFlowModal = ({
             />
           }
         >
-          <TextInput
+          <KeycloakTextInput
             type="text"
             id="description"
             name="description"

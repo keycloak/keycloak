@@ -1,9 +1,10 @@
 import React from "react";
 import { Trans, useTranslation } from "react-i18next";
-import { FormGroup, TextInput } from "@patternfly/react-core";
+import { FormGroup } from "@patternfly/react-core";
 
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { FormattedLink } from "../../components/external-link/FormattedLink";
+import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { useFormContext } from "react-hook-form";
 
 type HelpLinkTextInputProps = {
@@ -34,7 +35,12 @@ export const HelpLinkTextInput = ({
         />
       }
     >
-      <TextInput type="text" id={name} name={fieldName} ref={register} />
+      <KeycloakTextInput
+        type="text"
+        id={name}
+        name={fieldName}
+        ref={register}
+      />
     </FormGroup>
   );
 };

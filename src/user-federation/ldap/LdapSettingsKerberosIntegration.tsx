@@ -1,10 +1,11 @@
-import { FormGroup, Switch, TextInput } from "@patternfly/react-core";
+import { FormGroup, Switch } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
 import React from "react";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { UseFormMethods, Controller, useWatch } from "react-hook-form";
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
+import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 
 export type LdapSettingsKerberosIntegrationProps = {
   form: UseFormMethods;
@@ -83,7 +84,7 @@ export const LdapSettingsKerberosIntegration = ({
               }
               helperTextInvalid={form.errors.config?.kerberosRealm?.[0].message}
             >
-              <TextInput
+              <KeycloakTextInput
                 isRequired
                 type="text"
                 id="kc-kerberos-realm"
@@ -118,7 +119,7 @@ export const LdapSettingsKerberosIntegration = ({
                 form.errors.config?.serverPrincipal?.[0].message
               }
             >
-              <TextInput
+              <KeycloakTextInput
                 isRequired
                 type="text"
                 id="kc-server-principal"
@@ -149,7 +150,7 @@ export const LdapSettingsKerberosIntegration = ({
               validated={form.errors.config?.keyTab?.[0] ? "error" : "default"}
               helperTextInvalid={form.errors.config?.keyTab?.[0].message}
             >
-              <TextInput
+              <KeycloakTextInput
                 isRequired
                 type="text"
                 id="kc-key-tab"

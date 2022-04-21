@@ -9,12 +9,12 @@ import {
   SelectOption,
   SelectVariant,
   Switch,
-  TextInput,
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
 import { HelpItem } from "../../../components/help-enabler/HelpItem";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { FormAccess } from "../../../components/form-access/FormAccess";
+import { KeycloakTextInput } from "../../../components/keycloak-text-input/KeycloakTextInput";
 import { useAdminClient, useFetch } from "../../../context/auth/AdminClient";
 import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientScopeRepresentation";
 import type { AttributeParams } from "../../routes/Attribute";
@@ -83,7 +83,7 @@ export const AttributeGeneralSettings = () => {
         validated={form.errors.name ? "error" : "default"}
         helperTextInvalid={form.errors.name?.message}
       >
-        <TextInput
+        <KeycloakTextInput
           isRequired
           type="text"
           id="kc-attribute-name"
@@ -110,7 +110,7 @@ export const AttributeGeneralSettings = () => {
         }
         fieldId="kc-attribute-display-name"
       >
-        <TextInput
+        <KeycloakTextInput
           type="text"
           id="kc-attribute-display-name"
           name="displayName"

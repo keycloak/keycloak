@@ -5,7 +5,6 @@ import {
   FormGroup,
   PageSection,
   Switch,
-  TextInput,
 } from "@patternfly/react-core";
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import React from "react";
@@ -16,6 +15,7 @@ import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { JsonFileUpload } from "../../components/json-file-upload/JsonFileUpload";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
+import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { useAdminClient } from "../../context/auth/AdminClient";
 import { useRealms } from "../../context/RealmsContext";
 import { useWhoAmI } from "../../context/whoami/WhoAmI";
@@ -79,7 +79,7 @@ export default function NewRealmForm() {
             validated={errors.realm ? "error" : "default"}
             helperTextInvalid={t("common:required")}
           >
-            <TextInput
+            <KeycloakTextInput
               isRequired
               type="text"
               id="kc-realm-name"

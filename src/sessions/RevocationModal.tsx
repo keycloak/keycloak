@@ -8,7 +8,6 @@ import {
   Modal,
   ModalVariant,
   TextContent,
-  TextInput,
   ValidatedOptions,
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
@@ -20,6 +19,7 @@ import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import { useAlerts } from "../components/alert/Alerts";
+import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 import type GlobalRequestResult from "@keycloak/keycloak-admin-client/lib/defs/globalRequestResult";
 
 type RevocationModalProps = {
@@ -201,7 +201,7 @@ export const RevocationModal = ({
             errors.email ? ValidatedOptions.error : ValidatedOptions.default
           }
         >
-          <TextInput
+          <KeycloakTextInput
             data-testid="not-before-input"
             ref={register({ required: true, pattern: emailRegexPattern })}
             autoFocus

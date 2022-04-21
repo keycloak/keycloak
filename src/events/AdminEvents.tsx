@@ -14,7 +14,6 @@ import {
   Select,
   SelectOption,
   SelectVariant,
-  TextInput,
 } from "@patternfly/react-core";
 import {
   cellWidth,
@@ -32,6 +31,7 @@ import { useTranslation } from "react-i18next";
 import { pickBy } from "lodash-es";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
+import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 import { useAdminClient } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
@@ -345,7 +345,7 @@ export const AdminEvents = () => {
                 fieldId="kc-resourcePath"
                 className="keycloak__events_search__form_label"
               >
-                <TextInput
+                <KeycloakTextInput
                   ref={register()}
                   type="text"
                   id="kc-resourcePath"
@@ -358,7 +358,7 @@ export const AdminEvents = () => {
                 fieldId="kc-realm"
                 className="keycloak__events_search__form_label"
               >
-                <TextInput
+                <KeycloakTextInput
                   ref={register()}
                   type="text"
                   id="kc-realm"
@@ -371,7 +371,7 @@ export const AdminEvents = () => {
                 fieldId="kc-client"
                 className="keycloak__events_search__form_label"
               >
-                <TextInput
+                <KeycloakTextInput
                   ref={register()}
                   type="text"
                   id="kc-client"
@@ -384,7 +384,7 @@ export const AdminEvents = () => {
                 fieldId="kc-user"
                 className="keycloak__events_search__form_label"
               >
-                <TextInput
+                <KeycloakTextInput
                   ref={register()}
                   type="text"
                   id="kc-user"
@@ -397,7 +397,7 @@ export const AdminEvents = () => {
                 fieldId="kc-ipAddress"
                 className="keycloak__events_search__form_label"
               >
-                <TextInput
+                <KeycloakTextInput
                   ref={register()}
                   type="text"
                   id="kc-ipAddress"
@@ -410,7 +410,7 @@ export const AdminEvents = () => {
                 fieldId="kc-dateFrom"
                 className="keycloak__events_search__form_label"
               >
-                <TextInput
+                <KeycloakTextInput
                   ref={register()}
                   type="text"
                   id="kc-dateFrom"
@@ -425,7 +425,7 @@ export const AdminEvents = () => {
                 fieldId="kc-dateTo"
                 className="keycloak__events_search__form_label"
               >
-                <TextInput
+                <KeycloakTextInput
                   ref={register()}
                   type="text"
                   id="kc-dateTo"

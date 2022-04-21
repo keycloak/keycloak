@@ -1,13 +1,9 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { Controller, useFormContext } from "react-hook-form";
-import {
-  FormGroup,
-  Switch,
-  TextInput,
-  ValidatedOptions,
-} from "@patternfly/react-core";
+import { FormGroup, Switch, ValidatedOptions } from "@patternfly/react-core";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 
 export const X509 = () => {
   const { t } = useTranslation("clients");
@@ -61,7 +57,7 @@ export const X509 = () => {
         }
         isRequired
       >
-        <TextInput
+        <KeycloakTextInput
           ref={register({ required: true })}
           type="text"
           id="kc-subject"

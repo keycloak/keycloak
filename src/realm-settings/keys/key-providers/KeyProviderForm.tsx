@@ -21,6 +21,7 @@ import { HelpItem } from "../../../components/help-enabler/HelpItem";
 import { KEY_PROVIDER_TYPE } from "../../../util";
 import { ViewHeader } from "../../../components/view-header/ViewHeader";
 import { DynamicComponents } from "../../../components/dynamic/DynamicComponents";
+import { KeycloakTextInput } from "../../../components/keycloak-text-input/KeycloakTextInput";
 import { useServerInfo } from "../../../context/server-info/ServerInfoProvider";
 
 type KeyProviderFormProps = {
@@ -105,7 +106,7 @@ export const KeyProviderForm = ({
           fieldId="providerId"
           isRequired
         >
-          <TextInput
+          <KeycloakTextInput
             ref={register}
             id="id"
             type="text"

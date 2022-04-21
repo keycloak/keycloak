@@ -11,11 +11,11 @@ import {
   Select,
   SelectOption,
   SelectVariant,
-  TextInput,
 } from "@patternfly/react-core";
 
 import type PolicyProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyProviderRepresentation";
 import useToggle from "../../utils/useToggle";
+import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 
 import "./search-dropdown.css";
 
@@ -93,7 +93,7 @@ export const SearchDropdown = ({
         onSubmit={handleSubmit(submit)}
       >
         <FormGroup label={t("common:name")} fieldId="name">
-          <TextInput
+          <KeycloakTextInput
             ref={register}
             type="text"
             id="name"
@@ -104,7 +104,7 @@ export const SearchDropdown = ({
         {isResource && (
           <>
             <FormGroup label={t("common:type")} fieldId="type">
-              <TextInput
+              <KeycloakTextInput
                 ref={register}
                 type="text"
                 id="type"
@@ -113,7 +113,7 @@ export const SearchDropdown = ({
               />
             </FormGroup>
             <FormGroup label={t("uris")} fieldId="uri">
-              <TextInput
+              <KeycloakTextInput
                 ref={register}
                 type="text"
                 id="uri"
@@ -122,7 +122,7 @@ export const SearchDropdown = ({
               />
             </FormGroup>
             <FormGroup label={t("owner")} fieldId="owner">
-              <TextInput
+              <KeycloakTextInput
                 ref={register}
                 type="text"
                 id="owner"
@@ -134,7 +134,7 @@ export const SearchDropdown = ({
         )}
         {!isResource && (
           <FormGroup label={t("resource")} fieldId="resource">
-            <TextInput
+            <KeycloakTextInput
               ref={register}
               type="text"
               id="resource"
@@ -144,7 +144,7 @@ export const SearchDropdown = ({
           </FormGroup>
         )}
         <FormGroup label={t("scope")} fieldId="scope">
-          <TextInput
+          <KeycloakTextInput
             ref={register}
             type="text"
             id="scope"

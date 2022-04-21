@@ -8,7 +8,6 @@ import {
   Select,
   SelectOption,
   SelectVariant,
-  TextInput,
 } from "@patternfly/react-core";
 
 import { FormAccess } from "../../components/form-access/FormAccess";
@@ -16,6 +15,7 @@ import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { sortProviders } from "../../util";
 import { MultiLineInput } from "../../components/multi-line-input/MultiLineInput";
+import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 
 type FineGrainOpenIdConnectProps = {
   save: () => void;
@@ -152,7 +152,7 @@ export const FineGrainOpenIdConnect = ({
           />
         }
       >
-        <TextInput
+        <KeycloakTextInput
           type="text"
           id="logoUrl"
           name="attributes.logoUri"
@@ -170,7 +170,7 @@ export const FineGrainOpenIdConnect = ({
           />
         }
       >
-        <TextInput
+        <KeycloakTextInput
           type="text"
           id="policyUrl"
           name="attributes.policyUri"
@@ -188,7 +188,7 @@ export const FineGrainOpenIdConnect = ({
           />
         }
       >
-        <TextInput
+        <KeycloakTextInput
           type="text"
           id="termsOfServiceUrl"
           name="attributes.tosUri"

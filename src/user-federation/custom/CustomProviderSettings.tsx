@@ -8,13 +8,13 @@ import {
   Button,
   FormGroup,
   PageSection,
-  TextInput,
 } from "@patternfly/react-core";
 
 import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
 import type { ProviderRouteParams } from "../routes/NewProvider";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { FormAccess } from "../../components/form-access/FormAccess";
+import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { toUserFederation } from "../routes/UserFederation";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
@@ -104,7 +104,7 @@ export default function CustomProviderSettings() {
             fieldId="kc-console-display-name"
             isRequired
           >
-            <TextInput
+            <KeycloakTextInput
               isRequired
               type="text"
               id="kc-console-display-name"

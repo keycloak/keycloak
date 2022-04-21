@@ -7,12 +7,12 @@ import {
   Select,
   SelectOption,
   SelectVariant,
-  TextInput,
   ValidatedOptions,
 } from "@patternfly/react-core";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { SwitchField } from "../component/SwitchField";
 import { TextField } from "../component/TextField";
+import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 
 import "./discovery-settings.css";
 
@@ -66,7 +66,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
           />
         }
       >
-        <TextInput
+        <KeycloakTextInput
           type="text"
           name="config.entityId"
           data-testid="serviceProviderEntityId"
@@ -91,7 +91,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         }
         helperTextInvalid={t("common:required")}
       >
-        <TextInput
+        <KeycloakTextInput
           type="text"
           data-testid="sso-service-url"
           id="kc-sso-service-url"
@@ -121,7 +121,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         }
         helperTextInvalid={t("common:required")}
       >
-        <TextInput
+        <KeycloakTextInput
           type="text"
           id="single-logout-service-url"
           name="config.singleLogoutServiceUrl"
@@ -278,7 +278,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
           }
           fieldId="principalAttribute"
         >
-          <TextInput
+          <KeycloakTextInput
             type="text"
             id="principalAttribute"
             name="config.principalAttribute"
@@ -448,7 +448,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         fieldId="allowedClockSkew"
         helperTextInvalid={t("common:required")}
       >
-        <TextInput
+        <KeycloakTextInput
           type="number"
           min="0"
           max="2147483"
@@ -470,7 +470,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         fieldId="attributeConsumingServiceIndex"
         helperTextInvalid={t("common:required")}
       >
-        <TextInput
+        <KeycloakTextInput
           type="number"
           min="0"
           max="65535"
@@ -492,7 +492,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         fieldId="attributeConsumingServiceName"
         helperTextInvalid={t("common:required")}
       >
-        <TextInput
+        <KeycloakTextInput
           type="text"
           id="attributeConsumingServiceName"
           name="config.attributeConsumingServiceName"

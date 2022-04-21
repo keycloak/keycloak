@@ -11,7 +11,6 @@ import {
   NumberInput,
   ActionGroup,
   Button,
-  TextInput,
   ButtonVariant,
   AlertVariant,
 } from "@patternfly/react-core";
@@ -21,6 +20,7 @@ import { FormAccess } from "../../components/form-access/FormAccess";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import useToggle from "../../utils/useToggle";
 import { TimeSelector } from "../../components/time-selector/TimeSelector";
+import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { useAdminClient } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useAlerts } from "../../components/alert/Alerts";
@@ -311,7 +311,7 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
             />
           }
         >
-          <TextInput
+          <KeycloakTextInput
             id="supportedActions"
             name="otpSupportedApplications"
             ref={register({

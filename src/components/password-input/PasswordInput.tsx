@@ -1,14 +1,14 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  Button,
-  InputGroup,
-  TextInput,
-  TextInputProps,
-} from "@patternfly/react-core";
+import { Button, InputGroup } from "@patternfly/react-core";
 import { EyeIcon, EyeSlashIcon } from "@patternfly/react-icons";
 
-type PasswordInputProps = TextInputProps & {
+import {
+  KeycloakTextInput,
+  KeycloakTextInputProps,
+} from "../keycloak-text-input/KeycloakTextInput";
+
+type PasswordInputProps = KeycloakTextInputProps & {
   hasReveal?: boolean;
 };
 
@@ -21,7 +21,7 @@ const PasswordInputBase = ({
   const [hidePassword, setHidePassword] = useState(true);
   return (
     <InputGroup>
-      <TextInput
+      <KeycloakTextInput
         {...rest}
         type={hidePassword ? "password" : "text"}
         ref={innerRef}

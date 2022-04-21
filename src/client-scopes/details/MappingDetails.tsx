@@ -10,7 +10,6 @@ import {
   DropdownItem,
   FormGroup,
   PageSection,
-  TextInput,
   ValidatedOptions,
 } from "@patternfly/react-core";
 import type ProtocolMapperRepresentation from "@keycloak/keycloak-admin-client/lib/defs/protocolMapperRepresentation";
@@ -28,6 +27,7 @@ import { useRealm } from "../../context/realm-context/RealmContext";
 import { MapperParams, MapperRoute } from "../routes/Mapper";
 import { toClientScope } from "../routes/ClientScope";
 import { DynamicComponents } from "../../components/dynamic/DynamicComponents";
+import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 
 import "./mapping-details.css";
 
@@ -202,7 +202,7 @@ export default function MappingDetails() {
           className="keycloak__client-scope-mapping-details__form"
         >
           <FormGroup label={t("common:mapperType")} fieldId="mapperType">
-            <TextInput
+            <KeycloakTextInput
               type="text"
               id="mapperType"
               name="mapperType"
@@ -225,7 +225,7 @@ export default function MappingDetails() {
             }
             helperTextInvalid={t("common:required")}
           >
-            <TextInput
+            <KeycloakTextInput
               ref={register({ required: true })}
               type="text"
               id="name"

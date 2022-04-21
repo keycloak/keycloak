@@ -1,14 +1,14 @@
 import React from "react";
 import { useFormContext } from "react-hook-form";
-import { TextInput } from "@patternfly/react-core";
 
 import { FieldProps, FormGroupField } from "./FormGroupField";
+import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 
 export const TextField = ({ label, field, isReadOnly = false }: FieldProps) => {
   const { register } = useFormContext();
   return (
     <FormGroupField label={label}>
-      <TextInput
+      <KeycloakTextInput
         type="text"
         id={label}
         data-testid={label}

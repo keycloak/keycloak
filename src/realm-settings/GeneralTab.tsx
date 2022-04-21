@@ -13,7 +13,6 @@ import {
   Stack,
   StackItem,
   Switch,
-  TextInput,
 } from "@patternfly/react-core";
 
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
@@ -24,6 +23,7 @@ import { useRealm } from "../context/realm-context/RealmContext";
 import { FormAccess } from "../components/form-access/FormAccess";
 import { HelpItem } from "../components/help-enabler/HelpItem";
 import { FormattedLink } from "../components/external-link/FormattedLink";
+import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 
 type RealmSettingsGeneralTabProps = {
   save: (realm: RealmRepresentation) => void;
@@ -71,7 +71,7 @@ export const RealmSettingsGeneralTab = ({
           />
         </FormGroup>
         <FormGroup label={t("displayName")} fieldId="kc-display-name">
-          <TextInput
+          <KeycloakTextInput
             type="text"
             id="kc-display-name"
             name="displayName"
@@ -79,7 +79,7 @@ export const RealmSettingsGeneralTab = ({
           />
         </FormGroup>
         <FormGroup label={t("htmlDisplayName")} fieldId="kc-html-display-name">
-          <TextInput
+          <KeycloakTextInput
             type="text"
             id="kc-html-display-name"
             name="displayNameHtml"
@@ -96,7 +96,7 @@ export const RealmSettingsGeneralTab = ({
             />
           }
         >
-          <TextInput
+          <KeycloakTextInput
             type="text"
             id="kc-frontend-url"
             name="attributes.frontendUrl"

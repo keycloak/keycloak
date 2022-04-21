@@ -1,12 +1,13 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useFormContext } from "react-hook-form";
-import { FormGroup, TextInput, ValidatedOptions } from "@patternfly/react-core";
+import { FormGroup, ValidatedOptions } from "@patternfly/react-core";
 
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { RedirectUrl } from "../component/RedirectUrl";
 import { TextField } from "../component/TextField";
 import { DisplayOrder } from "../component/DisplayOrder";
+import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import type { IdentityProviderParams } from "../routes/IdentityProvider";
 import { useParams } from "react-router-dom";
 
@@ -38,7 +39,7 @@ export const OIDCGeneralSettings = ({ id }: { id: string }) => {
         }
         helperTextInvalid={t("common:required")}
       >
-        <TextInput
+        <KeycloakTextInput
           isReadOnly={tab === "settings"}
           isRequired
           type="text"

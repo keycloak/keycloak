@@ -1,10 +1,11 @@
-import { FormGroup, Switch, TextInput } from "@patternfly/react-core";
+import { FormGroup, Switch } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
 import React from "react";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { UseFormMethods, Controller } from "react-hook-form";
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
+import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 
 export type LdapSettingsSynchronizationProps = {
   form: UseFormMethods;
@@ -72,7 +73,7 @@ export const LdapSettingsSynchronization = ({
           }
           fieldId="kc-batch-size"
         >
-          <TextInput
+          <KeycloakTextInput
             type="number"
             min={0}
             id="kc-batch-size"
@@ -122,7 +123,7 @@ export const LdapSettingsSynchronization = ({
             }
             fieldId="kc-full-sync-period"
           >
-            <TextInput
+            <KeycloakTextInput
               type="number"
               min={-1}
               defaultValue={604800}
@@ -174,7 +175,7 @@ export const LdapSettingsSynchronization = ({
             fieldId="kc-changed-users-sync-period"
             hasNoPaddingTop
           >
-            <TextInput
+            <KeycloakTextInput
               type="number"
               min={-1}
               defaultValue={86400}

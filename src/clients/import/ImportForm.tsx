@@ -4,7 +4,6 @@ import {
   Button,
   FormGroup,
   PageSection,
-  TextInput,
 } from "@patternfly/react-core";
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import React, { useState } from "react";
@@ -15,6 +14,7 @@ import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { JsonFileUpload } from "../../components/json-file-upload/JsonFileUpload";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
+import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { useAdminClient } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { convertFormValuesToObject, convertToFormValues } from "../../util";
@@ -77,7 +77,7 @@ export default function ImportForm() {
             <JsonFileUpload id="realm-file" onChange={handleFileChange} />
             <ClientDescription />
             <FormGroup label={t("common:type")} fieldId="kc-type">
-              <TextInput
+              <KeycloakTextInput
                 type="text"
                 id="kc-type"
                 name="protocol"

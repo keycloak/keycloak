@@ -40,6 +40,7 @@ import "./auth-evaluate.css";
 import { AuthorizationEvaluateResource } from "./AuthorizationEvaluateResource";
 import { SearchIcon } from "@patternfly/react-icons";
 import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
+import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 
 interface EvaluateFormInputs
   extends Omit<ResourceEvaluation, "context" | "resources"> {
@@ -542,7 +543,7 @@ export const AuthorizationEvaluate = ({ client }: Props) => {
                 }
                 fieldId="client"
               >
-                <TextInput
+                <KeycloakTextInput
                   type="text"
                   id="alias"
                   name="alias"

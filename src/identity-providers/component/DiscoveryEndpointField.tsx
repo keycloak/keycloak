@@ -1,10 +1,11 @@
 import React, { ReactNode, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useFormContext } from "react-hook-form";
-import { FormGroup, TextInput, Switch } from "@patternfly/react-core";
+import { FormGroup, Switch } from "@patternfly/react-core";
 
 import environment from "../../environment";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { useAdminClient } from "../../context/auth/AdminClient";
 
 type DiscoveryEndpointFieldProps = {
@@ -124,7 +125,7 @@ export const DiscoveryEndpointField = ({
           }
           isRequired
         >
-          <TextInput
+          <KeycloakTextInput
             type="text"
             name="discoveryEndpoint"
             data-testid="discoveryEndpoint"

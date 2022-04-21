@@ -1,10 +1,11 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useFormContext } from "react-hook-form";
-import { FormGroup, TextInput, ValidatedOptions } from "@patternfly/react-core";
+import { FormGroup, ValidatedOptions } from "@patternfly/react-core";
 
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { PasswordInput } from "../../components/password-input/PasswordInput";
+import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 
 export const ClientIdSecret = ({
   secretRequired = true,
@@ -39,7 +40,7 @@ export const ClientIdSecret = ({
         }
         helperTextInvalid={t("common:required")}
       >
-        <TextInput
+        <KeycloakTextInput
           isRequired
           type="text"
           id="kc-client-id"
@@ -75,7 +76,7 @@ export const ClientIdSecret = ({
           />
         )}
         {!create && (
-          <TextInput
+          <KeycloakTextInput
             isRequired={secretRequired}
             type="password"
             id="kc-client-secret"

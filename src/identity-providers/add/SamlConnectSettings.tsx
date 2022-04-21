@@ -1,6 +1,6 @@
 import React from "react";
 import { useFormContext } from "react-hook-form";
-import { FormGroup, TextInput, Title } from "@patternfly/react-core";
+import { FormGroup, Title } from "@patternfly/react-core";
 
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { useTranslation } from "react-i18next";
@@ -12,6 +12,7 @@ import { useRealm } from "../../context/realm-context/RealmContext";
 import { DescriptorSettings } from "./DescriptorSettings";
 import { getBaseUrl } from "../../util";
 import { DiscoveryEndpointField } from "../component/DiscoveryEndpointField";
+import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import environment from "../../environment";
 
 export const SamlConnectSettings = () => {
@@ -92,7 +93,7 @@ export const SamlConnectSettings = () => {
         helperTextInvalid={t("common:required")}
         validated={errors.config?.entityId ? "error" : "default"}
       >
-        <TextInput
+        <KeycloakTextInput
           type="text"
           name="config.entityId"
           data-testid="serviceProviderEntityId"

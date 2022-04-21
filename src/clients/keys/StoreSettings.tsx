@@ -1,11 +1,12 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useFormContext } from "react-hook-form";
-import { FormGroup, TextInput } from "@patternfly/react-core";
+import { FormGroup } from "@patternfly/react-core";
 
 import type KeyStoreConfig from "@keycloak/keycloak-admin-client/lib/defs/keystoreConfig";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { PasswordInput } from "../../components/password-input/PasswordInput";
+import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 
 export const StoreSettings = ({
   hidePassword = false,
@@ -28,7 +29,7 @@ export const StoreSettings = ({
           />
         }
       >
-        <TextInput
+        <KeycloakTextInput
           data-testid="keyAlias"
           type="text"
           id="keyAlias"

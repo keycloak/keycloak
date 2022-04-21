@@ -3,7 +3,6 @@ import {
   Select,
   SelectOption,
   SelectVariant,
-  TextInput,
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
 import React, { useState } from "react";
@@ -13,6 +12,7 @@ import { FormAccess } from "../../components/form-access/FormAccess";
 import { useRealm } from "../../context/realm-context/RealmContext";
 
 import { WizardSectionHeader } from "../../components/wizard-section-header/WizardSectionHeader";
+import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 
 export type LdapSettingsGeneralProps = {
@@ -117,7 +117,7 @@ export const LdapSettingsGeneral = ({
           helperTextInvalid={form.errors.name?.message}
         >
           {/* These hidden fields are required so data object written back matches data retrieved */}
-          <TextInput
+          <KeycloakTextInput
             hidden
             type="text"
             id="kc-console-provider-id"
@@ -125,7 +125,7 @@ export const LdapSettingsGeneral = ({
             defaultValue="ldap"
             ref={form.register}
           />
-          <TextInput
+          <KeycloakTextInput
             hidden
             type="text"
             id="kc-console-provider-type"
@@ -133,7 +133,7 @@ export const LdapSettingsGeneral = ({
             defaultValue="org.keycloak.storage.UserStorageProvider"
             ref={form.register}
           />
-          <TextInput
+          <KeycloakTextInput
             hidden
             type="text"
             id="kc-console-parentId"
@@ -141,7 +141,7 @@ export const LdapSettingsGeneral = ({
             defaultValue={realm}
             ref={form.register}
           />
-          <TextInput
+          <KeycloakTextInput
             isRequired
             type="text"
             id="kc-console-display-name"

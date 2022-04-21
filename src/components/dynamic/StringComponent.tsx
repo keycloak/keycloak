@@ -1,9 +1,10 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useFormContext } from "react-hook-form";
-import { FormGroup, TextInput } from "@patternfly/react-core";
+import { FormGroup } from "@patternfly/react-core";
 
 import { HelpItem } from "../help-enabler/HelpItem";
+import { KeycloakTextInput } from "../keycloak-text-input/KeycloakTextInput";
 import type { ComponentProps } from "./components";
 
 export const StringComponent = ({
@@ -24,7 +25,7 @@ export const StringComponent = ({
       }
       fieldId={name!}
     >
-      <TextInput
+      <KeycloakTextInput
         id={name!}
         data-testid={name}
         isDisabled={isDisabled}

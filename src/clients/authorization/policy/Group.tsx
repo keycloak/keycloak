@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useFormContext, Controller } from "react-hook-form";
 import { MinusCircleIcon } from "@patternfly/react-icons";
-import { FormGroup, Button, Checkbox, TextInput } from "@patternfly/react-core";
+import { FormGroup, Button, Checkbox } from "@patternfly/react-core";
 import {
   TableComposable,
   Thead,
@@ -16,6 +16,7 @@ import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/g
 import { HelpItem } from "../../../components/help-enabler/HelpItem";
 import { useAdminClient, useFetch } from "../../../context/auth/AdminClient";
 import { GroupPickerDialog } from "../../../components/group/GroupPickerDialog";
+import { KeycloakTextInput } from "../../../components/keycloak-text-input/KeycloakTextInput";
 
 export type GroupValue = {
   id: string;
@@ -69,7 +70,7 @@ export const Group = () => {
         }
         fieldId="groups"
       >
-        <TextInput
+        <KeycloakTextInput
           type="text"
           id="groupsClaim"
           name="groupsClaim"

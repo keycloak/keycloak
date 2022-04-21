@@ -9,7 +9,6 @@ import {
   Select,
   SelectOption,
   SelectVariant,
-  TextInput,
   ValidatedOptions,
 } from "@patternfly/react-core";
 import { convertFormValuesToObject, convertToFormValues } from "../../../util";
@@ -27,6 +26,7 @@ import type ComponentTypeRepresentation from "@keycloak/keycloak-admin-client/li
 import { DynamicComponents } from "../../../components/dynamic/DynamicComponents";
 import { useRealm } from "../../../context/realm-context/RealmContext";
 import { KeycloakSpinner } from "../../../components/keycloak-spinner/KeycloakSpinner";
+import { KeycloakTextInput } from "../../../components/keycloak-text-input/KeycloakTextInput";
 import { toUserFederationLdap } from "../../routes/UserFederationLdap";
 
 export default function LdapMapperDetails() {
@@ -134,7 +134,7 @@ export default function LdapMapperDetails() {
         <FormAccess role="manage-realm" isHorizontal>
           {!isNew && (
             <FormGroup label={t("common:id")} fieldId="kc-ldap-mapper-id">
-              <TextInput
+              <KeycloakTextInput
                 isDisabled
                 type="text"
                 id="kc-ldap-mapper-id"
@@ -155,7 +155,7 @@ export default function LdapMapperDetails() {
             fieldId="kc-ldap-mapper-name"
             isRequired
           >
-            <TextInput
+            <KeycloakTextInput
               isDisabled={!isNew}
               isRequired
               type="text"
@@ -169,7 +169,7 @@ export default function LdapMapperDetails() {
                   : ValidatedOptions.default
               }
             />
-            <TextInput
+            <KeycloakTextInput
               hidden
               defaultValue={isNew ? id : mapping ? mapping.parentId : ""}
               type="text"
@@ -178,7 +178,7 @@ export default function LdapMapperDetails() {
               name="parentId"
               ref={form.register}
             />
-            <TextInput
+            <KeycloakTextInput
               hidden
               defaultValue="org.keycloak.storage.ldap.mappers.LDAPStorageMapper"
               type="text"
@@ -200,7 +200,7 @@ export default function LdapMapperDetails() {
               fieldId="kc-ldap-mapper-type"
               isRequired
             >
-              <TextInput
+              <KeycloakTextInput
                 isDisabled={!isNew}
                 isRequired
                 type="text"

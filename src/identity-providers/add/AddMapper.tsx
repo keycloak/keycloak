@@ -8,7 +8,6 @@ import {
   Button,
   FormGroup,
   PageSection,
-  TextInput,
   ValidatedOptions,
 } from "@patternfly/react-core";
 
@@ -32,6 +31,7 @@ import { AddMapperForm } from "./AddMapperForm";
 import { DynamicComponents } from "../../components/dynamic/DynamicComponents";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
 import type { AttributeForm } from "../../components/key-value-form/AttributeForm";
+import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 
 export type IdPMapperRepresentationWithAttributes =
   IdentityProviderMapperRepresentation & AttributeForm;
@@ -177,7 +177,7 @@ export default function AddMapper() {
             }
             helperTextInvalid={t("common:required")}
           >
-            <TextInput
+            <KeycloakTextInput
               ref={register()}
               type="text"
               value={currentMapper?.id}

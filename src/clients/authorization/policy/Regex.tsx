@@ -1,9 +1,10 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useFormContext } from "react-hook-form";
-import { FormGroup, TextInput } from "@patternfly/react-core";
+import { FormGroup } from "@patternfly/react-core";
 
 import { HelpItem } from "../../../components/help-enabler/HelpItem";
+import { KeycloakTextInput } from "../../../components/keycloak-text-input/KeycloakTextInput";
 
 export const Regex = () => {
   const { t } = useTranslation("clients");
@@ -27,7 +28,7 @@ export const Regex = () => {
           />
         }
       >
-        <TextInput
+        <KeycloakTextInput
           type="text"
           id="targetClaim"
           name="targetClaim"
@@ -49,7 +50,7 @@ export const Regex = () => {
         validated={errors.pattern ? "error" : "default"}
         helperTextInvalid={t("common:required")}
       >
-        <TextInput
+        <KeycloakTextInput
           ref={register({ required: true })}
           type="text"
           id="pattern"

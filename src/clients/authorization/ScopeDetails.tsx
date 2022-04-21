@@ -10,7 +10,6 @@ import {
   DropdownItem,
   FormGroup,
   PageSection,
-  TextInput,
   ValidatedOptions,
 } from "@patternfly/react-core";
 
@@ -22,6 +21,7 @@ import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { toAuthorizationTab } from "../routes/AuthenticationTab";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { useAlerts } from "../../components/alert/Alerts";
+import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import useToggle from "../../utils/useToggle";
 import { DeleteScopeDialog } from "./DeleteScopeDialog";
 
@@ -143,7 +143,7 @@ export default function ScopeDetails() {
             }
             isRequired
           >
-            <TextInput
+            <KeycloakTextInput
               id="name"
               name="name"
               ref={register({ required: true })}
@@ -162,7 +162,11 @@ export default function ScopeDetails() {
               />
             }
           >
-            <TextInput id="displayName" name="displayName" ref={register} />
+            <KeycloakTextInput
+              id="displayName"
+              name="displayName"
+              ref={register}
+            />
           </FormGroup>
           <FormGroup
             label={t("iconUri")}
@@ -174,7 +178,7 @@ export default function ScopeDetails() {
               />
             }
           >
-            <TextInput id="iconUri" name="iconUri" ref={register} />
+            <KeycloakTextInput id="iconUri" name="iconUri" ref={register} />
           </FormGroup>
           <ActionGroup>
             <div className="pf-u-mt-md">

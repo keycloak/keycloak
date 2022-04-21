@@ -3,7 +3,6 @@ import React, { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   FormGroup,
-  TextInput,
   Form,
   Switch,
   TextArea,
@@ -20,6 +19,7 @@ import { CapabilityConfig } from "./add/CapabilityConfig";
 import { MultiLineInput } from "../components/multi-line-input/MultiLineInput";
 import { FormAccess } from "../components/form-access/FormAccess";
 import { HelpItem } from "../components/help-enabler/HelpItem";
+import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { SaveReset } from "./advanced/SaveReset";
 import { SamlConfig } from "./add/SamlConfig";
@@ -100,7 +100,7 @@ export const ClientSettings = ({
                 />
               }
             >
-              <TextInput
+              <KeycloakTextInput
                 type="text"
                 id="kc-root-url"
                 name="rootUrl"
@@ -117,7 +117,7 @@ export const ClientSettings = ({
                 />
               }
             >
-              <TextInput
+              <KeycloakTextInput
                 type="text"
                 id="kc-home-url"
                 name="baseUrl"
@@ -158,7 +158,7 @@ export const ClientSettings = ({
                     })
                   }
                 >
-                  <TextInput
+                  <KeycloakTextInput
                     type="text"
                     id="idpInitiatedSsoUrlName"
                     name="attributes.saml_idp_initiated_sso_url_name"
@@ -175,7 +175,7 @@ export const ClientSettings = ({
                     />
                   }
                 >
-                  <TextInput
+                  <KeycloakTextInput
                     type="text"
                     id="idpInitiatedSsoRelayState"
                     name="attributes.saml_idp_initiated_sso_relay_state"
@@ -192,7 +192,7 @@ export const ClientSettings = ({
                     />
                   }
                 >
-                  <TextInput
+                  <KeycloakTextInput
                     type="text"
                     id="masterSamlProcessingUrl"
                     name="adminUrl"
@@ -232,7 +232,7 @@ export const ClientSettings = ({
               />
             }
           >
-            <TextInput
+            <KeycloakTextInput
               type="text"
               id="kc-admin-url"
               name="adminUrl"
@@ -412,7 +412,7 @@ export const ClientSettings = ({
                     : ValidatedOptions.default
                 }
               >
-                <TextInput
+                <KeycloakTextInput
                   type="text"
                   id="frontchannelLogoutUrl"
                   name="attributes.frontchannel.logout.url"
@@ -452,7 +452,7 @@ export const ClientSettings = ({
               : ValidatedOptions.default
           }
         >
-          <TextInput
+          <KeycloakTextInput
             type="text"
             id="backchannelLogoutUrl"
             name="attributes.backchannel.logout.url"

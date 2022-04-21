@@ -4,12 +4,12 @@ import { useFormContext, useWatch } from "react-hook-form";
 import {
   ExpandableSection,
   FormGroup,
-  TextInput,
   ValidatedOptions,
 } from "@patternfly/react-core";
 
 import { SwitchField } from "../component/SwitchField";
 import { TextField } from "../component/TextField";
+import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 
 import "./discovery-settings.css";
 
@@ -47,7 +47,7 @@ const Fields = ({ readOnly }: DiscoverySettingsProps) => {
         }
         helperTextInvalid={t("common:required")}
       >
-        <TextInput
+        <KeycloakTextInput
           type="text"
           data-testid="authorizationUrl"
           id="kc-authorization-url"
@@ -73,7 +73,7 @@ const Fields = ({ readOnly }: DiscoverySettingsProps) => {
         }
         helperTextInvalid={t("common:required")}
       >
-        <TextInput
+        <KeycloakTextInput
           type="text"
           id="tokenUrl"
           name="config.tokenUrl"

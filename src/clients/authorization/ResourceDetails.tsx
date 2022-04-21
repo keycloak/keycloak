@@ -12,7 +12,6 @@ import {
   FormGroup,
   PageSection,
   Switch,
-  TextInput,
   ValidatedOptions,
 } from "@patternfly/react-core";
 
@@ -33,6 +32,7 @@ import { MultiLineInput } from "../../components/multi-line-input/MultiLineInput
 import { toAuthorizationTab } from "../routes/AuthenticationTab";
 import { ScopePicker } from "./ScopePicker";
 import { KeyValueInput } from "../../components/key-value-form/KeyValueInput";
+import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 
 import "./resource-details.css";
 
@@ -193,7 +193,11 @@ export default function ResourceDetails() {
                 />
               }
             >
-              <TextInput id="owner" value={client.clientId} isReadOnly />
+              <KeycloakTextInput
+                id="owner"
+                value={client.clientId}
+                isReadOnly
+              />
             </FormGroup>
             <FormGroup
               label={t("common:name")}
@@ -210,7 +214,7 @@ export default function ResourceDetails() {
               }
               isRequired
             >
-              <TextInput
+              <KeycloakTextInput
                 id="name"
                 name="name"
                 ref={register({ required: true })}
@@ -231,7 +235,7 @@ export default function ResourceDetails() {
                 />
               }
             >
-              <TextInput id="displayName" name="name" ref={register} />
+              <KeycloakTextInput id="displayName" name="name" ref={register} />
             </FormGroup>
             <FormGroup
               label={t("type")}
@@ -240,7 +244,7 @@ export default function ResourceDetails() {
                 <HelpItem helpText="clients-help:type" fieldLabelId="type" />
               }
             >
-              <TextInput id="type" name="type" ref={register} />
+              <KeycloakTextInput id="type" name="type" ref={register} />
             </FormGroup>
             <FormGroup
               label={t("uris")}
@@ -269,7 +273,7 @@ export default function ResourceDetails() {
                 />
               }
             >
-              <TextInput id="iconUri" name="icon_uri" ref={register} />
+              <KeycloakTextInput id="iconUri" name="icon_uri" ref={register} />
             </FormGroup>
             <FormGroup
               hasNoPaddingTop

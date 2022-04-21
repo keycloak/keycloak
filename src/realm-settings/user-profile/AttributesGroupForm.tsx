@@ -6,7 +6,6 @@ import {
   PageSection,
   Text,
   TextContent,
-  TextInput,
 } from "@patternfly/react-core";
 import React, { useEffect, useMemo } from "react";
 import { FormProvider, SubmitHandler, useForm } from "react-hook-form";
@@ -15,6 +14,7 @@ import { Link, useHistory, useParams } from "react-router-dom";
 import { KeyValueInput } from "../../components/key-value-form/KeyValueInput";
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import type { EditAttributesGroupParams } from "../routes/EditAttributesGroup";
@@ -128,7 +128,7 @@ export default function AttributesGroupForm() {
               />
             }
           >
-            <TextInput
+            <KeycloakTextInput
               ref={form.register({ required: true })}
               type="text"
               id="kc-name"
@@ -149,7 +149,7 @@ export default function AttributesGroupForm() {
               />
             }
           >
-            <TextInput
+            <KeycloakTextInput
               ref={form.register()}
               type="text"
               id="kc-display-header"
@@ -166,7 +166,7 @@ export default function AttributesGroupForm() {
               />
             }
           >
-            <TextInput
+            <KeycloakTextInput
               ref={form.register()}
               type="text"
               id="kc-display-description"

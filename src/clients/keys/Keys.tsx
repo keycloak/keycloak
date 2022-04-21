@@ -14,7 +14,6 @@ import {
   Switch,
   Text,
   TextContent,
-  TextInput,
 } from "@patternfly/react-core";
 
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
@@ -22,6 +21,7 @@ import type CertificateRepresentation from "@keycloak/keycloak-admin-client/lib/
 import type KeyStoreConfig from "@keycloak/keycloak-admin-client/lib/defs/keystoreConfig";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { FormAccess } from "../../components/form-access/FormAccess";
+import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { GenerateKeyDialog } from "./GenerateKeyDialog";
 import { useFetch, useAdminClient } from "../../context/auth/AdminClient";
@@ -170,7 +170,7 @@ export const Keys = ({ clientId, save }: KeysProps) => {
                   />
                 }
               >
-                <TextInput
+                <KeycloakTextInput
                   type="text"
                   id="jwksUrl"
                   name="attributes.jwks.url"

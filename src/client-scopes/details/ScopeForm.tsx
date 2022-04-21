@@ -5,7 +5,6 @@ import { Controller, useForm, useWatch } from "react-hook-form";
 import {
   FormGroup,
   ValidatedOptions,
-  TextInput,
   Select,
   SelectVariant,
   SelectOption,
@@ -28,6 +27,7 @@ import { useRealm } from "../../context/realm-context/RealmContext";
 import { getProtocolName } from "../../clients/utils";
 import { toClientScopes } from "../routes/ClientScopes";
 import { FormAccess } from "../../components/form-access/FormAccess";
+import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 
 type ScopeFormProps = {
   clientScope: ClientScopeRepresentation;
@@ -82,7 +82,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
         }
         helperTextInvalid={t("common:required")}
       >
-        <TextInput
+        <KeycloakTextInput
           ref={register({
             required: true,
             validate: (value: string) =>
@@ -110,7 +110,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
         }
         helperTextInvalid={t("common:maxLength", { length: 255 })}
       >
-        <TextInput
+        <KeycloakTextInput
           ref={register({
             maxLength: 255,
           })}
@@ -285,7 +285,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
           defaultValue=""
           control={control}
           render={({ onChange, value }) => (
-            <TextInput
+            <KeycloakTextInput
               type="number"
               value={value}
               data-testid="displayOrder"

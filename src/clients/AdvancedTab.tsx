@@ -10,7 +10,6 @@ import {
   Split,
   SplitItem,
   Text,
-  TextInput,
   ToolbarItem,
   Tooltip,
 } from "@patternfly/react-core";
@@ -29,6 +28,7 @@ import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { ScrollForm } from "../components/scroll-form/ScrollForm";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { TimeSelector } from "../components/time-selector/TimeSelector";
+import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 import { useAdminClient } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { convertToFormValues, toUpperCase } from "../util";
@@ -209,7 +209,7 @@ export const AdvancedTab = ({
                 }
               >
                 <InputGroup>
-                  <TextInput
+                  <KeycloakTextInput
                     type="text"
                     id="kc-not-before"
                     name="notBefore"

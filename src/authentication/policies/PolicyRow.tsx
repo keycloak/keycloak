@@ -8,12 +8,12 @@ import {
   Split,
   SplitItem,
   Switch,
-  TextInput,
   ValidatedOptions,
 } from "@patternfly/react-core";
 import { MinusCircleIcon } from "@patternfly/react-icons";
-
 import type PasswordPolicyTypeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/passwordPolicyTypeRepresentation";
+
+import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 
 import "./policy-row.css";
 
@@ -45,7 +45,7 @@ export const PolicyRow = ({
       <Split>
         <SplitItem isFilled>
           {configType && configType !== "int" && (
-            <TextInput
+            <KeycloakTextInput
               id={id}
               data-testid={id}
               ref={register({ required: true })}

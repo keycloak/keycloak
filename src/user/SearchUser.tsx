@@ -7,12 +7,13 @@ import {
   EmptyStateBody,
   Form,
   InputGroup,
-  TextInput,
   Title,
 } from "@patternfly/react-core";
 import { SearchIcon } from "@patternfly/react-icons";
 import { useForm } from "react-hook-form";
 import { useHistory, useRouteMatch } from "react-router-dom";
+
+import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 
 type SearchUserProps = {
   onSearch: (search: string) => void;
@@ -34,7 +35,7 @@ export const SearchUser = ({ onSearch }: SearchUserProps) => {
       <EmptyStateBody>
         <Form onSubmit={handleSubmit((form) => onSearch(form.search))}>
           <InputGroup>
-            <TextInput
+            <KeycloakTextInput
               type="text"
               id="kc-user-search"
               name="search"

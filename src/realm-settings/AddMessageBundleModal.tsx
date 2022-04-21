@@ -6,12 +6,13 @@ import {
   FormGroup,
   Modal,
   ModalVariant,
-  TextInput,
   ValidatedOptions,
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
 import { useForm, UseFormMethods } from "react-hook-form";
 import type { KeyValueType } from "../components/key-value-form/key-value-convert";
+
+import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 
 type AddMessageBundleModalProps = {
   id?: string;
@@ -75,7 +76,7 @@ export const AddMessageBundleModal = ({
           }
           isRequired
         >
-          <TextInput
+          <KeycloakTextInput
             data-testid="key-input"
             ref={register({ required: true })}
             autoFocus
@@ -97,7 +98,7 @@ export const AddMessageBundleModal = ({
           }
           isRequired
         >
-          <TextInput
+          <KeycloakTextInput
             data-testid="value-input"
             ref={register({ required: true })}
             type="text"

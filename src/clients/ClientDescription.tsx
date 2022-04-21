@@ -5,13 +5,13 @@ import {
   FormGroup,
   Switch,
   TextArea,
-  TextInput,
   ValidatedOptions,
 } from "@patternfly/react-core";
 
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import { HelpItem } from "../components/help-enabler/HelpItem";
 import { FormAccess } from "../components/form-access/FormAccess";
+import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 
 type ClientDescriptionProps = {
   protocol?: string;
@@ -38,7 +38,7 @@ export const ClientDescription = ({ protocol }: ClientDescriptionProps) => {
         }
         isRequired
       >
-        <TextInput
+        <KeycloakTextInput
           ref={register({ required: true })}
           type="text"
           id="kc-client-id"
@@ -55,7 +55,12 @@ export const ClientDescription = ({ protocol }: ClientDescriptionProps) => {
         label={t("common:name")}
         fieldId="kc-name"
       >
-        <TextInput ref={register()} type="text" id="kc-name" name="name" />
+        <KeycloakTextInput
+          ref={register()}
+          type="text"
+          id="kc-name"
+          name="name"
+        />
       </FormGroup>
       <FormGroup
         labelIcon={

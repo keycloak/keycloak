@@ -1,15 +1,10 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Controller, useFormContext } from "react-hook-form";
-import {
-  Button,
-  Chip,
-  ChipGroup,
-  FormGroup,
-  TextInput,
-} from "@patternfly/react-core";
+import { Button, Chip, ChipGroup, FormGroup } from "@patternfly/react-core";
 
 import { HelpItem } from "../help-enabler/HelpItem";
+import { KeycloakTextInput } from "../keycloak-text-input/KeycloakTextInput";
 import type { ComponentProps } from "./components";
 import { AddScopeDialog } from "../../clients/scopes/AddScopeDialog";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
@@ -86,7 +81,7 @@ export const MultivaluedScopesComponent = ({
                 />
               )}
               {value.length === 0 && !conditionName && (
-                <TextInput
+                <KeycloakTextInput
                   type="text"
                   id="kc-scopes"
                   value={value}

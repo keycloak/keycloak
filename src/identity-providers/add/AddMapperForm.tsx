@@ -6,7 +6,6 @@ import {
   Select,
   SelectOption,
   SelectVariant,
-  TextInput,
   ValidatedOptions,
 } from "@patternfly/react-core";
 
@@ -14,6 +13,7 @@ import { HelpItem } from "../../components/help-enabler/HelpItem";
 import type IdentityProviderMapperRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderMapperRepresentation";
 import type { IdPMapperRepresentationWithAttributes } from "./AddMapper";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
+import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 
 type AddMapperFormProps = {
   mapperTypes: Record<string, IdentityProviderMapperRepresentation>;
@@ -60,7 +60,7 @@ export const AddMapperForm = ({
         }
         helperTextInvalid={t("common:required")}
       >
-        <TextInput
+        <KeycloakTextInput
           ref={register({ required: true })}
           type="text"
           datatest-id="name-input"

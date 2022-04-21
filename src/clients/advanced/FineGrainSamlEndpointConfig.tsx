@@ -1,15 +1,11 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import type { Control } from "react-hook-form";
-import {
-  ActionGroup,
-  Button,
-  FormGroup,
-  TextInput,
-} from "@patternfly/react-core";
+import { ActionGroup, Button, FormGroup } from "@patternfly/react-core";
 
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 
 type FineGrainSamlEndpointConfigProps = {
   control: Control<Record<string, any>>;
@@ -35,7 +31,7 @@ export const FineGrainSamlEndpointConfig = ({
           />
         }
       >
-        <TextInput
+        <KeycloakTextInput
           ref={register()}
           type="text"
           id="assertionConsumerServicePostBindingURL"
@@ -52,7 +48,7 @@ export const FineGrainSamlEndpointConfig = ({
           />
         }
       >
-        <TextInput
+        <KeycloakTextInput
           ref={register()}
           type="text"
           id="assertionConsumerServiceRedirectBindingURL"
@@ -69,7 +65,7 @@ export const FineGrainSamlEndpointConfig = ({
           />
         }
       >
-        <TextInput
+        <KeycloakTextInput
           ref={register()}
           type="text"
           id="logoutServicePostBindingURL"
@@ -86,7 +82,7 @@ export const FineGrainSamlEndpointConfig = ({
           />
         }
       >
-        <TextInput
+        <KeycloakTextInput
           ref={register()}
           type="text"
           id="logoutServiceRedirectBindingURL"
@@ -103,7 +99,7 @@ export const FineGrainSamlEndpointConfig = ({
           />
         }
       >
-        <TextInput
+        <KeycloakTextInput
           ref={register()}
           type="text"
           id="logoutServiceArtifactBindingUrl"
@@ -120,7 +116,7 @@ export const FineGrainSamlEndpointConfig = ({
           />
         }
       >
-        <TextInput
+        <KeycloakTextInput
           ref={register()}
           type="text"
           id="artifactBindingUrl"
@@ -137,7 +133,7 @@ export const FineGrainSamlEndpointConfig = ({
           />
         }
       >
-        <TextInput
+        <KeycloakTextInput
           ref={register()}
           type="text"
           id="artifactResolutionService"

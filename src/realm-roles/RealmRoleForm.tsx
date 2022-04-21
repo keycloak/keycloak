@@ -5,7 +5,6 @@ import {
   FormGroup,
   PageSection,
   TextArea,
-  TextInput,
   ValidatedOptions,
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
@@ -13,6 +12,7 @@ import type { UseFormMethods } from "react-hook-form";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { FormAccess } from "../components/form-access/FormAccess";
 import type { AttributeForm } from "../components/key-value-form/AttributeForm";
+import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useHistory } from "react-router-dom";
 
@@ -50,7 +50,7 @@ export const RealmRoleForm = ({
             validated={errors.name ? "error" : "default"}
             helperTextInvalid={t("common:required")}
           >
-            <TextInput
+            <KeycloakTextInput
               ref={register({
                 required: !editMode,
                 validate: (value: string) =>
