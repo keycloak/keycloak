@@ -27,37 +27,37 @@ export default class AuthorizationTab extends CommonPage {
   private exportSubTab = new ExportTab();
 
   goToSettingsSubTab() {
-    this.tabUtils().clickTab(AuthorizationSubTab.Settings);
+    this.tabUtils().clickTab(AuthorizationSubTab.Settings, 1);
     return this.settingsSubTab;
   }
 
   goToResourcesSubTab() {
-    this.tabUtils().clickTab(AuthorizationSubTab.Resources);
+    this.tabUtils().clickTab(AuthorizationSubTab.Resources, 1);
     return this.resourcesSubTab;
   }
 
   goToScopesSubTab() {
-    this.tabUtils().clickTab(AuthorizationSubTab.Scopes);
+    this.tabUtils().clickTab(AuthorizationSubTab.Scopes, 1);
     return this.scopesSubTab;
   }
 
   goToPoliciesSubTab() {
-    this.tabUtils().clickTab(AuthorizationSubTab.Policies);
+    this.tabUtils().clickTab(AuthorizationSubTab.Policies, 1);
     return this.policiesSubTab;
   }
 
   goToPermissionsSubTab() {
-    this.tabUtils().clickTab(AuthorizationSubTab.Permissions);
+    this.tabUtils().clickTab(AuthorizationSubTab.Permissions, 1);
     return this.permissionsSubTab;
   }
 
   goToEvaluateSubTab() {
-    this.tabUtils().clickTab(AuthorizationSubTab.Evaluate);
+    this.tabUtils().clickTab(AuthorizationSubTab.Evaluate, 1);
     return this.evaluateSubTab;
   }
 
   goToExportSubTab() {
-    this.tabUtils().clickTab(AuthorizationSubTab.Export);
+    this.tabUtils().clickTab(AuthorizationSubTab.Export, 1);
     return this.exportSubTab;
   }
 }

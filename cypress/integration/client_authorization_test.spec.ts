@@ -23,22 +23,22 @@ describe("Client authentication subtab", () => {
     "client-authentication-" + (Math.random() + 1).toString(36).substring(7);
 
   before(() => {
-    adminClient.createClient({
-      protocol: "openid-connect",
-      clientId,
-      publicClient: false,
-      authorizationServicesEnabled: true,
-      serviceAccountsEnabled: true,
-      standardFlowEnabled: true,
-    });
-  });
-
-  beforeEach(() => {
     keycloakBefore();
     loginPage.logIn();
     sidebarPage.goToClients();
     listingPage.searchItem(clientId).goToItemDetails(clientId);
     clientDetailsPage.goToAuthorizationTab();
+
+    cy.wrap(
+      adminClient.createClient({
+        protocol: "openid-connect",
+        clientId,
+        publicClient: false,
+        authorizationServicesEnabled: true,
+        serviceAccountsEnabled: true,
+        standardFlowEnabled: true,
+      })
+    );
   });
 
   after(() => {
@@ -142,7 +142,7 @@ describe("Client authentication subtab", () => {
     authenticationTab.formUtils().cancel();
   });
 
-  it.skip("Should create a permission", () => {
+  it("Should create a permission", () => {
     authenticationTab.goToPermissionsSubTab();
 
     permissionsSubTab.createPermission("resource").fillPermissionForm({

@@ -5,31 +5,40 @@ export default class TabPage extends CommonElements {
 
   constructor() {
     super(".pf-c-tabs");
-    this.tabItemSelector = this.parentSelector + ".pf-c-tabs__item";
+    this.tabItemSelector = ".pf-c-tabs__item";
   }
 
-  clickTab(tabName: string) {
-    cy.get(this.tabItemSelector).contains(tabName).click();
-    this.checkIsCurrentTab(tabName);
+  private getTab(tabName: string, index: number | undefined = 0) {
+    return cy
+      .get(this.parentSelector)
+      .eq(index)
+      .find(this.tabItemSelector)
+      .contains(tabName);
+  }
+
+  clickTab(tabName: string, index: number | undefined = 0) {
+    this.getTab(tabName, index).click();
+    this.checkIsCurrentTab(tabName, index);
     return this;
   }
 
-  checkIsCurrentTab(tabName: string) {
-    cy.get(this.tabItemSelector)
-      .contains(tabName)
-      .parent()
-      .should("have.class", "pf-m-current");
+  checkIsCurrentTab(tabName: string, index: number | undefined = 0) {
+    this.getTab(tabName, index).parent().should("have.class", "pf-m-current");
     return this;
   }
 
-  checkTabExists(tabName: string, exists: boolean) {
+  checkTabExists(
+    tabName: string,
+    exists: boolean,
+    index: number | undefined = 0
+  ) {
     const condition = exists ? "exist" : "not.exist";
-    cy.get(this.tabItemSelector).contains(tabName).should(condition);
+    this.getTab(tabName, index).should(condition);
     return this;
   }
 
-  checkNumberOfTabsIsEqual(number: number) {
-    cy.get(this.tabItemSelector).should("have.length", number);
+  checkNumberOfTabsIsEqual(number: number, index: number | undefined = 0) {
+    cy.get(this.parentSelector).eq(index).should("have.length", number);
     return this;
   }
 }
