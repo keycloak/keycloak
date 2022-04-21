@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0"?>
 <!--
   ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
   ~ and other contributors as indicated by the @author tags.
@@ -19,20 +19,40 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <parent>
-        <artifactId>keycloak-parent</artifactId>
+        <artifactId>keycloak-dependencies-parent</artifactId>
         <groupId>org.keycloak</groupId>
         <version>999-SNAPSHOT</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
-    <artifactId>keycloak-dependencies-parent</artifactId>
-    <packaging>pom</packaging>
-    <name>Keycloak Dependencies Parent</name>
-    <description/>
+    <artifactId>keycloak-dependencies-admin-ui-wrapper</artifactId>
+    <packaging>jar</packaging>
+    <name>Keycloak Admin UI BOM wrapper</name>
+    <description>
+        BOM wrapper for Admin UI to limit Sonatype snapshot repository to admin-ui
+    </description>
 
-    <modules>
-        <module>admin-ui</module>
-        <module>server-min</module>
-        <module>server-all</module>
-    </modules>
+    <dependencies>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-admin-ui</artifactId>
+            <type>jar</type>
+        </dependency>
+    </dependencies>
+
+    <repositories>
+        <repository>
+            <id>sonatype-snapshots</id>
+            <name>Sonatype Snapshots</name>
+            <url>https://s01.oss.sonatype.org/content/repositories/snapshots/</url>
+            <snapshots>
+                <enabled>true</enabled>
+                <updatePolicy>daily</updatePolicy>
+            </snapshots>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+        </repository>
+    </repositories>
+
 </project>
