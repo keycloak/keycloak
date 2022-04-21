@@ -112,7 +112,7 @@ By default, the console log handler logs plain unstructured data to the console.
 {"timestamp":"2022-02-25T10:31:32.452+01:00","sequence":8442,"loggerClassName":"org.jboss.logging.Logger","loggerName":"io.quarkus","level":"INFO","message":"Keycloak 18.0.0-SNAPSHOT on JVM (powered by Quarkus 2.7.2.Final) started in 3.253s. Listening on: http://0.0.0.0:8080","threadName":"main","threadId":1,"mdc":{},"ndc":"","hostName":"host-name","processName":"QuarkusEntryPoint","processId":36946}
 ----
 
-When using JSON output, colors are disabled and the format settings set by `--log-console-format` will not apply.
+When using JSON output, colors are disabled and the format settings set by `--log-console-format` will not apply. The JSON messages can be customized, see the https://quarkus.io/guides/logging#quarkus-logging-json_configuration[JSON logging section] in the quarkus logging guide for reference.
 
 To use unstructured logging, run the following command:
 
@@ -157,7 +157,7 @@ Please see the <<Configuring the console log format>> section in this guide for 
 == Configuring raw quarkus logging properties
 At the time of writing, the logging features of the quarkus based Keycloak are basic, yet powerful. Nevertheless, expect more to come and feel free to join the https://github.com/keycloak/keycloak/discussions/8870[discussion] at GitHub.
 
-When you need a temporary solution, e.g. for logging to a file or using syslog isntead of console, you can check out the https://github.com/keycloak/keycloak/discussions/8870[Quarkus logging guide]. It is possible to use all properties mentioned there, as long as no other than the base logging dependency is involved. For example it is possible to set the log handler to file, but not to use json output, yet, as you would need to provide another dependency for json output to work.
+When you need a temporary solution, e.g. for logging to a file or using syslog isntead of console, you can check out the https://quarkus.io/guides/logging[Quarkus logging guide]. It is possible to use all properties mentioned there, as long as no other than the base logging dependency is involved. For example it is possible to set the log handler to file, but not to use json output, yet, as you would need to provide another dependency for json output to work.
 
 To use raw quarkus properties, please refer to the <@links.server id="configuration"/> guide at section _Using unsupported server options_.
 
