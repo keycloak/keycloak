@@ -1,8 +1,7 @@
 import CommonElements from "../CommonElements";
 
 export default class SidebarPage extends CommonElements {
-  private realmsDrpDwn = "#realm-select button.pf-c-dropdown__toggle";
-  private realmsList = '#realm-select ul[role="menu"]';
+  private realmsDrpDwn = "realmSelectorToggle";
   private createRealmBtn = "add-realm";
 
   private clientsBtn = "#nav-item-clients";
@@ -19,21 +18,25 @@ export default class SidebarPage extends CommonElements {
   private userFederationBtn = "#nav-item-user-federation";
 
   showCurrentRealms(length: number) {
-    cy.get(this.realmsDrpDwn).scrollIntoView().click({ force: true });
-    cy.get(this.realmsList)
-      .children("li")
-      .should("have.length", length + 1); // account for button
-    cy.get(this.realmsDrpDwn).click({ force: true });
+    cy.findByTestId(this.realmsDrpDwn).click();
+    cy.get('[data-testid="realmSelector"] li').should(
+      "have.length",
+      length + 1 // account for button
+    );
+    cy.findByTestId(this.realmsDrpDwn).click({ force: true });
   }
 
   getCurrentRealm() {
-    return cy.get(this.realmsDrpDwn).scrollIntoView().invoke("text");
+    return cy.findByTestId(this.realmsDrpDwn).scrollIntoView().invoke("text");
   }
 
   goToRealm(realmName: string) {
     this.waitForPageLoad();
-    cy.get(this.realmsDrpDwn).scrollIntoView().click({ force: true });
-    cy.get(this.realmsList).contains(realmName).click({ force: true });
+    cy.findByTestId(this.realmsDrpDwn)
+      .click()
+      .parent()
+      .contains(realmName)
+      .click();
     this.waitForPageLoad();
 
     return this;
@@ -41,7 +44,7 @@ export default class SidebarPage extends CommonElements {
 
   goToCreateRealm() {
     this.waitForPageLoad();
-    cy.get(this.realmsDrpDwn).scrollIntoView().click({ force: true });
+    cy.findByTestId(this.realmsDrpDwn).click({ force: true });
     cy.findByTestId(this.createRealmBtn).click({ force: true });
     this.waitForPageLoad();
 
@@ -50,7 +53,7 @@ export default class SidebarPage extends CommonElements {
 
   goToClients() {
     this.waitForPageLoad();
-    cy.get(this.clientsBtn).scrollIntoView().click({ force: true });
+    cy.get(this.clientsBtn).click({ force: true });
     this.waitForPageLoad();
 
     return this;
@@ -58,7 +61,7 @@ export default class SidebarPage extends CommonElements {
 
   goToClientScopes() {
     this.waitForPageLoad();
-    cy.get(this.clientScopesBtn).scrollIntoView().click();
+    cy.get(this.clientScopesBtn).click();
     this.waitForPageLoad();
 
     return this;

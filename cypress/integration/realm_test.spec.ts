@@ -14,114 +14,113 @@ const createRealmPage = new CreateRealmPage();
 const realmSettings = new RealmSettings();
 const modalUtils = new ModalUtils();
 
-describe.skip("Realms test", () => {
-  const testRealmName =
-    "Test realm " + (Math.random() + 1).toString(36).substring(7);
-  const newRealmName =
-    "New Test realm " + (Math.random() + 1).toString(36).substring(7);
-  const editedRealmName =
-    "Edited Test realm " + (Math.random() + 1).toString(36).substring(7);
-  describe("Realm creation", () => {
-    before(() => {
-      keycloakBefore();
-      loginPage.logIn();
-    });
+const testRealmName =
+  "Test realm " + (Math.random() + 1).toString(36).substring(7);
+const newRealmName =
+  "New Test realm " + (Math.random() + 1).toString(36).substring(7);
+const editedRealmName =
+  "Edited Test realm " + (Math.random() + 1).toString(36).substring(7);
 
-    after(() => {
+describe("Realm tests", () => {
+  before(() => {
+    keycloakBefore();
+    loginPage.logIn();
+  });
+
+  after(() =>
+    Promise.all(
       [testRealmName, newRealmName, editedRealmName].map((realm) =>
         adminClient.deleteRealm(realm)
-      );
-    });
+      )
+    )
+  );
 
-    it("should fail creating Master realm", () => {
-      sidebarPage.goToCreateRealm();
-      createRealmPage.fillRealmName("master").createRealm();
+  it("should fail creating Master realm", () => {
+    sidebarPage.goToCreateRealm();
+    createRealmPage.fillRealmName("master").createRealm();
 
-      masthead.checkNotificationMessage(
-        "Could not create realm Conflict detected. See logs for details"
-      );
-      createRealmPage.cancelRealmCreation();
-      cy.reload();
-    });
+    masthead.checkNotificationMessage(
+      "Could not create realm Conflict detected. See logs for details"
+    );
+    createRealmPage.cancelRealmCreation();
+  });
 
-    it("should fail creating realm with empty name", () => {
-      sidebarPage.goToCreateRealm();
-      createRealmPage.createRealm();
+  it("should fail creating realm with empty name", () => {
+    sidebarPage.goToCreateRealm();
+    createRealmPage.createRealm();
 
-      createRealmPage.verifyRealmNameFieldInvalid();
-      cy.reload();
-    });
+    createRealmPage.verifyRealmNameFieldInvalid();
+  });
 
-    it("should create Test realm", () => {
-      sidebarPage.goToCreateRealm();
+  it("should create Test realm", () => {
+    sidebarPage.goToCreateRealm();
 
-      // Test and clear resource field
-      createRealmPage.fillCodeEditor();
-      createRealmPage.clearTextField();
+    // Test and clear resource field
+    createRealmPage.fillCodeEditor();
+    createRealmPage.clearTextField();
 
-      createRealmPage.fillRealmName(testRealmName).createRealm();
+    createRealmPage.fillRealmName(testRealmName).createRealm();
 
-      masthead.checkNotificationMessage("Realm created");
-    });
+    masthead.checkNotificationMessage("Realm created");
+  });
 
-    it("should create Test Disabled realm", () => {
-      sidebarPage.goToCreateRealm();
-      sidebarPage.waitForPageLoad();
-      createRealmPage.fillRealmName("Test Disabled").createRealm();
-      createRealmPage.disableRealm();
+  it("should create Test Disabled realm", () => {
+    sidebarPage.goToCreateRealm();
+    sidebarPage.waitForPageLoad();
+    createRealmPage.fillRealmName("Test Disabled").createRealm();
+    createRealmPage.disableRealm();
 
-      masthead.checkNotificationMessage("Realm created");
-    });
+    masthead.checkNotificationMessage("Realm created");
+  });
 
-    it("Should cancel deleting Test Disabled realm", () => {
-      sidebarPage.goToRealmSettings();
-      realmSettings.clickActionMenu();
-      cy.findByText("Delete").click();
-      modalUtils.cancelModal();
-    });
+  it("Should cancel deleting Test Disabled realm", () => {
+    sidebarPage.goToRealm("Test Disabled").goToRealmSettings();
+    realmSettings.clickActionMenu();
+    cy.findByText("Delete").click();
+    modalUtils.cancelModal();
+  });
 
-    it("Should delete Test Disabled realm", () => {
-      sidebarPage.goToRealmSettings();
-      realmSettings.clickActionMenu();
-      cy.findByText("Delete").click();
-      modalUtils.confirmModal();
-      masthead.checkNotificationMessage("The realm has been deleted");
-    });
+  it("Should delete Test Disabled realm", () => {
+    sidebarPage.goToRealm("Test Disabled").goToRealmSettings();
+    realmSettings.clickActionMenu();
+    cy.findByText("Delete").click();
+    modalUtils.confirmModal();
+    masthead.checkNotificationMessage("The realm has been deleted");
+  });
 
-    it("Should update realms on delete", () => {
-      sidebarPage.showCurrentRealms(2);
-    });
+  it("Should update realms on delete", () => {
+    sidebarPage.showCurrentRealms(2);
+  });
 
-    it("should create realm from new a realm", () => {
-      sidebarPage.goToCreateRealm();
-      createRealmPage.fillRealmName(newRealmName).createRealm();
+  it("should create realm from new a realm", () => {
+    sidebarPage.goToCreateRealm();
+    createRealmPage.fillRealmName(newRealmName).createRealm();
 
-      const fetchUrl = "/admin/realms?briefRepresentation=true";
-      cy.intercept(fetchUrl).as("fetch");
+    const fetchUrl = "/admin/realms?briefRepresentation=true";
+    cy.intercept(fetchUrl).as("fetch");
 
-      masthead.checkNotificationMessage("Realm created");
+    masthead.checkNotificationMessage("Realm created");
 
-      cy.wait(["@fetch"]);
+    cy.wait(["@fetch"]);
 
-      sidebarPage.goToCreateRealm();
-      createRealmPage.fillRealmName(editedRealmName).createRealm();
+    sidebarPage.goToCreateRealm();
+    createRealmPage.fillRealmName(editedRealmName).createRealm();
 
-      masthead.checkNotificationMessage("Realm created");
+    masthead.checkNotificationMessage("Realm created");
 
-      cy.wait(["@fetch"]);
-    });
+    cy.wait(["@fetch"]);
+  });
 
-    it("Should show current realms", () => {
-      sidebarPage.showCurrentRealms(4);
-    });
+  it("Should show current realms", () => {
+    sidebarPage.showCurrentRealms(4);
+  });
 
-    it("should change to Test realm", () => {
-      sidebarPage.getCurrentRealm().should("eq", editedRealmName);
+  it("should change to Test realm", () => {
+    sidebarPage.getCurrentRealm().should("eq", editedRealmName);
 
-      sidebarPage
-        .goToRealm(testRealmName)
-        .getCurrentRealm()
-        .should("eq", testRealmName);
-    });
+    sidebarPage
+      .goToRealm(testRealmName)
+      .getCurrentRealm()
+      .should("eq", testRealmName);
   });
 });
