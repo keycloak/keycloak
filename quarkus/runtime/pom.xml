@@ -173,6 +173,12 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-dependencies-admin-ui-wrapper</artifactId>
+            <type>pom</type>
+            <scope>import</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
             <artifactId>keycloak-admin-ui</artifactId>
             <exclusions>
                 <exclusion>
