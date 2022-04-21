@@ -1,69 +1,58 @@
 # Keycloak
 
-Keycloak is an Open Source Identity and Access Management solution for modern Applications and Services.
+Keycloak es una solución de gestión de acceso e identidad de código abierto para aplicaciones y servicios modernos.
 
-This repository contains the source code for the Keycloak Server, Java adapters and the JavaScript adapter.
+Este repositorio contiene el código fuente del servidor de Keycloak, los adaptadores de Java y el adaptador de JavaScript.
 
+## Documentación de Apoyo
 
-## Help and Documentation
+- [Documentación](https://www.keycloak.org/documentation.html)
+- [Lista de correo de usuarios ](https://groups.google.com/d/forum/keycloak-user) - Lista de correo para preguntas generales y soporte sobre Keycloak
 
-* [Documentation](https://www.keycloak.org/documentation.html)
-* [User Mailing List](https://groups.google.com/d/forum/keycloak-user) - Mailing list for help and general questions about Keycloak
+## Reportar vulnerabilidades de seguridad
 
+Si ha encontrado una vulnerabilidad de seguridad, consulte las [instrucciones sobre cómo informarla correctamente.](https://github.com/keycloak/keycloak/security/policy)
 
-## Reporting Security Vulnerabilities
+## Reportar un problema
 
-If you've found a security vulnerability, please look at the [instructions on how to properly report it](https://github.com/keycloak/keycloak/security/policy)
+Si cree haber descubierto un defecto en Keycloak, abra [un problema](https://github.com/keycloak/keycloak/issues). Recuerde proporcionar un buen resumen, una descripción y los pasos para reproducir el problema.
 
+## Primeros Pasos
 
-## Reporting an issue
-
-If you believe you have discovered a defect in Keycloak please open [an issue](https://github.com/keycloak/keycloak/issues).
-Please remember to provide a good summary, description as well as steps to reproduce the issue.
-
-
-## Getting started
-
-To run Keycloak download the distribution from our [website](https://www.keycloak.org/downloads.html). Unzip and run:
+Para ejecutar Keycloak, descargue la distribución desde [nuestro sitio web](https://www.keycloak.org/downloads.html). Descomprima y ejecute:
 
     bin/kc.[sh|bat] start-dev
 
-Alternatively, you can use the Docker image by running:
+Alternativamente, puede usar la imagen de Docker ejecutando:
 
     docker run quay.io/keycloak/keycloak start-dev
-    
-For more details refer to the [Keycloak Documentation](https://www.keycloak.org/documentation.html).
 
+Para obtener más detalles, consulte la [documentación de Keycloak](https://www.keycloak.org/documentation.html).
 
-## Building from Source
+## Construir desde el código fuente.
 
-To build from source refer to the [building and working with the code base](docs/building.md) guide.
+Para compilar desde el código fuente, consulte la [guía de creación y trabajo con código base](docs/building.md).
 
+### Pruebas
 
-### Testing
+Para ejecutar pruebas, consulte la [guía de pruebas](docs/tests.md).
 
-To run tests refer to the [running tests](docs/tests.md) guide.
+### Escribir pruebas
 
+Para escribir pruebas, consulte la guía de [escritura de pruebas](docs/tests-development.md).
 
-### Writing Tests
+## Contribuir
 
-To write tests refer to the [writing tests](docs/tests-development.md) guide.
+Antes de contribuir a Keycloak, lea nuestras [pautas de contribución](CONTRIBUTING.md).
 
+## Otros Proyectos de Keycloak
 
-## Contributing
+- [Keycloak](https://github.com/keycloak/keycloak) - Servidor Keycloak y adaptadores Java
+- [Keycloak Documentation](https://github.com/keycloak/keycloak-documentation) - Documentación para Keycloak
+- [Keycloak QuickStarts](https://github.com/keycloak/keycloak-quickstarts) - Inicios rápidos para comenzar con Keycloak
+- [Keycloak Node.js Connect](https://github.com/keycloak/keycloak-nodejs-connect) - Adaptador Node.js para Keycloak
+- [Keycloak Node.js Admin Client](https://github.com/keycloak/keycloak-nodejs-admin-client) - Biblioteca de Node.js para Keycloak Admin REST API
 
-Before contributing to Keycloak please read our [contributing guidelines](CONTRIBUTING.md).
+## Licencia
 
-
-## Other Keycloak Projects
-
-* [Keycloak](https://github.com/keycloak/keycloak) - Keycloak Server and Java adapters
-* [Keycloak Documentation](https://github.com/keycloak/keycloak-documentation) - Documentation for Keycloak
-* [Keycloak QuickStarts](https://github.com/keycloak/keycloak-quickstarts) - QuickStarts for getting started with Keycloak
-* [Keycloak Node.js Connect](https://github.com/keycloak/keycloak-nodejs-connect) - Node.js adapter for Keycloak
-* [Keycloak Node.js Admin Client](https://github.com/keycloak/keycloak-nodejs-admin-client) - Node.js library for Keycloak Admin REST API
-
-
-## License
-
-* [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0)
+- [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0)
