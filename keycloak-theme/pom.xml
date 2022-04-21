@@ -119,17 +119,6 @@
 
         <plugins>
             <plugin>
-                <artifactId>maven-clean-plugin</artifactId>
-                <version>3.2.0</version>
-                <configuration>
-                    <filesets>
-                        <fileset>
-                            <directory>src</directory>
-                        </fileset>
-                    </filesets>
-                </configuration>
-            </plugin>
-            <plugin>
                 <groupId>com.github.eirslett</groupId>
                 <artifactId>frontend-maven-plugin</artifactId>
                 <version>1.12.1</version>
@@ -144,6 +133,9 @@
                         <goals>
                             <goal>npm</goal>
                         </goals>
+                        <configuration>
+                            <arguments>ci</arguments>
+                        </configuration>
                     </execution>
                     <execution>
                         <id>npm run build</id>
@@ -171,7 +163,7 @@
                             <goal>copy-resources</goal>
                         </goals>
                         <configuration>
-                            <outputDirectory>src/main/resources/admin/resources</outputDirectory>
+                            <outputDirectory>target/classes/theme/keycloak.v2/admin/resources</outputDirectory>
                             <resources>
                                 <resource>
                                     <directory>../build</directory>
@@ -207,8 +199,8 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <file>target/classes/admin/resources/index.html</file>
-                    <outputFile>target/classes/admin/index.ftl</outputFile>
+                    <file>target/classes/theme/keycloak.v2/admin/resources/index.html</file>
+                    <outputFile>target/classes/theme/keycloak.v2/admin/index.ftl</outputFile>
                     <regex>false</regex>
                     <replacements>
                         <replacement>
@@ -238,7 +230,7 @@
   </script>
 </body>
 ]]>
-                            </value>
+</value>
                         </replacement>
                     </replacements>
 
