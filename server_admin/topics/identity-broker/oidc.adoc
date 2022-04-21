@@ -2,7 +2,7 @@
 [[_identity_broker_oidc]]
 === OpenID Connect v1.0 identity providers
 
-{project_name} brokers identity providers based on the OpenID Connect protocol. These identity providers (IDPs) must support the xref:proc-creating-oidc-client_{context}[Authorization Code Flow] defined in the specification to authenticate users and authorize access.
+{project_name} brokers identity providers based on the OpenID Connect protocol. These identity providers (IDPs) must support the xref:con-oidc-auth-flows_{context}[Authorization Code Flow] defined in the specification to authenticate users and authorize access.
 
 
 .Procedure
