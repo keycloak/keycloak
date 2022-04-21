@@ -23,7 +23,7 @@ describe("Identity provider test", () => {
   const changeSuccessMsg =
     "Successfully changed display order of identity providers";
   const deletePrompt = "Delete provider?";
-  const deleteSuccessMsg = "Provider successfully deleted";
+  const deleteSuccessMsg = "Provider successfully deleted.";
 
   describe("Identity provider creation", () => {
     const identityProviderName = "github";

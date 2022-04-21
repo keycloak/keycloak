@@ -22,7 +22,7 @@ describe("SAML identity provider test", () => {
   const saveMapperSuccessMsg = "Mapper saved successfully.";
 
   const deletePrompt = "Delete provider?";
-  const deleteSuccessMsg = "Provider successfully deleted";
+  const deleteSuccessMsg = "Provider successfully deleted.";
 
   const classRefName = "acClassRef-1";
   const declRefName = "acDeclRef-1";

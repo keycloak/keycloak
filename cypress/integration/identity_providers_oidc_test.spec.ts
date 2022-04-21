@@ -19,7 +19,7 @@ describe("OIDC identity provider test", () => {
   const createMapperSuccessMsg = "Mapper created successfully.";
 
   const deletePrompt = "Delete provider?";
-  const deleteSuccessMsg = "Provider successfully deleted";
+  const deleteSuccessMsg = "Provider successfully deleted.";
 
   const keycloakServer = Cypress.env("KEYCLOAK_SERVER");
   const discoveryUrl = `${keycloakServer}/realms/master/.well-known/openid-configuration`;

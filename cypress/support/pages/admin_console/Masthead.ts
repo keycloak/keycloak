@@ -53,14 +53,11 @@ export default class Masthead extends CommonElements {
   }
 
   checkNotificationMessage(message: string, closeNotification?: boolean) {
-    cy.get(this.alertMessage)
-      .should("contain.text", message)
-      .parent()
-      .within(() => {
-        if (closeNotification) {
-          cy.get(".pf-c-alert__action").click({ multiple: true });
-        }
-      });
+    cy.get(this.alertMessage).should("contain.text", message);
+
+    if (closeNotification) {
+      cy.get(`button[title="${message}"]`).click();
+    }
     return this;
   }
 
