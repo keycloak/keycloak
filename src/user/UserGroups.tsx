@@ -216,6 +216,7 @@ export const UserGroups = ({ user }: UserGroupsProps) => {
           data-testid={`leave-${group.name}`}
           onClick={() => leave([group])}
           variant="link"
+          isDisabled={!user.access?.manageGroupMembership}
         >
           {t("leave")}
         </Button>
@@ -286,6 +287,7 @@ export const UserGroups = ({ user }: UserGroupsProps) => {
               className="kc-join-group-button"
               onClick={toggleModal}
               data-testid="add-group-button"
+              isDisabled={!user.access?.manageGroupMembership}
             >
               {t("joinGroup")}
             </Button>

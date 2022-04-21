@@ -157,11 +157,16 @@ const UsersTabs = () => {
         dropdownItems={[
           <DropdownItem
             key="impersonate"
+            isDisabled={!user?.access?.impersonate}
             onClick={() => toggleImpersonateDialog()}
           >
             {t("impersonate")}
           </DropdownItem>,
-          <DropdownItem key="delete" onClick={() => toggleDeleteDialog()}>
+          <DropdownItem
+            key="delete"
+            isDisabled={!user?.access?.manage}
+            onClick={() => toggleDeleteDialog()}
+          >
             {t("common:delete")}
           </DropdownItem>,
         ]}
@@ -196,6 +201,7 @@ const UsersTabs = () => {
               <Tab
                 eventKey="credentials"
                 data-testid="credentials"
+                isHidden={!user.access?.manage}
                 title={<TabTitleText>{t("common:credentials")}</TabTitleText>}
               >
                 <UserCredentials user={user} />
@@ -203,6 +209,7 @@ const UsersTabs = () => {
               <Tab
                 eventKey="role-mapping"
                 data-testid="role-mapping-tab"
+                isHidden={!user.access?.mapRoles}
                 title={<TabTitleText>{t("roleMapping")}</TabTitleText>}
               >
                 <UserRoleMapping id={id} name={user.username!} />

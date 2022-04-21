@@ -23,6 +23,7 @@ import {
   SearchIcon,
   WarningTriangleIcon,
 } from "@patternfly/react-icons";
+import type { IRowData } from "@patternfly/react-table";
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
@@ -113,7 +114,10 @@ export default function UsersSection() {
     }
 
     try {
-      const users = await adminClient.users.find({ ...params });
+      const users = await adminClient.users.find({
+        briefRepresentation: true,
+        ...params,
+      });
       if (realm?.bruteForceProtected) {
         const brutes = await Promise.all(
           users.map((user: BruteUser) =>
@@ -344,15 +348,20 @@ export default function UsersSection() {
             )
           }
           toolbarItem={toolbar}
-          actions={[
-            {
-              title: t("common:delete"),
-              onRowClick: (user) => {
-                setSelectedRows([user]);
-                toggleDeleteDialog();
+          actionResolver={(rowData: IRowData) => {
+            const user: UserRepresentation = rowData.data;
+            if (!user.access?.manage) return [];
+
+            return [
+              {
+                title: t("common:delete"),
+                onClick: () => {
+                  setSelectedRows([user]);
+                  toggleDeleteDialog();
+                },
               },
-            },
-          ]}
+            ];
+          }}
           columns={[
             {
               name: "username",

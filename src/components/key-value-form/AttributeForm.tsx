@@ -16,9 +16,15 @@ export type AttributesFormProps = {
   form: UseFormMethods<AttributeForm>;
   save?: (model: AttributeForm) => void;
   reset?: () => void;
+  fineGrainedAccess?: boolean;
 };
 
-export const AttributesForm = ({ form, reset, save }: AttributesFormProps) => {
+export const AttributesForm = ({
+  form,
+  reset,
+  save,
+  fineGrainedAccess,
+}: AttributesFormProps) => {
   const { t } = useTranslation("roles");
   const noSaveCancelButtons = !save && !reset;
   const {
@@ -30,6 +36,7 @@ export const AttributesForm = ({ form, reset, save }: AttributesFormProps) => {
     <FormAccess
       role="manage-realm"
       onSubmit={save ? handleSubmit(save) : undefined}
+      fineGrainedAccess={fineGrainedAccess}
     >
       <FormProvider {...form}>
         <KeyValueInput name="attributes" />

@@ -153,6 +153,7 @@ export const UserForm = ({
       isHorizontal
       onSubmit={handleSubmit(save)}
       role="manage-users"
+      fineGrainedAccess={user?.access?.manage}
       className="pf-u-mt-lg"
     >
       {open && (

@@ -56,6 +56,7 @@ export const UserAttributes = ({ user: defaultUser }: UserAttributesProps) => {
       <AttributesForm
         form={form}
         save={save}
+        fineGrainedAccess={user.access?.manage}
         reset={() =>
           form.reset({
             attributes: convertAttributes(),
