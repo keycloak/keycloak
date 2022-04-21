@@ -251,7 +251,7 @@ describe("Realm roles test", () => {
     });
 
     const keyValue = new KeyValueInput("attributes");
-    it("should add attribute", () => {
+    it.skip("should add attribute", () => {
       listingPage.itemExist(editRoleName).goToItemDetails(editRoleName);
 
       createRealmRolePage.goToAttributesTab();
@@ -261,7 +261,7 @@ describe("Realm roles test", () => {
       keyValue.validateRows(1);
     });
 
-    it("should add attribute multiple", () => {
+    it.skip("should add attribute multiple", () => {
       listingPage.itemExist(editRoleName).goToItemDetails(editRoleName);
 
       createRealmRolePage.goToAttributesTab();
@@ -272,7 +272,7 @@ describe("Realm roles test", () => {
         .validateRows(3);
     });
 
-    it("should delete attribute", () => {
+    it.skip("should delete attribute", () => {
       listingPage.itemExist(editRoleName).goToItemDetails(editRoleName);
       createRealmRolePage.goToAttributesTab();
 
