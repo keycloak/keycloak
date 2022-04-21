@@ -37,9 +37,9 @@ import { EmptyPermissionsState } from "./EmptyPermissionsState";
 import { toNewPermission } from "../routes/NewPermission";
 import { toPermissionDetails } from "../routes/PermissionDetails";
 import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
+import { toPolicyDetails } from "../routes/PolicyDetails";
 
 import "./permissions.css";
-import { toPolicyDetails } from "../routes/PolicyDetails";
 
 type PermissionsProps = {
   clientId: string;
@@ -93,7 +93,7 @@ export const AuthorizationPermissions = ({ clientId }: PermissionsProps) => {
     async () => {
       const permissions = await adminClient.clients.findPermissions({
         first,
-        max,
+        max: max + 1,
         id: clientId,
         ...search,
       });
@@ -115,7 +115,7 @@ export const AuthorizationPermissions = ({ clientId }: PermissionsProps) => {
       );
     },
     setPermissions,
-    [key, search]
+    [key, search, first, max]
   );
 
   useFetch(

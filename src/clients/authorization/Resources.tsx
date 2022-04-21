@@ -66,7 +66,7 @@ export const AuthorizationResources = ({ clientId }: ResourcesProps) => {
     () => {
       const params = {
         first,
-        max,
+        max: max + 1,
         deep: false,
         ...search,
       };
@@ -79,7 +79,7 @@ export const AuthorizationResources = ({ clientId }: ResourcesProps) => {
       setResources(
         resources.map((resource) => ({ ...resource, isExpanded: false }))
       ),
-    [key, search]
+    [key, search, first, max]
   );
 
   const UriRenderer = ({ row }: { row: ResourceRepresentation }) => (

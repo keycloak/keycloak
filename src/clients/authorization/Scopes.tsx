@@ -66,7 +66,7 @@ export const AuthorizationScopes = ({ clientId }: ScopesProps) => {
     async () => {
       const params = {
         first,
-        max,
+        max: max + 1,
         deep: false,
         name: search,
       };
@@ -93,7 +93,7 @@ export const AuthorizationScopes = ({ clientId }: ScopesProps) => {
       );
     },
     setScopes,
-    [key, search]
+    [key, search, first, max]
   );
 
   const ResourceRenderer = ({

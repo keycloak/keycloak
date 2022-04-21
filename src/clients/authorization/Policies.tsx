@@ -72,7 +72,7 @@ export const AuthorizationPolicies = ({ clientId }: PoliciesProps) => {
     async () => {
       const policies = await adminClient.clients.listPolicies({
         first,
-        max,
+        max: max + 1,
         id: clientId,
         permission: "false",
         ...search,
@@ -101,7 +101,7 @@ export const AuthorizationPolicies = ({ clientId }: PoliciesProps) => {
       );
       setPolicies(policies);
     },
-    [key, search]
+    [key, search, first, max]
   );
 
   const DependentPoliciesRenderer = ({
