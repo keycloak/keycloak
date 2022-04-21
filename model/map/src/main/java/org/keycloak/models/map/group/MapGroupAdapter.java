@@ -67,12 +67,7 @@ public class MapGroupAdapter extends AbstractGroupModel<MapGroupEntity> {
 
     @Override
     public String getFirstAttribute(String name) {
-        List<String> attributeValues = this.entity.getAttribute(name);
-        if (attributeValues == null) {
-            return null;
-        }
-
-        return attributeValues.get(0);
+        return getAttributeStream(name).findFirst().orElse(null);
     }
 
     @Override
