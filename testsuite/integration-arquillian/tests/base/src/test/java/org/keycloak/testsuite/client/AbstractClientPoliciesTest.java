@@ -79,10 +79,10 @@ import org.keycloak.common.util.KeycloakUriBuilder;
 import org.keycloak.common.util.Time;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.constants.ServiceUrlConstants;
+import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyType;
 import org.keycloak.crypto.SignatureSignerContext;
 import org.keycloak.events.EventType;
-import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.Constants;
@@ -419,17 +419,17 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
     private String getKeyAlgorithmFromJwaAlgorithm(String jwaAlgorithm) {
         String keyAlg = null;
         switch (jwaAlgorithm) {
-            case org.keycloak.crypto.Algorithm.RS256:
-            case org.keycloak.crypto.Algorithm.RS384:
-            case org.keycloak.crypto.Algorithm.RS512:
-            case org.keycloak.crypto.Algorithm.PS256:
-            case org.keycloak.crypto.Algorithm.PS384:
-            case org.keycloak.crypto.Algorithm.PS512:
+            case Algorithm.RS256:
+            case Algorithm.RS384:
+            case Algorithm.RS512:
+            case Algorithm.PS256:
+            case Algorithm.PS384:
+            case Algorithm.PS512:
                 keyAlg = KeyType.RSA;
                 break;
-            case org.keycloak.crypto.Algorithm.ES256:
-            case org.keycloak.crypto.Algorithm.ES384:
-            case org.keycloak.crypto.Algorithm.ES512:
+            case Algorithm.ES256:
+            case Algorithm.ES384:
+            case Algorithm.ES512:
                 keyAlg = KeyType.EC;
                 break;
             default :
@@ -556,7 +556,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         return requestObject;
     }
 
-    protected void registerRequestObject(AuthorizationEndpointRequestObject requestObject, String clientId, Algorithm sigAlg, boolean isUseRequestUri) throws URISyntaxException, IOException {
+    protected void registerRequestObject(AuthorizationEndpointRequestObject requestObject, String clientId, String sigAlg, boolean isUseRequestUri) throws URISyntaxException, IOException {
         TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
 
         // Set required signature for request_uri
@@ -572,12 +572,12 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
 
         // generate and register client keypair
-        oidcClientEndpointsResource.generateKeys(sigAlg.name());
+        oidcClientEndpointsResource.generateKeys(sigAlg);
 
         // register request object
         byte[] contentBytes = JsonSerialization.writeValueAsBytes(requestObject);
         String encodedRequestObject = Base64Url.encode(contentBytes);
-        oidcClientEndpointsResource.registerOIDCRequest(encodedRequestObject, sigAlg.name());
+        oidcClientEndpointsResource.registerOIDCRequest(encodedRequestObject, sigAlg);
 
         if (isUseRequestUri) {
             oauth.request(null);
