@@ -131,13 +131,13 @@ final class HttpPropertyMappers {
         }
 
         if (!enabled) {
-            ConfigValue proceed = context.proceed("kc.https-certificate-file");
+            ConfigValue certConfig = context.proceed("kc.https-certificate-file");
 
-            if (proceed == null || proceed.getValue() == null) {
-                proceed = getMapper("quarkus.http.ssl.certificate.key-store-file").getConfigValue(context);
+            if (certConfig == null || certConfig.getValue() == null) {
+                certConfig = getMapper("quarkus.http.ssl.certificate.key-store-file").getConfigValue(context);
             }
 
-            if (proceed == null || proceed.getValue() == null) {
+            if (certConfig == null || certConfig.getValue() == null) {
                 addInitializationException(Messages.httpsConfigurationNotSet());
             }
         }

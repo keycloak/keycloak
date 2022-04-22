@@ -44,6 +44,7 @@ public final class Environment {
     public static final String DATA_PATH = "/data";
     public static final String DEFAULT_THEMES_PATH = "/themes";
     public static final String DEV_PROFILE_VALUE = "dev";
+    public static final String PROD_PROFILE_VALUE = "prod";
     public static final String LAUNCH_MODE = "kc.launch.mode";
 
     private Environment() {}
@@ -130,6 +131,14 @@ public final class Environment {
         }
         
         return profile;
+    }
+
+    public static boolean isProdMode() {
+        if (PROD_PROFILE_VALUE.equalsIgnoreCase(getProfile())) {
+            return true;
+        }
+
+        return PROD_PROFILE_VALUE.equals(getBuildTimeProperty(PROFILE).orElse(null));
     }
 
     public static boolean isDevMode() {

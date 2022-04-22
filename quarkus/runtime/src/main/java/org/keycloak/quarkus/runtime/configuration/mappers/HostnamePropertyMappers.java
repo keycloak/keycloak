@@ -1,6 +1,12 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
 
+import io.smallrye.config.ConfigValue;
+import org.keycloak.quarkus.runtime.Environment;
+import org.keycloak.quarkus.runtime.Messages;
+
+import static org.keycloak.quarkus.runtime.integration.QuarkusPlatform.addInitializationException;
+
 final class HostnamePropertyMappers {
 
     private HostnamePropertyMappers(){}
@@ -23,6 +29,14 @@ final class HostnamePropertyMappers {
                         .description("Forces URLs to use HTTPS. Only needed if proxy does not properly set the X-Forwarded-Proto header.")
                         .hidden(true)
                         .defaultValue(Boolean.TRUE.toString())
+                        .transformer((s, configSourceInterceptorContext) -> {
+                            ConfigValue proxyConfig = configSourceInterceptorContext.proceed("kc.proxy");
+
+                            if(Environment.isProdMode() && (proxyConfig == null || proxyConfig.getValue().equals("false"))) {
+                                addInitializationException(Messages.httpsConfigurationNotSet());
+                            }
+                            return s;
+                        })
                         .type(Boolean.class)
                         .build(),
                 builder().from("hostname-strict-backchannel")
