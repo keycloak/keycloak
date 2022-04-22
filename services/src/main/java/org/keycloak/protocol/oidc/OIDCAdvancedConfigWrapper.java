@@ -20,15 +20,10 @@ package org.keycloak.protocol.oidc;
 import static org.keycloak.protocol.oidc.OIDCConfigAttributes.USE_LOWER_CASE_IN_TOKEN_RESPONSE;
 
 import org.keycloak.authentication.authenticators.client.X509ClientAuthenticator;
-import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.Constants;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.utils.StringUtil;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -49,14 +44,12 @@ public class OIDCAdvancedConfigWrapper extends AbstractClientConfigWrapper {
     }
 
 
-    public Algorithm getUserInfoSignedResponseAlg() {
-        String alg = getAttribute(OIDCConfigAttributes.USER_INFO_RESPONSE_SIGNATURE_ALG);
-        return alg==null ? null : Enum.valueOf(Algorithm.class, alg);
+    public String getUserInfoSignedResponseAlg() {
+        return getAttribute(OIDCConfigAttributes.USER_INFO_RESPONSE_SIGNATURE_ALG);
     }
 
-    public void setUserInfoSignedResponseAlg(Algorithm alg) {
-        String algStr = alg==null ? null : alg.toString();
-        setAttribute(OIDCConfigAttributes.USER_INFO_RESPONSE_SIGNATURE_ALG, algStr);
+    public void setUserInfoSignedResponseAlg(String algorithm) {
+        setAttribute(OIDCConfigAttributes.USER_INFO_RESPONSE_SIGNATURE_ALG, algorithm);
     }
 
     public boolean isUserInfoSignatureRequired() {
@@ -83,14 +76,12 @@ public class OIDCAdvancedConfigWrapper extends AbstractClientConfigWrapper {
         return getUserInfoEncryptedResponseAlg() != null;
     }
 
-    public Algorithm getRequestObjectSignatureAlg() {
-        String alg = getAttribute(OIDCConfigAttributes.REQUEST_OBJECT_SIGNATURE_ALG);
-        return alg==null ? null : Enum.valueOf(Algorithm.class, alg);
+    public String getRequestObjectSignatureAlg() {
+        return getAttribute(OIDCConfigAttributes.REQUEST_OBJECT_SIGNATURE_ALG);
     }
 
-    public void setRequestObjectSignatureAlg(Algorithm alg) {
-        String algStr = alg==null ? null : alg.toString();
-        setAttribute(OIDCConfigAttributes.REQUEST_OBJECT_SIGNATURE_ALG, algStr);
+    public void setRequestObjectSignatureAlg(String algorithm) {
+        setAttribute(OIDCConfigAttributes.REQUEST_OBJECT_SIGNATURE_ALG, algorithm);
     }
 
     public void setRequestObjectEncryptionAlg(String algorithm) {
