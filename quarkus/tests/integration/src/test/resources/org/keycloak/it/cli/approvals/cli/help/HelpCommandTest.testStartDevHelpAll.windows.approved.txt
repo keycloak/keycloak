@@ -21,7 +21,8 @@ Cluster:
                        disables clustering and is intended for development and testing purposes.
                        Default: ispn.
 --cache-config-file <file>
-                     Defines the file from which cache configuration should be loaded from.
+                     Defines the file from which cache configuration should be loaded from. The
+                       configuration file is relative to the 'conf/' directory.
 --cache-stack <stack>
                      Define the default stack to use for cluster communication and node discovery.
                        This option only takes effect if 'cache' is set to 'ispn'. Default: udp.
@@ -173,4 +174,4 @@ Logging:
 Do NOT start the server using this command when deploying to production.
 
 Use 'kc.bat start-dev --help-all' to list all available options, including
-build options.
+build options.
