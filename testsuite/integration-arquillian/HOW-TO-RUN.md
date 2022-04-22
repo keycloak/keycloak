@@ -454,7 +454,7 @@ For the available versions, take a look at the directory [tests/other/server-con
 
 
 ## Admin Console UI tests
-The UI tests are real-life, UI focused integration tests. Hence they do not support the default HtmlUnit browser. Only the following real-life browsers are supported: Mozilla Firefox, Google Chrome and Internet Explorer. For details on how to run the tests with these browsers, please refer to [Different Browsers](#different-browsers) chapter.
+The UI tests are real-life, UI focused integration tests. Hence they do not support the default HtmlUnit browser. Only the following real-life browsers are supported: Mozilla Firefox and Google Chrome. For details on how to run the tests with these browsers, please refer to [Different Browsers](#different-browsers) chapter.
 
 The UI tests are focused on the Admin Console. They are placed in the `console` module and are disabled by default.
 
@@ -598,13 +598,6 @@ Although technically they can be run with almost every test in the testsuite, th
 * **Driver download required:** [ChromeDriver](https://sites.google.com/a/chromium.org/chromedriver/) that corresponds with your version of the browser
 * **Run with:** `-Dbrowser=chrome -Dwebdriver.chrome.driver=path/to/chromedriver`
 
-#### Internet Explorer
-* **Supported test modules:** `console`, `base-ui`
-* **Supported version:** 11
-* **Driver download required:** [Internet Explorer Driver Server](http://www.seleniumhq.org/download/); recommended version [3.5.1 32-bit](http://selenium-release.storage.googleapis.com/3.5/IEDriverServer_Win32_3.5.1.zip)
-* **Run with:** `-Dbrowser=internetExplorer -Dwebdriver.ie.driver=path/to/IEDriverServer.exe -Dauth.server.ssl.required=false`
-Note: We currently do not support SSL in IE.
-
 #### Apple Safari
 * **Supported test modules:** `base-ui`
 * **Supported version:** latest stable
@@ -619,7 +612,7 @@ Note: We currently do not support SSL in IE.
 
 #### Automatic driver downloads
 You can rely on automatic driver downloads which is provided by [Arquillian Drone](http://arquillian.org/arquillian-extension-drone/#_automatic_download). To do so just omit the `-Dwebdriver.{browser}.driver` CLI argument when running the tests.
-By default latest driver version is always downloaded. To download a specific version, add `-DfirefoxDriverVersion`, `-DchromeDriverVersion` or `-DieDriverVersion` CLI argument.
+By default latest driver version is always downloaded. To download a specific version, add `-DfirefoxDriverVersion` or `-DchromeDriverVersion` CLI argument.
 
 #### Mobile browsers
 The support for testing with the mobile browsers is implemented using the [Appium](http://appium.io/) project.
