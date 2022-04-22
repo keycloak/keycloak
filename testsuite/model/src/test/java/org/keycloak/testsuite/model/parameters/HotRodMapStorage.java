@@ -68,8 +68,6 @@ public class HotRodMapStorage extends KeycloakModelParameters {
       .add(ConcurrentHashMapStorageProviderFactory.class) // TODO: this should be removed when we have a HotRod implementation for each area
       .build();
     
-    private static final String STORAGE_CONFIG = "storage.provider";
-
     private HotRodServerRule hotRodServerRule = new HotRodServerRule();
 
     @Override

@@ -109,6 +109,11 @@
             <artifactId>infinispan-component-annotations</artifactId>
             <version>${infinispan.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>${postgresql.driver.version}</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -152,6 +157,9 @@
                         <keycloak.connectionsJpa.default.user>${keycloak.connectionsJpa.user}</keycloak.connectionsJpa.default.user>
                         <keycloak.connectionsJpa.default.password>${keycloak.connectionsJpa.password}</keycloak.connectionsJpa.default.password>
                         <keycloak.connectionsJpa.default.url>${keycloak.connectionsJpa.url}</keycloak.connectionsJpa.default.url>
+                        <keycloak.map.storage.connectionsJpa.url>${keycloak.map.storage.connectionsJpa.url}</keycloak.map.storage.connectionsJpa.url>
+                        <keycloak.map.storage.connectionsJpa.user>${keycloak.map.storage.connectionsJpa.user}</keycloak.map.storage.connectionsJpa.user>
+                        <keycloak.map.storage.connectionsJpa.password>${keycloak.map.storage.connectionsJpa.password}</keycloak.map.storage.connectionsJpa.password>
                         <log4j.configuration>file:${project.build.directory}/test-classes/log4j.properties</log4j.configuration> <!-- for the logging to properly work with tests in the 'other' module -->
                         <keycloak.profile.feature.map_storage>${keycloak.profile.feature.map_storage}</keycloak.profile.feature.map_storage>
                         <keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase>${keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase}</keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase>
@@ -305,6 +313,14 @@
             <properties>
                 <keycloak.profile.feature.map_storage>enabled</keycloak.profile.feature.map_storage>
                 <keycloak.model.parameters>Jpa,Map,LdapMapStorage</keycloak.model.parameters>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>map-jpa</id>
+            <properties>
+                <keycloak.profile.feature.map_storage>enabled</keycloak.profile.feature.map_storage>
+                <keycloak.model.parameters>Map,JpaMapStorage</keycloak.model.parameters>
             </properties>
         </profile>
 
