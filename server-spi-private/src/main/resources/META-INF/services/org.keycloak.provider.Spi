@@ -26,7 +26,6 @@ org.keycloak.models.RealmSpi
 org.keycloak.models.RoleSpi
 org.keycloak.models.DeploymentStateSpi
 org.keycloak.models.ActionTokenStoreSpi
-org.keycloak.models.OAuth2DeviceTokenStoreSpi
 org.keycloak.models.OAuth2DeviceUserCodeSpi
 org.keycloak.models.SamlArtifactSessionMappingStoreSpi
 org.keycloak.models.SingleUseTokenStoreSpi

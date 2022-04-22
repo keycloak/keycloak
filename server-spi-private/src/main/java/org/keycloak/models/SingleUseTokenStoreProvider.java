@@ -37,6 +37,12 @@ public interface SingleUseTokenStoreProvider extends Provider {
      */
     void put(String codeId, long lifespanSeconds, Map<String, String> codeData);
 
+    /**
+     * Gets data associated with the given key.
+     * @param key String
+     * @return Map<String, String> Data associated with the given key or {@code null} if there is no associated data.
+     */
+    Map<String, String> get(String key);
 
     /**
      * This method returns data just if removal was successful. Implementation should guarantee that "remove" is single-use. So if
@@ -47,6 +53,14 @@ public interface SingleUseTokenStoreProvider extends Provider {
      * @return context data related to OAuth2 code. It returns null if there are not context data available.
      */
     Map<String, String> remove(String codeId);
+
+    /**
+     * Replaces data associated with the given key in the store if the store contains the key.
+     * @param key String
+     * @param notes Map<String, String> New data to be stored
+     * @return {@code true} if the store contains the key and data was replaced, otherwise {@code false}.
+     */
+    boolean replace(String key, Map<String, String> notes);
 
     /**
      * Will try to put the token into the cache. It will success just if token is not already there.

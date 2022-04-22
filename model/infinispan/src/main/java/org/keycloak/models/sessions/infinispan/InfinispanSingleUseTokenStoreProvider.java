@@ -67,6 +67,13 @@ public class InfinispanSingleUseTokenStoreProvider implements SingleUseTokenStor
         }
     }
 
+    @Override
+    public Map<String, String> get(String key) {
+        BasicCache<String, ActionTokenValueEntity> cache = tokenCache.get();
+        ActionTokenValueEntity actionTokenValueEntity = cache.get(key);
+        return actionTokenValueEntity != null ? actionTokenValueEntity.getNotes() : null;
+    }
+
 
     @Override
     public Map<String, String> remove(String codeId) {
@@ -86,11 +93,14 @@ public class InfinispanSingleUseTokenStoreProvider implements SingleUseTokenStor
     }
 
     @Override
+    public boolean replace(String key, Map<String, String> notes) {
+        BasicCache<String, ActionTokenValueEntity> cache = tokenCache.get();
+        return cache.replace(key, new ActionTokenValueEntity(notes)) != null;
+    }
+
+    @Override
     public boolean putIfAbsent(String tokenId, long lifespanInSeconds) {
         ActionTokenValueEntity tokenValue = new ActionTokenValueEntity(null);
-
-        // Rather keep the items in the cache for a bit longer
-        lifespanInSeconds = lifespanInSeconds + 10;
 
         try {
             BasicCache<String, ActionTokenValueEntity> cache = tokenCache.get();
