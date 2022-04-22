@@ -48,7 +48,7 @@ public interface MapJpaUpdaterProvider extends Provider {
      * @param connection DB connection
      * @param defaultSchema DB connection
      */
-    void update(Class modelType, Connection connection, String defaultSchema);
+    void update(Class<?> modelType, Connection connection, String defaultSchema);
 
     /**
      * Checks whether Keycloak database for the given model type is up to date with the most recent changesets
@@ -57,7 +57,7 @@ public interface MapJpaUpdaterProvider extends Provider {
      * @param defaultSchema DB schema to use
      * @return
      */
-    Status validate(Class modelType, Connection connection, String defaultSchema);
+    Status validate(Class<?> modelType, Connection connection, String defaultSchema);
 
     /**
      * Exports the SQL update script for the given model type into the given File.
@@ -66,6 +66,6 @@ public interface MapJpaUpdaterProvider extends Provider {
      * @param defaultSchema DB schema to use
      * @param file File to write to
      */
-    void export(Class modelType, Connection connection, String defaultSchema, File file);
+    void export(Class<?> modelType, Connection connection, String defaultSchema, File file);
 
 }

@@ -32,7 +32,7 @@ import javax.persistence.criteria.Root;
 import javax.persistence.criteria.Selection;
 import org.jboss.logging.Logger;
 import org.keycloak.connections.jpa.PersistenceExceptionConverter;
-import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
+import static org.keycloak.models.map.storage.jpa.PaginationUtils.paginateQuery;
 import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.StringKeyConverter;
 import org.keycloak.models.map.common.StringKeyConverter.UUIDKey;
