@@ -14,24 +14,15 @@ import { useAdminClient } from "../context/auth/AdminClient";
 import { RevocationModal } from "./RevocationModal";
 import { LogoutAllSessionsModal } from "./LogoutAllSessionsModal";
 import helpUrls from "../help-urls";
+import { toClient } from "../clients/routes/Client";
+import { useRealm } from "../context/realm-context/RealmContext";
 
 import "./SessionsSection.css";
-
-const Clients = (row: UserSessionRepresentation) => {
-  return (
-    <>
-      {Object.values(row.clients!).map((client) => (
-        <Link key={client} to="" className="pf-u-mx-sm">
-          {client}
-        </Link>
-      ))}
-    </>
-  );
-};
 
 export default function SessionsSection() {
   const { t } = useTranslation("sessions");
   const adminClient = useAdminClient();
+  const { realm } = useRealm();
   const [revocationModalOpen, setRevocationModalOpen] = useState(false);
   const [logoutAllSessionsModalOpen, setLogoutAllSessionsModalOpen] =
     useState(false);
@@ -79,6 +70,20 @@ export default function SessionsSection() {
 
     return userSessions;
   };
+
+  const Clients = (row: UserSessionRepresentation) => (
+    <>
+      {Object.entries(row.clients!).map(([clientId, client]) => (
+        <Link
+          key={client}
+          to={toClient({ clientId, realm, tab: "settings" })}
+          className="pf-u-mx-sm"
+        >
+          {client}
+        </Link>
+      ))}
+    </>
+  );
 
   const dropdownItems = [
     <DropdownItem
