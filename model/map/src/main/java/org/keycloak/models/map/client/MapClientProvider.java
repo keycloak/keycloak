@@ -51,7 +51,6 @@ import static org.keycloak.models.map.storage.QueryParameters.Order.ASCENDING;
 import static org.keycloak.models.map.storage.QueryParameters.withCriteria;
 import static org.keycloak.models.map.storage.criteria.DefaultModelCriteria.criteria;
 
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import java.util.HashSet;
 
 public class MapClientProvider implements ClientProvider {
@@ -302,7 +301,7 @@ public class MapClientProvider implements ClientProvider {
         if (entity == null) return;
 
         // Defaults to openid-connect
-        String clientProtocol = client.getProtocol() == null ? OIDCLoginProtocol.LOGIN_PROTOCOL : client.getProtocol();
+        String clientProtocol = client.getProtocol() == null ? "openid-connect" : client.getProtocol();
 
         LOG.tracef("addClientScopes(%s, %s, %s, %b)%s", realm, client, clientScopes, defaultScope, getShortStackTrace());
 
@@ -335,7 +334,7 @@ public class MapClientProvider implements ClientProvider {
         if (entity == null) return null;
 
         // Defaults to openid-connect
-        String clientProtocol = client.getProtocol() == null ? OIDCLoginProtocol.LOGIN_PROTOCOL : client.getProtocol();
+        String clientProtocol = client.getProtocol() == null ? "openid-connect" : client.getProtocol();
 
         LOG.tracef("getClientScopes(%s, %s, %b)%s", realm, client, defaultScopes, getShortStackTrace());
 

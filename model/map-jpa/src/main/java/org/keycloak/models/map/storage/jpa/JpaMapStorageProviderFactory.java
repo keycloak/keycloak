@@ -16,6 +16,8 @@
  */
 package org.keycloak.models.map.storage.jpa;
 
+import static org.keycloak.models.map.storage.jpa.updater.MapJpaUpdaterProvider.Status.VALID;
+
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
@@ -48,7 +50,6 @@ import org.keycloak.common.Profile;
 import org.keycloak.common.util.StackUtil;
 import org.keycloak.common.util.StringPropertyReplacer;
 import org.keycloak.component.AmphibianProviderFactory;
-import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.GroupModel;
@@ -107,8 +108,6 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 
-import static org.keycloak.models.map.storage.jpa.updater.MapJpaUpdaterProvider.Status.VALID;
-
 public class JpaMapStorageProviderFactory implements 
         AmphibianProviderFactory<MapStorageProvider>,
         MapStorageProviderFactory,
@@ -116,6 +115,8 @@ public class JpaMapStorageProviderFactory implements
 
     public static final String PROVIDER_ID = "jpa-map-storage";
     private static final Logger logger = Logger.getLogger(JpaMapStorageProviderFactory.class);
+
+    public static final String HIBERNATE_DEFAULT_SCHEMA = "hibernate.default_schema";
 
     private volatile EntityManagerFactory emf;
     private final Set<Class<?>> validatedModels = ConcurrentHashMap.newKeySet();
@@ -233,7 +234,7 @@ public class JpaMapStorageProviderFactory implements
 
                     String schema = config.get("schema");
                     if (schema != null) {
-                        properties.put(JpaUtils.HIBERNATE_DEFAULT_SCHEMA, schema);
+                        properties.put(HIBERNATE_DEFAULT_SCHEMA, schema);
                     }
 
                     properties.put("hibernate.show_sql", config.getBoolean("showSql", false));
