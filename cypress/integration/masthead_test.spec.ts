@@ -19,12 +19,12 @@ const logOutTest = () => {
 const goToAcctMgtTest = () => {
   sidebarPage.waitForPageLoad();
   masthead.accountManagement();
-  cy.contains("Welcome to Keycloak Account Management");
+  cy.get("h1").contains("Welcome to Keycloak account management");
   cy.get("#landingReferrerLink").click({ force: true });
   masthead.checkIsAdminConsole();
 };
 
-describe.skip("Masthead tests in desktop mode", () => {
+describe("Masthead tests in desktop mode", () => {
   beforeEach(() => {
     keycloakBefore();
     loginPage.logIn();
@@ -48,7 +48,7 @@ describe.skip("Masthead tests in desktop mode", () => {
   });
 });
 
-describe.skip("Masthead tests with kebab menu", () => {
+describe("Masthead tests with kebab menu", () => {
   beforeEach(() => {
     keycloakBefore();
     loginPage.logIn();
