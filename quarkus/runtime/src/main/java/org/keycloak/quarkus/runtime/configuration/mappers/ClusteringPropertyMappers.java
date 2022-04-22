@@ -34,7 +34,8 @@ final class ClusteringPropertyMappers {
                 builder().from("cache-config-file")
                         .mapFrom("cache")
                         .to("kc.spi-connections-infinispan-quarkus-config-file")
-                        .description("Defines the file from which cache configuration should be loaded from.")
+                        .description("Defines the file from which cache configuration should be loaded from. "
+                                + "The configuration file is relative to the 'conf/' directory.")
                         .transformer(new BiFunction<String, ConfigSourceInterceptorContext, String>() {
                             @Override
                             public String apply(String value, ConfigSourceInterceptorContext context) {
