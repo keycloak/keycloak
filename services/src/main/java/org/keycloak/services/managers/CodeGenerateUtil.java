@@ -77,8 +77,8 @@ class CodeGenerateUtil {
 
         boolean isExpired(KeycloakSession session, String code, CS clientSession);
 
-        int getTimestamp(CS clientSession);
-        void setTimestamp(CS clientSession, int timestamp);
+        long getTimestamp(CS clientSession);
+        void setTimestamp(CS clientSession, long timestamp);
 
         String getClientNote(CS clientSession, String noteKey);
 
@@ -158,12 +158,12 @@ class CodeGenerateUtil {
         }
 
         @Override
-        public int getTimestamp(AuthenticationSessionModel clientSession) {
+        public long getTimestamp(AuthenticationSessionModel clientSession) {
             return clientSession.getParentSession().getTimestamp();
         }
 
         @Override
-        public void setTimestamp(AuthenticationSessionModel clientSession, int timestamp) {
+        public void setTimestamp(AuthenticationSessionModel clientSession, long timestamp) {
             clientSession.getParentSession().setTimestamp(timestamp);
         }
 

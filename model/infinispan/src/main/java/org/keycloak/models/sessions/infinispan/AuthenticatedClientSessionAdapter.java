@@ -131,12 +131,12 @@ public class AuthenticatedClientSessionAdapter implements AuthenticatedClientSes
     }
 
     @Override
-    public int getTimestamp() {
+    public long getTimestamp() {
         return entity.getTimestamp();
     }
 
     @Override
-    public void setTimestamp(int timestamp) {
+    public void setTimestamp(long timestamp) {
         ClientSessionUpdateTask task = new ClientSessionUpdateTask() {
 
             @Override

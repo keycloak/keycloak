@@ -39,7 +39,7 @@ public interface ActionTokenKeyModel {
     /**
      * Returns absolute number of seconds since the epoch in UTC timezone when the token expires.
      */
-    int getExpiration();
+    long getExpiration();
 
     /**
      * @return Single-use random value used for verification whether the relevant action is allowed.

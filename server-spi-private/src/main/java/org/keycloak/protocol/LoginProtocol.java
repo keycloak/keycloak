@@ -107,7 +107,7 @@ public interface LoginProtocol extends Provider {
      * @param managementUrl
      * @return {@code true} if revocation policy was successfully updated at the client, {@code false} otherwise.
      */
-    default boolean sendPushRevocationPolicyRequest(RealmModel realm, ClientModel resource, int notBefore, String managementUrl) {
+    default boolean sendPushRevocationPolicyRequest(RealmModel realm, ClientModel resource, long notBefore, String managementUrl) {
         return false;
     }
 

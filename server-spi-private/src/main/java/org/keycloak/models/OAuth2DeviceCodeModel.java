@@ -45,8 +45,8 @@ public class OAuth2DeviceCodeModel {
     private final RealmModel realm;
     private final String clientId;
     private final String deviceCode;
-    private final int expiration;
-    private final int pollingInterval;
+    private final long expiration;
+    private final long pollingInterval;
     private final String clientNotificationToken;
     private final String authReqId;
     private final String scope;
@@ -58,10 +58,10 @@ public class OAuth2DeviceCodeModel {
     private final String codeChallengeMethod;
 
     public static OAuth2DeviceCodeModel create(RealmModel realm, ClientModel client,
-                                               String deviceCode, String scope, String nonce, int expiresIn, int pollingInterval,
+                                               String deviceCode, String scope, String nonce, long expiresIn, long pollingInterval,
                                                String clientNotificationToken, String authReqId, Map<String, String> additionalParams, String codeChallenge, String codeChallengeMethod) {
         
-        int expiration = Time.currentTime() + expiresIn;
+        long expiration = Time.currentTime() + expiresIn;
         return new OAuth2DeviceCodeModel(realm, client.getClientId(), deviceCode, scope, nonce, expiration, pollingInterval,  clientNotificationToken, authReqId, null, null, additionalParams, codeChallenge, codeChallengeMethod);
     }
 
@@ -81,7 +81,7 @@ public class OAuth2DeviceCodeModel {
     }
 
     private OAuth2DeviceCodeModel(RealmModel realm, String clientId,
-                                  String deviceCode, String scope, String nonce, int expiration, int pollingInterval, String clientNotificationToken,
+                                  String deviceCode, String scope, String nonce, long expiration, long pollingInterval, String clientNotificationToken,
                                   String authReqId, String userSessionId, Boolean denied, Map<String, String> additionalParams, String codeChallenge, String codeChallengeMethod) {
         this.realm = realm;
         this.clientId = clientId;
@@ -137,11 +137,11 @@ public class OAuth2DeviceCodeModel {
         return nonce;
     }
 
-    public int getExpiration() {
+    public long getExpiration() {
         return expiration;
     }
 
-    public int getPollingInterval() {
+    public long getPollingInterval() {
         return pollingInterval;
     }
 

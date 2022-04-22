@@ -61,7 +61,7 @@ public class ConsoleTermsAndConditions implements RequiredActionProvider {
             return;
         }
 
-        context.getUser().setAttribute(USER_ATTRIBUTE, Arrays.asList(Integer.toString(Time.currentTime())));
+        context.getUser().setAttribute(USER_ATTRIBUTE, Arrays.asList(Long.toString(Time.currentTime())));
 
         context.success();
     }

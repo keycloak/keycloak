@@ -949,7 +949,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
 
     @Override
     public void removeExpiredClientInitialAccess() {
-        int currentTime = Time.currentTime();
+        long currentTime = Time.currentTime();
 
         em.createNamedQuery("removeExpiredClientInitialAccess")
                 .setParameter("currentTime", currentTime)

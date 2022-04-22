@@ -921,8 +921,8 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
             JsonNode jsonNode = objectMapper.readTree(introspectionResponse);
             Assert.assertEquals(true, jsonNode.get("active").asBoolean());
             Assert.assertEquals("test-user@localhost", jsonNode.get("email").asText());
-            Assert.assertThat(jsonNode.get("exp").asInt() - getCurrentTime(),
-                allOf(greaterThanOrEqualTo(59), lessThanOrEqualTo(60)));
+            Assert.assertThat(jsonNode.get("exp").asLong() - getCurrentTime(),
+                allOf(greaterThanOrEqualTo(59L), lessThanOrEqualTo(60L)));
 
         } finally {
             changeOfflineSessionSettings(false, prevOfflineSession[0], prevOfflineSession[1]);

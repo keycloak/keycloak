@@ -156,17 +156,17 @@ public class PersistentUserSessionAdapter implements OfflineUserSessionModel {
     }
 
     @Override
-    public int getStarted() {
+    public long getStarted() {
         return model.getStarted();
     }
 
     @Override
-    public int getLastSessionRefresh() {
+    public long getLastSessionRefresh() {
         return model.getLastSessionRefresh();
     }
 
     @Override
-    public void setLastSessionRefresh(int seconds) {
+    public void setLastSessionRefresh(long seconds) {
         model.setLastSessionRefresh(seconds);
     }
 

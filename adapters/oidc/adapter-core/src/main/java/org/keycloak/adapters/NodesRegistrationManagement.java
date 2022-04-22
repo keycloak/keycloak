@@ -134,11 +134,11 @@ public class NodesRegistrationManagement {
 
     public static class NodeRegistrationContext {
 
-        private final Integer lastRegistrationTime;
+        private final Long lastRegistrationTime;
         // deployment instance used for registration request
         private final KeycloakDeployment resolvedDeployment;
 
-        public NodeRegistrationContext(Integer lastRegTime, KeycloakDeployment deployment) {
+        public NodeRegistrationContext(Long lastRegTime, KeycloakDeployment deployment) {
             this.lastRegistrationTime = lastRegTime;
             this.resolvedDeployment = deployment;
         }

@@ -42,7 +42,7 @@ public class OAuth2Code {
 
     private final UUID id;
 
-    private final int expiration;
+    private final long expiration;
 
     private final String nonce;
 
@@ -55,7 +55,7 @@ public class OAuth2Code {
     private final String codeChallengeMethod;
 
 
-    public OAuth2Code(UUID id, int expiration, String nonce, String scope, String redirectUriParam,
+    public OAuth2Code(UUID id, long expiration, String nonce, String scope, String redirectUriParam,
                       String codeChallenge, String codeChallengeMethod) {
         this.id = id;
         this.expiration = expiration;
@@ -102,7 +102,7 @@ public class OAuth2Code {
         return id;
     }
 
-    public int getExpiration() {
+    public long getExpiration() {
         return expiration;
     }
 

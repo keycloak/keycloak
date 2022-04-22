@@ -249,7 +249,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         entity.setBrokerSessionId(brokerSessionId);
         entity.setBrokerUserId(brokerUserId);
 
-        int currentTime = Time.currentTime();
+        long currentTime = Time.currentTime();
 
         entity.setStarted(currentTime);
         entity.setLastSessionRefresh(currentTime);
@@ -744,7 +744,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         UserSessionAdapter offlineUserSession = importUserSession(userSession, true);
 
         // started and lastSessionRefresh set to current time
-        int currentTime = Time.currentTime();
+        long currentTime = Time.currentTime();
         offlineUserSession.getEntity().setStarted(currentTime);
         offlineUserSession.setLastSessionRefresh(currentTime);
 

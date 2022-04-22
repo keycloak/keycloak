@@ -49,7 +49,7 @@ public class RootAuthenticationSessionAdapter implements RootAuthenticationSessi
     private RootAuthenticationSessionEntity entity;
     private final int authSessionsLimit;
     private static Comparator<Map.Entry<String, AuthenticationSessionEntity>> TIMESTAMP_COMPARATOR =
-            Comparator.comparingInt(e -> e.getValue().getTimestamp());
+            Comparator.comparingLong(e -> e.getValue().getTimestamp());
 
     public RootAuthenticationSessionAdapter(KeycloakSession session, InfinispanAuthenticationSessionProvider provider,
                                             Cache<String, RootAuthenticationSessionEntity> cache, RealmModel realm,
@@ -79,12 +79,12 @@ public class RootAuthenticationSessionAdapter implements RootAuthenticationSessi
     }
 
     @Override
-    public int getTimestamp() {
+    public long getTimestamp() {
         return entity.getTimestamp();
     }
 
     @Override
-    public void setTimestamp(int timestamp) {
+    public void setTimestamp(long timestamp) {
         entity.setTimestamp(timestamp);
         update();
     }
@@ -135,7 +135,7 @@ public class RootAuthenticationSessionAdapter implements RootAuthenticationSessi
         AuthenticationSessionEntity authSessionEntity = new AuthenticationSessionEntity();
         authSessionEntity.setClientUUID(client.getId());
 
-        int timestamp = Time.currentTime();
+        long timestamp = Time.currentTime();
         authSessionEntity.setTimestamp(timestamp);
 
         String tabId = provider.generateTabId();

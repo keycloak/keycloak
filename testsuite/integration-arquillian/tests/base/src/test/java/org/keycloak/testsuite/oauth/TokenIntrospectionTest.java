@@ -159,8 +159,8 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         assertTrue(rep.isActive());
         assertEquals("test-user@localhost", rep.getUserName());
         assertEquals("test-app", rep.getClientId());
-        assertEquals(jsonNode.get("exp").asInt(), rep.getExpiration());
-        assertEquals(jsonNode.get("iat").asInt(), rep.getIssuedAt());
+        assertEquals(jsonNode.get("exp").asLong(), rep.getExpiration());
+        assertEquals(jsonNode.get("iat").asLong(), rep.getIssuedAt());
         assertEquals(jsonNode.get("nbf"), rep.getNbf());
         assertEquals(jsonNode.get("sub").asText(), rep.getSubject());
 
@@ -215,8 +215,8 @@ public class TokenIntrospectionTest extends AbstractTestRealmKeycloakTest {
         assertTrue(rep.isActive());
         assertEquals("test-app", rep.getClientId());
         assertEquals(jsonNode.get("session_state").asText(), rep.getSessionState());
-        assertEquals(jsonNode.get("exp").asInt(), rep.getExpiration());
-        assertEquals(jsonNode.get("iat").asInt(), rep.getIssuedAt());
+        assertEquals(jsonNode.get("exp").asLong(), rep.getExpiration());
+        assertEquals(jsonNode.get("iat").asLong(), rep.getIssuedAt());
         assertEquals(jsonNode.get("nbf"), rep.getNbf());
         assertEquals(jsonNode.get("iss").asText(), rep.getIssuer());
         assertEquals(jsonNode.get("jti").asText(), rep.getId());

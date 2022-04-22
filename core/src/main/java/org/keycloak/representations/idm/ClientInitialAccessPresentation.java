@@ -26,9 +26,9 @@ public class ClientInitialAccessPresentation {
 
     private String token;
 
-    private Integer timestamp;
+    private Long timestamp;
 
-    private Integer expiration;
+    private Long expiration;
 
     private Integer count;
 
@@ -50,19 +50,19 @@ public class ClientInitialAccessPresentation {
         this.token = token;
     }
 
-    public Integer getTimestamp() {
+    public Long getTimestamp() {
         return timestamp;
     }
 
-    public void setTimestamp(Integer timestamp) {
+    public void setTimestamp(Long timestamp) {
         this.timestamp = timestamp;
     }
 
-    public Integer getExpiration() {
+    public Long getExpiration() {
         return expiration;
     }
 
-    public void setExpiration(Integer expiration) {
+    public void setExpiration(Long expiration) {
         this.expiration = expiration;
     }
 

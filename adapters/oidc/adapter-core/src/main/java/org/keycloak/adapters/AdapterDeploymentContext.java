@@ -364,17 +364,17 @@ public class AdapterDeploymentContext {
         }
 
         @Override
-        public void setNotBefore(int notBefore) {
+        public void setNotBefore(long notBefore) {
             delegate.setNotBefore(notBefore);
         }
 
         @Override
-        public int getNotBefore() {
+        public long getNotBefore() {
             return delegate.getNotBefore();
         }
 
         @Override
-        public void updateNotBefore(int notBefore) {
+        public void updateNotBefore(long notBefore) {
             delegate.setNotBefore(notBefore);
             getPublicKeyLocator().reset(this);
         }

@@ -35,7 +35,7 @@ public class SessionExpiration {
         return lifespan;
     }
 
-    public static long getAuthSessionExpiration(RealmModel realm, int timestamp) {
+    public static long getAuthSessionExpiration(RealmModel realm, long timestamp) {
         return (long) timestamp + getAuthSessionLifespan(realm);
     }
 

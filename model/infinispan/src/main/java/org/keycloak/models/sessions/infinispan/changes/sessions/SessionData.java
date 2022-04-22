@@ -33,9 +33,9 @@ import org.keycloak.models.sessions.infinispan.util.KeycloakMarshallUtil;
 public class SessionData {
 
     private final String realmId;
-    private final int lastSessionRefresh;
+    private final long lastSessionRefresh;
 
-    public SessionData(String realmId, int lastSessionRefresh) {
+    public SessionData(String realmId, long lastSessionRefresh) {
         this.realmId = realmId;
         this.lastSessionRefresh = lastSessionRefresh;
     }
@@ -44,7 +44,7 @@ public class SessionData {
         return realmId;
     }
 
-    public int getLastSessionRefresh() {
+    public long getLastSessionRefresh() {
         return lastSessionRefresh;
     }
 
@@ -66,7 +66,7 @@ public class SessionData {
         @Override
         public SessionData readObject(ObjectInput input) throws IOException, ClassNotFoundException {
             String realmId = MarshallUtil.unmarshallString(input);
-            int lastSessionRefresh = KeycloakMarshallUtil.unmarshallInteger(input);
+            long lastSessionRefresh = KeycloakMarshallUtil.unmarshallLong(input);
 
             return new SessionData(realmId, lastSessionRefresh);
         }

@@ -104,7 +104,7 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
     @Test
     @ModelTest
     public  void testCreateSessions(KeycloakSession session) {
-        int started = Time.currentTime();
+        long started = Time.currentTime();
         RealmModel realm = session.realms().getRealmByName("test");
         UserSessionModel[] sessions = createSessions(session);
 
@@ -118,7 +118,7 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
     public void testUpdateSession(KeycloakSession session) {
         RealmModel realm = session.realms().getRealmByName("test");
         UserSessionModel[] sessions = createSessions(session);
-        int lastRefresh = Time.currentTime();
+        long lastRefresh = Time.currentTime();
         session.sessions().getUserSession(realm, sessions[0].getId()).setLastSessionRefresh(lastRefresh);
 
         assertEquals(lastRefresh, session.sessions().getUserSession(realm, sessions[0].getId()).getLastSessionRefresh());
@@ -129,7 +129,7 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
     public void testUpdateSessionInSameTransaction(KeycloakSession session) {
         RealmModel realm = session.realms().getRealmByName("test");
         UserSessionModel[] sessions = createSessions(session);
-        int lastRefresh = Time.currentTime();
+        long lastRefresh = Time.currentTime();
         session.sessions().getUserSession(realm, sessions[0].getId()).setLastSessionRefresh(lastRefresh);
         assertEquals(lastRefresh, session.sessions().getUserSession(realm, sessions[0].getId()).getLastSessionRefresh());
     }
@@ -138,7 +138,7 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
     @ModelTest
     public void testRestartSession(KeycloakSession session) {
         RealmModel realm = session.realms().getRealmByName("test");
-        int started = Time.currentTime();
+        long started = Time.currentTime();
         UserSessionModel[] sessions = createSessions(session);
 
         Time.setOffset(100);
@@ -188,7 +188,7 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
         UserSessionModel userSession = session.sessions().getUserSession(realm, userSessionId);
         AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessions().get(clientUUID);
 
-        int time = clientSession.getTimestamp();
+        long time = clientSession.getTimestamp();
         assertNull(clientSession.getAction());
 
         clientSession.setAction(AuthenticatedClientSessionModel.Action.LOGGED_OUT.name());
@@ -211,7 +211,7 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
         UserSessionModel userSession = session.sessions().getUserSession(realm, userSessionId);
         AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(clientUUID);
 
-        int time = clientSession.getTimestamp();
+        long time = clientSession.getTimestamp();
         assertNull(clientSession.getAction());
 
         clientSession.setAction(AuthenticatedClientSessionModel.Action.LOGGED_OUT.name());
@@ -601,13 +601,13 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
         // Create client1 session
         AuthenticatedClientSessionModel clientSession1 = session.sessions().createClientSession(realm, client1, userSession);
         clientSession1.setAction("foo1");
-        int currentTime1 = Time.currentTime();
+        long currentTime1 = Time.currentTime();
         clientSession1.setTimestamp(currentTime1);
 
         // Create client2 session
         AuthenticatedClientSessionModel clientSession2 = session.sessions().createClientSession(realm, client2, userSession);
         clientSession2.setAction("foo2");
-        int currentTime2 = Time.currentTime();
+        long currentTime2 = Time.currentTime();
         clientSession2.setTimestamp(currentTime2);
 
         // Ensure sessions are here
@@ -629,7 +629,7 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
         // Rewrite session2
         clientSession2 = session.sessions().createClientSession(realm, client2, userSession);
         clientSession2.setAction("foo2-rewrited");
-        int currentTime3 = Time.currentTime();
+        long currentTime3 = Time.currentTime();
         clientSession2.setTimestamp(currentTime3);
 
 
@@ -651,7 +651,7 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
     }
 
 
-    private static void testAuthenticatedClientSession(AuthenticatedClientSessionModel clientSession, String expectedClientId, String expectedUserSessionId, String expectedAction, int expectedTimestamp) {
+    private static void testAuthenticatedClientSession(AuthenticatedClientSessionModel clientSession, String expectedClientId, String expectedUserSessionId, String expectedAction, long expectedTimestamp) {
         Assert.assertEquals(expectedClientId, clientSession.getClient().getClientId());
         Assert.assertEquals(expectedUserSessionId, clientSession.getUserSession().getId());
         Assert.assertEquals(expectedAction, clientSession.getAction());
@@ -794,7 +794,7 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
         assertArrayEquals(expected, actual);
     }
 
-    public static  void assertSession(UserSessionModel session, UserModel user, String ipAddress, int started, int lastRefresh, String... clients) {
+    public static  void assertSession(UserSessionModel session, UserModel user, String ipAddress, long started, long lastRefresh, String... clients) {
         assertEquals(user.getId(), session.getUser().getId());
         assertEquals(ipAddress, session.getIpAddress());
         assertEquals(user.getUsername(), session.getLoginUsername());

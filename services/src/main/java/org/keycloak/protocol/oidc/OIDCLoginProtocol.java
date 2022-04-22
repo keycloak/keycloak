@@ -418,7 +418,7 @@ public class OIDCLoginProtocol implements LoginProtocol {
     }
 
     @Override
-    public boolean sendPushRevocationPolicyRequest(RealmModel realm, ClientModel resource, int notBefore, String managementUrl) {
+    public boolean sendPushRevocationPolicyRequest(RealmModel realm, ClientModel resource, long notBefore, String managementUrl) {
         PushNotBeforeAction adminAction = new PushNotBeforeAction(TokenIdGenerator.generateId(), Time.currentTime() + 30, resource.getClientId(), notBefore);
         String token = session.tokens().encode(adminAction);
         logger.debugv("pushRevocation resource: {0} url: {1}", resource.getClientId(), managementUrl);

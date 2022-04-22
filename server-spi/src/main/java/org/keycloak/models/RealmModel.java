@@ -752,9 +752,9 @@ public interface RealmModel extends RoleContainerModel {
      *
      * @return
      */
-    int getNotBefore();
+    long getNotBefore();
 
-    void setNotBefore(int notBefore);
+    void setNotBefore(long notBefore);
 
     boolean isEventsEnabled();
 

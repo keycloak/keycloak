@@ -156,7 +156,7 @@ public class ClientSessionCode<CLIENT_SESSION extends CommonClientSessionModel> 
 
     public boolean isActionActive(ActionType actionType) {
         CodeGenerateUtil.ClientSessionParser<CLIENT_SESSION> clientSessionParser = (CodeGenerateUtil.ClientSessionParser<CLIENT_SESSION>) CodeGenerateUtil.getParser(commonLoginSession.getClass());
-        int timestamp = clientSessionParser.getTimestamp(commonLoginSession);
+        long timestamp = clientSessionParser.getTimestamp(commonLoginSession);
 
         int lifespan;
         switch (actionType) {

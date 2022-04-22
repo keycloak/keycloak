@@ -213,8 +213,8 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         IDToken idToken = sendTokenRequestAndGetIDToken(loginEvent);
 
         // Check that authTime is available and set to current time
-        int authTime = idToken.getAuthTime();
-        int currentTime = Time.currentTime();
+        long authTime = idToken.getAuthTime();
+        long currentTime = Time.currentTime();
         Assert.assertTrue(authTime <= currentTime && authTime + 3 >= currentTime);
 
         // Set time offset
@@ -233,7 +233,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         idToken = sendTokenRequestAndGetIDToken(loginEvent);
 
         // Assert that authTime was updated
-        int authTimeUpdated = idToken.getAuthTime();
+        long authTimeUpdated = idToken.getAuthTime();
         Assert.assertTrue(authTime + 10 <= authTimeUpdated);
     }
 
@@ -246,8 +246,8 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         IDToken idToken = sendTokenRequestAndGetIDToken(loginEvent);
 
         // Check that authTime is available and set to current time
-        int authTime = idToken.getAuthTime();
-        int currentTime = Time.currentTime();
+        long authTime = idToken.getAuthTime();
+        long currentTime = Time.currentTime();
         Assert.assertTrue(authTime <= currentTime && authTime + 3 >= currentTime);
 
         // Set time offset
@@ -263,7 +263,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
         idToken = sendTokenRequestAndGetIDToken(loginEvent);
 
         // Assert that authTime is still the same
-        int authTimeUpdated = idToken.getAuthTime();
+        long authTimeUpdated = idToken.getAuthTime();
         Assert.assertEquals(authTime, authTimeUpdated);
     }
 
@@ -297,7 +297,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
 
         EventRepresentation loginEvent = events.expectLogin().detail(Details.USERNAME, "test-user@localhost").assertEvent();
         IDToken idToken = sendTokenRequestAndGetIDToken(loginEvent);
-        int authTime = idToken.getAuthTime();
+        long authTime = idToken.getAuthTime();
 
         // Set time offset
         setTimeOffset(10);
@@ -308,7 +308,7 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
 
         loginEvent = events.expectLogin().removeDetail(Details.USERNAME).assertEvent();
         idToken = sendTokenRequestAndGetIDToken(loginEvent);
-        int authTime2 = idToken.getAuthTime();
+        long authTime2 = idToken.getAuthTime();
 
         Assert.assertEquals(authTime, authTime2);
     }

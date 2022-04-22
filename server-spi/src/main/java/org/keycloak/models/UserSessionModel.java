@@ -71,11 +71,11 @@ public interface UserSessionModel {
 
     boolean isRememberMe();
 
-    int getStarted();
+    long getStarted();
 
-    int getLastSessionRefresh();
+    long getLastSessionRefresh();
 
-    void setLastSessionRefresh(int seconds);
+    void setLastSessionRefresh(long seconds);
 
     boolean isOffline();
 

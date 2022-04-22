@@ -30,8 +30,8 @@ public class Time {
      * Returns current time in seconds adjusted by adding {@link #offset) seconds.
      * @return see description
      */
-    public static int currentTime() {
-        return ((int) (System.currentTimeMillis() / 1000)) + offset;
+    public static long currentTime() {
+        return (System.currentTimeMillis() / 1000) + offset;
     }
 
     /**
@@ -47,7 +47,7 @@ public class Time {
      * @param time Time in milliseconds since the epoch
      * @return see description
      */
-    public static Date toDate(int time) {
+    public static Date toDate(long time) {
         return new Date(time * 1000L);
     }
 
@@ -56,7 +56,7 @@ public class Time {
      * @param time Time in milliseconds since the epoch
      * @return see description
      */
-    public static Date toDate(long time) {
+    public static Date toDateFromMillis(long time) {
         return new Date(time);
     }
 

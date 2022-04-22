@@ -34,7 +34,7 @@ import org.keycloak.models.sessions.infinispan.util.KeycloakMarshallUtil;
 public class LockEntry implements Serializable {
 
     private String node;
-    private int timestamp;
+    private long timestamp;
 
     public String getNode() {
         return node;
@@ -44,11 +44,11 @@ public class LockEntry implements Serializable {
         this.node = node;
     }
 
-    public int getTimestamp() {
+    public long getTimestamp() {
         return timestamp;
     }
 
-    public void setTimestamp(int timestamp) {
+    public void setTimestamp(long timestamp) {
         this.timestamp = timestamp;
     }
 
@@ -76,7 +76,7 @@ public class LockEntry implements Serializable {
         public LockEntry readObjectVersion1(ObjectInput input) throws IOException, ClassNotFoundException {
             LockEntry entry = new LockEntry();
             entry.setNode(MarshallUtil.unmarshallString(input));
-            entry.setTimestamp(KeycloakMarshallUtil.unmarshallInteger(input));
+            entry.setTimestamp(KeycloakMarshallUtil.unmarshallLong(input));
             return entry;
         }
     }

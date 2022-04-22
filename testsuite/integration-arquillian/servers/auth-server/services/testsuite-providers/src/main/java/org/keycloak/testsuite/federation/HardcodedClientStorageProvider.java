@@ -266,7 +266,7 @@ public class HardcodedClientStorageProvider implements ClientStorageProvider, Cl
         }
 
         @Override
-        public int getNotBefore() {
+        public long getNotBefore() {
             return 0;
         }
 

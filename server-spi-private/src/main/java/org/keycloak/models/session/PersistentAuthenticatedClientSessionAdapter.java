@@ -140,12 +140,12 @@ public class PersistentAuthenticatedClientSessionAdapter implements Authenticate
     }
 
     @Override
-    public int getTimestamp() {
+    public long getTimestamp() {
         return model.getTimestamp();
     }
 
     @Override
-    public void setTimestamp(int timestamp) {
+    public void setTimestamp(long timestamp) {
         model.setTimestamp(timestamp);
     }
 

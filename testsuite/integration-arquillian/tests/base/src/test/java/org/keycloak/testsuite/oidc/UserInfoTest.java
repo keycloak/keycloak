@@ -600,7 +600,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
         try {
             AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client);
 
-            int time = Time.currentTime() + 60;
+            long time = Time.currentTime() + 60;
 
             RealmResource realm = adminClient.realm("test");
             RealmRepresentation rep = realm.toRepresentation();
@@ -622,7 +622,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
                     .assertEvent();
 
             events.clear();
-            rep.setNotBefore(0);
+            rep.setNotBefore(0L);
             realm.update(rep);
 
             // do the same with client's notBefore
@@ -645,7 +645,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
                     .client((String) null)
                     .assertEvent();
 
-            clientRep.setNotBefore(0);
+            clientRep.setNotBefore(0L);
             clientResource.update(clientRep);
         } finally {
             client.close();

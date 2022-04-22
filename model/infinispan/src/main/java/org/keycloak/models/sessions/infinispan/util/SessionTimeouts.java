@@ -49,7 +49,7 @@ public class SessionTimeouts {
      * @return
      */
     public static long getUserSessionLifespanMs(RealmModel realm, UserSessionEntity userSessionEntity) {
-        int timeSinceSessionStart = Time.currentTime() - userSessionEntity.getStarted();
+        long timeSinceSessionStart = Time.currentTime() - userSessionEntity.getStarted();
 
         int sessionMaxLifespan = Math.max(realm.getSsoSessionMaxLifespan(), MINIMAL_EXPIRATION_SEC);
         if (userSessionEntity.isRememberMe()) {
@@ -76,7 +76,7 @@ public class SessionTimeouts {
      * @return
      */
     public static long getUserSessionMaxIdleMs(RealmModel realm, UserSessionEntity userSessionEntity) {
-        int timeSinceLastRefresh = Time.currentTime() - userSessionEntity.getLastSessionRefresh();
+        long timeSinceLastRefresh = Time.currentTime() - userSessionEntity.getLastSessionRefresh();
 
         int sessionIdleMs = Math.max(realm.getSsoSessionIdleTimeout(), MINIMAL_EXPIRATION_SEC);
         if (userSessionEntity.isRememberMe()) {
@@ -103,7 +103,7 @@ public class SessionTimeouts {
      * @return
      */
     public static long getClientSessionLifespanMs(RealmModel realm, AuthenticatedClientSessionEntity clientSessionEntity) {
-        int timeSinceTimestampUpdate = Time.currentTime() - clientSessionEntity.getTimestamp();
+        long timeSinceTimestampUpdate = Time.currentTime() - clientSessionEntity.getTimestamp();
 
         int sessionMaxLifespan = Math.max(realm.getSsoSessionMaxLifespan(), realm.getSsoSessionMaxLifespanRememberMe());
 
@@ -134,7 +134,7 @@ public class SessionTimeouts {
      * @return
      */
     public static long getClientSessionMaxIdleMs(RealmModel realm, AuthenticatedClientSessionEntity clientSessionEntity) {
-        int timeSinceTimestampUpdate = Time.currentTime() - clientSessionEntity.getTimestamp();
+        long timeSinceTimestampUpdate = Time.currentTime() - clientSessionEntity.getTimestamp();
 
         int sessionIdleTimeout = Math.max(realm.getSsoSessionIdleTimeout(), realm.getSsoSessionIdleTimeoutRememberMe());
 
@@ -168,7 +168,7 @@ public class SessionTimeouts {
         // By default, this is disabled, so offlineSessions have just "maxIdle"
         if (!realm.isOfflineSessionMaxLifespanEnabled()) return -1l;
 
-        int timeSinceSessionStart = Time.currentTime() - userSessionEntity.getStarted();
+        long timeSinceSessionStart = Time.currentTime() - userSessionEntity.getStarted();
 
         int sessionMaxLifespan = Math.max(realm.getOfflineSessionMaxLifespan(), MINIMAL_EXPIRATION_SEC);
 
@@ -192,7 +192,7 @@ public class SessionTimeouts {
      * @return
      */
     public static long getOfflineSessionMaxIdleMs(RealmModel realm, UserSessionEntity userSessionEntity) {
-        int timeSinceLastRefresh = Time.currentTime() - userSessionEntity.getLastSessionRefresh();
+        long timeSinceLastRefresh = Time.currentTime() - userSessionEntity.getLastSessionRefresh();
 
         int sessionIdle = Math.max(realm.getOfflineSessionIdleTimeout(), MINIMAL_EXPIRATION_SEC);
 
@@ -218,7 +218,7 @@ public class SessionTimeouts {
         // By default, this is disabled, so offlineSessions have just "maxIdle"
         if (!realm.isOfflineSessionMaxLifespanEnabled() && realm.getClientOfflineSessionMaxLifespan() <= 0) return -1l;
 
-        int timeSinceTimestamp = Time.currentTime() - authenticatedClientSessionEntity.getTimestamp();
+        long timeSinceTimestamp = Time.currentTime() - authenticatedClientSessionEntity.getTimestamp();
 
         int sessionMaxLifespan = Math.max(realm.getOfflineSessionMaxLifespan(), MINIMAL_EXPIRATION_SEC);
 
@@ -246,7 +246,7 @@ public class SessionTimeouts {
      * @return
      */
     public static long getOfflineClientSessionMaxIdleMs(RealmModel realm, AuthenticatedClientSessionEntity authenticatedClientSessionEntity) {
-        int timeSinceLastRefresh = Time.currentTime() - authenticatedClientSessionEntity.getTimestamp();
+        long timeSinceLastRefresh = Time.currentTime() - authenticatedClientSessionEntity.getTimestamp();
 
         int sessionIdle = Math.max(realm.getOfflineSessionIdleTimeout(), MINIMAL_EXPIRATION_SEC);
 

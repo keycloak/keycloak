@@ -429,7 +429,7 @@ public abstract class AbstractOAuth2IdentityProvider<C extends OAuth2IdentityPro
         jwt.subject(getConfig().getClientId());
         jwt.audience(getConfig().getTokenUrl());
         int expirationDelay = session.getContext().getRealm().getAccessCodeLifespan();
-        jwt.expiration(Time.currentTime() + expirationDelay);
+        jwt.exp(Time.currentTime() + expirationDelay);
         jwt.issuedNow();
         return jwt;
     }

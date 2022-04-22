@@ -120,18 +120,18 @@ public class ClientManager {
     }
 
     public Set<String> validateRegisteredNodes(ClientModel client) {
-        Map<String, Integer> registeredNodes = client.getRegisteredNodes();
+        Map<String, Long> registeredNodes = client.getRegisteredNodes();
         if (registeredNodes == null || registeredNodes.isEmpty()) {
             return Collections.emptySet();
         }
 
-        int currentTime = Time.currentTime();
+        long currentTime = Time.currentTime();
 
         Set<String> validatedNodes = new TreeSet<String>();
         if (client.getNodeReRegistrationTimeout() > 0) {
             List<String> toRemove = new LinkedList<String>();
-            for (Map.Entry<String, Integer> entry : registeredNodes.entrySet()) {
-                Integer lastReRegistration = entry.getValue();
+            for (Map.Entry<String, Long> entry : registeredNodes.entrySet()) {
+                Long lastReRegistration = entry.getValue();
                 if (lastReRegistration + client.getNodeReRegistrationTimeout() < currentTime) {
                     toRemove.add(entry.getKey());
                 } else {

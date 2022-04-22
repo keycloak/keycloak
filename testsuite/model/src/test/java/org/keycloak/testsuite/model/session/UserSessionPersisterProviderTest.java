@@ -129,7 +129,7 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
 
     @Test
     public void testPersistenceWithLoad() {
-        int started = Time.currentTime();
+        long started = Time.currentTime();
         final UserSessionModel[] userSession = new UserSessionModel[1];
 
         UserSessionModel[] origSessions = inComittedTransaction(session -> {
@@ -172,7 +172,7 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
 
     @Test
     public void testUpdateAndRemove() {
-        int started = Time.currentTime();
+        long started = Time.currentTime();
 
         AtomicReference<UserSessionModel[]> origSessionsAt = new AtomicReference<>();
         AtomicReference<List<UserSessionModel>> loadedSessionsAt = new AtomicReference<>();
@@ -289,7 +289,7 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
 
     @Test
     public void testOnClientRemoved() {
-        int started = Time.currentTime();
+        long started = Time.currentTime();
         AtomicReference<String> userSessionID = new AtomicReference<>();
 
         inComittedTransaction(session -> {
@@ -355,7 +355,7 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
 
     @Test
     public void testOnUserRemoved() {
-        int started = Time.currentTime();
+        long started = Time.currentTime();
         AtomicReference<UserSessionModel[]> origSessionsAt = new AtomicReference<>();
 
         inComittedTransaction(session -> {
@@ -468,7 +468,7 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
 
     @Test
     public void testExpiredSessions() {
-        int started = Time.currentTime();
+        long started = Time.currentTime();
         final UserSessionModel[] userSession1 = {null};
         final UserSessionModel[] userSession2 = {null};
 
@@ -488,7 +488,7 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
 
         inComittedTransaction(session -> {
             // Update one of the sessions with lastSessionRefresh of 20 days ahead
-            int lastSessionRefresh = Time.currentTime() + 1728000;
+            long lastSessionRefresh = Time.currentTime() + 1728000;
             RealmModel realm = session.realms().getRealm(realmId);
             UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
 
@@ -521,7 +521,7 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
                 setupClientStorageComponents(session, session.realms().getRealm(realmId));
             });
 
-            int started = Time.currentTime();
+            long started = Time.currentTime();
 
             UserSessionModel origSession = inComittedTransaction(session -> {
                 // Create session in infinispan
@@ -608,7 +608,7 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
         }
     }
 
-    public static void assertSessionLoaded(List<UserSessionModel> sessions, String id, UserModel user, String ipAddress, int started, int lastRefresh, String... clients) {
+    public static void assertSessionLoaded(List<UserSessionModel> sessions, String id, UserModel user, String ipAddress, long started, long lastRefresh, String... clients) {
         for (UserSessionModel session : sessions) {
             if (session.getId().equals(id)) {
                 assertSession(session, user, ipAddress, started, lastRefresh, clients);
@@ -655,7 +655,7 @@ public class UserSessionPersisterProviderTest extends KeycloakModelTest {
         return result;
     }
 
-    public static void assertSession(UserSessionModel session, UserModel user, String ipAddress, int started, int lastRefresh, String... clients) {
+    public static void assertSession(UserSessionModel session, UserModel user, String ipAddress, long started, long lastRefresh, String... clients) {
         assertEquals(user.getId(), session.getUser().getId());
         assertEquals(ipAddress, session.getIpAddress());
         assertEquals(user.getUsername(), session.getLoginUsername());

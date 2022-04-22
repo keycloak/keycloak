@@ -1,4 +1,5 @@
 /*
+/*
  * Copyright 2021 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
@@ -27,7 +28,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
-import org.keycloak.models.map.common.TimeAdapter;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
@@ -97,8 +97,8 @@ public class MapUserSessionProvider implements UserSessionProvider {
                     }
 
                     @Override
-                    public void setLastSessionRefresh(int lastSessionRefresh) {
-                        entity.setLastSessionRefresh(TimeAdapter.fromIntegerWithTimeInSecondsToLongWithTimeAsInSeconds(lastSessionRefresh));
+                    public void setLastSessionRefresh(long lastSessionRefresh) {
+                        entity.setLastSessionRefresh(lastSessionRefresh);
                         // whenever the lastSessionRefresh is changed recompute the expiration time
                         setUserSessionExpiration(entity, realm);
                     }
@@ -127,8 +127,8 @@ public class MapUserSessionProvider implements UserSessionProvider {
                     }
 
                     @Override
-                    public void setTimestamp(int timestamp) {
-                        entity.setTimestamp(TimeAdapter.fromIntegerWithTimeInSecondsToLongWithTimeAsInSeconds(timestamp));
+                    public void setTimestamp(long timestamp) {
+                        entity.setTimestamp(timestamp);
                         // whenever the timestamp is changed recompute the expiration time
                         setClientSessionExpiration(entity, realm, client);
                     }
@@ -424,9 +424,9 @@ public class MapUserSessionProvider implements UserSessionProvider {
         // set a reference for the offline user session to the original online user session
         userSession.setNote(CORRESPONDING_SESSION_ID, offlineUserSession.getId());
 
-        int currentTime = Time.currentTime();
-        offlineUserSession.setStarted(TimeAdapter.fromIntegerWithTimeInSecondsToLongWithTimeAsInSeconds(currentTime));
-        offlineUserSession.setLastSessionRefresh(TimeAdapter.fromIntegerWithTimeInSecondsToLongWithTimeAsInSeconds(currentTime));
+        long currentTime = Time.currentTime();
+        offlineUserSession.setStarted(currentTime);
+        offlineUserSession.setLastSessionRefresh(currentTime);
         setUserSessionExpiration(offlineUserSession, userSession.getRealm());
 
         return userEntityToAdapterFunc(userSession.getRealm()).apply(offlineUserSession);
@@ -466,9 +466,9 @@ public class MapUserSessionProvider implements UserSessionProvider {
         LOG.tracef("createOfflineClientSession(%s, %s)%s", clientSession, offlineUserSession, getShortStackTrace());
 
         MapAuthenticatedClientSessionEntity clientSessionEntity = createAuthenticatedClientSessionInstance(clientSession, offlineUserSession, true);
-        int currentTime = Time.currentTime();
+        long currentTime = Time.currentTime();
         clientSessionEntity.setNote(AuthenticatedClientSessionModel.STARTED_AT_NOTE, String.valueOf(currentTime));
-        clientSessionEntity.setTimestamp(TimeAdapter.fromIntegerWithTimeInSecondsToLongWithTimeAsInSeconds(currentTime));
+        clientSessionEntity.setTimestamp(currentTime);
         setClientSessionExpiration(clientSessionEntity, clientSession.getRealm(), clientSession.getClient());
         clientSessionEntity = clientSessionTx.create(clientSessionEntity);
 
@@ -632,8 +632,8 @@ public class MapUserSessionProvider implements UserSessionProvider {
         entity.setNotes(new ConcurrentHashMap<>(userSession.getNotes()));
         entity.setNote(CORRESPONDING_SESSION_ID, userSession.getId());
         entity.setState(userSession.getState());
-        entity.setStarted(TimeAdapter.fromIntegerWithTimeInSecondsToLongWithTimeAsInSeconds(userSession.getStarted()));
-        entity.setLastSessionRefresh(TimeAdapter.fromIntegerWithTimeInSecondsToLongWithTimeAsInSeconds(userSession.getLastSessionRefresh()));
+        entity.setStarted(userSession.getStarted());
+        entity.setLastSessionRefresh(userSession.getLastSessionRefresh());
 
         return entity;
     }
@@ -648,7 +648,7 @@ public class MapUserSessionProvider implements UserSessionProvider {
 
         entity.setNotes(new ConcurrentHashMap<>(clientSession.getNotes()));
         entity.setRedirectUri(clientSession.getRedirectUri());
-        entity.setTimestamp(TimeAdapter.fromIntegerWithTimeInSecondsToLongWithTimeAsInSeconds(clientSession.getTimestamp()));
+        entity.setTimestamp(clientSession.getTimestamp());
 
         return entity;
     }
@@ -667,7 +667,7 @@ public class MapUserSessionProvider implements UserSessionProvider {
         userSessionEntity.setBrokerSessionId(brokerSessionId);
         userSessionEntity.setBrokerUserId(brokerUserId);
         userSessionEntity.setOffline(offline);
-        userSessionEntity.setStarted(TimeAdapter.fromIntegerWithTimeInSecondsToLongWithTimeAsInSeconds(Time.currentTime()));
+        userSessionEntity.setStarted(Time.currentTime());
         userSessionEntity.setLastSessionRefresh(userSessionEntity.getStarted());
         return userSessionEntity;
     }
@@ -680,7 +680,7 @@ public class MapUserSessionProvider implements UserSessionProvider {
         clientSessionEntity.setRealmId(realmId);
         clientSessionEntity.setClientId(clientId);
         clientSessionEntity.setOffline(offline);
-        clientSessionEntity.setTimestamp(TimeAdapter.fromIntegerWithTimeInSecondsToLongWithTimeAsInSeconds(Time.currentTime()));
+        clientSessionEntity.setTimestamp(Time.currentTime());
         return clientSessionEntity;
     }
 

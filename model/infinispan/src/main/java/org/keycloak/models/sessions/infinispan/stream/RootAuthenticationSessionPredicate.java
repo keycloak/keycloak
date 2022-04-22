@@ -37,7 +37,7 @@ public class RootAuthenticationSessionPredicate implements Predicate<Map.Entry<S
 
     private final String realm;
 
-    private Integer expired;
+    private Long expired;
 
     private RootAuthenticationSessionPredicate(String realm) {
         this.realm = realm;
@@ -47,7 +47,7 @@ public class RootAuthenticationSessionPredicate implements Predicate<Map.Entry<S
         return new RootAuthenticationSessionPredicate(realm);
     }
 
-    public RootAuthenticationSessionPredicate expired(Integer expired) {
+    public RootAuthenticationSessionPredicate expired(Long expired) {
         this.expired = expired;
         return this;
     }
@@ -93,7 +93,7 @@ public class RootAuthenticationSessionPredicate implements Predicate<Map.Entry<S
 
         public RootAuthenticationSessionPredicate readObjectVersion1(ObjectInput input) throws IOException, ClassNotFoundException {
             RootAuthenticationSessionPredicate res = new RootAuthenticationSessionPredicate(MarshallUtil.unmarshallString(input));
-            res.expired(KeycloakMarshallUtil.unmarshallInteger(input));
+            res.expired(KeycloakMarshallUtil.unmarshallLong(input));
             return res;
         }
     }

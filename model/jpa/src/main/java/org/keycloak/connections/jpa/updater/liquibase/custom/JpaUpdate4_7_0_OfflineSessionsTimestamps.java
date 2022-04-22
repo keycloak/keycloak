@@ -34,7 +34,7 @@ public class JpaUpdate4_7_0_OfflineSessionsTimestamps extends CustomKeycloakTask
         String offlineUserSessionsTableName = database.correctObjectName("OFFLINE_USER_SESSION", Table.class);
 
         try {
-            int currentTime = Time.currentTime();
+            long currentTime = Time.currentTime();
 
             UpdateStatement updateStatement = new UpdateStatement(null, null, offlineUserSessionsTableName)
                     .addNewColumnValue("LAST_SESSION_REFRESH", currentTime);

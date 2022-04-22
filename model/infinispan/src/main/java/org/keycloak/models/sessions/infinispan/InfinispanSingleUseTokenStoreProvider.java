@@ -49,7 +49,7 @@ public class InfinispanSingleUseTokenStoreProvider implements SingleUseTokenStor
     }
 
     @Override
-    public boolean putIfAbsent(String tokenId, int lifespanInSeconds) {
+    public boolean putIfAbsent(String tokenId, long lifespanInSeconds) {
         ActionTokenValueEntity tokenValue = new ActionTokenValueEntity(null);
 
         // Rather keep the items in the cache for a bit longer

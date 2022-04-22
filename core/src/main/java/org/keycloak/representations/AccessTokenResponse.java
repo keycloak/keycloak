@@ -50,7 +50,7 @@ public class AccessTokenResponse {
     protected String idToken;
 
     @JsonProperty("not-before-policy")
-    protected int notBeforePolicy;
+    protected long notBeforePolicy;
 
     @JsonProperty("session_state")
     protected String sessionState;
@@ -126,11 +126,11 @@ public class AccessTokenResponse {
         this.idToken = idToken;
     }
 
-    public int getNotBeforePolicy() {
+    public long getNotBeforePolicy() {
         return notBeforePolicy;
     }
 
-    public void setNotBeforePolicy(int notBeforePolicy) {
+    public void setNotBeforePolicy(long notBeforePolicy) {
         this.notBeforePolicy = notBeforePolicy;
     }
 

@@ -30,14 +30,14 @@ import org.keycloak.common.util.Time;
  */
 public abstract class AdminAction implements Token {
     protected String id;
-    protected int expiration;
+    protected long expiration;
     protected String resource;
     protected String action;
 
     public AdminAction() {
     }
 
-    public AdminAction(String id, int expiration, String resource, String action) {
+    public AdminAction(String id, long expiration, String resource, String action) {
         this.id = id;
         this.expiration = expiration;
         this.resource = resource;
@@ -62,7 +62,7 @@ public abstract class AdminAction implements Token {
      *
      * @return
      */
-    public int getExpiration() {
+    public long getExpiration() {
         return expiration;
     }
 

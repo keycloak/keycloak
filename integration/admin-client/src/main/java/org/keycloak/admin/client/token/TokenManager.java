@@ -93,7 +93,7 @@ public class TokenManager {
             form.param(CLIENT_ID, config.getClientId());
         }
 
-        int requestTime = Time.currentTime();
+        long requestTime = Time.currentTime();
         synchronized (this) {
             currentToken = tokenService.grantToken(config.getRealm(), form.asMap());
             expirationTime = requestTime + currentToken.getExpiresIn();
@@ -114,7 +114,7 @@ public class TokenManager {
         }
 
         try {
-            int requestTime = Time.currentTime();
+            long requestTime = Time.currentTime();
 
             currentToken = tokenService.refreshToken(config.getRealm(), form.asMap());
             expirationTime = requestTime + currentToken.getExpiresIn();

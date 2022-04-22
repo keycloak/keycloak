@@ -48,7 +48,7 @@ public interface UserProvider extends Provider,
      *
      * @throws ModelException when user doesn't exist in the storage
      */
-    void setNotBeforeForUser(RealmModel realm, UserModel user, int notBefore);
+    void setNotBeforeForUser(RealmModel realm, UserModel user, long notBefore);
 
     /**
      * Gets the notBefore value for the given user
@@ -59,7 +59,7 @@ public interface UserProvider extends Provider,
      *
      * @throws ModelException when user doesn't exist in the storage
      */
-    int getNotBeforeOfUser(RealmModel realm, UserModel user);
+    long getNotBeforeOfUser(RealmModel realm, UserModel user);
 
     /**
      * Return a UserModel representing service account of the client

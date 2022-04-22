@@ -259,12 +259,12 @@ public class ClientAdapter implements ClientModel, CachedObject {
         return cachedRealm;
     }
 
-    public int getNotBefore() {
+    public long getNotBefore() {
         if (isUpdated()) return updated.getNotBefore();
         return cached.getNotBefore();
     }
 
-    public void setNotBefore(int notBefore) {
+    public void setNotBefore(long notBefore) {
         getDelegateForUpdate();
         updated.setNotBefore(notBefore);
     }
@@ -608,13 +608,13 @@ public class ClientAdapter implements ClientModel, CachedObject {
     }
 
     @Override
-    public Map<String, Integer> getRegisteredNodes() {
+    public Map<String, Long> getRegisteredNodes() {
         if (isUpdated()) return updated.getRegisteredNodes();
         return cached.getRegisteredNodes();
     }
 
     @Override
-    public void registerNode(String nodeHost, int registrationTime) {
+    public void registerNode(String nodeHost, long registrationTime) {
         getDelegateForUpdate();
         updated.registerNode(nodeHost, registrationTime);
     }

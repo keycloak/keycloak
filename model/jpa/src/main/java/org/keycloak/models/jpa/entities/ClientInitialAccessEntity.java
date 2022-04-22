@@ -48,7 +48,7 @@ public class ClientInitialAccessEntity {
     protected String id;
 
     @Column(name="TIMESTAMP")
-    private int timestamp;
+    private long timestamp;
 
     @Column(name="EXPIRATION")
     private int expiration;
@@ -71,11 +71,11 @@ public class ClientInitialAccessEntity {
         this.id = id;
     }
 
-    public int getTimestamp() {
+    public long getTimestamp() {
         return timestamp;
     }
 
-    public void setTimestamp(int timestamp) {
+    public void setTimestamp(long timestamp) {
         this.timestamp = timestamp;
     }
 

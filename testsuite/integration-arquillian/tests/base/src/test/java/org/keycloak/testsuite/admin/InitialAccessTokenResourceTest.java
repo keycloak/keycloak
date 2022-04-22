@@ -61,7 +61,7 @@ public class InitialAccessTokenResourceTest extends AbstractAdminTest {
         rep.setCount(2);
         rep.setExpiration(100);
 
-        int time = Time.currentTime();
+        long time = Time.currentTime();
 
         ClientInitialAccessPresentation response = resource.create(rep);
         assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientInitialAccessPath(response.getId()), rep, ResourceType.CLIENT_INITIAL_ACCESS_MODEL);
@@ -69,7 +69,7 @@ public class InitialAccessTokenResourceTest extends AbstractAdminTest {
         assertNotNull(response.getId());
         assertEquals(new Integer(2), response.getCount());
         assertEquals(new Integer(2), response.getRemainingCount());
-        assertEquals(new Integer(100), response.getExpiration());
+        assertEquals(new Long(100), response.getExpiration());
         assertThat(response.getTimestamp(), allOf(greaterThanOrEqualTo(time), lessThanOrEqualTo(Time.currentTime())));
         assertNotNull(response.getToken());
 

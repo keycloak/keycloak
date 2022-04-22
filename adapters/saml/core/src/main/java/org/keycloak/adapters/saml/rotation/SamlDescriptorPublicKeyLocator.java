@@ -71,7 +71,7 @@ public class SamlDescriptorPublicKeyLocator implements KeyLocator, Iterable<Publ
 
     private final HttpClient client;
 
-    private volatile int lastRequestTime = 0;
+    private volatile long lastRequestTime = 0;
 
     public SamlDescriptorPublicKeyLocator(String descriptorUrl, int minTimeBetweenDescriptorRequests, int cacheEntryTtl, HttpClient httpClient) {
         this.minTimeBetweenDescriptorRequests = minTimeBetweenDescriptorRequests <= 0
@@ -93,7 +93,7 @@ public class SamlDescriptorPublicKeyLocator implements KeyLocator, Iterable<Publ
 
         LOG.tracef("Requested key id: %s", kid);
 
-        int currentTime = Time.currentTime();
+        long currentTime = Time.currentTime();
 
         PublicKey res;
         if (currentTime > this.lastRequestTime + this.cacheEntryTtl) {

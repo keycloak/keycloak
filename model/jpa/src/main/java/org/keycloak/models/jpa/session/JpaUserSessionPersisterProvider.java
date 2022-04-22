@@ -211,7 +211,7 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
 
 
     @Override
-    public void updateLastSessionRefreshes(RealmModel realm, int lastSessionRefresh, Collection<String> userSessionIds, boolean offline) {
+    public void updateLastSessionRefreshes(RealmModel realm, long lastSessionRefresh, Collection<String> userSessionIds, boolean offline) {
         String offlineStr = offlineToString(offline);
 
         int us = em.createNamedQuery("updateUserSessionLastSessionRefresh")
@@ -226,10 +226,10 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
 
     @Override
     public void removeExpired(RealmModel realm) {
-        int expiredOffline = Time.currentTime() - realm.getOfflineSessionIdleTimeout() - SessionTimeoutHelper.PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS;
+        long expiredOffline = Time.currentTime() - realm.getOfflineSessionIdleTimeout() - SessionTimeoutHelper.PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS;
 
         // prefer client session timeout if set
-        int expiredClientOffline = expiredOffline;
+        long expiredClientOffline = expiredOffline;
         if (realm.getClientOfflineSessionIdleTimeout() > 0) {
             expiredClientOffline = Time.currentTime() - realm.getClientOfflineSessionIdleTimeout() - SessionTimeoutHelper.PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS;
         }

@@ -133,7 +133,7 @@ public class ExportImportUtil {
 
         Assert.assertEquals("Applicationn", application.getName());
         Assert.assertEquals((Integer)50, application.getNodeReRegistrationTimeout());
-        Map<String, Integer> appRegisteredNodes = application.getRegisteredNodes();
+        Map<String, Long> appRegisteredNodes = application.getRegisteredNodes();
         Assert.assertEquals(2, appRegisteredNodes.size());
         Assert.assertTrue(10 == appRegisteredNodes.get("node1"));
         Assert.assertTrue(20 == appRegisteredNodes.get("172.10.15.20"));
@@ -178,7 +178,7 @@ public class ExportImportUtil {
 
         Assert.assertNull(realmRsc.users().get(wburke.getId()).roles().getAll().getRealmMappings());
 
-        Assert.assertEquals((Object) 159, wburke.getNotBefore());
+        Assert.assertEquals((Object) 159L, wburke.getNotBefore());
 
         UserRepresentation loginclient = findByUsername(realmRsc, "loginclient");
         // user with creation timestamp as string in import

@@ -73,10 +73,10 @@ public class PersistentUserSessionEntity {
     protected String userId;
 
     @Column(name = "CREATED_ON")
-    protected int createdOn;
+    protected long createdOn;
 
     @Column(name = "LAST_SESSION_REFRESH")
-    protected int lastSessionRefresh;
+    protected long lastSessionRefresh;
 
     @Id
     @Column(name = "OFFLINE_FLAG")
@@ -110,19 +110,19 @@ public class PersistentUserSessionEntity {
         this.userId = userId;
     }
 
-    public int getCreatedOn() {
+    public long getCreatedOn() {
         return createdOn;
     }
 
-    public void setCreatedOn(int createdOn) {
+    public void setCreatedOn(long createdOn) {
         this.createdOn = createdOn;
     }
 
-    public int getLastSessionRefresh() {
+    public long getLastSessionRefresh() {
         return lastSessionRefresh;
     }
 
-    public void setLastSessionRefresh(int lastSessionRefresh) {
+    public void setLastSessionRefresh(long lastSessionRefresh) {
         this.lastSessionRefresh = lastSessionRefresh;
     }
 

@@ -609,7 +609,7 @@ public class ClientResource {
 
         if (logger.isDebugEnabled()) logger.debug("Unregister node: " + node);
 
-        Integer time = client.getRegisteredNodes().get(node);
+        Long time = client.getRegisteredNodes().get(node);
         if (time == null) {
             throw new NotFoundException("Client does not have node ");
         }

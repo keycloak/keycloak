@@ -44,7 +44,7 @@ public class DeviceRepresentation {
     private String osVersion;
     private String browser;
     private String device;
-    private int lastAccess;
+    private long lastAccess;
     private Boolean current;
     private List<SessionRepresentation> sessions;
     private boolean mobile;
@@ -108,11 +108,11 @@ public class DeviceRepresentation {
         this.device = device;
     }
 
-    public int getLastAccess() {
+    public long getLastAccess() {
         return lastAccess;
     }
 
-    public void setLastAccess(int lastAccess) {
+    public void setLastAccess(long lastAccess) {
         this.lastAccess = lastAccess;
     }
 

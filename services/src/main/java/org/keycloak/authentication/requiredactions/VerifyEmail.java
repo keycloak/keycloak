@@ -142,7 +142,7 @@ public class VerifyEmail implements RequiredActionProvider, RequiredActionFactor
         UriInfo uriInfo = session.getContext().getUri();
 
         int validityInSecs = realm.getActionTokenGeneratedByUserLifespan(VerifyEmailActionToken.TOKEN_TYPE);
-        int absoluteExpirationInSecs = Time.currentTime() + validityInSecs;
+        long absoluteExpirationInSecs = Time.currentTime() + validityInSecs;
 
         String authSessionEncodedId = AuthenticationSessionCompoundId.fromAuthSession(authSession).getEncodedId();
         VerifyEmailActionToken token = new VerifyEmailActionToken(user.getId(), absoluteExpirationInSecs, authSessionEncodedId, user.getEmail(), authSession.getClient().getClientId());

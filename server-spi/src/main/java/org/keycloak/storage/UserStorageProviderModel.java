@@ -42,7 +42,7 @@ public class UserStorageProviderModel extends CacheableStorageProviderModel {
 
     private transient Integer fullSyncPeriod;
     private transient Integer changedSyncPeriod;
-    private transient Integer lastSync;
+    private transient Long lastSync;
     private transient Boolean importEnabled;
 
     public boolean isImportEnabled() {
@@ -98,20 +98,20 @@ public class UserStorageProviderModel extends CacheableStorageProviderModel {
         getConfig().putSingle(CHANGED_SYNC_PERIOD, Integer.toString(changedSyncPeriod));
     }
 
-    public int getLastSync() {
+    public long getLastSync() {
         if (lastSync == null) {
             String val = getConfig().getFirst(LAST_SYNC);
             if (val == null) {
-                lastSync = 0;
+                lastSync = 0L;
             } else {
-                lastSync = Integer.valueOf(val);
+                lastSync = Long.valueOf(val);
             }
         }
         return lastSync;
     }
 
-    public void setLastSync(int lastSync) {
+    public void setLastSync(long lastSync) {
         this.lastSync = lastSync;
-        getConfig().putSingle(LAST_SYNC, Integer.toString(lastSync));
+        getConfig().putSingle(LAST_SYNC, Long.toString(lastSync));
     }
 }

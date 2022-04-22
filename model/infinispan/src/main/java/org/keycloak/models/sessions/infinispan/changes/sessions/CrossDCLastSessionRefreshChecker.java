@@ -46,7 +46,7 @@ public class CrossDCLastSessionRefreshChecker {
 
 
     public SessionUpdateTask.CrossDCMessageStatus shouldSaveUserSessionToRemoteCache(
-            KeycloakSession kcSession, RealmModel realm, SessionEntityWrapper<UserSessionEntity> sessionWrapper, boolean offline, int newLastSessionRefresh) {
+            KeycloakSession kcSession, RealmModel realm, SessionEntityWrapper<UserSessionEntity> sessionWrapper, boolean offline, long newLastSessionRefresh) {
 
         SessionUpdateTask.CrossDCMessageStatus baseChecks = baseChecks(kcSession, realm ,offline);
         if (baseChecks != null) {
@@ -56,7 +56,7 @@ public class CrossDCLastSessionRefreshChecker {
         String userSessionId = sessionWrapper.getEntity().getId();
 
         if (offline) {
-            Integer lsrr = sessionWrapper.getLocalMetadataNoteInt(UserSessionEntity.LAST_SESSION_REFRESH_REMOTE);
+            Long lsrr = sessionWrapper.getLocalMetadataNoteLong(UserSessionEntity.LAST_SESSION_REFRESH_REMOTE);
             if (lsrr == null) {
                 lsrr = sessionWrapper.getEntity().getStarted();
             }
@@ -80,7 +80,7 @@ public class CrossDCLastSessionRefreshChecker {
 
 
     public SessionUpdateTask.CrossDCMessageStatus shouldSaveClientSessionToRemoteCache(
-            KeycloakSession kcSession, RealmModel realm, SessionEntityWrapper<AuthenticatedClientSessionEntity> sessionWrapper, UserSessionModel userSession, boolean offline, int newTimestamp) {
+            KeycloakSession kcSession, RealmModel realm, SessionEntityWrapper<AuthenticatedClientSessionEntity> sessionWrapper, UserSessionModel userSession, boolean offline, long newTimestamp) {
 
         SessionUpdateTask.CrossDCMessageStatus baseChecks = baseChecks(kcSession, realm ,offline);
         if (baseChecks != null) {
@@ -90,7 +90,7 @@ public class CrossDCLastSessionRefreshChecker {
         UUID clientSessionId = sessionWrapper.getEntity().getId();
 
         if (offline) {
-            Integer lsrr = sessionWrapper.getLocalMetadataNoteInt(AuthenticatedClientSessionEntity.LAST_TIMESTAMP_REMOTE);
+            Long lsrr = sessionWrapper.getLocalMetadataNoteLong(AuthenticatedClientSessionEntity.LAST_TIMESTAMP_REMOTE);
             if (lsrr == null) {
                 lsrr = userSession.getStarted();
             }

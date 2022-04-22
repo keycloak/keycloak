@@ -453,7 +453,7 @@ public class ClientTest extends AbstractAdminTest {
         client.setSecret("secret");
         client.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
 
-        int notBefore = Time.currentTime() - 60;
+        long notBefore = Time.currentTime() - 60;
         client.setNotBefore(notBefore);
 
         Response response = realm.clients().create(client);

@@ -169,7 +169,7 @@ public class RealmBuilder {
         return this;
     }
 
-    public RealmBuilder notBefore(int i) {
+    public RealmBuilder notBefore(long i) {
         rep.setNotBefore(i);
         return this;
     }

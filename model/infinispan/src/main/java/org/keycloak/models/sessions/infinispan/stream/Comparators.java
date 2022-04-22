@@ -48,7 +48,7 @@ public class Comparators {
 
         @Override
         public int compare(UserSessionEntity u1, UserSessionEntity u2) {
-            return u1.getLastSessionRefresh() - u2.getLastSessionRefresh();
+            return Long.compare(u1.getLastSessionRefresh(), u2.getLastSessionRefresh());
         }
     }
 

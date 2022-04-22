@@ -155,6 +155,21 @@ public class KeycloakMarshallUtil {
     }
 
     /**
+     * Marshalls the given object with support of {@code null} values.
+     * @param obj Object to marshall (can be {@code null})
+     * @param output Output stream
+     * @throws IOException
+     */
+    public static void marshall(Long obj, ObjectOutput output) throws IOException {
+        if (obj == null) {
+            output.writeBoolean(false);
+        } else {
+            output.writeBoolean(true);
+            output.writeLong(obj);
+        }
+    }
+
+    /**
      * Unmarshals the given object into {@code Integer} instance.
      * @param input Input stream
      * @return Unmarshalled value (can be {@code null})
@@ -163,6 +178,17 @@ public class KeycloakMarshallUtil {
     public static Integer unmarshallInteger(ObjectInput input) throws IOException {
         boolean isSet = input.readBoolean();
         return isSet ? input.readInt() : null;
+    }
+
+    /**
+     * Unmarshals the given object into {@code Integer} instance.
+     * @param input Input stream
+     * @return Unmarshalled value (can be {@code null})
+     * @throws IOException
+     */
+    public static Long unmarshallLong(ObjectInput input) throws IOException {
+        boolean isSet = input.readBoolean();
+        return isSet ? input.readLong() : null;
     }
 
     public static class ConcurrentHashMapBuilder<K, V> implements MarshallUtil.MapBuilder<K, V, ConcurrentHashMap<K, V>> {

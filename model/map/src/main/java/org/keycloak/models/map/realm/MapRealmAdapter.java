@@ -56,7 +56,6 @@ import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.WebAuthnPolicy;
-import org.keycloak.models.map.common.TimeAdapter;
 import org.keycloak.models.map.realm.entity.MapAuthenticationExecutionEntity;
 import org.keycloak.models.map.realm.entity.MapAuthenticationFlowEntity;
 import org.keycloak.models.map.realm.entity.MapAuthenticatorConfigEntity;
@@ -1229,14 +1228,14 @@ public class MapRealmAdapter extends AbstractRealmModel<MapRealmEntity> implemen
     }
 
     @Override
-    public int getNotBefore() {
+    public long getNotBefore() {
         Long notBefore = entity.getNotBefore();
-        return notBefore == null ? 0 : TimeAdapter.fromLongWithTimeInSecondsToIntegerWithTimeInSeconds(notBefore);
+        return notBefore == null ? 0 : notBefore;
     }
 
     @Override
-    public void setNotBefore(int notBefore) {
-        entity.setNotBefore(TimeAdapter.fromIntegerWithTimeInSecondsToLongWithTimeAsInSeconds(notBefore));
+    public void setNotBefore(long notBefore) {
+        entity.setNotBefore(notBefore);
     }
 
     @Override

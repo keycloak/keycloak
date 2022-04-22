@@ -288,7 +288,7 @@ public class TokenManager {
             }
 
             if (updateTimestamps && valid) {
-                int currentTime = Time.currentTime();
+                long currentTime = Time.currentTime();
                 userSession.setLastSessionRefresh(currentTime);
                 if (clientSession != null) {
                     clientSession.setTimestamp(currentTime);
@@ -377,7 +377,7 @@ public class TokenManager {
 
         validateTokenReuseForRefresh(session, realm, refreshToken, validation);
 
-        int currentTime = Time.currentTime();
+        long currentTime = Time.currentTime();
         clientSession.setTimestamp(currentTime);
         validation.userSession.setLastSessionRefresh(currentTime);
 
@@ -893,7 +893,7 @@ public class TokenManager {
 
         String authTime = session.getNote(AuthenticationManager.AUTH_TIME);
         if (authTime != null) {
-            token.setAuthTime(Integer.parseInt(authTime));
+            token.setAuth_time(Long.parseLong(authTime));
         }
 
 
@@ -901,12 +901,12 @@ public class TokenManager {
         ClientScopeModel offlineAccessScope = KeycloakModelUtils.getClientScopeByName(realm, OAuth2Constants.OFFLINE_ACCESS);
         boolean offlineTokenRequested = offlineAccessScope == null ? false
             : clientSessionCtx.getClientScopeIds().contains(offlineAccessScope.getId());
-        token.expiration(getTokenExpiration(realm, client, session, clientSession, offlineTokenRequested));
+        token.exp(getTokenExpiration(realm, client, session, clientSession, offlineTokenRequested));
 
         return token;
     }
 
-    private int getTokenExpiration(RealmModel realm, ClientModel client, UserSessionModel userSession,
+    private long getTokenExpiration(RealmModel realm, ClientModel client, UserSessionModel userSession,
         AuthenticatedClientSessionModel clientSession, boolean offlineTokenRequested) {
         boolean implicitFlow = false;
         String responseType = clientSession.getNote(OIDCLoginProtocol.RESPONSE_TYPE_PARAM);
@@ -927,7 +927,7 @@ public class TokenManager {
             }
         }
 
-        int expiration;
+        long expiration;
         if (tokenLifespan == -1) {
             expiration = userSession.getStarted() + (userSession.isRememberMe() && realm.getSsoSessionMaxLifespanRememberMe() > 0 ?
                     realm.getSsoSessionMaxLifespanRememberMe() : realm.getSsoSessionMaxLifespan());
@@ -937,7 +937,7 @@ public class TokenManager {
 
         if (userSession.isOffline() || offlineTokenRequested) {
             if (realm.isOfflineSessionMaxLifespanEnabled()) {
-                int sessionExpires = userSession.getStarted() + realm.getOfflineSessionMaxLifespan();
+                long sessionExpires = userSession.getStarted() + realm.getOfflineSessionMaxLifespan();
                 expiration = expiration <= sessionExpires ? expiration : sessionExpires;
 
                 int clientOfflineSessionMaxLifespan;
@@ -951,12 +951,12 @@ public class TokenManager {
                 }
 
                 if (clientOfflineSessionMaxLifespan > 0) {
-                    int clientOfflineSessionExpiration = userSession.getStarted() + clientOfflineSessionMaxLifespan;
+                    long clientOfflineSessionExpiration = userSession.getStarted() + clientOfflineSessionMaxLifespan;
                     return expiration < clientOfflineSessionExpiration ? expiration : clientOfflineSessionExpiration;
                 }
             }
         } else {
-            int sessionExpires = userSession.getStarted()
+            long sessionExpires = userSession.getStarted()
                 + (userSession.isRememberMe() && realm.getSsoSessionMaxLifespanRememberMe() > 0
                     ? realm.getSsoSessionMaxLifespanRememberMe()
                     : realm.getSsoSessionMaxLifespan());
@@ -971,7 +971,7 @@ public class TokenManager {
             }
 
             if (clientSessionMaxLifespan > 0) {
-                int clientSessionExpiration = clientSession.getTimestamp() + clientSessionMaxLifespan;
+                long clientSessionExpiration = clientSession.getTimestamp() + clientSessionMaxLifespan;
                 return expiration < clientSessionExpiration ? expiration : clientSessionExpiration;
             }
         }
@@ -1056,19 +1056,19 @@ public class TokenManager {
                 refreshToken = new RefreshToken(accessToken);
                 refreshToken.type(TokenUtil.TOKEN_TYPE_OFFLINE);
                 if (realm.isOfflineSessionMaxLifespanEnabled())
-                    refreshToken.expiration(getOfflineExpiration());
+                    refreshToken.exp(getOfflineExpiration());
                 sessionManager.createOrUpdateOfflineSession(clientSessionCtx.getClientSession(), userSession);
             } else {
                 refreshToken = new RefreshToken(accessToken);
-                refreshToken.expiration(getRefreshExpiration());
+                refreshToken.exp(getRefreshExpiration());
             }
             refreshToken.id(KeycloakModelUtils.generateId());
             refreshToken.issuedNow();
             return this;
         }
 
-        private int getRefreshExpiration() {
-            int sessionExpires = userSession.getStarted()
+        private long getRefreshExpiration() {
+            long sessionExpires = userSession.getStarted()
                 + (userSession.isRememberMe() && realm.getSsoSessionMaxLifespanRememberMe() > 0
                     ? realm.getSsoSessionMaxLifespanRememberMe()
                     : realm.getSsoSessionMaxLifespan());
@@ -1082,11 +1082,11 @@ public class TokenManager {
             }
 
             if (clientSessionMaxLifespan > 0) {
-                int clientSessionMaxExpiration = userSession.getStarted() + clientSessionMaxLifespan;
+                long clientSessionMaxExpiration = userSession.getStarted() + clientSessionMaxLifespan;
                 sessionExpires = sessionExpires < clientSessionMaxExpiration ? sessionExpires : clientSessionMaxExpiration;
             }
 
-            int expiration = Time.currentTime() + (userSession.isRememberMe() && realm.getSsoSessionIdleTimeoutRememberMe() > 0
+            long expiration = Time.currentTime() + (userSession.isRememberMe() && realm.getSsoSessionIdleTimeoutRememberMe() > 0
                 ? realm.getSsoSessionIdleTimeoutRememberMe()
                 : realm.getSsoSessionIdleTimeout());
 
@@ -1099,15 +1099,15 @@ public class TokenManager {
             }
 
             if (clientSessionIdleTimeout > 0) {
-                int clientSessionIdleExpiration = Time.currentTime() + clientSessionIdleTimeout;
+                long clientSessionIdleExpiration = Time.currentTime() + clientSessionIdleTimeout;
                 expiration = expiration < clientSessionIdleExpiration ? expiration : clientSessionIdleExpiration;
             }
 
             return expiration <= sessionExpires ? expiration : sessionExpires;
         }
 
-        private int getOfflineExpiration() {
-            int sessionExpires = userSession.getStarted() + realm.getOfflineSessionMaxLifespan();
+        private long getOfflineExpiration() {
+            long sessionExpires = userSession.getStarted() + realm.getOfflineSessionMaxLifespan();
 
             int clientOfflineSessionMaxLifespan;
             String clientOfflineSessionMaxLifespanPerClient = client
@@ -1120,12 +1120,12 @@ public class TokenManager {
             }
 
             if (clientOfflineSessionMaxLifespan > 0) {
-                int clientOfflineSessionMaxExpiration = userSession.getStarted() + clientOfflineSessionMaxLifespan;
+                long clientOfflineSessionMaxExpiration = userSession.getStarted() + clientOfflineSessionMaxLifespan;
                 sessionExpires = sessionExpires < clientOfflineSessionMaxExpiration ? sessionExpires
                     : clientOfflineSessionMaxExpiration;
             }
 
-            int expiration = Time.currentTime() + realm.getOfflineSessionIdleTimeout();
+            long expiration = Time.currentTime() + realm.getOfflineSessionIdleTimeout();
 
             int clientOfflineSessionIdleTimeout;
             String clientOfflineSessionIdleTimeoutPerClient = client
@@ -1138,7 +1138,7 @@ public class TokenManager {
             }
 
             if (clientOfflineSessionIdleTimeout > 0) {
-                int clientOfflineSessionIdleExpiration = Time.currentTime() + clientOfflineSessionIdleTimeout;
+                long clientOfflineSessionIdleExpiration = Time.currentTime() + clientOfflineSessionIdleTimeout;
                 expiration = expiration < clientOfflineSessionIdleExpiration ? expiration : clientOfflineSessionIdleExpiration;
             }
 
@@ -1162,9 +1162,9 @@ public class TokenManager {
             idToken.issuedFor(accessToken.getIssuedFor());
             idToken.issuer(accessToken.getIssuer());
             idToken.setNonce(accessToken.getNonce());
-            idToken.setAuthTime(accessToken.getAuthTime());
+            idToken.setAuth_time(accessToken.getAuth_time());
             idToken.setSessionState(accessToken.getSessionState());
-            idToken.expiration(accessToken.getExpiration());
+            idToken.exp(accessToken.getExp());
 
             // Protocol mapper is supposed to set this in case "step_up_authentication" feature enabled
             if (!Profile.isFeatureEnabled(Profile.Feature.STEP_UP_AUTHENTICATION)) {
@@ -1244,9 +1244,9 @@ public class TokenManager {
                 }
             }
 
-            int notBefore = realm.getNotBefore();
+            long notBefore = realm.getNotBefore();
             if (client.getNotBefore() > notBefore) notBefore = client.getNotBefore();
-            int userNotBefore = session.users().getNotBeforeOfUser(realm, userSession.getUser());
+            long userNotBefore = session.users().getNotBeforeOfUser(realm, userSession.getUser());
             if (userNotBefore > notBefore) notBefore = userNotBefore;
             res.setNotBeforePolicy(notBefore);
 
@@ -1302,9 +1302,9 @@ public class TokenManager {
 
     public static class NotBeforeCheck implements TokenVerifier.Predicate<JsonWebToken> {
 
-        private final int notBefore;
+        private final long notBefore;
 
-        public NotBeforeCheck(int notBefore) {
+        public NotBeforeCheck(long notBefore) {
             this.notBefore = notBefore;
         }
 
@@ -1320,10 +1320,10 @@ public class TokenManager {
         public static NotBeforeCheck forModel(ClientModel clientModel) {
             if (clientModel != null) {
 
-                int notBeforeClient = clientModel.getNotBefore();
-                int notBeforeRealm = clientModel.getRealm().getNotBefore();
+                long notBeforeClient = clientModel.getNotBefore();
+                long notBeforeRealm = clientModel.getRealm().getNotBefore();
 
-                int notBefore = (notBeforeClient == 0 ? notBeforeRealm : (notBeforeRealm == 0 ? notBeforeClient :
+                long notBefore = (notBeforeClient == 0 ? notBeforeRealm : (notBeforeRealm == 0 ? notBeforeClient :
                         Math.min(notBeforeClient, notBeforeRealm)));
 
                 return new NotBeforeCheck(notBefore);

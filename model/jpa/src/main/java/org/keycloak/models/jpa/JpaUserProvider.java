@@ -351,7 +351,7 @@ public class JpaUserProvider implements UserProvider.Streams, UserCredentialStor
 
 
     @Override
-    public void setNotBeforeForUser(RealmModel realm, UserModel user, int notBefore) {
+    public void setNotBeforeForUser(RealmModel realm, UserModel user, long notBefore) {
         UserEntity entity = em.getReference(UserEntity.class, user.getId());
         if (entity == null) {
             throw new ModelException("User does not exists");
@@ -360,7 +360,7 @@ public class JpaUserProvider implements UserProvider.Streams, UserCredentialStor
     }
 
     @Override
-    public int getNotBeforeOfUser(RealmModel realm, UserModel user) {
+    public long getNotBeforeOfUser(RealmModel realm, UserModel user) {
         UserEntity entity = em.getReference(UserEntity.class, user.getId());
         if (entity == null) {
             throw new ModelException("User does not exists");

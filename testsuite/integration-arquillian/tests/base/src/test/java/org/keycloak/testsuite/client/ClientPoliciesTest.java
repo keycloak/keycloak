@@ -2840,7 +2840,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         OIDCClientRepresentation response = getClientDynamically(clientId);
 
         String firstSecret = response.getClientSecret();
-        Integer firstSecretExpiration = response.getClientSecretExpiresAt();
+        Long firstSecretExpiration = response.getClientSecretExpiresAt();
 
         updateClientDynamically(clientId, (OIDCClientRepresentation clientRep) -> {
             clientRep.setContacts(Collections.singletonList("keycloak@keycloak.org"));
@@ -2901,7 +2901,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         OIDCClientRepresentation response = getClientDynamically(clientId);
 
         String firstSecret = response.getClientSecret();
-        Integer firstSecretExpiration = response.getClientSecretExpiresAt();
+        Long firstSecretExpiration = response.getClientSecretExpiresAt();
 
         assertThat(firstSecretExpiration, is(greaterThan(Time.currentTime())));
 
@@ -3232,7 +3232,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
 
     @NotNull
     private ClientSecretRotationExecutor.Configuration getClientProfileConfiguration(
-            int expirationPeriod, int rotatedExpirationPeriod, int remainExpirationPeriod) {
+            long expirationPeriod, long rotatedExpirationPeriod, long remainExpirationPeriod) {
         ClientSecretRotationExecutor.Configuration profileConfig = new ClientSecretRotationExecutor.Configuration();
         profileConfig.setExpirationPeriod(expirationPeriod);
         profileConfig.setRotatedExpirationPeriod(rotatedExpirationPeriod);

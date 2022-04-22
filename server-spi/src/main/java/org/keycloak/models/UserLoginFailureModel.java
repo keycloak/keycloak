@@ -33,8 +33,8 @@ public interface UserLoginFailureModel {
 
    String getId();
    String getUserId();
-   int getFailedLoginNotBefore();
-   void setFailedLoginNotBefore(int notBefore);
+   long getFailedLoginNotBefore();
+   void setFailedLoginNotBefore(long notBefore);
    int getNumFailures();
    void incrementFailures();
    void clearFailures();

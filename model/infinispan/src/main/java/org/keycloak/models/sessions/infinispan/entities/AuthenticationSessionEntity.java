@@ -42,7 +42,7 @@ public class AuthenticationSessionEntity implements Serializable {
 
     private String authUserId;
 
-    private int timestamp;
+    private long timestamp;
 
     private String redirectUri;
     private String action;
@@ -62,7 +62,7 @@ public class AuthenticationSessionEntity implements Serializable {
     public AuthenticationSessionEntity(
       String clientUUID,
       String authUserId,
-      int timestamp,
+      long timestamp,
       String redirectUri, String action, Set<String> clientScopes,
       Map<String, AuthenticationSessionModel.ExecutionStatus> executionStatus, String protocol,
       Map<String, String> clientNotes, Map<String, String> authNotes, Set<String> requiredActions, Map<String, String> userSessionNotes) {
@@ -109,11 +109,11 @@ public class AuthenticationSessionEntity implements Serializable {
         this.authUserId = authUserId;
     }
 
-    public int getTimestamp() {
+    public long getTimestamp() {
         return timestamp;
     }
 
-    public void setTimestamp(int timestamp) {
+    public void setTimestamp(long timestamp) {
         this.timestamp = timestamp;
     }
 
@@ -193,6 +193,7 @@ public class AuthenticationSessionEntity implements Serializable {
 
         private static final int VERSION_1 = 1;
         private static final int VERSION_2 = 2;
+        private static final int VERSION_3 = 3;
 
         public static final ExternalizerImpl INSTANCE = new ExternalizerImpl();
 
@@ -218,13 +219,13 @@ public class AuthenticationSessionEntity implements Serializable {
 
         @Override
         public void writeObject(ObjectOutput output, AuthenticationSessionEntity value) throws IOException {
-            output.writeByte(VERSION_2);
+            output.writeByte(VERSION_3);
 
             MarshallUtil.marshallString(value.clientUUID, output);
 
             MarshallUtil.marshallString(value.authUserId, output);
 
-            output.writeInt(value.timestamp);
+            output.writeLong(value.timestamp);
 
             MarshallUtil.marshallString(value.redirectUri, output);
             MarshallUtil.marshallString(value.action, output);
@@ -246,6 +247,8 @@ public class AuthenticationSessionEntity implements Serializable {
                     return readObjectVersion1(input);
                 case VERSION_2:
                     return readObjectVersion2(input);
+                case VERSION_3:
+                    return readObjectVersion3(input);
                 default:
                     throw new IOException("Unknown version");
             }
@@ -278,6 +281,28 @@ public class AuthenticationSessionEntity implements Serializable {
                     MarshallUtil.unmarshallString(input),     // authUserId
 
                     input.readInt(),                          // timestamp
+
+                    MarshallUtil.unmarshallString(input),     // redirectUri
+                    MarshallUtil.unmarshallString(input),     // action
+                    KeycloakMarshallUtil.readCollection(input, KeycloakMarshallUtil.STRING_EXT, ConcurrentHashMap::newKeySet),  // clientScopes
+
+                    KeycloakMarshallUtil.readMap(input, KeycloakMarshallUtil.STRING_EXT, EXECUTION_STATUS_EXT, size -> new ConcurrentHashMap<>(size)), // executionStatus
+                    MarshallUtil.unmarshallString(input),     // protocol
+
+                    KeycloakMarshallUtil.readMap(input, KeycloakMarshallUtil.STRING_EXT, KeycloakMarshallUtil.STRING_EXT, size -> new ConcurrentHashMap<>(size)), // clientNotes
+                    KeycloakMarshallUtil.readMap(input, KeycloakMarshallUtil.STRING_EXT, KeycloakMarshallUtil.STRING_EXT, size -> new ConcurrentHashMap<>(size)), // authNotes
+                    KeycloakMarshallUtil.readCollection(input, KeycloakMarshallUtil.STRING_EXT, ConcurrentHashMap::newKeySet),  // requiredActions
+                    KeycloakMarshallUtil.readMap(input, KeycloakMarshallUtil.STRING_EXT, KeycloakMarshallUtil.STRING_EXT, size -> new ConcurrentHashMap<>(size)) // userSessionNotes
+            );
+        }
+
+        public AuthenticationSessionEntity readObjectVersion3(ObjectInput input) throws IOException, ClassNotFoundException {
+            return new AuthenticationSessionEntity(
+                    MarshallUtil.unmarshallString(input),     // clientUUID
+
+                    MarshallUtil.unmarshallString(input),     // authUserId
+
+                    input.readLong(),                         // timestamp
 
                     MarshallUtil.unmarshallString(input),     // redirectUri
                     MarshallUtil.unmarshallString(input),     // action

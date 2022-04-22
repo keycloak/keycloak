@@ -33,7 +33,7 @@ public class TokenUtil implements TestRule {
 
     private String refreshToken;
     private String token;
-    private int expires;
+    private long expires;
 
     public TokenUtil() {
         this("test-user@localhost", "password");

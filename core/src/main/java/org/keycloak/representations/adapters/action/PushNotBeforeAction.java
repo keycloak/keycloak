@@ -24,17 +24,17 @@ package org.keycloak.representations.adapters.action;
 public class PushNotBeforeAction extends AdminAction {
 
     public static final String PUSH_NOT_BEFORE = "PUSH_NOT_BEFORE";
-    protected int notBefore;
+    protected long notBefore;
 
     public PushNotBeforeAction() {
     }
 
-    public PushNotBeforeAction(String id, int expiration, String resource, int notBefore) {
+    public PushNotBeforeAction(String id, long expiration, String resource, long notBefore) {
         super(id, expiration, resource, PUSH_NOT_BEFORE);
         this.notBefore = notBefore;
     }
 
-    public int getNotBefore() {
+    public long getNotBefore() {
         return notBefore;
     }
 

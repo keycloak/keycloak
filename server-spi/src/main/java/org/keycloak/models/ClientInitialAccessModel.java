@@ -24,9 +24,9 @@ public class ClientInitialAccessModel {
 
     private String id;
 
-    private int timestamp;
+    private long timestamp;
 
-    private int expiration;
+    private long expiration;
 
     private int count;
 
@@ -40,19 +40,19 @@ public class ClientInitialAccessModel {
         this.id = id;
     }
 
-    public int getTimestamp() {
+    public long getTimestamp() {
         return timestamp;
     }
 
-    public void setTimestamp(int timestamp) {
+    public void setTimestamp(long timestamp) {
         this.timestamp = timestamp;
     }
 
-    public int getExpiration() {
+    public long getExpiration() {
         return expiration;
     }
 
-    public void setExpiration(int expiration) {
+    public void setExpiration(long expiration) {
         this.expiration = expiration;
     }
 

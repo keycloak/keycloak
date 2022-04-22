@@ -223,12 +223,12 @@ public class ClientAdapter implements ClientModel, JpaModel<ClientEntity> {
     }
 
     @Override
-    public int getNotBefore() {
+    public long getNotBefore() {
         return entity.getNotBefore();
     }
 
     @Override
-    public void setNotBefore(int notBefore) {
+    public void setNotBefore(long notBefore) {
         entity.setNotBefore(notBefore);
     }
 
@@ -698,20 +698,20 @@ public class ClientAdapter implements ClientModel, JpaModel<ClientEntity> {
     }
 
     @Override
-    public Map<String, Integer> getRegisteredNodes() {
+    public Map<String, Long> getRegisteredNodes() {
         return entity.getRegisteredNodes();
     }
 
     @Override
-    public void registerNode(String nodeHost, int registrationTime) {
-        Map<String, Integer> currentNodes = getRegisteredNodes();
+    public void registerNode(String nodeHost, long registrationTime) {
+        Map<String, Long> currentNodes = getRegisteredNodes();
         currentNodes.put(nodeHost, registrationTime);
         em.flush();
     }
 
     @Override
     public void unregisterNode(String nodeHost) {
-        Map<String, Integer> currentNodes = getRegisteredNodes();
+        Map<String, Long> currentNodes = getRegisteredNodes();
         currentNodes.remove(nodeHost);
         em.flush();
     }

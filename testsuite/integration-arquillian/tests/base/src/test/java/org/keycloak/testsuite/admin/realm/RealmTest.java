@@ -719,7 +719,7 @@ public class RealmTest extends AbstractAdminTest {
     public void pushNotBefore() {
         setupTestAppAndUser();
 
-        int time = Time.currentTime() - 60;
+        long time = Time.currentTime() - 60;
 
         RealmRepresentation rep = realm.toRepresentation();
         rep.setNotBefore(time);
@@ -741,7 +741,7 @@ public class RealmTest extends AbstractAdminTest {
         setupTestAppAndUser();
         setupTestSamlApp();
 
-        int time = Time.currentTime() - 60;
+        long time = Time.currentTime() - 60;
 
         RealmRepresentation rep = realm.toRepresentation();
         rep.setNotBefore(time);

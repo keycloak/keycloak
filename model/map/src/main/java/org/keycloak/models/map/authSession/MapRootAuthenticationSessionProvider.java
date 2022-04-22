@@ -23,7 +23,6 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.map.common.TimeAdapter;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
@@ -99,8 +98,8 @@ public class MapRootAuthenticationSessionProvider implements AuthenticationSessi
         MapRootAuthenticationSessionEntity entity = new MapRootAuthenticationSessionEntityImpl();
         entity.setId(id);
         entity.setRealmId(realm.getId());
-        int timestamp = Time.currentTime();
-        entity.setTimestamp(TimeAdapter.fromIntegerWithTimeInSecondsToLongWithTimeAsInSeconds(timestamp));
+        long timestamp = Time.currentTime();
+        entity.setTimestamp(timestamp);
         entity.setExpiration(SessionExpiration.getAuthSessionExpiration(realm, timestamp));
 
         if (id != null && tx.read(id) != null) {

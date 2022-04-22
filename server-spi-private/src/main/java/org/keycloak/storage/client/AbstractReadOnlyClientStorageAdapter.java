@@ -235,7 +235,7 @@ public abstract class AbstractReadOnlyClientStorageAdapter extends AbstractClien
     }
 
     @Override
-    public void setNotBefore(int notBefore) {
+    public void setNotBefore(long notBefore) {
         throw new ReadOnlyException("client is read only for this update");
 
     }

@@ -85,7 +85,7 @@ public class LogoutTest extends AbstractKeycloakTest {
     @Before
     public void clientConfiguration() {
         ClientManager.realm(adminClient.realm("test")).clientId("test-app").directAccessGrant(true);
-        new RealmAttributeUpdater(adminClient.realm("test")).setNotBefore(0).update();
+        new RealmAttributeUpdater(adminClient.realm("test")).setNotBefore(0L).update();
     }
 
     @Override
@@ -203,7 +203,7 @@ public class LogoutTest extends AbstractKeycloakTest {
         String sessionId = events.expectLogin().assertEvent().getSessionId();
 
         UserRepresentation user = ApiUtil.findUserByUsername(adminClient.realm("test"), "test-user@localhost");
-        Assert.assertEquals((Object) 0, user.getNotBefore());
+        Assert.assertEquals((Object) 0L, user.getNotBefore());
 
         adminClient.realm("test").users().get(user.getId()).logout();
 

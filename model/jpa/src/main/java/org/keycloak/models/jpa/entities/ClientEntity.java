@@ -83,7 +83,7 @@ public class ClientEntity {
     @Column(name="CLIENT_AUTHENTICATOR_TYPE")
     private String clientAuthenticatorType;
     @Column(name="NOT_BEFORE")
-    private int notBefore;
+    private long notBefore;
     @Column(name="PUBLIC_CLIENT")
     private boolean publicClient;
     @Column(name="PROTOCOL")
@@ -160,7 +160,7 @@ public class ClientEntity {
     @MapKeyColumn(name="NAME")
     @Column(name="VALUE")
     @CollectionTable(name="CLIENT_NODE_REGISTRATIONS", joinColumns={ @JoinColumn(name="CLIENT_ID") })
-    Map<String, Integer> registeredNodes;
+    Map<String, Long> registeredNodes;
 
     public String getRealmId() {
         return realmId;
@@ -264,11 +264,11 @@ public class ClientEntity {
         this.registrationToken = registrationToken;
     }
 
-    public int getNotBefore() {
+    public long getNotBefore() {
         return notBefore;
     }
 
-    public void setNotBefore(int notBefore) {
+    public void setNotBefore(long notBefore) {
         this.notBefore = notBefore;
     }
 
@@ -425,14 +425,14 @@ public class ClientEntity {
         this.nodeReRegistrationTimeout = nodeReRegistrationTimeout;
     }
 
-    public Map<String, Integer> getRegisteredNodes() {
+    public Map<String, Long> getRegisteredNodes() {
         if (registeredNodes == null) {
             registeredNodes = new HashMap<>();
         }
         return registeredNodes;
     }
 
-    public void setRegisteredNodes(Map<String, Integer> registeredNodes) {
+    public void setRegisteredNodes(Map<String, Long> registeredNodes) {
         this.registeredNodes = registeredNodes;
     }
 

@@ -104,8 +104,8 @@ public class DockerAuthV2Protocol implements LoginProtocol {
 
         // since realm access token is given in seconds
         final int accessTokenLifespan = realm.getAccessTokenLifespan();
-        responseToken.notBefore(responseToken.getIssuedAt())
-                .expiration(responseToken.getIssuedAt() + accessTokenLifespan);
+        responseToken.nbf(responseToken.getIssuedAt())
+                .exp(responseToken.getIssuedAt() + accessTokenLifespan);
 
         // Next, allow mappers to decorate the token to add/remove scopes as appropriate
 

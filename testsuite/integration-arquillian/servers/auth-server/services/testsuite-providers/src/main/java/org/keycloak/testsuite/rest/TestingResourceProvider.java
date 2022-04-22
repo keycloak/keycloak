@@ -163,7 +163,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @GET
     @Path("/get-last-session-refresh")
     @Produces(MediaType.APPLICATION_JSON)
-    public Integer getLastSessionRefresh(@QueryParam("realm") final String name, @QueryParam("session") final String sessionId, @QueryParam("offline") boolean offline) {
+    public Long getLastSessionRefresh(@QueryParam("realm") final String name, @QueryParam("session") final String sessionId, @QueryParam("offline") boolean offline) {
         RealmModel realm = getRealmByName(name);
 
         UserSessionModel sessionModel = offline ? session.sessions().getOfflineUserSession(realm, sessionId) : session.sessions().getUserSession(realm, sessionId);

@@ -146,8 +146,8 @@ public class InfinispanPublicKeyStorageProvider implements PublicKeyStorageProvi
             }
         }
 
-        int lastRequestTime = entry==null ? 0 : entry.getLastRequestTime();
-        int currentTime = Time.currentTime();
+        long lastRequestTime = entry==null ? 0 : entry.getLastRequestTime();
+        long currentTime = Time.currentTime();
 
         // Check if we are allowed to send request
         if (currentTime > lastRequestTime + minTimeBetweenRequests) {
@@ -226,8 +226,8 @@ public class InfinispanPublicKeyStorageProvider implements PublicKeyStorageProvi
         public PublicKeysEntry call() throws Exception {
             PublicKeysEntry entry = keys.get(modelKey);
 
-            int lastRequestTime = entry==null ? 0 : entry.getLastRequestTime();
-            int currentTime = Time.currentTime();
+            long lastRequestTime = entry==null ? 0 : entry.getLastRequestTime();
+            long currentTime = Time.currentTime();
 
             // Check again if we are allowed to send request. There is a chance other task was already finished and removed from tasksInProgress in the meantime.
             if (currentTime > lastRequestTime + minTimeBetweenRequests) {

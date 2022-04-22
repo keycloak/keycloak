@@ -43,13 +43,13 @@ public class UserSessionPredicate implements Predicate<Map.Entry<String, Session
 
     private String client;
 
-    private Integer expired;
+    private Long expired;
 
-    private Integer expiredRefresh;
+    private Long expiredRefresh;
 
-    private Integer expiredRememberMe;
+    private Long expiredRememberMe;
 
-    private Integer expiredRefreshRememberMe;
+    private Long expiredRefreshRememberMe;
 
     private String brokerSessionId;
     private String brokerUserId;
@@ -85,11 +85,11 @@ public class UserSessionPredicate implements Predicate<Map.Entry<String, Session
         return this;
     }
 
-    public UserSessionPredicate expired(Integer expired, Integer expiredRefresh) {
+    public UserSessionPredicate expired(Long expired, Long expiredRefresh) {
         return this.expired(expired, expiredRefresh, null, null);
     }
 
-    public UserSessionPredicate expired(Integer expired, Integer expiredRefresh, Integer expiredRememberMe, Integer expiredRefreshRememberMe) {
+    public UserSessionPredicate expired(Long expired, Long expiredRefresh, Long expiredRememberMe, Long expiredRefreshRememberMe) {
         this.expired = expired;
         this.expiredRefresh = expiredRefresh;
         this.expiredRememberMe = expiredRememberMe;
@@ -202,7 +202,7 @@ public class UserSessionPredicate implements Predicate<Map.Entry<String, Session
             UserSessionPredicate res = new UserSessionPredicate(MarshallUtil.unmarshallString(input));
             res.user(MarshallUtil.unmarshallString(input));
             res.client(MarshallUtil.unmarshallString(input));
-            res.expired(KeycloakMarshallUtil.unmarshallInteger(input), KeycloakMarshallUtil.unmarshallInteger(input));
+            res.expired(KeycloakMarshallUtil.unmarshallLong(input), KeycloakMarshallUtil.unmarshallLong(input));
             res.brokerSessionId(MarshallUtil.unmarshallString(input));
             res.brokerUserId(MarshallUtil.unmarshallString(input));
             return res;
@@ -212,8 +212,8 @@ public class UserSessionPredicate implements Predicate<Map.Entry<String, Session
             UserSessionPredicate res = new UserSessionPredicate(MarshallUtil.unmarshallString(input));
             res.user(MarshallUtil.unmarshallString(input));
             res.client(MarshallUtil.unmarshallString(input));
-            res.expired(KeycloakMarshallUtil.unmarshallInteger(input), KeycloakMarshallUtil.unmarshallInteger(input),
-                    KeycloakMarshallUtil.unmarshallInteger(input), KeycloakMarshallUtil.unmarshallInteger(input));
+            res.expired(KeycloakMarshallUtil.unmarshallLong(input), KeycloakMarshallUtil.unmarshallLong(input),
+                    KeycloakMarshallUtil.unmarshallLong(input), KeycloakMarshallUtil.unmarshallLong(input));
             res.brokerSessionId(MarshallUtil.unmarshallString(input));
             res.brokerUserId(MarshallUtil.unmarshallString(input));
             return res;

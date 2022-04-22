@@ -102,7 +102,7 @@ public class DisabledUserSessionPersisterProvider implements UserSessionPersiste
     }
 
     @Override
-    public void updateLastSessionRefreshes(RealmModel realm, int lastSessionRefresh, Collection<String> userSessionIds, boolean offline) {
+    public void updateLastSessionRefreshes(RealmModel realm, long lastSessionRefresh, Collection<String> userSessionIds, boolean offline) {
 
     }
 

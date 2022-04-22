@@ -31,7 +31,7 @@ import org.infinispan.commons.marshall.SerializeWith;
 public class LoginFailureEntity extends SessionEntity {
 
     private String userId;
-    private int failedLoginNotBefore;
+    private long failedLoginNotBefore;
     private int numFailures;
     private long lastFailure;
     private String lastIPFailure;
@@ -39,7 +39,7 @@ public class LoginFailureEntity extends SessionEntity {
     public LoginFailureEntity() {
     }
 
-    private LoginFailureEntity(String realmId, String userId, int failedLoginNotBefore, int numFailures, long lastFailure, String lastIPFailure) {
+    private LoginFailureEntity(String realmId, String userId, long failedLoginNotBefore, int numFailures, long lastFailure, String lastIPFailure) {
         super(realmId);
         this.userId = userId;
         this.failedLoginNotBefore = failedLoginNotBefore;
@@ -56,11 +56,11 @@ public class LoginFailureEntity extends SessionEntity {
         this.userId = userId;
     }
 
-    public int getFailedLoginNotBefore() {
+    public long getFailedLoginNotBefore() {
         return failedLoginNotBefore;
     }
 
-    public void setFailedLoginNotBefore(int failedLoginNotBefore) {
+    public void setFailedLoginNotBefore(long failedLoginNotBefore) {
         this.failedLoginNotBefore = failedLoginNotBefore;
     }
 
@@ -124,14 +124,15 @@ public class LoginFailureEntity extends SessionEntity {
     public static class ExternalizerImpl implements Externalizer<LoginFailureEntity> {
 
         private static final int VERSION_1 = 1;
+        private static final int VERSION_2 = 2;
 
         @Override
         public void writeObject(ObjectOutput output, LoginFailureEntity value) throws IOException {
-            output.writeByte(VERSION_1);
+            output.writeByte(VERSION_2);
 
             MarshallUtil.marshallString(value.getRealmId(), output);
             MarshallUtil.marshallString(value.userId, output);
-            output.writeInt(value.failedLoginNotBefore);
+            output.writeLong(value.failedLoginNotBefore);
             output.writeInt(value.numFailures);
             output.writeLong(value.lastFailure);
             MarshallUtil.marshallString(value.lastIPFailure, output);
@@ -142,6 +143,8 @@ public class LoginFailureEntity extends SessionEntity {
             switch (input.readByte()) {
                 case VERSION_1:
                     return readObjectVersion1(input);
+                case VERSION_2:
+                    return readObjectVersion2(input);
                 default:
                     throw new IOException("Unknown version");
             }
@@ -149,9 +152,20 @@ public class LoginFailureEntity extends SessionEntity {
 
         public LoginFailureEntity readObjectVersion1(ObjectInput input) throws IOException {
             return new LoginFailureEntity(
+                    MarshallUtil.unmarshallString(input),
+                    MarshallUtil.unmarshallString(input),
+                    input.readInt(),
+                    input.readInt(),
+                    input.readLong(),
+                    MarshallUtil.unmarshallString(input)
+            );
+        }
+
+        public LoginFailureEntity readObjectVersion2(ObjectInput input) throws IOException {
+            return new LoginFailureEntity(
               MarshallUtil.unmarshallString(input),
               MarshallUtil.unmarshallString(input),
-              input.readInt(),
+              input.readLong(),
               input.readInt(),
               input.readLong(),
               MarshallUtil.unmarshallString(input)

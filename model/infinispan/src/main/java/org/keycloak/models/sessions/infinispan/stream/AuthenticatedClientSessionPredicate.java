@@ -39,7 +39,7 @@ public class AuthenticatedClientSessionPredicate implements Predicate<Map.Entry<
 
     private final String realm;
 
-    private Integer expired;
+    private Long expired;
 
     private AuthenticatedClientSessionPredicate(String realm) {
         this.realm = realm;
@@ -55,7 +55,7 @@ public class AuthenticatedClientSessionPredicate implements Predicate<Map.Entry<
     }
 
 
-    public AuthenticatedClientSessionPredicate expired(Integer expired) {
+    public AuthenticatedClientSessionPredicate expired(Long expired) {
         this.expired = expired;
         return this;
     }
@@ -101,7 +101,7 @@ public class AuthenticatedClientSessionPredicate implements Predicate<Map.Entry<
 
         public AuthenticatedClientSessionPredicate readObjectVersion1(ObjectInput input) throws IOException, ClassNotFoundException {
             AuthenticatedClientSessionPredicate res = new AuthenticatedClientSessionPredicate(MarshallUtil.unmarshallString(input));
-            res.expired(KeycloakMarshallUtil.unmarshallInteger(input));
+            res.expired(KeycloakMarshallUtil.unmarshallLong(input));
             return res;
         }
     }

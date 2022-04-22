@@ -25,11 +25,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
-import org.apache.http.client.utils.CloneUtils;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.AuthenticationFlowError;
@@ -38,8 +36,6 @@ import org.keycloak.common.util.Time;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.AuthenticationExecutionModel.Requirement;
 import org.keycloak.models.SingleUseTokenStoreProvider;
-import org.keycloak.models.delegate.ClientModelLazyDelegate;
-import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCClientSecretConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -187,7 +183,7 @@ public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
             }
 
             // KEYCLOAK-2986, token-timeout or token-expiration in keycloak.json might not be used
-            int currentTime = Time.currentTime();
+            long currentTime = Time.currentTime();
             if (token.getExpiration() == 0 && token.getIssuedAt() + 10 < currentTime) {
                 throw new RuntimeException("Token is not active");
             }
@@ -197,7 +193,7 @@ public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
             }
 
             SingleUseTokenStoreProvider singleUseCache = context.getSession().getProvider(SingleUseTokenStoreProvider.class);
-            int lifespanInSecs = Math.max(token.getExpiration() - currentTime, 10);
+            long lifespanInSecs = Math.max(token.getExpiration() - currentTime, 10);
             if (singleUseCache.putIfAbsent(token.getId(), lifespanInSecs)) {
 
                 logger.tracef("Added token '%s' to single-use cache. Lifespan: %d seconds, client: %s", token.getId(), lifespanInSecs, clientId);

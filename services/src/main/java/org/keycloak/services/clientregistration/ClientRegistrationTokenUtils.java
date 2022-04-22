@@ -27,7 +27,6 @@ import org.keycloak.crypto.SignatureVerifierContext;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.models.ClientInitialAccessModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.TokenManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -56,8 +55,8 @@ public class ClientRegistrationTokenUtils {
 
             regToken.type(auth.getJwt().getType());
             regToken.id(auth.getJwt().getId());
-            regToken.issuedAt(Time.currentTime());
-            regToken.expiration(0);
+            regToken.iat(Time.currentTime());
+            regToken.exp(0L);
             regToken.issuer(auth.getJwt().getIssuer());
             regToken.audience(auth.getJwt().getIssuer());
 
@@ -117,13 +116,13 @@ public class ClientRegistrationTokenUtils {
         return TokenVerification.success(kid, jwt);
     }
 
-    private static String setupToken(JsonWebToken jwt, KeycloakSession session, RealmModel realm, String id, String type, int expiration) {
+    private static String setupToken(JsonWebToken jwt, KeycloakSession session, RealmModel realm, String id, String type, long expiration) {
         String issuer = getIssuer(session, realm);
 
         jwt.type(type);
         jwt.id(id);
-        jwt.issuedAt(Time.currentTime());
-        jwt.expiration(expiration);
+        jwt.iat(Time.currentTime());
+        jwt.exp(expiration);
         jwt.issuer(issuer);
         jwt.audience(issuer);
 

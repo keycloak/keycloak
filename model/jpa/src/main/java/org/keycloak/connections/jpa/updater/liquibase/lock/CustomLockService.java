@@ -163,7 +163,7 @@ public class CustomLockService extends StandardLockService {
         while (nextAttempt) {
             locked = acquireLock(lockStmt);
             if (!locked) {
-                int remainingTime = ((int)(timeToGiveUp / 1000)) - Time.currentTime();
+                long remainingTime = (timeToGiveUp / 1000) - Time.currentTime();
                 if (remainingTime > 0) {
                     log.debugf("Will try to acquire log another time. Remaining time: %d seconds", remainingTime);
                 } else {

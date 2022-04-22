@@ -53,7 +53,7 @@ public class PersisterLastSessionRefreshStore extends AbstractLastSessionRefresh
                                 Collectors.mapping(Map.Entry::getKey, Collectors.toSet())));
 
         // Update DB with a bit lower value than current time to ensure 'revokeRefreshToken' will work correctly taking server
-        int lastSessionRefresh = Time.currentTime() - SessionTimeoutHelper.PERIODIC_TASK_INTERVAL_SECONDS;
+        long lastSessionRefresh = Time.currentTime() - SessionTimeoutHelper.PERIODIC_TASK_INTERVAL_SECONDS;
 
         if (logger.isDebugEnabled()) {
             logger.debugf("Updating %d userSessions with lastSessionRefresh: %d", refreshesToSend.size(), lastSessionRefresh);

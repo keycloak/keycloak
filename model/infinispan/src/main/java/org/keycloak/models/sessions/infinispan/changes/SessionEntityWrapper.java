@@ -115,7 +115,19 @@ public class SessionEntityWrapper<S extends SessionEntity> {
         return note==null ? null : Integer.valueOf(note);
     }
 
+    public Long getLocalMetadataNoteLong(String key) {
+        String note = getLocalMetadataNote(key);
+        return note==null ? null : Long.valueOf(note);
+    }
+
     public void putLocalMetadataNoteInt(String key, int value) {
+        if (isForTransport()) {
+            throw new IllegalStateException("This entity is only intended for transport");
+        }
+        localMetadata.put(key, String.valueOf(value));
+    }
+
+    public void putLocalMetadataNoteLong(String key, long value) {
         if (isForTransport()) {
             throw new IllegalStateException("This entity is only intended for transport");
         }

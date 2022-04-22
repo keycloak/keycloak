@@ -954,13 +954,13 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
-    public int getNotBefore() {
+    public long getNotBefore() {
         if (isUpdated()) return updated.getNotBefore();
         return cached.getNotBefore();
     }
 
     @Override
-    public void setNotBefore(int notBefore) {
+    public void setNotBefore(long notBefore) {
         getDelegateForUpdate();
         updated.setNotBefore(notBefore);
     }

@@ -19,7 +19,6 @@ package org.keycloak.models.map.realm.entity;
 
 import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientInitialAccessModel;
-import org.keycloak.models.map.common.TimeAdapter;
 import org.keycloak.models.map.annotations.GenerateEntityImplementations;
 import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.DeepCloner;
@@ -29,13 +28,13 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 @GenerateEntityImplementations
 @DeepCloner.Root
 public interface MapClientInitialAccessEntity extends UpdatableEntity, AbstractEntity {
-    static MapClientInitialAccessEntity createEntity(int expiration, int count) {
-        int currentTime = Time.currentTime();
+    static MapClientInitialAccessEntity createEntity(long expiration, int count) {
+        long currentTime = Time.currentTime();
 
         MapClientInitialAccessEntity entity = new MapClientInitialAccessEntityImpl();
         entity.setId(KeycloakModelUtils.generateId());
-        entity.setTimestamp(TimeAdapter.fromIntegerWithTimeInSecondsToLongWithTimeAsInSeconds(currentTime));
-        entity.setExpiration(TimeAdapter.fromIntegerWithTimeInSecondsToLongWithTimeAsInSeconds(expiration));
+        entity.setTimestamp(currentTime);
+        entity.setExpiration(expiration);
         entity.setCount(count);
         entity.setRemainingCount(count);
         return entity;
@@ -46,9 +45,9 @@ public interface MapClientInitialAccessEntity extends UpdatableEntity, AbstractE
         ClientInitialAccessModel model = new ClientInitialAccessModel();
         model.setId(entity.getId());
         Long timestamp = entity.getTimestamp();
-        model.setTimestamp(timestamp == null ? 0 : TimeAdapter.fromLongWithTimeInSecondsToIntegerWithTimeInSeconds(timestamp));
+        model.setTimestamp(timestamp == null ? 0 : timestamp);
         Long expiration = entity.getExpiration();
-        model.setExpiration(expiration == null ? 0 : TimeAdapter.fromLongWithTimeInSecondsToIntegerWithTimeInSeconds(expiration));
+        model.setExpiration(expiration == null ? 0 : expiration);
         Integer count = entity.getCount();
         model.setCount(count == null ? 0 : count);
         Integer remainingCount = entity.getRemainingCount();

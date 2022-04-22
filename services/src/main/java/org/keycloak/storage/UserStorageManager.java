@@ -608,7 +608,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
     }
 
     @Override
-    public void setNotBeforeForUser(RealmModel realm, UserModel user, int notBefore) {
+    public void setNotBeforeForUser(RealmModel realm, UserModel user, long notBefore) {
         if (StorageId.isLocalStorage(user)) {
             localStorage().setNotBeforeForUser(realm, user, notBefore);
         } else {
@@ -617,7 +617,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
     }
 
     @Override
-    public int getNotBeforeOfUser(RealmModel realm, UserModel user) {
+    public long getNotBeforeOfUser(RealmModel realm, UserModel user) {
         if (StorageId.isLocalStorage(user)) {
             return localStorage().getNotBeforeOfUser(realm, user);
         } else {

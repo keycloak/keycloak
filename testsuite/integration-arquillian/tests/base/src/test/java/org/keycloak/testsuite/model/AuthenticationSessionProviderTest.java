@@ -96,7 +96,7 @@ public class AuthenticationSessionProviderTest extends AbstractTestRealmKeycloak
     public void testLoginSessionsCRUD(KeycloakSession session) {
         AtomicReference<String> rootAuthSessionID = new AtomicReference<>();
         AtomicReference<String> tabID = new AtomicReference<>();
-        final int timestamp = Time.currentTime();
+        final long timestamp = Time.currentTime();
 
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionCRUD1) -> {
             KeycloakSession currentSession = sessionCRUD1;
@@ -165,7 +165,7 @@ public class AuthenticationSessionProviderTest extends AbstractTestRealmKeycloak
     public void testAuthenticationSessionRestart(KeycloakSession session) {
         AtomicReference<String> parentAuthSessionID = new AtomicReference<>();
         AtomicReference<String> tabID = new AtomicReference<>();
-        final int timestamp = Time.currentTime();
+        final long timestamp = Time.currentTime();
 
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionRestart1) -> {
             KeycloakSession currentSession = sessionRestart1;

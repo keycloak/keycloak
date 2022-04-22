@@ -644,7 +644,7 @@ public abstract class AbstractKeycloakTest {
         log.debugv("Reset time offset, response {0}", response);
     }
 
-    public int getCurrentTime() {
+    public long getCurrentTime() {
         return Time.currentTime();
     }
 

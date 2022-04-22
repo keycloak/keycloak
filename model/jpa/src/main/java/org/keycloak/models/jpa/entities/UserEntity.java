@@ -120,7 +120,7 @@ public class UserEntity {
     protected String serviceAccountClientLink;
 
     @Column(name="NOT_BEFORE")
-    protected int notBefore;
+    protected long notBefore;
 
     public String getId() {
         return id;
@@ -263,11 +263,11 @@ public class UserEntity {
         this.serviceAccountClientLink = serviceAccountClientLink;
     }
 
-    public int getNotBefore() {
+    public long getNotBefore() {
         return notBefore;
     }
 
-    public void setNotBefore(int notBefore) {
+    public void setNotBefore(long notBefore) {
         this.notBefore = notBefore;
     }
 

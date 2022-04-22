@@ -172,7 +172,7 @@ public class AuthenticationManager {
             logger.debug("No user session");
             return false;
         }
-        int currentTime = Time.currentTime();
+        long currentTime = Time.currentTime();
 
         // Additional time window is added for the case when session was updated in different DC and the update to current DC was postponed
         int maxIdle = userSession.isRememberMe() && realm.getSsoSessionIdleTimeoutRememberMe() > 0 ?
@@ -190,13 +190,13 @@ public class AuthenticationManager {
             logger.debug("No offline user session");
             return false;
         }
-        int currentTime = Time.currentTime();
+        long currentTime = Time.currentTime();
         // Additional time window is added for the case when session was updated in different DC and the update to current DC was postponed
         int maxIdle = realm.getOfflineSessionIdleTimeout() + SessionTimeoutHelper.IDLE_TIMEOUT_WINDOW_SECONDS;
 
         // KEYCLOAK-7688 Offline Session Max for Offline Token
         if (realm.isOfflineSessionMaxLifespanEnabled()) {
-            int max = userSession.getStarted() + realm.getOfflineSessionMaxLifespan();
+            long max = userSession.getStarted() + realm.getOfflineSessionMaxLifespan();
             return userSession.getLastSessionRefresh() + maxIdle > currentTime && max > currentTime;
         } else {
             return userSession.getLastSessionRefresh() + maxIdle > currentTime;
@@ -752,9 +752,9 @@ public class AuthenticationManager {
         }
 
         if (session != null && session.isRememberMe() && realm.getSsoSessionMaxLifespanRememberMe() > 0) {
-            token.expiration(Time.currentTime() + realm.getSsoSessionMaxLifespanRememberMe());
+            token.exp(Time.currentTime() + realm.getSsoSessionMaxLifespanRememberMe());
         } else if (realm.getSsoSessionMaxLifespan() > 0) {
-            token.expiration(Time.currentTime() + realm.getSsoSessionMaxLifespan());
+            token.exp(Time.currentTime() + realm.getSsoSessionMaxLifespan());
         }
 
         String stateChecker = (String) keycloakSession.getAttribute("state_checker");
@@ -957,7 +957,7 @@ public class AuthenticationManager {
             clientSession.setNote(SSO_AUTH, "true");
             authSession.removeAuthNote(SSO_AUTH);
         } else {
-            int authTime = Time.currentTime();
+            long authTime = Time.currentTime();
             userSession.setNote(AUTH_TIME, String.valueOf(authTime));
             clientSession.removeNote(SSO_AUTH);
         }
@@ -1529,7 +1529,7 @@ public class AuthenticationManager {
             return false;
         }
 
-        int userNotBefore = session.users().getNotBeforeOfUser(realm, user);
+        long userNotBefore = session.users().getNotBeforeOfUser(realm, user);
         if (token.getIssuedAt() < userNotBefore) {
             logger.debug("User notBefore newer than token");
             return false;

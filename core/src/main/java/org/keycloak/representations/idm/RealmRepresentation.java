@@ -45,7 +45,7 @@ public class RealmRepresentation {
     protected String realm;
     protected String displayName;
     protected String displayNameHtml;
-    protected Integer notBefore;
+    protected Long notBefore;
     protected String defaultSignatureAlgorithm;
     protected Boolean revokeRefreshToken;
     protected Integer refreshTokenMaxReuse;
@@ -734,11 +734,11 @@ public class RealmRepresentation {
         this.emailTheme = emailTheme;
     }
 
-    public Integer getNotBefore() {
+    public Long getNotBefore() {
         return notBefore;
     }
 
-    public void setNotBefore(Integer notBefore) {
+    public void setNotBefore(Long notBefore) {
         this.notBefore = notBefore;
     }
 

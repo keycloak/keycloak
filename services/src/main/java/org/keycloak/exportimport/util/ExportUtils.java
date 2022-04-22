@@ -513,7 +513,7 @@ public class ExportUtils {
         }
 
         // Not Before
-        int notBefore = session.users().getNotBeforeOfUser(realm, user);
+        long notBefore = session.users().getNotBeforeOfUser(realm, user);
         userRep.setNotBefore(notBefore);
 
         // Service account
@@ -675,7 +675,7 @@ public class ExportUtils {
         }
 
         // Not Before
-        int notBefore = session.userFederatedStorage().getNotBeforeOfUser(realm, userRep.getId());
+        long notBefore = session.userFederatedStorage().getNotBeforeOfUser(realm, userRep.getId());
         userRep.setNotBefore(notBefore);
 
         if (options.isGroupsAndRolesIncluded()) {

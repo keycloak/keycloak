@@ -47,8 +47,8 @@ public interface AuthenticatedClientSessionModel extends CommonClientSessionMode
         return started == null ? 0 : Integer.parseInt(started);
     }
 
-    int getTimestamp();
-    void setTimestamp(int timestamp);
+    long getTimestamp();
+    void setTimestamp(long timestamp);
 
     /**
      * Detaches the client session from its user session.

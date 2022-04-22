@@ -41,7 +41,6 @@ import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.SearchableFields;
 import org.keycloak.models.UserProvider;
-import org.keycloak.models.map.common.TimeAdapter;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
@@ -277,19 +276,19 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
     }
 
     @Override
-    public void setNotBeforeForUser(RealmModel realm, UserModel user, int notBefore) {
+    public void setNotBeforeForUser(RealmModel realm, UserModel user, long notBefore) {
         LOG.tracef("setNotBeforeForUser(%s, %s, %d)%s", realm, user.getId(), notBefore, getShortStackTrace());
-        getEntityByIdOrThrow(realm, user.getId()).setNotBefore(TimeAdapter.fromIntegerWithTimeInSecondsToLongWithTimeAsInSeconds(notBefore));
+        getEntityByIdOrThrow(realm, user.getId()).setNotBefore(notBefore);
     }
 
     @Override
-    public int getNotBeforeOfUser(RealmModel realm, UserModel user) {
+    public long getNotBeforeOfUser(RealmModel realm, UserModel user) {
         LOG.tracef("getNotBeforeOfUser(%s, %s)%s", realm, user.getId(), getShortStackTrace());
         Long notBefore = getEntityById(realm, user.getId())
                 .orElseThrow(this::userDoesntExistException)
                 .getNotBefore();
 
-        return notBefore == null ? 0 : TimeAdapter.fromLongWithTimeInSecondsToIntegerWithTimeInSeconds(notBefore);
+        return notBefore == null ? 0 : notBefore;
     }
 
     @Override

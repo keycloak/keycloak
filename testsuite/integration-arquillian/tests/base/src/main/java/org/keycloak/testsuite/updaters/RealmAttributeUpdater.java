@@ -98,7 +98,7 @@ public class RealmAttributeUpdater extends ServerResourceUpdater<RealmAttributeU
         return this;
     }
 
-    public RealmAttributeUpdater setNotBefore(Integer notBefore) {
+    public RealmAttributeUpdater setNotBefore(Long notBefore) {
         rep.setNotBefore(notBefore);
         return this;
     }

@@ -265,11 +265,11 @@ public interface ClientModel extends ClientScopeModel, RoleContainerModel,  Prot
      *
      * @return
      */
-    int getNotBefore();
+    long getNotBefore();
 
-    void setNotBefore(int notBefore);
+    void setNotBefore(long notBefore);
 
-     Map<String, Integer> getRegisteredNodes();
+     Map<String, Long> getRegisteredNodes();
 
     /**
      * Register node or just update the 'lastReRegistration' time if this node is already registered
@@ -277,7 +277,7 @@ public interface ClientModel extends ClientScopeModel, RoleContainerModel,  Prot
      * @param nodeHost
      * @param registrationTime
      */
-    void registerNode(String nodeHost, int registrationTime);
+    void registerNode(String nodeHost, long registrationTime);
 
     void unregisterNode(String nodeHost);
 

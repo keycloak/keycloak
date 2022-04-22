@@ -90,7 +90,7 @@ public class KeycloakDeployment {
     protected int registerNodePeriod;
     protected boolean turnOffChangeSessionIdOnLogin;
 
-    protected volatile int notBefore;
+    protected volatile long notBefore;
     protected int tokenMinimumTimeToLive;
     protected int minTimeBetweenJwksRequests;
     protected int publicKeyCacheTtl;
@@ -462,15 +462,15 @@ public class KeycloakDeployment {
         this.exposeToken = exposeToken;
     }
 
-    public int getNotBefore() {
+    public long getNotBefore() {
         return notBefore;
     }
 
-    public void setNotBefore(int notBefore) {
+    public void setNotBefore(long notBefore) {
         this.notBefore = notBefore;
     }
 
-    public void updateNotBefore(int notBefore) {
+    public void updateNotBefore(long notBefore) {
         this.notBefore = notBefore;
         getPublicKeyLocator().reset(this);
     }

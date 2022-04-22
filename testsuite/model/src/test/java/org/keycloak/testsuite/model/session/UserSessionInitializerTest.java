@@ -102,7 +102,7 @@ public class UserSessionInitializerTest extends KeycloakModelTest {
     @Test
     public void testUserSessionInitializer() {
         UserSessionModel[] origSessionIds = createSessionsInPersisterOnly();
-        int started = origSessionIds[0].getStarted();
+        long started = origSessionIds[0].getStarted();
 
         inComittedTransaction(session -> {
             RealmModel realm = session.realms().getRealm(realmId);
@@ -126,7 +126,7 @@ public class UserSessionInitializerTest extends KeycloakModelTest {
     @Test
     public void testUserSessionInitializerWithDeletingClient() {
         UserSessionModel[] origSessionIds = createSessionsInPersisterOnly();
-        int started = origSessionIds[0].getStarted();
+        long started = origSessionIds[0].getStarted();
 
         inComittedTransaction(session -> {
             RealmModel realm = session.realms().getRealm(realmId);
@@ -221,7 +221,7 @@ public class UserSessionInitializerTest extends KeycloakModelTest {
         return res;
     }
 
-    private void assertSessionLoaded(List<UserSessionModel> sessions, String id, UserModel user, String ipAddress, int started, int lastRefresh, String... clients) {
+    private void assertSessionLoaded(List<UserSessionModel> sessions, String id, UserModel user, String ipAddress, long started, long lastRefresh, String... clients) {
         for (UserSessionModel session : sessions) {
             if (session.getId().equals(id)) {
                 UserSessionPersisterProviderTest.assertSession(session, user, ipAddress, started, lastRefresh, clients);

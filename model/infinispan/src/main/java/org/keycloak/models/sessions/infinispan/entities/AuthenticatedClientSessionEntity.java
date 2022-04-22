@@ -45,7 +45,7 @@ public class AuthenticatedClientSessionEntity extends SessionEntity {
 
     private String authMethod;
     private String redirectUri;
-    private volatile int timestamp;
+    private volatile long timestamp;
     private String action;
 
     private Map<String, String> notes = new ConcurrentHashMap<>();
@@ -75,11 +75,11 @@ public class AuthenticatedClientSessionEntity extends SessionEntity {
         this.redirectUri = redirectUri;
     }
 
-    public int getTimestamp() {
+    public long getTimestamp() {
         return timestamp;
     }
 
-    public void setTimestamp(int timestamp) {
+    public void setTimestamp(long timestamp) {
         this.timestamp = timestamp;
     }
 
@@ -143,7 +143,7 @@ public class AuthenticatedClientSessionEntity extends SessionEntity {
 
     @Override
     public SessionEntityWrapper mergeRemoteEntityWithLocalEntity(SessionEntityWrapper localEntityWrapper) {
-        int timestampRemote = getTimestamp();
+        long timestampRemote = getTimestamp();
 
         SessionEntityWrapper entityWrapper;
         if (localEntityWrapper == null) {
@@ -159,7 +159,7 @@ public class AuthenticatedClientSessionEntity extends SessionEntity {
             entityWrapper = new SessionEntityWrapper<>(localEntityWrapper.getLocalMetadata(), this);
         }
 
-        entityWrapper.putLocalMetadataNoteInt(LAST_TIMESTAMP_REMOTE, timestampRemote);
+        entityWrapper.putLocalMetadataNoteLong(LAST_TIMESTAMP_REMOTE, timestampRemote);
 
         logger.debugf("Updating client session entity %s. timestamp=%d, timestampRemote=%d", getId(), getTimestamp(), timestampRemote);
 
@@ -193,7 +193,7 @@ public class AuthenticatedClientSessionEntity extends SessionEntity {
 
             sessionEntity.setAuthMethod(MarshallUtil.unmarshallString(input));
             sessionEntity.setRedirectUri(MarshallUtil.unmarshallString(input));
-            sessionEntity.setTimestamp(KeycloakMarshallUtil.unmarshallInteger(input));
+            sessionEntity.setTimestamp(KeycloakMarshallUtil.unmarshallLong(input));
             sessionEntity.setAction(MarshallUtil.unmarshallString(input));
 
             Map<String, String> notes = KeycloakMarshallUtil.readMap(input, KeycloakMarshallUtil.STRING_EXT, KeycloakMarshallUtil.STRING_EXT,

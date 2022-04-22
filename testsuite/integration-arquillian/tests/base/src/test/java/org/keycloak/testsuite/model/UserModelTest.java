@@ -566,8 +566,8 @@ public class UserModelTest extends AbstractTestRealmKeycloakTest {
             RealmModel realm = currentSession.realms().getRealmByName("original");
 
             UserModel user1 = currentSession.users().getUserByUsername(realm, "user1");
-            int notBefore = currentSession.users().getNotBeforeOfUser(realm, user1);
-            Assert.assertThat(notBefore, equalTo(10));
+            long notBefore = currentSession.users().getNotBeforeOfUser(realm, user1);
+            Assert.assertThat(notBefore, equalTo(10L));
 
             // Try to update
             currentSession.users().setNotBeforeForUser(realm, user1, 20);
@@ -578,8 +578,8 @@ public class UserModelTest extends AbstractTestRealmKeycloakTest {
             RealmModel realm = currentSession.realms().getRealmByName("original");
 
             UserModel user1 = currentSession.users().getUserByUsername(realm, "user1");
-            int notBefore = currentSession.users().getNotBeforeOfUser(realm, user1);
-            Assert.assertThat(notBefore, equalTo(20));
+            long notBefore = currentSession.users().getNotBeforeOfUser(realm, user1);
+            Assert.assertThat(notBefore, equalTo(20L));
         });
     }
 

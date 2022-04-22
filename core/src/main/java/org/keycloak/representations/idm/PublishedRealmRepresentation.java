@@ -40,7 +40,7 @@ public class PublishedRealmRepresentation {
     protected String accountServiceUrl;
 
     @JsonProperty("tokens-not-before")
-    protected int notBefore;
+    protected long notBefore;
 
     @JsonIgnore
     protected volatile transient PublicKey publicKey;
@@ -98,11 +98,11 @@ public class PublishedRealmRepresentation {
         this.accountServiceUrl = accountServiceUrl;
     }
 
-    public int getNotBefore() {
+    public long getNotBefore() {
         return notBefore;
     }
 
-    public void setNotBefore(int notBefore) {
+    public void setNotBefore(long notBefore) {
         this.notBefore = notBefore;
     }
 }

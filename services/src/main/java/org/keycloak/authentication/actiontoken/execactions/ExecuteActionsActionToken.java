@@ -31,14 +31,14 @@ public class ExecuteActionsActionToken extends DefaultActionToken {
     private static final String JSON_FIELD_REQUIRED_ACTIONS = "rqac";
     private static final String JSON_FIELD_REDIRECT_URI = "reduri";
 
-    public ExecuteActionsActionToken(String userId, int absoluteExpirationInSecs, List<String> requiredActions, String redirectUri, String clientId) {
+    public ExecuteActionsActionToken(String userId, long absoluteExpirationInSecs, List<String> requiredActions, String redirectUri, String clientId) {
         super(userId, TOKEN_TYPE, absoluteExpirationInSecs, null);
         setRequiredActions(requiredActions == null ? new LinkedList<>() : new LinkedList<>(requiredActions));
         setRedirectUri(redirectUri);
         this.issuedFor = clientId;
     }
 
-    public ExecuteActionsActionToken(String userId, String email, int absoluteExpirationInSecs, List<String> requiredActions, String redirectUri, String clientId) {
+    public ExecuteActionsActionToken(String userId, String email, long absoluteExpirationInSecs, List<String> requiredActions, String redirectUri, String clientId) {
         this(userId, absoluteExpirationInSecs, requiredActions, redirectUri, clientId);
         setEmail(email);
     }

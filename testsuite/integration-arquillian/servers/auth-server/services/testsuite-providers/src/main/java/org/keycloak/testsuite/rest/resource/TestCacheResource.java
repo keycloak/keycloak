@@ -149,7 +149,7 @@ public class TestCacheResource {
     @GET
     @Path("/remote-cache-last-session-refresh/{user-session-id}")
     @Produces(MediaType.APPLICATION_JSON)
-    public int getRemoteCacheLastSessionRefresh(@PathParam("user-session-id") String userSessionId) {
+    public long getRemoteCacheLastSessionRefresh(@PathParam("user-session-id") String userSessionId) {
         RemoteCache remoteCache = InfinispanUtil.getRemoteCache(cache);
         if (remoteCache == null) {
             return -1;

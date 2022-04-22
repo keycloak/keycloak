@@ -41,27 +41,10 @@ public class DockerResponseToken extends JsonWebToken {
         return this;
     }
 
-    @Override
-    public DockerResponseToken expiration(final int expiration) {
-        super.expiration(expiration);
-        return this;
-    }
-
-    @Override
-    public DockerResponseToken notBefore(final int notBefore) {
-        super.notBefore(notBefore);
-        return this;
-    }
 
     @Override
     public DockerResponseToken issuedNow() {
         super.issuedNow();
-        return this;
-    }
-
-    @Override
-    public DockerResponseToken issuedAt(final int issuedAt) {
-        super.issuedAt(issuedAt);
         return this;
     }
 

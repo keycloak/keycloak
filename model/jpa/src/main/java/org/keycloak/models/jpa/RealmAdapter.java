@@ -369,12 +369,12 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
     }
 
     @Override
-    public int getNotBefore() {
+    public long getNotBefore() {
         return realm.getNotBefore();
     }
 
     @Override
-    public void setNotBefore(int notBefore) {
+    public void setNotBefore(long notBefore) {
         realm.setNotBefore(notBefore);
     }
 
@@ -2232,7 +2232,7 @@ public class RealmAdapter implements RealmModel, JpaModel<RealmEntity> {
         entity.setCount(count);
         entity.setRemainingCount(count);
 
-        int currentTime = Time.currentTime();
+        long currentTime = Time.currentTime();
         entity.setTimestamp(currentTime);
         entity.setExpiration(expiration);
 

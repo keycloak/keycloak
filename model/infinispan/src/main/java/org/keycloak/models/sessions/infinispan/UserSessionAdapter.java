@@ -203,15 +203,15 @@ public class UserSessionAdapter implements UserSessionModel {
         return entity.isRememberMe();
     }
 
-    public int getStarted() {
+    public long getStarted() {
         return entity.getStarted();
     }
 
-    public int getLastSessionRefresh() {
+    public long getLastSessionRefresh() {
         return entity.getLastSessionRefresh();
     }
 
-    public void setLastSessionRefresh(int lastSessionRefresh) {
+    public void setLastSessionRefresh(long lastSessionRefresh) {
         if (offline) {
             // Received the message from the other DC that we should update the lastSessionRefresh in local cluster. Don't update DB in that case.
             // The other DC already did.

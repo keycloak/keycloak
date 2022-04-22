@@ -53,14 +53,14 @@ public interface RootAuthenticationSessionModel {
      * Returns timestamp when the root authentication session was created or updated.
      * @return {@code int}
      */
-    int getTimestamp();
+    long getTimestamp();
 
     /**
      * Sets a timestamp when the root authentication session was created or updated.
      * It also updates the expiration time for the root authentication session entity.
      * @param timestamp {@code int}
      */
-    void setTimestamp(int timestamp);
+    void setTimestamp(long timestamp);
 
     /**
      * Returns authentication sessions for the root authentication session.

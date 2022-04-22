@@ -319,7 +319,7 @@ public class UserCacheSession implements UserCache.Streams {
     }
 
     protected UserModel cacheUser(RealmModel realm, UserModel delegate, Long revision) {
-        int notBefore = getDelegate().getNotBeforeOfUser(realm, delegate);
+        long notBefore = getDelegate().getNotBeforeOfUser(realm, delegate);
 
         StorageId storageId = delegate.getFederationLink() != null ?
                 new StorageId(delegate.getFederationLink(), delegate.getId()) : new StorageId(delegate.getId());
@@ -741,7 +741,7 @@ public class UserCacheSession implements UserCache.Streams {
     }
 
     @Override
-    public void setNotBeforeForUser(RealmModel realm, UserModel user, int notBefore) {
+    public void setNotBeforeForUser(RealmModel realm, UserModel user, long notBefore) {
         if (!isRegisteredForInvalidation(realm, user.getId())) {
             UserModel foundUser = getUserById(realm, user.getId());
             if (foundUser instanceof UserAdapter) {
@@ -754,7 +754,7 @@ public class UserCacheSession implements UserCache.Streams {
     }
 
     @Override
-    public int getNotBeforeOfUser(RealmModel realm, UserModel user) {
+    public long getNotBeforeOfUser(RealmModel realm, UserModel user) {
         if (isRegisteredForInvalidation(realm, user.getId())) {
             return getDelegate().getNotBeforeOfUser(realm, user);
         }

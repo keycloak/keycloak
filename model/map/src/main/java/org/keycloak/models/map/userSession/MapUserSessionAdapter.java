@@ -24,7 +24,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.map.common.TimeAdapter;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -90,20 +89,20 @@ public abstract class MapUserSessionAdapter extends AbstractUserSessionModel {
     }
 
     @Override
-    public int getStarted() {
+    public long getStarted() {
         Long started = entity.getStarted();
-        return started != null ? TimeAdapter.fromLongWithTimeInSecondsToIntegerWithTimeInSeconds(started) : 0;
+        return started != null ? started : 0;
     }
 
     @Override
-    public int getLastSessionRefresh() {
+    public long getLastSessionRefresh() {
         Long lastSessionRefresh = entity.getLastSessionRefresh();
-        return lastSessionRefresh != null ? TimeAdapter.fromLongWithTimeInSecondsToIntegerWithTimeInSeconds(lastSessionRefresh) : 0;
+        return lastSessionRefresh != null ? lastSessionRefresh : 0;
     }
 
     @Override
-    public void setLastSessionRefresh(int seconds) {
-        entity.setLastSessionRefresh(TimeAdapter.fromIntegerWithTimeInSecondsToLongWithTimeAsInSeconds(seconds));
+    public void setLastSessionRefresh(long seconds) {
+        entity.setLastSessionRefresh(seconds);
     }
 
     @Override
@@ -215,9 +214,9 @@ public abstract class MapUserSessionAdapter extends AbstractUserSessionModel {
         entity.setBrokerSessionId(brokerSessionId);
         entity.setBrokerUserId(brokerUserId);
 
-        int currentTime = Time.currentTime();
-        entity.setStarted(TimeAdapter.fromIntegerWithTimeInSecondsToLongWithTimeAsInSeconds(currentTime));
-        entity.setLastSessionRefresh(TimeAdapter.fromIntegerWithTimeInSecondsToLongWithTimeAsInSeconds(currentTime));
+        long currentTime = Time.currentTime();
+        entity.setStarted(currentTime);
+        entity.setLastSessionRefresh(currentTime);
 
         entity.setState(null);
 

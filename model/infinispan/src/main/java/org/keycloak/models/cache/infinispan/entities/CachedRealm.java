@@ -107,7 +107,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     protected LazyLoader<RealmModel, ParConfig> parConfig;
     protected int actionTokenGeneratedByAdminLifespan;
     protected int actionTokenGeneratedByUserLifespan;
-    protected int notBefore;
+    protected long notBefore;
     protected PasswordPolicy passwordPolicy;
     protected OTPPolicy otpPolicy;
     protected WebAuthnPolicy webAuthnPolicy;
@@ -567,7 +567,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         return emailTheme;
     }
 
-    public int getNotBefore() {
+    public long getNotBefore() {
         return notBefore;
     }
 

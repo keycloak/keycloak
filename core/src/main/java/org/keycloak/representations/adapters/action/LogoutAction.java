@@ -26,13 +26,13 @@ import java.util.List;
 public class LogoutAction extends AdminAction {
     public static final String LOGOUT = "LOGOUT";
     protected List<String> adapterSessionIds;
-    protected int notBefore;
+    protected long notBefore;
     protected List<String> keycloakSessionIds;
 
     public LogoutAction() {
     }
 
-    public LogoutAction(String id, int expiration, String resource, List<String> adapterSessionIds, int notBefore, List<String> keycloakSessionIds) {
+    public LogoutAction(String id, long expiration, String resource, List<String> adapterSessionIds, long notBefore, List<String> keycloakSessionIds) {
         super(id, expiration, resource, LOGOUT);
         this.adapterSessionIds = adapterSessionIds;
         this.notBefore = notBefore;
@@ -40,7 +40,7 @@ public class LogoutAction extends AdminAction {
     }
 
 
-    public int getNotBefore() {
+    public long getNotBefore() {
         return notBefore;
     }
 

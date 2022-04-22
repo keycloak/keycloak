@@ -309,7 +309,7 @@ public final class OpenshiftSAClientAdapter extends AbstractReadOnlyClientStorag
     }
 
     @Override
-    public int getNotBefore() {
+    public long getNotBefore() {
         return 0;
     }
 

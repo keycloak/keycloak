@@ -258,7 +258,7 @@ public class TokenRevocationEndpoint {
 
     private void revokeAccessToken() {
         TokenRevocationStoreProvider revocationStore = session.getProvider(TokenRevocationStoreProvider.class);
-        int currentTime = Time.currentTime();
+        long currentTime = Time.currentTime();
         long lifespanInSecs = Math.max(token.getExp() - currentTime, 10);
         revocationStore.putRevokedToken(token.getId(), lifespanInSecs);
     }

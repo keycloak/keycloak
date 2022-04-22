@@ -549,7 +549,7 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
 
         OIDCClientSecretConfigWrapper wrapper = OIDCClientSecretConfigWrapper.fromClientRepresentation(
                 clientResource.toRepresentation());
-        int clientSecretExpirationTime = wrapper.getClientSecretExpirationTime();
+        long clientSecretExpirationTime = wrapper.getClientSecretExpirationTime();
         assertThat(clientSecretExpirationTime, is(not(0)));
 
     }
@@ -654,7 +654,7 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
         OIDCClientSecretConfigWrapper wrapper = OIDCClientSecretConfigWrapper.fromClientRepresentation(clientRepresentation);
 
         assertThat(wrapper.hasRotatedSecret(), is(false));
-        assertThat(wrapper.getClientSecretExpirationTime(),is(0));
+        assertThat(wrapper.getClientSecretExpirationTime(),is(0L));
     }
 
     /**
@@ -686,7 +686,7 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
         OIDCClientSecretConfigWrapper wrapper = OIDCClientSecretConfigWrapper.fromClientRepresentation(clientRepresentation);
         assertThat(clientResource.getSecret().getValue(),equalTo(newSecret));
         assertThat(wrapper.hasRotatedSecret(), is(false));
-        assertThat(wrapper.getClientSecretExpirationTime(),is(0));
+        assertThat(wrapper.getClientSecretExpirationTime(),is(0L));
     }
 
     /**
@@ -744,7 +744,7 @@ public class ClientSecretRotationTest extends AbstractRestServiceTest {
 
     @NotNull
     private ClientSecretRotationExecutor.Configuration getClientProfileConfiguration(
-            int expirationPeriod, int rotatedExpirationPeriod, int remainExpirationPeriod) {
+            long expirationPeriod, long rotatedExpirationPeriod, long remainExpirationPeriod) {
         ClientSecretRotationExecutor.Configuration profileConfig = new ClientSecretRotationExecutor.Configuration();
         profileConfig.setExpirationPeriod(expirationPeriod);
         profileConfig.setRotatedExpirationPeriod(rotatedExpirationPeriod);

@@ -22,7 +22,6 @@ import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.map.common.TimeAdapter;
 import org.keycloak.models.utils.SessionExpiration;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
@@ -52,13 +51,13 @@ public class MapRootAuthenticationSessionAdapter extends AbstractRootAuthenticat
     }
 
     @Override
-    public int getTimestamp() {
-        return TimeAdapter.fromLongWithTimeInSecondsToIntegerWithTimeInSeconds(entity.getTimestamp());
+    public long getTimestamp() {
+        return entity.getTimestamp();
     }
 
     @Override
-    public void setTimestamp(int timestamp) {
-        entity.setTimestamp(TimeAdapter.fromIntegerWithTimeInSecondsToLongWithTimeAsInSeconds(timestamp));
+    public void setTimestamp(long timestamp) {
+        entity.setTimestamp(timestamp);
         entity.setExpiration(SessionExpiration.getAuthSessionExpiration(realm, timestamp));
     }
 
@@ -84,15 +83,15 @@ public class MapRootAuthenticationSessionAdapter extends AbstractRootAuthenticat
         MapAuthenticationSessionEntity authSessionEntity = new MapAuthenticationSessionEntityImpl();
         authSessionEntity.setClientUUID(client.getId());
 
-        int timestamp = Time.currentTime();
-        authSessionEntity.setTimestamp(TimeAdapter.fromIntegerWithTimeInSecondsToLongWithTimeAsInSeconds(timestamp));
+        long timestamp = Time.currentTime();
+        authSessionEntity.setTimestamp(timestamp);
         String tabId = generateTabId();
         authSessionEntity.setTabId(tabId);
 
         entity.addAuthenticationSession(authSessionEntity);
 
         // Update our timestamp when adding new authenticationSession
-        entity.setTimestamp(TimeAdapter.fromIntegerWithTimeInSecondsToLongWithTimeAsInSeconds(timestamp));
+        entity.setTimestamp(timestamp);
         entity.setExpiration(SessionExpiration.getAuthSessionExpiration(realm, timestamp));
 
         return entity.getAuthenticationSession(tabId).map(this::toAdapter).map(this::setAuthContext).orElse(null);
@@ -105,8 +104,8 @@ public class MapRootAuthenticationSessionAdapter extends AbstractRootAuthenticat
             if (entity.getAuthenticationSessions().isEmpty()) {
                 session.authenticationSessions().removeRootAuthenticationSession(realm, this);
             } else {
-                int timestamp = Time.currentTime();
-                entity.setTimestamp(TimeAdapter.fromIntegerWithTimeInSecondsToLongWithTimeAsInSeconds(timestamp));
+                long timestamp = Time.currentTime();
+                entity.setTimestamp(timestamp);
                 entity.setExpiration(SessionExpiration.getAuthSessionExpiration(realm, timestamp));
             }
         }
@@ -115,8 +114,8 @@ public class MapRootAuthenticationSessionAdapter extends AbstractRootAuthenticat
     @Override
     public void restartSession(RealmModel realm) {
         entity.setAuthenticationSessions(null);
-        int timestamp = Time.currentTime();
-        entity.setTimestamp(TimeAdapter.fromIntegerWithTimeInSecondsToLongWithTimeAsInSeconds(timestamp));
+        long timestamp = Time.currentTime();
+        entity.setTimestamp(timestamp);
         entity.setExpiration(SessionExpiration.getAuthSessionExpiration(realm, timestamp));
     }
 

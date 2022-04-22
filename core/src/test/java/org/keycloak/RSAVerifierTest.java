@@ -56,7 +56,6 @@ import java.security.PublicKey;
 import java.security.Security;
 import java.security.SignatureException;
 import java.util.Date;
-import javax.security.auth.x500.X500Principal;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -199,7 +198,7 @@ public class RSAVerifierTest {
 
     @Test
     public void testNotBeforeGood() throws Exception {
-        token.notBefore(Time.currentTime() - 100);
+        token.nbf(Time.currentTime() - 100);
 
         String encoded = new JWSBuilder()
                 .jsonContent(token)
@@ -215,7 +214,7 @@ public class RSAVerifierTest {
 
     @Test
     public void testNotBeforeBad() {
-        token.notBefore(Time.currentTime() + 100);
+        token.nbf(Time.currentTime() + 100);
 
         String encoded = new JWSBuilder()
                 .jsonContent(token)
@@ -232,7 +231,7 @@ public class RSAVerifierTest {
 
     @Test
     public void testExpirationGood() throws Exception {
-        token.expiration(Time.currentTime() + 100);
+        token.exp(Time.currentTime() + 100);
 
         String encoded = new JWSBuilder()
                 .jsonContent(token)
@@ -248,7 +247,7 @@ public class RSAVerifierTest {
 
     @Test
     public void testExpirationBad() {
-        token.expiration(Time.currentTime() - 100);
+        token.exp(Time.currentTime() - 100);
 
         String encoded = new JWSBuilder()
                 .jsonContent(token)

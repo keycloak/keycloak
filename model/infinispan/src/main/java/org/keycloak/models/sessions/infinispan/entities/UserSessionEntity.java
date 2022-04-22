@@ -62,9 +62,9 @@ public class UserSessionEntity extends SessionEntity {
 
     private boolean rememberMe;
 
-    private int started;
+    private long started;
 
-    private int lastSessionRefresh;
+    private long lastSessionRefresh;
 
     private UserSessionModel.State state;
 
@@ -120,19 +120,19 @@ public class UserSessionEntity extends SessionEntity {
         this.rememberMe = rememberMe;
     }
 
-    public int getStarted() {
+    public long getStarted() {
         return started;
     }
 
-    public void setStarted(int started) {
+    public void setStarted(long started) {
         this.started = started;
     }
 
-    public int getLastSessionRefresh() {
+    public long getLastSessionRefresh() {
         return lastSessionRefresh;
     }
 
-    public void setLastSessionRefresh(int lastSessionRefresh) {
+    public void setLastSessionRefresh(long lastSessionRefresh) {
         this.lastSessionRefresh = lastSessionRefresh;
     }
 
@@ -201,7 +201,7 @@ public class UserSessionEntity extends SessionEntity {
 
     @Override
     public SessionEntityWrapper mergeRemoteEntityWithLocalEntity(SessionEntityWrapper localEntityWrapper) {
-        int lsrRemote = getLastSessionRefresh();
+        long lsrRemote = getLastSessionRefresh();
 
         SessionEntityWrapper entityWrapper;
         if (localEntityWrapper == null) {
@@ -217,7 +217,7 @@ public class UserSessionEntity extends SessionEntity {
             entityWrapper = new SessionEntityWrapper<>(localEntityWrapper.getLocalMetadata(), this);
         }
 
-        entityWrapper.putLocalMetadataNoteInt(LAST_SESSION_REFRESH_REMOTE, lsrRemote);
+        entityWrapper.putLocalMetadataNoteLong(LAST_SESSION_REFRESH_REMOTE, lsrRemote);
 
         logger.debugf("Updating session entity '%s'. lastSessionRefresh=%d, lastSessionRefreshRemote=%d", getId(), getLastSessionRefresh(), lsrRemote);
 
@@ -291,8 +291,8 @@ public class UserSessionEntity extends SessionEntity {
             sessionEntity.setRealmId(MarshallUtil.unmarshallString(input));
             sessionEntity.setUser(MarshallUtil.unmarshallString(input));
 
-            sessionEntity.setLastSessionRefresh(KeycloakMarshallUtil.unmarshallInteger(input));
-            sessionEntity.setStarted(KeycloakMarshallUtil.unmarshallInteger(input));
+            sessionEntity.setLastSessionRefresh(KeycloakMarshallUtil.unmarshallLong(input));
+            sessionEntity.setStarted(KeycloakMarshallUtil.unmarshallLong(input));
             sessionEntity.setRememberMe(input.readBoolean());
 
             sessionEntity.setState(ID_TO_STATE.get(input.readInt()));

@@ -459,10 +459,10 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         reqToken.subject(clientId);
         reqToken.audience(realmInfoUrl);
 
-        int now = Time.currentTime();
-        reqToken.iat(Long.valueOf(now));
-        reqToken.exp(Long.valueOf(now + 10));
-        reqToken.nbf(Long.valueOf(now));
+        long now = Time.currentTime();
+        reqToken.iat(now);
+        reqToken.exp(now + 10);
+        reqToken.nbf(now);
 
         return reqToken;
     }

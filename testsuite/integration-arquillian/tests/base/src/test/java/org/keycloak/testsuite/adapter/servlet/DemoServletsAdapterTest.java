@@ -764,13 +764,13 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
 
         // Get time of token
         AccessToken token = tokenMinTTLPage.getAccessToken();
-        int tokenIssued1 = token.getIssuedAt();
+        long tokenIssued1 = token.getIssuedAt();
 
         // Sets 5 minutes offset and assert access token will be still the same
         setAdapterAndServerTimeOffset(300, tokenMinTTLPage.toString());
         tokenMinTTLPage.navigateTo();
         token = tokenMinTTLPage.getAccessToken();
-        int tokenIssued2 = token.getIssuedAt();
+        long tokenIssued2 = token.getIssuedAt();
         Assert.assertEquals(tokenIssued1, tokenIssued2);
         assertFalse(token.isExpired());
 
@@ -778,7 +778,7 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
         setAdapterAndServerTimeOffset(540, tokenMinTTLPage.toString());
         tokenMinTTLPage.navigateTo();
         token = tokenMinTTLPage.getAccessToken();
-        int tokenIssued3 = token.getIssuedAt();
+        long tokenIssued3 = token.getIssuedAt();
         Assert.assertTrue(tokenIssued3 > tokenIssued1);
 
         // Revert times
@@ -850,7 +850,7 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
         assertCurrentUrlStartsWith(securePortal);
         assertLogged();
 
-        int currentTime = Time.currentTime();
+        long currentTime = Time.currentTime();
         try {
             setAdapterAndServerTimeOffset(10, securePortal.toString());
 
@@ -862,7 +862,7 @@ public class DemoServletsAdapterTest extends AbstractServletsAdapterTest {
             testRealmLoginPage.form().setPassword("password");
             testRealmLoginPage.form().login();
             AccessToken token = tokenMinTTLPage.getAccessToken();
-            int authTime = token.getAuthTime();
+            long authTime = token.getAuthTime();
             assertThat(authTime, is(greaterThanOrEqualTo(currentTime + 10)));
         } finally {
             setAdapterAndServerTimeOffset(0, securePortal.toString());

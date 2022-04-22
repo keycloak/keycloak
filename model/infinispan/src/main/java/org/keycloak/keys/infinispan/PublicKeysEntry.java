@@ -27,16 +27,16 @@ import org.keycloak.crypto.KeyWrapper;
  */
 public class PublicKeysEntry implements Serializable {
 
-    private final int lastRequestTime;
+    private final long lastRequestTime;
 
     private final Map<String, KeyWrapper> currentKeys;
 
-    public PublicKeysEntry(int lastRequestTime, Map<String, KeyWrapper> currentKeys) {
+    public PublicKeysEntry(long lastRequestTime, Map<String, KeyWrapper> currentKeys) {
         this.lastRequestTime = lastRequestTime;
         this.currentKeys = currentKeys;
     }
 
-    public int getLastRequestTime() {
+    public long getLastRequestTime() {
         return lastRequestTime;
     }
 

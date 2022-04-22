@@ -43,12 +43,12 @@ public class UserLoginFailureAdapter implements UserLoginFailureModel {
     }
 
     @Override
-    public int getFailedLoginNotBefore() {
+    public long getFailedLoginNotBefore() {
         return entity.getFailedLoginNotBefore();
     }
 
     @Override
-    public void setFailedLoginNotBefore(int notBefore) {
+    public void setFailedLoginNotBefore(long notBefore) {
         LoginFailuresUpdateTask task = new LoginFailuresUpdateTask() {
 
             @Override

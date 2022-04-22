@@ -27,11 +27,8 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 
-import org.keycloak.models.map.common.TimeAdapter;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -94,17 +91,13 @@ public class MapClientProvider implements ClientProvider {
 
             /** This is runtime information and should have never been part of the adapter */
             @Override
-            public Map<String, Integer> getRegisteredNodes() {
-                return Collections.unmodifiableMap(getMapForEntity()
-                                .entrySet()
-                                .stream()
-                                .collect(Collectors.toMap(Map.Entry::getKey, e -> TimeAdapter.fromLongWithTimeInSecondsToIntegerWithTimeInSeconds(e.getValue())))
-                );
+            public Map<String, Long> getRegisteredNodes() {
+                return getMapForEntity();
             }
 
             @Override
-            public void registerNode(String nodeHost, int registrationTime) {
-                getMapForEntity().put(nodeHost, TimeAdapter.fromIntegerWithTimeInSecondsToLongWithTimeAsInSeconds(registrationTime));
+            public void registerNode(String nodeHost, long registrationTime) {
+                getMapForEntity().put(nodeHost, registrationTime);
             }
 
             @Override

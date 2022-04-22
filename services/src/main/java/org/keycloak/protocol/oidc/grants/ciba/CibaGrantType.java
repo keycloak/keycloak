@@ -214,7 +214,7 @@ public class CibaGrantType {
         ClientSessionContext clientSessionCtx = DefaultClientSessionContext
                 .fromClientSessionAndScopeParameter(userSession.getAuthenticatedClientSessionByClient(client.getId()), scopeParam, session);
 
-        int authTime = Time.currentTime();
+        long authTime = Time.currentTime();
         userSession.setNote(AuthenticationManager.AUTH_TIME, String.valueOf(authTime));
 
         return tokenEndpoint.createTokenResponse(user, userSession, clientSessionCtx, scopeParam, true);

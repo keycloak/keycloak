@@ -27,7 +27,7 @@ public class TestAvailabilityAction extends AdminAction {
     public TestAvailabilityAction() {
     }
 
-    public TestAvailabilityAction(String id, int expiration, String resource) {
+    public TestAvailabilityAction(String id, long expiration, String resource) {
         super(id, expiration, resource, TEST_AVAILABILITY);
     }
 

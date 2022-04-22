@@ -266,7 +266,7 @@ public class ResourceAdminManager {
     }
 
 
-    protected GlobalRequestResult logoutClient(RealmModel realm, ClientModel resource, int notBefore) {
+    protected GlobalRequestResult logoutClient(RealmModel realm, ClientModel resource, long notBefore) {
 
         if (!resource.isEnabled()) {
             return new GlobalRequestResult();
@@ -292,7 +292,7 @@ public class ResourceAdminManager {
         return result;
     }
 
-    protected Response sendLogoutRequest(RealmModel realm, ClientModel resource, List<String> adapterSessionIds, List<String> userSessions, int notBefore, String managementUrl) {
+    protected Response sendLogoutRequest(RealmModel realm, ClientModel resource, List<String> adapterSessionIds, List<String> userSessions, long notBefore, String managementUrl) {
         LogoutAction adminAction = new LogoutAction(TokenIdGenerator.generateId(), Time.currentTime() + 30, resource.getClientId(), adapterSessionIds, notBefore, userSessions);
         String token = session.tokens().encode(adminAction);
         if (logger.isDebugEnabled()) logger.debugv("logout resource {0} url: {1} sessionIds: " + adapterSessionIds, resource.getClientId(), managementUrl);
@@ -322,7 +322,7 @@ public class ResourceAdminManager {
     }
 
 
-    protected GlobalRequestResult pushRevocationPolicy(RealmModel realm, ClientModel resource, int notBefore) {
+    protected GlobalRequestResult pushRevocationPolicy(RealmModel realm, ClientModel resource, long notBefore) {
         List<String> mgmtUrls = getAllManagementUrls(resource);
         if (mgmtUrls.isEmpty()) {
             logger.debugf("No management URL or no registered cluster nodes for the client %s", resource.getClientId());
@@ -343,7 +343,7 @@ public class ResourceAdminManager {
         return result;
     }
 
-    protected boolean sendPushRevocationPolicyRequest(RealmModel realm, ClientModel resource, int notBefore, String managementUrl) {
+    protected boolean sendPushRevocationPolicyRequest(RealmModel realm, ClientModel resource, long notBefore, String managementUrl) {
         String protocol = resource.getProtocol();
         if (protocol == null) {
             protocol = OIDCLoginProtocol.LOGIN_PROTOCOL;

@@ -310,8 +310,8 @@ public class DefaultBruteForceProtector implements Runnable, BruteForceProtector
         UserLoginFailureModel failure = session.loginFailures().getUserLoginFailure(realm, user.getId());
 
         if (failure != null) {
-            int currTime = (int) (Time.currentTimeMillis() / 1000);
-            int failedLoginNotBefore = failure.getFailedLoginNotBefore();
+            long currTime = Time.currentTime();
+            long failedLoginNotBefore = failure.getFailedLoginNotBefore();
             if (currTime < failedLoginNotBefore) {
                 logger.debugv("Current: {0} notBefore: {1}", currTime, failedLoginNotBefore);
                 return true;

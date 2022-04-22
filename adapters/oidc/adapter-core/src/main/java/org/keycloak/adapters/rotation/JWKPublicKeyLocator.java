@@ -42,13 +42,13 @@ public class JWKPublicKeyLocator implements PublicKeyLocator {
 
     private Map<String, PublicKey> currentKeys = new ConcurrentHashMap<>();
 
-    private volatile int lastRequestTime = 0;
+    private volatile long lastRequestTime = 0;
 
     @Override
     public PublicKey getPublicKey(String kid, KeycloakDeployment deployment) {
         int minTimeBetweenRequests = deployment.getMinTimeBetweenJwksRequests();
         int publicKeyCacheTtl = deployment.getPublicKeyCacheTtl();
-        int currentTime = Time.currentTime();
+        long currentTime = Time.currentTime();
 
         // Check if key is in cache.
         PublicKey publicKey = lookupCachedKey(publicKeyCacheTtl, currentTime, kid);
@@ -81,7 +81,7 @@ public class JWKPublicKeyLocator implements PublicKeyLocator {
     }
 
 
-    private PublicKey lookupCachedKey(int publicKeyCacheTtl, int currentTime, String kid) {
+    private PublicKey lookupCachedKey(int publicKeyCacheTtl, long currentTime, String kid) {
         if (lastRequestTime + publicKeyCacheTtl > currentTime && kid != null) {
             return currentKeys.get(kid);
         } else {

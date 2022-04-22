@@ -90,7 +90,7 @@ public abstract class AbstractClientStorageAdapter extends UnsupportedOperations
      * @return
      */
     @Override
-    public Map<String, Integer> getRegisteredNodes() {
+    public Map<String, Long> getRegisteredNodes() {
         return Collections.EMPTY_MAP;
     }
 
@@ -100,7 +100,7 @@ public abstract class AbstractClientStorageAdapter extends UnsupportedOperations
      * @return
      */
     @Override
-    public void registerNode(String nodeHost, int registrationTime) {
+    public void registerNode(String nodeHost, long registrationTime) {
         // do nothing
     }
 

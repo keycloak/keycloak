@@ -20,7 +20,6 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.map.common.TimeAdapter;
 
 import java.util.Collections;
 import java.util.Map;
@@ -41,14 +40,14 @@ public abstract class MapAuthenticatedClientSessionAdapter extends AbstractAuthe
     }
 
     @Override
-    public int getTimestamp() {
+    public long getTimestamp() {
         Long timestamp = entity.getTimestamp();
-        return timestamp != null ? TimeAdapter.fromLongWithTimeInSecondsToIntegerWithTimeInSeconds(timestamp) : 0;
+        return timestamp != null ? timestamp : 0;
     }
 
     @Override
-    public void setTimestamp(int timestamp) {
-        entity.setTimestamp(TimeAdapter.fromIntegerWithTimeInSecondsToLongWithTimeAsInSeconds(timestamp));
+    public void setTimestamp(long timestamp) {
+        entity.setTimestamp(timestamp);
     }
 
     @Override

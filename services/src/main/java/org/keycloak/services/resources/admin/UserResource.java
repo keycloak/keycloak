@@ -816,7 +816,7 @@ public class UserResource {
         if (lifespan == null) {
             lifespan = realm.getActionTokenGeneratedByAdminLifespan();
         }
-        int expiration = Time.currentTime() + lifespan;
+        long expiration = Time.currentTime() + lifespan;
         ExecuteActionsActionToken token = new ExecuteActionsActionToken(user.getId(), user.getEmail(), expiration, actions, redirectUri, clientId);
 
         try {

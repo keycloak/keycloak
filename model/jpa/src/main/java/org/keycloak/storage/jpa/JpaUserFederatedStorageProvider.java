@@ -413,7 +413,7 @@ public class JpaUserFederatedStorageProvider implements
 
 
     @Override
-    public void setNotBeforeForUser(RealmModel realm, String userId, int notBefore) {
+    public void setNotBeforeForUser(RealmModel realm, String userId, long notBefore) {
         // Track it as attribute for now
         String notBeforeStr = String.valueOf(notBefore);
         setSingleAttribute(realm, userId, "fedNotBefore", notBeforeStr);

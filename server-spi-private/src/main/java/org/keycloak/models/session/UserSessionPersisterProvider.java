@@ -52,7 +52,7 @@ public interface UserSessionPersisterProvider extends Provider {
     void onUserRemoved(RealmModel realm, UserModel user);
 
     // Bulk update of lastSessionRefresh of all specified userSessions to the given value.
-    void updateLastSessionRefreshes(RealmModel realm, int lastSessionRefresh, Collection<String> userSessionIds, boolean offline);
+    void updateLastSessionRefreshes(RealmModel realm, long lastSessionRefresh, Collection<String> userSessionIds, boolean offline);
 
     // Remove userSessions and clientSessions, which are expired
     void removeExpired(RealmModel realm);

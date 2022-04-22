@@ -45,13 +45,13 @@ public class CachedUser extends AbstractExtendableRevisioned implements InRealm 
     private final boolean enabled;
     private final String federationLink;
     private final String serviceAccountClientLink;
-    private final int notBefore;
+    private final long notBefore;
     private final LazyLoader<UserModel, Set<String>> requiredActions;
     private final LazyLoader<UserModel, MultivaluedHashMap<String, String>> attributes;
     private final LazyLoader<UserModel, Set<String>> roleMappings;
     private final LazyLoader<UserModel, Set<String>> groups;
 
-    public CachedUser(Long revision, RealmModel realm, UserModel user, int notBefore) {
+    public CachedUser(Long revision, RealmModel realm, UserModel user, long notBefore) {
         super(revision, user.getId());
         this.realm = realm.getId();
         this.username = user.getUsername();
@@ -116,7 +116,7 @@ public class CachedUser extends AbstractExtendableRevisioned implements InRealm 
         return groups.get(userModel);
     }
 
-    public int getNotBefore() {
+    public long getNotBefore() {
         return notBefore;
     }
 }

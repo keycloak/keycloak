@@ -1493,7 +1493,7 @@ public class RepresentationToModel {
         }
 
         if (resourceRep.getRegisteredNodes() != null) {
-            for (Map.Entry<String, Integer> entry : resourceRep.getRegisteredNodes().entrySet()) {
+            for (Map.Entry<String, Long> entry : resourceRep.getRegisteredNodes().entrySet()) {
                 client.registerNode(entry.getKey(), entry.getValue());
             }
         }
@@ -1631,7 +1631,7 @@ public class RepresentationToModel {
         }
 
         if (rep.getRegisteredNodes() != null) {
-            for (Map.Entry<String, Integer> entry : rep.getRegisteredNodes().entrySet()) {
+            for (Map.Entry<String, Long> entry : rep.getRegisteredNodes().entrySet()) {
                 resource.registerNode(entry.getKey(), entry.getValue());
             }
         }

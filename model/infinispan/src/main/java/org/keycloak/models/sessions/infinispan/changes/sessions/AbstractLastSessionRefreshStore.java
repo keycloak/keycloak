@@ -35,7 +35,7 @@ public abstract class AbstractLastSessionRefreshStore {
 
     private volatile Map<String, SessionData> lastSessionRefreshes = new ConcurrentHashMap<>();
 
-    private volatile int lastRun = Time.currentTime();
+    private volatile long lastRun = Time.currentTime();
 
 
     protected AbstractLastSessionRefreshStore(int maxIntervalBetweenMessagesSeconds, int maxCount) {
@@ -44,7 +44,7 @@ public abstract class AbstractLastSessionRefreshStore {
     }
 
 
-    public void putLastSessionRefresh(KeycloakSession kcSession, String sessionId, String realmId, int lastSessionRefresh) {
+    public void putLastSessionRefresh(KeycloakSession kcSession, String sessionId, String realmId, long lastSessionRefresh) {
         lastSessionRefreshes.put(sessionId, new SessionData(realmId, lastSessionRefresh));
 
         // Assume that lastSessionRefresh is same or close to current time
@@ -52,7 +52,7 @@ public abstract class AbstractLastSessionRefreshStore {
     }
 
 
-    void checkSendingMessage(KeycloakSession kcSession, int currentTime) {
+    void checkSendingMessage(KeycloakSession kcSession, long currentTime) {
         if (lastSessionRefreshes.size() >= maxCount || lastRun + maxIntervalBetweenMessagesSeconds <= currentTime) {
             Map<String, SessionData> refreshesToSend = prepareSendingMessage();
 
@@ -67,7 +67,7 @@ public abstract class AbstractLastSessionRefreshStore {
     // synchronized manipulation with internal object instances. Will return map if message should be sent. Otherwise return null
     private synchronized Map<String, SessionData> prepareSendingMessage() {
         // Safer to retrieve currentTime to avoid race conditions during testsuite
-        int currentTime = Time.currentTime();
+        long currentTime = Time.currentTime();
         if (lastSessionRefreshes.size() >= maxCount || lastRun + maxIntervalBetweenMessagesSeconds <= currentTime) {
             // Create new map instance, so that new writers will use that one
             Map<String, SessionData> copiedRefreshesToSend = lastSessionRefreshes;

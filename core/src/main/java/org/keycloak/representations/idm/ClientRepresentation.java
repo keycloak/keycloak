@@ -44,7 +44,7 @@ public class ClientRepresentation {
     protected String[] defaultRoles;
     protected List<String> redirectUris;
     protected List<String> webOrigins;
-    protected Integer notBefore;
+    protected Long notBefore;
     protected Boolean bearerOnly;
     protected Boolean consentRequired;
     protected Boolean standardFlowEnabled;
@@ -62,7 +62,7 @@ public class ClientRepresentation {
     protected Map<String, String> authenticationFlowBindingOverrides;
     protected Boolean fullScopeAllowed;
     protected Integer nodeReRegistrationTimeout;
-    protected Map<String, Integer> registeredNodes;
+    protected Map<String, Long> registeredNodes;
     protected List<ProtocolMapperRepresentation> protocolMappers;
 
     @Deprecated
@@ -212,11 +212,11 @@ public class ClientRepresentation {
         this.defaultRoles = defaultRoles;
     }
 
-    public Integer getNotBefore() {
+    public Long getNotBefore() {
         return notBefore;
     }
 
-    public void setNotBefore(Integer notBefore) {
+    public void setNotBefore(Long notBefore) {
         this.notBefore = notBefore;
     }
 
@@ -336,11 +336,11 @@ public class ClientRepresentation {
         this.nodeReRegistrationTimeout = nodeReRegistrationTimeout;
     }
 
-    public Map<String, Integer> getRegisteredNodes() {
+    public Map<String, Long> getRegisteredNodes() {
         return registeredNodes;
     }
 
-    public void setRegisteredNodes(Map<String, Integer> registeredNodes) {
+    public void setRegisteredNodes(Map<String, Long> registeredNodes) {
         this.registeredNodes = registeredNodes;
     }
 

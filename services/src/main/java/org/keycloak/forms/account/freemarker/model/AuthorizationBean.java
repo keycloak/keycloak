@@ -177,7 +177,7 @@ public class AuthorizationBean {
         }
 
         public Date getCreatedDate() {
-            return Time.toDate(createdTimestamp);
+            return Time.toDateFromMillis(createdTimestamp);
         }
 
         public Date getGrantedDate() {
@@ -190,7 +190,7 @@ public class AuthorizationBean {
 
                 return permission.getGrantedDate();
             }
-            return Time.toDate(grantedTimestamp);
+            return Time.toDateFromMillis(grantedTimestamp);
         }
     }
 
@@ -218,7 +218,7 @@ public class AuthorizationBean {
 
         private Date getGrantedDate() {
             if (isGranted()) {
-                return Time.toDate(ticket.getGrantedTimestamp());
+                return Time.toDateFromMillis(ticket.getGrantedTimestamp());
             }
             return null;
         }

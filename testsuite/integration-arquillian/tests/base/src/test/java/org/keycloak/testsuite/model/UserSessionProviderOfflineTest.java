@@ -274,7 +274,7 @@ public class UserSessionProviderOfflineTest extends AbstractTestRealmKeycloakTes
         String realmId = KeycloakModelUtils.generateId();
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionCR) -> {
             try {
-                int started = Time.currentTime();
+                long started = Time.currentTime();
                 AtomicReference<String> userSessionID = new AtomicReference<>();
 
                 KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionCR1) -> {
@@ -373,7 +373,7 @@ public class UserSessionProviderOfflineTest extends AbstractTestRealmKeycloakTes
         String realmId = KeycloakModelUtils.generateId();
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionUR) -> {
             try {
-                int started = Time.currentTime();
+                long started = Time.currentTime();
                 AtomicReference<String> userSessionID = new AtomicReference<>();
 
                 KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sessionUR1) -> {
@@ -447,8 +447,8 @@ public class UserSessionProviderOfflineTest extends AbstractTestRealmKeycloakTes
         return offlineSessions;
     }
 
-    public static void assertSession(UserSessionModel session, UserModel user, String ipAddress, int started,
-                                     int lastRefresh, String... clients) {
+    public static void assertSession(UserSessionModel session, UserModel user, String ipAddress, long started,
+                                     long lastRefresh, String... clients) {
         assertEquals(user.getId(), session.getUser().getId());
         assertEquals(ipAddress, session.getIpAddress());
         assertEquals(user.getUsername(), session.getLoginUsername());

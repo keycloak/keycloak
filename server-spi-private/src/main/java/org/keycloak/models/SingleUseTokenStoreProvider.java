@@ -36,6 +36,6 @@ public interface SingleUseTokenStoreProvider extends Provider {
      * @param lifespanInSeconds Minimum lifespan for which successfully added token will be kept in the cache.
      * @return true if token was successfully put into the cache. This means that same token wasn't in the cache before
      */
-    boolean putIfAbsent(String tokenId, int lifespanInSeconds);
+    boolean putIfAbsent(String tokenId, long lifespanInSeconds);
 
 }

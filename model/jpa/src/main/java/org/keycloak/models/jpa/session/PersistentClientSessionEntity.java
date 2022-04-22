@@ -68,7 +68,7 @@ public class PersistentClientSessionEntity {
     protected String externalClientId;
 
     @Column(name="TIMESTAMP")
-    protected int timestamp;
+    protected long timestamp;
 
     @Id
     @Column(name = "OFFLINE_FLAG")
@@ -109,11 +109,11 @@ public class PersistentClientSessionEntity {
         this.externalClientId = externalClientId;
     }
 
-    public int getTimestamp() {
+    public long getTimestamp() {
         return timestamp;
     }
 
-    public void setTimestamp(int timestamp) {
+    public void setTimestamp(long timestamp) {
         this.timestamp = timestamp;
     }
 

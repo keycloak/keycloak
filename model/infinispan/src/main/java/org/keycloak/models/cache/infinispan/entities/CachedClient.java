@@ -53,7 +53,7 @@ public class CachedClient extends AbstractRevisioned implements InRealm {
     protected boolean publicClient;
     protected boolean fullScopeAllowed;
     protected boolean frontchannelLogout;
-    protected int notBefore;
+    protected long notBefore;
     protected Set<String> scope = new HashSet<>();
     protected Set<String> webOrigins = new HashSet<>();
     protected Set<ProtocolMapperModel> protocolMappers = new HashSet<>();
@@ -68,7 +68,7 @@ public class CachedClient extends AbstractRevisioned implements InRealm {
     protected boolean directAccessGrantsEnabled;
     protected boolean serviceAccountsEnabled;
     protected int nodeReRegistrationTimeout;
-    protected Map<String, Integer> registeredNodes;
+    protected Map<String, Long> registeredNodes;
     protected List<String> defaultClientScopesIds;
     protected List<String> optionalClientScopesIds;
 
@@ -162,7 +162,7 @@ public class CachedClient extends AbstractRevisioned implements InRealm {
         return publicClient;
     }
 
-    public int getNotBefore() {
+    public long getNotBefore() {
         return notBefore;
     }
 
@@ -238,7 +238,7 @@ public class CachedClient extends AbstractRevisioned implements InRealm {
         return nodeReRegistrationTimeout;
     }
 
-    public Map<String, Integer> getRegisteredNodes() {
+    public Map<String, Long> getRegisteredNodes() {
         return registeredNodes;
     }
 

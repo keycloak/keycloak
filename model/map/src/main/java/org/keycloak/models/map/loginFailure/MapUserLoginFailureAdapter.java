@@ -18,7 +18,6 @@ package org.keycloak.models.map.loginFailure;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.map.common.TimeAdapter;
 
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
@@ -39,14 +38,14 @@ public class MapUserLoginFailureAdapter extends AbstractUserLoginFailureModel<Ma
     }
 
     @Override
-    public int getFailedLoginNotBefore() {
+    public long getFailedLoginNotBefore() {
         Long failedLoginNotBefore = entity.getFailedLoginNotBefore();
-        return failedLoginNotBefore == null ? 0 : TimeAdapter.fromLongWithTimeInSecondsToIntegerWithTimeInSeconds(failedLoginNotBefore);
+        return failedLoginNotBefore == null ? 0 : failedLoginNotBefore;
     }
 
     @Override
-    public void setFailedLoginNotBefore(int notBefore) {
-        entity.setFailedLoginNotBefore(TimeAdapter.fromIntegerWithTimeInSecondsToLongWithTimeAsInSeconds(notBefore));
+    public void setFailedLoginNotBefore(long notBefore) {
+        entity.setFailedLoginNotBefore(notBefore);
     }
 
     @Override

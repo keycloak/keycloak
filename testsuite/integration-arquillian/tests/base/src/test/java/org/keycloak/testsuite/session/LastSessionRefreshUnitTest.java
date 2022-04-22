@@ -78,7 +78,7 @@ public class LastSessionRefreshUnitTest extends AbstractKeycloakTest {
             CrossDCLastSessionRefreshStore customStore = createStoreInstance(session, 1000000, 1000);
             System.out.println("sss");
 
-            int lastSessionRefresh = Time.currentTime();
+            long lastSessionRefresh = Time.currentTime();
 
             // Add 8 items. No message
             for (int i=0 ; i<8 ; i++){

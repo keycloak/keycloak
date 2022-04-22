@@ -164,7 +164,7 @@ public class UserSessionLimitsAuthenticator implements Authenticator {
 
     private void logoutOldestSession(List<UserSessionModel> userSessions) {
         logger.info("Logging out oldest session");
-        Optional<UserSessionModel> oldest = userSessions.stream().sorted(Comparator.comparingInt(UserSessionModel::getLastSessionRefresh)).findFirst();
+        Optional<UserSessionModel> oldest = userSessions.stream().sorted(Comparator.comparingLong(UserSessionModel::getLastSessionRefresh)).findFirst();
         oldest.ifPresent(userSession -> AuthenticationManager.backchannelLogout(session, userSession, true));
     }
 }

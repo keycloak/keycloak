@@ -125,7 +125,7 @@ public class RealmEntity {
     @Column(name="LOGIN_LIFESPAN")
     protected int accessCodeLifespanLogin;
     @Column(name="NOT_BEFORE")
-    protected int notBefore;
+    protected long notBefore;
 
     @Column(name="LOGIN_THEME")
     protected String loginTheme;
@@ -504,11 +504,11 @@ public class RealmEntity {
         this.emailTheme = emailTheme;
     }
 
-    public int getNotBefore() {
+    public long getNotBefore() {
         return notBefore;
     }
 
-    public void setNotBefore(int notBefore) {
+    public void setNotBefore(long notBefore) {
         this.notBefore = notBefore;
     }
 

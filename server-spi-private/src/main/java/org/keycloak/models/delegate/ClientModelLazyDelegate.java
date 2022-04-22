@@ -445,22 +445,22 @@ public class ClientModelLazyDelegate implements ClientModel {
     }
 
     @Override
-    public int getNotBefore() {
+    public long getNotBefore() {
         return getDelegate().getNotBefore();
     }
 
     @Override
-    public void setNotBefore(int notBefore) {
+    public void setNotBefore(long notBefore) {
         getDelegate().setNotBefore(notBefore);
     }
 
     @Override
-    public Map<String, Integer> getRegisteredNodes() {
+    public Map<String, Long> getRegisteredNodes() {
         return getDelegate().getRegisteredNodes();
     }
 
     @Override
-    public void registerNode(String nodeHost, int registrationTime) {
+    public void registerNode(String nodeHost, long registrationTime) {
         getDelegate().registerNode(nodeHost, registrationTime);
     }
 

@@ -145,7 +145,7 @@ public class UserStorageSyncManager {
                     @Override
                     public SynchronizationResult call() throws Exception {
                         // See when we did last sync.
-                        int oldLastSync = provider.getLastSync();
+                        long oldLastSync = provider.getLastSync();
                         updateLastSyncInterval(sessionFactory, provider, realmId);
                         return ((ImportSynchronization)factory).syncSince(Time.toDate(oldLastSync), sessionFactory, realmId, provider);
                     }
@@ -233,13 +233,13 @@ public class UserStorageSyncManager {
     }
 
     // Skip syncing if there is short time since last sync time.
-    private boolean shouldPerformNewPeriodicSync(int lastSyncTime, int period) {
+    private boolean shouldPerformNewPeriodicSync(long lastSyncTime, int period) {
         if (lastSyncTime <= 0) {
             return true;
         }
 
-        int currentTime = Time.currentTime();
-        int timeSinceLastSync = currentTime - lastSyncTime;
+        long currentTime = Time.currentTime();
+        long timeSinceLastSync = currentTime - lastSyncTime;
 
         return (timeSinceLastSync * 2 > period);
     }
@@ -262,7 +262,7 @@ public class UserStorageSyncManager {
                         .filter(persistentFedProvider -> Objects.equals(provider.getId(), persistentFedProvider.getId()))
                         .forEachOrdered(persistentFedProvider -> {
                             // Update persistent provider in DB
-                            int lastSync = Time.currentTime();
+                            long lastSync = Time.currentTime();
                             persistentFedProvider.setLastSync(lastSync);
                             persistentRealm.updateComponent(persistentFedProvider);
 

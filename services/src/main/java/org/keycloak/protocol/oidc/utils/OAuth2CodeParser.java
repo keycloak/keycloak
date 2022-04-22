@@ -125,7 +125,7 @@ public class OAuth2CodeParser {
         result.codeData = OAuth2Code.deserializeCode(codeData);
 
         // Finally doublecheck if code is not expired
-        int currentTime = Time.currentTime();
+        long currentTime = Time.currentTime();
         if (currentTime > result.codeData.getExpiration()) {
             return result.expiredCode();
         }
