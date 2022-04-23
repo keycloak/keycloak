@@ -13,6 +13,9 @@
     <name>keycloak-test-helper</name>
     <description>Helper library to test application using Keycloak.</description>
     <packaging>jar</packaging>
+    <properties>
+        <resteasy.version>6.0.1.Final</resteasy.version>
+    </properties>
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>

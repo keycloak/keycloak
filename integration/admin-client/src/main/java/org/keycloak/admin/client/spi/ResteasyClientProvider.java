@@ -17,9 +17,10 @@
 
 package org.keycloak.admin.client.spi;
 
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.WebTarget;
+
 import javax.net.ssl.SSLContext;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.WebTarget;
 
 /**
  * An SPI for using the JAX-RS Client API regardless of the underlying stack.
@@ -29,7 +30,7 @@ public interface ResteasyClientProvider {
     /**
      * Creates a new {@link Client}.
      *
-     * @param messageHandler a {@link javax.ws.rs.ext.MessageBodyReader} and/or {@link javax.ws.rs.ext.MessageBodyWriter} instance.
+     * @param messageHandler a {@link jakarta.ws.rs.ext.MessageBodyReader} and/or {@link jakarta.ws.rs.ext.MessageBodyWriter} instance.
      * @param sslContext an optional {@link SSLContext}
      * @param disableTrustManager if the client should not validate the server certificates when using TLS
      * @return
