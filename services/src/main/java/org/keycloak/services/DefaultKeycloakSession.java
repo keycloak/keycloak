@@ -47,7 +47,6 @@ import org.keycloak.provider.InvalidationHandler.ObjectType;
 import org.keycloak.services.clientpolicy.ClientPolicyManager;
 import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.storage.DatastoreProvider;
-import org.keycloak.storage.UserStorageManager;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
 import org.keycloak.vault.DefaultVaultTranscriber;
 import org.keycloak.vault.VaultProvider;
@@ -77,7 +76,6 @@ public class DefaultKeycloakSession implements KeycloakSession {
     private final Map<String, Object> attributes = new HashMap<>();
     private final Map<InvalidableObjectType, Set<Object>> invalidationMap = new HashMap<>();
     private DatastoreProvider datastoreProvider;
-    private UserStorageManager userStorageManager;
     private UserCredentialStoreManager userCredentialStorageManager;
     private UserSessionProvider sessionProvider;
     private UserLoginFailureProvider userLoginFailureProvider;
@@ -217,21 +215,14 @@ public class DefaultKeycloakSession implements KeycloakSession {
         return groups();
     }
 
-
     @Override
     public UserProvider userStorageManager() {
-        if (userStorageManager == null) userStorageManager = new UserStorageManager(this);
-        return userStorageManager;
+        return users();
     }
 
     @Override
     public UserProvider users() {
-        UserCache cache = getProvider(UserCache.class);
-        if (cache != null) {
-            return cache;
-        } else {
-            return userStorageManager();
-        }
+        return getDatastoreProvider().users();
     }
 
     @Override

@@ -112,10 +112,11 @@ import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.LDAPServerCapabilitiesManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.ResourceAdminManager;
-import org.keycloak.services.managers.UserStorageSyncManager;
+import org.keycloak.services.resources.admin.ext.AdminRealmResourceProvider;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionManagement;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
+import org.keycloak.storage.LegacyStoreSyncEvent;
 import org.keycloak.utils.ProfileHelper;
 import org.keycloak.utils.ReservedCharValidator;
 
@@ -436,9 +437,7 @@ public class RealmAdminResource {
             RepresentationToModel.updateRealm(rep, realm, session);
 
             // Refresh periodic sync tasks for configured federationProviders
-            UserStorageSyncManager usersSyncManager = new UserStorageSyncManager();
-            realm.getUserStorageProvidersStream().forEachOrdered(fedProvider ->
-                    usersSyncManager.notifyToRefreshPeriodicSync(session, realm, fedProvider, false));
+            LegacyStoreSyncEvent.fire(session, realm, false);
 
             // This populates the map in DefaultKeycloakContext to be used when treating the event
             session.getContext().getUri();
@@ -531,12 +530,18 @@ public class RealmAdminResource {
     }
 
 
-    @Path("user-storage")
-    public UserStorageProviderResource userStorage() {
-        UserStorageProviderResource fed = new UserStorageProviderResource(realm, auth, adminEvent);
-        ResteasyProviderFactory.getInstance().injectProperties(fed);
-        //resourceContext.initResource(fed);
-        return fed;
+    @Path("{extension}")
+    public Object extension(@PathParam("extension") String extension) {
+        AdminRealmResourceProvider provider = session.getProvider(AdminRealmResourceProvider.class, extension);
+        if (provider != null) {
+            Object resource = provider.getResource(session, realm, auth, adminEvent);
+            if (resource != null) {
+                ResteasyProviderFactory.getInstance().injectProperties(resource);
+                return resource;
+            }
+        }
+
+        throw new NotFoundException();
     }
 
     @Path("authentication")

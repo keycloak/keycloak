@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,25 +15,18 @@
  * limitations under the License.
  */
 
-package org.keycloak.models.utils;
+package org.keycloak.services.scheduled;
 
-import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.provider.ProviderEvent;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.timer.ScheduledTask;
 
 /**
- * Executed at startup after model migration is finished
- *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class PostMigrationEvent implements ProviderEvent {
+public class ClearExpiredClientInitialAccessTokens implements ScheduledTask {
 
-    private final KeycloakSessionFactory factory;
-
-    public PostMigrationEvent(KeycloakSessionFactory factory) {
-        this.factory = factory;
-    }
-
-    public KeycloakSessionFactory getFactory() {
-        return this.factory;
+    @Override
+    public void run(KeycloakSession session) {
+        session.realms().removeExpiredClientInitialAccess();
     }
 }

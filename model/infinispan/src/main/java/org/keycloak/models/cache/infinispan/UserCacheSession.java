@@ -53,6 +53,10 @@ import org.keycloak.models.cache.infinispan.stream.InIdentityProviderPredicate;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ReadOnlyUserModelDelegate;
 import org.keycloak.storage.CacheableStorageProviderModel;
+import org.keycloak.storage.DatastoreProvider;
+import org.keycloak.storage.LegacyStoreManagers;
+import org.keycloak.storage.OnCreateComponent;
+import org.keycloak.storage.OnUpdateComponent;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
@@ -71,7 +75,7 @@ import java.util.stream.Stream;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class UserCacheSession implements UserCache.Streams {
+public class UserCacheSession implements UserCache.Streams, OnCreateComponent, OnUpdateComponent {
     protected static final Logger logger = Logger.getLogger(UserCacheSession.class);
     protected UserCacheManager cache;
     protected KeycloakSession session;
@@ -85,11 +89,13 @@ public class UserCacheSession implements UserCache.Streams {
     protected Set<String> realmInvalidations = new HashSet<>();
     protected Set<InvalidationEvent> invalidationEvents = new HashSet<>(); // Events to be sent across cluster
     protected Map<String, UserModel> managedUsers = new HashMap<>();
+    private LegacyStoreManagers datastoreProvider;
 
     public UserCacheSession(UserCacheManager cache, KeycloakSession session) {
         this.cache = cache;
         this.session = session;
         this.startupRevision = cache.getCurrentCounter();
+        this.datastoreProvider = (LegacyStoreManagers) session.getProvider(DatastoreProvider.class);
         session.getTransactionManager().enlistAfterCompletion(getTransaction());
     }
 
@@ -103,7 +109,7 @@ public class UserCacheSession implements UserCache.Streams {
     public UserProvider getDelegate() {
         if (!transactionActive) throw new IllegalStateException("Cannot access delegate without a transaction");
         if (delegate != null) return delegate;
-        delegate = session.userStorageManager();
+        delegate = this.datastoreProvider.userStorageManager();
 
         return delegate;
     }
@@ -906,4 +912,17 @@ public class UserCacheSession implements UserCache.Streams {
         invalidationEvents.add(UserCacheRealmInvalidationEvent.create(realmId));
     }
 
+    @Override
+    public void onUpdate(KeycloakSession session, RealmModel realm, ComponentModel oldModel, ComponentModel newModel) {
+        if (getDelegate() instanceof OnUpdateComponent) {
+            ((OnUpdateComponent) getDelegate()).onUpdate(session, realm, oldModel, newModel);
+        }
+    }
+
+    @Override
+    public void onCreate(KeycloakSession session, RealmModel realm, ComponentModel model) {
+        if (getDelegate() instanceof OnCreateComponent) {
+            ((OnCreateComponent) getDelegate()).onCreate(session, realm, model);
+        }
+    }
 }
