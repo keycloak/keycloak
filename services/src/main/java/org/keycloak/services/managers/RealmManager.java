@@ -52,6 +52,7 @@ import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.sessions.AuthenticationSessionProvider;
+import org.keycloak.storage.LegacyStoreSyncEvent;
 import org.keycloak.services.clientregistration.policy.DefaultClientRegistrationPolicies;
 
 import java.util.Collections;
@@ -271,10 +272,7 @@ public class RealmManager {
             }
 
           // Refresh periodic sync tasks for configured storageProviders
-            UserStorageSyncManager storageSync = new UserStorageSyncManager();
-            realm.getUserStorageProvidersStream()
-                    .forEachOrdered(provider -> storageSync.notifyToRefreshPeriodicSync(session, realm, provider, true));
-
+          LegacyStoreSyncEvent.fire(session, realm, true);
         }
         return removed;
     }
@@ -588,9 +586,7 @@ public class RealmManager {
         }
 
         // Refresh periodic sync tasks for configured storageProviders
-        UserStorageSyncManager storageSync = new UserStorageSyncManager();
-        realm.getUserStorageProvidersStream()
-                .forEachOrdered(provider -> storageSync.notifyToRefreshPeriodicSync(session, realm, provider, false));
+        LegacyStoreSyncEvent.fire(session, realm, false);
 
         setupAuthorizationServices(realm);
         setupClientRegistrations(realm);

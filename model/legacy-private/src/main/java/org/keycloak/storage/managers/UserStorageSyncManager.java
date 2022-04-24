@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.services.managers;
+package org.keycloak.storage.managers;
 
 import org.jboss.logging.Logger;
 import org.keycloak.cluster.ClusterEvent;
@@ -22,12 +22,12 @@ import org.keycloak.cluster.ClusterListener;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.cluster.ExecutionResult;
 import org.keycloak.common.util.Time;
+import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakSessionTask;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.services.ServicesLogger;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderFactory;
 import org.keycloak.storage.UserStorageProviderModel;
@@ -54,7 +54,7 @@ public class UserStorageSyncManager {
      * @param sessionFactory
      * @param timer
      */
-    public void bootstrapPeriodic(final KeycloakSessionFactory sessionFactory, final TimerProvider timer) {
+    public static void bootstrapPeriodic(final KeycloakSessionFactory sessionFactory, final TimerProvider timer) {
         KeycloakModelUtils.runJobInTransaction(sessionFactory, new KeycloakSessionTask() {
 
             @Override
@@ -80,7 +80,7 @@ public class UserStorageSyncManager {
         ExecutionResult<SynchronizationResult> result;
     }
 
-    public SynchronizationResult syncAllUsers(final KeycloakSessionFactory sessionFactory, final String realmId, final UserStorageProviderModel provider) {
+    public static SynchronizationResult syncAllUsers(final KeycloakSessionFactory sessionFactory, final String realmId, final UserStorageProviderModel provider) {
         UserStorageProviderFactory factory = (UserStorageProviderFactory) sessionFactory.getProviderFactory(UserStorageProvider.class, provider.getProviderId());
         if (!(factory instanceof ImportSynchronization) || !provider.isImportEnabled() || !provider.isEnabled()) {
             return SynchronizationResult.ignored();
@@ -121,7 +121,7 @@ public class UserStorageSyncManager {
         }
     }
 
-    public SynchronizationResult syncChangedUsers(final KeycloakSessionFactory sessionFactory, final String realmId, final UserStorageProviderModel provider) {
+    public static SynchronizationResult syncChangedUsers(final KeycloakSessionFactory sessionFactory, final String realmId, final UserStorageProviderModel provider) {
         UserStorageProviderFactory factory = (UserStorageProviderFactory) sessionFactory.getProviderFactory(UserStorageProvider.class, provider.getProviderId());
         if (!(factory instanceof ImportSynchronization) || !provider.isImportEnabled() || !provider.isEnabled()) {
             return SynchronizationResult.ignored();
@@ -164,8 +164,17 @@ public class UserStorageSyncManager {
     }
 
 
+    public static void notifyToRefreshPeriodicSyncAll(KeycloakSession session, RealmModel realm, boolean removed) {
+        realm.getUserStorageProvidersStream().forEachOrdered(fedProvider ->
+           notifyToRefreshPeriodicSync(session, realm, fedProvider, removed));
+    }
+    
+    public static void notifyToRefreshPeriodicSyncSingle(KeycloakSession session, RealmModel realm, ComponentModel component, boolean removed) {
+        notifyToRefreshPeriodicSync(session, realm, new UserStorageProviderModel(component), removed);
+    }
+    
     // Ensure all cluster nodes are notified
-    public void notifyToRefreshPeriodicSync(KeycloakSession session, RealmModel realm, UserStorageProviderModel provider, boolean removed) {
+    public static void notifyToRefreshPeriodicSync(KeycloakSession session, RealmModel realm, UserStorageProviderModel provider, boolean removed) {
         UserStorageProviderFactory factory = (UserStorageProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(UserStorageProvider.class, provider.getProviderId());
         if (!(factory instanceof ImportSynchronization) || !provider.isImportEnabled()) {
             return;
@@ -180,7 +189,7 @@ public class UserStorageSyncManager {
 
 
     // Executed once it receives notification that some UserFederationProvider was created or updated
-    protected void refreshPeriodicSyncForProvider(final KeycloakSessionFactory sessionFactory, TimerProvider timer, final UserStorageProviderModel provider, final String realmId) {
+    protected static void refreshPeriodicSyncForProvider(final KeycloakSessionFactory sessionFactory, TimerProvider timer, final UserStorageProviderModel provider, final String realmId) {
         logger.debugf("Going to refresh periodic sync for provider '%s' . Full sync period: %d , changed users sync period: %d",
                 provider.getName(), provider.getFullSyncPeriod(), provider.getChangedSyncPeriod());
 
@@ -198,7 +207,7 @@ public class UserStorageSyncManager {
                             logger.debugf("Ignored periodic full sync with storage provider %s due small time since last sync", provider.getName());
                         }
                     } catch (Throwable t) {
-                        ServicesLogger.LOGGER.errorDuringFullUserSync(t);
+                        logger.error("Error occurred during full sync of users", t);
                     }
                 }
 
@@ -221,7 +230,7 @@ public class UserStorageSyncManager {
                             logger.debugf("Ignored periodic changed-users sync with storage provider %s due small time since last sync", provider.getName());
                         }
                     } catch (Throwable t) {
-                        ServicesLogger.LOGGER.errorDuringChangedUserSync(t);
+                        logger.error("Error occurred during sync of changed users", t);
                     }
                 }
 
@@ -233,7 +242,7 @@ public class UserStorageSyncManager {
     }
 
     // Skip syncing if there is short time since last sync time.
-    private boolean shouldPerformNewPeriodicSync(int lastSyncTime, int period) {
+    private static boolean shouldPerformNewPeriodicSync(int lastSyncTime, int period) {
         if (lastSyncTime <= 0) {
             return true;
         }
@@ -245,14 +254,14 @@ public class UserStorageSyncManager {
     }
 
     // Executed once it receives notification that some UserFederationProvider was removed
-    protected void removePeriodicSyncForProvider(TimerProvider timer, UserStorageProviderModel fedProvider) {
+    protected static void removePeriodicSyncForProvider(TimerProvider timer, UserStorageProviderModel fedProvider) {
         logger.debugf("Removing periodic sync for provider %s", fedProvider.getName());
         timer.cancelTask(fedProvider.getId() + "-FULL");
         timer.cancelTask(fedProvider.getId() + "-CHANGED");
     }
 
     // Update interval of last sync for given UserFederationProviderModel. Do it in separate transaction
-    private void updateLastSyncInterval(final KeycloakSessionFactory sessionFactory, UserStorageProviderModel provider, final String realmId) {
+    private static void updateLastSyncInterval(final KeycloakSessionFactory sessionFactory, UserStorageProviderModel provider, final String realmId) {
         KeycloakModelUtils.runJobInTransaction(sessionFactory, new KeycloakSessionTask() {
 
             @Override
@@ -274,7 +283,7 @@ public class UserStorageSyncManager {
     }
 
 
-    private class UserStorageClusterListener implements ClusterListener {
+    private static class UserStorageClusterListener implements ClusterListener {
 
         private final KeycloakSessionFactory sessionFactory;
 

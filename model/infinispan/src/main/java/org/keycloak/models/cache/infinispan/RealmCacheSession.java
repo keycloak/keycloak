@@ -27,9 +27,9 @@ import org.keycloak.models.cache.infinispan.entities.*;
 import org.keycloak.models.cache.infinispan.events.*;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.storage.DatastoreProvider;
+import org.keycloak.storage.LegacyStoreManagers;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.client.ClientStorageProviderModel;
-import org.keycloak.storage.datastore.LegacyDatastoreProvider;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -121,13 +121,13 @@ public class RealmCacheSession implements CacheRealmProvider {
 
     protected boolean clearAll;
     protected final long startupRevision;
-    private final LegacyDatastoreProvider datastoreProvider;
+    private final LegacyStoreManagers datastoreProvider;
 
     public RealmCacheSession(RealmCacheManager cache, KeycloakSession session) {
         this.cache = cache;
         this.session = session;
         this.startupRevision = cache.getCurrentCounter();
-        this.datastoreProvider = (LegacyDatastoreProvider) session.getProvider(DatastoreProvider.class);
+        this.datastoreProvider = (LegacyStoreManagers) session.getProvider(DatastoreProvider.class);
         session.getTransactionManager().enlistPrepare(getPrepareTransaction());
         session.getTransactionManager().enlistAfterCompletion(getAfterTransaction());
     }

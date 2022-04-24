@@ -5,6 +5,7 @@ import org.keycloak.models.ClientScopeProvider;
 import org.keycloak.models.GroupProvider;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleProvider;
+import org.keycloak.models.UserProvider;
 import org.keycloak.provider.Provider;
 
 public interface DatastoreProvider extends Provider {
@@ -18,5 +19,7 @@ public interface DatastoreProvider extends Provider {
     public RealmProvider realms();
 
     public RoleProvider roles();
+    
+    public UserProvider users();
     
 }

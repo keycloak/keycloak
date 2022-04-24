@@ -6,14 +6,18 @@ import org.keycloak.models.GroupProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleProvider;
+import org.keycloak.models.UserProvider;
 import org.keycloak.models.cache.CacheRealmProvider;
+import org.keycloak.models.cache.UserCache;
 import org.keycloak.storage.ClientScopeStorageManager;
 import org.keycloak.storage.ClientStorageManager;
 import org.keycloak.storage.DatastoreProvider;
 import org.keycloak.storage.GroupStorageManager;
+import org.keycloak.storage.LegacyStoreManagers;
 import org.keycloak.storage.RoleStorageManager;
+import org.keycloak.storage.UserStorageManager;
 
-public class LegacyDatastoreProvider implements DatastoreProvider {
+public class LegacyDatastoreProvider implements DatastoreProvider, LegacyStoreManagers {
 
     private final LegacyDatastoreProviderFactory factory;
     private final KeycloakSession session;
@@ -23,11 +27,13 @@ public class LegacyDatastoreProvider implements DatastoreProvider {
     private GroupProvider groupProvider;
     private RealmProvider realmProvider;
     private RoleProvider roleProvider;
+    private UserProvider userProvider;
 
     private ClientScopeStorageManager clientScopeStorageManager;
     private RoleStorageManager roleStorageManager;
     private GroupStorageManager groupStorageManager;
     private ClientStorageManager clientStorageManager;
+    private UserProvider userStorageManager;
 
     public LegacyDatastoreProvider(LegacyDatastoreProviderFactory factory, KeycloakSession session) {
         this.factory = factory;
@@ -64,6 +70,13 @@ public class LegacyDatastoreProvider implements DatastoreProvider {
             groupStorageManager = new GroupStorageManager(session);
         }
         return groupStorageManager;
+    }
+
+    public UserProvider userStorageManager() {
+        if (userStorageManager == null) {
+            userStorageManager = new UserStorageManager(session);
+        }
+        return userStorageManager;
     }
 
     private ClientProvider getClientProvider() {
@@ -115,6 +128,15 @@ public class LegacyDatastoreProvider implements DatastoreProvider {
         }
     }
 
+    private UserProvider getUserProvider() {
+        UserCache cache = session.getProvider(UserCache.class);
+        if (cache != null) {
+            return cache;
+        } else {
+            return userStorageManager();
+        }
+    }
+
     @Override
     public ClientProvider clients() {
         if (clientProvider == null) {
@@ -153,5 +175,13 @@ public class LegacyDatastoreProvider implements DatastoreProvider {
             roleProvider = getRoleProvider();
         }
         return roleProvider;
+    }
+
+    @Override
+    public UserProvider users() {
+        if (userProvider == null) {
+            userProvider = getUserProvider();
+        }
+        return userProvider;
     }
 }
