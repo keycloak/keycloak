@@ -60,6 +60,14 @@ do
     shift
 done
 
+if [ "x$JAVA" = "x" ]; then
+    if [ "x$JAVA_HOME" != "x" ]; then
+        JAVA="$JAVA_HOME/bin/java"
+    else
+        JAVA="java"
+    fi
+fi
+
 #
 # Specify options to pass to the Java VM.
 #
@@ -89,11 +97,11 @@ CLASSPATH_OPTS="'$DIRNAME'/../lib/quarkus-run.jar"
 JAVA_RUN_OPTS="$JAVA_OPTS $SERVER_OPTS -cp $CLASSPATH_OPTS io.quarkus.bootstrap.runner.QuarkusEntryPoint ${CONFIG_ARGS#?}"
 
 if [[ $CONFIG_ARGS = *"--auto-build"* ]]; then
-    eval java -Dkc.config.rebuild-and-exit=true $JAVA_RUN_OPTS
+    eval "$JAVA" -Dkc.config.rebuild-and-exit=true $JAVA_RUN_OPTS
     EXIT_CODE=$?
     if [ $EXIT_CODE != 0 ]; then
       exit $EXIT_CODE
     fi
 fi
 
-eval exec java ${JAVA_RUN_OPTS}
+eval exec "${JAVA}" ${JAVA_RUN_OPTS}
