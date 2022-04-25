@@ -1,5 +1,4 @@
-[[_webauthn]]
-
+[id="webauthn_{context}"]
 === W3C Web Authentication (WebAuthn)
 
 {project_name} provides support for https://www.w3.org/TR/webauthn/[W3C Web Authentication (WebAuthn)]. {project_name} works as a WebAuthn's https://www.w3.org/TR/webauthn/#webauthn-relying-party[Relying Party (RP)].

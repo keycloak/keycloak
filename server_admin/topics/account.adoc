@@ -58,7 +58,7 @@ image:images/account-console-signing-in.png[Signing In]
 
 .Prerequisites
 
-* WebAuthn is a valid two-factor authentication mechanism for your realm. Please follow the <<_webauthn,WebAuthn section>> for more details.
+* WebAuthn is a valid two-factor authentication mechanism for your realm. Please follow the xref:webauthn_{context}[WebAuthn] section for more details.
 
 .Procedure
 
