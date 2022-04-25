@@ -70,7 +70,7 @@ const AddLdapFormContent = ({
         <LdapSettingsSynchronization form={form} />
         <LdapSettingsKerberosIntegration form={form} />
         <SettingsCache form={form} />
-        <LdapSettingsAdvanced form={form} />
+        <LdapSettingsAdvanced form={form} id={id} />
       </ScrollForm>
       <Form onSubmit={form.handleSubmit(save)}>
         <ActionGroup className="keycloak__form_actions">

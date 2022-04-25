@@ -42,7 +42,7 @@ const testLdapProperties: Array<keyof TestLdapConnectionRepresentation> = [
 
 type TestTypes = "testConnection" | "testAuthentication";
 
-const convertFormToSettings = (form: UseFormMethods) => {
+export const convertFormToSettings = (form: UseFormMethods) => {
   const settings: TestLdapConnectionRepresentation = {};
 
   testLdapProperties.forEach((key) => {
