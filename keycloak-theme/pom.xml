@@ -31,7 +31,7 @@
         <jboss.snapshots.repo.id>jboss-snapshots-repository</jboss.snapshots.repo.id>
         <jboss.snapshots.repo.url>https://s01.oss.sonatype.org/content/repositories/snapshots/</jboss.snapshots.repo.url>
 
-        <nexus.staging.plugin.version>1.6.12</nexus.staging.plugin.version>
+        <nexus.staging.plugin.version>1.6.13</nexus.staging.plugin.version>
     </properties>
 
     <licenses>
