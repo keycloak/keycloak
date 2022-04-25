@@ -1715,7 +1715,7 @@ module.controller('RealmUserProfileCtrl', function($scope, Realm, realm, clientS
     }
 
     $scope.editAttribute = function(attribute) {
-        if (attribute.permissions == null) {
+        if (attribute.name !== 'username' && attribute.name !== 'email' && attribute.permissions == null) {
             attribute.permissions = {
                 view: [],
                 edit: []
@@ -1752,10 +1752,10 @@ module.controller('RealmUserProfileCtrl', function($scope, Realm, realm, clientS
         }
 
         $scope.isRequired = attribute.required != null;
-        $scope.canUserView = attribute.permissions.view.includes('user');
-        $scope.canAdminView = attribute.permissions.view.includes('admin');
-        $scope.canUserEdit = attribute.permissions.edit.includes('user');
-        $scope.canAdminEdit = attribute.permissions.edit.includes('admin');
+        $scope.canUserView = attribute.permissions ? attribute.permissions.view.includes('user') : false;
+        $scope.canAdminView = attribute.permissions ? attribute.permissions.view.includes('admin'): false;
+        $scope.canUserEdit = attribute.permissions ? attribute.permissions.edit.includes('user'): false;
+        $scope.canAdminEdit = attribute.permissions ? attribute.permissions.edit.includes('admin'): false;
         $scope.currentAttribute = attribute;
         $scope.attributeSelected = true;
     };
