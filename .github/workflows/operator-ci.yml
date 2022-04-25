@@ -79,9 +79,8 @@ jobs:
           (cd operator && ./scripts/build-testing-docker-images.sh ${{ steps.vars.outputs.version }} keycloak custom-keycloak)
 
       - name: Test operator running locally
-        working-directory: operator
         run: |
-          mvn clean verify \
+          mvn -Poperator -pl operator -am clean verify \
               -Dquarkus.kubernetes.deployment-target=kubernetes \
               -Doperator.keycloak.image=keycloak:${{ steps.vars.outputs.version }} \
               -Dtest.operator.custom.image=custom-keycloak:${{ steps.vars.outputs.version }} \
@@ -125,10 +124,9 @@ jobs:
           (cd operator && ./scripts/build-testing-docker-images.sh ${{ steps.vars.outputs.version }} keycloak custom-keycloak)
 
       - name: Test operator running in cluster
-        working-directory: operator
         run: |
           eval $(minikube -p minikube docker-env)
-          mvn clean verify \
+          mvn -Poperator -pl operator -am clean verify \
               -Dquarkus.container-image.build=true \
               -Dquarkus.kubernetes.deployment-target=kubernetes \
               -Doperator.keycloak.image=keycloak:${{ steps.vars.outputs.version }} \
