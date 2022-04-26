@@ -4,7 +4,7 @@ ignore:
     - "*":
         reason: >
           The Keycloak core module is not affected by Open Redirect
-          Vulnerability (CVE-2020-1723),  that relates to Gatekeeper, an old
+          Vulnerability (CVE-2020-1723), that relates to Gatekeeper, an old
           project already decommissioned from our org. More details:
             - https://issues.redhat.com/browse/KEYCLOAK-11318
             - https://www.keycloak.org/2020/08/sunsetting-louketo-project.adoc
@@ -38,7 +38,20 @@ ignore:
             - https://nvd.nist.gov/vuln/detail/CVE-2021-3642
             - https://github.com/keycloak/keycloak/pull/11250
             - https://github.com/keycloak/keycloak/pull/11197
-
+  SNYK-JAVA-ORGKEYCLOAK-1658295:
+    - "*":
+        reason: >
+          Keycloak is no longer vulnerable. The issue was fixed on Keycloak 18.0.0
+          More details:
+            - https://github.com/keycloak/keycloak/security/advisories/GHSA-4pc7-vqv5-5r3v   
+            - https://access.redhat.com/security/cve/cve-2021-3827
+  SNYK-JAVA-ORGKEYCLOAK-1083276:
+    - "*":
+        reason: >
+          Keycloak is no longer vulnerable. The issue was fixed on Keycloak 18.0.0
+          More details:
+            - https://github.com/keycloak/keycloak/security/advisories/GHSA-mwm4-5qwr-g9pf   
+            - https://access.redhat.com/security/cve/cve-2021-3424                       
   # License warnings
   snyk:lic:maven:org.eclipse.sisu:org.eclipse.sisu.plexus:EPL-1.0:
     - "*":
