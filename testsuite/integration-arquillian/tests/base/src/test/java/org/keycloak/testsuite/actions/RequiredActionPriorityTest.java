@@ -116,9 +116,11 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
 
         // Finally, update profile
         updateProfilePage.assertCurrent();
-        updateProfilePage.prepareUpdate().username("test-user@localhost").firstName("New first").lastName("New last").submit();
+        updateProfilePage.prepareUpdate().username("test-user@localhost").firstName("New first").lastName("New last").email("new@email.com").submit();
         events.expectRequiredAction(EventType.UPDATE_PROFILE).detail(Details.UPDATED_FIRST_NAME, "New first")
                 .detail(Details.UPDATED_LAST_NAME, "New last")
+                .detail(Details.PREVIOUS_EMAIL, "test-user@localhost")
+                .detail(Details.UPDATED_EMAIL, "new@email.com")
                 .assertEvent();
 
         // Logged in
@@ -148,9 +150,11 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
 
         // Second, update profile
         updateProfilePage.assertCurrent();
-        updateProfilePage.prepareUpdate().username("test-user@localhost").firstName("New first").lastName("New last").submit();
+        updateProfilePage.prepareUpdate().username("test-user@localhost").firstName("New first").lastName("New last").email("new@email.com").submit();
         events.expectRequiredAction(EventType.UPDATE_PROFILE).detail(Details.UPDATED_FIRST_NAME, "New first")
                 .detail(Details.UPDATED_LAST_NAME, "New last")
+                .detail(Details.PREVIOUS_EMAIL, "test-user@localhost")
+                .detail(Details.UPDATED_EMAIL, "new@email.com")
                 .assertEvent();
 
         // Finally, accept terms

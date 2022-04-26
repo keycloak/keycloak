@@ -128,7 +128,8 @@ public class DefaultRequiredActions {
     }
 
     public static void addUpdateEmailAction(RealmModel realm){
-        if (realm.getRequiredActionProviderByAlias(UserModel.RequiredAction.UPDATE_EMAIL.name()) == null){
+        if (realm.getRequiredActionProviderByAlias(UserModel.RequiredAction.UPDATE_EMAIL.name()) == null
+                && Profile.isFeatureEnabled(Profile.Feature.UPDATE_EMAIL)){
             RequiredActionProviderModel updateEmail = new RequiredActionProviderModel();
             updateEmail.setEnabled(true);
             updateEmail.setAlias(UserModel.RequiredAction.UPDATE_EMAIL.name());

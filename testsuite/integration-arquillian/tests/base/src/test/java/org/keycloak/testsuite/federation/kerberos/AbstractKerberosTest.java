@@ -23,12 +23,10 @@ import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 import java.net.URI;
 import java.security.Principal;
 import java.util.Hashtable;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
-
 import javax.naming.Context;
 import javax.naming.NamingException;
 import javax.naming.directory.Attributes;
@@ -36,7 +34,6 @@ import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
 import javax.security.sasl.Sasl;
 import javax.ws.rs.core.Response;
-
 import org.apache.http.NameValuePair;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.Credentials;
@@ -76,7 +73,6 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
-import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.pages.AccountPasswordPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.KerberosRule;
@@ -311,11 +307,8 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
             Assert.assertEquals(expectedLastname, user.getLastName());
 
             if (updateProfileActionExpected) {
-                Iterator<String> requiredActionIterator = user.getRequiredActions().iterator();
-                Assert.assertEquals(UserModel.RequiredAction.UPDATE_EMAIL.toString(),
-                        requiredActionIterator.next());
                 Assert.assertEquals(UserModel.RequiredAction.UPDATE_PROFILE.toString(),
-                        requiredActionIterator.next());
+                        user.getRequiredActions().iterator().next());
             } else {
                 Assert.assertTrue(user.getRequiredActions().isEmpty());
             }

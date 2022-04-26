@@ -17,14 +17,8 @@
 
 package org.keycloak.testsuite.ui.account2.page;
 
-import org.keycloak.representations.idm.UserRepresentation;
-import org.openqa.selenium.By;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.support.FindBy;
-import org.openqa.selenium.support.ui.Select;
-
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.util.UIAssert.assertElementDisabled;
 import static org.keycloak.testsuite.util.UIAssert.assertInputElementValid;
 import static org.keycloak.testsuite.util.UIUtils.clickLink;
@@ -32,7 +26,11 @@ import static org.keycloak.testsuite.util.UIUtils.getTextInputValue;
 import static org.keycloak.testsuite.util.UIUtils.isElementVisible;
 import static org.keycloak.testsuite.util.UIUtils.setTextInputValue;
 
-import static org.junit.Assert.assertEquals;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.FindBy;
+import org.openqa.selenium.support.ui.Select;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
@@ -80,6 +78,14 @@ public class PersonalInfoPage extends AbstractLoggedInPage {
 
     public String getEmail() {
         return getTextInputValue(email);
+    }
+
+    public void setEmail(String value) {
+        setTextInputValue(email, value);
+    }
+
+    public void assertEmailValid(boolean expected) {
+        assertInputElementValid(expected, email);
     }
 
     public void assertUpdateEmailLinkVisible(boolean expected){
@@ -159,9 +165,9 @@ public class PersonalInfoPage extends AbstractLoggedInPage {
         setLastName(user.getLastName());
     }
 
-    public boolean valuesEqual(UserRepresentation user, boolean includeEmail) {
+    public boolean valuesEqual(UserRepresentation user) {
         return user.getUsername().equals(getUsername())
-                && (!includeEmail || user.getEmail().equals(getEmail()))
+                && user.getEmail().equals(getEmail())
                 && user.getFirstName().equals(getFirstName())
                 && user.getLastName().equals(getLastName());
     }

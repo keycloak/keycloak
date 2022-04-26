@@ -30,6 +30,7 @@ import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionFactory;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.authentication.actiontoken.updateemail.UpdateEmailActionToken;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.Time;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailTemplateProvider;
@@ -45,6 +46,7 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.services.Urls;
 import org.keycloak.services.validation.Validation;
 import org.keycloak.sessions.AuthenticationSessionModel;
@@ -54,7 +56,7 @@ import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.userprofile.ValidationException;
 
-public class UpdateEmail implements RequiredActionProvider, RequiredActionFactory {
+public class UpdateEmail implements RequiredActionProvider, RequiredActionFactory, EnvironmentDependentProviderFactory {
 
     private static final Logger logger = Logger.getLogger(UpdateEmail.class);
 
@@ -188,5 +190,10 @@ public class UpdateEmail implements RequiredActionProvider, RequiredActionFactor
     @Override
     public String getId() {
         return UserModel.RequiredAction.UPDATE_EMAIL.name();
+    }
+
+    @Override
+    public boolean isSupported() {
+        return Profile.isFeatureEnabled(Profile.Feature.UPDATE_EMAIL);
     }
 }

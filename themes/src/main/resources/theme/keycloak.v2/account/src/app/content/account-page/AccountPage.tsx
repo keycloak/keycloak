@@ -71,7 +71,8 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
     private isRegistrationEmailAsUsername: boolean = features.isRegistrationEmailAsUsername;
     private isEditUserNameAllowed: boolean = features.isEditUserNameAllowed;
     private isDeleteAccountAllowed: boolean = features.deleteAccountAllowed;
-    private isEmailUpdateAllowed: boolean = features.emailUpdateAllowed;
+    private isUpdateEmailFeatureEnabled: boolean = features.updateEmailFeatureEnabled;
+    private isUpdateEmailActionEnabled: boolean = features.updateEmailActionEnabled;
     private readonly DEFAULT_STATE: AccountPageState = {
         errors: {
             username: '',
@@ -196,7 +197,32 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
                                 )}
                             </FormGroup>
                         )}
-                        <FormGroup
+                        {!this.isUpdateEmailFeatureEnabled && <FormGroup
+                            label={Msg.localize('email')}
+                            fieldId="email-address"
+                            helperTextInvalid={this.state.errors.email}
+                            validated={
+                                this.state.errors.email !== ""
+                                    ? ValidatedOptions.error
+                                    : ValidatedOptions.default
+                            }
+                        >
+                            <TextInput
+                                isRequired
+                                type="email"
+                                id="email-address"
+                                name="email"
+                                maxLength={254}
+                                value={fields.email}
+                                onChange={this.handleChange}
+                                validated={
+                                    this.state.errors.email !== ""
+                                        ? ValidatedOptions.error
+                                        : ValidatedOptions.default
+                                }
+                            ></TextInput>
+                        </FormGroup> }
+                        {this.isUpdateEmailFeatureEnabled && <FormGroup
                             label={Msg.localize('email')}
                             fieldId="email-address"
                         >
@@ -209,7 +235,7 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
                                     value={fields.email}
                                 >
                                 </TextInput>
-                                {this.isEmailUpdateAllowed &&
+                                {this.isUpdateEmailActionEnabled && (!this.isRegistrationEmailAsUsername || this.isEditUserNameAllowed) &&
                                     <KeycloakContext.Consumer>
                                         { (keycloak: KeycloakService) => (
                                             <Button id="update-email-btn"
@@ -223,7 +249,7 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
                                     </KeycloakContext.Consumer>
                                 }
                             </InputGroup>
-                        </FormGroup>
+                        </FormGroup> }
                         <FormGroup
                             label={Msg.localize("firstName")}
                             fieldId="first-name"

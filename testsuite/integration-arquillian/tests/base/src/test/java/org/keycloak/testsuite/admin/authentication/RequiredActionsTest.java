@@ -46,7 +46,6 @@ public class RequiredActionsTest extends AbstractAuthenticationTest {
 
         List<RequiredActionProviderRepresentation> expected = new ArrayList<>();
         addRequiredAction(expected, "CONFIGURE_TOTP", "Configure OTP", true, false, null);
-        addRequiredAction(expected, "UPDATE_EMAIL", "Update Email", true, false, null);
         addRequiredAction(expected, "UPDATE_PASSWORD", "Update Password", true, false, null);
         addRequiredAction(expected, "UPDATE_PROFILE", "Update Profile", true, false, null);
         addRequiredAction(expected, "VERIFY_EMAIL", "Verify Email", true, false, null);

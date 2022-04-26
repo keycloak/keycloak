@@ -85,10 +85,11 @@ public class AppInitiatedActionUpdateProfileTest extends AbstractAppInitiatedAct
         
         updateProfilePage.assertCurrent();
 
-        updateProfilePage.prepareUpdate().username("test-user@localhost").firstName("New first").lastName("New last").submit();
+        updateProfilePage.prepareUpdate().username("test-user@localhost").firstName("New first").lastName("New last").email("new@email.com").submit();
 
         events.expectRequiredAction(EventType.UPDATE_PROFILE).detail(Details.PREVIOUS_FIRST_NAME, "Tom").detail(Details.UPDATED_FIRST_NAME, "New first")
                 .detail(Details.PREVIOUS_LAST_NAME, "Brady").detail(Details.UPDATED_LAST_NAME, "New last")
+                .detail(Details.PREVIOUS_EMAIL, "test-user@localhost").detail(Details.UPDATED_EMAIL, "new@email.com")
                 .assertEvent();
         events.expectLogin().assertEvent();
 
@@ -98,7 +99,7 @@ public class AppInitiatedActionUpdateProfileTest extends AbstractAppInitiatedAct
         UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
         Assert.assertEquals("New first", user.getFirstName());
         Assert.assertEquals("New last", user.getLastName());
-        Assert.assertEquals("test-user@localhost", user.getEmail());
+        Assert.assertEquals("new@email.com", user.getEmail());
         Assert.assertEquals("test-user@localhost", user.getUsername());
     }
     
@@ -114,11 +115,12 @@ public class AppInitiatedActionUpdateProfileTest extends AbstractAppInitiatedAct
 
         updateProfilePage.assertCurrent();
 
-        updateProfilePage.prepareUpdate().username("test-user@localhost").firstName("New first").lastName("New last").submit();
+        updateProfilePage.prepareUpdate().username("test-user@localhost").firstName("New first").lastName("New last").email("new@email.com").submit();
 
         events.expectLogin().assertEvent();
         events.expectRequiredAction(EventType.UPDATE_PROFILE).detail(Details.PREVIOUS_FIRST_NAME, "Tom").detail(Details.UPDATED_FIRST_NAME, "New first")
                 .detail(Details.PREVIOUS_LAST_NAME, "Brady").detail(Details.UPDATED_LAST_NAME, "New last")
+                .detail(Details.PREVIOUS_EMAIL, "test-user@localhost").detail(Details.UPDATED_EMAIL, "new@email.com")
                 .assertEvent();
         events.expectLogin().assertEvent();
 
@@ -128,7 +130,7 @@ public class AppInitiatedActionUpdateProfileTest extends AbstractAppInitiatedAct
         UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
         Assert.assertEquals("New first", user.getFirstName());
         Assert.assertEquals("New last", user.getLastName());
-        Assert.assertEquals("test-user@localhost", user.getEmail());
+        Assert.assertEquals("new@email.com", user.getEmail());
         Assert.assertEquals("test-user@localhost", user.getUsername());
     }
     
@@ -163,7 +165,7 @@ public class AppInitiatedActionUpdateProfileTest extends AbstractAppInitiatedAct
 
         updateProfilePage.assertCurrent();
 
-        updateProfilePage.prepareUpdate().username("new").firstName("New first").lastName("New last").submit();
+        updateProfilePage.prepareUpdate().username("new").firstName("New first").lastName("New last").email("john-doh@localhost").submit();
 
         events.expectLogin()
                 .event(EventType.UPDATE_PROFILE)
@@ -197,13 +199,14 @@ public class AppInitiatedActionUpdateProfileTest extends AbstractAppInitiatedAct
 
         updateProfilePage.assertCurrent();
 
-        updateProfilePage.prepareUpdate().username("new").firstName("").lastName("New last").submit();
+        updateProfilePage.prepareUpdate().username("new").firstName("").lastName("New last").email("new@email.com").submit();
 
         updateProfilePage.assertCurrent();
 
         // assert that form holds submitted values during validation error
         Assert.assertEquals("", updateProfilePage.getFirstName());
         Assert.assertEquals("New last", updateProfilePage.getLastName());
+        Assert.assertEquals("new@email.com", updateProfilePage.getEmail());
 
         if(isDynamicForm())
             Assert.assertEquals("Please specify this field.", updateProfilePage.getInputErrors().getFirstNameError());
@@ -221,18 +224,63 @@ public class AppInitiatedActionUpdateProfileTest extends AbstractAppInitiatedAct
 
         updateProfilePage.assertCurrent();
 
-        updateProfilePage.prepareUpdate().username("new").firstName("New first").lastName("").submit();
+        updateProfilePage.prepareUpdate().username("new").firstName("New first").lastName("").email("new@email.com").submit();
 
         updateProfilePage.assertCurrent();
 
         // assert that form holds submitted values during validation error
         Assert.assertEquals("New first", updateProfilePage.getFirstName());
         Assert.assertEquals("", updateProfilePage.getLastName());
+        Assert.assertEquals("new@email.com", updateProfilePage.getEmail());
 
         if(isDynamicForm())
             Assert.assertEquals("Please specify this field.", updateProfilePage.getInputErrors().getLastNameError());
         else
             Assert.assertEquals("Please specify last name.", updateProfilePage.getInputErrors().getLastNameError());
+
+        events.assertEmpty();
+    }
+
+    @Test
+    public void updateProfileMissingEmail() {
+        doAIA();
+
+        loginPage.login("test-user@localhost", "password");
+
+        updateProfilePage.assertCurrent();
+
+        updateProfilePage.prepareUpdate().username("new").firstName("New first").lastName("New last").email("").submit();
+
+        updateProfilePage.assertCurrent();
+
+        // assert that form holds submitted values during validation error
+        Assert.assertEquals("New first", updateProfilePage.getFirstName());
+        Assert.assertEquals("New last", updateProfilePage.getLastName());
+        Assert.assertEquals("", updateProfilePage.getEmail());
+
+        Assert.assertEquals("Please specify email.", updateProfilePage.getInputErrors().getEmailError());
+
+        events.assertEmpty();
+    }
+
+    @Test
+    public void updateProfileInvalidEmail() {
+        doAIA();
+
+        loginPage.login("test-user@localhost", "password");
+
+        updateProfilePage.assertCurrent();
+
+        updateProfilePage.prepareUpdate().username("invalid").firstName("New first").lastName("New last").email("invalidemail").submit();
+
+        updateProfilePage.assertCurrent();
+
+        // assert that form holds submitted values during validation error
+        Assert.assertEquals("New first", updateProfilePage.getFirstName());
+        Assert.assertEquals("New last", updateProfilePage.getLastName());
+        Assert.assertEquals("invalidemail", updateProfilePage.getEmail());
+
+        Assert.assertEquals("Invalid email address.", updateProfilePage.getInputErrors().getEmailError());
 
         events.assertEmpty();
     }
@@ -245,13 +293,14 @@ public class AppInitiatedActionUpdateProfileTest extends AbstractAppInitiatedAct
 
         updateProfilePage.assertCurrent();
 
-        updateProfilePage.prepareUpdate().username("").firstName("New first").lastName("New last").submit();
+        updateProfilePage.prepareUpdate().username("").firstName("New first").lastName("New last").email("new@email.com").submit();
 
         updateProfilePage.assertCurrent();
 
         // assert that form holds submitted values during validation error
         Assert.assertEquals("New first", updateProfilePage.getFirstName());
         Assert.assertEquals("New last", updateProfilePage.getLastName());
+        Assert.assertEquals("new@email.com", updateProfilePage.getEmail());
         Assert.assertEquals("", updateProfilePage.getUsername());
 
         Assert.assertEquals("Please specify username.", updateProfilePage.getInputErrors().getUsernameError());
@@ -267,16 +316,39 @@ public class AppInitiatedActionUpdateProfileTest extends AbstractAppInitiatedAct
 
         updateProfilePage.assertCurrent();
 
-        updateProfilePage.prepareUpdate().username("test-user@localhost").firstName("New first").lastName("New last").submit();
+        updateProfilePage.prepareUpdate().username("test-user@localhost").firstName("New first").lastName("New last").email("new@email.com").submit();
 
         updateProfilePage.assertCurrent();
 
         // assert that form holds submitted values during validation error
         Assert.assertEquals("New first", updateProfilePage.getFirstName());
         Assert.assertEquals("New last", updateProfilePage.getLastName());
+        Assert.assertEquals("new@email.com", updateProfilePage.getEmail());
         Assert.assertEquals("test-user@localhost", updateProfilePage.getUsername());
 
         Assert.assertEquals("Username already exists.", updateProfilePage.getInputErrors().getUsernameError());
+
+        events.assertEmpty();
+    }
+
+    @Test
+    public void updateProfileDuplicatedEmail() {
+        doAIA();
+
+        loginPage.login("test-user@localhost", "password");
+
+        updateProfilePage.assertCurrent();
+
+        updateProfilePage.prepareUpdate().username("test-user@localhost").firstName("New first").lastName("New last").email("keycloak-user@localhost").submit();
+
+        updateProfilePage.assertCurrent();
+
+        // assert that form holds submitted values during validation error
+        Assert.assertEquals("New first", updateProfilePage.getFirstName());
+        Assert.assertEquals("New last", updateProfilePage.getLastName());
+        Assert.assertEquals("keycloak-user@localhost", updateProfilePage.getEmail());
+
+        Assert.assertEquals("Email already exists.", updateProfilePage.getInputErrors().getEmailError());
 
         events.assertEmpty();
     }
@@ -291,7 +363,7 @@ public class AppInitiatedActionUpdateProfileTest extends AbstractAppInitiatedAct
         // Expire cookies and assert the page with "back to application" link present
         driver.manage().deleteAllCookies();
 
-        updateProfilePage.prepareUpdate().username("test-user@localhost").firstName("New first").lastName("New last").submit();
+        updateProfilePage.prepareUpdate().username("test-user@localhost").firstName("New first").lastName("New last").email("keycloak-user@localhost").submit();
         errorPage.assertCurrent();
 
         String backToAppLink = errorPage.getBackToApplicationLink();

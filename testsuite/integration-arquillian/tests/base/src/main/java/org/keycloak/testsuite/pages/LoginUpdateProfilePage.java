@@ -88,6 +88,10 @@ public class LoginUpdateProfilePage extends AbstractPage {
         return lastNameInput.getAttribute("value");
     }
     
+    public String getEmail() {
+        return emailInput.getAttribute("value");
+    }
+
     public String getDepartment() {
         return departmentInput.getAttribute("value");
     }
