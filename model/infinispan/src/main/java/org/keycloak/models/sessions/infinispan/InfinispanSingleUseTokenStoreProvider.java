@@ -50,17 +50,17 @@ public class InfinispanSingleUseTokenStoreProvider implements SingleUseTokenStor
     }
 
     @Override
-    public void put(String codeId, long lifespanSeconds, Map<String, String> codeData) {
-        ActionTokenValueEntity tokenValue = new ActionTokenValueEntity(codeData);
+    public void put(String key, long lifespanSeconds, Map<String, String> notes) {
+        ActionTokenValueEntity tokenValue = new ActionTokenValueEntity(notes);
 
         try {
             BasicCache<String, ActionTokenValueEntity> cache = tokenCache.get();
             long lifespanMs = InfinispanUtil.toHotrodTimeMs(cache, Time.toMillis(lifespanSeconds));
-            cache.put(codeId, tokenValue, lifespanMs, TimeUnit.MILLISECONDS);
+            cache.put(key, tokenValue, lifespanMs, TimeUnit.MILLISECONDS);
         } catch (HotRodClientException re) {
             // No need to retry. The hotrod (remoteCache) has some retries in itself in case of some random network error happened.
             if (logger.isDebugEnabled()) {
-                logger.debugf(re, "Failed when adding code %s", codeId);
+                logger.debugf(re, "Failed when adding code %s", key);
             }
 
             throw re;
@@ -74,18 +74,17 @@ public class InfinispanSingleUseTokenStoreProvider implements SingleUseTokenStor
         return actionTokenValueEntity != null ? actionTokenValueEntity.getNotes() : null;
     }
 
-
     @Override
-    public Map<String, String> remove(String codeId) {
+    public Map<String, String> remove(String key) {
         try {
             BasicCache<String, ActionTokenValueEntity> cache = tokenCache.get();
-            ActionTokenValueEntity existing = cache.remove(codeId);
+            ActionTokenValueEntity existing = cache.remove(key);
             return existing == null ? null : existing.getNotes();
         } catch (HotRodClientException re) {
             // No need to retry. The hotrod (remoteCache) has some retries in itself in case of some random network error happened.
             // In case of lock conflict, we don't want to retry anyway as there was likely an attempt to remove the code from different place.
             if (logger.isDebugEnabled()) {
-                logger.debugf(re, "Failed when removing code %s", codeId);
+                logger.debugf(re, "Failed when removing code %s", key);
             }
 
             return null;
@@ -99,28 +98,22 @@ public class InfinispanSingleUseTokenStoreProvider implements SingleUseTokenStor
     }
 
     @Override
-    public boolean putIfAbsent(String tokenId, long lifespanInSeconds) {
+    public boolean putIfAbsent(String key, long lifespanInSeconds) {
         ActionTokenValueEntity tokenValue = new ActionTokenValueEntity(null);
 
         try {
             BasicCache<String, ActionTokenValueEntity> cache = tokenCache.get();
             long lifespanMs = InfinispanUtil.toHotrodTimeMs(cache, Time.toMillis(lifespanInSeconds));
-            ActionTokenValueEntity existing = cache.putIfAbsent(tokenId, tokenValue, lifespanMs, TimeUnit.MILLISECONDS);
+            ActionTokenValueEntity existing = cache.putIfAbsent(key, tokenValue, lifespanMs, TimeUnit.MILLISECONDS);
             return existing == null;
         } catch (HotRodClientException re) {
             // No need to retry. The hotrod (remoteCache) has some retries in itself in case of some random network error happened.
             // In case of lock conflict, we don't want to retry anyway as there was likely an attempt to use the token from different place.
-            logger.debugf(re, "Failed when adding token %s", tokenId);
+            logger.debugf(re, "Failed when adding token %s", key);
 
             return false;
         }
 
-    }
-
-    @Override
-    public boolean contains(String tokenId) {
-        BasicCache<String, ActionTokenValueEntity> cache = tokenCache.get();
-        return cache.containsKey(tokenId);
     }
 
     @Override
