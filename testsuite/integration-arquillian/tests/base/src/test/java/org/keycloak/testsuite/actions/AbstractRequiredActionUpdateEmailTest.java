@@ -36,7 +36,7 @@ import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.UserBuilder;
 
-@EnableFeature(value = Profile.Feature.UPDATE_EMAIL, skipRestart = true)
+@EnableFeature(Profile.Feature.UPDATE_EMAIL)
 public abstract class AbstractRequiredActionUpdateEmailTest extends AbstractTestRealmKeycloakTest {
 
 	@Rule

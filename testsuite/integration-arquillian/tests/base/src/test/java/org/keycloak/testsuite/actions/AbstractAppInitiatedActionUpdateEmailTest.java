@@ -29,7 +29,7 @@ import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.pages.EmailUpdatePage;
 import org.keycloak.testsuite.util.UserBuilder;
 
-@EnableFeature(value = Profile.Feature.UPDATE_EMAIL, skipRestart = true)
+@EnableFeature(Profile.Feature.UPDATE_EMAIL)
 public abstract class AbstractAppInitiatedActionUpdateEmailTest extends AbstractAppInitiatedActionTest {
 
 	@Page

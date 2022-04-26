@@ -37,7 +37,7 @@ import org.keycloak.testsuite.auth.page.login.UpdateEmailPage;
 import org.keycloak.testsuite.ui.account2.page.AbstractLoggedInPage;
 import org.keycloak.testsuite.ui.account2.page.PersonalInfoPage;
 
-@EnableFeature(value = Profile.Feature.UPDATE_EMAIL,skipRestart = true)
+@EnableFeature(Profile.Feature.UPDATE_EMAIL)
 public class UpdateEmailTest extends BaseAccountPageTest {
 
     @Page
