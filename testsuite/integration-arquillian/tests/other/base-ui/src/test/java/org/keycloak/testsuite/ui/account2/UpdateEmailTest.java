@@ -28,6 +28,7 @@ import org.junit.Test;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
 import org.keycloak.models.UserModel;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.auth.page.login.UpdateEmailPage;
@@ -58,6 +59,7 @@ public class UpdateEmailTest extends BaseAccountPageTest {
     @After
     public void clean() {
         disableUpdateEmailRequiredAction();
+        disableRegistration();
     }
 
     @Test
@@ -69,6 +71,13 @@ public class UpdateEmailTest extends BaseAccountPageTest {
     @Test
     public void updateEmailLinkNotVisibleWithoutUpdateEmailActionEnabled() {
         disableUpdateEmailRequiredAction();
+        refreshPageAndWaitForLoad();
+        personalInfoPage.assertUpdateEmailLinkVisible(false);
+    }
+
+    @Test
+    public void updateEmailLinkVisibleWithUpdateEmailActionEnabledAndRegistrationEmailAsUsernameAndEditUsernameNotAllowed() {
+        enableRegistration(true, false);
         refreshPageAndWaitForLoad();
         personalInfoPage.assertUpdateEmailLinkVisible(false);
     }
@@ -104,6 +113,20 @@ public class UpdateEmailTest extends BaseAccountPageTest {
         RequiredActionProviderRepresentation updateEmail = testRealmResource().flows().getRequiredAction(UserModel.RequiredAction.UPDATE_EMAIL.name());
         updateEmail.setEnabled(true);
         testRealmResource().flows().updateRequiredAction(UserModel.RequiredAction.UPDATE_EMAIL.name(), updateEmail);
+    }
+
+    private void enableRegistration(boolean emailAsUsername, boolean usernameEditionAllowed) {
+        RealmRepresentation realmRepresentation = testRealmResource().toRepresentation();
+        realmRepresentation.setRegistrationEmailAsUsername(emailAsUsername);
+        realmRepresentation.setEditUsernameAllowed(usernameEditionAllowed);
+        testRealmResource().update(realmRepresentation);
+    }
+
+    private void disableRegistration() {
+        RealmRepresentation realmRepresentation = testRealmResource().toRepresentation();
+        realmRepresentation.setRegistrationEmailAsUsername(false);
+        realmRepresentation.setEditUsernameAllowed(false);
+        testRealmResource().update(realmRepresentation);
     }
 
 }

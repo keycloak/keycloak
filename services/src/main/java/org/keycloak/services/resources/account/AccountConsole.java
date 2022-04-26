@@ -145,7 +145,7 @@ public class AccountConsole {
 
             map.put("deleteAccountAllowed", deleteAccountAllowed);
             RequiredActionProviderModel updateEmailActionProvider = realm.getRequiredActionProviderByAlias(UserModel.RequiredAction.UPDATE_EMAIL.name());
-            map.put("emailUpdateAllowed", updateEmailActionProvider != null && updateEmailActionProvider.isEnabled());
+            map.put("emailUpdateAllowed", updateEmailActionProvider != null && updateEmailActionProvider.isEnabled() && (!realm.isRegistrationEmailAsUsername() || realm.isEditUsernameAllowed()));
 
             FreeMarkerUtil freeMarkerUtil = new FreeMarkerUtil();
             String result = freeMarkerUtil.processTemplate(map, "index.ftl", theme);
