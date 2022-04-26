@@ -47,7 +47,8 @@
                 isMyResourcesEnabled : ${(realm.userManagedAccessAllowed && isAuthorizationEnabled)?c},
                 isTotpConfigured : ${isTotpConfigured?c},
                 deleteAccountAllowed : ${deleteAccountAllowed?c},
-                emailUpdateAllowed: ${emailUpdateAllowed?c}
+                updateEmailFeatureEnabled: ${updateEmailFeatureEnabled?c},
+                updateEmailActionEnabled: ${updateEmailActionEnabled?c}
             }
 
             var availableLocales = [];
