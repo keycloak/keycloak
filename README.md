@@ -29,6 +29,50 @@ Alternativamente, puede usar la imagen de Docker ejecutando:
 
 Para obtener más detalles, consulte la [documentación de Keycloak](https://www.keycloak.org/documentation.html).
 
+## Guia de usuario
+
+Instalación
+
+    * Instalar JDK 11 o posterior, es necesario tenerla instalada ya que Keycloak funciona con Java.
+    * Descargar  keycloak-18.0.0.zip
+    * Extraer los archivos del zip keycloak-18.0.0.zip
+    * Abrir el directorio de keycloak-18.0.0
+    * Abrir terminal, posicionándose en la carpeta de keycloak-18.0.0
+    * En Linux ejecutar: bin/kc.sh start-dev
+    * En Windows ejecutar:  bin/kc.bat start-dev
+
+Crear cuenta de administrador
+
+Una vez terminada la instalación, puede crear su cuenta como administrador, Keycloak no tiene administrador predeterminado.
+Seguir los pasos siguientes para comenzar su configuración:
+
+    * Abra http://localhost:8080/
+    * Complete el formulario con su nombre de usuario y contraseña
+    * Vaya a la consola de administración de Keycloak e inicie sesión, con su usuario y contraseña.
+
+Cree un Reino.
+
+Un reino (realm) equivale a crear un grupo aislado de aplicaciones y usuarios. Master es el reino predeterminado y no debe usarse para sus aplicaciones.
+
+- Posiciones en la esquina superior izquierda donde dice master, haga clic en Add realm.
+- Llene el formulario con los valores: Name:myrealm.
+- Haga click en crear.
+
+Cree un Usuario
+
+Para agregar un usuario en un reino haga lo siguiente:
+
+- Haga click en el menú de la izquierda en Users
+- Haga click en Adduser
+- Llene el formulario
+  Iniciar sesión en la consola de la cuenta
+- Abra Keycloak Account Console
+- Inicie sesión con su correo y contraseña creado previamente
+  Registre una aplicación
+- Haga click en clientes
+- LLene el formulario con los datos de su aplicación
+- Haga clic en save
+
 ## Construir desde el código fuente.
 
 Para compilar desde el código fuente, consulte la [guía de creación y trabajo con código base](docs/building.md).
