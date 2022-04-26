@@ -2,6 +2,7 @@ export default {
   users: {
     title: "Users",
     usersExplain: "Placeholder for users explanation.",
+    userList: "User list",
     searchForUser: "Search user",
     startBySearchingAUser: "Start by searching for users",
     searchForUserDescription:

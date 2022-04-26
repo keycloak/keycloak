@@ -167,7 +167,6 @@ export default {
     resourceDeletedSuccess: "The resource successfully deleted",
     resourceDeletedError: "Could not remove the resource {{error}}",
     identityInformation: "Identity Information",
-    permissions: "Permissions",
     searchForPermission: "Search for permission",
     deleteScope: "Permanently delete authorization scope?",
     deleteScopeConfirm:
@@ -554,23 +553,5 @@ export default {
       never: "Never expires",
     },
     mappers: "Mappers",
-
-    permissionsEnabled: "Permissions enabled",
-    scopePermissions: {
-      "manage-description":
-        "Policies that decide if an administrator can manage this client",
-      "configure-description":
-        "Reduced management permissions for administrator. Cannot set scope, template, or protocol mappers.",
-      "view-description":
-        "Policies that decide if an administrator can view this client",
-      "map-roles-description":
-        "Policies that decide if an administrator can map roles defined by this client",
-      "map-roles-client-scope-description":
-        "Policies that decide if an administrator can apply roles defined by this client to the client scope of another client",
-      "map-roles-composite-description":
-        "Policies that decide if an administrator can apply roles defined by this client as a composite to another role",
-      "token-exchange-description":
-        "Policies that decide which clients are allowed exchange tokens for a token that is targeted to this client.",
-    },
   },
 };

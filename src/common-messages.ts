@@ -70,6 +70,7 @@ export default {
     retry: "Press here to refresh and continue",
     plus: "Plus",
     minus: "Minus",
+    confirm: "Confirm",
 
     clientScope: {
       default: "Default",
@@ -89,6 +90,52 @@ export default {
     sessions: "Sessions",
     events: "Events",
     mappers: "Mappers",
+    permissions: "Permissions",
+    permissionsList: "Permission list",
+    permissionsListIntro:
+      "Edit the permission list by clicking the scope-name. It then redirects to the permission details page of the client named <1>{{realm}}</1>",
+    usersPermissionsHint:
+      "Fine grained permissions for managing all users in realm.  You can define different policies for who is allowed to manage users in the realm.",
+    clientsPermissionsHint:
+      "Fine grained permissions for administrators that want to manage this client or apply roles defined by this client.",
+
+    permissionsScopeName: "Scope-name",
+    permissionsEnabled: "Permissions enabled",
+    permissionsDisable: "Disable permissions?",
+    permissionsDisableConfirm:
+      "If you disable the permissions, all the permissions in the list below will be delete automatically. In addition, the resources and scopes that are related will be removed",
+    scopePermissions: {
+      clients: {
+        "manage-description":
+          "Policies that decide if an administrator can manage this client",
+        "configure-description":
+          "Reduced management permissions for administrator. Cannot set scope, template, or protocol mappers.",
+        "view-description":
+          "Policies that decide if an administrator can view this client",
+        "map-roles-description":
+          "Policies that decide if an administrator can map roles defined by this client",
+        "map-roles-client-scope-description":
+          "Policies that decide if an administrator can apply roles defined by this client to the client scope of another client",
+        "map-roles-composite-description":
+          "Policies that decide if an administrator can apply roles defined by this client as a composite to another role",
+        "token-exchange-description":
+          "Policies that decide which clients are allowed exchange tokens for a token that is targeted to this client.",
+      },
+      users: {
+        "view-description":
+          "Policies that decide if an administrator can view all users in realm",
+        "manage-description":
+          "Policies that decide if an administrator can manage all users in the realm",
+        "map-roles-description":
+          "Policies that decide if administrator can map roles for all users",
+        "manage-group-membership-description":
+          "Policies that decide if an administrator can manage group membership for all users in the realm.  This is used in conjunction with specific group policy",
+        "impersonate-description":
+          "Policies that decide if administrator can impersonate other users",
+        "user-impersonated-description":
+          "Policies that decide which users can be impersonated.  These policies are applied to the user being impersonated.",
+      },
+    },
 
     configure: "Configure",
     realmSettings: "Realm settings",

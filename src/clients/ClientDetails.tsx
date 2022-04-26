@@ -69,7 +69,7 @@ import {
 import { toClientScopesTab } from "./routes/ClientScopeTab";
 import { AuthorizationExport } from "./authorization/AuthorizationExport";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
-import { PermissionsTab } from "./permissions/PermissionTab";
+import { PermissionsTab } from "../components/permission-tab/PermissionTab";
 import { keyValueToArray } from "../components/key-value-form/key-value-convert";
 
 type ClientDetailHeaderProps = {
@@ -524,7 +524,9 @@ export default function ClientDetails() {
                   <Tab
                     id="permissions"
                     data-testid="authorizationPermissions"
-                    title={<TabTitleText>{t("permissions")}</TabTitleText>}
+                    title={
+                      <TabTitleText>{t("common:permissions")}</TabTitleText>
+                    }
                     {...authenticationRoute("permissions")}
                   >
                     <AuthorizationPermissions clientId={clientId} />
@@ -565,10 +567,10 @@ export default function ClientDetails() {
                 <Tab
                   id="permissions"
                   data-testid="permissionsTab"
-                  title={<TabTitleText>{t("permissions")}</TabTitleText>}
+                  title={<TabTitleText>{t("common:permissions")}</TabTitleText>}
                   {...route("permissions")}
                 >
-                  <PermissionsTab clientId={client.id!} />
+                  <PermissionsTab id={client.id!} type="clients" />
                 </Tab>
               )}
             <Tab

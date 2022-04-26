@@ -9,6 +9,8 @@ import {
   KebabToggle,
   Label,
   PageSection,
+  Tab,
+  TabTitleText,
   Text,
   TextContent,
   TextInput,
@@ -42,6 +44,12 @@ import { toUser } from "./routes/User";
 import { toAddUser } from "./routes/AddUser";
 import helpUrls from "../help-urls";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
+import { PermissionsTab } from "../components/permission-tab/PermissionTab";
+import { toUsers, UserTab } from "./routes/Users";
+import {
+  routableTab,
+  RoutableTabs,
+} from "../components/routable-tabs/RoutableTabs";
 
 import "./user-section.css";
 
@@ -277,6 +285,15 @@ export default function UsersSection() {
     return <KeycloakSpinner />;
   }
 
+  const route = (tab: UserTab) =>
+    routableTab({
+      to: toUsers({
+        realm: realmName,
+        tab,
+      }),
+      history,
+    });
+
   return (
     <>
       <DeleteConfirm />
@@ -285,111 +302,137 @@ export default function UsersSection() {
         titleKey="users:title"
         subKey="users:usersExplain"
         helpUrl={helpUrls.usersUrl}
+        divider={false}
       />
       <PageSection
         data-testid="users-page"
         variant="light"
         className="pf-u-p-0"
       >
-        <KeycloakDataTable
-          key={key}
-          loader={loader}
-          isPaginated
-          ariaLabelKey="users:title"
-          searchPlaceholderKey="users:searchForUser"
-          canSelectAll
-          onSelect={(rows) => setSelectedRows([...rows])}
-          emptyState={
-            !listUsers ? (
-              <>
-                <Toolbar>
-                  <ToolbarContent>
-                    <ToolbarItem>
-                      <InputGroup>
-                        <TextInput
-                          name="search-input"
-                          type="search"
-                          aria-label={t("search")}
-                          placeholder={t("users:searchForUser")}
-                          onChange={(value) => {
-                            setSearchUser(value);
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              refresh();
-                            }
-                          }}
-                        />
-                        <Button
-                          variant={ButtonVariant.control}
-                          aria-label={t("common:search")}
-                          onClick={refresh}
-                        >
-                          <SearchIcon />
-                        </Button>
-                      </InputGroup>
-                    </ToolbarItem>
-                    {toolbar}
-                  </ToolbarContent>
-                </Toolbar>
-                <EmptyState data-testid="empty-state" variant="large">
-                  <TextContent className="kc-search-users-text">
-                    <Text>{t("searchForUserDescription")}</Text>
-                  </TextContent>
-                </EmptyState>
-              </>
-            ) : (
-              <ListEmptyState
-                message={t("noUsersFound")}
-                instructions={t("emptyInstructions")}
-                primaryActionText={t("createNewUser")}
-                onPrimaryAction={goToCreate}
-              />
-            )
-          }
-          toolbarItem={toolbar}
-          actionResolver={(rowData: IRowData) => {
-            const user: UserRepresentation = rowData.data;
-            if (!user.access?.manage) return [];
+        <RoutableTabs
+          data-testid="user-tabs"
+          defaultLocation={toUsers({
+            realm: realmName,
+            tab: "list",
+          })}
+          isBox
+          mountOnEnter
+        >
+          <Tab
+            id="list"
+            data-testid="listTab"
+            title={<TabTitleText>{t("userList")}</TabTitleText>}
+            {...route("list")}
+          >
+            <KeycloakDataTable
+              key={key}
+              loader={loader}
+              isPaginated
+              ariaLabelKey="users:title"
+              searchPlaceholderKey="users:searchForUser"
+              canSelectAll
+              onSelect={(rows) => setSelectedRows([...rows])}
+              emptyState={
+                !listUsers ? (
+                  <>
+                    <Toolbar>
+                      <ToolbarContent>
+                        <ToolbarItem>
+                          <InputGroup>
+                            <TextInput
+                              name="search-input"
+                              type="search"
+                              aria-label={t("search")}
+                              placeholder={t("users:searchForUser")}
+                              onChange={(value) => {
+                                setSearchUser(value);
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                  refresh();
+                                }
+                              }}
+                            />
+                            <Button
+                              variant={ButtonVariant.control}
+                              aria-label={t("common:search")}
+                              onClick={refresh}
+                            >
+                              <SearchIcon />
+                            </Button>
+                          </InputGroup>
+                        </ToolbarItem>
+                        {toolbar}
+                      </ToolbarContent>
+                    </Toolbar>
+                    <EmptyState data-testid="empty-state" variant="large">
+                      <TextContent className="kc-search-users-text">
+                        <Text>{t("searchForUserDescription")}</Text>
+                      </TextContent>
+                    </EmptyState>
+                  </>
+                ) : (
+                  <ListEmptyState
+                    message={t("noUsersFound")}
+                    instructions={t("emptyInstructions")}
+                    primaryActionText={t("createNewUser")}
+                    onPrimaryAction={goToCreate}
+                  />
+                )
+              }
+              toolbarItem={toolbar}
+              actionResolver={(rowData: IRowData) => {
+                const user: UserRepresentation = rowData.data;
+                if (!user.access?.manage) return [];
 
-            return [
-              {
-                title: t("common:delete"),
-                onClick: () => {
-                  setSelectedRows([user]);
-                  toggleDeleteDialog();
+                return [
+                  {
+                    title: t("common:delete"),
+                    onClick: () => {
+                      setSelectedRows([user]);
+                      toggleDeleteDialog();
+                    },
+                  },
+                ];
+              }}
+              columns={[
+                {
+                  name: "username",
+                  displayKey: "users:username",
+                  cellRenderer: UserDetailLink,
                 },
-              },
-            ];
-          }}
-          columns={[
-            {
-              name: "username",
-              displayKey: "users:username",
-              cellRenderer: UserDetailLink,
-            },
-            {
-              name: "email",
-              displayKey: "users:email",
-              cellRenderer: ValidatedEmail,
-            },
-            {
-              name: "lastName",
-              displayKey: "users:lastName",
-              cellFormatters: [emptyFormatter()],
-            },
-            {
-              name: "firstName",
-              displayKey: "users:firstName",
-              cellFormatters: [emptyFormatter()],
-            },
-            {
-              name: "status",
-              displayKey: "users:status",
-              cellRenderer: StatusRow,
-            },
-          ]}
-        />
+                {
+                  name: "email",
+                  displayKey: "users:email",
+                  cellRenderer: ValidatedEmail,
+                },
+                {
+                  name: "lastName",
+                  displayKey: "users:lastName",
+                  cellFormatters: [emptyFormatter()],
+                },
+                {
+                  name: "firstName",
+                  displayKey: "users:firstName",
+                  cellFormatters: [emptyFormatter()],
+                },
+                {
+                  name: "status",
+                  displayKey: "users:status",
+                  cellRenderer: StatusRow,
+                },
+              ]}
+            />
+          </Tab>
+          <Tab
+            id="permissions"
+            data-testid="permissionsTab"
+            title={<TabTitleText>{t("common:permissions")}</TabTitleText>}
+            {...route("permissions")}
+          >
+            <PermissionsTab type="users" />
+          </Tab>
+        </RoutableTabs>
       </PageSection>
     </>
   );
