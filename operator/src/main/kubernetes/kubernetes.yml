@@ -5,6 +5,9 @@ metadata:
 rules:
   - apiGroups:
       - apps
+      # Extensions enabled for backward compatibility:
+      # https://github.com/fabric8io/kubernetes-client/issues/3996
+      - extensions
     resources:
       - deployments
     verbs:

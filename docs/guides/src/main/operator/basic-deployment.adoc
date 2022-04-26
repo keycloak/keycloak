@@ -5,6 +5,7 @@
 
 <@tmpl.guide
 title="Basic Keycloak Deployment"
+priority=20
 summary="How to install Keycloak using the Operator on Kubernetes or OpenShift">
 
 == Basic Keycloak Deployment
@@ -68,7 +69,7 @@ spec:
   - port: 5432
     targetPort: 5432
 EOF
-kubectl|oc apply -f example-postgres.yaml
+kubectl apply -f example-postgres.yaml
 ----
 
 ==== Hostname
@@ -113,7 +114,7 @@ The Keycloak CRD allow you to customize several fields but, for a simple deploym
 [source,bash]
 ----
 cat <<EOF >> example-kc.yaml
-apiVersion: keycloak.org/v2alpha1
+apiVersion: k8s.keycloak.org/v2alpha1
 kind: Keycloak
 metadata:
   name: example-kc
@@ -135,7 +136,7 @@ spec:
   hostname: test.keycloak.org
   tlsSecret: example-tls-secret
 EOF
-kubectl|oc apply -f example-kc.yaml
+kubectl apply -f example-kc.yaml
 ----
 
 And you can check that the Keycloak instance has been provisioned in the cluster by looking at the status of the created CR:
@@ -170,5 +171,25 @@ For debugging and development purposes we suggest you to directly connect to the
 ----
 kubectl port-forward service/example-kc-service 8443:8443
 ----
+
+==== Accessing the Admin Console
+
+When deploying Keycloak, the operator generates an arbitrary initial admin `username` and `password` and stores those credentials as a Kubernetes basic-auth Secret in the same namespace as the CR.
+
+.Warning:
+[NOTE]
+Change the default admin credentials and enable MFA in Keycloak before going to production.
+
+To fetch the initial admin credentials you have to read and decode a Kubernetes Secret.
+The Secret name is derived from the Keycloak CR name plus the fixed suffix `-initial-admin`.
+To get the username and password for the `example-kc` CR use the following command:
+
+[source,bash]
+----
+kubectl get secret example-kc-initial-admin -o jsonpath='{.data.username}' | base64 --decode
+kubectl get secret example-kc-initial-admin -o jsonpath='{.data.password}' | base64 --decode
+----
+
+You can use those credentials to access the Admin Console or the Admin REST API.
 
 </@tmpl.guide>

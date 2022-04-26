@@ -58,6 +58,11 @@ final class DatabasePropertyMappers {
                         .description("Sets the database name of the default JDBC URL of the chosen vendor. If the `db-url` option is set, this option is ignored.")
                         .paramLabel("dbname")
                         .build(),
+                builder().from("db-url-port")
+                        .to("kc.db-url-port")
+                        .description("Sets the port of the default JDBC URL of the chosen vendor. If the `db-url` option is set, this option is ignored.")
+                        .paramLabel("port")
+                        .build(),
                 builder().from("db-url-properties")
                         .to("kc.db-url-properties")
                         .description("Sets the properties of the default JDBC URL of the chosen vendor. If the `db-url` option is set, this option is ignored.")

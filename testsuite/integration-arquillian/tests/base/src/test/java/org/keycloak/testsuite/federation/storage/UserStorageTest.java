@@ -4,6 +4,7 @@ import org.apache.commons.io.FileUtils;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Rule;
@@ -116,6 +117,8 @@ public class UserStorageTest extends AbstractAuthTest {
 
     @Before
     public void addProvidersBeforeTest() throws URISyntaxException, IOException {
+        Assume.assumeTrue("User cache disabled.", isUserCacheEnabled());
+
         ComponentRepresentation memProvider = new ComponentRepresentation();
         memProvider.setName("memory");
         memProvider.setProviderId(UserMapStorageFactory.PROVIDER_ID);

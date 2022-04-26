@@ -27,9 +27,13 @@ import java.util.List;
 
 public class KeycloakSpec {
 
+    @JsonPropertyDescription("Number of Keycloak instances in HA mode. Default is 1.")
     private int instances = 1;
+    @JsonPropertyDescription("Custom Keycloak image to be used.")
     private String image;
-    private List<ValueOrSecret> serverConfiguration; // can't use Set due to a bug in Sundrio
+    @JsonPropertyDescription("Configuration of the Keycloak server.\n" +
+            "expressed as a keys (reference: https://www.keycloak.org/server/all-config) and values that can be either direct values or references to secrets.")
+    private List<ValueOrSecret> serverConfiguration; // can't use Set due to a bug in Sundrio https://github.com/sundrio/sundrio/issues/316
 
     @NotNull
     @JsonPropertyDescription("Hostname for the Keycloak server.\n" +

@@ -365,7 +365,7 @@ public class UserConsentWithUserStorageModelTest extends AbstractTestRealmKeyclo
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession sesDelClient2) -> {
             KeycloakSession currentSession = sesDelClient2;
             RealmManager realmManager = new RealmManager(currentSession);
-            RealmModel realm = realmManager.getRealm("original");
+            RealmModel realm = realmManager.getRealmByName("original");
 
             ClientModel fooClient = realm.getClientByClientId("foo-client");
             Assert.assertNull(realm.getClientByClientId("bar-client"));

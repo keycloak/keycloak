@@ -16,3 +16,4 @@
 #
 
 org.keycloak.models.map.storage.jpa.liquibase.extension.JsonDataType
+org.keycloak.models.map.storage.jpa.liquibase.extension.KeycloakKeyDataType

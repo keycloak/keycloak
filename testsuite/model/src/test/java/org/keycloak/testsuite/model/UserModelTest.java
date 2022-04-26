@@ -216,16 +216,7 @@ public class UserModelTest extends KeycloakModelTest {
             log.debugf("Removing selected users from backend");
             IntStream.range(FIRST_DELETED_USER_INDEX, LAST_DELETED_USER_INDEX).forEach(j -> {
                 final UserModel user = session.users().getUserByUsername(realm, "user-" + j);
-                try {
-                    ((UserRegistrationProvider) instance).removeUser(realm, user);
-                } catch (ModelException ex) {
-                    // removing user might have failed for an LDAP reason
-                    // as this is not the main subject under test, retry once more to delete the entry
-                    if (ex.getMessage().contains("Could not unbind DN") && ex.getCause() instanceof NamingException) {
-                        log.warn("removing failed, retrying", ex);
-                        ((UserRegistrationProvider) instance).removeUser(realm, user);
-                    }
-                }
+                ((UserRegistrationProvider) instance).removeUser(realm, user);
             });
             return null;
         });

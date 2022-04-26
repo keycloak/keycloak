@@ -16,6 +16,7 @@
  */
 package org.keycloak.models.map.storage.ldap;
 
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
@@ -39,13 +40,18 @@ public class LdapMapStorageProvider implements MapStorageProvider {
     @Override
     @SuppressWarnings("unchecked")
     public <V extends AbstractEntity, M> MapStorage<V, M> getStorage(Class<M> modelType, Flag... flags) {
-        return session -> {
-            MapKeycloakTransaction<V, M> sessionTx = session.getAttribute(sessionTxPrefix + modelType.hashCode(), MapKeycloakTransaction.class);
-            if (sessionTx == null) {
-                sessionTx = factory.createTransaction(session, modelType);
-                session.setAttribute(sessionTxPrefix + modelType.hashCode(), sessionTx);
+        // MapStorage is not a functional interface, therefore don't try to convert it to a lambda as additional methods might be added in the future
+        //noinspection Convert2Lambda
+        return new MapStorage<V, M>() {
+            @Override
+            public MapKeycloakTransaction<V, M> createTransaction(KeycloakSession session) {
+                MapKeycloakTransaction<V, M> sessionTx = session.getAttribute(sessionTxPrefix + modelType.hashCode(), MapKeycloakTransaction.class);
+                if (sessionTx == null) {
+                    sessionTx = factory.createTransaction(session, modelType);
+                    session.setAttribute(sessionTxPrefix + modelType.hashCode(), sessionTx);
+                }
+                return sessionTx;
             }
-            return sessionTx;
         };
     }
 

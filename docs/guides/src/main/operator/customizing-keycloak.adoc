@@ -31,7 +31,7 @@ To provide a custom image you have to define the `image` field in the Keycloak C
 
 [source,yaml]
 ----
-apiVersion: keycloak.org/v2alpha1
+apiVersion: k8s.keycloak.org/v2alpha1
 kind: Keycloak
 metadata:
   name: example-kc

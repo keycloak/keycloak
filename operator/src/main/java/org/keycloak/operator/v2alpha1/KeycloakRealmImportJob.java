@@ -26,6 +26,7 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.batch.v1.Job;
 import io.fabric8.kubernetes.api.model.batch.v1.JobBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.ResourceNotFoundException;
 import io.fabric8.kubernetes.client.utils.KubernetesResourceUtil;
 import io.quarkus.logging.Log;
 import org.keycloak.operator.OperatorManagedResource;
@@ -55,7 +56,9 @@ public class KeycloakRealmImportJob extends OperatorManagedResource {
 
     @Override
     protected Optional<HasMetadata> getReconciledResource() {
-        if (existingJob == null) {
+        if (existingDeployment == null) {
+            throw new ResourceNotFoundException("Keycloak Deployment not found: " + getKeycloakName());
+        } else if (existingJob == null) {
             Log.info("Creating a new Job");
             return Optional.of(createImportJob());
         } else {

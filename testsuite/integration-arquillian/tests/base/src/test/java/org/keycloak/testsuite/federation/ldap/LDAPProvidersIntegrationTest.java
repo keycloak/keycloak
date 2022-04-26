@@ -18,6 +18,7 @@
 package org.keycloak.testsuite.federation.ldap;
 
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -35,7 +36,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.cache.CachedUserModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -46,7 +46,6 @@ import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.RealmManager;
-import org.keycloak.services.managers.UserStorageSyncManager;
 import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
@@ -62,7 +61,6 @@ import org.keycloak.storage.ldap.mappers.HardcodedLDAPRoleStorageMapper;
 import org.keycloak.storage.ldap.mappers.HardcodedLDAPRoleStorageMapperFactory;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapper;
-import org.keycloak.storage.user.SynchronizationResult;
 import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
@@ -161,7 +159,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
 
         testingClient.server().run(session -> {
             RealmManager manager = new RealmManager(session);
-            RealmModel appRealm = manager.getRealm("test");
+            RealmModel appRealm = manager.getRealmByName("test");
             UserModel user = session.userLocalStorage().getUserByUsername(appRealm, "johnkeycloak");
             Assert.assertNull(user);
         });
@@ -575,6 +573,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
 
     @Test
     public void testHardcodedAttributeMapperTest() throws Exception {
+        Assume.assumeTrue("User cache disabled.", isUserCacheEnabled());
         // Create hardcoded mapper for "description"
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
@@ -854,6 +853,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
 
     @Test
     public void testSearchWithCustomLDAPFilter() {
+        Assume.assumeTrue("User cache disabled.", isUserCacheEnabled());
         // Add custom filter for searching users
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
@@ -1053,6 +1053,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
     // KEYCLOAK-9002
     @Test
     public void testSearchWithPartiallyCachedUser() {
+        Assume.assumeTrue("User cache disabled.", isUserCacheEnabled());
         testingClient.server().run(session -> {
             session.userCache().clear();
         });
@@ -1079,6 +1080,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
 
     @Test
     public void testLDAPUserRefreshCache() {
+        Assume.assumeTrue("User cache disabled.", isUserCacheEnabled());
         testingClient.server().run(session -> {
             session.userCache().clear();
         });
@@ -1122,6 +1124,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
 
     @Test
     public void testCacheUser() {
+        Assume.assumeTrue("User cache disabled.", isUserCacheEnabled());
         String userId = testingClient.server().fetch(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             ctx.getLdapModel().setCachePolicy(UserStorageProviderModel.CachePolicy.NO_CACHE);

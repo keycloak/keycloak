@@ -1102,7 +1102,7 @@
                 <cache.server.config.dir>${cache.server.home}/standalone/configuration</cache.server.config.dir>
                 <keycloak.testsuite.logging.pattern>%d{HH:mm:ss,SSS} [%t] %-5p [%c{1.}] %m%n</keycloak.testsuite.logging.pattern>
                 <keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>false</keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>
-                <keycloak.connectionsInfinispan.hotrodProtocolVersion>2.9</keycloak.connectionsInfinispan.hotrodProtocolVersion>
+                <keycloak.connectionsInfinispan.hotrodProtocolVersion>PROTOCOL_VERSION_30</keycloak.connectionsInfinispan.hotrodProtocolVersion>
             </properties>
             <dependencies>
                 <dependency>
@@ -1173,7 +1173,7 @@
                 <cache.server.config.dir>${cache.server.home}/standalone/configuration</cache.server.config.dir>
                 <keycloak.testsuite.logging.pattern>%d{HH:mm:ss,SSS} [%t] %-5p [%c{1.}] %m%n</keycloak.testsuite.logging.pattern>
                 <keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>false</keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>
-                <keycloak.connectionsInfinispan.hotrodProtocolVersion>2.9</keycloak.connectionsInfinispan.hotrodProtocolVersion>
+                <keycloak.connectionsInfinispan.hotrodProtocolVersion>PROTOCOL_VERSION_30</keycloak.connectionsInfinispan.hotrodProtocolVersion>
             </properties>
             <dependencies>
                 <dependency>
@@ -1244,7 +1244,7 @@
                 <auth.server.crossdc>true</auth.server.crossdc>
                 <keycloak.testsuite.logging.pattern>%d{HH:mm:ss,SSS} [%t] %-5p [%c{1.}] %m%n</keycloak.testsuite.logging.pattern>
                 <keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>false</keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>
-                <keycloak.connectionsInfinispan.hotrodProtocolVersion>2.9</keycloak.connectionsInfinispan.hotrodProtocolVersion>
+                <keycloak.connectionsInfinispan.hotrodProtocolVersion>PROTOCOL_VERSION_30</keycloak.connectionsInfinispan.hotrodProtocolVersion>
                 <skip.clean.second.cache>true</skip.clean.second.cache>
             </properties>
             <build>
@@ -1341,7 +1341,7 @@
                 <auth.server.crossdc>true</auth.server.crossdc>
                 <keycloak.testsuite.logging.pattern>%d{HH:mm:ss,SSS} [%t] %-5p [%c{1.}] %m%n</keycloak.testsuite.logging.pattern>
                 <keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>false</keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>
-                <keycloak.connectionsInfinispan.hotrodProtocolVersion>2.9</keycloak.connectionsInfinispan.hotrodProtocolVersion>
+                <keycloak.connectionsInfinispan.hotrodProtocolVersion>PROTOCOL_VERSION_30</keycloak.connectionsInfinispan.hotrodProtocolVersion>
                 <skip.clean.second.cache>true</skip.clean.second.cache>
             </properties>
             <build>
@@ -1503,6 +1503,8 @@
                                     <keycloak.role.map.storage.provider>hotrod</keycloak.role.map.storage.provider>
                                     <keycloak.user.map.storage.provider>hotrod</keycloak.user.map.storage.provider>
                                     <keycloak.loginFailure.map.storage.provider>hotrod</keycloak.loginFailure.map.storage.provider>
+                                    <keycloak.realm.map.storage.provider>hotrod</keycloak.realm.map.storage.provider>
+                                    <keycloak.userSession.map.storage.provider>hotrod</keycloak.userSession.map.storage.provider>
                                 </systemPropertyVariables>
                             </configuration>
                         </plugin>

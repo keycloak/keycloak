@@ -34,7 +34,7 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.keycloak.operator.utils.K8sUtils.getResourceFromMultiResourceFile;
+import static org.keycloak.operator.utils.K8sUtils.getResourceFromFile;
 
 public abstract class ClusterOperatorTest {
 
@@ -119,10 +119,10 @@ public abstract class ClusterOperatorTest {
   private static void createCRDs() {
     Log.info("Creating CRDs");
     try {
-      var deploymentCRD = k8sclient.load(new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + "keycloaks.keycloak.org-v1.yml"));
+      var deploymentCRD = k8sclient.load(new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + "keycloaks.k8s.keycloak.org-v1.yml"));
       deploymentCRD.createOrReplace();
       deploymentCRD.waitUntilReady(5, TimeUnit.SECONDS);
-      var realmImportCRD = k8sclient.load(new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + "keycloakrealmimports.keycloak.org-v1.yml"));
+      var realmImportCRD = k8sclient.load(new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + "keycloakrealmimports.k8s.keycloak.org-v1.yml"));
       realmImportCRD.createOrReplace();
       realmImportCRD.waitUntilReady(5, TimeUnit.SECONDS);
     } catch (Exception e) {
@@ -171,7 +171,7 @@ public abstract class ClusterOperatorTest {
   }
 
   protected static void deployDBSecret() {
-    k8sclient.secrets().inNamespace(namespace).createOrReplace((Secret) getResourceFromMultiResourceFile("example-keycloak.yml", 1));
+    k8sclient.secrets().inNamespace(namespace).createOrReplace(getResourceFromFile("example-db-secret.yaml", Secret.class));
   }
 
   protected static void deleteDB() {

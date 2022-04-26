@@ -151,6 +151,7 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
         List<String> commands = new ArrayList<>();
 
         commands.add("./kc.sh");
+        commands.add("-v");
         commands.add("start");
         commands.add("--http-enabled=true");
 

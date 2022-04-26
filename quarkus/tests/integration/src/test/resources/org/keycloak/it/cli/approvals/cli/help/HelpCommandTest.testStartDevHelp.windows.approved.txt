@@ -34,6 +34,8 @@ Database:
 --db-url-host <hostname>
                      Sets the hostname of the default JDBC URL of the chosen vendor. If the
                        `db-url` option is set, this option is ignored.
+--db-url-port <port> Sets the port of the default JDBC URL of the chosen vendor. If the `db-url`
+                       option is set, this option is ignored.
 --db-url-properties <properties>
                      Sets the properties of the default JDBC URL of the chosen vendor. If the
                        `db-url` option is set, this option is ignored.
@@ -55,7 +57,7 @@ Hostname:
                        Default: true.
 --hostname-strict-backchannel <true|false>
                      By default backchannel URLs are dynamically resolved from request headers to
-                       allow internal an external applications. If all applications use the public
+                       allow internal and external applications. If all applications use the public
                        URL this option should be enabled. Default: false.
 
 HTTP/TLS:
@@ -129,4 +131,4 @@ Logging:
 Do NOT start the server using this command when deploying to production.
 
 Use 'kc.bat start-dev --help-all' to list all available options, including
-build options.
+build options.

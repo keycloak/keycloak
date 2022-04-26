@@ -35,19 +35,11 @@ jobs:
           username: ${{ secrets.QUAY_USERNAME }}
           password: ${{ secrets.QUAY_TOKEN }}
 
-      - uses: actions/setup-java@v2
+      - uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
           java-version: ${{ env.JDK_VERSION }}
-
-      - name: Cache Maven packages
-        id: cache
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.m2/repository
-          key: cache-1-${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: cache-1-${{ runner.os }}-m2
+          cache: 'maven'
 
       - name: Build locally Keycloak artifacts to avoid depending on Maven
         run: |

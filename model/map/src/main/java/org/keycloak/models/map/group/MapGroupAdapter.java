@@ -22,6 +22,7 @@ import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.utils.RoleUtils;
 
 import java.util.Collections;
 import java.util.List;
@@ -67,12 +68,7 @@ public class MapGroupAdapter extends AbstractGroupModel<MapGroupEntity> {
 
     @Override
     public String getFirstAttribute(String name) {
-        List<String> attributeValues = this.entity.getAttribute(name);
-        if (attributeValues == null) {
-            return null;
-        }
-
-        return attributeValues.get(0);
+        return getAttributeStream(name).findFirst().orElse(null);
     }
 
     @Override
@@ -155,7 +151,7 @@ public class MapGroupAdapter extends AbstractGroupModel<MapGroupEntity> {
 
     @Override
     public boolean hasRole(RoleModel role) {
-        return hasDirectRole(role);
+        return RoleUtils.hasRole(getRoleMappingsStream(), role);
     }
 
     @Override

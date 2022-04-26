@@ -1896,13 +1896,6 @@ module.controller('ResourceServerPolicyJSDetailCtrl', function($scope, $route, $
         },
 
         onInit : function() {
-            $scope.readOnly = !serverInfo.featureEnabled('UPLOAD_SCRIPTS');
-            $scope.initEditor = function(editor){
-                editor.$blockScrolling = Infinity;
-                editor.setReadOnly($scope.readOnly);
-                var session = editor.getSession();
-                session.setMode('ace/mode/javascript');
-            };
         },
 
         onInitUpdate : function(policy) {
@@ -2394,6 +2387,9 @@ module.service("PolicyController", function($http, $route, $location, ResourceSe
                         if (delegate.onCreate) {
                             delegate.onCreate();
                         }
+
+                        let policyType = $scope.policy.type.endsWith('.js') ? 'js': $scope.policy.type;
+
                         service.save({realm : realm.realm, client : client.id, type: $scope.policy.type}, $scope.policy, function(data) {
                             if (delegate.isPermission()) {
                                 if ($scope.historyBackOnSaveOrCancel || policyViewState.state.rootUrl != null) {
@@ -2404,7 +2400,7 @@ module.service("PolicyController", function($http, $route, $location, ResourceSe
                                         $location.url(policyViewState.state.previousUrl);
                                     }
                                 } else {
-                                    $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/authz/resource-server/permission/" + $scope.policy.type + "/" + data.id);
+                                    $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/authz/resource-server/permission/" + policyType + "/" + data.id);
                                 }
                                 Notifications.success("The permission has been created.");
                             } else {
@@ -2412,7 +2408,7 @@ module.service("PolicyController", function($http, $route, $location, ResourceSe
                                     policyViewState.state.newPolicyName = $scope.policy.name;
                                     $location.url(policyViewState.state.previousUrl);
                                 } else {
-                                    $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/authz/resource-server/policy/" + $scope.policy.type + "/" + data.id);
+                                    $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/authz/resource-server/policy/" + policyType + "/" + data.id);
                                 }
                                 Notifications.success("The policy has been created.");
                             }
@@ -2473,12 +2469,15 @@ module.service("PolicyController", function($http, $route, $location, ResourceSe
                             if (delegate.onUpdate) {
                                 delegate.onUpdate();
                             }
+
+                            let policyType = $scope.policy.type.endsWith('.js') ? 'js': $scope.policy.type;
+
                             service.update({realm : realm.realm, client : client.id, type: $scope.policy.type, id : $scope.policy.id}, $scope.policy, function() {
                                 if (delegate.isPermission()) {
                                     if ($scope.historyBackOnSaveOrCancel) {
                                         $location.url(policyViewState.state.previousUrl);
                                     } else {
-                                        $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/authz/resource-server/permission/" + $scope.policy.type + "/" + $scope.policy.id);
+                                        $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/authz/resource-server/permission/" + policyType + "/" + $scope.policy.id);
                                     }
                                     $route.reload();
                                     Notifications.success("The permission has been updated.");
@@ -2486,7 +2485,7 @@ module.service("PolicyController", function($http, $route, $location, ResourceSe
                                     if ($scope.historyBackOnSaveOrCancel) {
                                         $location.url(policyViewState.state.previousUrl);
                                     } else {
-                                        $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/authz/resource-server/policy/" + $scope.policy.type + "/" + $scope.policy.id);
+                                        $location.url("/realms/" + realm.realm + "/clients/" + client.id + "/authz/resource-server/policy/" + policyType + "/" + $scope.policy.id);
                                     }
                                     $route.reload();
                                     Notifications.success("The policy has been updated.");

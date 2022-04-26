@@ -13,8 +13,14 @@
     <!--groups-->
     <class>org.keycloak.models.map.storage.jpa.group.entity.JpaGroupEntity</class>
     <class>org.keycloak.models.map.storage.jpa.group.entity.JpaGroupAttributeEntity</class>
+    <!-- realms -->
+    <class>org.keycloak.models.map.storage.jpa.realm.entity.JpaComponentEntity</class>
+    <class>org.keycloak.models.map.storage.jpa.realm.entity.JpaRealmEntity</class>
+    <class>org.keycloak.models.map.storage.jpa.realm.entity.JpaRealmAttributeEntity</class>
     <!--roles-->
     <class>org.keycloak.models.map.storage.jpa.role.entity.JpaRoleEntity</class>
     <class>org.keycloak.models.map.storage.jpa.role.entity.JpaRoleAttributeEntity</class>
+    <!--user-login-failures-->
+    <class>org.keycloak.models.map.storage.jpa.loginFailure.entity.JpaUserLoginFailureEntity</class>
   </persistence-unit>
 </persistence>

@@ -63,6 +63,12 @@ public interface MapClientEntity extends AbstractEntity, UpdatableEntity, Entity
         }
 
         @Override
+        public void clearUpdatedFlag() {
+            this.updated = false;
+            Optional.ofNullable(getProtocolMappers()).orElseGet(Collections::emptyMap).values().forEach(UpdatableEntity::clearUpdatedFlag);
+        }
+
+        @Override
         public Stream<String> getClientScopes(boolean defaultScope) {
             final Map<String, Boolean> clientScopes = getClientScopes();
             return clientScopes == null ? Stream.empty() : clientScopes.entrySet().stream()
@@ -114,7 +120,7 @@ public interface MapClientEntity extends AbstractEntity, UpdatableEntity, Entity
 
     Integer getNodeReRegistrationTimeout();
 
-    Integer getNotBefore();
+    Long getNotBefore();
 
     String getProtocol();
 
@@ -182,7 +188,7 @@ public interface MapClientEntity extends AbstractEntity, UpdatableEntity, Entity
 
     void setNodeReRegistrationTimeout(Integer nodeReRegistrationTimeout);
 
-    void setNotBefore(Integer notBefore);
+    void setNotBefore(Long notBefore);
 
     void setProtocol(String protocol);
 

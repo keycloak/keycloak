@@ -580,8 +580,6 @@ public abstract class AbstractAdvancedBrokerTest extends AbstractBrokerTest {
             updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
 
             ComponentRepresentation component = new ComponentRepresentation();
-
-            component.setId(DummyUserFederationProviderFactory.PROVIDER_NAME);
             component.setName(DummyUserFederationProviderFactory.PROVIDER_NAME);
             component.setProviderId(DummyUserFederationProviderFactory.PROVIDER_NAME);
             component.setProviderType(UserStorageProvider.class.getName());

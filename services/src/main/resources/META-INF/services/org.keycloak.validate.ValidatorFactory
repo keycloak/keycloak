@@ -3,6 +3,7 @@ org.keycloak.userprofile.validator.AttributeRequiredByMetadataValidator
 org.keycloak.userprofile.validator.ReadOnlyAttributeUnchangedValidator
 org.keycloak.userprofile.validator.DuplicateUsernameValidator
 org.keycloak.userprofile.validator.UsernameHasValueValidator
+org.keycloak.userprofile.validator.UsernameIDNHomographValidator
 org.keycloak.userprofile.validator.UsernameMutationValidator
 org.keycloak.userprofile.validator.DuplicateEmailValidator
 org.keycloak.userprofile.validator.EmailExistsAsUsernameValidator

@@ -22,28 +22,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-java@v2
+      - uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
           java-version: ${{ env.DEFAULT_JDK_VERSION }}
+          cache: 'maven'
       - name: Update maven settings
         run: mkdir -p ~/.m2 ; cp .github/settings.xml ~/.m2/
-      - name: Cache Maven packages
-        id: cache
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.m2/repository
-          key: cache-2-${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: cache-1-${{ runner.os }}-m2
 
       - name: Build Keycloak
         run: |
-           mvn clean install -nsu -B -e -DskipTests -Pdistribution
-           mvn clean install -nsu -B -e -f testsuite/integration-arquillian/servers/auth-server -Pauth-server-quarkus
-           mvn clean install -nsu -B -e -f testsuite/integration-arquillian/servers/auth-server -Pauth-server-wildfly
-           mvn clean install -nsu -B -e -f testsuite/integration-arquillian/servers/auth-server -Pauth-server-undertow
-           mvn clean install -nsu -B -e -f testsuite/integration-arquillian/servers/cache-server -Pcache-server-infinispan
+           ./mvnw clean install -nsu -B -e -DskipTests -Pdistribution
+           ./mvnw clean install -nsu -B -e -f testsuite/integration-arquillian/servers/auth-server -Pauth-server-quarkus
+           ./mvnw clean install -nsu -B -e -f testsuite/integration-arquillian/servers/auth-server -Pauth-server-wildfly
+           ./mvnw clean install -nsu -B -e -f testsuite/integration-arquillian/servers/auth-server -Pauth-server-undertow
+           ./mvnw clean install -nsu -B -e -f testsuite/integration-arquillian/servers/cache-server -Pcache-server-infinispan
 
       - name: Store Keycloak artifacts
         id: store-keycloak
@@ -67,18 +60,13 @@ jobs:
     needs: build
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-java@v2
+      - uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
           java-version: ${{ env.DEFAULT_JDK_VERSION }}
+          cache: 'maven'
       - name: Update maven settings
         run: mkdir -p ~/.m2 ; cp .github/settings.xml ~/.m2/
-      - name: Cache Maven packages
-        uses: actions/cache@v3
-        with:
-          path: ~/.m2/repository
-          key: cache-2-${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: cache-1-${{ runner.os }}-m2
       - name: Cleanup org.keycloak artifacts
         run: rm -rf ~/.m2/repository/org/keycloak >/dev/null || true
       - name: Download built keycloak
@@ -89,7 +77,7 @@ jobs:
           name: keycloak-artifacts.zip
       - name: Run unit tests
         run: |
-          if ! mvn install -nsu -B -DskipTestsuite -DskipQuarkus -DskipExamples -f pom.xml; then
+          if ! ./mvnw install -nsu -B -DskipTestsuite -DskipQuarkus -DskipExamples -f pom.xml; then
             find . -path '*/target/surefire-reports/*.xml' | zip -q reports-unit-tests.zip -@
             exit 1
           fi
@@ -109,18 +97,13 @@ jobs:
     needs: build
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-java@v2
+      - uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
           java-version: ${{ env.DEFAULT_JDK_VERSION }}
+          cache: 'maven'
       - name: Update maven settings
         run: mkdir -p ~/.m2 ; cp .github/settings.xml ~/.m2/
-      - name: Cache Maven packages
-        uses: actions/cache@v3
-        with:
-          path: ~/.m2/repository
-          key: cache-2-${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: cache-1-${{ runner.os }}-m2
       - name: Cleanup org.keycloak artifacts
         run: rm -rf ~/.m2/repository/org/keycloak >/dev/null || true
       - name: Download built keycloak
@@ -160,7 +143,8 @@ jobs:
           fetch-depth: 2
 
       - name: Check whether HEAD^ contains HotRod storage relevant changes
-        run: echo "GIT_HOTROD_RELEVANT_DIFF=$( git diff --name-only HEAD^ | egrep -ic -e '^model/hot-rod|^model/map|^model/build-processor|^testsuite/model' )" >> $GITHUB_ENV
+        run: echo "GIT_HOTROD_RELEVANT_DIFF=$( git diff --name-only HEAD^ | egrep -ic -e 'non-existent-folder' )" >> $GITHUB_ENV
+#        run: echo "GIT_HOTROD_RELEVANT_DIFF=$( git diff --name-only HEAD^ | egrep -ic -e '^model/hot-rod|^model/map|^model/build-processor|^testsuite/model' )" >> $GITHUB_ENV
 
       - name: Cache Maven packages
         if: ${{ github.event_name != 'pull_request' || matrix.server != 'undertow-map-hot-rod' || env.GIT_HOTROD_RELEVANT_DIFF != 0 }}
@@ -183,7 +167,7 @@ jobs:
       #     find ~ -name *dist*.zip
       #     ls -lR ~/.m2/repository
 
-      - uses: actions/setup-java@v2
+      - uses: actions/setup-java@v3
         if: ${{ github.event_name != 'pull_request' || matrix.server != 'undertow-map-hot-rod' || env.GIT_HOTROD_RELEVANT_DIFF != 0 }}
         with:
           distribution: 'temurin'
@@ -204,7 +188,7 @@ jobs:
           TESTGROUP["group2"]="-Dtest=!**.crossdc.**,!**.cluster.**,%regex[org.keycloak.testsuite.(ad[^a-l]|a[^a-d]|b).*]"      # Admin tests and those starting with "b"
           TESTGROUP["group3"]="-Dtest=!**.crossdc.**,!**.cluster.**,%regex[org.keycloak.testsuite.([c-q]).*]"                   # All the rest
 
-          mvn clean install -nsu -B ${PARAMS["${{ matrix.server }}"]} ${TESTGROUP["${{ matrix.tests }}"]} -f testsuite/integration-arquillian/tests/base/pom.xml | misc/log/trimmer.sh
+          ./mvnw clean install -nsu -B ${PARAMS["${{ matrix.server }}"]} ${TESTGROUP["${{ matrix.tests }}"]} -f testsuite/integration-arquillian/tests/base/pom.xml | misc/log/trimmer.sh
 
           TEST_RESULT=${PIPESTATUS[0]}
           find . -path '*/target/surefire-reports/*.xml' | zip -q reports-${{ matrix.server }}-base-tests-${{ matrix.tests }}.zip -@
@@ -231,13 +215,12 @@ jobs:
       - name: Check whether this phase should run
         run: echo "GIT_DIFF=$[ $( git diff --name-only HEAD^ | egrep -ic 'crossdc|infinispan' ) + $( git diff HEAD^ pom.xml | egrep -ic '\+\s+<wildfly.version>' ) ]" >> $GITHUB_ENV
 
-      - name: Cache Maven packages
+      - uses: actions/setup-java@v3
         if: ${{ github.event_name != 'pull_request' || env.GIT_DIFF != 0 }}
-        uses: actions/cache@v3
         with:
-          path: ~/.m2/repository
-          key: cache-2-${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: cache-1-${{ runner.os }}-m2
+          distribution: 'temurin'
+          java-version: ${{ env.DEFAULT_JDK_VERSION }}
+          cache: 'maven'
 
       - name: Cleanup org.keycloak artifacts
         if: ${{ github.event_name != 'pull_request' || env.GIT_DIFF != 0 }}
@@ -251,11 +234,6 @@ jobs:
           path: ~/.m2/repository/org/keycloak/
           name: keycloak-artifacts.zip
 
-      - uses: actions/setup-java@v2
-        if: ${{ github.event_name != 'pull_request' || env.GIT_DIFF != 0 }}
-        with:
-          distribution: 'temurin'
-          java-version: ${{ env.DEFAULT_JDK_VERSION }}
       - name: Update maven settings
         if: ${{ github.event_name != 'pull_request' || env.GIT_DIFF != 0 }}
         run: mkdir -p ~/.m2 ; cp .github/settings.xml ~/.m2/
@@ -263,7 +241,7 @@ jobs:
       - name: Run cluster tests
         if: ${{ github.event_name != 'pull_request' || env.GIT_DIFF != 0 }}
         run: |
-          mvn clean install -nsu -B -Pauth-server-wildfly,auth-server-cluster,db-mysql,jpa -Dsession.cache.owners=2 -Dbackends.console.output=true -Dauth.server.log.check=false -Dfrontend.console.output=true -Dtest=org.keycloak.testsuite.cluster.**.*Test -f testsuite/integration-arquillian/pom.xml | misc/log/trimmer.sh
+          ./mvnw clean install -nsu -B -Pauth-server-wildfly,auth-server-cluster,db-mysql,jpa -Dsession.cache.owners=2 -Dbackends.console.output=true -Dauth.server.log.check=false -Dfrontend.console.output=true -Dtest=org.keycloak.testsuite.cluster.**.*Test -f testsuite/integration-arquillian/pom.xml | misc/log/trimmer.sh
           TEST_RESULT=${PIPESTATUS[0]}
           find . -path '*/target/surefire-reports/*.xml' | zip -q reports-cluster-tests.zip -@
           exit $TEST_RESULT
@@ -291,22 +269,16 @@ jobs:
       - name: Check whether this phase should run
         run: echo "GIT_DIFF=$[ $( git diff --name-only HEAD^ | egrep -ic 'crossdc|infinispan' ) + $( git diff HEAD^ pom.xml | egrep -ic '\+\s+<wildfly.version>' ) ]" >> $GITHUB_ENV
 
-      - uses: actions/setup-java@v2
+      - uses: actions/setup-java@v3
         if: ${{ github.event_name != 'pull_request' || env.GIT_DIFF != 0 }}
         with:
           distribution: 'temurin'
           java-version: ${{ env.DEFAULT_JDK_VERSION }}
+          cache: 'maven'
+
       - name: Update maven settings
         if: ${{ github.event_name != 'pull_request' || env.GIT_DIFF != 0 }}
         run: mkdir -p ~/.m2 ; cp .github/settings.xml ~/.m2/
-
-      - name: Cache Maven packages
-        if: ${{ github.event_name != 'pull_request' || env.GIT_DIFF != 0 }}
-        uses: actions/cache@v3
-        with:
-          path: ~/.m2/repository
-          key: cache-2-${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: cache-1-${{ runner.os }}-m2
 
       - name: Cleanup org.keycloak artifacts
         if: ${{ github.event_name != 'pull_request' || env.GIT_DIFF != 0 }}
@@ -325,9 +297,9 @@ jobs:
         shell: bash
         run: |
           echo '::group::Compiling testsuite'
-          mvn clean install -B -nsu -Pauth-servers-crossdc-jboss,auth-server-wildfly,cache-server-infinispan,app-server-wildfly -DskipTests
+          ./mvnw clean install -B -nsu -Pauth-servers-crossdc-jboss,auth-server-wildfly,cache-server-infinispan,app-server-wildfly -DskipTests
           echo '::endgroup::'
-          mvn clean install -B -nsu -f testsuite/integration-arquillian/tests/base/pom.xml -Pcache-server-infinispan,auth-servers-crossdc-jboss,auth-server-wildfly "-Dtest=org.keycloak.testsuite.crossdc.**.*,org.keycloak.testsuite.adapter.**.crossdc.**.*" | misc/log/trimmer.sh
+          ./mvnw clean install -B -nsu -f testsuite/integration-arquillian/tests/base/pom.xml -Pcache-server-infinispan,auth-servers-crossdc-jboss,auth-server-wildfly "-Dtest=org.keycloak.testsuite.crossdc.**.*,org.keycloak.testsuite.adapter.**.crossdc.**.*" | misc/log/trimmer.sh
           TEST_RESULT=${PIPESTATUS[0]}
           find . -path '*/target/surefire-reports/*.xml' | zip -q reports-cross-dc-tests.zip -@
           exit $TEST_RESULT
@@ -351,12 +323,13 @@ jobs:
       MAVEN_OPTS: -Xmx1024m
     steps:
       - uses: actions/checkout@v3
-      - name: Cache Maven packages
-        uses: actions/cache@v3
+
+      - uses: actions/setup-java@v3
         with:
-          path: ~/.m2/repository
-          key: cache-2-${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: cache-1-${{ runner.os }}-m2
+          distribution: 'temurin'
+          java-version: ${{ env.DEFAULT_JDK_VERSION }}
+          cache: 'maven'
+
       - name: Cleanup org.keycloak artifacts
         run: rm -rf ~/.m2/repository/org/keycloak >/dev/null || true
 
@@ -366,7 +339,7 @@ jobs:
         with:
           path: ~/.m2/repository/org/keycloak/
           name: keycloak-artifacts.zip
-      - uses: actions/setup-java@v2
+      - uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
           java-version: ${{ env.DEFAULT_JDK_VERSION }}
@@ -375,9 +348,9 @@ jobs:
       - name: Run Quarkus cluster tests
         run: |
           echo '::group::Compiling testsuite'
-          mvn clean install -nsu -B -Pauth-server-quarkus -DskipTests -f testsuite/pom.xml
+          ./mvnw clean install -nsu -B -Pauth-server-quarkus -DskipTests -f testsuite/pom.xml
           echo '::endgroup::'
-          mvn clean install -nsu -B -Pauth-server-cluster-quarkus -Dsession.cache.owners=2 -Dtest=**.cluster.** -f testsuite/integration-arquillian/pom.xml  | misc/log/trimmer.sh
+          ./mvnw clean install -nsu -B -Pauth-server-cluster-quarkus -Dsession.cache.owners=2 -Dtest=**.cluster.** -f testsuite/integration-arquillian/pom.xml  | misc/log/trimmer.sh
           TEST_RESULT=${PIPESTATUS[0]}
           find . -path '*/target/surefire-reports/*.xml' | zip -q reports-quarkus-cluster-tests.zip -@
           exit $TEST_RESULT
@@ -401,12 +374,11 @@ jobs:
       MAVEN_OPTS: -Xmx1024m
     steps:
       - uses: actions/checkout@v3
-      - name: Cache Maven packages
-        uses: actions/cache@v3
+      - uses: actions/setup-java@v3
         with:
-          path: ~/.m2/repository
-          key: cache-2-${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: cache-1-${{ runner.os }}-m2
+          distribution: 'temurin'
+          java-version: ${{ env.DEFAULT_JDK_VERSION }}
+          cahe: 'maven'
       - name: Cleanup org.keycloak artifacts
         run: rm -rf ~/.m2/repository/org/keycloak >/dev/null || true
 
@@ -416,33 +388,29 @@ jobs:
         with:
           path: ~/.m2/repository/org/keycloak/
           name: keycloak-artifacts.zip
-      - uses: actions/setup-java@v2
-        with:
-          distribution: 'temurin'
-          java-version: ${{ env.DEFAULT_JDK_VERSION }}
       - name: Update maven settings
         run: mkdir -p ~/.m2 ; cp .github/settings.xml ~/.m2/
 
       - name: Prepare the local distribution archives
-        run: mvn clean install -DskipTests -Pdistribution
+        run: ./mvnw clean install -DskipTests -Pdistribution
 
       - name: Run Quarkus Integration Tests
         run: |
-          mvn clean install -nsu -B -f quarkus/tests/pom.xml | misc/log/trimmer.sh
+          ./mvnw clean install -nsu -B -f quarkus/tests/pom.xml | misc/log/trimmer.sh
           TEST_RESULT=${PIPESTATUS[0]}
           find . -path '*/target/surefire-reports/*.xml' | zip -q reports-quarkus-tests.zip -@
           exit $TEST_RESULT
 
       - name: Run Quarkus Storage Tests
         run: |
-          mvn clean install -nsu -B -f quarkus/tests/pom.xml -Ptest-database -Dtest=PostgreSQLStartDatabaseTest | misc/log/trimmer.sh
+          ./mvnw clean install -nsu -B -f quarkus/tests/pom.xml -Ptest-database -Dtest=PostgreSQLStartDatabaseTest | misc/log/trimmer.sh
           TEST_RESULT=${PIPESTATUS[0]}
           find . -path '*/target/surefire-reports/*.xml' | zip -q reports-quarkus-tests.zip -@
           exit $TEST_RESULT
 
       - name: Run Quarkus Tests in Docker
         run: |
-          mvn clean install -nsu -B -f quarkus/tests/pom.xml -Dkc.quarkus.tests.dist=docker | misc/log/trimmer.sh
+          ./mvnw clean install -nsu -B -f quarkus/tests/pom.xml -Dkc.quarkus.tests.dist=docker | misc/log/trimmer.sh
           TEST_RESULT=${PIPESTATUS[0]}
           exit $TEST_RESULT
 
@@ -469,18 +437,14 @@ jobs:
         with:
           path: keycloak
 
-      - uses: actions/setup-java@v2
+      - uses: actions/setup-java@v3
         with:
           distribution: 'temurin'
           java-version: 8
+          cache: 'maven'
+
       - name: Update maven settings
         run: mkdir -p ~/.m2 ; cp .github/settings.xml ~/.m2/
-      - name: Cache Maven packages
-        uses: actions/cache@v3
-        with:
-          path: ~/.m2/repository
-          key: cache-2-${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: cache-1-${{ runner.os }}-m2
       - name: Cleanup org.keycloak artifacts
         run: rm -rf ~/.m2/repository/org/keycloak >/dev/null || true
       - name: Download built keycloak

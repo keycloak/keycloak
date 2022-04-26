@@ -244,6 +244,6 @@ public interface MapUserEntity extends UpdatableEntity, AbstractEntity, EntityWi
     String getServiceAccountClientLink();
     void setServiceAccountClientLink(String serviceAccountClientLink);
 
-    Integer getNotBefore();
-    void setNotBefore(Integer notBefore);
+    Long getNotBefore();
+    void setNotBefore(Long notBefore);
 }

@@ -30,6 +30,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorageProvider;
 import org.keycloak.models.map.storage.MapStorageProviderFactory;
+import org.keycloak.models.map.storage.ldap.config.LdapMapConfig;
 import org.keycloak.models.map.storage.ldap.role.LdapRoleMapKeycloakTransaction;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
@@ -67,6 +68,25 @@ public class LdapMapStorageProviderFactory implements
     @Override
     public void init(Config.Scope config) {
         this.config = config;
+        LdapMapConfig cfg = new LdapMapConfig(config);
+        checkSystemProperty("com.sun.jndi.ldap.connect.pool.authentication", cfg.getConnectionPoolingAuthentication(), "none simple");
+        checkSystemProperty("com.sun.jndi.ldap.connect.pool.initsize", cfg.getConnectionPoolingInitSize(), "1");
+        checkSystemProperty("com.sun.jndi.ldap.connect.pool.maxsize", cfg.getConnectionPoolingMaxSize(), "1000");
+        checkSystemProperty("com.sun.jndi.ldap.connect.pool.prefsize", cfg.getConnectionPoolingPrefSize(), "5");
+        checkSystemProperty("com.sun.jndi.ldap.connect.pool.timeout", cfg.getConnectionPoolingTimeout(), "300000");
+        checkSystemProperty("com.sun.jndi.ldap.connect.pool.protocol", cfg.getConnectionPoolingProtocol(), "plain ssl");
+        checkSystemProperty("com.sun.jndi.ldap.connect.pool.debug", cfg.getConnectionPoolingDebug(), "off");
+    }
+
+    private static void checkSystemProperty(String name, String cfgValue, String defaultValue) {
+        String value = System.getProperty(name);
+        if(cfgValue != null) {
+            value = cfgValue;
+        }
+        if(value == null) {
+            value = defaultValue;
+        }
+        System.setProperty(name, value);
     }
 
     @Override

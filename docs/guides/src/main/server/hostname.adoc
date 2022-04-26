@@ -8,8 +8,14 @@ summary="Learn how to configure the frontend and backchannel endpoints exposed b
 includedOptions="hostname-* proxy">
 
 When running Keycloak in environments such as Kubernetes, OpenShift, or on-premise, you want to protect the internal URLs from exposure to the public facing internet.
-You want to use your public hostname.
+Instead, You want to expose your public hostname.
 This guide describes how to configure Keycloak to use the right hostname for different scenarios.
+
+== Hostname Syntax:
+Keycloak does not impose strict validation for the configured hostname value. Please make sure the hostname value you configure complies to the standardized hostname syntax as outlined in RFC 952, RFC 1123 and others.
+
+.Example:
+`LOCALHOST` is a non-compliant hostname and leads to problems when the browser tries to resolve your requests. Instead, `localhost` will work fine.
 
 == Keycloak API Endpoint categories
 As this section explains, Keycloak exposes three API endpoint categories: frontend, backend, and administrative.

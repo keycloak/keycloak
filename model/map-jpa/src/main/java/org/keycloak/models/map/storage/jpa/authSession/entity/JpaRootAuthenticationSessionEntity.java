@@ -39,6 +39,8 @@ import org.keycloak.models.map.authSession.MapRootAuthenticationSessionEntity.Ab
 import org.keycloak.models.map.common.DeepCloner;
 import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_AUTH_SESSION;
 import static org.keycloak.models.map.storage.jpa.JpaMapStorageProviderFactory.CLONER;
+
+import org.keycloak.models.map.common.UuidValidator;
 import org.keycloak.models.map.storage.jpa.JpaRootVersionedEntity;
 import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
 
@@ -78,7 +80,7 @@ public class JpaRootAuthenticationSessionEntity extends AbstractRootAuthenticati
 
     @Column(insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
-    private Integer timestamp;
+    private Long timestamp;
 
     @Column(insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
@@ -102,7 +104,7 @@ public class JpaRootAuthenticationSessionEntity extends AbstractRootAuthenticati
      * Used by hibernate when calling cb.construct from read(QueryParameters) method.
      * It is used to select root auth session without metadata(json) field.
      */
-    public JpaRootAuthenticationSessionEntity(UUID id, Integer entityVersion, String realmId, Integer timestamp, Long expiration) {
+    public JpaRootAuthenticationSessionEntity(UUID id, Integer entityVersion, String realmId, Long timestamp, Long expiration) {
         this.id = id;
         this.entityVersion = entityVersion;
         this.realmId = realmId;
@@ -143,7 +145,8 @@ public class JpaRootAuthenticationSessionEntity extends AbstractRootAuthenticati
 
     @Override
     public void setId(String id) {
-        this.id = id == null ? null : UUID.fromString(id);
+        String validatedId = UuidValidator.validateAndConvert(id);
+        this.id = UUID.fromString(validatedId);
     }
 
     @Override
@@ -158,13 +161,13 @@ public class JpaRootAuthenticationSessionEntity extends AbstractRootAuthenticati
     }
 
     @Override
-    public Integer getTimestamp() {
+    public Long getTimestamp() {
         if (isMetadataInitialized()) return metadata.getTimestamp();
         return timestamp;
     }
 
     @Override
-    public void setTimestamp(Integer timestamp) {
+    public void setTimestamp(Long timestamp) {
         metadata.setTimestamp(timestamp);
     }
 

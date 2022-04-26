@@ -61,8 +61,8 @@ The following table shows the recommended paths to expose.
 
 |/js/
 | -
-|No
-|A good practice is to not use external js for the JavaScript client, but add it into your public client using a package manager like NPM or Yarn instead.
+|Yes (see note below)
+|Access to keycloak.js needed for "internal" clients, e.g. the account console
 
 |/welcome/
 | -
@@ -95,6 +95,11 @@ The following table shows the recommended paths to expose.
 |Exposed health checks lead to an unnecessary attack vector.
 
 |===
+
+.Note:
+[NOTE]
+As it's true that the `js` path is needed for internal clients like the account console, it's good practice to use `keycloak.js` from a JavaScript package manager like npm or yarn for your external clients.
+
 We assume you run Keycloak on the root path `/` on your reverse proxy/gateway's public API.
 If not, prefix the path with your desired one.
 

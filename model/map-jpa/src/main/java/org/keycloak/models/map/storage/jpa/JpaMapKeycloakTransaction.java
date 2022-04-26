@@ -32,7 +32,7 @@ import javax.persistence.criteria.Root;
 import javax.persistence.criteria.Selection;
 import org.jboss.logging.Logger;
 import org.keycloak.connections.jpa.PersistenceExceptionConverter;
-import static org.keycloak.models.jpa.PaginationUtils.paginateQuery;
+import static org.keycloak.models.map.storage.jpa.PaginationUtils.paginateQuery;
 import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.StringKeyConverter;
 import org.keycloak.models.map.common.StringKeyConverter.UUIDKey;
@@ -90,6 +90,7 @@ public abstract class JpaMapKeycloakTransaction<RE extends JpaRootEntity, E exte
         CriteriaQuery<RE> query = cb.createQuery(entityType);
         Root<RE> root = query.from(entityType);
         query.select(selectCbConstruct(cb, root));
+        if (mcb.isDistinct()) query.distinct(true);
 
         //ordering
         if (!queryParameters.getOrderBy().isEmpty()) {
@@ -165,24 +166,17 @@ public abstract class JpaMapKeycloakTransaction<RE extends JpaRootEntity, E exte
 
     @Override
     public void begin() {
-        logger.tracef("tx %d: begin", hashCode());
-        em.getTransaction().begin();
+        // no-op: rely on JPA transaction enlisted by the JPA storage provider.
     }
 
     @Override
     public void commit() {
-        try {
-            logger.tracef("tx %d: commit", hashCode());
-            em.getTransaction().commit();
-        } catch (PersistenceException e) {
-            throw PersistenceExceptionConverter.convert(e.getCause() != null ? e.getCause() : e);
-        }
+        // no-op: rely on JPA transaction enlisted by the JPA storage provider.
     }
 
     @Override
     public void rollback() {
-        logger.tracef("tx %d: rollback", hashCode());
-        em.getTransaction().rollback();
+        // no-op: rely on JPA transaction enlisted by the JPA storage provider.
     }
 
     @Override

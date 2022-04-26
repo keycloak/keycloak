@@ -18,6 +18,7 @@
 package org.keycloak.testsuite.federation.ldap;
 
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -26,7 +27,6 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.UserAttributeMapper;
 import org.keycloak.representations.IDToken;
@@ -105,6 +105,7 @@ public class LDAPMultipleAttributesTest extends AbstractLDAPTest {
 
     @Test
     public void testUserImport() {
+        Assume.assumeTrue("User cache disabled.", isUserCacheEnabled());
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             session.userCache().clear();
@@ -120,6 +121,7 @@ public class LDAPMultipleAttributesTest extends AbstractLDAPTest {
 
     @Test
     public void testModel() {
+        Assume.assumeTrue("User cache disabled.", isUserCacheEnabled());
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             session.userCache().clear();

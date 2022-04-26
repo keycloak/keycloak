@@ -27,8 +27,11 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 
+import org.keycloak.models.map.common.TimeAdapter;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -48,7 +51,6 @@ import static org.keycloak.models.map.storage.QueryParameters.Order.ASCENDING;
 import static org.keycloak.models.map.storage.QueryParameters.withCriteria;
 import static org.keycloak.models.map.storage.criteria.DefaultModelCriteria.criteria;
 
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import java.util.HashSet;
 
 public class MapClientProvider implements ClientProvider {
@@ -56,9 +58,9 @@ public class MapClientProvider implements ClientProvider {
     private static final Logger LOG = Logger.getLogger(MapClientProvider.class);
     private final KeycloakSession session;
     final MapKeycloakTransaction<MapClientEntity, ClientModel> tx;
-    private final ConcurrentMap<String, ConcurrentMap<String, Integer>> clientRegisteredNodesStore;
+    private final ConcurrentMap<String, ConcurrentMap<String, Long>> clientRegisteredNodesStore;
 
-    public MapClientProvider(KeycloakSession session, MapStorage<MapClientEntity, ClientModel> clientStore, ConcurrentMap<String, ConcurrentMap<String, Integer>> clientRegisteredNodesStore) {
+    public MapClientProvider(KeycloakSession session, MapStorage<MapClientEntity, ClientModel> clientStore, ConcurrentMap<String, ConcurrentMap<String, Long>> clientRegisteredNodesStore) {
         this.session = session;
         this.clientRegisteredNodesStore = clientRegisteredNodesStore;
         this.tx = clientStore.createTransaction(session);
@@ -92,18 +94,25 @@ public class MapClientProvider implements ClientProvider {
             /** This is runtime information and should have never been part of the adapter */
             @Override
             public Map<String, Integer> getRegisteredNodes() {
-                return clientRegisteredNodesStore.computeIfAbsent(entity.getId(), k -> new ConcurrentHashMap<>());
+                return Collections.unmodifiableMap(getMapForEntity()
+                                .entrySet()
+                                .stream()
+                                .collect(Collectors.toMap(Map.Entry::getKey, e -> TimeAdapter.fromLongWithTimeInSecondsToIntegerWithTimeInSeconds(e.getValue())))
+                );
             }
 
             @Override
             public void registerNode(String nodeHost, int registrationTime) {
-                Map<String, Integer> value = getRegisteredNodes();
-                value.put(nodeHost, registrationTime);
+                getMapForEntity().put(nodeHost, TimeAdapter.fromIntegerWithTimeInSecondsToLongWithTimeAsInSeconds(registrationTime));
             }
 
             @Override
             public void unregisterNode(String nodeHost) {
-                getRegisteredNodes().remove(nodeHost);
+                getMapForEntity().remove(nodeHost);
+            }
+
+            private ConcurrentMap<String, Long> getMapForEntity() {
+                return clientRegisteredNodesStore.computeIfAbsent(entity.getId(), k -> new ConcurrentHashMap<>());
             }
 
         };
@@ -292,7 +301,7 @@ public class MapClientProvider implements ClientProvider {
         if (entity == null) return;
 
         // Defaults to openid-connect
-        String clientProtocol = client.getProtocol() == null ? OIDCLoginProtocol.LOGIN_PROTOCOL : client.getProtocol();
+        String clientProtocol = client.getProtocol() == null ? "openid-connect" : client.getProtocol();
 
         LOG.tracef("addClientScopes(%s, %s, %s, %b)%s", realm, client, clientScopes, defaultScope, getShortStackTrace());
 
@@ -325,7 +334,7 @@ public class MapClientProvider implements ClientProvider {
         if (entity == null) return null;
 
         // Defaults to openid-connect
-        String clientProtocol = client.getProtocol() == null ? OIDCLoginProtocol.LOGIN_PROTOCOL : client.getProtocol();
+        String clientProtocol = client.getProtocol() == null ? "openid-connect" : client.getProtocol();
 
         LOG.tracef("getClientScopes(%s, %s, %b)%s", realm, client, defaultScopes, getShortStackTrace());
 

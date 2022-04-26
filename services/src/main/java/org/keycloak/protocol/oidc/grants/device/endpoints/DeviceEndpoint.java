@@ -111,6 +111,12 @@ public class DeviceEndpoint extends AuthorizationEndpointBase implements RealmRe
         AuthorizationEndpointRequest request = AuthorizationEndpointRequestParserProcessor.parseRequest(event, session, client,
             httpRequest.getDecodedFormParameters());
 
+        if (request.getInvalidRequestMessage() != null) {
+            event.error(Errors.INVALID_REQUEST);
+            throw new ErrorResponseException(OAuthErrorException.INVALID_GRANT,
+                request.getInvalidRequestMessage(), Response.Status.BAD_REQUEST);
+        }
+
         if (!TokenUtil.isOIDCRequest(request.getScope())) {
             ServicesLogger.LOGGER.oidcScopeMissing();
         }

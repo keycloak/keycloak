@@ -19,6 +19,7 @@ package org.keycloak.models.map.storage.hotRod;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.map.storage.CriterionNotSupportedException;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.storage.SearchableModelField;
@@ -54,6 +55,7 @@ public class IckleQueryWhereClauses {
         WHERE_CLAUSE_PRODUCER_OVERRIDES.put(UserModel.SearchableFields.ATTRIBUTE, IckleQueryWhereClauses::whereClauseForAttributes);
         WHERE_CLAUSE_PRODUCER_OVERRIDES.put(UserModel.SearchableFields.IDP_AND_USER, IckleQueryWhereClauses::whereClauseForUserIdpAlias);
         WHERE_CLAUSE_PRODUCER_OVERRIDES.put(UserModel.SearchableFields.CONSENT_CLIENT_FEDERATION_LINK, IckleQueryWhereClauses::whereClauseForConsentClientFederationLink);
+        WHERE_CLAUSE_PRODUCER_OVERRIDES.put(UserSessionModel.SearchableFields.CORRESPONDING_SESSION_ID, IckleQueryWhereClauses::whereClauseForCorrespondingSessionId);
     }
 
     @FunctionalInterface
@@ -153,5 +155,21 @@ public class IckleQueryWhereClauses {
 
         String providerId = new StorageId((String) values[0], "").getId();
         return IckleQueryOperators.combineExpressions(ModelCriteriaBuilder.Operator.LIKE, getFieldName(UserModel.SearchableFields.CONSENT_FOR_CLIENT), new String[] {providerId + "%"}, parameters);
+    }
+
+    private static String whereClauseForCorrespondingSessionId(String modelFieldName, ModelCriteriaBuilder.Operator op, Object[] values, Map<String, Object> parameters) {
+        if (op != ModelCriteriaBuilder.Operator.EQ) {
+            throw new CriterionNotSupportedException(UserSessionModel.SearchableFields.CORRESPONDING_SESSION_ID, op);
+        }
+        if (values == null || values.length != 1) {
+            throw new CriterionNotSupportedException(UserSessionModel.SearchableFields.CORRESPONDING_SESSION_ID, op, "Invalid arguments, expected (corresponding_session:id), got: " + Arrays.toString(values));
+        }
+
+        // Clause for searching key
+        String nameClause = IckleQueryOperators.combineExpressions(op, "notes.key", new String[]{UserSessionModel.CORRESPONDING_SESSION_ID}, parameters);
+        // Clause for searching value
+        String valueClause = IckleQueryOperators.combineExpressions(op, "notes.value", values, parameters);
+
+        return "(" + nameClause + ")" + " AND " + "(" + valueClause + ")";
     }
 }

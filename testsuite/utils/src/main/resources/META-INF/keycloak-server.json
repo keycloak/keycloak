@@ -136,7 +136,8 @@
             "role.object.classes": "groupOfNames",
             "role.attributes": "ou",
             "mode": "LDAP_ONLY",
-            "use.realm.roles.mapping": "true"
+            "use.realm.roles.mapping": "true",
+            "connectionPooling": "true"
         }
     },
 
