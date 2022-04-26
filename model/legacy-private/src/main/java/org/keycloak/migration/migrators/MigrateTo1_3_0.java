@@ -27,6 +27,7 @@ import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
+import org.keycloak.storage.UserStorageUtil;
 
 import javax.naming.directory.SearchControls;
 import java.util.List;
@@ -52,7 +53,7 @@ public class MigrateTo1_3_0 implements Migration {
     }
 
     private void migrateLDAPProviders(KeycloakSession session, RealmModel realm) {
-        realm.getUserStorageProvidersStream().forEachOrdered(fedProvider -> {
+        UserStorageUtil.getUserStorageProvidersStream(realm).forEachOrdered(fedProvider -> {
             if (fedProvider.getProviderId().equals(LDAPConstants.LDAP_PROVIDER)) {
                 fedProvider = new UserStorageProviderModel(fedProvider);  // copy don't want to muck with cache
                 MultivaluedHashMap<String, String> config = fedProvider.getConfig();

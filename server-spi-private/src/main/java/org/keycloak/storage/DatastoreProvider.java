@@ -21,5 +21,8 @@ public interface DatastoreProvider extends Provider {
     public RoleProvider roles();
     
     public UserProvider users();
-    
+
+    ExportImportManager getExportImportManager();
+
+    MigrationManager getMigrationManager();
 }

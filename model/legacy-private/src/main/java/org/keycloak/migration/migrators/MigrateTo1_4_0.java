@@ -29,6 +29,7 @@ import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.DefaultRequiredActions;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.storage.UserStorageUtil;
 
 import java.util.Arrays;
 import java.util.List;
@@ -67,7 +68,7 @@ public class MigrateTo1_4_0 implements Migration {
 
     private void migrateLDAPMappers(KeycloakSession session, RealmModel realm) {
         List<String> mandatoryInLdap = Arrays.asList("username", "username-cn", "first name", "last name");
-        realm.getUserStorageProvidersStream()
+        UserStorageUtil.getUserStorageProvidersStream(realm)
                 .filter(providerModel -> Objects.equals(providerModel.getProviderId(), LDAPConstants.LDAP_PROVIDER))
                 .forEachOrdered(providerModel -> realm.getComponentsStream(providerModel.getId())
                         .filter(mapper -> mandatoryInLdap.contains(mapper.getName()))

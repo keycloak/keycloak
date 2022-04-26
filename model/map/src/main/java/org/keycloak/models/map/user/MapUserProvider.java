@@ -48,7 +48,6 @@ import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.storage.StorageId;
-import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.client.ClientStorageProvider;
 
 import java.util.Collection;
@@ -456,9 +455,6 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
     public void preRemove(RealmModel realm, ComponentModel component) {
         String componentId = component.getId();
         LOG.tracef("preRemove[ComponentModel](%s, %s)%s", realm, componentId, getShortStackTrace());
-        if (component.getProviderType().equals(UserStorageProvider.class.getName())) {
-            removeImportedUsers(realm, componentId);
-        }
         if (component.getProviderType().equals(ClientStorageProvider.class.getName())) {
             DefaultModelCriteria<UserModel> mcb = criteria();
             mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())

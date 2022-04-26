@@ -12,13 +12,14 @@ import org.keycloak.models.cache.UserCache;
 import org.keycloak.storage.ClientScopeStorageManager;
 import org.keycloak.storage.ClientStorageManager;
 import org.keycloak.storage.DatastoreProvider;
+import org.keycloak.storage.ExportImportManager;
 import org.keycloak.storage.GroupStorageManager;
 import org.keycloak.storage.LegacyStoreManagers;
+import org.keycloak.storage.MigrationManager;
 import org.keycloak.storage.RoleStorageManager;
 import org.keycloak.storage.UserStorageManager;
 
 public class LegacyDatastoreProvider implements DatastoreProvider, LegacyStoreManagers {
-
     private final LegacyDatastoreProviderFactory factory;
     private final KeycloakSession session;
 
@@ -184,4 +185,15 @@ public class LegacyDatastoreProvider implements DatastoreProvider, LegacyStoreMa
         }
         return userProvider;
     }
+
+    @Override
+    public ExportImportManager getExportImportManager() {
+        return new LegacyExportImportManager(session);
+    }
+
+    @Override
+    public MigrationManager getMigrationManager() {
+        return new LegacyMigrationManager(session);
+    }
+
 }
