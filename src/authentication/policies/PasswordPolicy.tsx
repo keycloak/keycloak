@@ -134,6 +134,7 @@ export const PasswordPolicy = ({
           <PageSection variant="light">
             <FormProvider {...form}>
               <FormAccess
+                className="keycloak__policies_authentication__form"
                 role="manage-realm"
                 isHorizontal
                 onSubmit={handleSubmit(save)}

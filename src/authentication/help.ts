@@ -47,5 +47,30 @@ export default {
       "Avoid registering the authenticator that has already been registered.",
     webAuthnPolicyAcceptableAaguids:
       "The list of AAGUID of which an authenticator can be registered.",
+
+    passwordPolicies: {
+      forceExpiredPasswordChange:
+        "The number of days the password is valid before a new password is required.",
+      hashIterations:
+        "The number of times a password is hashed before storage or verification. Default: 27,500.",
+      passwordHistory: "Prevents a recently used password from being reused.",
+      passwordBlacklist:
+        "Prevents the use of a password that is in a blacklist file.",
+      regexPattern:
+        "Requires that the password matches one or more defined regular expression patterns.",
+      length: "The minimum number of characters required for the password.",
+      notUsername: "The password cannot match the username.",
+      notEmail: "The password cannot match the email address of the user.",
+      specialChars:
+        "The number of special characters required in the password string.",
+      upperCase:
+        "The number of uppercase letters required in the password string.",
+      lowerCase:
+        "The number of lowercase letters required in the password string.",
+      digits: "The number of numerical digits required in the password string.",
+      hashAlgorithm:
+        "Applies a hashing algorithm to passwords, so they are not stored in clear text.",
+      maxLength: "The maximum number of characters allowed in the password.",
+    },
   },
 };

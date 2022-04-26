@@ -14,6 +14,7 @@ import { MinusCircleIcon } from "@patternfly/react-icons";
 import type PasswordPolicyTypeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/passwordPolicyTypeRepresentation";
 
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
+import { HelpItem } from "../../components/help-enabler/HelpItem";
 
 import "./policy-row.css";
 
@@ -40,6 +41,12 @@ export const PolicyRow = ({
       helperTextInvalid={t("common:required")}
       validated={
         errors[id!] ? ValidatedOptions.error : ValidatedOptions.default
+      }
+      labelIcon={
+        <HelpItem
+          helpText={`authentication-help:passwordPolicies.${id}`}
+          fieldLabelId={`authentication:${id}`}
+        />
       }
     >
       <Split>
