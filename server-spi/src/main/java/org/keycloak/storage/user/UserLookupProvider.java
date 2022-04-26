@@ -21,7 +21,7 @@ import org.keycloak.models.UserModel;
 
 /**
  * This is an optional capability interface that is intended to be implemented by any
- * {@link org.keycloak.storage.UserStorageProvider UserStorageProvider} that supports basic user querying. You must
+ * <code>UserStorageProvider</code> that supports basic user querying. You must
  * implement this interface if you want to be able to log in to keycloak using users from your storage.
  * <p/>
  * Note that all methods in this interface should limit search only to data available within the storage that is

@@ -25,11 +25,11 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.CachedUserModel;
 import org.keycloak.models.cache.OnUserCache;
 import org.keycloak.models.cache.UserCache;
+import org.keycloak.provider.Provider;
+import org.keycloak.provider.ProviderFactory;
 import org.keycloak.storage.AbstractStorageManager;
+import org.keycloak.storage.CacheableStorageProviderModel;
 import org.keycloak.storage.StorageId;
-import org.keycloak.storage.UserStorageProvider;
-import org.keycloak.storage.UserStorageProviderFactory;
-import org.keycloak.storage.UserStorageProviderModel;
 
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -41,11 +41,11 @@ import java.util.stream.Stream;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class UserCredentialStoreManager extends AbstractStorageManager<UserStorageProvider, UserStorageProviderModel>
+public class UserCredentialStoreManager extends AbstractStorageManager<Provider, CacheableStorageProviderModel>
         implements UserCredentialManager.Streams, OnUserCache {
 
     public UserCredentialStoreManager(KeycloakSession session) {
-        super(session, UserStorageProviderFactory.class, UserStorageProvider.class, UserStorageProviderModel::new, "user");
+        super(session, ProviderFactory.class, Provider.class, componentModel -> null, "user");
     }
 
     protected UserCredentialStore getStoreForUser(UserModel user) {
@@ -143,6 +143,7 @@ public class UserCredentialStoreManager extends AbstractStorageManager<UserStora
         List<CredentialInput> toValidate = new LinkedList<>(inputs);
         String providerId = StorageId.isLocalStorage(user) ? user.getFederationLink() : StorageId.resolveProviderId(user);
         if (providerId != null) {
+            /*
             UserStorageProviderModel model = getStorageProviderModel(realm, providerId);
             if (model == null || !model.isEnabled()) return false;
 
@@ -150,6 +151,7 @@ public class UserCredentialStoreManager extends AbstractStorageManager<UserStora
             if (validator != null) {
                 validate(realm, user, toValidate, validator);
             }
+             */
         }
 
         if (toValidate.isEmpty()) return true;
@@ -176,6 +178,7 @@ public class UserCredentialStoreManager extends AbstractStorageManager<UserStora
         if (!StorageId.isLocalStorage(user)) throwExceptionIfInvalidUser(user);
 
         if (providerId != null) {
+            /*
             UserStorageProviderModel model = getStorageProviderModel(realm, providerId);
             if (model == null || !model.isEnabled()) return false;
 
@@ -183,6 +186,7 @@ public class UserCredentialStoreManager extends AbstractStorageManager<UserStora
             if (updater != null && updater.supportsCredentialType(input.getType())) {
                 if (updater.updateCredential(realm, user, input)) return true;
             }
+             */
         }
 
         return getCredentialProviders(session, CredentialInputUpdater.class)
@@ -195,6 +199,7 @@ public class UserCredentialStoreManager extends AbstractStorageManager<UserStora
         String providerId = StorageId.isLocalStorage(user) ? user.getFederationLink() : StorageId.resolveProviderId(user);
         if (!StorageId.isLocalStorage(user)) throwExceptionIfInvalidUser(user);
         if (providerId != null) {
+            /*
             UserStorageProviderModel model = getStorageProviderModel(realm, providerId);
             if (model == null || !model.isEnabled()) return;
 
@@ -202,6 +207,8 @@ public class UserCredentialStoreManager extends AbstractStorageManager<UserStora
             if (updater.supportsCredentialType(credentialType)) {
                 updater.disableCredentialType(realm, user, credentialType);
             }
+
+             */
         }
 
         getCredentialProviders(session, CredentialInputUpdater.class)
@@ -214,11 +221,13 @@ public class UserCredentialStoreManager extends AbstractStorageManager<UserStora
         Stream<String> types = Stream.empty();
         String providerId = StorageId.isLocalStorage(user) ? user.getFederationLink() : StorageId.resolveProviderId(user);
         if (providerId != null) {
+            /*
             UserStorageProviderModel model = getStorageProviderModel(realm, providerId);
             if (model == null || !model.isEnabled()) return types;
 
             CredentialInputUpdater updater = getStorageProviderInstance(model, CredentialInputUpdater.class);
             if (updater != null) types = updater.getDisableableCredentialTypesStream(realm, user);
+             */
         }
 
         return Stream.concat(types, getCredentialProviders(session, CredentialInputUpdater.class)
@@ -251,6 +260,7 @@ public class UserCredentialStoreManager extends AbstractStorageManager<UserStora
     private UserStorageCredentialConfigured isConfiguredThroughUserStorage(RealmModel realm, UserModel user, String type) {
         String providerId = StorageId.isLocalStorage(user) ? user.getFederationLink() : StorageId.resolveProviderId(user);
         if (providerId != null) {
+            /*
             UserStorageProviderModel model = getStorageProviderModel(realm, providerId);
             if (model == null || !model.isEnabled()) return UserStorageCredentialConfigured.USER_STORAGE_DISABLED;
 
@@ -258,6 +268,7 @@ public class UserCredentialStoreManager extends AbstractStorageManager<UserStora
             if (validator != null && validator.supportsCredentialType(type) && validator.isConfiguredFor(realm, user, type)) {
                 return UserStorageCredentialConfigured.CONFIGURED;
             }
+             */
         }
 
         return UserStorageCredentialConfigured.NOT_CONFIGURED;

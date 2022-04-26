@@ -162,9 +162,9 @@ public class CacheableStorageProviderModel extends PrioritizedComponentModel {
     }
 
     public long getLifespan() {
-        UserStorageProviderModel.CachePolicy policy = getCachePolicy();
+        CachePolicy policy = getCachePolicy();
         long lifespan = -1;
-        if (policy == null || policy == UserStorageProviderModel.CachePolicy.DEFAULT) {
+        if (policy == null || policy == CachePolicy.DEFAULT) {
             lifespan = -1;
         } else if (policy == CacheableStorageProviderModel.CachePolicy.EVICT_DAILY) {
             if (getEvictionHour() > -1 && getEvictionMinute() > -1) {
