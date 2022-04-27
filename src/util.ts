@@ -89,7 +89,15 @@ export const convertToFormValues = (
     if (key === "attributes" && isAttributesObject(value)) {
       setValue(key, arrayToKeyValue(value as Record<string, string[]>));
     } else if (key === "config" || key === "attributes") {
-      setValue(key, !isEmpty(value) ? unflatten(value) : undefined);
+      if (!isEmpty(value)) {
+        const flattened: any = flatten(value, { safe: true });
+        const convertedValues = Object.entries(flattened).map(([key, value]) =>
+          Array.isArray(value) ? [key, value[0]] : [key, value]
+        );
+        setValue(key, unflatten(Object.fromEntries(convertedValues)));
+      } else {
+        setValue(key, undefined);
+      }
     } else {
       setValue(key, value);
     }

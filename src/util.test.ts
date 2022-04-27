@@ -111,4 +111,20 @@ describe("Tests the form convert util functions", () => {
       attributes: {},
     });
   });
+
+  it("convert single element arrays to string", () => {
+    const given = {
+      config: { group: ["one"], another: { nested: ["value"] } },
+    };
+    const setValue = jest.fn();
+
+    //when
+    convertToFormValues(given, setValue);
+
+    //then
+    expect(setValue).toHaveBeenCalledWith("config", {
+      group: "one",
+      another: { nested: "value" },
+    });
+  });
 });
