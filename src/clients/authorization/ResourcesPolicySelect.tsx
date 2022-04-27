@@ -3,14 +3,17 @@ import { useTranslation } from "react-i18next";
 import { Controller, useFormContext } from "react-hook-form";
 import { Select, SelectOption, SelectVariant } from "@patternfly/react-core";
 
+import type ResourceRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceRepresentation";
 import type PolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyRepresentation";
 import type { Clients } from "@keycloak/keycloak-admin-client/lib/resources/clients";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 
+type Type = "resources" | "policies";
+
 type ResourcesPolicySelectProps = {
-  name: keyof PolicyRepresentation;
+  name: Type;
   clientId: string;
-  searchFunction: keyof Pick<Clients, "listPolicies" | "listResources">;
+  permissionId?: string;
   variant?: SelectVariant;
   preSelected?: string;
   isRequired?: boolean;
@@ -21,10 +24,31 @@ type Policies = {
   name?: string;
 };
 
+type TypeMapping = {
+  [key in Type]: {
+    searchFunction: keyof Pick<Clients, "listPolicies" | "listResources">;
+    fetchFunction: keyof Pick<
+      Clients,
+      "getAssociatedPolicies" | "getAssociatedResources"
+    >;
+  };
+};
+
+const typeMapping: TypeMapping = {
+  resources: {
+    searchFunction: "listResources",
+    fetchFunction: "getAssociatedResources",
+  },
+  policies: {
+    searchFunction: "listPolicies",
+    fetchFunction: "getAssociatedPolicies",
+  },
+};
+
 export const ResourcesPolicySelect = ({
   name,
-  searchFunction,
   clientId,
+  permissionId,
   variant = SelectVariant.typeaheadMulti,
   preSelected,
   isRequired = false,
@@ -40,20 +64,40 @@ export const ResourcesPolicySelect = ({
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
 
+  const functions = typeMapping[name];
+
+  const convert = (
+    p: PolicyRepresentation | ResourceRepresentation
+  ): Policies => ({
+    id: "_id" in p ? p._id : "id" in p ? p.id : undefined,
+    name: p.name,
+  });
+
   useFetch(
     async () =>
       (
-        await adminClient.clients[searchFunction](
-          Object.assign(
-            { id: clientId, first: 0, max: 10 },
-            search === "" ? null : { name: search }
-          )
-        )
-      ).map((p) => ({
-        id: "_id" in p ? p._id : "id" in p ? p.id : undefined,
-        name: p.name,
-      })),
-    (policies) => setItems(policies),
+        await Promise.all([
+          adminClient.clients[functions.searchFunction](
+            Object.assign(
+              { id: clientId, first: 0, max: 10 },
+              search === "" ? null : { name: search }
+            )
+          ),
+          permissionId
+            ? adminClient.clients[functions.fetchFunction]({
+                id: clientId,
+                permissionId,
+              })
+            : Promise.resolve([]),
+        ])
+      )
+        .flat()
+        .map(convert)
+        .filter(
+          ({ id }, index, self) =>
+            index === self.findIndex(({ id: otherId }) => id === otherId)
+        ),
+    setItems,
     [search]
   );
 

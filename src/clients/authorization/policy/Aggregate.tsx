@@ -24,11 +24,7 @@ export const Aggregate = () => {
           />
         }
       >
-        <ResourcesPolicySelect
-          name="policies"
-          searchFunction="listPolicies"
-          clientId={id}
-        />
+        <ResourcesPolicySelect name="policies" clientId={id} />
       </FormGroup>
       <DecisionStrategySelect helpLabel="policyDecisionStagey" />
     </>

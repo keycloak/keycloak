@@ -296,8 +296,8 @@ export default function PermissionDetails() {
               >
                 <ResourcesPolicySelect
                   name="resources"
-                  searchFunction="listResources"
                   clientId={id}
+                  permissionId={permissionId}
                   preSelected={
                     permissionType === "scope" ? undefined : selectedId
                   }
@@ -343,8 +343,8 @@ export default function PermissionDetails() {
             >
               <ResourcesPolicySelect
                 name="policies"
-                searchFunction="listPolicies"
                 clientId={id}
+                permissionId={permissionId}
               />
             </FormGroup>
             <FormGroup
