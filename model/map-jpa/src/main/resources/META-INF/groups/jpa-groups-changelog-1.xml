@@ -59,6 +59,8 @@ limitations under the License.
             <column name="name" type="VARCHAR(255)"/>
             <column name="value" type="text"/>
         </createTable>
+        <!-- this is deferrable and initiallyDeferred as hibernate will first insert new entries and then delete the old by default -->
+        <addUniqueConstraint tableName="kc_group_attribute" columnNames="fk_root, name, value" deferrable="true" initiallyDeferred="true" />
         <createIndex tableName="kc_group_attribute" indexName="group_attr_fk_root">
             <column name="fk_root"/>
         </createIndex>

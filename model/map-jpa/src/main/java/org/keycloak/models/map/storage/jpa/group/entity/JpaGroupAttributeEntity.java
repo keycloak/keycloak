@@ -18,10 +18,14 @@ package org.keycloak.models.map.storage.jpa.group.entity;
 
 import javax.persistence.Entity;
 import javax.persistence.Table;
+import javax.persistence.UniqueConstraint;
+
 import org.keycloak.models.map.storage.jpa.JpaAttributeEntity;
 
 @Entity
-@Table(name = "kc_group_attribute")
+@Table(name = "kc_group_attribute", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"fk_root", "name", "value"})
+})
 public class JpaGroupAttributeEntity extends JpaAttributeEntity<JpaGroupEntity> {
 
     public JpaGroupAttributeEntity() {
