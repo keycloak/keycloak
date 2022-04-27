@@ -1,0 +1,9 @@
+{
+  "flowType": "它是什么样的形式",
+  "topLevelFlowType": "什么样的顶层流是什么？类型“客户端”用于客户端（应用程序）的认证，当通用是为用户和其他",
+  "alias": "配置的名称",
+  "otpType": "totp是基于时间的一次性密码。 'hotp'是一个计数器基本一次性密码，其中服务器保持一个计数器哈希。",
+  "otpHashAlgorithm": "应该使用什么散列算法来生成OTP。",
+  "otpPolicyDigits": "OTP有多少位？",
+  "otpPolicyPeriod": "OTP令牌有效多少秒？默认为30秒。"
+}

@@ -1,0 +1,72 @@
+{
+  "selectARole": "选择角色",
+  "usermodel": {
+    "prop": {
+      "label": "属性",
+      "tooltip": "UserModel 接口中属性方法的名字. 例如,  'email' 会引用UserModel.getEmail() 方法."
+    },
+    "attr": {
+      "label": "用户属性",
+      "tooltip": "在UserModel.attribute映射中定义的存储的用户属性名。"
+    },
+    "clientRoleMapping": {
+      "client": {
+        "label": "客户端 ID",
+        "tooltip": "角色映射的客户端ID"
+      },
+      "rolePrefix": {
+        "label": "客户端角色前缀",
+        "tooltip": "每个客户端角色的前缀（可选）。"
+      }
+    },
+    "realmRoleMapping": {
+      "rolePrefix": {
+        "label": "Realm角色前缀",
+        "tooltip": "每个领域角色的前缀（可选）。"
+      }
+    }
+  },
+  "userSession": {
+    "modelNote": {
+      "label": "用户会话标记",
+      "tooltip": "用户会话标记在 UserSessionModel.note映射中的属性名。"
+    }
+  },
+  "multivalued": {
+    "label": "多值的",
+    "tooltip": "表示此值是否支持多值.如果为真，所有值会设置为已知。如果为假，只有第一个值是已知。"
+  },
+  "selectRole": {
+    "label": "选择角色",
+    "tooltip": "在左边文本框输入角色或点击这个按钮浏览并选择您想要的角色。"
+  },
+  "tokenClaimName": {
+    "label": "Token申请名",
+    "tooltip": "token中加入的申请者名. 这可以是个完整的分级信息例如 'address.street'. 这种情况下，会生成一个复杂的json回复"
+  },
+  "jsonType": {
+    "label": "申请 JSON 的类型",
+    "tooltip": "用来展现申请的JSON 类型 long, int, boolean, 和 String 是有效值"
+  },
+  "includeInIdToken": {
+    "label": "添加到ID令牌",
+    "tooltip": "是否应将声明添加到ID令牌？"
+  },
+  "includeInAccessToken": {
+    "label": "添加到访问令牌",
+    "tooltip": "是否应该将声明添加到访问令牌？"
+  },
+  "includeInUserInfo": {
+    "label": "添加到userinfo",
+    "tooltip": "是否应该将声明添加到userinfo？"
+  },
+  "sectorIdentifierUri": {
+    "label": "扇区标识符URI",
+    "tooltip": "使用成对子值和支持的提供程序动态客户端注册应使用sector_identifier_uri参数。它为一组在共同管理控制下的网站提供了一种独立于各个域名的具有一致的成对子值的方法。它还为客户端更改redirect_uri域而不必重新注册其所有用户提供了一种方法。"
+  },
+  "pairwiseSubAlgorithmSalt": {
+    "label": "Salt",
+    "tooltip": "计算成对主体标识符时使用的盐。如果留空，将产生盐。"
+  },
+  "name-id-format": "名称ID格式"
+}

@@ -1,0 +1,9 @@
+{
+  "partialExportHeaderText": "Partial export allows you to export realm configuration, and other associated resources into a json file.",
+  "includeGroupsAndRoles": "Include groups and roles",
+  "includeClients": "Include clients",
+  "exportWarningTitle": "Export with caution",
+  "exportWarningDescription": "If there is a great number of groups, roles or clients in your realm, the operation may make server unresponsive for a while.",
+  "exportSuccess": "Realm successfully exported.",
+  "exportFail": "Could not export realm: '{{error}}'"
+}

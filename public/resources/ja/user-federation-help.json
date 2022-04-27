@@ -1,0 +1,13 @@
+{
+  "vendorHelp": "LDAPベンダー（プロバイダー）",
+  "consoleDisplayConnectionUrlHelp": "LDAPサーバーへの接続URL",
+  "connectionTimeoutHelp": "LDAP接続タイムアウト（ミリ秒単位）",
+  "bindCredentialsHelp": "LDAP管理者のパスワードを設定します。このフィールドは、ボールトから値を取得できます。${vault.ID}形式を使用します。",
+  "editModeLdapHelp": "READ_ONLYの場合、LDAPストアに読み取り専用でアクセスします。WRITABLEは、必要に応じてデータをLDAPに同期させることを意味します。UNSYNCEDは、ユーザーデータをインポートするが、LDAPに同期しないことを意味します。",
+  "fullSyncPeriodHelp": "フル同期の周期を秒で設定します。",
+  "changedUsersSyncHelp": "変更または新規作成されたLDAPユーザーの同期周期を秒で設定します。",
+  "trustEmailHelp": "有効とした場合は、このレルムでEメールの確認が有効となっている場合でも、このプロバイダーが提供するEメールは確認されなくなります。",
+  "debugHelp": "Krb5LoginModuleの標準出力へのデバッグロギングの有効/無効を設定します。",
+  "allowPasswordAuthenticationHelp": "Kerberosデータベースに対するユーザー名/パスワード認証の有効/無効を設定します。",
+  "updateFirstLoginHelp": "初回ログイン時のプロファイル更新の有効/無効を設定します。"
+}

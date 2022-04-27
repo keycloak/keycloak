@@ -1,0 +1,35 @@
+{
+  "title": "验证",
+  "flows": "流量",
+  "requiredActions": "必需操作",
+  "policies": "策略",
+  "passwordPolicy": "密码策略",
+  "otpPolicy": "OTP策略",
+  "otpType": "OTP类型",
+  "policyType": {
+    "totp": "基于时间的",
+    "hotp": "基于计数器"
+  },
+  "otpHashAlgorithm": "OTP哈希算法",
+  "otpPolicyDigits": "位数",
+  "lookAhead": "向前看窗口",
+  "otpPolicyPeriod": "OTP令牌周期",
+  "initialCounter": "初始计数器",
+  "attestationPreference": {
+    "none": "none"
+  },
+  "flow": {
+    "browserFlow": "浏览器流",
+    "registrationFlow": "注册流程",
+    "directGrantFlow": "直接授权流"
+  },
+  "edit": "编辑",
+  "flowType": "流类型",
+  "flow-type": {
+    "basic-flow": "generic",
+    "form-flow": "form"
+  },
+  "addExecution": "添加执行",
+  "requirement": "需求",
+  "alias": "别名"
+}

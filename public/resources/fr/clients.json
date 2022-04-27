@@ -1,0 +1,13 @@
+{
+  "password": "Mot de passe",
+  "clientList": "Clients",
+  "authentication": "Authentification",
+  "loginTheme": "Thème de connexion",
+  "revocation": "Révocation",
+  "notBefore": "Pas avant",
+  "setToNow": "Mettre à maintenant",
+  "push": "Appuyer",
+  "clear": "Effacer",
+  "accessTokenLifespan": "Durée de vie du jeton d''accès",
+  "certificate": "Certificat"
+}

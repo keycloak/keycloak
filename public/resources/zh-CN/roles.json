@@ -1,0 +1,13 @@
+{
+  "associatedRolesText": "关联角色",
+  "title": "Realm角色",
+  "addRole": "添加角色",
+  "roleName": "角色名称",
+  "composite": "Composite",
+  "addUser": "添加用户",
+  "users": "用户",
+  "userName": "用户名",
+  "email": "电子邮件",
+  "lastName": "姓氏",
+  "firstName": "名字"
+}

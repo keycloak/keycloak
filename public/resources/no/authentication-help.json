@@ -1,0 +1,9 @@
+{
+  "flowType": "Hva slags skjema det er",
+  "topLevelFlowType": "Hvilken type toppnivå flyt er det? Type 'klient' brukes for autentisering av klienter (applikasjoner) når generisk brukes for brukere og alt annet",
+  "alias": "Navn på konfigurasjonen",
+  "otpType": "Totp er et tidsbasert engangspassord. 'hotp' er et teller basert engangspassord hvor serveren følger med på en teller som den kan hashe mot.",
+  "otpHashAlgorithm": "Hva slags hashing algoritme skal brukes for å generere OTP.",
+  "otpPolicyDigits": "Hvor mange sifre skal OTP ha?",
+  "otpPolicyPeriod": "Hvor mange sekunder burde et engangskode token være gyldig? Standard er satt til 30 sekunder."
+}

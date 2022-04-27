@@ -17,7 +17,7 @@ import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import type { IdentityProviderAddMapperParams } from "../routes/AddMapper";
-import type { RoleRepresentation } from "../../model/role-model";
+import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
 import { useAlerts } from "../../components/alert/Alerts";
 import {
   IdentityProviderEditMapperParams,

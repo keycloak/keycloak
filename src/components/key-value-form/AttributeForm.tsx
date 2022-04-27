@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { FormProvider, UseFormMethods } from "react-hook-form";
 import { ActionGroup, Button } from "@patternfly/react-core";
 
-import type { RoleRepresentation } from "../../model/role-model";
+import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
 import type { KeyValueType } from "./key-value-convert";
 import { KeyValueInput } from "./KeyValueInput";
 import { FormAccess } from "../form-access/FormAccess";

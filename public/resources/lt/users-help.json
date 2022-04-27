@@ -1,0 +1,6 @@
+{
+  "temporaryLocked": "Naudotojas laikintai užrakintas, nes per daug klydo prisijungiant prie sistemos.",
+  "emailVerified": "Ar naudotojo el. pašto adresas yra patvirtintas?",
+  "requiredUserActions": "Nurodykite kuriuos veiksmus po prisijungimo naudotojas privalo atlikti. 'Patvirtinti el. pašto adresą' į naudotojo el. pašto adresą siunčia patvirtinimo nuorodą. 'Atnaujinti profilio informaciją' reikalauja naudotojo peržiūrėti ir atnaujinti profilio informaciją. 'Atnaujinti slaptažodį' reikalauja naudotojo pasikeisti slaptažodį. 'Konfigūruoti OTP' reikalauja atnaujinti mobilaus slaptažodžių generatoriaus konfigūraciją.",
+  "groups": "Visos grupės, kurių narys yra šis naudotojas. Pažymėkite grupę ir paspauskite 'Palikti' norėdami pašalinti naudotoją iš grupės."
+}

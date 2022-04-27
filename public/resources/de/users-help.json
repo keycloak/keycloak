@@ -1,0 +1,5 @@
+{
+  "temporaryLocked": "Der Benutzer wurde vorübergehend wegen zuvieler ungültiger Loginversuche gesperrt.",
+  "emailVerified": "Wurde die E-Mail des Benutzers verifiziert?",
+  "requiredUserActions": "Verlangt eine Aktion wenn sich der Benutzer einloggt. 'E-Mail Verifizieren' sendet eine E-Mail an den Benutzer, um die Gültigkeit seiner E-Mailadresse zu prüfen. 'Profil aktualisieren' verlangt, dass Benutzer ihre persönlichen Angaben eingeben. 'Passwort aktualisieren' zwingt Benutzer ein neues Passwort zu setzen. 'OTP konfigurieren' zwingt Benutzer einen mobilen Passwort-Generator einzurichten (i.e. Google Authenticator)"
+}

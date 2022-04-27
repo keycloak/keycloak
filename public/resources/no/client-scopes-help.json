@@ -1,0 +1,10 @@
+{
+  "name": "Navn på klientmal. Må være unik i sikkerhetsdomenet.",
+  "description": "Beskrivelse av klientmal",
+  "protocol": "Hvilken SSO protokoll-konfigurasjon som blir levert av denne klientmalen",
+  "prefix": "Prefiks for hver sikkerhetsdomenerolle (valgfri).",
+  "multiValued": "Angir om en attributt støtter flere verdier. Hvis true, vil listen med alle verdier for dette attributtet bli satt som claims. Hvis false, vil bare den første verdien bli satt som claim.",
+  "tokenClaimName": "Navn på claim som skal legges inn i token. Denne kan være et fullt kvalifisert navn som 'address.street'. I dette tilfellet vil et nestet jsonobjekt bli laget.",
+  "claimJsonType": "JSON-type som burde bli brukt for å fylle json claimet i tokenet. long, int, boolean og String er gyldige verdier.",
+  "protocolMapper": "Protokoll..."
+}

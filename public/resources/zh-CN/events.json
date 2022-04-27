@@ -1,0 +1,20 @@
+{
+  "title": "事件",
+  "adminEvents": "管理事件",
+  "time": "时间",
+  "user": "用户",
+  "username": "用户名",
+  "email": "电子邮件",
+  "eventType": "事件类型",
+  "ipAddress": "IP地址",
+  "client": "client",
+  "realm": "领域",
+  "resourcePath": "资源路径",
+  "resourceType": "资源类型",
+  "resourceTypes": "资源类型",
+  "operationType": "操作类型",
+  "operationTypes": "操作类型",
+  "auth": "Auth",
+  "value": "Value",
+  "representation": "表示"
+}

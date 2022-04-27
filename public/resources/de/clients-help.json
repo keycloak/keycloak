@@ -1,0 +1,9 @@
+{
+  "validRedirectURIs": "Gültiges URI-Muster, zu dem ein Browser nach einer erfolgreichen An- oder Abmeldung umleiten kann. Einfache Platzhalter sind zulässig, z. B. \"http://example.com/*\". Es kann auch ein relativer Pfad angegeben werden, z. B. /my/relative/path/*. Relative Pfade beziehen sich auf die Root URL des Clients, oder wenn keine angegeben ist, wird die Stamm-URL des Autorisierungsservers verwendet. Für SAML muss man gültige URI-Muster festlegen, wenn man sich auf die in die Anmeldeanforderung eingebettete URL des Verbraucherdienstes verlässt.",
+  "webOrigins": "Erlaubte CORS Origins. Um alle Origins der Valid Redirect URIs zu erlauben, fügen Sie ein '+' hinzu. Dabei wird der '*' Platzhalter nicht mit übernommen. Um alle Origins zu erlauben, geben Sie explizit einen Eintrag mit '*' an.",
+  "clientId": "Legt die Id fest, auf die in URI und Token verwiesen wird. Zum Beispiel 'my-client'. Bei SAML ist dies auch der erwartete Issuer-Wert von authn-Anfragen",
+  "clientName": "Legt den Anzeigenamen des Clients fest. Zum Beispiel 'My Client'. Unterstützt auch Keys für lokalisierte Werte. Zum Beispiel: ${my_client}",
+  "resetActions": "Liste von Aktionen, die der Benutzer ausführen soll, wenn er eine E-Mail zum Zurücksetzen des Passworts erhält. 'Verify email' sendet bem Benutzer eine E-Mail um seine E-Mail-Adresse zu verifizieren. 'Update profile' verlangt vom Benutzer, dass er seine Profil-Informationen eingibt. 'Update password' verlangt vom Benutzer, dass er ein neues Passwort definiert. 'Configure OTP' verlangt vom Benutzer, dass er einen mobilen Passwort-Generator aufsetzt.",
+  "lifespan": "Maximale Zeit in der die Aktion zugelassen ist.",
+  "permissionsEnabled": "Legt fest, ob feingranulare Berechtigungen für diese Rolle aktiv sein sollen. Wird diese Option deaktiviert, werden alle aktuell aufgesetzten Berechtigungen gelöscht."
+}

@@ -1,0 +1,72 @@
+{
+  "selectARole": "Pasirinkti rolę",
+  "usermodel": {
+    "prop": {
+      "label": "Atributas",
+      "tooltip": "Sąsajos UserModel atributo metodo pavadinimas. Pavyzdžiui reikšmė 'email' atitinka UserMode.getEmail() metodą."
+    },
+    "attr": {
+      "label": "Naudotojo atributas",
+      "tooltip": "Išsaugoto naudotojo atributo pavadinimas kuris naudojamas UserModel.attribute rinkinyje."
+    },
+    "clientRoleMapping": {
+      "client": {
+        "label": "Kliento ID",
+        "tooltip": "Kliento ID naudojamas rolių atributų susiejime"
+      },
+      "rolePrefix": {
+        "label": "Kliento rolės prefiksas",
+        "tooltip": "Prefiksas, pridedamas prieš kiekvieną kliento rolę (neprivalomas)"
+      }
+    },
+    "realmRoleMapping": {
+      "rolePrefix": {
+        "label": "Srities rolės prefiksas",
+        "tooltip": "Prefiksas, pridedamas prieš kiekvieną srities rolę (neprivalomas)"
+      }
+    }
+  },
+  "userSession": {
+    "modelNote": {
+      "label": "Naudotojo sesijos pastaba",
+      "tooltip": "Išsaugotos naudotojo sesijos pastaba, kuri saugoma UserSessionModel.note rinkinyje."
+    }
+  },
+  "multivalued": {
+    "label": "Daugiareikšmis",
+    "tooltip": "Nurodo, kad atributas gali turėti daugiau nei vieną reikšmę. Jei pažymėtas, tuomet visos reikšmės nustatomos kaip privalomos. Kitu atveju privaloma tik pirmoji reikšmė."
+  },
+  "selectRole": {
+    "label": "Parinkite rolę",
+    "tooltip": "Kairėje pusėje esančiame laukelyje įveskite rolės pavadinimą arba paspauskite Rinktis norėdami nurodyti pageidaujamą rolę."
+  },
+  "tokenClaimName": {
+    "label": "Reikalaujamo rakto pavadinimas",
+    "tooltip": "Į raktą įterpiamas privalomas atributas. Galite nurodyte pilną kelią iki atributo, pavyzdžiui 'address.street'. Pateiktu atveju bus sukuriamas sudėtinis (nested) JSON objektas."
+  },
+  "jsonType": {
+    "label": "Privalomo atributo JSON tipas",
+    "tooltip": "Naudojamas JSON lauko tipas, kuris turi būti užpildomas rakto privalomoje JSON informacijoje. Galimi tipai: long, int, boolean ir String."
+  },
+  "includeInIdToken": {
+    "label": "Pridėti prie ID rakto",
+    "tooltip": "Ar privaloma informacija turi būti pridedama prie ID rakto?"
+  },
+  "includeInAccessToken": {
+    "label": "Pridėti prie prieigos rakto",
+    "tooltip": "Ar privaloma informacija turi būti pridedama prie prieigos rakto?"
+  },
+  "includeInUserInfo": {
+    "label": "Pridėti prie naudotojo informacijos",
+    "tooltip": "Ar privaloma informacija turi būti pridedama prie naudotojo informacijos?"
+  },
+  "sectorIdentifierUri": {
+    "label": "Sektoriaus identifikatoriaus URI",
+    "tooltip": "Paslaugų teikėjai, kurie naudoja porines subreikšmes ir palaiko dinaminę klientų registraciją (Dynamic Client Registration) turėtų naudoti sector_identifier_uri parametrą. Teikiamas funkcionalumas leidžia svetainių grupėms, valdomoms centralizuotos administravimo panelės, turėti pastovias porines subreikšmes nepriklausomas nuo domeno vardų. Tokiu būdu klientai gali keisti domenų redirect_uri neperregistruojant visų naudotojų."
+  },
+  "pairwiseSubAlgorithmSalt": {
+    "label": "Druska",
+    "tooltip": "Druska naudojama porinio objekto identifikatoriaus skaičiavimo metu. Jei paliekama tuščia reikšmė, tuomet druskos reikšmė bus automatikšai sugeneruota."
+  },
+  "name-id-format": "NameID formatas"
+}

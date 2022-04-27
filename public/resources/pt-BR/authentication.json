@@ -1,0 +1,35 @@
+{
+  "title": "Autenticação",
+  "flows": "Fluxos",
+  "requiredActions": "Ações requeridas",
+  "policies": "Políticas",
+  "passwordPolicy": "Política de senha",
+  "otpPolicy": "Política OTP",
+  "otpType": "Tipo OTP",
+  "policyType": {
+    "totp": "Baseado em tempo",
+    "hotp": "Baseado em contador"
+  },
+  "otpHashAlgorithm": "Algoritmo de hash OTP",
+  "otpPolicyDigits": "Quantidade de dígitos",
+  "lookAhead": "Look Ahead Window",
+  "otpPolicyPeriod": "Período de token OTP ",
+  "initialCounter": "Contador inicial",
+  "attestationPreference": {
+    "none": "Nenhum"
+  },
+  "flow": {
+    "browserFlow": "Fluxo de browser",
+    "registrationFlow": "Fluxo de registro",
+    "directGrantFlow": "Fluxo de Direct Grant"
+  },
+  "edit": "Editar",
+  "flowType": "Flow Type",
+  "flow-type": {
+    "basic-flow": "genérico",
+    "form-flow": "formulário"
+  },
+  "addExecution": "Adicionar execução",
+  "requirement": "Condição",
+  "alias": "Alias"
+}

@@ -1,7 +1,9 @@
+import KeycloakAdminClient from "@keycloak/keycloak-admin-client";
 import axios from "axios";
-import type KeycloakAdminClient from "@keycloak/keycloak-admin-client";
 import { createContext, DependencyList, useEffect } from "react";
 import { useErrorHandler } from "react-error-boundary";
+
+import environment from "../../environment";
 import useRequiredContext from "../../utils/useRequiredContext";
 
 export const AdminClient = createContext<KeycloakAdminClient | undefined>(
@@ -60,4 +62,24 @@ export function useFetch<T>(
       source.cancel();
     };
   }, deps);
+}
+
+export async function initAdminClient() {
+  const kcAdminClient = new KeycloakAdminClient();
+
+  await kcAdminClient.init(
+    { onLoad: "check-sso", pkceMethod: "S256" },
+    {
+      url: environment.authUrl,
+      realm: environment.loginRealm,
+      clientId: environment.isRunningAsTheme
+        ? "security-admin-console"
+        : "security-admin-console-v2",
+    }
+  );
+
+  kcAdminClient.setConfig({ realmName: environment.loginRealm });
+  kcAdminClient.baseUrl = environment.authUrl;
+
+  return kcAdminClient;
 }
