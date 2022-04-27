@@ -50,6 +50,6 @@ After successfull CRD installation, install the Keycloak Operator deployment by 
 kubectl apply -f https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/{version}/kubernetes/kubernetes.yml
 ----
 
-Currently the operator watches only the same namespace as it's installed.
+Currently the operator watches only the namespace where the operator is installed.
 
 </@tmpl.guide>
