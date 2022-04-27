@@ -39,7 +39,7 @@
             org.keycloak.adapters.osgi.*
         </keycloak.osgi.export>
         <keycloak.osgi.import>
-            org.ops4j.pax.web.*;version="[3.0,8)",
+            org.ops4j.pax.web.*;version="[3.0,9)",
             javax.servlet.*;version="[3.1,5)";resolution:=optional,
             org.eclipse.jetty.*;version="[8.1,10)";resolution:=optional,
             org.keycloak.*;version="${project.version}",

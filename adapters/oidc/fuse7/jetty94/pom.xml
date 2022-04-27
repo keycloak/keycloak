@@ -38,6 +38,7 @@
             !org.keycloak.adapters.osgi.jetty94,
             org.ops4j.pax.web.*;version="[7.1,9)",
             org.keycloak.*;version="${project.version}",
+            org.keycloak.adapters.osgi;version="${project.version}",
             *;resolution:=optional
         </keycloak.osgi.import>
         <keycloak.osgi.fragment>org.ops4j.pax.web.pax-web-jetty</keycloak.osgi.fragment>

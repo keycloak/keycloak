@@ -55,7 +55,6 @@
     </feature>
 
     <!-- Keycloak adapter for PaxWeb jetty provider -->
-<!--
     <feature name="keycloak-pax-http-jetty" version="${project.version}">
         <details>Keycloak Pax-Web adapter for Jetty 9.4</details>
         <feature>keycloak-adapter-core</feature>
@@ -66,7 +65,6 @@
         <bundle>mvn:org.keycloak/keycloak-jetty94-adapter/${project.version}</bundle>
         <bundle>mvn:org.keycloak/keycloak-pax-web-jetty94/${project.version}</bundle>
     </feature>
- -->
 
     <!-- Keycloak adapter for PaxWeb undertow provider -->
     <feature name="keycloak-pax-http-undertow" version="${project.version}">
@@ -77,11 +75,18 @@
         <bundle>mvn:org.keycloak/keycloak-undertow-adapter/${project.version}</bundle>
         <bundle>mvn:org.keycloak/keycloak-undertow-adapter-spi/${project.version}</bundle>
         <bundle>mvn:org.keycloak/keycloak-pax-web-undertow/${project.version}</bundle>
+    </feature>
+
+    <feature name="keycloak-camel-undertow" version="${project.version}">
+        <details>Keycloak Camel integration for Undertow</details>
+        <feature>keycloak-adapter-core</feature>
+        <bundle>mvn:org.keycloak/keycloak-osgi-adapter/${project.version}</bundle>
+        <bundle>mvn:org.keycloak/keycloak-undertow-adapter/${project.version}</bundle>
+        <bundle>mvn:org.keycloak/keycloak-undertow-adapter-spi/${project.version}</bundle>
         <bundle>mvn:org.keycloak/keycloak-camel-undertow/${project.version}</bundle>
     </feature>
 
     <!-- Keycloak adapter for PaxWeb tomcat provider -->
-<!--
     <feature name="keycloak-pax-http-tomcat" version="${project.version}">
         <details>Keycloak Pax-Web adapter for Tomcat 8</details>
         <feature>keycloak-adapter-core</feature>
@@ -89,10 +94,9 @@
         <bundle>mvn:org.keycloak/keycloak-osgi-adapter/${project.version}</bundle>
         <bundle>mvn:org.keycloak/keycloak-tomcat-core-adapter/${project.version}</bundle>
         <bundle>mvn:org.keycloak/keycloak-tomcat-adapter-spi/${project.version}</bundle>
-        <bundle>mvn:org.keycloak/keycloak-tomcat8-adapter/${project.version}</bundle>
+        <bundle>mvn:org.keycloak/keycloak-tomcat-adapter/${project.version}</bundle>
         <bundle>mvn:org.keycloak/keycloak-pax-web-tomcat8/${project.version}</bundle>
     </feature>
- -->
 
     <feature name="keycloak-servlet-filter-adapter" version="${project.version}" resolver="(obr)">
         <details>Keycloak servlet filter adapter</details>
