@@ -121,5 +121,11 @@ public class KeycloakIngressE2EIT extends ClusterOperatorTest {
                     assertEquals("HTTPS", i.getMetadata().getAnnotations().get("nginx.ingress.kubernetes.io/backend-protocol"));
                     assertEquals(Constants.KEYCLOAK_HTTPS_PORT, i.getSpec().getDefaultBackend().getService().getPort().getNumber());
                 });
+
+        // Delete the ingress
+        kc.getSpec().setDisableDefaultIngress(true);
+        K8sUtils.deployKeycloak(k8sclient, kc, true);
+
+        assertThat(k8sclient.network().v1().ingresses().inNamespace(namespace).list().getItems().size()).isEqualTo(0);
     }
 }

@@ -164,6 +164,22 @@ CONDITION: RollingUpdate
 === Accessing the Keycloak Deployment
 
 The Keycloak deployment is, by default, exposed through a basic nginx ingress and it will be accessible through the provided hostname.
+If the default ingress doesn't fit your use-case you can disable it by setting `disableDefaultIngress: true`:
+
+[source,bash]
+----
+cat <<EOF >> example-kc.yaml
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: example-kc
+spec:
+    ...
+    disableDefaultIngress: true
+EOF
+kubectl apply -f example-kc.yaml
+----
+And you can provide an alternative ingress resource pointing to the service `<keycloak-cr-name>-service`.
 
 For debugging and development purposes we suggest you to directly connect to the Keycloak service using a port forward:
 
