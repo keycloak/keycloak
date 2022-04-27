@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.ui.account2;
 
+import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.util.UIUtils.refreshPageAndWaitForLoad;
 
 import org.jboss.arquillian.graphene.page.Page;
@@ -31,6 +32,7 @@ import org.keycloak.events.EventType;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.auth.page.login.UpdateEmailPage;
@@ -86,6 +88,31 @@ public class UpdateEmailTest extends BaseAccountPageTest {
     }
 
     @Test
+    public void updateUserInfoWithRegistrationEnabled() {
+        enableRegistration(false, true);
+        refreshPageAndWaitForLoad();
+
+        assertTrue(personalInfoPage.valuesEqual(testUser));
+        personalInfoPage.assertSaveDisabled(false);
+
+        UserRepresentation newInfo = new UserRepresentation();
+        newInfo.setUsername(testUser.getUsername());
+        newInfo.setEmail(testUser.getEmail());
+        newInfo.setFirstName("New First");
+        newInfo.setLastName("New Last");
+
+        personalInfoPage.setValues(newInfo, true);
+        assertTrue(personalInfoPage.valuesEqual(newInfo));
+        personalInfoPage.assertSaveDisabled(false);
+        personalInfoPage.clickSave();
+        personalInfoPage.alert().assertSuccess();
+        personalInfoPage.assertSaveDisabled(false);
+
+        personalInfoPage.navigateTo();
+        personalInfoPage.valuesEqual(newInfo);
+    }
+
+    @Test
     public void aiaCancellationSucceeds() {
         refreshPageAndWaitForLoad();
         personalInfoPage.assertUpdateEmailLinkVisible(true);
@@ -120,6 +147,7 @@ public class UpdateEmailTest extends BaseAccountPageTest {
 
     private void enableRegistration(boolean emailAsUsername, boolean usernameEditionAllowed) {
         RealmRepresentation realmRepresentation = testRealmResource().toRepresentation();
+        realmRepresentation.setRegistrationAllowed(true);
         realmRepresentation.setRegistrationEmailAsUsername(emailAsUsername);
         realmRepresentation.setEditUsernameAllowed(usernameEditionAllowed);
         testRealmResource().update(realmRepresentation);
@@ -127,6 +155,7 @@ public class UpdateEmailTest extends BaseAccountPageTest {
 
     private void disableRegistration() {
         RealmRepresentation realmRepresentation = testRealmResource().toRepresentation();
+        realmRepresentation.setRegistrationAllowed(false);
         realmRepresentation.setRegistrationEmailAsUsername(false);
         realmRepresentation.setEditUsernameAllowed(false);
         testRealmResource().update(realmRepresentation);

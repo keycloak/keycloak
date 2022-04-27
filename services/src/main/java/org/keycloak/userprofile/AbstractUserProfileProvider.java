@@ -105,7 +105,7 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
     }
 
     private static boolean editEmailCondition(AttributeContext c) {
-        return !Profile.isFeatureEnabled(Profile.Feature.UPDATE_EMAIL) || c.getContext() != UPDATE_PROFILE;
+        return !Profile.isFeatureEnabled(Profile.Feature.UPDATE_EMAIL) || (c.getContext() != UPDATE_PROFILE && c.getContext() != ACCOUNT);
     }
 
     private static boolean readEmailCondition(AttributeContext c) {
