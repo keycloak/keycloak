@@ -63,11 +63,11 @@ public class KeycloakSpec {
         return this.hostname.equals(Constants.INSECURE_DISABLE);
     }
 
-    public void setDefaultIngressDisabled(boolean value) {
+    public void setDisableDefaultIngress(boolean value) {
         this.disableDefaultIngress = value;
     }
 
-    public boolean isDefaultIngressDisabled() {
+    public boolean isDisableDefaultIngress() {
         return this.disableDefaultIngress;
     }
 
