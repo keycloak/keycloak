@@ -460,7 +460,7 @@ public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest 
 
     @Test
     @UncaughtServerErrorExpected
-    public void testAccountLinkNoTokenStore() throws Exception {
+    public void testAccountLinkNoTokenStore() {
         testingClient.server().run(BrokerLinkAndTokenExchangeTest::turnOffTokenStore);
 
         RealmResource realm = adminClient.realms().realm(CHILD_IDP);
@@ -500,8 +500,6 @@ public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest 
 
     /**
      * KEYCLOAK-6026
-     * 
-     * @throws Exception
      */
     @Test
     @UncaughtServerErrorExpected
@@ -509,19 +507,22 @@ public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest 
         ContainerAssume.assumeNotAuthServerRemote();
 
         testExternalExchange();
-        testingClient.testing().exportImport().setProvider(SingleFileExportProviderFactory.PROVIDER_ID);
-        String targetFilePath = testingClient.testing().exportImport().getExportImportTestDirectory() + File.separator + "singleFile-full.json";
-        testingClient.testing().exportImport().setFile(targetFilePath);
-        testingClient.testing().exportImport().setAction(ExportImportConfig.ACTION_EXPORT);
-        testingClient.testing().exportImport().setRealmName(CHILD_IDP);
-        testingClient.testing().exportImport().runExport();
 
-        adminClient.realms().realm(CHILD_IDP).remove();
-        testingClient.testing().exportImport().setAction(ExportImportConfig.ACTION_IMPORT);
+        try {
+            testingClient.testing().exportImport().setProvider(SingleFileExportProviderFactory.PROVIDER_ID);
+            String targetFilePath = testingClient.testing().exportImport().getExportImportTestDirectory() + File.separator + "singleFile-full.json";
+            testingClient.testing().exportImport().setFile(targetFilePath);
+            testingClient.testing().exportImport().setAction(ExportImportConfig.ACTION_EXPORT);
+            testingClient.testing().exportImport().setRealmName(CHILD_IDP);
+            testingClient.testing().exportImport().runExport();
 
-        testingClient.testing().exportImport().runImport();
+            adminClient.realms().realm(CHILD_IDP).remove();
+            testingClient.testing().exportImport().setAction(ExportImportConfig.ACTION_IMPORT);
 
-        testingClient.testing().exportImport().clear();
+            testingClient.testing().exportImport().runImport();
+        } finally {
+            testingClient.testing().exportImport().clear();
+        }
 
         testExternalExchange();
     }
@@ -552,8 +553,8 @@ public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest 
             rep.getConfig().put("issuer", parentIssuer);
             adminClient.realm(CHILD_IDP).identityProviders().get(PARENT_IDP).update(rep);
 
-            String exchangedUserId = null;
-            String exchangedUsername = null;
+            String exchangedUserId;
+            String exchangedUsername;
 
             {
                 // test signature validation
@@ -699,7 +700,7 @@ public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest 
 
             {
                 // test unauthorized client gets 403
-                Response response = exchangeUrl.request()
+                try (Response response = exchangeUrl.request()
                         .header(HttpHeaders.AUTHORIZATION, BasicAuthHelper.createHeader(UNAUTHORIZED_CHILD_CLIENT, "password"))
                         .post(Entity.form(
                                 new Form()
@@ -708,8 +709,9 @@ public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest 
                                         .param(OAuth2Constants.SUBJECT_TOKEN_TYPE, OAuth2Constants.JWT_TOKEN_TYPE)
                                         .param(OAuth2Constants.SUBJECT_ISSUER, PARENT_IDP)
 
-                        ));
-                Assert.assertEquals(403, response.getStatus());
+                        ))) {
+                    Assert.assertEquals(403, response.getStatus());
+                }
             }
         } finally {
             httpClient.close();
