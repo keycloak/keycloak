@@ -303,7 +303,11 @@ export function KeycloakDataTable<T>({
     (data) => {
       if (!isPaginated) {
         setUnPaginatedData(data);
-        data = data.slice(first, first + max + 1);
+        if (data.length > first) {
+          data = data.slice(first, first + max + 1);
+        } else {
+          setFirst(0);
+        }
       }
 
       const result = convertToColumns(data);
