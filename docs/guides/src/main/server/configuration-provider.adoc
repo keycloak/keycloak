@@ -81,23 +81,6 @@ When implementing a provider you might need to use some third-party dependency t
 In this case, you should copy any additional dependency to the `providers` directory and run the `build` command.
 Once you do that, the server is going to make these additional dependencies available at runtime for any provider that depends on them.
 
-== Setting JPA provider configuration option for migrationStrategy
-
-To setup the JPA migrationStrategy you should run the `build` command as follows:
-
-.Setting the `migration-strategy` for the `quarkus` provider of the `connections-jpa` SPI
-<@kc.build parameters="--spi-connections-jpa-quarkus-migration-strategy=manual"/>
-
-If you want to get a SQL file for DB initialization, too, you have to add this additional initializeEmpty SPI:
-
-.Setting the `initialize-empty` for the `quarkus` provider of the `connections-jpa` SPI
-<@kc.start parameters="--spi-connections-jpa-quarkus-initialize-empty=false"/>
-
-In the same way the migrationExport to point to a specific file and location:
-
-.Setting the `migration-export` for the `quarkus` provider of the `connections-jpa` SPI
-<@kc.start parameters="--spi-connections-jpa-quarkus-migration-export=/path_to_file/my_sql_file.sql"/>
-
 == References
 
 * https://www.keycloak.org/server/configuration[Configuring Keycloak]
