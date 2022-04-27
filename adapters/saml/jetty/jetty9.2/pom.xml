@@ -29,8 +29,8 @@
     <artifactId>keycloak-saml-jetty92-adapter</artifactId>
     <name>Keycloak Jetty 9.2.x SAML Integration</name>
     <properties>
-        <maven.compiler.target>1.7</maven.compiler.target>
-        <maven.compiler.source>1.7</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+        <maven.compiler.source>1.8</maven.compiler.source>
 
         <jetty9.version>9.2.4.v20141103</jetty9.version>
         <keycloak.osgi.export>

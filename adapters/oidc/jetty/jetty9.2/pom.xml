@@ -29,8 +29,8 @@
     <artifactId>keycloak-jetty92-adapter</artifactId>
     <name>Keycloak Jetty 9.2.x Integration</name>
     <properties>
-        <maven.compiler.target>1.7</maven.compiler.target>
-        <maven.compiler.source>1.7</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+        <maven.compiler.source>1.8</maven.compiler.source>
         <keycloak.osgi.export>
             org.keycloak.adapters.jetty.*
         </keycloak.osgi.export>
