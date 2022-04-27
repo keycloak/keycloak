@@ -53,7 +53,7 @@ Otherwise, leave this parameter as false to allow internal applications to commu
 
 To reduce attack surface, the administration endpoints for Keycloak and the Admin Console should not be publicly accessible.
 Therefore, you can secure them by using a reverse proxy.
-For more information about which paths to expose using a reverse proxy, see the <@links.server id="proxy"/> Guide.
+For more information about which paths to expose using a reverse proxy, see the <@links.server id="reverseproxy"/> Guide.
 
 == Overriding the hostname path
 When running Keycloak behind a reverse proxy, you may expose Keycloak using a different context path such as `myproxy.url/mykeycloak`.
@@ -62,7 +62,7 @@ To perform this action, you can override the hostname path to use the path defin
 <@kc.start parameters="--hostname=myurl --hostname-path=mykeycloak"/>
 
 The `hostname-path` configuration takes effect when a reverse proxy is enabled.
-For details, see the <@links.server id="proxy"/> Guide.
+For details, see the <@links.server id="reverseproxy"/> Guide.
 
 == Using the hostname in development mode
 You run Keycloak in development mode by using `start-dev`.
