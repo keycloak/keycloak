@@ -109,7 +109,7 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
     }
 
     private static boolean readEmailCondition(AttributeContext c) {
-        return !Profile.isFeatureEnabled(Profile.Feature.UPDATE_EMAIL) || editEmailCondition(c);
+        return !Profile.isFeatureEnabled(Profile.Feature.UPDATE_EMAIL) || c.getContext() != UPDATE_PROFILE;
     }
 
     public static Pattern getRegexPatternString(String[] builtinReadOnlyAttributes) {
