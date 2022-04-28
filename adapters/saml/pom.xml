@@ -52,15 +52,5 @@
                 <module>jetty</module>
             </modules>
         </profile>
-
-        <profile>
-            <id>AS7</id>
-            <activation>
-                <jdk>[,9)</jdk>
-            </activation>
-            <modules>
-                <module>as7-eap6</module>
-            </modules>
-        </profile>
     </profiles>
 </project>
