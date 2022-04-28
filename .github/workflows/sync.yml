@@ -11,12 +11,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
         with:
-          ref: main.                    # set the branch to merge to
+          ref: main                     # set the branch to merge to
           fetch-depth: 0
 
       - name: Merge Upstream
         uses: ethan42/merge-upstream@v4
         with:
           upstream: keycloak/keycloak   # set the upstream repo manually
-          upstream-branch: main.        # set the upstream branch to merge from
-          branch: main.                 # set the branch to merge to
+          upstream-branch: main         # set the upstream branch to merge from
+          branch: main                  # set the branch to merge to
