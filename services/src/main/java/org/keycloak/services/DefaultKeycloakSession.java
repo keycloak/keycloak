@@ -166,11 +166,14 @@ public class DefaultKeycloakSession implements KeycloakSession {
     }
 
     @Override
+    @Deprecated // put deprecated on the interface
     public UserProvider userLocalStorage() {
+        // TODO: if we would call users() here, we could get the cache in legacy mode instead and would then loop
         return getProvider(UserProvider.class);
     }
 
     @Override
+    @Deprecated // put deprecated on the interface (all *LocalStorage, all *Managers)
     public RealmProvider realmLocalStorage() {
         return realms();
     }

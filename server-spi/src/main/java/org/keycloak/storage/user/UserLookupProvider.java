@@ -16,6 +16,8 @@
  */
 package org.keycloak.storage.user;
 
+import org.keycloak.credential.CredentialInput;
+import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 
@@ -59,6 +61,11 @@ public interface UserLookupProvider {
     default UserModel getUserByUsername(RealmModel realm, String username) {
         return getUserByUsername(username, realm);
     }
+
+    default CredentialValidationOutput getUserByCredential(RealmModel realm, CredentialInput input) {
+        return null;
+    }
+
     /**
      * @deprecated Use {@link #getUserByUsername(RealmModel, String) getUserByUsername} instead.
      */

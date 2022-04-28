@@ -8,21 +8,23 @@ import org.keycloak.models.RoleProvider;
 import org.keycloak.models.UserProvider;
 import org.keycloak.provider.Provider;
 
+
 public interface DatastoreProvider extends Provider {
 
-    public ClientScopeProvider clientScopes();
+    ClientScopeProvider clientScopes();
 
-    public ClientProvider clients();
+    ClientProvider clients();
 
-    public GroupProvider groups();
+    GroupProvider groups();
 
-    public RealmProvider realms();
+    RealmProvider realms();
 
-    public RoleProvider roles();
+    RoleProvider roles();
     
-    public UserProvider users();
+    UserProvider users();
 
     ExportImportManager getExportImportManager();
 
     MigrationManager getMigrationManager();
+
 }
