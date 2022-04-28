@@ -125,11 +125,6 @@
         </#if>
         </div>
       </div>
-      <div class='footer'>
-        <#if properties.displayCommunityLinks = "true">
-        <a href="http://www.jboss.org"><img src="welcome-content/jboss_community.png" alt="JBoss and JBoss Community"></a>
-        </#if>
-      </div>
     </div>
   </div>
 </div>
