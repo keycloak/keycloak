@@ -30,6 +30,7 @@ import io.fabric8.kubernetes.client.ResourceNotFoundException;
 import io.fabric8.kubernetes.client.utils.KubernetesResourceUtil;
 import io.quarkus.logging.Log;
 import org.keycloak.operator.OperatorManagedResource;
+import org.keycloak.operator.v2alpha1.crds.Keycloak;
 import org.keycloak.operator.v2alpha1.crds.KeycloakRealmImport;
 import org.keycloak.operator.v2alpha1.crds.KeycloakRealmImportStatusBuilder;
 
@@ -38,6 +39,7 @@ import java.util.Optional;
 
 public class KeycloakRealmImportJob extends OperatorManagedResource {
 
+    private final Keycloak keycloak;
     private final KeycloakRealmImport realmCR;
     private final Deployment existingDeployment;
     private final Job existingJob;
@@ -52,6 +54,7 @@ public class KeycloakRealmImportJob extends OperatorManagedResource {
 
         this.existingJob = fetchExistingJob();
         this.existingDeployment = fetchExistingDeployment();
+        this.keycloak = fetchExistingKeycloak();
     }
 
     @Override
@@ -86,7 +89,17 @@ public class KeycloakRealmImportJob extends OperatorManagedResource {
                 .get();
     }
 
-    private Job buildJob(Container keycloakContainer, List<Volume> volumes) {
+    private Keycloak fetchExistingKeycloak() {
+        return client
+                .resources(Keycloak.class)
+                .inNamespace(getNamespace())
+                .withName(getKeycloakName())
+                .get();
+    }
+
+    private Job buildJob(PodTemplateSpec keycloakPodTemplate) {
+        keycloakPodTemplate.getSpec().setRestartPolicy("Never");
+
         return new JobBuilder()
                 .withNewMetadata()
                 .withName(getName())
@@ -139,9 +152,10 @@ public class KeycloakRealmImportJob extends OperatorManagedResource {
 
         var override = "--override=false";
 
+        var runBuild = (keycloak.getSpec().getImage() == null) ? "/opt/keycloak/bin/kc.sh build && " : "";
+
         var commandArgs = List.of("-c",
-                "/opt/keycloak/bin/kc.sh build && " +
-                    "/opt/keycloak/bin/kc.sh import --file='" + importMntPath + getRealmName() + "-realm.json' " + override);
+                runBuild + "/opt/keycloak/bin/kc.sh import --file='" + importMntPath + getRealmName() + "-realm.json' " + override);
 
         keycloakContainer
                 .setCommand(command);
