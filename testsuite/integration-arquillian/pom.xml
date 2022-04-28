@@ -55,7 +55,6 @@
         <arquillian-wildfly-container.version>3.0.1.Final</arquillian-wildfly-container.version>
         <arquillian-wls-container.version>1.0.1.Final</arquillian-wls-container.version>
         <arquillian-jetty9-container.version>1.0.0.CR3</arquillian-jetty9-container.version>
-        <arquillian-container-karaf.version>2.2.0.Final</arquillian-container-karaf.version>
         <arquillian-infinispan-container.version>1.2.0.Beta3</arquillian-infinispan-container.version>
         <arquillian-tomcat8-container-version>1.1.0.Final</arquillian-tomcat8-container-version>
         <arquillian-tomcat9-container-version>1.1.0.Final</arquillian-tomcat9-container-version>
@@ -211,22 +210,6 @@
                 <groupId>org.jboss.arquillian.container</groupId>
                 <artifactId>undertow-embedded</artifactId>
                 <version>${undertow-embedded.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.arquillian.container</groupId>
-                <artifactId>arquillian-container-karaf-managed</artifactId>
-                <version>${arquillian-container-karaf.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.arquillian.container</groupId>
-                <artifactId>arquillian-container-osgi</artifactId>
-                <version>${arquillian-container-karaf.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>com.google.guava</groupId>
-                        <artifactId>guava</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
         </dependencies>
     </dependencyManagement>

@@ -42,11 +42,6 @@ Themes
 Example themes to change the look and feel of login forms, account management console and admin console. For more information look at `themes/README.md`.
 
 
-Fuse
-----
-
-This is set of demo applications, showing how to secure your own web applications running inside OSGI environment in JBoss Fuse or Apache Karaf. Fore more information look at `fuse/README.md`   
-
 SAML
 ----
 

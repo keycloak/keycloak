@@ -9,7 +9,6 @@
     keycloak-js-adapter-npm-dist:keycloak-oidc-js-adapter
     keycloak-tomcat-adapter-dist:keycloak-oidc-tomcat-adapter
     keycloak-wildfly-adapter-dist:keycloak-oidc-wildfly-adapter
-    keycloak-fuse-adapter-dist:keycloak-oidc-fuse-adapter
 
     keycloak-saml-jetty92-adapter-dist:keycloak-saml-jetty92-adapter
     keycloak-saml-jetty93-adapter-dist:keycloak-saml-jetty93-adapter
