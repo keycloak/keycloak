@@ -1,25 +1,22 @@
 name: Scheduled Merge Remote Action
 on:
   schedule:
-    - cron: "0 0 * * *"
+  - cron: 0 0 * * *
   workflow_dispatch:
-
 jobs:
   merge-upstream:
     runs-on: ubuntu-latest
-    steps: 
-      - name: Checkout
-        uses: actions/checkout@v2
-        with:
-          ref: main               # set the branch to merge to
-          fetch-depth: 0 
-      
-      - name: Merge Upstream
-        uses: ethan42/merge-upstream@v4
-        with:
-          upstream: abuakbar/golang-simple                                  # set the upstream repo manually
-          upstream-branch: main    # set the upstream branch to merge from
-          branch: main             # set the branch to merge to
-  
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        ref: main
+        fetch-depth: 0
+    - name: Merge Upstream
+      uses: ethan42/merge-upstream@v4
+      with:
+        upstream: https://github.com/keycloak/keycloak
+        upstream-branch: main
+        branch: main
   mayhem-analysis:
     uses: ./.github/workflows/mayhem.yml
