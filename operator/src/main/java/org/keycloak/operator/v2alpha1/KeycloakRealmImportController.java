@@ -32,12 +32,10 @@ import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 import io.quarkus.logging.Log;
-import org.keycloak.operator.v2alpha1.crds.Keycloak;
 import org.keycloak.operator.v2alpha1.crds.KeycloakRealmImport;
 import org.keycloak.operator.v2alpha1.crds.KeycloakRealmImportStatus;
 import org.keycloak.operator.v2alpha1.crds.KeycloakRealmImportStatusBuilder;
 import org.keycloak.operator.v2alpha1.crds.KeycloakRealmImportStatusCondition;
-import org.keycloak.operator.v2alpha1.crds.KeycloakStatusCondition;
 
 import javax.inject.Inject;
 

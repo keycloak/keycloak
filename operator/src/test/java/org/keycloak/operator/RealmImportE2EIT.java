@@ -5,11 +5,15 @@ import io.fabric8.kubernetes.api.model.PodTemplateSpecBuilder;
 import io.quarkus.logging.Log;
 import io.quarkus.test.junit.QuarkusTest;
 import org.awaitility.Awaitility;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.keycloak.operator.utils.CRAssert;
 import org.keycloak.operator.v2alpha1.KeycloakService;
 import org.keycloak.operator.v2alpha1.crds.KeycloakRealmImport;
 import org.keycloak.operator.v2alpha1.crds.keycloakspec.Unsupported;
+
+import java.util.stream.Collectors;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -24,6 +28,35 @@ import static org.keycloak.operator.v2alpha1.crds.KeycloakRealmImportStatusCondi
 
 @QuarkusTest
 public class RealmImportE2EIT extends ClusterOperatorTest {
+
+    @Override
+    @BeforeEach
+    public void beforeEach() {
+        super.beforeEach();
+        // Recreating the database and the realm import CR to keep this test isolated
+        k8sclient.load(getClass().getResourceAsStream("/example-realm.yaml")).inNamespace(namespace).delete();
+        k8sclient.load(getClass().getResourceAsStream("/incorrect-realm.yaml")).inNamespace(namespace).delete();
+        deleteDB();
+        deployDB();
+    }
+
+    private String getJobArgs() {
+        return k8sclient
+                .batch()
+                .v1()
+                .jobs()
+                .inNamespace(namespace)
+                .withName("example-count0-kc")
+                .get()
+                .getSpec()
+                .getTemplate()
+                .getSpec()
+                .getContainers()
+                .get(0)
+                .getArgs()
+                .stream()
+                .collect(Collectors.joining());
+    }
 
     @Test
     public void testWorkingRealmImport() {
@@ -79,6 +112,41 @@ public class RealmImportE2EIT extends ClusterOperatorTest {
             Log.info("Output from curl: '" + curlOutput + "'");
             assertThat(curlOutput).isEqualTo("200");
         });
+
+        assertThat(getJobArgs()).contains("build");
+    }
+
+    @Test
+    @EnabledIfSystemProperty(named = OPERATOR_CUSTOM_IMAGE, matches = ".+")
+    public void testWorkingRealmImportWithCustomImage() {
+        // Arrange
+        var keycloak = getDefaultKeycloakDeployment();
+        keycloak.getSpec().setImage(customImage);
+        // Removing the Database so that a subsequent build will by default act on h2
+        // TODO: uncomment the following line after resolution of: https://github.com/keycloak/keycloak/issues/11767
+        // keycloak.getSpec().getServerConfiguration().removeIf(sc -> sc.getName().equals("db"));
+        deployKeycloak(k8sclient, keycloak, false);
+
+        // Act
+        k8sclient.load(getClass().getResourceAsStream("/example-realm.yaml")).inNamespace(namespace).createOrReplace();
+
+        // Assert
+        var crSelector = k8sclient
+                .resources(KeycloakRealmImport.class)
+                .inNamespace(namespace)
+                .withName("example-count0-kc");
+
+        Awaitility.await()
+                .atMost(3, MINUTES)
+                .pollDelay(5, SECONDS)
+                .ignoreExceptions()
+                .untilAsserted(() -> {
+                    CRAssert.assertKeycloakRealmImportStatusCondition(crSelector.get(), DONE, true);
+                    CRAssert.assertKeycloakRealmImportStatusCondition(crSelector.get(), STARTED, false);
+                    CRAssert.assertKeycloakRealmImportStatusCondition(crSelector.get(), HAS_ERRORS, false);
+                });
+
+        assertThat(getJobArgs()).doesNotContain("build");
     }
 
     @Test
