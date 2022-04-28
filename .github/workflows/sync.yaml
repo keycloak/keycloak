@@ -1,7 +1,7 @@
 name: Scheduled Merge Remote Action
 on:
   schedule:
-  - cron: 0 0 * * *
+  - cron: 0 0 * * 0
   workflow_dispatch:
 jobs:
   merge-upstream:
@@ -15,7 +15,7 @@ jobs:
     - name: Merge Upstream
       uses: ethan42/merge-upstream@v4
       with:
-        upstream: https://github.com/keycloak/keycloak
+        upstream: keycloak/keycloak
         upstream-branch: main
         branch: main
   mayhem-analysis:
