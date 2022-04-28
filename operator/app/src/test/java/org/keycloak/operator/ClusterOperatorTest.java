@@ -96,19 +96,9 @@ public abstract class ClusterOperatorTest {
   }
 
   private static void createRBACresourcesAndOperatorDeployment() throws FileNotFoundException {
-    Log.info("Creating RBAC into Namespace " + namespace);
-    List<HasMetadata> hasMetadata = k8sclient.load(new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + deploymentTarget + ".yml"))
-            .inNamespace(namespace).get();
-    hasMetadata.stream()
-            .map(b -> {
-              if ("Deployment".equalsIgnoreCase(b.getKind()) && b.getMetadata().getName().contains("operator")) {
-                ((Deployment) b).getSpec().getTemplate().getSpec().getContainers().get(0).setImagePullPolicy("Never");
-              }
-              return b;
-            }).forEach(c -> {
-              Log.info("processing part : " + c.getKind() + "--" + c.getMetadata().getName() + " -- " + namespace);
-              k8sclient.resource(c).inNamespace(namespace).createOrReplace();
-            });
+    Log.info("Creating RBAC and Deployment into Namespace " + namespace);
+    k8sclient.load(new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER + deploymentTarget + ".yml"))
+            .inNamespace(namespace).createOrReplace();
   }
 
   private static void cleanRBACresourcesAndOperatorDeployment() throws FileNotFoundException {
@@ -116,6 +106,7 @@ public abstract class ClusterOperatorTest {
     k8sclient.load(new FileInputStream(TARGET_KUBERNETES_GENERATED_YML_FOLDER +deploymentTarget+".yml"))
             .inNamespace(namespace).delete();
   }
+
   private static void createCRDs() {
     Log.info("Creating CRDs");
     try {
@@ -134,7 +125,7 @@ public abstract class ClusterOperatorTest {
   private static void registerReconcilers() {
     Log.info("Registering reconcilers for operator : " + operator + " [" + operatorDeployment + "]");
 
-    for (Reconciler reconciler : reconcilers) {
+    for (Reconciler<?> reconciler : reconcilers) {
       final var config = configuration.getConfigurationFor(reconciler);
       if (!config.isRegistrationDelayed()) {
         Log.info("Register and apply : " + reconciler.getClass().getName());
@@ -216,7 +207,7 @@ public abstract class ClusterOperatorTest {
                       .withLabels(Constants.DEFAULT_LABELS)
                       .list()
                       .getItems();
-              assertThat(kcDeployments.size()).isEqualTo(0);
+              assertThat(kcDeployments.size()).isZero();
             });
   }
 
