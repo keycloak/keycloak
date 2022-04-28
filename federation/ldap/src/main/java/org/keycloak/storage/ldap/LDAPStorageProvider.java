@@ -36,6 +36,7 @@ import org.keycloak.credential.CredentialAuthentication;
 import org.keycloak.credential.CredentialInput;
 import org.keycloak.credential.CredentialInputUpdater;
 import org.keycloak.credential.CredentialInputValidator;
+import org.keycloak.credential.LegacySingleUserCredentialManager;
 import org.keycloak.federation.kerberos.impl.KerberosUsernamePasswordAuthenticator;
 import org.keycloak.federation.kerberos.impl.SPNEGOAuthenticator;
 import org.keycloak.models.CredentialValidationOutput;
@@ -712,7 +713,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
     @Override
     public boolean isValid(RealmModel realm, UserModel user, CredentialInput input) {
         if (!(input instanceof UserCredentialModel)) return false;
-        if (input.getType().equals(PasswordCredentialModel.TYPE) && !session.userCredentialManager().isConfiguredLocally(realm, user, PasswordCredentialModel.TYPE)) {
+        if (input.getType().equals(PasswordCredentialModel.TYPE) && !((LegacySingleUserCredentialManager) user.getUserCredentialManager()).isConfiguredLocally(PasswordCredentialModel.TYPE)) {
             return validPassword(realm, user, input.getChallengeResponse());
         } else {
             return false; // invalid cred type

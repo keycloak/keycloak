@@ -16,20 +16,23 @@
  */
 package org.keycloak.testsuite.federation;
 
+import org.jboss.logging.Logger;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialInput;
 import org.keycloak.credential.CredentialInputUpdater;
 import org.keycloak.credential.CredentialInputValidator;
+import org.keycloak.credential.LegacySingleUserCredentialManager;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.SingleUserCredentialManager;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.credential.PasswordUserCredentialModel;
 import org.keycloak.storage.ReadOnlyException;
-import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.adapter.AbstractUserAdapterFederatedStorage;
@@ -46,7 +49,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
-import org.jboss.logging.Logger;
+
 import static org.keycloak.storage.UserStorageProviderModel.IMPORT_ENABLED;
 import static org.keycloak.utils.StreamsUtil.paginatedStream;
 
@@ -81,9 +84,9 @@ public class UserMapStorage implements UserLookupProvider.Streams, UserStoragePr
 
         String editModeString = model.getConfig().getFirst(LDAPConstants.EDIT_MODE);
         if (editModeString == null) {
-            this.editMode = UserStorageProvider.EditMode.UNSYNCED;
+            this.editMode = EditMode.UNSYNCED;
         } else {
-            this.editMode = UserStorageProvider.EditMode.valueOf(editModeString);
+            this.editMode = EditMode.valueOf(editModeString);
         }
     }
 
@@ -140,6 +143,11 @@ public class UserMapStorage implements UserLookupProvider.Streams, UserStoragePr
                 public String getFederationLink() {
                     return model.getId();
                 }
+
+                @Override
+                public SingleUserCredentialManager getUserCredentialManager() {
+                    return new LegacySingleUserCredentialManager(session, realm, this);
+                }
             };
         }
 
@@ -153,7 +161,7 @@ public class UserMapStorage implements UserLookupProvider.Streams, UserStoragePr
 
     @Override
     public boolean updateCredential(RealmModel realm, UserModel user, CredentialInput input) {
-        if (editMode == UserStorageProvider.EditMode.READ_ONLY) {
+        if (editMode == EditMode.READ_ONLY) {
             throw new ReadOnlyException("Federated storage is not writable");
         }
         if (!(input instanceof UserCredentialModel)) {
@@ -215,7 +223,7 @@ public class UserMapStorage implements UserLookupProvider.Streams, UserStoragePr
 
     @Override
     public UserModel addUser(RealmModel realm, String username) {
-        if (editMode == UserStorageProvider.EditMode.READ_ONLY) {
+        if (editMode == EditMode.READ_ONLY) {
             throw new ReadOnlyException("Federated storage is not writable");
         }
 
@@ -225,7 +233,7 @@ public class UserMapStorage implements UserLookupProvider.Streams, UserStoragePr
 
     @Override
     public boolean removeUser(RealmModel realm, UserModel user) {
-        if (editMode == UserStorageProvider.EditMode.READ_ONLY || editMode == UserStorageProvider.EditMode.UNSYNCED) {
+        if (editMode == EditMode.READ_ONLY || editMode == EditMode.UNSYNCED) {
             log.warnf("User '%s' can't be deleted in LDAP as editMode is '%s'. Deleting user just from Keycloak DB, but he will be re-imported from LDAP again once searched in Keycloak", user.getUsername(), editMode.toString());
             userPasswords.remove(translateUserName(user.getUsername()));
             return true;
@@ -235,7 +243,7 @@ public class UserMapStorage implements UserLookupProvider.Streams, UserStoragePr
     }
 
     public boolean removeUserByName(String userName) {
-        if (editMode == UserStorageProvider.EditMode.READ_ONLY || editMode == UserStorageProvider.EditMode.UNSYNCED) {
+        if (editMode == EditMode.READ_ONLY || editMode == EditMode.UNSYNCED) {
             log.warnf("User '%s' can't be deleted in LDAP as editMode is '%s'. Deleting user just from Keycloak DB, but he will be re-imported from LDAP again once searched in Keycloak", userName, editMode.toString());
             userPasswords.remove(translateUserName(userName));
             return true;

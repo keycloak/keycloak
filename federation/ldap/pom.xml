@@ -75,6 +75,11 @@
             <artifactId>jboss-transaction-api_1.3_spec</artifactId>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <!-- needed for InMemoryUserAdapter -->
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-model-legacy-private</artifactId>
+        </dependency>
     </dependencies>
 
 </project>

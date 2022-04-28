@@ -30,10 +30,16 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
 import org.jboss.logging.Logger;
+import org.keycloak.common.util.reflections.Types;
 import org.keycloak.component.ComponentFactory;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.credential.CredentialAuthentication;
+import org.keycloak.credential.CredentialInput;
+import org.keycloak.credential.CredentialProvider;
+import org.keycloak.credential.CredentialProviderFactory;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.IdentityProviderModel;
@@ -52,6 +58,7 @@ import org.keycloak.models.cache.UserCache;
 import org.keycloak.models.utils.ComponentUtil;
 import org.keycloak.models.utils.ReadOnlyUserModelDelegate;
 import org.keycloak.storage.client.ClientStorageProvider;
+import org.keycloak.storage.datastore.LegacyDatastoreProvider;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
 import org.keycloak.storage.managers.UserStorageSyncManager;
 import org.keycloak.storage.user.ImportedUserValidation;
@@ -76,7 +83,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
     }
 
     protected UserProvider localStorage() {
-        return session.userLocalStorage();
+        return ((LegacyDatastoreProvider) session.getProvider(DatastoreProvider.class)).userLocalStorage();
     }
 
     private UserFederatedStorageProvider getFederatedStorage() {
@@ -120,6 +127,26 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         } else {
             return validated;
         }
+    }
+
+    private static <T> Stream<T> getCredentialProviders(KeycloakSession session, Class<T> type) {
+        return session.getKeycloakSessionFactory().getProviderFactoriesStream(CredentialProvider.class)
+                .filter(f -> Types.supports(type, f, CredentialProviderFactory.class))
+                .map(f -> (T) session.getProvider(CredentialProvider.class, f.getId()));
+    }
+
+    @Override
+    public CredentialValidationOutput getUserByCredential(RealmModel realm, CredentialInput input) {
+        Stream<CredentialAuthentication> credentialAuthenticationStream = getEnabledStorageProviders(realm, CredentialAuthentication.class);
+
+        credentialAuthenticationStream = Stream.concat(credentialAuthenticationStream,
+                getCredentialProviders(session, CredentialAuthentication.class));
+
+        return credentialAuthenticationStream
+                .filter(credentialAuthentication -> credentialAuthentication.supportsCredentialAuthenticationFor(input.getType()))
+                .map(credentialAuthentication -> credentialAuthentication.authenticate(realm, input))
+                .filter(Objects::nonNull)
+                .findFirst().orElse(null);
     }
 
     protected void deleteInvalidUser(final RealmModel realm, final UserModel user) {

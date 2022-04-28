@@ -19,7 +19,9 @@ package org.keycloak.models.cache.infinispan;
 
 import org.jboss.logging.Logger;
 import org.keycloak.cluster.ClusterProvider;
+import org.keycloak.credential.CredentialInput;
 import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.CredentialValidationOutput;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
 import org.keycloak.common.constants.ServiceAccountConstants;
@@ -546,6 +548,10 @@ public class UserCacheSession implements UserCache.Streams, OnCreateComponent, O
         return getDelegate().getUsersStream(realm, includeServiceAccounts);
     }
 
+    @Override
+    public CredentialValidationOutput getUserByCredential(RealmModel realm, CredentialInput input) {
+        return getDelegate().getUserByCredential(realm, input);
+    }
     @Override
     public int getUsersCount(RealmModel realm, boolean includeServiceAccount) {
         return getDelegate().getUsersCount(realm, includeServiceAccount);
