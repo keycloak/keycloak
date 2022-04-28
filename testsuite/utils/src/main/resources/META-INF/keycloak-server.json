@@ -190,9 +190,23 @@
     },
 
     "realmCache": {
-        "provider": "${keycloak.realm.cache.provider:default}",
         "default" : {
-            "enabled": "${keycloak.realm.cache.provider.enabled:true}"
+            "enabled": "${keycloak.realmCache.enabled:true}"
+        }
+    },
+
+    "userCache": {
+        "default" : {
+            "enabled": "${keycloak.userCache.enabled:true}"
+        },
+        "mem": {
+            "maxSize": 20000
+        }
+    },
+
+    "authorizationCache": {
+        "default": {
+            "enabled": "${keycloak.authorizationCache.enabled:true}"
         }
     },
 
