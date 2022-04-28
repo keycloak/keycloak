@@ -297,6 +297,9 @@
                                 <systemProperty><key>keycloak.userSession.provider</key><value>map</value></systemProperty>
                                 <systemProperty><key>keycloak.loginFailure.provider</key><value>map</value></systemProperty>
                                 <systemProperty><key>keycloak.authorization.provider</key><value>map</value></systemProperty>
+                                <systemProperty><key>keycloak.authorizationCache.enabled</key><value>false</value></systemProperty>
+                                <systemProperty><key>keycloak.realmCache.enabled</key><value>false</value></systemProperty>
+                                <systemProperty><key>keycloak.userCache.enabled</key><value>false</value></systemProperty>
                             </systemProperties>
                         </configuration>
                     </plugin>
