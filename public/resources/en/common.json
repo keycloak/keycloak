@@ -91,6 +91,8 @@
   "permissionsListIntro": "Edit the permission list by clicking the scope-name. It then redirects to the permission details page of the client named <1>{{realm}}</1>",
   "usersPermissionsHint": "Fine grained permissions for managing all users in realm.  You can define different policies for who is allowed to manage users in the realm.",
   "clientsPermissionsHint": "Fine grained permissions for administrators that want to manage this client or apply roles defined by this client.",
+  "groupsPermissionsHint":
+      "Determines if fine grained permissions are enabled for managing this role.  Disabling will delete all current permissions that have been set up.",
   "permissionsScopeName": "Scope-name",
   "permissionsEnabled": "Permissions enabled",
   "permissionsDisable": "Disable permissions?",

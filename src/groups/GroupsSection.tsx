@@ -27,6 +27,7 @@ import { toGroups } from "./routes/Groups";
 import { toGroupsSearch } from "./routes/GroupsSearch";
 import { GroupRoleMapping } from "./GroupRoleMapping";
 import helpUrls from "../help-urls";
+import { PermissionsTab } from "../components/permission-tab/PermissionTab";
 
 import "./GroupsSection.css";
 
@@ -175,6 +176,13 @@ export default function GroupsSection() {
               title={<TabTitleText>{t("roleMapping")}</TabTitleText>}
             >
               <GroupRoleMapping id={id!} name={currentGroup()?.name!} />
+            </Tab>
+            <Tab
+              eventKey={4}
+              data-testid="permissionsTab"
+              title={<TabTitleText>{t("common:permissions")}</TabTitleText>}
+            >
+              <PermissionsTab id={id} type="groups" />
             </Tab>
           </Tabs>
         )}
