@@ -43,7 +43,7 @@ export const routes: RouteDef[] = [
   ...sessionRoutes,
   ...userFederationRoutes,
   ...userRoutes,
-  ...dashboardRoutes,
   ...groupsRoutes,
+  ...dashboardRoutes,
   NotFoundRoute,
 ];
