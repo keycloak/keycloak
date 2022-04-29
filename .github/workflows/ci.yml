@@ -143,8 +143,7 @@ jobs:
           fetch-depth: 2
 
       - name: Check whether HEAD^ contains HotRod storage relevant changes
-        run: echo "GIT_HOTROD_RELEVANT_DIFF=$( git diff --name-only HEAD^ | egrep -ic -e 'non-existent-folder' )" >> $GITHUB_ENV
-#        run: echo "GIT_HOTROD_RELEVANT_DIFF=$( git diff --name-only HEAD^ | egrep -ic -e '^model/hot-rod|^model/map|^model/build-processor|^testsuite/model' )" >> $GITHUB_ENV
+        run: echo "GIT_HOTROD_RELEVANT_DIFF=$( git diff --name-only HEAD^ | egrep -ic -e '^model/hot-rod|^model/map|^model/build-processor|^testsuite/model' )" >> $GITHUB_ENV
 
       - name: Cache Maven packages
         if: ${{ github.event_name != 'pull_request' || matrix.server != 'undertow-map-hot-rod' || env.GIT_HOTROD_RELEVANT_DIFF != 0 }}

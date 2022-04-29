@@ -93,6 +93,7 @@ public class HotRodRoleEntity extends AbstractHotRodEntity {
     @ProtoField(number = 8)
     public String clientId;
 
+    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
     @ProtoField(number = 9)
     public Set<String> compositeRoles;
 
