@@ -95,6 +95,7 @@ import org.keycloak.models.map.storage.jpa.clientscope.JpaClientScopeMapKeycloak
 import org.keycloak.models.map.storage.jpa.clientscope.entity.JpaClientScopeEntity;
 import org.keycloak.models.map.storage.jpa.group.JpaGroupMapKeycloakTransaction;
 import org.keycloak.models.map.storage.jpa.group.entity.JpaGroupEntity;
+import org.keycloak.models.map.storage.jpa.hibernate.dirtiness.JpaDirtinessStrategy;
 import org.keycloak.models.map.storage.jpa.hibernate.listeners.JpaAutoFlushListener;
 import org.keycloak.models.map.storage.jpa.hibernate.listeners.JpaEntityVersionListener;
 import org.keycloak.models.map.storage.jpa.hibernate.listeners.JpaOptimisticLockingListener;
@@ -258,6 +259,7 @@ public class JpaMapStorageProviderFactory implements
                     properties.put("hibernate.show_sql", config.getBoolean("showSql", false));
                     properties.put("hibernate.format_sql", config.getBoolean("formatSql", true));
                     properties.put("hibernate.dialect", config.get("driverDialect"));
+                    properties.put(AvailableSettings.CUSTOM_ENTITY_DIRTINESS_STRATEGY, "org.keycloak.models.map.storage.jpa.hibernate.dirtiness.JpaDirtinessStrategy");
 
                     properties.put(
                             "hibernate.integrator_provider",

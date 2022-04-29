@@ -246,6 +246,19 @@ public class JpaGroupEntity extends AbstractGroupEntity implements JpaRootVersio
     }
 
     @Override
+    public boolean isUpdated() {
+        return updated || (metadata != null && metadata.isUpdated());
+    }
+
+    @Override
+    public void clearUpdatedFlag() {
+        updated = false;
+        if (metadata != null) {
+            metadata.clearUpdatedFlag();
+        }
+    }
+
+    @Override
     public int hashCode() {
         return getClass().hashCode();
     }

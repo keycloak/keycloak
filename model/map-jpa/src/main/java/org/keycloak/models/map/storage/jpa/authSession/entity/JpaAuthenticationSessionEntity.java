@@ -278,6 +278,17 @@ public class JpaAuthenticationSessionEntity extends UpdatableEntity.Impl impleme
     }
 
     @Override
+    public boolean isUpdated() {
+        return updated || metadata.isUpdated();
+    }
+
+    @Override
+    public void clearUpdatedFlag() {
+        updated = false;
+        metadata.clearUpdatedFlag();
+    }
+
+    @Override
     public int hashCode() {
         return getClass().hashCode();
     }

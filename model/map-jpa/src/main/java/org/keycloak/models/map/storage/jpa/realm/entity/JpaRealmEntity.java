@@ -16,6 +16,7 @@
  */
 package org.keycloak.models.map.storage.jpa.realm.entity;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -1013,6 +1014,19 @@ public class JpaRealmEntity extends MapRealmEntity.AbstractRealmEntity implement
     @Override
     public int hashCode() {
         return getClass().hashCode();
+    }
+
+    @Override
+    public boolean isUpdated() {
+        return updated || (metadata != null && metadata.isUpdated());
+    }
+
+    @Override
+    public void clearUpdatedFlag() {
+        updated = false;
+        if (metadata != null) {
+            metadata.clearUpdatedFlag();
+        }
     }
 
     @Override
