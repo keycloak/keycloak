@@ -77,11 +77,12 @@ public class GroupsResource {
     public Stream<GroupRepresentation> getGroups(@QueryParam("search") String search,
                                                  @QueryParam("first") Integer firstResult,
                                                  @QueryParam("max") Integer maxResults,
-                                                 @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation) {
+                                                 @QueryParam("briefRepresentation") @DefaultValue("true") boolean briefRepresentation,
+                                                 @QueryParam("filterSubGroup") @DefaultValue("true") boolean filterSubGroup) {
         auth.groups().requireList();
 
         if (Objects.nonNull(search)) {
-            return ModelToRepresentation.searchForGroupByName(realm, !briefRepresentation, search.trim(), firstResult, maxResults);
+            return ModelToRepresentation.searchForGroupByName(realm, !briefRepresentation, search.trim(), firstResult, maxResults, filterSubGroup);
         } else if(Objects.nonNull(firstResult) && Objects.nonNull(maxResults)) {
             return ModelToRepresentation.toGroupHierarchy(realm, !briefRepresentation, firstResult, maxResults);
         } else {
