@@ -377,13 +377,9 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
         Set<String> removedClientUUIDs = new HashSet<>();
 
         if (!sessionsById.isEmpty()) {
-            String fromUserSessionId = userSessionAdapters.get(0).getId();
-            String toUserSessionId = userSessionAdapters.get(userSessionAdapters.size() - 1).getId();
-
-            TypedQuery<PersistentClientSessionEntity> queryClientSessions = em.createNamedQuery("findClientSessionsOrderedById", PersistentClientSessionEntity.class);
+            TypedQuery<PersistentClientSessionEntity> queryClientSessions = em.createNamedQuery("findClientSessionsByUserSessions", PersistentClientSessionEntity.class);
             queryClientSessions.setParameter("offline", offlineStr);
-            queryClientSessions.setParameter("fromSessionId", fromUserSessionId);
-            queryClientSessions.setParameter("toSessionId", toUserSessionId);
+            queryClientSessions.setParameter("userSessionIds", sessionsById.keySet());
 
             closing(queryClientSessions.getResultStream()).forEach(clientSession -> {
                 PersistentUserSessionAdapter userSession = sessionsById.get(clientSession.getUserSessionId());
