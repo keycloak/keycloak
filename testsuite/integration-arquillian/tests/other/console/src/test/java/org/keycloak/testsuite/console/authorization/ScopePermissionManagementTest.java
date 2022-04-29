@@ -27,6 +27,7 @@ import org.junit.Test;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.PoliciesResource;
 import org.keycloak.admin.client.resource.ResourcesResource;
+import org.keycloak.admin.client.resource.ScopePermissionsResource;
 import org.keycloak.admin.client.resource.RolePoliciesResource;
 import org.keycloak.admin.client.resource.RolesResource;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -301,6 +302,23 @@ public class ScopePermissionManagementTest extends AbstractAuthorizationSettings
         assertPolicy(expected, actual);
     }
 
+    @Test
+    public void testUpdateResourceType() {
+        authorizationPage.navigateTo();
+        ScopePermissionRepresentation expected = new ScopePermissionRepresentation();
+
+        expected.setName("testUpdateResourceType Permission");
+        expected.setDescription("description");
+        expected.setResourceType("test-resource-type");
+        expected.addScope("Scope A");
+
+        expected = createPermission(expected);
+
+        authorizationPage.navigateTo();
+        ScopePermission actual = authorizationPage.authorizationTabs().permissions().name(expected.getName());
+        assertPolicy(expected, actual);
+    }
+
     private ScopePermissionRepresentation createPermission(ScopePermissionRepresentation expected) {
         ScopePermission policy = authorizationPage.authorizationTabs().permissions().create(expected, true);
         assertAlertSuccess();
@@ -313,6 +331,7 @@ public class ScopePermissionManagementTest extends AbstractAuthorizationSettings
         assertEquals(expected.getName(), actual.getName());
         assertEquals(expected.getDescription(), actual.getDescription());
         assertEquals(expected.getDecisionStrategy(), actual.getDecisionStrategy());
+        assertEquals(expected.getResourceType(), actual.getResourceType());
 
         if (expected.getPolicies() == null) {
             assertTrue(actual.getPolicies() == null || actual.getPolicies().isEmpty());
