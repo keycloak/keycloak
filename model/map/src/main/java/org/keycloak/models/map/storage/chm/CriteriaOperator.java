@@ -16,6 +16,7 @@
  */
 package org.keycloak.models.map.storage.chm;
 
+import org.jboss.logging.Logger;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 import java.util.Arrays;
 import java.util.Collection;
@@ -24,11 +25,8 @@ import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Objects;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -70,7 +68,7 @@ class CriteriaOperator {
     /**
      * Returns a predicate {@code P(x)} for comparing {@code value} and {@code x} as {@code x OP value}.
      * <b>Implementation note:</b> Note that this may mean reverse logic to e.g. {@link Comparable#compareTo}.
-     * @param operator
+     * @param op
      * @param value
      * @return
      */
@@ -261,8 +259,7 @@ class CriteriaOperator {
             try {
                 return o != null && op.isComparisonTrue(cValue.compareTo(o));
             } catch (ClassCastException ex) {
-                LOG.log(Level.WARNING, "Incomparable argument type for comparison operation: {0}", cValue.getClass().getSimpleName());
-                return false;
+                throw new IllegalArgumentException("Incomparable argument type for comparison operation: " + cValue.getClass().getSimpleName() + " vs. " + o.getClass().getSimpleName(), ex);
             }
         }
 
