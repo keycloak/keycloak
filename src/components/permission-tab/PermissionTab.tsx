@@ -31,7 +31,7 @@ import { useConfirmDialog } from "../confirm-dialog/ConfirmDialog";
 
 import "./permissions-tab.css";
 
-type PermissionScreenType = "clients" | "users" | "groups";
+type PermissionScreenType = "clients" | "users" | "groups" | "roles";
 
 type PermissionsTabProps = {
   id?: string;
@@ -61,6 +61,8 @@ export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
         });
       case "groups":
         return adminClient.groups.updatePermission({ id: id! }, { enabled });
+      case "roles":
+        return adminClient.roles.updatePermission({ id: id! }, { enabled });
     }
   };
 
@@ -81,6 +83,8 @@ export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
               });
             case "groups":
               return adminClient.groups.listPermissions({ id: id! });
+            case "roles":
+              return adminClient.roles.listPermissions({ id: id! });
           }
         })(),
       ]),

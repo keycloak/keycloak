@@ -39,6 +39,7 @@ import {
   ClientRoleRoute,
   toClientRole,
 } from "./routes/ClientRole";
+import { PermissionsTab } from "../components/permission-tab/PermissionTab";
 
 export default function RealmRoleTabs() {
   const { t } = useTranslation("roles");
@@ -392,6 +393,12 @@ export default function RealmRoleTabs() {
                 <UsersInRoleTab data-cy="users-in-role-tab" />
               </Tab>
             )}
+            <Tab
+              eventKey="permissions"
+              title={<TabTitleText>{t("common:permissions")}</TabTitleText>}
+            >
+              <PermissionsTab id={role.id} type="roles" />
+            </Tab>
           </KeycloakTabs>
         )}
       </PageSection>

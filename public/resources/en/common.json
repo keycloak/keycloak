@@ -91,8 +91,8 @@
   "permissionsListIntro": "Edit the permission list by clicking the scope-name. It then redirects to the permission details page of the client named <1>{{realm}}</1>",
   "usersPermissionsHint": "Fine grained permissions for managing all users in realm.  You can define different policies for who is allowed to manage users in the realm.",
   "clientsPermissionsHint": "Fine grained permissions for administrators that want to manage this client or apply roles defined by this client.",
-  "groupsPermissionsHint":
-      "Determines if fine grained permissions are enabled for managing this role.  Disabling will delete all current permissions that have been set up.",
+  "groupsPermissionsHint": "Determines if fine grained permissions are enabled for managing this role.  Disabling will delete all current permissions that have been set up.",
+  "rolesPermissionsHint": "Determines if fine grained permissions are enabled for managing this role.  Disabling will delete all current permissions that have been set up.",
   "permissionsScopeName": "Scope-name",
   "permissionsEnabled": "Permissions enabled",
   "permissionsDisable": "Disable permissions?",
@@ -114,6 +114,18 @@
       "manage-group-membership-description": "Policies that decide if an administrator can manage group membership for all users in the realm.  This is used in conjunction with specific group policy",
       "impersonate-description": "Policies that decide if administrator can impersonate other users",
       "user-impersonated-description": "Policies that decide which users can be impersonated.  These policies are applied to the user being impersonated."
+    },
+    "groups": {
+      "view-description": "Policies that decide if an administrator can view this group",
+      "manage-description": "Policies that decide if an administrator can manage this group",
+      "view-members-description": "Policies that decide if an administrator can view the members of this group",
+      "manage-members-description": "Policies that decide if an administrator can manage the members of this group",
+      "manage-membership-description": "Policies that decide if an administrator can add or remove users from this group"
+    },
+    "roles": {
+      "map-role-description": "Policies that decide if an administrator can map this role to a user or group",
+      "map-role-client-scope-description": "Policies that decide if an administrator can apply this role to the client scope of a client",
+      "map-role-composite-description": "Policies that decide if an administrator can apply this role as a composite to another role"
     }
   },
   "configure": "Configure",
