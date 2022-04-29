@@ -258,20 +258,14 @@ public class JsonbType extends AbstractSingleColumnStandardBasicType<Object> imp
             try {
                 return MAPPER.writeValueAsString(value);
             } catch (IOException e) {
-                throw new HibernateException("unable to tranform value: " + value + " as String.", e);
+                throw new HibernateException("unable to transform value: " + value + " as String.", e);
             }
         }
 
         @Override
         public boolean areEqual(Object one, Object another) {
             if (one == another) return true;
-            if (one == null || another == null) return Objects.equals(one, another);
-            try {
-                return MAPPER.readTree(toString(one)).equals(
-                       MAPPER.readTree(toString(another)));
-            } catch (IOException e) {
-                throw new HibernateException("unable to perform areEqual", e);
-            }
+            return Objects.equals(one, another);
         }
     }
 }
