@@ -145,7 +145,7 @@ public class MapRootAuthenticationSessionProvider implements AuthenticationSessi
 
         DefaultModelCriteria<RootAuthenticationSessionModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
-          .compare(SearchableFields.EXPIRATION, Operator.LT, Time.currentTime());
+          .compare(SearchableFields.EXPIRATION, Operator.LT, (long) Time.currentTime());
 
         long deletedCount = tx.delete(withCriteria(mcb));
 
