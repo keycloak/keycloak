@@ -16,6 +16,7 @@ import org.keycloak.testsuite.model.RequireProvider;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -223,6 +224,61 @@ public class RoleModelTest extends KeycloakModelTest {
             assertThat(clientRolesByDescription, hasSize(1));
             assertThat(clientRolesByDescription.get(0).getDescription(), is("This is a description for main-role-composite-13 client role."));
 
+            return null;
+        });
+    }
+
+    @Test
+    public void testCompositeRolesUpdateOnChildRoleRemoval() {
+        final AtomicReference<String> parentRealmRoleId = new AtomicReference<>();
+        final AtomicReference<String> parentClientRoleId = new AtomicReference<>();
+
+        final AtomicReference<String> childRealmRoleId = new AtomicReference<>();
+        final AtomicReference<String> childClientRoleId = new AtomicReference<>();
+
+        withRealm(realmId, (session, realm) -> {
+            // Create realm role
+            RoleModel parentRealmRole = session.roles().addRealmRole(realm, "parentRealmRole");
+            parentRealmRoleId.set(parentRealmRole.getId());
+
+            // Create client role
+            ClientModel client = session.clients().addClient(realm,"clientWithRole");
+
+            RoleModel parentClientRole = session.roles().addClientRole(client, "parentClientRole");
+            parentClientRoleId.set(parentClientRole.getId());
+
+            // Create realm child role
+            RoleModel childRealmRole = session.roles().addRealmRole(realm, "childRealmRole");
+            childRealmRoleId.set(childRealmRole.getId());
+
+            RoleModel childClientRole = session.roles().addClientRole(client, "childClientRole");
+            childClientRoleId.set(childClientRole.getId());
+
+            // Add composites
+            parentRealmRole.addCompositeRole(childRealmRole);
+            parentRealmRole.addCompositeRole(childClientRole);
+
+            parentClientRole.addCompositeRole(childRealmRole);
+            parentClientRole.addCompositeRole(childClientRole);
+            return null;
+        });
+
+        withRealm(realmId, (session, realm) -> {
+            RoleModel parentRealmRole = session.roles().getRoleById(realm, parentRealmRoleId.get());
+            RoleModel parentClientRole = session.roles().getRoleById(realm, parentClientRoleId.get());
+            assertThat(parentRealmRole.getCompositesStream().collect(Collectors.toSet()), hasSize(2));
+            assertThat(parentClientRole.getCompositesStream().collect(Collectors.toSet()), hasSize(2));
+
+            session.roles().removeRole(session.roles().getRoleById(realm, childRealmRoleId.get()));
+            session.roles().removeRole(session.roles().getRoleById(realm, childClientRoleId.get()));
+            return null;
+        });
+
+        withRealm(realmId, (session, realm) -> {
+            RoleModel parentRealmRole = session.roles().getRoleById(realm, parentRealmRoleId.get());
+            RoleModel parentClientRole = session.roles().getRoleById(realm, parentClientRoleId.get());
+            assertThat(parentRealmRole.getCompositesStream().collect(Collectors.toSet()), empty());
+            assertThat(parentClientRole.getCompositesStream().collect(Collectors.toSet()), empty());
             return null;
         });
     }

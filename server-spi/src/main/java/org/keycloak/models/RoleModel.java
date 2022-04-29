@@ -38,6 +38,7 @@ public interface RoleModel {
         public static final SearchableModelField<RoleModel> NAME                = new SearchableModelField<>("name", String.class);
         public static final SearchableModelField<RoleModel> DESCRIPTION         = new SearchableModelField<>("description", String.class);
         public static final SearchableModelField<RoleModel> IS_CLIENT_ROLE      = new SearchableModelField<>("isClientRole", Boolean.class);
+        public static final SearchableModelField<RoleModel> COMPOSITE_ROLE      = new SearchableModelField<>("compositeRoles", Boolean.class);
     }
 
     String getName();

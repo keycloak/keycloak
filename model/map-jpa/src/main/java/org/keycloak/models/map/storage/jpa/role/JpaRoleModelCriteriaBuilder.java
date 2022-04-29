@@ -35,6 +35,7 @@ import org.keycloak.models.RoleModel.SearchableFields;
 import org.keycloak.models.map.common.StringKeyConverter.UUIDKey;
 import org.keycloak.models.map.storage.CriterionNotSupportedException;
 import org.keycloak.models.map.storage.jpa.JpaModelCriteriaBuilder;
+import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
 import org.keycloak.models.map.storage.jpa.role.entity.JpaRoleEntity;
 import org.keycloak.storage.SearchableModelField;
 
@@ -60,6 +61,15 @@ public class JpaRoleModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaRole
 
                     return new JpaRoleModelCriteriaBuilder((cb, root) -> 
                         cb.equal(root.get(modelField.getName()), value[0])
+                    );
+                } else if (modelField == SearchableFields.COMPOSITE_ROLE){
+                    validateValue(value, modelField, op, String.class);
+
+                    return new JpaRoleModelCriteriaBuilder((cb, root) ->
+                            cb.isTrue(cb.function("@>",
+                                    Boolean.TYPE,
+                                    cb.function("->", JsonbType.class, root.get("metadata"), cb.literal("fCompositeRoles")),
+                                    cb.literal(convertToJson(value[0]))))
                     );
                 } else {
                     throw new CriterionNotSupportedException(modelField, op);
