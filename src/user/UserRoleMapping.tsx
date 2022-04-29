@@ -17,7 +17,7 @@ type UserRoleMappingProps = {
 };
 
 export const UserRoleMapping = ({ id, name }: UserRoleMappingProps) => {
-  const { t } = useTranslation("clients");
+  const { t } = useTranslation("users");
   const adminClient = useAdminClient();
   const { addAlert, addError } = useAlerts();
 

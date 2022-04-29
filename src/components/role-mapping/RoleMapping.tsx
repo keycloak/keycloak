@@ -8,6 +8,7 @@ import {
   Checkbox,
   ToolbarItem,
 } from "@patternfly/react-core";
+import { cellWidth } from "@patternfly/react-table";
 
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
@@ -40,27 +41,24 @@ export const mapRoles = (
   assignedRoles: Row[],
   effectiveRoles: Row[],
   hide: boolean
-) => {
-  return [
-    ...(hide
-      ? assignedRoles.map((row) => ({
-          ...row,
-          role: {
-            ...row.role,
-            isInherited: false,
-          },
-        }))
-      : effectiveRoles.map((row) => ({
-          ...row,
-          role: {
-            ...row.role,
-            isInherited:
-              assignedRoles.find((r) => r.role.id === row.role.id) ===
-              undefined,
-          },
-        }))),
-  ];
-};
+) => [
+  ...(hide
+    ? assignedRoles.map((row) => ({
+        ...row,
+        role: {
+          ...row.role,
+          isInherited: false,
+        },
+      }))
+    : effectiveRoles.map((row) => ({
+        ...row,
+        role: {
+          ...row.role,
+          isInherited:
+            assignedRoles.find((r) => r.role.id === row.role.id) === undefined,
+        },
+      }))),
+];
 
 export const ServiceRole = ({ role, client }: Row) => (
   <>
@@ -287,12 +285,8 @@ export const RoleMapping = ({
           {
             name: "role.name",
             displayKey: t("common:name"),
+            transforms: [cellWidth(30)],
             cellRenderer: ServiceRole,
-          },
-          {
-            name: "role.parent.name",
-            displayKey: t("common:inherentFrom"),
-            cellFormatters: [emptyFormatter()],
           },
           {
             name: "role.description",
