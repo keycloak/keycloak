@@ -152,8 +152,12 @@ public class ModelToRepresentation {
     }
 
     public static Stream<GroupRepresentation> searchForGroupByName(RealmModel realm, boolean full, String search, Integer first, Integer max) {
+        return searchForGroupByName(realm, full, search, first, max, false);
+    }
+
+    public static Stream<GroupRepresentation> searchForGroupByName(RealmModel realm, boolean full, String search, Integer first, Integer max, boolean filterSubGroup) {
         return realm.searchForGroupByNameStream(search, first, max)
-                .map(g -> toGroupHierarchy(g, full, search));
+                .map(g -> toGroupHierarchy(g, full, filterSubGroup ? search : null));
     }
 
     public static Stream<GroupRepresentation> searchForGroupByName(UserModel user, boolean full, String search, Integer first, Integer max) {
