@@ -157,7 +157,7 @@ Please see the <<Configuring the console log format>> section in this guide for 
 == Configuring raw quarkus logging properties
 At the time of writing, the logging features of the quarkus based Keycloak are basic, yet powerful. Nevertheless, expect more to come and feel free to join the https://github.com/keycloak/keycloak/discussions/8870[discussion] at GitHub.
 
-When you need a temporary solution, e.g. for logging to a file or using syslog isntead of console, you can check out the https://github.com/keycloak/keycloak/discussions/8870[Quarkus logging guide]. It is possible to use all properties mentioned there, as long as no other than the base logging dependency is involved. For example it is possible to set the log handler to file, but not to use json output, yet, as you would need to provide another dependency for json output to work.
+When you need a temporary solution, e.g. for logging to a file or using syslog instead of console, you can check out the https://github.com/keycloak/keycloak/discussions/8870[Quarkus logging guide]. It is possible to use all properties mentioned there, as long as no other than the base logging dependency is involved. For example it is possible to set the log handler to file, but not to use json output, yet, as you would need to provide another dependency for json output to work.
 
 To use raw quarkus properties, please refer to the <@links.server id="configuration"/> guide at section _Using unsupported server options_.
 
