@@ -42,7 +42,8 @@ public class PermissionTicketAdapter implements PermissionTicket, CachedModel<Pe
     @Override
     public PermissionTicket getDelegateForUpdate() {
         if (updated == null) {
-            updated = cacheSession.getPermissionTicketStoreDelegate().findById(cached.getId(), cached.getResourceServerId());
+            ResourceServer resourceServer = cacheSession.getResourceServerStoreDelegate().findById(cached.getResourceServerId());
+            updated = cacheSession.getPermissionTicketStoreDelegate().findById(resourceServer, cached.getId());
             if (updated == null) throw new IllegalStateException("Not found in database");
             cacheSession.registerPermissionTicketInvalidation(cached.getId(), cached.getOwner(), cached.getRequester(), cached.getResourceId(), updated.getResource().getName(), cached.getScopeId(), cached.getResourceServerId());
         }
@@ -69,7 +70,8 @@ public class PermissionTicketAdapter implements PermissionTicket, CachedModel<Pe
     protected boolean isUpdated() {
         if (updated != null) return true;
         if (!invalidated) return false;
-        updated = cacheSession.getPermissionTicketStoreDelegate().findById(cached.getId(), cached.getResourceServerId());
+        ResourceServer resourceServer = cacheSession.getResourceServerStoreDelegate().findById(cached.getResourceServerId());
+        updated = cacheSession.getPermissionTicketStoreDelegate().findById(resourceServer, cached.getId());
         if (updated == null) throw new IllegalStateException("Not found in database");
         return true;
     }
@@ -126,7 +128,7 @@ public class PermissionTicketAdapter implements PermissionTicket, CachedModel<Pe
     @Override
     public Policy getPolicy() {
         if (isUpdated()) return updated.getPolicy();
-        return cacheSession.getPolicyStore().findById(cached.getPolicy(), cached.getResourceServerId());
+        return cacheSession.getPolicyStore().findById(cacheSession.getResourceServerStore().findById(cached.getResourceServerId()), cached.getPolicy());
     }
 
     @Override
@@ -138,12 +140,12 @@ public class PermissionTicketAdapter implements PermissionTicket, CachedModel<Pe
 
     @Override
     public Resource getResource() {
-        return cacheSession.getResourceStore().findById(cached.getResourceId(), getResourceServer().getId());
+        return cacheSession.getResourceStore().findById(getResourceServer(), cached.getResourceId());
     }
 
     @Override
     public Scope getScope() {
-        return cacheSession.getScopeStore().findById(cached.getScopeId(), getResourceServer().getId());
+        return cacheSession.getScopeStore().findById(getResourceServer(), cached.getScopeId());
     }
 
     @Override

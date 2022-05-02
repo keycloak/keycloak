@@ -19,6 +19,7 @@ package org.keycloak.testsuite.rest;
 
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.HttpRequest;
+import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.HtmlUtils;
 import org.keycloak.common.util.Time;
@@ -49,12 +50,14 @@ import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.ResetTimeOffsetEvent;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.AudienceProtocolMapper;
+import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.AuthDetailsRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.services.ErrorPage;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.services.scheduled.ClearExpiredUserSessions;
@@ -610,7 +613,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Path("/valid-credentials")
     @Produces(MediaType.APPLICATION_JSON)
     public boolean validCredentials(@QueryParam("realmName") String realmName, @QueryParam("userName") String userName, @QueryParam("password") String password) {
-        RealmModel realm = session.realms().getRealm(realmName);
+        RealmModel realm = session.realms().getRealmByName(realmName);
         if (realm == null) return false;
         UserProvider userProvider = session.getProvider(UserProvider.class);
         UserModel user = userProvider.getUserByUsername(realm, userName);
@@ -966,6 +969,16 @@ public class TestingResourceProvider implements RealmResourceProvider {
         }
     }
 
+    @GET
+    @Path("/reinitialize-provider-factory-with-system-properties-scope")
+    @Consumes(MediaType.TEXT_HTML_UTF_8)
+    public void reinitializeProviderFactoryWithSystemPropertiesScope(@QueryParam("provider-type") String providerType, @QueryParam("provider-id") String providerId,
+                                                              @QueryParam("system-properties-prefix") String systemPropertiesPrefix) throws Exception {
+        Class<? extends Provider> providerClass = (Class<? extends Provider>) Class.forName(providerType);
+        ProviderFactory factory = session.getKeycloakSessionFactory().getProviderFactory(providerClass, providerId);
+        factory.init(new Config.SystemPropertiesScope(systemPropertiesPrefix));
+    }
+
     /**
      * This will send POST request to specified URL with specified form parameters. It's not easily possible to "trick" web driver to send POST
      * request with custom parameters, which are not directly available in the form.
@@ -1021,6 +1034,18 @@ public class TestingResourceProvider implements RealmResourceProvider {
                 .type(javax.ws.rs.core.MediaType.TEXT_HTML_TYPE)
                 .entity(builder.toString()).build();
 
+    }
+
+    /**
+     * Display message to Error Page - for testing purposes
+     *
+     * @param message message
+     */
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/display-error-message")
+    public Response displayErrorMessage(@QueryParam("message") String message) {
+        return ErrorPage.error(session, session.getContext().getAuthenticationSession(), Response.Status.BAD_REQUEST, message == null ? "" : message);
     }
 
     private RealmModel getRealmByName(String realmName) {

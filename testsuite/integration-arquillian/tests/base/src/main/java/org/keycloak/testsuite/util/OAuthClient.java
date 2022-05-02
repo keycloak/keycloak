@@ -73,11 +73,13 @@ import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentatio
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AuthorizationResponseToken;
+import org.keycloak.representations.ClaimsRepresentation;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.UserInfo;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.testsuite.runonserver.RunOnServerException;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.JsonSerialization;
@@ -92,6 +94,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
@@ -150,6 +153,12 @@ public class OAuthClient {
 
     private String redirectUri;
 
+    private String postLogoutRedirectUri;
+
+    private String idTokenHint;
+
+    private String initiatingIDP;
+
     private String kcAction;
 
     private StateParamProvider state;
@@ -164,6 +173,8 @@ public class OAuthClient {
 
     private String maxAge;
 
+    private String prompt;
+
     private String responseType;
 
     private String responseMode;
@@ -173,6 +184,8 @@ public class OAuthClient {
     private String request;
 
     private String requestUri;
+
+    private String claims;
 
     private Map<String, String> requestHeaders;
 
@@ -195,18 +208,19 @@ public class OAuthClient {
 
         public LogoutUrlBuilder idTokenHint(String idTokenHint) {
             if (idTokenHint != null) {
-                b.queryParam("id_token_hint", idTokenHint);
+                b.queryParam(OIDCLoginProtocol.ID_TOKEN_HINT, idTokenHint);
             }
             return this;
         }
 
         public LogoutUrlBuilder postLogoutRedirectUri(String redirectUri) {
             if (redirectUri != null) {
-                b.queryParam("post_logout_redirect_uri", redirectUri);
+                b.queryParam(OIDCLoginProtocol.POST_LOGOUT_REDIRECT_URI_PARAM, redirectUri);
             }
             return this;
         }
 
+        @Deprecated // Use only in backwards compatibility tests
         public LogoutUrlBuilder redirectUri(String redirectUri) {
             if (redirectUri != null) {
                 b.queryParam(OAuth2Constants.REDIRECT_URI, redirectUri);
@@ -214,9 +228,23 @@ public class OAuthClient {
             return this;
         }
 
-        public LogoutUrlBuilder sessionState(String sessionState) {
-            if (sessionState != null) {
-                b.queryParam("session_state", sessionState);
+        public LogoutUrlBuilder state(String state) {
+            if (state != null) {
+                b.queryParam(OIDCLoginProtocol.STATE_PARAM, state);
+            }
+            return this;
+        }
+
+        public LogoutUrlBuilder uiLocales(String uiLocales) {
+            if (uiLocales != null) {
+                b.queryParam(OIDCLoginProtocol.UI_LOCALES_PARAM,  uiLocales);
+            }
+            return this;
+        }
+
+        public LogoutUrlBuilder initiatingIdp(String initiatingIdp) {
+            if (initiatingIdp != null) {
+                b.queryParam(AuthenticationManager.INITIATING_IDP_PARAM,  initiatingIdp);
             }
             return this;
         }
@@ -243,6 +271,7 @@ public class OAuthClient {
         realm = "test";
         clientId = "test-app";
         redirectUri = APP_ROOT + "/auth";
+        postLogoutRedirectUri = APP_ROOT + "/auth";
         state = () -> {
             return KeycloakModelUtils.generateId();
         };
@@ -251,11 +280,13 @@ public class OAuthClient {
         clientSessionState = null;
         clientSessionHost = null;
         maxAge = null;
+        prompt = null;
         responseType = OAuth2Constants.CODE;
         responseMode = null;
         nonce = null;
         request = null;
         requestUri = null;
+        claims = null;
         // https://tools.ietf.org/html/rfc7636#section-4
         codeVerifier = null;
         codeChallenge = null;
@@ -624,7 +655,10 @@ public class OAuthClient {
             parameters.add(new BasicNameValuePair(OAuth2Constants.GRANT_TYPE, OAuth2Constants.TOKEN_EXCHANGE_GRANT_TYPE));
             parameters.add(new BasicNameValuePair(OAuth2Constants.SUBJECT_TOKEN, token));
             parameters.add(new BasicNameValuePair(OAuth2Constants.SUBJECT_TOKEN_TYPE, OAuth2Constants.ACCESS_TOKEN_TYPE));
-            parameters.add(new BasicNameValuePair(OAuth2Constants.AUDIENCE, targetAudience));
+
+            if (targetAudience != null) {
+                parameters.add(new BasicNameValuePair(OAuth2Constants.AUDIENCE, targetAudience));
+            }
 
             if (additionalParams != null) {
                 for (Map.Entry<String, String> entry : additionalParams.entrySet()) {
@@ -754,6 +788,9 @@ public class OAuthClient {
             }
             if (request != null) {
                 parameters.add(new BasicNameValuePair(OIDCLoginProtocol.REQUEST_PARAM, request));
+            }
+            if (claims != null) {
+                parameters.add(new BasicNameValuePair(OIDCLoginProtocol.CLAIMS_PARAM, claims));
             }
             if (additionalParams != null) {
                 for (Map.Entry<String, String> entry : additionalParams.entrySet()) {
@@ -996,6 +1033,12 @@ public class OAuthClient {
             if (nonce != null) {
                 parameters.add(new BasicNameValuePair(OIDCLoginProtocol.NONCE_PARAM, scope));
             }
+            if (codeChallenge != null) {
+                parameters.add(new BasicNameValuePair(OAuth2Constants.CODE_CHALLENGE, codeChallenge));
+            }
+            if (codeChallengeMethod != null) {
+                parameters.add(new BasicNameValuePair(OAuth2Constants.CODE_CHALLENGE_METHOD, codeChallengeMethod));
+            }
 
             UrlEncodedFormEntity formEntity;
             try {
@@ -1025,6 +1068,10 @@ public class OAuthClient {
 
             if (origin != null) {
                 post.addHeader("Origin", origin);
+            }
+            // https://tools.ietf.org/html/rfc7636#section-4.5
+            if (codeVerifier != null) {
+                parameters.add(new BasicNameValuePair(OAuth2Constants.CODE_VERIFIER, codeVerifier));
             }
 
             UrlEncodedFormEntity formEntity;
@@ -1115,11 +1162,17 @@ public class OAuthClient {
             if (maxAge != null) {
                 parameters.add(new BasicNameValuePair(OIDCLoginProtocol.MAX_AGE_PARAM, maxAge));
             }
+            if (prompt != null) {
+                parameters.add(new BasicNameValuePair(OIDCLoginProtocol.PROMPT_PARAM, prompt));
+            }
             if (request != null) {
                 parameters.add(new BasicNameValuePair(OIDCLoginProtocol.REQUEST_PARAM, request));
             }
             if (requestUri != null) {
                 parameters.add(new BasicNameValuePair(OIDCLoginProtocol.REQUEST_URI_PARAM, requestUri));
+            }
+            if (claims != null) {
+                parameters.add(new BasicNameValuePair(OIDCLoginProtocol.CLAIMS_PARAM, claims));
             }
             if (codeChallenge != null) {
                 parameters.add(new BasicNameValuePair(OAuth2Constants.CODE_CHALLENGE, codeChallenge));
@@ -1334,8 +1387,14 @@ public class OAuthClient {
 
     public void openLogout() {
         UriBuilder b = OIDCLoginProtocolService.logoutUrl(UriBuilder.fromUri(baseUrl));
-        if (redirectUri != null) {
-            b.queryParam(OAuth2Constants.REDIRECT_URI, redirectUri);
+        if (postLogoutRedirectUri != null) {
+            b.queryParam(OAuth2Constants.POST_LOGOUT_REDIRECT_URI, postLogoutRedirectUri);
+        }
+        if (idTokenHint != null) {
+            b.queryParam(OAuth2Constants.ID_TOKEN_HINT, idTokenHint);
+        }
+        if(initiatingIDP != null) {
+            b.queryParam(AuthenticationManager.INITIATING_IDP_PARAM, initiatingIDP);
         }
         driver.navigate().to(b.build(realm).toString());
     }
@@ -1397,11 +1456,17 @@ public class OAuthClient {
         if (maxAge != null) {
             b.queryParam(OIDCLoginProtocol.MAX_AGE_PARAM, maxAge);
         }
+        if (prompt != null) {
+            b.queryParam(OIDCLoginProtocol.PROMPT_PARAM, prompt);
+        }
         if (request != null) {
             b.queryParam(OIDCLoginProtocol.REQUEST_PARAM, request);
         }
         if (requestUri != null) {
             b.queryParam(OIDCLoginProtocol.REQUEST_URI_PARAM, requestUri);
+        }
+        if (claims != null) {
+            b.queryParam(OIDCLoginProtocol.CLAIMS_PARAM, claims);
         }
         // https://tools.ietf.org/html/rfc7636#section-4.3
         if (codeChallenge != null) {
@@ -1548,6 +1613,21 @@ public class OAuthClient {
         this.redirectUri = redirectUri;
         return this;
     }
+
+    public OAuthClient postLogoutRedirectUri(String postLogoutRedirectUri) {
+        this.postLogoutRedirectUri = postLogoutRedirectUri;
+        return this;
+    }
+
+    public OAuthClient idTokenHint(String idTokenHint) {
+        this.idTokenHint = idTokenHint;
+        return this;
+    }
+
+    public OAuthClient initiatingIDP(String initiatingIDP) {
+        this.initiatingIDP = initiatingIDP;
+        return this;
+    }
     
     public OAuthClient kcAction(String kcAction) {
         this.kcAction = kcAction;
@@ -1598,6 +1678,11 @@ public class OAuthClient {
         return this;
     }
 
+    public OAuthClient prompt(String prompt) {
+        this.prompt = prompt;
+        return this;
+    }
+
     public OAuthClient responseType(String responseType) {
         this.responseType = responseType;
         return this;
@@ -1620,6 +1705,19 @@ public class OAuthClient {
 
     public OAuthClient requestUri(String requestUri) {
         this.requestUri = requestUri;
+        return this;
+    }
+
+    public OAuthClient claims(ClaimsRepresentation claims) {
+        if (claims == null) {
+            this.claims = null;
+        } else {
+            try {
+                this.claims = URLEncoder.encode(JsonSerialization.writeValueAsString(claims), "UTF-8");
+            } catch (IOException ioe) {
+                throw new RuntimeException(ioe);
+            }
+        }
         return this;
     }
 

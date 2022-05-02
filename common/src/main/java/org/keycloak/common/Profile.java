@@ -17,14 +17,14 @@
 
 package org.keycloak.common;
 
-import org.jboss.logging.Logger;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
+
+import org.jboss.logging.Logger;
 
 import static org.keycloak.common.Profile.Type.DEPRECATED;
 
@@ -34,10 +34,106 @@ import static org.keycloak.common.Profile.Type.DEPRECATED;
  */
 public class Profile {
 
-    private static final Logger logger = Logger.getLogger(Profile.class);
-
     public static final String PRODUCT_NAME = ProductValue.RHSSO.getName();
     public static final String PROJECT_NAME = ProductValue.KEYCLOAK.getName();
+    private static final Logger logger = Logger.getLogger(Profile.class);
+
+    private static Profile CURRENT;
+    private final ProductValue product;
+    private final ProfileValue profile;
+    private final Set<Feature> disabledFeatures = new HashSet<>();
+    private final Set<Feature> previewFeatures = new HashSet<>();
+    private final Set<Feature> experimentalFeatures = new HashSet<>();
+    private final Set<Feature> deprecatedFeatures = new HashSet<>();
+    private final PropertyResolver propertyResolver;
+    public Profile(PropertyResolver resolver) {
+        this.propertyResolver = resolver;
+        Config config = new Config();
+
+        product = PRODUCT_NAME.toLowerCase().equals(Version.NAME) ? ProductValue.RHSSO : ProductValue.KEYCLOAK;
+        profile = ProfileValue.valueOf(config.getProfile().toUpperCase());
+
+        for (Feature f : Feature.values()) {
+            Boolean enabled = config.getConfig(f);
+            Type type = product.equals(ProductValue.RHSSO) ? f.getTypeProduct() : f.getTypeProject();
+
+            switch (type) {
+                case DEFAULT:
+                    if (enabled != null && !enabled) {
+                        disabledFeatures.add(f);
+                    }
+                    break;
+                case DEPRECATED:
+                    deprecatedFeatures.add(f);
+                case DISABLED_BY_DEFAULT:
+                    if (enabled == null || !enabled) {
+                        disabledFeatures.add(f);
+                    } else if (DEPRECATED.equals(type)) {
+                        logger.warnf("Deprecated feature enabled: " + f.name().toLowerCase());
+                    }
+                    break;
+                case PREVIEW:
+                    previewFeatures.add(f);
+                    if ((enabled == null || !enabled) && !profile.equals(ProfileValue.PREVIEW)) {
+                        disabledFeatures.add(f);
+                    } else {
+                        logger.info("Preview feature enabled: " + f.name().toLowerCase());
+                    }
+                    break;
+                case EXPERIMENTAL:
+                    experimentalFeatures.add(f);
+                    if (enabled == null || !enabled) {
+                        disabledFeatures.add(f);
+                    } else {
+                        logger.warn("Experimental feature enabled: " + f.name().toLowerCase());
+                    }
+                    break;
+            }
+        }
+    }
+
+    private static Profile getInstance() {
+        if (CURRENT == null) {
+            CURRENT = new Profile(null);
+        }
+        return CURRENT;
+    }
+
+    public static void setInstance(Profile instance) {
+        CURRENT = instance;
+    }
+
+    public static void init() {
+        CURRENT = new Profile(null);
+    }
+
+    public static String getName() {
+        return getInstance().profile.name().toLowerCase();
+    }
+
+    public static Set<Feature> getDisabledFeatures() {
+        return getInstance().disabledFeatures;
+    }
+
+    public static Set<Feature> getPreviewFeatures() {
+        return getInstance().previewFeatures;
+    }
+
+    public static Set<Feature> getExperimentalFeatures() {
+        return getInstance().experimentalFeatures;
+    }
+
+    public static Set<Feature> getDeprecatedFeatures() {
+        return getInstance().deprecatedFeatures;
+    }
+
+    public static boolean isFeatureEnabled(Feature feature) {
+        return !getInstance().disabledFeatures.contains(feature);
+    }
+
+    public static boolean isProduct() {
+        return getInstance().profile.equals(ProfileValue.PRODUCT);
+    }
 
     public enum Type {
         DEFAULT,
@@ -48,34 +144,44 @@ public class Profile {
     }
 
     public enum Feature {
-        AUTHORIZATION(Type.DEFAULT),
-        ACCOUNT2(Type.DEFAULT),
-        ACCOUNT_API(Type.DEFAULT),
-        ADMIN_FINE_GRAINED_AUTHZ(Type.PREVIEW),
-        ADMIN2(Type.EXPERIMENTAL),
-        DOCKER(Type.DISABLED_BY_DEFAULT),
-        IMPERSONATION(Type.DEFAULT),
-        OPENSHIFT_INTEGRATION(Type.PREVIEW),
-        SCRIPTS(Type.PREVIEW),
-        TOKEN_EXCHANGE(Type.PREVIEW),
-        UPLOAD_SCRIPTS(DEPRECATED),
-        WEB_AUTHN(Type.DEFAULT, Type.PREVIEW),
-        CLIENT_POLICIES(Type.DEFAULT),
-        CIBA(Type.DEFAULT),
-        MAP_STORAGE(Type.EXPERIMENTAL),
-        PAR(Type.DEFAULT),
-        DECLARATIVE_USER_PROFILE(Type.PREVIEW);
+        AUTHORIZATION("Authorization Service", Type.DEFAULT),
+        ACCOUNT2("New Account Management Console", Type.DEFAULT),
+        ACCOUNT_API("Account Management REST API", Type.DEFAULT),
+        ADMIN_FINE_GRAINED_AUTHZ("Fine-Grained Admin Permissions", Type.PREVIEW),
+        ADMIN2("New Admin Console", Type.PREVIEW),
+        DOCKER("Docker Registry protocol", Type.DISABLED_BY_DEFAULT),
+        IMPERSONATION("Ability for admins to impersonate users", Type.DEFAULT),
+        OPENSHIFT_INTEGRATION("Extension to enable securing OpenShift", Type.PREVIEW),
+        SCRIPTS("Write custom authenticators using JavaScript", Type.PREVIEW),
+        TOKEN_EXCHANGE("Token Exchange Service", Type.PREVIEW),
+        WEB_AUTHN("W3C Web Authentication (WebAuthn)", Type.DEFAULT),
+        CLIENT_POLICIES("Client configuration policies", Type.DEFAULT),
+        CIBA("OpenID Connect Client Initiated Backchannel Authentication (CIBA)", Type.DEFAULT),
+        MAP_STORAGE("New store", Type.EXPERIMENTAL),
+        PAR("OAuth 2.0 Pushed Authorization Requests (PAR)", Type.DEFAULT),
+        DECLARATIVE_USER_PROFILE("Configure user profiles using a declarative style", Type.PREVIEW),
+        DYNAMIC_SCOPES("Dynamic OAuth 2.0 scopes", Type.EXPERIMENTAL),
+        CLIENT_SECRET_ROTATION("Client Secret Rotation", Type.PREVIEW),
+        STEP_UP_AUTHENTICATION("Step-up Authentication", Type.DEFAULT),
+        RECOVERY_CODES("Recovery codes", Type.PREVIEW);
+
 
         private final Type typeProject;
         private final Type typeProduct;
+        private String label;
 
-        Feature(Type type) {
-            this(type, type);
+        Feature(String label, Type type) {
+            this(label, type, type);
         }
 
-        Feature(Type typeProject, Type typeProduct) {
+        Feature(String label, Type typeProject, Type typeProduct) {
+            this.label = label;
             this.typeProject = typeProject;
             this.typeProduct = typeProduct;
+        }
+
+        public String getLabel() {
+            return label;
         }
 
         public Type getTypeProject() {
@@ -112,111 +218,8 @@ public class Profile {
         PREVIEW
     }
 
-    private static Profile CURRENT;
-
-    private final ProductValue product;
-
-    private final ProfileValue profile;
-
-    private final Set<Feature> disabledFeatures = new HashSet<>();
-    private final Set<Feature> previewFeatures = new HashSet<>();
-    private final Set<Feature> experimentalFeatures = new HashSet<>();
-    private final Set<Feature> deprecatedFeatures = new HashSet<>();
-
-    private final PropertyResolver propertyResolver;
-    
-    public Profile(PropertyResolver resolver) {
-        this.propertyResolver = resolver;
-        Config config = new Config();
-
-        product = PRODUCT_NAME.toLowerCase().equals(Version.NAME) ? ProductValue.RHSSO : ProductValue.KEYCLOAK;
-        profile = ProfileValue.valueOf(config.getProfile().toUpperCase());
-
-        for (Feature f : Feature.values()) {
-            Boolean enabled = config.getConfig(f);
-            Type type = product.equals(ProductValue.RHSSO) ? f.getTypeProduct() : f.getTypeProject();
-
-            switch (type) {
-                case DEFAULT:
-                    if (enabled != null && !enabled) {
-                        disabledFeatures.add(f);
-                    }
-                    break;
-                case DEPRECATED:
-                    deprecatedFeatures.add(f);
-                case DISABLED_BY_DEFAULT:
-                    if (enabled == null || !enabled) {
-                        disabledFeatures.add(f);
-                    } else if (DEPRECATED.equals(type)) {
-                        logger.warnf("Deprecated feature enabled: " + f.name().toLowerCase());
-                        if (Feature.UPLOAD_SCRIPTS.equals(f)) {
-                            previewFeatures.add(Feature.SCRIPTS);
-                            disabledFeatures.remove(Feature.SCRIPTS);
-                            logger.warnf("Preview feature enabled: " + Feature.SCRIPTS.name().toLowerCase());
-                        }
-                    }
-                    break;
-                case PREVIEW:
-                    previewFeatures.add(f);
-                    if ((enabled == null || !enabled) && !profile.equals(ProfileValue.PREVIEW)) {
-                        disabledFeatures.add(f);
-                    } else {
-                        logger.info("Preview feature enabled: " + f.name().toLowerCase());
-                    }
-                    break;
-                case EXPERIMENTAL:
-                    experimentalFeatures.add(f);
-                    if (enabled == null || !enabled) {
-                        disabledFeatures.add(f);
-                    } else {
-                        logger.warn("Experimental feature enabled: " + f.name().toLowerCase());
-                    }
-                    break;
-            }
-        }
-    }
-
-    private static Profile getInstance() {
-        if (CURRENT == null) {
-            CURRENT = new Profile(null);
-        }
-        return CURRENT;
-    }
-
-    public static void init() {
-        CURRENT = new Profile(null);
-    }
-    
-    public static void setInstance(Profile instance) {
-        CURRENT = instance;
-    }
-
-    public static String getName() {
-        return getInstance().profile.name().toLowerCase();
-    }
-
-    public static Set<Feature> getDisabledFeatures() {
-        return getInstance().disabledFeatures;
-    }
-
-    public static Set<Feature> getPreviewFeatures() {
-        return getInstance().previewFeatures;
-    }
-
-    public static Set<Feature> getExperimentalFeatures() {
-        return getInstance().experimentalFeatures;
-    }
-
-    public static Set<Feature> getDeprecatedFeatures() {
-        return getInstance().deprecatedFeatures;
-    }
-
-    public static boolean isFeatureEnabled(Feature feature) {
-        return !getInstance().disabledFeatures.contains(feature);
-    }
-
-    public static boolean isProduct() {
-        return getInstance().profile.equals(ProfileValue.PRODUCT);
+    public interface PropertyResolver {
+        String resolve(String feature);
     }
 
     private class Config {
@@ -279,17 +282,13 @@ public class Profile {
             if (value != null) {
                 return value;
             }
-            
+
             if (propertyResolver != null) {
                 return propertyResolver.resolve(name);
             }
-            
+
             return null;
         }
-    }
-    
-    public interface PropertyResolver {
-        String resolve(String feature);
     }
 
 }

@@ -17,27 +17,17 @@
 
 package org.keycloak.quarkus.runtime.configuration;
 
-import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
 
-import java.io.File;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.eclipse.microprofile.config.spi.ConfigSourceProvider;
-import org.jboss.logging.Logger;
 import org.keycloak.quarkus.runtime.Environment;
 
 public class KeycloakConfigSourceProvider implements ConfigSourceProvider {
 
-    private static final Logger log = Logger.getLogger(KeycloakConfigSourceProvider.class);
-
-    public static final String KEYCLOAK_CONFIG_FILE_ENV = "KC_CONFIG_FILE";
-    public static final String KEYCLOAK_CONFIG_FILE_PROP = NS_KEYCLOAK_PREFIX + "config.file";
     private static final List<ConfigSource> CONFIG_SOURCES = new ArrayList<>();
-    public static PersistedConfigSource PERSISTED_CONFIG_SOURCE;
 
     // we initialize in a static block to avoid discovering the config sources multiple times when starting the application
     static {
@@ -52,19 +42,16 @@ public class KeycloakConfigSourceProvider implements ConfigSourceProvider {
         }
 
         CONFIG_SOURCES.add(new ConfigArgsConfigSource());
-        CONFIG_SOURCES.add(new SysPropConfigSource());
         CONFIG_SOURCES.add(new KcEnvConfigSource());
-        PERSISTED_CONFIG_SOURCE = new PersistedConfigSource(getPersistedConfigFile());
-        CONFIG_SOURCES.add(PERSISTED_CONFIG_SOURCE);
 
-        Path configFile = getConfigurationFile();
+        CONFIG_SOURCES.addAll(new QuarkusPropertiesConfigSource().getConfigSources(Thread.currentThread().getContextClassLoader()));
 
-        if (configFile != null) {
-            CONFIG_SOURCES.add(new KeycloakPropertiesConfigSource.InFileSystem(configFile));
-        } else {
-            log.debug("Loading the default server configuration");
-            CONFIG_SOURCES.add(new KeycloakPropertiesConfigSource.InJar());
-        }
+        CONFIG_SOURCES.add(PersistedConfigSource.getInstance());
+
+        CONFIG_SOURCES.addAll(new KeycloakPropertiesConfigSource.InFileSystem().getConfigSources(Thread.currentThread().getContextClassLoader()));
+
+        // by enabling this config source we are able to rely on the default settings when running tests
+        CONFIG_SOURCES.addAll(new KeycloakPropertiesConfigSource.InClassPath().getConfigSources(Thread.currentThread().getContextClassLoader()));
     }
 
     /**
@@ -76,47 +63,11 @@ public class KeycloakConfigSourceProvider implements ConfigSourceProvider {
         initializeSources();
     }
 
-    private static Path getConfigurationFile() {
-        String filePath = System.getProperty(KEYCLOAK_CONFIG_FILE_PROP);
-
-        if (filePath == null)
-            filePath = System.getenv(KEYCLOAK_CONFIG_FILE_ENV);
-
-        if (filePath == null) {
-            String homeDir = Environment.getHomeDir();
-
-            if (homeDir != null) {
-                File file = Paths.get(homeDir, "conf", KeycloakPropertiesConfigSource.KEYCLOAK_PROPERTIES).toFile();
-
-                if (file.exists()) {
-                    filePath = file.getAbsolutePath();
-                }
-            }
-        }
-
-        if (filePath == null) {
-            return null;
-        }
-        
-        return Paths.get(filePath);
-    }
-
-    public static Path getPersistedConfigFile() {
-        String homeDir = Environment.getHomeDir();
-
-        if (homeDir == null) {
-            return Paths.get(System.getProperty("java.io.tmpdir"), PersistedConfigSource.KEYCLOAK_PROPERTIES);
-        }
-
-        Path generatedPath = Paths.get(homeDir, "data", "generated");
-
-        generatedPath.toFile().mkdirs();
-
-        return generatedPath.resolve(PersistedConfigSource.KEYCLOAK_PROPERTIES);
-    }
-
     @Override
     public Iterable<ConfigSource> getConfigSources(ClassLoader forClassLoader) {
+        if(Environment.isTestLaunchMode()) {
+            reload();
+        }
         return CONFIG_SOURCES;
     }
 }

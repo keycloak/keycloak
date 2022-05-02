@@ -79,6 +79,8 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
 
     public static final String REMOVE_USER_SESSIONS_EVENT = "REMOVE_USER_SESSIONS_EVENT";
 
+    private boolean preloadOfflineSessionsFromDatabase;
+
     private Config.Scope config;
 
     private RemoteCacheInvoker remoteCacheInvoker;
@@ -95,15 +97,14 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
         Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> clientSessionCache = connections.getCache(InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME);
         Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> offlineClientSessionsCache = connections.getCache(InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME);
 
-        boolean loadOfflineSessionsStatsFromDatabase = !isPreloadingOfflineSessionsFromDatabaseEnabled();
-
         return new InfinispanUserSessionProvider(session, remoteCacheInvoker, lastSessionRefreshStore, offlineLastSessionRefreshStore,
-                persisterLastSessionRefreshStore, keyGenerator, cache, offlineSessionsCache, clientSessionCache, offlineClientSessionsCache, loadOfflineSessionsStatsFromDatabase);
+                persisterLastSessionRefreshStore, keyGenerator, cache, offlineSessionsCache, clientSessionCache, offlineClientSessionsCache, !preloadOfflineSessionsFromDatabase);
     }
 
     @Override
     public void init(Config.Scope config) {
         this.config = config;
+        preloadOfflineSessionsFromDatabase = config.getBoolean("preloadOfflineSessionsFromDatabase", false);
     }
 
     @Override
@@ -147,10 +148,6 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
         });
     }
 
-    private boolean isPreloadingOfflineSessionsFromDatabaseEnabled() {
-        return config.getBoolean("preloadOfflineSessionsFromDatabase", true);
-    }
-
     // Max count of worker errors. Initialization will end with exception when this number is reached
     private int getMaxErrors() {
         return config.getInt("maxErrors", 20);
@@ -175,7 +172,7 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
             @Override
             public void run(KeycloakSession session) {
 
-                if (isPreloadingOfflineSessionsFromDatabaseEnabled()) {
+                if (preloadOfflineSessionsFromDatabase) {
                     // only preload offline-sessions if necessary
                     log.debug("Start pre-loading userSessions from persistent storage");
 
@@ -339,7 +336,6 @@ public class InfinispanUserSessionProviderFactory implements UserSessionProvider
 
         log.debugf("Pre-loading sessions from remote cache '%s' finished", cacheName);
     }
-
 
     @Override
     public void close() {

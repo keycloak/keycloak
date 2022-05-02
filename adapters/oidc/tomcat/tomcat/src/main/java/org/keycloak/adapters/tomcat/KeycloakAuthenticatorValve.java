@@ -110,4 +110,9 @@ public class KeycloakAuthenticatorValve extends AbstractKeycloakAuthenticatorVal
     protected AbstractAuthenticatedActionsValve createAuthenticatedActionsValve(AdapterDeploymentContext deploymentContext, Valve next, Container container) {
         return new AuthenticatedActionsValve(deploymentContext, next, container);
     }
+    
+    @Override
+    protected CatalinaRequestAuthenticator createRequestAuthenticator(Request request, CatalinaHttpFacade facade, KeycloakDeployment deployment, AdapterTokenStore tokenStore) {
+        return new TomcatRequestAuthenticator(deployment, tokenStore, facade, request, createPrincipalFactory());
+    }
 }

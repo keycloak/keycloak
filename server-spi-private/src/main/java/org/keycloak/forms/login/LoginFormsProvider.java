@@ -18,10 +18,10 @@
 package org.keycloak.forms.login;
 
 import org.keycloak.authentication.AuthenticationFlowContext;
-import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.provider.Provider;
+import org.keycloak.rar.AuthorizationDetails;
 import org.keycloak.sessions.AuthenticationSessionModel;
 
 import javax.ws.rs.core.MultivaluedMap;
@@ -38,7 +38,7 @@ public interface LoginFormsProvider extends Provider {
 
     String IDENTITY_PROVIDER_BROKER_CONTEXT = "identityProviderBrokerCtx";
 
-    String USERNAME_EDIT_DISABLED = "usernameEditDisabled";
+    String USERNAME_HIDDEN = "usernameHidden";
 
     String REGISTRATION_DISABLED = "registrationDisabled";
 
@@ -67,6 +67,8 @@ public interface LoginFormsProvider extends Provider {
     Response createPasswordReset();
 
     Response createLoginTotp();
+
+    Response createLoginRecoveryAuthnCode();
 
     Response createLoginWebAuthn();
 
@@ -100,11 +102,13 @@ public interface LoginFormsProvider extends Provider {
 
     Response createFrontChannelLogoutPage();
 
+    Response createLogoutConfirmPage();
+
     LoginFormsProvider setAuthenticationSession(AuthenticationSessionModel authenticationSession);
 
     LoginFormsProvider setClientSessionCode(String accessCode);
 
-    LoginFormsProvider setAccessRequest(List<ClientScopeModel> clientScopesRequested);
+    LoginFormsProvider setAccessRequest(List<AuthorizationDetails> clientScopesRequested);
 
     /**
      * Set one global error message.

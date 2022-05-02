@@ -62,6 +62,7 @@ class AuthenticationSelectionResolver {
      */
     static List<AuthenticationSelectionOption> createAuthenticationSelectionList(AuthenticationProcessor processor, AuthenticationExecutionModel model) {
         List<AuthenticationSelectionOption> authenticationSelectionList = new ArrayList<>();
+        List<AuthenticationSelectionOption> userlessCredBasedAuthenticationSelectionList = new ArrayList<>();
 
         if (processor.getAuthenticationSession() != null) {
             Map<String, AuthenticationExecutionModel> typeAuthExecMap = new HashMap<>();
@@ -91,11 +92,24 @@ class AuthenticationSelectionResolver {
                         .map(credentialType -> new AuthenticationSelectionOption(processor.getSession(), typeAuthExecMap.get(credentialType)))
                         .collect(Collectors.toList());
             }
+            else {
+                // No user associated with session. Check if this flow contains executions linked to authenticators that don't require a user
+                typeAuthExecMap.forEach((key, value) -> {
+                    AuthenticatorFactory credbasedAuthenticatorFactory = (AuthenticatorFactory) processor.getSession().getKeycloakSessionFactory().getProviderFactory(Authenticator.class, value.getAuthenticator());
+                    Authenticator credbasedAuthenticator = credbasedAuthenticatorFactory.create(processor.getSession());
+                    if (!credbasedAuthenticator.requiresUser()) {
+                        userlessCredBasedAuthenticationSelectionList.add(new AuthenticationSelectionOption(processor.getSession(), value));
+                    }
+                });
+            }
 
             //add all other authenticators
             for (AuthenticationExecutionModel exec : nonCredentialExecutions) {
                 authenticationSelectionList.add(new AuthenticationSelectionOption(processor.getSession(), exec));
             }
+
+            // Add options for userless credential based authenticators AFTER regular authenticators options
+            authenticationSelectionList.addAll(userlessCredBasedAuthenticationSelectionList);
         }
 
         logger.debugf("Selections when trying execution '%s' : %s", model.getAuthenticator(), authenticationSelectionList);

@@ -131,6 +131,9 @@ public abstract class AbstractOIDCResponseTypeTest extends AbstractTestRealmKeyc
         events.expectLogin().error(Errors.INVALID_REQUEST).user((String) null).session((String) null).clearDetails().assertEvent();
     }
 
+    protected void validateNonceNotUsedSuccessExpected() {
+    	loginUser(null);
+    }
 
     protected void validateNonceNotUsedErrorExpected() {
         oauth.nonce(null);

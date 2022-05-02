@@ -64,7 +64,7 @@ public class PolicyEvaluationResponseBuilder {
         authorizationData.setPermissions(decision.results());
         accessToken.setAuthorization(authorizationData);
 
-        ClientModel clientModel = authorization.getRealm().getClientById(resourceServer.getId());
+        ClientModel clientModel = authorization.getRealm().getClientById(resourceServer.getClientId());
 
         if (!accessToken.hasAudience(clientModel.getClientId())) {
             accessToken.audience(clientModel.getClientId());
@@ -194,7 +194,7 @@ public class PolicyEvaluationResponseBuilder {
 
             filters.put(PermissionTicket.FilterOption.POLICY_ID, policy.getId());
 
-            List<PermissionTicket> tickets = authorization.getStoreFactory().getPermissionTicketStore().find(filters, policy.getResourceServer().getId(), -1, 1);
+            List<PermissionTicket> tickets = authorization.getStoreFactory().getPermissionTicketStore().find(policy.getResourceServer(), filters, -1, 1);
 
             if (!tickets.isEmpty()) {
                 KeycloakSession keycloakSession = authorization.getKeycloakSession();

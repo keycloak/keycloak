@@ -17,6 +17,7 @@
 package org.keycloak.models.map.client;
 
 import org.keycloak.models.map.annotations.GenerateEntityImplementations;
+import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.UpdatableEntity;
 import java.util.Map;
@@ -27,10 +28,7 @@ import java.util.Map;
  */
 @GenerateEntityImplementations
 @DeepCloner.Root
-public interface MapProtocolMapperEntity extends UpdatableEntity {
-
-    String getId();
-    void setId(String id);
+public interface MapProtocolMapperEntity extends UpdatableEntity, AbstractEntity {
 
     String getName();
     void setName(String name);

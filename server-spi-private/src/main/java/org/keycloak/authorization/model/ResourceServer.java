@@ -18,9 +18,18 @@
 
 package org.keycloak.authorization.model;
 
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.ProtocolMapperModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.PolicyEnforcementMode;
 import org.keycloak.storage.SearchableModelField;
+
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Stream;
 
 /**
  * Represents a resource server, whose resources are managed and protected. A resource server is basically an existing
@@ -83,4 +92,11 @@ public interface ResourceServer {
      * @return the decision strategy
      */
     DecisionStrategy getDecisionStrategy();
+
+    /**
+     * Returns id of a client that this {@link ResourceServer} is associated with
+     */
+    default String getClientId() {
+        return getId();
+    }
 }

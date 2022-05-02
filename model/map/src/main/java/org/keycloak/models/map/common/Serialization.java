@@ -16,14 +16,11 @@
  */
 package org.keycloak.models.map.common;
 
-import org.keycloak.common.util.reflections.Reflections;
 import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreType;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
-import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -35,10 +32,7 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.fasterxml.jackson.datatype.jdk8.StreamSerializer;
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Stream;
 
 /**
@@ -62,9 +56,9 @@ public class Serialization {
     public static final ConcurrentHashMap<Class<?>, ObjectWriter> WRITERS = new ConcurrentHashMap<>();
 
     @JsonIgnoreType
-    class IgnoredTypeMixIn {}
+    public class IgnoredTypeMixIn {}
 
-    abstract class IgnoreUpdatedMixIn {
+    public abstract class IgnoreUpdatedMixIn {
         @JsonIgnore public abstract boolean isUpdated();
     }
 

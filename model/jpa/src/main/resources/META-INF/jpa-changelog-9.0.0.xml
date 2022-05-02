@@ -18,6 +18,7 @@
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
 
     <changeSet author="keycloak" id="9.0.0-always-display-client">
+        <validCheckSum>7:39e0073779aba192646291aa2332493d</validCheckSum>
         <addColumn tableName="CLIENT">
             <column name="ALWAYS_DISPLAY_IN_CONSOLE" type="BOOLEAN" defaultValueBoolean="false">
                 <constraints nullable="false"/>
@@ -26,6 +27,7 @@
     </changeSet>
 
     <changeSet author="keycloak" id="9.0.0-drop-constraints-for-column-increase">
+        <validCheckSum>7:81f87368f00450799b4bf42ea0b3ec34</validCheckSum>
         <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
             <dbms type="mssql"/>
         </preConditions>
@@ -37,6 +39,7 @@
     </changeSet>
 
     <changeSet author="keycloak" id="9.0.0-increase-column-size-federated-fk">
+        <validCheckSum>7:20b37422abb9fb6571c618148f013a15</validCheckSum>
         <modifyDataType newDataType="VARCHAR(255)" tableName="FED_USER_CONSENT" columnName="CLIENT_ID"/>
         <modifyDataType newDataType="VARCHAR(255)" tableName="KEYCLOAK_ROLE" columnName="CLIENT_REALM_CONSTRAINT"/>
         <modifyDataType newDataType="VARCHAR(255)" tableName="RESOURCE_SERVER_POLICY" columnName="OWNER"/>
@@ -49,6 +52,7 @@
     </changeSet>
 
     <changeSet author="keycloak" id="9.0.0-recreate-constraints-after-column-increase">
+        <validCheckSum>7:1970bb6cfb5ee800736b95ad3fb3c78a</validCheckSum>
         <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
             <dbms type="mssql"/>
         </preConditions>

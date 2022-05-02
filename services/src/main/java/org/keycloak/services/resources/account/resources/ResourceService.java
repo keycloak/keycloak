@@ -58,7 +58,7 @@ public class ResourceService extends AbstractResourceService {
             Auth auth, HttpRequest request) {
         super(session, user, auth, request);
         this.resource = resource;
-        this.resourceServer = provider.getStoreFactory().getResourceServerStore().findById(resource.getResourceServer());
+        this.resourceServer = resource.getResourceServer();
     }
 
     /**
@@ -87,7 +87,7 @@ public class ResourceService extends AbstractResourceService {
         filters.put(PermissionTicket.FilterOption.GRANTED, Boolean.TRUE.toString());
         filters.put(PermissionTicket.FilterOption.RESOURCE_ID, resource.getId());
 
-        Collection<ResourcePermission> resources = toPermissions(ticketStore.find(filters, null, -1, -1));
+        Collection<ResourcePermission> resources = toPermissions(ticketStore.find(null, filters, null, null));
         Collection<Permission> permissions = Collections.EMPTY_LIST;
         
         if (!resources.isEmpty()) {
@@ -135,7 +135,7 @@ public class ResourceService extends AbstractResourceService {
 
             filters.put(PermissionTicket.FilterOption.REQUESTER, user.getId());
 
-            List<PermissionTicket> tickets = ticketStore.find(filters, resource.getResourceServer(), -1, -1);
+            List<PermissionTicket> tickets = ticketStore.find(resource.getResourceServer(), filters, null, null);
 
             // grants all requested permissions
             if (tickets.isEmpty()) {
@@ -196,7 +196,7 @@ public class ResourceService extends AbstractResourceService {
         
         Map<String, Permission> requests = new HashMap<>();
 
-        for (PermissionTicket ticket : ticketStore.find(filters, null, -1, -1)) {
+        for (PermissionTicket ticket : ticketStore.find(null, filters, null, null)) {
             requests.computeIfAbsent(ticket.getRequester(), requester -> new Permission(ticket, provider)).addScope(ticket.getScope().getName());
         }
         
@@ -205,15 +205,15 @@ public class ResourceService extends AbstractResourceService {
 
     private void grantPermission(UserModel user, String scopeId) {
         org.keycloak.authorization.model.Scope scope = getScope(scopeId, resourceServer);
-        PermissionTicket ticket = ticketStore.create(resource.getId(), scope.getId(), user.getId(), resourceServer);
+        PermissionTicket ticket = ticketStore.create(resourceServer, resource, scope, user.getId());
         ticket.setGrantedTimestamp(Calendar.getInstance().getTimeInMillis());
     }
 
     private org.keycloak.authorization.model.Scope getScope(String scopeId, ResourceServer resourceServer) {
-        org.keycloak.authorization.model.Scope scope = scopeStore.findByName(scopeId, resourceServer.getId());
+        org.keycloak.authorization.model.Scope scope = scopeStore.findByName(resourceServer, scopeId);
 
         if (scope == null) {
-            scope = scopeStore.findById(scopeId, resourceServer.getId());
+            scope = scopeStore.findById(resourceServer, scopeId);
         }
         
         return scope;

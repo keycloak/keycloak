@@ -54,6 +54,7 @@ import javax.ws.rs.core.Response;
 
 import java.util.Collections;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 import static org.keycloak.protocol.oidc.OIDCLoginProtocol.ID_TOKEN_HINT;
 import static org.keycloak.protocol.oidc.OIDCLoginProtocol.LOGIN_HINT_PARAM;
@@ -61,6 +62,8 @@ import static org.keycloak.protocol.oidc.OIDCLoginProtocol.LOGIN_HINT_PARAM;
 public class BackchannelAuthenticationEndpoint extends AbstractCibaEndpoint {
 
     private final RealmModel realm;
+
+    private static final Pattern BINDING_MESSAGE_VALIDATION = Pattern.compile("^[a-zA-Z0-9-._+/!?#]{1,50}$");
 
     public BackchannelAuthenticationEndpoint(KeycloakSession session, EventBuilder event) {
         super(session, event);
@@ -136,7 +139,7 @@ public class BackchannelAuthenticationEndpoint extends AbstractCibaEndpoint {
 
         OAuth2DeviceCodeModel deviceCode = OAuth2DeviceCodeModel.create(realm, client,
                 request.getId(), request.getScope(), null, expiresIn, poolingInterval, request.getClientNotificationToken(), authReqId,
-                Collections.emptyMap());
+                Collections.emptyMap(), null, null);
         String authResultId = request.getAuthResultId();
         OAuth2DeviceUserCodeModel userCode = new OAuth2DeviceUserCodeModel(realm, deviceCode.getDeviceCode(),
                 authResultId);
@@ -172,7 +175,10 @@ public class BackchannelAuthenticationEndpoint extends AbstractCibaEndpoint {
         request.setScope(scope);
 
         // optional parameters
-        if (endpointRequest.getBindingMessage() != null) request.setBindingMessage(endpointRequest.getBindingMessage());
+        if (endpointRequest.getBindingMessage() != null) {
+            validateBindingMessage(endpointRequest.getBindingMessage());
+            request.setBindingMessage(endpointRequest.getBindingMessage());
+        }
         if (endpointRequest.getAcr() != null) request.setAcrValues(endpointRequest.getAcr());
 
         CibaConfig policy = realm.getCibaPolicy();
@@ -225,6 +231,13 @@ public class BackchannelAuthenticationEndpoint extends AbstractCibaEndpoint {
     protected void extractAdditionalParams(BackchannelAuthenticationEndpointRequest endpointRequest, CIBAAuthenticationRequest request) {
         for (String paramName : endpointRequest.getAdditionalReqParams().keySet()) {
             request.setOtherClaims(paramName, endpointRequest.getAdditionalReqParams().get(paramName));
+        }
+    }
+
+    protected void validateBindingMessage(String bindingMessage) {
+        if (!BINDING_MESSAGE_VALIDATION.matcher(bindingMessage).matches()) {
+            throw new ErrorResponseException(OAuthErrorException.INVALID_BINDING_MESSAGE, "the binding_message value has to be max 50 characters in length and must contain only basic plain-text characters without spaces",
+                    Response.Status.BAD_REQUEST);
         }
     }
 

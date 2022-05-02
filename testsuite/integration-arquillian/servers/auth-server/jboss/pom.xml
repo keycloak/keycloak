@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-servers-auth-server</artifactId>
-        <version>16.0.0-SNAPSHOT</version>
+        <version>999-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -146,6 +146,25 @@
                                             <type>jar</type>
                                             <outputDirectory>${auth.server.home}/modules</outputDirectory>
                                             <includes>**/module.xml</includes>
+                                        </artifactItem>
+                                    </artifactItems>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>deploy-testsuite-providers-deployment</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>copy</goal>
+                                </goals>
+                                <configuration>
+                                    <artifactItems>
+                                        <artifactItem>
+                                            <groupId>org.keycloak.testsuite</groupId>
+                                            <artifactId>integration-arquillian-testsuite-providers-deployment</artifactId>
+                                            <version>${project.version}</version>
+                                            <type>jar</type>
+                                            <overWrite>false</overWrite>
+                                            <outputDirectory>${auth.server.home}/standalone/deployments</outputDirectory>
                                         </artifactItem>
                                     </artifactItems>
                                 </configuration>
@@ -534,6 +553,8 @@
                 <ant.scenario>scenario-crossdc</ant.scenario>
 
                 <h2.jdbc.url>jdbc:h2:tcp://localhost:9092/mem:keycloak-dc-shared;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE</h2.jdbc.url>
+
+                <keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase>true</keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase>
             </properties>
             <build>
                 <plugins>

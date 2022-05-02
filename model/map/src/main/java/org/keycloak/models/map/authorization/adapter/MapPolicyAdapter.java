@@ -26,6 +26,7 @@ import org.keycloak.models.map.authorization.entity.MapPolicyEntity;
 import org.keycloak.representations.idm.authorization.DecisionStrategy;
 import org.keycloak.representations.idm.authorization.Logic;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -48,7 +49,8 @@ public class MapPolicyAdapter extends AbstractPolicyModel<MapPolicyEntity> {
 
     @Override
     public DecisionStrategy getDecisionStrategy() {
-        return entity.getDecisionStrategy();
+        DecisionStrategy ds = entity.getDecisionStrategy();
+        return ds == null ? DecisionStrategy.UNANIMOUS : ds;
     }
 
     @Override
@@ -59,7 +61,8 @@ public class MapPolicyAdapter extends AbstractPolicyModel<MapPolicyEntity> {
 
     @Override
     public Logic getLogic() {
-        return entity.getLogic();
+        Logic l = entity.getLogic();
+        return l == null ? Logic.POSITIVE : l;
     }
 
     @Override
@@ -70,13 +73,14 @@ public class MapPolicyAdapter extends AbstractPolicyModel<MapPolicyEntity> {
 
     @Override
     public Map<String, String> getConfig() {
-        return entity.getConfig();
+        Map<String, String> c = entity.getConfigs();
+        return c == null ? Collections.emptyMap() : c;
     }
 
     @Override
     public void setConfig(Map<String, String> config) {
         throwExceptionIfReadonly();
-        entity.setConfig(config);
+        entity.setConfigs(config);
     }
 
     @Override
@@ -88,7 +92,7 @@ public class MapPolicyAdapter extends AbstractPolicyModel<MapPolicyEntity> {
     @Override
     public void putConfig(String name, String value) {
         throwExceptionIfReadonly();
-        entity.putConfig(name, value);
+        entity.setConfig(name, value);
     }
 
     @Override
@@ -121,24 +125,27 @@ public class MapPolicyAdapter extends AbstractPolicyModel<MapPolicyEntity> {
     @Override
     public Set<Policy> getAssociatedPolicies() {
         String resourceServerId = entity.getResourceServerId();
-        return entity.getAssociatedPoliciesIds().stream()
-                .map(policyId -> storeFactory.getPolicyStore().findById(policyId, resourceServerId))
+        Set<String> ids = entity.getAssociatedPolicyIds();
+        return ids == null ? Collections.emptySet() : ids.stream()
+                .map(policyId -> storeFactory.getPolicyStore().findById(storeFactory.getResourceServerStore().findById(resourceServerId), policyId))
                 .collect(Collectors.toSet());
     }
 
     @Override
     public Set<Resource> getResources() {
-        String resourceServerId = entity.getResourceServerId();
-        return entity.getResourceIds().stream()
-                .map(resourceId -> storeFactory.getResourceStore().findById(resourceId, resourceServerId))
+        ResourceServer resourceServer = getResourceServer();
+        Set<String> ids = entity.getResourceIds();
+        return ids == null ? Collections.emptySet() : ids.stream()
+                .map(resourceId -> storeFactory.getResourceStore().findById(resourceServer, resourceId))
                 .collect(Collectors.toSet());
     }
 
     @Override
     public Set<Scope> getScopes() {
-        String resourceServerId = entity.getResourceServerId();
-        return entity.getScopeIds().stream()
-                .map(scopeId -> storeFactory.getScopeStore().findById(scopeId, resourceServerId))
+        ResourceServer resourceServer = getResourceServer();
+        Set<String> ids = entity.getScopeIds();
+        return ids == null ? Collections.emptySet() : ids.stream()
+                .map(scopeId -> storeFactory.getScopeStore().findById(resourceServer, scopeId))
                 .collect(Collectors.toSet());
     }
 
@@ -156,37 +163,37 @@ public class MapPolicyAdapter extends AbstractPolicyModel<MapPolicyEntity> {
     @Override
     public void addScope(Scope scope) {
         throwExceptionIfReadonly();
-        entity.addScope(scope.getId());
+        entity.addScopeId(scope.getId());
     }
 
     @Override
     public void removeScope(Scope scope) {
         throwExceptionIfReadonly();
-        entity.removeScope(scope.getId());
+        entity.removeScopeId(scope.getId());
     }
 
     @Override
     public void addAssociatedPolicy(Policy associatedPolicy) {
         throwExceptionIfReadonly();
-        entity.addAssociatedPolicy(associatedPolicy.getId());
+        entity.addAssociatedPolicyId(associatedPolicy.getId());
     }
 
     @Override
     public void removeAssociatedPolicy(Policy associatedPolicy) {
         throwExceptionIfReadonly();
-        entity.removeAssociatedPolicy(associatedPolicy.getId());
+        entity.removeAssociatedPolicyId(associatedPolicy.getId());
     }
 
     @Override
     public void addResource(Resource resource) {
         throwExceptionIfReadonly();
-        entity.addResource(resource.getId());
+        entity.addResourceId(resource.getId());
     }
 
     @Override
     public void removeResource(Resource resource) {
         throwExceptionIfReadonly();
-        entity.removeResource(resource.getId());
+        entity.removeResourceId(resource.getId());
     }
 
     @Override

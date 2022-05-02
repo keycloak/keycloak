@@ -22,6 +22,7 @@ import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
@@ -246,7 +247,10 @@ public class LDAPMSADFullNameTest extends AbstractLDAPTest {
         Assert.assertEquals("Username already exists.", registerPage.getInputAccountErrors().getUsernameError());
 
         registerPage.register("John", "Existing", "johnyanth@check.cz", "existingkc2", "Password1", "Password1");
-        appPage.logout();
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String idTokenHint = oauth.doAccessTokenRequest(code, "Password1").getIdToken();
+        appPage.logout(idTokenHint);
 
         loginPage.open();
         loginPage.clickRegister();

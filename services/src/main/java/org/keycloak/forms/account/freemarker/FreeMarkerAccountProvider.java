@@ -79,6 +79,7 @@ public class FreeMarkerAccountProvider implements AccountProvider {
     protected String[] referrer;
     protected List<Event> events;
     protected String stateChecker;
+    protected String idTokenHint;
     protected List<UserSessionModel> sessions;
     protected boolean identityProviderEnabled;
     protected boolean eventsEnabled;
@@ -151,7 +152,7 @@ public class FreeMarkerAccountProvider implements AccountProvider {
             attributes.put("realm", new RealmBean(realm));
         }
 
-        attributes.put("url", new UrlBean(realm, theme, baseUri, baseQueryUri, uriInfo.getRequestUri(), stateChecker));
+        attributes.put("url", new UrlBean(realm, theme, baseUri, baseQueryUri, uriInfo.getRequestUri(), idTokenHint));
 
         if (realm.isInternationalizationEnabled()) {
             UriBuilder b = UriBuilder.fromUri(baseQueryUri).path(uriInfo.getPath());
@@ -366,6 +367,12 @@ public class FreeMarkerAccountProvider implements AccountProvider {
     @Override
     public AccountProvider setStateChecker(String stateChecker) {
         this.stateChecker = stateChecker;
+        return this;
+    }
+
+    @Override
+    public AccountProvider setIdTokenHint(String idTokenHint) {
+        this.idTokenHint = idTokenHint;
         return this;
     }
 

@@ -29,11 +29,13 @@ import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.ResourceServerStore;
 import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.authorization.store.ScopeStore;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.map.authorization.adapter.MapResourceServerAdapter;
 import org.keycloak.models.map.authorization.entity.MapResourceServerEntity;
+import org.keycloak.models.map.authorization.entity.MapResourceServerEntityImpl;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.storage.StorageId;
@@ -45,10 +47,8 @@ public class MapResourceServerStore implements ResourceServerStore {
     private static final Logger LOG = Logger.getLogger(MapResourceServerStore.class);
     private final AuthorizationProvider authorizationProvider;
     final MapKeycloakTransaction<MapResourceServerEntity, ResourceServer> tx;
-    private final MapStorage<MapResourceServerEntity, ResourceServer> resourceServerStore;
 
     public MapResourceServerStore(KeycloakSession session, MapStorage<MapResourceServerEntity, ResourceServer> resourceServerStore, AuthorizationProvider provider) {
-        this.resourceServerStore = resourceServerStore;
         this.tx = resourceServerStore.createTransaction(session);
         this.authorizationProvider = provider;
         session.getTransactionManager().enlist(tx);
@@ -61,47 +61,54 @@ public class MapResourceServerStore implements ResourceServerStore {
     }
 
     @Override
-    public ResourceServer create(String clientId) {
-        LOG.tracef("create(%s)%s", clientId, getShortStackTrace());
-        
+    public ResourceServer create(ClientModel client) {
+        LOG.tracef("create(%s)%s", client.getClientId(), getShortStackTrace());
+
+        String clientId = client.getId();
         if (clientId == null) return null;
 
         if (!StorageId.isLocalStorage(clientId)) {
             throw new ModelException("Creating resource server from federated ClientModel not supported");
         }
 
-        if (tx.read(clientId) != null) {
-            throw new ModelDuplicateException("Resource server already exists: " + clientId);
+        if (findByClient(client) != null) {
+            throw new ModelDuplicateException("Resource server assiciated with client : " + client.getClientId() + " already exists.");
         }
 
-        MapResourceServerEntity entity = new MapResourceServerEntity(clientId);
+        MapResourceServerEntity entity = new MapResourceServerEntityImpl();
+        entity.setId(clientId);
 
-        return entityToAdapter(tx.create(entity));
+        entity = tx.create(entity);
+        return entityToAdapter(entity);
     }
 
     @Override
-    public void delete(String id) {
-        LOG.tracef("delete(%s, %s)%s", id, getShortStackTrace());
-        if (id == null) return;
+    public void delete(ClientModel client) {
+        LOG.tracef("delete(%s, %s)%s", client.getClientId(), getShortStackTrace());
+
+        ResourceServer resourceServer = findByClient(client);
+        if (resourceServer == null) return;
+
+        String id = resourceServer.getId();
 
         // TODO: Simplify the following, ideally by leveraging triggers, stored procedures or ref integrity
         PolicyStore policyStore = authorizationProvider.getStoreFactory().getPolicyStore();
-        policyStore.findByResourceServer(id).stream()
+        policyStore.findByResourceServer(resourceServer).stream()
             .map(Policy::getId)
             .forEach(policyStore::delete);
 
         PermissionTicketStore permissionTicketStore = authorizationProvider.getStoreFactory().getPermissionTicketStore();
-        permissionTicketStore.findByResourceServer(id).stream()
+        permissionTicketStore.findByResourceServer(resourceServer).stream()
                 .map(PermissionTicket::getId)
                 .forEach(permissionTicketStore::delete);
 
         ResourceStore resourceStore = authorizationProvider.getStoreFactory().getResourceStore();
-        resourceStore.findByResourceServer(id).stream()
+        resourceStore.findByResourceServer(resourceServer).stream()
                 .map(Resource::getId)
                 .forEach(resourceStore::delete);
 
         ScopeStore scopeStore = authorizationProvider.getStoreFactory().getScopeStore();
-        scopeStore.findByResourceServer(id).stream()
+        scopeStore.findByResourceServer(resourceServer).stream()
                 .map(Scope::getId)
                 .forEach(scopeStore::delete);
 
@@ -118,5 +125,10 @@ public class MapResourceServerStore implements ResourceServerStore {
 
         MapResourceServerEntity entity = tx.read(id);
         return entityToAdapter(entity);
+    }
+
+    @Override
+    public ResourceServer findByClient(ClientModel client) {
+        return findById(client.getId());
     }
 }

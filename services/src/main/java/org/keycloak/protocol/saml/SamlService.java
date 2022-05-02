@@ -255,7 +255,7 @@ public class SamlService extends AuthorizationEndpointBase {
 
             session.getContext().setClient(client);
             logger.debug("logout response");
-            Response response = authManager.browserLogout(session, realm, userSession, session.getContext().getUri(), clientConnection, headers, null);
+            Response response = authManager.browserLogout(session, realm, userSession, session.getContext().getUri(), clientConnection, headers);
             event.success();
             return response;
         }
@@ -580,7 +580,7 @@ public class SamlService extends AuthorizationEndpointBase {
                 }
 
                 logger.debug("browser Logout");
-                return authManager.browserLogout(session, realm, userSession, session.getContext().getUri(), clientConnection, headers, null);
+                return authManager.browserLogout(session, realm, userSession, session.getContext().getUri(), clientConnection, headers);
             } else if (logoutRequest.getSessionIndex() != null) {
                 for (String sessionIndex : logoutRequest.getSessionIndex()) {
 
@@ -1352,7 +1352,7 @@ public class SamlService extends AuthorizationEndpointBase {
             Resteasy.pushContext(ClientConnection.class, connection);
 
             RealmManager realmManager = new RealmManager(session);
-            RealmModel realm = realmManager.getRealmByName(realmId);
+            RealmModel realm = realmManager.getRealm(realmId);
             if (realm == null) {
                 throw new NotFoundException("Realm does not exist");
             }

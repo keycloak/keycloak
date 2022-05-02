@@ -32,12 +32,13 @@ public class Config {
     private String clientId;
     private String clientSecret;
     private String grantType;
+    private String scope;
 
     public Config(String serverUrl, String realm, String username, String password, String clientId, String clientSecret) {
-        this(serverUrl, realm, username, password, clientId, clientSecret, PASSWORD);
+        this(serverUrl, realm, username, password, clientId, clientSecret, PASSWORD, null);
     }
 
-    public Config(String serverUrl, String realm, String username, String password, String clientId, String clientSecret, String grantType) {
+    public Config(String serverUrl, String realm, String username, String password, String clientId, String clientSecret, String grantType, String scope) {
         this.serverUrl = serverUrl;
         this.realm = realm;
         this.username = username;
@@ -46,6 +47,7 @@ public class Config {
         this.clientSecret = clientSecret;
         this.grantType = grantType;
         checkGrantType(grantType);
+        this.scope = scope;
     }
 
     public String getServerUrl() {
@@ -98,6 +100,14 @@ public class Config {
 
     public boolean isPublicClient() {
         return clientSecret == null;
+    }
+
+    public String getScope() {
+        return scope;
+    }
+
+    public void setScope(String scope) {
+        this.scope = scope;
     }
 
     public String getGrantType() {

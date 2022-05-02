@@ -78,7 +78,6 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
     public  void before() {
         testingClient.server().run( session -> {
             RealmModel realm = session.realms().getRealmByName("test");
-            realm = session.realms().getRealm("test");
             session.users().addUser(realm, "user1").setEmail("user1@localhost");
             session.users().addUser(realm, "user2").setEmail("user2@localhost");
         });
@@ -450,12 +449,11 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
                 r.setSsoSessionMaxLifespanRememberMe(r.getSsoSessionMaxLifespan() * 4);
                 r.setSsoSessionIdleTimeoutRememberMe(r.getSsoSessionIdleTimeout() * 4);
             });
-            // update the realm reference so that the remember-me timeouts are now visible.
-            RealmModel realm = session.realms().getRealmByName("test");
 
             // create an user session with remember-me enabled that is older than the default 'max lifespan' timeout but not older than the 'max lifespan remember-me' timeout.
             // the session's last refresh also exceeds the default 'session idle' timeout but doesn't exceed the 'session idle remember-me' timeout.
             KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession kcSession) -> {
+                RealmModel realm = kcSession.realms().getRealmByName("test");
                 Time.setOffset(-(realm.getSsoSessionMaxLifespan() * 2));
                 UserSessionModel userSession = kcSession.sessions().createUserSession(realm, kcSession.users().getUserByUsername(realm, "user1"), "user1", "127.0.0.1", "form", true, null, null);
                 AuthenticatedClientSessionModel clientSession = kcSession.sessions().createClientSession(realm, client, userSession);
@@ -469,6 +467,7 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
 
             // create an user session with remember-me enabled that is older than the 'max lifespan remember-me' timeout.
             KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession kcSession) -> {
+                RealmModel realm = kcSession.realms().getRealmByName("test");
                 Time.setOffset(-(realm.getSsoSessionMaxLifespanRememberMe() + 1));
                 UserSessionModel userSession = kcSession.sessions().createUserSession(realm, kcSession.users().getUserByUsername(realm, "user1"), "user1", "127.0.0.1", "form", true, null, null);
                 expiredUserSessions.add(userSession.getId());
@@ -476,6 +475,7 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
 
             // finally create an user session with remember-me enabled whose last refresh exceeds the 'session idle remember-me' timeout.
             KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession kcSession) -> {
+                RealmModel realm = kcSession.realms().getRealmByName("test");
                 Time.setOffset(-(realm.getSsoSessionIdleTimeoutRememberMe() + SessionTimeoutHelper.PERIODIC_CLEANER_IDLE_TIMEOUT_WINDOW_SECONDS + 1));
                 UserSessionModel userSession = kcSession.sessions().createUserSession(realm, kcSession.users().getUserByUsername(realm, "user2"), "user2", "127.0.0.1", "form", true, null, null);
                 // no need to explicitly set the last refresh time - it is the same as the creation time.
@@ -484,21 +484,24 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
 
             // remove the expired sessions - the first session should not be removed as it doesn't exceed any of the remember-me timeout values.
             Time.setOffset(0);
-            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession kcSession) -> kcSession.sessions().removeExpired(realm));
+            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession kcSession) -> kcSession.sessions().removeExpired(kcSession.realms().getRealmByName("test")));
 
-            for (String sessionId : expiredUserSessions) {
-                assertNull(session.sessions().getUserSession(realm, sessionId));
-            }
+            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession kcSession) -> {
+                RealmModel realm = kcSession.realms().getRealmByName("test");
 
-            for (String sessionId : validUserSessions) {
-                UserSessionModel userSessionLoaded = session.sessions().getUserSession(realm, sessionId);
-                assertNotNull(userSessionLoaded);
-                // the only valid user session should also have a valid client session that hasn't expired.
-                AuthenticatedClientSessionModel clientSessionModel = userSessionLoaded.getAuthenticatedClientSessions().get(client.getId());
-                assertNotNull(clientSessionModel);
-                assertTrue(validClientSessions.contains(clientSessionModel.getId()));
-            }
+                for (String sessionId : expiredUserSessions) {
+                    assertNull(kcSession.sessions().getUserSession(realm, sessionId));
+                }
 
+                for (String sessionId : validUserSessions) {
+                    UserSessionModel userSessionLoaded = kcSession.sessions().getUserSession(realm, sessionId);
+                    assertNotNull(userSessionLoaded);
+                    // the only valid user session should also have a valid client session that hasn't expired.
+                    AuthenticatedClientSessionModel clientSessionModel = userSessionLoaded.getAuthenticatedClientSessions().get(client.getId());
+                    assertNotNull(clientSessionModel);
+                    assertTrue(validClientSessions.contains(clientSessionModel.getId()));
+                }
+            });
         } finally {
             Time.setOffset(0);
             session.getKeycloakSessionFactory().publish(new ResetTimeOffsetEvent());

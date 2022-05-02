@@ -144,6 +144,8 @@ public class OIDCClientRepresentation {
 
     private String frontchannel_logout_uri;
 
+    private Boolean frontchannel_logout_session_required;
+
     public List<String> getRedirectUris() {
         return redirect_uris;
     }
@@ -568,5 +570,13 @@ public class OIDCClientRepresentation {
 
     public void setFrontChannelLogoutUri(String frontchannel_logout_uri) {
         this.frontchannel_logout_uri = frontchannel_logout_uri;
+    }
+
+    public Boolean getFrontchannelLogoutSessionRequired() {
+        return frontchannel_logout_session_required;
+    }
+
+    public void setFrontchannelLogoutSessionRequired(Boolean frontchannel_logout_session_required) {
+        this.frontchannel_logout_session_required = frontchannel_logout_session_required;
     }
 }

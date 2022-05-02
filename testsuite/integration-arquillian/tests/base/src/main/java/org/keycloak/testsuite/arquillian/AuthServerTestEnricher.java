@@ -120,6 +120,7 @@ public class AuthServerTestEnricher {
     private Event<StopContainer> stopContainerEvent;
 
     private JavaArchive testsuiteProvidersArchive;
+    private JavaArchive testsuiteProvidersDeploymentArchive;
     private String currentContainerName;
 
     public static final String AUTH_SERVER_CONTAINER_DEFAULT = "auth-server-undertow";
@@ -423,14 +424,25 @@ public class AuthServerTestEnricher {
                         .asSingleFile()
                     ).as(JavaArchive.class)
                     .addAsManifestResource("jboss-deployment-structure.xml");
-                    
             event.getDeployableContainer().deploy(testsuiteProvidersArchive);
+
+            this.testsuiteProvidersDeploymentArchive = ShrinkWrap.create(ZipImporter.class, "testsuiteProvidersDeployment.jar")
+                    .importFrom(Maven.configureResolverViaPlugin()
+                        .resolve("org.keycloak.testsuite:integration-arquillian-testsuite-providers-deployment")
+                        .withoutTransitivity()
+                        .asSingleFile()
+                    ).as(JavaArchive.class)
+                    .addAsManifestResource("jboss-deployment-structure.xml");
+            event.getDeployableContainer().deploy(testsuiteProvidersDeploymentArchive);
         }
     }
 
     public void unDeployProviders(@Observes(precedence = 20) BeforeStop event) throws DeploymentException {
         if (testsuiteProvidersArchive != null) {
             event.getDeployableContainer().undeploy(testsuiteProvidersArchive);
+        }
+        if (testsuiteProvidersDeploymentArchive != null) {
+            event.getDeployableContainer().undeploy(testsuiteProvidersDeploymentArchive);
         }
     }
 
@@ -823,10 +835,12 @@ public class AuthServerTestEnricher {
         Administration administration = new Administration(client);
         Operations operations = new Operations(client);
 
-        if(!operations.exists(Address.coreService("management").and("security-realm", "UndertowRealm"))) {
-            client.execute("/core-service=management/security-realm=UndertowRealm:add()");
-            client.execute("/core-service=management/security-realm=UndertowRealm/server-identity=ssl:add(keystore-relative-to=jboss.server.config.dir,keystore-password=secret,keystore-path=keycloak.jks");
-            client.execute("/core-service=management/security-realm=UndertowRealm/authentication=truststore:add(keystore-relative-to=jboss.server.config.dir,keystore-password=secret,keystore-path=keycloak.truststore");
+        if(!operations.exists(Address.subsystem("elytron").and("server-ssl-context", "httpsSSC"))) {
+            client.execute("/subsystem=elytron/key-store=httpsKS:add(relative-to=jboss.server.config.dir,path=keycloak.jks,credential-reference={clear-text=secret},type=JKS)");
+            client.execute("/subsystem=elytron/key-manager=httpsKM:add(key-store=httpsKS,credential-reference={clear-text=secret})");
+            client.execute("/subsystem=elytron/key-store=twoWayTS:add(relative-to=jboss.server.config.dir,path=keycloak.truststore,credential-reference={clear-text=secret},type=JKS)");
+            client.execute("/subsystem=elytron/trust-manager=twoWayTM:add(key-store=twoWayTS)");
+            client.execute("/subsystem=elytron/server-ssl-context=httpsSSC:add(key-manager=httpsKM,protocols=[\"TLSv1.2\"],trust-manager=twoWayTM,want-client-auth=true)");
 
             removeHttpsListener(client, administration);
             addHttpsListener(client);

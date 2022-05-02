@@ -26,9 +26,10 @@ import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.DeepCloner;
-import org.keycloak.models.map.common.HotRodEntityDescriptor;
-import org.keycloak.models.map.common.StringKeyConvertor;
-import org.keycloak.models.map.common.UpdatableEntity;
+import org.keycloak.models.map.storage.hotRod.common.AbstractHotRodEntity;
+import org.keycloak.models.map.storage.hotRod.common.HotRodEntityDelegate;
+import org.keycloak.models.map.storage.hotRod.common.HotRodEntityDescriptor;
+import org.keycloak.models.map.common.StringKeyConverter;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.QueryParameters;
@@ -42,38 +43,41 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Spliterators;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import static org.keycloak.models.map.common.HotRodUtils.paginateQuery;
+import static org.keycloak.models.map.storage.hotRod.common.HotRodUtils.paginateQuery;
 import static org.keycloak.utils.StreamsUtil.closing;
 
-public class HotRodMapStorage<K, V extends AbstractEntity & UpdatableEntity, M> implements MapStorage<V, M>, ConcurrentHashMapCrudOperations<V, M> {
+public class HotRodMapStorage<K, E extends AbstractHotRodEntity, V extends HotRodEntityDelegate<E> & AbstractEntity, M> implements MapStorage<V, M>, ConcurrentHashMapCrudOperations<V, M> {
 
     private static final Logger LOG = Logger.getLogger(HotRodMapStorage.class);
 
-    private final RemoteCache<K, V> remoteCache;
-    private final StringKeyConvertor<K> keyConvertor;
-    private final HotRodEntityDescriptor<V> storedEntityDescriptor;
+    private final RemoteCache<K, E> remoteCache;
+    private final StringKeyConverter<K> keyConverter;
+    private final HotRodEntityDescriptor<E, V> storedEntityDescriptor;
+    private final Function<E, V> delegateProducer;
     private final DeepCloner cloner;
 
-    public HotRodMapStorage(RemoteCache<K, V> remoteCache, StringKeyConvertor<K> keyConvertor, HotRodEntityDescriptor<V> storedEntityDescriptor, DeepCloner cloner) {
+    public HotRodMapStorage(RemoteCache<K, E> remoteCache, StringKeyConverter<K> keyConverter, HotRodEntityDescriptor<E, V> storedEntityDescriptor, DeepCloner cloner) {
         this.remoteCache = remoteCache;
-        this.keyConvertor = keyConvertor;
+        this.keyConverter = keyConverter;
         this.storedEntityDescriptor = storedEntityDescriptor;
         this.cloner = cloner;
+        this.delegateProducer = storedEntityDescriptor.getHotRodDelegateProvider();
     }
 
     @Override
     public V create(V value) {
-        K key = keyConvertor.fromStringSafe(value.getId());
+        K key = keyConverter.fromStringSafe(value.getId());
         if (key == null) {
-            key = keyConvertor.yieldNewUniqueKey();
-            value = cloner.from(keyConvertor.keyToString(key), value);
+            key = keyConverter.yieldNewUniqueKey();
+            value = cloner.from(keyConverter.keyToString(key), value);
         }
 
-        remoteCache.putIfAbsent(key, value);
+        remoteCache.putIfAbsent(key, value.getHotRodEntity());
 
         return value;
     }
@@ -81,19 +85,19 @@ public class HotRodMapStorage<K, V extends AbstractEntity & UpdatableEntity, M> 
     @Override
     public V read(String key) {
         Objects.requireNonNull(key, "Key must be non-null");
-        K k = keyConvertor.fromStringSafe(key);
-        return remoteCache.get(k);
+        K k = keyConverter.fromStringSafe(key);
+        return delegateProducer.apply(remoteCache.get(k));
     }
 
     @Override
     public V update(V value) {
-        K key = keyConvertor.fromStringSafe(value.getId());
-        return remoteCache.replace(key, value);
+        K key = keyConverter.fromStringSafe(value.getId());
+        return delegateProducer.apply(remoteCache.replace(key, value.getHotRodEntity()));
     }
 
     @Override
     public boolean delete(String key) {
-        K k = keyConvertor.fromStringSafe(key);
+        K k = keyConverter.fromStringSafe(key);
         return remoteCache.remove(k) != null;
     }
 
@@ -107,7 +111,7 @@ public class HotRodMapStorage<K, V extends AbstractEntity & UpdatableEntity, M> 
 
     @Override
     public Stream<V> read(QueryParameters<M> queryParameters) {
-        IckleQueryMapModelCriteriaBuilder<K, V, M> iqmcb = queryParameters.getModelCriteriaBuilder()
+        IckleQueryMapModelCriteriaBuilder<E, M> iqmcb = queryParameters.getModelCriteriaBuilder()
                 .flashToModelCriteriaBuilder(createCriteriaBuilder());
         String queryString = iqmcb.getIckleQuery();
 
@@ -120,19 +124,21 @@ public class HotRodMapStorage<K, V extends AbstractEntity & UpdatableEntity, M> 
 
         QueryFactory queryFactory = Search.getQueryFactory(remoteCache);
 
-        Query<V> query = paginateQuery(queryFactory.create(queryString), queryParameters.getOffset(),
+        Query<E> query = paginateQuery(queryFactory.create(queryString), queryParameters.getOffset(),
                 queryParameters.getLimit());
 
         query.setParameters(iqmcb.getParameters());
 
-        CloseableIterator<V> iterator = query.iterator();
+        CloseableIterator<E> iterator = query.iterator();
         return closing(StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator, 0), false))
-                .onClose(iterator::close);
+                .onClose(iterator::close)
+                .filter(Objects::nonNull) // see https://github.com/keycloak/keycloak/issues/9271
+                .map(this.delegateProducer);
     }
 
     @Override
     public long getCount(QueryParameters<M> queryParameters) {
-        IckleQueryMapModelCriteriaBuilder<K, V, M> iqmcb = queryParameters.getModelCriteriaBuilder()
+        IckleQueryMapModelCriteriaBuilder<E, M> iqmcb = queryParameters.getModelCriteriaBuilder()
                 .flashToModelCriteriaBuilder(createCriteriaBuilder());
         String queryString = iqmcb.getIckleQuery();
 
@@ -140,7 +146,7 @@ public class HotRodMapStorage<K, V extends AbstractEntity & UpdatableEntity, M> 
 
         QueryFactory queryFactory = Search.getQueryFactory(remoteCache);
 
-        Query<V> query = queryFactory.create(queryString);
+        Query<E> query = queryFactory.create(queryString);
         query.setParameters(iqmcb.getParameters());
 
         return query.execute().hitCount().orElse(0);
@@ -148,7 +154,7 @@ public class HotRodMapStorage<K, V extends AbstractEntity & UpdatableEntity, M> 
 
     @Override
     public long delete(QueryParameters<M> queryParameters) {
-        IckleQueryMapModelCriteriaBuilder<K, V, M> iqmcb = queryParameters.getModelCriteriaBuilder()
+        IckleQueryMapModelCriteriaBuilder<E, M> iqmcb = queryParameters.getModelCriteriaBuilder()
                 .flashToModelCriteriaBuilder(createCriteriaBuilder());
         String queryString = "SELECT id " + iqmcb.getIckleQuery();
 
@@ -161,30 +167,31 @@ public class HotRodMapStorage<K, V extends AbstractEntity & UpdatableEntity, M> 
 
         QueryFactory queryFactory = Search.getQueryFactory(remoteCache);
 
-        Query<V> query = paginateQuery(queryFactory.create(queryString), queryParameters.getOffset(),
+        Query<Object[]> query = paginateQuery(queryFactory.create(queryString), queryParameters.getOffset(),
                 queryParameters.getLimit());
 
         query.setParameters(iqmcb.getParameters());
 
         AtomicLong result = new AtomicLong();
 
-        CloseableIterator<V> iterator = query.iterator();
+        CloseableIterator<Object[]> iterator = query.iterator();
         StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator, 0), false)
                 .peek(e -> result.incrementAndGet())
-                .map(AbstractEntity::getId)
+                .map(a -> a[0])
+                .map(String.class::cast)
                 .forEach(this::delete);
         iterator.close();
 
         return result.get();
     }
 
-    public IckleQueryMapModelCriteriaBuilder<K, V, M> createCriteriaBuilder() {
-        return new IckleQueryMapModelCriteriaBuilder<>();
+    public IckleQueryMapModelCriteriaBuilder<E, M> createCriteriaBuilder() {
+        return new IckleQueryMapModelCriteriaBuilder<>(storedEntityDescriptor.getEntityTypeClass());
     }
 
     @Override
     public MapKeycloakTransaction<V, M> createTransaction(KeycloakSession session) {
         Map<SearchableModelField<? super M>, MapModelCriteriaBuilder.UpdatePredicatesFunc<K, V, M>> fieldPredicates = MapFieldPredicates.getPredicates((Class<M>) storedEntityDescriptor.getModelTypeClass());
-        return new ConcurrentHashMapKeycloakTransaction<>(this, keyConvertor, cloner, fieldPredicates);
+        return new ConcurrentHashMapKeycloakTransaction<>(this, keyConverter, cloner, fieldPredicates);
     }
 }

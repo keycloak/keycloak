@@ -16,89 +16,83 @@
  */
 package org.keycloak.models.map.authSession;
 
+import org.keycloak.models.map.annotations.GenerateEntityImplementations;
 import org.keycloak.models.map.common.AbstractEntity;
 
+import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.UpdatableEntity;
-import java.util.Map;
+
+import java.util.Collections;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
-public class MapRootAuthenticationSessionEntity extends UpdatableEntity.Impl implements AbstractEntity {
+@GenerateEntityImplementations(
+        inherits = "org.keycloak.models.map.authSession.MapRootAuthenticationSessionEntity.AbstractRootAuthenticationSessionEntity"
+)
+@DeepCloner.Root
+public interface MapRootAuthenticationSessionEntity extends AbstractEntity, UpdatableEntity {
 
-    private String id;
-    private String realmId;
+    public abstract class AbstractRootAuthenticationSessionEntity extends UpdatableEntity.Impl implements MapRootAuthenticationSessionEntity {
 
-    /**
-     * Flag signalizing that any of the setters has been meaningfully used.
-     */
-    private int timestamp;
-    private Map<String, MapAuthenticationSessionEntity> authenticationSessions = new ConcurrentHashMap<>();
+        private String id;
 
-    public MapRootAuthenticationSessionEntity() {}
+        @Override
+        public String getId() {
+            return this.id;
+        }
 
-    public MapRootAuthenticationSessionEntity(String id, String realmId) {
-        this.id = id;
-        this.realmId = realmId;
+        @Override
+        public void setId(String id) {
+            if (this.id != null) throw new IllegalStateException("Id cannot be changed");
+            this.id = id;
+            this.updated |= id != null;
+        }
+
+        @Override
+        public Optional<MapAuthenticationSessionEntity> getAuthenticationSession(String tabId) {
+            Set<MapAuthenticationSessionEntity> authenticationSessions = getAuthenticationSessions();
+            if (authenticationSessions == null || authenticationSessions.isEmpty()) return Optional.empty();
+
+            return authenticationSessions.stream().filter(as -> Objects.equals(as.getTabId(), tabId)).findFirst();
+        }
+
+        @Override
+        public Boolean removeAuthenticationSession(String tabId) {
+            Set<MapAuthenticationSessionEntity> authenticationSessions = getAuthenticationSessions();
+            boolean removed = authenticationSessions != null && authenticationSessions.removeIf(c -> Objects.equals(c.getTabId(), tabId));
+            this.updated |= removed;
+            return removed;
+        }
+
+        @Override
+        public boolean isUpdated() {
+            return this.updated ||
+                    Optional.ofNullable(getAuthenticationSessions()).orElseGet(Collections::emptySet).stream().anyMatch(MapAuthenticationSessionEntity::isUpdated);
+        }
+
+        @Override
+        public void clearUpdatedFlag() {
+            this.updated = false;
+            Optional.ofNullable(getAuthenticationSessions()).orElseGet(Collections::emptySet).forEach(UpdatableEntity::clearUpdatedFlag);
+        }
     }
 
-    @Override
-    public String getId() {
-        return this.id;
-    }
+    String getRealmId();
+    void setRealmId(String realmId);
 
-    @Override
-    public void setId(String id) {
-        if (this.id != null) throw new IllegalStateException("Id cannot be changed");
-        this.id = id;
-        this.updated |= id != null;
-    }
+    Long getTimestamp();
+    void setTimestamp(Long timestamp);
 
-    public String getRealmId() {
-        return realmId;
-    }
+    Long getExpiration();
+    void setExpiration(Long expiration);
 
-    public void setRealmId(String realmId) {
-        this.updated |= !Objects.equals(this.realmId, realmId);
-        this.realmId = realmId;
-    }
-
-    public int getTimestamp() {
-        return timestamp;
-    }
-
-    public void setTimestamp(int timestamp) {
-        this.updated |= !Objects.equals(this.timestamp, timestamp);
-        this.timestamp = timestamp;
-    }
-
-    public Map<String, MapAuthenticationSessionEntity> getAuthenticationSessions() {
-        return authenticationSessions;
-    }
-
-    public void setAuthenticationSessions(Map<String, MapAuthenticationSessionEntity> authenticationSessions) {
-        this.updated |= !Objects.equals(this.authenticationSessions, authenticationSessions);
-        this.authenticationSessions = authenticationSessions;
-    }
-
-    public MapAuthenticationSessionEntity removeAuthenticationSession(String tabId) {
-        MapAuthenticationSessionEntity entity = this.authenticationSessions.remove(tabId);
-        this.updated |= entity != null;
-        return entity;
-    }
-
-    public void addAuthenticationSession(String tabId, MapAuthenticationSessionEntity entity) {
-        this.updated |= !Objects.equals(this.authenticationSessions.put(tabId, entity), entity);
-    }
-
-    public void clearAuthenticationSessions() {
-        this.updated |= !this.authenticationSessions.isEmpty();
-        this.authenticationSessions.clear();
-    }
-
-    void signalUpdated(boolean updated) {
-        this.updated |= updated;
-    }
+    Set<MapAuthenticationSessionEntity> getAuthenticationSessions();
+    void setAuthenticationSessions(Set<MapAuthenticationSessionEntity> authenticationSessions);
+    Optional<MapAuthenticationSessionEntity> getAuthenticationSession(String tabId);
+    void addAuthenticationSession(MapAuthenticationSessionEntity authenticationSession);
+    Boolean removeAuthenticationSession(String tabId);
 }

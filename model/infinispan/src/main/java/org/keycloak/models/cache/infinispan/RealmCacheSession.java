@@ -1312,7 +1312,7 @@ public class RealmCacheSession implements CacheRealmProvider {
 
     @Override
     public void removeClientScopes(RealmModel realm) {
-        realm.getClientScopesStream().map(ClientScopeModel::getId).forEach(id -> removeClientScope(realm, id));
+        getClientScopesStream(realm).map(ClientScopeModel::getId).forEach(id -> removeClientScope(realm, id));
     }
 
     @Override

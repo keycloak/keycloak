@@ -17,11 +17,9 @@
 
 package org.keycloak.quarkus.runtime.cli.command;
 
-import static java.lang.Boolean.parseBoolean;
-import static org.keycloak.quarkus.runtime.configuration.Configuration.getBuiltTimeProperty;
+import static org.keycloak.quarkus.runtime.Environment.getCurrentOrPersistedProfile;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getConfigValue;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getPropertyNames;
-import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers.canonicalFormat;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers.formatValue;
 
 import java.util.HashSet;
@@ -32,21 +30,21 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
-import org.keycloak.quarkus.runtime.Environment;
 
+import io.quarkus.runtime.Quarkus;
 import io.smallrye.config.ConfigValue;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Parameters;
 
 @Command(name = "show-config",
         header = "Print out the current configuration.",
-        description = "%nPrint out the current configuration.",
-        abbreviateSynopsis = true,
-        optionListHeading = "Options:")
+        description = "%nPrint out the current configuration.")
 public final class ShowConfig extends AbstractCommand implements Runnable {
 
+    public static final String NAME = "show-config";
     @Parameters(
             paramLabel = "filter",
             defaultValue = "none",
@@ -60,20 +58,18 @@ public final class ShowConfig extends AbstractCommand implements Runnable {
 
         if (configArgs != null) {
             Map<String, Set<String>> properties = getPropertiesByGroup();
-            String profile = getProfile();
+            String profile = getCurrentOrPersistedProfile();
 
             printRunTimeConfig(properties, profile);
 
             if (configArgs.equalsIgnoreCase("all")) {
-                printAllProfilesConfig(properties, profile);
-
                 spec.commandLine().getOut().println("Quarkus Configuration:");
                 properties.get(MicroProfileConfigProvider.NS_QUARKUS).stream().sorted()
                         .forEachOrdered(this::printProperty);
             }
 
-            if (!parseBoolean(System.getProperty("kc.show.config.runtime", Boolean.FALSE.toString()))) {
-                System.exit(0);
+            if (!Boolean.getBoolean("kc.show.config.runtime")) {
+                Quarkus.asyncExit(0);
             }
         }
     }
@@ -81,49 +77,13 @@ public final class ShowConfig extends AbstractCommand implements Runnable {
     private void printRunTimeConfig(Map<String, Set<String>> properties, String profile) {
         Set<String> uniqueNames = new HashSet<>();
 
-        spec.commandLine().getOut().printf("Current Profile: %s%n", profile == null ? "none" : profile);
+        spec.commandLine().getOut().printf("Current Mode: %s%n", Environment.getKeycloakModeFromProfile(profile));
 
         spec.commandLine().getOut().println("Runtime Configuration:");
+
         properties.get(MicroProfileConfigProvider.NS_KEYCLOAK).stream().sorted()
-                .filter(name -> {
-                    String canonicalFormat = canonicalFormat(name);
-
-                    if (!canonicalFormat.equals(name)) {
-                        return uniqueNames.add(canonicalFormat);
-                    }
-                    return uniqueNames.add(name);
-                })
+                .filter(uniqueNames::add)
                 .forEachOrdered(this::printProperty);
-    }
-
-    private void printAllProfilesConfig(Map<String, Set<String>> properties, String profile) {
-        Set<String> profiles = properties.get("%");
-
-        if (profiles != null) {
-            profiles.stream()
-                    .sorted()
-                    .collect(Collectors.groupingBy(s -> s.substring(1, s.indexOf('.'))))
-                    .forEach((p, properties1) -> {
-                        if (p.equals(profile)) {
-                            spec.commandLine().getOut().printf("Profile \"%s\" Configuration (%s):%n", p,
-                                    "current");
-                        } else {
-                            spec.commandLine().getOut().printf("Profile \"%s\" Configuration:%n", p);
-                        }
-
-                        properties1.stream().sorted().forEachOrdered(this::printProperty);
-                    });
-        }
-    }
-
-    private static String getProfile() {
-        String profile = Environment.getProfile();
-
-        if (profile == null) {
-            return getBuiltTimeProperty("quarkus.profile").orElse(null);
-        }
-
-        return profile;
     }
 
     private static Map<String, Set<String>> getPropertiesByGroup() {
@@ -158,8 +118,7 @@ public final class ShowConfig extends AbstractCommand implements Runnable {
     }
 
     private void printProperty(String property) {
-        String canonicalFormat = canonicalFormat(property);
-        ConfigValue configValue = getConfigValue(canonicalFormat);
+        ConfigValue configValue = getConfigValue(property);
 
         if (configValue.getValue() == null) {
             configValue = getConfigValue(property);

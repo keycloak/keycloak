@@ -33,13 +33,15 @@ public class UrlBean {
     private URI baseURI;
     private URI baseQueryURI;
     private URI currentURI;
+    private String idTokenHint;
 
-    public UrlBean(RealmModel realm, Theme theme, URI baseURI, URI baseQueryURI, URI currentURI, String stateChecker) {
+    public UrlBean(RealmModel realm, Theme theme, URI baseURI, URI baseQueryURI, URI currentURI, String idTokenHint) {
         this.realm = realm.getName();
         this.theme = theme;
         this.baseURI = baseURI;
         this.baseQueryURI = baseQueryURI;
         this.currentURI = currentURI;
+        this.idTokenHint = idTokenHint;
     }
 
     public String getApplicationsUrl() {
@@ -71,7 +73,7 @@ public class UrlBean {
     }
 
     public String getLogoutUrl() {
-        return Urls.accountLogout(baseQueryURI, currentURI, realm).toString();
+        return Urls.accountLogout(baseQueryURI, currentURI, realm, idTokenHint).toString();
     }
 
     public String getResourceUrl() {

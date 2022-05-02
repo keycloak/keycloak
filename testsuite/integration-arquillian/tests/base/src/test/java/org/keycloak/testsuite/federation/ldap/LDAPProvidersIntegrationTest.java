@@ -18,6 +18,7 @@
 package org.keycloak.testsuite.federation.ldap;
 
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.ClassRule;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -27,6 +28,7 @@ import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.Profile;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.credential.CredentialModel;
+import org.keycloak.events.EventType;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelException;
@@ -34,17 +36,16 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.cache.CachedUserModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.RealmManager;
-import org.keycloak.services.managers.UserStorageSyncManager;
 import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
@@ -60,7 +61,6 @@ import org.keycloak.storage.ldap.mappers.HardcodedLDAPRoleStorageMapper;
 import org.keycloak.storage.ldap.mappers.HardcodedLDAPRoleStorageMapperFactory;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapper;
-import org.keycloak.storage.user.SynchronizationResult;
 import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
@@ -159,7 +159,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
 
         testingClient.server().run(session -> {
             RealmManager manager = new RealmManager(session);
-            RealmModel appRealm = manager.getRealm("test");
+            RealmModel appRealm = manager.getRealmByName("test");
             UserModel user = session.userLocalStorage().getUserByUsername(appRealm, "johnkeycloak");
             Assert.assertNull(user);
         });
@@ -206,11 +206,14 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
     }
 
     private void loginSuccessAndLogout(String username, String password) {
+        events.clear();
         loginPage.open();
         loginPage.login(username, password);
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
-        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
-        oauth.openLogout();
+
+        OAuthClient.AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(events.poll());
+        oauth.idTokenHint(tokenResponse.getIdToken()).openLogout();
+        events.poll();
     }
 
     @Test
@@ -366,15 +369,21 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
         loginPage.clickRegister();
         registerPage.assertCurrent();
         registerPage.register("firstName", "lastName", email,
-                username, "Password1", "Password1");
+            username, "Password1", "Password1");
 
 
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        appPage.logout();
+        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), username);
+        String userId = user.toRepresentation().getId();
+
+        events.expectRegister(username, email).assertEvent();
+        EventRepresentation loginEvent = events.expectLogin().user(userId).assertEvent();
+        OAuthClient.AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
+        appPage.logout(tokenResponse.getIdToken());
+        events.expectLogout(loginEvent.getSessionId()).user(userId).assertEvent();
 
         // Test admin endpoint. Assert federated endpoint returns password in LDAP "supportedCredentials", but there is no stored password
-        UserResource user = ApiUtil.findUserByUsernameId(testRealm(), username);
         assertPasswordConfiguredThroughLDAPOnly(user);
 
         // Update password through admin REST endpoint. Assert user can authenticate with the new password
@@ -401,7 +410,11 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
             requiredActionChangePasswordPage.changePassword("Password1-updated2", "Password1-updated2");
 
             appPage.assertCurrent();
-            appPage.logout();
+            events.expect(EventType.UPDATE_PASSWORD).user(userId).assertEvent();
+            loginEvent = events.expectLogin().user(userId).assertEvent();
+            tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
+            appPage.logout(tokenResponse.getIdToken());
+            events.expectLogout(loginEvent.getSessionId()).user(userId);
 
             // Assert user can authenticate with the new password
             loginSuccessAndLogout(username, "Password1-updated2");
@@ -560,13 +573,14 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
 
     @Test
     public void testHardcodedAttributeMapperTest() throws Exception {
+        Assume.assumeTrue("User cache disabled.", isUserCacheEnabled());
         // Create hardcoded mapper for "description"
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
 
             ComponentModel hardcodedMapperModel = KeycloakModelUtils.createComponentModel("hardcodedAttr-description", ctx.getLdapModel().getId(), HardcodedLDAPAttributeMapperFactory.PROVIDER_ID, LDAPStorageMapper.class.getName(),
-                    HardcodedLDAPAttributeMapper.LDAP_ATTRIBUTE_NAME, "description",
-                    HardcodedLDAPAttributeMapper.LDAP_ATTRIBUTE_VALUE, "some-${RANDOM}");
+                HardcodedLDAPAttributeMapper.LDAP_ATTRIBUTE_NAME, "description",
+                HardcodedLDAPAttributeMapper.LDAP_ATTRIBUTE_VALUE, "some-${RANDOM}");
             ctx.getRealm().addComponentModel(hardcodedMapperModel);
         });
 
@@ -630,8 +644,8 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
             Assert.assertFalse(john.hasRole(hardcodedRole));
 
             ComponentModel hardcodedMapperModel = KeycloakModelUtils.createComponentModel("hardcoded role", ctx.getLdapModel().getId(),
-                    HardcodedLDAPRoleStorageMapperFactory.PROVIDER_ID, LDAPStorageMapper.class.getName(),
-                    HardcodedLDAPRoleStorageMapper.ROLE, "hardcoded-role");
+                HardcodedLDAPRoleStorageMapperFactory.PROVIDER_ID, LDAPStorageMapper.class.getName(),
+                HardcodedLDAPRoleStorageMapper.ROLE, "hardcoded-role");
             appRealm.addComponentModel(hardcodedMapperModel);
         });
 
@@ -672,8 +686,8 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
             Assert.assertFalse(john.isMemberOf(hardcodedGroup));
 
             ComponentModel hardcodedMapperModel = KeycloakModelUtils.createComponentModel("hardcoded group",
-                    ctx.getLdapModel().getId(), HardcodedLDAPGroupStorageMapperFactory.PROVIDER_ID, LDAPStorageMapper.class.getName(),
-                    HardcodedLDAPGroupStorageMapper.GROUP, "hardcoded-group");
+                ctx.getLdapModel().getId(), HardcodedLDAPGroupStorageMapperFactory.PROVIDER_ID, LDAPStorageMapper.class.getName(),
+                HardcodedLDAPGroupStorageMapper.GROUP, "hardcoded-group");
             appRealm.addComponentModel(hardcodedMapperModel);
         });
 
@@ -782,7 +796,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
             appRealm.updateComponent(ctx.getLdapModel());
 
             Assert.assertEquals(UserStorageProvider.EditMode.WRITABLE.toString(),
-                    appRealm.getComponent(ctx.getLdapModel().getId()).getConfig().getFirst(LDAPConstants.EDIT_MODE));
+                appRealm.getComponent(ctx.getLdapModel().getId()).getConfig().getFirst(LDAPConstants.EDIT_MODE));
         });
     }
 
@@ -839,6 +853,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
 
     @Test
     public void testSearchWithCustomLDAPFilter() {
+        Assume.assumeTrue("User cache disabled.", isUserCacheEnabled());
         // Add custom filter for searching users
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
@@ -871,6 +886,50 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
             ctx.getLdapModel().getConfig().remove(LDAPConstants.CUSTOM_USER_SEARCH_FILTER);
             appRealm.updateComponent(ctx.getLdapModel());
         });
+
+        // Get username5 ID. Username5 is covered by the custom filter
+        String user5Id = testingClient.server().fetch(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            // Fetch user from LDAP
+            UserModel testedUser = session.users().getUserByUsername(ctx.getRealm(), "username5");
+            return testedUser.getId();
+        },String.class);
+
+        // Get username7 ID. Username7 is not covered by the custom filter
+        String user7Id = testingClient.server().fetch(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            // Fetch user from LDAP
+            UserModel testedUser = session.users().getUserByUsername(ctx.getRealm(), "username7");
+            return testedUser.getId();
+        },String.class);
+
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+            session.userCache().clear();
+            // Add custom filter again
+            ctx.getLdapModel().getConfig().putSingle(LDAPConstants.CUSTOM_USER_SEARCH_FILTER, "(|(mail=user5@email.org)(mail=user6@email.org))");
+
+            appRealm.updateComponent(ctx.getLdapModel());
+        });
+
+        testingClient.server().run(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            RealmModel appRealm = ctx.getRealm();
+            session.userCache().clear();
+
+            // search by id using custom filter. Must return the user
+            UserModel testUser5 = session.users().getUserById(appRealm, user5Id);
+            Assert.assertNotNull(testUser5);
+
+            // search by id using custom filter. Must not return the user
+            UserModel testUser7 = session.users().getUserById(appRealm, user7Id);
+            Assert.assertNull(testUser7);
+
+            // Remove custom filter
+            ctx.getLdapModel().getConfig().remove(LDAPConstants.CUSTOM_USER_SEARCH_FILTER);
+            appRealm.updateComponent(ctx.getLdapModel());
+        });
     }
 
     @Test
@@ -896,8 +955,8 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
             UserCredentialModel cred = UserCredentialModel.password("Candycand1", true);
             session.userCredentialManager().updateCredential(appRealm, user, cred);
             CredentialModel userCredentialValueModel = session.userCredentialManager()
-                    .getStoredCredentialsByTypeStream(appRealm, user, PasswordCredentialModel.TYPE)
-                    .findFirst().orElse(null);
+                .getStoredCredentialsByTypeStream(appRealm, user, PasswordCredentialModel.TYPE)
+                .findFirst().orElse(null);
             Assert.assertNotNull(userCredentialValueModel);
             Assert.assertEquals(PasswordCredentialModel.TYPE, userCredentialValueModel.getType());
             Assert.assertTrue(session.userCredentialManager().isValid(appRealm, user, cred));
@@ -916,8 +975,8 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
 
         // Assert password is stored locally
         List<String> storedCredentials = userResource.credentials().stream()
-                .map(CredentialRepresentation::getType)
-                .collect(Collectors.toList());
+            .map(CredentialRepresentation::getType)
+            .collect(Collectors.toList());
         Assert.assertTrue(storedCredentials.contains(PasswordCredentialModel.TYPE));
 
         // Assert password is supported in the LDAP too.
@@ -971,7 +1030,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
 
             // search for user by attribute
             List<UserModel> users = ctx.getLdapProvider().searchForUserByUserAttributeStream(appRealm, ATTRIBUTE, ATTRIBUTE_VALUE)
-                    .collect(Collectors.toList());
+                .collect(Collectors.toList());
             assertEquals(2, users.size());
             List<String> attrList = users.get(0).getAttributeStream(ATTRIBUTE).collect(Collectors.toList());
             assertEquals(1, attrList.size());
@@ -981,7 +1040,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
             assertEquals(1, attrList.size());
             assertEquals(ATTRIBUTE_VALUE, attrList.get(0));
 
-	        // user are now imported to local store
+            // user are now imported to local store
             LDAPTestAsserts.assertUserImported(session.userLocalStorage(), appRealm, "username8", "John8", "Doel8", "user8@email.org", ATTRIBUTE_VALUE);
             LDAPTestAsserts.assertUserImported(session.userLocalStorage(), appRealm, "username9", "John9", "Doel9", "user9@email.org", ATTRIBUTE_VALUE);
             // but the one not looked up is not
@@ -994,6 +1053,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
     // KEYCLOAK-9002
     @Test
     public void testSearchWithPartiallyCachedUser() {
+        Assume.assumeTrue("User cache disabled.", isUserCacheEnabled());
         testingClient.server().run(session -> {
             session.userCache().clear();
         });
@@ -1020,6 +1080,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
 
     @Test
     public void testLDAPUserRefreshCache() {
+        Assume.assumeTrue("User cache disabled.", isUserCacheEnabled());
         testingClient.server().run(session -> {
             session.userCache().clear();
         });
@@ -1063,6 +1124,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
 
     @Test
     public void testCacheUser() {
+        Assume.assumeTrue("User cache disabled.", isUserCacheEnabled());
         String userId = testingClient.server().fetch(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             ctx.getLdapModel().setCachePolicy(UserStorageProviderModel.CachePolicy.NO_CACHE);
@@ -1139,7 +1201,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
             Assert.assertTrue(userVerified.get().isEmailVerified());
         });
 
-        //Test untrusted email option 
+        //Test untrusted email option
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             ctx.getLdapModel().put(LDAPConstants.TRUST_EMAIL, "false");
@@ -1230,4 +1292,5 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
             Assert.assertEquals(origKeycloakUserId.replace("\"",""), newKeycloakUserId);
         });
     }
+
 }

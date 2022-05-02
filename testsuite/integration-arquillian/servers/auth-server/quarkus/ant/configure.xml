@@ -5,8 +5,8 @@
         <echo>Re-augmenting...</echo>
         <exec osfamily="unix" dir="${auth.server.home}/bin" executable="./kc.sh" failonerror="true">
             <arg value="build"/>
-            <arg value="-Dquarkus.http.root-path=/auth"/>
-            <arg value="--http-enabled=true"/>
+            <arg value="--http-relative-path=/auth"/>
+            <arg value="--cache=local"/>
         </exec>
     </target>
 

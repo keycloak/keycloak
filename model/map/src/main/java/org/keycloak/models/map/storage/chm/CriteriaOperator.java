@@ -44,6 +44,7 @@ class CriteriaOperator {
     private static final Logger LOG = Logger.getLogger(CriteriaOperator.class.getSimpleName());
 
     private static final Predicate<Object> ALWAYS_FALSE = o -> false;
+    private static final Predicate<Object> ALWAYS_TRUE = o -> true;
 
     static {
         OPERATORS.put(Operator.EQ, CriteriaOperator::eq);
@@ -190,6 +191,11 @@ class CriteriaOperator {
         Object value0 = getFirstArrayElement(value);
         if (value0 instanceof String) {
             String sValue = (String) value0;
+
+            if(Pattern.matches("^%+$", sValue)) {
+                return ALWAYS_TRUE;
+            }
+
             boolean anyBeginning = sValue.startsWith("%");
             boolean anyEnd = sValue.endsWith("%");
 
@@ -210,6 +216,11 @@ class CriteriaOperator {
         Object value0 = getFirstArrayElement(value);
         if (value0 instanceof String) {
             String sValue = (String) value0;
+
+            if(Pattern.matches("^%+$", sValue)) {
+                return ALWAYS_TRUE;
+            }
+
             boolean anyBeginning = sValue.startsWith("%");
             boolean anyEnd = sValue.endsWith("%");
 

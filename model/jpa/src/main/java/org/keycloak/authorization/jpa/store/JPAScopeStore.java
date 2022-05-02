@@ -55,12 +55,12 @@ public class JPAScopeStore implements ScopeStore {
     }
 
     @Override
-    public Scope create(final String name, final ResourceServer resourceServer) {
-        return create(null, name, resourceServer);
+    public Scope create(final ResourceServer resourceServer, final String name) {
+        return create(resourceServer, null, name);
     }
 
     @Override
-    public Scope create(String id, final String name, final ResourceServer resourceServer) {
+    public Scope create(final ResourceServer resourceServer, String id, final String name) {
         ScopeEntity entity = new ScopeEntity();
 
         if (id == null) {
@@ -88,7 +88,7 @@ public class JPAScopeStore implements ScopeStore {
     }
 
     @Override
-    public Scope findById(String id, String resourceServerId) {
+    public Scope findById(ResourceServer resourceServer, String id) {
         if (id == null) {
             return null;
         }
@@ -100,45 +100,45 @@ public class JPAScopeStore implements ScopeStore {
     }
 
     @Override
-    public Scope findByName(String name, String resourceServerId) {
+    public Scope findByName(ResourceServer resourceServer, String name) {
         try {
             TypedQuery<String> query = entityManager.createNamedQuery("findScopeIdByName", String.class);
 
             query.setFlushMode(FlushModeType.COMMIT);
-            query.setParameter("serverId", resourceServerId);
+            query.setParameter("serverId", resourceServer.getId());
             query.setParameter("name", name);
 
             String id = query.getSingleResult();
-            return provider.getStoreFactory().getScopeStore().findById(id, resourceServerId);
+            return provider.getStoreFactory().getScopeStore().findById(resourceServer, id);
         } catch (NoResultException nre) {
             return null;
         }
     }
 
     @Override
-    public List<Scope> findByResourceServer(final String serverId) {
+    public List<Scope> findByResourceServer(final ResourceServer resourceServer) {
         TypedQuery<String> query = entityManager.createNamedQuery("findScopeIdByResourceServer", String.class);
 
         query.setFlushMode(FlushModeType.COMMIT);
-        query.setParameter("serverId", serverId);
+        query.setParameter("serverId", resourceServer.getId());
 
         List<String> result = query.getResultList();
         List<Scope> list = new LinkedList<>();
         for (String id : result) {
-            list.add(provider.getStoreFactory().getScopeStore().findById(id, serverId));
+            list.add(provider.getStoreFactory().getScopeStore().findById(resourceServer, id));
         }
         return list;
     }
 
     @Override
-    public List<Scope> findByResourceServer(Map<Scope.FilterOption, String[]> attributes, String resourceServerId, int firstResult, int maxResult) {
+    public List<Scope> findByResourceServer(ResourceServer resourceServer, Map<Scope.FilterOption, String[]> attributes, Integer firstResult, Integer maxResults) {
         CriteriaBuilder builder = entityManager.getCriteriaBuilder();
         CriteriaQuery<ScopeEntity> querybuilder = builder.createQuery(ScopeEntity.class);
         Root<ScopeEntity> root = querybuilder.from(ScopeEntity.class);
         querybuilder.select(root.get("id"));
         List<Predicate> predicates = new ArrayList();
 
-        predicates.add(builder.equal(root.get("resourceServer").get("id"), resourceServerId));
+        predicates.add(builder.equal(root.get("resourceServer").get("id"), resourceServer.getId()));
 
         attributes.forEach((filterOption, value) -> {
             switch (filterOption) {
@@ -157,10 +157,10 @@ public class JPAScopeStore implements ScopeStore {
 
         TypedQuery query = entityManager.createQuery(querybuilder);
 
-        List result = paginateQuery(query, firstResult, maxResult).getResultList();
+        List result = paginateQuery(query, firstResult, maxResults).getResultList();
         List<Scope> list = new LinkedList<>();
         for (Object id : result) {
-            list.add(provider.getStoreFactory().getScopeStore().findById((String)id, resourceServerId));
+            list.add(provider.getStoreFactory().getScopeStore().findById(resourceServer, (String)id));
         }
         return list;
 

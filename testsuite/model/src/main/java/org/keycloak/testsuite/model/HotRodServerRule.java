@@ -14,7 +14,7 @@ import org.infinispan.server.hotrod.configuration.HotRodServerConfiguration;
 import org.infinispan.server.hotrod.configuration.HotRodServerConfigurationBuilder;
 import org.junit.rules.ExternalResource;
 import org.keycloak.Config;
-import org.keycloak.models.map.common.HotRodUtils;
+import org.keycloak.models.map.storage.hotRod.common.HotRodUtils;
 
 import java.io.IOException;
 

@@ -29,6 +29,6 @@ public final class QuarkusCacheManagerProvider implements ManagedCacheManagerPro
 
     @Override
     public <C> C getCacheManager(Config.Scope config) {
-        return (C) Arc.container().instance(CacheInitializer.class).get().getCacheManager(config);
+        return (C) Arc.container().instance(CacheManagerFactory.class).get().getOrCreate();
     }
 }

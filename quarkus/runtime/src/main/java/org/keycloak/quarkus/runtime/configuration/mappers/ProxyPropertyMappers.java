@@ -11,7 +11,7 @@ import org.keycloak.quarkus.runtime.Messages;
 
 final class ProxyPropertyMappers {
 
-    private static final String[] possibleProxyValues = {"none", "edge", "reencrypt", "passthrough"};
+    private static final String[] possibleProxyValues = {"edge", "reencrypt", "passthrough"};
 
     private ProxyPropertyMappers(){}
 
@@ -25,6 +25,12 @@ final class ProxyPropertyMappers {
                         .description("The proxy address forwarding mode if the server is behind a reverse proxy. " +
                                 "Possible values are: " + String.join(",",possibleProxyValues))
                         .paramLabel("mode")
+                        .category(ConfigCategory.PROXY)
+                        .build(),
+                builder().to("quarkus.http.proxy.enable-forwarded-host")
+                        .mapFrom("proxy")
+                        .defaultValue("false")
+                        .transformer(ProxyPropertyMappers::resolveEnableForwardedHost)
                         .category(ConfigCategory.PROXY)
                         .build()
         };
@@ -44,6 +50,10 @@ final class ProxyPropertyMappers {
                     return "false";
             }
         };
+    }
+
+    private static String resolveEnableForwardedHost(String proxy, ConfigSourceInterceptorContext context) {
+        return String.valueOf(!"none".equals(proxy));
     }
 
     private static PropertyMapper.Builder builder() {

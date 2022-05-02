@@ -94,7 +94,7 @@ public class ClientScopesResource {
     @NoCache
     public Response createClientScope(ClientScopeRepresentation rep) {
         auth.clients().requireManageClientScopes();
-
+        ClientScopeResource.validateDynamicClientScope(rep);
         try {
             ClientScopeModel clientModel = RepresentationToModel.createClientScope(session, realm, rep);
 

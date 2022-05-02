@@ -16,7 +16,7 @@
  */
 package org.keycloak.models.map.storage.chm;
 
-import org.keycloak.models.map.common.StringKeyConvertor;
+import org.keycloak.models.map.common.StringKeyConverter;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserSessionModel;
@@ -52,13 +52,13 @@ public class UserSessionConcurrentHashMapStorage<K> extends ConcurrentHashMapSto
         private final MapKeycloakTransaction<MapAuthenticatedClientSessionEntity, AuthenticatedClientSessionModel> clientSessionTr;
 
         public Transaction(MapKeycloakTransaction<MapAuthenticatedClientSessionEntity, AuthenticatedClientSessionModel> clientSessionTr,
-                           StringKeyConvertor<K> keyConvertor,
+                           StringKeyConverter<K> keyConverter,
                            DeepCloner cloner,
                            Map<SearchableModelField<? super UserSessionModel>,
                                UpdatePredicatesFunc<K,
                                        MapUserSessionEntity,
                                        UserSessionModel>> fieldPredicates) {
-            super(UserSessionConcurrentHashMapStorage.this, keyConvertor, cloner, fieldPredicates);
+            super(UserSessionConcurrentHashMapStorage.this, keyConverter, cloner, fieldPredicates);
             this.clientSessionTr = clientSessionTr;
         }
 
@@ -83,8 +83,8 @@ public class UserSessionConcurrentHashMapStorage<K> extends ConcurrentHashMapSto
 
     @SuppressWarnings("unchecked")
     public UserSessionConcurrentHashMapStorage(ConcurrentHashMapStorage<K, MapAuthenticatedClientSessionEntity, AuthenticatedClientSessionModel> clientSessionStore,
-      StringKeyConvertor<K> keyConvertor, DeepCloner cloner) {
-        super(UserSessionModel.class, keyConvertor, cloner);
+                                               StringKeyConverter<K> keyConverter, DeepCloner cloner) {
+        super(UserSessionModel.class, keyConverter, cloner);
         this.clientSessionStore = clientSessionStore;
     }
 
@@ -92,6 +92,6 @@ public class UserSessionConcurrentHashMapStorage<K> extends ConcurrentHashMapSto
     @SuppressWarnings("unchecked")
     public MapKeycloakTransaction<MapUserSessionEntity, UserSessionModel> createTransaction(KeycloakSession session) {
         MapKeycloakTransaction<MapUserSessionEntity, UserSessionModel> sessionTransaction = session.getAttribute("map-transaction-" + hashCode(), MapKeycloakTransaction.class);
-        return sessionTransaction == null ? new Transaction(clientSessionStore.createTransaction(session), clientSessionStore.getKeyConvertor(), cloner, fieldPredicates) : sessionTransaction;
+        return sessionTransaction == null ? new Transaction(clientSessionStore.createTransaction(session), clientSessionStore.getKeyConverter(), cloner, fieldPredicates) : sessionTransaction;
     }
 }

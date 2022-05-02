@@ -69,4 +69,12 @@ public interface MigrationProvider extends Provider {
      * @return a reference to the {@code microprofile-jwt} client scope that was either created or already exists in the realm.
      */
     ClientScopeModel addOIDCMicroprofileJWTClientScope(RealmModel realm);
+
+    /**
+     * Add 'acr' client scope or return it if already exists
+     *
+     * @param realm
+     * @return created or already existing client scope 'acr'
+     */
+    void addOIDCAcrClientScope(RealmModel realm);
 }

@@ -16,6 +16,7 @@ import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 import java.util.List;
+import org.keycloak.authorization.model.ResourceServer;
 
 @AuthServerContainerExclude(AuthServer.REMOTE)
 public class UmaRepresentationTest extends AbstractResourceServerTest {
@@ -139,9 +140,10 @@ public class UmaRepresentationTest extends AbstractResourceServerTest {
         AuthorizationBean authorizationBean  = new AuthorizationBean(session, null, session.getContext().getUri());
         ClientModel client = session.getContext().getRealm().getClientByClientId("resource-server-test");
         UserModel user = session.userStorageManager().getUserByUsername(session.getContext().getRealm(), "marta");
+        ResourceServer resourceServer = authorization.getStoreFactory().getResourceServerStore().findByClient(client);
         ResourceBean resourceBean = authorizationBean.new ResourceBean(
             authorization.getStoreFactory().getResourceStore().findByName(
-                "Resource A", user.getId(), client.getId()
+                    resourceServer, "Resource A", user.getId()
             )
         );
 
@@ -164,9 +166,10 @@ public class UmaRepresentationTest extends AbstractResourceServerTest {
 
         AuthorizationBean authorizationBean  = new AuthorizationBean(session, null, session.getContext().getUri());
         ClientModel client = session.getContext().getRealm().getClientByClientId("resource-server-test");
+        ResourceServer resourceServer = authorization.getStoreFactory().getResourceServerStore().findByClient(client);
         ResourceBean resourceBean = authorizationBean.new ResourceBean(
             authorization.getStoreFactory().getResourceStore().findByName(
-                "Resource A", client.getId(), client.getId()
+                    resourceServer, "Resource A", client.getId()
             )
         );
 

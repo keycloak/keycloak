@@ -16,12 +16,9 @@
  */
 package org.keycloak.testsuite.adapter.example.authorization;
 
-import static org.keycloak.common.Profile.Feature.UPLOAD_SCRIPTS;
-
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 
 /**
@@ -33,10 +30,8 @@ import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP6)
 @AppServerContainer(ContainerConstants.APP_SERVER_UNDERTOW)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP71)
-@AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT7)
 @AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT8)
 @AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT9)
-@EnableFeature(value = UPLOAD_SCRIPTS, skipRestart = true)
 public class ServletPolicyEnforcerTest extends AbstractServletPolicyEnforcerTest {
 
     @Deployment(name = RESOURCE_SERVER_ID, managed = false)

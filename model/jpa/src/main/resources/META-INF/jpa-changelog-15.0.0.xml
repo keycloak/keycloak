@@ -19,6 +19,7 @@
 
     <!-- change datatype of field REALM_LOCALIZATIONS.TEXTS to NCLOB (instead of CLOB) -->
     <changeSet author="keycloak" id="15.0.0-KEYCLOAK-18467">
+        <validCheckSum>7:b06356d66c2790ecc2ae54ba0458397a</validCheckSum>
         <addColumn tableName="REALM_LOCALIZATIONS">
             <column name="TEXTS_NEW" type="NCLOB">
                 <!-- not-null constraint has to be added at the end, when data has been copied -->

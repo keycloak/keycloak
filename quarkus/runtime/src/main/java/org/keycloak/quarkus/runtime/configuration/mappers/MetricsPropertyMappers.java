@@ -9,11 +9,11 @@ final class MetricsPropertyMappers {
 
     public static PropertyMapper[] getMetricsPropertyMappers() {
         return new PropertyMapper[] {
-                builder().from("metrics.enabled")
+                builder().from("metrics-enabled")
                         .to("quarkus.datasource.metrics.enabled")
                         .isBuildTimeProperty(true)
                         .defaultValue(Boolean.FALSE.toString())
-                        .description("If the server should expose metrics and healthcheck. If enabled, metrics are available at the '/metrics' endpoint and healthcheck at the '/health' endpoint.")
+                        .description("If the server should expose metrics. If enabled, metrics are available at the '/metrics' endpoint.")
                         .paramLabel(Boolean.TRUE + "|" + Boolean.FALSE)
                         .expectedValues(Arrays.asList(Boolean.TRUE.toString(), Boolean.FALSE.toString()))
                         .build()

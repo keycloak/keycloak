@@ -243,6 +243,30 @@ public interface UsersResource {
                   @QueryParam("username") String username);
 
     /**
+     * Returns the number of users that can be viewed and match the given filters.
+     * If none of the filters is specified this is equivalent to {{@link #count()}}.
+     *
+     * @param search        arbitrary search string for all the fields below
+     * @param last          last name field of a user
+     * @param first         first name field of a user
+     * @param email         email field of a user
+     * @param emailVerified emailVerified field of a user
+     * @param username      username field of a user
+     * @param enabled       Boolean representing if user is enabled or not
+     * @return number of users matching the given filters
+     */
+    @Path("count")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    Integer count(@QueryParam("search") String search,
+                  @QueryParam("lastName") String last,
+                  @QueryParam("firstName") String first,
+                  @QueryParam("email") String email,
+                  @QueryParam("emailVerified") Boolean emailVerified,
+                  @QueryParam("username") String username,
+                  @QueryParam("enabled") Boolean enabled);
+
+    /**
      * Returns the number of users with the given status for emailVerified.
      * If none of the filters is specified this is equivalent to {{@link #count()}}.
      *

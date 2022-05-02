@@ -56,6 +56,11 @@ public class WebAuthnPasswordlessAuthenticator extends WebAuthnAuthenticator {
     }
 
     @Override
+    protected boolean shouldDisplayAuthenticators(AuthenticationFlowContext context){
+        return false;
+    }
+
+    @Override
     public void setRequiredActions(KeycloakSession session, RealmModel realm, UserModel user) {
         // ask the user to do required action to register webauthn authenticator
         AuthenticationSessionModel authenticationSession = session.getContext().getAuthenticationSession();
@@ -73,6 +78,11 @@ public class WebAuthnPasswordlessAuthenticator extends WebAuthnAuthenticator {
     @Override
     public WebAuthnPasswordlessCredentialProvider getCredentialProvider(KeycloakSession session) {
         return (WebAuthnPasswordlessCredentialProvider)session.getProvider(CredentialProvider.class, WebAuthnPasswordlessCredentialProviderFactory.PROVIDER_ID);
+    }
+
+    @Override
+    public boolean requiresUser() {
+        return false;
     }
 
 }

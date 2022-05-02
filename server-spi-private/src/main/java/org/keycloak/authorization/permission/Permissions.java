@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
@@ -73,16 +74,16 @@ public final class Permissions {
         }
 
         // obtain all resources where owner is the resource server
-        resourceStore.findByOwner(resourceServer.getId(), resourceServer.getId(), resource -> {
+        resourceStore.findByOwner(resourceServer, resourceServer.getClientId(), resource -> {
             if (limit.decrementAndGet() >= 0) {
                 evaluator.accept(createResourcePermissions(resource, resourceServer, resource.getScopes(), authorization, request));
             }
         });
 
         // resource server isn't current user
-        if (resourceServer.getId() != identity.getId()) {
+        if (!Objects.equals(resourceServer.getClientId(), identity.getId())) {
             // obtain all resources where owner is the current user
-            resourceStore.findByOwner(identity.getId(), resourceServer.getId(), resource -> {
+            resourceStore.findByOwner(resourceServer, identity.getId(), resource -> {
                 if (limit.decrementAndGet() >= 0) {
                     evaluator.accept(createResourcePermissions(resource, resourceServer, resource.getScopes(), authorization, request));
                 }
@@ -90,7 +91,7 @@ public final class Permissions {
         }
 
         // obtain all resources granted to the user via permission tickets (uma)
-        List<PermissionTicket> tickets = storeFactory.getPermissionTicketStore().findGranted(identity.getId(), resourceServer.getId());
+        List<PermissionTicket> tickets = storeFactory.getPermissionTicketStore().findGranted(resourceServer, identity.getId());
 
         if (!tickets.isEmpty()) {
             Map<String, ResourcePermission> userManagedPermissions = new HashMap<>();
@@ -151,7 +152,7 @@ public final class Permissions {
         // is owned by the resource server itself
         StoreFactory storeFactory = authorization.getStoreFactory();
         ResourceStore resourceStore = storeFactory.getResourceStore();
-        resourceStore.findByType(type, resourceServer.getId(), resource1 -> {
+        resourceStore.findByType(resourceServer, type, resource1 -> {
             for (Scope typeScope : resource1.getScopes()) {
                 if (!scopes.contains(typeScope)) {
                     scopes.add(typeScope);

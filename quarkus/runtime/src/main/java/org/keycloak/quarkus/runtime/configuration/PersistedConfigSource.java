@@ -17,37 +17,43 @@
 
 package org.keycloak.quarkus.runtime.configuration;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import io.smallrye.config.PropertiesConfigSource;
-import io.smallrye.config.common.utils.ConfigSourceUtil;
 import org.keycloak.quarkus.runtime.Environment;
 
 /**
  * A {@link org.eclipse.microprofile.config.spi.ConfigSource} based on the configuration properties persisted into the server
  * image.
  */
-public class PersistedConfigSource extends PropertiesConfigSource {
+public final class PersistedConfigSource extends PropertiesConfigSource {
 
     public static final String NAME = "PersistedConfigSource";
-    static final String KEYCLOAK_PROPERTIES = "persisted.properties";
+    public static final String PERSISTED_PROPERTIES = "META-INF/keycloak-persisted.properties";
+    private static final PersistedConfigSource INSTANCE = new PersistedConfigSource();
 
-    public PersistedConfigSource(Path file) {
-        super(readProperties(file), "", 300);
+    private PersistedConfigSource() {
+        super(readProperties(), "", 200);
+    }
+
+    public static PersistedConfigSource getInstance() {
+        return INSTANCE;
     }
 
     @Override
     public String getName() {
         return NAME;
-    }
-
-    @Override
-    public Map<String, String> getProperties() {
-        return Collections.emptyMap();
     }
 
     @Override
@@ -58,22 +64,62 @@ public class PersistedConfigSource extends PropertiesConfigSource {
             return value;
         }
 
-        return null;
+        return super.getValue(propertyName.replace(Configuration.OPTION_PART_SEPARATOR_CHAR, '.'));
     }
 
-    private static Map<String, String> readProperties(Path path) {
+    private static Map<String, String> readProperties() {
         if (!Environment.isRebuild()) {
-            File file = path.toFile();
+            InputStream fileStream = loadPersistedConfig();
 
-            if (file.exists()) {
-                try {
-                    return ConfigSourceUtil.urlToMap(file.toURL());
-                } catch (IOException e) {
-                    throw new RuntimeException("Failed to load persisted properties from [" + file.getAbsolutePath() + ".", e);
+            if (fileStream == null) {
+                return Collections.emptyMap();
+            }
+
+            try (fileStream) {
+                Properties properties = new Properties();
+
+                properties.load(fileStream);
+
+                Map<String, String> props = new HashMap<>();
+
+                for (Map.Entry<Object, Object> entry : properties.entrySet()) {
+                    props.put(entry.getKey().toString(), entry.getValue().toString());
                 }
+
+                return props;
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to load persisted properties.", e);
             }
         }
 
         return Collections.emptyMap();
+    }
+
+    private static InputStream loadPersistedConfig() {
+        Path homePath = Environment.getHomePath();
+
+        if (homePath == null) {
+            return null;
+        }
+
+        File configFile = homePath.resolve("lib").resolve("quarkus").resolve("generated-bytecode.jar").toFile();
+
+        if (!configFile.exists()) {
+            return null;
+        }
+
+        try (ZipInputStream is = new ZipInputStream(new FileInputStream(configFile))) {
+            ZipEntry entry;
+
+            while ((entry = is.getNextEntry()) != null) {
+                if (entry.getName().equals(PERSISTED_PROPERTIES)) {
+                    return new ByteArrayInputStream(is.readAllBytes());
+                }
+            }
+        } catch (Exception cause) {
+            throw new RuntimeException("Failed to load persisted properties from " + configFile, cause);
+        }
+
+        return null;
     }
 }

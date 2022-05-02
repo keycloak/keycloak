@@ -49,7 +49,7 @@ __all__ = [
     'isWellFormedWildflyTag',
     'loadGavDictionaryFromGavFile',
     'loadGavDictionaryFromXmlFile',
-    'saveUrlToNamedTemporaryFile'
+    'saveUrlToNamedTemporaryFile',
     'updateAdapterLicenseFile',
     'performMainKeycloakPomFileUpdateTask',
     'performAdapterGalleonPackPomFileUpdateTask',
@@ -660,13 +660,10 @@ _keycloakSpecificProperties = [
     "surefire.memory.metaspace",
     "surefire.memory.metaspace.max",
     "surefire.memory.settings",
-    "tomcat7.version",
     "tomcat8.version",
     "tomcat9.version",
-    "spring-boot15.version",
-    "spring-boot21.version",
-    "spring-boot22.version",
-    "spring-boot23.version",
+    "spring-boot24.version",
+    "spring-boot26.version",
     "webauthn4j.version",
     "org.apache.kerby.kerby-asn1.version",
 ]
@@ -770,8 +767,8 @@ _keycloakToWildflyProperties = {
     # Skip "nexus.staging.plugin.version" since Keycloak specific
     # Skip "frontend.plugin.version" since Keycloak specific
     # Skip "docker.maven.plugin.version" since Keycloak specific
-    # Skip "tomcat7.version", "tomcat8.version", and "tomcat9.version" since Keycloak specific
-    # Skip "spring-boot15.version", "spring-boot21.version", "spring-boot22.version", and "spring-boot23.version" since Keycloak specific
+    # Skip "tomcat8.version", and "tomcat9.version" since Keycloak specific
+    # Skip "spring-boot24.version" and "spring-boot26.version" since Keycloak specific
     # Skip "webauthn4j.version" since Keycloak specific
     # Skip "org.apache.kerby.kerby-asn1.version" since Keycloak specific
 }

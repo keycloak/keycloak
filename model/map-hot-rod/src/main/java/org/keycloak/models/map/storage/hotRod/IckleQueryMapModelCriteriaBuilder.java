@@ -17,9 +17,15 @@
 
 package org.keycloak.models.map.storage.hotRod;
 
+import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.map.common.AbstractEntity;
+import org.keycloak.models.GroupModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder;
+import org.keycloak.models.map.storage.hotRod.common.AbstractHotRodEntity;
 import org.keycloak.storage.SearchableModelField;
 
 import java.util.Arrays;
@@ -28,29 +34,68 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static org.keycloak.models.map.storage.hotRod.IckleQueryOperators.C;
 import static org.keycloak.models.map.storage.hotRod.IckleQueryOperators.findAvailableNamedParam;
+import static org.keycloak.models.map.storage.hotRod.common.ProtoSchemaInitializer.HOT_ROD_ENTITY_PACKAGE;
 
-public class IckleQueryMapModelCriteriaBuilder<K, V extends AbstractEntity, M> implements ModelCriteriaBuilder<M, IckleQueryMapModelCriteriaBuilder<K, V, M>> {
+public class IckleQueryMapModelCriteriaBuilder<E extends AbstractHotRodEntity, M> implements ModelCriteriaBuilder<M, IckleQueryMapModelCriteriaBuilder<E, M>> {
 
     private static final int INITIAL_BUILDER_CAPACITY = 250;
+    private final Class<E> hotRodEntityClass;
     private final StringBuilder whereClauseBuilder = new StringBuilder(INITIAL_BUILDER_CAPACITY);
     private final Map<String, Object> parameters;
+    private static final Pattern NON_ANALYZED_FIELD_REGEX = Pattern.compile("[%_\\\\]");
+    // private static final Pattern ANALYZED_FIELD_REGEX = Pattern.compile("[+!^\"~*?:\\\\]"); // TODO reevaluate once https://github.com/keycloak/keycloak/issues/9295 is fixed
+    private static final Pattern ANALYZED_FIELD_REGEX = Pattern.compile("\\\\"); // escape "\" with extra "\"
+    private static final Pattern SINGLE_PERCENT_CHARACTER = Pattern.compile("^%+$");
     public static final Map<SearchableModelField<?>, String> INFINISPAN_NAME_OVERRIDES = new HashMap<>();
+    public static final Set<SearchableModelField<?>> ANALYZED_MODEL_FIELDS = new HashSet<>();
+
 
     static {
         INFINISPAN_NAME_OVERRIDES.put(ClientModel.SearchableFields.SCOPE_MAPPING_ROLE, "scopeMappings");
         INFINISPAN_NAME_OVERRIDES.put(ClientModel.SearchableFields.ATTRIBUTE, "attributes");
+
+        INFINISPAN_NAME_OVERRIDES.put(GroupModel.SearchableFields.PARENT_ID, "parentId");
+        INFINISPAN_NAME_OVERRIDES.put(GroupModel.SearchableFields.ASSIGNED_ROLE, "grantedRoles");
+
+        INFINISPAN_NAME_OVERRIDES.put(RoleModel.SearchableFields.IS_CLIENT_ROLE, "clientRole");
+
+        INFINISPAN_NAME_OVERRIDES.put(UserModel.SearchableFields.SERVICE_ACCOUNT_CLIENT, "serviceAccountClientLink");
+        INFINISPAN_NAME_OVERRIDES.put(UserModel.SearchableFields.CONSENT_FOR_CLIENT, "userConsents.clientId");
+        INFINISPAN_NAME_OVERRIDES.put(UserModel.SearchableFields.CONSENT_WITH_CLIENT_SCOPE, "userConsents.grantedClientScopesIds");
+        INFINISPAN_NAME_OVERRIDES.put(UserModel.SearchableFields.ASSIGNED_ROLE, "rolesMembership");
+        INFINISPAN_NAME_OVERRIDES.put(UserModel.SearchableFields.ASSIGNED_GROUP, "groupsMembership");
+        INFINISPAN_NAME_OVERRIDES.put(UserModel.SearchableFields.ATTRIBUTE, "attributes");
+        INFINISPAN_NAME_OVERRIDES.put(UserModel.SearchableFields.IDP_AND_USER, "federatedIdentities");
+
+        INFINISPAN_NAME_OVERRIDES.put(RealmModel.SearchableFields.CLIENT_INITIAL_ACCESS, "clientInitialAccesses");
+        INFINISPAN_NAME_OVERRIDES.put(RealmModel.SearchableFields.COMPONENT_PROVIDER_TYPE, "components.providerType");
+
+        INFINISPAN_NAME_OVERRIDES.put(UserSessionModel.SearchableFields.IS_OFFLINE, "offline");
+        INFINISPAN_NAME_OVERRIDES.put(UserSessionModel.SearchableFields.CLIENT_ID, "authenticatedClientSessions.key");
+        INFINISPAN_NAME_OVERRIDES.put(AuthenticatedClientSessionModel.SearchableFields.IS_OFFLINE, "offline");
     }
 
-    public IckleQueryMapModelCriteriaBuilder(StringBuilder whereClauseBuilder, Map<String, Object> parameters) {
+    static {
+        // the "filename" analyzer in Infinispan works correctly for case-insensitive search with whitespaces
+        ANALYZED_MODEL_FIELDS.add(RoleModel.SearchableFields.DESCRIPTION);
+        ANALYZED_MODEL_FIELDS.add(UserModel.SearchableFields.FIRST_NAME);
+        ANALYZED_MODEL_FIELDS.add(UserModel.SearchableFields.LAST_NAME);
+        ANALYZED_MODEL_FIELDS.add(UserModel.SearchableFields.EMAIL);
+    }
+
+    public IckleQueryMapModelCriteriaBuilder(Class<E> hotRodEntityClass, StringBuilder whereClauseBuilder, Map<String, Object> parameters) {
+        this.hotRodEntityClass = hotRodEntityClass;
         this.whereClauseBuilder.append(whereClauseBuilder);
         this.parameters = parameters;
     }
 
-    public IckleQueryMapModelCriteriaBuilder() {
+    public IckleQueryMapModelCriteriaBuilder(Class<E> hotRodEntityClass) {
+        this.hotRodEntityClass = hotRodEntityClass;
         this.parameters = new HashMap<>();
     }
 
@@ -63,7 +108,7 @@ public class IckleQueryMapModelCriteriaBuilder<K, V extends AbstractEntity, M> i
     }
 
     @Override
-    public IckleQueryMapModelCriteriaBuilder<K, V, M> compare(SearchableModelField<? super M> modelField, Operator op, Object... value) {
+    public IckleQueryMapModelCriteriaBuilder<E, M> compare(SearchableModelField<? super M> modelField, Operator op, Object... value) {
         StringBuilder newBuilder = new StringBuilder(INITIAL_BUILDER_CAPACITY);
         newBuilder.append("(");
 
@@ -78,17 +123,17 @@ public class IckleQueryMapModelCriteriaBuilder<K, V extends AbstractEntity, M> i
             newBuilder.append(")");
         }
 
-        return new IckleQueryMapModelCriteriaBuilder<>(newBuilder.append(")"), newParameters);
+        return new IckleQueryMapModelCriteriaBuilder<>(hotRodEntityClass, newBuilder.append(")"), newParameters);
     }
 
-    private StringBuilder joinBuilders(IckleQueryMapModelCriteriaBuilder<K, V, M>[] builders, String delimiter) {
+    private StringBuilder joinBuilders(IckleQueryMapModelCriteriaBuilder<E, M>[] builders, String delimiter) {
         return new StringBuilder(INITIAL_BUILDER_CAPACITY).append("(").append(Arrays.stream(builders)
                 .map(IckleQueryMapModelCriteriaBuilder::getWhereClauseBuilder)
                 .filter(IckleQueryMapModelCriteriaBuilder::notEmpty)
                 .collect(Collectors.joining(delimiter))).append(")");
     }
 
-    private Map<String, Object> joinParameters(IckleQueryMapModelCriteriaBuilder<K, V, M>[] builders) {
+    private Map<String, Object> joinParameters(IckleQueryMapModelCriteriaBuilder<E, M>[] builders) {
         return Arrays.stream(builders)
                 .map(IckleQueryMapModelCriteriaBuilder::getParameters)
                 .map(Map::entrySet)
@@ -97,7 +142,7 @@ public class IckleQueryMapModelCriteriaBuilder<K, V extends AbstractEntity, M> i
     }
 
     @SuppressWarnings("unchecked")
-    private IckleQueryMapModelCriteriaBuilder<K, V, M>[] resolveNamedQueryConflicts(IckleQueryMapModelCriteriaBuilder<K, V, M>[] builders) {
+    private IckleQueryMapModelCriteriaBuilder<E, M>[] resolveNamedQueryConflicts(IckleQueryMapModelCriteriaBuilder<E, M>[] builders) {
         final Set<String> existingKeys = new HashSet<>();
 
         return Arrays.stream(builders).map(builder -> {
@@ -123,36 +168,36 @@ public class IckleQueryMapModelCriteriaBuilder<K, V extends AbstractEntity, M> i
                }
            }
 
-           return new IckleQueryMapModelCriteriaBuilder<>(new StringBuilder(newWhereClause), newParameters);
+           return new IckleQueryMapModelCriteriaBuilder<>(hotRodEntityClass, new StringBuilder(newWhereClause), newParameters);
         }).toArray(IckleQueryMapModelCriteriaBuilder[]::new);
     }
 
     @Override
-    public IckleQueryMapModelCriteriaBuilder<K, V, M> and(IckleQueryMapModelCriteriaBuilder<K, V, M>... builders) {
+    public IckleQueryMapModelCriteriaBuilder<E, M> and(IckleQueryMapModelCriteriaBuilder<E, M>... builders) {
         if (builders.length == 0) {
-            return new IckleQueryMapModelCriteriaBuilder<>();
+            return new IckleQueryMapModelCriteriaBuilder<>(hotRodEntityClass);
         }
 
         builders = resolveNamedQueryConflicts(builders);
 
-        return new IckleQueryMapModelCriteriaBuilder<>(joinBuilders(builders, " AND "),
+        return new IckleQueryMapModelCriteriaBuilder<>(hotRodEntityClass, joinBuilders(builders, " AND "),
                 joinParameters(builders));
     }
 
     @Override
-    public IckleQueryMapModelCriteriaBuilder<K, V, M> or(IckleQueryMapModelCriteriaBuilder<K, V, M>... builders) {
+    public IckleQueryMapModelCriteriaBuilder<E, M> or(IckleQueryMapModelCriteriaBuilder<E, M>... builders) {
         if (builders.length == 0) {
-            return new IckleQueryMapModelCriteriaBuilder<>();
+            return new IckleQueryMapModelCriteriaBuilder<>(hotRodEntityClass);
         }
 
         builders = resolveNamedQueryConflicts(builders);
 
-        return new IckleQueryMapModelCriteriaBuilder<>(joinBuilders(builders, " OR "),
+        return new IckleQueryMapModelCriteriaBuilder<>(hotRodEntityClass, joinBuilders(builders, " OR "),
                 joinParameters(builders));
     }
 
     @Override
-    public IckleQueryMapModelCriteriaBuilder<K, V, M> not(IckleQueryMapModelCriteriaBuilder<K, V, M> builder) {
+    public IckleQueryMapModelCriteriaBuilder<E, M> not(IckleQueryMapModelCriteriaBuilder<E, M> builder) {
         StringBuilder newBuilder = new StringBuilder(INITIAL_BUILDER_CAPACITY);
         StringBuilder originalBuilder = builder.getWhereClauseBuilder();
 
@@ -160,11 +205,57 @@ public class IckleQueryMapModelCriteriaBuilder<K, V extends AbstractEntity, M> i
             newBuilder.append("not").append(originalBuilder);
         }
 
-        return new IckleQueryMapModelCriteriaBuilder<>(newBuilder, builder.getParameters());
+        return new IckleQueryMapModelCriteriaBuilder<>(hotRodEntityClass, newBuilder, builder.getParameters());
     }
 
     private StringBuilder getWhereClauseBuilder() {
         return whereClauseBuilder;
+    }
+
+    public static Object sanitize(Object value) {
+        if (value instanceof String) {
+            String sValue = (String) value;
+
+            if(SINGLE_PERCENT_CHARACTER.matcher(sValue).matches()) {
+                return value;
+            }
+
+            boolean anyBeginning = sValue.startsWith("%");
+            boolean anyEnd = sValue.endsWith("%");
+
+            String sanitizedString = NON_ANALYZED_FIELD_REGEX.matcher(sValue.substring(anyBeginning ? 1 : 0, sValue.length() - (anyEnd ? 1 : 0)))
+                    .replaceAll("\\\\\\\\" + "$0");
+
+            return (anyBeginning ? "%" : "") + sanitizedString + (anyEnd ? "%" : "");
+        }
+
+        return value;
+    }
+
+    public static Object sanitizeAnalyzed(Object value) {
+        if (value instanceof String) {
+            String sValue = (String) value;
+            boolean anyBeginning = sValue.startsWith("%");
+            boolean anyEnd = sValue.endsWith("%");
+
+            if(SINGLE_PERCENT_CHARACTER.matcher(sValue).matches()) {
+                return "*";
+            }
+
+            String sanitizedString = ANALYZED_FIELD_REGEX.matcher(sValue.substring(anyBeginning ? 1 : 0, sValue.length() - (anyEnd ? 1 : 0)))
+                    .replaceAll("\\\\\\\\"); // escape "\" with extra "\"
+            //      .replaceAll("\\\\\\\\" + "$0"); skipped for now because Infinispan is not able to escape
+            //      special characters for analyzed fields
+            //      TODO reevaluate once https://github.com/keycloak/keycloak/issues/9295 is fixed
+
+            return (anyBeginning ? "*" : "") + sanitizedString + (anyEnd ? "*" : "");
+        }
+
+        return value;
+    }
+
+    public static boolean isAnalyzedModelField(SearchableModelField<?> modelField) {
+        return ANALYZED_MODEL_FIELDS.contains(modelField);
     }
 
     /**
@@ -172,7 +263,7 @@ public class IckleQueryMapModelCriteriaBuilder<K, V extends AbstractEntity, M> i
      * @return Ickle query that represents this QueryBuilder
      */
     public String getIckleQuery() {
-        return "FROM org.keycloak.models.map.storage.hotrod.HotRodClientEntity " + C + ((whereClauseBuilder.length() != 0) ? " WHERE " + whereClauseBuilder : "");
+        return "FROM " + HOT_ROD_ENTITY_PACKAGE + "." + hotRodEntityClass.getSimpleName() + " " + C + ((whereClauseBuilder.length() != 0) ? " WHERE " + whereClauseBuilder : "");
     }
 
     /**

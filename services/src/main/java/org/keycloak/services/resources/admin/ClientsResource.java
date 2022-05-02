@@ -57,7 +57,6 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Stream;
 
 import static java.lang.Boolean.TRUE;
@@ -87,9 +86,11 @@ public class ClientsResource {
     }
 
     /**
-     * Get clients belonging to the realm
+     * Get clients belonging to the realm.
      *
-     * Returns a list of clients belonging to the realm
+     * If a client can't be retrieved from the storage due to a problem with the underlying storage,
+     * it is silently removed from the returned list.
+     * This ensures that concurrent modifications to the list don't prevent callers from retrieving this list.
      *
      * @param clientId filter by clientId
      * @param viewableOnly filter clients that cannot be viewed in full by admin
@@ -131,9 +132,8 @@ public class ClientsResource {
             }
         }
 
-        Stream<ClientRepresentation> s = clientModels
-                .filter(c -> { try { c.getClientId(); return true; } catch (Exception ex) { return false; } } )
-                .map(c -> {
+        Stream<ClientRepresentation> s = ModelToRepresentation.filterValidRepresentations(clientModels,
+                c -> {
                     ClientRepresentation representation = null;
                     if (canView || auth.clients().canView(c)) {
                         representation = ModelToRepresentation.toRepresentation(c, session);
@@ -146,8 +146,7 @@ public class ClientsResource {
                     }
 
                     return representation;
-                })
-                .filter(Objects::nonNull);
+                });
 
         if (!canView) {
             s = paginatedStream(s, firstResult, maxResults);
@@ -208,6 +207,7 @@ public class ClientsResource {
                         Response.Status.BAD_REQUEST);
             });
 
+            session.getContext().setClient(clientModel);
             session.clientPolicy().triggerOnEvent(new AdminClientRegisteredContext(clientModel, auth.adminAuth()));
 
             return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(clientModel.getId()).build()).build();

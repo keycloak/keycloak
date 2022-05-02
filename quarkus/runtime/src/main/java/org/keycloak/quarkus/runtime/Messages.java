@@ -17,6 +17,11 @@
 
 package org.keycloak.quarkus.runtime;
 
+import java.util.Arrays;
+import java.util.Set;
+import java.util.stream.Collectors;
+import org.jboss.logging.Logger;
+
 import picocli.CommandLine;
 
 public final class Messages {
@@ -44,5 +49,26 @@ public final class Messages {
 
     public static void cliExecutionError(CommandLine cmd, String message, Throwable cause) {
         throw new CommandLine.ExecutionException(cmd, message, cause);
+    }
+
+    public static String devProfileNotAllowedError(String cmd) {
+        return String.format("You can not '%s' the server in %s mode. Please re-build the server first, using 'kc.sh build' for the default production mode.%n", cmd, Environment.getKeycloakModeFromProfile(Environment.DEV_PROFILE_VALUE));
+    }
+
+    public static Throwable invalidLogLevel(String logLevel) {
+        Set<String> values = Arrays.stream(Logger.Level.values()).map(Logger.Level::name).map(String::toLowerCase).collect(Collectors.toSet());
+        return new IllegalStateException("Invalid log level: " + logLevel + ". Possible values are: " + String.join(", ", values) + ".");
+    }
+
+    public static Throwable invalidLogCategoryFormat(String category) {
+        return new IllegalStateException("Invalid log category format: " + category + ". The format is 'category:level' such as 'org.keycloak:debug'.");
+    }
+
+    public static Throwable emptyValueForKey(String key) {
+        return new IllegalStateException("Value for configuration key '" + key + "' is empty.");
+    }
+
+    public static Throwable notRecognizedValueInList(String key, String values, String expected) {
+        return new IllegalStateException("Invalid values in list for key: " + key + " Values: " + values + ". Possible values are a combination of: " + expected);
     }
 }

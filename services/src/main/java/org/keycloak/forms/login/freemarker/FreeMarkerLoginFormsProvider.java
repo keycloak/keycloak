@@ -28,12 +28,15 @@ import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.forms.login.LoginFormsPages;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.forms.login.freemarker.model.AuthenticationContextBean;
+import org.keycloak.forms.login.freemarker.model.RecoveryAuthnCodeInputLoginBean;
+import org.keycloak.forms.login.freemarker.model.RecoveryAuthnCodesBean;
 import org.keycloak.forms.login.freemarker.model.ClientBean;
 import org.keycloak.forms.login.freemarker.model.CodeBean;
 import org.keycloak.forms.login.freemarker.model.IdentityProviderBean;
 import org.keycloak.forms.login.freemarker.model.IdpReviewProfileBean;
 import org.keycloak.forms.login.freemarker.model.LoginBean;
 import org.keycloak.forms.login.freemarker.model.FrontChannelLogoutBean;
+import org.keycloak.forms.login.freemarker.model.LogoutConfirmBean;
 import org.keycloak.forms.login.freemarker.model.OAuthGrantBean;
 import org.keycloak.forms.login.freemarker.model.ProfileBean;
 import org.keycloak.forms.login.freemarker.model.RealmBean;
@@ -46,7 +49,6 @@ import org.keycloak.forms.login.freemarker.model.UrlBean;
 import org.keycloak.forms.login.freemarker.model.VerifyProfileBean;
 import org.keycloak.forms.login.freemarker.model.X509ConfirmBean;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
@@ -54,6 +56,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.rar.AuthorizationDetails;
 import org.keycloak.services.Urls;
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.LoginActionsService;
@@ -100,7 +103,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     protected String accessCode;
     protected Response.Status status;
     protected javax.ws.rs.core.MediaType contentType;
-    protected List<ClientScopeModel> clientScopesRequested;
+    protected List<AuthorizationDetails> clientScopesRequested;
     protected Map<String, String> httpResponseHeaders = new HashMap<>();
     protected URI actionUri;
     protected String execution;
@@ -151,6 +154,10 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 actionMessage = Messages.CONFIGURE_TOTP;
                 page = LoginFormsPages.LOGIN_CONFIG_TOTP;
                 break;
+            case CONFIGURE_RECOVERY_AUTHN_CODES:
+                actionMessage = Messages.CONFIGURE_BACKUP_CODES;
+                page = LoginFormsPages.LOGIN_RECOVERY_AUTHN_CODES_CONFIG;
+                break;
             case UPDATE_PROFILE:
                 UpdateProfileContext userBasedContext = new UserUpdateProfileContext(realm, user);
                 this.attributes.put(UPDATE_PROFILE_CONTEXT_ATTR, userBasedContext);
@@ -168,6 +175,8 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 page = LoginFormsPages.LOGIN_UPDATE_PASSWORD;
                 break;
             case VERIFY_EMAIL:
+                UpdateProfileContext userBasedContext1 = new UserUpdateProfileContext(realm,user);
+                attributes.put("user",new ProfileBean(userBasedContext1,formData));
                 actionMessage = Messages.VERIFY_EMAIL;
                 page = LoginFormsPages.LOGIN_VERIFY_EMAIL;
                 break;
@@ -217,6 +226,12 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         switch (page) {
             case LOGIN_CONFIG_TOTP:
                 attributes.put("totp", new TotpBean(session, realm, user, uriInfo.getRequestUriBuilder()));
+                break;
+            case LOGIN_RECOVERY_AUTHN_CODES_CONFIG:
+                attributes.put("recoveryAuthnCodesConfigBean", new RecoveryAuthnCodesBean());
+                break;
+            case LOGIN_RECOVERY_AUTHN_CODES_INPUT:
+                attributes.put("recoveryAuthnCodesInputBean", new RecoveryAuthnCodeInputLoginBean(session, realm, user));
                 break;
             case LOGIN_UPDATE_PROFILE:
                 UpdateProfileContext userCtx = (UpdateProfileContext) attributes.get(LoginFormsProvider.UPDATE_PROFILE_CONTEXT_ATTR);
@@ -271,6 +286,9 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 break;
             case FRONTCHANNEL_LOGOUT:
                 attributes.put("logout", new FrontChannelLogoutBean(session));
+                break;
+            case LOGOUT_CONFIRM:
+                attributes.put("logoutConfirm", new LogoutConfirmBean(accessCode, authenticationSession));
                 break;
         }
 
@@ -550,6 +568,11 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     }
 
     @Override
+    public Response createLoginRecoveryAuthnCode() {
+        return createResponse(LoginFormsPages.LOGIN_RECOVERY_AUTHN_CODES_INPUT);
+    }
+
+    @Override
     public Response createLoginWebAuthn() {
         return createResponse(LoginFormsPages.LOGIN_WEBAUTHN);
     }
@@ -662,6 +685,11 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         return createResponse(LoginFormsPages.FRONTCHANNEL_LOGOUT);
     }
 
+    @Override
+    public Response createLogoutConfirmPage() {
+        return createResponse(LoginFormsPages.LOGOUT_CONFIRM);
+    }
+
     protected void setMessage(MessageType type, String message, Object... parameters) {
         messageType = type;
         messages = new ArrayList<>();
@@ -767,7 +795,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     }
 
     @Override
-    public LoginFormsProvider setAccessRequest(List<ClientScopeModel> clientScopesRequested) {
+    public LoginFormsProvider setAccessRequest(List<AuthorizationDetails> clientScopesRequested) {
         this.clientScopesRequested = clientScopesRequested;
         return this;
     }

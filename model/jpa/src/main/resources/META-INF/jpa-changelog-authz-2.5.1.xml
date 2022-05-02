@@ -18,6 +18,7 @@
 
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.2.xsd">
     <changeSet author="psilva@redhat.com" id="authz-2.5.1">
+        <validCheckSum>7:03d64aeed9cb52b969bd30a7ac0db57e</validCheckSum>
         <update tableName="RESOURCE_SERVER_POLICY">
             <column name="TYPE" value="rules"/>
             <where>TYPE = :value</where>

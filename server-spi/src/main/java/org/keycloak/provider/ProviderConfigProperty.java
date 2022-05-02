@@ -70,6 +70,7 @@ public class ProviderConfigProperty {
     protected Object defaultValue;
     protected List<String> options;
     protected boolean secret;
+    private boolean readOnly;
 
     public ProviderConfigProperty() {
     }
@@ -189,4 +190,11 @@ public class ProviderConfigProperty {
         this.secret = secret;
     }
 
+    public void setReadOnly(boolean readOnly) {
+        this.readOnly = readOnly;
+    }
+
+    public boolean isReadOnly() {
+        return readOnly;
+    }
 }

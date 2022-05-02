@@ -1518,10 +1518,15 @@ module.factory('ClientSecret', function($resource) {
         realm : '@realm',
         client : '@client'
     },  {
-        update : {
-            method : 'POST'
+          update : {
+              method : 'POST'
+          },
+          invalidate: {
+              url:  authUrl + '/admin/realms/:realm/clients/:client/client-secret/rotated',
+              method: 'DELETE'
+          }
         }
-    });
+    );
 });
 
 module.factory('ClientRegistrationAccessToken', function($resource) {
@@ -1589,15 +1594,15 @@ module.factory('TimeUnit', function() {
         if (time % 60 == 0) {
             unit = 'Minutes';
             time  = time / 60;
+            if (time % 60 == 0) {
+                unit = 'Hours';
+                time = time / 60;
+                if (time % 24 == 0) {
+                    unit = 'Days';
+                }
+            }
         }
-        if (time % 60 == 0) {
-            unit = 'Hours';
-            time = time / 60;
-        }
-        if (time % 24 == 0) {
-            unit = 'Days'
-            time = time / 24;
-        }
+
         return unit;
     }
 
@@ -1642,14 +1647,14 @@ module.factory('TimeUnit2', function() {
                 if (time % 60 == 0) {
                     unit = 'Minutes';
                     time = time / 60;
-                }
-                if (time % 60 == 0) {
-                    unit = 'Hours';
-                    time = time / 60;
-                }
-                if (time % 24 == 0) {
-                    unit = 'Days'
-                    time = time / 24;
+                    if (time % 60 == 0) {
+                        unit = 'Hours';
+                        time = time / 60;
+                        if (time % 24 == 0) {
+                            unit = 'Days';
+                            time = time / 24;
+                        }
+                    }
                 }
             }
         }

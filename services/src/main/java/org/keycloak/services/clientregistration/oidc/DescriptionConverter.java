@@ -22,16 +22,17 @@ import org.keycloak.authentication.ClientAuthenticator;
 import org.keycloak.authentication.ClientAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
-import org.keycloak.authentication.authenticators.client.X509ClientAuthenticator;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKParser;
 import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.models.CibaConfig;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ParConfig;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
+import org.keycloak.protocol.oidc.OIDCClientSecretConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.PairwiseSubMapperHelper;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
@@ -141,6 +142,14 @@ public class DescriptionConverter {
             configWrapper.setRequestObjectSignatureAlg(algorithm);
         }
 
+        if (clientOIDC.getUserinfoEncryptedResponseAlg() != null) {
+            configWrapper.setUserInfoEncryptedResponseAlg(clientOIDC.getUserinfoEncryptedResponseAlg());
+        }
+
+        if (clientOIDC.getUserinfoEncryptedResponseEnc() != null) {
+            configWrapper.setUserInfoEncryptedResponseEnc(clientOIDC.getUserinfoEncryptedResponseEnc());
+        }
+
         // KEYCLOAK-6771 Certificate Bound Token
         // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-6.5
         Boolean tlsClientCertificateBoundAccessTokens = clientOIDC.getTlsClientCertificateBoundAccessTokens();
@@ -233,6 +242,16 @@ public class DescriptionConverter {
         }
 
         configWrapper.setFrontChannelLogoutUrl(Optional.ofNullable(clientOIDC.getFrontChannelLogoutUri()).orElse(null));
+        if (clientOIDC.getFrontchannelLogoutSessionRequired() == null) {
+            // False by default per OIDC FrontChannel Logout specification
+            configWrapper.setFrontChannelLogoutSessionRequired(false);
+        } else {
+            configWrapper.setFrontChannelLogoutSessionRequired(clientOIDC.getFrontchannelLogoutSessionRequired());
+        }        
+
+        if (clientOIDC.getDefaultAcrValues() != null) {
+            configWrapper.setAttributeMultivalued(Constants.DEFAULT_ACR_VALUES, clientOIDC.getDefaultAcrValues());
+        }
 
         return client;
     }
@@ -311,7 +330,8 @@ public class DescriptionConverter {
 
         if (client.getClientAuthenticatorType().equals(ClientIdAndSecretAuthenticator.PROVIDER_ID)) {
             response.setClientSecret(client.getSecret());
-            response.setClientSecretExpiresAt(0);
+            response.setClientSecretExpiresAt(
+                    OIDCClientSecretConfigWrapper.fromClientRepresentation(client).getClientSecretExpirationTime());
         }
 
         response.setClientName(client.getName());
@@ -328,6 +348,12 @@ public class DescriptionConverter {
         OIDCAdvancedConfigWrapper config = OIDCAdvancedConfigWrapper.fromClientRepresentation(client);
         if (config.isUserInfoSignatureRequired()) {
             response.setUserinfoSignedResponseAlg(config.getUserInfoSignedResponseAlg().toString());
+        }
+        if (config.getUserInfoEncryptedResponseAlg() != null) {
+            response.setUserinfoEncryptedResponseAlg(config.getUserInfoEncryptedResponseAlg());
+        }
+        if (config.getUserInfoEncryptedResponseEnc() != null) {
+            response.setUserinfoEncryptedResponseEnc(config.getUserInfoEncryptedResponseEnc());
         }
         if (config.getRequestObjectSignatureAlg() != null) {
             response.setRequestObjectSigningAlg(config.getRequestObjectSignatureAlg().toString());
@@ -413,6 +439,12 @@ public class DescriptionConverter {
         }
 
         response.setFrontChannelLogoutUri(config.getFrontChannelLogoutUrl());
+        response.setFrontchannelLogoutSessionRequired(config.isFrontChannelLogoutSessionRequired());
+
+        List<String> defaultAcrValues = config.getAttributeMultivalued(Constants.DEFAULT_ACR_VALUES);
+        if (!defaultAcrValues.isEmpty()) {
+            response.setDefaultAcrValues(defaultAcrValues);
+        }
 
         return response;
     }

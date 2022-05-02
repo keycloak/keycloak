@@ -17,24 +17,47 @@
 
 package org.keycloak.quarkus.runtime.cli;
 
+import static org.keycloak.quarkus.runtime.configuration.Configuration.getMappedPropertyName;
+import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
+import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers.getMapper;
 import static picocli.CommandLine.Help.Column.Overflow.SPAN;
 import static picocli.CommandLine.Help.Column.Overflow.WRAP;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import org.keycloak.quarkus.runtime.cli.command.Build;
+import org.keycloak.quarkus.runtime.cli.command.StartDev;
+import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.utils.StringUtil;
 
 import picocli.CommandLine;
+import picocli.CommandLine.Model.ArgGroupSpec;
+import picocli.CommandLine.Model.OptionSpec;
 
-public class Help extends CommandLine.Help {
+public final class Help extends CommandLine.Help {
 
+    static final String[] OPTION_NAMES = new String[] { "-h", "--help" };
     private static final int HELP_WIDTH = 100;
+    private static final String DEFAULT_OPTION_LIST_HEADING = "Options:";
+    private static final String DEFAULT_COMMAND_LIST_HEADING = "Commands:";
+    private boolean allOptions;
 
-    public Help(CommandLine.Model.CommandSpec commandSpec, ColorScheme colorScheme) {
+    Help(CommandLine.Model.CommandSpec commandSpec, ColorScheme colorScheme) {
         super(commandSpec, colorScheme);
+        configureUsageMessage(commandSpec);
     }
 
     @Override
     public Layout createDefaultLayout() {
-        return new Layout(colorScheme(), createTextTable(), createDefaultOptionRenderer(), createDefaultParameterRenderer());
+        return new Layout(colorScheme(), createTextTable(), createDefaultOptionRenderer(), createDefaultParameterRenderer()) {
+            @Override
+            public void addOption(OptionSpec option, IParamLabelRenderer paramLabelRenderer) {
+                if (isVisible(option)) {
+                    super.addOption(option, paramLabelRenderer);
+                }
+            }
+        };
     }
 
     private TextTable createTextTable() {
@@ -76,5 +99,68 @@ public class Help extends CommandLine.Help {
                 return new Ansi.Text[0][];
             }
         };
+    }
+
+    @Override
+    public List<ArgGroupSpec> optionSectionGroups() {
+        List<ArgGroupSpec> allGroupSpecs = super.optionSectionGroups();
+        List<ArgGroupSpec> nonEmptyGroups = new ArrayList<>(allGroupSpecs);
+        Iterator<ArgGroupSpec> argGroupSpecsIt = nonEmptyGroups.iterator();
+
+        while (argGroupSpecsIt.hasNext()) {
+            ArgGroupSpec argGroupSpec = argGroupSpecsIt.next();
+
+            if (argGroupSpec.options().stream().anyMatch(this::isVisible)) {
+                continue;
+            }
+
+            // remove groups with no options in it
+            argGroupSpecsIt.remove();
+        }
+
+        return nonEmptyGroups;
+    }
+
+    private void configureUsageMessage(CommandLine.Model.CommandSpec commandSpec) {
+        commandSpec.usageMessage()
+                .abbreviateSynopsis(true)
+                .optionListHeading(DEFAULT_OPTION_LIST_HEADING)
+                .commandListHeading(DEFAULT_COMMAND_LIST_HEADING);
+    }
+
+    private boolean isVisible(OptionSpec option) {
+        if (allOptions) {
+            return true;
+        }
+
+        String optionName = option.longestName();
+        boolean isFeatureOption = optionName.startsWith("--feature");
+        String canonicalOptionName = NS_KEYCLOAK_PREFIX.concat(optionName.replace("--", ""));
+        String propertyName = getMappedPropertyName(canonicalOptionName);
+        PropertyMapper mapper = getMapper(propertyName);
+
+        if (mapper == null && !isFeatureOption) {
+            // only filter mapped and non-feature options
+            return true;
+        }
+
+        String commandName = commandSpec().name();
+        boolean isBuildTimeProperty = isFeatureOption || mapper.isBuildTime();
+
+        if (Build.NAME.equals(commandName)) {
+            // by default, build command only shows build time props
+            return isBuildTimeProperty;
+        }
+
+        if (StartDev.NAME.equals(commandName)) {
+            // by default, start-dev command only shows runtime props
+            return !isBuildTimeProperty;
+        }
+
+        return true;
+    }
+
+    public void setAllOptions(boolean allOptions) {
+        this.allOptions = allOptions;
     }
 }

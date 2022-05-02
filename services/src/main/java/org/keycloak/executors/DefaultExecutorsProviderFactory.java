@@ -19,10 +19,10 @@ package org.keycloak.executors;
 
 import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -189,7 +189,7 @@ public class DefaultExecutorsProviderFactory implements ExecutorsProviderFactory
             // Same like Executors.newCachedThreadPool. Besides that "min" and "max" are configurable
             return new ThreadPoolExecutor(min, max,
                     60L, TimeUnit.SECONDS,
-                    new ArrayBlockingQueue<>(1024),
+                    new LinkedBlockingQueue<>(),
                     threadFactory);
         }
     }

@@ -16,8 +16,6 @@
  * limitations under the License.
  */
 
-module.requires.push('ui.ace');
-
 module.config(['$routeProvider', function ($routeProvider) {
     $routeProvider
         .when('/realms/:realm/authz', {

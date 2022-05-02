@@ -214,7 +214,9 @@ public class LDAPSamlIdPInitiatedVaryingLetterCaseTest extends AbstractLDAPTest 
         appPage.assertCurrent();
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
-        appPage.logout();
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String idTokenHint = oauth.doAccessTokenRequest(code, USER_PASSWORD).getIdToken();
+        appPage.logout(idTokenHint);
     }
 
     protected URI getAuthServerBrokerSamlEndpoint(String realm, String identityProviderAlias, String samlClientId) throws IllegalArgumentException, UriBuilderException {

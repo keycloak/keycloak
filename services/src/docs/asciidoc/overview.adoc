@@ -8,5 +8,5 @@ Version: 1
 
 === URI scheme
 Host: localhost:8080
-BasePath: /auth
+BasePath: /auth/admin/realms
 Schemes: HTTP

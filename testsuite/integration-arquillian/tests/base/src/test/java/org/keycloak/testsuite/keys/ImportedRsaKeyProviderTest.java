@@ -25,10 +25,12 @@ import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.KeyUse;
+import org.keycloak.jose.jwe.JWEConstants;
 import org.keycloak.jose.jws.AlgorithmType;
 import org.keycloak.keys.Attributes;
+import org.keycloak.keys.ImportedRsaEncKeyProviderFactory;
 import org.keycloak.keys.ImportedRsaKeyProviderFactory;
-import org.keycloak.keys.KeyMetadata;
 import org.keycloak.keys.KeyProvider;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.ErrorRepresentation;
@@ -69,13 +71,22 @@ public class ImportedRsaKeyProviderTest extends AbstractKeycloakTest {
     }
 
     @Test
-    public void privateKeyOnly() throws Exception {
+    public void privateKeyOnlyForSig() throws Exception {
+        privateKeyOnly(ImportedRsaKeyProviderFactory.ID, KeyUse.SIG, Algorithm.RS256);
+    }
+
+    @Test
+    public void privateKeyOnlyForEnc() throws Exception {
+        privateKeyOnly(ImportedRsaEncKeyProviderFactory.ID, KeyUse.ENC, JWEConstants.RSA_OAEP);
+    }
+
+    private void privateKeyOnly(String providerId, KeyUse keyUse, String algorithm) throws Exception {
         long priority = System.currentTimeMillis();
 
         KeyPair keyPair = KeyUtils.generateRsaKeyPair(2048);
         String kid = KeyUtils.createKeyId(keyPair.getPublic());
 
-        ComponentRepresentation rep = createRep("valid", ImportedRsaKeyProviderFactory.ID);
+        ComponentRepresentation rep = createRep("valid", providerId);
         rep.getConfig().putSingle(Attributes.PRIVATE_KEY_KEY, PemUtils.encodeKey(keyPair.getPrivate()));
         rep.getConfig().putSingle(Attributes.PRIORITY_KEY, Long.toString(priority));
 
@@ -91,7 +102,7 @@ public class ImportedRsaKeyProviderTest extends AbstractKeycloakTest {
 
         KeysMetadataRepresentation keys = adminClient.realm("test").keys().getKeyMetadata();
 
-        assertEquals(kid, keys.getActive().get(Algorithm.RS256));
+        assertEquals(kid, keys.getActive().get(algorithm));
 
         KeysMetadataRepresentation.KeyMetadataRepresentation key = keys.getKeys().get(0);
 
@@ -101,17 +112,27 @@ public class ImportedRsaKeyProviderTest extends AbstractKeycloakTest {
         assertEquals(kid, key.getKid());
         assertEquals(PemUtils.encodeKey(keyPair.getPublic()), keys.getKeys().get(0).getPublicKey());
         assertEquals(keyPair.getPublic(), PemUtils.decodeCertificate(key.getCertificate()).getPublicKey());
+        assertEquals(keyUse, keys.getKeys().get(0).getUse());
     }
 
     @Test
-    public void keyAndCertificate() throws Exception {
+    public void keyAndCertificateForSig() throws Exception {
+        keyAndCertificate(ImportedRsaKeyProviderFactory.ID, KeyUse.SIG);
+    }
+
+    @Test
+    public void keyAndCertificateForEnc() throws Exception {
+        keyAndCertificate(ImportedRsaEncKeyProviderFactory.ID, KeyUse.ENC);
+    }
+
+    private void keyAndCertificate(String providerId, KeyUse keyUse) throws Exception {
         long priority = System.currentTimeMillis();
 
         KeyPair keyPair = KeyUtils.generateRsaKeyPair(2048);
         Certificate certificate = CertificateUtils.generateV1SelfSignedCertificate(keyPair, "test");
         String certificatePem = PemUtils.encodeCertificate(certificate);
 
-        ComponentRepresentation rep = createRep("valid", ImportedRsaKeyProviderFactory.ID);
+        ComponentRepresentation rep = createRep("valid", providerId);
         rep.getConfig().putSingle(Attributes.PRIVATE_KEY_KEY, PemUtils.encodeKey(keyPair.getPrivate()));
         rep.getConfig().putSingle(Attributes.CERTIFICATE_KEY, certificatePem);
         rep.getConfig().putSingle(Attributes.PRIORITY_KEY, Long.toString(priority));
@@ -128,13 +149,23 @@ public class ImportedRsaKeyProviderTest extends AbstractKeycloakTest {
 
         KeysMetadataRepresentation.KeyMetadataRepresentation key = keys.getKeys().get(0);
         assertEquals(certificatePem, key.getCertificate());
+        assertEquals(keyUse, keys.getKeys().get(0).getUse());
     }
 
     @Test
-    public void invalidPriority() throws Exception {
+    public void invalidPriorityForSig() throws Exception {
+        invalidPriority(ImportedRsaKeyProviderFactory.ID);
+    }
+
+    @Test
+    public void invalidPriorityForEnc() throws Exception {
+        invalidPriority(ImportedRsaEncKeyProviderFactory.ID);
+    }
+
+    private void invalidPriority(String providerId) throws Exception {
         KeyPair keyPair = KeyUtils.generateRsaKeyPair(2048);
 
-        ComponentRepresentation rep = createRep("invalid", ImportedRsaKeyProviderFactory.ID);
+        ComponentRepresentation rep = createRep("invalid", providerId);
         rep.getConfig().putSingle(Attributes.PRIVATE_KEY_KEY, PemUtils.encodeKey(keyPair.getPrivate()));
         rep.getConfig().putSingle(Attributes.PRIORITY_KEY, "invalid");
 
@@ -143,10 +174,19 @@ public class ImportedRsaKeyProviderTest extends AbstractKeycloakTest {
     }
 
     @Test
-    public void invalidEnabled() throws Exception {
+    public void invalidEnabledForSig() throws Exception {
+        invalidEnabled(ImportedRsaKeyProviderFactory.ID);
+    }
+
+    @Test
+    public void invalidEnabledForEnc() throws Exception {
+        invalidEnabled(ImportedRsaEncKeyProviderFactory.ID);
+    }
+
+    private void invalidEnabled(String providerId) throws Exception {
         KeyPair keyPair = KeyUtils.generateRsaKeyPair(2048);
 
-        ComponentRepresentation rep = createRep("invalid", ImportedRsaKeyProviderFactory.ID);
+        ComponentRepresentation rep = createRep("invalid", providerId);
         rep.getConfig().putSingle(Attributes.PRIVATE_KEY_KEY, PemUtils.encodeKey(keyPair.getPrivate()));
         rep.getConfig().putSingle(Attributes.ENABLED_KEY, "invalid");
 
@@ -155,10 +195,19 @@ public class ImportedRsaKeyProviderTest extends AbstractKeycloakTest {
     }
 
     @Test
-    public void invalidActive() throws Exception {
+    public void invalidActiveForSig() throws Exception {
+        invalidActive(ImportedRsaKeyProviderFactory.ID);
+    }
+
+    @Test
+    public void invalidActiveForEnc() throws Exception {
+        invalidActive(ImportedRsaEncKeyProviderFactory.ID);
+    }
+
+    private void invalidActive(String providerId) throws Exception {
         KeyPair keyPair = KeyUtils.generateRsaKeyPair(2048);
 
-        ComponentRepresentation rep = createRep("invalid", ImportedRsaKeyProviderFactory.ID);
+        ComponentRepresentation rep = createRep("invalid", providerId);
         rep.getConfig().putSingle(Attributes.PRIVATE_KEY_KEY, PemUtils.encodeKey(keyPair.getPrivate()));
         rep.getConfig().putSingle(Attributes.ACTIVE_KEY, "invalid");
 
@@ -167,10 +216,19 @@ public class ImportedRsaKeyProviderTest extends AbstractKeycloakTest {
     }
 
     @Test
-    public void invalidPrivateKey() throws Exception {
+    public void invalidPrivateKeyForSig() throws Exception {
+        invalidPrivateKey(ImportedRsaKeyProviderFactory.ID);
+    }
+
+    @Test
+    public void invalidPrivateKeyForEnc() throws Exception {
+        invalidPrivateKey(ImportedRsaEncKeyProviderFactory.ID);
+    }
+
+    private void invalidPrivateKey(String providerId) throws Exception {
         KeyPair keyPair = KeyUtils.generateRsaKeyPair(2048);
 
-        ComponentRepresentation rep = createRep("invalid", ImportedRsaKeyProviderFactory.ID);
+        ComponentRepresentation rep = createRep("invalid", providerId);
 
         Response response = adminClient.realm("test").components().add(rep);
         assertErrror(response, "'Private RSA Key' is required");
@@ -185,11 +243,20 @@ public class ImportedRsaKeyProviderTest extends AbstractKeycloakTest {
     }
 
     @Test
-    public void invalidCertificate() throws Exception {
+    public void invalidCertificateForSig() throws Exception {
+        invalidCertificate(ImportedRsaKeyProviderFactory.ID);
+    }
+
+    @Test
+    public void invalidCertificateForEnc() throws Exception {
+        invalidCertificate(ImportedRsaEncKeyProviderFactory.ID);
+    }
+
+    private void invalidCertificate(String providerId) throws Exception {
         KeyPair keyPair = KeyUtils.generateRsaKeyPair(2048);
         Certificate invalidCertificate = CertificateUtils.generateV1SelfSignedCertificate(KeyUtils.generateRsaKeyPair(2048), "test");
 
-        ComponentRepresentation rep = createRep("invalid", ImportedRsaKeyProviderFactory.ID);
+        ComponentRepresentation rep = createRep("invalid", providerId);
         rep.getConfig().putSingle(Attributes.PRIVATE_KEY_KEY, PemUtils.encodeKey(keyPair.getPrivate()));
 
         rep.getConfig().putSingle(Attributes.CERTIFICATE_KEY, "nonsense");
@@ -215,7 +282,7 @@ public class ImportedRsaKeyProviderTest extends AbstractKeycloakTest {
     protected ComponentRepresentation createRep(String name, String providerId) {
         ComponentRepresentation rep = new ComponentRepresentation();
         rep.setName(name);
-        rep.setParentId("test");
+        rep.setParentId(adminClient.realm("test").toRepresentation().getId());
         rep.setProviderId(providerId);
         rep.setProviderType(KeyProvider.class.getName());
         rep.setConfig(new MultivaluedHashMap<>());

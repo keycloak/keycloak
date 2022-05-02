@@ -139,7 +139,7 @@ public class X509ClientCertificateAuthenticator extends AbstractX509ClientCertif
                 return;
             }
 
-            String bruteForceError = getDisabledByBruteForceEventError(context.getProtector(), context.getSession(), context.getRealm(), user);
+            String bruteForceError = getDisabledByBruteForceEventError(context, user);
             if (bruteForceError != null) {
                 context.getEvent().user(user);
                 context.getEvent().error(bruteForceError);

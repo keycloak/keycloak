@@ -59,6 +59,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.AuthenticationFlowResolver;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -229,6 +230,14 @@ public class LoginActionsService {
         String flowPath = authSession.getClientNote(AuthorizationEndpointBase.APP_INITIATED_FLOW);
         if (flowPath == null) {
             flowPath = AUTHENTICATE_PATH;
+        }
+
+        // See if we already have userSession attached to authentication session. This means restart of authentication session during re-authentication
+        // We logout userSession in this case
+        UserSessionModel userSession = new AuthenticationSessionManager(session).getUserSession(authSession);
+        if (userSession != null) {
+            logger.debugf("Logout of user session %s when restarting flow during re-authentication", userSession.getId());
+            AuthenticationManager.backchannelLogout(session, userSession, false);
         }
 
         AuthenticationProcessor.resetFlow(authSession, flowPath);
@@ -849,7 +858,6 @@ public class LoginActionsService {
     /**
      * OAuth grant page.  You should not invoked this directly!
      *
-     * @param formData
      * @return
      */
     @Path("consent")

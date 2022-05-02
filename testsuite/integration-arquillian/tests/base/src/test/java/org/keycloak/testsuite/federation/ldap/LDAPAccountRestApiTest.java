@@ -177,8 +177,8 @@ public class LDAPAccountRestApiTest extends AbstractLDAPTest {
 
         AccountCredentialResource.CredentialContainer password = credentials.get(0);
         Assert.assertEquals(PasswordCredentialModel.TYPE, password.getType());
-        Assert.assertEquals(1, password.getUserCredentials().size());
-        CredentialRepresentation userPassword = password.getUserCredentials().get(0);
+        Assert.assertEquals(1, password.getUserCredentialMetadatas().size());
+        CredentialRepresentation userPassword = password.getUserCredentialMetadatas().get(0).getCredential();
 
         // Password won't have createdDate and any metadata set
         Assert.assertEquals(PasswordCredentialModel.TYPE, userPassword.getType());

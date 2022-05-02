@@ -28,6 +28,7 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.impl.client.CloseableHttpClient;
 
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -394,6 +395,45 @@ public class CIBATest extends AbstractClientPoliciesTest {
         } finally {
             revertCIBASettings(clientResource, clientRep);
             restoreCIBAPolicy();
+        }
+    }
+
+    // Corresponds to the test fapi-ciba-id1-ensure-authorization-request-with-potentially-bad-binding-message from the FAPI CIBA conformance testsuite
+    @Test
+    public void testBadBindingMessage() throws Exception {
+        ClientResource clientResource = null;
+        ClientRepresentation clientRep = null;
+        try {
+            final String username = "nutzername-schwarz";
+            clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
+            clientRep = clientResource.toRepresentation();
+            prepareCIBASettings(clientResource, clientRep);
+
+            // Binding message with non plain-text characters
+            String bindingMessage = "1234 \uD83D\uDC4D\uD83C\uDFFF 品川 Lor";
+            AuthenticationRequestAcknowledgement response = oauth.doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, bindingMessage, null);
+            assertThat(response.getStatusCode(), is(equalTo(400)));
+            assertThat(response.getError(), is(OAuthErrorException.INVALID_BINDING_MESSAGE));
+
+            // Long binding message
+            bindingMessage = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud.";
+            response = oauth.doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, bindingMessage, null);
+            assertThat(response.getStatusCode(), is(equalTo(400)));
+            assertThat(response.getError(), is(OAuthErrorException.INVALID_BINDING_MESSAGE));
+
+            // Empty binding message
+            bindingMessage = "";
+            response = oauth.doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, bindingMessage, null);
+            assertThat(response.getStatusCode(), is(equalTo(400)));
+            assertThat(response.getError(), is(OAuthErrorException.INVALID_BINDING_MESSAGE));
+
+            // Valid binding message
+            bindingMessage = "Lorem_ipsum";
+            response = oauth.doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, bindingMessage, null);
+            assertThat(response.getStatusCode(), is(equalTo(200)));
+            assertThat(response.getError(), is(nullValue()));
+        } finally {
+            revertCIBASettings(clientResource, clientRep);
         }
     }
 

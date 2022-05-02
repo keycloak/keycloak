@@ -37,8 +37,9 @@ import org.keycloak.testsuite.util.UserBuilder;
  */
 public class AppInitiatedActionUpdateProfileTest extends AbstractAppInitiatedActionTest {
 
-    public AppInitiatedActionUpdateProfileTest() {
-        super(UserModel.RequiredAction.UPDATE_PROFILE.name());
+    @Override
+    public String getAiaAction() {
+        return UserModel.RequiredAction.UPDATE_PROFILE.name();
     }
     
     @Page
@@ -46,7 +47,7 @@ public class AppInitiatedActionUpdateProfileTest extends AbstractAppInitiatedAct
 
     @Page
     protected ErrorPage errorPage;
-    
+
     protected boolean isDynamicForm() {
         return false;
     }
@@ -92,7 +93,7 @@ public class AppInitiatedActionUpdateProfileTest extends AbstractAppInitiatedAct
                 .assertEvent();
         events.expectLogin().assertEvent();
 
-        assertKcActionStatus("success");
+        assertKcActionStatus(SUCCESS);
 
         // assert user is really updated in persistent store
         UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
@@ -123,7 +124,7 @@ public class AppInitiatedActionUpdateProfileTest extends AbstractAppInitiatedAct
                 .assertEvent();
         events.expectLogin().assertEvent();
 
-        assertKcActionStatus("success");
+        assertKcActionStatus(SUCCESS);
 
         // assert user is really updated in persistent store
         UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
@@ -142,7 +143,7 @@ public class AppInitiatedActionUpdateProfileTest extends AbstractAppInitiatedAct
         updateProfilePage.assertCurrent();
         updateProfilePage.cancel();
 
-        assertKcActionStatus("cancelled");
+        assertKcActionStatus(CANCELLED);
 
         
         // assert nothing was updated in persistent store
@@ -177,7 +178,7 @@ public class AppInitiatedActionUpdateProfileTest extends AbstractAppInitiatedAct
                 .removeDetail(Details.CONSENT)
                 .assertEvent();
 
-        assertKcActionStatus("success");
+        assertKcActionStatus(SUCCESS);
 
         events.expectLogin().detail(Details.USERNAME, "john-doh@localhost").user(userId).assertEvent();
 

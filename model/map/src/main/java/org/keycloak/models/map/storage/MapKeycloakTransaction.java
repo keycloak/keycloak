@@ -29,8 +29,12 @@ public interface MapKeycloakTransaction<V extends AbstractEntity, M> extends Key
      * Updates to the returned instances of {@code V} would be visible in the current transaction
      * and will propagate into the underlying store upon commit.
      *
+     * The ID of the entity passed in the parameter might change to a different value in the returned value
+     * if the underlying storage decided this was necessary.
+     * If the ID of the entity was null before, it will be set on the returned value.
+     *
      * @param value the value
-     * @return Entity representing the {@code value} in the store. It may or may not be the same instance as {@code value}
+     * @return Entity representing the {@code value} in the store. It may or may not be the same instance as {@code value}.
      */
     V create(V value);
 
@@ -47,7 +51,7 @@ public interface MapKeycloakTransaction<V extends AbstractEntity, M> extends Key
     /**
      * Returns a stream of values from underlying storage that are updated based on the current transaction changes;
      * i.e. the result contains updates and excludes of records that have been created, updated or deleted in this
-     * transaction by methods {@link MapKeycloakTransaction#create}, {@link MapKeycloakTransaction#update},
+     * transaction by methods {@link MapKeycloakTransaction#create}, {@link MapKeycloakTransaction#create},
      * {@link MapKeycloakTransaction#delete}, etc.
      * <p>
      * Updates to the returned instances of {@code V} would be visible in the current transaction
@@ -79,8 +83,6 @@ public interface MapKeycloakTransaction<V extends AbstractEntity, M> extends Key
     /**
      * Instructs this transaction to remove values (identified by {@code mcb} filter) from the underlying store on commit.
      *
-     * @param artificialKey key to record the transaction with, must be a key that does not exist in this transaction to
-     *                      prevent collisions with other operations in this transaction
      * @param queryParameters parameters for the query like firstResult, maxResult, requested ordering, etc.
      * @return number of removed objects (might return {@code -1} if not supported)
      */

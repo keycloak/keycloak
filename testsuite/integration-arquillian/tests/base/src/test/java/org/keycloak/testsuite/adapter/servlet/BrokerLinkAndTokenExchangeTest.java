@@ -87,6 +87,7 @@ import java.util.List;
 import static org.keycloak.testsuite.admin.ApiUtil.createUserAndResetPasswordWithAdminClient;
 
 /**
+ *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
@@ -290,7 +291,7 @@ public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest 
         clientRep.addClient(client.getId());
         clientRep.addClient(directExchanger.getId());
         ResourceServer server = management.realmResourceServer();
-        Policy clientPolicy = management.authz().getStoreFactory().getPolicyStore().create(clientRep, server);
+        Policy clientPolicy = management.authz().getStoreFactory().getPolicyStore().create(server, clientRep);
         management.idps().exchangeToPermission(idp).addAssociatedPolicy(clientPolicy);
 
 
@@ -300,7 +301,7 @@ public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest 
         clientImpersonateRep.setName("clientImpersonators");
         clientImpersonateRep.addClient(directExchanger.getId());
         server = management.realmResourceServer();
-        Policy clientImpersonatePolicy = management.authz().getStoreFactory().getPolicyStore().create(clientImpersonateRep, server);
+        Policy clientImpersonatePolicy = management.authz().getStoreFactory().getPolicyStore().create(server, clientImpersonateRep);
         management.users().setPermissionsEnabled(true);
         management.users().adminImpersonatingPermission().addAssociatedPolicy(clientImpersonatePolicy);
         management.users().adminImpersonatingPermission().setDecisionStrategy(DecisionStrategy.AFFIRMATIVE);
@@ -422,6 +423,7 @@ public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest 
             Assert.assertNotEquals(externalToken, tokenResponse.getToken());
 
 
+            resetTimeOffset();
             logoutAll();
 
 
@@ -458,7 +460,7 @@ public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest 
 
     @Test
     @UncaughtServerErrorExpected
-    public void testAccountLinkNoTokenStore() throws Exception {
+    public void testAccountLinkNoTokenStore() {
         testingClient.server().run(BrokerLinkAndTokenExchangeTest::turnOffTokenStore);
 
         RealmResource realm = adminClient.realms().realm(CHILD_IDP);
@@ -475,7 +477,7 @@ public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest 
         Assert.assertTrue(loginPage.isCurrent(CHILD_IDP));
         Assert.assertTrue(driver.getPageSource().contains(PARENT_IDP));
         loginPage.login("child", "password");
-        Assert.assertTrue(loginPage.isCurrent(PARENT_IDP));
+        Assert.assertTrue("Unexpected page. Current Page URL: " + driver.getCurrentUrl(),loginPage.isCurrent(PARENT_IDP));
         loginPage.login(PARENT_USERNAME, "password");
         System.out.println("After linking: " + driver.getCurrentUrl());
         System.out.println(driver.getPageSource());
@@ -498,8 +500,6 @@ public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest 
 
     /**
      * KEYCLOAK-6026
-     * 
-     * @throws Exception
      */
     @Test
     @UncaughtServerErrorExpected
@@ -507,19 +507,22 @@ public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest 
         ContainerAssume.assumeNotAuthServerRemote();
 
         testExternalExchange();
-        testingClient.testing().exportImport().setProvider(SingleFileExportProviderFactory.PROVIDER_ID);
-        String targetFilePath = testingClient.testing().exportImport().getExportImportTestDirectory() + File.separator + "singleFile-full.json";
-        testingClient.testing().exportImport().setFile(targetFilePath);
-        testingClient.testing().exportImport().setAction(ExportImportConfig.ACTION_EXPORT);
-        testingClient.testing().exportImport().setRealmName(CHILD_IDP);
-        testingClient.testing().exportImport().runExport();
 
-        adminClient.realms().realm(CHILD_IDP).remove();
-        testingClient.testing().exportImport().setAction(ExportImportConfig.ACTION_IMPORT);
+        try {
+            testingClient.testing().exportImport().setProvider(SingleFileExportProviderFactory.PROVIDER_ID);
+            String targetFilePath = testingClient.testing().exportImport().getExportImportTestDirectory() + File.separator + "singleFile-full.json";
+            testingClient.testing().exportImport().setFile(targetFilePath);
+            testingClient.testing().exportImport().setAction(ExportImportConfig.ACTION_EXPORT);
+            testingClient.testing().exportImport().setRealmName(CHILD_IDP);
+            testingClient.testing().exportImport().runExport();
 
-        testingClient.testing().exportImport().runImport();
+            adminClient.realms().realm(CHILD_IDP).remove();
+            testingClient.testing().exportImport().setAction(ExportImportConfig.ACTION_IMPORT);
 
-        testingClient.testing().exportImport().clear();
+            testingClient.testing().exportImport().runImport();
+        } finally {
+            testingClient.testing().exportImport().clear();
+        }
 
         testExternalExchange();
     }
@@ -550,8 +553,8 @@ public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest 
             rep.getConfig().put("issuer", parentIssuer);
             adminClient.realm(CHILD_IDP).identityProviders().get(PARENT_IDP).update(rep);
 
-            String exchangedUserId = null;
-            String exchangedUsername = null;
+            String exchangedUserId;
+            String exchangedUsername;
 
             {
                 // test signature validation
@@ -697,7 +700,7 @@ public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest 
 
             {
                 // test unauthorized client gets 403
-                Response response = exchangeUrl.request()
+                try (Response response = exchangeUrl.request()
                         .header(HttpHeaders.AUTHORIZATION, BasicAuthHelper.createHeader(UNAUTHORIZED_CHILD_CLIENT, "password"))
                         .post(Entity.form(
                                 new Form()
@@ -706,8 +709,9 @@ public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest 
                                         .param(OAuth2Constants.SUBJECT_TOKEN_TYPE, OAuth2Constants.JWT_TOKEN_TYPE)
                                         .param(OAuth2Constants.SUBJECT_ISSUER, PARENT_IDP)
 
-                        ));
-                Assert.assertEquals(403, response.getStatus());
+                        ))) {
+                    Assert.assertEquals(403, response.getStatus());
+                }
             }
         } finally {
             httpClient.close();
@@ -764,10 +768,8 @@ public class BrokerLinkAndTokenExchangeTest extends AbstractServletsAdapterTest 
     }
 
     public void logoutAll() {
-        String logoutUri = OIDCLoginProtocolService.logoutUrl(authServerPage.createUriBuilder()).build(CHILD_IDP).toString();
-        navigateTo(logoutUri);
-        logoutUri = OIDCLoginProtocolService.logoutUrl(authServerPage.createUriBuilder()).build(PARENT_IDP).toString();
-        navigateTo(logoutUri);
+        adminClient.realm(CHILD_IDP).logoutAll();
+        adminClient.realm(PARENT_IDP).logoutAll();
     }
 
     private void navigateTo(String uri) {

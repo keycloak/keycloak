@@ -30,11 +30,14 @@ import org.keycloak.common.util.EnvUtil;
 import org.keycloak.common.util.KeystoreUtil;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.truststore.TruststoreProvider;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.KeyStore;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.util.EntityUtils;
@@ -223,6 +226,86 @@ public class DefaultHttpClientFactory implements HttpClientFactory {
     @Override
     public void postInit(KeycloakSessionFactory factory) {
 
+    }
+
+    @Override
+    public List<ProviderConfigProperty> getConfigMetadata() {
+        return ProviderConfigurationBuilder.create()
+                .property()
+                .name("socket-timeout-millis")
+                .type("long")
+                .helpText("Socket inactivity timeout.")
+                .defaultValue(5000L)
+                .add()
+                .property()
+                .name("establish-connection-timeout-millis")
+                .type("long")
+                .helpText("When trying to make an initial socket connection, what is the timeout?")
+                .defaultValue(-1L)
+                .add()
+                .property()
+                .name("max-pooled-per-route")
+                .type("int")
+                .helpText("Assigns maximum connection per route value.")
+                .defaultValue(64)
+                .add()
+                .property()
+                .name("connection-pool-size")
+                .type("int")
+                .helpText("Assigns maximum total connection value.")
+                .add()
+                .property()
+                .name("connection-ttl-millis")
+                .type("long")
+                .helpText("Sets maximum time, in milliseconds, to live for persistent connections.")
+                .defaultValue(-1L)
+                .add()
+                .property()
+                .name("reuse-connections")
+                .type("boolean")
+                .helpText("If connections should be reused.")
+                .defaultValue(true)
+                .add()
+                .property()
+                .name("max-connection-idle-time-millis")
+                .type("long")
+                .helpText("Sets the time, in milliseconds, for evicting idle connections from the pool.")
+                .defaultValue(900000)
+                .add()
+                .property()
+                .name("disable-cookies")
+                .type("boolean")
+                .helpText("Disables state (cookie) management.")
+                .defaultValue(true)
+                .add()
+                .property()
+                .name("client-keystore")
+                .type("string")
+                .helpText("The file path of the key store from where the key material is going to be read from to set-up TLS connections.")
+                .add()
+                .property()
+                .name("client-keystore-password")
+                .type("string")
+                .helpText("The key store password.")
+                .add()
+                .property()
+                .name("client-key-password")
+                .type("string")
+                .helpText("The key password.")
+                .defaultValue(-1L)
+                .add()
+                .property()
+                .name("disable-trust-manager")
+                .type("boolean")
+                .helpText("Disable trust management and hostname verification. NOTE this is a security hole, so only set this option if you cannot or do not want to verify the identity of the host you are communicating with.")
+                .defaultValue(false)
+                .add()
+                .property()
+                .name("proxy-mappings")
+                .type("string")
+                .helpText("Denotes the combination of a regex based hostname pattern and a proxy-uri in the form of hostnamePattern;proxyUri.")
+                .add()
+                .build();
     }
 
     private boolean getBooleanConfigWithSysPropFallback(String key, boolean defaultValue) {

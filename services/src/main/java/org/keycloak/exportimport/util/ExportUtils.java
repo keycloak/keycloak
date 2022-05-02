@@ -17,22 +17,11 @@
 
 package org.keycloak.exportimport.util;
 
-import static org.keycloak.models.utils.ModelToRepresentation.toRepresentation;
-
-import java.io.IOException;
-import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
+import com.fasterxml.jackson.core.JsonEncoding;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.AuthorizationProviderFactory;
 import org.keycloak.authorization.model.Policy;
@@ -71,11 +60,20 @@ import org.keycloak.representations.idm.authorization.ResourceServerRepresentati
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
 import org.keycloak.util.JsonSerialization;
 
-import com.fasterxml.jackson.core.JsonEncoding;
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static org.keycloak.models.utils.ModelToRepresentation.toRepresentation;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -103,15 +101,17 @@ public class ExportUtils {
                 .map(ClientScopeModel::getName).collect(Collectors.toList()));
 
         // Clients
-        List<ClientModel> clients = Collections.emptyList();
+        List<ClientModel> clients = new LinkedList<>();
 
         if (options.isClientsIncluded()) {
-            clients = realm.getClientsStream()
-              .filter(c -> { try { c.getClientId(); return true; } catch (Exception ex) { return false; } } )
-              .collect(Collectors.toList());
-            List<ClientRepresentation> clientReps = clients.stream()
-              .map(app -> exportClient(session, app))
-              .collect(Collectors.toList());
+            // we iterate over all clients in the stream.
+            // only those client models that can be translated into a valid client representation will be added to the client list
+            // that is later used to retrieve related information about groups and roles
+            List<ClientRepresentation> clientReps = ModelToRepresentation.filterValidRepresentations(realm.getClientsStream(), app -> {
+                ClientRepresentation clientRepresentation = exportClient(session, app);
+                clients.add(app);
+                return clientRepresentation;
+            }).collect(Collectors.toList());
             rep.setClients(clientReps);
         }
 
@@ -297,7 +297,7 @@ public class ExportUtils {
         AuthorizationProviderFactory providerFactory = (AuthorizationProviderFactory) session.getKeycloakSessionFactory().getProviderFactory(AuthorizationProvider.class);
         AuthorizationProvider authorization = providerFactory.create(session, client.getRealm());
         StoreFactory storeFactory = authorization.getStoreFactory();
-        ResourceServer settingsModel = authorization.getStoreFactory().getResourceServerStore().findById(client.getId());
+        ResourceServer settingsModel = authorization.getStoreFactory().getResourceServerStore().findByClient(client);
 
         if (settingsModel == null) {
             return null;
@@ -309,11 +309,11 @@ public class ExportUtils {
         representation.setName(null);
         representation.setClientId(null);
 
-        List<ResourceRepresentation> resources = storeFactory.getResourceStore().findByResourceServer(settingsModel.getId())
+        List<ResourceRepresentation> resources = storeFactory.getResourceStore().findByResourceServer(settingsModel)
                 .stream().map(resource -> {
-                    ResourceRepresentation rep = toRepresentation(resource, settingsModel.getId(), authorization);
+                    ResourceRepresentation rep = toRepresentation(resource, settingsModel, authorization);
 
-                    if (rep.getOwner().getId().equals(settingsModel.getId())) {
+                    if (rep.getOwner().getId().equals(settingsModel.getClientId())) {
                         rep.setOwner((ResourceOwnerRepresentation) null);
                     } else {
                         rep.getOwner().setId(null);
@@ -331,16 +331,16 @@ public class ExportUtils {
         List<PolicyRepresentation> policies = new ArrayList<>();
         PolicyStore policyStore = storeFactory.getPolicyStore();
 
-        policies.addAll(policyStore.findByResourceServer(settingsModel.getId())
+        policies.addAll(policyStore.findByResourceServer(settingsModel)
                 .stream().filter(policy -> !policy.getType().equals("resource") && !policy.getType().equals("scope") && policy.getOwner() == null)
                 .map(policy -> createPolicyRepresentation(authorization, policy)).collect(Collectors.toList()));
-        policies.addAll(policyStore.findByResourceServer(settingsModel.getId())
+        policies.addAll(policyStore.findByResourceServer(settingsModel)
                 .stream().filter(policy -> (policy.getType().equals("resource") || policy.getType().equals("scope") && policy.getOwner() == null))
                 .map(policy -> createPolicyRepresentation(authorization, policy)).collect(Collectors.toList()));
 
         representation.setPolicies(policies);
 
-        List<ScopeRepresentation> scopes = storeFactory.getScopeStore().findByResourceServer(settingsModel.getId()).stream().map(scope -> {
+        List<ScopeRepresentation> scopes = storeFactory.getScopeStore().findByResourceServer(settingsModel).stream().map(scope -> {
             ScopeRepresentation rep = toRepresentation(scope);
 
             rep.setPolicies(null);

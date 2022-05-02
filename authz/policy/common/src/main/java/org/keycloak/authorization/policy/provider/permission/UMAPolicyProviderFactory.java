@@ -28,7 +28,6 @@ import org.keycloak.authorization.policy.provider.PolicyProvider;
 import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
@@ -148,11 +147,11 @@ public class UMAPolicyProviderFactory implements PolicyProviderFactory<UmaPermis
                 } else {
                     RepresentationToModel.toModel(rep, authorization, associatedPolicy);
                 }
-            } else if ("js".equals(associatedRep.getType())) {
+            } else if (associatedRep instanceof JSPolicyRepresentation) {
                 JSPolicyRepresentation rep = JSPolicyRepresentation.class.cast(associatedRep);
 
                 if (representation.getCondition() != null) {
-                    rep.setCode(representation.getCondition());
+                    rep.setType(representation.getCondition());
                     RepresentationToModel.toModel(rep, authorization, associatedPolicy);
                 } else {
                     policyStore.delete(associatedPolicy.getId());
@@ -292,7 +291,7 @@ public class UMAPolicyProviderFactory implements PolicyProviderFactory<UmaPermis
             boolean createPolicy = true;
 
             for (Policy associatedPolicy : associatedPolicies) {
-                if ("js".equals(associatedPolicy.getType())) {
+                if (associatedPolicy.getType().startsWith("script-")) {
                     createPolicy = false;
                 }
             }
@@ -330,9 +329,9 @@ public class UMAPolicyProviderFactory implements PolicyProviderFactory<UmaPermis
                         representation.addRole(role.getName());
                     }
                 }
-            } else if ("js".equals(associatedRep.getType())) {
+            } else if (associatedRep instanceof JSPolicyRepresentation) {
                 JSPolicyRepresentation rep = JSPolicyRepresentation.class.cast(associatedRep);
-                representation.setCondition(rep.getCode());
+                representation.setCondition(rep.getType());
             } else if ("group".equals(associatedRep.getType())) {
                 GroupPolicyRepresentation rep = GroupPolicyRepresentation.class.cast(associatedRep);
 
@@ -395,9 +394,9 @@ public class UMAPolicyProviderFactory implements PolicyProviderFactory<UmaPermis
         JSPolicyRepresentation rep = new JSPolicyRepresentation();
 
         rep.setName(KeycloakModelUtils.generateId());
-        rep.setCode(condition);
+        rep.setType(condition);
 
-        Policy associatedPolicy = policyStore.create(rep, policy.getResourceServer());
+        Policy associatedPolicy = policyStore.create(policy.getResourceServer(), rep);
 
         associatedPolicy.setOwner(owner);
 
@@ -410,7 +409,7 @@ public class UMAPolicyProviderFactory implements PolicyProviderFactory<UmaPermis
         rep.setName(KeycloakModelUtils.generateId());
         rep.addClient(client);
 
-        Policy associatedPolicy = policyStore.create(rep, policy.getResourceServer());
+        Policy associatedPolicy = policyStore.create(policy.getResourceServer(), rep);
 
         associatedPolicy.setOwner(owner);
 
@@ -423,7 +422,7 @@ public class UMAPolicyProviderFactory implements PolicyProviderFactory<UmaPermis
         rep.setName(KeycloakModelUtils.generateId());
         rep.addGroupPath(group);
 
-        Policy associatedPolicy = policyStore.create(rep, policy.getResourceServer());
+        Policy associatedPolicy = policyStore.create(policy.getResourceServer(), rep);
 
         associatedPolicy.setOwner(owner);
 
@@ -436,7 +435,7 @@ public class UMAPolicyProviderFactory implements PolicyProviderFactory<UmaPermis
         rep.setName(KeycloakModelUtils.generateId());
         rep.addRole(role, false);
 
-        Policy associatedPolicy = policyStore.create(rep, policy.getResourceServer());
+        Policy associatedPolicy = policyStore.create(policy.getResourceServer(), rep);
 
         associatedPolicy.setOwner(owner);
 
@@ -449,7 +448,7 @@ public class UMAPolicyProviderFactory implements PolicyProviderFactory<UmaPermis
         rep.setName(KeycloakModelUtils.generateId());
         rep.addUser(user);
 
-        Policy associatedPolicy = policyStore.create(rep, policy.getResourceServer());
+        Policy associatedPolicy = policyStore.create(policy.getResourceServer(), rep);
 
         associatedPolicy.setOwner(owner);
 
