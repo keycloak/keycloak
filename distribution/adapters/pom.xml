@@ -31,9 +31,7 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>fuse-adapter-zip</module>
         <module>js-adapter-zip</module>
-        <module>osgi</module>
         <module>wildfly-adapter</module>
     </modules>
 

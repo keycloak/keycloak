@@ -23,7 +23,6 @@
         <module>servlets</module>
         <module>app-profile-jee</module>
         <module>cors</module>
-        <module>fuse</module>
         <module>spring-boot-adapter-app</module>
     </modules>
 
