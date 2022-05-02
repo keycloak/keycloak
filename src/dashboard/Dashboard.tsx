@@ -26,14 +26,6 @@ import {
   TextContent,
   Title,
 } from "@patternfly/react-core";
-import {
-  TableComposable,
-  Tbody,
-  Td,
-  Th,
-  Thead,
-  Tr,
-} from "@patternfly/react-table";
 
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
@@ -48,6 +40,7 @@ import {
 import { DashboardTab, toDashboard } from "./routes/Dashboard";
 
 import "./dashboard.css";
+import { ProviderInfo } from "./ProviderInfo";
 
 const EmptyDashboard = () => {
   const { t } = useTranslation("dashboard");
@@ -221,33 +214,7 @@ const Dashboard = () => {
             title={<TabTitleText>{t("providerInfo")}</TabTitleText>}
             {...route("providers")}
           >
-            <PageSection variant="light">
-              <TableComposable variant="compact">
-                <Thead>
-                  <Tr>
-                    <Th width={20}>{t("spi")}</Th>
-                    <Th>{t("providers")}</Th>
-                  </Tr>
-                </Thead>
-                <Tbody>
-                  {Object.keys(serverInfo.providers || []).map((name) => (
-                    <Tr key={name}>
-                      <Td>{name}</Td>
-                      <Td>
-                        <ul>
-                          {Object.keys(
-                            serverInfo.providers?.[name].providers || []
-                          ).map((value) => (
-                            <li key={value}>{value}</li>
-                          ))}
-                        </ul>
-                      </Td>
-                    </Tr>
-                  ))}
-                </Tbody>
-              </TableComposable>
-              <ul></ul>
-            </PageSection>
+            <ProviderInfo />
           </Tab>
         </RoutableTabs>
       </PageSection>

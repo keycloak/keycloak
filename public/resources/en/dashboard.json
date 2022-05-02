@@ -16,5 +16,7 @@
   "providerInfo": "Provider info",
   "providers": "Providers",
   "realmInfo": "Realm info",
-  "spi": "SPI"
+  "spi": "SPI",
+  "showMore": "Show more",
+  "showLess": "Show less"
 }
