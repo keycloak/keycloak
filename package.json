@@ -91,7 +91,7 @@
     "jest": "^27.5.1",
     "lint-staged": "^12.4.1",
     "node-fetch": "^3.2.4",
-    "postcss": "^8.4.12",
+    "postcss": "^8.4.13",
     "postcss-import": "^14.1.0",
     "postcss-svg": "^3.0.0",
     "prettier": "^2.6.2",
