@@ -225,10 +225,9 @@ where ${HOST} is url of keycloak, for example: `keycloak-keycloak.192.168.42.91.
 
 ### Jetty
 
-At the moment we can run the testsuite with Jetty `9.2` and `9.4`.
+At the moment we can run the testsuite with Jetty `9.4`.
 Each version has its corresponding profile:
 
-* Jetty `9.2`: `app-server-jetty92`
 * Jetty `9.4`: `app-server-jetty94`
 
 Here's how to run the tests with Jetty `9.4`:
@@ -366,8 +365,6 @@ mvn -f testsuite/integration-arquillian/tests/other/springboot-tests/pom.xml \
     -Dadapter.container=[tomcat|undertow|jetty94] \
     [-Pspringboot26]
 ```
-
- **Note:** Spring Boot 2.x doesn't work with `jetty92` and `jetty93`, only `jetty94` is tested.
 
 ## Base UI tests
 Similarly to Admin Console tests, these tests are focused on UI, specifically on the parts of the server that are accessed by an end user (like Login page, or Account Console).

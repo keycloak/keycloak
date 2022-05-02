@@ -3,15 +3,11 @@
     keycloak-quarkus-dist:keycloak
     keycloak-api-docs-dist:keycloak-api-docs
 
-    keycloak-jetty92-adapter-dist:keycloak-oidc-jetty92-adapter
-    keycloak-jetty93-adapter-dist:keycloak-oidc-jetty93-adapter
     keycloak-jetty94-adapter-dist:keycloak-oidc-jetty94-adapter
     keycloak-js-adapter-npm-dist:keycloak-oidc-js-adapter
     keycloak-tomcat-adapter-dist:keycloak-oidc-tomcat-adapter
     keycloak-wildfly-adapter-dist:keycloak-oidc-wildfly-adapter
 
-    keycloak-saml-jetty92-adapter-dist:keycloak-saml-jetty92-adapter
-    keycloak-saml-jetty93-adapter-dist:keycloak-saml-jetty93-adapter
     keycloak-saml-jetty94-adapter-dist:keycloak-saml-jetty94-adapter
     keycloak-saml-tomcat-adapter-dist:keycloak-saml-tomcat-adapter
     keycloak-saml-wildfly-adapter-dist:keycloak-saml-wildfly-adapter
