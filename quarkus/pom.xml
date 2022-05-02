@@ -163,6 +163,7 @@
         <module>server</module>
         <module>dist</module>
         <module>tests</module>
+        <module>maven-plugin</module>
     </modules>
 
     <repositories>

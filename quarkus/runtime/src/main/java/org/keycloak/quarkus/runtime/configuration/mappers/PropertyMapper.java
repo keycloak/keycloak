@@ -24,16 +24,17 @@ import static org.keycloak.quarkus.runtime.configuration.Configuration.toEnvVarF
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
 
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 
-public class PropertyMapper {
+public class PropertyMapper<T> {
 
-    static PropertyMapper IDENTITY = new PropertyMapper(null, null, null, null, null,
-            false,null, null, false,Collections.emptyList(),null, true) {
+    static PropertyMapper IDENTITY = new PropertyMapper(null, null, null, null, null, null,
+            false,null, null, false,Collections.emptyList(),null, null,true) {
         @Override
         public ConfigValue getConfigValue(String name, ConfigSourceInterceptorContext context) {
             return context.proceed(name);
@@ -44,6 +45,7 @@ public class PropertyMapper {
     private final String from;
     private final String defaultValue;
     private final BiFunction<String, ConfigSourceInterceptorContext, String> mapper;
+    private final Function<String, T> convert;
     private final String mapFrom;
     private final boolean buildTime;
     private final String description;
@@ -51,17 +53,19 @@ public class PropertyMapper {
     private final Iterable<String> expectedValues;
     private final ConfigCategory category;
     private final String paramLabel;
+    private final Class<T> type;
     private final boolean hidden;
     private final String envVarFormat;
     private String cliFormat;
 
     PropertyMapper(String from, String to, String defaultValue, BiFunction<String, ConfigSourceInterceptorContext, String> mapper,
-            String mapFrom, boolean buildTime, String description, String paramLabel, boolean mask, Iterable<String> expectedValues,
-            ConfigCategory category, boolean hidden) {
+            Function<String, T> convert, String mapFrom, boolean buildTime, String description, String paramLabel, boolean mask,
+            Iterable<String> expectedValues, ConfigCategory category, Class<T> type, boolean hidden) {
         this.from = MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + from;
         this.to = to == null ? this.from : to;
         this.defaultValue = defaultValue;
         this.mapper = mapper == null ? PropertyMapper::defaultTransformer : mapper;
+        this.convert = convert;
         this.mapFrom = mapFrom;
         this.buildTime = buildTime;
         this.description = description;
@@ -69,21 +73,37 @@ public class PropertyMapper {
         this.mask = mask;
         this.expectedValues = expectedValues == null ? Collections.emptyList() : expectedValues;
         this.category = category != null ? category : ConfigCategory.GENERAL;
+        this.type = type;
         this.hidden = hidden;
         this.cliFormat = toCliFormat(from);
         this.envVarFormat = toEnvVarFormat(this.from);
     }
 
-    public static PropertyMapper.Builder builder(String fromProp, String toProp) {
+    public static <T> PropertyMapper.Builder<T> builder(String fromProp, String toProp) {
         return new PropertyMapper.Builder(fromProp, toProp);
     }
 
-    public static PropertyMapper.Builder builder(ConfigCategory category) {
+    public static <T> PropertyMapper.Builder<T> builder(ConfigCategory category) {
         return new PropertyMapper.Builder(category);
     }
 
     private static String defaultTransformer(String value, ConfigSourceInterceptorContext context) {
         return value;
+    }
+
+    public Function<String, T> getConverter() {
+        return this.convert;
+    }
+
+    public Class<T> getType() {
+        if (this.convert != null) {
+            if (this.type == null) {
+                throw new IllegalArgumentException("If you specify a convert function you should explicitly set, as well, the returning type " + this.from);
+            }
+            return this.type;
+        } else {
+            return (Class<T>) String.class;
+        }
     }
 
     ConfigValue getConfigValue(ConfigSourceInterceptorContext context) {
@@ -213,12 +233,13 @@ public class PropertyMapper {
         return null;
     }
 
-    public static class Builder {
+    public static class Builder<T> {
 
         private String from;
         private String to;
         private String defaultValue;
         private BiFunction<String, ConfigSourceInterceptorContext, String> mapper;
+        private Function<String, T> convert;
         private String description;
         private String mapFrom = null;
         private Iterable<String> expectedValues = Collections.emptyList();
@@ -226,95 +247,103 @@ public class PropertyMapper {
         private boolean isMasked = false;
         private ConfigCategory category = ConfigCategory.GENERAL;
         private String paramLabel;
+        private Class<T> type;
         private boolean hidden;
 
-        public Builder(ConfigCategory category) {
+        public <T> Builder(ConfigCategory category) {
             this.category = category;
         }
 
-        public Builder(String fromProp, String toProp) {
+        public <T> Builder(String fromProp, String toProp) {
             this.from = fromProp;
             this.to = toProp;
         }
 
-        public Builder from(String from) {
+        public Builder<T> from(String from) {
             this.from = from;
             return this;
         }
 
-        public Builder to(String to) {
+        public Builder<T> to(String to) {
             this.to = to;
             return this;
         }
 
 
-        public Builder defaultValue(String defaultValue) {
+        public Builder<T> defaultValue(String defaultValue) {
             this.defaultValue = defaultValue;
             return this;
         }
 
-        public Builder transformer(BiFunction<String, ConfigSourceInterceptorContext, String> mapper) {
+        public Builder<T> transformer(BiFunction<String, ConfigSourceInterceptorContext, String> mapper) {
             this.mapper = mapper;
             return this;
         }
 
-        public Builder description(String description) {
+        public Builder<T> converter(Function<String, T> convert) {
+            this.convert = convert;
+            return this;
+        }
+
+        public Builder<T> description(String description) {
             this.description = description;
             return this;
         }
 
-        public Builder paramLabel(String label) {
+        public Builder<T> paramLabel(String label) {
             this.paramLabel = label;
             return this;
         }
 
-        public Builder mapFrom(String mapFrom) {
+        public Builder<T> mapFrom(String mapFrom) {
             this.mapFrom = mapFrom;
             return this;
         }
 
-        public Builder expectedValues(Iterable<String> expectedValues) {
+        public Builder<T> expectedValues(Iterable<String> expectedValues) {
             this.expectedValues = expectedValues;
             return this;
         }
 
-        public Builder expectedValues(String... expectedValues) {
+        public Builder<T> expectedValues(String... expectedValues) {
             this.expectedValues = Arrays.asList(expectedValues);
             return this;
         }
 
-        public Builder isBuildTimeProperty(boolean isBuildTime) {
+        public Builder<T> isBuildTimeProperty(boolean isBuildTime) {
             this.isBuildTimeProperty = isBuildTime;
             return this;
         }
 
-        public Builder isMasked(boolean isMasked) {
+        public Builder<T> isMasked(boolean isMasked) {
             this.isMasked = isMasked;
             return this;
         }
 
-        public Builder category(ConfigCategory category) {
+        public Builder<T> category(ConfigCategory category) {
             this.category = category;
             return this;
         }
 
-        public Builder type(Class<Boolean> type) {
+        public Builder<T> type(Class<T> type) {
             if (Boolean.class.equals(type)) {
                 expectedValues(Boolean.TRUE.toString(), Boolean.FALSE.toString());
                 paramLabel(defaultValue == null ? "true|false" : defaultValue);
                 defaultValue(defaultValue == null ? Boolean.FALSE.toString() : defaultValue);
             }
+
+            this.type = type;
             return this;
         }
 
-        public Builder hidden(boolean hidden) {
+        public Builder<T> hidden(boolean hidden) {
             this.hidden = hidden;
             return this;
         }
 
-        public PropertyMapper build() {
-            return new PropertyMapper(from, to, defaultValue, mapper, mapFrom, isBuildTimeProperty, description, paramLabel,
-                    isMasked, expectedValues, category, hidden);
+        public PropertyMapper<T> build() {
+            return new PropertyMapper<T>(from, to, defaultValue, mapper, convert, mapFrom, isBuildTimeProperty, description,
+                    paramLabel, isMasked, expectedValues, category, type, hidden);
         }
     }
 }

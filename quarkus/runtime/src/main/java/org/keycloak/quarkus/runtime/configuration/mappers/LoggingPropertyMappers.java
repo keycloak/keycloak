@@ -175,7 +175,7 @@ public final class LoggingPropertyMappers {
         LogContext.getLogContext().getLogger(category).setLevel(toLevel(level));
     }
 
-    private static PropertyMapper.Builder builder() {
-        return PropertyMapper.builder(ConfigCategory.LOGGING);
+    private static <T> PropertyMapper.Builder<T> builder() {
+        return PropertyMapper.<T> builder(ConfigCategory.LOGGING);
     }
 }

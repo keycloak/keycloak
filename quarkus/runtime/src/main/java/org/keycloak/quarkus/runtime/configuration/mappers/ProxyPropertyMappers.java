@@ -56,7 +56,7 @@ final class ProxyPropertyMappers {
         return String.valueOf(!"none".equals(proxy));
     }
 
-    private static PropertyMapper.Builder builder() {
-        return PropertyMapper.builder(ConfigCategory.PROXY);
+    private static <T> PropertyMapper.Builder<T> builder() {
+        return PropertyMapper.<T> builder(ConfigCategory.PROXY);
     }
 }

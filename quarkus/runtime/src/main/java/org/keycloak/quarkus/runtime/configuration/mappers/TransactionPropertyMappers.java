@@ -32,8 +32,8 @@ public class TransactionPropertyMappers {
         return "enabled";
     }
 
-    private static PropertyMapper.Builder builder() {
-        return PropertyMapper.builder(ConfigCategory.TRANSACTION);
+    private static <T> PropertyMapper.Builder<T> builder() {
+        return PropertyMapper.<T> builder(ConfigCategory.TRANSACTION);
     }
 
 }

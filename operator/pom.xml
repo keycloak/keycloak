@@ -160,6 +160,19 @@
         </pluginManagement>
         <plugins>
             <plugin>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-operator-maven-plugin</artifactId>
+                <version>${project.version}</version>
+                <executions>
+                    <execution>
+                        <id>generate-server-config</id>
+                        <goals>
+                            <goal>keycloak-operator-codegen</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>io.quarkus</groupId>
                 <artifactId>quarkus-maven-plugin</artifactId>
                 <version>${quarkus.version}</version>
@@ -222,6 +235,7 @@
                         <configuration>
                             <sources>
                                 <source>${basedir}/target/keycloak-core</source>
+                                <source>${basedir}/target/generated-sources/java</source>
                             </sources>
                         </configuration>
                     </execution>

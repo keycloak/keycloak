@@ -5,6 +5,7 @@ import io.smallrye.config.ConfigValue;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.Messages;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
+import org.keycloak.quarkus.runtime.configuration.validators.PortValidator;
 
 import java.io.File;
 import java.nio.file.Paths;
@@ -17,8 +18,8 @@ final class HttpPropertyMappers {
 
     private HttpPropertyMappers(){}
 
-    public static PropertyMapper[] getHttpPropertyMappers() {
-        return new PropertyMapper[] {
+    public static PropertyMapper<?>[] getHttpPropertyMappers() {
+        return new PropertyMapper<?>[] {
                 builder().from("http-enabled")
                         .to("quarkus.http.insecure-requests")
                         .defaultValue(Boolean.FALSE.toString())
@@ -40,9 +41,11 @@ final class HttpPropertyMappers {
                         .paramLabel("path")
                         .isBuildTimeProperty(true)
                         .build(),
-                builder().from("http-port")
+                HttpPropertyMappers.<Integer> builder().from("http-port")
                         .to("quarkus.http.port")
                         .defaultValue(String.valueOf(8080))
+                        .type(Integer.class)
+                        .converter(PortValidator::validate)
                         .description("The used HTTP port.")
                         .paramLabel("port")
                         .build(),
@@ -159,8 +162,8 @@ final class HttpPropertyMappers {
         return null;
     }
 
-    private static PropertyMapper.Builder builder() {
-        return PropertyMapper.builder(ConfigCategory.HTTP);
+    private static <T> PropertyMapper.Builder<T> builder() {
+        return PropertyMapper.<T> builder(ConfigCategory.HTTP);
     }
 }
 

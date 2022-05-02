@@ -129,8 +129,8 @@ final class DatabasePropertyMappers {
         };
     }
 
-    private static PropertyMapper.Builder builder() {
-        return PropertyMapper.builder(ConfigCategory.DATABASE);
+    private static <T> PropertyMapper.Builder<T> builder() {
+        return PropertyMapper.<T> builder(ConfigCategory.DATABASE);
     }
 
     private static String resolveUsername(String value, ConfigSourceInterceptorContext context) {

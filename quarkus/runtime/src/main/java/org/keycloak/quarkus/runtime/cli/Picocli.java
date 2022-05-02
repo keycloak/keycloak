@@ -356,6 +356,13 @@ public final class Picocli {
 
         CommandLine cmd = new CommandLine(spec);
 
+        // TODO: check if really needed
+        for (PropertyMapper mapper: PropertyMappers.getMappers()) {
+            if (mapper.getConverter() != null) {
+                cmd.registerConverter(mapper.getType(), PicocliConverterAdapter.build(mapper.getConverter()));
+            }
+        }
+
         cmd.setExecutionExceptionHandler(new ExecutionExceptionHandler());
         cmd.setParameterExceptionHandler(new ShortErrorMessageHandler());
         cmd.setHelpFactory(new HelpFactory());
@@ -408,15 +415,21 @@ public final class Picocli {
                 String defaultValue = mapper.getDefaultValue();
                 Iterable<String> expectedValues = mapper.getExpectedValues();
 
-                argGroupBuilder.addArg(OptionSpec.builder(name)
-                        .defaultValue(defaultValue)
-                        .description(description)
-                        .paramLabel(mapper.getParamLabel())
-                        .completionCandidates(expectedValues)
-                        .parameterConsumer(PropertyMapperParameterConsumer.INSTANCE)
-                        .type(String.class)
-                        .hidden(mapper.isHidden())
-                        .build());
+                OptionSpec.Builder optBuilder = OptionSpec.builder(name)
+                    .defaultValue(defaultValue)
+                    .description(description)
+                    .paramLabel(mapper.getParamLabel())
+                    .completionCandidates(expectedValues)
+                    .type(mapper.getType())
+                    .hidden(mapper.isHidden());
+
+                if (mapper.getConverter() == null) {
+                    optBuilder.parameterConsumer(PropertyMapperParameterConsumer.INSTANCE);
+                } else {
+                    optBuilder.converters(PicocliConverterAdapter.build(mapper.getConverter()));
+                }
+
+                argGroupBuilder.addArg(optBuilder.build());
             }
 
             cSpec.addArgGroup(argGroupBuilder.build());
