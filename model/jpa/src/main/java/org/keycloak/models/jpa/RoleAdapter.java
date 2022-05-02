@@ -17,16 +17,23 @@
 
 package org.keycloak.models.jpa;
 
+import org.hibernate.Hibernate;
+import org.hibernate.SynchronizeableQuery;
+import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.jpa.entities.CompositeRoleEntity;
+import org.keycloak.models.jpa.entities.CompositeRoleEntityKey;
 import org.keycloak.models.jpa.entities.RoleAttributeEntity;
 import org.keycloak.models.jpa.entities.RoleEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
+import javax.persistence.TypedQuery;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -41,6 +48,7 @@ import java.util.stream.Stream;
  * @version $Revision: 1 $
  */
 public class RoleAdapter implements RoleModel, JpaModel<RoleEntity> {
+            
     protected RoleEntity role;
     protected EntityManager em;
     protected RealmModel realm;
@@ -89,30 +97,95 @@ public class RoleAdapter implements RoleModel, JpaModel<RoleEntity> {
 
     @Override
     public boolean isComposite() {
-        return getCompositesStream().count() > 0;
+        // Use the composite role collection if already loaded, or use a named query to avoid triggering its lazy loading
+        if (Hibernate.isPropertyInitialized(getEntity(), "compositeRoles")) {
+            return !getEntity().getCompositeRoles().isEmpty();
+        }
+        else {
+            TypedQuery<String> query = em.createNamedQuery("getChildrenRoleIds", String.class);
+            query.setParameter("roleId", getId());
+            query.setMaxResults(1);
+            return !query.getResultList().isEmpty();
+        }
     }
 
     @Override
     public void addCompositeRole(RoleModel role) {
+        // Avoid lazy loading the composite role collection if not already done
+        // Not using Persistence.getPersistenceUtil().isLoaded(Object, String) as this is not working
+        // properly (Hibernate 5.6) - still returning false even after the collection was lazy loaded
+        if (Hibernate.isPropertyInitialized(getEntity(), "compositeRoles")) {
+            addCompositeRoleUsingLoadedCompositeCollection(role);
+        }
+        else {
+            addCompositeRoleWithoutLoadingCompositeCollection(role);
+        }
+    }
+
+    private void addCompositeRoleUsingLoadedCompositeCollection(RoleModel role) {
         RoleEntity entity = toRoleEntity(role);
+        // Why performing this loop at all? The semantic of Set.add(T) ensures that the operation
+        // is performed only if there is not entry already...
         for (RoleEntity composite : getEntity().getCompositeRoles()) {
             if (composite.equals(entity)) return;
         }
         getEntity().getCompositeRoles().add(entity);
     }
 
+    private void addCompositeRoleWithoutLoadingCompositeCollection(RoleModel role) {
+        // Ensure that the entry does not exist already - will hit the database,
+        // but it's required to maintain the semantic of method #addCompositeRole(RoleModel)
+        CompositeRoleEntityKey compositeKey = new CompositeRoleEntityKey(this.getId(), role.getId());
+        if (em.find(CompositeRoleEntity.class, compositeKey) == null) {
+            // Using a native query to perform insertion (not possible with JPQL), allowing to instruct
+            // the auto-flushing mechanism which query spaces (tables) should be flushed
+            // (and invalidated in 2nd level cache) before executing it.
+            String compositeRoleTable = JpaUtils.getTableNameForNativeQuery("COMPOSITE_ROLE", em);
+            Query q = em.createNativeQuery("insert into " + compositeRoleTable + " (COMPOSITE, CHILD_ROLE) values (:composite, :child)")
+                    .setParameter("composite", this.getId())
+                    .setParameter("child", role.getId())
+                    ;
+            // Table for the RoleEntity class is added to the query space so that
+            // any pending operation in this table is flushed as well.
+            SynchronizeableQuery<?> sq = q.unwrap(SynchronizeableQuery.class);
+            sq.addSynchronizedEntityClass(CompositeRoleEntity.class, RoleEntity.class);
+            q.executeUpdate();
+        }
+    }
+
     @Override
     public void removeCompositeRole(RoleModel role) {
+        // Avoid lazy loading the composite role collection if not already done
+        // Not using Persistence.getPersistenceUtil().isLoaded(Object, String) as this is not working
+        // properly (Hibernate 5.6) - still returning false even after the collection was lazy loaded
+        if (Hibernate.isPropertyInitialized(getEntity(), "compositeRoles")) {
+            removeCompositeRoleUsingLoadedCompositeCollection(role);
+        }
+        else {
+            removeCompositeRoleWithoutLoadingCompositeCollection(role);
+        }
+    }
+
+    private void removeCompositeRoleUsingLoadedCompositeCollection(RoleModel role) {
         RoleEntity entity = toRoleEntity(role);
         getEntity().getCompositeRoles().remove(entity);
     }
 
+    private void removeCompositeRoleWithoutLoadingCompositeCollection(RoleModel role) {
+        // Using a named query here to avoid the two-steps find() + delete() operation when using
+        // EntityManager.
+        em.createNamedQuery("removeCompositeAndChildRoleEntry")
+            .setParameter("compositeId", this.getId())
+            .setParameter("childId", role.getId())
+            .executeUpdate();
+    }
+    
     @Override
     public Stream<RoleModel> getCompositesStream() {
         Stream<RoleModel> composites = getEntity().getCompositeRoles().stream().map(c -> new RoleAdapter(session, realm, em, c));
         return composites.filter(Objects::nonNull);
     }
-
+    
     @Override
     public Stream<RoleModel> getCompositesStream(String search, Integer first, Integer max) {
         return session.roles().getRolesStream(realm,
@@ -214,4 +287,5 @@ public class RoleAdapter implements RoleModel, JpaModel<RoleEntity> {
         }
         return em.getReference(RoleEntity.class, model.getId());
     }
+
 }
