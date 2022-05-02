@@ -152,7 +152,7 @@
   "unAssignRole": "Unassign",
   "hideInheritedRoles": "Hide inherited roles",
   "assignRolesTo": "Assign roles to {{client}} account",
-  "inherentFrom": "Inherited from",
+  "inherent": "Inherited",
   "unitLabel": "Select a time unit",
   "times": {
     "seconds": "Seconds",

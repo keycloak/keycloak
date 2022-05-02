@@ -19,7 +19,7 @@ import type { Clients } from "@keycloak/keycloak-admin-client/lib/resources/clie
 import type KeycloakAdminClient from "@keycloak/keycloak-admin-client";
 import { AddRoleMappingModal } from "./AddRoleMappingModal";
 import { KeycloakDataTable } from "../table-toolbar/KeycloakDataTable";
-import { emptyFormatter } from "../../util";
+import { emptyFormatter, upperCaseFormatter } from "../../util";
 import { useAlerts } from "../alert/Alerts";
 import { useConfirmDialog } from "../confirm-dialog/ConfirmDialog";
 import { useAdminClient } from "../../context/auth/AdminClient";
@@ -63,11 +63,7 @@ export const mapRoles = (
 export const ServiceRole = ({ role, client }: Row) => (
   <>
     {client && (
-      <Badge
-        key={`${client.id}-${role.id}`}
-        isRead
-        className="keycloak-admin--role-mapping__client-name"
-      >
+      <Badge isRead className="keycloak-admin--role-mapping__client-name">
         {client.clientId}
       </Badge>
     )}
@@ -287,6 +283,11 @@ export const RoleMapping = ({
             displayKey: t("common:name"),
             transforms: [cellWidth(30)],
             cellRenderer: ServiceRole,
+          },
+          {
+            name: "role.isInherited",
+            displayKey: t("common:inherent"),
+            cellFormatters: [upperCaseFormatter(), emptyFormatter()],
           },
           {
             name: "role.description",
