@@ -67,6 +67,8 @@
   "flowName": "Flow name",
   "searchForFlow": "Search for flow",
   "usedBy": "Used by",
+  "flowUsedBy": "Flow used by",
+  "flowUsedByDescription": "This flow is applied by the following {{value}}",
   "buildIn": "Built-in",
   "appliedByProviders": "Applied by the following providers",
   "appliedByClients": "Applied by the following clients",

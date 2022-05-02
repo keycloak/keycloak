@@ -8,12 +8,10 @@ import {
   ButtonVariant,
   Label,
   PageSection,
-  Popover,
   Tab,
   TabTitleText,
   ToolbarItem,
 } from "@patternfly/react-core";
-import { CheckCircleIcon } from "@patternfly/react-icons";
 
 import type AuthenticationFlowRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticationFlowRepresentation";
 import { useAdminClient } from "../context/auth/AdminClient";
@@ -33,12 +31,13 @@ import { RequiredActions } from "./RequiredActions";
 import { Policies } from "./policies/Policies";
 import helpUrls from "../help-urls";
 import { BindFlowDialog } from "./BindFlowDialog";
+import { UsedBy } from "./components/UsedBy";
 
 import "./authentication-section.css";
 
 type UsedBy = "specificClients" | "default" | "specificProviders";
 
-type AuthenticationType = AuthenticationFlowRepresentation & {
+export type AuthenticationType = AuthenticationFlowRepresentation & {
   usedBy: { type?: UsedBy; values: string[] };
 };
 
@@ -64,7 +63,7 @@ export default function AuthenticationSection() {
   const [bindFlowOpen, toggleBindFlow] = useToggle();
 
   const loader = async () => {
-    const [clients, idps, realmRep, flows] = await Promise.all([
+    const [allClients, allIdps, realmRep, flows] = await Promise.all([
       adminClient.clients.find(),
       adminClient.identityProviders.find(),
       adminClient.realms.findOne({ realm }),
@@ -80,31 +79,32 @@ export default function AuthenticationSection() {
 
     for (const flow of flows as AuthenticationType[]) {
       flow.usedBy = { values: [] };
-      const client = clients.find(
+      const clients = allClients.filter(
         (client) =>
           client.authenticationFlowBindingOverrides &&
           (client.authenticationFlowBindingOverrides["direct_grant"] ===
             flow.id ||
             client.authenticationFlowBindingOverrides["browser"] === flow.id)
       );
-      if (client) {
+      if (clients.length > 0) {
         flow.usedBy.type = "specificClients";
-        flow.usedBy.values.push(client.clientId!);
+        flow.usedBy.values = clients.map(({ clientId }) => clientId!);
       }
 
-      const idp = idps.find(
+      const idps = allIdps.filter(
         (idp) =>
           idp.firstBrokerLoginFlowAlias === flow.alias ||
           idp.postBrokerLoginFlowAlias === flow.alias
       );
-      if (idp) {
+      if (idps.length > 0) {
         flow.usedBy.type = "specificProviders";
-        flow.usedBy.values.push(idp.alias!);
+        flow.usedBy.values = idps.map(({ alias }) => alias!);
       }
 
       const isDefault = defaultFlows.includes(flow.alias);
       if (isDefault) {
         flow.usedBy.type = "default";
+        flow.usedBy.values.push(flow.alias!);
       }
     }
 
@@ -134,47 +134,8 @@ export default function AuthenticationSection() {
     },
   });
 
-  const UsedBy = ({ id, usedBy: { type, values } }: AuthenticationType) => (
-    <>
-      {(type === "specificProviders" || type === "specificClients") && (
-        <Popover
-          key={id}
-          aria-label={t("usedBy")}
-          bodyContent={
-            <div key={`usedBy-${id}-${values}`}>
-              {t(
-                "appliedBy" +
-                  (type === "specificClients" ? "Clients" : "Providers")
-              )}{" "}
-              {values.map((used, index) => (
-                <>
-                  <strong>{used}</strong>
-                  {index < values.length - 1 ? ", " : ""}
-                </>
-              ))}
-            </div>
-          }
-        >
-          <>
-            <CheckCircleIcon
-              className="keycloak_authentication-section__usedby"
-              key={`icon-${id}`}
-            />{" "}
-            {t(type)}
-          </>
-        </Popover>
-      )}
-      {type === "default" && (
-        <>
-          <CheckCircleIcon
-            className="keycloak_authentication-section__usedby"
-            key={`icon-${id}`}
-          />{" "}
-          {t("default")}
-        </>
-      )}
-      {!type && t("notInUse")}
-    </>
+  const UsedByRenderer = (authType: AuthenticationType) => (
+    <UsedBy authType={authType} />
   );
 
   const AliasRenderer = ({
@@ -296,7 +257,7 @@ export default function AuthenticationSection() {
                 {
                   name: "usedBy",
                   displayKey: "authentication:usedBy",
-                  cellRenderer: UsedBy,
+                  cellRenderer: UsedByRenderer,
                 },
                 {
                   name: "description",
