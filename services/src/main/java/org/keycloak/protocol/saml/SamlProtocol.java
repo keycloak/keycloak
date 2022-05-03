@@ -42,7 +42,7 @@ import org.keycloak.models.KeyManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.SingleUseTokenStoreProvider;
+import org.keycloak.models.SingleUseStoreProvider;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.LoginProtocol;
@@ -155,7 +155,7 @@ public class SamlProtocol implements LoginProtocol {
     protected EventBuilder event;
 
     protected ArtifactResolver artifactResolver;
-    protected SingleUseTokenStoreProvider singleUseTokenStore;
+    protected SingleUseStoreProvider singleUseStore;
 
     @Override
     public SamlProtocol setSession(KeycloakSession session) {
@@ -194,11 +194,11 @@ public class SamlProtocol implements LoginProtocol {
         return artifactResolver;
     }
 
-    private SingleUseTokenStoreProvider getSingleUseTokenStore() {
-        if (singleUseTokenStore == null) {
-            singleUseTokenStore = session.getProvider(SingleUseTokenStoreProvider.class);
+    private SingleUseStoreProvider getSingleUseStore() {
+        if (singleUseStore == null) {
+            singleUseStore = session.getProvider(SingleUseStoreProvider.class);
         }
-        return singleUseTokenStore;
+        return singleUseStore;
     }
 
     @Override
@@ -933,7 +933,7 @@ public class SamlProtocol implements LoginProtocol {
         HashMap<String, String> notes = new HashMap<>();
         notes.put(USER_SESSION_ID, clientSessionModel.getUserSession().getId());
         notes.put(CLIENT_SESSION_ID, clientSessionModel.getClient().getId());
-        getSingleUseTokenStore().put(artifact, realm.getAccessCodeLifespan(), notes);
+        getSingleUseStore().put(artifact, realm.getAccessCodeLifespan(), notes);
         
         return artifact;
     }

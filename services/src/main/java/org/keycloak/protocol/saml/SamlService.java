@@ -60,7 +60,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.KeycloakUriInfo;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.SingleUseTokenStoreProvider;
+import org.keycloak.models.SingleUseStoreProvider;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.AuthorizationEndpointBase;
 import org.keycloak.protocol.LoginProtocol;
@@ -1104,8 +1104,8 @@ public class SamlService extends AuthorizationEndpointBase {
     }
 
 
-    private SingleUseTokenStoreProvider getSingleUseTokenStore() {
-        return session.getProvider(SingleUseTokenStoreProvider.class);
+    private SingleUseStoreProvider getSingleUseStore() {
+        return session.getProvider(SingleUseStoreProvider.class);
     }
 
     /**
@@ -1136,7 +1136,7 @@ public class SamlService extends AuthorizationEndpointBase {
         }
 
         // Obtain details of session that issued artifact and check if it corresponds to issuer of Resolve message
-        Map<String, String> sessionMapping = getSingleUseTokenStore().get(artifact);
+        Map<String, String> sessionMapping = getSingleUseStore().get(artifact);
 
         if (sessionMapping == null) {
             logger.errorf("No data stored for artifact %s", artifact);
@@ -1179,7 +1179,7 @@ public class SamlService extends AuthorizationEndpointBase {
         }
 
         // Artifact is successfully resolved, we can remove session mapping from storage
-        if (getSingleUseTokenStore().remove(artifact) == null) {
+        if (getSingleUseStore().remove(artifact) == null) {
             logger.debugf("Artifact %s was already removed", artifact);
         }
 

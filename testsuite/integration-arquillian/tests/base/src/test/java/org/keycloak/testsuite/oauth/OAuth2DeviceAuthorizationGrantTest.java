@@ -707,7 +707,7 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
     }
 
     @Test
-    public void testPooling() throws Exception {
+    public void testPolling() throws Exception {
         getTestingClient().testing().setTestingInfinispanTimeService();
 
         try {

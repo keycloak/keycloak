@@ -26,7 +26,7 @@ import org.infinispan.commons.api.BasicCache;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.SingleUseTokenStoreProvider;
+import org.keycloak.models.SingleUseStoreProvider;
 import org.keycloak.models.sessions.infinispan.entities.ActionTokenValueEntity;
 import org.keycloak.connections.infinispan.InfinispanUtil;
 
@@ -37,14 +37,14 @@ import org.keycloak.connections.infinispan.InfinispanUtil;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class InfinispanSingleUseTokenStoreProvider implements SingleUseTokenStoreProvider {
+public class InfinispanSingleUseStoreProvider implements SingleUseStoreProvider {
 
-    public static final Logger logger = Logger.getLogger(InfinispanSingleUseTokenStoreProvider.class);
+    public static final Logger logger = Logger.getLogger(InfinispanSingleUseStoreProvider.class);
 
     private final Supplier<BasicCache<String, ActionTokenValueEntity>> tokenCache;
     private final KeycloakSession session;
 
-    public InfinispanSingleUseTokenStoreProvider(KeycloakSession session, Supplier<BasicCache<String, ActionTokenValueEntity>> actionKeyCache) {
+    public InfinispanSingleUseStoreProvider(KeycloakSession session, Supplier<BasicCache<String, ActionTokenValueEntity>> actionKeyCache) {
         this.session = session;
         this.tokenCache = actionKeyCache;
     }

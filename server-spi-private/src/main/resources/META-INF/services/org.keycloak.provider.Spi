@@ -27,7 +27,7 @@ org.keycloak.models.RoleSpi
 org.keycloak.models.DeploymentStateSpi
 org.keycloak.models.ActionTokenStoreSpi
 org.keycloak.models.OAuth2DeviceUserCodeSpi
-org.keycloak.models.SingleUseTokenStoreSpi
+org.keycloak.models.SingleUseStoreSpi
 org.keycloak.models.UserSessionSpi
 org.keycloak.models.UserLoginFailureSpi
 org.keycloak.models.UserSpi

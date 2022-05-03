@@ -35,7 +35,7 @@ import org.keycloak.models.OAuth2DeviceCodeModel;
 import org.keycloak.models.OAuth2DeviceUserCodeModel;
 import org.keycloak.models.OAuth2DeviceUserCodeProvider;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.SingleUseTokenStoreProvider;
+import org.keycloak.models.SingleUseStoreProvider;
 import org.keycloak.protocol.AuthorizationEndpointBase;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpointChecker;
@@ -164,10 +164,10 @@ public class DeviceEndpoint extends AuthorizationEndpointBase implements RealmRe
         // To inform "expired_token" to the client, the lifespan of the cache provider is longer than device code
         int lifespanSeconds = expiresIn + interval + 10;
 
-        SingleUseTokenStoreProvider singleUseTokenStore = session.getProvider(SingleUseTokenStoreProvider.class);
+        SingleUseStoreProvider singleUseStore = session.getProvider(SingleUseStoreProvider.class);
 
-        singleUseTokenStore.put(deviceCode.serializeKey(), lifespanSeconds, deviceCode.toMap());
-        singleUseTokenStore.put(userCode.serializeKey(), lifespanSeconds, userCode.serializeValue());
+        singleUseStore.put(deviceCode.serializeKey(), lifespanSeconds, deviceCode.toMap());
+        singleUseStore.put(userCode.serializeKey(), lifespanSeconds, userCode.serializeValue());
 
         try {
             String deviceUrl = DeviceGrantType.oauth2DeviceVerificationUrl(session.getContext().getUri()).build(realm.getName())
@@ -292,13 +292,13 @@ public class DeviceEndpoint extends AuthorizationEndpointBase implements RealmRe
     }
 
     public static OAuth2DeviceCodeModel getDeviceByUserCode(KeycloakSession session, RealmModel realm, String userCode) {
-        SingleUseTokenStoreProvider singleUseTokenStore = session.getProvider(SingleUseTokenStoreProvider.class);
-        Map<String, String> notes = singleUseTokenStore.get(OAuth2DeviceUserCodeModel.createKey(realm, userCode));
+        SingleUseStoreProvider singleUseStore = session.getProvider(SingleUseStoreProvider.class);
+        Map<String, String> notes = singleUseStore.get(OAuth2DeviceUserCodeModel.createKey(realm, userCode));
 
         if (notes != null) {
             OAuth2DeviceUserCodeModel data = OAuth2DeviceUserCodeModel.fromCache(realm, userCode, notes);
             String deviceCode = data.getDeviceCode();
-            notes = singleUseTokenStore.get(OAuth2DeviceCodeModel.createKey(deviceCode));
+            notes = singleUseStore.get(OAuth2DeviceCodeModel.createKey(deviceCode));
 
             return notes != null ? OAuth2DeviceCodeModel.fromCache(realm, deviceCode, notes) : null;
         }

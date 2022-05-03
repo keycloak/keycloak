@@ -22,11 +22,11 @@ import org.keycloak.provider.Provider;
 import java.util.Map;
 
 /**
- * Provides a cache for storing data associated to tokens that are represented by a {@code String} key.
+ * Provides a cache to store data for single-use use case. Data are represented by a {@code String} key.
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public interface SingleUseTokenStoreProvider extends Provider {
+public interface SingleUseStoreProvider extends Provider {
 
     /**
      * Stores the given data and guarantees that data should be available in the store for at least the time specified by {@param lifespanSeconds} parameter
@@ -62,11 +62,11 @@ public interface SingleUseTokenStoreProvider extends Provider {
     boolean replace(String key, Map<String, String> notes);
 
     /**
-     * Will try to put the token into the cache. It will succeed just if token is not already there.
+     * Will try to put the key into the cache. It will succeed just if key is not already there.
      *
      * @param key
-     * @param lifespanInSeconds Minimum lifespan for which successfully added token will be kept in the cache.
-     * @return true if token was successfully put into the cache. This means that same token wasn't in the cache before
+     * @param lifespanInSeconds Minimum lifespan for which successfully added key will be kept in the cache.
+     * @return true if the key was successfully put into the cache. This means that same key wasn't in the cache before
      */
     boolean putIfAbsent(String key, long lifespanInSeconds);
 

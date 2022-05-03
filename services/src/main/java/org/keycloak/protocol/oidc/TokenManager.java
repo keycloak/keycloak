@@ -49,7 +49,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.SingleUseTokenStoreProvider;
+import org.keycloak.models.SingleUseStoreProvider;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
@@ -1352,8 +1352,8 @@ public class TokenManager {
 
         @Override
         public boolean test(AccessToken token) {
-            SingleUseTokenStoreProvider singleUseTokenStore = session.getProvider(SingleUseTokenStoreProvider.class);
-            return singleUseTokenStore.get(token.getId()) == null;
+            SingleUseStoreProvider singleUseStore = session.getProvider(SingleUseStoreProvider.class);
+            return singleUseStore.get(token.getId()) == null;
         }
     }
 

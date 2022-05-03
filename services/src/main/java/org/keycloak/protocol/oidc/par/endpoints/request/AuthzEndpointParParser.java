@@ -25,7 +25,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.SingleUseTokenStoreProvider;
+import org.keycloak.models.SingleUseStoreProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
 import org.keycloak.protocol.oidc.endpoints.request.AuthzEndpointRequestObjectParser;
@@ -50,7 +50,7 @@ public class AuthzEndpointParParser extends AuthzEndpointRequestParser {
     public AuthzEndpointParParser(KeycloakSession session, ClientModel client, String requestUri) {
         this.session = session;
         this.client = client;
-        SingleUseTokenStoreProvider singleUseTokenStore = session.getProvider(SingleUseTokenStoreProvider.class);
+        SingleUseStoreProvider singleUseStore = session.getProvider(SingleUseStoreProvider.class);
         String key;
         try {
             key = requestUri.substring(ParEndpoint.REQUEST_URI_PREFIX_LENGTH);
@@ -58,7 +58,7 @@ public class AuthzEndpointParParser extends AuthzEndpointRequestParser {
             logger.warnf(re,"Unable to parse request_uri: %s", requestUri);
             throw new RuntimeException("Unable to parse request_uri");
         }
-        Map<String, String> retrievedRequest = singleUseTokenStore.remove(key);
+        Map<String, String> retrievedRequest = singleUseStore.remove(key);
         if (retrievedRequest == null) {
             throw new RuntimeException("PAR not found. not issued or used multiple times.");
         }

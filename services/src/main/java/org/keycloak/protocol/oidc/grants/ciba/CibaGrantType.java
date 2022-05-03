@@ -178,8 +178,8 @@ public class CibaGrantType {
             throw new CorsErrorResponseException(cors, OAuthErrorException.EXPIRED_TOKEN, "authentication timed out", Response.Status.BAD_REQUEST);
         }
 
-        if (!DeviceGrantType.isPoolingAllowed(session, deviceCode)) {
-            logDebug("pooling.", request);
+        if (!DeviceGrantType.isPollingAllowed(session, deviceCode)) {
+            logDebug("polling.", request);
             throw new CorsErrorResponseException(cors, OAuthErrorException.SLOW_DOWN, "too early to access", Response.Status.BAD_REQUEST);
         }
 

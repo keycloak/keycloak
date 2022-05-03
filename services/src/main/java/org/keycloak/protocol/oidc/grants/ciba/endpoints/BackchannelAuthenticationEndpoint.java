@@ -29,7 +29,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OAuth2DeviceCodeModel;
 import org.keycloak.models.OAuth2DeviceUserCodeModel;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.SingleUseTokenStoreProvider;
+import org.keycloak.models.SingleUseStoreProvider;
 import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.grants.ciba.CibaGrantType;
 import org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelProvider;
@@ -123,7 +123,7 @@ public class BackchannelAuthenticationEndpoint extends AbstractCibaEndpoint {
 
     /**
      * TODO: Leverage the device code storage for tracking authentication requests. Not sure if we need a specific storage,
-     * or we can leverage the {@link SingleUseTokenStoreProvider} for ciba, device, or any other use case
+     * or we can leverage the {@link SingleUseStoreProvider} for ciba, device, or any other use case
      * that relies on cross-references for unsolicited user authentication requests from devices.
      */
     private void storeAuthenticationRequest(CIBAAuthenticationRequest request, CibaConfig cibaConfig, String authReqId) {
@@ -147,10 +147,10 @@ public class BackchannelAuthenticationEndpoint extends AbstractCibaEndpoint {
         // To inform "expired_token" to the client, the lifespan of the cache provider is longer than device code
         int lifespanSeconds = expiresIn + poolingInterval + 10;
 
-        SingleUseTokenStoreProvider singleUseTokenStore = session.getProvider(SingleUseTokenStoreProvider.class);
+        SingleUseStoreProvider singleUseStore = session.getProvider(SingleUseStoreProvider.class);
 
-        singleUseTokenStore.put(deviceCode.serializeKey(), lifespanSeconds, deviceCode.toMap());
-        singleUseTokenStore.put(userCode.serializeKey(), lifespanSeconds, userCode.serializeValue());
+        singleUseStore.put(deviceCode.serializeKey(), lifespanSeconds, deviceCode.toMap());
+        singleUseStore.put(userCode.serializeKey(), lifespanSeconds, userCode.serializeValue());
     }
 
     private CIBAAuthenticationRequest authorizeClient(MultivaluedMap<String, String> params) {
