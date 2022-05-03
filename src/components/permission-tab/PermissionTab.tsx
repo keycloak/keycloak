@@ -71,7 +71,7 @@ export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
       Promise.all([
         adminClient.clients.find({
           search: true,
-          clientId: realm,
+          clientId: realm === "master" ? "master-realm" : "realm-management",
         }),
         (() => {
           switch (type) {
