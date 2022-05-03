@@ -5,7 +5,6 @@ import io.smallrye.config.ConfigValue;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.Messages;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
-import org.keycloak.quarkus.runtime.configuration.validators.PortValidator;
 
 import java.io.File;
 import java.nio.file.Paths;
@@ -45,7 +44,7 @@ final class HttpPropertyMappers {
                         .to("quarkus.http.port")
                         .defaultValue(String.valueOf(8080))
                         .type(Integer.class)
-                        .converter(PortValidator::validate)
+                        .converter(Integer::parseInt)
                         .description("The used HTTP port.")
                         .paramLabel("port")
                         .build(),
