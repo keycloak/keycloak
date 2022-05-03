@@ -25,18 +25,21 @@ const SIGNATURE_ALGORITHMS = [
 const KEYNAME_TRANSFORMER = ["NONE", "KEY_ID", "CERT_SUBJECT"] as const;
 
 const CANONICALIZATION = [
-  { name: "EXCLUSIVE", value: "http://www.w3.org/2001/10/xml-exc-c14n#" },
+  {
+    name: "EXCLUSIVE",
+    value: "https://www.w3.org/TR/2002/REC-xml-exc-c14n-20020718/",
+  },
   {
     name: "EXCLUSIVE_WITH_COMMENTS",
-    value: "http://www.w3.org/2001/10/xml-exc-c14n#WithComments",
+    value: "https://www.w3.org/TR/2002/REC-xml-exc-c14n-20020718/#WithComments",
   },
   {
     name: "INCLUSIVE",
-    value: "http://www.w3.org/TR/2001/REC-xml-c14n-20010315",
+    value: "https://www.w3.org/TR/2001/REC-xml-c14n-20010315",
   },
   {
     name: "INCLUSIVE_WITH_COMMENTS",
-    value: "http://www.w3.org/TR/2001/REC-xml-c14n-20010315#WithComments",
+    value: "https://www.w3.org/TR/2001/REC-xml-c14n-20010315#WithComments",
   },
 ] as const;
 

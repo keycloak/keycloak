@@ -30,31 +30,31 @@ export const HeadersForm = ({ save, reset }: HeadersFormProps) => {
     >
       <HelpLinkTextInput
         fieldName="browserSecurityHeaders.xFrameOptions"
-        url="http://tools.ietf.org/html/rfc7034"
+        url="https://datatracker.ietf.org/doc/html/rfc7034"
       />
       <HelpLinkTextInput
         fieldName="browserSecurityHeaders.contentSecurityPolicy"
-        url="http://www.w3.org/TR/CSP/"
+        url="https://www.w3.org/TR/CSP/"
       />
       <HelpLinkTextInput
         fieldName="browserSecurityHeaders.contentSecurityPolicyReportOnly"
-        url="http://www.w3.org/TR/CSP/"
+        url="https://www.w3.org/TR/CSP/"
       />
       <HelpLinkTextInput
         fieldName="browserSecurityHeaders.xContentTypeOptions"
-        url="https://www.owasp.org/index.php/List_of_useful_HTTP_headers"
+        url="https://owasp.org/index.php/List_of_useful_HTTP_headers"
       />
       <HelpLinkTextInput
         fieldName="browserSecurityHeaders.xRobotsTag"
-        url="https://developers.google.com/webmasters/control-crawl-index/docs/robots_meta_tag"
+        url="https://developers.google.com/search/docs/advanced/robots/robots_meta_tag"
       />
       <HelpLinkTextInput
         fieldName="browserSecurityHeaders.xXSSProtection"
-        url="https://www.owasp.org/index.php/OWASP_Secure_Headers_Project#xxxsp"
+        url="https://owasp.org/www-project-secure-headers/#xxxsp"
       />
       <HelpLinkTextInput
         fieldName="browserSecurityHeaders.strictTransportSecurity"
-        url="https://www.owasp.org/index.php/OWASP_Secure_Headers_Project#hsts"
+        url="https://owasp.org/www-project-secure-headers/#hsts"
       />
 
       <ActionGroup>
