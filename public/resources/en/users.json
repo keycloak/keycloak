@@ -1,6 +1,6 @@
 {
   "title": "Users",
-  "usersExplain": "Placeholder for users explanation.",
+  "usersExplain": "Users are the users in the current realm.",
   "userList": "User list",
   "searchForUser": "Search user",
   "startBySearchingAUser": "Start by searching for users",

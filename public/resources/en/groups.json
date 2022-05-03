@@ -31,7 +31,7 @@
   "moveGroupSuccess": "Group moved",
   "moveGroupError": "Could not move group {{error}}",
   "tableOfGroups": "Table of groups",
-  "groupsDescription": "Placeholder for groups explanation.",
+  "groupsDescription": "A group is a set of attributes and role mappings that can be applied to a user. You can create, edit, and delete groups and manage their child-parent organization.",
   "groupCreated": "Group created",
   "couldNotCreateGroup": "Could not create group {{error}}",
   "createAGroup": "Create a group",

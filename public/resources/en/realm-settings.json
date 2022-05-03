@@ -1,5 +1,5 @@
 {
-  "realmSettingsExplain": "Placeholder for realm settings explanation.",
+  "realmSettingsExplain": "Realm settings are settings that control the options for users, applications, roles, and groups in the current realm.",
   "partialImport": "Partial import",
   "partialExport": "Partial export",
   "deleteRealm": "Delete realm",

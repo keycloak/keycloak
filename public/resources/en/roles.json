@@ -13,7 +13,7 @@
   "homeURL": "Home URL",
   "filterByClients": "Filter by clients",
   "filterByRoles": "Filter by roles",
-  "roleExplain": "Realm-level roles are a global namespace to define your roles.",
+  "roleExplain": "Realm roles are the roles that you define for use in the current realm.",
   "roleCreateExplain": "This is some description",
   "roleName": "Role name",
   "roleDetails": "Role details",

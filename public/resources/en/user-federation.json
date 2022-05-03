@@ -1,7 +1,7 @@
 {
   "userFederation": "User federation",
   "descriptionLanding": "This is the description for the user federation landing page",
-  "userFederationExplain": "Keycloak can federate external user databases. Out of the box we have support for LDAP and Active Directory.",
+  "userFederationExplain": "User federation provides access to external databases and directories, such as LDAP and Active Directory.",
   "getStarted": "To get started, select a provider from the list below.",
   "providers": "Add providers",
   "addProvider_one": "Add {{provider}} provider",

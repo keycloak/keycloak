@@ -1,5 +1,5 @@
 {
-  "listExplain": "Through Identity Brokering it's easy to allow users to authenticate to Keycloak using external Identity Provider or Social Networks.",
+  "listExplain": "Identity providers are social networks or identity brokers that allow users to authenticate to Keycloak.",
   "searchForProvider": "Search for provider",
   "providerDetails": "Provider details",
   "addProvider": "Add provider",

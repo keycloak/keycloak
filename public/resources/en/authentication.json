@@ -1,6 +1,6 @@
 {
   "title": "Authentication",
-  "authenticationExplain": "Placeholder for authentication explanation.",
+  "authenticationExplain": "Authentication is the area where you can configure and manage different credential types.",
   "flows": "Flows",
   "requiredActions": "Required actions",
   "policies": "Policies",

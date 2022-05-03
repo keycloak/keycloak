@@ -3,7 +3,7 @@
   "clientScopeList": "Client scopes",
   "grantedClientScopes": "Granted client scopes",
   "clientScopeDetails": "Client scope details",
-  "clientScopeExplain": "Client scopes allow you to define a common set of protocol mappers and roles, which are shared between multiple clients.",
+  "clientScopeExplain": "Client scopes are a common set of protocol mappers and roles that are shared between multiple clients.",
   "searchFor": "Search for client scope",
   "protocol": "Protocol",
   "assignedType": "Assigned type",

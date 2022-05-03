@@ -1,6 +1,6 @@
 {
   "title": "Events",
-  "eventExplain": "If you want to configure user events, Admin events or Event listeners, please enter <1>Event configs</1> page realm settings to configure.",
+  "eventExplain": "Events are records of user and admin events in this realm. To configure the tracking of these events, go to <1>Event configs</1>.",
   "eventConfigs": "Event configs",
   "userEvents": "User events",
   "adminEvents": "Admin events",

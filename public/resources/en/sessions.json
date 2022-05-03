@@ -1,6 +1,6 @@
 {
   "title": "Sessions",
-  "sessionExplain": "Placeholder for sessions explanation.",
+  "sessionExplain": "Sessions are sessions of users in this realm and the clients that they access within the session.",
   "searchForSession": "Search session",
   "subject": "Subject",
   "lastAccess": "Last access",
