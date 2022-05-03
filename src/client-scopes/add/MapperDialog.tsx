@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Button,
   ButtonVariant,
@@ -13,19 +14,20 @@ import {
   TextContent,
   TextVariants,
 } from "@patternfly/react-core";
-import {
-  Table,
-  TableBody,
-  TableHeader,
-  TableVariant,
-} from "@patternfly/react-table";
-import { useTranslation } from "react-i18next";
+
 import type ProtocolMapperRepresentation from "@keycloak/keycloak-admin-client/lib/defs/protocolMapperRepresentation";
 import type { ProtocolMapperTypeRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/serverInfoRepesentation";
 
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { useWhoAmI } from "../../context/whoami/WhoAmI";
 import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
+import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTable";
+
+type Row = {
+  name: string;
+  description: string;
+  item: ProtocolMapperRepresentation;
+};
 
 export type AddMapperDialogModalProps = {
   protocol: string;
@@ -49,6 +51,7 @@ export const AddMapperDialog = (props: AddMapperDialogProps) => {
   const protocolMappers = serverInfo.protocolMapperTypes![protocol];
   const builtInMappers = serverInfo.builtinProtocolMappers![protocol];
   const [filter, setFilter] = useState<ProtocolMapperRepresentation[]>([]);
+  const [selectedRows, setSelectedRows] = useState<Row[]>([]);
 
   const allRows = useMemo(
     () =>
@@ -60,8 +63,8 @@ export const AddMapperDialog = (props: AddMapperDialogProps) => {
           )[0];
           return {
             item: mapper,
-            selected: false,
-            cells: [mapper.name, mapperType.helpText],
+            name: mapper.name!,
+            description: mapperType.helpText,
           };
         }),
     []
@@ -73,10 +76,6 @@ export const AddMapperDialog = (props: AddMapperDialogProps) => {
     const nameFilter = props.filter.map((f) => f.name);
     setRows([...allRows.filter((row) => !nameFilter.includes(row.item.name))]);
   }
-
-  const selectedRows = rows
-    .filter((row) => row.selected)
-    .map((row) => row.item);
 
   const sortedProtocolMappers = useMemo(
     () =>
@@ -175,35 +174,29 @@ export const AddMapperDialog = (props: AddMapperDialogProps) => {
           ))}
         </DataList>
       )}
-      {isBuiltIn && rows.length > 0 && (
-        <Table
-          variant={TableVariant.compact}
-          cells={header}
-          onSelect={(_, isSelected, rowIndex) => {
-            if (rowIndex === -1) {
-              setRows(
-                rows.map((row) => ({
-                  ...row,
-                  selected: isSelected,
-                }))
-              );
-            } else {
-              rows[rowIndex].selected = isSelected;
-              setRows([...rows]);
-            }
-          }}
+      {isBuiltIn && (
+        <KeycloakDataTable
+          loader={rows}
+          onSelect={setSelectedRows}
           canSelectAll
-          rows={rows}
-          aria-label={t("addPredefinedMappers")}
-        >
-          <TableHeader />
-          <TableBody />
-        </Table>
-      )}
-      {isBuiltIn && rows.length === 0 && (
-        <ListEmptyState
-          message={t("common:emptyMappers")}
-          instructions={t("client-scopes:emptyBuiltInMappersInstructions")}
+          ariaLabelKey="client-scopes:addPredefinedMappers"
+          searchPlaceholderKey="common:searchForMapper"
+          columns={[
+            {
+              name: "name",
+              displayKey: "common:name",
+            },
+            {
+              name: "description",
+              displayKey: "common:description",
+            },
+          ]}
+          emptyState={
+            <ListEmptyState
+              message={t("common:emptyMappers")}
+              instructions={t("client-scopes:emptyBuiltInMappersInstructions")}
+            />
+          }
         />
       )}
     </Modal>
