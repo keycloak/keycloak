@@ -71,12 +71,6 @@ public class HostnameDistTest {
     }
 
     @Test
-    @Launch({ "start-dev", "--hostname=mykeycloak.127.0.0.1.nip.io", "--proxy=edge", "--hostname-strict-https=true" })
-    public void testUseDefaultPortsAndHttpsSchemeWhenProxyIsSetAndStrictHttpsEnabled() {
-        assertFrontEndUrl("http://mykeycloak.127.0.0.1.nip.io:8080", "https://mykeycloak.127.0.0.1.nip.io/");
-    }
-
-    @Test
     @Launch({ "start-dev", "--hostname=mykeycloak.127.0.0.1.nip.io" })
     public void testBackEndUrlFromRequest() {
         assertBackEndUrl("http://localhost:8080", "http://localhost:8080/");

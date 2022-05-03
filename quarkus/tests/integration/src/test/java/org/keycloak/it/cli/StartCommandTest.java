@@ -44,7 +44,7 @@ public class StartCommandTest {
     }
 
     @Test
-    @Launch({ "-v", "start", "--http-enabled=true", "--hostname-strict=false" })
+    @Launch({ "-v", "start", "--http-enabled=true", "--hostname-strict=false", "--proxy=edge" })
     void testHttpEnabled(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertStarted();

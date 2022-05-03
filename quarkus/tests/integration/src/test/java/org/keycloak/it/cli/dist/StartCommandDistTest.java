@@ -48,7 +48,7 @@ public class StartCommandDistTest extends StartCommandTest {
     }
 
     @Test
-    @Launch({ "start", "--auto-build", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
+    @Launch({ "start", "--auto-build", "--http-enabled=true", "--hostname-strict=false", "--proxy=edge","--cache=local" })
     void testStartUsingAutoBuild(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertMessage("Changes detected in configuration. Updating the server image.");
@@ -56,7 +56,7 @@ public class StartCommandDistTest extends StartCommandTest {
         cliResult.assertMessage("Server configuration updated and persisted. Run the following command to review the configuration:");
         cliResult.assertMessage("kc.sh show-config");
         cliResult.assertMessage("Next time you run the server, just run:");
-        cliResult.assertMessage("kc.sh start --http-enabled=true --hostname-strict=false");
+        cliResult.assertMessage("kc.sh start --http-enabled=true --hostname-strict=false --proxy=edge");
         assertFalse(cliResult.getOutput().contains("--cache"));
         cliResult.assertStarted();
     }

@@ -20,6 +20,8 @@ package org.keycloak.quarkus.runtime;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import org.apache.commons.lang.StringUtils;
 import org.jboss.logging.Logger;
 
 import picocli.CommandLine;
@@ -38,11 +40,19 @@ public final class Messages {
         return new IllegalArgumentException("Invalid value [" + mode + "] for configuration property [proxy].");
     }
 
-    public static IllegalStateException httpsConfigurationNotSet() {
-        StringBuilder builder = new StringBuilder("Key material not provided to setup HTTPS. Please configure your keys/certificates");
-        if (!Environment.DEV_PROFILE_VALUE.equals(Environment.getProfile())) {
-            builder.append(" or start the server in development mode");
+    public static IllegalStateException httpsConfigurationNotSet(String proxyMode) {
+        StringBuilder builder = new StringBuilder("Key material not provided to setup HTTPS. Please configure your keys/certificates. ");
+
+        if (!StringUtils.isBlank(proxyMode)) {
+            builder.append(" or use proxy mode `edge` to allow HTTP traffic behind your proxy. Current proxy mode: ")
+                    .append(proxyMode)
+                    .append(" does not support HTTP traffic in production mode. ");
         }
+
+        if (!Environment.DEV_PROFILE_VALUE.equals(Environment.getProfile())) {
+            builder.append("Alternatively, start the server in development mode");
+        }
+
         builder.append(".");
         return new IllegalStateException(builder.toString());
     }
@@ -53,6 +63,14 @@ public final class Messages {
 
     public static String devProfileNotAllowedError(String cmd) {
         return String.format("You can not '%s' the server in %s mode. Please re-build the server first, using 'kc.sh build' for the default production mode.%n", cmd, Environment.getKeycloakModeFromProfile(Environment.DEV_PROFILE_VALUE));
+    }
+
+    public static String doNotUseDevModeInProductionWarning() {
+        return "Running the server in development mode. DO NOT use this configuration in production.";
+    }
+
+    public static String noProxyButHttpEnabledAndTlsSetupExistsInProdModeWarning() {
+        return "The applied configuration uses no proxy configuration and HTTP enabled. This is an INSECURE production configuration. Keycloak needs transport encryption to function securely and OIDC-compliant. Suggestion: proxy=edge.";
     }
 
     public static Throwable invalidLogLevel(String logLevel) {

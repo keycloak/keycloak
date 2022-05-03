@@ -45,7 +45,7 @@ public class BuildAndStartDistTest {
     }
 
     @Test
-    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false" })
+    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--proxy=edge" })
     @Order(2)
     void testStartUsingCliArgs(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
@@ -77,6 +77,7 @@ public class BuildAndStartDistTest {
         public void accept(KeycloakDistribution distribution) {
             distribution.setProperty("http-enabled", "true");
             distribution.setProperty("hostname-strict", "false");
+            distribution.setProperty("proxy", "edge");
             distribution.setProperty("cache", "local");
         }
     }

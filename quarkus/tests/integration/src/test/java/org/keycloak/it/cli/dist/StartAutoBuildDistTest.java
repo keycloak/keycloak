@@ -37,7 +37,7 @@ import io.quarkus.test.junit.main.LaunchResult;
 public class StartAutoBuildDistTest {
 
     @Test
-    @Launch({ "start", "--auto-build", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
+    @Launch({ "start", "--auto-build", "--http-enabled=true", "--hostname-strict=false", "--proxy=edge", "--cache=local" })
     @Order(1)
     void testStartAutoBuild(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
@@ -46,13 +46,13 @@ public class StartAutoBuildDistTest {
         cliResult.assertMessage("Server configuration updated and persisted. Run the following command to review the configuration:");
         cliResult.assertMessage("kc.sh show-config");
         cliResult.assertMessage("Next time you run the server, just run:");
-        cliResult.assertMessage("kc.sh start --http-enabled=true --hostname-strict=false");
+        cliResult.assertMessage("kc.sh start --http-enabled=true --hostname-strict=false --proxy=edge");
         assertFalse(cliResult.getOutput().contains("--cache"));
         cliResult.assertStarted();
     }
 
     @Test
-    @Launch({ "start", "--auto-build", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
+    @Launch({ "start", "--auto-build", "--http-enabled=true", "--hostname-strict=false", "--proxy=edge", "--cache=local" })
     @Order(2)
     void testShouldNotReAugIfConfigIsSame(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
@@ -61,7 +61,7 @@ public class StartAutoBuildDistTest {
     }
 
     @Test
-    @Launch({ "start", "--auto-build", "--db=dev-mem", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
+    @Launch({ "start", "--auto-build", "--db=dev-mem", "--http-enabled=true", "--hostname-strict=false", "--proxy=edge", "--cache=local" })
     @Order(3)
     void testShouldReAugIfConfigChanged(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
@@ -70,7 +70,7 @@ public class StartAutoBuildDistTest {
     }
 
     @Test
-    @Launch({ "start", "--auto-build", "--db=dev-mem", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
+    @Launch({ "start", "--auto-build", "--db=dev-mem", "--http-enabled=true", "--hostname-strict=false", "--proxy=edge", "--cache=local" })
     @Order(4)
     void testShouldNotReAugIfSameDatabase(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
@@ -87,7 +87,7 @@ public class StartAutoBuildDistTest {
     }
 
     @Test
-    @Launch({ "start", "--auto-build", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
+    @Launch({ "start", "--auto-build", "--http-enabled=true", "--hostname-strict=false", "--proxy=edge", "--cache=local" })
     @Order(6)
     void testReAugWhenNoOptionAfterBuild(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;

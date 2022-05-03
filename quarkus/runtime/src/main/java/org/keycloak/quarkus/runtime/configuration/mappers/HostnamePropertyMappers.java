@@ -1,6 +1,7 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
 
+import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.Messages;
@@ -29,14 +30,7 @@ final class HostnamePropertyMappers {
                         .description("Forces URLs to use HTTPS. Only needed if proxy does not properly set the X-Forwarded-Proto header.")
                         .hidden(true)
                         .defaultValue(Boolean.TRUE.toString())
-                        .transformer((s, configSourceInterceptorContext) -> {
-                            ConfigValue proxyConfig = configSourceInterceptorContext.proceed("kc.proxy");
-
-                            if(Environment.isProdMode() && (proxyConfig == null || proxyConfig.getValue().equals("false"))) {
-                                addInitializationException(Messages.httpsConfigurationNotSet());
-                            }
-                            return s;
-                        })
+                        .transformer(HostnamePropertyMappers::setStrictHttpsConditionally)
                         .type(Boolean.class)
                         .build(),
                 builder().from("hostname-strict-backchannel")
@@ -56,6 +50,53 @@ final class HostnamePropertyMappers {
                         .paramLabel("port")
                         .build()
         };
+    }
+
+    private static String setStrictHttpsConditionally(String value, ConfigSourceInterceptorContext context) {
+        ConfigValue proxyConfig = context.proceed("kc.proxy");
+        ConfigValue httpEnabledConfig = context.proceed("kc.http-enabled");
+
+        //no matter what other conditions, when proxy set to edge set strict-https to false
+        // bc tls terminated at proxy level and http requests are ok
+        if (isProxyEdge(proxyConfig)) {
+            value = Boolean.FALSE.toString();
+            return value;
+        }
+
+        //when start and http-enabled = true and proxy = none,passthrough or reencrypt and no TLS setup found throw exception bc invalid
+        if (Environment.isProdMode()
+                && isHttpEnabled(httpEnabledConfig)
+                && isProxyNotEdge(proxyConfig)) {
+
+            if(!HttpPropertyMappers.isTlsConfigured(context)) {
+                addInitializationException(Messages.httpsConfigurationNotSet(proxyConfig == null ? "none" : proxyConfig.getValue()));
+                return value;
+            }
+            //when start and http-enabled and proxy = none, but TLS setup found, set false and add warning
+            Environment.setInsecureInProdMode(true);
+        }
+
+        //for other modes, just return true.
+        return value;
+    }
+
+    private static boolean isHttpEnabled(ConfigValue httpEnabledConfig) {
+        return httpEnabledConfig.getValue().equals("true");
+    }
+
+    private static boolean isProxyNotEdge(ConfigValue proxyConfig) {
+        if (proxyConfig == null) {
+            return true;
+        }
+
+        return !proxyConfig.getValue().equals("edge");
+    }
+
+    private static boolean isProxyEdge(ConfigValue proxyConfig) {
+        if(proxyConfig == null) {
+            return false;
+        }
+        return proxyConfig.getValue().equals("edge");
     }
 
     private static PropertyMapper.Builder builder() {

@@ -46,6 +46,7 @@ public final class Environment {
     public static final String DEV_PROFILE_VALUE = "dev";
     public static final String PROD_PROFILE_VALUE = "prod";
     public static final String LAUNCH_MODE = "kc.launch.mode";
+    public static final String INSECURE_PRODMODE_FLAG = "kc.mode.production.insecure";
 
     private Environment() {}
 
@@ -105,6 +106,15 @@ public final class Environment {
         }
 
         return profile;
+    }
+
+    public static void setInsecureInProdMode(boolean isInsecure) {
+        System.setProperty(INSECURE_PRODMODE_FLAG, String.valueOf(isInsecure));
+    }
+
+    public static boolean isPossiblyInsecureProdModeConfig() {
+
+        return Boolean.getBoolean(INSECURE_PRODMODE_FLAG);
     }
 
     public static void setProfile(String profile) {

@@ -122,6 +122,7 @@ final class HttpPropertyMappers {
     }
 
     private static String getHttpEnabledTransformer(String value, ConfigSourceInterceptorContext context) {
+
         boolean enabled = Boolean.parseBoolean(value);
         ConfigValue proxy = context.proceed(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + "proxy");
 
@@ -130,19 +131,30 @@ final class HttpPropertyMappers {
             enabled = true;
         }
 
-        if (!enabled) {
-            ConfigValue certConfig = context.proceed("kc.https-certificate-file");
-
-            if (certConfig == null || certConfig.getValue() == null) {
-                certConfig = getMapper("quarkus.http.ssl.certificate.key-store-file").getConfigValue(context);
-            }
-
-            if (certConfig == null || certConfig.getValue() == null) {
-                addInitializationException(Messages.httpsConfigurationNotSet());
-            }
+        if (!enabled && !isTlsConfigured(context)) {
+            addInitializationException(Messages.httpsConfigurationNotSet(proxy != null ? proxy.getValue() : "none"));
         }
 
         return enabled ? "enabled" : "disabled";
+    }
+
+    public static boolean isTlsConfigured(ConfigSourceInterceptorContext context) {
+        boolean tlsConfigured = true;
+        ConfigValue certConfig = context.proceed("kc.https-certificate-file");
+
+        if (!certConfigExists(certConfig)) {
+            certConfig = getMapper("quarkus.http.ssl.certificate.key-store-file").getConfigValue(context);
+        }
+
+        if (!certConfigExists(certConfig)) {
+            tlsConfigured = false;
+        }
+
+        return tlsConfigured;
+    }
+
+    private static boolean certConfigExists(ConfigValue certConfig) {
+        return certConfig != null && certConfig.getValue() != null;
     }
 
     private static String getDefaultKeystorePathValue() {

@@ -29,7 +29,7 @@ final class ProxyPropertyMappers {
                         .build(),
                 builder().to("quarkus.http.proxy.enable-forwarded-host")
                         .mapFrom("proxy")
-                        .defaultValue("false")
+                        .defaultValue(Boolean.FALSE.toString())
                         .transformer(ProxyPropertyMappers::resolveEnableForwardedHost)
                         .category(ConfigCategory.PROXY)
                         .build()

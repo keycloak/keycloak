@@ -20,6 +20,7 @@ package org.keycloak.quarkus.runtime;
 import static org.keycloak.quarkus.runtime.Environment.getKeycloakModeFromProfile;
 import static org.keycloak.quarkus.runtime.Environment.isDevProfile;
 import static org.keycloak.quarkus.runtime.Environment.getProfileOrDefault;
+import static org.keycloak.quarkus.runtime.Environment.isPossiblyInsecureProdModeConfig;
 import static org.keycloak.quarkus.runtime.Environment.isTestLaunchMode;
 import static org.keycloak.quarkus.runtime.cli.Picocli.parseAndRun;
 import static org.keycloak.quarkus.runtime.cli.command.Start.isDevProfileNotAllowed;
@@ -110,8 +111,13 @@ public class KeycloakMain implements QuarkusApplication {
      */
     @Override
     public int run(String... args) throws Exception {
+
+        if (isPossiblyInsecureProdModeConfig()) {
+            Logger.getLogger(KeycloakMain.class).warnf(Messages.noProxyButHttpEnabledAndTlsSetupExistsInProdModeWarning());
+        }
+
         if (isDevProfile()) {
-            Logger.getLogger(KeycloakMain.class).warnf("Running the server in development mode. DO NOT use this configuration in production.");
+            Logger.getLogger(KeycloakMain.class).warnf(Messages.doNotUseDevModeInProductionWarning());
         }
 
         int exitCode = ApplicationLifecycleManager.getExitCode();

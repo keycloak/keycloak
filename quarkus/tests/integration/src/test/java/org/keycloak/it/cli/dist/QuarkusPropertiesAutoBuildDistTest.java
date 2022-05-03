@@ -60,7 +60,7 @@ public class QuarkusPropertiesAutoBuildDistTest {
 
     @Test
     @BeforeStartDistribution(UpdateConsoleLogLevelToInfo.class)
-    @Launch({ "start", "--auto-build", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
+    @Launch({ "start", "--auto-build", "--http-enabled=true", "--hostname-strict=false", "--proxy=edge", "--cache=local" })
     @Order(3)
     void testNoReAugAfterChangingRuntimeProperty(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
@@ -106,7 +106,7 @@ public class QuarkusPropertiesAutoBuildDistTest {
 
     @Test
     @BeforeStartDistribution(EnableDatasourceMetrics.class)
-    @Launch({ "start", "--auto-build", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
+    @Launch({ "start", "--auto-build", "--http-enabled=true", "--hostname-strict=false", "--proxy=edge", "--cache=local" })
     @Order(8)
     void testWrappedBuildPropertyTriggersBuildButGetsIgnoredWhenSetByQuarkus(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;

@@ -101,8 +101,8 @@ public final class ExecutionExceptionHandler implements CommandLine.IExecutionEx
             FileSystemException fse = (FileSystemException) cause;
             ConfigValue httpsCertFile = getConfig().getConfigValue("kc.https-certificate-file");
 
-            if (fse.getFile().equals(Optional.ofNullable(httpsCertFile.getValue()).orElse(null))) {
-                logError(errorWriter, Messages.httpsConfigurationNotSet().getMessage());
+            if (fse.getFile().equals(httpsCertFile.getValue())) {
+                logError(errorWriter, Messages.httpsConfigurationNotSet("").getMessage());
             }
         }
     }

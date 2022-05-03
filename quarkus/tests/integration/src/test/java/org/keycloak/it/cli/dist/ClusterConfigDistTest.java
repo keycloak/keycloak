@@ -69,7 +69,7 @@ public class ClusterConfigDistTest {
     }
 
     @Test
-    @Launch({ "start", "--auto-build", "--http-enabled=true", "--hostname-strict false" })
+    @Launch({ "start", "--auto-build", "--http-enabled=true", "--hostname-strict false", "--proxy=edge" })
     void testStartDefaultsToClustering(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertStarted();

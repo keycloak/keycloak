@@ -21,7 +21,6 @@ import static org.keycloak.quarkus.runtime.cli.Picocli.NO_PARAM_LABEL;
 
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.ExecutionExceptionHandler;
-import org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider;
 import org.keycloak.quarkus.runtime.configuration.KeycloakPropertiesConfigSource;
 
 import picocli.CommandLine;

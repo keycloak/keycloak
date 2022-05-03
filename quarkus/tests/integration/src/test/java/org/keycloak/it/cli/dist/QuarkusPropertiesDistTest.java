@@ -119,7 +119,7 @@ public class QuarkusPropertiesDistTest {
 
     @Test
     @KeepServerAlive
-    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false" })
+    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--proxy=edge" })
     @Order(9)
     void testUnknownQuarkusBuildTimePropertyApplied(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
