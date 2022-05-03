@@ -1,5 +1,9 @@
 {
   "extends": "./tsconfig.json",
+  "include": [
+    "src",
+    "jest.setup.ts"
+  ],
   // overwrite exclude so test files are included.
   "exclude": [],
   "compilerOptions": {

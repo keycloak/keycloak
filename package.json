@@ -50,7 +50,6 @@
   "devDependencies": {
     "@cypress/webpack-batteries-included-preprocessor": "^2.2.3",
     "@cypress/webpack-preprocessor": "^5.11.1",
-    "@jest/types": "^28.0.2",
     "@octokit/rest": "^18.12.0",
     "@snowpack/app-scripts-react": "^2.0.1",
     "@snowpack/plugin-postcss": "^1.4.3",
@@ -87,7 +86,8 @@
     "gunzip-maybe": "^1.4.2",
     "http2-proxy": "^5.0.53",
     "husky": "^7.0.4",
-    "jest": "^27.5.1",
+    "jest": "^28.0.3",
+    "jest-environment-jsdom": "^28.0.2",
     "lint-staged": "^12.4.1",
     "node-fetch": "^3.2.4",
     "postcss": "^8.4.13",
@@ -97,7 +97,7 @@
     "progress-promise": "^0.0.6",
     "snowpack": "^3.8.6",
     "tar-fs": "^2.1.1",
-    "ts-jest": "^27.1.4",
+    "ts-jest": "^28.0.0",
     "ts-node": "^10.7.0",
     "typescript": "^4.6.4"
   },
