@@ -623,8 +623,6 @@ _keycloakSpecificProperties = [
     "resteasy.undertow.version",
     "owasp.html.sanitizer.version",
     "sun.xml.ws.version",
-    "jetty92.version",
-    "jetty93.version",
     "jetty94.version",
     "ua-parser.version",
     "version.com.openshift.openshift-restclient-java",
@@ -720,7 +718,6 @@ _keycloakToWildflyProperties = {
     "undertow.version"                                            : "version.io.undertow",
     "elytron.version"                                             : "version.org.wildfly.security.elytron",
     "elytron.undertow-server.version"                             : "version.org.wildfly.security.elytron-web",
-    # Skip "jetty92.version", "jetty93.version", and "jetty94.version" since Keycloak specific
     "woodstox.version"                                            : "version.org.codehaus.woodstox.woodstox-core",
     "xmlsec.version"                                              : "version.org.apache.santuario",
     "glassfish.json.version"                                      : "version.org.glassfish.jakarta.json",

@@ -36,8 +36,6 @@ public interface ContainerConstants {
     public static final String APP_SERVER_EAP6_CLUSTER = APP_SERVER_EAP6 + "-ha-node-1;" + APP_SERVER_EAP6 + "-ha-node-2";
 
     public static final String APP_SERVER_JETTY94 = APP_SERVER_PREFIX + "jetty94";
-    public static final String APP_SERVER_JETTY93 = APP_SERVER_PREFIX + "jetty93";
-    public static final String APP_SERVER_JETTY92 = APP_SERVER_PREFIX + "jetty92";
 
     public static final String APP_SERVER_TOMCAT8 = APP_SERVER_PREFIX + "tomcat8";
     public static final String APP_SERVER_TOMCAT9 = APP_SERVER_PREFIX + "tomcat9";
