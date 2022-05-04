@@ -147,4 +147,44 @@ describe("ExecutionList", () => {
     expect(diff).toBeInstanceOf(LevelChange);
     expect((diff as LevelChange).parent).toBeUndefined();
   });
+
+  it("Construct list", () => {
+    //given
+    const list = [
+      { id: "0", level: 0, index: 0 },
+      { id: "1", level: 1, index: 0 },
+      { id: "2", level: 0, index: 1 },
+      { id: "3", level: 1, index: 0 },
+      { id: "4", level: 0, index: 2 },
+      { id: "5", level: 1, index: 0 },
+    ];
+
+    //when
+    const result = new ExecutionList(list);
+
+    //then
+    expect(result.expandableList).toEqual([
+      {
+        executionList: [{ id: "1", index: 0, level: 1 }],
+        id: "0",
+        index: 0,
+        isCollapsed: false,
+        level: 0,
+      },
+      {
+        executionList: [{ id: "3", index: 0, level: 1 }],
+        id: "2",
+        index: 1,
+        isCollapsed: false,
+        level: 0,
+      },
+      {
+        executionList: [{ id: "5", index: 0, level: 1 }],
+        id: "4",
+        index: 2,
+        isCollapsed: false,
+        level: 0,
+      },
+    ]);
+  });
 });

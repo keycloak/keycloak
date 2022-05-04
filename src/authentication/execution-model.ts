@@ -34,38 +34,40 @@ export class ExecutionList {
 
   constructor(list: AuthenticationExecutionInfoRepresentation[]) {
     this.list = list as ExpandableExecution[];
-    this.expandableList =
-      this.transformToExpandableList(0, 0, {
-        executionList: [],
-        isCollapsed: false,
-      }).executionList || [];
+
+    const exList = {
+      executionList: [],
+      isCollapsed: false,
+    };
+    this.transformToExpandableList(0, exList);
+    this.expandableList = exList.executionList;
   }
 
   private transformToExpandableList(
-    level: number,
     currIndex: number,
     execution: ExpandableExecution
   ) {
     for (let index = currIndex; index < this.list.length; index++) {
       const ex = this.list[index];
+      const level = ex.level || 0;
       const nextRowLevel = this.list[index + 1]?.level || 0;
+      const isLeaf = level > nextRowLevel;
+      const hasChild = level < nextRowLevel;
 
-      if (ex.level === level && nextRowLevel <= level) {
+      if (isLeaf) {
         execution.executionList?.push(ex);
-      } else if (ex.level === level && nextRowLevel > level) {
-        const expandable = this.transformToExpandableList(
-          nextRowLevel,
-          index + 1,
-          {
-            ...ex,
-            executionList: [],
-            isCollapsed: false,
-          }
-        );
-        execution.executionList?.push(expandable);
+        return index;
+      }
+
+      if (ex.level === level && !hasChild) {
+        execution.executionList?.push(ex);
+      } else {
+        const subLevel = { ...ex, executionList: [], isCollapsed: false };
+        index = this.transformToExpandableList(index + 1, subLevel);
+        execution.executionList?.push(subLevel);
       }
     }
-    return execution;
+    return this.list.length;
   }
 
   order(list?: ExpandableExecution[]) {
