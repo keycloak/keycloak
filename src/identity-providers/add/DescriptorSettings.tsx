@@ -75,6 +75,24 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
         />
       </FormGroup>
       <FormGroup
+        label={t("identityProviderEntityId")}
+        fieldId="kc-identity-provider-entity-id"
+        labelIcon={
+          <HelpItem
+            helpText="identity-providers-help:identityProviderEntityId"
+            fieldLabelId="identity-providers:identityProviderEntityId"
+          />
+        }
+      >
+        <KeycloakTextInput
+          type="text"
+          name="config.idpEntityId"
+          data-testid="identityProviderEntityId"
+          id="kc-identity-provider-entity-id"
+          ref={register()}
+        />
+      </FormGroup>
+      <FormGroup
         label={t("ssoServiceUrl")}
         labelIcon={
           <HelpItem

@@ -84,6 +84,7 @@
   "signServiceProviderMetadata": "Sign service provider metadata",
   "passSubject": "Pass subject",
   "serviceProviderEntityId": "Service provider entity ID",
+  "identityProviderEntityId": "Identity provider entity ID",
   "importConfig": "Import config from file",
   "showMetaData": "Show metadata",
   "hideMetaData": "Hide metadata",

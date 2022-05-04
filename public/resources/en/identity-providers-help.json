@@ -36,6 +36,7 @@
   "postBrokerLoginFlowAlias": "Alias of authentication flow, which is triggered after each login with this identity provider. Useful if you want additional verification of each user authenticated with this identity provider (for example OTP). Leave this to \"None\" if you need no any additional authenticators to be triggered after login with this identity provider. Also note that authenticator implementations must assume that user is already set in ClientSession as identity provider already set it.",
   "syncMode": "Default sync mode for all mappers. The sync mode determines when user data will be synced using the mappers. Possible values are: 'legacy' to keep the behaviour before this option was introduced, 'import' to only import the user once during first login of the user with this identity provider, 'force' to always update the user during every login with this identity provider.",
   "serviceProviderEntityId": "The Entity ID that will be used to uniquely identify this SAML Service Provider.",
+  "identityProviderEntityId": "The Entity ID used to validate the Issuer for received SAML assertions. If empty, no Issuer validation is performed.",
   "useEntityDescriptor": "Import metadata from a remote IDP SAML entity descriptor.",
   "samlEntityDescriptor": "Allows you to load external IDP metadata from a config file or to download it from a URL.",
   "ssoServiceUrl": "The Url that must be used to send authentication requests (SAML AuthnRequest).",
