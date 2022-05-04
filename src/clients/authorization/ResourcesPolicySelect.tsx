@@ -5,7 +5,10 @@ import { Select, SelectOption, SelectVariant } from "@patternfly/react-core";
 
 import type ResourceRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceRepresentation";
 import type PolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyRepresentation";
-import type { Clients } from "@keycloak/keycloak-admin-client/lib/resources/clients";
+import type {
+  Clients,
+  PolicyQuery,
+} from "@keycloak/keycloak-admin-client/lib/resources/clients";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 
 type Type = "resources" | "policies";
@@ -74,15 +77,14 @@ export const ResourcesPolicySelect = ({
   });
 
   useFetch(
-    async () =>
-      (
+    async () => {
+      const params: PolicyQuery = Object.assign(
+        { id: clientId, first: 0, max: 10, permission: "false" },
+        search === "" ? null : { name: search }
+      );
+      return (
         await Promise.all([
-          adminClient.clients[functions.searchFunction](
-            Object.assign(
-              { id: clientId, first: 0, max: 10 },
-              search === "" ? null : { name: search }
-            )
-          ),
+          adminClient.clients[functions.searchFunction](params),
           permissionId
             ? adminClient.clients[functions.fetchFunction]({
                 id: clientId,
@@ -96,7 +98,8 @@ export const ResourcesPolicySelect = ({
         .filter(
           ({ id }, index, self) =>
             index === self.findIndex(({ id: otherId }) => id === otherId)
-        ),
+        );
+    },
     setItems,
     [search]
   );

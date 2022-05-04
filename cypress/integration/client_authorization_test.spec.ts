@@ -151,7 +151,7 @@ describe("Client authentication subtab", () => {
     });
     permissionsSubTab.selectResource("Default Resource").formUtils().save();
     cy.intercept(
-      "/admin/realms/master/clients/*/authz/resource-server/resource?first=0&max=10"
+      "/admin/realms/master/clients/*/authz/resource-server/resource?first=0&max=10&permission=false"
     ).as("load");
     masthead.checkNotificationMessage(
       "Successfully created the permission",
