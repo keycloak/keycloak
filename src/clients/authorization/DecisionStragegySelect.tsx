@@ -18,6 +18,7 @@ export const DecisionStrategySelect = ({
 }: DecisionStrategySelectProps) => {
   const { t } = useTranslation("clients");
   const { control } = useFormContext();
+
   return (
     <FormGroup
       label={t("decisionStrategy")}
