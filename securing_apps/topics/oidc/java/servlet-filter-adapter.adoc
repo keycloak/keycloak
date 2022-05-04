@@ -93,7 +93,7 @@ karaf@root()> feature:install keycloak-servlet-filter-adapter
 
 For other OSGi runtimes, please refer to the runtime documentation on how to install the adapter bundle and its dependencies.
 
-NOTE: If your OSGi platform is Apache Karaf with Pax Web, you should consider using <<_fuse_adapter,JBoss Fuse 6>> or <<_fuse7_adapter,JBoss Fuse 7>> adapters instead.
+NOTE: If your OSGi platform is Apache Karaf with Pax Web, you should consider using https://access.redhat.com/products/red-hat-single-sign-on[Red Hat Single Sign-On] 7.x JBoss Fuse 7 adapters instead.
 
 ====== Configuration
 

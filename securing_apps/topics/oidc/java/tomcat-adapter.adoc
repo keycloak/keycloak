@@ -1,8 +1,8 @@
 
 [[_tomcat_adapter]]
-==== Tomcat 7, 8, and 9 adapters
+==== Tomcat 8 and 9 adapters
 
-To be able to secure WAR apps deployed on Tomcat 7, 8, and 9, you install the Keycloak Tomcat 7 adapter or Keycloak Tomcat adapter into your Tomcat installation. You then perform extra configuration to secure each WAR you deploy to Tomcat.
+To be able to secure WAR apps deployed on Tomcat 8, and 9, you install the Keycloak Tomcat adapter into your Tomcat installation. You then perform extra configuration to secure each WAR you deploy to Tomcat.
 
 [[_tomcat_adapter_installation]]
 ===== Installing the adapter
@@ -14,14 +14,6 @@ They are also available as a maven artifact.
 .Procedure
 
 . Download the adapter for the Tomcat version on your system from the link:https://www.keycloak.org/downloads[Keycloak Downloads] site.
-
-* Install on Tomcat 7:
-+
-[source]
-----
-$ cd $TOMCAT_HOME/lib
-$ unzip keycloak-tomcat7-adapter-dist.zip
-----
 
 * Install on Tomcat 8 or 9:
 +

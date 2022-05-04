@@ -5,13 +5,13 @@ ifeval::[{project_community}==true]
 endif::[]
 ifeval::[{project_product}==true]
 ==== JBoss EAP adapter
-endif::[]
 
 You can install this adapter from a ZIP file or from an RPM.
 
 * xref:jboss_adapter_installation[Installing JBOSS EAP adapters from a ZIP file]
 * xref:jboss7_adapter_rpm[Installing JBoss EAP 7 Adapters from an RPM]
 * xref:jboss6_adapter_rpm[Installing JBoss EAP 6 Adapters from an RPM]
+endif::[]
 
 [id="jboss_adapter_installation"]
 ==== Installing JBOSS EAP adapters from a ZIP file
@@ -42,7 +42,7 @@ The other alternative is to switch your applications from WildFly to the JBoss E
 
 . Install the adapter that applies to your application server from the link:https://www.keycloak.org/downloads[Downloads] site.
 
-* Install on WildFly 9 or newer:
+* Install on WildFly:
 +
 [source, subs="attributes"]
 ----
@@ -56,22 +56,6 @@ $ unzip keycloak-wildfly-adapter-dist-{project_version}.zip
 ----
 $ cd $EAP_HOME
 $ unzip keycloak-eap7-adapter-dist-{project_version}.zip
-----
-
-* Install on JBoss EAP 6:
-+
-[source, subs="attributes"]
-----
-$ cd $EAP_HOME
-$ unzip keycloak-eap6-adapter-dist-{project_version}.zip
-----
-
-* Install on JBoss AS 7.1:
-+
-[source, subs="attributes"]
-----
-$ cd $JBOSS_HOME
-$ unzip keycloak-as7-adapter-dist-{project_version}.zip
 ----
 endif::[]
 ifeval::[{project_product}==true]
@@ -87,50 +71,26 @@ ifeval::[{project_product}==true]
 $ cd $EAP_HOME
 $ unzip rh-sso-{project_version}-eap7-adapter.zip
 ----
-
-* Install on JBoss EAP 6:
-+
-[source, subs="attributes"]
-----
-$ cd $EAP_HOME
-$ unzip rh-sso-{project_version}-eap6-adapter.zip
-----
 endif::[]
 +
 This ZIP archive contains JBoss Modules specific to the {project_name} adapter. It also contains JBoss CLI scripts to configure the adapter subsystem.
 
 . To configure the adapter subsystem, execute the appropriate command.
 ifeval::[{project_community}==true]
-* Install on WildFly 11 or newer if the server *is not* running
+* Install on WildFly if the server *is not* running
 +
 [source]
 ----
 $ ./bin/jboss-cli.sh --file=bin/adapter-elytron-install-offline.cli
 ----
 +
-* Install on WildFly 11 or newer if the server *is* running
+* Install on WildFly if the server *is* running
 +
 [source]
 ----
 $ ./bin/jboss-cli.sh -c --file=bin/adapter-elytron-install.cli
 ----
 +
-NOTE: It is possible to use the legacy non-Elytron adapter on WildFly 11 or newer as well, meaning you can use `adapter-install-offline.cli`
-even on those versions. However, we recommend to use the newer Elytron adapter.
-+
-* Install on WildFly 10 or older if the server *is not* running
-+
-[source]
-----
-$ ./bin/jboss-cli.sh --file=bin/adapter-install-offline.cli
-----
-+
-* Install on WildFly 10 or older if the server *is* running
-+
-[source]
-----
-$ ./bin/jboss-cli.sh -c --file=bin/adapter-install.cli
-----
 
 NOTE: Alternatively, you can specify the `server.config` property while installing adapters from the command line to install adapters using a different config, for example: `-Dserver.config=standalone-ha.xml`.
 endif::[]

@@ -12,14 +12,6 @@ They are also available as a maven artifact.
 
 . Install on the Tomcat version on your system:
 
-* Install on Tomcat 7:
-+
-[source]
-----
-$ cd $TOMCAT_HOME/lib
-$ unzip keycloak-saml-tomcat7-adapter-dist.zip
-----
-
 * Install on Tomcat 8 or 9:
 +
 [source]

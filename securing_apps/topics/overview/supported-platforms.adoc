@@ -9,7 +9,6 @@
 ifeval::[{project_community}==true]
   * <<_jboss_adapter,WildFly>>
 endif::[]
-* <<_fuse_adapter,Fuse>>
 ifeval::[{project_community}==true]
   * <<_tomcat_adapter,Tomcat>>
   * <<_jetty9_adapter,Jetty 9>>
