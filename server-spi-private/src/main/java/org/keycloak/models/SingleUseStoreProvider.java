@@ -70,4 +70,10 @@ public interface SingleUseStoreProvider extends Provider {
      */
     boolean putIfAbsent(String key, long lifespanInSeconds);
 
+    /**
+     * Checks if there is a record in the store for the given key.
+     * @param key String
+     * @return {@code true} if the record is present in the store, {@code false} otherwise.
+     */
+    boolean contains(String key);
 }

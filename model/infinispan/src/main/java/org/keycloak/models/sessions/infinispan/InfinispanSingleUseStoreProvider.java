@@ -117,6 +117,12 @@ public class InfinispanSingleUseStoreProvider implements SingleUseStoreProvider 
     }
 
     @Override
+    public boolean contains(String key) {
+        BasicCache<String, ActionTokenValueEntity> cache = tokenCache.get();
+        return cache.containsKey(key);
+    }
+
+    @Override
     public void close() {
 
     }
