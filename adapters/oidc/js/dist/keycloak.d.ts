@@ -182,6 +182,13 @@ export interface KeycloakInitOptions {
 	enableLogging?: boolean
 
 	/**
+	 * Set the default scope parameter to the login endpoint. Use a space-delimited list of scopes. 
+	 * Note that the scope 'openid' will be always be added to the list of scopes by the adapter.
+	 * Note that the default scope specified here is overwritten if the `login()` options specify scope explicitly.
+	 */
+	scope?: string
+	
+	/**
 	 * Configures how long will Keycloak adapter wait for receiving messages from server in ms. This is used,
 	 * for example, when waiting for response of 3rd party cookies check.
 	 *
