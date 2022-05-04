@@ -2226,8 +2226,11 @@ module.controller('ClientScopeMappingCtrl', function($scope, $http, realm, $rout
        return $scope.client.fullScopeAllowed;
     }
 
-    $scope.changeFlag = function() {
+    $scope.changeFlag = function(event) {
         console.log('changeFlag');
+        event.stopPropagation();
+        event.preventDefault();
+        $scope.client.fullScopeAllowed = !$scope.client.fullScopeAllowed
         Client.update({
             realm : realm.realm,
             client : client.id
