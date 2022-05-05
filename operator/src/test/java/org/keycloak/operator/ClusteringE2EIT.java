@@ -50,7 +50,7 @@ public class ClusteringE2EIT extends ClusterOperatorTest {
                 .untilAsserted(() -> CRAssert.assertKeycloakStatusCondition(crSelector.get(), KeycloakStatusCondition.READY, false));
 
         Awaitility.await()
-                .atMost(Duration.ofSeconds(5))
+                .atMost(Duration.ofSeconds(60))
                 .ignoreExceptions()
                 .untilAsserted(() -> assertThat(kcPodsSelector.list().getItems().size()).isEqualTo(3));
 
@@ -118,6 +118,8 @@ public class ClusteringE2EIT extends ClusterOperatorTest {
                     Log.info("Checking Keycloak is stable.");
                     CRAssert.assertKeycloakStatusCondition(crSelector.get(), KeycloakStatusCondition.READY, true);
                 });
+        // Remove the completed pod for the job
+        realmImportSelector.delete();
 
         Log.info("Testing the Keycloak Cluster");
         Awaitility.await().atMost(5, MINUTES).ignoreExceptions().untilAsserted(() -> {

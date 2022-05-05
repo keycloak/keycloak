@@ -1,5 +1,7 @@
 package org.keycloak.operator;
 
+import io.fabric8.kubernetes.api.model.LocalObjectReferenceBuilder;
+import io.fabric8.kubernetes.api.model.PodTemplateSpecBuilder;
 import io.quarkus.logging.Log;
 import io.quarkus.test.junit.QuarkusTest;
 import org.awaitility.Awaitility;
@@ -9,6 +11,7 @@ import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.keycloak.operator.utils.CRAssert;
 import org.keycloak.operator.v2alpha1.KeycloakService;
 import org.keycloak.operator.v2alpha1.crds.KeycloakRealmImport;
+import org.keycloak.operator.v2alpha1.crds.keycloakspec.Unsupported;
 
 import java.util.stream.Collectors;
 
@@ -58,7 +61,14 @@ public class RealmImportE2EIT extends ClusterOperatorTest {
     @Test
     public void testWorkingRealmImport() {
         // Arrange
-        deployKeycloak(k8sclient, getDefaultKeycloakDeployment(), false);
+        var kc = getDefaultKeycloakDeployment();
+        var podTemplate = new PodTemplateSpecBuilder()
+                .withNewSpec()
+                .withImagePullSecrets(new LocalObjectReferenceBuilder().withName("my-empty-secret").build())
+                .endSpec()
+                .build();
+        kc.getSpec().setUnsupported(new Unsupported(podTemplate));
+        deployKeycloak(k8sclient, kc, false);
 
         // Act
         k8sclient.load(getClass().getResourceAsStream("/example-realm.yaml")).inNamespace(namespace).createOrReplace();
@@ -87,6 +97,10 @@ public class RealmImportE2EIT extends ClusterOperatorTest {
                     CRAssert.assertKeycloakRealmImportStatusCondition(crSelector.get(), STARTED, false);
                     CRAssert.assertKeycloakRealmImportStatusCondition(crSelector.get(), HAS_ERRORS, false);
                 });
+        var job = k8sclient.batch().v1().jobs().inNamespace(namespace).withName("example-count0-kc").get();
+        assertThat(job.getSpec().getTemplate().getSpec().getImagePullSecrets().size()).isEqualTo(1);
+        assertThat(job.getSpec().getTemplate().getSpec().getImagePullSecrets().get(0).getName()).isEqualTo("my-empty-secret");
+
         var service = new KeycloakService(k8sclient, getDefaultKeycloakDeployment());
         String url =
                 "https://" + service.getName() + "." + namespace + ":" + KEYCLOAK_HTTPS_PORT + "/realms/count0";

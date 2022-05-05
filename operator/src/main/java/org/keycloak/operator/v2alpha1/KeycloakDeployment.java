@@ -134,6 +134,7 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
 
         if (overlayTemplate.getSpec() != null &&
             overlayTemplate.getSpec().getContainers() != null &&
+            overlayTemplate.getSpec().getContainers().size() > 0 &&
             overlayTemplate.getSpec().getContainers().get(0) != null &&
             overlayTemplate.getSpec().getContainers().get(0).getName() != null) {
             status.addWarningMessage("The name of the keycloak container cannot be modified");
@@ -141,6 +142,7 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
 
         if (overlayTemplate.getSpec() != null &&
             overlayTemplate.getSpec().getContainers() != null &&
+            overlayTemplate.getSpec().getContainers().size() > 0 &&
             overlayTemplate.getSpec().getContainers().get(0) != null &&
             overlayTemplate.getSpec().getContainers().get(0).getImage() != null) {
             status.addWarningMessage("The image of the keycloak container cannot be modified using podTemplate");
