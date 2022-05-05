@@ -54,6 +54,7 @@ import org.keycloak.models.map.storage.hotRod.realm.entity.HotRodRequiredCredent
 import org.keycloak.models.map.storage.hotRod.realm.entity.HotRodRequirement;
 import org.keycloak.models.map.storage.hotRod.realm.entity.HotRodWebAuthnPolicyEntity;
 import org.keycloak.models.map.storage.hotRod.role.HotRodRoleEntity;
+import org.keycloak.models.map.storage.hotRod.singleUseObject.HotRodSingleUseObjectEntity;
 import org.keycloak.models.map.storage.hotRod.user.HotRodUserConsentEntity;
 import org.keycloak.models.map.storage.hotRod.user.HotRodUserCredentialEntity;
 import org.keycloak.models.map.storage.hotRod.user.HotRodUserEntity;
@@ -109,6 +110,9 @@ import org.keycloak.models.map.storage.hotRod.userSession.HotRodUserSessionEntit
                 HotRodRequirement.class,
                 HotRodWebAuthnPolicyEntity.class,
                 HotRodRealmEntity.class,
+
+                // single-use objects
+                HotRodSingleUseObjectEntity.class,
 
                 // User sessions
                 HotRodUserSessionEntity.class,

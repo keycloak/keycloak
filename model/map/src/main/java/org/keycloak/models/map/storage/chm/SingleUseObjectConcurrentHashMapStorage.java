@@ -26,9 +26,7 @@ import org.keycloak.models.map.singleUseObject.MapSingleUseObjectEntity;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.QueryParameters;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
-import org.keycloak.storage.SearchableModelField;
 
-import java.util.Map;
 import java.util.stream.Stream;
 
 /**
@@ -44,7 +42,13 @@ public class SingleUseObjectConcurrentHashMapStorage<K, V extends AbstractEntity
     @SuppressWarnings("unchecked")
     public MapKeycloakTransaction<MapSingleUseObjectEntity, ActionTokenValueModel> createTransaction(KeycloakSession session) {
         MapKeycloakTransaction<MapSingleUseObjectEntity, ActionTokenValueModel> actionTokenTransaction = session.getAttribute("map-transaction-" + hashCode(), MapKeycloakTransaction.class);
-        return actionTokenTransaction == null ? new SingleUseObjectConcurrentHashMapStorage.Transaction(getKeyConverter(), cloner, fieldPredicates) : actionTokenTransaction;
+
+        if (actionTokenTransaction == null) {
+            actionTokenTransaction = new SingleUseObjectKeycloakTransaction(this, keyConverter, cloner, fieldPredicates);
+            session.setAttribute("map-transaction-" + hashCode(), actionTokenTransaction);
+        }
+
+        return actionTokenTransaction;
     }
 
     @Override
@@ -78,21 +82,4 @@ public class SingleUseObjectConcurrentHashMapStorage<K, V extends AbstractEntity
         return new SingleUseObjectModelCriteriaBuilder();
     }
 
-    private class Transaction extends ConcurrentHashMapKeycloakTransaction<K, MapSingleUseObjectEntity, ActionTokenValueModel> {
-
-        public Transaction(StringKeyConverter<K> keyConverter, DeepCloner cloner,
-                           Map<SearchableModelField<? super ActionTokenValueModel>, MapModelCriteriaBuilder.UpdatePredicatesFunc<K, MapSingleUseObjectEntity, ActionTokenValueModel>> fieldPredicates) {
-            super(SingleUseObjectConcurrentHashMapStorage.this, keyConverter, cloner, fieldPredicates);
-        }
-
-        @Override
-        public MapSingleUseObjectEntity create(MapSingleUseObjectEntity value) {
-            if (value.getId() == null) {
-                if (value.getUserId() != null && value.getActionId() != null && value.getActionVerificationNonce() != null) {
-                    value.setId(value.getUserId() + ":" + value.getActionId() + ":" + value.getActionVerificationNonce());
-                }
-            }
-            return super.create(value);
-        }
-    }
 }
