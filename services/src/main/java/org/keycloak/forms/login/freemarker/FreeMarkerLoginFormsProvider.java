@@ -73,6 +73,7 @@ import org.keycloak.theme.beans.MessagesPerFieldBean;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.utils.MediaType;
+import org.keycloak.utils.StringUtil;
 
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.MultivaluedMap;
@@ -362,6 +363,10 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     protected Properties handleThemeResources(Theme theme, Locale locale) {
         Properties messagesBundle = new Properties();
         try {
+            if(!StringUtil.isNotBlank(realm.getDefaultLocale()))
+            {
+                messagesBundle.putAll(realm.getRealmLocalizationTextsByLocale(realm.getDefaultLocale()));
+            }
             messagesBundle.putAll(theme.getMessages(locale));
             messagesBundle.putAll(realm.getRealmLocalizationTextsByLocale(locale.toLanguageTag()));
             attributes.put("msg", new MessageFormatterMethod(locale, messagesBundle));
