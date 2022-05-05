@@ -245,7 +245,7 @@ public class LinkedAccountsResource {
     }
     
     private boolean isPasswordSet() {
-        return session.userCredentialManager().isConfiguredFor(realm, user, PasswordCredentialModel.TYPE);
+        return user.getUserCredentialManager().isConfiguredFor(PasswordCredentialModel.TYPE);
     }
     
     private boolean isValidProvider(String providerId) {

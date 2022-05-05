@@ -224,13 +224,13 @@ public class ClientTokenExchangeSAML2Test extends AbstractKeycloakTest {
 
         UserModel user = session.users().addUser(realm, "user");
         user.setEnabled(true);
-        session.userCredentialManager().updateCredential(realm, user, UserCredentialModel.password("password"));
+        user.getUserCredentialManager().updateCredential(UserCredentialModel.password("password"));
         user.grantRole(exampleRole);
         user.grantRole(impersonateRole);
 
         UserModel bad = session.users().addUser(realm, "bad-impersonator");
         bad.setEnabled(true);
-        session.userCredentialManager().updateCredential(realm, bad, UserCredentialModel.password("password"));
+        bad.getUserCredentialManager().updateCredential(UserCredentialModel.password("password"));
     }
 
     @Override
@@ -704,7 +704,7 @@ public class ClientTokenExchangeSAML2Test extends AbstractKeycloakTest {
 
         UserModel impersonatedUser = session.users().addUser(realm, "impersonated-user");
         impersonatedUser.setEnabled(true);
-        session.userCredentialManager().updateCredential(realm, impersonatedUser, UserCredentialModel.password("password"));
+        impersonatedUser.getUserCredentialManager().updateCredential(UserCredentialModel.password("password"));
         impersonatedUser.grantRole(exampleRole);
     }
 

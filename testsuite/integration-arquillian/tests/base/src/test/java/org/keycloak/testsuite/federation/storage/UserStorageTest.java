@@ -14,9 +14,11 @@ import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.ObjectUtil;
+import org.keycloak.common.util.reflections.Types;
 import org.keycloak.credential.CredentialAuthentication;
 import org.keycloak.credential.CredentialModel;
-import org.keycloak.credential.UserCredentialStoreManager;
+import org.keycloak.credential.CredentialProvider;
+import org.keycloak.credential.CredentialProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -229,7 +231,9 @@ public class UserStorageTest extends AbstractAuthTest {
     @Test
     @ModelTest
     public void testCast(KeycloakSession session) throws Exception {
-        UserCredentialStoreManager.getCredentialProviders(session, CredentialAuthentication.class).collect(Collectors.toList());
+        session.getKeycloakSessionFactory().getProviderFactoriesStream(CredentialProvider.class)
+                .filter(f -> Types.supports(CredentialAuthentication.class, f, CredentialProviderFactory.class))
+                .map(f -> (CredentialAuthentication) session.getProvider(CredentialProvider.class, f.getId())).collect(Collectors.toList());
     }
 
     @Test
@@ -883,19 +887,19 @@ public class UserStorageTest extends AbstractAuthTest {
             UserModel user = currentSession.users().getUserByUsername(realm, "thor");
             Assert.assertFalse(StorageId.isLocalStorage(user));
 
-            Stream<CredentialModel> credentials = currentSession.userCredentialManager().getStoredCredentialsStream(realm, user);
+            Stream<CredentialModel> credentials = user.getUserCredentialManager().getStoredCredentialsStream();
             org.keycloak.testsuite.Assert.assertEquals(0, credentials.count());
 
             // Create password
             CredentialModel passwordCred = PasswordCredentialModel.createFromValues("my-algorithm", "theSalt".getBytes(), 22, "ABC");
-            passwordCred = currentSession.userCredentialManager().createCredential(realm, user, passwordCred);
+            passwordCred = user.getUserCredentialManager().createStoredCredential(passwordCred);
             passwordId.set(passwordCred.getId());
 
             // Create Password and 2 OTP credentials (password was already created)
             CredentialModel otp1 = OTPCredentialModel.createFromPolicy(realm, "secret1");
             CredentialModel otp2 = OTPCredentialModel.createFromPolicy(realm, "secret2");
-            otp1 = currentSession.userCredentialManager().createCredential(realm, user, otp1);
-            otp2 = currentSession.userCredentialManager().createCredential(realm, user, otp2);
+            otp1 = user.getUserCredentialManager().createStoredCredential(otp1);
+            otp2 = user.getUserCredentialManager().createStoredCredential(otp2);
             otp1Id.set(otp1.getId());
             otp2Id.set(otp2.getId());
         });
@@ -906,18 +910,18 @@ public class UserStorageTest extends AbstractAuthTest {
             UserModel user = currentSession.users().getUserByUsername(realm, "thor");
 
             // Assert priorities: password, otp1, otp2
-            List<CredentialModel> list = currentSession.userCredentialManager().getStoredCredentialsStream(realm, user)
+            List<CredentialModel> list = user.getUserCredentialManager().getStoredCredentialsStream()
                     .collect(Collectors.toList());
             assertOrder(list, passwordId.get(), otp1Id.get(), otp2Id.get());
 
             // Assert can't move password when newPreviousCredential not found
-            assertFalse(currentSession.userCredentialManager().moveCredentialTo(realm, user, passwordId.get(), "not-known"));
+            assertFalse(user.getUserCredentialManager().moveStoredCredentialTo(passwordId.get(), "not-known"));
 
             // Assert can't move credential when not found
-            assertFalse(currentSession.userCredentialManager().moveCredentialTo(realm, user, "not-known", otp2Id.get()));
+            assertFalse(user.getUserCredentialManager().moveStoredCredentialTo("not-known", otp2Id.get()));
 
             // Move otp2 up
-            assertTrue(currentSession.userCredentialManager().moveCredentialTo(realm, user, otp2Id.get(), passwordId.get()));
+            assertTrue(user.getUserCredentialManager().moveStoredCredentialTo(otp2Id.get(), passwordId.get()));
         });
 
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession currentSession) -> {
@@ -925,12 +929,12 @@ public class UserStorageTest extends AbstractAuthTest {
             UserModel user = currentSession.users().getUserByUsername(realm, "thor");
 
             // Assert priorities: password, otp2, otp1
-            List<CredentialModel> list = currentSession.userCredentialManager().getStoredCredentialsStream(realm, user)
+            List<CredentialModel> list = user.getUserCredentialManager().getStoredCredentialsStream()
                     .collect(Collectors.toList());
             assertOrder(list, passwordId.get(), otp2Id.get(), otp1Id.get());
 
             // Move otp2 to the top
-            org.keycloak.testsuite.Assert.assertTrue(currentSession.userCredentialManager().moveCredentialTo(realm, user, otp2Id.get(), null));
+            org.keycloak.testsuite.Assert.assertTrue(user.getUserCredentialManager().moveStoredCredentialTo(otp2Id.get(), null));
         });
 
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession currentSession) -> {
@@ -938,12 +942,12 @@ public class UserStorageTest extends AbstractAuthTest {
             UserModel user = currentSession.users().getUserByUsername(realm, "thor");
 
             // Assert priorities: otp2, password, otp1
-            List<CredentialModel> list = currentSession.userCredentialManager().getStoredCredentialsStream(realm, user)
+            List<CredentialModel> list = user.getUserCredentialManager().getStoredCredentialsStream()
                     .collect(Collectors.toList());
             assertOrder(list, otp2Id.get(), passwordId.get(), otp1Id.get());
 
             // Move password down
-            assertTrue(currentSession.userCredentialManager().moveCredentialTo(realm, user, passwordId.get(), otp1Id.get()));
+            assertTrue(user.getUserCredentialManager().moveStoredCredentialTo(passwordId.get(), otp1Id.get()));
         });
 
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession currentSession) -> {
@@ -951,12 +955,12 @@ public class UserStorageTest extends AbstractAuthTest {
             UserModel user = currentSession.users().getUserByUsername(realm, "thor");
 
             // Assert priorities: otp2, otp1, password
-            List<CredentialModel> list = currentSession.userCredentialManager().getStoredCredentialsStream(realm, user)
+            List<CredentialModel> list = user.getUserCredentialManager().getStoredCredentialsStream()
                     .collect(Collectors.toList());
             assertOrder(list, otp2Id.get(), otp1Id.get(), passwordId.get());
 
             // Remove otp2 down two positions
-            assertTrue(currentSession.userCredentialManager().moveCredentialTo(realm, user, otp2Id.get(), passwordId.get()));
+            assertTrue(user.getUserCredentialManager().moveStoredCredentialTo(otp2Id.get(), passwordId.get()));
         });
 
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession currentSession) -> {
@@ -964,12 +968,12 @@ public class UserStorageTest extends AbstractAuthTest {
             UserModel user = currentSession.users().getUserByUsername(realm, "thor");
 
             // Assert priorities: otp2, otp1, password
-            List<CredentialModel> list = currentSession.userCredentialManager().getStoredCredentialsStream(realm, user)
+            List<CredentialModel> list = user.getUserCredentialManager().getStoredCredentialsStream()
                     .collect(Collectors.toList());
             assertOrder(list, otp1Id.get(), passwordId.get(), otp2Id.get());
 
             // Remove password
-            assertTrue(currentSession.userCredentialManager().removeStoredCredential(realm, user, passwordId.get()));
+            assertTrue(user.getUserCredentialManager().removeStoredCredentialById(passwordId.get()));
         });
 
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession currentSession) -> {
@@ -977,7 +981,7 @@ public class UserStorageTest extends AbstractAuthTest {
             UserModel user = currentSession.users().getUserByUsername(realm, "thor");
 
             // Assert priorities: otp2, password
-            List<CredentialModel> list = currentSession.userCredentialManager().getStoredCredentialsStream(realm, user)
+            List<CredentialModel> list = user.getUserCredentialManager().getStoredCredentialsStream()
                     .collect(Collectors.toList());
             assertOrder(list, otp1Id.get(), otp2Id.get());
         });
@@ -993,7 +997,7 @@ public class UserStorageTest extends AbstractAuthTest {
             Assert.assertFalse(StorageId.isLocalStorage(user));
 
             CredentialModel otp1 = OTPCredentialModel.createFromPolicy(realm, "secret1");
-            session.userCredentialManager().createCredential(realm, user, otp1);
+            user.getUserCredentialManager().createStoredCredential(otp1);
         });
 
         UserResource user1 = ApiUtil.findUserByUsernameId(testRealmResource(), "thor");

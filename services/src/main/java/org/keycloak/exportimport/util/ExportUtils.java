@@ -498,7 +498,7 @@ public class ExportUtils {
 
         // Credentials - extra security, do not export credentials if service accounts
         if (internal) {
-            List<CredentialRepresentation> credReps = session.userCredentialManager().getStoredCredentialsStream(realm, user)
+            List<CredentialRepresentation> credReps = user.getUserCredentialManager().getStoredCredentialsStream()
                     .map(ExportUtils::exportCredential).collect(Collectors.toList());
             userRep.setCredentials(credReps);
         }

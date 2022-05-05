@@ -20,6 +20,7 @@ package org.keycloak.models;
 import org.keycloak.credential.CredentialInput;
 import org.keycloak.credential.CredentialModel;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -29,6 +30,10 @@ public interface SingleUserCredentialManager {
      * Validates list of credentials.
      */
     boolean isValid(List<CredentialInput> inputs);
+
+    default boolean isValid(CredentialInput... inputs) {
+        return isValid(Arrays.asList(inputs));
+    }
 
     /**
      * Updates a credentials of the user.
@@ -63,7 +68,7 @@ public interface SingleUserCredentialManager {
     @Deprecated
     boolean isConfiguredLocally(String type);
 
-    Stream<String> getConfiguredUserStorageCredentialTypesStream(UserModel user);
+    Stream<String> getConfiguredUserStorageCredentialTypesStream();
 
     CredentialModel createCredentialThroughProvider(CredentialModel model);
 }

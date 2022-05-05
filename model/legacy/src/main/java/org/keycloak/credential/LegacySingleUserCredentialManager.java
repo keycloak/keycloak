@@ -34,15 +34,9 @@ import java.util.Objects;
 import java.util.stream.Stream;
 
 /**
- * Handling credentials for a given user.
+ * Handling credentials for a given user for the legacy store.
  *
- * This serves as a wrapper to specific strategies. The wrapping code implements the logic for {@link CredentialInputUpdater}s
- * and {@link CredentialInputValidator}s. Storage specific strategies can be added like for example in
- * org.keycloak.models.map.credential.MapSingleUserCredentialManagerStrategy.
- *
- * I tried to extract the federation specific parts to the {@link LegacySingleUserCredentialManagerStrategy} but the control
- * flow in the existing logic: if <code>model == null || !model.isEnabled()</code>, the code will directly return, while
- * the behavior of the strategy is to continue if it returns false and it will then try other providers.
+ * Its companion is the MapSingleUserCredentialManagerStrategy that doesn't contain storage related elements.
  *
  * @author Alexander Schwartz
  */
@@ -218,7 +212,7 @@ public class LegacySingleUserCredentialManager extends AbstractStorageManager<Us
     }
 
     @Override
-    public Stream<String> getConfiguredUserStorageCredentialTypesStream(UserModel user) {
+    public Stream<String> getConfiguredUserStorageCredentialTypesStream() {
         return getCredentialProviders(session, CredentialProvider.class).map(CredentialProvider::getType)
                 .filter(credentialType -> UserStorageCredentialConfigured.CONFIGURED == isConfiguredThroughUserStorage(realm, user, credentialType));
     }

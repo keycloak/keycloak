@@ -24,12 +24,9 @@ import org.keycloak.models.UserCredentialManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.CachedUserModel;
 import org.keycloak.models.cache.OnUserCache;
-import org.keycloak.storage.DatastoreProvider;
-import org.keycloak.storage.StorageId;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Stream;
 
 /**
@@ -48,77 +45,90 @@ public class UserCredentialStoreManager
     @Override
     @Deprecated // Keep this up to and including Keycloak 19, the use methods on user.getUserCredentialManager() instead
     public void updateCredential(RealmModel realm, UserModel user, CredentialModel cred) {
+        // TODO: no longer used in non-legacy code, can be removed
         user.getUserCredentialManager().updateStoredCredential(cred);
     }
 
     @Override
     @Deprecated // Keep this up to and including Keycloak 19, the use methods on user.getUserCredentialManager() instead
     public CredentialModel createCredential(RealmModel realm, UserModel user, CredentialModel cred) {
+        // TODO: no longer used in non-legacy code, can be removed
         return user.getUserCredentialManager().createStoredCredential(cred);
     }
 
     @Override
     @Deprecated // Keep this up to and including Keycloak 19, the use methods on user.getUserCredentialManager() instead
     public boolean removeStoredCredential(RealmModel realm, UserModel user, String id) {
+        // TODO: no longer used in non-legacy code, can be removed
         return user.getUserCredentialManager().removeStoredCredentialById(id);
     }
 
     @Override
     @Deprecated // Keep this up to and including Keycloak 19, the use methods on user.getUserCredentialManager() instead
     public CredentialModel getStoredCredentialById(RealmModel realm, UserModel user, String id) {
+        // TODO: no longer used in non-legacy code, can be removed
         return user.getUserCredentialManager().getStoredCredentialById(id);
     }
 
     @Override
     @Deprecated // Keep this up to and including Keycloak 19, the use methods on user.getUserCredentialManager() instead
     public Stream<CredentialModel> getStoredCredentialsStream(RealmModel realm, UserModel user) {
+        // TODO: no longer used in non-legacy code, can be removed
         return user.getUserCredentialManager().getStoredCredentialsStream();
     }
 
     @Override
     @Deprecated // Keep this up to and including Keycloak 19, the use methods on user.getUserCredentialManager() instead
     public Stream<CredentialModel> getStoredCredentialsByTypeStream(RealmModel realm, UserModel user, String type) {
+        // TODO: no longer used in non-legacy code, can be removed
         return user.getUserCredentialManager().getStoredCredentialsByTypeStream(type);
     }
 
     @Override
     @Deprecated // Keep this up to and including Keycloak 19, the use methods on user.getUserCredentialManager() instead
     public CredentialModel getStoredCredentialByNameAndType(RealmModel realm, UserModel user, String name, String type) {
+        // TODO: no longer used in non-legacy code, can be removed
         return user.getUserCredentialManager().getStoredCredentialByNameAndType(name, type);
     }
 
     @Override
     @Deprecated // Keep this up to and including Keycloak 19, the use methods on user.getUserCredentialManager() instead
     public boolean moveCredentialTo(RealmModel realm, UserModel user, String id, String newPreviousCredentialId){
+        // TODO: no longer used, can be removed
         return user.getUserCredentialManager().moveStoredCredentialTo(id, newPreviousCredentialId);
     }
 
     @Override
     @Deprecated // Keep this up to and including Keycloak 19, the use methods on user.getUserCredentialManager() instead
     public boolean isValid(RealmModel realm, UserModel user, CredentialInput... inputs) {
+        // TODO: no longer used, can be removed
         return isValid(realm, user, Arrays.asList(inputs));
     }
 
     @Override
     @Deprecated // Keep this up to and including Keycloak 19, the use methods on user.getUserCredentialManager() instead
     public CredentialModel createCredentialThroughProvider(RealmModel realm, UserModel user, CredentialModel model){
+        // TODO: no longer used, can be removed
         return user.getUserCredentialManager().createCredentialThroughProvider(model);
     }
 
     @Override
     @Deprecated // Keep this up to and including Keycloak 19, the use methods on user.getUserCredentialManager() instead
     public void updateCredentialLabel(RealmModel realm, UserModel user, String credentialId, String userLabel){
+        // TODO: no longer used, can be removed
         user.getUserCredentialManager().updateCredentialLabel(credentialId, userLabel);
     }
 
     @Override
     @Deprecated // Keep this up to and including Keycloak 19, the use methods on user.getUserCredentialManager() instead
     public boolean isValid(RealmModel realm, UserModel user, List<CredentialInput> inputs) {
+        // TODO: no longer used, can be removed
         return user.getUserCredentialManager().isValid(inputs);
     }
 
     @Deprecated // Keep this up to and including Keycloak 19, then inline
     public static <T> Stream<T> getCredentialProviders(KeycloakSession session, Class<T> type) {
+        // TODO: no longer used, can be removed
         return session.getKeycloakSessionFactory().getProviderFactoriesStream(CredentialProvider.class)
                 .filter(f -> Types.supports(type, f, CredentialProviderFactory.class))
                 .map(f -> (T) session.getProvider(CredentialProvider.class, f.getId()));
@@ -127,24 +137,28 @@ public class UserCredentialStoreManager
     @Override
     @Deprecated // Keep this up to and including Keycloak 19, the use methods on user.getUserCredentialManager() instead
     public boolean updateCredential(RealmModel realm, UserModel user, CredentialInput input) {
+        // TODO: no longer used, can be removed
         return user.getUserCredentialManager().updateCredential(input);
     }
 
     @Override
     @Deprecated // Keep this up to and including Keycloak 19, the use methods on user.getUserCredentialManager() instead
     public void disableCredentialType(RealmModel realm, UserModel user, String credentialType) {
+        // TODO: no longer used, can be removed
         user.getUserCredentialManager().disableCredentialType(credentialType);
     }
 
     @Override
     @Deprecated // Keep this up to and including Keycloak 19, the use methods on user.getUserCredentialManager() instead
     public Stream<String> getDisableableCredentialTypesStream(RealmModel realm, UserModel user) {
+        // TODO: no longer used, can be removed
         return user.getUserCredentialManager().getDisableableCredentialTypesStream();
     }
 
     @Override
     @Deprecated // Keep this up to and including Keycloak 19, the use methods on user.getUserCredentialManager() instead
     public boolean isConfiguredFor(RealmModel realm, UserModel user, String type) {
+        // TODO: no longer used, can be removed
         return user.getUserCredentialManager().isConfiguredFor(type);
     }
 
@@ -165,13 +179,15 @@ public class UserCredentialStoreManager
     @Override
     @Deprecated // Keep this up to and including Keycloak 19, then remove it together with the OnUserCache class
     public void onCache(RealmModel realm, CachedUserModel user, UserModel delegate) {
+        // TODO: only called from legacy code (infinispan), can be removed
         getCredentialProviders(session, OnUserCache.class).forEach(validator -> validator.onCache(realm, user, delegate));
     }
 
     @Override
     @Deprecated // Keep this up to and including Keycloak 19, the use methods on user.getUserCredentialManager() instead
     public Stream<String> getConfiguredUserStorageCredentialTypesStream(RealmModel realm, UserModel user) {
-        return user.getUserCredentialManager().getConfiguredUserStorageCredentialTypesStream(user);
+        // TODO: no longer used, can be removed
+        return user.getUserCredentialManager().getConfiguredUserStorageCredentialTypesStream();
     }
 
     @Override

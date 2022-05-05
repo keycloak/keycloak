@@ -3,7 +3,6 @@ package org.keycloak.models.cache.infinispan;
 import org.keycloak.credential.CredentialInput;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.SingleUserCredentialManager;
-import org.keycloak.models.UserModel;
 
 import java.util.List;
 import java.util.stream.Stream;
@@ -107,8 +106,8 @@ public abstract class SingleUserCredentialManagerCacheAdapter implements SingleU
     }
 
     @Override
-    public Stream<String> getConfiguredUserStorageCredentialTypesStream(UserModel user) {
-        return singleUserCredentialManager.getConfiguredUserStorageCredentialTypesStream(user);
+    public Stream<String> getConfiguredUserStorageCredentialTypesStream() {
+        return singleUserCredentialManager.getConfiguredUserStorageCredentialTypesStream();
     }
 
     @Override
