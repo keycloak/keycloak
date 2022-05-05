@@ -18,6 +18,7 @@ package org.keycloak.operator.v2alpha1;
 
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.api.model.SecretVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeBuilder;
@@ -86,20 +87,16 @@ public class KeycloakRealmImportJob extends OperatorManagedResource {
                 .get();
     }
 
-    private Job buildJob(Container keycloakContainer, List<Volume> volumes) {
+    private Job buildJob(PodTemplateSpec keycloakPodTemplate) {
+        keycloakPodTemplate.getSpec().setRestartPolicy("Never");
+
         return new JobBuilder()
                 .withNewMetadata()
                 .withName(getName())
                 .withNamespace(getNamespace())
                 .endMetadata()
                 .withNewSpec()
-                .withNewTemplate()
-                .withNewSpec()
-                .withContainers(keycloakContainer)
-                .withVolumes(volumes)
-                .withRestartPolicy("Never")
-                .endSpec()
-                .endTemplate()
+                .withTemplate(keycloakPodTemplate)
                 .endSpec()
                 .build();
     }
@@ -114,25 +111,18 @@ public class KeycloakRealmImportJob extends OperatorManagedResource {
     }
 
     private Job createImportJob() {
-        var keycloakContainer = buildKeycloakJobContainer();
-
-        var volumes = this.existingDeployment.getSpec().getTemplate().getSpec().getVolumes();
-        volumes.add(buildSecretVolume());
-        var importJob = buildJob(keycloakContainer, volumes);
-
-        return importJob;
-    }
-
-    private Container buildKeycloakJobContainer() {
-        var keycloakContainer =
-            this
+        var keycloakPodTemplate = this
                 .existingDeployment
                 .getSpec()
-                .getTemplate()
-                .getSpec()
-                .getContainers()
-                .get(0);
+                .getTemplate();
 
+        buildKeycloakJobContainer(keycloakPodTemplate.getSpec().getContainers().get(0));
+        keycloakPodTemplate.getSpec().getVolumes().add(buildSecretVolume());
+
+        return buildJob(keycloakPodTemplate);
+    }
+
+    private void buildKeycloakJobContainer(Container keycloakContainer) {
         var importMntPath = "/mnt/realm-import/";
 
         var command = List.of("/bin/bash");
@@ -158,8 +148,6 @@ public class KeycloakRealmImportJob extends OperatorManagedResource {
         // Disable probes since we are not really starting the server
         keycloakContainer.setReadinessProbe(null);
         keycloakContainer.setLivenessProbe(null);
-
-        return keycloakContainer;
     }
 
 
