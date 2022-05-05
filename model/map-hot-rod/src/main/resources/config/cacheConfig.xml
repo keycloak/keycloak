@@ -116,5 +116,13 @@
                 </indexed-entities>
             </indexing>
         </distributed-cache>
+        <distributed-cache name="single-use-objects" mode="SYNC">
+            <indexing>
+                <indexed-entities>
+                    <indexed-entity>kc.HotRodSingleUseObjectEntity</indexed-entity>
+                </indexed-entities>
+            </indexing>
+            <encoding media-type="application/x-protostream"/>
+        </distributed-cache>
     </cache-container>
 </infinispan>
