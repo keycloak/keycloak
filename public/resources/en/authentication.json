@@ -84,7 +84,8 @@
     "registrationFlow": "Registration flow",
     "directGrantFlow": "Direct grant flow",
     "resetCredentialsFlow": "Reset credentials flow",
-    "clientAuthenticationFlow": "Client authentication flow"
+    "clientAuthenticationFlow": "Client authentication flow",
+    "dockerAuthenticationFlow": "Docker authentication flow"
   },
   "editInfo": "Edit info",
   "editFlow": "Edit flow",

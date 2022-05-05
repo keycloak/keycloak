@@ -13,7 +13,6 @@ import { CheckCircleIcon } from "@patternfly/react-icons";
 
 import type { AuthenticationType } from "../AuthenticationSection";
 import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTable";
-import { toUpperCase } from "../../util";
 import useToggle from "../../utils/useToggle";
 
 import "./used-by.css";
@@ -135,7 +134,7 @@ export const UsedBy = ({
             <Label label={t(type!)} />
           </Button>
         ))}
-      {type === "default" && <Label label={toUpperCase(values[0])} />}
+      {type === "default" && <Label label={t(`flow.${values[0]}`)} />}
       {!type && t("notInUse")}
     </>
   );

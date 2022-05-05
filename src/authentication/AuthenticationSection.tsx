@@ -73,9 +73,9 @@ export default function AuthenticationSection() {
       throw new Error(t("common:notFound"));
     }
 
-    const defaultFlows = Object.entries(realmRep)
-      .filter((entry) => REALM_FLOWS.includes(entry[0]))
-      .map((entry) => entry[1]);
+    const defaultFlows = Object.entries(realmRep).filter(([key]) =>
+      REALM_FLOWS.includes(key)
+    );
 
     for (const flow of flows as AuthenticationType[]) {
       flow.usedBy = { values: [] };
@@ -101,10 +101,12 @@ export default function AuthenticationSection() {
         flow.usedBy.values = idps.map(({ alias }) => alias!);
       }
 
-      const isDefault = defaultFlows.includes(flow.alias);
-      if (isDefault) {
+      const defaultFlow = defaultFlows.find(
+        ([, alias]) => flow.alias === alias
+      );
+      if (defaultFlow) {
         flow.usedBy.type = "default";
-        flow.usedBy.values.push(flow.alias!);
+        flow.usedBy.values.push(defaultFlow[0]);
       }
     }
 
