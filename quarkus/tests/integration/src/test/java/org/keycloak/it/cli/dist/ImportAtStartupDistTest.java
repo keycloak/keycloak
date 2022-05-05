@@ -18,22 +18,19 @@
 package org.keycloak.it.cli.dist;
 
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.function.Consumer;
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
 import org.keycloak.it.junit5.extension.BeforeStartDistribution;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.utils.KeycloakDistribution;
+import org.keycloak.it.utils.RawKeycloakDistribution;
 
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
 
-@DistributionTest
+@DistributionTest(reInstall = DistributionTest.ReInstall.BEFORE_TEST)
 @RawDistOnly(reason = "Containers are immutable")
 public class ImportAtStartupDistTest {
 
@@ -43,6 +40,23 @@ public class ImportAtStartupDistTest {
     void testImport(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertMessage("Imported realm quickstart-realm from file");
+    }
+
+    @Test
+    @BeforeStartDistribution(CreateRealmConfigurationFileAndDir.class)
+    @Launch({"start-dev", "--import-realm", "--log-level=org.keycloak.quarkus.runtime.storage.database.jpa:debug"})
+    void testImportAndIgnoreDirectory(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertMessage("Imported realm quickstart-realm from file");
+        cliResult.assertMessage("Ignoring import file because it is not a valid file");
+    }
+
+    @Test
+    @BeforeStartDistribution(CreateRealmConfigurationFileWithUnsupportedExtension.class)
+    @Launch({"start-dev", "--import-realm", "--log-level=org.keycloak.quarkus.runtime.storage.database.jpa:debug"})
+    void testIgnoreFileWithUnsupportedExtension(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertMessage("Ignoring import file because it is not a valid file");
     }
 
     @Test
@@ -58,6 +72,26 @@ public class ImportAtStartupDistTest {
         @Override
         public void accept(KeycloakDistribution distribution) {
             distribution.copyOrReplaceFileFromClasspath("/quickstart-realm.json", Path.of("data", "import", "realm.json"));
+        }
+    }
+
+    public static class CreateRealmConfigurationFileAndDir implements Consumer<KeycloakDistribution> {
+
+        @Override
+        public void accept(KeycloakDistribution distribution) {
+            distribution.copyOrReplaceFileFromClasspath("/quickstart-realm.json", Path.of("data", "import", "realm.json"));
+
+            RawKeycloakDistribution rawDist = (RawKeycloakDistribution) distribution;
+
+            rawDist.getDistPath().resolve("data").resolve("import").resolve("sub-dir").toFile().mkdirs();
+        }
+    }
+
+    public static class CreateRealmConfigurationFileWithUnsupportedExtension implements Consumer<KeycloakDistribution> {
+
+        @Override
+        public void accept(KeycloakDistribution distribution) {
+            distribution.copyOrReplaceFileFromClasspath("/quickstart-realm.json", Path.of("data", "import", "realm"));
         }
     }
 }

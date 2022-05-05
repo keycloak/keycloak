@@ -25,6 +25,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -58,10 +59,14 @@ import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.connections.jpa.updater.JpaUpdaterProvider;
 import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.exportimport.ExportImportManager;
-import org.keycloak.migration.MigrationModel;
 import org.keycloak.migration.MigrationModelManager;
 import org.keycloak.migration.ModelVersion;
-import org.keycloak.models.*;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
+import org.keycloak.models.UserProvider;
 import org.keycloak.models.dblock.DBLockManager;
 import org.keycloak.models.dblock.DBLockProvider;
 import org.keycloak.models.utils.RepresentationToModel;
@@ -322,8 +327,15 @@ public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionPr
                 String file = tokenizer.nextToken().trim();
                 RealmRepresentation rep;
                 try {
+                    Path filePath = Paths.get(file);
+
+                    if (!(Files.exists(filePath) && Files.isRegularFile(filePath) && filePath.toString().endsWith(".json"))) {
+                        logger.debugf("Ignoring import file because it is not a valid file: %s", file);
+                        continue;
+                    }
+
                     rep = JsonSerialization.readValue(StringPropertyReplacer.replaceProperties(
-                            Files.readString(Paths.get(file)), new StringPropertyReplacer.PropertyResolver() {
+                            Files.readString(filePath), new StringPropertyReplacer.PropertyResolver() {
                                 @Override
                                 public String resolve(String property) {
                                     return Optional.ofNullable(System.getenv(property)).orElse(null);
