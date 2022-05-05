@@ -17,7 +17,7 @@
 
 package org.keycloak.protocol.oidc.endpoints;
 
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -261,6 +261,6 @@ public class TokenRevocationEndpoint {
         SingleUseStoreProvider singleUseStore = session.getProvider(SingleUseStoreProvider.class);
         int currentTime = Time.currentTime();
         long lifespanInSecs = Math.max(token.getExp() - currentTime, 10);
-        singleUseStore.put(token.getId(), lifespanInSecs, new HashMap<>());
+        singleUseStore.put(token.getId() + SingleUseStoreProvider.REVOKED_KEY, lifespanInSecs, Collections.emptyMap());
     }
 }

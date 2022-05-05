@@ -28,6 +28,9 @@ import java.util.Map;
  */
 public interface SingleUseStoreProvider extends Provider {
 
+    // suffix to a key to indicate that token is considered revoked
+    String REVOKED_KEY = ".revoked";
+
     /**
      * Stores the given data and guarantees that data should be available in the store for at least the time specified by {@param lifespanSeconds} parameter
      * @param key

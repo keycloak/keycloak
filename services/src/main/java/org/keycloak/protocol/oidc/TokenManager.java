@@ -1353,7 +1353,7 @@ public class TokenManager {
         @Override
         public boolean test(AccessToken token) {
             SingleUseStoreProvider singleUseStore = session.getProvider(SingleUseStoreProvider.class);
-            return !singleUseStore.contains(token.getId());
+            return !singleUseStore.contains(token.getId() + SingleUseStoreProvider.REVOKED_KEY);
         }
     }
 
