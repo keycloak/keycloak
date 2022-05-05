@@ -40,6 +40,7 @@ import java.util.Set;
 @ProtoDoc("@Indexed")
 public class HotRodClientScopeEntity extends AbstractHotRodEntity  {
 
+    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
     @ProtoField(number = 1, required = true)
     public int entityVersion = 1;
 

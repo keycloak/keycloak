@@ -50,6 +50,7 @@ public class HotRodUserEntity extends AbstractHotRodEntity {
     @IgnoreForEntityImplementationGenerator
     private static final Logger LOG = Logger.getLogger(HotRodUserEntity.class);
 
+    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
     @ProtoField(number = 1, required = true)
     public int entityVersion = 1;
 
