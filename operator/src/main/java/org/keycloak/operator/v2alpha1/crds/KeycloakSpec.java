@@ -44,7 +44,7 @@ public class KeycloakSpec {
             "The special value `" + Constants.INSECURE_DISABLE + "` disables https.")
     private String tlsSecret;
     @JsonPropertyDescription("Disable the default ingress.")
-    private boolean disableDefaultIngress;
+    private boolean defaultIngressDisabled;
     @JsonPropertyDescription(
         "In this section you can configure podTemplate advanced features, not production-ready, and not supported settings.\n" +
         "Use at your own risk and open an issue with your use-case if you don't find an alternative way.")
@@ -64,11 +64,11 @@ public class KeycloakSpec {
     }
 
     public void setDisableDefaultIngress(boolean value) {
-        this.disableDefaultIngress = value;
+        this.defaultIngressDisabled = value;
     }
 
     public boolean isDisableDefaultIngress() {
-        return this.disableDefaultIngress;
+        return this.defaultIngressDisabled;
     }
 
     public String getTlsSecret() {
