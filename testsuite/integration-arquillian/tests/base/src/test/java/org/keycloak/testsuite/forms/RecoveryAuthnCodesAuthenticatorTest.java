@@ -120,7 +120,7 @@ public class RecoveryAuthnCodesAuthenticatorTest extends AbstractTestRealmKeyclo
                         generatedRecoveryAuthnCodes,
                         System.currentTimeMillis(),
                         null);
-                session.userCredentialManager().createCredential(realm, user, recoveryAuthnCodesCred);
+                user.getUserCredentialManager().createStoredCredential(recoveryAuthnCodesCred);
             });
             passwordPage.clickTryAnotherWayLink();
             selectAuthenticatorPage.assertCurrent();
@@ -194,7 +194,7 @@ public class RecoveryAuthnCodesAuthenticatorTest extends AbstractTestRealmKeyclo
                         generatedRecoveryAuthnCodes,
                         System.currentTimeMillis(),
                         null);
-                session.userCredentialManager().createCredential(realm, user, recoveryAuthnCodesCred);
+                user.getUserCredentialManager().createStoredCredential(recoveryAuthnCodesCred);
             });
             passwordPage.clickTryAnotherWayLink();
             selectAuthenticatorPage.assertCurrent();

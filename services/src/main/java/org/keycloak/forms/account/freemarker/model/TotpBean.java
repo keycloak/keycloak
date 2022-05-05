@@ -51,10 +51,9 @@ public class TotpBean {
 
     public TotpBean(KeycloakSession session, RealmModel realm, UserModel user, UriBuilder uriBuilder) {
         this.uriBuilder = uriBuilder;
-        this.enabled = session.userCredentialManager().isConfiguredFor(realm, user, OTPCredentialModel.TYPE);
+        this.enabled = user.getUserCredentialManager().isConfiguredFor(OTPCredentialModel.TYPE);
         if (enabled) {
-            List<CredentialModel> otpCredentials = session.userCredentialManager()
-                    .getStoredCredentialsByTypeStream(realm, user, OTPCredentialModel.TYPE).collect(Collectors.toList());
+            List<CredentialModel> otpCredentials = user.getUserCredentialManager().getStoredCredentialsByTypeStream(OTPCredentialModel.TYPE).collect(Collectors.toList());
 
             if (otpCredentials.isEmpty()) {
                 // Credential is configured on userStorage side. Create the "fake" credential similar like we do for the new account console

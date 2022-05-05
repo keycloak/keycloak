@@ -48,12 +48,8 @@ public class PasswordCredentialProvider implements CredentialProvider<PasswordCr
         this.session = session;
     }
 
-    protected UserCredentialStore getCredentialStore() {
-        return session.userCredentialManager();
-    }
-
     public PasswordCredentialModel getPassword(RealmModel realm, UserModel user) {
-        List<CredentialModel> passwords = getCredentialStore().getStoredCredentialsByTypeStream(realm, user, getType()).collect(Collectors.toList());
+        List<CredentialModel> passwords = user.getUserCredentialManager().getStoredCredentialsByTypeStream(getType()).collect(Collectors.toList());
         if (passwords.isEmpty()) return null;
         return PasswordCredentialModel.createFromCredentialModel(passwords.get(0));
     }
@@ -87,34 +83,34 @@ public class PasswordCredentialProvider implements CredentialProvider<PasswordCr
             credentialModel.setCreatedDate(Time.currentTimeMillis());
         }
         if (oldPassword == null) { // no password exists --> create new
-            createdCredential = getCredentialStore().createCredential(realm, user, credentialModel);
+            createdCredential = user.getUserCredentialManager().createStoredCredential(credentialModel);
         } else { // password exists --> update existing
             credentialModel.setId(oldPassword.getId());
-            getCredentialStore().updateCredential(realm, user, credentialModel);
+            user.getUserCredentialManager().updateStoredCredential(credentialModel);
             createdCredential = credentialModel;
 
             // 2) add a password history item based on the old password
             if (expiredPasswordsPolicyValue > 1) {
                 oldPassword.setId(null);
                 oldPassword.setType(PasswordCredentialModel.PASSWORD_HISTORY);
-                getCredentialStore().createCredential(realm, user, oldPassword);
+                user.getUserCredentialManager().createStoredCredential(oldPassword);
             }
         }
         
         // 3) remove old password history items
         final int passwordHistoryListMaxSize = Math.max(0, expiredPasswordsPolicyValue - 1);
-        getCredentialStore().getStoredCredentialsByTypeStream(realm, user, PasswordCredentialModel.PASSWORD_HISTORY)
+        user.getUserCredentialManager().getStoredCredentialsByTypeStream(PasswordCredentialModel.PASSWORD_HISTORY)
                 .sorted(CredentialModel.comparingByStartDateDesc())
                 .skip(passwordHistoryListMaxSize)
                 .collect(Collectors.toList())
-                .forEach(p -> getCredentialStore().removeStoredCredential(realm, user, p.getId()));
+                .forEach(p -> user.getUserCredentialManager().removeStoredCredentialById(p.getId()));
 
         return createdCredential;
     }
 
     @Override
     public boolean deleteCredential(RealmModel realm, UserModel user, String credentialId) {
-        return getCredentialStore().removeStoredCredential(realm, user, credentialId);
+        return user.getUserCredentialManager().removeStoredCredentialById(credentialId);
     }
 
     @Override
@@ -198,7 +194,7 @@ public class PasswordCredentialProvider implements CredentialProvider<PasswordCr
         newPassword.setId(password.getId());
         newPassword.setCreatedDate(password.getCreatedDate());
         newPassword.setUserLabel(password.getUserLabel());
-        getCredentialStore().updateCredential(realm, user, newPassword);
+        user.getUserCredentialManager().updateStoredCredential(newPassword);
 
         return true;
     }
@@ -219,7 +215,7 @@ public class PasswordCredentialProvider implements CredentialProvider<PasswordCr
 
         // Check if we are creating or updating password
         UserModel user = metadataContext.getUser();
-        if (user != null && session.userCredentialManager().isConfiguredFor(session.getContext().getRealm(), user, getType())) {
+        if (user != null && user.getUserCredentialManager().isConfiguredFor(getType())) {
             metadataBuilder.updateAction(UserModel.RequiredAction.UPDATE_PASSWORD.toString());
         } else {
             metadataBuilder.createAction(UserModel.RequiredAction.UPDATE_PASSWORD.toString());

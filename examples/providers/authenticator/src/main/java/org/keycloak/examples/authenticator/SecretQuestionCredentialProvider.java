@@ -44,11 +44,6 @@ public class SecretQuestionCredentialProvider implements CredentialProvider<Secr
         this.session = session;
     }
 
-    private UserCredentialStore getCredentialStore() {
-        return session.userCredentialManager();
-    }
-
-
     @Override
     public boolean isValid(RealmModel realm, UserModel user, CredentialInput input) {
         if (!(input instanceof UserCredentialModel)) {
@@ -62,7 +57,7 @@ public class SecretQuestionCredentialProvider implements CredentialProvider<Secr
         if (challengeResponse == null) {
             return false;
         }
-        CredentialModel credentialModel = getCredentialStore().getStoredCredentialById(realm, user, input.getCredentialId());
+        CredentialModel credentialModel = user.getUserCredentialManager().getStoredCredentialById(input.getCredentialId());
         SecretQuestionCredentialModel sqcm = getCredentialFromModel(credentialModel);
         return sqcm.getSecretQuestionSecretData().getAnswer().equals(challengeResponse);
     }
@@ -75,7 +70,7 @@ public class SecretQuestionCredentialProvider implements CredentialProvider<Secr
     @Override
     public boolean isConfiguredFor(RealmModel realm, UserModel user, String credentialType) {
         if (!supportsCredentialType(credentialType)) return false;
-        return getCredentialStore().getStoredCredentialsByTypeStream(realm, user, credentialType).count() > 0;
+        return user.getUserCredentialManager().getStoredCredentialsByTypeStream(credentialType).findAny().isPresent();
     }
 
     @Override
@@ -83,12 +78,12 @@ public class SecretQuestionCredentialProvider implements CredentialProvider<Secr
         if (credentialModel.getCreatedDate() == null) {
             credentialModel.setCreatedDate(Time.currentTimeMillis());
         }
-        return getCredentialStore().createCredential(realm, user, credentialModel);
+        return user.getUserCredentialManager().createStoredCredential(credentialModel);
     }
 
     @Override
     public boolean deleteCredential(RealmModel realm, UserModel user, String credentialId) {
-        return getCredentialStore().removeStoredCredential(realm, user, credentialId);
+        return user.getUserCredentialManager().removeStoredCredentialById(credentialId);
     }
 
     @Override

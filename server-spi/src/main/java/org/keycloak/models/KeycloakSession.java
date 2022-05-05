@@ -248,9 +248,10 @@ public interface KeycloakSession {
 
     /**
      * Service that allows you to valid and update credentials for a user
-     *
+     * @deprecated Use {@link UserModel#getUserCredentialManager()} instead.
      * @return
      */
+    @Deprecated
     UserCredentialManager userCredentialManager();
 
     /**

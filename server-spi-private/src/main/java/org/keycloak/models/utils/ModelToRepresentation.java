@@ -220,9 +220,9 @@ public class ModelToRepresentation {
         rep.setEmail(user.getEmail());
         rep.setEnabled(user.isEnabled());
         rep.setEmailVerified(user.isEmailVerified());
-        rep.setTotp(session.userCredentialManager().isConfiguredFor(realm, user, OTPCredentialModel.TYPE));
-        rep.setDisableableCredentialTypes(session.userCredentialManager()
-                .getDisableableCredentialTypesStream(realm, user).collect(Collectors.toSet()));
+        rep.setTotp(user.getUserCredentialManager().isConfiguredFor(OTPCredentialModel.TYPE));
+        rep.setDisableableCredentialTypes(user.getUserCredentialManager()
+                .getDisableableCredentialTypesStream().collect(Collectors.toSet()));
         rep.setFederationLink(user.getFederationLink());
         rep.setNotBefore(session.users().getNotBeforeOfUser(realm, user));
         rep.setRequiredActions(user.getRequiredActionsStream().collect(Collectors.toList()));

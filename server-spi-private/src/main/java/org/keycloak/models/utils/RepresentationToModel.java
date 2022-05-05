@@ -779,21 +779,21 @@ public class RepresentationToModel {
         convertDeprecatedCredentialsFormat(userRep);
         if (userRep.getCredentials() != null) {
             for (CredentialRepresentation cred : userRep.getCredentials()) {
-                if (cred.getId() != null && session.userCredentialManager().getStoredCredentialById(realm, user, cred.getId()) != null) {
+                if (cred.getId() != null && user.getUserCredentialManager().getStoredCredentialById(cred.getId()) != null) {
                     continue;
                 }
                 if (cred.getValue() != null && !cred.getValue().isEmpty()) {
                     RealmModel origRealm = session.getContext().getRealm();
                     try {
                         session.getContext().setRealm(realm);
-                        session.userCredentialManager().updateCredential(realm, user, UserCredentialModel.password(cred.getValue(), false));
+                        user.getUserCredentialManager().updateCredential(UserCredentialModel.password(cred.getValue(), false));
                     } catch (ModelException ex) {
                         throw new PasswordPolicyNotMetException(ex.getMessage(), user.getUsername(), ex);
                     } finally {
                         session.getContext().setRealm(origRealm);
                     }
                 } else {
-                    session.userCredentialManager().createCredentialThroughProvider(realm, user, toModel(cred));
+                    user.getUserCredentialManager().createCredentialThroughProvider(toModel(cred));
                 }
             }
         }

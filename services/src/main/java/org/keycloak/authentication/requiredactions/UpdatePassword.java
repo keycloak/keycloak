@@ -139,7 +139,7 @@ public class UpdatePassword implements RequiredActionProvider, RequiredActionFac
         }
 
         try {
-            session.userCredentialManager().updateCredential(realm, user, UserCredentialModel.password(passwordNew, false));
+            user.getUserCredentialManager().updateCredential(UserCredentialModel.password(passwordNew, false));
             context.success();
         } catch (ModelException me) {
             errorEvent.detail(Details.REASON, me.getMessage()).error(Errors.PASSWORD_REJECTED);
