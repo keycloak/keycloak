@@ -27,6 +27,8 @@ import org.keycloak.models.sessions.infinispan.InfinispanAuthenticationSessionPr
 import org.keycloak.models.sessions.infinispan.InfinispanSingleUseObjectProviderFactory;
 import org.keycloak.models.sessions.infinispan.InfinispanUserLoginFailureProviderFactory;
 import org.keycloak.models.sessions.infinispan.InfinispanUserSessionProviderFactory;
+import org.keycloak.services.legacysessionsupport.LegacySessionSupportProviderFactory;
+import org.keycloak.services.legacysessionsupport.LegacySessionSupportSpi;
 import org.keycloak.sessions.AuthenticationSessionSpi;
 import org.keycloak.sessions.StickySessionEncoderProviderFactory;
 import org.keycloak.sessions.StickySessionEncoderSpi;
@@ -62,6 +64,8 @@ public class Infinispan extends KeycloakModelParameters {
       .add(ActionTokenStoreSpi.class)
       .add(SingleUseObjectSpi.class)
 
+      .add(LegacySessionSupportSpi.class) // necessary as it will call session.userCredentialManager().onCache()
+
       .build();
 
     static final Set<Class<? extends ProviderFactory>> ALLOWED_FACTORIES = ImmutableSet.<Class<? extends ProviderFactory>>builder()
@@ -76,6 +80,7 @@ public class Infinispan extends KeycloakModelParameters {
       .add(InfinispanSingleUseObjectProviderFactory.class)
       .add(StickySessionEncoderProviderFactory.class)
       .add(TimerProviderFactory.class)
+      .add(LegacySessionSupportProviderFactory.class)
       .build();
 
     @Override

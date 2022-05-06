@@ -68,7 +68,9 @@ public interface SingleUserCredentialManager {
     @Deprecated
     boolean isConfiguredLocally(String type);
 
+    // TODO: not needed for new store? -> no, will be removed without replacement
     Stream<String> getConfiguredUserStorageCredentialTypesStream();
 
+    // TODO: not needed for new store? -> no, will be removed without replacement
     CredentialModel createCredentialThroughProvider(CredentialModel model);
 }
