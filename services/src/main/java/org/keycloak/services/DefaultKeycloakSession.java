@@ -16,6 +16,8 @@
  */
 package org.keycloak.services;
 
+import org.jboss.logging.Logger;
+import org.keycloak.common.util.StackUtil;
 import org.keycloak.component.ComponentFactory;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.jose.jws.DefaultTokenManager;
@@ -69,6 +71,7 @@ import java.util.stream.Collectors;
  */
 public class DefaultKeycloakSession implements KeycloakSession {
 
+    private final static Logger log = Logger.getLogger(DefaultKeycloakSession.class);
     private final DefaultKeycloakSessionFactory factory;
     private final Map<Integer, Provider> providers = new HashMap<>();
     private final List<Provider> closable = new LinkedList<>();
@@ -167,59 +170,68 @@ public class DefaultKeycloakSession implements KeycloakSession {
     }
 
     @Override
-    @Deprecated // put deprecated on the interface
+    @Deprecated
     public UserProvider userLocalStorage() {
-        // TODO: if we would call users() here, we could get the cache in legacy mode instead and would then loop
-        return getProvider(UserProvider.class);
+        log.warnf("The semantics of this method have changed: Please see the migration guide on how to migrate.%s", StackUtil.getShortStackTrace());
+        return users();
     }
 
     @Override
-    @Deprecated // put deprecated on the interface (all *LocalStorage, all *Managers)
+    @Deprecated
     public RealmProvider realmLocalStorage() {
         return realms();
     }
 
     @Override
+    @Deprecated
     public ClientProvider clientLocalStorage() {
         return clients();
     }
 
     @Override
+    @Deprecated
     public ClientScopeProvider clientScopeLocalStorage() {
         return clientScopes();
     }
 
     @Override
+    @Deprecated
     public GroupProvider groupLocalStorage() {
         return groups();
     }
 
     @Override
+    @Deprecated
     public ClientProvider clientStorageManager() {
         return clients();
     }
 
     @Override
+    @Deprecated
     public ClientScopeProvider clientScopeStorageManager() {
         return clientScopes();
     }
 
     @Override
+    @Deprecated
     public RoleProvider roleLocalStorage() {
         return roles();
     }
 
     @Override
+    @Deprecated
     public RoleProvider roleStorageManager() {
         return roles();
     }
 
     @Override
+    @Deprecated
     public GroupProvider groupStorageManager() {
         return groups();
     }
 
     @Override
+    @Deprecated
     public UserProvider userStorageManager() {
         return users();
     }
@@ -322,7 +334,6 @@ public class DefaultKeycloakSession implements KeycloakSession {
             return null;
         }
 
-        @SuppressWarnings("unchecked")
         ComponentFactory<T, T> componentFactory = (ComponentFactory<T, T>) providerFactory;
         T provider = componentFactory.create(this, componentModel);
         enlistForClose(provider);
