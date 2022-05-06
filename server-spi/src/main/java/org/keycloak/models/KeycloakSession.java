@@ -71,7 +71,7 @@ public interface KeycloakSession {
      * @param clazz
      * @param componentId Component configuration
      * @throws IllegalArgumentException If the realm is not set in the context.
-     * @return Provider configured according to the {@link componentId}, {@code null} if it cannot be instantiated.
+     * @return Provider configured according to the {@param componentId}, {@code null} if it cannot be instantiated.
      */
     <T extends Provider> T getComponentProvider(Class<T> clazz, String componentId);
 
@@ -83,7 +83,7 @@ public interface KeycloakSession {
      * @param componentId Component configuration
      * @param modelGetter Getter to retrieve componentModel
      * @throws IllegalArgumentException If the realm is not set in the context.
-     * @return Provider configured according to the {@link componentId}, {@code null} if it cannot be instantiated.
+     * @return Provider configured according to the {@param componentId}, {@code null} if it cannot be instantiated.
      */
     <T extends Provider> T getComponentProvider(Class<T> clazz, String componentId, Function<KeycloakSessionFactory, ComponentModel> modelGetter);
 
@@ -209,34 +209,39 @@ public interface KeycloakSession {
      *
      * @return may be null if cache is disabled
      */
+    @Deprecated
     UserCache userCache();
 
     /**
      * A cached view of all users in system including  users loaded by UserStorageProviders
      *
-     * @return
+     * @return UserProvider instance
      */
     UserProvider users();
 
     /**
      * @return ClientStorageManager instance
      */
+    @Deprecated
     ClientProvider clientStorageManager();
 
     /**
      * @return ClientScopeStorageManager instance
      * @deprecated Use {@link #clientScopes()} instead
      */
+    @Deprecated
     ClientScopeProvider clientScopeStorageManager();
 
     /**
      * @return RoleStorageManager instance
      */
+    @Deprecated
     RoleProvider roleStorageManager();
 
     /**
      * @return GroupStorageManager instance
      */
+    @Deprecated
     GroupProvider groupStorageManager();
 
     /**
@@ -244,11 +249,12 @@ public interface KeycloakSession {
      *
      * @return
      */
+    @Deprecated
     UserProvider userStorageManager();
 
     /**
      * Service that allows you to valid and update credentials for a user
-     * @deprecated Use {@link UserModel#getUserCredentialManager()} instead.
+     * @deprecated Use {@link UserModel#credentialManager()} instead.
      * @return
      */
     @Deprecated
@@ -256,11 +262,11 @@ public interface KeycloakSession {
 
     /**
      * Keycloak specific local storage for users.  No cache in front, this api talks directly to database configured for Keycloak
-     *
-     * @return
      */
+    @Deprecated
     UserProvider userLocalStorage();
 
+    @Deprecated
     RealmProvider realmLocalStorage();
 
     /**
@@ -268,6 +274,7 @@ public interface KeycloakSession {
      *
      * @return
      */
+    @Deprecated
     ClientProvider clientLocalStorage();
 
     /**
@@ -276,6 +283,7 @@ public interface KeycloakSession {
      * @deprecated Use {@link #clientScopes()} instead
      * @return
      */
+    @Deprecated
     ClientScopeProvider clientScopeLocalStorage();
 
     /**
@@ -283,6 +291,7 @@ public interface KeycloakSession {
      *
      * @return
      */
+    @Deprecated
     GroupProvider groupLocalStorage();
 
     /**
@@ -290,6 +299,7 @@ public interface KeycloakSession {
      *
      * @return
      */
+    @Deprecated
     RoleProvider roleLocalStorage();
 
     /**
@@ -298,6 +308,7 @@ public interface KeycloakSession {
      *
      * @return
      */
+    @Deprecated
     UserFederatedStorageProvider userFederatedStorage();
 
     /**
