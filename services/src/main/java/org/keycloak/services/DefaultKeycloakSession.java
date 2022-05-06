@@ -18,7 +18,6 @@ package org.keycloak.services;
 
 import org.keycloak.component.ComponentFactory;
 import org.keycloak.component.ComponentModel;
-import org.keycloak.credential.UserCredentialStoreManager;
 import org.keycloak.jose.jws.DefaultTokenManager;
 import org.keycloak.keys.DefaultKeyManager;
 import org.keycloak.models.ClientProvider;
@@ -45,6 +44,7 @@ import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.InvalidationHandler.InvalidableObjectType;
 import org.keycloak.provider.InvalidationHandler.ObjectType;
 import org.keycloak.services.clientpolicy.ClientPolicyManager;
+import org.keycloak.models.LegacySessionSupportProvider;
 import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.storage.DatastoreProvider;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
@@ -76,12 +76,13 @@ public class DefaultKeycloakSession implements KeycloakSession {
     private final Map<String, Object> attributes = new HashMap<>();
     private final Map<InvalidableObjectType, Set<Object>> invalidationMap = new HashMap<>();
     private DatastoreProvider datastoreProvider;
-    private UserCredentialStoreManager userCredentialStorageManager;
+    @Deprecated
+    private UserCredentialManager userCredentialStorageManager;
     private UserSessionProvider sessionProvider;
     private UserLoginFailureProvider userLoginFailureProvider;
     private AuthenticationSessionProvider authenticationSessionProvider;
     private UserFederatedStorageProvider userFederatedStorageProvider;
-    private KeycloakContext context;
+    private final KeycloakContext context;
     private KeyManager keyManager;
     private ThemeManager themeManager;
     private TokenManager tokenManager;
@@ -229,8 +230,15 @@ public class DefaultKeycloakSession implements KeycloakSession {
     }
 
     @Override
+    @Deprecated
     public UserCredentialManager userCredentialManager() {
-        if (userCredentialStorageManager == null) userCredentialStorageManager = new UserCredentialStoreManager(this);
+        if (userCredentialStorageManager == null) {
+            LegacySessionSupportProvider provider = this.getProvider(LegacySessionSupportProvider.class);
+            if (provider == null) {
+                throw new IllegalStateException("legacy support for a UserCredentialManager is not enabled");
+            }
+            userCredentialStorageManager = provider.userCredentialManager();
+        }
         return userCredentialStorageManager;
     }
 
