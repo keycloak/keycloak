@@ -24,7 +24,7 @@ In the default Catalog, the Keycloak Operator is named `keycloak-operator`. Make
 ==== OpenShift UI
 
 On OpenShift, use the built-in OLM UI to install the Keycloak Operator.
-Navigate to `Home` → `Operators` → `OperatorHub` using the menu on the left side of the OpenShift Console.
+Navigate to `Home`, `Operators`, `OperatorHub` using the menu on the left side of the OpenShift Console.
 Search for "keycloak" on the search input box:
 
 image::{generatedGuideImages}/select-operator.jpeg["Select the Keycloak Operator in the UI"]
