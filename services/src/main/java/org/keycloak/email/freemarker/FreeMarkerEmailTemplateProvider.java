@@ -167,7 +167,10 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
 
         attributes.put("realmName", getRealmName());
 
-        send("executeActionsSubject", "executeActions.ftl", attributes);
+        ArrayList<Object> subjectAttrs = new ArrayList<>();
+        // In theme/email/messages/executeActionsSubject real-name can be used using {0}
+        al.add(getRealmName());
+        send("executeActionsSubject", subjectAttrs, "executeActions.ftl", attributes);
     }
 
     @Override
