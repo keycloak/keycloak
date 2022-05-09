@@ -4,6 +4,14 @@
     <!--auth-sessions-->
     <class>org.keycloak.models.map.storage.jpa.authSession.entity.JpaRootAuthenticationSessionEntity</class>
     <class>org.keycloak.models.map.storage.jpa.authSession.entity.JpaAuthenticationSessionEntity</class>
+    <!--authz-->
+    <class>org.keycloak.models.map.storage.jpa.authorization.resourceServer.entity.JpaResourceServerEntity</class>
+    <class>org.keycloak.models.map.storage.jpa.authorization.resource.entity.JpaResourceEntity</class>
+    <class>org.keycloak.models.map.storage.jpa.authorization.resource.entity.JpaResourceAttributeEntity</class>
+    <class>org.keycloak.models.map.storage.jpa.authorization.scope.entity.JpaScopeEntity</class>
+    <class>org.keycloak.models.map.storage.jpa.authorization.permission.entity.JpaPermissionEntity</class>
+    <class>org.keycloak.models.map.storage.jpa.authorization.policy.entity.JpaPolicyEntity</class>
+    <class>org.keycloak.models.map.storage.jpa.authorization.policy.entity.JpaPolicyConfigEntity</class>
     <!--client-scopes-->
     <class>org.keycloak.models.map.storage.jpa.clientscope.entity.JpaClientScopeEntity</class>
     <class>org.keycloak.models.map.storage.jpa.clientscope.entity.JpaClientScopeAttributeEntity</class>

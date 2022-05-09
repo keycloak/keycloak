@@ -115,6 +115,8 @@ public class MapPolicyStore implements PolicyStore {
     public Policy findById(RealmModel realm, ResourceServer resourceServer, String id) {
         LOG.tracef("findById(%s, %s)%s", id, resourceServer, getShortStackTrace());
 
+        if (id == null) return null;
+
         return tx.read(withCriteria(forRealmAndResourceServer(realm, resourceServer)
                 .compare(SearchableFields.ID, Operator.EQ, id)))
                 .findFirst()

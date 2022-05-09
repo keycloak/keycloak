@@ -20,6 +20,7 @@ limitations under the License.
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
     <!-- aggregate changelog for cockroachdb -->
     <include file="META-INF/jpa-auth-sessions-changelog.xml"/>
+    <include file="META-INF/jpa-authz-changelog.xml"/>
     <include file="META-INF/jpa-client-scopes-changelog.xml"/>
     <include file="META-INF/jpa-clients-changelog.xml"/>
     <include file="META-INF/jpa-groups-changelog.xml"/>
