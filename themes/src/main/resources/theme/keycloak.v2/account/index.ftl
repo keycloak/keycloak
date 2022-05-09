@@ -46,7 +46,9 @@
                 isEventsEnabled : ${isEventsEnabled?c},
                 isMyResourcesEnabled : ${(realm.userManagedAccessAllowed && isAuthorizationEnabled)?c},
                 isTotpConfigured : ${isTotpConfigured?c},
-                deleteAccountAllowed : ${deleteAccountAllowed?c}
+                deleteAccountAllowed : ${deleteAccountAllowed?c},
+                updateEmailFeatureEnabled: ${updateEmailFeatureEnabled?c},
+                updateEmailActionEnabled: ${updateEmailActionEnabled?c}
             }
 
             var availableLocales = [];

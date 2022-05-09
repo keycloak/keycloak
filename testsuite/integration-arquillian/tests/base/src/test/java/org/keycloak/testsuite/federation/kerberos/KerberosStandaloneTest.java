@@ -19,12 +19,9 @@ package org.keycloak.testsuite.federation.kerberos;
 
 import java.net.URI;
 import java.util.List;
-
-
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
-
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -36,11 +33,9 @@ import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.ActionURIUtils;
+import org.keycloak.testsuite.KerberosEmbeddedServer;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.util.KerberosRule;
-import org.keycloak.testsuite.KerberosEmbeddedServer;
-
-import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 
 /**
  * Test for the KerberosFederationProvider (kerberos without LDAP integration)

@@ -17,14 +17,8 @@
 
 package org.keycloak.testsuite.ui.account2.page;
 
-import org.keycloak.representations.idm.UserRepresentation;
-import org.openqa.selenium.By;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.support.FindBy;
-import org.openqa.selenium.support.ui.Select;
-
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.util.UIAssert.assertElementDisabled;
 import static org.keycloak.testsuite.util.UIAssert.assertInputElementValid;
 import static org.keycloak.testsuite.util.UIUtils.clickLink;
@@ -32,7 +26,11 @@ import static org.keycloak.testsuite.util.UIUtils.getTextInputValue;
 import static org.keycloak.testsuite.util.UIUtils.isElementVisible;
 import static org.keycloak.testsuite.util.UIUtils.setTextInputValue;
 
-import static org.junit.Assert.assertEquals;
+import org.keycloak.representations.idm.UserRepresentation;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.FindBy;
+import org.openqa.selenium.support.ui.Select;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
@@ -54,6 +52,8 @@ public class PersonalInfoPage extends AbstractLoggedInPage {
     private WebElement cancelBtn;
     @FindBy(id = "delete-account")
     private WebElement deleteAccountSection;
+    @FindBy(id = "update-email-btn")
+    private WebElement updateEmailLink;
 
     @Override
     public String getPageId() {
@@ -86,6 +86,18 @@ public class PersonalInfoPage extends AbstractLoggedInPage {
 
     public void assertEmailValid(boolean expected) {
         assertInputElementValid(expected, email);
+    }
+
+    public void assertUpdateEmailLinkVisible(boolean expected){
+        if (updateEmailLink == null) {
+            assertFalse(expected);
+            return;
+        }
+        assertEquals(expected, isElementVisible(updateEmailLink));
+    }
+
+    public void clickUpdateEmailLink(){
+        clickLink(updateEmailLink);
     }
 
     public String getFirstName() {
@@ -149,7 +161,6 @@ public class PersonalInfoPage extends AbstractLoggedInPage {
 
     public void setValues(UserRepresentation user, boolean includeUsername) {
         if (includeUsername) {setUsername(user.getUsername());}
-        setEmail(user.getEmail());
         setFirstName(user.getFirstName());
         setLastName(user.getLastName());
     }

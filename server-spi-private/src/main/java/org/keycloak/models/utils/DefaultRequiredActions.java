@@ -98,6 +98,7 @@ public class DefaultRequiredActions {
 
         addUpdateLocaleAction(realm);
         addDeleteAccountAction(realm);
+        addUpdateEmailAction(realm);
     }
 
     public static void addDeleteAccountAction(RealmModel realm) {
@@ -123,6 +124,20 @@ public class DefaultRequiredActions {
             updateUserLocale.setDefaultAction(false);
             updateUserLocale.setPriority(1000);
             realm.addRequiredActionProvider(updateUserLocale);
+        }
+    }
+
+    public static void addUpdateEmailAction(RealmModel realm){
+        if (realm.getRequiredActionProviderByAlias(UserModel.RequiredAction.UPDATE_EMAIL.name()) == null
+                && Profile.isFeatureEnabled(Profile.Feature.UPDATE_EMAIL)){
+            RequiredActionProviderModel updateEmail = new RequiredActionProviderModel();
+            updateEmail.setEnabled(true);
+            updateEmail.setAlias(UserModel.RequiredAction.UPDATE_EMAIL.name());
+            updateEmail.setName("Update Email");
+            updateEmail.setProviderId(UserModel.RequiredAction.UPDATE_EMAIL.name());
+            updateEmail.setDefaultAction(false);
+            updateEmail.setPriority(70);
+            realm.addRequiredActionProvider(updateEmail);
         }
     }
 }
