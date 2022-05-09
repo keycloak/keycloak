@@ -31,7 +31,7 @@
             type=semver,pattern={{major}}.{{minor}}
 
       - name: Login to Quay
-        uses: docker/login-action@v1
+        uses: docker/login-action@v2
         with:
           registry: quay.io
           username: ${{ secrets.QUAY_USERNAME }}
