@@ -100,25 +100,23 @@ export const AuthorizationScopes = ({ clientId }: ScopesProps) => {
     row,
   }: {
     row: ExpandableScopeRepresentation;
-  }) => {
-    return (
-      <>
-        {row.resources?.[0]?.name} <MoreLabel array={row.resources} />
-      </>
-    );
-  };
+  }) => (
+    <>
+      {row.resources?.[0]?.name ? row.resources[0]?.name : "—"}{" "}
+      <MoreLabel array={row.resources} />
+    </>
+  );
 
   const PermissionsRenderer = ({
     row,
   }: {
     row: ExpandableScopeRepresentation;
-  }) => {
-    return (
-      <>
-        {row.permissions?.[0]?.name} <MoreLabel array={row.permissions} />
-      </>
-    );
-  };
+  }) => (
+    <>
+      {row.permissions?.[0]?.name ? row.permissions[0]?.name : "—"}{" "}
+      <MoreLabel array={row.permissions} />
+    </>
+  );
 
   if (!scopes) {
     return <KeycloakSpinner />;
@@ -169,7 +167,7 @@ export const AuthorizationScopes = ({ clientId }: ScopesProps) => {
                   <Th />
                   <Th>{t("common:name")}</Th>
                   <Th>{t("resources")}</Th>
-                  <Th>{t("permissions")}</Th>
+                  <Th>{t("common:permissions")}</Th>
                   <Th />
                   <Th />
                 </Tr>
