@@ -20,6 +20,7 @@ import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { emptyFormatter } from "../util";
+import useLocaleSort, { mapByKey } from "../utils/useLocaleSort";
 import {
   CellDropdown,
   ClientScope,
@@ -32,9 +33,7 @@ import {
 import { ChangeTypeDropdown } from "./ChangeTypeDropdown";
 import { toNewClientScope } from "./routes/NewClientScope";
 
-import "./client-scope.css";
 import { toClientScope } from "./routes/ClientScope";
-import { useWhoAmI } from "../context/whoami/WhoAmI";
 import {
   nameFilter,
   protocolFilter,
@@ -48,9 +47,10 @@ import type { Row } from "../clients/scopes/ClientScopes";
 import { getProtocolName } from "../clients/utils";
 import helpUrls from "../help-urls";
 
+import "./client-scope.css";
+
 export default function ClientScopesSection() {
   const { realm } = useRealm();
-  const { whoAmI } = useWhoAmI();
   const { t } = useTranslation("client-scopes");
 
   const adminClient = useAdminClient();
@@ -66,6 +66,7 @@ export default function ClientScopesSection() {
     AllClientScopes.none
   );
   const [searchProtocol, setSearchProtocol] = useState<ProtocolType>("all");
+  const localeSort = useLocaleSort();
 
   const [key, setKey] = useState(0);
   const refresh = () => {
@@ -87,7 +88,7 @@ export default function ClientScopesSection() {
         ? typeFilter(searchTypeType)
         : protocolFilter(searchProtocol);
 
-    return clientScopes
+    const transformed = clientScopes
       .map((scope) => {
         const row: Row = {
           ...scope,
@@ -103,9 +104,12 @@ export default function ClientScopesSection() {
         };
         return row;
       })
-      .filter(filter)
-      .sort((a, b) => a.name!.localeCompare(b.name!, whoAmI.getLocale()))
-      .slice(first, Number(first) + Number(max));
+      .filter(filter);
+
+    return localeSort(transformed, mapByKey("name")).slice(
+      first,
+      Number(first) + Number(max)
+    );
   };
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({

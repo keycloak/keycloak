@@ -12,46 +12,47 @@ import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/de
 import { KeycloakDataTable } from "../../../components/table-toolbar/KeycloakDataTable";
 import { ListEmptyState } from "../../../components/list-empty-state/ListEmptyState";
 import { useAlerts } from "../../../components/alert/Alerts";
-import { useAdminClient } from "../../../context/auth/AdminClient";
+import { useAdminClient, useFetch } from "../../../context/auth/AdminClient";
 import { useConfirmDialog } from "../../../components/confirm-dialog/ConfirmDialog";
-import { useWhoAmI } from "../../../context/whoami/WhoAmI";
+import useLocaleSort, { mapByKey } from "../../../utils/useLocaleSort";
 
 export const LdapMapperList = () => {
   const history = useHistory();
   const { t } = useTranslation("user-federation");
   const adminClient = useAdminClient();
   const { addAlert, addError } = useAlerts();
-  const { whoAmI } = useWhoAmI();
   const { url } = useRouteMatch();
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
+
+  const [mappers, setMappers] = useState<ComponentRepresentation[]>([]);
+  const localeSort = useLocaleSort();
 
   const { id } = useParams<{ id: string }>();
 
   const [selectedMapper, setSelectedMapper] =
     useState<ComponentRepresentation>();
 
-  const loader = async () => {
-    const testParams: {
-      [name: string]: string | number;
-    } = {
-      parent: id,
-      type: "org.keycloak.storage.ldap.mappers.LDAPStorageMapper",
-    };
-
-    const mappersList = (await adminClient.components.find(testParams)).map(
-      (mapper) => {
-        return {
-          ...mapper,
-          name: mapper.name,
-          type: mapper.providerId,
-        } as ComponentRepresentation;
-      }
-    );
-    return mappersList.sort((a, b) =>
-      a.name!.localeCompare(b.name!, whoAmI.getLocale())
-    );
-  };
+  useFetch(
+    () =>
+      adminClient.components.find({
+        parent: id,
+        type: "org.keycloak.storage.ldap.mappers.LDAPStorageMapper",
+      }),
+    (mapper) => {
+      setMappers(
+        localeSort(
+          mapper.map((mapper) => ({
+            ...mapper,
+            name: mapper.name,
+            type: mapper.providerId,
+          })),
+          mapByKey("name")
+        )
+      );
+    },
+    [key]
+  );
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: t("common:deleteMappingTitle", { mapperId: selectedMapper?.id }),
@@ -88,7 +89,7 @@ export const LdapMapperList = () => {
       <DeleteConfirm />
       <KeycloakDataTable
         key={key}
-        loader={loader}
+        loader={mappers}
         ariaLabelKey="ldapMappersList"
         searchPlaceholderKey="common:searchForMapper"
         toolbarItem={

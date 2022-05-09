@@ -10,8 +10,8 @@ import {
 } from "@patternfly/react-core";
 
 import type CredentialRepresentation from "@keycloak/keycloak-admin-client/lib/defs/credentialRepresentation";
-import { useWhoAmI } from "../../context/whoami/WhoAmI";
 import useToggle from "../../utils/useToggle";
+import useLocaleSort from "../../utils/useLocaleSort";
 import { CredentialDataDialog } from "./CredentialDataDialog";
 
 type CredentialRowProps = {
@@ -30,8 +30,7 @@ export const CredentialRow = ({
   const { t } = useTranslation("users");
   const [showData, toggleShow] = useToggle();
   const [kebabOpen, toggleKebab] = useToggle();
-
-  const { whoAmI } = useWhoAmI();
+  const localeSort = useLocaleSort();
 
   const rows = useMemo(() => {
     if (!credential.credentialData) {
@@ -41,17 +40,15 @@ export const CredentialRow = ({
     const credentialData: Record<string, unknown> = JSON.parse(
       credential.credentialData
     );
-    const locale = whoAmI.getLocale();
+    return localeSort(Object.entries(credentialData), ([key]) => key).map<
+      [string, string]
+    >(([key, value]) => {
+      if (typeof value === "string") {
+        return [key, value];
+      }
 
-    return Object.entries(credentialData)
-      .sort(([a], [b]) => a.localeCompare(b, locale))
-      .map<[string, string]>(([key, value]) => {
-        if (typeof value === "string") {
-          return [key, value];
-        }
-
-        return [key, JSON.stringify(value)];
-      });
+      return [key, JSON.stringify(value)];
+    });
   }, [credential.credentialData]);
 
   return (

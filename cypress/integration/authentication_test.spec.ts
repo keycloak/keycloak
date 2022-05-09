@@ -65,11 +65,11 @@ describe("Authentication test", () => {
     listingPage.goToItemDetails("Copy of browser");
     detailPage.addExecution(
       "Copy of browser forms",
-      "console-username-password"
+      "reset-credentials-choose-user"
     );
 
     masthead.checkNotificationMessage("Flow successfully updated");
-    detailPage.executionExists("Username Password Challenge");
+    detailPage.executionExists("Choose User");
   });
 
   it("should add a condition", () => {
@@ -80,7 +80,6 @@ describe("Authentication test", () => {
     );
 
     masthead.checkNotificationMessage("Flow successfully updated");
-    detailPage.executionExists("Username Password Challenge");
   });
 
   it("should add a sub-flow", () => {

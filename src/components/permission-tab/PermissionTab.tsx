@@ -26,7 +26,7 @@ import { useRealm } from "../../context/realm-context/RealmContext";
 import { toPermissionDetails } from "../../clients/routes/PermissionDetails";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
-import { useWhoAmI } from "../../context/whoami/WhoAmI";
+import useLocaleSort from "../../utils/useLocaleSort";
 import { useConfirmDialog } from "../confirm-dialog/ConfirmDialog";
 
 import "./permissions-tab.css";
@@ -43,9 +43,9 @@ export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
   const history = useHistory();
   const adminClient = useAdminClient();
   const { realm } = useRealm();
-  const { whoAmI } = useWhoAmI();
   const [realmId, setRealmId] = useState("");
   const [permission, setPermission] = useState<ManagementPermissionReference>();
+  const localeSort = useLocaleSort();
 
   const togglePermissionEnabled = (enabled: boolean) => {
     switch (type) {
@@ -173,48 +173,47 @@ export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
                   </Tr>
                 </Thead>
                 <Tbody>
-                  {Object.entries(permission.scopePermissions || {})
-                    .sort((a, b) =>
-                      a[0]!.localeCompare(b[0]!, whoAmI.getLocale())
-                    )
-                    .map(([name, id]) => (
-                      <Tr key={id}>
-                        <Td>
-                          <Link
-                            to={toPermissionDetails({
-                              realm,
-                              id: realmId,
-                              permissionType: "scope",
-                              permissionId: id,
-                            })}
-                          >
-                            {name}
-                          </Link>
-                        </Td>
-                        <Td>
-                          {t(`scopePermissions.${type}.${name}-description`)}
-                        </Td>
-                        <Td isActionCell>
-                          <ActionsColumn
-                            items={[
-                              {
-                                title: t("common:edit"),
-                                onClick() {
-                                  history.push(
-                                    toPermissionDetails({
-                                      realm,
-                                      id: realmId,
-                                      permissionType: "scope",
-                                      permissionId: id,
-                                    })
-                                  );
-                                },
+                  {localeSort(
+                    Object.entries(permission.scopePermissions || {}),
+                    ([name]) => name
+                  ).map(([name, id]) => (
+                    <Tr key={id}>
+                      <Td>
+                        <Link
+                          to={toPermissionDetails({
+                            realm,
+                            id: realmId,
+                            permissionType: "scope",
+                            permissionId: id,
+                          })}
+                        >
+                          {name}
+                        </Link>
+                      </Td>
+                      <Td>
+                        {t(`scopePermissions.${type}.${name}-description`)}
+                      </Td>
+                      <Td isActionCell>
+                        <ActionsColumn
+                          items={[
+                            {
+                              title: t("common:edit"),
+                              onClick() {
+                                history.push(
+                                  toPermissionDetails({
+                                    realm,
+                                    id: realmId,
+                                    permissionType: "scope",
+                                    permissionId: id,
+                                  })
+                                );
                               },
-                            ]}
-                          />
-                        </Td>
-                      </Tr>
-                    ))}
+                            },
+                          ]}
+                        />
+                      </Td>
+                    </Tr>
+                  ))}
                 </Tbody>
               </TableComposable>
             </CardBody>

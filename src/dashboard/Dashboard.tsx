@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { useHistory } from "react-router-dom";
 import { Trans, useTranslation } from "react-i18next";
 import { xor } from "lodash-es";
@@ -33,14 +33,15 @@ import { toUpperCase } from "../util";
 import { HelpItem } from "../components/help-enabler/HelpItem";
 import environment from "../environment";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
+import useLocaleSort from "../utils/useLocaleSort";
 import {
   routableTab,
   RoutableTabs,
 } from "../components/routable-tabs/RoutableTabs";
 import { DashboardTab, toDashboard } from "./routes/Dashboard";
+import { ProviderInfo } from "./ProviderInfo";
 
 import "./dashboard.css";
-import { ProviderInfo } from "./ProviderInfo";
 
 const EmptyDashboard = () => {
   const { t } = useTranslation("dashboard");
@@ -70,11 +71,28 @@ const Dashboard = () => {
   const { realm } = useRealm();
   const serverInfo = useServerInfo();
   const history = useHistory();
+  const localeSort = useLocaleSort();
 
-  const enabledFeatures = xor(
-    serverInfo.profileInfo?.disabledFeatures,
-    serverInfo.profileInfo?.experimentalFeatures,
-    serverInfo.profileInfo?.previewFeatures
+  const enabledFeatures = useMemo(
+    () =>
+      localeSort(
+        xor(
+          serverInfo.profileInfo?.disabledFeatures,
+          serverInfo.profileInfo?.experimentalFeatures,
+          serverInfo.profileInfo?.previewFeatures
+        ),
+        (item) => item
+      ),
+    [serverInfo.profileInfo]
+  );
+
+  const disabledFeatures = useMemo(
+    () =>
+      localeSort(
+        serverInfo.profileInfo?.disabledFeatures ?? [],
+        (item) => item
+      ),
+    [serverInfo.profileInfo]
   );
 
   const isExperimentalFeature = (feature: string) =>
@@ -193,11 +211,9 @@ const Dashboard = () => {
                           </DescriptionListTerm>
                           <DescriptionListDescription>
                             <List variant={ListVariant.inline}>
-                              {serverInfo.profileInfo?.disabledFeatures?.map(
-                                (feature) => (
-                                  <ListItem key={feature}>{feature}</ListItem>
-                                )
-                              )}
+                              {disabledFeatures.map((feature) => (
+                                <ListItem key={feature}>{feature}</ListItem>
+                              ))}
                             </List>
                           </DescriptionListDescription>
                         </DescriptionListGroup>
