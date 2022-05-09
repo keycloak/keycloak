@@ -242,27 +242,25 @@ export default function PermissionDetails() {
                 validated={errors.description ? "error" : "default"}
               />
             </FormGroup>
-            {permissionType !== "scope" && (
-              <FormGroup
-                label={t("applyToResourceTypeFlag")}
-                fieldId="applyToResourceTypeFlag"
-                labelIcon={
-                  <HelpItem
-                    helpText="clients-help:applyToResourceTypeFlag"
-                    fieldLabelId="clients:applyToResourceTypeFlag"
-                  />
-                }
-              >
-                <Switch
-                  id="applyToResourceTypeFlag"
-                  name="applyToResourceTypeFlag"
-                  label={t("common:on")}
-                  labelOff={t("common:off")}
-                  isChecked={applyToResourceTypeFlag}
-                  onChange={setApplyToResourceTypeFlag}
+            <FormGroup
+              label={t("applyToResourceTypeFlag")}
+              fieldId="applyToResourceTypeFlag"
+              labelIcon={
+                <HelpItem
+                  helpText="clients-help:applyToResourceTypeFlag"
+                  fieldLabelId="clients:applyToResourceTypeFlag"
                 />
-              </FormGroup>
-            )}
+              }
+            >
+              <Switch
+                id="applyToResourceTypeFlag"
+                name="applyToResourceTypeFlag"
+                label={t("common:on")}
+                labelOff={t("common:off")}
+                isChecked={applyToResourceTypeFlag}
+                onChange={setApplyToResourceTypeFlag}
+              />
+            </FormGroup>
             {applyToResourceTypeFlag ? (
               <FormGroup
                 label={t("resourceType")}
@@ -273,11 +271,12 @@ export default function PermissionDetails() {
                     fieldLabelId="resourceType"
                   />
                 }
+                isRequired={permissionType === "scope"}
               >
                 <KeycloakTextInput
                   id="resourceType"
                   name="resourceType"
-                  ref={register}
+                  ref={register({ required: permissionType === "scope" })}
                 />
               </FormGroup>
             ) : (
@@ -292,7 +291,7 @@ export default function PermissionDetails() {
                 }
                 helperTextInvalid={t("common:required")}
                 validated={errors.resources ? "error" : "default"}
-                isRequired
+                isRequired={permissionType !== "scope"}
               >
                 <ResourcesPolicySelect
                   name="resources"
@@ -306,7 +305,7 @@ export default function PermissionDetails() {
                       ? SelectVariant.typeahead
                       : SelectVariant.typeaheadMulti
                   }
-                  isRequired
+                  isRequired={permissionType !== "scope"}
                 />
               </FormGroup>
             )}
