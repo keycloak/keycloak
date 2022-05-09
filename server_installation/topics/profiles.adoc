@@ -99,6 +99,11 @@ The features that can be enabled and disabled are:
 |Yes
 |Supported
 
+|update_email
+|Update Email Workflow
+|No
+|Preview
+
 |===
 
 To enable all preview features start the server with:
