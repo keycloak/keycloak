@@ -17,13 +17,22 @@
 package org.keycloak.models.map.storage.jpa;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Set;
+import java.util.UUID;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
+import org.keycloak.models.map.common.StringKeyConverter;
 import org.keycloak.models.map.storage.CriterionNotSupportedException;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
@@ -103,5 +112,37 @@ public abstract class JpaModelCriteriaBuilder<E, M, Self extends JpaModelCriteri
 
     public boolean isDistinct() {
         return this.isDistinct;
+    }
+
+    @SuppressWarnings("unchecked")
+    protected Collection<?> getValuesForInOperator(Object[] values, SearchableModelField<?> modelField) {
+        if (values == null || values.length == 0) throw new CriterionNotSupportedException(modelField, Operator.IN);
+
+        Collection<?> collectionValues;
+        if (values.length == 1) {
+
+            if (values[0] instanceof Object[]) {
+                collectionValues = Arrays.asList(values[0]);
+            } else if (values[0] instanceof Collection) {
+                collectionValues = (Collection) values[0];
+            } else if (values[0] instanceof Stream) {
+                try (Stream<?> str = ((Stream) values[0])) {
+                    collectionValues = str.collect(Collectors.toCollection(ArrayList::new));
+                }
+            } else {
+                collectionValues = Collections.singleton(values[0]);
+            }
+
+        } else  {
+            collectionValues = new HashSet(Arrays.asList(values));
+        }
+        return collectionValues;
+    }
+
+    protected Set<UUID> getUuidsForInOperator(Object[] values, SearchableModelField<?> modelField) {
+        return getValuesForInOperator(values, modelField).stream()
+                    .map(val -> StringKeyConverter.UUIDKey.INSTANCE.fromStringSafe(Objects.toString(val, null)))
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet());
     }
 }

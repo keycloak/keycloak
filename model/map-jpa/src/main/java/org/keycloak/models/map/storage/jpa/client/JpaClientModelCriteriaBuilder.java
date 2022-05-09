@@ -19,6 +19,7 @@ package org.keycloak.models.map.storage.jpa.client;
 import java.util.function.BiFunction;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.Join;
+import javax.persistence.criteria.JoinType;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import org.keycloak.models.ClientModel;
@@ -79,7 +80,7 @@ public class JpaClientModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaCl
                     validateValue(value, modelField, op, String.class, String.class);
 
                     return new JpaClientModelCriteriaBuilder((cb, root) -> {
-                        Join<JpaClientEntity, JpaClientAttributeEntity> join = root.join("attributes");
+                        Join<JpaClientEntity, JpaClientAttributeEntity> join = root.join("attributes", JoinType.LEFT);
                         return cb.and(
                             cb.equal(join.get("name"), value[0]), 
                             cb.equal(join.get("value"), value[1])

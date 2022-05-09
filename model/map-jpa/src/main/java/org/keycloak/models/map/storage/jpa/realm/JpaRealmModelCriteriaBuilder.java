@@ -19,6 +19,7 @@ package org.keycloak.models.map.storage.jpa.realm;
 import java.util.function.BiFunction;
 
 import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.JoinType;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
@@ -62,7 +63,7 @@ public class JpaRealmModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaRea
                 } else if (modelField == RealmModel.SearchableFields.COMPONENT_PROVIDER_TYPE) {
                     validateValue(value, modelField, op, String.class);
                     return new JpaRealmModelCriteriaBuilder((cb, root) ->
-                            cb.equal(root.join("components").get("providerType"), value[0]), true);
+                            cb.equal(root.join("components", JoinType.LEFT).get("providerType"), value[0]), true);
                 } else {
                     throw new CriterionNotSupportedException(modelField, op);
                 }

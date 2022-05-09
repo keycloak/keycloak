@@ -190,6 +190,10 @@ public class MapJpaLiquibaseUpdaterProvider implements MapJpaUpdaterProvider {
         if (modelName == null) {
             throw new IllegalStateException("Cannot find changlelog for modelClass " + modelType.getName());
         }
+
+        // for authorization services there is used single name for all modelTypes
+        modelName = modelName.startsWith("authz-") ? "authz" : modelName;
+
         Database database = DatabaseFactory.getInstance().findCorrectDatabaseImplementation(new JdbcConnection(connection));
         // if database is cockroachdb, use the aggregate changelog (see GHI #11230).
         String changelog = database instanceof CockroachDatabase ? "META-INF/jpa-aggregate-changelog.xml" : "META-INF/jpa-" + modelName + "-changelog.xml";

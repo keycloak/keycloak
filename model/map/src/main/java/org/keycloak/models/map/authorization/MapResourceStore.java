@@ -114,6 +114,8 @@ public class MapResourceStore implements ResourceStore {
     public Resource findById(RealmModel realm, ResourceServer resourceServer, String id) {
         LOG.tracef("findById(%s, %s)%s", id, resourceServer, getShortStackTrace());
 
+        if (id == null) return null;
+
         return tx.read(withCriteria(forRealmAndResourceServer(realm, resourceServer)
                 .compare(SearchableFields.ID, Operator.EQ, id)))
                 .findFirst()

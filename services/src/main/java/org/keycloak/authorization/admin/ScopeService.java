@@ -141,9 +141,12 @@ public class ScopeService {
             }
         }
 
+        //to be able to access all lazy loaded fields it's needed to create representation before it's deleted
+        ScopeRepresentation scopeRep = toRepresentation(scope);
+
         storeFactory.getScopeStore().delete(realm, id);
 
-        audit(toRepresentation(scope), OperationType.DELETE);
+        audit(scopeRep, OperationType.DELETE);
 
         return Response.noContent().build();
     }
