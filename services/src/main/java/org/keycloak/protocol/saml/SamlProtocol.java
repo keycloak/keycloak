@@ -42,7 +42,7 @@ import org.keycloak.models.KeyManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.SingleUseStoreProvider;
+import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.LoginProtocol;
@@ -155,7 +155,7 @@ public class SamlProtocol implements LoginProtocol {
     protected EventBuilder event;
 
     protected ArtifactResolver artifactResolver;
-    protected SingleUseStoreProvider singleUseStore;
+    protected SingleUseObjectProvider singleUseStore;
 
     @Override
     public SamlProtocol setSession(KeycloakSession session) {
@@ -194,9 +194,9 @@ public class SamlProtocol implements LoginProtocol {
         return artifactResolver;
     }
 
-    private SingleUseStoreProvider getSingleUseStore() {
+    private SingleUseObjectProvider getSingleUseStore() {
         if (singleUseStore == null) {
-            singleUseStore = session.getProvider(SingleUseStoreProvider.class);
+            singleUseStore = session.getProvider(SingleUseObjectProvider.class);
         }
         return singleUseStore;
     }

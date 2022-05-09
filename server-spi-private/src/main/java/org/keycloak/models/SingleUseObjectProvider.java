@@ -26,7 +26,7 @@ import java.util.Map;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public interface SingleUseStoreProvider extends Provider {
+public interface SingleUseObjectProvider extends Provider {
 
     // suffix to a key to indicate that token is considered revoked
     String REVOKED_KEY = ".revoked";

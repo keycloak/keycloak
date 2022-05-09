@@ -27,7 +27,7 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.SingleUseStoreProvider;
+import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.services.managers.UserSessionCrossDCManager;
 
@@ -50,7 +50,7 @@ public class OAuth2CodeParser {
      * @return code parameter to be used in OAuth2 handshake
      */
     public static String persistCode(KeycloakSession session, AuthenticatedClientSessionModel clientSession, OAuth2Code codeData) {
-        SingleUseStoreProvider codeStore = session.getProvider(SingleUseStoreProvider.class);
+        SingleUseObjectProvider codeStore = session.getProvider(SingleUseObjectProvider.class);
 
         String key = codeData.getId();
         if (key == null) {
@@ -110,7 +110,7 @@ public class OAuth2CodeParser {
 
         result.clientSession = userSession.getAuthenticatedClientSessionByClient(clientUUID);
 
-        SingleUseStoreProvider codeStore = session.getProvider(SingleUseStoreProvider.class);
+        SingleUseObjectProvider codeStore = session.getProvider(SingleUseObjectProvider.class);
         Map<String, String> codeData = codeStore.remove(codeUUID);
 
         // Either code not available or was already used

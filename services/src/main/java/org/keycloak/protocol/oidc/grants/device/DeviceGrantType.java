@@ -33,7 +33,7 @@ import org.keycloak.models.KeycloakUriInfo;
 import org.keycloak.models.OAuth2DeviceCodeModel;
 import org.keycloak.models.OAuth2DeviceUserCodeModel;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.SingleUseStoreProvider;
+import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.LoginProtocol;
@@ -144,28 +144,28 @@ public class DeviceGrantType {
     }
 
     public static OAuth2DeviceCodeModel getDeviceByDeviceCode(KeycloakSession session, RealmModel realm, String deviceCode) {
-        SingleUseStoreProvider singleUseStore = session.getProvider(SingleUseStoreProvider.class);
+        SingleUseObjectProvider singleUseStore = session.getProvider(SingleUseObjectProvider.class);
         Map<String, String> notes = singleUseStore.get(OAuth2DeviceCodeModel.createKey(deviceCode));
         return notes != null ? OAuth2DeviceCodeModel.fromCache(realm, deviceCode, notes) : null;
     }
 
     public static void removeDeviceByDeviceCode(KeycloakSession session, String deviceCode) {
-        SingleUseStoreProvider singleUseStore = session.getProvider(SingleUseStoreProvider.class);
+        SingleUseObjectProvider singleUseStore = session.getProvider(SingleUseObjectProvider.class);
         singleUseStore.remove(OAuth2DeviceCodeModel.createKey(deviceCode));
     }
 
     public static void removeDeviceByUserCode(KeycloakSession session, RealmModel realm, String userCode) {
-        SingleUseStoreProvider singleUseStore = session.getProvider(SingleUseStoreProvider.class);
+        SingleUseObjectProvider singleUseStore = session.getProvider(SingleUseObjectProvider.class);
         singleUseStore.remove(OAuth2DeviceUserCodeModel.createKey(realm, userCode));
     }
 
     public static boolean isPollingAllowed(KeycloakSession session, OAuth2DeviceCodeModel deviceCodeModel) {
-        SingleUseStoreProvider singleUseStore = session.getProvider(SingleUseStoreProvider.class);
+        SingleUseObjectProvider singleUseStore = session.getProvider(SingleUseObjectProvider.class);
         return singleUseStore.putIfAbsent(deviceCodeModel.serializePollingKey(), deviceCodeModel.getPollingInterval());
     }
 
     public static boolean approveUserCode(KeycloakSession session, RealmModel realm, String userCode, String userSessionId, Map<String, String> additionalParams) {
-        SingleUseStoreProvider singleUseStore = session.getProvider(SingleUseStoreProvider.class);
+        SingleUseObjectProvider singleUseStore = session.getProvider(SingleUseObjectProvider.class);
         OAuth2DeviceCodeModel deviceCodeModel = DeviceEndpoint.getDeviceByUserCode(session, realm, userCode);
 
         if (deviceCodeModel != null) {
@@ -177,7 +177,7 @@ public class DeviceGrantType {
     }
 
     public static boolean denyUserCode(KeycloakSession session, RealmModel realm, String userCode) {
-        SingleUseStoreProvider singleUseStore = session.getProvider(SingleUseStoreProvider.class);
+        SingleUseObjectProvider singleUseStore = session.getProvider(SingleUseObjectProvider.class);
         OAuth2DeviceCodeModel deviceCodeModel = DeviceEndpoint.getDeviceByUserCode(session, realm, userCode);
 
         if (deviceCodeModel != null) {

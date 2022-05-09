@@ -25,7 +25,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.SingleUseStoreProvider;
+import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
 import org.keycloak.protocol.oidc.endpoints.request.AuthzEndpointRequestObjectParser;
@@ -50,7 +50,7 @@ public class AuthzEndpointParParser extends AuthzEndpointRequestParser {
     public AuthzEndpointParParser(KeycloakSession session, ClientModel client, String requestUri) {
         this.session = session;
         this.client = client;
-        SingleUseStoreProvider singleUseStore = session.getProvider(SingleUseStoreProvider.class);
+        SingleUseObjectProvider singleUseStore = session.getProvider(SingleUseObjectProvider.class);
         String key;
         try {
             key = requestUri.substring(ParEndpoint.REQUEST_URI_PREFIX_LENGTH);

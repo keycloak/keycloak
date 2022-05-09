@@ -60,7 +60,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.KeycloakUriInfo;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.SingleUseStoreProvider;
+import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.AuthorizationEndpointBase;
 import org.keycloak.protocol.LoginProtocol;
@@ -1104,8 +1104,8 @@ public class SamlService extends AuthorizationEndpointBase {
     }
 
 
-    private SingleUseStoreProvider getSingleUseStore() {
-        return session.getProvider(SingleUseStoreProvider.class);
+    private SingleUseObjectProvider getSingleUseStore() {
+        return session.getProvider(SingleUseObjectProvider.class);
     }
 
     /**
