@@ -38,7 +38,7 @@
           password: ${{ secrets.QUAY_TOKEN }}
 
       - name: Build and push
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3
         with:
           context: quarkus/container
           platforms: linux/amd64,linux/arm64
