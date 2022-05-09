@@ -11,6 +11,7 @@ import {
   Text,
   TextVariants,
   Button,
+  Tooltip,
 } from "@patternfly/react-core";
 import { TrashIcon } from "@patternfly/react-icons";
 
@@ -111,13 +112,15 @@ export const FlowRow = ({
                   />
                 )}
                 {!builtIn && (
-                  <Button
-                    variant="plain"
-                    aria-label={t("common:delete")}
-                    onClick={() => onDelete(execution)}
-                  >
-                    <TrashIcon />
-                  </Button>
+                  <Tooltip content={t("common:delete")}>
+                    <Button
+                      variant="plain"
+                      aria-label={t("common:delete")}
+                      onClick={() => onDelete(execution)}
+                    >
+                      <TrashIcon />
+                    </Button>
+                  </Tooltip>
                 )}
               </DataListCell>,
             ]}

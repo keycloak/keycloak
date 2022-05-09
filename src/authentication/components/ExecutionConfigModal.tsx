@@ -10,6 +10,7 @@ import {
   FormGroup,
   Modal,
   ModalVariant,
+  Tooltip,
   ValidatedOptions,
 } from "@patternfly/react-core";
 import { CogIcon, TrashIcon } from "@patternfly/react-icons";
@@ -125,13 +126,15 @@ export const ExecutionConfigModal = ({
 
   return (
     <>
-      <Button
-        variant="plain"
-        aria-label={t("common:settings")}
-        onClick={() => setShow(true)}
-      >
-        <CogIcon />
-      </Button>
+      <Tooltip content={t("common:settings")}>
+        <Button
+          variant="plain"
+          aria-label={t("common:settings")}
+          onClick={() => setShow(true)}
+        >
+          <CogIcon />
+        </Button>
+      </Tooltip>
       {configDescription && (
         <Modal
           variant={ModalVariant.small}
