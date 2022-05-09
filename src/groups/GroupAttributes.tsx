@@ -64,6 +64,7 @@ export const GroupAttributes = () => {
       <AttributesForm
         form={form}
         save={save}
+        fineGrainedAccess={currentGroup()?.access?.manage}
         reset={() =>
           form.reset({
             attributes: convertAttributes(),
