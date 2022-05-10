@@ -93,6 +93,7 @@
   "clientsPermissionsHint": "Fine grained permissions for administrators that want to manage this client or apply roles defined by this client.",
   "groupsPermissionsHint": "Determines if fine grained permissions are enabled for managing this role.  Disabling will delete all current permissions that have been set up.",
   "rolesPermissionsHint": "Determines if fine grained permissions are enabled for managing this role.  Disabling will delete all current permissions that have been set up.",
+  "identityProvidersPermissionsHint": "Determines if fine grained permissions are enabled for managing this role.  Disabling will delete all current permissions that have been set up.",
   "permissionsScopeName": "Scope-name",
   "permissionsEnabled": "Permissions enabled",
   "permissionsDisable": "Disable permissions?",
@@ -126,6 +127,9 @@
       "map-role-description": "Policies that decide if an administrator can map this role to a user or group",
       "map-role-client-scope-description": "Policies that decide if an administrator can apply this role to the client scope of a client",
       "map-role-composite-description": "Policies that decide if an administrator can apply this role as a composite to another role"
+    },
+    "identityProviders": {
+      "token-exchange-description": "Policies that decide which clients are allowed exchange tokens for an external token minted by this identity provider."
     }
   },
   "configure": "Configure",

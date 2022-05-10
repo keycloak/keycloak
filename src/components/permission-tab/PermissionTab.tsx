@@ -31,7 +31,12 @@ import { useConfirmDialog } from "../confirm-dialog/ConfirmDialog";
 
 import "./permissions-tab.css";
 
-type PermissionScreenType = "clients" | "users" | "groups" | "roles";
+type PermissionScreenType =
+  | "clients"
+  | "users"
+  | "groups"
+  | "roles"
+  | "identityProviders";
 
 type PermissionsTabProps = {
   id?: string;
@@ -63,6 +68,11 @@ export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
         return adminClient.groups.updatePermission({ id: id! }, { enabled });
       case "roles":
         return adminClient.roles.updatePermission({ id: id! }, { enabled });
+      case "identityProviders":
+        return adminClient.identityProviders.updatePermission(
+          { alias: id! },
+          { enabled }
+        );
     }
   };
 
@@ -85,6 +95,10 @@ export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
               return adminClient.groups.listPermissions({ id: id! });
             case "roles":
               return adminClient.roles.listPermissions({ id: id! });
+            case "identityProviders":
+              return adminClient.identityProviders.listPermissions({
+                alias: id!,
+              });
           }
         })(),
       ]),
@@ -154,7 +168,13 @@ export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
             <CardBody>
               <Trans i18nKey="common:permissionsListIntro">
                 {" "}
-                <strong>{{ realm: `${realm}-realm` }}</strong>.
+                <strong>
+                  {{
+                    realm:
+                      realm === "master" ? "master-realm" : "realm-management",
+                  }}
+                </strong>
+                .
               </Trans>
             </CardBody>
           </Card>

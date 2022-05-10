@@ -47,6 +47,7 @@ import {
   IdentityProviderParams,
   toIdentityProvider,
 } from "../routes/IdentityProvider";
+import { PermissionsTab } from "../../components/permission-tab/PermissionTab";
 
 type HeaderProps = {
   onChange: (value: boolean) => void;
@@ -419,6 +420,14 @@ export default function DetailSettings() {
                   },
                 ]}
               />
+            </Tab>
+            <Tab
+              id="permissions"
+              data-testid="permissionsTab"
+              eventKey="permissions"
+              title={<TabTitleText>{t("common:permissions")}</TabTitleText>}
+            >
+              <PermissionsTab id={alias} type="identityProviders" />
             </Tab>
           </KeycloakTabs>
         </FormProvider>
