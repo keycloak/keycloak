@@ -3,6 +3,7 @@ package org.keycloak.quarkus.runtime.configuration.mappers;
 import io.quarkus.datasource.common.runtime.DatabaseKind;
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
+import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.storage.database.Database;
 
 import java.util.Optional;
@@ -129,8 +130,8 @@ final class DatabasePropertyMappers {
         };
     }
 
-    private static PropertyMapper.Builder builder() {
-        return PropertyMapper.builder(ConfigCategory.DATABASE);
+    private static <T> PropertyMapper.Builder<T> builder() {
+        return PropertyMapper.builder(OptionCategory.DATABASE);
     }
 
     private static String resolveUsername(String value, ConfigSourceInterceptorContext context) {

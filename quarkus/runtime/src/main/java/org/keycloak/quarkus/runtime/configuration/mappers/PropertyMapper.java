@@ -21,18 +21,27 @@ import static org.keycloak.quarkus.runtime.configuration.Configuration.OPTION_PA
 import static org.keycloak.quarkus.runtime.configuration.Configuration.toCliFormat;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.toEnvVarFormat;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.BiFunction;
+import java.util.stream.Collectors;
 
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
 
+import org.keycloak.config.Option;
+import org.keycloak.config.OptionBuilder;
+import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 
-public class PropertyMapper {
+public class PropertyMapper<T> {
 
-    static PropertyMapper IDENTITY = new PropertyMapper(null, null, null, null, null,
+    static PropertyMapper IDENTITY = new PropertyMapper(String.class, null, null, Optional.empty(), null, null,
             false,null, null, false,Collections.emptyList(),null, true) {
         @Override
         public ConfigValue getConfigValue(String name, ConfigSourceInterceptorContext context) {
@@ -40,45 +49,47 @@ public class PropertyMapper {
         }
     };
 
+    private final Option<T> option;
     private final String to;
-    private final String from;
-    private final String defaultValue;
     private final BiFunction<String, ConfigSourceInterceptorContext, String> mapper;
     private final String mapFrom;
-    private final boolean buildTime;
-    private final String description;
     private final boolean mask;
-    private final Iterable<String> expectedValues;
-    private final ConfigCategory category;
+    private final List<T> expectedValues;
     private final String paramLabel;
-    private final boolean hidden;
     private final String envVarFormat;
     private String cliFormat;
 
-    PropertyMapper(String from, String to, String defaultValue, BiFunction<String, ConfigSourceInterceptorContext, String> mapper,
-            String mapFrom, boolean buildTime, String description, String paramLabel, boolean mask, Iterable<String> expectedValues,
-            ConfigCategory category, boolean hidden) {
-        this.from = MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + from;
-        this.to = to == null ? this.from : to;
-        this.defaultValue = defaultValue;
+    // Backward compatible constructor
+    PropertyMapper(Class<T> type, String from, String to, Optional<T> defaultValue, BiFunction<String, ConfigSourceInterceptorContext, String> mapper,
+            String mapFrom, boolean buildTime, String description, String paramLabel, boolean mask, List<T> expectedValues,
+            OptionCategory category, boolean hidden) {
+        Set<Option.Runtime> runtimes = new HashSet<>();
+        if (!hidden) {
+            runtimes.add(Option.Runtime.QUARKUS);
+        }
+        this.option = new OptionBuilder<T>(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + from, type)
+                .buildTime(buildTime)
+                .category(category != null ? category : OptionCategory.GENERAL)
+                .defaultValue(defaultValue)
+                .description(description)
+                .expectedValues(expectedValues)
+                .runtimes(runtimes)
+                .build();
+        this.to = to == null ? option.getKey() : to;
         this.mapper = mapper == null ? PropertyMapper::defaultTransformer : mapper;
         this.mapFrom = mapFrom;
-        this.buildTime = buildTime;
-        this.description = description;
         this.paramLabel = paramLabel;
         this.mask = mask;
         this.expectedValues = expectedValues == null ? Collections.emptyList() : expectedValues;
-        this.category = category != null ? category : ConfigCategory.GENERAL;
-        this.hidden = hidden;
         this.cliFormat = toCliFormat(from);
-        this.envVarFormat = toEnvVarFormat(this.from);
+        this.envVarFormat = toEnvVarFormat(option.getKey());
     }
 
     public static PropertyMapper.Builder builder(String fromProp, String toProp) {
         return new PropertyMapper.Builder(fromProp, toProp);
     }
 
-    public static PropertyMapper.Builder builder(ConfigCategory category) {
+    public static PropertyMapper.Builder builder(OptionCategory category) {
         return new PropertyMapper.Builder(category);
     }
 
@@ -91,7 +102,7 @@ public class PropertyMapper {
     }
 
     ConfigValue getConfigValue(String name, ConfigSourceInterceptorContext context) {
-        String from = this.from;
+        String from = this.option.getKey();
 
         if (to != null && to.endsWith(OPTION_PART_SEPARATOR)) {
             // in case mapping is based on prefixes instead of full property names
@@ -111,8 +122,8 @@ public class PropertyMapper {
                     // parent value not explicitly set, try to resolve the default value set to the parent property
                     PropertyMapper parentMapper = PropertyMappers.getMapper(parentKey);
 
-                    if (parentMapper != null) {
-                        parentValue = ConfigValue.builder().withValue(parentMapper.getDefaultValue()).build();
+                    if (parentMapper != null && parentMapper.getDefaultValue().isPresent()) {
+                        parentValue = ConfigValue.builder().withValue(parentMapper.getDefaultValue().get().toString()).build();
                     }
                 }
 
@@ -121,8 +132,8 @@ public class PropertyMapper {
                 }
             }
 
-            if (defaultValue != null) {
-                return transformValue(defaultValue, context);
+            if (this.option.getDefaultValue().isPresent()) {
+                return transformValue(this.option.getDefaultValue().get().toString(), context);
             }
 
             // now tries any defaults from quarkus
@@ -149,30 +160,30 @@ public class PropertyMapper {
         return value;
     }
 
+    public Class<T> getType() { return this.option.getType(); }
+
     public String getFrom() {
-        return from;
+        return this.option.getKey();
     }
 
-    public String getDescription() {
-        return description;
-    }
+    public String getDescription() { return this.option.getDescription(); }
 
-    public Iterable<String> getExpectedValues() {
+    public List<T> getExpectedValues() {
         return expectedValues;
     }
 
-    public String getDefaultValue() {return defaultValue; }
+    public Optional<T> getDefaultValue() {return this.option.getDefaultValue(); }
 
-    public ConfigCategory getCategory() {
-        return category;
+    public OptionCategory getCategory() {
+        return this.option.getCategory();
     }
 
     public boolean isHidden() {
-        return hidden;
+        return !this.option.getSupportedRuntimes().contains(Option.Runtime.QUARKUS);
     }
 
     public boolean isBuildTime() {
-        return buildTime;
+        return this.option.isBuildTime();
     }
 
     public String getTo() {
@@ -213,22 +224,23 @@ public class PropertyMapper {
         return null;
     }
 
-    public static class Builder {
+    public static class Builder<T> {
 
+        private Class<T> type;
         private String from;
         private String to;
-        private String defaultValue;
+        private T defaultValue;
         private BiFunction<String, ConfigSourceInterceptorContext, String> mapper;
         private String description;
         private String mapFrom = null;
-        private Iterable<String> expectedValues = Collections.emptyList();
+        private List<T> expectedValues = new ArrayList<>();
         private boolean isBuildTimeProperty = false;
         private boolean isMasked = false;
-        private ConfigCategory category = ConfigCategory.GENERAL;
+        private OptionCategory category = OptionCategory.GENERAL;
         private String paramLabel;
         private boolean hidden;
 
-        public Builder(ConfigCategory category) {
+        public Builder(OptionCategory category) {
             this.category = category;
         }
 
@@ -237,84 +249,99 @@ public class PropertyMapper {
             this.to = toProp;
         }
 
-        public Builder from(String from) {
+        public Builder<T> from(String from) {
             this.from = from;
             return this;
         }
 
-        public Builder to(String to) {
+        public Builder<T> to(String to) {
             this.to = to;
             return this;
         }
 
 
-        public Builder defaultValue(String defaultValue) {
+        public Builder<T> defaultValue(T defaultValue) {
             this.defaultValue = defaultValue;
             return this;
         }
 
-        public Builder transformer(BiFunction<String, ConfigSourceInterceptorContext, String> mapper) {
+        public Builder<T> transformer(BiFunction<String, ConfigSourceInterceptorContext, String> mapper) {
             this.mapper = mapper;
             return this;
         }
 
-        public Builder description(String description) {
+        public Builder<T> description(String description) {
             this.description = description;
             return this;
         }
 
-        public Builder paramLabel(String label) {
+        public Builder<T> paramLabel(String label) {
             this.paramLabel = label;
             return this;
         }
 
-        public Builder mapFrom(String mapFrom) {
+        public Builder<T> mapFrom(String mapFrom) {
             this.mapFrom = mapFrom;
             return this;
         }
 
-        public Builder expectedValues(Iterable<String> expectedValues) {
-            this.expectedValues = expectedValues;
+        public Builder<T> expectedValues(List<T> expectedValues) {
+            this.expectedValues = new ArrayList<>(expectedValues);
             return this;
         }
 
-        public Builder expectedValues(String... expectedValues) {
-            this.expectedValues = Arrays.asList(expectedValues);
+        public Builder expectedValues(T... expectedValues) {
+            this.expectedValues = new ArrayList<>(Arrays.asList(expectedValues));
             return this;
         }
 
-        public Builder isBuildTimeProperty(boolean isBuildTime) {
+        public Builder<T> isBuildTimeProperty(boolean isBuildTime) {
             this.isBuildTimeProperty = isBuildTime;
             return this;
         }
 
-        public Builder isMasked(boolean isMasked) {
+        public Builder<T> isMasked(boolean isMasked) {
             this.isMasked = isMasked;
             return this;
         }
 
-        public Builder category(ConfigCategory category) {
+        public Builder<T> category(OptionCategory category) {
             this.category = category;
             return this;
         }
 
-        public Builder type(Class<Boolean> type) {
+        public Builder<T> type(Class<T> type) {
             if (Boolean.class.equals(type)) {
-                expectedValues(Boolean.TRUE.toString(), Boolean.FALSE.toString());
-                paramLabel(defaultValue == null ? "true|false" : defaultValue);
-                defaultValue(defaultValue == null ? Boolean.FALSE.toString() : defaultValue);
+                expectedValues((T) Boolean.TRUE.toString(), (T) Boolean.FALSE.toString());
+                paramLabel(defaultValue == null ? "true|false" : defaultValue.toString());
+                defaultValue(defaultValue == null ? (T) Boolean.FALSE : defaultValue);
             }
+            this.type = type;
             return this;
         }
 
-        public Builder hidden(boolean hidden) {
+        public Builder<T> hidden(boolean hidden) {
             this.hidden = hidden;
             return this;
         }
 
-        public PropertyMapper build() {
-            return new PropertyMapper(from, to, defaultValue, mapper, mapFrom, isBuildTimeProperty, description, paramLabel,
+        public PropertyMapper<T> build() {
+            return new PropertyMapper<T>(type, from, to, Optional.ofNullable(defaultValue), mapper, mapFrom, isBuildTimeProperty, description, paramLabel,
                     isMasked, expectedValues, category, hidden);
         }
+    }
+
+    public static <T> PropertyMapper.Builder<T> fromOption(Option<T> opt) {
+        Builder<T> builder = PropertyMapper.builder(opt.getCategory())
+                .type(opt.getType())
+                .from(opt.getKey())
+                .hidden(!opt.getSupportedRuntimes().contains(Option.Runtime.QUARKUS))
+                .description(opt.getDescription())
+                .isBuildTimeProperty(opt.isBuildTime())
+                .expectedValues(opt.getExpectedValues());
+        if (opt.getDefaultValue().isPresent()) {
+            builder.defaultValue(opt.getDefaultValue().get());
+        }
+        return builder;
     }
 }

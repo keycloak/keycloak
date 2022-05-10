@@ -133,6 +133,7 @@
         <apacheds.codec.version>2.0.0</apacheds.codec.version>
         <google.zxing.version>3.4.0</google.zxing.version>
         <freemarker.version>2.3.31</freemarker.version>
+        <javaparser.version>3.24.2</javaparser.version>
 
         <jetty9.version>${jetty94.version}</jetty9.version>
         <liquibase.version>4.8.0</liquibase.version>
@@ -1030,6 +1031,11 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-config-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-client-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -1596,6 +1602,11 @@
                 <artifactId>commons-io</artifactId>
                 <version>${commons-io.version}</version>
             </dependency>
+            <dependency>
+                <groupId>com.github.javaparser</groupId>
+                <artifactId>javaparser-core</artifactId>
+                <version>${javaparser.version}</version>
+            </dependency>
 
             <dependency>
                 <groupId>org.eclipse.microprofile.metrics</groupId>
@@ -1869,6 +1880,16 @@
                     --add-opens=java.base/java.lang=ALL-UNNAMED
                 </surefire.system.args>
             </properties>
+        </profile>
+
+        <profile>
+            <id>config-api</id>
+            <activation>
+                <jdk>[11,)</jdk>
+            </activation>
+            <modules>
+                <module>config-api</module>
+            </modules>
         </profile>
 
         <profile>

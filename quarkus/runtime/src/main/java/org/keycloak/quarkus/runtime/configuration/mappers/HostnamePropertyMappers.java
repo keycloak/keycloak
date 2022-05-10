@@ -1,6 +1,8 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
 
+import org.keycloak.config.OptionCategory;
+
 final class HostnamePropertyMappers {
 
     private HostnamePropertyMappers(){}
@@ -45,6 +47,6 @@ final class HostnamePropertyMappers {
     }
 
     private static PropertyMapper.Builder builder() {
-        return PropertyMapper.builder(ConfigCategory.HOSTNAME);
+        return PropertyMapper.builder(OptionCategory.HOSTNAME);
     }
 }

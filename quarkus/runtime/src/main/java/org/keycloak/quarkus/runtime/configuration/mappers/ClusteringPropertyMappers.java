@@ -3,6 +3,7 @@ package org.keycloak.quarkus.runtime.configuration.mappers;
 import java.util.Arrays;
 import java.util.function.BiFunction;
 
+import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.Environment;
 
 import io.smallrye.config.ConfigSourceInterceptorContext;
@@ -64,6 +65,6 @@ final class ClusteringPropertyMappers {
     }
 
     private static PropertyMapper.Builder builder() {
-        return PropertyMapper.builder(ConfigCategory.CLUSTERING);
+        return PropertyMapper.builder(OptionCategory.CLUSTERING);
     }
 }

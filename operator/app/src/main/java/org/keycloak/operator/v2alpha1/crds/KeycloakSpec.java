@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 
 import org.keycloak.operator.Constants;
+import org.keycloak.operator.codegen.configuration.ServerConfig;
 import org.keycloak.operator.v2alpha1.crds.keycloakspec.Unsupported;
 
 import javax.validation.constraints.NotNull;
@@ -34,6 +35,9 @@ public class KeycloakSpec {
     @JsonPropertyDescription("Configuration of the Keycloak server.\n" +
             "expressed as a keys (reference: https://www.keycloak.org/server/all-config) and values that can be either direct values or references to secrets.")
     private List<ValueOrSecret> serverConfiguration; // can't use Set due to a bug in Sundrio https://github.com/sundrio/sundrio/issues/316
+
+    // TODO: switch to this serverConfig when all the options are ported
+    // private ServerConfig serverConfig;
 
     @NotNull
     @JsonPropertyDescription("Hostname for the Keycloak server.\n" +

@@ -1,6 +1,6 @@
-package org.keycloak.quarkus.runtime.configuration.mappers;
+package org.keycloak.config;
 
-public enum ConfigCategory {
+public enum OptionCategory {
     // ordered by name asc
     CLUSTERING("Cluster", 10),
     DATABASE("Database", 20),
@@ -20,7 +20,7 @@ public enum ConfigCategory {
     //Categories with a lower number are shown before groups with a higher number
     private final int order;
 
-    ConfigCategory(String heading, int order) {
+    OptionCategory(String heading, int order) {
         this.heading = heading; this.order = order;
     }
 
