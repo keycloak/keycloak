@@ -65,7 +65,7 @@
     "@types/gunzip-maybe": "^1.4.0",
     "@types/lodash-es": "^4.17.6",
     "@types/node": "^17.0.31",
-    "@types/react": "^17.0.44",
+    "@types/react": "^17.0.45",
     "@types/react-dom": "^18.0.3",
     "@types/react-router-dom": "^5.3.3",
     "@types/snowpack-env": "^2.3.4",
