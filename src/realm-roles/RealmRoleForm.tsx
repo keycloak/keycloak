@@ -35,7 +35,7 @@ export const RealmRoleForm = ({
 
   return (
     <>
-      <ViewHeader titleKey={t("createRole")} />
+      {!editMode && <ViewHeader titleKey={t("createRole")} />}
       <PageSection variant="light">
         <FormAccess
           isHorizontal
