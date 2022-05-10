@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
+  DropdownProps,
   Select,
   SelectOption,
   SelectVariant,
@@ -8,7 +9,6 @@ import {
   SplitItem,
   TextInput,
   TextInputProps,
-  ToggleMenuBaseProps,
 } from "@patternfly/react-core";
 
 export type Unit = "second" | "minute" | "hour" | "day";
@@ -23,7 +23,7 @@ const allTimes: TimeUnit[] = [
 ];
 
 export type TimeSelectorProps = TextInputProps &
-  ToggleMenuBaseProps & {
+  Pick<DropdownProps, "menuAppendTo"> & {
     value: number;
     units?: Unit[];
     onChange: (time: number | string) => void;
