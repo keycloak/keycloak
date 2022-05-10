@@ -85,7 +85,7 @@
     "fork-ts-checker-webpack-plugin": "^7.2.11",
     "gunzip-maybe": "^1.4.2",
     "http2-proxy": "^5.0.53",
-    "husky": "^7.0.4",
+    "husky": "^8.0.1",
     "jest": "^28.1.0",
     "jest-environment-jsdom": "^28.1.0",
     "lint-staged": "^12.4.1",
