@@ -1,3 +1,4 @@
+<?xml version="1.0"?>
 <!--
   ~ Copyright 2016 Red Hat, Inc. and/or its affiliates
   ~ and other contributors as indicated by the @author tags.
@@ -14,6 +15,7 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
+
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <parent>
@@ -22,15 +24,18 @@
         <version>999-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
-    <name>Keycloak Operator Parent</name>
-    <description/>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>keycloak-operator-parent</artifactId>
-    <packaging>pom</packaging>
+    <artifactId>keycloak-config-api</artifactId>
+    <name>Keycloak Configuration API</name>
+    <packaging>jar</packaging>
+    <description/>
 
-    <modules>
-        <module>maven-plugin</module>
-        <module>app</module>
-    </modules>
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.release>11</maven.compiler.release>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
+    </properties>
+
 </project>

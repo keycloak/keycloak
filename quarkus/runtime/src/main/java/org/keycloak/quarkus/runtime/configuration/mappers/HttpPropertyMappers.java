@@ -2,6 +2,9 @@ package org.keycloak.quarkus.runtime.configuration.mappers;
 
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
+import org.keycloak.config.HttpOptions;
+import org.keycloak.config.Option;
+import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.Messages;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
@@ -10,6 +13,7 @@ import java.io.File;
 import java.nio.file.Paths;
 import java.util.Arrays;
 
+import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers.getMapper;
 import static org.keycloak.quarkus.runtime.integration.QuarkusPlatform.addInitializationException;
 
@@ -40,10 +44,8 @@ final class HttpPropertyMappers {
                         .paramLabel("path")
                         .isBuildTimeProperty(true)
                         .build(),
-                builder().from("http-port")
+                fromOption(HttpOptions.httpPort)
                         .to("quarkus.http.port")
-                        .defaultValue(String.valueOf(8080))
-                        .description("The used HTTP port.")
                         .paramLabel("port")
                         .build(),
                 builder().from("https-port")
@@ -159,8 +161,6 @@ final class HttpPropertyMappers {
         return null;
     }
 
-    private static PropertyMapper.Builder builder() {
-        return PropertyMapper.builder(ConfigCategory.HTTP);
-    }
+    private static <T> PropertyMapper.Builder<T> builder() { return PropertyMapper.<T> builder(OptionCategory.HTTP); }
 }
 

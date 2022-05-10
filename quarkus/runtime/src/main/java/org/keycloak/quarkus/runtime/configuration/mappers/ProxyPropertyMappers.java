@@ -7,6 +7,7 @@ import java.util.function.BiFunction;
 
 import static org.keycloak.quarkus.runtime.integration.QuarkusPlatform.addInitializationException;
 
+import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.Messages;
 
 final class ProxyPropertyMappers {
@@ -25,13 +26,13 @@ final class ProxyPropertyMappers {
                         .description("The proxy address forwarding mode if the server is behind a reverse proxy. " +
                                 "Possible values are: " + String.join(",",possibleProxyValues))
                         .paramLabel("mode")
-                        .category(ConfigCategory.PROXY)
+                        .category(OptionCategory.PROXY)
                         .build(),
                 builder().to("quarkus.http.proxy.enable-forwarded-host")
                         .mapFrom("proxy")
                         .defaultValue("false")
                         .transformer(ProxyPropertyMappers::resolveEnableForwardedHost)
-                        .category(ConfigCategory.PROXY)
+                        .category(OptionCategory.PROXY)
                         .build()
         };
     }
@@ -56,7 +57,7 @@ final class ProxyPropertyMappers {
         return String.valueOf(!"none".equals(proxy));
     }
 
-    private static PropertyMapper.Builder builder() {
-        return PropertyMapper.builder(ConfigCategory.PROXY);
+    private static <T> PropertyMapper.Builder<T> builder() {
+        return PropertyMapper.builder(OptionCategory.PROXY);
     }
 }

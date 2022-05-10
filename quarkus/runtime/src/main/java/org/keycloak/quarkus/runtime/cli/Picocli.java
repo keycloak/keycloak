@@ -47,6 +47,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
+import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.cli.command.Build;
 import org.keycloak.quarkus.runtime.cli.command.ImportRealmMixin;
 import org.keycloak.quarkus.runtime.cli.command.Main;
@@ -55,7 +56,6 @@ import org.keycloak.quarkus.runtime.cli.command.StartDev;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 import org.keycloak.quarkus.runtime.configuration.QuarkusPropertiesConfigSource;
-import org.keycloak.quarkus.runtime.configuration.mappers.ConfigCategory;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.Environment;
@@ -259,7 +259,7 @@ public final class Picocli {
             if (runtimeValue == null && isNotBlank(persistedValue)) {
                 PropertyMapper mapper = PropertyMappers.getMapper(propertyName);
 
-                if (mapper != null && persistedValue.equals(mapper.getDefaultValue())) {
+                if (mapper != null && persistedValue.equals(mapper.getDefaultValue().orElse(null))) {
                     // same as default
                     continue;
                 }
@@ -381,7 +381,7 @@ public final class Picocli {
     }
 
     private static void addMappedOptionsToArgGroups(CommandSpec cSpec, List<PropertyMapper> propertyMappers) {
-        for(ConfigCategory category : ConfigCategory.values()) {
+        for(OptionCategory category : OptionCategory.values()) {
             List<PropertyMapper> mappersInCategory = propertyMappers.stream()
                     .filter(m -> category.equals(m.getCategory()))
                     .collect(Collectors.toList());
@@ -405,18 +405,26 @@ public final class Picocli {
                     continue;
                 }
 
-                String defaultValue = mapper.getDefaultValue();
                 Iterable<String> expectedValues = mapper.getExpectedValues();
 
-                argGroupBuilder.addArg(OptionSpec.builder(name)
-                        .defaultValue(defaultValue)
+                OptionSpec.Builder optBuilder = OptionSpec.builder(name)
                         .description(description)
                         .paramLabel(mapper.getParamLabel())
                         .completionCandidates(expectedValues)
                         .parameterConsumer(PropertyMapperParameterConsumer.INSTANCE)
-                        .type(String.class)
-                        .hidden(mapper.isHidden())
-                        .build());
+                        .hidden(mapper.isHidden());
+
+                if (mapper.getDefaultValue().isPresent()) {
+                    optBuilder.defaultValue(mapper.getDefaultValue().get().toString());
+                }
+
+                if (mapper.getType() != null) {
+                    optBuilder.type(mapper.getType());
+                } else {
+                    optBuilder.type(String.class);
+                }
+
+                argGroupBuilder.addArg(optBuilder.build());
             }
 
             cSpec.addArgGroup(argGroupBuilder.build());
