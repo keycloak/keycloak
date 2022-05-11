@@ -28,7 +28,7 @@ export default function ImportForm() {
   const history = useHistory();
   const adminClient = useAdminClient();
   const { realm } = useRealm();
-  const form = useForm<ClientRepresentation>();
+  const form = useForm<ClientRepresentation>({ shouldUnregister: false });
   const { register, handleSubmit, setValue } = form;
   const [imported, setImported] = useState<ClientRepresentation>({});
 
