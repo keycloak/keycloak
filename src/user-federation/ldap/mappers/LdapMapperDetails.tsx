@@ -3,6 +3,8 @@ import {
   ActionGroup,
   AlertVariant,
   Button,
+  ButtonVariant,
+  DropdownItem,
   Form,
   FormGroup,
   PageSection,
@@ -28,6 +30,7 @@ import { useRealm } from "../../../context/realm-context/RealmContext";
 import { KeycloakSpinner } from "../../../components/keycloak-spinner/KeycloakSpinner";
 import { KeycloakTextInput } from "../../../components/keycloak-text-input/KeycloakTextInput";
 import { toUserFederationLdap } from "../../routes/UserFederationLdap";
+import { useConfirmDialog } from "../../../components/confirm-dialog/ConfirmDialog";
 
 export default function LdapMapperDetails() {
   const form = useForm<ComponentRepresentation>();
@@ -114,6 +117,24 @@ export default function LdapMapperDetails() {
     }
   };
 
+  const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
+    titleKey: "common:deleteMappingTitle",
+    messageKey: "common:deleteMappingConfirm",
+    continueButtonLabel: "common:delete",
+    continueButtonVariant: ButtonVariant.danger,
+    onConfirm: async () => {
+      try {
+        await adminClient.components.del({
+          id: mapping!.id!,
+        });
+        addAlert(t("common:mappingDeletedSuccess"), AlertVariant.success);
+        history.push(toUserFederationLdap({ id, realm, tab: "mappers" }));
+      } catch (error) {
+        addError("common:mappingDeletedError", error);
+      }
+    },
+  });
+
   const mapperType = useWatch({
     control: form.control,
     name: "providerId",
@@ -127,8 +148,18 @@ export default function LdapMapperDetails() {
 
   return (
     <>
+      <DeleteConfirm />
       <ViewHeader
         titleKey={mapping ? mapping.name! : t("common:createNewMapper")}
+        dropdownItems={
+          isNew
+            ? undefined
+            : [
+                <DropdownItem key="delete" onClick={toggleDeleteDialog}>
+                  {t("common:delete")}
+                </DropdownItem>,
+              ]
+        }
       />
       <PageSection variant="light" isFilled>
         <FormAccess role="manage-realm" isHorizontal>
