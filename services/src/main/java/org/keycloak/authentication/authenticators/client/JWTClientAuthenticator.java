@@ -29,7 +29,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
@@ -44,7 +43,7 @@ import org.keycloak.keys.loader.PublicKeyStorageManager;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.SingleUseTokenStoreProvider;
+import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
@@ -190,7 +189,7 @@ public class JWTClientAuthenticator extends AbstractClientAuthenticator {
                 throw new RuntimeException("Missing ID on the token");
             }
 
-            SingleUseTokenStoreProvider singleUseCache = context.getSession().getProvider(SingleUseTokenStoreProvider.class);
+            SingleUseObjectProvider singleUseCache = context.getSession().getProvider(SingleUseObjectProvider.class);
             int lifespanInSecs = Math.max(token.getExpiration() - currentTime, 10);
             if (singleUseCache.putIfAbsent(token.getId(), lifespanInSecs)) {
                 logger.tracef("Added token '%s' to single-use cache. Lifespan: %d seconds, client: %s", token.getId(), lifespanInSecs, clientId);

@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Red Hat, Inc. and/or its affiliates
+ * Copyright 2017 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,7 +20,7 @@ package org.keycloak.models;
 import org.keycloak.provider.ProviderFactory;
 
 /**
- * @author <a href="mailto:h2-wada@nri.co.jp">Hiroyuki Wada</a>
+ * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public interface OAuth2DeviceTokenStoreProviderFactory extends ProviderFactory<OAuth2DeviceTokenStoreProvider> {
+public interface SingleUseObjectProviderFactory extends ProviderFactory<SingleUseObjectProvider> {
 }

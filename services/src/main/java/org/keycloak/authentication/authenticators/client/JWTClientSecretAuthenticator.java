@@ -25,11 +25,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
-import org.apache.http.client.utils.CloneUtils;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.AuthenticationFlowError;
@@ -37,9 +35,7 @@ import org.keycloak.authentication.ClientAuthenticationFlowContext;
 import org.keycloak.common.util.Time;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.AuthenticationExecutionModel.Requirement;
-import org.keycloak.models.SingleUseTokenStoreProvider;
-import org.keycloak.models.delegate.ClientModelLazyDelegate;
-import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCClientSecretConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -196,7 +192,7 @@ public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
                 throw new RuntimeException("Missing ID on the token");
             }
 
-            SingleUseTokenStoreProvider singleUseCache = context.getSession().getProvider(SingleUseTokenStoreProvider.class);
+            SingleUseObjectProvider singleUseCache = context.getSession().getProvider(SingleUseObjectProvider.class);
             int lifespanInSecs = Math.max(token.getExpiration() - currentTime, 10);
             if (singleUseCache.putIfAbsent(token.getId(), lifespanInSecs)) {
 

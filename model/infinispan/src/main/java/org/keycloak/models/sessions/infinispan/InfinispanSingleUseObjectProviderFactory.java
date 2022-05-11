@@ -28,7 +28,7 @@ import org.keycloak.Config;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.SingleUseTokenStoreProviderFactory;
+import org.keycloak.models.SingleUseObjectProviderFactory;
 import org.keycloak.models.sessions.infinispan.entities.ActionTokenValueEntity;
 import org.keycloak.connections.infinispan.InfinispanUtil;
 import static org.keycloak.models.sessions.infinispan.InfinispanAuthenticationSessionProviderFactory.PROVIDER_PRIORITY;
@@ -36,17 +36,17 @@ import static org.keycloak.models.sessions.infinispan.InfinispanAuthenticationSe
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class InfinispanSingleUseTokenStoreProviderFactory implements SingleUseTokenStoreProviderFactory {
+public class InfinispanSingleUseObjectProviderFactory implements SingleUseObjectProviderFactory {
 
-    private static final Logger LOG = Logger.getLogger(InfinispanSingleUseTokenStoreProviderFactory.class);
+    private static final Logger LOG = Logger.getLogger(InfinispanSingleUseObjectProviderFactory.class);
 
     // Reuse "actionTokens" infinispan cache for now
     private volatile Supplier<BasicCache<String, ActionTokenValueEntity>> tokenCache;
 
     @Override
-    public InfinispanSingleUseTokenStoreProvider create(KeycloakSession session) {
+    public InfinispanSingleUseObjectProvider create(KeycloakSession session) {
         lazyInit(session);
-        return new InfinispanSingleUseTokenStoreProvider(session, tokenCache);
+        return new InfinispanSingleUseObjectProvider(session, tokenCache);
     }
 
     private void lazyInit(KeycloakSession session) {
