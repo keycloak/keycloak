@@ -194,9 +194,7 @@ export default function UserFederationLdapSettings() {
               title={<TabTitleText>{t("common:mappers")}</TabTitleText>}
               data-testid="ldap-mappers-tab"
             >
-              <PageSection>
-                <LdapMapperList />
-              </PageSection>
+              <LdapMapperList />
             </Tab>
           </KeycloakTabs>
         ) : (
