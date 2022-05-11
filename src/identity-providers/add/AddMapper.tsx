@@ -6,6 +6,8 @@ import {
   ActionGroup,
   AlertVariant,
   Button,
+  ButtonVariant,
+  DropdownItem,
   FormGroup,
   PageSection,
   ValidatedOptions,
@@ -32,6 +34,7 @@ import { DynamicComponents } from "../../components/dynamic/DynamicComponents";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
 import type { AttributeForm } from "../../components/key-value-form/AttributeForm";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
+import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 
 export type IdPMapperRepresentationWithAttributes =
   IdentityProviderMapperRepresentation & AttributeForm;
@@ -115,6 +118,29 @@ export default function AddMapper() {
     }
   };
 
+  const [toggleDeleteMapperDialog, DeleteMapperConfirm] = useConfirmDialog({
+    titleKey: "identity-providers:deleteProviderMapper",
+    messageKey: t("identity-providers:deleteMapperConfirm", {
+      mapper: currentMapper?.name,
+    }),
+    continueButtonLabel: "common:delete",
+    continueButtonVariant: ButtonVariant.danger,
+    onConfirm: async () => {
+      try {
+        await adminClient.identityProviders.delMapper({
+          alias: alias,
+          id: id!,
+        });
+        addAlert(t("deleteMapperSuccess"), AlertVariant.success);
+        history.push(
+          toIdentityProvider({ providerId, alias, tab: "mappers", realm })
+        );
+      } catch (error) {
+        addError("identity-providers:deleteErrorError", error);
+      }
+    },
+  });
+
   useFetch(
     () =>
       Promise.all([
@@ -147,6 +173,7 @@ export default function AddMapper() {
 
   return (
     <PageSection variant="light">
+      <DeleteMapperConfirm />
       <ViewHeader
         className="kc-add-mapper-title"
         titleKey={
@@ -159,6 +186,15 @@ export default function AddMapper() {
                 providerId:
                   providerId[0].toUpperCase() + providerId.substring(1),
               })
+        }
+        dropdownItems={
+          id
+            ? [
+                <DropdownItem key="delete" onClick={toggleDeleteMapperDialog}>
+                  {t("common:delete")}
+                </DropdownItem>,
+              ]
+            : undefined
         }
         divider
       />
