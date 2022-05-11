@@ -123,19 +123,19 @@ public class LdapRoleModelCriteriaBuilder extends LdapModelCriteriaBuilder<LdapR
     public LdapRoleModelCriteriaBuilder compare(SearchableModelField<? super RoleModel> modelField, Operator op, Object... value) {
         switch (op) {
             case EQ:
-                if (modelField.equals(RoleModel.SearchableFields.IS_CLIENT_ROLE)) {
+                if (modelField == RoleModel.SearchableFields.IS_CLIENT_ROLE) {
                     LdapRoleModelCriteriaBuilder result = new LdapRoleModelCriteriaBuilder(roleMapperConfig, StringBuilder::new);
                     result.isClientRole = (boolean) value[0];
                     return result;
-                } else if (modelField.equals(RoleModel.SearchableFields.CLIENT_ID)) {
+                } else if (modelField == RoleModel.SearchableFields.CLIENT_ID) {
                     LdapRoleModelCriteriaBuilder result = new LdapRoleModelCriteriaBuilder(roleMapperConfig, StringBuilder::new);
                     result.clientId = (String) value[0];
                     return result;
-                } else if (modelField.equals(RoleModel.SearchableFields.REALM_ID)) {
+                } else if (modelField == RoleModel.SearchableFields.REALM_ID) {
                     LdapRoleModelCriteriaBuilder result = new LdapRoleModelCriteriaBuilder(roleMapperConfig, StringBuilder::new);
                     result.realmId = (String) value[0];
                     return result;
-                } else if (modelField.equals(RoleModel.SearchableFields.NAME)) {
+                } else if (modelField == RoleModel.SearchableFields.NAME) {
                     // validateValue(value, modelField, op, String.class);
                     String field = modelFieldNameToLdap(roleMapperConfig, modelField);
                     return new LdapRoleModelCriteriaBuilder(roleMapperConfig, 
@@ -148,11 +148,11 @@ public class LdapRoleModelCriteriaBuilder extends LdapModelCriteriaBuilder<LdapR
                 }
 
             case NE:
-                if (modelField.equals(RoleModel.SearchableFields.IS_CLIENT_ROLE)) {
+                if (modelField == RoleModel.SearchableFields.IS_CLIENT_ROLE) {
                     LdapRoleModelCriteriaBuilder result = new LdapRoleModelCriteriaBuilder(roleMapperConfig, StringBuilder::new);
                     result.isClientRole = !((boolean) value[0]);
                     return result;
-                } else if (modelField.equals(RoleModel.SearchableFields.NAME)) {
+                } else if (modelField == RoleModel.SearchableFields.NAME) {
                     // validateValue(value, modelField, op, String.class);
                     String field = modelFieldNameToLdap(roleMapperConfig, modelField);
                     return not(new LdapRoleModelCriteriaBuilder(roleMapperConfig, 
@@ -163,8 +163,8 @@ public class LdapRoleModelCriteriaBuilder extends LdapModelCriteriaBuilder<LdapR
 
             case ILIKE:
             case LIKE:
-                if (modelField.equals(RoleModel.SearchableFields.NAME) ||
-                     modelField.equals(RoleModel.SearchableFields.DESCRIPTION)) {
+                if (modelField == RoleModel.SearchableFields.NAME ||
+                     modelField == RoleModel.SearchableFields.DESCRIPTION) {
                     // validateValue(value, modelField, op, String.class);
                     // first escape all elements of the string (which would not escape the percent sign)
                     // then replace percent sign with the wildcard character asterisk
@@ -185,9 +185,9 @@ public class LdapRoleModelCriteriaBuilder extends LdapModelCriteriaBuilder<LdapR
                 }
 
             case IN:
-                if (modelField.equals(RoleModel.SearchableFields.NAME) ||
-                        modelField.equals(RoleModel.SearchableFields.DESCRIPTION) ||
-                        modelField.equals(RoleModel.SearchableFields.ID)) {
+                if (modelField == RoleModel.SearchableFields.NAME ||
+                        modelField == RoleModel.SearchableFields.DESCRIPTION ||
+                        modelField == RoleModel.SearchableFields.ID) {
                     String field = modelFieldNameToLdap(roleMapperConfig, modelField);
                     return new LdapRoleModelCriteriaBuilder(roleMapperConfig, () -> {
                         Object[] v;
@@ -208,11 +208,11 @@ public class LdapRoleModelCriteriaBuilder extends LdapModelCriteriaBuilder<LdapR
     }
 
     private String modelFieldNameToLdap(LdapMapRoleMapperConfig roleMapperConfig, SearchableModelField<? super RoleModel> modelField) {
-        if (modelField.equals(RoleModel.SearchableFields.NAME)) {
+        if (modelField == RoleModel.SearchableFields.NAME) {
             return roleMapperConfig.getRoleNameLdapAttribute();
-        } else if (modelField.equals(RoleModel.SearchableFields.ID)) {
+        } else if (modelField == RoleModel.SearchableFields.ID) {
             return roleMapperConfig.getLdapMapConfig().getUuidLDAPAttributeName();
-        } else if (modelField.equals(RoleModel.SearchableFields.DESCRIPTION)) {
+        } else if (modelField == RoleModel.SearchableFields.DESCRIPTION) {
             return "description";
         } else {
             throw new CriterionNotSupportedException(modelField, null);

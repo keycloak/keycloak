@@ -52,14 +52,14 @@ public class JpaGroupModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaGro
     public JpaGroupModelCriteriaBuilder compare(SearchableModelField<? super GroupModel> modelField, Operator op, Object... value) {
         switch (op) {
             case EQ:
-                if (modelField.equals(GroupModel.SearchableFields.REALM_ID) ||
-                    modelField.equals(GroupModel.SearchableFields.NAME)) {
+                if (modelField == GroupModel.SearchableFields.REALM_ID ||
+                    modelField == GroupModel.SearchableFields.NAME) {
                     validateValue(value, modelField, op, String.class);
 
                     return new JpaGroupModelCriteriaBuilder((cb, root) -> 
                         cb.equal(root.get(modelField.getName()), value[0])
                     );
-                } else if (modelField.equals(GroupModel.SearchableFields.PARENT_ID)) {
+                } else if (modelField == GroupModel.SearchableFields.PARENT_ID) {
                     if (value.length == 1 && Objects.isNull(value[0])) {
                         return new JpaGroupModelCriteriaBuilder((cb, root) -> 
                             cb.isNull(root.get("parentId"))
@@ -71,7 +71,7 @@ public class JpaGroupModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaGro
                     return new JpaGroupModelCriteriaBuilder((cb, root) -> 
                         cb.equal(root.get("parentId"), value[0])
                     );
-                } else if (modelField.equals(GroupModel.SearchableFields.ASSIGNED_ROLE)) {
+                } else if (modelField == GroupModel.SearchableFields.ASSIGNED_ROLE) {
                     validateValue(value, modelField, op, String.class);
 
                     return new JpaGroupModelCriteriaBuilder((cb, root) -> 
@@ -84,7 +84,7 @@ public class JpaGroupModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaGro
                     throw new CriterionNotSupportedException(modelField, op);
                 }
             case IN:
-                if (modelField.equals(GroupModel.SearchableFields.ID)) {
+                if (modelField == GroupModel.SearchableFields.ID) {
                     if (value == null || value.length == 0) throw new CriterionNotSupportedException(modelField, op);
 
                     final Collection<?> collectionValues;
@@ -125,7 +125,7 @@ public class JpaGroupModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaGro
                     throw new CriterionNotSupportedException(modelField, op);
                 }
             case ILIKE:
-                if (modelField.equals(GroupModel.SearchableFields.NAME)) {
+                if (modelField == GroupModel.SearchableFields.NAME) {
 
                     validateValue(value, modelField, op, String.class);
 
@@ -136,7 +136,7 @@ public class JpaGroupModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaGro
                     throw new CriterionNotSupportedException(modelField, op);
                 }
             case NOT_EXISTS:
-                if (modelField.equals(GroupModel.SearchableFields.PARENT_ID)) {
+                if (modelField == GroupModel.SearchableFields.PARENT_ID) {
 
                     return new JpaGroupModelCriteriaBuilder((cb, root) -> 
                         cb.isNull(root.get("parentId"))
