@@ -58,5 +58,7 @@
   "attributes": "Attributes",
   "groupUpdated": "Group updated",
   "groupUpdateError": "Error updating group {error}",
-  "roleMapping": "Role mapping"
+  "roleMapping": "Role mapping",
+  "noRoles": "No roles for this group",
+  "noRolesInstructions": "You haven't created any roles for this group. Create a role to get started."
 }

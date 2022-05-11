@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   AlertVariant,
@@ -24,6 +24,8 @@ import { useAlerts } from "../alert/Alerts";
 import { useConfirmDialog } from "../confirm-dialog/ConfirmDialog";
 import { useAdminClient } from "../../context/auth/AdminClient";
 import { ListEmptyState } from "../list-empty-state/ListEmptyState";
+import useSetTimeout from "../../utils/useSetTimeout";
+import useToggle from "../../utils/useToggle";
 
 import "./role-mapping.css";
 
@@ -172,11 +174,15 @@ export const RoleMapping = ({
   const [hide, setHide] = useState(false);
   const [showAssign, setShowAssign] = useState(false);
   const [selected, setSelected] = useState<Row[]>([]);
+  const [wait, toggleWait] = useToggle();
+  const setTimeout = useSetTimeout();
 
   const assignRoles = async (rows: Row[]) => {
     await save(rows);
     refresh();
   };
+
+  useEffect(() => setTimeout(refresh, 200), [wait]);
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: "clients:removeMappingTitle",
@@ -202,8 +208,8 @@ export const RoleMapping = ({
             );
           })
         );
-        addAlert(t("clientScopeRemoveSuccess"), AlertVariant.success);
-        refresh();
+        addAlert(t("clients:clientScopeRemoveSuccess"), AlertVariant.success);
+        toggleWait();
       } catch (error) {
         addError("clients:clientScopeRemoveError", error);
       }
