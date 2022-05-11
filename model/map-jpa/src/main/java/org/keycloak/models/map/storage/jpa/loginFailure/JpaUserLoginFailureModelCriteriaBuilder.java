@@ -47,8 +47,8 @@ public class JpaUserLoginFailureModelCriteriaBuilder extends JpaModelCriteriaBui
     public JpaUserLoginFailureModelCriteriaBuilder compare(SearchableModelField<? super UserLoginFailureModel> modelField, Operator op, Object... value) {
         switch (op) {
             case EQ:
-                if (modelField.equals(UserLoginFailureModel.SearchableFields.REALM_ID) ||
-                        modelField.equals(UserLoginFailureModel.SearchableFields.USER_ID)) {
+                if (modelField == UserLoginFailureModel.SearchableFields.REALM_ID ||
+                    modelField == UserLoginFailureModel.SearchableFields.USER_ID) {
 
                     validateValue(value, modelField, op, String.class);
 

@@ -41,8 +41,8 @@ public class JpaClientScopeModelCriteriaBuilder extends JpaModelCriteriaBuilder<
     public JpaClientScopeModelCriteriaBuilder compare(SearchableModelField<? super ClientScopeModel> modelField, Operator op, Object... value) {
         switch (op) {
             case EQ:
-                if (modelField.equals(SearchableFields.REALM_ID) ||
-                    modelField.equals(SearchableFields.NAME)) {
+                if (modelField == SearchableFields.REALM_ID ||
+                    modelField == SearchableFields.NAME) {
 
                     validateValue(value, modelField, op, String.class);
 

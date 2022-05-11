@@ -54,15 +54,17 @@ public class JpaRoleModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaRole
     public JpaRoleModelCriteriaBuilder compare(SearchableModelField<? super RoleModel> modelField, Operator op, Object... value) {
         switch (op) {
             case EQ:
-                if (modelField.equals(SearchableFields.REALM_ID) ||
-                    modelField.equals(SearchableFields.CLIENT_ID) ||
-                    modelField.equals(SearchableFields.NAME)) {
+                if (modelField == SearchableFields.REALM_ID ||
+                    modelField == SearchableFields.CLIENT_ID ||
+                    modelField == SearchableFields.NAME) {
+
                     validateValue(value, modelField, op, String.class);
 
                     return new JpaRoleModelCriteriaBuilder((cb, root) -> 
                         cb.equal(root.get(modelField.getName()), value[0])
                     );
-                } else if (modelField == SearchableFields.COMPOSITE_ROLE){
+                } else if (modelField == SearchableFields.COMPOSITE_ROLE) {
+
                     validateValue(value, modelField, op, String.class);
 
                     return new JpaRoleModelCriteriaBuilder((cb, root) ->
@@ -75,7 +77,7 @@ public class JpaRoleModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaRole
                     throw new CriterionNotSupportedException(modelField, op);
                 }
             case NE:
-                if (modelField.equals(SearchableFields.IS_CLIENT_ROLE)) {
+                if (modelField == SearchableFields.IS_CLIENT_ROLE) {
                     
                     validateValue(value, modelField, op, Boolean.class);
 
@@ -86,7 +88,7 @@ public class JpaRoleModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaRole
                     throw new CriterionNotSupportedException(modelField, op);
                 }
             case IN:
-                if (modelField.equals(SearchableFields.ID)) {
+                if (modelField == SearchableFields.ID) {
                     if (value == null || value.length == 0) throw new CriterionNotSupportedException(modelField, op);
 
                     final Collection<?> collectionValues;
@@ -127,8 +129,8 @@ public class JpaRoleModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaRole
                     throw new CriterionNotSupportedException(modelField, op);
                 }
             case ILIKE:
-                if (modelField.equals(SearchableFields.NAME) ||
-                    modelField.equals(SearchableFields.DESCRIPTION)) {
+                if (modelField == SearchableFields.NAME ||
+                    modelField == SearchableFields.DESCRIPTION) {
 
                     validateValue(value, modelField, op, String.class);
 
