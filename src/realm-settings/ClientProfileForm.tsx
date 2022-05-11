@@ -16,7 +16,6 @@ import {
   FormGroup,
   PageSection,
   Text,
-  TextArea,
   TextVariants,
   ValidatedOptions,
 } from "@patternfly/react-core";
@@ -30,6 +29,7 @@ import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import type ClientProfileRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientProfileRepresentation";
 import { HelpItem } from "../components/help-enabler/HelpItem";
 import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
+import { KeycloakTextArea } from "../components/keycloak-text-area/KeycloakTextArea";
 import { PlusCircleIcon, TrashIcon } from "@patternfly/react-icons";
 import "./realm-settings-section.css";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
@@ -247,7 +247,7 @@ export default function ClientProfileForm() {
             />
           </FormGroup>
           <FormGroup label={t("common:description")} fieldId="kc-description">
-            <TextArea
+            <KeycloakTextArea
               ref={register()}
               name="description"
               type="text"

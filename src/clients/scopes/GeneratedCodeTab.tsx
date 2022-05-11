@@ -5,12 +5,12 @@ import {
   CodeBlockAction,
   EmptyState,
   EmptyStateBody,
-  TextArea,
   Title,
 } from "@patternfly/react-core";
 
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import { CopyToClipboardButton } from "./CopyToClipboardButton";
+import { KeycloakTextArea } from "../../components/keycloak-text-area/KeycloakTextArea";
 
 type GeneratedCodeTabProps = {
   user?: UserRepresentation;
@@ -34,7 +34,7 @@ export const GeneratedCodeTab = ({
         </CodeBlockAction>
       }
     >
-      <TextArea id={`text-area-${label}`} rows={20} value={text} />
+      <KeycloakTextArea id={`text-area-${label}`} rows={20} value={text} />
     </CodeBlock>
   ) : (
     <EmptyState variant="large">

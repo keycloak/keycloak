@@ -9,7 +9,6 @@ import {
   SelectVariant,
   Stack,
   StackItem,
-  TextArea,
 } from "@patternfly/react-core";
 import FileSaver from "file-saver";
 import React, { useEffect, useMemo, useState } from "react";
@@ -20,6 +19,7 @@ import { prettyPrintJSON } from "../../util";
 import { ConfirmDialogModal } from "../confirm-dialog/ConfirmDialog";
 import { useHelp } from "../help-enabler/HelpHeader";
 import { HelpItem } from "../help-enabler/HelpItem";
+import { KeycloakTextArea } from "../keycloak-text-area/KeycloakTextArea";
 
 type DownloadDialogProps = {
   id: string;
@@ -158,7 +158,7 @@ export const DownloadDialog = ({
                   />
                 }
               >
-                <TextArea
+                <KeycloakTextArea
                   id="details"
                   readOnly
                   rows={12}

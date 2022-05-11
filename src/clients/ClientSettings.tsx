@@ -5,7 +5,6 @@ import {
   FormGroup,
   Form,
   Switch,
-  TextArea,
   Select,
   SelectVariant,
   SelectOption,
@@ -20,6 +19,7 @@ import { MultiLineInput } from "../components/multi-line-input/MultiLineInput";
 import { FormAccess } from "../components/form-access/FormAccess";
 import { HelpItem } from "../components/help-enabler/HelpItem";
 import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
+import { KeycloakTextArea } from "../components/keycloak-text-area/KeycloakTextArea";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { SaveReset } from "./advanced/SaveReset";
 import { SamlConfig } from "./add/SamlConfig";
@@ -356,7 +356,7 @@ export const ClientSettings = ({
           }
           fieldId="kc-consent-screen-text"
         >
-          <TextArea
+          <KeycloakTextArea
             id="kc-consent-screen-text"
             name="attributes.consent.screen.text"
             ref={register}

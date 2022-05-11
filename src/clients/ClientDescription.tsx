@@ -1,17 +1,13 @@
 import React from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import {
-  FormGroup,
-  Switch,
-  TextArea,
-  ValidatedOptions,
-} from "@patternfly/react-core";
+import { FormGroup, Switch, ValidatedOptions } from "@patternfly/react-core";
 
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import { HelpItem } from "../components/help-enabler/HelpItem";
 import { FormAccess } from "../components/form-access/FormAccess";
 import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
+import { KeycloakTextArea } from "../components/keycloak-text-area/KeycloakTextArea";
 
 type ClientDescriptionProps = {
   protocol?: string;
@@ -76,7 +72,7 @@ export const ClientDescription = ({ protocol }: ClientDescriptionProps) => {
         }
         helperTextInvalid={errors.description?.message}
       >
-        <TextArea
+        <KeycloakTextArea
           ref={register({
             maxLength: {
               value: 255,

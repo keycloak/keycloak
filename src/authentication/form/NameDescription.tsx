@@ -1,10 +1,11 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useFormContext } from "react-hook-form";
-import { FormGroup, TextArea, ValidatedOptions } from "@patternfly/react-core";
+import { FormGroup, ValidatedOptions } from "@patternfly/react-core";
 
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
+import { KeycloakTextArea } from "../../components/keycloak-text-area/KeycloakTextArea";
 
 export const NameDescription = () => {
   const { t } = useTranslation("authentication");
@@ -52,7 +53,7 @@ export const NameDescription = () => {
         }
         helperTextInvalid={errors.description?.message}
       >
-        <TextArea
+        <KeycloakTextArea
           ref={register({
             maxLength: {
               value: 255,

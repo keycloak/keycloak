@@ -11,7 +11,6 @@ import {
   Switch,
   ActionGroup,
   Button,
-  TextArea,
 } from "@patternfly/react-core";
 
 import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientScopeRepresentation";
@@ -28,6 +27,7 @@ import { getProtocolName } from "../../clients/utils";
 import { toClientScopes } from "../routes/ClientScopes";
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
+import { KeycloakTextArea } from "../../components/keycloak-text-area/KeycloakTextArea";
 
 type ScopeFormProps = {
   clientScope: ClientScopeRepresentation;
@@ -236,7 +236,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
           }
           fieldId="kc-consent-screen-text"
         >
-          <TextArea
+          <KeycloakTextArea
             ref={register}
             type="text"
             id="kc-consent-screen-text"

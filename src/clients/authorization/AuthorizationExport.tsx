@@ -5,7 +5,6 @@ import {
   PageSection,
   ActionGroup,
   Button,
-  TextArea,
   AlertVariant,
 } from "@patternfly/react-core";
 
@@ -19,6 +18,7 @@ import { useAlerts } from "../../components/alert/Alerts";
 import type { ClientParams } from "../routes/Client";
 import type ResourceServerRepresentation from "@keycloak/keycloak-admin-client/lib/defs/resourceServerRepresentation";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
+import { KeycloakTextArea } from "../../components/keycloak-text-area/KeycloakTextArea";
 
 import "./authorization-details.css";
 
@@ -76,7 +76,7 @@ export const AuthorizationExport = () => {
           }
           fieldId="client"
         >
-          <TextArea
+          <KeycloakTextArea
             id="authorizationDetails"
             readOnly
             resizeOrientation="vertical"

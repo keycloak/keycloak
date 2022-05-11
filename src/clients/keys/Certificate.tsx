@@ -1,9 +1,10 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { FormGroup, GenerateId, TextArea } from "@patternfly/react-core";
+import { FormGroup, GenerateId } from "@patternfly/react-core";
 
 import type CertificateRepresentation from "@keycloak/keycloak-admin-client/lib/defs/certificateRepresentation";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { KeycloakTextArea } from "../../components/keycloak-text-area/KeycloakTextArea";
 
 type CertificateProps = Omit<CertificateDisplayProps, "id"> & {
   plain?: boolean;
@@ -15,7 +16,7 @@ type CertificateDisplayProps = {
 };
 
 const CertificateDisplay = ({ id, keyInfo }: CertificateDisplayProps) => (
-  <TextArea
+  <KeycloakTextArea
     readOnly
     rows={5}
     id={id}

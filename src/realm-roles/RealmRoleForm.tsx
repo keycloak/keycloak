@@ -4,7 +4,6 @@ import {
   Button,
   FormGroup,
   PageSection,
-  TextArea,
   ValidatedOptions,
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
@@ -13,6 +12,7 @@ import { ViewHeader } from "../components/view-header/ViewHeader";
 import { FormAccess } from "../components/form-access/FormAccess";
 import type { AttributeForm } from "../components/key-value-form/AttributeForm";
 import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
+import { KeycloakTextArea } from "../components/keycloak-text-area/KeycloakTextArea";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useHistory } from "react-router-dom";
 
@@ -72,7 +72,7 @@ export const RealmRoleForm = ({
             }
             helperTextInvalid={errors.description?.message}
           >
-            <TextArea
+            <KeycloakTextArea
               name="description"
               aria-label="description"
               isDisabled={getValues().name?.includes("default-roles")}

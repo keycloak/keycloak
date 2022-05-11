@@ -13,7 +13,6 @@ import {
   Radio,
   SelectVariant,
   Switch,
-  TextArea,
 } from "@patternfly/react-core";
 
 import type PolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyRepresentation";
@@ -34,6 +33,7 @@ import { ScopeSelect } from "./ScopeSelect";
 import { toUpperCase } from "../../util";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
+import { KeycloakTextArea } from "../../components/keycloak-text-area/KeycloakTextArea";
 
 const DECISION_STRATEGIES = ["UNANIMOUS", "AFFIRMATIVE", "CONSENSUS"] as const;
 
@@ -230,7 +230,7 @@ export default function PermissionDetails() {
               validated={errors.description ? "error" : "default"}
               helperTextInvalid={errors.description?.message}
             >
-              <TextArea
+              <KeycloakTextArea
                 id="description"
                 name="description"
                 ref={register({
