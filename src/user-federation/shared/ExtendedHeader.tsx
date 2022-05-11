@@ -11,6 +11,7 @@ import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { useAdminClient } from "../../context/auth/AdminClient";
 import { Header } from "./Header";
+import { useFormContext, useWatch } from "react-hook-form";
 
 type ExtendedHeaderProps = {
   provider: string;
@@ -29,6 +30,13 @@ export const ExtendedHeader = ({
   const { id } = useParams<{ id: string }>();
   const adminClient = useAdminClient();
   const { addAlert, addError } = useAlerts();
+
+  const { control } = useFormContext();
+  const hasImportUsers = useWatch({
+    name: "config.importEnabled",
+    control,
+    defaultValue: ["true"],
+  })[0];
 
   const [toggleUnlinkUsersDialog, UnlinkUsersDialog] = useConfirmDialog({
     titleKey: "user-federation:userFedUnlinkUsersConfirmTitle",
@@ -126,10 +134,18 @@ export const ExtendedHeader = ({
         noDivider={noDivider}
         save={save}
         dropdownItems={[
-          <DropdownItem key="sync" onClick={syncChangedUsers}>
+          <DropdownItem
+            key="sync"
+            onClick={syncChangedUsers}
+            isDisabled={hasImportUsers === "false"}
+          >
             {t("syncChangedUsers")}
           </DropdownItem>,
-          <DropdownItem key="syncall" onClick={syncAllUsers}>
+          <DropdownItem
+            key="syncall"
+            onClick={syncAllUsers}
+            isDisabled={hasImportUsers === "false"}
+          >
             {t("syncAllUsers")}
           </DropdownItem>,
           <DropdownItem
