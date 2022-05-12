@@ -1,7 +1,13 @@
 import React, { useState } from "react";
 import { Link, useHistory, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Controller, FormProvider, useForm } from "react-hook-form";
+import {
+  Controller,
+  FormProvider,
+  useForm,
+  useFormContext,
+  useWatch,
+} from "react-hook-form";
 import {
   ActionGroup,
   AlertVariant,
@@ -68,9 +74,16 @@ const Header = ({ onChange, value, save, toggleDeleteDialog }: HeaderProps) => {
   const { t } = useTranslation("identity-providers");
   const { alias } = useParams<{ alias: string }>();
 
+  const { control } = useFormContext();
+  const displayName = useWatch({
+    name: "displayName",
+    control,
+    defaultValue: alias,
+  });
+
   const [toggleDisableDialog, DisableConfirm] = useConfirmDialog({
     titleKey: "identity-providers:disableProvider",
-    messageKey: t("disableConfirm", { provider: alias }),
+    messageKey: t("disableConfirm", { provider: displayName }),
     continueButtonLabel: "common:disable",
     onConfirm: () => {
       onChange(!value);
@@ -82,7 +95,7 @@ const Header = ({ onChange, value, save, toggleDeleteDialog }: HeaderProps) => {
     <>
       <DisableConfirm />
       <ViewHeader
-        titleKey={toUpperCase(alias)}
+        titleKey={toUpperCase(displayName)}
         divider={false}
         dropdownItems={[
           <DropdownItem key="delete" onClick={() => toggleDeleteDialog()}>
@@ -265,7 +278,7 @@ export default function DetailSettings() {
   }
 
   return (
-    <>
+    <FormProvider {...form}>
       <DeleteConfirm />
       <DeleteMapperConfirm />
       <Controller
@@ -283,155 +296,153 @@ export default function DetailSettings() {
       />
 
       <PageSection variant="light" className="pf-u-p-0">
-        <FormProvider {...form}>
-          <KeycloakTabs isBox>
-            <Tab
-              id="settings"
-              eventKey="settings"
-              title={<TabTitleText>{t("common:settings")}</TabTitleText>}
-            >
-              <ScrollForm className="pf-u-px-lg" sections={sections}>
+        <KeycloakTabs isBox>
+          <Tab
+            id="settings"
+            eventKey="settings"
+            title={<TabTitleText>{t("common:settings")}</TabTitleText>}
+          >
+            <ScrollForm className="pf-u-px-lg" sections={sections}>
+              <FormAccess
+                role="manage-identity-providers"
+                isHorizontal
+                onSubmit={handleSubmit(save)}
+              >
+                {!isOIDC && !isSAML && (
+                  <GeneralSettings create={false} id={alias} />
+                )}
+                {isOIDC && <OIDCGeneralSettings id={alias} />}
+                {isSAML && <SamlGeneralSettings id={alias} />}
+              </FormAccess>
+              {isOIDC && (
+                <>
+                  <DiscoverySettings readOnly={false} />
+                  <Form isHorizontal className="pf-u-py-lg">
+                    <Divider />
+                    <OIDCAuthentication create={false} />
+                  </Form>
+                  <ExtendedNonDiscoverySettings />
+                </>
+              )}
+              {isSAML && <DescriptorSettings readOnly={false} />}
+              {isSAML && (
                 <FormAccess
                   role="manage-identity-providers"
                   isHorizontal
                   onSubmit={handleSubmit(save)}
                 >
-                  {!isOIDC && !isSAML && (
-                    <GeneralSettings create={false} id={alias} />
-                  )}
-                  {isOIDC && <OIDCGeneralSettings id={alias} />}
-                  {isSAML && <SamlGeneralSettings id={alias} />}
+                  <ReqAuthnConstraints />
                 </FormAccess>
-                {isOIDC && (
-                  <>
-                    <DiscoverySettings readOnly={false} />
-                    <Form isHorizontal className="pf-u-py-lg">
-                      <Divider />
-                      <OIDCAuthentication create={false} />
-                    </Form>
-                    <ExtendedNonDiscoverySettings />
-                  </>
-                )}
-                {isSAML && <DescriptorSettings readOnly={false} />}
-                {isSAML && (
-                  <FormAccess
-                    role="manage-identity-providers"
-                    isHorizontal
-                    onSubmit={handleSubmit(save)}
-                  >
-                    <ReqAuthnConstraints />
-                  </FormAccess>
-                )}
-                <FormAccess
-                  role="manage-identity-providers"
-                  isHorizontal
-                  onSubmit={handleSubmit(save)}
-                >
-                  <AdvancedSettings isOIDC={isOIDC!} isSAML={isSAML!} />
+              )}
+              <FormAccess
+                role="manage-identity-providers"
+                isHorizontal
+                onSubmit={handleSubmit(save)}
+              >
+                <AdvancedSettings isOIDC={isOIDC!} isSAML={isSAML!} />
 
-                  <ActionGroup className="keycloak__form_actions">
-                    <Button data-testid={"save"} type="submit">
-                      {t("common:save")}
-                    </Button>
-                    <Button
-                      data-testid={"revert"}
-                      variant="link"
-                      onClick={() => {
-                        reset();
-                      }}
-                    >
-                      {t("common:revert")}
-                    </Button>
-                  </ActionGroup>
-                </FormAccess>
-              </ScrollForm>
-            </Tab>
-            <Tab
-              id="mappers"
-              data-testid="mappers-tab"
-              eventKey="mappers"
-              title={<TabTitleText>{t("common:mappers")}</TabTitleText>}
-            >
-              <KeycloakDataTable
-                emptyState={
-                  <ListEmptyState
-                    message={t("identity-providers:noMappers")}
-                    instructions={t("identity-providers:noMappersInstructions")}
-                    primaryActionText={t("identity-providers:addMapper")}
-                    onPrimaryAction={() =>
-                      history.push(
-                        toIdentityProviderAddMapper({
+                <ActionGroup className="keycloak__form_actions">
+                  <Button data-testid={"save"} type="submit">
+                    {t("common:save")}
+                  </Button>
+                  <Button
+                    data-testid={"revert"}
+                    variant="link"
+                    onClick={() => {
+                      reset();
+                    }}
+                  >
+                    {t("common:revert")}
+                  </Button>
+                </ActionGroup>
+              </FormAccess>
+            </ScrollForm>
+          </Tab>
+          <Tab
+            id="mappers"
+            data-testid="mappers-tab"
+            eventKey="mappers"
+            title={<TabTitleText>{t("common:mappers")}</TabTitleText>}
+          >
+            <KeycloakDataTable
+              emptyState={
+                <ListEmptyState
+                  message={t("identity-providers:noMappers")}
+                  instructions={t("identity-providers:noMappersInstructions")}
+                  primaryActionText={t("identity-providers:addMapper")}
+                  onPrimaryAction={() =>
+                    history.push(
+                      toIdentityProviderAddMapper({
+                        realm,
+                        alias: alias!,
+                        providerId: provider.providerId!,
+                        tab: "mappers",
+                      })
+                    )
+                  }
+                />
+              }
+              loader={loader}
+              key={key}
+              ariaLabelKey="identity-providers:mappersList"
+              searchPlaceholderKey="identity-providers:searchForMapper"
+              toolbarItem={
+                <ToolbarItem>
+                  <Button
+                    id="add-mapper-button"
+                    component={(props) => (
+                      <Link
+                        {...props}
+                        to={toIdentityProviderAddMapper({
                           realm,
                           alias: alias!,
                           providerId: provider.providerId!,
                           tab: "mappers",
-                        })
-                      )
-                    }
-                  />
-                }
-                loader={loader}
-                key={key}
-                ariaLabelKey="identity-providers:mappersList"
-                searchPlaceholderKey="identity-providers:searchForMapper"
-                toolbarItem={
-                  <ToolbarItem>
-                    <Button
-                      id="add-mapper-button"
-                      component={(props) => (
-                        <Link
-                          {...props}
-                          to={toIdentityProviderAddMapper({
-                            realm,
-                            alias: alias!,
-                            providerId: provider.providerId!,
-                            tab: "mappers",
-                          })}
-                        />
-                      )}
-                      data-testid="addMapper"
-                    >
-                      {t("addMapper")}
-                    </Button>
-                  </ToolbarItem>
-                }
-                columns={[
-                  {
-                    name: "name",
-                    displayKey: "common:name",
-                    cellRenderer: MapperLink,
+                        })}
+                      />
+                    )}
+                    data-testid="addMapper"
+                  >
+                    {t("addMapper")}
+                  </Button>
+                </ToolbarItem>
+              }
+              columns={[
+                {
+                  name: "name",
+                  displayKey: "common:name",
+                  cellRenderer: MapperLink,
+                },
+                {
+                  name: "category",
+                  displayKey: "common:category",
+                },
+                {
+                  name: "type",
+                  displayKey: "common:type",
+                },
+              ]}
+              actions={[
+                {
+                  title: t("common:delete"),
+                  onRowClick: (mapper) => {
+                    setSelectedMapper(mapper);
+                    toggleDeleteMapperDialog();
                   },
-                  {
-                    name: "category",
-                    displayKey: "common:category",
-                  },
-                  {
-                    name: "type",
-                    displayKey: "common:type",
-                  },
-                ]}
-                actions={[
-                  {
-                    title: t("common:delete"),
-                    onRowClick: (mapper) => {
-                      setSelectedMapper(mapper);
-                      toggleDeleteMapperDialog();
-                    },
-                  },
-                ]}
-              />
-            </Tab>
-            <Tab
-              id="permissions"
-              data-testid="permissionsTab"
-              eventKey="permissions"
-              title={<TabTitleText>{t("common:permissions")}</TabTitleText>}
-            >
-              <PermissionsTab id={alias} type="identityProviders" />
-            </Tab>
-          </KeycloakTabs>
-        </FormProvider>
+                },
+              ]}
+            />
+          </Tab>
+          <Tab
+            id="permissions"
+            data-testid="permissionsTab"
+            eventKey="permissions"
+            title={<TabTitleText>{t("common:permissions")}</TabTitleText>}
+          >
+            <PermissionsTab id={alias} type="identityProviders" />
+          </Tab>
+        </KeycloakTabs>
       </PageSection>
-    </>
+    </FormProvider>
   );
 }
