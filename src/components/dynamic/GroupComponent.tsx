@@ -34,7 +34,7 @@ export const GroupComponent = ({ name, label, helpText }: ComponentProps) => {
                 ok: "common:select",
               }}
               onConfirm={(groups) => {
-                onChange(groups[0].path);
+                onChange(groups?.[0].path);
                 setOpen(false);
               }}
               onClose={() => setOpen(false)}

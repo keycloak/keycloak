@@ -164,7 +164,7 @@ export const UserForm = ({
             ok: "users:join",
           }}
           onConfirm={(groups) => {
-            user?.id ? addGroups(groups) : addChips(groups);
+            user?.id ? addGroups(groups || []) : addChips(groups || []);
             setOpen(false);
           }}
           onClose={() => setOpen(false)}

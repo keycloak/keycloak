@@ -27,7 +27,7 @@ export type GroupPickerDialogProps = {
   type: "selectOne" | "selectMany";
   filterGroups?: string[];
   text: { title: string; ok: string };
-  onConfirm: (groups: GroupRepresentation[]) => void;
+  onConfirm: (groups: GroupRepresentation[] | undefined) => void;
   onClose: () => void;
 };
 
@@ -131,7 +131,7 @@ export const GroupPickerDialog = ({
       variant={ModalVariant.small}
       title={t(text.title, {
         group1: filterGroups?.[0],
-        group2: currentGroup() ? currentGroup().name : t("root"),
+        group2: navigation.length ? currentGroup().name : t("root"),
       })}
       isOpen
       onClose={onClose}
@@ -142,7 +142,13 @@ export const GroupPickerDialog = ({
           variant="primary"
           form="group-form"
           onClick={() => {
-            onConfirm(type === "selectMany" ? selectedRows : [currentGroup()]);
+            onConfirm(
+              type === "selectMany"
+                ? selectedRows
+                : navigation.length
+                ? [currentGroup()]
+                : undefined
+            );
           }}
           isDisabled={type === "selectMany" && selectedRows.length === 0}
         >
@@ -242,7 +248,7 @@ export const GroupPickerDialog = ({
                         newSelectedRows = selectedRows.filter(
                           (r) => r.id !== group.id
                         );
-                      } else if (group.checked) {
+                      } else {
                         newSelectedRows = [
                           ...selectedRows,
                           filter === "" ? group : findSubGroup(group, filter),

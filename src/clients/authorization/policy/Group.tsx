@@ -109,8 +109,11 @@ export const Group = () => {
                     ok: "common:add",
                   }}
                   onConfirm={(groups) => {
-                    onChange([...value, ...groups.map(({ id }) => ({ id }))]);
-                    setSelectedGroups([...selectedGroups, ...groups]);
+                    onChange([
+                      ...value,
+                      ...(groups || []).map(({ id }) => ({ id })),
+                    ]);
+                    setSelectedGroups([...selectedGroups, ...(groups || [])]);
                     setOpen(false);
                   }}
                   onClose={() => {

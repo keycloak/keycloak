@@ -111,28 +111,31 @@ describe("Group test", () => {
       masthead.checkNotificationMessage("Group deleted");
     });
 
-    // This test doesn't seem to do anything.  The "Move to" dialog never opens.
-    // But the test somehow still passes.
-    it("Should move group to root", async () => {
-      const groups = ["group1", "group2"];
-      groupModal
-        .open("no-groups-in-this-realm-empty-action")
-        .fillGroupForm(groups[0])
-        .clickCreate();
-      groupModal
-        .open("openCreateGroupModal")
-        .fillGroupForm(groups[1])
-        .clickCreate();
-      listingPage.clickRowDetails(groups[0]).clickDetailMenu("Move to");
+    describe("Move groups", () => {
+      const groups = ["group", "group1", "group2"];
+      before(() => adminClient.createSubGroups(groups));
 
-      moveGroupModal.clickRoot().clickMove();
-      sidebarPage.goToGroups();
+      after(() => adminClient.deleteGroups());
 
-      new GroupDetailPage().checkListSubGroup(groups);
-      listingPage.deleteItem(groups[0]);
-      modalUtils.checkModalTitle("Delete group?").confirmModal();
-      listingPage.deleteItem(groups[1]);
-      modalUtils.checkModalTitle("Delete group?").confirmModal();
+      it("Should move group to root", () => {
+        listingPage.goToItemDetails(groups[0]);
+        sidebarPage.waitForPageLoad();
+        listingPage.clickRowDetails(groups[1]).clickDetailMenu("Move to");
+
+        moveGroupModal.clickMove();
+        sidebarPage.goToGroups();
+
+        new GroupDetailPage().checkListSubGroup(groups.slice(0, -1));
+      });
+
+      it("Should move group back", () => {
+        listingPage.clickRowDetails(groups[1]).clickDetailMenu("Move to");
+
+        moveGroupModal.clickRow(groups[0]).clickMove();
+        sidebarPage.goToGroups();
+
+        new GroupDetailPage().checkListSubGroup(["group"]);
+      });
     });
 
     it("Group search", () => {

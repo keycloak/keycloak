@@ -231,18 +231,35 @@ export const GroupTable = () => {
           onClose={() => setMove(undefined)}
           onConfirm={async (group) => {
             try {
-              try {
-                if (group[0].id) {
+              if (group !== undefined) {
+                try {
                   await adminClient.groups.setOrCreateChild(
-                    { id: group[0].id },
+                    { id: group[0].id! },
                     move
                   );
-                } else {
-                  await adminClient.groups.create(move);
+                } catch (error: any) {
+                  if (error.response) {
+                    throw error;
+                  }
                 }
-              } catch (error: any) {
-                if (error.response) {
-                  throw error;
+              } else {
+                await adminClient.groups.del({ id: move.id! });
+                const { id } = await adminClient.groups.create({
+                  ...move,
+                  id: undefined,
+                });
+                if (move.subGroups) {
+                  await Promise.all(
+                    move.subGroups.map((s) =>
+                      adminClient.groups.setOrCreateChild(
+                        { id: id! },
+                        {
+                          ...s,
+                          id: undefined,
+                        }
+                      )
+                    )
+                  );
                 }
               }
               setMove(undefined);

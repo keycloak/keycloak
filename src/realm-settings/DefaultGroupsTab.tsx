@@ -120,7 +120,7 @@ export const DefaultsGroupsTab = () => {
             ok: "common:add",
           }}
           onConfirm={(groups) => {
-            addGroups(groups);
+            addGroups(groups || []);
             toggleGroupPicker();
           }}
           onClose={toggleGroupPicker}

@@ -256,7 +256,7 @@ export const UserGroups = ({ user }: UserGroupsProps) => {
           }}
           onClose={() => setOpen(false)}
           onConfirm={(groups) => {
-            addGroups(groups);
+            addGroups(groups || []);
             setOpen(false);
             refresh();
           }}
