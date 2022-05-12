@@ -31,6 +31,7 @@ import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -58,7 +59,6 @@ import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.connections.jpa.updater.JpaUpdaterProvider;
 import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.exportimport.ExportImportManager;
-import org.keycloak.migration.MigrationModel;
 import org.keycloak.migration.MigrationModelManager;
 import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.*;
@@ -68,6 +68,7 @@ import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderConfigurationBuilder;
 import org.keycloak.provider.ServerInfoAwareProviderFactory;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.ServicesLogger;
@@ -341,6 +342,7 @@ public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionPr
         KeycloakSession session = factory.create();
         boolean exists = false;
         try {
+            sanitizeClientUrlsForImport(rep);
             session.getTransactionManager().begin();
 
             try {
@@ -369,6 +371,32 @@ public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionPr
         } finally {
             session.close();
         }
+    }
+
+    /**
+     * To allow whitespaces in Realm names that are reflected in BaseURI and redirect URIs.
+     * See gh issue #11921
+     * @param realmRep imported Realm representation
+     */
+    private void sanitizeClientUrlsForImport(RealmRepresentation realmRep) {
+        List<ClientRepresentation> clients = realmRep.getClients();
+        for (ClientRepresentation client : clients) {
+            //admin-cli, broker, realm-management client have no baseUrl set.
+            if(client.getBaseUrl() != null){
+                client.setBaseUrl(client.getBaseUrl().replaceAll("\\s+", "%20"));
+            }
+
+            List<String> redirectUris = client.getRedirectUris();
+            List<String> sanitizedRedirectUris = new ArrayList<>();
+
+            for (String redirectUri : redirectUris) {
+                String s = redirectUri.replaceAll("\\s+", "%20");
+                sanitizedRedirectUris.add(s);
+            }
+
+            client.setRedirectUris(sanitizedRedirectUris);
+        }
+        realmRep.setClients(clients);
     }
 
     private void importAddUser() {

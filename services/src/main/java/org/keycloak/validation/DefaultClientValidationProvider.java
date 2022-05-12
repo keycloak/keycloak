@@ -184,7 +184,7 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
         }
 
         try {
-            URI uri = new URI(url.replace(" ","%20"));
+            URI uri = new URI(url);
 
             boolean valid = true;
             if (uri.getScheme() != null && (uri.getScheme().equals("data") || uri.getScheme().equals("javascript"))) {
