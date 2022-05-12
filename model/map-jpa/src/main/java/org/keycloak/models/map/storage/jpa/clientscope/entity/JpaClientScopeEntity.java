@@ -43,7 +43,9 @@ import org.keycloak.models.map.client.MapProtocolMapperEntity;
 import org.keycloak.models.map.clientscope.MapClientScopeEntity.AbstractClientScopeEntity;
 import org.keycloak.models.map.common.DeepCloner;
 import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_CLIENT_SCOPE;
-import org.keycloak.models.map.storage.jpa.JpaRootEntity;
+
+import org.keycloak.models.map.common.UuidValidator;
+import org.keycloak.models.map.storage.jpa.JpaRootVersionedEntity;
 import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
 
 /**
@@ -54,7 +56,7 @@ import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
 @Entity
 @Table(name = "kc_client_scope", uniqueConstraints = {@UniqueConstraint(columnNames = {"realmId", "name"})})
 @TypeDefs({@TypeDef(name = "jsonb", typeClass = JsonbType.class)})
-public class JpaClientScopeEntity extends AbstractClientScopeEntity implements JpaRootEntity {
+public class JpaClientScopeEntity extends AbstractClientScopeEntity implements JpaRootVersionedEntity {
 
     @Id
     @Column
@@ -140,7 +142,8 @@ public class JpaClientScopeEntity extends AbstractClientScopeEntity implements J
 
     @Override
     public void setId(String id) {
-        this.id = id == null ? null : UUID.fromString(id);
+        String validatedId = UuidValidator.validateAndConvert(id);
+        this.id = UUID.fromString(validatedId);
     }
 
     @Override

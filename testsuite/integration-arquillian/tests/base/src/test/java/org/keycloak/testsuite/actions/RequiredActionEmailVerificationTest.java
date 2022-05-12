@@ -41,6 +41,7 @@ import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
+import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.cluster.AuthenticationSessionFailoverClusterTest;
 import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
@@ -358,7 +359,9 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
         driver.navigate().to(verificationUrl1.trim());
 
         appPage.assertCurrent();
-        appPage.logout();
+        accountPage.setAuthRealm(AuthRealm.TEST);
+        accountPage.navigateTo();
+        accountPage.logOut();
 
         MimeMessage message2 = greenMail.getReceivedMessages()[1];
 
@@ -768,7 +771,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
 
             accountPage.assertCurrent();
 
-            driver.navigate().to(oauth.getLogoutUrl().redirectUri(accountPage.buildUri().toString()).build());
+            accountPage.logOut();
             loginPage.assertCurrent();
 
             verifyEmailDuringAuthFlow();
@@ -809,7 +812,7 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
                 assertThat(driver2.getCurrentUrl(), Matchers.startsWith(accountPage.buildUri().toString()));
 
                 // Browser 1: Logout
-                driver.navigate().to(oauth.getLogoutUrl().redirectUri(accountPage.buildUri().toString()).build());
+                accountPage.logOut();
 
                 // Browser 1: Go to account page
                 accountPage.navigateTo();

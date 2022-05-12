@@ -178,6 +178,8 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
         }
 
         String requestedSubject = formParams.getFirst(OAuth2Constants.REQUESTED_SUBJECT);
+        boolean disallowOnHolderOfTokenMismatch = true;
+
         if (requestedSubject != null) {
             event.detail(Details.REQUESTED_SUBJECT, requestedSubject);
             UserModel requestedUser = session.users().getUserByUsername(realm, requestedSubject);
@@ -197,12 +199,11 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
                 event.detail(Details.IMPERSONATOR, tokenUser.getUsername());
                 // for this case, the user represented by the token, must have permission to impersonate.
                 AdminAuth auth = new AdminAuth(realm, token, tokenUser, client);
-                if (!AdminPermissions.evaluator(session, realm, auth).users().canImpersonate(requestedUser)) {
+                if (!AdminPermissions.evaluator(session, realm, auth).users().canImpersonate(requestedUser, client)) {
                     event.detail(Details.REASON, "subject not allowed to impersonate");
                     event.error(Errors.NOT_ALLOWED);
                     throw new CorsErrorResponseException(cors, OAuthErrorException.ACCESS_DENIED, "Client not allowed to exchange", Response.Status.FORBIDDEN);
                 }
-
             } else {
                 // no token is being exchanged, this is a direct exchange.  Client must be authenticated, not public, and must be allowed
                 // to impersonate
@@ -217,6 +218,9 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
                     event.error(Errors.NOT_ALLOWED);
                     throw new CorsErrorResponseException(cors, OAuthErrorException.ACCESS_DENIED, "Client not allowed to exchange", Response.Status.FORBIDDEN);
                 }
+
+                // see https://issues.redhat.com/browse/KEYCLOAK-5492
+                disallowOnHolderOfTokenMismatch = false;
             }
 
             tokenSession = session.sessions().createUserSession(realm, requestedUser, requestedUser.getUsername(), clientConnection.getRemoteAddr(), "impersonate", false, null, null);
@@ -230,7 +234,7 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
 
         String requestedIssuer = formParams.getFirst(OAuth2Constants.REQUESTED_ISSUER);
         if (requestedIssuer == null) {
-            return exchangeClientToClient(tokenUser, tokenSession);
+            return exchangeClientToClient(tokenUser, tokenSession, token, disallowOnHolderOfTokenMismatch);
         } else {
             try {
                 return exchangeToIdentityProvider(tokenUser, tokenSession, requestedIssuer);
@@ -271,7 +275,8 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
 
     }
 
-    protected Response exchangeClientToClient(UserModel targetUser, UserSessionModel targetUserSession) {
+    protected Response exchangeClientToClient(UserModel targetUser, UserSessionModel targetUserSession,
+            AccessToken token, boolean disallowOnHolderOfTokenMismatch) {
         String requestedTokenType = formParams.getFirst(OAuth2Constants.REQUESTED_TOKEN_TYPE);
         if (requestedTokenType == null) {
             requestedTokenType = OAuth2Constants.REFRESH_TOKEN_TYPE;
@@ -283,8 +288,11 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "requested_token_type unsupported", Response.Status.BAD_REQUEST);
 
         }
-        ClientModel targetClient = client;
+
         String audience = formParams.getFirst(OAuth2Constants.AUDIENCE);
+        ClientModel tokenHolder = token == null ? null : realm.getClientByClientId(token.getIssuedFor());
+        ClientModel targetClient = client;
+
         if (audience != null) {
             targetClient = realm.getClientByClientId(audience);
             if (targetClient == null) {
@@ -301,10 +309,26 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_CLIENT, "Client requires user consent", Response.Status.BAD_REQUEST);
         }
 
-        if (!targetClient.equals(client) && !AdminPermissions.management(session, realm).clients().canExchangeTo(client, targetClient)) {
-            event.detail(Details.REASON, "client not allowed to exchange to audience");
-            event.error(Errors.NOT_ALLOWED);
-            throw new CorsErrorResponseException(cors, OAuthErrorException.ACCESS_DENIED, "Client not allowed to exchange", Response.Status.FORBIDDEN);
+        boolean isClientTheAudience = client.equals(targetClient);
+
+        if (isClientTheAudience) {
+            if (client.isPublicClient()) {
+                // public clients can only exchange on to themselves if they are the token holder
+                forbiddenIfClientIsNotTokenHolder(disallowOnHolderOfTokenMismatch, tokenHolder);
+            } else if (!client.equals(tokenHolder)) {
+                // confidential clients can only exchange to themselves if they are within the token audience
+                forbiddenIfClientIsNotWithinTokenAudience(token, tokenHolder);
+            }
+        } else {
+            if (client.isPublicClient()) {
+                // public clients can not exchange tokens from other client
+                forbiddenIfClientIsNotTokenHolder(disallowOnHolderOfTokenMismatch, tokenHolder);
+            }
+            if (!AdminPermissions.management(session, realm).clients().canExchangeTo(client, targetClient)) {
+                event.detail(Details.REASON, "client not allowed to exchange to audience");
+                event.error(Errors.NOT_ALLOWED);
+                throw new CorsErrorResponseException(cors, OAuthErrorException.ACCESS_DENIED, "Client not allowed to exchange", Response.Status.FORBIDDEN);
+            }
         }
 
         String scope = formParams.getFirst(OAuth2Constants.SCOPE);
@@ -318,6 +342,22 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
         }
 
         throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "requested_token_type unsupported", Response.Status.BAD_REQUEST);
+    }
+
+    private void forbiddenIfClientIsNotWithinTokenAudience(AccessToken token, ClientModel tokenHolder) {
+        if (token != null && !token.hasAudience(client.getClientId())) {
+            event.detail(Details.REASON, "client is not within the token audience");
+            event.error(Errors.NOT_ALLOWED);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.ACCESS_DENIED, "Client is not within the token audience", Response.Status.FORBIDDEN);
+        }
+    }
+
+    private void forbiddenIfClientIsNotTokenHolder(boolean disallowOnHolderOfTokenMismatch, ClientModel tokenHolder) {
+        if (disallowOnHolderOfTokenMismatch && !client.equals(tokenHolder)) {
+            event.detail(Details.REASON, "client is not the token holder");
+            event.error(Errors.NOT_ALLOWED);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.ACCESS_DENIED, "Client is not the holder of the token", Response.Status.FORBIDDEN);
+        }
     }
 
     protected Response exchangeClientToOIDCClient(UserModel targetUser, UserSessionModel targetUserSession, String requestedTokenType,
@@ -457,7 +497,7 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
         userSession.setNote(IdentityProvider.EXTERNAL_IDENTITY_PROVIDER, externalIdpModel.get().getAlias());
         userSession.setNote(IdentityProvider.FEDERATED_ACCESS_TOKEN, subjectToken);
 
-        return exchangeClientToClient(user, userSession);
+        return exchangeClientToClient(user, userSession, null, false);
     }
 
     protected UserModel importUserFromExternalIdentity(BrokeredIdentityContext context) {

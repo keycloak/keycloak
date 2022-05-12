@@ -43,8 +43,6 @@ import static org.keycloak.testsuite.util.Matchers.bodyHC;
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP71)
 @AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT8)
 @AppServerContainer(ContainerConstants.APP_SERVER_TOMCAT9)
-@AppServerContainer(ContainerConstants.APP_SERVER_JETTY92)
-@AppServerContainer(ContainerConstants.APP_SERVER_JETTY93)
 @AppServerContainer(ContainerConstants.APP_SERVER_JETTY94)
 public class SAMLServletSessionTimeoutTest extends AbstractSAMLServletAdapterTest {
 

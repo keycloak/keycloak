@@ -19,12 +19,9 @@ package org.keycloak.testsuite.federation.kerberos;
 
 import java.net.URI;
 import java.util.List;
-
-
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
-
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -36,9 +33,9 @@ import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.ActionURIUtils;
+import org.keycloak.testsuite.KerberosEmbeddedServer;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.util.KerberosRule;
-import org.keycloak.testsuite.KerberosEmbeddedServer;
 
 /**
  * Test for the KerberosFederationProvider (kerberos without LDAP integration)
@@ -82,7 +79,8 @@ public class KerberosStandaloneTest extends AbstractKerberosSingleRealmTest {
     @Test
     public void updateProfileEnabledTest() throws Exception {
         // Switch updateProfileOnFirstLogin to on
-        List<ComponentRepresentation> reps = testRealmResource().components().query("test", UserStorageProvider.class.getName());
+        String parentId = testRealmResource().toRepresentation().getId();
+        List<ComponentRepresentation> reps = testRealmResource().components().query(parentId, UserStorageProvider.class.getName());
         org.keycloak.testsuite.Assert.assertEquals(1, reps.size());
         ComponentRepresentation kerberosProvider = reps.get(0);
         kerberosProvider.getConfig().putSingle(KerberosConstants.UPDATE_PROFILE_FIRST_LOGIN, "true");
@@ -114,7 +112,8 @@ public class KerberosStandaloneTest extends AbstractKerberosSingleRealmTest {
      */
     @Test
     public void noProvider() throws Exception {
-        List<ComponentRepresentation> reps = testRealmResource().components().query("test", UserStorageProvider.class.getName());
+        String parentId = testRealmResource().toRepresentation().getId();
+        List<ComponentRepresentation> reps = testRealmResource().components().query(parentId, UserStorageProvider.class.getName());
         org.keycloak.testsuite.Assert.assertEquals(1, reps.size());
         ComponentRepresentation kerberosProvider = reps.get(0);
         testRealmResource().components().component(kerberosProvider.getId()).remove();
@@ -159,8 +158,9 @@ public class KerberosStandaloneTest extends AbstractKerberosSingleRealmTest {
     @Test
     @UncaughtServerErrorExpected
     public void handleUnknownKerberosRealm() throws Exception {
-        // Switch kerberos realm to "unavailable"
-        List<ComponentRepresentation> reps = testRealmResource().components().query("test", UserStorageProvider.class.getName());
+        // Switch kerberos realm to "unavailable
+        String parentId = testRealmResource().toRepresentation().getId();
+        List<ComponentRepresentation> reps = testRealmResource().components().query(parentId, UserStorageProvider.class.getName());
         org.keycloak.testsuite.Assert.assertEquals(1, reps.size());
         ComponentRepresentation kerberosProvider = reps.get(0);
         kerberosProvider.getConfig().putSingle(KerberosConstants.KERBEROS_REALM, "unavailable");

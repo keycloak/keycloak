@@ -136,7 +136,8 @@
             "role.object.classes": "groupOfNames",
             "role.attributes": "ou",
             "mode": "LDAP_ONLY",
-            "use.realm.roles.mapping": "true"
+            "use.realm.roles.mapping": "true",
+            "connectionPooling": "true"
         }
     },
 
@@ -189,9 +190,23 @@
     },
 
     "realmCache": {
-        "provider": "${keycloak.realm.cache.provider:default}",
         "default" : {
-            "enabled": "${keycloak.realm.cache.provider.enabled:true}"
+            "enabled": "${keycloak.realmCache.enabled:true}"
+        }
+    },
+
+    "userCache": {
+        "default" : {
+            "enabled": "${keycloak.userCache.enabled:true}"
+        },
+        "mem": {
+            "maxSize": 20000
+        }
+    },
+
+    "authorizationCache": {
+        "default": {
+            "enabled": "${keycloak.authorizationCache.enabled:true}"
         }
     },
 
@@ -228,6 +243,9 @@
     },
 
     "login-protocol": {
+        "openid-connect": {
+            "legacy-logout-redirect-uri": "${keycloak.oidc.legacyLogoutRedirectUri:false}"
+        },
         "saml": {
             "knownProtocols": [
                 "http=${auth.server.http.port}",

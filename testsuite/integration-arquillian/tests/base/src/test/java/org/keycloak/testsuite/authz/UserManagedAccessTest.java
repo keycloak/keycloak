@@ -70,7 +70,7 @@ public class UserManagedAccessTest extends AbstractResourceServerTest {
         JSPolicyRepresentation policy = new JSPolicyRepresentation();
 
         policy.setName("Only Owner Policy");
-        policy.setCode("if ($evaluation.getContext().getIdentity().getId() == $evaluation.getPermission().getResource().getOwner()) {$evaluation.grant();}");
+        policy.setType("script-scripts/only-owner-policy.js");
 
         authorization.policies().js().create(policy).close();
     }

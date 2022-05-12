@@ -29,8 +29,8 @@
     <artifactId>keycloak-saml-tomcat-adapter-core</artifactId>
     <name>Keycloak Tomcat Core SAML Integration</name>
     <properties>
-        <maven.compiler.target>1.7</maven.compiler.target>
-        <maven.compiler.source>1.7</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+        <maven.compiler.source>1.8</maven.compiler.source>
     </properties>
     <description />
 

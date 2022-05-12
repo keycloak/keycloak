@@ -1,13 +1,12 @@
 /*
- * JBoss, Home of Professional Open Source.
- * Copyright 2016 Red Hat, Inc., and individual contributors
- * as indicated by the @author tags.
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -29,6 +28,7 @@ import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
@@ -49,7 +49,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
@@ -101,7 +100,7 @@ public class ScopeService {
             this.auth.realm().requireManageAuthorization();
         scope.setId(id);
         StoreFactory storeFactory = authorization.getStoreFactory();
-        Scope model = storeFactory.getScopeStore().findById(resourceServer, scope.getId());
+        Scope model = storeFactory.getScopeStore().findById(resourceServer.getRealm(), resourceServer, scope.getId());
 
         if (model == null) {
             return Response.status(Status.NOT_FOUND).build();
@@ -119,7 +118,8 @@ public class ScopeService {
     public Response delete(@PathParam("id") String id) {
         this.auth.realm().requireManageAuthorization();
         StoreFactory storeFactory = authorization.getStoreFactory();
-        Scope scope = storeFactory.getScopeStore().findById(resourceServer, id);
+        RealmModel realm = resourceServer.getRealm();
+        Scope scope = storeFactory.getScopeStore().findById(realm, resourceServer, id);
         if (scope == null) {
             return Response.status(Status.NOT_FOUND).build();
         }
@@ -135,13 +135,13 @@ public class ScopeService {
 
         for (Policy policyModel : policies) {
             if (policyModel.getScopes().size() == 1) {
-                policyStore.delete(policyModel.getId());
+                policyStore.delete(realm, policyModel.getId());
             } else {
                 policyModel.removeScope(scope);
             }
         }
 
-        storeFactory.getScopeStore().delete(id);
+        storeFactory.getScopeStore().delete(realm, id);
 
         audit(toRepresentation(scope), OperationType.DELETE);
 
@@ -154,7 +154,7 @@ public class ScopeService {
     @Produces(MediaType.APPLICATION_JSON)
     public Response findById(@PathParam("id") String id) {
         this.auth.realm().requireViewAuthorization();
-        Scope model = this.authorization.getStoreFactory().getScopeStore().findById(resourceServer, id);
+        Scope model = this.authorization.getStoreFactory().getScopeStore().findById(resourceServer.getRealm(), resourceServer, id);
 
         if (model == null) {
             return Response.status(Status.NOT_FOUND).build();
@@ -170,7 +170,7 @@ public class ScopeService {
     public Response getResources(@PathParam("id") String id) {
         this.auth.realm().requireViewAuthorization();
         StoreFactory storeFactory = this.authorization.getStoreFactory();
-        Scope model = storeFactory.getScopeStore().findById(resourceServer, id);
+        Scope model = storeFactory.getScopeStore().findById(resourceServer.getRealm(), resourceServer, id);
 
         if (model == null) {
             return Response.status(Status.NOT_FOUND).build();
@@ -193,7 +193,7 @@ public class ScopeService {
     public Response getPermissions(@PathParam("id") String id) {
         this.auth.realm().requireViewAuthorization();
         StoreFactory storeFactory = this.authorization.getStoreFactory();
-        Scope model = storeFactory.getScopeStore().findById(resourceServer, id);
+        Scope model = storeFactory.getScopeStore().findById(resourceServer.getRealm(), resourceServer, id);
 
         if (model == null) {
             return Response.status(Status.NOT_FOUND).build();

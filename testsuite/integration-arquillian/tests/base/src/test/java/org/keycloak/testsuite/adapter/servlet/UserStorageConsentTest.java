@@ -42,6 +42,8 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.federation.UserMapStorageFactory;
 import org.keycloak.testsuite.pages.ConsentPage;
+import org.keycloak.testsuite.pages.InfoPage;
+import org.keycloak.testsuite.pages.LogoutConfirmPage;
 import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 
 import javax.ws.rs.core.Response;
@@ -75,6 +77,12 @@ public class UserStorageConsentTest extends AbstractServletsAdapterTest {
 
     @Page
     protected ConsentPage consentPage;
+
+    @Page
+    protected LogoutConfirmPage logoutConfirmPage;
+
+    @Page
+    protected InfoPage infoPage;
 
     @Deployment(name = ProductPortal.DEPLOYMENT_NAME)
     protected static WebArchive productPortal() {
@@ -172,11 +180,18 @@ public class UserStorageConsentTest extends AbstractServletsAdapterTest {
         consentPage.confirm();
         assertCurrentUrlEquals(productPortal.toString());
         Assert.assertTrue(driver.getPageSource().contains("iPhone"));
+
         String logoutUri = OIDCLoginProtocolService.logoutUrl(authServerPage.createUriBuilder())
-                .queryParam(OAuth2Constants.REDIRECT_URI, productPortal.toString())
                 .build("demo").toString();
 
         driver.navigate().to(logoutUri);
+        waitForPageToLoad();
+        logoutConfirmPage.assertCurrent();
+        logoutConfirmPage.confirmLogout();
+        waitForPageToLoad();
+        infoPage.assertCurrent();
+
+        driver.navigate().to(productPortal.toString());
         waitForPageToLoad();
         assertCurrentUrlStartsWithLoginUrlOf(testRealmPage);
         productPortal.navigateTo();
@@ -186,6 +201,9 @@ public class UserStorageConsentTest extends AbstractServletsAdapterTest {
         Assert.assertTrue(driver.getPageSource().contains("iPhone"));
 
         driver.navigate().to(logoutUri);
+        waitForPageToLoad();
+        logoutConfirmPage.assertCurrent();
+        logoutConfirmPage.confirmLogout();
         adminClient.realm("demo").users().delete(uid).close();
     }
 }

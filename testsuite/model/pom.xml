@@ -285,14 +285,6 @@
         </profile>
 
         <profile>
-            <id>map+infinispan</id>
-            <properties>
-                <keycloak.profile.feature.map_storage>enabled</keycloak.profile.feature.map_storage>
-                <keycloak.model.parameters>Infinispan,Jpa,Map,ConcurrentHashMapStorage</keycloak.model.parameters>
-            </properties>
-        </profile>
-
-        <profile>
             <id>map</id>
             <properties>
                 <keycloak.profile.feature.map_storage>enabled</keycloak.profile.feature.map_storage>
@@ -313,6 +305,18 @@
             <properties>
                 <keycloak.profile.feature.map_storage>enabled</keycloak.profile.feature.map_storage>
                 <keycloak.model.parameters>Jpa,Map,LdapMapStorage</keycloak.model.parameters>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>.asyncProfiler</id>
+            <activation>
+                <property><name>libasyncProfilerPath</name></property>
+            </activation>
+            <properties>
+                <asyncProfiler.event>cpu</asyncProfiler.event>
+                <asyncProfiler.file>target/profile.html</asyncProfiler.file>
+                <argLine>-agentpath:${libasyncProfilerPath}=start,event=${asyncProfiler.event},file=${asyncProfiler.file}</argLine>
             </properties>
         </profile>
 

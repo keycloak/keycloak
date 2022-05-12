@@ -62,11 +62,7 @@ public class RecoveryAuthnCodesCredentialProvider
                 .helpText("recovery-authn-codes-help-text").iconCssClass("kcAuthenticatorRecoveryAuthnCodesClass")
                 .removeable(true);
         UserModel user = metadataContext.getUser();
-        if (user != null && !isConfiguredFor(session.getContext().getRealm(), user, getType())) {
-            builder.createAction(UserModel.RequiredAction.CONFIGURE_RECOVERY_AUTHN_CODES.name());
-        } else {
-            builder.updateAction(UserModel.RequiredAction.CONFIGURE_RECOVERY_AUTHN_CODES.name());
-        }
+        builder.createAction(UserModel.RequiredAction.CONFIGURE_RECOVERY_AUTHN_CODES.name());
         return builder.build(session);
     }
 

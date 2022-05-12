@@ -305,7 +305,8 @@ public interface UserModel extends RoleMapperModel {
         CONFIGURE_RECOVERY_AUTHN_CODES,
         UPDATE_PASSWORD,
         TERMS_AND_CONDITIONS,
-        VERIFY_PROFILE
+        VERIFY_PROFILE,
+        UPDATE_EMAIL
     }
 
     /**

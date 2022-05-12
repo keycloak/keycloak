@@ -56,6 +56,7 @@ import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RequiredCredentialModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.WebAuthnPolicy;
+import org.keycloak.models.map.common.TimeAdapter;
 import org.keycloak.models.map.realm.entity.MapAuthenticationExecutionEntity;
 import org.keycloak.models.map.realm.entity.MapAuthenticationFlowEntity;
 import org.keycloak.models.map.realm.entity.MapAuthenticatorConfigEntity;
@@ -482,6 +483,9 @@ public class MapRealmAdapter extends AbstractRealmModel<MapRealmEntity> implemen
 
     @Override
     public int getActionTokenGeneratedByUserLifespan(String actionTokenType) {
+        if (actionTokenType == null || getAttribute(ACTION_TOKEN_GENERATED_BY_USER_LIFESPAN + "." + actionTokenType) == null) {
+            return getActionTokenGeneratedByUserLifespan();
+        }
         return getAttribute(ACTION_TOKEN_GENERATED_BY_USER_LIFESPAN + "." + actionTokenType, getAccessCodeLifespanUserAction());
     }
 
@@ -519,6 +523,9 @@ public class MapRealmAdapter extends AbstractRealmModel<MapRealmEntity> implemen
         RequiredCredentialModel model = RequiredCredentialModel.BUILT_IN.get(cred);
         if (model == null) {
             throw new RuntimeException("Unknown credential type " + cred);
+        }
+        if (getRequiredCredentialsStream().anyMatch(credential -> Objects.equals(model.getType(), credential.getType()))) { 
+            throw new ModelDuplicateException("A Required Credential with given type already exists.");
         }
         entity.addRequiredCredential(MapRequiredCredentialEntity.fromModel(model));
     }
@@ -836,6 +843,9 @@ public class MapRealmAdapter extends AbstractRealmModel<MapRealmEntity> implemen
 
     @Override
     public AuthenticatorConfigModel addAuthenticatorConfig(AuthenticatorConfigModel model) {
+        if (entity.getAuthenticatorConfig(model.getId()).isPresent()) {
+            throw new ModelDuplicateException("An Authenticator Config with given id already exists.");
+        }
         MapAuthenticatorConfigEntity authenticatorConfig = MapAuthenticatorConfigEntity.fromModel(model);
         entity.addAuthenticatorConfig(authenticatorConfig);
         model.setId(authenticatorConfig.getId());
@@ -882,6 +892,12 @@ public class MapRealmAdapter extends AbstractRealmModel<MapRealmEntity> implemen
 
     @Override
     public RequiredActionProviderModel addRequiredActionProvider(RequiredActionProviderModel model) {
+        if (entity.getRequiredActionProvider(model.getId()).isPresent()) {
+            throw new ModelDuplicateException("A Required Action Provider with given id already exists.");
+        }
+        if (getRequiredActionProviderByAlias(model.getAlias()) != null) {
+            throw new ModelDuplicateException("A Required Action Provider with given alias already exists.");
+        }
         MapRequiredActionProviderEntity requiredActionProvider = MapRequiredActionProviderEntity.fromModel(model);
         entity.addRequiredActionProvider(requiredActionProvider);
 
@@ -942,6 +958,9 @@ public class MapRealmAdapter extends AbstractRealmModel<MapRealmEntity> implemen
 
     @Override
     public void addIdentityProvider(IdentityProviderModel model) {
+        if (getIdentityProviderByAlias(model.getAlias()) != null) {
+            throw new ModelDuplicateException("An Identity Provider with given alias already exists.");
+        }
         entity.addIdentityProvider(MapIdentityProviderEntity.fromModel(model));
     }
 
@@ -1229,13 +1248,13 @@ public class MapRealmAdapter extends AbstractRealmModel<MapRealmEntity> implemen
 
     @Override
     public int getNotBefore() {
-        Integer i = entity.getNotBefore();
-        return i == null ? 0 : i;
+        Long notBefore = entity.getNotBefore();
+        return notBefore == null ? 0 : TimeAdapter.fromLongWithTimeInSecondsToIntegerWithTimeInSeconds(notBefore);
     }
 
     @Override
     public void setNotBefore(int notBefore) {
-        entity.setNotBefore(notBefore);
+        entity.setNotBefore(TimeAdapter.fromIntegerWithTimeInSecondsToLongWithTimeAsInSeconds(notBefore));
     }
 
     @Override
@@ -1312,7 +1331,7 @@ public class MapRealmAdapter extends AbstractRealmModel<MapRealmEntity> implemen
         }
         RealmModel masterRealm = getName().equals(Config.getAdminRealm())
           ? this
-          : session.realms().getRealm(Config.getAdminRealm());
+          : session.realms().getRealmByName(Config.getAdminRealm());
         return session.clients().getClientById(masterRealm, masterAdminClientId);
     }
 

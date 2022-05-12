@@ -19,15 +19,14 @@ package org.keycloak.testsuite.admin.authentication;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.keycloak.common.Profile;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderSimpleRepresentation;
 import org.keycloak.testsuite.actions.DummyRequiredActionFactory;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.util.AdminEventPaths;
 
+import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.NotFoundException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -58,7 +57,7 @@ public class RequiredActionsTest extends AbstractAuthenticationTest {
 
         RequiredActionProviderRepresentation forUpdate = newRequiredAction("VERIFY_EMAIL", "Verify Email", false, false, null);
         authMgmtResource.updateRequiredAction(forUpdate.getAlias(), forUpdate);
-        assertAdminEvents.assertEvent(REALM_NAME, OperationType.UPDATE, AdminEventPaths.authRequiredActionPath(forUpdate.getAlias()), ResourceType.REQUIRED_ACTION);
+        assertAdminEvents.assertEvent(testRealmId, OperationType.UPDATE, AdminEventPaths.authRequiredActionPath(forUpdate.getAlias()), ResourceType.REQUIRED_ACTION);
 
         result = authMgmtResource.getRequiredActions();
         RequiredActionProviderRepresentation updated = findRequiredActionByAlias(forUpdate.getAlias(), result);
@@ -68,7 +67,7 @@ public class RequiredActionsTest extends AbstractAuthenticationTest {
 
         forUpdate.setConfig(Collections.<String, String>emptyMap());
         authMgmtResource.updateRequiredAction(forUpdate.getAlias(), forUpdate);
-        assertAdminEvents.assertEvent(REALM_NAME, OperationType.UPDATE, AdminEventPaths.authRequiredActionPath(forUpdate.getAlias()), ResourceType.REQUIRED_ACTION);
+        assertAdminEvents.assertEvent(testRealmId, OperationType.UPDATE, AdminEventPaths.authRequiredActionPath(forUpdate.getAlias()), ResourceType.REQUIRED_ACTION);
 
         result = authMgmtResource.getRequiredActions();
         updated = findRequiredActionByAlias(forUpdate.getAlias(), result);
@@ -92,7 +91,14 @@ public class RequiredActionsTest extends AbstractAuthenticationTest {
 
         // Register it
         authMgmtResource.registerRequiredAction(action);
-        assertAdminEvents.assertEvent(REALM_NAME, OperationType.CREATE, AdminEventPaths.authMgmtBasePath() + "/register-required-action", action, ResourceType.REQUIRED_ACTION);
+        assertAdminEvents.assertEvent(testRealmId, OperationType.CREATE, AdminEventPaths.authMgmtBasePath() + "/register-required-action", action, ResourceType.REQUIRED_ACTION);
+
+        // Try to register 2nd time
+        try {
+            authMgmtResource.registerRequiredAction(action);
+        } catch (ClientErrorException ex) {
+            // Expected
+        }
 
         // Try to find not-existent action - should fail
         try {
@@ -121,7 +127,7 @@ public class RequiredActionsTest extends AbstractAuthenticationTest {
         // Update (set it as defaultAction)
         rep.setDefaultAction(true);
         authMgmtResource.updateRequiredAction(DummyRequiredActionFactory.PROVIDER_ID, rep);
-        assertAdminEvents.assertEvent(REALM_NAME, OperationType.UPDATE, AdminEventPaths.authRequiredActionPath(rep.getAlias()), rep, ResourceType.REQUIRED_ACTION);
+        assertAdminEvents.assertEvent(testRealmId, OperationType.UPDATE, AdminEventPaths.authRequiredActionPath(rep.getAlias()), rep, ResourceType.REQUIRED_ACTION);
         compareRequiredAction(rep, newRequiredAction(DummyRequiredActionFactory.PROVIDER_ID, "Dummy Action",
                 true, true, Collections.<String, String>emptyMap()));
 
@@ -135,7 +141,7 @@ public class RequiredActionsTest extends AbstractAuthenticationTest {
 
         // Remove success
         authMgmtResource.removeRequiredAction(DummyRequiredActionFactory.PROVIDER_ID);
-        assertAdminEvents.assertEvent(REALM_NAME, OperationType.DELETE, AdminEventPaths.authRequiredActionPath(rep.getAlias()), ResourceType.REQUIRED_ACTION);
+        assertAdminEvents.assertEvent(testRealmId, OperationType.DELETE, AdminEventPaths.authRequiredActionPath(rep.getAlias()), ResourceType.REQUIRED_ACTION);
 
     }
 

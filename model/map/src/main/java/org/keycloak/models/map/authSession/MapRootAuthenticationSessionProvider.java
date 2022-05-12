@@ -23,6 +23,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.map.common.TimeAdapter;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
@@ -99,7 +100,7 @@ public class MapRootAuthenticationSessionProvider implements AuthenticationSessi
         entity.setId(id);
         entity.setRealmId(realm.getId());
         int timestamp = Time.currentTime();
-        entity.setTimestamp(timestamp);
+        entity.setTimestamp(TimeAdapter.fromIntegerWithTimeInSecondsToLongWithTimeAsInSeconds(timestamp));
         entity.setExpiration(SessionExpiration.getAuthSessionExpiration(realm, timestamp));
 
         if (id != null && tx.read(id) != null) {
@@ -144,7 +145,7 @@ public class MapRootAuthenticationSessionProvider implements AuthenticationSessi
 
         DefaultModelCriteria<RootAuthenticationSessionModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
-          .compare(SearchableFields.EXPIRATION, Operator.LT, Time.currentTime());
+          .compare(SearchableFields.EXPIRATION, Operator.LT, (long) Time.currentTime());
 
         long deletedCount = tx.delete(withCriteria(mcb));
 

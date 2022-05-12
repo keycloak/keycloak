@@ -98,6 +98,11 @@ public class RealmAttributeUpdater extends ServerResourceUpdater<RealmAttributeU
         return this;
     }
 
+    public RealmAttributeUpdater setNotBefore(Integer notBefore) {
+        rep.setNotBefore(notBefore);
+        return this;
+    }
+
     public RealmAttributeUpdater setDefaultLocale(String defaultLocale) {
         rep.setDefaultLocale(defaultLocale);
         return this;

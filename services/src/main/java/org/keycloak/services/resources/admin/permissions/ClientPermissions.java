@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -165,7 +165,7 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
     private void deletePolicy(String name, ResourceServer server) {
         Policy policy = authz.getStoreFactory().getPolicyStore().findByName(server, name);
         if (policy != null) {
-            authz.getStoreFactory().getPolicyStore().delete(policy.getId());
+            authz.getStoreFactory().getPolicyStore().delete(server.getRealm(), policy.getId());
         }
 
     }
@@ -181,7 +181,7 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
         deletePolicy(getConfigurePermissionName(client), server);
         deletePolicy(getExchangeToPermissionName(client), server);
         Resource resource = authz.getStoreFactory().getResourceStore().findByName(server, getResourceName(client));;
-        if (resource != null) authz.getStoreFactory().getResourceStore().delete(resource.getId());
+        if (resource != null) authz.getStoreFactory().getResourceStore().delete(server.getRealm(), resource.getId());
     }
 
     @Override
@@ -306,50 +306,47 @@ class ClientPermissions implements ClientPermissionEvaluator,  ClientPermissionM
     @Override
     public boolean canExchangeTo(ClientModel authorizedClient, ClientModel to) {
 
-        if (!authorizedClient.equals(to)) {
-            ResourceServer server = resourceServer(to);
-            if (server == null) {
-                logger.debug("No resource server set up for target client");
-                return false;
-            }
-
-            Resource resource =  authz.getStoreFactory().getResourceStore().findByName(server, getResourceName(to));
-            if (resource == null) {
-                logger.debug("No resource object set up for target client");
-                return false;
-            }
-
-            Policy policy = authz.getStoreFactory().getPolicyStore().findByName(server, getExchangeToPermissionName(to));
-            if (policy == null) {
-                logger.debug("No permission object set up for target client");
-                return false;
-            }
-
-            Set<Policy> associatedPolicies = policy.getAssociatedPolicies();
-            // if no policies attached to permission then just do default behavior
-            if (associatedPolicies == null || associatedPolicies.isEmpty()) {
-                logger.debug("No policies set up for permission on target client");
-                return false;
-            }
-
-            Scope scope = exchangeToScope(server);
-            if (scope == null) {
-                logger.debug(TOKEN_EXCHANGE + " not initialized");
-                return false;
-            }
-            ClientModelIdentity identity = new ClientModelIdentity(session, authorizedClient);
-            EvaluationContext context = new DefaultEvaluationContext(identity, session) {
-                @Override
-                public Map<String, Collection<String>> getBaseAttributes() {
-                    Map<String, Collection<String>> attributes = super.getBaseAttributes();
-                    attributes.put("kc.client.id", Arrays.asList(authorizedClient.getClientId()));
-                    return attributes;
-                }
-
-            };
-            return root.evaluatePermission(resource, server, context, scope);
+        ResourceServer server = resourceServer(to);
+        if (server == null) {
+            logger.debug("No resource server set up for target client");
+            return false;
         }
-        return true;
+
+        Resource resource =  authz.getStoreFactory().getResourceStore().findByName(server, getResourceName(to));
+        if (resource == null) {
+            logger.debug("No resource object set up for target client");
+            return false;
+        }
+
+        Policy policy = authz.getStoreFactory().getPolicyStore().findByName(server, getExchangeToPermissionName(to));
+        if (policy == null) {
+            logger.debug("No permission object set up for target client");
+            return false;
+        }
+
+        Set<Policy> associatedPolicies = policy.getAssociatedPolicies();
+        // if no policies attached to permission then just do default behavior
+        if (associatedPolicies == null || associatedPolicies.isEmpty()) {
+            logger.debug("No policies set up for permission on target client");
+            return false;
+        }
+
+        Scope scope = exchangeToScope(server);
+        if (scope == null) {
+            logger.debug(TOKEN_EXCHANGE + " not initialized");
+            return false;
+        }
+        ClientModelIdentity identity = new ClientModelIdentity(session, authorizedClient);
+        EvaluationContext context = new DefaultEvaluationContext(identity, session) {
+            @Override
+            public Map<String, Collection<String>> getBaseAttributes() {
+                Map<String, Collection<String>> attributes = super.getBaseAttributes();
+                attributes.put("kc.client.id", Arrays.asList(authorizedClient.getClientId()));
+                return attributes;
+            }
+
+        };
+        return root.evaluatePermission(resource, server, context, scope);
     }
 
 

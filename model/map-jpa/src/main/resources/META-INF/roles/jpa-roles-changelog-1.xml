@@ -36,9 +36,9 @@ limitations under the License.
         </createTable>
         <ext:addGeneratedColumn tableName="kc_role">
             <ext:column name="entityversion" type="INTEGER" jsonColumn="metadata" jsonProperty="entityVersion"/>
-            <ext:column name="realmid" type="VARCHAR(36)" jsonColumn="metadata" jsonProperty="fRealmId"/>
+            <ext:column name="realmid" type="KC_KEY" jsonColumn="metadata" jsonProperty="fRealmId"/>
+            <ext:column name="clientid" type="KC_KEY" jsonColumn="metadata" jsonProperty="fClientId"/>
             <ext:column name="name" type="VARCHAR(255)" jsonColumn="metadata" jsonProperty="fName"/>
-            <ext:column name="clientid" type="VARCHAR(255)" jsonColumn="metadata" jsonProperty="fClientId"/>
             <ext:column name="description" type="VARCHAR(255)" jsonColumn="metadata" jsonProperty="fDescription"/>
         </ext:addGeneratedColumn>
         <createIndex tableName="kc_role" indexName="role_entityVersion">
@@ -66,6 +66,8 @@ limitations under the License.
             <column name="name" type="VARCHAR(255)"/>
             <column name="value" type="text"/>
         </createTable>
+        <!-- this is deferrable and initiallyDeferred as hibernate will first insert new entries and then delete the old by default -->
+        <addUniqueConstraint tableName="kc_role_attribute" columnNames="fk_root, name, value" deferrable="true" initiallyDeferred="true" />
         <createIndex tableName="kc_role_attribute" indexName="role_attr_fk_root">
             <column name="fk_root"/>
         </createIndex>

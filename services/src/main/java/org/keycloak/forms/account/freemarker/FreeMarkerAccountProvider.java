@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -79,6 +79,7 @@ public class FreeMarkerAccountProvider implements AccountProvider {
     protected String[] referrer;
     protected List<Event> events;
     protected String stateChecker;
+    protected String idTokenHint;
     protected List<UserSessionModel> sessions;
     protected boolean identityProviderEnabled;
     protected boolean eventsEnabled;
@@ -151,7 +152,7 @@ public class FreeMarkerAccountProvider implements AccountProvider {
             attributes.put("realm", new RealmBean(realm));
         }
 
-        attributes.put("url", new UrlBean(realm, theme, baseUri, baseQueryUri, uriInfo.getRequestUri(), stateChecker));
+        attributes.put("url", new UrlBean(realm, theme, baseUri, baseQueryUri, uriInfo.getRequestUri(), idTokenHint));
 
         if (realm.isInternationalizationEnabled()) {
             UriBuilder b = UriBuilder.fromUri(baseQueryUri).path(uriInfo.getPath());
@@ -185,12 +186,12 @@ public class FreeMarkerAccountProvider implements AccountProvider {
                 if (!realm.isUserManagedAccessAllowed()) {
                     return Response.status(Status.FORBIDDEN).build();
                 }
-                attributes.put("authorization", new AuthorizationBean(session, user, uriInfo));
+                attributes.put("authorization", new AuthorizationBean(session, realm, user, uriInfo));
             case RESOURCE_DETAIL:
                 if (!realm.isUserManagedAccessAllowed()) {
                     return Response.status(Status.FORBIDDEN).build();
                 }
-                attributes.put("authorization", new AuthorizationBean(session, user, uriInfo));
+                attributes.put("authorization", new AuthorizationBean(session, realm, user, uriInfo));
         }
 
         return processTemplate(theme, page, attributes, locale);
@@ -366,6 +367,12 @@ public class FreeMarkerAccountProvider implements AccountProvider {
     @Override
     public AccountProvider setStateChecker(String stateChecker) {
         this.stateChecker = stateChecker;
+        return this;
+    }
+
+    @Override
+    public AccountProvider setIdTokenHint(String idTokenHint) {
+        this.idTokenHint = idTokenHint;
         return this;
     }
 

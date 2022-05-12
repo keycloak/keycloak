@@ -26,14 +26,14 @@ import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakUriInfo;
 import org.keycloak.models.OAuth2DeviceCodeModel;
-import org.keycloak.models.OAuth2DeviceTokenStoreProvider;
+import org.keycloak.models.OAuth2DeviceUserCodeModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.LoginProtocol;
@@ -60,7 +60,7 @@ import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 
 import java.net.URI;
-import java.util.stream.Stream;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:h2-wada@nri.co.jp">Hiroyuki Wada</a>
@@ -101,8 +101,7 @@ public class DeviceGrantType {
         String errorType = OAuthErrorException.SERVER_ERROR;
         if (error == LoginProtocol.Error.CONSENT_DENIED) {
             String verifiedUserCode = authSession.getClientNote(DeviceGrantType.OAUTH2_DEVICE_VERIFIED_USER_CODE);
-            OAuth2DeviceTokenStoreProvider store = session.getProvider(OAuth2DeviceTokenStoreProvider.class);
-            if (!store.deny(realm, verifiedUserCode)) {
+            if (!denyUserCode(session, realm, verifiedUserCode)) {
                 // Already expired and removed in the store
                 errorType = OAuthErrorException.EXPIRED_TOKEN;
             } else {
@@ -123,8 +122,7 @@ public class DeviceGrantType {
 
         String verifiedUserCode = authSession.getClientNote(DeviceGrantType.OAUTH2_DEVICE_VERIFIED_USER_CODE);
         String userSessionId = clientSession.getUserSession().getId();
-        OAuth2DeviceTokenStoreProvider store = session.getProvider(OAuth2DeviceTokenStoreProvider.class);
-        if (!store.approve(realm, verifiedUserCode, userSessionId, null)) {
+        if (!approveUserCode(session, realm, verifiedUserCode, userSessionId, null)) {
             // Already expired and removed in the store
             return Response.status(302).location(
                     uriBuilder.queryParam(OAuth2Constants.ERROR, OAuthErrorException.EXPIRED_TOKEN)
@@ -133,7 +131,7 @@ public class DeviceGrantType {
         }
 
         // Now, remove the verified user code
-        store.removeUserCode(realm, verifiedUserCode);
+        removeDeviceByUserCode(session, realm, verifiedUserCode);
 
         return Response.status(302).location(
                 uriBuilder.build(realm.getName())
@@ -143,6 +141,51 @@ public class DeviceGrantType {
     public static boolean isOAuth2DeviceVerificationFlow(final AuthenticationSessionModel authSession) {
         String flow = authSession.getClientNote(DeviceGrantType.OAUTH2_DEVICE_VERIFIED_USER_CODE);
         return flow != null;
+    }
+
+    public static OAuth2DeviceCodeModel getDeviceByDeviceCode(KeycloakSession session, RealmModel realm, String deviceCode) {
+        SingleUseObjectProvider singleUseStore = session.getProvider(SingleUseObjectProvider.class);
+        Map<String, String> notes = singleUseStore.get(OAuth2DeviceCodeModel.createKey(deviceCode));
+        return notes != null ? OAuth2DeviceCodeModel.fromCache(realm, deviceCode, notes) : null;
+    }
+
+    public static void removeDeviceByDeviceCode(KeycloakSession session, String deviceCode) {
+        SingleUseObjectProvider singleUseStore = session.getProvider(SingleUseObjectProvider.class);
+        singleUseStore.remove(OAuth2DeviceCodeModel.createKey(deviceCode));
+    }
+
+    public static void removeDeviceByUserCode(KeycloakSession session, RealmModel realm, String userCode) {
+        SingleUseObjectProvider singleUseStore = session.getProvider(SingleUseObjectProvider.class);
+        singleUseStore.remove(OAuth2DeviceUserCodeModel.createKey(realm, userCode));
+    }
+
+    public static boolean isPollingAllowed(KeycloakSession session, OAuth2DeviceCodeModel deviceCodeModel) {
+        SingleUseObjectProvider singleUseStore = session.getProvider(SingleUseObjectProvider.class);
+        return singleUseStore.putIfAbsent(deviceCodeModel.serializePollingKey(), deviceCodeModel.getPollingInterval());
+    }
+
+    public static boolean approveUserCode(KeycloakSession session, RealmModel realm, String userCode, String userSessionId, Map<String, String> additionalParams) {
+        SingleUseObjectProvider singleUseStore = session.getProvider(SingleUseObjectProvider.class);
+        OAuth2DeviceCodeModel deviceCodeModel = DeviceEndpoint.getDeviceByUserCode(session, realm, userCode);
+
+        if (deviceCodeModel != null) {
+            OAuth2DeviceCodeModel approvedDeviceCode = deviceCodeModel.approve(userSessionId, additionalParams);
+            return singleUseStore.replace(approvedDeviceCode.serializeKey(), approvedDeviceCode.toMap());
+        }
+
+        return false;
+    }
+
+    public static boolean denyUserCode(KeycloakSession session, RealmModel realm, String userCode) {
+        SingleUseObjectProvider singleUseStore = session.getProvider(SingleUseObjectProvider.class);
+        OAuth2DeviceCodeModel deviceCodeModel = DeviceEndpoint.getDeviceByUserCode(session, realm, userCode);
+
+        if (deviceCodeModel != null) {
+            OAuth2DeviceCodeModel deniedDeviceCode = deviceCodeModel.deny();
+            return singleUseStore.replace(deniedDeviceCode.serializeKey(), deniedDeviceCode.toMap());
+        }
+
+        return false;
     }
 
     private MultivaluedMap<String, String> formParams;
@@ -182,8 +225,7 @@ public class DeviceGrantType {
                 "Missing parameter: " + OAuth2Constants.DEVICE_CODE, Response.Status.BAD_REQUEST);
         }
 
-        OAuth2DeviceTokenStoreProvider store = session.getProvider(OAuth2DeviceTokenStoreProvider.class);
-        OAuth2DeviceCodeModel deviceCodeModel = store.getByDeviceCode(realm, deviceCode);
+        OAuth2DeviceCodeModel deviceCodeModel = getDeviceByDeviceCode(session, realm, deviceCode);
 
         if (deviceCodeModel == null) {
             event.error(Errors.INVALID_OAUTH2_DEVICE_CODE);
@@ -197,7 +239,7 @@ public class DeviceGrantType {
                 Response.Status.BAD_REQUEST);
         }
 
-        if (!store.isPollingAllowed(deviceCodeModel)) {
+        if (!isPollingAllowed(session, deviceCodeModel)) {
             event.error(Errors.SLOW_DOWN);
             throw new CorsErrorResponseException(cors, OAuthErrorException.SLOW_DOWN, "Slow down", Response.Status.BAD_REQUEST);
         }
@@ -245,7 +287,7 @@ public class DeviceGrantType {
         }
 
         // Now, remove the device code
-        store.removeDeviceCode(realm, deviceCode);
+        removeDeviceByDeviceCode(session, deviceCode);
 
         UserModel user = userSession.getUser();
         if (user == null) {

@@ -548,10 +548,8 @@ public class AccountLinkSpringBootTest extends AbstractSpringBootTest {
     }
 
     public void logoutAll() {
-        String logoutUri = OIDCLoginProtocolService.logoutUrl(authServerPage.createUriBuilder()).build(REALM_NAME).toString();
-        navigateTo(logoutUri);
-        logoutUri = OIDCLoginProtocolService.logoutUrl(authServerPage.createUriBuilder()).build(PARENT_REALM).toString();
-        navigateTo(logoutUri);
+        adminClient.realm(REALM_NAME).logoutAll();
+        adminClient.realm(PARENT_REALM).logoutAll();
     }
 
     private String getToken(OAuthClient.AccessTokenResponse response, Client httpClient) throws Exception {

@@ -46,6 +46,8 @@ import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.Serialization;
 import org.keycloak.models.map.common.UpdatableEntity;
 import org.keycloak.models.map.group.MapGroupEntityImpl;
+import org.keycloak.models.map.loginFailure.MapUserLoginFailureEntity;
+import org.keycloak.models.map.loginFailure.MapUserLoginFailureEntityImpl;
 import org.keycloak.models.map.realm.MapRealmEntity;
 import org.keycloak.models.map.realm.MapRealmEntityImpl;
 import org.keycloak.models.map.realm.entity.*;
@@ -65,6 +67,10 @@ import org.keycloak.models.map.user.MapUserCredentialEntityImpl;
 import org.keycloak.models.map.user.MapUserEntityImpl;
 import org.keycloak.models.map.user.MapUserFederatedIdentityEntityImpl;
 import org.keycloak.models.map.storage.ModelEntityUtil;
+import org.keycloak.models.map.userSession.MapAuthenticatedClientSessionEntity;
+import org.keycloak.models.map.userSession.MapAuthenticatedClientSessionEntityImpl;
+import org.keycloak.models.map.userSession.MapUserSessionEntity;
+import org.keycloak.models.map.userSession.MapUserSessionEntityImpl;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
@@ -128,6 +134,9 @@ public class ConcurrentHashMapStorageProviderFactory implements AmphibianProvide
       .constructor(MapWebAuthnPolicyEntity.class,                   MapWebAuthnPolicyEntityImpl::new)
       .constructor(MapRootAuthenticationSessionEntity.class,        MapRootAuthenticationSessionEntityImpl::new)
       .constructor(MapAuthenticationSessionEntity.class,            MapAuthenticationSessionEntityImpl::new)
+      .constructor(MapUserLoginFailureEntity.class,                 MapUserLoginFailureEntityImpl::new)
+      .constructor(MapUserSessionEntity.class,                      MapUserSessionEntityImpl::new)
+      .constructor(MapAuthenticatedClientSessionEntity.class,       MapAuthenticatedClientSessionEntityImpl::new)
       .build();
 
     private static final Map<String, StringKeyConverter> KEY_CONVERTERS = new HashMap<>();

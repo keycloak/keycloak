@@ -32,14 +32,14 @@ public class HotRodAttributeEntity {
 
     @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
     @ProtoField(number = 2)
-    public List<String> values = new LinkedList<>();
+    public List<String> values;
 
     public HotRodAttributeEntity() {
     }
 
     public HotRodAttributeEntity(String name, List<String> values) {
         this.name = name;
-        this.values.addAll(values);
+        this.values = values;
     }
 
     public String getName() {

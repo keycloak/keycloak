@@ -43,7 +43,9 @@ import org.keycloak.models.map.client.MapClientEntity.AbstractClientEntity;
 import org.keycloak.models.map.client.MapProtocolMapperEntity;
 import org.keycloak.models.map.common.DeepCloner;
 import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_CLIENT;
-import org.keycloak.models.map.storage.jpa.JpaRootEntity;
+
+import org.keycloak.models.map.common.UuidValidator;
+import org.keycloak.models.map.storage.jpa.JpaRootVersionedEntity;
 import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
 
 /**
@@ -59,7 +61,7 @@ import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
             )
 })
 @TypeDefs({@TypeDef(name = "jsonb", typeClass = JsonbType.class)})
-public class JpaClientEntity extends AbstractClientEntity implements JpaRootEntity {
+public class JpaClientEntity extends AbstractClientEntity implements JpaRootVersionedEntity {
 
     @Id
     @Column
@@ -156,7 +158,8 @@ public class JpaClientEntity extends AbstractClientEntity implements JpaRootEnti
 
     @Override
     public void setId(String id) {
-        this.id = id == null ? null : UUID.fromString(id);
+        String validatedId = UuidValidator.validateAndConvert(id);
+        this.id = UUID.fromString(validatedId);
     }
 
     @Override
@@ -363,12 +366,12 @@ public class JpaClientEntity extends AbstractClientEntity implements JpaRootEnti
     }
 
     @Override
-    public Integer getNotBefore() {
+    public Long getNotBefore() {
         return metadata.getNotBefore();
     }
 
     @Override
-    public void setNotBefore(Integer notBefore) {
+    public void setNotBefore(Long notBefore) {
         metadata.setNotBefore(notBefore);
     }
 

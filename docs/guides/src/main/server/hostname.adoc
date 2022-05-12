@@ -8,8 +8,14 @@ summary="Learn how to configure the frontend and backchannel endpoints exposed b
 includedOptions="hostname-* proxy">
 
 When running Keycloak in environments such as Kubernetes, OpenShift, or on-premise, you want to protect the internal URLs from exposure to the public facing internet.
-You want to use your public hostname.
+Instead, You want to expose your public hostname.
 This guide describes how to configure Keycloak to use the right hostname for different scenarios.
+
+== Hostname Syntax:
+Keycloak does not impose strict validation for the configured hostname value. Please make sure the hostname value you configure complies to the standardized hostname syntax as outlined in RFC 952, RFC 1123 and others.
+
+.Example:
+`LOCALHOST` is a non-compliant hostname and leads to problems when the browser tries to resolve your requests. Instead, `localhost` will work fine.
 
 == Keycloak API Endpoint categories
 As this section explains, Keycloak exposes three API endpoint categories: frontend, backend, and administrative.
@@ -47,7 +53,7 @@ Otherwise, leave this parameter as false to allow internal applications to commu
 
 To reduce attack surface, the administration endpoints for Keycloak and the Admin Console should not be publicly accessible.
 Therefore, you can secure them by using a reverse proxy.
-For more information about which paths to expose using a reverse proxy, see the <@links.server id="proxy"/> Guide.
+For more information about which paths to expose using a reverse proxy, see the <@links.server id="reverseproxy"/> Guide.
 
 == Overriding the hostname path
 When running Keycloak behind a reverse proxy, you may expose Keycloak using a different context path such as `myproxy.url/mykeycloak`.
@@ -56,7 +62,7 @@ To perform this action, you can override the hostname path to use the path defin
 <@kc.start parameters="--hostname=myurl --hostname-path=mykeycloak"/>
 
 The `hostname-path` configuration takes effect when a reverse proxy is enabled.
-For details, see the <@links.server id="proxy"/> Guide.
+For details, see the <@links.server id="reverseproxy"/> Guide.
 
 == Using the hostname in development mode
 You run Keycloak in development mode by using `start-dev`.

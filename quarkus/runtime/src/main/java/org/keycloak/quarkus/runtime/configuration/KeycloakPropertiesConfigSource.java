@@ -150,7 +150,7 @@ public class KeycloakPropertiesConfigSource extends AbstractLocationConfigSource
             if (mapper != null
                     || key.contains(NS_KEYCLOAK_PREFIX + "spi")
                     || key.contains(NS_KEYCLOAK_PREFIX + "feature")) {
-                String value = replaceProperties(properties.get(k));
+                String value = properties.get(k);
 
                 result.put(key, value);
 

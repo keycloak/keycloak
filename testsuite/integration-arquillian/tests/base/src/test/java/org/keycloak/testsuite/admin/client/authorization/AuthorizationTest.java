@@ -32,6 +32,7 @@ import org.keycloak.representations.idm.authorization.JSPolicyRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
+import org.keycloak.representations.idm.authorization.RolePolicyRepresentation;
 
 import java.util.List;
 
@@ -64,12 +65,12 @@ public class AuthorizationTest extends AbstractAuthorizationTest {
         serviceAccountRoles = realm.users().get(serviceAccount.getId()).roles().clientLevel(resourceServer.getId()).listEffective();
         Assert.assertTrue(serviceAccountRoles.stream().anyMatch(roleRepresentation -> "uma_protection".equals(roleRepresentation.getName())));
 
-        JSPolicyRepresentation policy = new JSPolicyRepresentation();
+        RolePolicyRepresentation policy = new RolePolicyRepresentation();
 
         policy.setName("should be removed");
-        policy.setCode("");
+        policy.addRole("uma_authorization");
 
-        clientResource.authorization().policies().js().create(policy);
+        clientResource.authorization().policies().role().create(policy);
 
         List<ResourceRepresentation> defaultResources = clientResource.authorization().resources().resources();
 

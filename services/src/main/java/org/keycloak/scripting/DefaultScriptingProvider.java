@@ -24,6 +24,7 @@ import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
 import org.keycloak.models.ScriptModel;
+import org.keycloak.services.ServicesLogger;
 
 /**
  * A {@link ScriptingProvider} that uses a {@link ScriptEngineManager} to evaluate scripts with a {@link ScriptEngine}.
@@ -32,14 +33,10 @@ import org.keycloak.models.ScriptModel;
  */
 public class DefaultScriptingProvider implements ScriptingProvider {
 
-    private final ScriptEngineManager scriptEngineManager;
+    private final DefaultScriptingProviderFactory factory;
 
-    DefaultScriptingProvider(ScriptEngineManager scriptEngineManager) {
-        if (scriptEngineManager == null) {
-            throw new IllegalStateException("scriptEngineManager must not be null!");
-        }
-
-        this.scriptEngineManager = scriptEngineManager;
+    DefaultScriptingProvider(DefaultScriptingProviderFactory factory) {
+        this.factory = factory;
     }
 
     /**
@@ -69,7 +66,7 @@ public class DefaultScriptingProvider implements ScriptingProvider {
             throw new IllegalArgumentException("script must not be null or empty");
         }
 
-        ScriptEngine engine = createPreparedScriptEngine(scriptModel);
+        ScriptEngine engine = getPreparedScriptEngine(scriptModel);
 
         if (engine instanceof Compilable) {
             return new CompiledEvaluatableScriptAdapter(scriptModel, tryCompile(scriptModel, (Compilable) engine));
@@ -99,11 +96,24 @@ public class DefaultScriptingProvider implements ScriptingProvider {
     /**
      * Looks-up a {@link ScriptEngine} with prepared {@link Bindings} for the given {@link ScriptModel Script}.
      */
-    private ScriptEngine createPreparedScriptEngine(ScriptModel script) {
+    private ScriptEngine getPreparedScriptEngine(ScriptModel script) {
+        // Try to lookup shared engine in the cache first
+        if (factory.isEnableScriptEngineCache()) {
+            ScriptEngine scriptEngine = factory.getScriptEngineCache().get(script.getMimeType());
+            if (scriptEngine != null) return scriptEngine;
+        }
+
         ScriptEngine scriptEngine = lookupScriptEngineFor(script);
 
         if (scriptEngine == null) {
             throw new IllegalStateException("Could not find ScriptEngine for script: " + script);
+        }
+
+        ServicesLogger.LOGGER.scriptEngineCreated(scriptEngine.getFactory().getEngineName(), scriptEngine.getFactory().getEngineVersion(), script.getMimeType());
+
+        // Nashorn scriptEngine is ok to cache and share across multiple threads
+        if (factory.isEnableScriptEngineCache()) {
+            factory.getScriptEngineCache().put(script.getMimeType(), scriptEngine);
         }
 
         return scriptEngine;
@@ -116,7 +126,7 @@ public class DefaultScriptingProvider implements ScriptingProvider {
         ClassLoader cl = Thread.currentThread().getContextClassLoader();
         try {
             Thread.currentThread().setContextClassLoader(DefaultScriptingProvider.class.getClassLoader());
-            return scriptEngineManager.getEngineByMimeType(script.getMimeType());
+            return factory.getScriptEngineManager().getEngineByMimeType(script.getMimeType());
         }
         finally {
             Thread.currentThread().setContextClassLoader(cl);

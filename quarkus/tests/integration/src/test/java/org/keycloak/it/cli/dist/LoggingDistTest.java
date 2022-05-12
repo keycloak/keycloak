@@ -22,6 +22,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.RawDistOnly;
@@ -60,6 +62,7 @@ public class LoggingDistTest {
     }
 
     @Test
+    @EnabledOnOs(value = { OS.LINUX, OS.MAC }, disabledReason = "different shell escaping behaviour on Windows.")
     @Launch({ "start-dev", "--log-level=off,org.keycloak:debug,org.infinispan:info" })
     void testRootAndCategoryLevels(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
@@ -69,6 +72,17 @@ public class LoggingDistTest {
     }
 
     @Test
+    @EnabledOnOs(value = { OS.WINDOWS }, disabledReason = "different shell escaping behaviour on Windows.")
+    @Launch({ "start-dev", "--log-level=\"off,org.keycloak:debug,org.infinispan:info\"" })
+    void testWinRootAndCategoryLevels(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        assertFalse(cliResult.getOutput().contains("INFO  [io.quarkus"));
+        assertTrue(cliResult.getOutput().contains("DEBUG [org.keycloak"));
+        assertTrue(cliResult.getOutput().contains("INFO  [org.infinispan.CONTAINER]"));
+    }
+
+    @Test
+    @EnabledOnOs(value = { OS.LINUX, OS.MAC }, disabledReason = "different shell escaping behaviour on Windows.")
     @Launch({ "start-dev", "--log-level=off,org.keycloak:warn,debug" })
     void testSetLastRootLevelIfMultipleSet(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
@@ -78,6 +92,17 @@ public class LoggingDistTest {
     }
 
     @Test
+    @EnabledOnOs(value = { OS.WINDOWS }, disabledReason = "different shell escaping behaviour on Windows.")
+    @Launch({ "start-dev", "--log-level=\"off,org.keycloak:warn,debug\"" })
+    void testWinSetLastRootLevelIfMultipleSet(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        assertTrue(cliResult.getOutput().contains("DEBUG [org.hibernate"));
+        assertFalse(cliResult.getOutput().contains("INFO  [org.keycloak"));
+        cliResult.assertStartedDevMode();
+    }
+
+    @Test
+    @EnabledOnOs(value = { OS.LINUX, OS.MAC }, disabledReason = "different shell escaping behaviour on Windows.")
     @Launch({ "start-dev", "--log-console-format=\"%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c{1.}] %s%e%n\"" })
     void testSetLogFormat(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
@@ -94,6 +119,7 @@ public class LoggingDistTest {
     }
 
     @Test
+    @EnabledOnOs(value = { OS.LINUX, OS.MAC }, disabledReason = "different shell escaping behaviour on Windows.")
     @Launch({ "start-dev", "--log-level=off,org.keycloak:debug,org.infinispan:info", "--log-console-output=json" })
     void testLogLevelSettingsAppliedWhenJsonEnabled(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
@@ -103,6 +129,17 @@ public class LoggingDistTest {
     }
 
     @Test
+    @EnabledOnOs(value = { OS.WINDOWS }, disabledReason = "different shell escaping behaviour on Windows.")
+    @Launch({ "start-dev", "--log-level=\"off,org.keycloak:debug,org.infinispan:info\"", "--log-console-output=json" })
+    void testWinLogLevelSettingsAppliedWhenJsonEnabled(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        assertFalse(cliResult.getOutput().contains("\"loggerName\":\"io.quarkus\",\"level\":\"INFO\")"));
+        assertTrue(cliResult.getOutput().contains("\"loggerName\":\"org.keycloak.quarkus.runtime.storage.database.jpa.QuarkusJpaConnectionProviderFactory\",\"level\":\"DEBUG\""));
+        assertTrue(cliResult.getOutput().contains("\"loggerName\":\"org.infinispan.CONTAINER\",\"level\":\"INFO\""));
+    }
+
+    @Test
+    @EnabledOnOs(value = { OS.LINUX, OS.MAC }, disabledReason = "different shell escaping behaviour on Windows.")
     @Launch({ "start-dev", "--log=console,file"})
     void testKeycloakLogFileCreated(RawDistRootPath path) {
         Path logFilePath = Paths.get(path.getDistRootPath() + File.separator + LoggingPropertyMappers.DEFAULT_LOG_PATH);
@@ -111,6 +148,16 @@ public class LoggingDistTest {
     }
 
     @Test
+    @EnabledOnOs(value = { OS.WINDOWS }, disabledReason = "different shell escaping behaviour on Windows.")
+    @Launch({ "start-dev", "--log=\"console,file\""})
+    void testWinKeycloakLogFileCreated(RawDistRootPath path) {
+        Path logFilePath = Paths.get(path.getDistRootPath() + File.separator + LoggingPropertyMappers.DEFAULT_LOG_PATH);
+        File logFile = new File(logFilePath.toString());
+        assertTrue(logFile.isFile(), "Log file does not exist!");
+    }
+
+    @Test
+    @EnabledOnOs(value = { OS.LINUX, OS.MAC }, disabledReason = "different shell escaping behaviour on Windows.")
     @Launch({ "start-dev", "--log=console,file", "--log-file-format=\"%d{HH:mm:ss} %-5p [%c{1.}] (%t) %s%e%n\""})
     void testFileLoggingHasDifferentFormat(RawDistRootPath path) throws IOException {
         Path logFilePath = Paths.get(path.getDistRootPath() + File.separator + LoggingPropertyMappers.DEFAULT_LOG_PATH);

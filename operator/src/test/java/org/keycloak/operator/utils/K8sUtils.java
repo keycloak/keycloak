@@ -17,6 +17,7 @@
 
 package org.keycloak.operator.utils;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -29,9 +30,6 @@ import org.awaitility.Awaitility;
 import org.keycloak.operator.v2alpha1.crds.Keycloak;
 import org.keycloak.operator.v2alpha1.crds.KeycloakStatusCondition;
 
-import java.time.Duration;
-import java.util.Collections;
-import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -40,21 +38,16 @@ import java.util.concurrent.TimeUnit;
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 public final class K8sUtils {
-    public static <T> T getResourceFromFile(String fileName) {
-        return Serialization.unmarshal(Objects.requireNonNull(K8sUtils.class.getResourceAsStream("/" + fileName)), Collections.emptyMap());
-    }
-
-    @SuppressWarnings("unchecked")
-    public static <T> T getResourceFromMultiResourceFile(String fileName, int index) {
-        return ((List<T>) getResourceFromFile(fileName)).get(index);
+    public static <T extends HasMetadata> T getResourceFromFile(String fileName, Class<T> type) {
+        return Serialization.unmarshal(Objects.requireNonNull(K8sUtils.class.getResourceAsStream("/" + fileName)), type);
     }
 
     public static Keycloak getDefaultKeycloakDeployment() {
-        return getResourceFromMultiResourceFile("example-keycloak.yml", 0);
+        return getResourceFromFile("example-keycloak.yaml", Keycloak.class);
     }
 
     public static Secret getDefaultTlsSecret() {
-        return getResourceFromMultiResourceFile("example-keycloak.yml", 2);
+        return getResourceFromFile("example-tls-secret.yaml", Secret.class);
     }
 
 

@@ -226,7 +226,9 @@ public class LoginPageTest extends AbstractI18NTest {
         UserRepresentation userRep = user.toRepresentation();
         Assert.assertEquals("de", userRep.getAttributes().get("locale").get(0));
 
-        appPage.logout();
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String idTokenHint = oauth.doAccessTokenRequest(code, "password").getIdToken();
+        appPage.logout(idTokenHint);
 
         loginPage.open();
 
@@ -242,7 +244,9 @@ public class LoginPageTest extends AbstractI18NTest {
         userRep = user.toRepresentation();
         Assert.assertNull(userRep.getAttributes());
 
-        appPage.logout();
+        code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        idTokenHint = oauth.doAccessTokenRequest(code, "password").getIdToken();
+        appPage.logout(idTokenHint);
 
         loginPage.open();
 

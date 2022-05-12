@@ -19,7 +19,7 @@ package org.keycloak.operator;
 import java.util.Map;
 
 public final class Constants {
-    public static final String CRDS_GROUP = "keycloak.org";
+    public static final String CRDS_GROUP = "k8s.keycloak.org";
     public static final String CRDS_VERSION = "v2alpha1";
     public static final String SHORT_NAME = "kc";
     public static final String NAME = "keycloak";

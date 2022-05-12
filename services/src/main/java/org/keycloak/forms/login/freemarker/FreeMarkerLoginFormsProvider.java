@@ -16,6 +16,24 @@
  */
 package org.keycloak.forms.login.freemarker;
 
+import static org.keycloak.models.UserModel.RequiredAction.UPDATE_PASSWORD;
+
+import java.io.IOException;
+import java.net.URI;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Properties;
+import javax.ws.rs.core.MultivaluedHashMap;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriBuilder;
+import javax.ws.rs.core.UriInfo;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.AuthenticationFlowContext;
@@ -32,10 +50,12 @@ import org.keycloak.forms.login.freemarker.model.RecoveryAuthnCodeInputLoginBean
 import org.keycloak.forms.login.freemarker.model.RecoveryAuthnCodesBean;
 import org.keycloak.forms.login.freemarker.model.ClientBean;
 import org.keycloak.forms.login.freemarker.model.CodeBean;
+import org.keycloak.forms.login.freemarker.model.EmailBean;
 import org.keycloak.forms.login.freemarker.model.IdentityProviderBean;
 import org.keycloak.forms.login.freemarker.model.IdpReviewProfileBean;
 import org.keycloak.forms.login.freemarker.model.LoginBean;
 import org.keycloak.forms.login.freemarker.model.FrontChannelLogoutBean;
+import org.keycloak.forms.login.freemarker.model.LogoutConfirmBean;
 import org.keycloak.forms.login.freemarker.model.OAuthGrantBean;
 import org.keycloak.forms.login.freemarker.model.ProfileBean;
 import org.keycloak.forms.login.freemarker.model.RealmBean;
@@ -72,25 +92,6 @@ import org.keycloak.theme.beans.MessagesPerFieldBean;
 import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.utils.MediaType;
-
-import javax.ws.rs.core.MultivaluedHashMap;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.core.UriInfo;
-import java.io.IOException;
-import java.net.URI;
-import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Properties;
-
-import static org.keycloak.models.UserModel.RequiredAction.UPDATE_PASSWORD;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -158,8 +159,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 page = LoginFormsPages.LOGIN_RECOVERY_AUTHN_CODES_CONFIG;
                 break;
             case UPDATE_PROFILE:
-                UpdateProfileContext userBasedContext = new UserUpdateProfileContext(realm, user);
-                this.attributes.put(UPDATE_PROFILE_CONTEXT_ATTR, userBasedContext);
+                this.attributes.put(UPDATE_PROFILE_CONTEXT_ATTR, new UserUpdateProfileContext(realm, user));
 
                 actionMessage = Messages.UPDATE_PROFILE;
                 if(isDynamicUserProfile()) {
@@ -167,6 +167,10 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 } else {
                     page = LoginFormsPages.LOGIN_UPDATE_PROFILE;
                 }
+                break;
+            case UPDATE_EMAIL:
+                actionMessage = Messages.UPDATE_EMAIL;
+                page = LoginFormsPages.UPDATE_EMAIL;
                 break;
             case UPDATE_PASSWORD:
                 boolean isRequestedByAdmin = user.getRequiredActionsStream().filter(Objects::nonNull).anyMatch(UPDATE_PASSWORD.toString()::contains);
@@ -236,6 +240,9 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 UpdateProfileContext userCtx = (UpdateProfileContext) attributes.get(LoginFormsProvider.UPDATE_PROFILE_CONTEXT_ATTR);
                 attributes.put("user", new ProfileBean(userCtx, formData));
                 break;
+            case UPDATE_EMAIL:
+                attributes.put("email", new EmailBean(user, formData));
+                break;
             case LOGIN_IDP_LINK_CONFIRM:
             case LOGIN_IDP_LINK_EMAIL:
                 BrokeredIdentityContext brokerContext = (BrokeredIdentityContext) this.attributes.get(IDENTITY_PROVIDER_BROKER_CONTEXT);
@@ -285,6 +292,9 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                 break;
             case FRONTCHANNEL_LOGOUT:
                 attributes.put("logout", new FrontChannelLogoutBean(session));
+                break;
+            case LOGOUT_CONFIRM:
+                attributes.put("logoutConfirm", new LogoutConfirmBean(accessCode, authenticationSession));
                 break;
         }
 
@@ -679,6 +689,11 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     @Override
     public Response createFrontChannelLogoutPage() {
         return createResponse(LoginFormsPages.FRONTCHANNEL_LOGOUT);
+    }
+
+    @Override
+    public Response createLogoutConfirmPage() {
+        return createResponse(LoginFormsPages.LOGOUT_CONFIRM);
     }
 
     protected void setMessage(MessageType type, String message, Object... parameters) {

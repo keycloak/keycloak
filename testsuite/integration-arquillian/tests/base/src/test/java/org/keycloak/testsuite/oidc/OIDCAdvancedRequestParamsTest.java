@@ -1298,6 +1298,9 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
             clientResource.update(clientRep);
         }
 
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String idTokenHint = oauth.doAccessTokenRequest(code, "password").getIdToken();
+        oauth.idTokenHint(idTokenHint);
         oauth.openLogout();
         oauth = oauth.request(createEncryptedRequestObject(RSA_OAEP_256));
         oauth.doLogin("test-user@localhost", "password");
@@ -1308,7 +1311,6 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
     public void testWrongContentEncryptionAlgorithm() throws Exception {
         ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm(oauth.getRealm()), oauth.getClientId());
         ClientRepresentation clientRep = clientResource.toRepresentation();
-
         try {
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setRequestObjectEncryptionAlg(RSA_OAEP_256);
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setRequestObjectEncryptionEnc(JWEConstants.A192GCM);
@@ -1336,6 +1338,9 @@ public class OIDCAdvancedRequestParamsTest extends AbstractTestRealmKeycloakTest
             clientResource.update(clientRep);
         }
 
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        String idTokenHint = oauth.doAccessTokenRequest(code, "password").getIdToken();
+        oauth.idTokenHint(idTokenHint);
         oauth.openLogout();
         oauth = oauth.request(createEncryptedRequestObject(RSA_OAEP_256));
         oauth.doLogin("test-user@localhost", "password");

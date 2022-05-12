@@ -36,7 +36,7 @@ limitations under the License.
         </createTable>
         <ext:addGeneratedColumn tableName="kc_client_scope">
             <ext:column name="entityversion" type="INTEGER" jsonColumn="metadata" jsonProperty="entityVersion"/>
-            <ext:column name="realmid" type="VARCHAR(36)" jsonColumn="metadata" jsonProperty="fRealmId"/>
+            <ext:column name="realmid" type="KC_KEY" jsonColumn="metadata" jsonProperty="fRealmId"/>
             <ext:column name="name" type="VARCHAR(255)" jsonColumn="metadata" jsonProperty="fName"/>
         </ext:addGeneratedColumn>
         <createIndex tableName="kc_client_scope" indexName="client_scope_entityVersion">
@@ -57,6 +57,8 @@ limitations under the License.
             <column name="name" type="VARCHAR(255)"/>
             <column name="value" type="text"/>
         </createTable>
+        <!-- this is deferrable and initiallyDeferred as hibernate will first insert new entries and then delete the old by default -->
+        <addUniqueConstraint tableName="kc_client_scope_attribute" columnNames="fk_root, name, value" deferrable="true" initiallyDeferred="true" />
         <createIndex tableName="kc_client_scope_attribute" indexName="client_scope_attr_fk_root">
             <column name="fk_root"/>
         </createIndex>

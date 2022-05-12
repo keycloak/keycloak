@@ -31,6 +31,7 @@
 
     <modules>
         <module>testsuite-providers</module>
+        <module>testsuite-providers-deployment</module>
     </modules>
 
 </project>

@@ -11,7 +11,7 @@ mvn -version
 
 EXIT_CODE=0
 mvn clean
-for I in `perl -ne 'print "$1\n" if (m,<id>([^<]+)</id>,)' pom.xml`; do
+for I in `perl -ne 'print "$1\n" if (m,<id>([^.<]+)</id>,)' pom.xml`; do
     echo "========"
     echo "======== Start of Profile $I"
     echo "========"

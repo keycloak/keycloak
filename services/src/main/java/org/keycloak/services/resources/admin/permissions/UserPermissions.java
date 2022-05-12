@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -35,12 +35,14 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.ImpersonationConstants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.services.ForbiddenException;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -355,16 +357,20 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
     }
 
     @Override
-    public boolean canImpersonate(UserModel user) {
+    public boolean canImpersonate(UserModel user, ClientModel requester) {
         if (!canImpersonate()) {
             return false;
         }
 
-        return isImpersonatable(user);
+        return isImpersonatable(user, requester);
+    }
+
+    private boolean canImpersonate(UserModel user) {
+        return canImpersonate(user, null);
     }
 
     @Override
-    public boolean isImpersonatable(UserModel user) {
+    public boolean isImpersonatable(UserModel user, ClientModel requester) {
         ResourceServer server = root.realmResourceServer();
 
         if (server == null) {
@@ -389,7 +395,20 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
             return true;
         }
 
-        return hasPermission(new DefaultEvaluationContext(new UserModelIdentity(root.realm, user), session), USER_IMPERSONATED_SCOPE);
+        Map<String, List<String>> additionalClaims = Collections.emptyMap();
+
+        if (requester != null) {
+            // make sure the requesting client id is available from the context as we are using a user identity that does not rely on token claims
+            additionalClaims = new HashMap<>();
+            additionalClaims.put("kc.client.id", Arrays.asList(requester.getClientId()));
+        }
+
+        return hasPermission(new DefaultEvaluationContext(new UserModelIdentity(root.realm, user), additionalClaims, session), USER_IMPERSONATED_SCOPE);
+    }
+
+    @Override
+    public boolean isImpersonatable(UserModel user) {
+        return isImpersonatable(user, null);
     }
 
     @Override
@@ -508,39 +527,42 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
     private void deletePermissionSetup() {
         ResourceServer server = root.realmResourceServer();
         if (server == null) return;
+
+        RealmModel realm = server.getRealm();
+
         Policy policy = managePermission();
         if (policy != null) {
-            policyStore.delete(policy.getId());
+            policyStore.delete(realm, policy.getId());
 
         }
         policy = viewPermission();
         if (policy != null) {
-            policyStore.delete(policy.getId());
+            policyStore.delete(realm, policy.getId());
 
         }
         policy = mapRolesPermission();
         if (policy != null) {
-            policyStore.delete(policy.getId());
+            policyStore.delete(realm, policy.getId());
 
         }
         policy = manageGroupMembershipPermission();
         if (policy != null) {
-            policyStore.delete(policy.getId());
+            policyStore.delete(realm, policy.getId());
 
         }
         policy = adminImpersonatingPermission();
         if (policy != null) {
-            policyStore.delete(policy.getId());
+            policyStore.delete(realm, policy.getId());
 
         }
         policy = userImpersonatedPermission();
         if (policy != null) {
-            policyStore.delete(policy.getId());
+            policyStore.delete(realm, policy.getId());
 
         }
         Resource usersResource = resourceStore.findByName(server, USERS_RESOURCE);
         if (usersResource != null) {
-            resourceStore.delete(usersResource.getId());
+            resourceStore.delete(realm, usersResource.getId());
         }
     }
 

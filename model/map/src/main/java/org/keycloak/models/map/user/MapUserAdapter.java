@@ -265,8 +265,7 @@ public abstract class MapUserAdapter extends AbstractUserModel<MapUserEntity> {
 
     @Override
     public boolean isMemberOf(GroupModel group) {
-        Set<String> groups = entity.getGroupsMembership();
-        return groups != null && groups.contains(group.getId());
+        return RoleUtils.isMember(getGroupsStream(), group);
     }
 
     @Override
@@ -308,7 +307,8 @@ public abstract class MapUserAdapter extends AbstractUserModel<MapUserEntity> {
 
     @Override
     public boolean hasRole(RoleModel role) {
-        return hasDirectRole(role);
+        return RoleUtils.hasRole(getRoleMappingsStream(), role)
+          || RoleUtils.hasRoleFromGroup(getGroupsStream(), role, true);
     }
 
     @Override

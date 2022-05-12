@@ -32,6 +32,7 @@ public interface Scope {
         public static final SearchableModelField<Scope> ID = new SearchableModelField<>("id", String.class);
         public static final SearchableModelField<Scope> NAME = new SearchableModelField<>("name", String.class);
         public static final SearchableModelField<Scope> RESOURCE_SERVER_ID = new SearchableModelField<>("resourceServerId", String.class);
+        public static final SearchableModelField<Scope> REALM_ID = new SearchableModelField<>("realmId", String.class);
     }
     
     public static enum FilterOption {

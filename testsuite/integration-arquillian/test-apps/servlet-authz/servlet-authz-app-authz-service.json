@@ -167,12 +167,9 @@
     },
     {
       "name": "Deny Policy",
-      "type": "js",
+      "type": "script-scripts/always-deny-policy.js",
       "logic": "POSITIVE",
-      "decisionStrategy": "UNANIMOUS",
-      "config": {
-        "code": "// by default, grants any permission associated with this policy\n$evaluation.deny();"
-      }
+      "decisionStrategy": "UNANIMOUS"
     },
     {
       "name": "Resource A Read Permission",
@@ -219,12 +216,9 @@
     {
       "name": "Request Claim Policy",
       "description": "A policy that grants access based on claims from an http request",
-      "type": "js",
+      "type": "script-scripts/allow-value-from-request-claim.js",
       "logic": "POSITIVE",
-      "decisionStrategy": "UNANIMOUS",
-      "config": {
-        "code": "var context = $evaluation.getContext();\nvar attributes = context.getAttributes();\nvar claim = attributes.getValue('request-claim');\n\nif (claim && claim.asString(0) == 'expected-value') {\n   $evaluation.grant();\n}"
-      }
+      "decisionStrategy": "UNANIMOUS"
     },
     {
       "name": "Resource Protected With Body Claim Permission",

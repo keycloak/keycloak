@@ -17,18 +17,8 @@
 
 package org.keycloak.models.map.client;
 
-import org.jboss.logging.Logger;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.ClientModel.ClientUpdatedEvent;
-import org.keycloak.models.ClientModel.SearchableFields;
-import org.keycloak.models.ClientProvider;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ModelDuplicateException;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
-
-import org.keycloak.models.map.storage.MapKeycloakTransaction;
-
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -38,27 +28,38 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import org.jboss.logging.Logger;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.ClientModel.ClientUpdatedEvent;
+import org.keycloak.models.ClientModel.SearchableFields;
+import org.keycloak.models.ClientProvider;
+import org.keycloak.models.ClientScopeModel;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelDuplicateException;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
+import org.keycloak.models.map.common.TimeAdapter;
+import org.keycloak.models.map.storage.MapKeycloakTransaction;
+import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 import org.keycloak.models.map.storage.MapStorage;
+import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
-import org.keycloak.models.ClientScopeModel;
-import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
-import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
+import static org.keycloak.models.map.common.AbstractMapProviderFactory.MapProviderObjectType.CLIENT_AFTER_REMOVE;
+import static org.keycloak.models.map.common.AbstractMapProviderFactory.MapProviderObjectType.CLIENT_BEFORE_REMOVE;
 import static org.keycloak.models.map.storage.QueryParameters.Order.ASCENDING;
 import static org.keycloak.models.map.storage.QueryParameters.withCriteria;
 import static org.keycloak.models.map.storage.criteria.DefaultModelCriteria.criteria;
-
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import java.util.HashSet;
 
 public class MapClientProvider implements ClientProvider {
 
     private static final Logger LOG = Logger.getLogger(MapClientProvider.class);
     private final KeycloakSession session;
     final MapKeycloakTransaction<MapClientEntity, ClientModel> tx;
-    private final ConcurrentMap<String, ConcurrentMap<String, Integer>> clientRegisteredNodesStore;
+    private final ConcurrentMap<String, ConcurrentMap<String, Long>> clientRegisteredNodesStore;
 
-    public MapClientProvider(KeycloakSession session, MapStorage<MapClientEntity, ClientModel> clientStore, ConcurrentMap<String, ConcurrentMap<String, Integer>> clientRegisteredNodesStore) {
+    public MapClientProvider(KeycloakSession session, MapStorage<MapClientEntity, ClientModel> clientStore, ConcurrentMap<String, ConcurrentMap<String, Long>> clientRegisteredNodesStore) {
         this.session = session;
         this.clientRegisteredNodesStore = clientRegisteredNodesStore;
         this.tx = clientStore.createTransaction(session);
@@ -92,18 +93,25 @@ public class MapClientProvider implements ClientProvider {
             /** This is runtime information and should have never been part of the adapter */
             @Override
             public Map<String, Integer> getRegisteredNodes() {
-                return clientRegisteredNodesStore.computeIfAbsent(entity.getId(), k -> new ConcurrentHashMap<>());
+                return Collections.unmodifiableMap(getMapForEntity()
+                                .entrySet()
+                                .stream()
+                                .collect(Collectors.toMap(Map.Entry::getKey, e -> TimeAdapter.fromLongWithTimeInSecondsToIntegerWithTimeInSeconds(e.getValue())))
+                );
             }
 
             @Override
             public void registerNode(String nodeHost, int registrationTime) {
-                Map<String, Integer> value = getRegisteredNodes();
-                value.put(nodeHost, registrationTime);
+                getMapForEntity().put(nodeHost, TimeAdapter.fromIntegerWithTimeInSecondsToLongWithTimeAsInSeconds(registrationTime));
             }
 
             @Override
             public void unregisterNode(String nodeHost) {
-                getRegisteredNodes().remove(nodeHost);
+                getMapForEntity().remove(nodeHost);
+            }
+
+            private ConcurrentMap<String, Long> getMapForEntity() {
+                return clientRegisteredNodesStore.computeIfAbsent(entity.getId(), k -> new ConcurrentHashMap<>());
             }
 
         };
@@ -187,32 +195,18 @@ public class MapClientProvider implements ClientProvider {
 
     @Override
     public boolean removeClient(RealmModel realm, String id) {
-        if (id == null) {
-            return false;
-        }
+        if (id == null) return false;
 
         LOG.tracef("removeClient(%s, %s)%s", realm, id, getShortStackTrace());
 
-        // TODO: Sending an event (and client role removal) should be extracted to store layer
         final ClientModel client = getClientById(realm, id);
         if (client == null) return false;
-        session.users().preRemove(realm, client);
-        session.roles().removeRoles(client);
 
-        session.getKeycloakSessionFactory().publish(new ClientModel.ClientRemovedEvent() {
-            @Override
-            public ClientModel getClient() {
-                return client;
-            }
-
-            @Override
-            public KeycloakSession getKeycloakSession() {
-                return session;
-            }
-        });
-        // TODO: ^^^^^^^ Up to here
+        session.invalidate(CLIENT_BEFORE_REMOVE, realm, client);
 
         tx.delete(id);
+
+        session.invalidate(CLIENT_AFTER_REMOVE, client);
 
         return true;
     }
@@ -292,7 +286,7 @@ public class MapClientProvider implements ClientProvider {
         if (entity == null) return;
 
         // Defaults to openid-connect
-        String clientProtocol = client.getProtocol() == null ? OIDCLoginProtocol.LOGIN_PROTOCOL : client.getProtocol();
+        String clientProtocol = client.getProtocol() == null ? "openid-connect" : client.getProtocol();
 
         LOG.tracef("addClientScopes(%s, %s, %s, %b)%s", realm, client, clientScopes, defaultScope, getShortStackTrace());
 
@@ -325,7 +319,7 @@ public class MapClientProvider implements ClientProvider {
         if (entity == null) return null;
 
         // Defaults to openid-connect
-        String clientProtocol = client.getProtocol() == null ? OIDCLoginProtocol.LOGIN_PROTOCOL : client.getProtocol();
+        String clientProtocol = client.getProtocol() == null ? "openid-connect" : client.getProtocol();
 
         LOG.tracef("getClientScopes(%s, %s, %b)%s", realm, client, defaultScopes, getShortStackTrace());
 
@@ -363,6 +357,14 @@ public class MapClientProvider implements ClientProvider {
                 .filter(Objects::nonNull)
                 .forEach(clientModel -> clientModel.deleteScopeMapping(role));
         }
+    }
+
+    public void preRemove(RealmModel realm) {
+        LOG.tracef("preRemove(%s)%s", realm, getShortStackTrace());
+        DefaultModelCriteria<ClientModel> mcb = criteria();
+        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
+
+        tx.delete(withCriteria(mcb));
     }
 
     @Override

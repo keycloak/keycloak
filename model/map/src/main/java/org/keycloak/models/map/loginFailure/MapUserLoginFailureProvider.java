@@ -78,7 +78,9 @@ public class MapUserLoginFailureProvider implements UserLoginFailureProvider {
         MapUserLoginFailureEntity userLoginFailureEntity = userLoginFailureTx.read(withCriteria(mcb)).findFirst().orElse(null);
 
         if (userLoginFailureEntity == null) {
-            userLoginFailureEntity = new MapUserLoginFailureEntity(null, realm.getId(), userId);
+            userLoginFailureEntity = new MapUserLoginFailureEntityImpl();
+            userLoginFailureEntity.setRealmId(realm.getId());
+            userLoginFailureEntity.setUserId(userId);
 
             userLoginFailureEntity = userLoginFailureTx.create(userLoginFailureEntity);
         }

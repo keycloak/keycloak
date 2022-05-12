@@ -104,11 +104,11 @@ public class LinkedAccountsPage extends AbstractLoggedInPage {
         }
 
         public boolean hasSocialLoginBadge() {
-            return getTextFromElement(badgeElement).equals("Social Login");
+            return getTextFromElement(badgeElement).equals("Social login");
         }
 
         public boolean hasSystemDefinedBadge() {
-            return getTextFromElement(badgeElement).equals("System Defined");
+            return getTextFromElement(badgeElement).equals("System defined");
         }
 
         public boolean hasSocialIcon() {

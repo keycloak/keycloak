@@ -125,69 +125,6 @@
         </profile>
 
         <profile>
-            <id>spring-boot-adapter-jetty92</id>
-
-            <properties>
-                <jetty.version>${jetty92.version}</jetty.version>
-            </properties>
-
-            <dependencies>
-                <dependency>
-                    <groupId>org.springframework.boot</groupId>
-                    <artifactId>spring-boot-starter-web</artifactId>
-                    <exclusions>
-                        <exclusion>
-                            <groupId>org.springframework.boot</groupId>
-                            <artifactId>spring-boot-starter-tomcat</artifactId>
-                        </exclusion>
-                    </exclusions>
-                </dependency>
-
-                <dependency>
-                    <groupId>org.keycloak</groupId>
-                    <artifactId>keycloak-jetty92-adapter</artifactId>
-                    <version>${project.version}</version>
-                </dependency>
-                <dependency>
-                    <groupId>org.springframework.boot</groupId>
-                    <artifactId>spring-boot-starter-jetty</artifactId>
-                </dependency>
-            </dependencies>
-        </profile>
-
-        <profile>
-            <id>spring-boot-adapter-jetty93</id>
-
-            <properties>
-                <jetty.version>${jetty93.version}</jetty.version>
-            </properties>
-
-            <dependencies>
-                <dependency>
-                    <groupId>org.springframework.boot</groupId>
-                    <artifactId>spring-boot-starter-web</artifactId>
-                    <exclusions>
-                        <exclusion>
-                            <groupId>org.springframework.boot</groupId>
-                            <artifactId>spring-boot-starter-tomcat</artifactId>
-                        </exclusion>
-                    </exclusions>
-                </dependency>
-
-                <dependency>
-                    <groupId>org.keycloak</groupId>
-                    <artifactId>keycloak-jetty93-adapter</artifactId>
-                    <version>${project.version}</version>
-                </dependency>
-                <dependency>
-                    <groupId>org.springframework.boot</groupId>
-                    <artifactId>spring-boot-starter-jetty</artifactId>
-                    <version>${spring-boot.version}</version>
-                </dependency>
-            </dependencies>
-        </profile>
-
-        <profile>
             <id>spring-boot-adapter-jetty94</id>
 
             <properties>

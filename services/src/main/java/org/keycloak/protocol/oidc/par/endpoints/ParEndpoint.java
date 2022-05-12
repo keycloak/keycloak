@@ -24,7 +24,7 @@ import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.headers.SecurityHeadersProvider;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.PushedAuthzRequestStoreProvider;
+import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpointChecker;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
@@ -146,8 +146,8 @@ public class ParEndpoint extends AbstractParEndpoint {
 
         Map<String, String> params = new HashMap<>();
 
-        UUID key = UUID.randomUUID();
-        String requestUri = REQUEST_URI_PREFIX + key.toString();
+        String key = UUID.randomUUID().toString();
+        String requestUri = REQUEST_URI_PREFIX + key;
 
         int expiresIn = realm.getParPolicy().getRequestUriLifespan();
 
@@ -158,8 +158,8 @@ public class ParEndpoint extends AbstractParEndpoint {
             });
         params.put(PAR_CREATED_TIME, String.valueOf(System.currentTimeMillis()));
 
-        PushedAuthzRequestStoreProvider parStore = session.getProvider(PushedAuthzRequestStoreProvider.class);
-        parStore.put(key, expiresIn, params);
+        SingleUseObjectProvider singleUseStore = session.getProvider(SingleUseObjectProvider.class);
+        singleUseStore.put(key, expiresIn, params);
 
         ParResponse parResponse = new ParResponse(requestUri, expiresIn);
 

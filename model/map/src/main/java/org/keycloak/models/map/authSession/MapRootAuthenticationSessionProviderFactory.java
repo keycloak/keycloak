@@ -18,7 +18,6 @@ package org.keycloak.models.map.authSession;
 
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.map.common.AbstractMapProviderFactory;
-import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.sessions.AuthenticationSessionProviderFactory;
 
 import org.keycloak.sessions.RootAuthenticationSessionModel;
@@ -26,15 +25,15 @@ import org.keycloak.sessions.RootAuthenticationSessionModel;
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
-public class MapRootAuthenticationSessionProviderFactory extends AbstractMapProviderFactory<AuthenticationSessionProvider, MapRootAuthenticationSessionEntity, RootAuthenticationSessionModel>
-        implements AuthenticationSessionProviderFactory {
+public class MapRootAuthenticationSessionProviderFactory extends AbstractMapProviderFactory<MapRootAuthenticationSessionProvider, MapRootAuthenticationSessionEntity, RootAuthenticationSessionModel>
+        implements AuthenticationSessionProviderFactory<MapRootAuthenticationSessionProvider> {
 
     public MapRootAuthenticationSessionProviderFactory() {
-        super(RootAuthenticationSessionModel.class);
+        super(RootAuthenticationSessionModel.class, MapRootAuthenticationSessionProvider.class);
     }
 
     @Override
-    public AuthenticationSessionProvider create(KeycloakSession session) {
+    public MapRootAuthenticationSessionProvider createNew(KeycloakSession session) {
         return new MapRootAuthenticationSessionProvider(session, getStorage(session));
     }
 

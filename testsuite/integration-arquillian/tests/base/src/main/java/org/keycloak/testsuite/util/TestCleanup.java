@@ -45,6 +45,7 @@ public class TestCleanup {
     private static final String GROUP_IDS = "GROUP_IDS";
     private static final String AUTH_FLOW_IDS = "AUTH_FLOW_IDS";
     private static final String AUTH_CONFIG_IDS = "AUTH_CONFIG_IDS";
+    private static final String REQUIRED_ACTION_ALIASES = "REQUIRED_ACTION_PROVIDERS";
     private static final String LOCALIZATION_LANGUAGES = "LOCALIZATION_LANGUAGES";
 
     private final TestContext testContext;
@@ -123,6 +124,9 @@ public class TestCleanup {
         entities.add(AUTH_CONFIG_IDS, executionConfigId);
     }
 
+    public void addRequiredAction(String alias) {
+        entities.add(REQUIRED_ACTION_ALIASES, alias);
+    }
 
     public void executeCleanup() {
         RealmResource realm = getAdminClient().realm(realmName);
@@ -236,6 +240,17 @@ public class TestCleanup {
                     realm.localization().deleteRealmLocalizationTexts(localizationLanguage);
                 } catch (NotFoundException nfe) {
                     // Localization texts might be already deleted in the test
+                }
+            }
+        }
+
+        List<String> requiredActionAliases = entities.get(REQUIRED_ACTION_ALIASES);
+        if (requiredActionAliases != null) {
+            for (String alias : requiredActionAliases) {
+                try {
+                    realm.flows().removeRequiredAction(alias);
+                } catch (NotFoundException nfe) {
+                    // required action might be already deleted in the test
                 }
             }
         }

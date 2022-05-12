@@ -239,6 +239,12 @@ public class ExportImportTest extends AbstractKeycloakTest {
     }
 
     @Test
+    public void testImportWithNullAuthenticatorConfigAndNoDefaultBrowserFlow() {
+        importRealmFromFile("/import/testrealm-authenticator-config-null.json");
+        Assert.assertTrue("Imported realm hasn't been found!", isRealmPresent("cez"));
+    }
+
+    @Test
     public void testImportIgnoreExistingMissingClientId() {
         TestingExportImportResource resource = testingClient.testing().exportImport();
 
@@ -283,8 +289,8 @@ public class ExportImportTest extends AbstractKeycloakTest {
         }
     }
 
-    private boolean isRealmPresent(String realmId) {
-        return adminClient.realms().findAll().stream().anyMatch(realm -> realmId.equals(realm.getId()));
+    private boolean isRealmPresent(String realmName) {
+        return adminClient.realms().findAll().stream().anyMatch(realm -> realmName.equals(realm.getRealm()));
     }
 
     /*

@@ -82,6 +82,8 @@ public class CLITestExtension extends QuarkusMainTestExtension {
         }
 
         if (distConfig != null) {
+            onKeepServerAlive(context.getRequiredTestMethod().getAnnotation(KeepServerAlive.class));
+
             if (launch != null) {
                 if (dist == null) {
                     dist = createDistribution(distConfig);
@@ -105,6 +107,16 @@ public class CLITestExtension extends QuarkusMainTestExtension {
                 annotation.value().getDeclaredConstructor().newInstance().accept(dist);
             } catch (Exception cause) {
                 throw new RuntimeException("Error when invoking " + annotation.value() + " instance before starting distribution", cause);
+            }
+        }
+    }
+
+    private void onKeepServerAlive(KeepServerAlive annotation) {
+        if(annotation != null && dist != null) {
+            try {
+                dist.setManualStop(true);
+            } catch (Exception cause) {
+                throw new RuntimeException("Error when invoking " + annotation, cause);
             }
         }
     }

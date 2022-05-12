@@ -26,6 +26,12 @@ final class ProxyPropertyMappers {
                                 "Possible values are: " + String.join(",",possibleProxyValues))
                         .paramLabel("mode")
                         .category(ConfigCategory.PROXY)
+                        .build(),
+                builder().to("quarkus.http.proxy.enable-forwarded-host")
+                        .mapFrom("proxy")
+                        .defaultValue("false")
+                        .transformer(ProxyPropertyMappers::resolveEnableForwardedHost)
+                        .category(ConfigCategory.PROXY)
                         .build()
         };
     }
@@ -44,6 +50,10 @@ final class ProxyPropertyMappers {
                     return "false";
             }
         };
+    }
+
+    private static String resolveEnableForwardedHost(String proxy, ConfigSourceInterceptorContext context) {
+        return String.valueOf(!"none".equals(proxy));
     }
 
     private static PropertyMapper.Builder builder() {

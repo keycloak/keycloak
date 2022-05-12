@@ -4,10 +4,16 @@
 </#list>
 </#macro>
 
-<#macro list options>
+<#macro list options buildIcon=true>
+<#if buildIcon>
 [cols="12a,4,4,1",role="options"]
 |===
 | |Type|Default|
+<#else>
+[cols="12a,4,4",role="options"]
+|===
+| |Type|Default
+</#if>
 
 <#list options as option>
 |
@@ -25,7 +31,7 @@
 
 |<#if option.defaultValue?has_content>[.options-default]#${option.defaultValue!}#</#if>
 
-|<#if option.build>icon:tools[role=options-build]</#if>
+<#if buildIcon>|<#if option.build>icon:tools[role=options-build]</#if></#if>
 </#list>
 
 |===

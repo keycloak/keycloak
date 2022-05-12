@@ -19,7 +19,6 @@ spec:
       containers:
       - args:
         - start
-        - --auto-build
         imagePullPolicy: Always
         name: keycloak
         ports:

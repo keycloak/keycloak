@@ -16,6 +16,7 @@
  */
 package org.keycloak.operator.v2alpha1.crds;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 
 import org.keycloak.operator.Constants;
@@ -26,9 +27,13 @@ import java.util.List;
 
 public class KeycloakSpec {
 
+    @JsonPropertyDescription("Number of Keycloak instances in HA mode. Default is 1.")
     private int instances = 1;
+    @JsonPropertyDescription("Custom Keycloak image to be used.")
     private String image;
-    private List<ValueOrSecret> serverConfiguration; // can't use Set due to a bug in Sundrio
+    @JsonPropertyDescription("Configuration of the Keycloak server.\n" +
+            "expressed as a keys (reference: https://www.keycloak.org/server/all-config) and values that can be either direct values or references to secrets.")
+    private List<ValueOrSecret> serverConfiguration; // can't use Set due to a bug in Sundrio https://github.com/sundrio/sundrio/issues/316
 
     @NotNull
     @JsonPropertyDescription("Hostname for the Keycloak server.\n" +
@@ -53,15 +58,16 @@ public class KeycloakSpec {
         this.hostname = hostname;
     }
 
+    @JsonIgnore
     public boolean isHostnameDisabled() {
         return this.hostname.equals(Constants.INSECURE_DISABLE);
     }
 
-    public void setDefaultIngressDisabled(boolean value) {
+    public void setDisableDefaultIngress(boolean value) {
         this.disableDefaultIngress = value;
     }
 
-    public boolean isDefaultIngressDisabled() {
+    public boolean isDisableDefaultIngress() {
         return this.disableDefaultIngress;
     }
 
@@ -73,6 +79,7 @@ public class KeycloakSpec {
         this.tlsSecret = tlsSecret;
     }
 
+    @JsonIgnore
     public boolean isHttp() {
         return this.tlsSecret.equals(Constants.INSECURE_DISABLE);
     }

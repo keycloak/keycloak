@@ -50,6 +50,7 @@ public class HotRodUserEntity extends AbstractHotRodEntity {
     @IgnoreForEntityImplementationGenerator
     private static final Logger LOG = Logger.getLogger(HotRodUserEntity.class);
 
+    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
     @ProtoField(number = 1, required = true)
     public int entityVersion = 1;
 
@@ -153,7 +154,7 @@ public class HotRodUserEntity extends AbstractHotRodEntity {
     public String serviceAccountClientLink;
 
     @ProtoField(number = 21)
-    public Integer notBefore;
+    public Long notBefore;
 
     public static abstract class AbstractHotRodUserEntityDelegate extends UpdatableHotRodEntityDelegateImpl<HotRodUserEntity> implements MapUserEntity {
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -729,44 +729,57 @@ public class RepresentationToModel {
             // assume this is an old version being imported
             DefaultAuthenticationFlows.migrateFlows(newRealm);
         } else {
-            for (AuthenticatorConfigRepresentation configRep : rep.getAuthenticatorConfig()) {
-                if (configRep.getAlias() == null) {
-                    // this can happen only during import json files from keycloak 3.4.0 and older
-                    throw new IllegalStateException("Provided realm contains authenticator config with null alias. "
-                            + "It should be resolved by adding alias to the authenticator config before exporting the realm.");
+            if (rep.getAuthenticatorConfig() != null) {
+                for (AuthenticatorConfigRepresentation configRep : rep.getAuthenticatorConfig()) {
+                    if (configRep.getAlias() == null) {
+                        // this can happen only during import json files from keycloak 3.4.0 and older
+                        throw new IllegalStateException("Provided realm contains authenticator config with null alias. "
+                                + "It should be resolved by adding alias to the authenticator config before exporting the realm.");
+                    }
+                    AuthenticatorConfigModel model = toModel(configRep);
+                    newRealm.addAuthenticatorConfig(model);
                 }
-                AuthenticatorConfigModel model = toModel(configRep);
-                newRealm.addAuthenticatorConfig(model);
             }
-            for (AuthenticationFlowRepresentation flowRep : rep.getAuthenticationFlows()) {
-                AuthenticationFlowModel model = toModel(flowRep);
-                // make sure new id is generated for new AuthenticationFlowModel instance
-                String previousId = model.getId();
-                model.setId(null);
-                model = newRealm.addAuthenticationFlow(model);
-                // store the mapped ids so that clients can reference the correct flow when importing the authenticationFlowBindingOverrides
-                mappedFlows.put(previousId, model.getId());
-            }
-            for (AuthenticationFlowRepresentation flowRep : rep.getAuthenticationFlows()) {
-                AuthenticationFlowModel model = newRealm.getFlowByAlias(flowRep.getAlias());
-                for (AuthenticationExecutionExportRepresentation exeRep : flowRep.getAuthenticationExecutions()) {
-                    AuthenticationExecutionModel execution = toModel(newRealm, model, exeRep);
-                    newRealm.addAuthenticatorExecution(execution);
+            if (rep.getAuthenticationFlows() != null) {
+                for (AuthenticationFlowRepresentation flowRep : rep.getAuthenticationFlows()) {
+                    AuthenticationFlowModel model = toModel(flowRep);
+                    // make sure new id is generated for new AuthenticationFlowModel instance
+                    String previousId = model.getId();
+                    model.setId(null);
+                    model = newRealm.addAuthenticationFlow(model);
+                    // store the mapped ids so that clients can reference the correct flow when importing the authenticationFlowBindingOverrides
+                    mappedFlows.put(previousId, model.getId());
+                }
+                for (AuthenticationFlowRepresentation flowRep : rep.getAuthenticationFlows()) {
+                    AuthenticationFlowModel model = newRealm.getFlowByAlias(flowRep.getAlias());
+                    for (AuthenticationExecutionExportRepresentation exeRep : flowRep.getAuthenticationExecutions()) {
+                        AuthenticationExecutionModel execution = toModel(newRealm, model, exeRep);
+                        newRealm.addAuthenticatorExecution(execution);
+                    }
                 }
             }
         }
         if (rep.getBrowserFlow() == null) {
-            newRealm.setBrowserFlow(newRealm.getFlowByAlias(DefaultAuthenticationFlows.BROWSER_FLOW));
+            AuthenticationFlowModel defaultFlow = newRealm.getFlowByAlias(DefaultAuthenticationFlows.BROWSER_FLOW);
+            if (defaultFlow != null) {
+                newRealm.setBrowserFlow(defaultFlow);
+            }
         } else {
             newRealm.setBrowserFlow(newRealm.getFlowByAlias(rep.getBrowserFlow()));
         }
         if (rep.getRegistrationFlow() == null) {
-            newRealm.setRegistrationFlow(newRealm.getFlowByAlias(DefaultAuthenticationFlows.REGISTRATION_FLOW));
+            AuthenticationFlowModel defaultFlow = newRealm.getFlowByAlias(DefaultAuthenticationFlows.REGISTRATION_FLOW);
+            if (defaultFlow != null) {
+                newRealm.setRegistrationFlow(defaultFlow);
+            }
         } else {
             newRealm.setRegistrationFlow(newRealm.getFlowByAlias(rep.getRegistrationFlow()));
         }
         if (rep.getDirectGrantFlow() == null) {
-            newRealm.setDirectGrantFlow(newRealm.getFlowByAlias(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW));
+            AuthenticationFlowModel defaultFlow = newRealm.getFlowByAlias(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW);
+            if (defaultFlow != null) {
+                newRealm.setDirectGrantFlow(defaultFlow);
+            }
         } else {
             newRealm.setDirectGrantFlow(newRealm.getFlowByAlias(rep.getDirectGrantFlow()));
         }
@@ -2344,6 +2357,8 @@ public class RepresentationToModel {
 
     private static Policy importPolicies(AuthorizationProvider authorization, ResourceServer resourceServer, List<PolicyRepresentation> policiesToImport, String parentPolicyName) {
         StoreFactory storeFactory = authorization.getStoreFactory();
+        RealmModel realm = resourceServer.getRealm();
+
         for (PolicyRepresentation policyRepresentation : policiesToImport) {
             if (parentPolicyName != null && !parentPolicyName.equals(policyRepresentation.getName())) {
                 continue;
@@ -2362,7 +2377,7 @@ public class RepresentationToModel {
                         Policy policy = policyStore.findByName(resourceServer, policyName);
 
                         if (policy == null) {
-                            policy = policyStore.findById(resourceServer, policyName);
+                            policy = policyStore.findById(realm, resourceServer, policyName);
                         }
 
                         if (policy == null) {
@@ -2382,7 +2397,7 @@ public class RepresentationToModel {
             }
 
             PolicyStore policyStore = storeFactory.getPolicyStore();
-            Policy policy = policyStore.findById(resourceServer, policyRepresentation.getId());
+            Policy policy = policyStore.findById(realm, resourceServer, policyRepresentation.getId());
 
             if (policy == null) {
                 policy = policyStore.findByName(resourceServer, policyRepresentation.getName());
@@ -2462,6 +2477,10 @@ public class RepresentationToModel {
 
         PolicyProviderFactory provider = authorization.getProviderFactory(model.getType());
 
+        if (provider == null) {
+            throw new RuntimeException("Could find policy provider with type [" + model.getType() + "]");
+        }
+
         if (representation instanceof PolicyRepresentation) {
             provider.onImport(model, PolicyRepresentation.class.cast(representation), authorization);
         } else if (representation.getId() == null) {
@@ -2484,6 +2503,8 @@ public class RepresentationToModel {
                 }
                 return;
             }
+            ResourceServer resourceServer = policy.getResourceServer();
+            RealmModel realm = resourceServer.getRealm();
             for (String scopeId : scopeIds) {
                 boolean hasScope = false;
 
@@ -2493,8 +2514,7 @@ public class RepresentationToModel {
                     }
                 }
                 if (!hasScope) {
-                    ResourceServer resourceServer = policy.getResourceServer();
-                    Scope scope = storeFactory.getScopeStore().findById(resourceServer, scopeId);
+                    Scope scope = storeFactory.getScopeStore().findById(realm, resourceServer, scopeId);
 
                     if (scope == null) {
                         scope = storeFactory.getScopeStore().findByName(resourceServer, scopeId);
@@ -2526,6 +2546,7 @@ public class RepresentationToModel {
 
     private static void updateAssociatedPolicies(Set<String> policyIds, Policy policy, StoreFactory storeFactory) {
         ResourceServer resourceServer = policy.getResourceServer();
+        RealmModel realm = resourceServer.getRealm();
 
         if (policyIds != null) {
             if (policyIds.isEmpty()) {
@@ -2547,7 +2568,7 @@ public class RepresentationToModel {
                 }
 
                 if (!hasPolicy) {
-                    Policy associatedPolicy = policyStore.findById(resourceServer, policyId);
+                    Policy associatedPolicy = policyStore.findById(realm, resourceServer, policyId);
 
                     if (associatedPolicy == null) {
                         associatedPolicy = policyStore.findByName(resourceServer, policyId);
@@ -2584,6 +2605,9 @@ public class RepresentationToModel {
                     policy.removeResource(resource);
                 }
             }
+            ResourceServer resourceServer = policy.getResourceServer();
+            RealmModel realm = resourceServer.getRealm();
+
             for (String resourceId : resourceIds) {
                 boolean hasResource = false;
                 for (Resource resourceModel : new HashSet<>(policy.getResources())) {
@@ -2592,10 +2616,10 @@ public class RepresentationToModel {
                     }
                 }
                 if (!hasResource && !"".equals(resourceId)) {
-                    Resource resource = storeFactory.getResourceStore().findById(policy.getResourceServer(), resourceId);
+                    Resource resource = storeFactory.getResourceStore().findById(realm, resourceServer, resourceId);
 
                     if (resource == null) {
-                        resource = storeFactory.getResourceStore().findByName(policy.getResourceServer(), resourceId);
+                        resource = storeFactory.getResourceStore().findByName(resourceServer, resourceId);
                         if (resource == null) {
                             throw new RuntimeException("Resource with id or name [" + resourceId + "] does not exist or is not owned by the resource server");
                         }
@@ -2625,6 +2649,7 @@ public class RepresentationToModel {
 
     public static Resource toModel(ResourceRepresentation resource, ResourceServer resourceServer, AuthorizationProvider authorization) {
         ResourceStore resourceStore = authorization.getStoreFactory().getResourceStore();
+        RealmModel realm = authorization.getRealm();
         ResourceOwnerRepresentation owner = resource.getOwner();
 
         if (owner == null) {
@@ -2639,7 +2664,6 @@ public class RepresentationToModel {
         }
 
         if (!resourceServer.getClientId().equals(ownerId)) {
-            RealmModel realm = authorization.getRealm();
             KeycloakSession keycloakSession = authorization.getKeycloakSession();
             UserProvider users = keycloakSession.users();
             UserModel ownerModel = users.getUserById(realm, ownerId);
@@ -2658,7 +2682,7 @@ public class RepresentationToModel {
         Resource existing;
 
         if (resource.getId() != null) {
-            existing = resourceStore.findById(resourceServer, resource.getId());
+            existing = resourceStore.findById(realm, resourceServer, resource.getId());
         } else {
             existing = resourceStore.findByName(resourceServer, resource.getName(), ownerId);
         }
@@ -2732,7 +2756,7 @@ public class RepresentationToModel {
         Scope existing;
 
         if (scope.getId() != null) {
-            existing = scopeStore.findById(resourceServer, scope.getId());
+            existing = scopeStore.findById(resourceServer.getRealm(), resourceServer, scope.getId());
         } else {
             existing = scopeStore.findByName(resourceServer, scope.getName());
         }
@@ -2758,13 +2782,13 @@ public class RepresentationToModel {
 
     public static PermissionTicket toModel(PermissionTicketRepresentation representation, ResourceServer resourceServer, AuthorizationProvider authorization) {
         PermissionTicketStore ticketStore = authorization.getStoreFactory().getPermissionTicketStore();
-        PermissionTicket ticket = ticketStore.findById(resourceServer, representation.getId());
+        PermissionTicket ticket = ticketStore.findById(resourceServer.getRealm(), resourceServer, representation.getId());
         boolean granted = representation.isGranted();
 
         if (granted && !ticket.isGranted()) {
             ticket.setGrantedTimestamp(System.currentTimeMillis());
         } else if (!granted) {
-            ticketStore.delete(ticket.getId());
+            ticketStore.delete(resourceServer.getRealm(), ticket.getId());
         }
 
         return ticket;

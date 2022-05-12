@@ -40,6 +40,7 @@ public abstract class JpaModelCriteriaBuilder<E, M, Self extends JpaModelCriteri
 
     private final Function<BiFunction<CriteriaBuilder, Root<E>, Predicate>, Self> instantiator;
     private BiFunction<CriteriaBuilder, Root<E>, Predicate> predicateFunc = null;
+    private boolean isDistinct = false;
 
     public JpaModelCriteriaBuilder(Function<BiFunction<CriteriaBuilder, Root<E>, Predicate>, Self> instantiator) {
         this.instantiator = instantiator;
@@ -49,6 +50,14 @@ public abstract class JpaModelCriteriaBuilder<E, M, Self extends JpaModelCriteri
             BiFunction<CriteriaBuilder, Root<E>, Predicate> predicateFunc) {
         this.instantiator = instantiator;
         this.predicateFunc = predicateFunc;
+    }
+
+    public JpaModelCriteriaBuilder(Function<BiFunction<CriteriaBuilder, Root<E>, Predicate>, Self> instantiator,
+                                   BiFunction<CriteriaBuilder, Root<E>, Predicate> predicateFunc,
+                                   boolean isDistinct) {
+        this.instantiator = instantiator;
+        this.predicateFunc = predicateFunc;
+        this.isDistinct = isDistinct;
     }
 
     protected void validateValue(Object[] value, SearchableModelField<? super M> field, ModelCriteriaBuilder.Operator op, Class<?>... expectedTypes) {
@@ -90,5 +99,9 @@ public abstract class JpaModelCriteriaBuilder<E, M, Self extends JpaModelCriteri
 
     public BiFunction<CriteriaBuilder, Root<E>, Predicate> getPredicateFunc() {
         return predicateFunc;
+    }
+
+    public boolean isDistinct() {
+        return this.isDistinct;
     }
 }

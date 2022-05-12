@@ -40,8 +40,9 @@ import org.keycloak.urls.UrlType;
 public final class DefaultHostnameProvider implements HostnameProvider, HostnameProviderFactory {
 
     private static final Logger LOGGER = Logger.getLogger(DefaultHostnameProvider.class);
-
     private static final String REALM_URI_SESSION_ATTRIBUTE = DefaultHostnameProvider.class.getName() + ".realmUrl";
+    private static final int DEFAULT_HTTPS_PORT_VALUE = 443;
+    private static final int RESTEASY_DEFAULT_PORT_VALUE = -1;
 
     private String frontChannelHostName;
     private String defaultPath;
@@ -218,6 +219,11 @@ public final class DefaultHostnameProvider implements HostnameProvider, Hostname
         defaultPath = config.get("path");
         noProxy = Configuration.getConfigValue("kc.proxy").getValue().equals("false");
         defaultTlsPort = Integer.parseInt(Configuration.getConfigValue("kc.https-port").getValue());
+
+        if (defaultTlsPort == DEFAULT_HTTPS_PORT_VALUE) {
+            defaultTlsPort = RESTEASY_DEFAULT_PORT_VALUE;
+        }
+
         hostnamePort = Integer.parseInt(Configuration.getConfigValue("kc.hostname-port").getValue());
         adminHostName = config.get("admin");
         strictBackChannel = config.getBoolean("strict-backchannel", false);

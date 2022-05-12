@@ -134,6 +134,7 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
 
         if (overlayTemplate.getSpec() != null &&
             overlayTemplate.getSpec().getContainers() != null &&
+            overlayTemplate.getSpec().getContainers().size() > 0 &&
             overlayTemplate.getSpec().getContainers().get(0) != null &&
             overlayTemplate.getSpec().getContainers().get(0).getName() != null) {
             status.addWarningMessage("The name of the keycloak container cannot be modified");
@@ -141,6 +142,7 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
 
         if (overlayTemplate.getSpec() != null &&
             overlayTemplate.getSpec().getContainers() != null &&
+            overlayTemplate.getSpec().getContainers().size() > 0 &&
             overlayTemplate.getSpec().getContainers().get(0) != null &&
             overlayTemplate.getSpec().getContainers().get(0).getImage() != null) {
             status.addWarningMessage("The image of the keycloak container cannot be modified using podTemplate");
@@ -402,7 +404,12 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
         baseDeployment.getSpec().getTemplate().getMetadata().setLabels(Constants.DEFAULT_LABELS);
 
         Container container = baseDeployment.getSpec().getTemplate().getSpec().getContainers().get(0);
-        container.setImage(Optional.ofNullable(keycloakCR.getSpec().getImage()).orElse(config.keycloak().image()));
+        var customImage = Optional.ofNullable(keycloakCR.getSpec().getImage());
+        container.setImage(customImage.orElse(config.keycloak().image()));
+        if (customImage.isEmpty()) {
+            container.getArgs().add("--auto-build");
+        }
+
         container.setImagePullPolicy(config.keycloak().imagePullPolicy());
 
         container.setEnv(getEnvVars());

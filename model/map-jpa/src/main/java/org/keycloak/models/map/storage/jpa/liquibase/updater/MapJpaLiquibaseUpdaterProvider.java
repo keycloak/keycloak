@@ -17,6 +17,10 @@
 
 package org.keycloak.models.map.storage.jpa.liquibase.updater;
 
+import liquibase.database.Database;
+import liquibase.database.DatabaseFactory;
+import liquibase.database.core.CockroachDatabase;
+import liquibase.database.jvm.JdbcConnection;
 import org.keycloak.models.map.storage.jpa.liquibase.connection.MapLiquibaseConnectionProvider;
 import java.io.File;
 import java.io.FileWriter;
@@ -32,13 +36,29 @@ import liquibase.changelog.ChangeSet;
 import liquibase.changelog.RanChangeSet;
 import liquibase.exception.LiquibaseException;
 import org.jboss.logging.Logger;
-import org.keycloak.connections.jpa.updater.liquibase.ThreadLocalSessionContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.map.storage.ModelEntityUtil;
 import org.keycloak.models.map.storage.jpa.updater.MapJpaUpdaterProvider;
 
 public class MapJpaLiquibaseUpdaterProvider implements MapJpaUpdaterProvider {
 
+    public static class ThreadLocalSessionContext {
+
+        private static final ThreadLocal<KeycloakSession> currentSession = new ThreadLocal<KeycloakSession>();
+    
+        public static KeycloakSession getCurrentSession() {
+            return currentSession.get();
+        }
+    
+        public static void setCurrentSession(KeycloakSession session) {
+            currentSession.set(session);
+        }
+    
+        public static void removeCurrentSession() {
+            currentSession.remove();
+        }
+    }
+    
     private static final Logger logger = Logger.getLogger(MapJpaLiquibaseUpdaterProvider.class);
 
     private final KeycloakSession session;
@@ -48,20 +68,20 @@ public class MapJpaLiquibaseUpdaterProvider implements MapJpaUpdaterProvider {
     }
 
     @Override
-    public void update(Class modelType, Connection connection, String defaultSchema) {
+    public void update(Class<?> modelType, Connection connection, String defaultSchema) {
         synchronized (MapJpaLiquibaseUpdaterProvider.class) {
             this.updateSynch(modelType, connection, null, defaultSchema);
         }
     }
 
     @Override
-    public void export(Class modelType, Connection connection, String defaultSchema, File file) {
+    public void export(Class<?> modelType, Connection connection, String defaultSchema, File file) {
         synchronized (MapJpaLiquibaseUpdaterProvider.class) {
             this.updateSynch(modelType, connection, file, defaultSchema);
         }
     }
 
-    protected void updateSynch(Class modelType, Connection connection, File file, String defaultSchema) {
+    protected void updateSynch(Class<?> modelType, Connection connection, File file, String defaultSchema) {
         logger.debug("Starting database update");
 
         // Need ThreadLocal as liquibase doesn't seem to have API to inject custom objects into tasks
@@ -170,7 +190,9 @@ public class MapJpaLiquibaseUpdaterProvider implements MapJpaUpdaterProvider {
         if (modelName == null) {
             throw new IllegalStateException("Cannot find changlelog for modelClass " + modelType.getName());
         }
-        String changelog = "META-INF/jpa-" + modelName + "-changelog.xml";
+        Database database = DatabaseFactory.getInstance().findCorrectDatabaseImplementation(new JdbcConnection(connection));
+        // if database is cockroachdb, use the aggregate changelog (see GHI #11230).
+        String changelog = database instanceof CockroachDatabase ? "META-INF/jpa-aggregate-changelog.xml" : "META-INF/jpa-" + modelName + "-changelog.xml";
         return liquibaseProvider.getLiquibaseForCustomUpdate(connection, defaultSchema, changelog, this.getClass().getClassLoader(), "databasechangelog");
     }
 

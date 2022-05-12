@@ -24,6 +24,8 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.map.common.TimeAdapter;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -83,27 +85,31 @@ public abstract class MapUserSessionAdapter extends AbstractUserSessionModel {
 
     @Override
     public boolean isRememberMe() {
-        return entity.isRememberMe();
+        Boolean rememberMe = entity.isRememberMe();
+        return rememberMe != null ? rememberMe : false;
     }
 
     @Override
     public int getStarted() {
-        return entity.getStarted();
+        Long started = entity.getStarted();
+        return started != null ? TimeAdapter.fromLongWithTimeInSecondsToIntegerWithTimeInSeconds(started) : 0;
     }
 
     @Override
     public int getLastSessionRefresh() {
-        return entity.getLastSessionRefresh();
+        Long lastSessionRefresh = entity.getLastSessionRefresh();
+        return lastSessionRefresh != null ? TimeAdapter.fromLongWithTimeInSecondsToIntegerWithTimeInSeconds(lastSessionRefresh) : 0;
     }
 
     @Override
     public void setLastSessionRefresh(int seconds) {
-        entity.setLastSessionRefresh(seconds);
+        entity.setLastSessionRefresh(TimeAdapter.fromIntegerWithTimeInSecondsToLongWithTimeAsInSeconds(seconds));
     }
 
     @Override
     public boolean isOffline() {
-        return entity.isOffline();
+        Boolean offline = entity.isOffline();
+        return offline != null ? offline : false;
     }
 
     @Override
@@ -111,8 +117,13 @@ public abstract class MapUserSessionAdapter extends AbstractUserSessionModel {
         Map<String, AuthenticatedClientSessionModel> result = new HashMap<>();
         List<String> removedClientUUIDS = new LinkedList<>();
 
-        // to avoid concurrentModificationException
-        Map<String, String> authenticatedClientSessions = new HashMap<>(entity.getAuthenticatedClientSessions());
+        Map<String, String> authenticatedClientSessions = entity.getAuthenticatedClientSessions();
+        if (authenticatedClientSessions == null) {
+            return Collections.emptyMap();
+        } else {
+            // to avoid concurrentModificationException
+            authenticatedClientSessions = new HashMap<>(authenticatedClientSessions);
+        }
 
         authenticatedClientSessions.forEach((clientUUID, clientSessionId) -> {
             ClientModel client = realm.getClientById(clientUUID);
@@ -135,7 +146,7 @@ public abstract class MapUserSessionAdapter extends AbstractUserSessionModel {
 
     @Override
     public AuthenticatedClientSessionModel getAuthenticatedClientSessionByClient(String clientUUID) {
-        String clientSessionId = entity.getAuthenticatedClientSessions().get(clientUUID);
+        String clientSessionId = entity.getAuthenticatedClientSession(clientUUID);
 
         if (clientSessionId == null) {
             return null;
@@ -155,7 +166,7 @@ public abstract class MapUserSessionAdapter extends AbstractUserSessionModel {
 
     @Override
     public String getNote(String name) {
-        return (name != null) ? entity.getNotes().get(name) : null;
+        return (name != null) ? entity.getNote(name) : null;
     }
 
     @Override
@@ -164,7 +175,7 @@ public abstract class MapUserSessionAdapter extends AbstractUserSessionModel {
             if (value == null) {
                 entity.removeNote(name);
             } else {
-                entity.addNote(name, value);
+                entity.setNote(name, value);
             }
         }
     }
@@ -178,7 +189,8 @@ public abstract class MapUserSessionAdapter extends AbstractUserSessionModel {
 
     @Override
     public Map<String, String> getNotes() {
-        return entity.getNotes();
+        Map<String, String> notes = entity.getNotes();
+        return notes == null ? Collections.emptyMap() : Collections.unmodifiableMap(notes);
     }
 
     @Override
@@ -204,17 +216,17 @@ public abstract class MapUserSessionAdapter extends AbstractUserSessionModel {
         entity.setBrokerUserId(brokerUserId);
 
         int currentTime = Time.currentTime();
-        entity.setStarted(currentTime);
-        entity.setLastSessionRefresh(currentTime);
+        entity.setStarted(TimeAdapter.fromIntegerWithTimeInSecondsToLongWithTimeAsInSeconds(currentTime));
+        entity.setLastSessionRefresh(TimeAdapter.fromIntegerWithTimeInSecondsToLongWithTimeAsInSeconds(currentTime));
 
         entity.setState(null);
 
         String correspondingSessionId = entity.getNote(CORRESPONDING_SESSION_ID);
         entity.setNotes(new ConcurrentHashMap<>());
         if (correspondingSessionId != null)
-            entity.addNote(CORRESPONDING_SESSION_ID, correspondingSessionId);
+            entity.setNote(CORRESPONDING_SESSION_ID, correspondingSessionId);
 
-        entity.clearAuthenticatedClientSessions();
+        entity.setAuthenticatedClientSessions(null);
     }
 
     @Override

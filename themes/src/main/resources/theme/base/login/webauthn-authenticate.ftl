@@ -69,7 +69,7 @@
                 </#if>
 
                 <div id="kc-form-buttons" class="${properties.kcFormButtonsClass!}">
-                    <input id="authenticateWebAuthnButton" type="button" onclick="webAuthnAuthenticate()"
+                    <input id="authenticateWebAuthnButton" type="button" onclick="webAuthnAuthenticate()" autofocus="autofocus"
                            value="${kcSanitize(msg("webauthn-doAuthenticate"))}"
                            class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonBlockClass!} ${properties.kcButtonLargeClass!}"/>
                 </div>

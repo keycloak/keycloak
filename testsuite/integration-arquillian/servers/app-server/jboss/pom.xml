@@ -748,18 +748,6 @@
             </modules>
         </profile>
         <profile>
-            <id>app-server-eap6</id>
-            <activation>
-                <property>
-                    <name>app.server</name>
-                    <value>eap6</value>
-                </property>
-            </activation>
-            <modules>
-                <module>eap6</module>
-            </modules>
-        </profile>
-        <profile>
             <id>app-server-wildfly</id>
             <activation>
                 <property>

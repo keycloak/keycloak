@@ -19,22 +19,34 @@ package org.keycloak.models.map.realm;
 import org.keycloak.models.map.common.AbstractMapProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RealmProviderFactory;
+import org.keycloak.provider.InvalidationHandler;
 
-public class MapRealmProviderFactory extends AbstractMapProviderFactory<RealmProvider, MapRealmEntity, RealmModel> implements RealmProviderFactory {
+import static org.keycloak.models.map.common.AbstractMapProviderFactory.MapProviderObjectType.REALM_AFTER_REMOVE;
+
+public class MapRealmProviderFactory extends AbstractMapProviderFactory<MapRealmProvider, MapRealmEntity, RealmModel> implements RealmProviderFactory<MapRealmProvider>, InvalidationHandler {
 
     public MapRealmProviderFactory() {
-        super(RealmModel.class);
+        super(RealmModel.class, MapRealmProvider.class);
     }
 
     @Override
-    public RealmProvider create(KeycloakSession session) {
+    public MapRealmProvider createNew(KeycloakSession session) {
         return new MapRealmProvider(session, getStorage(session));
     }
 
     @Override
     public String getHelpText() {
         return "Realm provider";
-     }
+    }
+
+    @Override
+    public void invalidate(KeycloakSession session, InvalidableObjectType type, Object... params) {
+        if (type == REALM_AFTER_REMOVE) {
+            session.getKeycloakSessionFactory().publish(new RealmModel.RealmRemovedEvent() {
+                @Override public RealmModel getRealm() { return (RealmModel) params[0]; }
+                @Override public KeycloakSession getKeycloakSession() { return session; }
+            });
+        }
+    }
 }

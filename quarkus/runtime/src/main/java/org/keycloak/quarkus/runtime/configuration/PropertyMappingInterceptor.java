@@ -49,11 +49,6 @@ public class PropertyMappingInterceptor implements ConfigSourceInterceptor {
             return null;
         }
 
-        if (isPersistedOnlyProperty(value)) {
-            // quarkus properties values always resolved from persisted config source
-            return value.withValue(PersistedConfigSource.getInstance().getValue(name));
-        }
-
         if (value.getValue().indexOf("${") == -1) {
             return value;
         }
@@ -69,20 +64,5 @@ public class PropertyMappingInterceptor implements ConfigSourceInterceptor {
                             
                             return prop.getValue();
                         }));
-    }
-
-    private boolean isPersistedOnlyProperty(ConfigValue value) {
-        if (isQuarkusPropertiesEnabled && value.getName().startsWith(NS_QUARKUS)) {
-            String configSourceName = value.getConfigSourceName();
-
-            return Environment.isRuntimeMode()
-                    && configSourceName != null
-                    && !configSourceName.equals(PersistedConfigSource.NAME)
-                    && !configSourceName.equals(AbstractRawDefaultConfigSource.NAME)
-                    && !configSourceName.contains("Runtime Defaults")
-                    && !configSourceName.contains("application.properties");
-        }
-
-        return false;
     }
 }

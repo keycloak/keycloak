@@ -102,6 +102,8 @@ public interface LoginFormsProvider extends Provider {
 
     Response createFrontChannelLogoutPage();
 
+    Response createLogoutConfirmPage();
+
     LoginFormsProvider setAuthenticationSession(AuthenticationSessionModel authenticationSession);
 
     LoginFormsProvider setClientSessionCode(String accessCode);
