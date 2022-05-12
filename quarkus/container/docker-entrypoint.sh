@@ -83,4 +83,4 @@ if [[ $ENTRYPOINT_TEST == 1 ]]; then
 fi
 
 # Pass all command parameters to actual startup script
-exec /opt/keycloak/bin/kc.sh start "$@"
+exec /opt/keycloak/bin/kc.sh "$@"
