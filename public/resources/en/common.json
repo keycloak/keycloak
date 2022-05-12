@@ -201,5 +201,7 @@
   "password": "Password",
   "passwordConfirmation": "Password confirmation",
   "temporaryPassword": "Temporary",
-  "temporaryPasswordHelpText": "If enabled, the user must change the password on next login"
+  "temporaryPasswordHelpText": "If enabled, the user must change the password on next login",
+  "forbidden_one": "Forbidden, permission needed:",
+  "forbidden_other": "Forbidden, permissions needed:"
 }

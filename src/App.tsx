@@ -71,7 +71,7 @@ const SecuredRoute = ({ route }: SecuredRouteProps) => {
       </Suspense>
     );
 
-  return <ForbiddenSection />;
+  return <ForbiddenSection permissionNeeded={route.access} />;
 };
 
 export const App = ({ adminClient }: AdminClientProps) => {
