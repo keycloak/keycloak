@@ -174,10 +174,10 @@ describe("Realm settings client policies tab tests", () => {
       "Test again",
       "Test Again Description"
     );
-    masthead.checkNotificationMessage("New policy created");
+    masthead.checkNotificationMessage("New policy created", true);
     sidebarPage.waitForPageLoad();
     cy.wait("@save");
-    masthead.closeLastAlertMessage();
+    masthead.closeAllAlertMessages();
     realmSettingsPage.deleteClientPolicyFromDetails();
     modalUtils.confirmModal();
     masthead.checkNotificationMessage("Client policy deleted");

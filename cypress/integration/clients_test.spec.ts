@@ -16,6 +16,7 @@ import ClientDetailsPage, {
   ClientsDetailsTab,
 } from "../support/pages/admin_console/manage/clients/client_details/ClientDetailsPage";
 import CommonPage from "../support/pages/CommonPage";
+import ListingPage from "../support/pages/admin_console/ListingPage";
 
 let itemId = "client_crud";
 const loginPage = new LoginPage();
@@ -23,6 +24,7 @@ const associatedRolesPage = new AssociatedRolesPage();
 const createClientPage = new CreateClientPage();
 const clientDetailsPage = new ClientDetailsPage();
 const commonPage = new CommonPage();
+const listingPage = new ListingPage();
 
 describe("Clients test", () => {
   describe("Client details - Client scopes subtab", () => {
@@ -721,23 +723,122 @@ describe("Clients test", () => {
       commonPage.tableUtils().clickRowItemLink(serviceAccountName);
       serviceAccountTab
         .goToServiceAccountTab()
-        .checkRoles(["manage-account", "offline_access", "uma_authorization"]);
+        .checkRoles([
+          "default-roles-master",
+          "offline_access",
+          "uma_authorization",
+          "manage-account",
+          "view-profile",
+          "manage-account-links",
+          "uma_protection",
+        ])
+        .hideInheritedRoles();
+
+      commonPage.sidebar().waitForPageLoad();
+
+      serviceAccountTab
+        .checkRoles(
+          [
+            "offline_access",
+            "uma_authorization",
+            "manage-account",
+            "view-profile",
+            "manage-account-links",
+          ],
+          false
+        )
+        .checkRoles(["default-roles-master", "uma_protection"])
+        .unhideInheritedRoles();
+
+      commonPage.sidebar().waitForPageLoad();
+
+      serviceAccountTab.checkRoles([
+        "default-roles-master",
+        "offline_access",
+        "uma_authorization",
+        "manage-account",
+        "view-profile",
+        "manage-account-links",
+        "uma_protection",
+      ]);
+
+      listingPage
+        .searchItem("testing", false)
+        .checkEmptyList()
+        .searchItem("", false);
+
+      serviceAccountTab.checkRoles([
+        "default-roles-master",
+        "offline_access",
+        "uma_authorization",
+        "manage-account",
+        "view-profile",
+        "manage-account-links",
+        "uma_protection",
+      ]);
     });
 
-    it.skip("Assign", () => {
+    it("Assign", () => {
       commonPage.tableUtils().clickRowItemLink(serviceAccountName);
       serviceAccountTab
         .goToServiceAccountTab()
         .assignRole(false)
-        .selectRow("create-realm")
+        .selectRow("create-realm", true)
         .assign();
       commonPage.masthead().checkNotificationMessage("Role mapping updated");
+
       serviceAccountTab.selectRow("create-realm").unAssign();
+
       commonPage.sidebar().waitForPageLoad();
       commonPage.modalUtils().checkModalTitle("Remove mapping?").confirmModal();
       commonPage
         .masthead()
         .checkNotificationMessage("Scope mapping successfully removed");
+
+      cy.intercept("/admin/realms/master/clients").as("assignRoles");
+      serviceAccountTab.checkRoles(["create-realm"], false).assignRole(false);
+
+      cy.wait("@assignRoles");
+      commonPage.sidebar().waitForPageLoad();
+
+      serviceAccountTab
+        .selectRow("offline_access", true)
+        .selectRow("admin", true)
+        .selectRow("create-realm", true)
+        .assign();
+
+      commonPage.masthead().checkNotificationMessage("Role mapping updated");
+      commonPage.sidebar().waitForPageLoad();
+
+      serviceAccountTab
+        .selectRow("offline_access")
+        .selectRow("admin")
+        .unAssign();
+
+      commonPage.modalUtils().confirmModal();
+
+      serviceAccountTab
+        .checkRoles(["admin"], false)
+        .checkRoles(["create-realm"]);
+
+      listingPage.clickRowDetails("create-realm");
+      serviceAccountTab.unAssignFromDropdown();
+
+      commonPage.modalUtils().confirmModal();
+
+      commonPage.sidebar().waitForPageLoad();
+
+      serviceAccountTab
+        .checkRoles(["create-realm"], false)
+        .checkRoles([
+          "default-roles-master",
+          "offline_access",
+          "uma_authorization",
+          "manage-account",
+          "view-profile",
+          "manage-account-links",
+          "uma_protection",
+        ]);
     });
   });
 

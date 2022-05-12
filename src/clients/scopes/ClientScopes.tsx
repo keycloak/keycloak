@@ -258,7 +258,7 @@ export const ClientScopes = ({
 
                         setKebabOpen(false);
                         addAlert(
-                          t("clientScopeRemoveSuccess"),
+                          t("clients:clientScopeRemoveSuccess"),
                           AlertVariant.success
                         );
                         refresh();
@@ -307,7 +307,10 @@ export const ClientScopes = ({
                   row,
                   row.type as ClientScope
                 );
-                addAlert(t("clientScopeRemoveSuccess"), AlertVariant.success);
+                addAlert(
+                  t("clients:clientScopeRemoveSuccess"),
+                  AlertVariant.success
+                );
                 refresh();
               } catch (error) {
                 addError("clients:clientScopeRemoveError", error);
