@@ -18,7 +18,7 @@ import { useUserProfile } from "./UserProfileContext";
 
 export const AttributesGroupTab = () => {
   const { config, save } = useUserProfile();
-  const { t } = useTranslation();
+  const { t } = useTranslation("attributes-group");
   const history = useHistory();
   const { realm } = useRealm();
   const [key, setKey] = useState(0);
@@ -75,7 +75,7 @@ export const AttributesGroupTab = () => {
                 <Link {...props} to={toNewAttributesGroup({ realm })} />
               )}
             >
-              {t("attributes-group:createGroupText")}
+              {t("createGroupText")}
             </Button>
           </ToolbarItem>
         }
@@ -106,9 +106,9 @@ export const AttributesGroupTab = () => {
         ]}
         emptyState={
           <ListEmptyState
-            message={t("attributes-group:emptyStateMessage")}
-            instructions={t("attributes-group:emptyStateInstructions")}
-            primaryActionText={t("attributes-group:createGroupText")}
+            message={t("emptyStateMessage")}
+            instructions={t("emptyStateInstructions")}
+            primaryActionText={t("createGroupText")}
             onPrimaryAction={() =>
               history.push(toNewAttributesGroup({ realm }))
             }
