@@ -19,16 +19,6 @@
         
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
-        
-      - name: Container metadata
-        id: meta
-        uses: docker/metadata-action@v4
-        with:
-          images: quay.io/keycloak/keycloak
-          tags: |
-            type=ref,event=branch
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
 
       - name: Login to Quay
         uses: docker/login-action@v2
@@ -37,7 +27,25 @@
           username: ${{ secrets.QUAY_USERNAME }}
           password: ${{ secrets.QUAY_TOKEN }}
 
-      - name: Build and push
+      - name: Login to Docker
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}          
+
+      - name: Container metadata
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: |
+            keycloak/keycloak
+            quay.io/keycloak/keycloak
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+
+      - name: Build and push the image
         uses: docker/build-push-action@v3
         with:
           context: quarkus/container
