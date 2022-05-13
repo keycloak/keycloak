@@ -32,6 +32,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -379,14 +380,15 @@ public class QuarkusJpaConnectionProviderFactory extends AbstractJpaConnectionPr
      * @param realmRep imported Realm representation
      */
     private void sanitizeClientUrlsForImport(RealmRepresentation realmRep) {
-        List<ClientRepresentation> clients = realmRep.getClients();
+        List<ClientRepresentation> clients = Optional.ofNullable(realmRep.getClients()).orElse(Collections.emptyList());
+
         for (ClientRepresentation client : clients) {
             //admin-cli, broker, realm-management client have no baseUrl set.
             if(client.getBaseUrl() != null){
                 client.setBaseUrl(client.getBaseUrl().replaceAll("\\s+", "%20"));
             }
 
-            List<String> redirectUris = client.getRedirectUris();
+            List<String> redirectUris = Optional.ofNullable(client.getRedirectUris()).orElse(Collections.emptyList());
             List<String> sanitizedRedirectUris = new ArrayList<>();
 
             for (String redirectUri : redirectUris) {

@@ -18,12 +18,8 @@
 package org.keycloak.it.cli.dist;
 
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.function.Consumer;
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
 import org.keycloak.it.junit5.extension.BeforeStartDistribution;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
@@ -53,11 +49,28 @@ public class ImportAtStartupDistTest {
         cliResult.assertError("Instead of manually specifying the files to import, just copy them to the 'data/import' directory.");
     }
 
+    @Test
+    @BeforeStartDistribution(CopyRealmWithWhiteSpaceFile.class)
+    @Launch({"start-dev", "--import-realm"})
+    void testImportWithWhiteSpacesInRealmNameSucceeds(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertMessage("Imported realm Test Realm from file");
+    }
+
+
     public static class CreateRealmConfigurationFile implements Consumer<KeycloakDistribution> {
 
         @Override
         public void accept(KeycloakDistribution distribution) {
             distribution.copyOrReplaceFileFromClasspath("/quickstart-realm.json", Path.of("data", "import", "realm.json"));
+        }
+    }
+
+    public static class CopyRealmWithWhiteSpaceFile implements Consumer<KeycloakDistribution> {
+
+        @Override
+        public void accept(KeycloakDistribution distribution) {
+            distribution.copyOrReplaceFileFromClasspath("/realm-with-whitespace-name.json", Path.of("data", "import", "realm.json"));
         }
     }
 }
