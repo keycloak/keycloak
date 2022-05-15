@@ -12,8 +12,6 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import javax.json.Json;
-import javax.json.JsonObjectBuilder;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Context;
@@ -47,6 +45,7 @@ import org.keycloak.theme.FreeMarkerUtil;
 import org.keycloak.theme.Theme;
 import org.keycloak.theme.beans.MessageFormatterMethod;
 import org.keycloak.urls.UrlType;
+import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.MediaType;
 
 /**
@@ -162,13 +161,12 @@ public class AccountConsole {
     
     private String messagesToJsonString(Properties props) {
         if (props == null) return "";
-        
-        JsonObjectBuilder json = Json.createObjectBuilder();
-        for (String prop : props.stringPropertyNames()) {
-            json.add(prop, convertPropValue(props.getProperty(prop)));
+
+        try {
+            return JsonSerialization.writeValueAsString(props);
+        } catch (IOException e) {
+            throw new RuntimeException("could not write value", e);
         }
-        
-        return json.build().toString();
     }
     
     private String convertPropValue(String propertyValue) {
