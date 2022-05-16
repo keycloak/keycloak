@@ -516,6 +516,10 @@ jobs:
           path: ~/.m2/repository/org/keycloak/
           name: keycloak-artifacts.zip
 
+      - uses: browser-actions/setup-chrome@latest
+        if: ${{ github.event_name != 'pull_request' || env.GIT_DIFF != 0 }}
+        run: chrome --version
+
       - name: Run WebAuthn tests
         if: ${{ github.event_name != 'pull_request' || env.GIT_DIFF != 0 }}
         run: |
