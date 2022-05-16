@@ -231,10 +231,15 @@
         "default": {
             "embedded": "${keycloak.connectionsHotRod.embedded:true}",
             "embeddedPort": "${keycloak.connectionsHotRod.embeddedPort:11444}",
-            "enableSecurity": "${keycloak.connectionsHotRod.enableSecurity:false}"
+            "enableSecurity": "${keycloak.connectionsHotRod.enableSecurity:false}",
+            "port": "${keycloak.connectionsHotRod.port:11444}",
+            "host": "${keycloak.connectionsHotRod.host:localhost}",
+            "configureRemoteCaches": "${keycloak.connectionsHotRod.configureRemoteCaches:false}",
+            "username": "${keycloak.connectionsHotRod.username:admin}",
+            "password": "${keycloak.connectionsHotRod.password:admin}",
+            "reindexCaches": "${keycloak.connectionsHotRod.reindexCaches:}"
         }
     },
-
     "scripting": {
     },
 
