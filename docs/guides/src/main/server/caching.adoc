@@ -99,6 +99,8 @@ To specify your own cache configuration file, enter this command:
 
 <@kc.build parameters="--cache-config-file=my-cache-file.xml"/>
 
+The configuration file is relative to the `conf/` directory.
+
 == Transport stacks
 Transport stacks ensure that distributed cache nodes in a cluster communicate in a reliable fashion.
 Keycloak supports a wide range of transport stacks:

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Red Hat, Inc. and/or its affiliates
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -686,7 +686,7 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
             authorizedGroups.removeIf(id -> {
                 Map<Resource.FilterOption, String[]> values = new EnumMap<>(Resource.FilterOption.class);
                 values.put(Resource.FilterOption.EXACT_NAME, new String[] {"group.resource." + id});
-                return resourceStore.findByResourceServer(null, values, 0, 1).isEmpty();
+                return resourceStore.find(realm, null, values, 0, 1).isEmpty();
             });
 
             criteria = criteria.compare(SearchableFields.ASSIGNED_GROUP, Operator.IN, authorizedGroups);

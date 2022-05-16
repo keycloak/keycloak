@@ -122,6 +122,7 @@ public class MapFieldPredicates {
         put(ROLE_PREDICATES, RoleModel.SearchableFields.DESCRIPTION,              MapRoleEntity::getDescription);
         put(ROLE_PREDICATES, RoleModel.SearchableFields.NAME,                     MapRoleEntity::getName);
         put(ROLE_PREDICATES, RoleModel.SearchableFields.IS_CLIENT_ROLE,           MapRoleEntity::isClientRole);
+        put(ROLE_PREDICATES, RoleModel.SearchableFields.COMPOSITE_ROLE,           MapFieldPredicates::checkCompositeRoles);
 
         put(USER_PREDICATES, UserModel.SearchableFields.REALM_ID,                 MapUserEntity::getRealmId);
         put(USER_PREDICATES, UserModel.SearchableFields.USERNAME,                 MapUserEntity::getUsername);
@@ -144,6 +145,8 @@ public class MapFieldPredicates {
         put(AUTHENTICATION_SESSION_PREDICATES, RootAuthenticationSessionModel.SearchableFields.EXPIRATION,  MapRootAuthenticationSessionEntity::getExpiration);
 
         put(AUTHZ_RESOURCE_SERVER_PREDICATES, ResourceServer.SearchableFields.ID, predicateForKeyField(MapResourceServerEntity::getId));
+        put(AUTHZ_RESOURCE_SERVER_PREDICATES, ResourceServer.SearchableFields.CLIENT_ID, MapResourceServerEntity::getClientId);
+        put(AUTHZ_RESOURCE_SERVER_PREDICATES, ResourceServer.SearchableFields.REALM_ID, MapResourceServerEntity::getRealmId);
 
         put(AUTHZ_RESOURCE_PREDICATES, Resource.SearchableFields.ID, predicateForKeyField(MapResourceEntity::getId));
         put(AUTHZ_RESOURCE_PREDICATES, Resource.SearchableFields.NAME, MapResourceEntity::getName);
@@ -153,10 +156,12 @@ public class MapFieldPredicates {
         put(AUTHZ_RESOURCE_PREDICATES, Resource.SearchableFields.URI, MapFieldPredicates::checkResourceUri);
         put(AUTHZ_RESOURCE_PREDICATES, Resource.SearchableFields.SCOPE_ID, MapFieldPredicates::checkResourceScopes);
         put(AUTHZ_RESOURCE_PREDICATES, Resource.SearchableFields.OWNER_MANAGED_ACCESS, MapResourceEntity::isOwnerManagedAccess);
+        put(AUTHZ_RESOURCE_PREDICATES, Resource.SearchableFields.REALM_ID, MapResourceEntity::getRealmId);
 
         put(AUTHZ_SCOPE_PREDICATES, Scope.SearchableFields.ID, predicateForKeyField(MapScopeEntity::getId));
         put(AUTHZ_SCOPE_PREDICATES, Scope.SearchableFields.RESOURCE_SERVER_ID, MapScopeEntity::getResourceServerId);
         put(AUTHZ_SCOPE_PREDICATES, Scope.SearchableFields.NAME, MapScopeEntity::getName);
+        put(AUTHZ_SCOPE_PREDICATES, Scope.SearchableFields.REALM_ID, MapScopeEntity::getRealmId);
 
         put(AUTHZ_PERMISSION_TICKET_PREDICATES, PermissionTicket.SearchableFields.ID, predicateForKeyField(MapPermissionTicketEntity::getId));
         put(AUTHZ_PERMISSION_TICKET_PREDICATES, PermissionTicket.SearchableFields.OWNER, MapPermissionTicketEntity::getOwner);
@@ -166,12 +171,14 @@ public class MapFieldPredicates {
         put(AUTHZ_PERMISSION_TICKET_PREDICATES, PermissionTicket.SearchableFields.SCOPE_ID, predicateForKeyField(MapPermissionTicketEntity::getScopeId));
         put(AUTHZ_PERMISSION_TICKET_PREDICATES, PermissionTicket.SearchableFields.POLICY_ID, predicateForKeyField(MapPermissionTicketEntity::getPolicyId));
         put(AUTHZ_PERMISSION_TICKET_PREDICATES, PermissionTicket.SearchableFields.GRANTED_TIMESTAMP, MapPermissionTicketEntity::getGrantedTimestamp);
+        put(AUTHZ_PERMISSION_TICKET_PREDICATES, PermissionTicket.SearchableFields.REALM_ID, MapPermissionTicketEntity::getRealmId);
 
         put(AUTHZ_POLICY_PREDICATES, Policy.SearchableFields.ID, predicateForKeyField(MapPolicyEntity::getId));
         put(AUTHZ_POLICY_PREDICATES, Policy.SearchableFields.NAME, MapPolicyEntity::getName);
         put(AUTHZ_POLICY_PREDICATES, Policy.SearchableFields.OWNER, MapPolicyEntity::getOwner);
         put(AUTHZ_POLICY_PREDICATES, Policy.SearchableFields.TYPE, MapPolicyEntity::getType);
         put(AUTHZ_POLICY_PREDICATES, Policy.SearchableFields.RESOURCE_SERVER_ID, MapPolicyEntity::getResourceServerId);
+        put(AUTHZ_POLICY_PREDICATES, Policy.SearchableFields.REALM_ID, MapPolicyEntity::getRealmId);
         put(AUTHZ_POLICY_PREDICATES, Policy.SearchableFields.RESOURCE_ID, MapFieldPredicates::checkPolicyResources);
         put(AUTHZ_POLICY_PREDICATES, Policy.SearchableFields.SCOPE_ID, MapFieldPredicates::checkPolicyScopes);
         put(AUTHZ_POLICY_PREDICATES, Policy.SearchableFields.CONFIG, MapFieldPredicates::checkPolicyConfig);
@@ -322,6 +329,14 @@ public class MapFieldPredicates {
             final List<String> attrs = ue.getAttribute(attrNameS);
             return attrs != null && attrs.stream().anyMatch(valueComparator);
         };
+
+        return mcb.fieldCompare(Boolean.TRUE::equals, getter);
+    }
+
+    private static MapModelCriteriaBuilder<Object, MapRoleEntity, RoleModel> checkCompositeRoles(MapModelCriteriaBuilder<Object, MapRoleEntity, RoleModel> mcb, Operator op, Object[] values) {
+        String roleIdS = ensureEqSingleValue(RoleModel.SearchableFields.COMPOSITE_ROLE, "composite_role_id", op, values);
+        Function<MapRoleEntity, ?> getter;
+        getter = re -> Optional.ofNullable(re.getCompositeRoles()).orElseGet(Collections::emptySet).contains(roleIdS);
 
         return mcb.fieldCompare(Boolean.TRUE::equals, getter);
     }

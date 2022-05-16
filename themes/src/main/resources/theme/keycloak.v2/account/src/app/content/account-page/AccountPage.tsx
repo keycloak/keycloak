@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 import * as React from 'react';
-import { ActionGroup, 
-    Button, 
-    Form, 
-    FormGroup, 
-    TextInput, 
-    Grid, 
-    GridItem, 
-    ExpandableSection, 
+import { ActionGroup,
+    Button,
+    Form,
+    FormGroup,
+    TextInput,
+    InputGroup,
+    Grid,
+    GridItem,
+    ExpandableSection,
     ValidatedOptions,
     PageSection,
     PageSectionVariants,
@@ -40,6 +41,7 @@ import { LocaleSelector } from '../../widgets/LocaleSelectors';
 import { KeycloakContext } from '../../keycloak-service/KeycloakContext';
 import { KeycloakService } from '../../keycloak-service/keycloak.service';
 import { AIACommand } from '../../util/AIACommand';
+import {ExternalLinkSquareAltIcon} from "@patternfly/react-icons";
 
 declare const features: Features;
 declare const locale: string;
@@ -69,6 +71,8 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
     private isRegistrationEmailAsUsername: boolean = features.isRegistrationEmailAsUsername;
     private isEditUserNameAllowed: boolean = features.isEditUserNameAllowed;
     private isDeleteAccountAllowed: boolean = features.deleteAccountAllowed;
+    private isUpdateEmailFeatureEnabled: boolean = features.updateEmailFeatureEnabled;
+    private isUpdateEmailActionEnabled: boolean = features.updateEmailActionEnabled;
     private readonly DEFAULT_STATE: AccountPageState = {
         errors: {
             username: '',
@@ -155,6 +159,10 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
         new AIACommand(keycloak, "delete_account").execute();
     }
 
+    private handleEmailUpdate = (keycloak: KeycloakService): void => {
+        new AIACommand(keycloak, "UPDATE_EMAIL").execute();
+    }
+
     public render(): React.ReactNode {
         const fields: FormFields = this.state.formFields;
         return (
@@ -189,8 +197,8 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
                                 )}
                             </FormGroup>
                         )}
-                        <FormGroup
-                            label={Msg.localize("email")}
+                        {!this.isUpdateEmailFeatureEnabled && <FormGroup
+                            label={Msg.localize('email')}
                             fieldId="email-address"
                             helperTextInvalid={this.state.errors.email}
                             validated={
@@ -213,7 +221,35 @@ export class AccountPage extends React.Component<AccountPageProps, AccountPageSt
                                         : ValidatedOptions.default
                                 }
                             ></TextInput>
-                        </FormGroup>
+                        </FormGroup> }
+                        {this.isUpdateEmailFeatureEnabled && <FormGroup
+                            label={Msg.localize('email')}
+                            fieldId="email-address"
+                        >
+                            <InputGroup>
+                                <TextInput
+                                    isDisabled
+                                    type="email"
+                                    id="email-address"
+                                    name="email"
+                                    value={fields.email}
+                                >
+                                </TextInput>
+                                {this.isUpdateEmailActionEnabled && (!this.isRegistrationEmailAsUsername || this.isEditUserNameAllowed) &&
+                                    <KeycloakContext.Consumer>
+                                        { (keycloak: KeycloakService) => (
+                                            <Button id="update-email-btn"
+                                                    variant="link"
+                                                    onClick={() => this.handleEmailUpdate(keycloak)}
+                                                    icon={<ExternalLinkSquareAltIcon/>}
+                                                    iconPosition="right">
+                                                <Msg msgKey="updateEmail" />
+                                            </Button>
+                                        )}
+                                    </KeycloakContext.Consumer>
+                                }
+                            </InputGroup>
+                        </FormGroup> }
                         <FormGroup
                             label={Msg.localize("firstName")}
                             fieldId="first-name"

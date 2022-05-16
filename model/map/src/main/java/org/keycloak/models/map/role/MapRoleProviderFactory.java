@@ -28,6 +28,7 @@ import org.keycloak.provider.InvalidationHandler;
 import static org.keycloak.models.map.common.AbstractMapProviderFactory.MapProviderObjectType.CLIENT_BEFORE_REMOVE;
 import static org.keycloak.models.map.common.AbstractMapProviderFactory.MapProviderObjectType.REALM_BEFORE_REMOVE;
 import static org.keycloak.models.map.common.AbstractMapProviderFactory.MapProviderObjectType.ROLE_AFTER_REMOVE;
+import static org.keycloak.models.map.common.AbstractMapProviderFactory.MapProviderObjectType.ROLE_BEFORE_REMOVE;
 
 public class MapRoleProviderFactory extends AbstractMapProviderFactory<MapRoleProvider, MapRoleEntity, RoleModel> implements RoleProviderFactory<MapRoleProvider>, InvalidationHandler {
 
@@ -51,6 +52,8 @@ public class MapRoleProviderFactory extends AbstractMapProviderFactory<MapRolePr
             create(session).preRemove((RealmModel) params[0]);
         } else if (type == CLIENT_BEFORE_REMOVE) {
             create(session).removeRoles((ClientModel) params[1]);
+        } else if (type == ROLE_BEFORE_REMOVE) {
+            create(session).preRemove((RealmModel) params[0], (RoleModel) params[1]);
         } else if (type == ROLE_AFTER_REMOVE) {
             session.getKeycloakSessionFactory().publish(new RoleContainerModel.RoleRemovedEvent() {
                 @Override public RoleModel getRole() { return (RoleModel) params[1]; }

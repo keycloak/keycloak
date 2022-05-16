@@ -38,7 +38,6 @@
     <modules>
         <module>app-server-spi</module>
         <module>jboss</module>
-        <module>karaf</module>
         <module>tomcat</module>
         <module>undertow</module>
         <module>jetty</module>

@@ -17,16 +17,15 @@
 
 package org.keycloak.common;
 
+import static org.keycloak.common.Profile.Type.DEPRECATED;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
-
 import org.jboss.logging.Logger;
-
-import static org.keycloak.common.Profile.Type.DEPRECATED;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -163,7 +162,8 @@ public class Profile {
         DYNAMIC_SCOPES("Dynamic OAuth 2.0 scopes", Type.EXPERIMENTAL),
         CLIENT_SECRET_ROTATION("Client Secret Rotation", Type.PREVIEW),
         STEP_UP_AUTHENTICATION("Step-up Authentication", Type.DEFAULT),
-        RECOVERY_CODES("Recovery codes", Type.PREVIEW);
+        RECOVERY_CODES("Recovery codes", Type.PREVIEW),
+        UPDATE_EMAIL("Update Email Action", Type.PREVIEW);
 
 
         private final Type typeProject;

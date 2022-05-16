@@ -6,8 +6,6 @@ import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 
 @AppServerContainer(ContainerConstants.APP_SERVER_JETTY94)
-@AppServerContainer(ContainerConstants.APP_SERVER_JETTY93)
-@AppServerContainer(ContainerConstants.APP_SERVER_JETTY92)
 public class JettyDemoServletAdapterTest extends DemoServletsAdapterTest {
 
     @Ignore("KEYCLOAK-9614")

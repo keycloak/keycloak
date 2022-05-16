@@ -30,11 +30,12 @@ import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.OAuth2DeviceCodeModel;
-import org.keycloak.models.OAuth2DeviceTokenStoreProvider;
 import org.keycloak.models.OAuth2DeviceUserCodeModel;
 import org.keycloak.models.OAuth2DeviceUserCodeProvider;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.protocol.AuthorizationEndpointBase;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.endpoints.AuthorizationEndpointChecker;
@@ -69,6 +70,8 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
+
+import java.util.Map;
 
 import static org.keycloak.protocol.oidc.grants.device.DeviceGrantType.OAUTH2_DEVICE_USER_CODE;
 
@@ -161,8 +164,10 @@ public class DeviceEndpoint extends AuthorizationEndpointBase implements RealmRe
         // To inform "expired_token" to the client, the lifespan of the cache provider is longer than device code
         int lifespanSeconds = expiresIn + interval + 10;
 
-        OAuth2DeviceTokenStoreProvider store = session.getProvider(OAuth2DeviceTokenStoreProvider.class);
-        store.put(deviceCode, userCode, lifespanSeconds);
+        SingleUseObjectProvider singleUseStore = session.getProvider(SingleUseObjectProvider.class);
+
+        singleUseStore.put(deviceCode.serializeKey(), lifespanSeconds, deviceCode.toMap());
+        singleUseStore.put(userCode.serializeKey(), lifespanSeconds, userCode.serializeValue());
 
         try {
             String deviceUrl = DeviceGrantType.oauth2DeviceVerificationUrl(session.getContext().getUri()).build(realm.getName())
@@ -212,10 +217,9 @@ public class DeviceEndpoint extends AuthorizationEndpointBase implements RealmRe
         } else {
             // code exists, probably due to using a verification_uri_complete. Start the authentication considering the client
             // that started the flow.
-            OAuth2DeviceTokenStoreProvider store = session.getProvider(OAuth2DeviceTokenStoreProvider.class);
             OAuth2DeviceUserCodeProvider userCodeProvider = session.getProvider(OAuth2DeviceUserCodeProvider.class);
             String formattedUserCode = userCodeProvider.format(userCode);
-            OAuth2DeviceCodeModel deviceCode = store.getByUserCode(realm, formattedUserCode);
+            OAuth2DeviceCodeModel deviceCode = getDeviceByUserCode(session, realm, formattedUserCode);
 
             if (deviceCode == null) {
                 return invalidUserCodeResponse(Messages.OAUTH2_DEVICE_INVALID_USER_CODE, "device code not found (it may already have been used)");
@@ -285,6 +289,21 @@ public class DeviceEndpoint extends AuthorizationEndpointBase implements RealmRe
                 .setAttribute(Constants.SKIP_LINK, true).setSuccess(Messages.OAUTH2_DEVICE_VERIFICATION_COMPLETE)
                 .createInfoPage();
         }
+    }
+
+    public static OAuth2DeviceCodeModel getDeviceByUserCode(KeycloakSession session, RealmModel realm, String userCode) {
+        SingleUseObjectProvider singleUseStore = session.getProvider(SingleUseObjectProvider.class);
+        Map<String, String> notes = singleUseStore.get(OAuth2DeviceUserCodeModel.createKey(realm, userCode));
+
+        if (notes != null) {
+            OAuth2DeviceUserCodeModel data = OAuth2DeviceUserCodeModel.fromCache(realm, userCode, notes);
+            String deviceCode = data.getDeviceCode();
+            notes = singleUseStore.get(OAuth2DeviceCodeModel.createKey(deviceCode));
+
+            return notes != null ? OAuth2DeviceCodeModel.fromCache(realm, deviceCode, notes) : null;
+        }
+
+        return null;
     }
 
     /**

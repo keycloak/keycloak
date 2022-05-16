@@ -17,6 +17,11 @@
 
 package org.keycloak.testsuite.cluster;
 
+import static org.junit.Assert.assertEquals;
+import static org.keycloak.testsuite.util.WaitUtils.pause;
+
+import java.io.IOException;
+import javax.mail.MessagingException;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Test;
 import org.keycloak.services.managers.AuthenticationSessionManager;
@@ -26,12 +31,6 @@ import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.LoginUpdateProfilePage;
 import org.openqa.selenium.Cookie;
 import org.openqa.selenium.WebDriver;
-
-import javax.mail.MessagingException;
-import java.io.IOException;
-
-import static org.junit.Assert.assertEquals;
-import static org.keycloak.testsuite.util.WaitUtils.pause;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -109,7 +108,7 @@ public class AuthenticationSessionFailoverClusterTest extends AbstractFailoverCl
         updateProfilePage.assertCurrent();
 
         // Successfully update profile and assert user logged
-        updateProfilePage.update("John", "Doe3", "john@doe3.com");
+        updateProfilePage.prepareUpdate().firstName("John").lastName("Doe3").email("john@doe3.com").submit();
         appPage.assertCurrent();
     }
 

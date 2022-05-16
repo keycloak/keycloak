@@ -17,6 +17,16 @@
 
 package org.keycloak.testsuite.ui.account2;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.keycloak.testsuite.admin.Users.setPasswordFor;
+import static org.keycloak.testsuite.util.UIUtils.refreshPageAndWaitForLoad;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Test;
@@ -27,15 +37,6 @@ import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.ui.account2.page.AbstractLoggedInPage;
 import org.keycloak.testsuite.ui.account2.page.PersonalInfoPage;
 import org.keycloak.testsuite.util.UserBuilder;
-
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import static org.junit.Assert.*;
-import static org.keycloak.testsuite.admin.Users.setPasswordFor;
-import static org.keycloak.testsuite.util.UIUtils.refreshPageAndWaitForLoad;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>

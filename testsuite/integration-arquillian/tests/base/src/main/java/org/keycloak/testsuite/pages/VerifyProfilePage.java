@@ -75,14 +75,14 @@ public class VerifyProfilePage extends AbstractPage {
 
         update(firstName, lastName);
     }
-    
+
     public void updateEmail(String email, String firstName, String lastName) {
-        
+
         emailInput.clear();
         if (emailInput != null) {
             emailInput.sendKeys(email);
         }
-        
+
         firstNameInput.clear();
         if (firstName != null) {
             firstNameInput.sendKeys(firstName);

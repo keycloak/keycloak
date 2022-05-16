@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -186,12 +186,12 @@ public class FreeMarkerAccountProvider implements AccountProvider {
                 if (!realm.isUserManagedAccessAllowed()) {
                     return Response.status(Status.FORBIDDEN).build();
                 }
-                attributes.put("authorization", new AuthorizationBean(session, user, uriInfo));
+                attributes.put("authorization", new AuthorizationBean(session, realm, user, uriInfo));
             case RESOURCE_DETAIL:
                 if (!realm.isUserManagedAccessAllowed()) {
                     return Response.status(Status.FORBIDDEN).build();
                 }
-                attributes.put("authorization", new AuthorizationBean(session, user, uriInfo));
+                attributes.put("authorization", new AuthorizationBean(session, realm, user, uriInfo));
         }
 
         return processTemplate(theme, page, attributes, locale);

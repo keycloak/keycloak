@@ -140,6 +140,9 @@ public class LdapRoleModelCriteriaBuilder extends LdapModelCriteriaBuilder<LdapR
                     String field = modelFieldNameToLdap(roleMapperConfig, modelField);
                     return new LdapRoleModelCriteriaBuilder(roleMapperConfig, 
                             () -> equal(field, value[0], LdapMapEscapeStrategy.DEFAULT, false));
+                } else if (modelField == RoleModel.SearchableFields.COMPOSITE_ROLE) {
+                    // Not supported at the moment
+                    return new LdapRoleModelCriteriaBuilder(roleMapperConfig, StringBuilder::new);
                 } else {
                     throw new CriterionNotSupportedException(modelField, op);
                 }

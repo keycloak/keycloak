@@ -279,6 +279,14 @@ public class MapRoleProvider implements RoleProvider {
         tx.delete(withCriteria(mcb));
     }
 
+    public void preRemove(RealmModel realm, RoleModel role) {
+        // Remove reference from all composite roles
+        DefaultModelCriteria<RoleModel> mcb = criteria();
+        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
+                .compare(SearchableFields.COMPOSITE_ROLE, Operator.EQ, role.getId());
+        tx.read(withCriteria(mcb)).forEach(mapRoleEntity -> mapRoleEntity.removeCompositeRole(role.getId()));
+    }
+
     @Override
     public void close() {
     }

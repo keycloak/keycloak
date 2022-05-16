@@ -32,6 +32,7 @@ public interface PermissionTicket {
         public static final SearchableModelField<PermissionTicket> SCOPE_ID = new SearchableModelField<>("scopeId", String.class);
         public static final SearchableModelField<PermissionTicket> POLICY_ID = new SearchableModelField<>("policyId", String.class);
         public static final SearchableModelField<PermissionTicket> GRANTED_TIMESTAMP = new SearchableModelField<>("grantedTimestamp", String.class);
+        public static final SearchableModelField<PermissionTicket> REALM_ID = new SearchableModelField<>("realmId", String.class);
     }
     
     public static enum FilterOption {

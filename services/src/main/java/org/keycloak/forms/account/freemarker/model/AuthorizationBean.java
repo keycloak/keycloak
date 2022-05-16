@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Red Hat, Inc. and/or its affiliates
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -52,6 +52,7 @@ import org.keycloak.services.util.ResolveRelative;
 public class AuthorizationBean {
 
     private final KeycloakSession session;
+    private final RealmModel realm;
     private final UserModel user;
     private final AuthorizationProvider authorization;
     private final UriInfo uriInfo;
@@ -61,15 +62,16 @@ public class AuthorizationBean {
     private Collection<ResourceBean> requestsWaitingPermission;
     private Collection<ResourceBean> resourcesWaitingOthersApproval;
 
-    public AuthorizationBean(KeycloakSession session, UserModel user, UriInfo uriInfo) {
+    public AuthorizationBean(KeycloakSession session, RealmModel realm, UserModel user, UriInfo uriInfo) {
         this.session = session;
+        this.realm = realm;
         this.user = user;
         this.uriInfo = uriInfo;
         authorization = session.getProvider(AuthorizationProvider.class);
         List<String> pathParameters = uriInfo.getPathParameters().get("resource_id");
 
         if (pathParameters != null && !pathParameters.isEmpty()) {
-            Resource resource = authorization.getStoreFactory().getResourceStore().findById(null, pathParameters.get(0));
+            Resource resource = authorization.getStoreFactory().getResourceStore().findById(realm, null, pathParameters.get(0));
 
             if (resource != null && !resource.getOwner().equals(user.getId())) {
                 throw new RuntimeException("User [" + user.getUsername() + "] can not access resource [" + resource.getId() + "]");
@@ -105,7 +107,7 @@ public class AuthorizationBean {
 
     public List<ResourceBean> getResources() {
         if (resources == null) {
-            resources = authorization.getStoreFactory().getResourceStore().findByOwner(null, user.getId()).stream()
+            resources = authorization.getStoreFactory().getResourceStore().findByOwner(realm, null, user.getId()).stream()
                     .filter(Resource::isOwnerManagedAccess)
                     .map(ResourceBean::new)
                     .collect(Collectors.toList());
@@ -122,7 +124,7 @@ public class AuthorizationBean {
 
             PermissionTicketStore ticketStore = authorization.getStoreFactory().getPermissionTicketStore();
 
-            userSharedResources = toResourceRepresentation(ticketStore.find(null, filters, null, null));
+            userSharedResources = toResourceRepresentation(ticketStore.find(realm,null, filters, null, null));
         }
         return userSharedResources;
     }
@@ -140,7 +142,7 @@ public class AuthorizationBean {
     }
 
     private ResourceBean getResource(String id) {
-        return new ResourceBean(authorization.getStoreFactory().getResourceStore().findById(null, id));
+        return new ResourceBean(authorization.getStoreFactory().getResourceStore().findById(realm, null, id));
     }
 
     public static class RequesterBean {
@@ -296,6 +298,8 @@ public class AuthorizationBean {
         }
 
         public Collection<ManagedPermissionBean> getPolicies() {
+            ResourceServer resourceServer = getResourceServer().getResourceServerModel();
+            RealmModel realm = resourceServer.getRealm();
             Map<Policy.FilterOption, String[]> filters = new EnumMap<>(Policy.FilterOption.class);
 
             filters.put(Policy.FilterOption.TYPE, new String[] {"uma"});
@@ -306,7 +310,7 @@ public class AuthorizationBean {
                 filters.put(Policy.FilterOption.OWNER, new String[] {getClientOwner().getId()});
             }
 
-            List<Policy> policies = authorization.getStoreFactory().getPolicyStore().findByResourceServer(getResourceServer().getResourceServerModel(), filters, null, null);
+            List<Policy> policies = authorization.getStoreFactory().getPolicyStore().find(realm, resourceServer, filters, null, null);
 
             if (policies.isEmpty()) {
                 return Collections.emptyList();
@@ -318,7 +322,7 @@ public class AuthorizationBean {
 
                         filters1.put(PermissionTicket.FilterOption.POLICY_ID, policy.getId());
 
-                        return authorization.getStoreFactory().getPermissionTicketStore().find(resourceServer.getResourceServerModel(), filters1, -1, 1)
+                        return authorization.getStoreFactory().getPermissionTicketStore().find(realm, resourceServer, filters1, -1, 1)
                                 .isEmpty();
                     })
                     .map(ManagedPermissionBean::new).collect(Collectors.toList());
@@ -370,7 +374,7 @@ public class AuthorizationBean {
     }
 
     private List<PermissionTicket> findPermissions(Map<PermissionTicket.FilterOption, String> filters) {
-        return authorization.getStoreFactory().getPermissionTicketStore().find(null, filters, null, null);
+        return authorization.getStoreFactory().getPermissionTicketStore().find(realm, null, filters, null, null);
     }
 
     public class ResourceServerBean {

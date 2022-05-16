@@ -18,7 +18,6 @@
 package org.keycloak.protocol.oidc.utils;
 
 import java.util.Map;
-import java.util.UUID;
 import java.util.regex.Pattern;
 
 import org.jboss.logging.Logger;
@@ -26,9 +25,9 @@ import org.keycloak.common.util.Time;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.AuthenticatedClientSessionModel;
-import org.keycloak.models.CodeToTokenStoreProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.services.managers.UserSessionCrossDCManager;
 
@@ -51,16 +50,16 @@ public class OAuth2CodeParser {
      * @return code parameter to be used in OAuth2 handshake
      */
     public static String persistCode(KeycloakSession session, AuthenticatedClientSessionModel clientSession, OAuth2Code codeData) {
-        CodeToTokenStoreProvider codeStore = session.getProvider(CodeToTokenStoreProvider.class);
+        SingleUseObjectProvider codeStore = session.getProvider(SingleUseObjectProvider.class);
 
-        UUID key = codeData.getId();
+        String key = codeData.getId();
         if (key == null) {
             throw new IllegalStateException("ID not present in the data");
         }
 
         Map<String, String> serialized = codeData.serializeCode();
         codeStore.put(key, clientSession.getUserSession().getRealm().getAccessCodeLifespan(), serialized);
-        return key.toString() + "." + clientSession.getUserSession().getId() + "." + clientSession.getClient().getId();
+        return key + "." + clientSession.getUserSession().getId() + "." + clientSession.getClient().getId();
     }
 
 
@@ -91,9 +90,9 @@ public class OAuth2CodeParser {
         event.session(userSessionId);
 
         // Parse UUID
-        UUID codeUUID;
+        String codeUUID;
         try {
-            codeUUID = UUID.fromString(parsed[0]);
+            codeUUID = parsed[0];
         } catch (IllegalArgumentException re) {
             logger.warn("Invalid format of the UUID in the code");
             return result.illegalCode();
@@ -111,7 +110,7 @@ public class OAuth2CodeParser {
 
         result.clientSession = userSession.getAuthenticatedClientSessionByClient(clientUUID);
 
-        CodeToTokenStoreProvider codeStore = session.getProvider(CodeToTokenStoreProvider.class);
+        SingleUseObjectProvider codeStore = session.getProvider(SingleUseObjectProvider.class);
         Map<String, String> codeData = codeStore.remove(codeUUID);
 
         // Either code not available or was already used

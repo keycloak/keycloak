@@ -41,6 +41,7 @@ import java.util.stream.Stream;
 @ProtoDoc("@Indexed")
 public class HotRodClientEntity extends AbstractHotRodEntity {
 
+    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
     @ProtoField(number = 1, required = true)
     public int entityVersion = 1;
 

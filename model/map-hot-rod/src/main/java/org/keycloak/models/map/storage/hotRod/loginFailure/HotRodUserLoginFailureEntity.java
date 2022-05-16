@@ -31,6 +31,7 @@ import org.keycloak.models.map.storage.hotRod.common.UpdatableHotRodEntityDelega
 @ProtoDoc("@Indexed")
 public class HotRodUserLoginFailureEntity extends AbstractHotRodEntity {
 
+    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
     @ProtoField(number = 1, required = true)
     public int entityVersion = 1;
 

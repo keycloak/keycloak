@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,18 +24,26 @@ import org.keycloak.authorization.store.PermissionTicketStore;
 import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.StoreFactory;
 
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.map.authorization.entity.MapResourceEntity;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 public class MapResourceAdapter extends AbstractResourceModel<MapResourceEntity> {
 
-    public MapResourceAdapter(MapResourceEntity entity, StoreFactory storeFactory) {
+    private final RealmModel realm;
+    private ResourceServer resourceServer;
+
+    public MapResourceAdapter(RealmModel realm, ResourceServer resourceServer, MapResourceEntity entity, StoreFactory storeFactory) {
         super(entity, storeFactory);
+        Objects.requireNonNull(realm);
+        this.realm = realm;
+        this.resourceServer = resourceServer;
     }
 
     @Override
@@ -94,7 +102,7 @@ public class MapResourceAdapter extends AbstractResourceModel<MapResourceEntity>
         ResourceServer resourceServer = getResourceServer();
         return ids == null ? Collections.emptyList() : ids.stream()
                 .map(id -> storeFactory
-                        .getScopeStore().findById(resourceServer, id))
+                        .getScopeStore().findById(realm, resourceServer, id))
                 .collect(Collectors.toList());
     }
 
@@ -111,7 +119,10 @@ public class MapResourceAdapter extends AbstractResourceModel<MapResourceEntity>
 
     @Override
     public ResourceServer getResourceServer() {
-        return storeFactory.getResourceServerStore().findById(entity.getResourceServerId());
+        if (resourceServer == null) {
+            resourceServer = storeFactory.getResourceServerStore().findById(realm, entity.getResourceServerId());
+        }
+        return resourceServer;
     }
 
     @Override
@@ -145,7 +156,7 @@ public class MapResourceAdapter extends AbstractResourceModel<MapResourceEntity>
                 // Remove permission tickets based on the scope
                 List<PermissionTicket> permissions = permissionStore.findByScope(getResourceServer(), scope);
                 for (PermissionTicket permission : permissions) {
-                    permissionStore.delete(permission.getId());
+                    permissionStore.delete(realm, permission.getId());
                 }
 
                 // Remove the scope from each Policy for this Resource

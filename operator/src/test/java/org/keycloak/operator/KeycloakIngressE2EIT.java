@@ -126,6 +126,9 @@ public class KeycloakIngressE2EIT extends ClusterOperatorTest {
         kc.getSpec().setDisableDefaultIngress(true);
         K8sUtils.deployKeycloak(k8sclient, kc, true);
 
-        assertThat(k8sclient.network().v1().ingresses().inNamespace(namespace).list().getItems().size()).isEqualTo(0);
+        Awaitility.await()
+                .untilAsserted(() -> {
+                    assertThat(k8sclient.network().v1().ingresses().inNamespace(namespace).list().getItems().size()).isEqualTo(0);
+                });
     }
 }

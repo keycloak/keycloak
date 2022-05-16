@@ -1505,6 +1505,7 @@
                                     <keycloak.loginFailure.map.storage.provider>hotrod</keycloak.loginFailure.map.storage.provider>
                                     <keycloak.realm.map.storage.provider>hotrod</keycloak.realm.map.storage.provider>
                                     <keycloak.userSession.map.storage.provider>hotrod</keycloak.userSession.map.storage.provider>
+                                    <keycloak.authorization.map.storage.provider>hotrod</keycloak.authorization.map.storage.provider>
                                 </systemPropertyVariables>
                             </configuration>
                         </plugin>
@@ -2135,12 +2136,6 @@
                     <groupId>org.keycloak</groupId>
                     <artifactId>keycloak-client-cli-dist</artifactId>
                     <type>zip</type>
-                </dependency>
-
-                <dependency>
-                    <groupId>org.osgi</groupId>
-                    <artifactId>org.osgi.enterprise</artifactId>
-                    <scope>provided</scope>
                 </dependency>
 
                 <!-- Needed for infinispan statistics -->

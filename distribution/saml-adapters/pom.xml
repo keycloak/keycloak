@@ -43,8 +43,6 @@
                 </property>
             </activation>
             <modules>
-                <module>jetty92-adapter-zip</module>
-                <module>jetty93-adapter-zip</module>
                 <module>jetty94-adapter-zip</module>
                 <module>tomcat-adapter-zip</module>
             </modules>
