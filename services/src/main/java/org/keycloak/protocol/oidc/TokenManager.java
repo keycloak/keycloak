@@ -142,7 +142,7 @@ public class TokenManager {
     }
 
     public TokenValidation validateToken(KeycloakSession session, UriInfo uriInfo, ClientConnection connection, RealmModel realm,
-                                         RefreshToken oldToken, HttpHeaders headers) throws OAuthErrorException {
+                                         RefreshToken oldToken, HttpHeaders headers, String oldTokenScope) throws OAuthErrorException {
         UserSessionModel userSession = null;
         boolean offline = TokenUtil.TOKEN_TYPE_OFFLINE.equals(oldToken.getType());
 
@@ -214,9 +214,6 @@ public class TokenManager {
         } catch (VerificationException e) {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale token");
         }
-
-        // Setup clientScopes from refresh token to the context
-        String oldTokenScope = oldToken.getScope();
 
         // Case when offline token is migrated from previous version
         if (oldTokenScope == null && userSession.isOffline()) {
@@ -379,14 +376,24 @@ public class TokenManager {
 
 
     public AccessTokenResponseBuilder refreshAccessToken(KeycloakSession session, UriInfo uriInfo, ClientConnection connection, RealmModel realm, ClientModel authorizedClient,
-                                            String encodedRefreshToken, EventBuilder event, HttpHeaders headers, HttpRequest request) throws OAuthErrorException {
+                                            String encodedRefreshToken, EventBuilder event, HttpHeaders headers, HttpRequest request, String scopeParameter) throws OAuthErrorException {
         RefreshToken refreshToken = verifyRefreshToken(session, realm, authorizedClient, request, encodedRefreshToken, true);
 
         event.user(refreshToken.getSubject()).session(refreshToken.getSessionState())
                 .detail(Details.REFRESH_TOKEN_ID, refreshToken.getId())
                 .detail(Details.REFRESH_TOKEN_TYPE, refreshToken.getType());
+        // Setup clientScopes from refresh token to the context
+        String oldTokenScope = refreshToken.getScope();
+        //The requested scope MUST NOT include any scope not originally granted by the resource owner
+        //if scope parameter is not null, remove every scope that is not part of scope parameter
+        if (scopeParameter != null && ! scopeParameter.isEmpty()) {
+            Set<String> scopeParamScopes = Arrays.stream(scopeParameter.split(" ")).collect(Collectors.toSet());
+            oldTokenScope = Arrays.stream(oldTokenScope.split(" ")).filter(sc -> scopeParamScopes.contains(sc))
+                    .collect(Collectors.joining(" "));
+        }
 
-        TokenValidation validation = validateToken(session, uriInfo, connection, realm, refreshToken, headers);
+
+        TokenValidation validation = validateToken(session, uriInfo, connection, realm, refreshToken, headers, oldTokenScope);
         AuthenticatedClientSessionModel clientSession = validation.clientSessionCtx.getClientSession();
         OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientModel(authorizedClient);
 
@@ -408,7 +415,8 @@ public class TokenManager {
         AccessTokenResponseBuilder responseBuilder = responseBuilder(realm, authorizedClient, event, session,
             validation.userSession, validation.clientSessionCtx).accessToken(validation.newToken);
         if (clientConfig.isUseRefreshToken()) {
-            responseBuilder.generateRefreshToken();
+            //refresh token must have same scope as old refresh token (type, scope, expiration)
+            responseBuilder.generateRefreshToken(refreshToken.getScope());
         }
 
         if (validation.newToken.getAuthorization() != null
@@ -1093,6 +1101,22 @@ public class TokenManager {
 
             ClientScopeModel offlineAccessScope = KeycloakModelUtils.getClientScopeByName(realm, OAuth2Constants.OFFLINE_ACCESS);
             boolean offlineTokenRequested = offlineAccessScope==null ? false : clientSessionCtx.getClientScopeIds().contains(offlineAccessScope.getId());
+            generateRefreshToken(offlineTokenRequested);
+            return this;
+        }
+
+        public AccessTokenResponseBuilder generateRefreshToken(String scope) {
+            if (accessToken == null) {
+                throw new IllegalStateException("accessToken not set");
+            }
+
+            boolean offlineTokenRequested = Arrays.asList(scope.split(" ")).contains(OAuth2Constants.OFFLINE_ACCESS) ;
+            generateRefreshToken(offlineTokenRequested);
+            refreshToken.setScope(scope);
+            return this;
+        }
+
+        private void generateRefreshToken(boolean offlineTokenRequested) {
             if (offlineTokenRequested) {
                 UserSessionManager sessionManager = new UserSessionManager(session);
                 if (!sessionManager.isOfflineTokenAllowed(clientSessionCtx)) {
@@ -1111,7 +1135,6 @@ public class TokenManager {
             }
             refreshToken.id(KeycloakModelUtils.generateId());
             refreshToken.issuedNow();
-            return this;
         }
 
         private int getExpiration(boolean offline) {
