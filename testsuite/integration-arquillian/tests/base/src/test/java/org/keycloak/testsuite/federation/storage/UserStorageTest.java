@@ -34,6 +34,7 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.CacheableStorageProviderModel.CachePolicy;
 import org.keycloak.storage.StorageId;
+import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.admin.ApiUtil;
@@ -167,7 +168,7 @@ public class UserStorageTest extends AbstractAuthTest {
 
             UserModel user = session.users().getUserByUsername(realm, "thor");
             if (user != null) {
-                session.userLocalStorage().removeUser(realm, user);
+                UserStoragePrivateUtil.userLocalStorage(session).removeUser(realm, user);
                 session.userCache().clear();
             }
 

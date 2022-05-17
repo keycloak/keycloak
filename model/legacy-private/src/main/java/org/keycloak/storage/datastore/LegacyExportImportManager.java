@@ -65,6 +65,7 @@ import org.keycloak.representations.idm.UserFederationMapperRepresentation;
 import org.keycloak.representations.idm.UserFederationProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.ExportImportManager;
+import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
@@ -781,7 +782,7 @@ public class LegacyExportImportManager implements ExportImportManager {
         convertDeprecatedSocialProviders(userRep);
 
         // Import users just to user storage. Don't federate
-        UserModel user = session.userLocalStorage().addUser(newRealm, userRep.getId(), userRep.getUsername(), false, false);
+        UserModel user = UserStoragePrivateUtil.userLocalStorage(session).addUser(newRealm, userRep.getId(), userRep.getUsername(), false, false);
         user.setEnabled(userRep.isEnabled() != null && userRep.isEnabled());
         user.setCreatedTimestamp(userRep.getCreatedTimestamp());
         user.setEmail(userRep.getEmail());
