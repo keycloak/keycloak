@@ -250,8 +250,6 @@ describe("Realm settings events tab tests", () => {
 
     cy.findByTestId("localization-tab-save").click();
 
-    cy.findByTestId("add-bundle-button").click({ force: true });
-
     addBundle();
 
     masthead.checkNotificationMessage(

@@ -506,7 +506,6 @@ export const LocalizationTab = ({
               toolbarItem={
                 <Button
                   data-testid="add-bundle-button"
-                  isDisabled={!formState.isSubmitSuccessful}
                   onClick={() => setAddMessageBundleModalOpen(true)}
                 >
                   {t("addMessageBundle")}
@@ -520,7 +519,7 @@ export const LocalizationTab = ({
                     isOpen={filterDropdownOpen}
                     className="kc-filter-by-locale-select"
                     variant={SelectVariant.single}
-                    isDisabled={!formState.isSubmitSuccessful}
+                    isDisabled={!internationalizationEnabled}
                     onToggle={(isExpanded) => setFilterDropdownOpen(isExpanded)}
                     onSelect={(_, value) => {
                       setSelectMenuLocale(value.toString());
