@@ -148,7 +148,9 @@ export default function NewAttributeSettings() {
     const validations = profileConfig.validations?.reduce(
       (prevValidations: any, currentValidations: any) => {
         prevValidations[currentValidations.key] =
-          currentValidations.value.length === 0 ? {} : currentValidations.value;
+          currentValidations.value?.length === 0
+            ? {}
+            : currentValidations.value;
         return prevValidations;
       },
       {}
