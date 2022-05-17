@@ -30,6 +30,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
 import org.jboss.logging.Logger;
+import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.common.util.reflections.Types;
 import org.keycloak.component.ComponentFactory;
 import org.keycloak.component.ComponentModel;
@@ -267,6 +268,11 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
 
     @Override
     public UserModel addUser(RealmModel realm, String username) {
+        if (username.startsWith(ServiceAccountConstants.SERVICE_ACCOUNT_USER_PREFIX)) {
+            // Don't use federation for service account user
+            return localStorage().addUser(realm, username);
+        }
+
         return getEnabledStorageProviders(realm, UserRegistrationProvider.class)
                 .map(provider -> provider.addUser(realm, username))
                 .filter(Objects::nonNull)
