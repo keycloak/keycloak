@@ -53,6 +53,11 @@ public final class Environment {
     }
 
     public static Boolean isRuntimeMode() {
+        //always assume runtimeMode for importexport, to get persistedproperties for db loaded. see #11902
+        if(isImportExportMode()) {
+            return true;
+        }
+
         return Thread.currentThread().getContextClassLoader() instanceof RunnerClassLoader;
     }
 

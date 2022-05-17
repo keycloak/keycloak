@@ -79,6 +79,11 @@
             <artifactId>approvaltests</artifactId>
             <version>${approvaltests.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>1.17.1</version>
+        </dependency>
     </dependencies>
 
     <build>
