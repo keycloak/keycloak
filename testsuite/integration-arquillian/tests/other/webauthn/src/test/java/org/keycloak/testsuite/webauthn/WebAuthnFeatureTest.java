@@ -32,7 +32,7 @@ import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import java.util.Set;
 
 public class WebAuthnFeatureTest extends AbstractTestRealmKeycloakTest {
-
+    // WebAuthn tests executed in GH actions
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
     }
