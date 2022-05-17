@@ -201,12 +201,14 @@ public class MapFieldPredicates {
         put(USER_SESSION_PREDICATES, UserSessionModel.SearchableFields.BROKER_USER_ID,            MapUserSessionEntity::getBrokerUserId);
         put(USER_SESSION_PREDICATES, UserSessionModel.SearchableFields.IS_OFFLINE,                MapUserSessionEntity::isOffline);
         put(USER_SESSION_PREDICATES, UserSessionModel.SearchableFields.LAST_SESSION_REFRESH,      MapUserSessionEntity::getLastSessionRefresh);
+        put(USER_SESSION_PREDICATES, UserSessionModel.SearchableFields.EXPIRATION,                MapUserSessionEntity::getExpiration);
 
         put(CLIENT_SESSION_PREDICATES, AuthenticatedClientSessionModel.SearchableFields.REALM_ID,         MapAuthenticatedClientSessionEntity::getRealmId);
         put(CLIENT_SESSION_PREDICATES, AuthenticatedClientSessionModel.SearchableFields.CLIENT_ID,        MapAuthenticatedClientSessionEntity::getClientId);
         put(CLIENT_SESSION_PREDICATES, AuthenticatedClientSessionModel.SearchableFields.USER_SESSION_ID,  MapAuthenticatedClientSessionEntity::getUserSessionId);
         put(CLIENT_SESSION_PREDICATES, AuthenticatedClientSessionModel.SearchableFields.IS_OFFLINE,       MapAuthenticatedClientSessionEntity::isOffline);
         put(CLIENT_SESSION_PREDICATES, AuthenticatedClientSessionModel.SearchableFields.TIMESTAMP,        MapAuthenticatedClientSessionEntity::getTimestamp);
+        put(CLIENT_SESSION_PREDICATES, AuthenticatedClientSessionModel.SearchableFields.EXPIRATION,       MapAuthenticatedClientSessionEntity::getExpiration);
 
         put(USER_LOGIN_FAILURE_PREDICATES, UserLoginFailureModel.SearchableFields.REALM_ID,  MapUserLoginFailureEntity::getRealmId);
         put(USER_LOGIN_FAILURE_PREDICATES, UserLoginFailureModel.SearchableFields.USER_ID,   MapUserLoginFailureEntity::getUserId);
@@ -214,13 +216,13 @@ public class MapFieldPredicates {
         put(AUTH_EVENTS_PREDICATES, Event.SearchableFields.REALM_ID, MapAuthEventEntity::getRealmId);
         put(AUTH_EVENTS_PREDICATES, Event.SearchableFields.CLIENT_ID, MapAuthEventEntity::getClientId);
         put(AUTH_EVENTS_PREDICATES, Event.SearchableFields.USER_ID, MapAuthEventEntity::getUserId);
-        put(AUTH_EVENTS_PREDICATES, Event.SearchableFields.TIME, MapAuthEventEntity::getTime);
+        put(AUTH_EVENTS_PREDICATES, Event.SearchableFields.TIMESTAMP, MapAuthEventEntity::getTimestamp);
         put(AUTH_EVENTS_PREDICATES, Event.SearchableFields.EXPIRATION, MapAuthEventEntity::getExpiration);
         put(AUTH_EVENTS_PREDICATES, Event.SearchableFields.IP_ADDRESS, MapAuthEventEntity::getIpAddress);
         put(AUTH_EVENTS_PREDICATES, Event.SearchableFields.EVENT_TYPE, MapAuthEventEntity::getType);
 
         put(ADMIN_EVENTS_PREDICATES, AdminEvent.SearchableFields.REALM_ID, MapAdminEventEntity::getRealmId);
-        put(ADMIN_EVENTS_PREDICATES, AdminEvent.SearchableFields.TIME, MapAdminEventEntity::getTime);
+        put(ADMIN_EVENTS_PREDICATES, AdminEvent.SearchableFields.TIMESTAMP, MapAdminEventEntity::getTimestamp);
         put(ADMIN_EVENTS_PREDICATES, AdminEvent.SearchableFields.EXPIRATION, MapAdminEventEntity::getExpiration);
         put(ADMIN_EVENTS_PREDICATES, AdminEvent.SearchableFields.AUTH_REALM_ID, MapAdminEventEntity::getAuthRealmId);
         put(ADMIN_EVENTS_PREDICATES, AdminEvent.SearchableFields.AUTH_CLIENT_ID, MapAdminEventEntity::getAuthClientId);

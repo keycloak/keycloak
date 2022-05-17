@@ -27,7 +27,7 @@ public class AdminEvent {
     public static class SearchableFields {
         public static final SearchableModelField<AdminEvent> ID              = new SearchableModelField<>("id", String.class);
         public static final SearchableModelField<AdminEvent> REALM_ID        = new SearchableModelField<>("realmId", String.class);
-        public static final SearchableModelField<AdminEvent> TIME            = new SearchableModelField<>("time", Long.class);
+        public static final SearchableModelField<AdminEvent> TIMESTAMP       = new SearchableModelField<>("timestamp", Long.class);
         public static final SearchableModelField<AdminEvent> EXPIRATION      = new SearchableModelField<>("expiration", Long.class);
         public static final SearchableModelField<AdminEvent> AUTH_REALM_ID   = new SearchableModelField<>("authRealmId", String.class);
         public static final SearchableModelField<AdminEvent> AUTH_CLIENT_ID  = new SearchableModelField<>("authClientId", String.class);

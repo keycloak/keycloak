@@ -23,7 +23,6 @@ import org.keycloak.events.admin.AdminEvent.SearchableFields;
 import org.keycloak.events.admin.AdminEventQuery;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
-import org.keycloak.models.map.common.TimeAdapter;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.models.map.storage.QueryParameters;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
@@ -103,13 +102,13 @@ public class MapAdminEventQuery implements AdminEventQuery {
 
     @Override
     public AdminEventQuery fromTime(Date fromTime) {
-        mcb = mcb.compare(SearchableFields.TIME, GE, fromTime.getTime());
+        mcb = mcb.compare(SearchableFields.TIMESTAMP, GE, fromTime.getTime());
         return this;
     }
 
     @Override
     public AdminEventQuery toTime(Date toTime) {
-        mcb = mcb.compare(SearchableFields.TIME, LE, toTime.getTime());
+        mcb = mcb.compare(SearchableFields.TIMESTAMP, LE, toTime.getTime());
         return this;
     }
 
@@ -138,7 +137,7 @@ public class MapAdminEventQuery implements AdminEventQuery {
         return resultProducer.apply(QueryParameters.withCriteria(mcb)
                 .offset(firstResult)
                 .limit(maxResults)
-                .orderBy(SearchableFields.TIME, DESCENDING)
+                .orderBy(SearchableFields.TIMESTAMP, DESCENDING)
         );
     }
 }

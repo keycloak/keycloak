@@ -21,6 +21,7 @@ import org.keycloak.models.map.annotations.GenerateEntityImplementations;
 import org.keycloak.models.map.common.AbstractEntity;
 
 import org.keycloak.models.map.common.DeepCloner;
+import org.keycloak.models.map.common.ExpirableEntity;
 import org.keycloak.models.map.common.UpdatableEntity;
 
 import java.util.Map;
@@ -32,7 +33,7 @@ import java.util.Map;
         inherits = "org.keycloak.models.map.userSession.MapUserSessionEntity.AbstractUserSessionEntity"
 )
 @DeepCloner.Root
-public interface MapUserSessionEntity extends AbstractEntity, UpdatableEntity {
+public interface MapUserSessionEntity extends AbstractEntity, UpdatableEntity, ExpirableEntity {
 
     abstract class AbstractUserSessionEntity extends UpdatableEntity.Impl implements MapUserSessionEntity {
 
@@ -75,14 +76,8 @@ public interface MapUserSessionEntity extends AbstractEntity, UpdatableEntity {
     Boolean isRememberMe();
     void setRememberMe(Boolean rememberMe);
 
-    Long getStarted();
-    void setStarted(Long started);
-
     Long getLastSessionRefresh();
     void setLastSessionRefresh(Long lastSessionRefresh);
-
-    Long getExpiration();
-    void setExpiration(Long expiration);
 
     Map<String, String> getNotes();
     String getNote(String name);

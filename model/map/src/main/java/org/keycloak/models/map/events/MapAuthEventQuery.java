@@ -22,7 +22,6 @@ import org.keycloak.events.Event;
 import org.keycloak.events.Event.SearchableFields;
 import org.keycloak.events.EventQuery;
 import org.keycloak.events.EventType;
-import org.keycloak.models.map.common.TimeAdapter;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.models.map.storage.QueryParameters;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
@@ -77,13 +76,13 @@ public class MapAuthEventQuery implements EventQuery {
 
     @Override
     public EventQuery fromDate(Date fromDate) {
-        mcb = mcb.compare(SearchableFields.TIME, GE, fromDate.getTime());
+        mcb = mcb.compare(SearchableFields.TIMESTAMP, GE, fromDate.getTime());
         return this;
     }
 
     @Override
     public EventQuery toDate(Date toDate) {
-        mcb = mcb.compare(SearchableFields.TIME, LE, toDate.getTime());
+        mcb = mcb.compare(SearchableFields.TIMESTAMP, LE, toDate.getTime());
         return this;
     }
 
@@ -118,6 +117,6 @@ public class MapAuthEventQuery implements EventQuery {
         return resultProducer.apply(QueryParameters.withCriteria(mcb)
                 .offset(firstResult)
                 .limit(maxResults)
-                .orderBy(SearchableFields.TIME, DESCENDING));
+                .orderBy(SearchableFields.TIMESTAMP, DESCENDING));
     }
 }
