@@ -764,7 +764,7 @@ public class RepresentationToModel {
         }
     }
 
-    public static void createClientRoleMappings(ClientModel clientModel, UserModel user, List<String> roleNames) {
+    private static void createClientRoleMappings(ClientModel clientModel, UserModel user, List<String> roleNames) {
         if (user == null) {
             throw new RuntimeException("User not found");
         }
@@ -1523,95 +1523,6 @@ public class RepresentationToModel {
         }
 
         return ticket;
-    }
-
-    public static void importFederatedUser(KeycloakSession session, RealmModel newRealm, UserRepresentation userRep) {
-        UserFederatedStorageProvider federatedStorage = session.userFederatedStorage();
-        if (userRep.getAttributes() != null) {
-            for (Map.Entry<String, List<String>> entry : userRep.getAttributes().entrySet()) {
-                String key = entry.getKey();
-                List<String> value = entry.getValue();
-                if (value != null) {
-                    federatedStorage.setAttribute(newRealm, userRep.getId(), key, new LinkedList<>(value));
-                }
-            }
-        }
-        if (userRep.getRequiredActions() != null) {
-            for (String action : userRep.getRequiredActions()) {
-                federatedStorage.addRequiredAction(newRealm, userRep.getId(), action);
-            }
-        }
-        if (userRep.getCredentials() != null) {
-            for (CredentialRepresentation cred : userRep.getCredentials()) {
-                federatedStorage.createCredential(newRealm, userRep.getId(), toModel(cred));
-            }
-        }
-        createFederatedRoleMappings(federatedStorage, userRep, newRealm);
-
-        if (userRep.getGroups() != null) {
-            for (String path : userRep.getGroups()) {
-                GroupModel group = KeycloakModelUtils.findGroupByPath(newRealm, path);
-                if (group == null) {
-                    throw new RuntimeException("Unable to find group specified by path: " + path);
-
-                }
-                federatedStorage.joinGroup(newRealm, userRep.getId(), group);
-            }
-        }
-
-        if (userRep.getFederatedIdentities() != null) {
-            for (FederatedIdentityRepresentation identity : userRep.getFederatedIdentities()) {
-                FederatedIdentityModel mappingModel = new FederatedIdentityModel(identity.getIdentityProvider(), identity.getUserId(), identity.getUserName());
-                federatedStorage.addFederatedIdentity(newRealm, userRep.getId(), mappingModel);
-            }
-        }
-        if (userRep.getClientConsents() != null) {
-            for (UserConsentRepresentation consentRep : userRep.getClientConsents()) {
-                UserConsentModel consentModel = toModel(newRealm, consentRep);
-                federatedStorage.addConsent(newRealm, userRep.getId(), consentModel);
-            }
-        }
-        if (userRep.getNotBefore() != null) {
-            federatedStorage.setNotBeforeForUser(newRealm, userRep.getId(), userRep.getNotBefore());
-        }
-
-
-    }
-
-    public static void createFederatedRoleMappings(UserFederatedStorageProvider federatedStorage, UserRepresentation userRep, RealmModel realm) {
-        if (userRep.getRealmRoles() != null) {
-            for (String roleString : userRep.getRealmRoles()) {
-                RoleModel role = realm.getRole(roleString.trim());
-                if (role == null) {
-                    role = realm.addRole(roleString.trim());
-                }
-                federatedStorage.grantRole(realm, userRep.getId(), role);
-            }
-        }
-        if (userRep.getClientRoles() != null) {
-            for (Map.Entry<String, List<String>> entry : userRep.getClientRoles().entrySet()) {
-                ClientModel client = realm.getClientByClientId(entry.getKey());
-                if (client == null) {
-                    throw new RuntimeException("Unable to find client role mappings for client: " + entry.getKey());
-                }
-                createFederatedClientRoleMappings(federatedStorage, realm, client, userRep, entry.getValue());
-            }
-        }
-    }
-
-    public static void createFederatedClientRoleMappings(UserFederatedStorageProvider federatedStorage, RealmModel realm, ClientModel clientModel, UserRepresentation userRep, List<String> roleNames) {
-        if (userRep == null) {
-            throw new RuntimeException("User not found");
-        }
-
-        for (String roleName : roleNames) {
-            RoleModel role = clientModel.getRole(roleName.trim());
-            if (role == null) {
-                role = clientModel.addRole(roleName.trim());
-            }
-            federatedStorage.grantRole(realm, userRep.getId(), role);
-
-        }
     }
 
     public static Map<String, String> removeEmptyString(Map<String, String> map) {

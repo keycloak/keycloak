@@ -32,6 +32,7 @@ import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.storage.datastore.LegacyExportImportManager;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -265,9 +266,8 @@ public class ImportUtils {
     private static void importFederatedUsers(KeycloakSession session, RealmProvider model, String realmName, List<UserRepresentation> userReps) {
         RealmModel realm = model.getRealmByName(realmName);
         for (UserRepresentation user : userReps) {
-            RepresentationToModel.importFederatedUser(session, realm, user);
+            LegacyExportImportManager.importFederatedUser(session, realm, user);
         }
     }
-
 
 }

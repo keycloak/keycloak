@@ -17,6 +17,7 @@ import org.keycloak.models.ClaimMask;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.Constants;
+import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
@@ -66,6 +67,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.ExportImportManager;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
+import org.keycloak.storage.federated.UserFederatedStorageProvider;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.validation.ValidationUtil;
 
@@ -84,7 +86,6 @@ import static org.keycloak.models.utils.RepresentationToModel.createCredentials;
 import static org.keycloak.models.utils.RepresentationToModel.createFederatedIdentities;
 import static org.keycloak.models.utils.RepresentationToModel.createGroups;
 import static org.keycloak.models.utils.RepresentationToModel.createRoleMappings;
-import static org.keycloak.models.utils.RepresentationToModel.importFederatedUser;
 import static org.keycloak.models.utils.RepresentationToModel.importGroup;
 import static org.keycloak.models.utils.RepresentationToModel.importRoles;
 
@@ -1373,6 +1374,95 @@ public class LegacyExportImportManager implements ExportImportManager {
                 ClientModel client = newRealm.getClientByClientId(clientRepresentation.getClientId());
                 RepresentationToModel.importAuthorizationSettings(clientRepresentation, client, session);
             });
+        }
+    }
+
+    public static void importFederatedUser(KeycloakSession session, RealmModel newRealm, UserRepresentation userRep) {
+        UserFederatedStorageProvider federatedStorage = session.userFederatedStorage();
+        if (userRep.getAttributes() != null) {
+            for (Map.Entry<String, List<String>> entry : userRep.getAttributes().entrySet()) {
+                String key = entry.getKey();
+                List<String> value = entry.getValue();
+                if (value != null) {
+                    federatedStorage.setAttribute(newRealm, userRep.getId(), key, new LinkedList<>(value));
+                }
+            }
+        }
+        if (userRep.getRequiredActions() != null) {
+            for (String action : userRep.getRequiredActions()) {
+                federatedStorage.addRequiredAction(newRealm, userRep.getId(), action);
+            }
+        }
+        if (userRep.getCredentials() != null) {
+            for (CredentialRepresentation cred : userRep.getCredentials()) {
+                federatedStorage.createCredential(newRealm, userRep.getId(), RepresentationToModel.toModel(cred));
+            }
+        }
+        createFederatedRoleMappings(federatedStorage, userRep, newRealm);
+
+        if (userRep.getGroups() != null) {
+            for (String path : userRep.getGroups()) {
+                GroupModel group = KeycloakModelUtils.findGroupByPath(newRealm, path);
+                if (group == null) {
+                    throw new RuntimeException("Unable to find group specified by path: " + path);
+
+                }
+                federatedStorage.joinGroup(newRealm, userRep.getId(), group);
+            }
+        }
+
+        if (userRep.getFederatedIdentities() != null) {
+            for (FederatedIdentityRepresentation identity : userRep.getFederatedIdentities()) {
+                FederatedIdentityModel mappingModel = new FederatedIdentityModel(identity.getIdentityProvider(), identity.getUserId(), identity.getUserName());
+                federatedStorage.addFederatedIdentity(newRealm, userRep.getId(), mappingModel);
+            }
+        }
+        if (userRep.getClientConsents() != null) {
+            for (UserConsentRepresentation consentRep : userRep.getClientConsents()) {
+                UserConsentModel consentModel = RepresentationToModel.toModel(newRealm, consentRep);
+                federatedStorage.addConsent(newRealm, userRep.getId(), consentModel);
+            }
+        }
+        if (userRep.getNotBefore() != null) {
+            federatedStorage.setNotBeforeForUser(newRealm, userRep.getId(), userRep.getNotBefore());
+        }
+
+
+    }
+
+    private static void createFederatedRoleMappings(UserFederatedStorageProvider federatedStorage, UserRepresentation userRep, RealmModel realm) {
+        if (userRep.getRealmRoles() != null) {
+            for (String roleString : userRep.getRealmRoles()) {
+                RoleModel role = realm.getRole(roleString.trim());
+                if (role == null) {
+                    role = realm.addRole(roleString.trim());
+                }
+                federatedStorage.grantRole(realm, userRep.getId(), role);
+            }
+        }
+        if (userRep.getClientRoles() != null) {
+            for (Map.Entry<String, List<String>> entry : userRep.getClientRoles().entrySet()) {
+                ClientModel client = realm.getClientByClientId(entry.getKey());
+                if (client == null) {
+                    throw new RuntimeException("Unable to find client role mappings for client: " + entry.getKey());
+                }
+                createFederatedClientRoleMappings(federatedStorage, realm, client, userRep, entry.getValue());
+            }
+        }
+    }
+
+    private static void createFederatedClientRoleMappings(UserFederatedStorageProvider federatedStorage, RealmModel realm, ClientModel clientModel, UserRepresentation userRep, List<String> roleNames) {
+        if (userRep == null) {
+            throw new RuntimeException("User not found");
+        }
+
+        for (String roleName : roleNames) {
+            RoleModel role = clientModel.getRole(roleName.trim());
+            if (role == null) {
+                role = clientModel.addRole(roleName.trim());
+            }
+            federatedStorage.grantRole(realm, userRep.getId(), role);
+
         }
     }
 
