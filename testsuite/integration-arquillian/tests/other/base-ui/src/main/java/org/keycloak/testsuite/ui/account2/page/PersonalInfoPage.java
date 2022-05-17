@@ -61,7 +61,7 @@ public class PersonalInfoPage extends AbstractLoggedInPage {
     }
 
     public void assertUsernameDisabled(boolean expected) {
-        assertElementDisabled(expected, username);
+        assertEquals(username.getAttribute("readonly") != null, expected);
     }
 
     public String getUsername() {
@@ -152,7 +152,7 @@ public class PersonalInfoPage extends AbstractLoggedInPage {
     }
 
     public void clickOpenDeleteExapandable() {
-        clickLink(driver.findElement(By.cssSelector(".pf-c-expandable__toggle")));
+        clickLink(driver.findElement(By.cssSelector(".pf-c-expandable-section__toggle")));
     }
 
     public void clickDeleteAccountButton() {
@@ -161,6 +161,7 @@ public class PersonalInfoPage extends AbstractLoggedInPage {
 
     public void setValues(UserRepresentation user, boolean includeUsername) {
         if (includeUsername) {setUsername(user.getUsername());}
+        setEmail(user.getEmail());
         setFirstName(user.getFirstName());
         setLastName(user.getLastName());
     }

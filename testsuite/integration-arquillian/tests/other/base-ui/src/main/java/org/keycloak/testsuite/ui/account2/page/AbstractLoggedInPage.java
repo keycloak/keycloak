@@ -48,7 +48,7 @@ public abstract class AbstractLoggedInPage extends AbstractAccountPage {
     @Page
     private ContinueCancelModal modal;
 
-    @FindBy(xpath = ".//*[@id='page-heading']//h1")
+    @FindBy(className = "pf-c-title")
     private WebElement pageTitle;
 
     @FindBy(id = "refresh-page")
