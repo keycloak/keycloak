@@ -86,9 +86,7 @@ export default function IdentityProvidersSection() {
         tab: "settings",
       })}
     >
-      {identityProvider.displayName
-        ? identityProvider.displayName
-        : identityProvider.alias}
+      {identityProvider.alias}
       {!identityProvider.enabled && (
         <Badge
           key={`${identityProvider.providerId}-disabled`}
