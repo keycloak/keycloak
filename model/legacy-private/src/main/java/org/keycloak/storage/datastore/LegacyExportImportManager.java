@@ -28,6 +28,8 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.ScopeContainerModel;
+import org.keycloak.models.UserConsentModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.WebAuthnPolicy;
 import org.keycloak.models.utils.ComponentUtil;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
@@ -46,6 +48,7 @@ import org.keycloak.representations.idm.ClientTemplateRepresentation;
 import org.keycloak.representations.idm.ComponentExportRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.FederatedIdentityRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
@@ -55,6 +58,8 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RequiredActionProviderRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.ScopeMappingRepresentation;
+import org.keycloak.representations.idm.SocialLinkRepresentation;
+import org.keycloak.representations.idm.UserConsentRepresentation;
 import org.keycloak.representations.idm.UserFederationMapperRepresentation;
 import org.keycloak.representations.idm.UserFederationProviderRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -64,6 +69,7 @@ import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.validation.ValidationUtil;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -74,7 +80,10 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static org.keycloak.models.utils.RepresentationToModel.createUser;
+import static org.keycloak.models.utils.RepresentationToModel.createCredentials;
+import static org.keycloak.models.utils.RepresentationToModel.createFederatedIdentities;
+import static org.keycloak.models.utils.RepresentationToModel.createGroups;
+import static org.keycloak.models.utils.RepresentationToModel.createRoleMappings;
 import static org.keycloak.models.utils.RepresentationToModel.importFederatedUser;
 import static org.keycloak.models.utils.RepresentationToModel.importGroup;
 import static org.keycloak.models.utils.RepresentationToModel.importRoles;
@@ -349,7 +358,7 @@ public class LegacyExportImportManager implements ExportImportManager {
 
         if (rep.getUsers() != null) {
             for (UserRepresentation userRep : rep.getUsers()) {
-                createUser(session, newRealm, userRep);
+                createUser(newRealm, userRep);
             }
         }
 
@@ -764,6 +773,80 @@ public class LegacyExportImportManager implements ExportImportManager {
         if (rep.getDockerAuthenticationFlow() != null) {
             realm.setDockerAuthenticationFlow(realm.getFlowByAlias(rep.getDockerAuthenticationFlow()));
         }
+    }
+
+    @Override
+    public UserModel createUser(RealmModel newRealm, UserRepresentation userRep) {
+        convertDeprecatedSocialProviders(userRep);
+
+        // Import users just to user storage. Don't federate
+        UserModel user = session.userLocalStorage().addUser(newRealm, userRep.getId(), userRep.getUsername(), false, false);
+        user.setEnabled(userRep.isEnabled() != null && userRep.isEnabled());
+        user.setCreatedTimestamp(userRep.getCreatedTimestamp());
+        user.setEmail(userRep.getEmail());
+        if (userRep.isEmailVerified() != null) user.setEmailVerified(userRep.isEmailVerified());
+        user.setFirstName(userRep.getFirstName());
+        user.setLastName(userRep.getLastName());
+        user.setFederationLink(userRep.getFederationLink());
+        if (userRep.getAttributes() != null) {
+            for (Map.Entry<String, List<String>> entry : userRep.getAttributes().entrySet()) {
+                List<String> value = entry.getValue();
+                if (value != null) {
+                    user.setAttribute(entry.getKey(), new ArrayList<>(value));
+                }
+            }
+        }
+        if (userRep.getRequiredActions() != null) {
+            for (String requiredAction : userRep.getRequiredActions()) {
+                try {
+                    user.addRequiredAction(UserModel.RequiredAction.valueOf(requiredAction.toUpperCase()));
+                } catch (IllegalArgumentException iae) {
+                    user.addRequiredAction(requiredAction);
+                }
+            }
+        }
+        createCredentials(userRep, session, newRealm, user, false);
+        createFederatedIdentities(userRep, session, newRealm, user);
+        createRoleMappings(userRep, user, newRealm);
+        if (userRep.getClientConsents() != null) {
+            for (UserConsentRepresentation consentRep : userRep.getClientConsents()) {
+                UserConsentModel consentModel = RepresentationToModel.toModel(newRealm, consentRep);
+                session.users().addConsent(newRealm, user.getId(), consentModel);
+            }
+        }
+
+        if (userRep.getNotBefore() != null) {
+            session.users().setNotBeforeForUser(newRealm, user, userRep.getNotBefore());
+        }
+
+        if (userRep.getServiceAccountClientId() != null) {
+            String clientId = userRep.getServiceAccountClientId();
+            ClientModel client = newRealm.getClientByClientId(clientId);
+            if (client == null) {
+                throw new RuntimeException("Unable to find client specified for service account link. Client: " + clientId);
+            }
+            user.setServiceAccountClientLink(client.getId());
+        }
+        createGroups(userRep, newRealm, user);
+        return user;
+    }
+
+    public static void convertDeprecatedSocialProviders(UserRepresentation user) {
+        if (user.getSocialLinks() != null && !user.getSocialLinks().isEmpty() && user.getFederatedIdentities() == null) {
+
+            logger.warnf("Using deprecated 'socialLinks' configuration in JSON representation for user '%s'. It will be removed in future versions", user.getUsername());
+            List<FederatedIdentityRepresentation> federatedIdentities = new LinkedList<>();
+            for (SocialLinkRepresentation social : user.getSocialLinks()) {
+                FederatedIdentityRepresentation federatedIdentity = new FederatedIdentityRepresentation();
+                federatedIdentity.setIdentityProvider(social.getSocialProvider());
+                federatedIdentity.setUserId(social.getSocialUserId());
+                federatedIdentity.setUserName(social.getSocialUsername());
+                federatedIdentities.add(federatedIdentity);
+            }
+            user.setFederatedIdentities(federatedIdentities);
+        }
+
+        user.setSocialLinks(null);
     }
 
     private static void convertDeprecatedApplications(KeycloakSession session, RealmRepresentation realm) {
