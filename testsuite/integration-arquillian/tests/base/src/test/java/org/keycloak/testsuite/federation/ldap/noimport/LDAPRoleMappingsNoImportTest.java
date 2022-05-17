@@ -32,6 +32,7 @@ import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
@@ -151,7 +152,7 @@ public class LDAPRoleMappingsNoImportTest extends AbstractLDAPTest {
 
             UserModel mary = session.users().getUserByUsername(appRealm, "marykeycloak");
             // make sure we are in no-import mode!
-            Assert.assertNull(session.userLocalStorage().getUserByUsername(appRealm, "marykeycloak"));
+            Assert.assertNull(UserStoragePrivateUtil.userLocalStorage(session).getUserByUsername(appRealm, "marykeycloak"));
 
             // This role should already exists as it was imported from LDAP
             RoleModel realmRole1 = appRealm.getRole("realmRole1");
@@ -205,8 +206,8 @@ public class LDAPRoleMappingsNoImportTest extends AbstractLDAPTest {
             UserModel mary = session.users().getUserByUsername(appRealm, "marykeycloak");
 
             // make sure we are in no-import mode
-            Assert.assertNull(session.userLocalStorage().getUserByUsername(appRealm, "johnkeycloak"));
-            Assert.assertNull(session.userLocalStorage().getUserByUsername(appRealm, "marykeycloak"));
+            Assert.assertNull(UserStoragePrivateUtil.userLocalStorage(session).getUserByUsername(appRealm, "johnkeycloak"));
+            Assert.assertNull(UserStoragePrivateUtil.userLocalStorage(session).getUserByUsername(appRealm, "marykeycloak"));
 
             // 1 - Grant some roles in LDAP
 
@@ -245,8 +246,8 @@ public class LDAPRoleMappingsNoImportTest extends AbstractLDAPTest {
             UserModel mary = session.users().getUserByUsername(appRealm, "marykeycloak");
 
             // make sure we are in no-import mode
-            Assert.assertNull(session.userLocalStorage().getUserByUsername(appRealm, "johnkeycloak"));
-            Assert.assertNull(session.userLocalStorage().getUserByUsername(appRealm, "marykeycloak"));
+            Assert.assertNull(UserStoragePrivateUtil.userLocalStorage(session).getUserByUsername(appRealm, "johnkeycloak"));
+            Assert.assertNull(UserStoragePrivateUtil.userLocalStorage(session).getUserByUsername(appRealm, "marykeycloak"));
 
             RoleModel realmRole1 = appRealm.getRole("realmRole1");
             RoleModel realmRole2 = appRealm.getRole("realmRole2");
@@ -306,7 +307,7 @@ public class LDAPRoleMappingsNoImportTest extends AbstractLDAPTest {
             UserModel david = session.users().addUser(appRealm, "davidkeycloak");
 
             // make sure we are in no-import mode
-            Assert.assertNull(session.userLocalStorage().getUserByUsername(appRealm, "davidkeycloak"));
+            Assert.assertNull(UserStoragePrivateUtil.userLocalStorage(session).getUserByUsername(appRealm, "davidkeycloak"));
 
             RoleModel defaultRole = appRealm.getRole("realmRole1");
             RoleModel realmRole2 = appRealm.getRole("realmRole2");

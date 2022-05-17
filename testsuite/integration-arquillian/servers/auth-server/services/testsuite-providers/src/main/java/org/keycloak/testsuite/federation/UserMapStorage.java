@@ -34,6 +34,7 @@ import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.credential.PasswordUserCredentialModel;
 import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.storage.StorageId;
+import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.adapter.AbstractUserAdapterFederatedStorage;
 import org.keycloak.storage.federated.UserGroupMembershipFederatedStorage;
@@ -112,7 +113,7 @@ public class UserMapStorage implements UserLookupProvider.Streams, UserStoragePr
     private UserModel createUser(RealmModel realm, String username) {
         UserModel user;
         if (isImportEnabled()) {
-            user = session.userLocalStorage().addUser(realm, username);
+            user = UserStoragePrivateUtil.userLocalStorage(session).addUser(realm, username);
             user.setEnabled(true);
             user.setFederationLink(model.getId());
         } else {
@@ -366,7 +367,7 @@ public class UserMapStorage implements UserLookupProvider.Streams, UserStoragePr
     @Override
     public Stream<UserModel> searchForUserByUserAttributeStream(RealmModel realm, String attrName, String attrValue) {
         if (isImportEnabled()) {
-            return session.userLocalStorage().searchForUserByUserAttributeStream(realm, attrName, attrValue);
+            return UserStoragePrivateUtil.userLocalStorage(session).searchForUserByUserAttributeStream(realm, attrName, attrValue);
         } else {
             return session.userFederatedStorage().getUsersByUserAttributeStream(realm, attrName, attrValue)
               .map(userName -> createUser(realm, userName));

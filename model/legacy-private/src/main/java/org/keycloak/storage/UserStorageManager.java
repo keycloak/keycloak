@@ -165,10 +165,10 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
         runJobInTransaction(session.getKeycloakSessionFactory(), session -> {
             RealmModel realmModel = session.realms().getRealm(realm.getId());
             if (realmModel == null) return;
-            UserModel deletedUser = session.userLocalStorage().getUserById(realmModel, userId);
+            UserModel deletedUser = UserStoragePrivateUtil.userLocalStorage(session).getUserById(realmModel, userId);
             if (deletedUser != null) {
                 try {
-                    new UserManager(session).removeUser(realmModel, deletedUser, session.userLocalStorage());
+                    new UserManager(session).removeUser(realmModel, deletedUser, UserStoragePrivateUtil.userLocalStorage(session));
                     logger.debugf("Removed invalid user '%s'", userName);
                 } catch (ModelException ex) {
                     // Ignore exception, possible cause may be concurrent deleteInvalidUser calls which means
@@ -769,8 +769,8 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
     @Override
     public void onCache(RealmModel realm, CachedUserModel user, UserModel delegate) {
         if (StorageId.isLocalStorage(user)) {
-            if (session.userLocalStorage() instanceof OnUserCache) {
-                ((OnUserCache)session.userLocalStorage()).onCache(realm, user, delegate);
+            if (UserStoragePrivateUtil.userLocalStorage(session) instanceof OnUserCache) {
+                ((OnUserCache)UserStoragePrivateUtil.userLocalStorage(session)).onCache(realm, user, delegate);
             }
         } else {
             OnUserCache provider = getStorageProviderInstance(realm, StorageId.resolveProviderId(user), OnUserCache.class);

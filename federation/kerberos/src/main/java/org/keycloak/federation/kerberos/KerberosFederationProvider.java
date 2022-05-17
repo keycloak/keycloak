@@ -37,6 +37,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserManager;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.storage.ReadOnlyException;
+import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.user.ImportedUserValidation;
@@ -236,7 +237,7 @@ public class KerberosFederationProvider implements UserStorageProvider,
      * @return user if found or successfully created. Null if user with same username already exists, but is not linked to this provider
      */
     protected UserModel findOrCreateAuthenticatedUser(RealmModel realm, String username) {
-        UserModel user = session.userLocalStorage().getUserByUsername(realm, username);
+        UserModel user = UserStoragePrivateUtil.userLocalStorage(session).getUserByUsername(realm, username);
         if (user != null) {
             user = session.users().getUserById(realm, user.getId());  // make sure we get a cached instance
             logger.debug("Kerberos authenticated user " + username + " found in Keycloak storage");
@@ -252,7 +253,7 @@ public class KerberosFederationProvider implements UserStorageProvider,
                     logger.warn("User with username " + username + " already exists and is linked to provider [" + model.getName() +
                             "] but kerberos principal is not correct. Kerberos principal on user is: " + user.getFirstAttribute(KERBEROS_PRINCIPAL));
                     logger.warn("Will re-create user");
-                    new UserManager(session).removeUser(realm, user, session.userLocalStorage());
+                    new UserManager(session).removeUser(realm, user, UserStoragePrivateUtil.userLocalStorage(session));
                 }
             }
         }
@@ -266,7 +267,7 @@ public class KerberosFederationProvider implements UserStorageProvider,
         String email = username + "@" + kerberosConfig.getKerberosRealm().toLowerCase();
 
         logger.debugf("Creating kerberos user: %s, email: %s to local Keycloak storage", username, email);
-        UserModel user = session.userLocalStorage().addUser(realm, username);
+        UserModel user = UserStoragePrivateUtil.userLocalStorage(session).addUser(realm, username);
         user.setEnabled(true);
         user.setEmail(email);
         user.setFederationLink(model.getId());

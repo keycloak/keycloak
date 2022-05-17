@@ -87,7 +87,7 @@ public class UserSyncTest extends KeycloakModelTest {
             return null;
         }));
 
-        assertThat(withRealm(realmId, (session, realm) -> session.userLocalStorage().getUsersCount(realm)), is(0));
+        assertThat(withRealm(realmId, (session, realm) -> UserStoragePrivateUtil.userLocalStorage(session).getUsersCount(realm)), is(0));
 
         long start = System.currentTimeMillis();
         SynchronizationResult res = withRealm(realmId, (session, realm) -> {
@@ -101,7 +101,7 @@ public class UserSyncTest extends KeycloakModelTest {
         assertThat(String.format("User sync took %f seconds per user, but it should take less than 18 seconds", 
                 (float)(timeNeeded) / NUMBER_OF_USERS), timeNeeded, Matchers.lessThan((long) (18 * NUMBER_OF_USERS)));
         assertThat(res.getAdded(), is(NUMBER_OF_USERS));
-        assertThat(withRealm(realmId, (session, realm) -> session.userLocalStorage().getUsersCount(realm)), is(NUMBER_OF_USERS));
+        assertThat(withRealm(realmId, (session, realm) -> UserStoragePrivateUtil.userLocalStorage(session).getUsersCount(realm)), is(NUMBER_OF_USERS));
     }
 }
 

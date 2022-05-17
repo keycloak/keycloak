@@ -29,6 +29,7 @@ import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.DefaultRequiredActions;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.UserStorageUtil;
 
 import java.util.Arrays;
@@ -80,7 +81,7 @@ public class MigrateTo1_4_0 implements Migration {
     }
 
     private void migrateUsers(KeycloakSession session, RealmModel realm) {
-        session.userLocalStorage().getUsersStream(realm, false)
+        UserStoragePrivateUtil.userLocalStorage(session).getUsersStream(realm, false)
                 .forEach(user -> {
                     String email = KeycloakModelUtils.toLowerCaseSafe(user.getEmail());
                     if (email != null && !email.equals(user.getEmail())) {

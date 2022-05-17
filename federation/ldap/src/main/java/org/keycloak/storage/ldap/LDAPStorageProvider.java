@@ -61,6 +61,7 @@ import org.keycloak.storage.DatastoreProvider;
 import org.keycloak.storage.LegacyStoreManagers;
 import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.storage.StorageId;
+import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.adapter.InMemoryUserAdapter;
@@ -263,7 +264,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
 
              return ldapObjects.stream().map(ldapUser -> {
                  String ldapUsername = LDAPUtils.getUsername(ldapUser, this.ldapIdentityStore.getConfig());
-                 UserModel localUser = session.userLocalStorage().getUserByUsername(realm, ldapUsername);
+                 UserModel localUser = UserStoragePrivateUtil.userLocalStorage(session).getUserByUsername(realm, ldapUsername);
                  if (localUser == null) {
                      return importUserFromLDAP(session, realm, ldapUser);
                  } else {
@@ -284,7 +285,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
         }
         UserModel user = null;
         if (model.isImportEnabled()) {
-            user = session.userLocalStorage().addUser(realm, username);
+            user = UserStoragePrivateUtil.userLocalStorage(session).addUser(realm, username);
             user.setFederationLink(model.getId());
         } else {
             user = new InMemoryUserAdapter(session, realm, new StorageId(model.getId(), username).getId());
@@ -383,7 +384,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
         Stream<LDAPObject> stream = searchLDAP(realm, params).stream()
             .filter(ldapObject -> {
                 String ldapUsername = LDAPUtils.getUsername(ldapObject, this.ldapIdentityStore.getConfig());
-                return (session.userLocalStorage().getUserByUsername(realm, ldapUsername) == null);
+                return (UserStoragePrivateUtil.userLocalStorage(session).getUserByUsername(realm, ldapUsername) == null);
             });
 
         return paginatedStream(stream, firstResult, maxResults).map(ldapObject -> importUserFromLDAP(session, realm, ldapObject));
@@ -524,7 +525,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
         UserModel imported = null;
         if (model.isImportEnabled()) {
             // Search if there is already an existing user, which means the username might have changed in LDAP without Keycloak knowing about it
-            UserModel existingLocalUser = session.userLocalStorage()
+            UserModel existingLocalUser = UserStoragePrivateUtil.userLocalStorage(session)
                     .searchForUserByUserAttributeStream(realm, LDAPConstants.LDAP_ID, ldapUser.getUuid()).findFirst().orElse(null);
             if(existingLocalUser != null){
                 imported = existingLocalUser;
@@ -533,7 +534,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
                     session.userCache().evict(realm, existingLocalUser);			
                 }
             } else {
-                imported = session.userLocalStorage().addUser(realm, ldapUsername);
+                imported = UserStoragePrivateUtil.userLocalStorage(session).addUser(realm, ldapUsername);
             }
 
         } else {
@@ -589,7 +590,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
 
         // Check here if user already exists
         String ldapUsername = LDAPUtils.getUsername(ldapUser, ldapIdentityStore.getConfig());
-        UserModel user = session.userLocalStorage().getUserByUsername(realm, ldapUsername);
+        UserModel user = UserStoragePrivateUtil.userLocalStorage(session).getUserByUsername(realm, ldapUsername);
 
         if (user != null) {
             LDAPUtils.checkUuid(ldapUser, ldapIdentityStore.getConfig());
@@ -777,7 +778,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
      * @return finded or newly created user
      */
     protected UserModel findOrCreateAuthenticatedUser(RealmModel realm, String username) {
-        UserModel user = session.userLocalStorage().getUserByUsername(realm, username);
+        UserModel user = UserStoragePrivateUtil.userLocalStorage(session).getUserByUsername(realm, username);
         if (user != null) {
             logger.debugf("Kerberos authenticated user [%s] found in Keycloak storage", username);
             if (!model.getId().equals(user.getFederationLink())) {
@@ -795,7 +796,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
                     if (userCache != null) {
                         userCache.evict(realm, user);
                     }
-                    new UserManager(session).removeUser(realm, user, session.userLocalStorage());
+                    new UserManager(session).removeUser(realm, user, UserStoragePrivateUtil.userLocalStorage(session));
                 }
             }
         }
