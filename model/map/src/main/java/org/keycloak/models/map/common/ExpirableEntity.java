@@ -44,4 +44,18 @@ public interface ExpirableEntity extends AbstractEntity {
      * @param expiration a timestamp in milliseconds since The Epoch or {@code null} if this entity never expires.
      */
     void setExpiration(Long expiration);
+
+    /**
+     * Returns a point in time (timestamp in milliseconds since The Epoch) when this entity was created or updated
+     *
+     * @return a timestamp in milliseconds since The Epoch or {@code null} when the time is unknown
+     */
+    Long getTimestamp();
+
+    /**
+     * Sets a point in the (timestamp in milliseconds since The Epoch) when this entity was created or updated
+     *
+     * @param timestamp a timestamp in milliseconds since The Epoch or {@code null} when the time is unknown
+     */
+    void setTimestamp(Long timestamp);
 }

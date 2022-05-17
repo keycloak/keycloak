@@ -19,6 +19,8 @@ package org.keycloak.models.map.common;
 
 import org.jboss.logging.Logger;
 
+import java.util.concurrent.TimeUnit;
+
 /**
  * Wrapper for adapters around handling time in seconds.
  *
@@ -51,5 +53,19 @@ public class TimeAdapter {
      */
     public static long fromIntegerWithTimeInSecondsToLongWithTimeAsInSeconds(int timestamp) {
         return timestamp;
+    }
+
+    public static Long fromSecondsToMilliseconds(Long seconds) {
+        if (seconds == null) return null;
+        return TimeUnit.SECONDS.toMillis(seconds);
+    }
+
+    public static Long fromMilliSecondsToSeconds(Long milliSeconds) {
+        if (milliSeconds == null) return null;
+        return TimeUnit.MILLISECONDS.toSeconds(milliSeconds);
+    }
+
+    public static Long fromSecondsToMilliseconds(int seconds) {
+        return fromSecondsToMilliseconds(fromIntegerWithTimeInSecondsToLongWithTimeAsInSeconds(seconds));
     }
 }

@@ -28,8 +28,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.map.common.ExpirableEntity;
-import org.keycloak.models.map.common.TimeAdapter;
-import org.keycloak.models.map.group.MapGroupProvider;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder;
@@ -118,7 +116,7 @@ public class MapEventStoreProvider implements EventStoreProvider {
         LOG.tracef("clear(%s, %d)%s", realm, olderThan, getShortStackTrace());
         authEventsTX.delete(QueryParameters.withCriteria(DefaultModelCriteria.<Event>criteria()
                 .compare(Event.SearchableFields.REALM_ID, ModelCriteriaBuilder.Operator.EQ, realm.getId())
-                .compare(Event.SearchableFields.TIME, ModelCriteriaBuilder.Operator.LT, olderThan)
+                .compare(Event.SearchableFields.TIMESTAMP, ModelCriteriaBuilder.Operator.LT, olderThan)
         ));
     }
 
@@ -173,7 +171,7 @@ public class MapEventStoreProvider implements EventStoreProvider {
         LOG.tracef("clearAdmin(%s, %d)%s", realm, olderThan, getShortStackTrace());
         adminEventsTX.delete(QueryParameters.withCriteria(DefaultModelCriteria.<AdminEvent>criteria()
                 .compare(AdminEvent.SearchableFields.REALM_ID, ModelCriteriaBuilder.Operator.EQ, realm.getId())
-                .compare(AdminEvent.SearchableFields.TIME, ModelCriteriaBuilder.Operator.LT, olderThan)
+                .compare(AdminEvent.SearchableFields.TIMESTAMP, ModelCriteriaBuilder.Operator.LT, olderThan)
         ));
     }
 

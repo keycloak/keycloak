@@ -48,9 +48,6 @@ public interface MapAdminEventEntity extends UpdatableEntity, AbstractEntity, Ex
 
     }
 
-    Long getTime();
-    void setTime(Long time);
-
     String getRealmId();
     void setRealmId(String realmId);
 

@@ -50,9 +50,6 @@ public interface MapAuthEventEntity extends UpdatableEntity, AbstractEntity, Exp
 
     }
 
-    Long getTime();
-    void setTime(Long time);
-
     EventType getType();
     void setType(EventType type);
 

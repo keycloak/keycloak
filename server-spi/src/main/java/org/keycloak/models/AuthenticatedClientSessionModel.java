@@ -34,7 +34,8 @@ public interface AuthenticatedClientSessionModel extends CommonClientSessionMode
         public static final SearchableModelField<AuthenticatedClientSessionModel> CLIENT_ID = new SearchableModelField<>("clientId", String.class);
         public static final SearchableModelField<AuthenticatedClientSessionModel> USER_SESSION_ID = new SearchableModelField<>("userSessionId", String.class);
         public static final SearchableModelField<AuthenticatedClientSessionModel> IS_OFFLINE = new SearchableModelField<>("isOffline", Boolean.class);
-        public static final SearchableModelField<AuthenticatedClientSessionModel> TIMESTAMP  = new SearchableModelField<>("timestamp", Integer.class);
+        public static final SearchableModelField<AuthenticatedClientSessionModel> TIMESTAMP  = new SearchableModelField<>("timestamp", Long.class);
+        public static final SearchableModelField<AuthenticatedClientSessionModel> EXPIRATION  = new SearchableModelField<>("expiration", Long.class);
     }
 
     String STARTED_AT_NOTE = "startedAt";

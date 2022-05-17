@@ -71,12 +71,13 @@ public class HotRodUserSessionEntity extends AbstractHotRodEntity {
     public Boolean rememberMe;
 
     @ProtoField(number = 11)
-    public Long started;
+    public Long timestamp;
 
     @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
     @ProtoField(number = 12)
     public Long lastSessionRefresh;
 
+    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
     @ProtoField(number = 13)
     public Long expiration;
 

@@ -43,12 +43,12 @@ public abstract class MapAuthenticatedClientSessionAdapter extends AbstractAuthe
     @Override
     public int getTimestamp() {
         Long timestamp = entity.getTimestamp();
-        return timestamp != null ? TimeAdapter.fromLongWithTimeInSecondsToIntegerWithTimeInSeconds(timestamp) : 0;
+        return timestamp != null ? TimeAdapter.fromLongWithTimeInSecondsToIntegerWithTimeInSeconds(TimeAdapter.fromMilliSecondsToSeconds(timestamp)) : 0;
     }
 
     @Override
     public void setTimestamp(int timestamp) {
-        entity.setTimestamp(TimeAdapter.fromIntegerWithTimeInSecondsToLongWithTimeAsInSeconds(timestamp));
+        entity.setTimestamp(TimeAdapter.fromSecondsToMilliseconds(timestamp));
     }
 
     @Override
