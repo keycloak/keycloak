@@ -6,16 +6,29 @@ type SaveResetProps = ActionGroupProps & {
   name: string;
   save: () => void;
   reset: () => void;
+  isActive?: boolean;
 };
 
-export const SaveReset = ({ name, save, reset, ...rest }: SaveResetProps) => {
+export const SaveReset = ({
+  name,
+  save,
+  reset,
+  isActive = true,
+  ...rest
+}: SaveResetProps) => {
+  console.log(isActive);
   const { t } = useTranslation("common");
   return (
     <ActionGroup {...rest}>
-      <Button data-testid={name + "Save"} onClick={save}>
+      <Button isDisabled={!isActive} data-testid={name + "Save"} onClick={save}>
         {t("save")}
       </Button>
-      <Button data-testid={name + "Revert"} variant="link" onClick={reset}>
+      <Button
+        isDisabled={!isActive}
+        data-testid={name + "Revert"}
+        variant="link"
+        onClick={reset}
+      >
         {t("revert")}
       </Button>
     </ActionGroup>

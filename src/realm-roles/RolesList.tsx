@@ -25,6 +25,7 @@ type RolesListProps = {
   paginated?: boolean;
   parentRoleId?: string;
   messageBundle?: string;
+  isReadOnly?: boolean;
   loader?: (
     first?: number,
     max?: number,
@@ -51,6 +52,7 @@ export const RolesList = ({
   paginated = true,
   parentRoleId,
   messageBundle = "roles",
+  isReadOnly = false,
 }: RolesListProps) => {
   const { t } = useTranslation(messageBundle);
   const history = useHistory();
@@ -129,21 +131,30 @@ export const RolesList = ({
         searchPlaceholderKey="roles:searchFor"
         isPaginated={paginated}
         toolbarItem={
-          <Button data-testid="create-role" onClick={goToCreate}>
-            {t("createRole")}
-          </Button>
+          !isReadOnly && (
+            <Button data-testid="create-role" onClick={goToCreate}>
+              {t("createRole")}
+            </Button>
+          )
         }
-        actions={[
-          {
-            title: t("common:delete"),
-            onRowClick: (role) => {
-              setSelectedRole(role);
-              if (role.name === realm!.defaultRole!.name) {
-                addAlert(t("defaultRoleDeleteError"), AlertVariant.danger);
-              } else toggleDeleteDialog();
-            },
-          },
-        ]}
+        actions={
+          isReadOnly
+            ? []
+            : [
+                {
+                  title: t("common:delete"),
+                  onRowClick: (role) => {
+                    setSelectedRole(role);
+                    if (role.name === realm!.defaultRole!.name) {
+                      addAlert(
+                        t("defaultRoleDeleteError"),
+                        AlertVariant.danger
+                      );
+                    } else toggleDeleteDialog();
+                  },
+                },
+              ]
+        }
         columns={[
           {
             name: "name",
@@ -165,8 +176,8 @@ export const RolesList = ({
           <ListEmptyState
             hasIcon={true}
             message={t("noRoles")}
-            instructions={t("noRolesInstructions")}
-            primaryActionText={t("createRole")}
+            instructions={isReadOnly ? "" : t("noRolesInstructions")}
+            primaryActionText={isReadOnly ? "" : t("createRole")}
             onPrimaryAction={goToCreate}
           />
         }

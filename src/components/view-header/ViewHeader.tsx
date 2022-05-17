@@ -44,6 +44,7 @@ export type ViewHeaderProps = {
   onToggle?: (value: boolean) => void;
   divider?: boolean;
   helpTextKey?: string;
+  isReadOnly?: boolean;
 };
 
 export type ViewHeaderBadge = {
@@ -68,6 +69,7 @@ export const ViewHeader = ({
   onToggle,
   divider = true,
   helpTextKey,
+  isReadOnly = false,
 }: ViewHeaderProps) => {
   const { t } = useTranslation();
   const { enabled } = useHelp();
@@ -124,6 +126,7 @@ export const ViewHeader = ({
                       label={t("common:enabled")}
                       labelOff={t("common:disabled")}
                       className="pf-u-mr-lg"
+                      isDisabled={isReadOnly}
                       isChecked={isEnabled}
                       onChange={(value) => {
                         onToggle(value);

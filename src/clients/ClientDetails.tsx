@@ -71,6 +71,7 @@ import { AuthorizationExport } from "./authorization/AuthorizationExport";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { PermissionsTab } from "../components/permission-tab/PermissionTab";
 import { keyValueToArray } from "../components/key-value-form/key-value-convert";
+import { useAccess } from "../context/access/Access";
 
 type ClientDetailHeaderProps = {
   onChange: (value: boolean) => void;
@@ -125,6 +126,9 @@ const ClientDetailHeader = ({
     return [{ text }];
   }, [client, t]);
 
+  const { hasAccess } = useAccess();
+  const isManager = hasAccess("manage-clients");
+
   const dropdownItems = [
     <DropdownItem key="download" onClick={toggleDownloadDialog}>
       {t("downloadAdapterConfig")}
@@ -132,7 +136,7 @@ const ClientDetailHeader = ({
     <DropdownItem key="export" onClick={() => exportClient(client)}>
       {t("common:export")}
     </DropdownItem>,
-    ...(!isRealmClient(client)
+    ...(!isRealmClient(client) && isManager
       ? [
           <Divider key="divider" />,
           <DropdownItem
@@ -154,6 +158,7 @@ const ClientDetailHeader = ({
         subKey="clients:clientsExplain"
         badges={badges}
         divider={false}
+        isReadOnly={!isManager}
         helpTextKey="clients-help:enableDisable"
         dropdownItems={dropdownItems}
         isEnabled={value}
@@ -181,6 +186,14 @@ export default function ClientDetails() {
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
   const { profileInfo } = useServerInfo();
+
+  const { hasAccess } = useAccess();
+  const isManager = hasAccess("manage-clients");
+  const canViewPermissions = hasAccess(
+    "manage-authorization",
+    "manage-clients"
+  );
+  const canViewServiceAccountRoles = hasAccess("view-users");
 
   const history = useHistory();
 
@@ -419,6 +432,7 @@ export default function ClientDetails() {
                 loader={loader}
                 paginated={false}
                 messageBundle="clients"
+                isReadOnly={!isManager}
               />
             </Tab>
             {!isRealmClient(client) && !client.bearerOnly && (
@@ -550,7 +564,7 @@ export default function ClientDetails() {
                 </RoutableTabs>
               </Tab>
             )}
-            {client!.serviceAccountsEnabled && (
+            {client!.serviceAccountsEnabled && canViewServiceAccountRoles && (
               <Tab
                 id="serviceAccount"
                 data-testid="serviceAccountTab"
@@ -563,7 +577,7 @@ export default function ClientDetails() {
             {!profileInfo?.disabledFeatures?.includes(
               "ADMIN_FINE_GRAINED_AUTHZ"
             ) &&
-              client.access?.manage && (
+              canViewPermissions && (
                 <Tab
                   id="permissions"
                   data-testid="permissionsTab"

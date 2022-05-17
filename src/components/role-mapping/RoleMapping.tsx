@@ -79,6 +79,7 @@ type RoleMappingProps = {
   name: string;
   id: string;
   type: ResourcesKey;
+  isManager?: boolean;
   loader: () => Promise<Row[]>;
   save: (rows: Row[]) => Promise<void>;
   onHideRolesToggle: () => void;
@@ -160,6 +161,7 @@ export const RoleMapping = ({
   name,
   id,
   type,
+  isManager = true,
   loader,
   save,
   onHideRolesToggle,
@@ -216,6 +218,30 @@ export const RoleMapping = ({
     },
   });
 
+  const ManagerToolbarItems = () => {
+    if (!isManager) return <span />;
+
+    return (
+      <>
+        <ToolbarItem>
+          <Button data-testid="assignRole" onClick={() => setShowAssign(true)}>
+            {t("common:assignRole")}
+          </Button>
+        </ToolbarItem>
+        <ToolbarItem>
+          <Button
+            variant="link"
+            data-testid="unAssignRole"
+            onClick={toggleDeleteDialog}
+            isDisabled={selected.length === 0}
+          >
+            {t("common:unAssignRole")}
+          </Button>
+        </ToolbarItem>
+      </>
+    );
+  };
+
   return (
     <>
       {showAssign && (
@@ -253,36 +279,23 @@ export const RoleMapping = ({
                 }}
               />
             </ToolbarItem>
-            <ToolbarItem>
-              <Button
-                data-testid="assignRole"
-                onClick={() => setShowAssign(true)}
-              >
-                {t("common:assignRole")}
-              </Button>
-            </ToolbarItem>
-            <ToolbarItem>
-              <Button
-                variant="link"
-                data-testid="unAssignRole"
-                onClick={toggleDeleteDialog}
-                isDisabled={selected.length === 0}
-              >
-                {t("common:unAssignRole")}
-              </Button>
-            </ToolbarItem>
+            <ManagerToolbarItems />
           </>
         }
-        actions={[
-          {
-            title: t("common:unAssignRole"),
-            onRowClick: async (role) => {
-              setSelected([role]);
-              toggleDeleteDialog();
-              return false;
-            },
-          },
-        ]}
+        actions={
+          isManager
+            ? [
+                {
+                  title: t("common:unAssignRole"),
+                  onRowClick: async (role) => {
+                    setSelected([role]);
+                    toggleDeleteDialog();
+                    return false;
+                  },
+                },
+              ]
+            : []
+        }
         columns={[
           {
             name: "role.name",

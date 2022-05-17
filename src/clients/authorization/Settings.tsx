@@ -82,7 +82,7 @@ export const AuthorizationSettings = ({ clientId }: { clientId: string }) => {
           closeDialog={toggleImportDialog}
         />
       )}
-      <FormAccess role="manage-clients" isHorizontal>
+      <FormAccess role="view-clients" isHorizontal>
         <FormGroup
           label={t("import")}
           fieldId="import"
@@ -166,6 +166,7 @@ export const AuthorizationSettings = ({ clientId }: { clientId: string }) => {
           name="authenticationSettings"
           save={() => handleSubmit(save)()}
           reset={() => reset(resource)}
+          isActive
         />
       </FormAccess>
     </PageSection>

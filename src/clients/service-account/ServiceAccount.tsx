@@ -17,6 +17,7 @@ import {
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
 import { toUser } from "../../user/routes/User";
 import { useRealm } from "../../context/realm-context/RealmContext";
+import { useAccess } from "../../context/access/Access";
 
 import "./service-account.css";
 
@@ -32,6 +33,9 @@ export const ServiceAccount = ({ client }: ServiceAccountProps) => {
 
   const [hide, setHide] = useState(false);
   const [serviceAccount, setServiceAccount] = useState<UserRepresentation>();
+
+  const { hasAccess } = useAccess();
+  const isManager = hasAccess("manage-clients");
 
   useFetch(
     () =>
@@ -124,6 +128,7 @@ export const ServiceAccount = ({ client }: ServiceAccountProps) => {
         name={client.clientId!}
         id={serviceAccount.id!}
         type="users"
+        isManager={isManager}
         loader={loader}
         save={assignRoles}
         onHideRolesToggle={() => setHide(!hide)}

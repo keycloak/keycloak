@@ -32,6 +32,7 @@ import { toClient } from "./routes/Client";
 import { toImportClient } from "./routes/ImportClient";
 import { isRealmClient, getProtocolName } from "./utils";
 import helpUrls from "../help-urls";
+import { useAccess } from "../context/access/Access";
 
 export default function ClientsSection() {
   const { t } = useTranslation("clients");
@@ -44,6 +45,9 @@ export default function ClientsSection() {
   const [key, setKey] = useState(0);
   const refresh = () => setKey(new Date().getTime());
   const [selectedClient, setSelectedClient] = useState<ClientRepresentation>();
+
+  const { hasAccess } = useAccess();
+  const isManager = hasAccess("manage-clients");
 
   const loader = async (first?: number, max?: number, search?: string) => {
     const params: ClientQuery = {
@@ -95,6 +99,34 @@ export default function ClientsSection() {
     </TableText>
   );
 
+  const ToolbarItems = () => {
+    if (!isManager) return <span />;
+
+    return (
+      <>
+        <ToolbarItem>
+          <Button
+            component={(props) => (
+              <Link {...props} to={toAddClient({ realm })} />
+            )}
+          >
+            {t("createClient")}
+          </Button>
+        </ToolbarItem>
+        <ToolbarItem>
+          <Button
+            component={(props) => (
+              <Link {...props} to={toImportClient({ realm })} />
+            )}
+            variant="link"
+          >
+            {t("importClient")}
+          </Button>
+        </ToolbarItem>
+      </>
+    );
+  };
+
   return (
     <>
       <ViewHeader
@@ -117,29 +149,7 @@ export default function ClientsSection() {
               isPaginated
               ariaLabelKey="clients:clientList"
               searchPlaceholderKey="clients:searchForClient"
-              toolbarItem={
-                <>
-                  <ToolbarItem>
-                    <Button
-                      component={(props) => (
-                        <Link {...props} to={toAddClient({ realm })} />
-                      )}
-                    >
-                      {t("createClient")}
-                    </Button>
-                  </ToolbarItem>
-                  <ToolbarItem>
-                    <Button
-                      component={(props) => (
-                        <Link {...props} to={toImportClient({ realm })} />
-                      )}
-                      variant="link"
-                    >
-                      {t("importClient")}
-                    </Button>
-                  </ToolbarItem>
-                </>
-              }
+              toolbarItem={<ToolbarItems />}
               actionResolver={(rowData: IRowData) => {
                 const client: ClientRepresentation = rowData.data;
                 const actions: Action<ClientRepresentation>[] = [
@@ -151,7 +161,7 @@ export default function ClientsSection() {
                   },
                 ];
 
-                if (!isRealmClient(client)) {
+                if (!isRealmClient(client) && isManager) {
                   actions.push({
                     title: t("common:delete"),
                     onClick() {

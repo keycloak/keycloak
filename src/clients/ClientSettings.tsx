@@ -26,6 +26,7 @@ import { SamlConfig } from "./add/SamlConfig";
 import { SamlSignature } from "./add/SamlSignature";
 import environment from "../environment";
 import { useRealm } from "../context/realm-context/RealmContext";
+import { useAccess } from "../context/access/Access";
 
 type ClientSettingsProps = {
   client: ClientRepresentation;
@@ -46,6 +47,9 @@ export const ClientSettings = ({
   } = useFormContext<ClientRepresentation>();
   const { t } = useTranslation("clients");
   const { realm } = useRealm();
+
+  const { hasAccess } = useAccess();
+  const isManager = hasAccess("manage-clients");
 
   const [loginThemeOpen, setLoginThemeOpen] = useState(false);
   const loginThemes = useServerInfo().themes!["login"];
@@ -246,6 +250,7 @@ export const ClientSettings = ({
             name="settings"
             save={save}
             reset={reset}
+            isActive={!isManager}
           />
         )}
       </FormAccess>
@@ -527,6 +532,7 @@ export const ClientSettings = ({
           name="settings"
           save={save}
           reset={reset}
+          isActive={isManager}
         />
       </FormAccess>
     </ScrollForm>
