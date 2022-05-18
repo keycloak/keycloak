@@ -47,13 +47,13 @@
                 <td class="text-muted" colspan="4" data-ng-show="searchLoaded && roles.length == 0 && lastSearch == null">{{:: 'no-client-roles-available' | translate}}</td>
             </tr>
         </tbody>
-        <tfoot data-ng-show="roles && (roles.length >= query.max || query.first > 0)">
+        <tfoot data-ng-show="roles && (roles.length > query.max || query.first > 0)">
             <tr>
                 <td colspan="5">
                     <div class="table-nav">
                         <button data-ng-click="firstPage()" class="first" ng-disabled="query.first == 0">{{:: 'first-page' | translate}}</button>
                         <button data-ng-click="previousPage()" class="prev" ng-disabled="query.first == 0">{{:: 'previous-page' | translate}}</button>
-                        <button data-ng-click="nextPage()" class="next" ng-disabled="roles.length < query.max">{{:: 'next-page' | translate}}</button>
+                        <button data-ng-click="nextPage()" class="next" ng-disabled="roles.length <= query.max">{{:: 'next-page' | translate}}</button>
                     </div>
                 </td>
             </tr>

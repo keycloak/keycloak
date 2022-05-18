@@ -77,7 +77,7 @@
             <th width="11%" style="text-align: center">{{:: 'actions' | translate}}</th>
         </tr>
         </thead>
-        <tfoot data-ng-show="resources && (resources.length >= query.max || query.first > 0)">
+        <tfoot data-ng-show="resources && (resources.length > query.max || query.first > 0)">
         <tr>
             <td colspan="6">
                 <div class="table-nav">
@@ -87,7 +87,7 @@
                     <button data-ng-click="previousPage()" class="prev" ng-disabled="query.first == 0">{{::
                         'previous-page' | translate}}
                     </button>
-                    <button data-ng-click="nextPage()" class="next" ng-disabled="resources.length < query.max">{{::
+                    <button data-ng-click="nextPage()" class="next" ng-disabled="resources.length <= query.max">{{::
                         'next-page' | translate}}
                     </button>
                 </div>

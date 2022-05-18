@@ -33,13 +33,13 @@
             <th>{{:: 'session-start' | translate}}</th>
         </tr>
         </thead>
-        <tfoot data-ng-show="sessions && (sessions.length >= 5 || query.first != 0)">
+        <tfoot data-ng-show="sessions && (sessions.length > query.max || query.first != 0)">
         <tr>
             <td colspan="7">
                 <div class="table-nav">
                     <button data-ng-click="firstPage()" class="first" ng-disabled="query.first == 0">{{:: 'first-page' | translate}}</button>
                     <button data-ng-click="previousPage()" class="prev" ng-disabled="query.first == 0">{{:: 'previous-page' | translate}}</button>
-                    <button data-ng-click="nextPage()" class="next" ng-disabled="sessions.length < query.max">{{:: 'next-page' | translate}}</button>
+                    <button data-ng-click="nextPage()" class="next" ng-disabled="sessions.length <= query.max">{{:: 'next-page' | translate}}</button>
                 </div>
             </td>
         </tr>
