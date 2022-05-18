@@ -41,9 +41,7 @@ const AppContexts: FunctionComponent<AdminClientProps> = ({
             <AccessContextProvider>
               <Help>
                 <AlertProvider>
-                  <ServerInfoProvider>
-                    <SubGroups>{children}</SubGroups>
-                  </ServerInfoProvider>
+                  <SubGroups>{children}</SubGroups>
                 </AlertProvider>
               </Help>
             </AccessContextProvider>
@@ -91,16 +89,18 @@ export const App = ({ adminClient }: AdminClientProps) => {
               window.location.origin + window.location.pathname)
           }
         >
-          <Switch>
-            {routes.map((route, i) => (
-              <Route
-                exact={route.matchOptions?.exact ?? true}
-                key={i}
-                path={route.path}
-                component={() => <SecuredRoute route={route} />}
-              />
-            ))}
-          </Switch>
+          <ServerInfoProvider>
+            <Switch>
+              {routes.map((route, i) => (
+                <Route
+                  exact={route.matchOptions?.exact ?? true}
+                  key={i}
+                  path={route.path}
+                  component={() => <SecuredRoute route={route} />}
+                />
+              ))}
+            </Switch>
+          </ServerInfoProvider>
         </ErrorBoundary>
       </Page>
     </AppContexts>

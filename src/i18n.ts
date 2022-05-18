@@ -77,7 +77,7 @@ const configuredI18n = i18n
       translator: any
     ) {
       const override: string =
-        translator.resourceStore.data[translator.language].overrides[key];
+        translator.resourceStore.data[translator.language].overrides?.[key];
       return override || value;
     },
   })
