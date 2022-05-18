@@ -90,8 +90,8 @@ public class HotRodMapStorage extends KeycloakModelParameters {
                                                                                        .config("storage-client-sessions.provider", HotRodMapStorageProviderFactory.PROVIDER_ID)
           .spi(UserLoginFailureSpi.NAME).provider(MapUserLoginFailureProviderFactory.PROVIDER_ID).config(STORAGE_CONFIG, HotRodMapStorageProviderFactory.PROVIDER_ID)
           .spi("dblock").provider(NoLockingDBLockProviderFactory.PROVIDER_ID).config(STORAGE_CONFIG, ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
-          .spi(EventStoreSpi.NAME).provider(MapUserSessionProviderFactory.PROVIDER_ID).config("storage-admin-events.provider", ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
-                                                                                       .config("storage-auth-events.provider", ConcurrentHashMapStorageProviderFactory.PROVIDER_ID);
+          .spi(EventStoreSpi.NAME).provider(MapUserSessionProviderFactory.PROVIDER_ID).config("storage-admin-events.provider", HotRodMapStorageProviderFactory.PROVIDER_ID)
+                                                                                       .config("storage-auth-events.provider", HotRodMapStorageProviderFactory.PROVIDER_ID);
 
         cf.spi(MapStorageSpi.NAME)
                 .provider(ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)

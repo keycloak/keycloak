@@ -1506,6 +1506,7 @@
                                     <keycloak.realm.map.storage.provider>hotrod</keycloak.realm.map.storage.provider>
                                     <keycloak.userSession.map.storage.provider>hotrod</keycloak.userSession.map.storage.provider>
                                     <keycloak.authorization.map.storage.provider>hotrod</keycloak.authorization.map.storage.provider>
+                                    <keycloak.eventStore.map.storage.provider>hotrod</keycloak.eventStore.map.storage.provider>
                                 </systemPropertyVariables>
                             </configuration>
                         </plugin>

@@ -100,5 +100,21 @@
                 </indexed-entities>
             </indexing>
         </distributed-cache>
+        <distributed-cache name="auth-events" mode="SYNC">
+            <encoding media-type="application/x-protostream"/>
+            <indexing>
+                <indexed-entities>
+                    <indexed-entity>kc.HotRodAuthEventEntity</indexed-entity>
+                </indexed-entities>
+            </indexing>
+        </distributed-cache>
+        <distributed-cache name="admin-events" mode="SYNC">
+            <encoding media-type="application/x-protostream"/>
+            <indexing>
+                <indexed-entities>
+                    <indexed-entity>kc.HotRodAdminEventEntity</indexed-entity>
+                </indexed-entities>
+            </indexing>
+        </distributed-cache>
     </cache-container>
 </infinispan>
