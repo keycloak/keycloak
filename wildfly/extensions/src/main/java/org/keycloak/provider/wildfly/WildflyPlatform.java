@@ -98,8 +98,7 @@ public class WildflyPlatform implements PlatformProvider {
             if (WildflyUtil.getJavaVersion() >= 15) {
                 log.warnf("Cannot find script engine in the JBoss module '%s'. Please add JavaScript engine to the specified JBoss Module or make sure it is available on the classpath", engineModule);
             } else {
-                // TODO:mposolda debug
-                log.infof("Cannot find script engine in the JBoss module '%s'. Will fallback to the default script engine", engineModule);
+                log.debugf("Cannot find script engine in the JBoss module '%s'. Will fallback to the default script engine", engineModule);
             }
             return null;
         }

@@ -169,6 +169,7 @@ public class QuarkusPlatform implements PlatformProvider {
 
     @Override
     public ClassLoader getScriptEngineClassLoader(Config.Scope scriptProviderConfig) {
+        // It is fine to return null assuming that nashorn and it's dependencies are included on the classpath (usually "providers" directory)
         return null;
     }
 }
