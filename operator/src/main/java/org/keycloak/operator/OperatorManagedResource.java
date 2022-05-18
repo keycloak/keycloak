@@ -53,7 +53,7 @@ public abstract class OperatorManagedResource {
                 setOwnerReferences(resource);
 
                 Log.debugf("Creating or updating resource: %s", resource);
-                resource = client.resource(resource).createOrReplace();
+                resource = client.resource(resource).inNamespace(getNamespace()).createOrReplace();
                 Log.debugf("Successfully created or updated resource: %s", resource);
             } catch (Exception e) {
                 Log.error("Failed to create or update resource");

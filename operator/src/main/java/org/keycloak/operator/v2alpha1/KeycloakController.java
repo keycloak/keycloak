@@ -67,12 +67,12 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
                         .runnableInformer(0);
 
         SharedIndexInformer<Service> servicesInformer =
-                client.services().inNamespace(context.getConfigurationService().getClientConfiguration().getNamespace())
+                client.services().inNamespace(namespace)
                         .withLabels(Constants.DEFAULT_LABELS)
                         .runnableInformer(0);
 
         SharedIndexInformer<Ingress> ingressesInformer =
-                client.network().v1().ingresses().inNamespace(context.getConfigurationService().getClientConfiguration().getNamespace())
+                client.network().v1().ingresses().inNamespace(namespace)
                         .withLabels(Constants.DEFAULT_LABELS)
                         .runnableInformer(0);
 
