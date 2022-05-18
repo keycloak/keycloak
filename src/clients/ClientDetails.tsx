@@ -43,6 +43,7 @@ import {
 import useToggle from "../utils/useToggle";
 import { AdvancedTab } from "./AdvancedTab";
 import { ClientSettings } from "./ClientSettings";
+import { ClientSessions } from "./ClientSessions";
 import { Credentials } from "./credentials/Credentials";
 import { Keys } from "./keys/Keys";
 import { ClientParams, ClientTab, toClient } from "./routes/Client";
@@ -594,6 +595,14 @@ export default function ClientDetails() {
               {...route("advanced")}
             >
               <AdvancedTab save={save} client={client} />
+            </Tab>
+            <Tab
+              id="sessions"
+              data-testid="sessionsTab"
+              title={<TabTitleText>{t("sessions")}</TabTitleText>}
+              {...route("sessions")}
+            >
+              <ClientSessions client={client} />
             </Tab>
           </RoutableTabs>
         </FormProvider>

@@ -28,6 +28,7 @@ import { toUsers } from "./routes/Users";
 import { UserRoleMapping } from "./UserRoleMapping";
 import { UserAttributes } from "./UserAttributes";
 import { UserCredentials } from "./UserCredentials";
+import { UserSessions } from "./UserSessions";
 import { useAccess } from "../context/access/Access";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
 
@@ -239,6 +240,13 @@ const UsersTabs = () => {
                   <UserIdentityProviderLinks />
                 </Tab>
               )}
+              <Tab
+                eventKey="sessions"
+                data-testid="user-sessions-tab"
+                title={<TabTitleText>{t("sessions")}</TabTitleText>}
+              >
+                <UserSessions />
+              </Tab>
             </KeycloakTabs>
           )}
           {!id && (

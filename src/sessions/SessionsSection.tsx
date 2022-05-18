@@ -1,28 +1,20 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
-import { useTranslation } from "react-i18next";
-import moment from "moment";
-import { DropdownItem, PageSection } from "@patternfly/react-core";
-import { CubesIcon } from "@patternfly/react-icons";
-
-import type UserSessionRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userSessionRepresentation";
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
-import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
+import { DropdownItem, PageSection } from "@patternfly/react-core";
+import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
+
 import { ViewHeader } from "../components/view-header/ViewHeader";
-import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { useAdminClient } from "../context/auth/AdminClient";
-import { RevocationModal } from "./RevocationModal";
-import { LogoutAllSessionsModal } from "./LogoutAllSessionsModal";
 import helpUrls from "../help-urls";
-import { toClient } from "../clients/routes/Client";
-import { useRealm } from "../context/realm-context/RealmContext";
+import { LogoutAllSessionsModal } from "./LogoutAllSessionsModal";
+import { RevocationModal } from "./RevocationModal";
+import SessionsTable from "./SessionsTable";
 
 import "./SessionsSection.css";
 
 export default function SessionsSection() {
-  const { t } = useTranslation("sessions");
   const adminClient = useAdminClient();
-  const { realm } = useRealm();
+  const { t } = useTranslation("sessions");
   const [revocationModalOpen, setRevocationModalOpen] = useState(false);
   const [logoutAllSessionsModalOpen, setLogoutAllSessionsModalOpen] =
     useState(false);
@@ -71,20 +63,6 @@ export default function SessionsSection() {
     return userSessions;
   };
 
-  const Clients = (row: UserSessionRepresentation) => (
-    <>
-      {Object.entries(row.clients!).map(([clientId, client]) => (
-        <Link
-          key={client}
-          to={toClient({ clientId, realm, tab: "settings" })}
-          className="pf-u-mx-sm"
-        >
-          {client}
-        </Link>
-      ))}
-    </>
-  );
-
   const dropdownItems = [
     <DropdownItem
       key="toggle-modal"
@@ -128,40 +106,7 @@ export default function SessionsSection() {
             handleModalToggle={handleLogoutAllSessionsModalToggle}
           />
         )}
-        <KeycloakDataTable
-          loader={loader}
-          ariaLabelKey="session:title"
-          searchPlaceholderKey="sessions:searchForSession"
-          columns={[
-            {
-              name: "username",
-              displayKey: "sessions:subject",
-            },
-            {
-              name: "lastAccess",
-              displayKey: "sessions:lastAccess",
-              cellRenderer: (row) => moment(row.lastAccess).fromNow(),
-            },
-            {
-              name: "start",
-              displayKey: "sessions:startDate",
-              cellRenderer: (row) => moment(row.lastAccess).format("LLL"),
-            },
-            {
-              name: "clients",
-              displayKey: "sessions:accessedClients",
-              cellRenderer: Clients,
-            },
-          ]}
-          emptyState={
-            <ListEmptyState
-              hasIcon
-              icon={CubesIcon}
-              message={t("noSessions")}
-              instructions={t("noSessionsDescription")}
-            />
-          }
-        />
+        <SessionsTable loader={loader} />
       </PageSection>
     </>
   );

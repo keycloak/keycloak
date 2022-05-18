@@ -3,7 +3,12 @@ import { lazy } from "react";
 import { generatePath } from "react-router-dom";
 import type { RouteDef } from "../../route-config";
 
-export type UserTab = "settings" | "groups" | "consents" | "attributes";
+export type UserTab =
+  | "settings"
+  | "groups"
+  | "consents"
+  | "attributes"
+  | "sessions";
 
 export type UserParams = {
   realm: string;

@@ -78,6 +78,7 @@
   "verifyEmail": "Verify Email",
   "updateUserLocale": "Update User Locale",
   "consents": "Consents",
+  "sessions": "Sessions",
   "noConsents": "No consents",
   "noConsentsText": "The consents will only be recorded when users try to access a client that is configured to require consent. In that case, users will get a consent page which asks them to grant access to the client.",
   "identityProvider": "Identity provider",

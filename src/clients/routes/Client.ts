@@ -13,7 +13,8 @@ export type ClientTab =
   | "mappers"
   | "authorization"
   | "serviceAccount"
-  | "permissions";
+  | "permissions"
+  | "sessions";
 
 export type ClientParams = {
   realm: string;

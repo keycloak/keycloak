@@ -2,10 +2,10 @@
   "title": "Sessions",
   "sessionExplain": "Sessions are sessions of users in this realm and the clients that they access within the session.",
   "searchForSession": "Search session",
-  "subject": "Subject",
+  "user": "User",
   "lastAccess": "Last access",
-  "startDate": "Start date",
-  "accessedClients": "Accessed clients",
+  "started": "Started",
+  "clients": "Clients",
   "sessionsType": {
     "allSessions": "All session types",
     "regularSSO": "Regular SSO",
@@ -29,5 +29,7 @@
   "push": "Push",
   "none": "None",
   "noSessions": "No sessions",
-  "noSessionsDescription": "There are currently no active sessions in this realm."
+  "noSessionsDescription": "There are currently no active sessions in this realm.",
+  "noSessionsForUser": "There are currently no active sessions for this user.",
+  "noSessionsForClient": "There are currently no active sessions for this client."
 }

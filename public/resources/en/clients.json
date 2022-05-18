@@ -493,5 +493,6 @@
     "expires": "Expires in",
     "never": "Never expires"
   },
-  "mappers": "Mappers"
+  "mappers": "Mappers",
+  "sessions": "Sessions"
 }

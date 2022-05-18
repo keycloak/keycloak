@@ -118,10 +118,10 @@ export type DetailField<T> = {
 };
 
 export type Action<T> = IAction & {
-  onRowClick?: (row: T) => Promise<boolean> | void;
+  onRowClick?: (row: T) => Promise<boolean | void> | void;
 };
 
-type LoaderFunction<T> = (
+export type LoaderFunction<T> = (
   first?: number,
   max?: number,
   search?: string

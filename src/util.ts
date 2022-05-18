@@ -138,6 +138,16 @@ export const getBaseUrl = (adminClient: KeycloakAdminClient) => {
   );
 };
 
+export const dateFormatter =
+  (locale: string, options?: Intl.DateTimeFormatOptions): IFormatter =>
+  (value) => {
+    if (typeof value !== "number" && typeof value !== "string") {
+      throw new Error("Date value should be a number or string.");
+    }
+
+    return new Date(value).toLocaleString(locale, options);
+  };
+
 export const alphaRegexPattern = /[^A-Za-z]/g;
 
 export const emailRegexPattern =
