@@ -33,6 +33,7 @@
         <module name="org.keycloak.keycloak-model-legacy"/>
         <module name="org.keycloak.keycloak-model-legacy-private"/>
         <module name="org.keycloak.keycloak-model-legacy-services"/>
+        <module name="org.keycloak.keycloak-services"/>
         <module name="javax.ws.rs.api"/>
         <module name="org.jboss.resteasy.resteasy-jaxrs"/>
         <module name="org.jboss.logging"/>

@@ -15,4 +15,5 @@
 # limitations under the License.
 #
 
-org.keycloak.services.resources.admin.UserStorageProviderRealmAdminProvider
+org.keycloak.services.resources.admin.TestLdapConnectionRealmAdminProvider
+org.keycloak.services.resources.admin.LdapServerCapabilitiesRealmAdminProvider
