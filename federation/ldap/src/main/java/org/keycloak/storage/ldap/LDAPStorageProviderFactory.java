@@ -43,6 +43,7 @@ import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderFactory;
 import org.keycloak.storage.UserStorageProviderModel;
+import org.keycloak.storage.UserStorageUtil;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.storage.ldap.idm.query.Condition;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
@@ -630,7 +631,7 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
                                             ldapMapper.onImportUserFromLDAP(ldapUser, currentUser, currentRealm, false);
                                         });
 
-                                UserCache userCache = session.userCache();
+                                UserCache userCache = UserStorageUtil.userCache(session);
                                 if (userCache != null) {
                                     userCache.evict(currentRealm, currentUser);
                                 }
@@ -667,7 +668,7 @@ public class LDAPStorageProviderFactory implements UserStorageProviderFactory<LD
                             if (username != null) {
                                 UserModel existing = UserStoragePrivateUtil.userLocalStorage(session).getUserByUsername(currentRealm, username);
                                 if (existing != null) {
-                                    UserCache userCache = session.userCache();
+                                    UserCache userCache = UserStorageUtil.userCache(session);
                                     if (userCache != null) {
                                         userCache.evict(currentRealm, existing);
                                     }

@@ -143,7 +143,7 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
             testingClient.server().run(session -> {
                 RealmModel realm = session.realms().getRealmByName(AuthRealm.TEST);
 
-                assertThat(session.clientStorageManager()
+                assertThat(session.clients()
                             .searchClientsByClientIdStream(realm, "client", null, null)
                             .map(ClientModel::getClientId)
                             .collect(Collectors.toList()),
@@ -153,7 +153,7 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
                         );
 
                 // test the pagination; the clients from local storage (root-url-client) are fetched first
-                assertThat(session.clientStorageManager()
+                assertThat(session.clients()
                                 .searchClientsByClientIdStream(realm, "client", 0, 1)
                                 .map(ClientModel::getClientId)
                                 .collect(Collectors.toList()),
@@ -161,7 +161,7 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
                                 not(hasItem(hardcodedClient)),
                                 hasItem("root-url-client"))
                 );
-                assertThat(session.clientStorageManager()
+                assertThat(session.clients()
                                 .searchClientsByClientIdStream(realm, "client", 1, 1)
                                 .map(ClientModel::getClientId)
                                 .collect(Collectors.toList()),
@@ -179,7 +179,7 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
 
             testingClient.server().run(session -> {
                 // search for clients and check hardcoded-client is not present
-                assertThat(session.clientStorageManager()
+                assertThat(session.clients()
                         .searchClientsByClientIdStream(session.realms().getRealmByName(AuthRealm.TEST), "client", null, null)
                         .map(ClientModel::getClientId)
                         .collect(Collectors.toList()),

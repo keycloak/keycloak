@@ -86,7 +86,7 @@ public class MigrateTo1_4_0 implements Migration {
                     String email = KeycloakModelUtils.toLowerCaseSafe(user.getEmail());
                     if (email != null && !email.equals(user.getEmail())) {
                         user.setEmail(email);
-                        UserCache userCache = session.userCache();
+                        UserCache userCache = UserStorageUtil.userCache(session);
                         if (userCache != null) {
                             userCache.evict(realm, user);
                         }

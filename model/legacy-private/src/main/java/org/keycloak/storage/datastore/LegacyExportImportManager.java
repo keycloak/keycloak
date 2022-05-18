@@ -68,6 +68,7 @@ import org.keycloak.storage.ExportImportManager;
 import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
+import org.keycloak.storage.UserStorageUtil;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
 import org.keycloak.userprofile.UserProfileProvider;
 import org.keycloak.validation.ValidationUtil;
@@ -1379,7 +1380,7 @@ public class LegacyExportImportManager implements ExportImportManager {
     }
 
     public static void importFederatedUser(KeycloakSession session, RealmModel newRealm, UserRepresentation userRep) {
-        UserFederatedStorageProvider federatedStorage = session.userFederatedStorage();
+        UserFederatedStorageProvider federatedStorage = UserStorageUtil.userFederatedStorage(session);
         if (userRep.getAttributes() != null) {
             for (Map.Entry<String, List<String>> entry : userRep.getAttributes().entrySet()) {
                 String key = entry.getKey();

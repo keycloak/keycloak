@@ -36,6 +36,7 @@ import org.keycloak.storage.CacheableStorageProviderModel.CachePolicy;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.UserStorageProvider;
+import org.keycloak.storage.UserStorageUtil;
 import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
@@ -169,7 +170,7 @@ public class UserStorageTest extends AbstractAuthTest {
             UserModel user = session.users().getUserByUsername(realm, "thor");
             if (user != null) {
                 UserStoragePrivateUtil.userLocalStorage(session).removeUser(realm, user);
-                session.userCache().clear();
+                UserStorageUtil.userCache(session).clear();
             }
 
             //we need to clear userPasswords and userGroups from UserMapStorageFactory
@@ -528,7 +529,7 @@ public class UserStorageTest extends AbstractAuthTest {
 
         // let's clear cache
         testingClient.server().run(session -> {
-            session.userCache().clear();
+            UserStorageUtil.userCache(session).clear();
         });
 
 

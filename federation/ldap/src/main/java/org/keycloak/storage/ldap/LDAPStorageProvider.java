@@ -64,6 +64,7 @@ import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
+import org.keycloak.storage.UserStorageUtil;
 import org.keycloak.storage.adapter.InMemoryUserAdapter;
 import org.keycloak.storage.adapter.UpdateOnlyChangeUserModelDelegate;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
@@ -240,7 +241,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
             logger.debugf("Updated LDAP DN of user '%s' to '%s'", local.getUsername(), ldapDn);
             local.setSingleAttribute(LDAPConstants.LDAP_ENTRY_DN, ldapDn);
 
-            UserCache userCache = session.userCache();
+            UserCache userCache = UserStorageUtil.userCache(session);
             if (userCache != null) {
                 userCache.evict(realm, local);
             }
@@ -530,8 +531,8 @@ public class LDAPStorageProvider implements UserStorageProvider,
             if(existingLocalUser != null){
                 imported = existingLocalUser;
                 // Need to evict the existing user from cache
-                if (session.userCache() != null) {
-                    session.userCache().evict(realm, existingLocalUser);			
+                if (UserStorageUtil.userCache(session) != null) {
+                    UserStorageUtil.userCache(session).evict(realm, existingLocalUser);
                 }
             } else {
                 imported = UserStoragePrivateUtil.userLocalStorage(session).addUser(realm, ldapUsername);
@@ -792,7 +793,7 @@ public class LDAPStorageProvider implements UserStorageProvider,
                     logger.warnf("User with username [%s] aready exists and is linked to provider [%s] but is not valid. Stale LDAP_ID on local user is: %s",
                             username,  model.getName(), user.getFirstAttribute(LDAPConstants.LDAP_ID));
                     logger.warn("Will re-create user");
-                    UserCache userCache = session.userCache();
+                    UserCache userCache = UserStorageUtil.userCache(session);
                     if (userCache != null) {
                         userCache.evict(realm, user);
                     }
