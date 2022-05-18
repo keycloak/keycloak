@@ -44,7 +44,7 @@ public class KeycloakIngress extends OperatorManagedResource implements StatusUp
     protected Optional<HasMetadata> getReconciledResource() {
         var defaultIngress = newIngress();
         if (keycloak.getSpec().isDisableDefaultIngress() && existingIngress != null) {
-            client.network().v1().ingresses().delete(existingIngress);
+            client.network().v1().ingresses().inNamespace(getNamespace()).delete(existingIngress);
             return Optional.empty();
         } else if (existingIngress == null) {
             return Optional.of(defaultIngress);

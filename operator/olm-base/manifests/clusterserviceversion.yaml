@@ -94,7 +94,7 @@ spec:
                       - -jar
                       - quarkus-run.jar
                     env:
-                      - name: WATCH_NAMESPACE
+                      - name: QUARKUS_OPERATOR_SDK_NAMESPACES
                         valueFrom:
                           fieldRef:
                             fieldPath: metadata.annotations['olm.targetNamespaces']
