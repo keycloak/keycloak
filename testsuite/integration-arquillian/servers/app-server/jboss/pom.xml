@@ -760,18 +760,6 @@
             </modules>
         </profile>
         <profile>
-            <id>app-server-wildfly-deprecated</id>
-            <activation>
-                <property>
-                    <name>app.server</name>
-                    <value>wildfly-deprecated</value>
-                </property>
-            </activation>
-            <modules>
-                <module>wildfly-deprecated</module>
-            </modules>
-        </profile>
-        <profile>
             <id>app-server-relative</id>
             <activation>
                 <property>

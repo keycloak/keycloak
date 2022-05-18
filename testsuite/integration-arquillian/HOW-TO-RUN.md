@@ -257,27 +257,6 @@ mvn -f testsuite/integration-arquillian/pom.xml \
        -Dtest=org.keycloak.testsuite.adapter.**
 ````
 
-### Wildfly with legacy non-elytron adapter
-
-    mvn -f testsuite/integration-arquillian/pom.xml \
-       clean install \
-       -Dskip.elytron.adapter.installation=true \
-       -Dskip.adapter.offline.installation=false \
-       -Papp-server-wildfly \
-       -Dtest=org.keycloak.testsuite.adapter.**
-
-
-### Wildfly deprecated
-
-This is usually previous version of WildFly application server right before current version.
-See the property `wildfly.deprecated.version` in the file [pom.xml](pom.xml) ) .
-
-    mvn -f testsuite/integration-arquillian/pom.xml \
-       clean install \
-       -Pauth-server-wildfly \
-       -Papp-server-wildfly-deprecated \
-       -Dtest=org.keycloak.testsuite.adapter.**
-
 ## Migration test
 
 ### DB migration test

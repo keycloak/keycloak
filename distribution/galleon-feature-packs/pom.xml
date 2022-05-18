@@ -31,7 +31,6 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>adapter-galleon-pack</module>
         <module>server-galleon-pack</module>
     </modules>
 
