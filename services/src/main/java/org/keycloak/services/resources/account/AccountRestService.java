@@ -27,7 +27,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -146,23 +148,35 @@ public class AccountRestService {
 
         UserRepresentation rep = new UserRepresentation();
         rep.setId(user.getId());
-        rep.setUsername(user.getUsername());
-        rep.setFirstName(user.getFirstName());
-        rep.setLastName(user.getLastName());
-        rep.setEmail(user.getEmail());
-        rep.setEmailVerified(user.isEmailVerified());
 
         UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
         UserProfile profile = provider.create(UserProfileContext.ACCOUNT, user);
 
         rep.setAttributes(profile.getAttributes().getReadable(false));
 
+        addReadableBuiltinAttributes(user, rep, profile.getAttributes().getReadable(true).keySet());
+
         if(userProfileMetadata == null || userProfileMetadata.booleanValue())
             rep.setUserProfileMetadata(createUserProfileMetadata(profile));
         
         return rep;
     }
-    
+
+    private void addReadableBuiltinAttributes(UserModel user, UserRepresentation rep, Set<String> readableAttributes) {
+        setIfReadable(UserModel.USERNAME, readableAttributes, rep::setUsername, user::getUsername);
+        setIfReadable(UserModel.FIRST_NAME, readableAttributes, rep::setFirstName, user::getFirstName);
+        setIfReadable(UserModel.LAST_NAME, readableAttributes, rep::setLastName, user::getLastName);
+        setIfReadable(UserModel.EMAIL, readableAttributes, rep::setEmail, user::getEmail);
+        // emailVerified is readable when email is readable
+        setIfReadable(UserModel.EMAIL, readableAttributes, rep::setEmailVerified, user::isEmailVerified);
+    }
+
+    private <T> void setIfReadable(String attributeName, Set<String> readableAttributes, Consumer<T> setter, Supplier<T> getter) {
+        if (readableAttributes.contains(attributeName)) {
+            setter.accept(getter.get());
+        }
+    }
+
     private UserProfileMetadata createUserProfileMetadata(final UserProfile profile) {
         Map<String, List<String>> am = profile.getAttributes().getReadable();
         
