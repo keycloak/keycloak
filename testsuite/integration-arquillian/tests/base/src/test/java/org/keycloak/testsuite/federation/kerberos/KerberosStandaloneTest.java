@@ -23,8 +23,10 @@ import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
+import org.keycloak.common.Profile;
 import org.keycloak.common.constants.KerberosConstants;
 import org.keycloak.federation.kerberos.CommonKerberosConfig;
 import org.keycloak.federation.kerberos.KerberosConfig;
@@ -34,6 +36,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.ActionURIUtils;
 import org.keycloak.testsuite.KerberosEmbeddedServer;
+import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.util.KerberosRule;
 
@@ -55,6 +58,11 @@ public class KerberosStandaloneTest extends AbstractKerberosSingleRealmTest {
         return kerberosRule;
     }
 
+    @Before
+    public void before() {
+        // don't run this test when map storage is enabled, as map storage doesn't support the legacy style federation
+        ProfileAssume.assumeFeatureDisabled(Profile.Feature.MAP_STORAGE);
+    }
 
     @Override
     protected CommonKerberosConfig getKerberosConfig() {

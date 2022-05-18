@@ -27,7 +27,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -79,7 +78,6 @@ import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
@@ -101,15 +99,12 @@ import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.GroupRepresentation;
-import org.keycloak.representations.idm.LDAPCapabilityRepresentation;
 import org.keycloak.representations.idm.ManagementPermissionReference;
 import org.keycloak.representations.idm.PartialImportRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.TestLdapConnectionRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.services.managers.LDAPServerCapabilitiesManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.ResourceAdminManager;
 import org.keycloak.services.resources.admin.ext.AdminRealmResourceProvider;
@@ -922,65 +917,6 @@ public class RealmAdminResource {
 
         EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
         eventStore.clearAdmin(realm);
-    }
-
-    /**
-     * Test LDAP connection
-     *
-     * @param action
-     * @param connectionUrl
-     * @param bindDn
-     * @param bindCredential
-     * @return
-     */
-    @Path("testLDAPConnection")
-    @POST
-    @NoCache
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    @Deprecated
-    public Response testLDAPConnection(@FormParam("action") String action, @FormParam("connectionUrl") String connectionUrl,
-                                       @FormParam("bindDn") String bindDn, @FormParam("bindCredential") String bindCredential,
-                                       @FormParam("useTruststoreSpi") String useTruststoreSpi, @FormParam("connectionTimeout") String connectionTimeout,
-                                       @FormParam("componentId") String componentId, @FormParam("startTls") String startTls) {
-        auth.realm().requireManageRealm();
-
-        TestLdapConnectionRepresentation config = new TestLdapConnectionRepresentation(action, connectionUrl, bindDn, bindCredential, useTruststoreSpi, connectionTimeout, startTls, LDAPConstants.AUTH_TYPE_SIMPLE);
-        config.setComponentId(componentId);
-        boolean result = LDAPServerCapabilitiesManager.testLDAP(config, session, realm);
-        return result ? Response.noContent().build() : ErrorResponse.error("LDAP test error", Response.Status.BAD_REQUEST);
-    }
-
-    /**
-     * Test LDAP connection
-     * @return
-     */
-    @Path("testLDAPConnection")
-    @POST
-    @NoCache
-    @Consumes(MediaType.APPLICATION_JSON)
-    public Response testLDAPConnection(TestLdapConnectionRepresentation config) {
-        boolean result = LDAPServerCapabilitiesManager.testLDAP(config, session, realm);
-        return result ? Response.noContent().build() : ErrorResponse.error("LDAP test error", Response.Status.BAD_REQUEST);
-    }
-
-    /**
-     * Get LDAP supported extensions.
-     * @param config LDAP configuration
-     * @return
-     */
-    @POST
-    @Path("ldap-server-capabilities")
-    @NoCache
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(javax.ws.rs.core.MediaType.APPLICATION_JSON)
-    public Response ldapServerCapabilities(TestLdapConnectionRepresentation config) {
-        auth.realm().requireManageRealm();
-        try {
-            Set<LDAPCapabilityRepresentation> ldapCapabilities = LDAPServerCapabilitiesManager.queryServerCapabilities(config, session, realm);
-            return Response.ok().entity(ldapCapabilities).build();
-        } catch (Exception e) {
-            return ErrorResponse.error("ldapServerCapabilities error", Status.BAD_REQUEST);
-        }
     }
 
     /**
