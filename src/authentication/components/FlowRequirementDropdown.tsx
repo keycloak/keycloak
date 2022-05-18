@@ -2,11 +2,11 @@ import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Select, SelectOption, SelectVariant } from "@patternfly/react-core";
 
-import type AuthenticationExecutionInfoRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticationExecutionInfoRepresentation";
+import type { ExpandableExecution } from "../execution-model";
 
 type FlowRequirementDropdownProps = {
-  flow: AuthenticationExecutionInfoRepresentation;
-  onChange: (flow: AuthenticationExecutionInfoRepresentation) => void;
+  flow: ExpandableExecution;
+  onChange: (flow: ExpandableExecution) => void;
 };
 
 export const FlowRequirementDropdown = ({

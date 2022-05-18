@@ -130,13 +130,13 @@ export default function FlowDetails() {
     }
   };
 
-  const update = async (
-    execution: AuthenticationExecutionInfoRepresentation
-  ) => {
+  const update = async (execution: ExpandableExecution) => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { executionList, isCollapsed, ...ex } = execution;
     try {
       await adminClient.authenticationManagement.updateExecution(
         { flow: flow?.alias! },
-        execution
+        ex
       );
       refresh();
       addAlert(t("updateFlowSuccess"), AlertVariant.success);

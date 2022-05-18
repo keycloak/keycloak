@@ -8,29 +8,48 @@ import FlowDetails from "../support/pages/admin_console/manage/authentication/Fl
 import RequiredActions from "../support/pages/admin_console/manage/authentication/RequiredActions";
 import adminClient from "../support/util/AdminClient";
 import PasswordPolicies from "../support/pages/admin_console/manage/authentication/PasswordPolicies";
+import ModalUtils from "../support/util/ModalUtils";
+
+const loginPage = new LoginPage();
+const masthead = new Masthead();
+const sidebarPage = new SidebarPage();
+const listingPage = new ListingPage();
 
 describe("Authentication test", () => {
-  const loginPage = new LoginPage();
-  const masthead = new Masthead();
-  const sidebarPage = new SidebarPage();
-  const listingPage = new ListingPage();
-
   const detailPage = new FlowDetails();
+  const duplicateFlowModal = new DuplicateFlowModal();
+  const modalUtil = new ModalUtils();
 
-  beforeEach(() => {
+  before(() => {
     keycloakBefore();
     loginPage.logIn();
     sidebarPage.waitForPageLoad();
+  });
+
+  beforeEach(() => {
     sidebarPage.goToAuthentication();
   });
 
   it("should create duplicate of existing flow", () => {
-    const modalDialog = new DuplicateFlowModal();
     listingPage.clickRowDetails("Browser").clickDetailMenu("Duplicate");
-    modalDialog.fill("Copy of browser");
+    duplicateFlowModal.fill("Copy of browser");
 
     masthead.checkNotificationMessage("Flow successfully duplicated");
     listingPage.itemExist("Copy of browser");
+  });
+
+  it("Should fail duplicate with empty flow name", () => {
+    listingPage.clickRowDetails("Browser").clickDetailMenu("Duplicate");
+    duplicateFlowModal.fill().shouldShowError("Required field");
+    modalUtil.cancelModal();
+  });
+
+  it("Should fail duplicate with duplicated name", () => {
+    listingPage.clickRowDetails("Browser").clickDetailMenu("Duplicate");
+    duplicateFlowModal.fill("browser");
+    masthead.checkNotificationMessage(
+      "Could not duplicate flow: New flow alias name already exists"
+    );
   });
 
   it("should show the details of a flow as a table", () => {
@@ -39,7 +58,7 @@ describe("Authentication test", () => {
     detailPage.executionExists("Cookie");
   });
 
-  it("should move kerberos down", () => {
+  it.skip("should move kerberos down", () => {
     listingPage.goToItemDetails("Copy of browser");
 
     detailPage.moveRowTo("Kerberos", "Identity Provider Redirector");
@@ -94,6 +113,13 @@ describe("Authentication test", () => {
     detailPage.flowExists(flowName);
   });
 
+  it("Should remove an execution", () => {
+    listingPage.goToItemDetails("Copy of browser");
+    detailPage.executionExists("Cookie").clickRowDelete("Cookie");
+    modalUtil.confirmModal();
+    detailPage.executionExists("Cookie", false);
+  });
+
   it("should create flow from scratch", () => {
     const flowName = "Flow";
     listingPage.goToCreateItem();
@@ -109,78 +135,76 @@ describe("Authentication test", () => {
 
     detailPage.flowExists(flowName);
   });
+});
 
-  describe("Required actions", () => {
-    const requiredActionsPage = new RequiredActions();
-    beforeEach(() => {
-      keycloakBefore();
-      loginPage.logIn();
-      sidebarPage.goToRealm("Test");
-      sidebarPage.goToAuthentication();
-      requiredActionsPage.goToTab();
-    });
+describe("Required actions", () => {
+  const requiredActionsPage = new RequiredActions();
 
-    before(() => {
-      adminClient.createRealm("Test");
-    });
-
-    after(() => {
-      adminClient.deleteRealm("Test");
-    });
-
-    it("should enable delete account", () => {
-      const action = "Delete Account";
-      requiredActionsPage.enableAction(action);
-      masthead.checkNotificationMessage("Updated required action successfully");
-      requiredActionsPage.isChecked(action);
-    });
-
-    it("should register an unregistered action", () => {
-      const action = "Verify Profile";
-      requiredActionsPage.enableAction(action);
-      masthead.checkNotificationMessage("Updated required action successfully");
-      requiredActionsPage.isChecked(action).isDefaultEnabled(action);
-    });
-
-    it("should set action as default", () => {
-      const action = "Configure OTP";
-      requiredActionsPage.setAsDefault(action);
-      masthead.checkNotificationMessage("Updated required action successfully");
-      requiredActionsPage.isDefaultChecked(action);
-    });
-
-    it("should reorder required actions", () => {
-      const action = "Terms and Conditions";
-      requiredActionsPage.moveRowTo(action, "Update Profile");
-      masthead.checkNotificationMessage("Updated required action successfully");
-    });
+  before(() => {
+    cy.wrap(adminClient.createRealm("Test"));
+    keycloakBefore();
+    loginPage.logIn();
+    sidebarPage.goToRealm("Test");
   });
 
-  describe("Password policies tab", () => {
-    const passwordPoliciesPage = new PasswordPolicies();
-    beforeEach(() => {
-      keycloakBefore();
-      loginPage.logIn();
-      sidebarPage.goToAuthentication();
-      passwordPoliciesPage.goToTab();
-    });
+  beforeEach(() => {
+    sidebarPage.goToAuthentication();
+    requiredActionsPage.goToTab();
+  });
 
-    it("should add password policies", () => {
-      passwordPoliciesPage
-        .shouldShowEmptyState()
-        .addPolicy("Not Recently Used")
-        .save();
-      masthead.checkNotificationMessage(
-        "Password policies successfully updated"
-      );
-    });
+  after(() => {
+    adminClient.deleteRealm("Test");
+  });
 
-    it("should remove password policies", () => {
-      passwordPoliciesPage.removePolicy("remove-passwordHistory").save();
-      masthead.checkNotificationMessage(
-        "Password policies successfully updated"
-      );
-      passwordPoliciesPage.shouldShowEmptyState();
-    });
+  it("should enable delete account", () => {
+    const action = "Delete Account";
+    requiredActionsPage.enableAction(action);
+    masthead.checkNotificationMessage("Updated required action successfully");
+    requiredActionsPage.isChecked(action);
+  });
+
+  it("should register an unregistered action", () => {
+    const action = "Verify Profile";
+    requiredActionsPage.enableAction(action);
+    masthead.checkNotificationMessage("Updated required action successfully");
+    requiredActionsPage.isChecked(action).isDefaultEnabled(action);
+  });
+
+  it("should set action as default", () => {
+    const action = "Configure OTP";
+    requiredActionsPage.setAsDefault(action);
+    masthead.checkNotificationMessage("Updated required action successfully");
+    requiredActionsPage.isDefaultChecked(action);
+  });
+
+  it("should reorder required actions", () => {
+    const action = "Terms and Conditions";
+    requiredActionsPage.moveRowTo(action, "Update Profile");
+    masthead.checkNotificationMessage("Updated required action successfully");
+  });
+});
+
+describe("Password policies tab", () => {
+  const passwordPoliciesPage = new PasswordPolicies();
+
+  beforeEach(() => {
+    keycloakBefore();
+    loginPage.logIn();
+    sidebarPage.goToAuthentication();
+    passwordPoliciesPage.goToTab();
+  });
+
+  it("should add password policies", () => {
+    passwordPoliciesPage
+      .shouldShowEmptyState()
+      .addPolicy("Not Recently Used")
+      .save();
+    masthead.checkNotificationMessage("Password policies successfully updated");
+  });
+
+  it("should remove password policies", () => {
+    passwordPoliciesPage.removePolicy("remove-passwordHistory").save();
+    masthead.checkNotificationMessage("Password policies successfully updated");
+    passwordPoliciesPage.shouldShowEmptyState();
   });
 });

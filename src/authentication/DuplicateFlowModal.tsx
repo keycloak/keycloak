@@ -41,7 +41,7 @@ export const DuplicateFlowModal = ({
   }, [name, description, setValue]);
 
   const save = async () => {
-    await trigger();
+    if (!(await trigger())) return;
     const form = getValues();
     try {
       await adminClient.authenticationManagement.copyFlow({

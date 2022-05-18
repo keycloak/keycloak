@@ -1,8 +1,8 @@
 type RequirementType = "Required" | "Alternative" | "Disabled" | "Conditional";
 
 export default class FlowDetails {
-  executionExists(name: string) {
-    this.getExecution(name).should("exist");
+  executionExists(name: string, exist = true) {
+    this.getExecution(name).should((!exist ? "not." : "") + "exist");
     return this;
   }
 
@@ -72,6 +72,12 @@ export default class FlowDetails {
   addSubFlow(subFlowName: string, name: string) {
     this.clickEditDropdownForFlow(subFlowName, "Add sub-flow");
     this.fillSubFlowModal(subFlowName, name);
+
+    return this;
+  }
+
+  clickRowDelete(name: string) {
+    cy.findByTestId(`${name}-delete`).click();
 
     return this;
   }
