@@ -11,7 +11,15 @@
     },
 
     "eventsStore": {
-        "provider": "${keycloak.eventsStore.provider:}"
+        "provider": "${keycloak.eventsStore.provider:jpa}",
+        "map": {
+            "storage-admin-events": {
+                "provider": "${keycloak.eventStore.map.storage.provider:concurrenthashmap}"
+            },
+            "storage-auth-events": {
+                "provider": "${keycloak.eventStore.map.storage.provider:concurrenthashmap}"
+            }
+        }
     },
 
     "deploymentState": {

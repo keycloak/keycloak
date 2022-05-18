@@ -18,17 +18,25 @@
 package org.keycloak.models.map.storage.hotRod;
 
 import org.keycloak.authorization.model.Policy;
+import org.keycloak.events.Event;
+import org.keycloak.events.EventType;
+import org.keycloak.events.admin.AdminEvent;
+import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.map.storage.CriterionNotSupportedException;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder;
+import org.keycloak.models.map.storage.hotRod.common.HotRodTypesUtils;
 import org.keycloak.storage.SearchableModelField;
 import org.keycloak.storage.StorageId;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.keycloak.models.map.storage.hotRod.IckleQueryMapModelCriteriaBuilder.getFieldName;
 import static org.keycloak.models.map.storage.hotRod.IckleQueryMapModelCriteriaBuilder.sanitizeAnalyzed;
@@ -58,6 +66,8 @@ public class IckleQueryWhereClauses {
         WHERE_CLAUSE_PRODUCER_OVERRIDES.put(UserModel.SearchableFields.CONSENT_CLIENT_FEDERATION_LINK, IckleQueryWhereClauses::whereClauseForConsentClientFederationLink);
         WHERE_CLAUSE_PRODUCER_OVERRIDES.put(UserSessionModel.SearchableFields.CORRESPONDING_SESSION_ID, IckleQueryWhereClauses::whereClauseForCorrespondingSessionId);
         WHERE_CLAUSE_PRODUCER_OVERRIDES.put(Policy.SearchableFields.CONFIG, IckleQueryWhereClauses::whereClauseForPolicyConfig);
+        WHERE_CLAUSE_PRODUCER_OVERRIDES.put(Event.SearchableFields.EVENT_TYPE, IckleQueryWhereClauses::whereClauseForEventType);
+        WHERE_CLAUSE_PRODUCER_OVERRIDES.put(AdminEvent.SearchableFields.OPERATION_TYPE, IckleQueryWhereClauses::whereClauseForOperationType);
     }
 
     @FunctionalInterface
@@ -203,5 +213,32 @@ public class IckleQueryWhereClauses {
 
         String valueClause = IckleQueryOperators.combineExpressions(op, modelFieldName + ".value", realValues, parameters);
         return "(" + nameClause + ")" + " AND " + "(" + valueClause + ")";
+    }
+
+    private static String whereClauseForEventType(String modelFieldName, ModelCriteriaBuilder.Operator op, Object[] values, Map<String, Object> parameters) {
+        if (values != null && values.length == 1) {
+            if (values[0] instanceof EventType) {
+                values[0] = HotRodTypesUtils.migrateEventTypeToHotRodEventType((EventType) values[0]);
+            } else if (values[0] instanceof Collection) {
+                values[0] = ((Collection<EventType>) values[0]).stream().map(HotRodTypesUtils::migrateEventTypeToHotRodEventType).collect(Collectors.toSet());
+            } else if (values[0] instanceof Stream) {
+                values[0] = ((Stream<EventType>) values[0]).map(HotRodTypesUtils::migrateEventTypeToHotRodEventType);
+            }
+        }
+
+        return produceWhereClause(modelFieldName, op, values, parameters);
+    }
+
+    private static String whereClauseForOperationType(String modelFieldName, ModelCriteriaBuilder.Operator op, Object[] values, Map<String, Object> parameters) {
+        if (values != null && values.length == 1) {
+            if (values[0] instanceof OperationType) {
+                values[0] = HotRodTypesUtils.migrateOperationTypeToHotRodOperationType((OperationType) values[0]);
+            } else if (values[0] instanceof Collection) {
+                values[0] = ((Collection<OperationType>) values[0]).stream().map(HotRodTypesUtils::migrateOperationTypeToHotRodOperationType).collect(Collectors.toSet());
+            } else if (values[0] instanceof Stream) {
+                values[0] = ((Stream<OperationType>) values[0]).map(HotRodTypesUtils::migrateOperationTypeToHotRodOperationType);
+            }
+        }
+        return produceWhereClause(modelFieldName, op, values, parameters);
     }
 }

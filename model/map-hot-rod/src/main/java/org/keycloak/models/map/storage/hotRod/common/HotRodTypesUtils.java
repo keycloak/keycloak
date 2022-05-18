@@ -17,6 +17,8 @@
 
 package org.keycloak.models.map.storage.hotRod.common;
 
+import org.keycloak.events.EventType;
+import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.map.common.AbstractEntity;
@@ -24,6 +26,8 @@ import org.keycloak.models.map.storage.hotRod.authSession.HotRodAuthenticationSe
 import org.keycloak.models.map.storage.hotRod.authorization.HotRodDecisionStrategy;
 import org.keycloak.models.map.storage.hotRod.authorization.HotRodLogic;
 import org.keycloak.models.map.storage.hotRod.authorization.HotRodPolicyEnforcementMode;
+import org.keycloak.models.map.storage.hotRod.events.HotRodEventType;
+import org.keycloak.models.map.storage.hotRod.events.HotRodOperationType;
 import org.keycloak.models.map.storage.hotRod.realm.entity.HotRodLocalizationTexts;
 import org.keycloak.models.map.storage.hotRod.realm.entity.HotRodRequirement;
 import org.keycloak.models.map.storage.hotRod.user.HotRodUserConsentEntity;
@@ -194,5 +198,21 @@ public class HotRodTypesUtils {
 
     public static Logic migrateHotRodLogicToLogic(HotRodLogic p0) {
         return p0 == null ? null :  Logic.values()[p0.ordinal()];
+    }
+
+    public static OperationType migrateHotRodOperationTypeToOperationType(HotRodOperationType p0) {
+        return p0 == null ? null :  OperationType.values()[p0.ordinal()];
+    }
+
+    public static HotRodOperationType migrateOperationTypeToHotRodOperationType(OperationType p0) {
+        return p0 == null ? null :  HotRodOperationType.values()[p0.ordinal()];
+    }
+
+    public static HotRodEventType migrateEventTypeToHotRodEventType(EventType p0) {
+        return p0 == null ? null :  HotRodEventType.values()[p0.ordinal()];
+    }
+
+    public static EventType migrateHotRodEventTypeToEventType(HotRodEventType p0) {
+        return p0 == null ? null :  EventType.values()[p0.ordinal()];
     }
 }

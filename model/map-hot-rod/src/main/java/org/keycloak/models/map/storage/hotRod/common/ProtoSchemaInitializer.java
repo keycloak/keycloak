@@ -33,6 +33,10 @@ import org.keycloak.models.map.storage.hotRod.authorization.HotRodScopeEntity;
 import org.keycloak.models.map.storage.hotRod.client.HotRodClientEntity;
 import org.keycloak.models.map.storage.hotRod.client.HotRodProtocolMapperEntity;
 import org.keycloak.models.map.storage.hotRod.clientscope.HotRodClientScopeEntity;
+import org.keycloak.models.map.storage.hotRod.events.HotRodAdminEventEntity;
+import org.keycloak.models.map.storage.hotRod.events.HotRodAuthEventEntity;
+import org.keycloak.models.map.storage.hotRod.events.HotRodEventType;
+import org.keycloak.models.map.storage.hotRod.events.HotRodOperationType;
 import org.keycloak.models.map.storage.hotRod.group.HotRodGroupEntity;
 import org.keycloak.models.map.storage.hotRod.loginFailure.HotRodUserLoginFailureEntity;
 import org.keycloak.models.map.storage.hotRod.realm.HotRodRealmEntity;
@@ -122,6 +126,12 @@ import org.keycloak.models.map.storage.hotRod.userSession.HotRodUserSessionEntit
                 HotRodDecisionStrategy.class,
                 HotRodLogic.class,
                 HotRodPolicyEnforcementMode.class,
+
+                // Events
+                HotRodAuthEventEntity.class,
+                HotRodEventType.class,
+                HotRodAdminEventEntity.class,
+                HotRodOperationType.class,
 
                 // Common
                 HotRodPair.class,

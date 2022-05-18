@@ -26,6 +26,8 @@ import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.common.Profile;
 import org.keycloak.component.AmphibianProviderFactory;
+import org.keycloak.events.Event;
+import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
@@ -47,6 +49,8 @@ import org.keycloak.models.map.authSession.MapRootAuthenticationSessionEntity;
 import org.keycloak.models.map.clientscope.MapClientScopeEntity;
 import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.StringKeyConverter;
+import org.keycloak.models.map.events.MapAdminEventEntity;
+import org.keycloak.models.map.events.MapAuthEventEntity;
 import org.keycloak.models.map.group.MapGroupEntity;
 import org.keycloak.models.map.loginFailure.MapUserLoginFailureEntity;
 import org.keycloak.models.map.realm.MapRealmEntity;
@@ -77,6 +81,10 @@ import org.keycloak.models.map.storage.hotRod.authorization.HotRodScopeEntity;
 import org.keycloak.models.map.storage.hotRod.authorization.HotRodScopeEntityDelegate;
 import org.keycloak.models.map.storage.hotRod.common.AbstractHotRodEntity;
 import org.keycloak.models.map.storage.hotRod.common.HotRodEntityDelegate;
+import org.keycloak.models.map.storage.hotRod.events.HotRodAdminEventEntity;
+import org.keycloak.models.map.storage.hotRod.events.HotRodAdminEventEntityDelegate;
+import org.keycloak.models.map.storage.hotRod.events.HotRodAuthEventEntity;
+import org.keycloak.models.map.storage.hotRod.events.HotRodAuthEventEntityDelegate;
 import org.keycloak.models.map.storage.hotRod.loginFailure.HotRodUserLoginFailureEntity;
 import org.keycloak.models.map.storage.hotRod.loginFailure.HotRodUserLoginFailureEntityDelegate;
 import org.keycloak.models.map.storage.hotRod.role.HotRodRoleEntity;
@@ -179,6 +187,9 @@ public class HotRodMapStorageProviderFactory implements AmphibianProviderFactory
             .constructor(MapScopeEntity.class,                      HotRodScopeEntityDelegate::new)
             .constructor(MapPolicyEntity.class,                     HotRodPolicyEntityDelegate::new)
             .constructor(MapPermissionTicketEntity.class,           HotRodPermissionTicketEntityDelegate::new)
+
+            .constructor(MapAuthEventEntity.class,                  HotRodAuthEventEntityDelegate::new)
+            .constructor(MapAdminEventEntity.class,                 HotRodAdminEventEntityDelegate::new)
 
             .build();
 
@@ -293,6 +304,17 @@ public class HotRodMapStorageProviderFactory implements AmphibianProviderFactory
                         return "authz";
                     }
                 });
+
+        // Events
+        ENTITY_DESCRIPTOR_MAP.put(Event.class,
+                new HotRodEntityDescriptor<>(Event.class,
+                        HotRodAuthEventEntity.class,
+                        HotRodAuthEventEntityDelegate::new));
+
+        ENTITY_DESCRIPTOR_MAP.put(AdminEvent.class,
+                new HotRodEntityDescriptor<>(AdminEvent.class,
+                        HotRodAdminEventEntity.class,
+                        HotRodAdminEventEntityDelegate::new));
     }
 
     @Override
