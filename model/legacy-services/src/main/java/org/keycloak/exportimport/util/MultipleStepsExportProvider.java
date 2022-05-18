@@ -28,6 +28,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.storage.UserStorageUtil;
 
 import java.io.IOException;
 import java.util.List;
@@ -83,7 +84,7 @@ public abstract class MultipleStepsExportProvider implements ExportProvider {
                 // Count total number of users
                 if (!exportUsersIntoRealmFile) {
                     usersHolder.totalCount = session.users().getUsersCount(realm, true);
-                    federatedUsersHolder.totalCount = session.userFederatedStorage().getStoredUsersCount(realm);
+                    federatedUsersHolder.totalCount = UserStorageUtil.userFederatedStorage(session).getStoredUsersCount(realm);
                 }
             }
 
@@ -141,7 +142,7 @@ public abstract class MultipleStepsExportProvider implements ExportProvider {
                     @Override
                     protected void runExportImportTask(KeycloakSession session) throws IOException {
                         RealmModel realm = session.realms().getRealmByName(realmName);
-                        federatedUsersHolder.users = session.userFederatedStorage()
+                        federatedUsersHolder.users = UserStorageUtil.userFederatedStorage(session)
                                 .getStoredUsersStream(realm, federatedUsersHolder.currentPageStart, federatedUsersHolder.currentPageEnd - federatedUsersHolder.currentPageStart)
                                 .collect(Collectors.toList());
 

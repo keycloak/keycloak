@@ -29,6 +29,7 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModelDefaultMethods;
 import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.storage.StorageId;
+import org.keycloak.storage.UserStorageUtil;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
 
 import java.util.Collections;
@@ -69,7 +70,7 @@ public abstract class AbstractUserAdapterFederatedStorage extends UserModelDefau
     }
 
     public UserFederatedStorageProvider getFederatedStorage() {
-        return session.userFederatedStorage();
+        return UserStorageUtil.userFederatedStorage(session);
     }
 
     @Override

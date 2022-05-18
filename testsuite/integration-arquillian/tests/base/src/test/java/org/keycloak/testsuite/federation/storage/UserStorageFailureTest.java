@@ -45,6 +45,7 @@ import org.keycloak.services.managers.RealmManager;
 import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
+import org.keycloak.storage.UserStorageUtil;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
@@ -224,7 +225,7 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName(AuthRealm.TEST);
             UserModel user = session.users().getUserByUsername(realm, username);
-            session.userCache().evict(realm, user);
+            UserStorageUtil.userCache(session).evict(realm, user);
         });
     }
 

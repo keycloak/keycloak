@@ -33,6 +33,7 @@ import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.UserAttributeMapper;
 import org.keycloak.representations.IDToken;
 import org.keycloak.storage.UserStoragePrivateUtil;
+import org.keycloak.storage.UserStorageUtil;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.testsuite.ProfileAssume;
@@ -117,7 +118,7 @@ public class LDAPMultipleAttributesTest extends AbstractLDAPTest {
         Assume.assumeTrue("User cache disabled.", isUserCacheEnabled());
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
-            session.userCache().clear();
+            UserStorageUtil.userCache(session).clear();
             RealmModel appRealm = ctx.getRealm();
 
             // Test user imported in local storage now
@@ -133,7 +134,7 @@ public class LDAPMultipleAttributesTest extends AbstractLDAPTest {
         Assume.assumeTrue("User cache disabled.", isUserCacheEnabled());
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
-            session.userCache().clear();
+            UserStorageUtil.userCache(session).clear();
             RealmModel appRealm = ctx.getRealm();
 
             UserModel user = session.users().getUserByUsername(appRealm, "bwilson");

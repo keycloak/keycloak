@@ -34,6 +34,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.UserStorageProviderModel;
+import org.keycloak.storage.UserStorageUtil;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.storage.ldap.mappers.membership.LDAPGroupMapperMode;
@@ -146,7 +147,7 @@ public class LDAPRoleMappingsNoImportTest extends AbstractLDAPTest {
         } );
 
         testingClient.server().run(session -> {
-            session.userCache().clear();
+            UserStorageUtil.userCache(session).clear();
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();
 
@@ -175,7 +176,7 @@ public class LDAPRoleMappingsNoImportTest extends AbstractLDAPTest {
         });
 
         testingClient.server().run(session -> {
-            session.userCache().clear();
+            UserStorageUtil.userCache(session).clear();
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();
 
@@ -196,7 +197,7 @@ public class LDAPRoleMappingsNoImportTest extends AbstractLDAPTest {
     @Test
     public void test02WriteMappings() {
         testingClient.server().run(session -> {
-            session.userCache().clear();
+            UserStorageUtil.userCache(session).clear();
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();
 
@@ -234,11 +235,11 @@ public class LDAPRoleMappingsNoImportTest extends AbstractLDAPTest {
             RoleModel manageAccountRole = accountApp.getRole(AccountRoles.MANAGE_ACCOUNT);
             RoleModel financeRole1 = financeApp.getRole("financeRole1");
             john.grantRole(financeRole1);
-            session.userCache().clear();
+            UserStorageUtil.userCache(session).clear();
         });
 
         testingClient.server().run(session -> {
-            session.userCache().clear();
+            UserStorageUtil.userCache(session).clear();
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();
 
@@ -288,7 +289,7 @@ public class LDAPRoleMappingsNoImportTest extends AbstractLDAPTest {
             // Cleanup
             mary.deleteRoleMapping(realmRole2);
             mary.deleteRoleMapping(realmRole3);
-            session.userCache().clear();
+            UserStorageUtil.userCache(session).clear();
         });
     }
 
@@ -298,7 +299,7 @@ public class LDAPRoleMappingsNoImportTest extends AbstractLDAPTest {
 
         // Check user group memberships
         testingClient.server().run(session -> {
-            session.userCache().clear();
+            UserStorageUtil.userCache(session).clear();
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();
 

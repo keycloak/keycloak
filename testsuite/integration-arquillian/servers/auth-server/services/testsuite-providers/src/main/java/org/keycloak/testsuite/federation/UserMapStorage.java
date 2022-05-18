@@ -36,6 +36,7 @@ import org.keycloak.storage.ReadOnlyException;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.UserStorageProvider;
+import org.keycloak.storage.UserStorageUtil;
 import org.keycloak.storage.adapter.AbstractUserAdapterFederatedStorage;
 import org.keycloak.storage.federated.UserGroupMembershipFederatedStorage;
 import org.keycloak.storage.user.ImportedUserValidation;
@@ -364,7 +365,7 @@ public class UserMapStorage implements UserLookupProvider.Streams, UserStoragePr
         if (isImportEnabled()) {
             return UserStoragePrivateUtil.userLocalStorage(session).searchForUserByUserAttributeStream(realm, attrName, attrValue);
         } else {
-            return session.userFederatedStorage().getUsersByUserAttributeStream(realm, attrName, attrValue)
+            return UserStorageUtil.userFederatedStorage(session).getUsersByUserAttributeStream(realm, attrName, attrValue)
               .map(userName -> createUser(realm, userName));
         }
     }

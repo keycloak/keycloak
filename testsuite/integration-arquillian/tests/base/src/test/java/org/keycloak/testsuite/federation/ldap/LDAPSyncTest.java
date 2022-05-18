@@ -359,7 +359,7 @@ public class LDAPSyncTest extends AbstractLDAPTest {
                     .peek(user -> System.out.println("trying to delete user: " + user.getUsername()))
                     .collect(Collectors.toList())
                     .forEach(user -> {
-                        UserCache userCache = session.userCache();
+                        UserCache userCache = UserStorageUtil.userCache(session);
                         if (userCache != null) {
                             userCache.evict(ctx.getRealm(), user);
                         }
@@ -513,7 +513,7 @@ public class LDAPSyncTest extends AbstractLDAPTest {
                     .peek(user -> System.out.println("trying to delete user: " + user.getUsername()))
                     .collect(Collectors.toList())
                     .forEach(user -> {
-                        UserCache userCache = session.userCache();
+                        UserCache userCache = UserStorageUtil.userCache(session);
                         if (userCache != null) {
                             userCache.evict(ctx.getRealm(), user);
                         }

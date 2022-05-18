@@ -102,7 +102,7 @@ public class RoleStorageTest extends AbstractTestRealmKeycloakTest {
             testingClient.server().run(session -> {
                 RealmModel realm = session.realms().getRealmByName(AuthRealm.TEST);
 
-                assertThat(session.roleStorageManager()
+                assertThat(session.roles()
                             .searchForRolesStream(realm, "role", null, null)
                             .map(RoleModel::getName)
                             .collect(Collectors.toList()),
@@ -120,7 +120,7 @@ public class RoleStorageTest extends AbstractTestRealmKeycloakTest {
             testingClient.server().run(session -> {
                 RealmModel realm = session.realms().getRealmByName(AuthRealm.TEST);
                 // search for roles and check hardcoded-role is not present
-                assertThat(session.roleStorageManager()
+                assertThat(session.roles()
                             .searchForRolesStream(realm, "role", null, null)
                             .map(RoleModel::getName)
                             .collect(Collectors.toList()),

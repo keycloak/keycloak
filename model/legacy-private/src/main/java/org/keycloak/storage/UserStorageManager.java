@@ -88,7 +88,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
     }
 
     private UserFederatedStorageProvider getFederatedStorage() {
-        return session.userFederatedStorage();
+        return UserStorageUtil.userFederatedStorage(session);
     }
 
     /**
@@ -153,7 +153,7 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
     protected void deleteInvalidUser(final RealmModel realm, final UserModel user) {
         String userId = user.getId();
         String userName = user.getUsername();
-        UserCache userCache = session.userCache();
+        UserCache userCache = UserStorageUtil.userCache(session);
         if (userCache != null) {
             userCache.evict(realm, user);
         }

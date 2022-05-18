@@ -52,6 +52,7 @@ import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
+import org.keycloak.storage.UserStorageUtil;
 import org.keycloak.storage.ldap.LDAPConfig;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
@@ -624,7 +625,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();
 
-            session.userCache().evict(appRealm, session.users().getUserByUsername(appRealm, "register123"));
+            UserStorageUtil.userCache(session).evict(appRealm, session.users().getUserByUsername(appRealm, "register123"));
 
             // See that user don't yet have any description
             UserModel user = session.users().getUserByUsername(appRealm, "register123");
@@ -915,7 +916,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();
-            session.userCache().clear();
+            UserStorageUtil.userCache(session).clear();
             // Add custom filter again
             ctx.getLdapModel().getConfig().putSingle(LDAPConstants.CUSTOM_USER_SEARCH_FILTER, "(|(mail=user5@email.org)(mail=user6@email.org))");
 
@@ -925,7 +926,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel appRealm = ctx.getRealm();
-            session.userCache().clear();
+            UserStorageUtil.userCache(session).clear();
 
             // search by id using custom filter. Must return the user
             UserModel testUser5 = session.users().getUserById(appRealm, user5Id);
@@ -1063,7 +1064,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
     public void testSearchWithPartiallyCachedUser() {
         Assume.assumeTrue("User cache disabled.", isUserCacheEnabled());
         testingClient.server().run(session -> {
-            session.userCache().clear();
+            UserStorageUtil.userCache(session).clear();
         });
 
 
@@ -1090,7 +1091,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
     public void testLDAPUserRefreshCache() {
         Assume.assumeTrue("User cache disabled.", isUserCacheEnabled());
         testingClient.server().run(session -> {
-            session.userCache().clear();
+            UserStorageUtil.userCache(session).clear();
         });
 
         testingClient.server().run(session -> {
