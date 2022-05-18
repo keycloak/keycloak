@@ -1,10 +1,5 @@
 import React, { useState } from "react";
-import {
-  Controller,
-  useFormContext,
-  UseFormMethods,
-  useWatch,
-} from "react-hook-form";
+import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import {
   ActionGroup,
@@ -22,9 +17,10 @@ import {
   Split,
   SplitItem,
 } from "@patternfly/react-core";
+
 import type CredentialRepresentation from "@keycloak/keycloak-admin-client/lib/defs/credentialRepresentation";
 import type { AuthenticationProviderRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigRepresentation";
-
+import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { FormAccess } from "../../components/form-access/FormAccess";
@@ -34,22 +30,22 @@ import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { ClientSecret } from "./ClientSecret";
 import { SignedJWT } from "./SignedJWT";
 import { X509 } from "./X509";
-import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 
 type AccessToken = {
   registrationAccessToken: string;
 };
 
 export type CredentialsProps = {
-  clientId: string;
+  client: ClientRepresentation;
   save: () => void;
-  form: UseFormMethods<ClientRepresentation>;
+  refresh: () => void;
 };
 
-export const Credentials = ({ clientId, save, form }: CredentialsProps) => {
+export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
   const { t } = useTranslation("clients");
   const adminClient = useAdminClient();
   const { addAlert, addError } = useAlerts();
+  const clientId = client.id!;
 
   const [providers, setProviders] = useState<
     AuthenticationProviderRepresentation[]
@@ -59,7 +55,7 @@ export const Credentials = ({ clientId, save, form }: CredentialsProps) => {
     control,
     formState: { isDirty },
     handleSubmit,
-  } = useFormContext();
+  } = useFormContext<ClientRepresentation>();
 
   const clientAuthenticatorType = useWatch({
     control: control,
@@ -72,21 +68,16 @@ export const Credentials = ({ clientId, save, form }: CredentialsProps) => {
   const [open, isOpen] = useState(false);
 
   useFetch(
-    async () => {
-      const providers =
-        await adminClient.authenticationManagement.getClientAuthenticatorProviders();
-
-      const secret = await adminClient.clients.getClientSecret({
-        id: clientId,
-      });
-      return {
-        providers,
-        secret: secret.value!,
-      };
-    },
-    ({ providers, secret }) => {
+    () =>
+      Promise.all([
+        adminClient.authenticationManagement.getClientAuthenticatorProviders(),
+        adminClient.clients.getClientSecret({
+          id: clientId,
+        }),
+      ]),
+    ([providers, secret]) => {
       setProviders(providers);
-      setSecret(secret);
+      setSecret(secret.value!);
     },
     []
   );
@@ -111,6 +102,7 @@ export const Credentials = ({ clientId, save, form }: CredentialsProps) => {
       "clientSecret"
     );
     setSecret(secret?.value || "");
+    refresh();
   };
 
   const [toggleClientSecretConfirm, ClientSecretConfirm] = useConfirmDialog({
@@ -205,7 +197,7 @@ export const Credentials = ({ clientId, save, form }: CredentialsProps) => {
             clientAuthenticatorType === "client-secret-jwt") && (
             <CardBody>
               <ClientSecret
-                form={form}
+                client={client}
                 secret={secret}
                 toggle={toggleClientSecretConfirm}
               />

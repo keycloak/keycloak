@@ -30,7 +30,7 @@ export const GeneratedCodeTab = ({
       id={label}
       actions={
         <CodeBlockAction>
-          <CopyToClipboardButton text={text} label={label} />
+          <CopyToClipboardButton id="code" text={text} label={label} />
         </CodeBlockAction>
       }
     >

@@ -14,11 +14,13 @@ enum CopyState {
 }
 
 type CopyToClipboardButtonProps = Pick<ClipboardCopyButtonProps, "variant"> & {
+  id: string;
   label: string;
   text: string;
 };
 
 export const CopyToClipboardButton = ({
+  id,
   label,
   text,
   variant = "plain",
@@ -56,7 +58,7 @@ export const CopyToClipboardButton = ({
 
   return (
     <ClipboardCopyButton
-      id={`copy-button-${label}`}
+      id={`copy-button-${id}`}
       textId={label}
       aria-label={t("copyToClipboard")}
       onClick={() => copyToClipboard(text)}

@@ -1,6 +1,8 @@
-import React from "react";
+import React, { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useFormContext } from "react-hook-form";
 import {
+  Alert,
   Button,
   FormGroup,
   InputGroup,
@@ -9,42 +11,139 @@ import {
 } from "@patternfly/react-core";
 
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
-import type { UseFormMethods } from "react-hook-form";
 import { PasswordInput } from "../../components/password-input/PasswordInput";
 import { CopyToClipboardButton } from "../scopes/CopyToClipboardButton";
+import { useWhoAmI } from "../../context/whoami/WhoAmI";
+import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
+import { useAdminClient } from "../../context/auth/AdminClient";
+import { useAlerts } from "../../components/alert/Alerts";
 
 export type ClientSecretProps = {
+  client: ClientRepresentation;
   secret: string;
   toggle: () => void;
-  form: UseFormMethods<ClientRepresentation>;
 };
 
-export const ClientSecret = ({ secret, toggle, form }: ClientSecretProps) => {
+type SecretInputProps = Omit<ClientSecretProps, "client"> & {
+  id: string;
+  buttonLabel: string;
+};
+
+const SecretInput = ({ id, buttonLabel, secret, toggle }: SecretInputProps) => {
   const { t } = useTranslation("clients");
+  const form = useFormContext<ClientRepresentation>();
 
   return (
-    <FormGroup label={t("clientSecret")} fieldId="kc-client-secret">
-      <Split hasGutter>
-        <SplitItem isFilled>
-          <InputGroup>
-            <PasswordInput id="kc-client-secret" value={secret} isReadOnly />
-            <CopyToClipboardButton
-              text={secret}
-              label="clientSecret"
-              variant="control"
-            />
-          </InputGroup>
-        </SplitItem>
-        <SplitItem>
-          <Button
-            variant="secondary"
-            isDisabled={form.formState.isDirty}
-            onClick={toggle}
-          >
-            {t("regenerate")}
-          </Button>
-        </SplitItem>
-      </Split>
-    </FormGroup>
+    <Split hasGutter>
+      <SplitItem isFilled>
+        <InputGroup>
+          <PasswordInput id={id} value={secret} isReadOnly />
+          <CopyToClipboardButton
+            id={id}
+            text={secret}
+            label="clientSecret"
+            variant="control"
+          />
+        </InputGroup>
+      </SplitItem>
+      <SplitItem>
+        <Button
+          variant="secondary"
+          isDisabled={form.formState.isDirty}
+          onClick={toggle}
+        >
+          {t(buttonLabel)}
+        </Button>
+      </SplitItem>
+    </Split>
+  );
+};
+
+const ExpireDateFormatter = ({ time }: { time: number }) => {
+  const { t } = useTranslation("clients");
+  const { whoAmI } = useWhoAmI();
+  const locale = whoAmI.getLocale();
+  const formatter = useMemo(
+    () =>
+      new Intl.DateTimeFormat(locale, {
+        dateStyle: "full",
+        timeStyle: "long",
+      }),
+    [locale]
+  );
+
+  const unixTimeToString = (time: number) =>
+    time
+      ? t("secretExpiresOn", {
+          time: formatter.format(time * 1000),
+        })
+      : undefined;
+
+  return <div className="pf-u-my-md">{unixTimeToString(time)}</div>;
+};
+
+export const ClientSecret = ({ client, secret, toggle }: ClientSecretProps) => {
+  const { t } = useTranslation("clients");
+  const adminClient = useAdminClient();
+  const { addAlert, addError } = useAlerts();
+
+  const [secretRotated, setSecretRotated] = useState<string | undefined>(
+    client.attributes?.["client.secret.rotated"]
+  );
+  const secretExpirationTime: number =
+    client.attributes?.["client.secret.expiration.time"];
+  const secretRotatedExpirationTime: number =
+    client.attributes?.["client.secret.rotated.expiration.time"];
+
+  const expired = (time: number) => new Date().getTime() >= time * 1000;
+
+  const [toggleInvalidateConfirm, InvalidateConfirm] = useConfirmDialog({
+    titleKey: "clients:invalidateRotatedSecret",
+    messageKey: "clients:invalidateRotatedSecretExplain",
+    continueButtonLabel: "common:confirm",
+    onConfirm: async () => {
+      try {
+        await adminClient.clients.invalidateSecret({
+          id: client.id!,
+        });
+        setSecretRotated(undefined);
+        addAlert(t("invalidateRotatedSuccess"));
+      } catch (error) {
+        addError("clients:invalidateRotatedError", error);
+      }
+    },
+  });
+
+  return (
+    <>
+      <InvalidateConfirm />
+      <FormGroup
+        label={t("clientSecret")}
+        fieldId="kc-client-secret"
+        className="pf-u-my-md"
+      >
+        <SecretInput
+          id="kc-client-secret"
+          secret={secret}
+          toggle={toggle}
+          buttonLabel="regenerate"
+        />
+        <ExpireDateFormatter time={secretExpirationTime} />
+        {expired(secretExpirationTime) && (
+          <Alert variant="warning" isInline title={t("secretHasExpired")} />
+        )}
+      </FormGroup>
+      {secretRotated && (
+        <FormGroup label={t("secretRotated")} fieldId="secretRotated">
+          <SecretInput
+            id="secretRotated"
+            secret={secretRotated}
+            toggle={toggleInvalidateConfirm}
+            buttonLabel="invalidateSecret"
+          />
+          <ExpireDateFormatter time={secretRotatedExpirationTime} />
+        </FormGroup>
+      )}
+    </>
   );
 };
