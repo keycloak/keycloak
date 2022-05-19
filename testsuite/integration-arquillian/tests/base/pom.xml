@@ -880,13 +880,13 @@
                                 <keycloak.map.storage.connectionsJpa.user>${keycloak.map.storage.connectionsJpa.user}</keycloak.map.storage.connectionsJpa.user>
                                 <keycloak.map.storage.connectionsJpa.password>${keycloak.map.storage.connectionsJpa.password}</keycloak.map.storage.connectionsJpa.password>
 
-                                <keycloak.authSession.map.storage.provider>jpa-map-storage</keycloak.authSession.map.storage.provider>
-                                <keycloak.client.map.storage.provider>jpa-map-storage</keycloak.client.map.storage.provider>
-                                <keycloak.clientScope.map.storage.provider>jpa-map-storage</keycloak.clientScope.map.storage.provider>
-                                <keycloak.group.map.storage.provider>jpa-map-storage</keycloak.group.map.storage.provider>
-                                <keycloak.loginFailure.map.storage.provider>jpa-map-storage</keycloak.loginFailure.map.storage.provider>
-                                <keycloak.realm.map.storage.provider>jpa-map-storage</keycloak.realm.map.storage.provider>
-                                <keycloak.role.map.storage.provider>jpa-map-storage</keycloak.role.map.storage.provider>
+                                <keycloak.authSession.map.storage.provider>jpa</keycloak.authSession.map.storage.provider>
+                                <keycloak.client.map.storage.provider>jpa</keycloak.client.map.storage.provider>
+                                <keycloak.clientScope.map.storage.provider>jpa</keycloak.clientScope.map.storage.provider>
+                                <keycloak.group.map.storage.provider>jpa</keycloak.group.map.storage.provider>
+                                <keycloak.loginFailure.map.storage.provider>jpa</keycloak.loginFailure.map.storage.provider>
+                                <keycloak.realm.map.storage.provider>jpa</keycloak.realm.map.storage.provider>
+                                <keycloak.role.map.storage.provider>jpa</keycloak.role.map.storage.provider>
                           </systemPropertyVariables>
                       </configuration>
                     </plugin>
