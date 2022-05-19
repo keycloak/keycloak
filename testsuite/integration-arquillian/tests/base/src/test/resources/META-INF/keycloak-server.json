@@ -148,7 +148,7 @@
             "keyType.realms": "string",
             "keyType.authz-resource-servers": "string"
         },
-        "jpa-map-storage": {
+        "jpa": {
             "url": "${keycloak.map.storage.connectionsJpa.url:}",
             "user": "${keycloak.map.storage.connectionsJpa.user:}",
             "password": "${keycloak.map.storage.connectionsJpa.password:}",
