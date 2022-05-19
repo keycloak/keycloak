@@ -22,6 +22,15 @@ class AdminClient {
     });
   }
 
+  async loginUser(username: string, password: string, clientId: string) {
+    return this.client.auth({
+      username: username,
+      password: password,
+      grantType: "password",
+      clientId: clientId,
+    });
+  }
+
   async createRealm(realm: string, payload?: RealmRepresentation) {
     await this.login();
     await this.client.realms.create({ realm, ...payload });

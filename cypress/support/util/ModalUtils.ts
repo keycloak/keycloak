@@ -79,4 +79,16 @@ export default class ModalUtils extends CommonElements {
 
     return this;
   }
+
+  assertModalMessageContainText(text: string) {
+    cy.get(this.modalMessage).should("contain.text", text);
+    return this;
+  }
+
+  assertModalHasElement(elementSelector: string, exist: boolean) {
+    cy.get(this.parentSelector)
+      .find(elementSelector)
+      .should((exist ? "" : ".not") + "exist");
+    return this;
+  }
 }

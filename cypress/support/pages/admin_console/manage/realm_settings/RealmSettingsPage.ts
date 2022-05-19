@@ -1,8 +1,13 @@
-import ModalUtils from "../../../../util/ModalUtils";
+import CommonPage from "../../../CommonPage";
 import ListingPage from "../../ListingPage";
+import RealmSettingsEventsTab from "./tabs/RealmSettingsEventsTab";
+
+enum RealmSettingsTab {
+  Events = "Events",
+}
 
 const expect = chai.expect;
-export default class RealmSettingsPage {
+export default class RealmSettingsPage extends CommonPage {
   generalSaveBtn = "general-tab-save";
   generalRevertBtn = "general-tab-revert";
   themesSaveBtn = "themes-tab-save";
@@ -200,7 +205,6 @@ export default class RealmSettingsPage {
   private executorAvailablePeriodInput = "#available-period";
 
   private listingPage = new ListingPage();
-  private modalUtils = new ModalUtils();
   private addCondition = "addCondition";
   private addConditionDrpDwn = ".pf-c-select__toggle";
   private addConditionDrpDwnOption = "conditionType-select";
@@ -225,10 +229,17 @@ export default class RealmSettingsPage {
   private realmDisplayName = "#kc-display-name";
   private frontEndURL = "#kc-frontend-url";
   private requireSSL = "#kc-require-ssl";
+  private realmSettingsEventsTab = new RealmSettingsEventsTab();
 
   private realmName?: string;
   constructor(realmName?: string) {
+    super();
     this.realmName = realmName;
+  }
+
+  goToEventsTab() {
+    this.tabUtils().clickTab(RealmSettingsTab.Events);
+    return this.realmSettingsEventsTab;
   }
 
   disableRealm() {
@@ -346,7 +357,7 @@ export default class RealmSettingsPage {
 
   deleteProvider(name: string) {
     this.listingPage.deleteItem(name);
-    this.modalUtils.checkModalTitle("Delete key provider?").confirmModal();
+    this.modalUtils().checkModalTitle("Delete key provider?").confirmModal();
 
     cy.get(this.alertMessage).should(
       "be.visible",

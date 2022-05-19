@@ -60,6 +60,7 @@ export default class ListingPage extends CommonElements {
   private changeTypeToButton = ".pf-c-select__toggle";
   private toolbarChangeType = "#change-type-dropdown";
   private tableNameColumnPrefix = "name-column-";
+  private rowGroup = "table:visible tbody[role='rowgroup']";
 
   showPreviousPageTableItems() {
     cy.get(this.previousPageBtn).first().click();
@@ -369,6 +370,38 @@ export default class ListingPage extends CommonElements {
 
   assertResource(name: string) {
     this.getResourceLink(name).should("exist");
+    return this;
+  }
+
+  private getRowGroup(index = 0) {
+    return cy.get(this.rowGroup).eq(index);
+  }
+
+  expandRow(index = 0) {
+    this.getRowGroup(index)
+      .find("[class='pf-c-button pf-m-plain'][id*='expandable']")
+      .click();
+    return this;
+  }
+
+  collapseRow(index = 0) {
+    this.getRowGroup(index)
+      .find("[class='pf-c-button pf-m-plain pf-m-expanded'][id*='expandable']")
+      .click();
+    return this;
+  }
+
+  assertExpandedRowContainText(index = 0, text: string) {
+    this.getRowGroup(index)
+      .find("tr[class='pf-c-table__expandable-row pf-m-expanded']")
+      .should("contain.text", text);
+    return this;
+  }
+
+  assertRowIsExpanded(index = 0, isExpanded: boolean) {
+    this.getRowGroup(index)
+      .find("[class='pf-c-button pf-m-plain pf-m-expanded'][id*='expandable']")
+      .should((!isExpanded ? "not." : "") + "exist");
     return this;
   }
 }

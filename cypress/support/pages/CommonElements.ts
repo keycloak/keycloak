@@ -26,6 +26,11 @@ export default class CommonElements {
       this.parentSelector + ".pf-c-select__menu > li";
   }
 
+  clickPrimaryBtn() {
+    cy.get(this.primaryBtn).click();
+    return this;
+  }
+
   clickSecondaryBtn(buttonName: string) {
     cy.get(this.secondaryBtn).contains(buttonName).click();
     return this;
