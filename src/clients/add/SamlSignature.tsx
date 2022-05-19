@@ -25,21 +25,18 @@ const SIGNATURE_ALGORITHMS = [
 const KEYNAME_TRANSFORMER = ["NONE", "KEY_ID", "CERT_SUBJECT"] as const;
 
 const CANONICALIZATION = [
-  {
-    name: "EXCLUSIVE",
-    value: "https://www.w3.org/TR/2002/REC-xml-exc-c14n-20020718/",
-  },
+  { name: "EXCLUSIVE", value: "http://www.w3.org/2001/10/xml-exc-c14n#" },
   {
     name: "EXCLUSIVE_WITH_COMMENTS",
-    value: "https://www.w3.org/TR/2002/REC-xml-exc-c14n-20020718/#WithComments",
+    value: "http://www.w3.org/2001/10/xml-exc-c14n#WithComments",
   },
   {
     name: "INCLUSIVE",
-    value: "https://www.w3.org/TR/2001/REC-xml-c14n-20010315",
+    value: "http://www.w3.org/TR/2001/REC-xml-c14n-20010315",
   },
   {
     name: "INCLUSIVE_WITH_COMMENTS",
-    value: "https://www.w3.org/TR/2001/REC-xml-c14n-20010315#WithComments",
+    value: "http://www.w3.org/TR/2001/REC-xml-c14n-20010315#WithComments",
   },
 ] as const;
 
@@ -51,7 +48,7 @@ export const SamlSignature = () => {
 
   const { control, watch } = useFormContext<ClientRepresentation>();
 
-  const signDocs = watch("attributes.saml.server.signature");
+  const signDocs = watch("attributes.saml$server$signature");
   const signAssertion = watch("attributes.saml.assertion.signature");
 
   return (
@@ -60,7 +57,7 @@ export const SamlSignature = () => {
       role="manage-clients"
       className="keycloak__capability-config__form"
     >
-      <Toggle name="attributes.saml.server.signature" label="signDocuments" />
+      <Toggle name="attributes.saml$server$signature" label="signDocuments" />
       <Toggle
         name="attributes.saml.assertion.signature"
         label="signAssertions"
@@ -117,7 +114,7 @@ export const SamlSignature = () => {
             }
           >
             <Controller
-              name="attributes.saml.server.signature.keyinfo.xmlSigKeyInfoKeyNameTransformer"
+              name="attributes.saml$server$signature$keyinfo$xmlSigKeyInfoKeyNameTransformer"
               defaultValue={KEYNAME_TRANSFORMER[0]}
               control={control}
               render={({ onChange, value }) => (
