@@ -81,20 +81,18 @@ public class DeviceActivityPage extends AbstractLoggedInPage {
     }
 
     private WebElement getSessionElement(String sessionId) {
-        final Predicate<WebElement> sessionEquals = (element -> {
-            final String session = getSessionId(element);
-            return session != null && (session.equals(sessionId) || session.equals(getTrimmedSessionId(sessionId)));
-        });
-
-        return sessions.stream().filter(sessionEquals).findFirst().orElse(null);
+        return sessions.stream()
+                .filter(f -> getTrimmedSessionId(sessionId).equals(getSessionId(f)))
+                .findFirst()
+                .orElse(null);
     }
 
     private static String getSessionId(WebElement sessionElement) {
         if (sessionElement == null) return null;
-        return sessionElement.getAttribute("id");
+        return sessionElement.getAttribute("id").split("-")[1]; // the id looks like session-71891504-item
     }
 
-    private static String getTrimmedSessionId(String fullSessionId) {
+    public static String getTrimmedSessionId(String fullSessionId) {
         return fullSessionId.substring(0, 7);
     }
 
@@ -108,21 +106,15 @@ public class DeviceActivityPage extends AbstractLoggedInPage {
 
         private final WebElement element;
         private final String sessionId;
-        private final String fullSessionId;
 
         // we don't want Session to be instantiated outside DeviceActivityPage
         private Session(WebElement element) {
             this.element = element;
-            this.fullSessionId = DeviceActivityPage.getSessionId(element);
-            this.sessionId = DeviceActivityPage.getTrimmedSessionId(fullSessionId);
+            this.sessionId = DeviceActivityPage.getSessionId(element);
         }
 
         public String getSessionId() {
             return sessionId;
-        }
-
-        public String getFullSessionId() {
-            return fullSessionId;
         }
 
         public boolean isPresent() {

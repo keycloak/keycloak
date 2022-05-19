@@ -42,13 +42,13 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.either;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
@@ -119,7 +119,7 @@ public class DeviceActivityTest extends BaseAccountPageTest {
     public void browsersTest() {
         Map<Browsers, String> browserSessions = new HashMap<>();
         Arrays.stream(Browsers.values()).forEach(b -> {
-            browserSessions.put(b, createSession(b));
+            browserSessions.put(b, DeviceActivityPage.getTrimmedSessionId(createSession(b)));
         });
 
         deviceActivityPage.clickRefreshPage();
@@ -165,8 +165,14 @@ public class DeviceActivityTest extends BaseAccountPageTest {
 
         assertTrue("Sign out all should be displayed", deviceActivityPage.isSignOutAllDisplayed());
         assertEquals(3, testUserResource().getUserSessions().size());
-        assertThat(testUserResource().getUserSessions(),
-                hasItem(hasProperty("id", is(chromeSession.getFullSessionId()))));
+
+        assertThat(testUserResource()
+                        .getUserSessions()
+                        .stream()
+                        .map(f -> f.getId())
+                        .map(DeviceActivityPage::getTrimmedSessionId)
+                        .collect(Collectors.toList()),
+                hasItem(chromeSession.getSessionId()));
 
         // sign out one session
         assertThat(chromeSession.isSignOutDisplayed(), is(true));
@@ -176,8 +182,13 @@ public class DeviceActivityTest extends BaseAccountPageTest {
         deviceActivityPage.alert().assertSuccess();
         assertFalse("Chrome session should be gone", chromeSession.isPresent());
         assertEquals(2, testUserResource().getUserSessions().size());
-        assertThat(testUserResource().getUserSessions(),
-                not(hasItem(hasProperty("id", is(chromeSession.getFullSessionId())))));
+        assertThat(testUserResource()
+                        .getUserSessions()
+                        .stream()
+                        .map(f -> f.getId())
+                        .map(DeviceActivityPage::getTrimmedSessionId)
+                        .collect(Collectors.toList()),
+                not(hasItem(chromeSession.getSessionId())));
 
         // sign out all sessions
         testModalDialog(deviceActivityPage::clickSignOutAll, () -> {

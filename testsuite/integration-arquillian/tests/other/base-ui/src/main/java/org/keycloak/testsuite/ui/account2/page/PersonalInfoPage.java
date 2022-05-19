@@ -61,7 +61,19 @@ public class PersonalInfoPage extends AbstractLoggedInPage {
     }
 
     public void assertUsernameDisabled(boolean expected) {
-        assertEquals(username.getAttribute("readonly") != null, expected);
+        assertEquals(isUsernameDisabled(), expected);
+    }
+
+    public boolean isUsernameDisabled() {
+        return isElementDisabled(username);
+    }
+
+    public boolean isEmailDisabled() {
+        return isElementDisabled(email);
+    }
+
+    private boolean isElementDisabled(WebElement element) {
+        return element.getAttribute("readonly") != null || element.getAttribute("disabled") != null;
     }
 
     public String getUsername() {
@@ -160,8 +172,12 @@ public class PersonalInfoPage extends AbstractLoggedInPage {
     }
 
     public void setValues(UserRepresentation user, boolean includeUsername) {
-        if (includeUsername) {setUsername(user.getUsername());}
-        setEmail(user.getEmail());
+        if (includeUsername) {
+            setUsername(user.getUsername());
+        }
+        if (!isEmailDisabled()) {
+            setEmail(user.getEmail());
+        }
         setFirstName(user.getFirstName());
         setLastName(user.getLastName());
     }

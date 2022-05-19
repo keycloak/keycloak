@@ -84,10 +84,13 @@ public abstract class AbstractLoggedInPage extends AbstractAccountPage {
      * and at some Account Console page (not Welcome Screen), i.e. that the nav bar is visible.
      */
     public void navigateToUsingSidebar() {
+        if (sidebar.isCollapsed()) {
+            sidebar.expand();
+        }
+
         if (getParentPageId() != null) {
             sidebar().clickSubNav(getParentPageId(), getPageId());
-        }
-        else {
+        } else {
             sidebar().clickNav(getPageId());
         }
     }

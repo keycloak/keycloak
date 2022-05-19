@@ -261,7 +261,7 @@ export class DeviceActivityPage extends React.Component<DeviceActivityPageProps,
                           <React.Fragment key={'device-' + deviceIndex + '-session-' + sessionIndex}>
                             <DataListItemRow>
                               <DataListContent aria-label="device-sessions-content" isHidden={false} className="pf-u-flex-grow-1">
-                                <Grid id={session.id} className="signed-in-device-grid" hasGutter>
+                                <Grid id={this.elementId("item",session)} className="signed-in-device-grid" hasGutter>
                                   <GridItem className="device-icon" span={1} rowSpan={2}>
                                     <span>{this.findDeviceTypeIcon(session, device)}</span>
                                   </GridItem>
