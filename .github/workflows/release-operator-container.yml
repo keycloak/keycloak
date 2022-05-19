@@ -9,6 +9,8 @@ concurrency: keycloak-operator-container-release
 
 env:
   JDK_VERSION: 11
+  QUAY_IMAGE: quay.io/keycloak/keycloak-operator
+  DOCKER_IMAGE: keycloak/keycloak-operator
 
 jobs:
   publish:
@@ -27,6 +29,9 @@ jobs:
       - name: Build locally Keycloak artifacts to avoid depending on Maven
         run: |
           mvn -P operator -pl operator -am clean install -DskipTests     
+
+      - name: Set incremental number
+        run: echo "INCREMENTAL=$(.github/scripts/incremental-tag.sh ${{ env.QUAY_IMAGE }})" >> $GITHUB_ENV
 
       - name: Login to Quay
         uses: docker/login-action@v2
@@ -47,12 +52,13 @@ jobs:
         uses: docker/metadata-action@v4
         with:
           images: |
-            keycloak/keycloak-operator
-            quay.io/keycloak/keycloak-operator
+            ${{ env.DOCKER_IMAGE }}
+            ${{ env.QUAY_IMAGE }}
           tags: |
             type=ref,event=branch
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{version}},suffix=${{ env.INCREMENTAL }}
                       
       - name: Build and push the operator image
         working-directory: operator
