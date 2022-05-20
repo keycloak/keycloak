@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.events;
 
+import org.junit.Before;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.client.resources.TestingResource;
@@ -31,16 +32,22 @@ import java.util.List;
  */
 public abstract class AbstractEventsTest extends AbstractKeycloakTest {
 
+    public static final String REALM_NAME_1 = "realmName1";
+    public static final String REALM_NAME_2 = "realmName2";
+
+    protected String realmId;
+    protected String realmId2;
+
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
-        RealmRepresentation rep1 = RealmBuilder.create().name("realmId").build();
-        rep1.setId("realmId");
+        testRealms.add(RealmBuilder.create().name(REALM_NAME_1).build());
+        testRealms.add(RealmBuilder.create().name(REALM_NAME_2).build());
+    }
 
-        RealmRepresentation rep2 = RealmBuilder.create().name("realmId2").build();
-        rep2.setId("realmId2");
-
-        testRealms.add(rep1);
-        testRealms.add(rep2);
+    @Before
+    public void before() {
+        realmId = adminClient.realm(REALM_NAME_1).toRepresentation().getId();
+        realmId2 = adminClient.realm(REALM_NAME_2).toRepresentation().getId();
     }
 
     protected TestingResource testing() {
