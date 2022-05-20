@@ -324,9 +324,9 @@
             <label class="col-md-2 control-label" for="requestUriLifespan" class="two-lines">{{:: 'request-uri-lifespan' | translate}}</label>
 
             <div class="col-md-6 time-selector">
-                <input class="form-control" type="number" required min="1" max="31536000" string-to-number data-ng-model="requestUriLifespan.time"
+                <input class="form-control" type="number" required min="1" max="31536000" string-to-number data-ng-model="realm.attributes.parRequestUriLifespan.time"
                        id="requestUriLifespan" name="requestUriLifespan">
-                <select class="form-control" name="requestUriLifespan" data-ng-model="requestUriLifespan.unit">
+                <select class="form-control" name="requestUriLifespanUnit" data-ng-model="realm.attributes.parRequestUriLifespan.unit">
                     <option value="Minutes">{{:: 'minutes' | translate}}</option>
                     <option value="Hours">{{:: 'hours' | translate}}</option>
                 </select>

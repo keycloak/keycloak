@@ -30,6 +30,7 @@ import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.RealmModel;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.models.ModelException;
+import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
@@ -50,8 +51,8 @@ import java.util.List;
 
 import java.util.Objects;
 import org.junit.Assume;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
+import org.keycloak.testsuite.util.OAuthClient;
 
 /**
  * Test user logins utilizing various LDAP authentication methods and different LDAP connection encryption mechanisms.
@@ -150,12 +151,16 @@ public class LDAPUserLoginTest extends AbstractLDAPTest {
 
     // Helper methods
     private void verifyLoginSucceededAndLogout(String username, String password) {
+        String userId = findUser(username).getId();
         loginPage.open();
         loginPage.login(username, password);
         appPage.assertCurrent();
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
         Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
-        appPage.logout();
+        EventRepresentation loginEvent = events.expectLogin().user(userId).assertEvent();
+        OAuthClient.AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
+        appPage.logout(tokenResponse.getIdToken());
+        events.expectLogout(loginEvent.getSessionId()).user(userId).assertEvent();
     }
 
     private void verifyLoginFailed(String username, String password) {
@@ -227,7 +232,7 @@ public class LDAPUserLoginTest extends AbstractLDAPTest {
     // Test variant: Bind credential set to vault
     @Test
     @LDAPConnectionParameters(bindCredential=LDAPConnectionParameters.BindCredential.VAULT, bindType=LDAPConnectionParameters.BindType.SIMPLE, encryption=LDAPConnectionParameters.Encryption.NONE)
-    @AuthServerContainerExclude(value = {AuthServerContainerExclude.AuthServer.QUARKUS, AuthServerContainerExclude.AuthServer.REMOTE}, details =
+    @AuthServerContainerExclude(value = REMOTE, details =
             "java.io.NotSerializableException: com.sun.jndi.ldap.LdapCtx")
     public void loginLDAPUserCredentialVaultAuthenticationSimpleEncryptionNone() {
         verifyConnectionUrlProtocolPrefix("ldap://");
@@ -247,7 +252,7 @@ public class LDAPUserLoginTest extends AbstractLDAPTest {
     // Test variant: Bind credential set to vault
     @Test
     @LDAPConnectionParameters(bindCredential=LDAPConnectionParameters.BindCredential.VAULT, bindType=LDAPConnectionParameters.BindType.SIMPLE, encryption=LDAPConnectionParameters.Encryption.SSL)
-    @AuthServerContainerExclude(value = {AuthServerContainerExclude.AuthServer.QUARKUS, AuthServerContainerExclude.AuthServer.REMOTE}, details =
+    @AuthServerContainerExclude(value = REMOTE, details =
             "java.io.NotSerializableException: com.sun.jndi.ldap.LdapCtx")
     public void loginLDAPUserCredentialVaultAuthenticationSimpleEncryptionSSL() {
         verifyConnectionUrlProtocolPrefix("ldaps://");
@@ -267,7 +272,7 @@ public class LDAPUserLoginTest extends AbstractLDAPTest {
     // Test variant: Bind credential set to vault
     @Test
     @LDAPConnectionParameters(bindCredential=LDAPConnectionParameters.BindCredential.VAULT, bindType=LDAPConnectionParameters.BindType.SIMPLE, encryption=LDAPConnectionParameters.Encryption.STARTTLS)
-    @AuthServerContainerExclude(value = {AuthServerContainerExclude.AuthServer.QUARKUS, AuthServerContainerExclude.AuthServer.REMOTE}, details =
+    @AuthServerContainerExclude(value = REMOTE, details =
             "java.io.NotSerializableException: com.sun.jndi.ldap.LdapCtx")
     public void loginLDAPUserCredentialVaultAuthenticationSimpleEncryptionStartTLS() {
         verifyConnectionUrlProtocolPrefix("ldap://");

@@ -75,10 +75,10 @@ public class MigrateTo2_1_0 implements Migration {
         StoreFactory storeFactory = authorizationProvider.getStoreFactory();
         PolicyStore policyStore = storeFactory.getPolicyStore();
         realm.getClientsStream().forEach(clientModel -> {
-            ResourceServer resourceServer = storeFactory.getResourceServerStore().findById(clientModel.getId());
+            ResourceServer resourceServer = storeFactory.getResourceServerStore().findByClient(clientModel);
 
             if (resourceServer != null) {
-                policyStore.findByType("role", resourceServer.getId()).forEach(policy -> {
+                policyStore.findByType(resourceServer, "role").forEach(policy -> {
                     Map<String, String> config = new HashMap(policy.getConfig());
                     String roles = config.get("roles");
                     List roleConfig;

@@ -383,7 +383,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
 
             assertEquals(200, response.getStatusCode());
             oauth.verifyToken(response.getAccessToken());
-            oauth.openLogout();
+            oauth.idTokenHint(response.getIdToken()).openLogout();
             return clientSignedToken;
         } finally {
             // Revert jwks_url settings

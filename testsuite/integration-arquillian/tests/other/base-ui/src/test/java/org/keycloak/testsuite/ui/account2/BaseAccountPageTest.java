@@ -19,6 +19,7 @@ package org.keycloak.testsuite.ui.account2;
 
 import org.junit.Test;
 import org.keycloak.testsuite.ui.account2.page.AbstractLoggedInPage;
+import org.keycloak.testsuite.ui.account2.page.utils.SigningInPageUtils;
 
 import static org.junit.Assert.assertTrue;
 
@@ -50,13 +51,6 @@ public abstract class BaseAccountPageTest extends AbstractAccountTest {
     }
 
     protected void testModalDialog(Runnable triggerModal, Runnable onCancel) {
-        triggerModal.run();
-        getAccountPage().modal().assertIsDisplayed();
-        getAccountPage().modal().clickCancel();
-        getAccountPage().modal().assertIsNotDisplayed();
-        onCancel.run();
-        triggerModal.run();
-        getAccountPage().modal().clickConfirm();
-        getAccountPage().modal().assertIsNotDisplayed();
+        SigningInPageUtils.testModalDialog(getAccountPage(), triggerModal, onCancel);
     }
 }

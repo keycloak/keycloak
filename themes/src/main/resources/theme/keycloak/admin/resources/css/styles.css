@@ -427,6 +427,10 @@ table.kc-authz-table-expanded {
   font-size: 14px;
 }
 
+.input-map input.form-control {
+  width: 50%;
+}
+
 /* Deactivation styles for user-group membership tree models */
 
 div[tree-model] li .deactivate {

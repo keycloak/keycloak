@@ -17,39 +17,37 @@
 
 package org.keycloak.models.map.role;
 
+import java.util.Objects;
+import java.util.function.Function;
+import java.util.stream.Stream;
 import org.jboss.logging.Logger;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
-
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
-
-import java.util.Objects;
-import java.util.function.Function;
-import java.util.stream.Stream;
 import org.keycloak.models.map.storage.MapStorage;
-import static org.keycloak.common.util.StackUtil.getShortStackTrace;
-import static org.keycloak.models.map.storage.QueryParameters.Order.ASCENDING;
-import static org.keycloak.models.map.storage.QueryParameters.withCriteria;
-
-import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel.SearchableFields;
 import org.keycloak.models.RoleProvider;
-import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
+import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
+
+import static org.keycloak.common.util.StackUtil.getShortStackTrace;
+import static org.keycloak.models.map.common.AbstractMapProviderFactory.MapProviderObjectType.ROLE_AFTER_REMOVE;
+import static org.keycloak.models.map.common.AbstractMapProviderFactory.MapProviderObjectType.ROLE_BEFORE_REMOVE;
+import static org.keycloak.models.map.storage.QueryParameters.Order.ASCENDING;
+import static org.keycloak.models.map.storage.QueryParameters.withCriteria;
+import static org.keycloak.models.map.storage.criteria.DefaultModelCriteria.criteria;
 
 public class MapRoleProvider implements RoleProvider {
 
     private static final Logger LOG = Logger.getLogger(MapRoleProvider.class);
     private final KeycloakSession session;
     final MapKeycloakTransaction<MapRoleEntity, RoleModel> tx;
-    private final MapStorage<MapRoleEntity, RoleModel> roleStore;
 
     public MapRoleProvider(KeycloakSession session, MapStorage<MapRoleEntity, RoleModel> roleStore) {
         this.session = session;
-        this.roleStore = roleStore;
         this.tx = roleStore.createTransaction(session);
         session.getTransactionManager().enlist(tx);
     }
@@ -62,15 +60,17 @@ public class MapRoleProvider implements RoleProvider {
     @Override
     public RoleModel addRealmRole(RealmModel realm, String id, String name) {
         if (getRealmRole(realm, name) != null) {
-            throw new ModelDuplicateException("Role exists: " + id);
+            throw new ModelDuplicateException("Role with the same name exists: " + name + " for realm " + realm.getName());
         }
 
         LOG.tracef("addRealmRole(%s, %s, %s)%s", realm, id, name, getShortStackTrace());
 
-        MapRoleEntity entity = new MapRoleEntity(id, realm.getId());
-        entity.setName(name);
+        MapRoleEntity entity = new MapRoleEntityImpl();
+        entity.setId(id);
         entity.setRealmId(realm.getId());
-        if (tx.read(entity.getId()) != null) {
+        entity.setName(name);
+        entity.setClientRole(false);
+        if (entity.getId() != null && tx.read(entity.getId()) != null) {
             throw new ModelDuplicateException("Role exists: " + id);
         }
         entity = tx.create(entity);
@@ -79,19 +79,36 @@ public class MapRoleProvider implements RoleProvider {
 
     @Override
     public Stream<RoleModel> getRealmRolesStream(RealmModel realm, Integer first, Integer max) {
-        ModelCriteriaBuilder<RoleModel> mcb = roleStore.createCriteriaBuilder()
-                .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
-                .compare(SearchableFields.IS_CLIENT_ROLE, Operator.NE, true);
+        DefaultModelCriteria<RoleModel> mcb = criteria();
+        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
+                 .compare(SearchableFields.IS_CLIENT_ROLE, Operator.NE, true);
 
         return tx.read(withCriteria(mcb).pagination(first, max, SearchableFields.NAME))
             .map(entityToAdapterFunc(realm));
     }
 
     @Override
+    public Stream<RoleModel> getRolesStream(RealmModel realm, Stream<String> ids, String search, Integer first, Integer max) {
+        LOG.tracef("getRolesStream(%s, %s, %s, %d, %d)%s", realm, ids, search, first, max, getShortStackTrace());
+        if (ids == null) return Stream.empty();
+
+        DefaultModelCriteria<RoleModel> mcb = criteria();
+        mcb = mcb.compare(RoleModel.SearchableFields.ID, Operator.IN, ids)
+                .compare(RoleModel.SearchableFields.REALM_ID, Operator.EQ, realm.getId());
+
+        if (search != null) {
+            mcb = mcb.compare(RoleModel.SearchableFields.NAME, Operator.ILIKE, "%" + search + "%");
+        }
+
+        return tx.read(withCriteria(mcb).pagination(first, max, RoleModel.SearchableFields.NAME))
+                .map(entityToAdapterFunc(realm));
+    }
+
+    @Override
     public Stream<RoleModel> getRealmRolesStream(RealmModel realm) {
-        ModelCriteriaBuilder<RoleModel> mcb = roleStore.createCriteriaBuilder()
-          .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
-          .compare(SearchableFields.IS_CLIENT_ROLE, Operator.NE, true);
+        DefaultModelCriteria<RoleModel> mcb = criteria();
+        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
+                 .compare(SearchableFields.IS_CLIENT_ROLE, Operator.NE, true);
         
         return tx.read(withCriteria(mcb).orderBy(SearchableFields.NAME, ASCENDING))
                 .map(entityToAdapterFunc(realm));
@@ -100,16 +117,18 @@ public class MapRoleProvider implements RoleProvider {
     @Override
     public RoleModel addClientRole(ClientModel client, String id, String name) {
         if (getClientRole(client, name) != null) {
-            throw new ModelDuplicateException("Role exists: " + id);
+            throw new ModelDuplicateException("Role with the same name exists: " + name + " for client " + client.getClientId());
         }
 
         LOG.tracef("addClientRole(%s, %s, %s)%s", client, id, name, getShortStackTrace());
 
-        MapRoleEntity entity = new MapRoleEntity(id, client.getRealm().getId());
+        MapRoleEntity entity = new MapRoleEntityImpl();
+        entity.setId(id);
+        entity.setRealmId(client.getRealm().getId());
         entity.setName(name);
         entity.setClientRole(true);
         entity.setClientId(client.getId());
-        if (tx.read(entity.getId()) != null) {
+        if (entity.getId() != null && tx.read(entity.getId()) != null) {
             throw new ModelDuplicateException("Role exists: " + id);
         }
         entity = tx.create(entity);
@@ -118,8 +137,8 @@ public class MapRoleProvider implements RoleProvider {
 
     @Override
     public Stream<RoleModel> getClientRolesStream(ClientModel client, Integer first, Integer max) {
-        ModelCriteriaBuilder<RoleModel> mcb = roleStore.createCriteriaBuilder()
-                .compare(SearchableFields.REALM_ID, Operator.EQ, client.getRealm().getId())
+        DefaultModelCriteria<RoleModel> mcb = criteria();
+        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, client.getRealm().getId())
                 .compare(SearchableFields.CLIENT_ID, Operator.EQ, client.getId());
 
         return tx.read(withCriteria(mcb).pagination(first, max, SearchableFields.NAME))
@@ -128,8 +147,8 @@ public class MapRoleProvider implements RoleProvider {
 
     @Override
     public Stream<RoleModel> getClientRolesStream(ClientModel client) {
-        ModelCriteriaBuilder<RoleModel> mcb = roleStore.createCriteriaBuilder()
-          .compare(SearchableFields.REALM_ID, Operator.EQ, client.getRealm().getId())
+        DefaultModelCriteria<RoleModel> mcb = criteria();
+        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, client.getRealm().getId())
           .compare(SearchableFields.CLIENT_ID, Operator.EQ, client.getId());
 
         return tx.read(withCriteria(mcb).orderBy(SearchableFields.NAME, ASCENDING))
@@ -141,23 +160,11 @@ public class MapRoleProvider implements RoleProvider {
 
         RealmModel realm = role.isClientRole() ? ((ClientModel)role.getContainer()).getRealm() : (RealmModel)role.getContainer();
 
-        session.users().preRemove(realm, role);
-
-        // TODO: Sending an event should be extracted to store layer
-        session.getKeycloakSessionFactory().publish(new RoleContainerModel.RoleRemovedEvent() {
-            @Override
-            public RoleModel getRole() {
-                return role;
-            }
-
-            @Override
-            public KeycloakSession getKeycloakSession() {
-                return session;
-            }
-        });
-        // TODO: ^^^^^^^ Up to here
+        session.invalidate(ROLE_BEFORE_REMOVE, realm, role);
 
         tx.delete(role.getId());
+
+        session.invalidate(ROLE_AFTER_REMOVE, realm, role);
 
         return true;
     }
@@ -179,9 +186,10 @@ public class MapRoleProvider implements RoleProvider {
         }
         LOG.tracef("getRealmRole(%s, %s)%s", realm, name, getShortStackTrace());
 
-        ModelCriteriaBuilder<RoleModel> mcb = roleStore.createCriteriaBuilder()
-          .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
-          .compare(SearchableFields.NAME, Operator.ILIKE, name);
+        DefaultModelCriteria<RoleModel> mcb = criteria();
+        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
+                 .compare(SearchableFields.IS_CLIENT_ROLE, Operator.NE, true)
+                 .compare(SearchableFields.NAME, Operator.EQ, name);
 
         String roleId = tx.read(withCriteria(mcb))
                 .map(entityToAdapterFunc(realm))
@@ -199,10 +207,10 @@ public class MapRoleProvider implements RoleProvider {
         }
         LOG.tracef("getClientRole(%s, %s)%s", client, name, getShortStackTrace());
 
-        ModelCriteriaBuilder<RoleModel> mcb = roleStore.createCriteriaBuilder()
-          .compare(SearchableFields.REALM_ID, Operator.EQ, client.getRealm().getId())
+        DefaultModelCriteria<RoleModel> mcb = criteria();
+        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, client.getRealm().getId())
           .compare(SearchableFields.CLIENT_ID, Operator.EQ, client.getId())
-          .compare(SearchableFields.NAME, Operator.ILIKE, name);
+          .compare(SearchableFields.NAME, Operator.EQ, name);
 
         String roleId = tx.read(withCriteria(mcb))
                 .map(entityToAdapterFunc(client.getRealm()))
@@ -223,7 +231,8 @@ public class MapRoleProvider implements RoleProvider {
 
         MapRoleEntity entity = tx.read(id);
         String realmId = realm.getId();
-        return (entity == null || ! Objects.equals(realmId, entity.getRealmId()))
+        // when a store doesn't store information about all realms, it doesn't have the information about
+        return (entity == null || (entity.getRealmId() != null && !Objects.equals(realmId, entity.getRealmId())))
           ? null
           : entityToAdapterFunc(realm).apply(entity);
     }
@@ -233,12 +242,13 @@ public class MapRoleProvider implements RoleProvider {
         if (search == null) {
             return Stream.empty();
         }
-        ModelCriteriaBuilder<RoleModel> mcb = roleStore.createCriteriaBuilder()
-          .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
-          .or(
-            roleStore.createCriteriaBuilder().compare(SearchableFields.NAME, Operator.ILIKE, "%" + search + "%"),
-            roleStore.createCriteriaBuilder().compare(SearchableFields.DESCRIPTION, Operator.ILIKE, "%" + search + "%")
-          );
+        DefaultModelCriteria<RoleModel> mcb = criteria();
+        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
+                .compare(SearchableFields.IS_CLIENT_ROLE, Operator.NE, true)
+                .or(
+                        mcb.compare(SearchableFields.NAME, Operator.ILIKE, "%" + search + "%"),
+                        mcb.compare(SearchableFields.DESCRIPTION, Operator.ILIKE, "%" + search + "%")
+                );
 
         return tx.read(withCriteria(mcb).pagination(first, max, SearchableFields.NAME))
                 .map(entityToAdapterFunc(realm));
@@ -249,15 +259,32 @@ public class MapRoleProvider implements RoleProvider {
         if (search == null) {
             return Stream.empty();
         }
-        ModelCriteriaBuilder<RoleModel> mcb = roleStore.createCriteriaBuilder()
-          .compare(SearchableFields.REALM_ID, Operator.EQ, client.getRealm().getId())
-          .compare(SearchableFields.CLIENT_ID, Operator.EQ, client.getId())
-          .or(
-            roleStore.createCriteriaBuilder().compare(SearchableFields.NAME, Operator.ILIKE, "%" + search + "%"),
-            roleStore.createCriteriaBuilder().compare(SearchableFields.DESCRIPTION, Operator.ILIKE, "%" + search + "%")
-          );
+        DefaultModelCriteria<RoleModel> mcb = criteria();
+        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, client.getRealm().getId())
+                .compare(SearchableFields.CLIENT_ID, Operator.EQ, client.getId())
+                .or(
+                        mcb.compare(SearchableFields.NAME, Operator.ILIKE, "%" + search + "%"),
+                        mcb.compare(SearchableFields.DESCRIPTION, Operator.ILIKE, "%" + search + "%")
+                );
+
         return tx.read(withCriteria(mcb).pagination(first, max, SearchableFields.NAME))
                 .map(entityToAdapterFunc(client.getRealm()));
+    }
+
+    public void preRemove(RealmModel realm) {
+        LOG.tracef("preRemove(%s)%s", realm, getShortStackTrace());
+        DefaultModelCriteria<RoleModel> mcb = criteria();
+        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
+
+        tx.delete(withCriteria(mcb));
+    }
+
+    public void preRemove(RealmModel realm, RoleModel role) {
+        // Remove reference from all composite roles
+        DefaultModelCriteria<RoleModel> mcb = criteria();
+        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
+                .compare(SearchableFields.COMPOSITE_ROLE, Operator.EQ, role.getId());
+        tx.read(withCriteria(mcb)).forEach(mapRoleEntity -> mapRoleEntity.removeCompositeRole(role.getId()));
     }
 
     @Override

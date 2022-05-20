@@ -49,11 +49,13 @@ import org.keycloak.testsuite.pages.LoginExpiredPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordResetPage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
+import org.keycloak.testsuite.pages.LogoutConfirmPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.pages.ProceedPage;
 import org.keycloak.testsuite.pages.UpdateAccountInformationPage;
 import org.keycloak.testsuite.pages.VerifyEmailPage;
 import org.keycloak.testsuite.util.MailServer;
+import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.openqa.selenium.TimeoutException;
 
@@ -103,6 +105,9 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
 
     @Page
     protected ProceedPage proceedPage;
+
+    @Page
+    protected LogoutConfirmPage logoutConfirmPage;
 
     @Page
     protected InfoPage infoPage;
@@ -226,6 +231,21 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
         logInWithBroker(bc);
     }
 
+    // We are re-authenticating to the IDP. Hence it is assumed that "username" field is not visible on the login form on the IDP side
+    protected void logInAsUserInIDPWithReAuthenticate() {
+        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
+
+        waitForPage(driver, "sign in to", true);
+        log.debug("Clicking social " + bc.getIDPAlias());
+        loginPage.clickSocial(bc.getIDPAlias());
+        waitForPage(driver, "sign in to", true);
+
+        // We are re-authenticating. Username field not visible
+        log.debug("Reauthenticating");
+        Assert.assertFalse(loginPage.isUsernameInputPresent());
+        loginPage.login(bc.getUserPassword());
+    }
+
     protected void logInWithBroker(BrokerConfiguration bc) {
         logInWithIdp(bc.getIDPAlias(), bc.getUserLogin(), bc.getUserPassword());
     }
@@ -289,16 +309,32 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
         logoutFromRealm(contextRoot, realm, null);
     }
 
-    protected void logoutFromRealm(String contextRoot, String realm, String initiatingIdp) { logoutFromRealm(contextRoot, realm, initiatingIdp, null); }
+    protected void logoutFromRealm(String contextRoot, String realm, String initiatingIdp) {
+        logoutFromRealm(contextRoot, realm, initiatingIdp, null);
+    }
 
-    protected void logoutFromRealm(String contextRoot, String realm, String initiatingIdp, String tokenHint) {
-        driver.navigate().to(contextRoot
-                + "/auth/realms/" + realm
-                + "/protocol/" + "openid-connect"
-                + "/logout?redirect_uri=" + encodeUrl(getAccountUrl(contextRoot, realm))
-                + (!StringUtils.isBlank(initiatingIdp) ? "&initiating_idp=" + initiatingIdp : "")
-                + (!StringUtils.isBlank(tokenHint) ? "&id_token_hint=" + tokenHint : "")
-        );
+    protected void logoutFromRealm(String contextRoot, String realm, String initiatingIdp, String idTokenHint) {
+        OAuthClient.LogoutUrlBuilder builder = oauth.realm(realm)
+                .getLogoutUrl()
+                .initiatingIdp(initiatingIdp);
+
+        if (idTokenHint != null) {
+            builder
+                   .postLogoutRedirectUri(encodeUrl(getAccountUrl(contextRoot, realm)))
+                   .idTokenHint(idTokenHint);
+        }
+
+        String logoutUrl = builder.build();
+        driver.navigate().to(logoutUrl);
+
+        // Needs to confirm logout if id_token_hint was not provided
+        if (idTokenHint == null) {
+            logoutConfirmPage.assertCurrent();
+            logoutConfirmPage.confirmLogout();
+            infoPage.assertCurrent();
+            driver.navigate().to(getAccountUrl(contextRoot, realm));
+        }
+
 
         try {
             Retry.execute(() -> {

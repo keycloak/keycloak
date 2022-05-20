@@ -34,6 +34,10 @@ import org.keycloak.storage.ldap.idm.model.LDAPDn;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
 import org.keycloak.storage.ldap.idm.query.internal.LDAPQuery;
 import org.keycloak.storage.ldap.idm.store.ldap.LDAPIdentityStore;
+import org.keycloak.storage.ldap.mappers.HardcodedLDAPGroupStorageMapper;
+import org.keycloak.storage.ldap.mappers.HardcodedLDAPGroupStorageMapperFactory;
+import org.keycloak.storage.ldap.mappers.HardcodedLDAPRoleStorageMapper;
+import org.keycloak.storage.ldap.mappers.HardcodedLDAPRoleStorageMapperFactory;
 import org.keycloak.storage.ldap.mappers.LDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapper;
 import org.keycloak.storage.ldap.mappers.UserAttributeLDAPStorageMapperFactory;
@@ -228,6 +232,20 @@ public class LDAPTestUtils {
                 .orElse(null);
     }
 
+    public static void addOrUpdateHardcodedGroupMapper(RealmModel realm, ComponentModel providerModel, String... otherConfigOptions) {
+        ComponentModel mapperModel = getSubcomponentByName(realm, providerModel, "hardcodedGroupsMapper");
+        if (mapperModel != null) {
+            updateGroupMapperConfigOptions(mapperModel, otherConfigOptions);
+            realm.updateComponent(mapperModel);
+        } else {
+            mapperModel = KeycloakModelUtils.createComponentModel("hardcodedGroupsMapper", providerModel.getId(),
+                    HardcodedLDAPGroupStorageMapperFactory.PROVIDER_ID, LDAPStorageMapper.class.getName(),
+                    HardcodedLDAPGroupStorageMapper.GROUP, "parent_group/hardcoded_group");
+            updateConfigOptions(mapperModel, otherConfigOptions);
+            realm.addComponentModel(mapperModel);
+        }
+    }
+
     public static void addOrUpdateGroupMapper(RealmModel realm, ComponentModel providerModel, LDAPGroupMapperMode mode, String descriptionAttrName, String... otherConfigOptions) {
         ComponentModel mapperModel = getSubcomponentByName(realm, providerModel, "groupsMapper");
         if (mapperModel != null) {
@@ -243,6 +261,19 @@ public class LDAPTestUtils {
                     GroupMapperConfig.MODE, mode.toString(),
                     GroupMapperConfig.LDAP_GROUPS_PATH, "/");
             updateGroupMapperConfigOptions(mapperModel, otherConfigOptions);
+            realm.addComponentModel(mapperModel);
+        }
+    }
+
+    public static void addOrUpdateHardcodedRoleMapper(RealmModel realm, ComponentModel providerModel, String... otherConfigOptions) {
+        ComponentModel mapperModel = getSubcomponentByName(realm, providerModel, "hardcodedRolesMapper");
+        if (mapperModel != null) {
+            updateConfigOptions(mapperModel, otherConfigOptions);
+            realm.updateComponent(mapperModel);
+        } else {
+            mapperModel = KeycloakModelUtils.createComponentModel("hardcodedRolesMapper", providerModel.getId(), HardcodedLDAPRoleStorageMapperFactory.PROVIDER_ID, LDAPStorageMapper.class.getName(),
+                    HardcodedLDAPRoleStorageMapper.ROLE, "hardcoded_role");
+            updateConfigOptions(mapperModel, otherConfigOptions);
             realm.addComponentModel(mapperModel);
         }
     }
@@ -264,12 +295,17 @@ public class LDAPTestUtils {
         }
     }
 
-    public static void updateGroupMapperConfigOptions(ComponentModel mapperModel, String... configOptions) {
+    public static void updateConfigOptions(ComponentModel componentModel, String... configOptions) {
         for (int i=0 ; i<configOptions.length ; i+=2) {
             String cfgName = configOptions[i];
             String cfgValue = configOptions[i+1];
-            mapperModel.getConfig().putSingle(cfgName, cfgValue);
+            componentModel.getConfig().putSingle(cfgName, cfgValue);
         }
+    }
+
+    @Deprecated
+    public static void updateGroupMapperConfigOptions(ComponentModel mapperModel, String... configOptions) {
+        updateConfigOptions(mapperModel, configOptions);
     }
 
     // End CRUD model mappers

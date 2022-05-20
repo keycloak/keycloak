@@ -174,7 +174,7 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory, Pr
         checkProvider();
         boolean cfChanged = false;
         for (ProviderFactory factory : undeployed) {
-            invalidate(ObjectType.PROVIDER_FACTORY, factory.getClass());
+            invalidate(null, ObjectType.PROVIDER_FACTORY, factory.getClass());
             factory.close();
             cfChanged |= (componentFactoryPF == factory);
         }
@@ -359,13 +359,13 @@ public class DefaultKeycloakSessionFactory implements KeycloakSessionFactory, Pr
     }
 
     @Override
-    public void invalidate(InvalidableObjectType type, Object... ids) {
+    public void invalidate(KeycloakSession session, InvalidableObjectType type, Object... ids) {
         factoriesMap.values().stream()
           .map(Map::values)
           .flatMap(Collection::stream)
           .filter(InvalidationHandler.class::isInstance)
           .map(InvalidationHandler.class::cast)
-          .forEach(ih -> ih.invalidate(type, ids));
+          .forEach(ih -> ih.invalidate(session, type, ids));
     }
 
     @Override

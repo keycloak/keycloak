@@ -42,6 +42,7 @@ import org.keycloak.testsuite.pages.AccountTotpPage;
 import org.keycloak.testsuite.pages.LoginConfigTotpPage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
 import org.keycloak.testsuite.pages.RegisterPage;
+import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.openqa.selenium.By;
@@ -55,10 +56,11 @@ import static org.junit.Assert.assertTrue;
  */
 public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionTest {
 
-    public AppInitiatedActionTotpSetupTest() {
-        super(UserModel.RequiredAction.CONFIGURE_TOTP.name());
+    @Override
+    public String getAiaAction() {
+        return UserModel.RequiredAction.CONFIGURE_TOTP.name();
     }
-    
+
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
         testRealm.setResetPasswordAllowed(Boolean.TRUE);
@@ -117,7 +119,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         String authSessionId = events.expectRequiredAction(EventType.UPDATE_TOTP).user(userId).detail(Details.USERNAME, "setuptotp").assertEvent()
                 .getDetails().get(Details.CODE_ID);
 
-        assertKcActionStatus("success");
+        assertKcActionStatus(SUCCESS);
         
         events.expectLogin().user(userId).session(authSessionId).detail(Details.USERNAME, "setuptotp").assertEvent();
     }
@@ -352,11 +354,12 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         String authSessionId = events.expectRequiredAction(EventType.UPDATE_TOTP).assertEvent()
                 .getDetails().get(Details.CODE_ID);
 
-        assertKcActionStatus("success");
+        assertKcActionStatus(SUCCESS);
 
         EventRepresentation loginEvent = events.expectLogin().session(authSessionId).assertEvent();
 
-        oauth.openLogout();
+        OAuthClient.AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
+        oauth.idTokenHint(tokenResponse.getIdToken()).openLogout();
 
         events.expectLogout(authSessionId).assertEvent();
 
@@ -387,7 +390,7 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         totpPage.configure(totp.generateTOTP(totpCode));
 
         // After totp config, user should be on the app page
-        assertKcActionStatus("success");
+        assertKcActionStatus(SUCCESS);
 
         events.poll();
         events.expectRequiredAction(EventType.UPDATE_TOTP).user(userId).detail(Details.USERNAME, "setuptotp2").assertEvent();
@@ -395,7 +398,8 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         EventRepresentation loginEvent = events.expectLogin().user(userId).detail(Details.USERNAME, "setuptotp2").assertEvent();
 
         // Logout
-        oauth.openLogout();
+        OAuthClient.AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
+        oauth.idTokenHint(tokenResponse.getIdToken()).openLogout();
         events.expectLogout(loginEvent.getSessionId()).user(userId).assertEvent();
 
         // Try to login after logout
@@ -423,8 +427,8 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         events.expectAccount(EventType.REMOVE_TOTP).user(userId).assertEvent();
 
         // Logout
-        oauth.openLogout();
-        events.expectLogout(loginEvent.getSessionId()).user(userId).assertEvent();
+        accountTotpPage.logout();
+        events.expectLogout(loginEvent.getSessionId()).user(userId).detail(Details.REDIRECT_URI, oauth.AUTH_SERVER_ROOT + "/realms/test/account/totp").assertEvent();
 
         // Try to login
         loginPage.open();
@@ -459,11 +463,12 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         String sessionId = events.expectRequiredAction(EventType.UPDATE_TOTP).assertEvent()
                 .getDetails().get(Details.CODE_ID);
 
-        assertKcActionStatus("success");
+        assertKcActionStatus(SUCCESS);
 
         EventRepresentation loginEvent = events.expectLogin().session(sessionId).assertEvent();
 
-        oauth.openLogout();
+        OAuthClient.AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
+        oauth.idTokenHint(tokenResponse.getIdToken()).openLogout();
 
         events.expectLogout(loginEvent.getSessionId()).assertEvent();
 
@@ -512,10 +517,11 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
             .getDetails().get(Details.CODE_ID);
         
         //RequestType reqType = appPage.getRequestType();
-        assertKcActionStatus("success");
+        assertKcActionStatus(SUCCESS);
         EventRepresentation loginEvent = events.expectLogin().session(sessionId).assertEvent();
 
-        oauth.openLogout();
+        OAuthClient.AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
+        oauth.idTokenHint(tokenResponse.getIdToken()).openLogout();
 
         events.expectLogout(loginEvent.getSessionId()).assertEvent();
 
@@ -526,9 +532,10 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
 
         assertKcActionStatus(null);
 
-        events.expectLogin().assertEvent();
+        loginEvent = events.expectLogin().assertEvent();
 
-        oauth.openLogout();
+        tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
+        oauth.idTokenHint(tokenResponse.getIdToken()).openLogout();
         events.expectLogout(null).session(AssertEvents.isUUID()).assertEvent();
 
         // test lookAheadWindow

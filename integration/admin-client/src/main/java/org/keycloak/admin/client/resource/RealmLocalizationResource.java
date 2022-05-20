@@ -23,6 +23,7 @@ import java.util.Map;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -59,4 +60,9 @@ public interface RealmLocalizationResource {
     @PUT
     @Consumes(MediaType.TEXT_PLAIN)
     void saveRealmLocalizationText(@PathParam("locale") String locale, @PathParam("key") String key, String text);
+
+    @Path("{locale}")
+    @POST
+    @Consumes("application/json")
+    void createOrUpdateRealmLocalizationTexts(@PathParam("locale") String locale, Map<String, String> localizationTexts);
 }

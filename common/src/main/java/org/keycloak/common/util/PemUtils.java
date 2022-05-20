@@ -35,6 +35,9 @@ import java.security.cert.X509Certificate;
  */
 public final class PemUtils {
 
+    public static final String BEGIN_CERT = "-----BEGIN CERTIFICATE-----";
+    public static final String END_CERT = "-----END CERTIFICATE-----";
+
     static {
         BouncyIntegration.init();
     }

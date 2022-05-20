@@ -583,6 +583,7 @@ public class RealmAdminResource {
      */
     @Path("logout-all")
     @POST
+    @Produces(MediaType.APPLICATION_JSON)
     public GlobalRequestResult logoutAll() {
         auth.users().requireManage();
 
@@ -903,7 +904,7 @@ public class RealmAdminResource {
         auth.realm().requireManageEvents();
 
         EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
-        eventStore.clear(realm.getId());
+        eventStore.clear(realm);
     }
 
     /**
@@ -916,7 +917,7 @@ public class RealmAdminResource {
         auth.realm().requireManageEvents();
 
         EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
-        eventStore.clearAdmin(realm.getId());
+        eventStore.clearAdmin(realm);
     }
 
     /**

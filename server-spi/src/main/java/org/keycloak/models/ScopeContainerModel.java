@@ -17,6 +17,7 @@
 
 package org.keycloak.models;
 
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -63,6 +64,26 @@ public interface ScopeContainerModel {
 
     void deleteScopeMapping(RoleModel role);
 
+    /**
+     * Returns {@code true}, if this object has the given role directly in its scope.
+     *
+     * @param role the role
+     * @return see description
+     * @see #hasScope(RoleModel) if you want to check whether this object has the given role directly or indirectly in
+     *      its scope
+     */
+    default boolean hasDirectScope(RoleModel role) {
+        return getScopeMappingsStream().anyMatch(r -> Objects.equals(r, role));
+    }
+
+    /**
+     * Returns {@code true}, if this object has the given role directly or indirectly in its scope, {@code false}
+     * otherwise.
+     *
+     * @param role the role
+     * @return see description
+     * @see #hasDirectScope(RoleModel) if you want to check if this object has the given role directly in its scope
+     */
     boolean hasScope(RoleModel role);
 
 }

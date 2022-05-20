@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-model-pom</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>16.0.0-SNAPSHOT</version>
+        <version>999-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -102,7 +102,7 @@
         </dependency>
         <dependency>
             <groupId>org.hamcrest</groupId>
-            <artifactId>hamcrest-all</artifactId>
+            <artifactId>hamcrest</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -136,7 +136,8 @@
                         <keycloak.connectionsJpa.default.user>${keycloak.connectionsJpa.user}</keycloak.connectionsJpa.default.user>
                         <keycloak.connectionsJpa.default.password>${keycloak.connectionsJpa.password}</keycloak.connectionsJpa.default.password>
                         <keycloak.connectionsJpa.default.url>${keycloak.connectionsJpa.url}</keycloak.connectionsJpa.default.url>
-                        <log4j.configuration>file:${project.build.directory}/test-classes/log4j.properties</log4j.configuration> <!-- for the logging to properly work with tests in the 'other' module -->
+                        <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
+                        <org.jboss.logging.provider>log4j</org.jboss.logging.provider>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>

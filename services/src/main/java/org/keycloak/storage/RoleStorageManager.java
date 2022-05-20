@@ -150,6 +150,11 @@ public class RoleStorageManager implements RoleProvider {
         return session.roleLocalStorage().getRealmRolesStream(realm, first, max);
     }
 
+    @Override
+    public Stream<RoleModel> getRolesStream(RealmModel realm, Stream<String> ids, String search, Integer first, Integer max) {
+        return session.roleLocalStorage().getRolesStream(realm, ids, search, first, max);
+    }
+
     /**
      * Obtaining roles from an external role storage is time-bounded. In case the external role storage
      * isn't available at least roles from a local storage are returned. For this purpose

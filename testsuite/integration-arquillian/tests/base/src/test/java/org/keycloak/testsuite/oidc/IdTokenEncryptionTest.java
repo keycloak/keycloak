@@ -22,13 +22,16 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.AesCbcHmacShaContentEncryptionProvider;
 import org.keycloak.crypto.AesGcmContentEncryptionProvider;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.RsaCekManagementProvider;
+import org.keycloak.jose.JOSEHeader;
 import org.keycloak.jose.jwe.JWEConstants;
 import org.keycloak.jose.jwe.JWEException;
+import org.keycloak.jose.jwe.JWEHeader;
 import org.keycloak.jose.jwe.alg.JWEAlgorithmProvider;
 import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
@@ -52,8 +55,10 @@ import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.OAuthClient.AccessTokenResponse;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
+import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.PrivateKey;
 import java.util.List;
@@ -185,6 +190,11 @@ public class IdTokenEncryptionTest extends AbstractTestRealmKeycloakTest {
         testIdTokenSignatureAndEncryption(Algorithm.PS512, JWEConstants.RSA_OAEP, JWEConstants.A256GCM);
     }
 
+    @Test
+    public void testIdTokenEncryptionAlgRSA_OAEPEncDefault() {
+        testIdTokenSignatureAndEncryption(Algorithm.PS256, JWEConstants.RSA_OAEP, null);
+    }
+
     private void testIdTokenSignatureAndEncryption(String sigAlgorithm, String algAlgorithm, String encAlgorithm) {
         ClientResource clientResource = null;
         ClientRepresentation clientRep = null;
@@ -220,7 +230,12 @@ public class IdTokenEncryptionTest extends AbstractTestRealmKeycloakTest {
             Map<String, String> keyPair = oidcClientEndpointsResource.getKeysAsPem();
             PrivateKey decryptionKEK = PemUtils.decodePrivateKey(keyPair.get("privateKey"));
 
+            // a nested JWT (signed and encrypted JWT) needs to set "JWT" to its JOSE Header's "cty" field
+            JWEHeader jweHeader = (JWEHeader) getHeader(parts[0]);
+            Assert.assertEquals("JWT", jweHeader.getContentType());
+
             // verify and decrypt JWE
+            if (encAlgorithm == null) encAlgorithm = JWEConstants.A128CBC_HS256;
             JWEAlgorithmProvider algorithmProvider = getJweAlgorithmProvider(algAlgorithm);
             JWEEncryptionProvider encryptionProvider = getJweEncryptionProvider(encAlgorithm);
             byte[] decodedString = TokenUtil.jweKeyEncryptionVerifyAndDecode(decryptionKEK, jweStr, algorithmProvider, encryptionProvider);
@@ -269,6 +284,15 @@ public class IdTokenEncryptionTest extends AbstractTestRealmKeycloakTest {
                 break;
         }
         return jweEncryptionProvider;
+    }
+
+    private JOSEHeader getHeader(String base64Header) {
+        try {
+            byte[] decodedHeader = Base64Url.decode(base64Header);
+            return JsonSerialization.readValue(decodedHeader, JWEHeader.class);
+        } catch (IOException ioe) {
+            throw new RuntimeException(ioe);
+        }
     }
 
     @Test

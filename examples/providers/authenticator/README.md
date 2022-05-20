@@ -2,7 +2,7 @@ Example Custom Authenticator
 ===================================================
 
 1. First, Keycloak must be running. See [Getting Started](https://github.com/keycloak/keycloak#getting-started), or you
-   can build distribution from [source](https://github.com/keycloak/keycloak/blob/master/docs/building.md).
+   can build distribution from [source](https://github.com/keycloak/keycloak/blob/main/docs/building.md).
 
 2. Execute the follow.  This will build the example and deploy it
 

@@ -16,8 +16,8 @@
  */
 package org.keycloak.component;
 
+import java.util.Set;
 import org.keycloak.Config.Scope;
-import org.keycloak.component.ComponentModel;
 
 /**
  *
@@ -84,7 +84,7 @@ public class ComponentModelScope implements Scope {
     @Override
     public Integer getInt(String key, Integer defaultValue) {
         final String res = componentConfig.get(prefix + key, null);
-        return (res == null) ? origScope.getInt(key, defaultValue) : Integer.parseInt(res);
+        return (res == null) ? origScope.getInt(key, defaultValue) : Integer.valueOf(res);
     }
 
     @Override
@@ -95,7 +95,7 @@ public class ComponentModelScope implements Scope {
     @Override
     public Long getLong(String key, Long defaultValue) {
         final String res = componentConfig.get(prefix + key, null);
-        return (res == null) ? origScope.getLong(key, defaultValue) : Long.parseLong(res);
+        return (res == null) ? origScope.getLong(key, defaultValue) : Long.valueOf(res);
     }
 
     @Override
@@ -106,12 +106,21 @@ public class ComponentModelScope implements Scope {
     @Override
     public Boolean getBoolean(String key, Boolean defaultValue) {
         final String res = componentConfig.get(prefix + key, null);
-        return (res == null) ? origScope.getBoolean(key, defaultValue) : Boolean.parseBoolean(res);
+        return (res == null) ? origScope.getBoolean(key, defaultValue) : Boolean.valueOf(res);
     }
 
     @Override
     public Scope scope(String... scope) {
         return new ComponentModelScope(origScope.scope(scope), componentConfig, String.join(".", scope) + ".");
+    }
+
+    @Override
+    public Set<String> getPropertyNames() {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+
+    public ComponentModel getComponentModel() {
+        return componentConfig;
     }
 
 }

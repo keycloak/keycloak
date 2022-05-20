@@ -79,6 +79,8 @@ public class ClientRolesCondition extends AbstractClientPolicyConditionProvider<
             case BACKCHANNEL_AUTHENTICATION_REQUEST:
             case BACKCHANNEL_TOKEN_REQUEST:
             case PUSHED_AUTHORIZATION_REQUEST:
+            case REGISTERED:
+            case UPDATED:
                 if (isRolesMatched(session.getContext().getClient())) return ClientPolicyVote.YES;
                 return ClientPolicyVote.NO;
             default:

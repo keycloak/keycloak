@@ -45,10 +45,6 @@
         <property name="chromeArguments">${chromeArguments}</property>
         <property name="chromeDriverVersion">${chromeDriverVersion}</property>
 
-        <!-- internet explorer -->
-        <property name="ieDriverArch">${ieDriverArch}</property>
-        <property name="ieDriverVersion">${ieDriverVersion}</property>
-
         <!-- appium -->
         <property name="appium.platformName">${appium.platformName}</property>
         <property name="appium.deviceName">${appium.deviceName}</property>
@@ -425,6 +421,7 @@
                     "keycloak.connectionsInfinispan.remoteStorePort": "${keycloak.connectionsInfinispan.remoteStorePort:11222}",
                     "keycloak.connectionsInfinispan.remoteStoreEnabled": "${keycloak.connectionsInfinispan.remoteStoreEnabled:true}",
                     "keycloak.connectionsInfinispan.hotrodProtocolVersion": "${keycloak.connectionsInfinispan.hotrodProtocolVersion}",
+                    "keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase": "${keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase:true}",
                     "keycloak.connectionsJpa.url": "${keycloak.connectionsJpa.url.crossdc:jdbc:h2:mem:test-dc-shared}",
                     "keycloak.connectionsJpa.driver": "${keycloak.connectionsJpa.driver.crossdc:org.h2.Driver}",
                     "keycloak.connectionsJpa.driverDialect": "${keycloak.connectionsJpa.driverDialect.crossdc:}"
@@ -451,6 +448,7 @@
                     "keycloak.connectionsInfinispan.remoteStorePort": "${keycloak.connectionsInfinispan.remoteStorePort:11222}",
                     "keycloak.connectionsInfinispan.remoteStoreEnabled": "${keycloak.connectionsInfinispan.remoteStoreEnabled:true}",
                     "keycloak.connectionsInfinispan.hotrodProtocolVersion": "${keycloak.connectionsInfinispan.hotrodProtocolVersion}",
+                    "keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase": "${keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase:true}",
                     "keycloak.connectionsJpa.url": "${keycloak.connectionsJpa.url.crossdc:jdbc:h2:mem:test-dc-shared}",
                     "keycloak.connectionsJpa.driver": "${keycloak.connectionsJpa.driver.crossdc:org.h2.Driver}",
                     "keycloak.connectionsJpa.driverDialect": "${keycloak.connectionsJpa.driverDialect.crossdc:}"
@@ -478,6 +476,7 @@
                     "keycloak.connectionsInfinispan.remoteStorePort": "${keycloak.connectionsInfinispan.remoteStorePort.2:11222}",
                     "keycloak.connectionsInfinispan.remoteStoreEnabled": "${keycloak.connectionsInfinispan.remoteStoreEnabled:true}",
                     "keycloak.connectionsInfinispan.hotrodProtocolVersion": "${keycloak.connectionsInfinispan.hotrodProtocolVersion}",
+                    "keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase": "${keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase:true}",
                     "keycloak.connectionsJpa.url": "${keycloak.connectionsJpa.url.crossdc:jdbc:h2:mem:test-dc-shared}",
                     "keycloak.connectionsJpa.driver": "${keycloak.connectionsJpa.driver.crossdc:org.h2.Driver}",
                     "keycloak.connectionsJpa.driverDialect": "${keycloak.connectionsJpa.driverDialect.crossdc:}"
@@ -504,6 +503,7 @@
                     "keycloak.connectionsInfinispan.remoteStorePort": "${keycloak.connectionsInfinispan.remoteStorePort.2:11222}",
                     "keycloak.connectionsInfinispan.remoteStoreEnabled": "${keycloak.connectionsInfinispan.remoteStoreEnabled:true}",
                     "keycloak.connectionsInfinispan.hotrodProtocolVersion": "${keycloak.connectionsInfinispan.hotrodProtocolVersion}",
+                    "keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase": "${keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase:true}",
                     "keycloak.connectionsJpa.url": "${keycloak.connectionsJpa.url.crossdc:jdbc:h2:mem:test-dc-shared}",
                     "keycloak.connectionsJpa.driver": "${keycloak.connectionsJpa.driver.crossdc:org.h2.Driver}",
                     "keycloak.connectionsJpa.driverDialect": "${keycloak.connectionsJpa.driverDialect.crossdc:}"
@@ -640,6 +640,19 @@
             </configuration>
         </container>
     </group>
+
+    <container qualifier="hot-rod-store" mode="manual" >
+        <configuration>
+            <property name="enabled">${hotrod.store.enabled}</property>
+            <property name="adapterImplClass">org.keycloak.testsuite.arquillian.containers.InfinispanServerDeployableContainer</property>
+            <property name="infinispanHome">${cache.server.home}-hot-rod-store</property>
+<!--            <property name="serverConfig">infinisan-xsite.xml</property>-->
+            <property name="portOffset">${hotrod.store.port.offset}</property>
+            <property name="managementPort">${hotrod.store.management.port}</property>
+            <property name="javaHome">${cache.server.java.home}</property>
+        </configuration>
+    </container>
+
 
     <container qualifier="auth-server-remote" mode="manual" >
         <configuration>

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,6 +23,7 @@ import org.keycloak.authorization.model.AbstractAuthorizationModel;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
+import org.keycloak.authorization.store.PermissionTicketStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.jpa.JpaModel;
@@ -116,8 +117,9 @@ public class ResourceAdapter extends AbstractAuthorizationModel implements Resou
     @Override
     public List<Scope> getScopes() {
         List<Scope> scopes = new LinkedList<>();
+        ResourceServer resourceServer = getResourceServer();
         for (ScopeEntity scope : entity.getScopes()) {
-            scopes.add(storeFactory.getScopeStore().findById(scope.getId(), entity.getResourceServer()));
+            scopes.add(storeFactory.getScopeStore().findById(JPAAuthorizationStoreFactory.NULL_REALM, resourceServer, scope.getId()));
         }
 
         return Collections.unmodifiableList(scopes);
@@ -136,8 +138,8 @@ public class ResourceAdapter extends AbstractAuthorizationModel implements Resou
     }
 
     @Override
-    public String getResourceServer() {
-        return entity.getResourceServer();
+    public ResourceServer getResourceServer() {
+        return storeFactory.getResourceServerStore().findById(JPAAuthorizationStoreFactory.NULL_REALM, entity.getResourceServer());
     }
 
     @Override

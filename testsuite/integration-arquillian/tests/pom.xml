@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian</artifactId>
-        <version>16.0.0-SNAPSHOT</version>
+        <version>999-SNAPSHOT</version>
     </parent>
 
     <packaging>pom</packaging>
@@ -49,6 +49,7 @@
         <auth.server.quarkus.cluster>false</auth.server.quarkus.cluster>
 
         <auth.server.crossdc>false</auth.server.crossdc>
+        <hotrod.store.enabled>false</hotrod.store.enabled>
         <auth.server.undertow.crossdc>false</auth.server.undertow.crossdc>
         <auth.server.jboss.crossdc>false</auth.server.jboss.crossdc>
         <cache.server.lifecycle.skip>false</cache.server.lifecycle.skip>
@@ -114,6 +115,12 @@
         <app.server.debug.port>5006</app.server.debug.port>
         <app.server.debug.suspend>n</app.server.debug.suspend>
         <app.server.jboss.jvm.debug.args>-agentlib:jdwp=transport=dt_socket,server=y,suspend=${app.server.debug.suspend},address=localhost:${app.server.debug.port}</app.server.jboss.jvm.debug.args>
+        <app.server.1.debug.port>7301</app.server.1.debug.port>
+        <app.server.1.debug.suspend>n</app.server.1.debug.suspend>
+        <app.server.1.jboss.jvm.debug.args>-agentlib:jdwp=transport=dt_socket,server=y,suspend=${app.server.1.debug.suspend},address=localhost:${app.server.1.debug.port}</app.server.1.jboss.jvm.debug.args>
+        <app.server.2.debug.port>7302</app.server.2.debug.port>
+        <app.server.2.debug.suspend>n</app.server.2.debug.suspend>
+        <app.server.2.jboss.jvm.debug.args>-agentlib:jdwp=transport=dt_socket,server=y,suspend=${app.server.2.debug.suspend},address=localhost:${app.server.2.debug.port}</app.server.2.jboss.jvm.debug.args>
         <app.server.memory.Xms>64m</app.server.memory.Xms>
         <app.server.memory.Xmx>512m</app.server.memory.Xmx>
         <app.server.memory.settings>-Xms${app.server.memory.Xms} -Xmx${app.server.memory.Xmx} -XX:MetaspaceSize=${surefire.memory.metaspace} -XX:MaxMetaspaceSize=${surefire.memory.metaspace.max}</app.server.memory.settings>
@@ -134,6 +141,9 @@
         <cache.server.console.output>true</cache.server.console.output>
         <cache.server.auth>false</cache.server.auth>
 
+        <hotrod.store.port.offset>3010</hotrod.store.port.offset>
+        <hotrod.store.management.port>13000</hotrod.store.management.port>
+
         <!--
         ~ Definition of default JVM parameters for all modular JDKs. See:
         ~
@@ -151,7 +161,7 @@
         ~ * add-opens=java.naming/javax.naming=ALL-UNNAMED              InitialContext proxy generation requires deep reflection in javax.naming
         ~ * add-modules=java.se                                         Needed for backward compatibility with jboss-modules older than jboss-modules 1.9.1.Final
         -->
-        <default.modular.jvm.options>--add-exports=java.desktop/sun.awt=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.invoke=ALL-UNNAMED --add-opens=java.base/java.io=ALL-UNNAMED --add-opens=java.base/java.security=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.management/javax.management=ALL-UNNAMED --add-opens=java.naming/javax.naming=ALL-UNNAMED --add-modules=java.se</default.modular.jvm.options>
+        <default.modular.jvm.options>--add-exports=java.base/sun.security.validator=ALL-UNNAMED --add-exports=java.naming/com.sun.jndi.ldap=ALL-UNNAMED --add-exports=java.base/com.sun.crypto.provider=ALL-UNNAMED --add-exports=java.desktop/sun.awt=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.invoke=ALL-UNNAMED --add-opens=java.base/java.io=ALL-UNNAMED --add-opens=java.base/java.security=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.management/javax.management=ALL-UNNAMED --add-opens=java.naming/javax.naming=ALL-UNNAMED --add-modules=java.se</default.modular.jvm.options>
 
         <dependency.keystore.root>${project.build.directory}/dependency/keystore</dependency.keystore.root>
         <dependency.truststore>${dependency.keystore.root}/keycloak.truststore</dependency.truststore>
@@ -245,6 +255,10 @@
         <!-- KEYCLOAK-6771 Certificate Bound Token -->
         <hok.client.certificate.keystore>${auth.server.config.dir}/other_client.jks</hok.client.certificate.keystore>
         <hok.client.certificate.keystore.passphrase>secret</hok.client.certificate.keystore.passphrase>
+
+        <!-- Client certificate with the format suitable for OpenBanking Brasil -->
+        <obb.client.certificate.keystore>${auth.server.config.dir}/test-user-obb.jks</obb.client.certificate.keystore>
+        <obb.client.certificate.keystore.passphrase>password</obb.client.certificate.keystore.passphrase>
 
         <auth.server.ocsp.responder.enabled>false</auth.server.ocsp.responder.enabled>
         <keycloak.x509cert.lookup.provider>default</keycloak.x509cert.lookup.provider>
@@ -561,6 +575,8 @@
                             <app.server.truststore.password>${app.server.truststore.password}</app.server.truststore.password>
                             <app.server.keystore>${app.server.keystore}</app.server.keystore>
                             <app.server.keystore.password>${app.server.keystore.password}</app.server.keystore.password>
+                            <app.server.1.jboss.jvm.debug.args>${app.server.1.jboss.jvm.debug.args}</app.server.1.jboss.jvm.debug.args>
+                            <app.server.2.jboss.jvm.debug.args>${app.server.2.jboss.jvm.debug.args}</app.server.2.jboss.jvm.debug.args>
                             <app.server.jvm.args.extra>${app.server.jvm.args.extra}</app.server.jvm.args.extra>
                             <tomcat.javax.net.ssl.properties>${tomcat.javax.net.ssl.properties}</tomcat.javax.net.ssl.properties>
 
@@ -634,6 +650,10 @@
                             <hok.client.certificate.keystore>${hok.client.certificate.keystore}</hok.client.certificate.keystore>
                             <hok.client.certificate.keystore.passphrase>${hok.client.certificate.keystore.passphrase}</hok.client.certificate.keystore.passphrase>
 
+                            <!-- Client certificate with the format suitable for OpenBanking Brasil -->
+                            <obb.client.certificate.keystore>${obb.client.certificate.keystore}</obb.client.certificate.keystore>
+                            <obb.client.certificate.keystore.passphrase>${obb.client.certificate.keystore.passphrase}</obb.client.certificate.keystore.passphrase>
+
                             <auth.server.ocsp.responder.enabled>${auth.server.ocsp.responder.enabled}</auth.server.ocsp.responder.enabled>
 
                             <!-- cluster properties -->
@@ -649,6 +669,11 @@
                             <auth.server.undertow.crossdc>${auth.server.undertow.crossdc}</auth.server.undertow.crossdc>
                             <auth.server.jboss.crossdc>${auth.server.jboss.crossdc}</auth.server.jboss.crossdc>
                             <cache.server.lifecycle.skip>${cache.server.lifecycle.skip}</cache.server.lifecycle.skip>
+
+                            <!--hot-rod-store properties-->
+                            <hotrod.store.enabled>${hotrod.store.enabled}</hotrod.store.enabled>
+                            <hotrod.store.port.offset>${hotrod.store.port.offset}</hotrod.store.port.offset>
+                            <hotrod.store.management.port>${hotrod.store.management.port}</hotrod.store.management.port>
 
                             <cache.server>${cache.server}</cache.server>
                             <cache.server.legacy>${cache.server.legacy}</cache.server.legacy>
@@ -1077,7 +1102,7 @@
                 <cache.server.config.dir>${cache.server.home}/standalone/configuration</cache.server.config.dir>
                 <keycloak.testsuite.logging.pattern>%d{HH:mm:ss,SSS} [%t] %-5p [%c{1.}] %m%n</keycloak.testsuite.logging.pattern>
                 <keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>false</keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>
-                <keycloak.connectionsInfinispan.hotrodProtocolVersion>2.9</keycloak.connectionsInfinispan.hotrodProtocolVersion>
+                <keycloak.connectionsInfinispan.hotrodProtocolVersion>PROTOCOL_VERSION_30</keycloak.connectionsInfinispan.hotrodProtocolVersion>
             </properties>
             <dependencies>
                 <dependency>
@@ -1148,7 +1173,7 @@
                 <cache.server.config.dir>${cache.server.home}/standalone/configuration</cache.server.config.dir>
                 <keycloak.testsuite.logging.pattern>%d{HH:mm:ss,SSS} [%t] %-5p [%c{1.}] %m%n</keycloak.testsuite.logging.pattern>
                 <keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>false</keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>
-                <keycloak.connectionsInfinispan.hotrodProtocolVersion>2.9</keycloak.connectionsInfinispan.hotrodProtocolVersion>
+                <keycloak.connectionsInfinispan.hotrodProtocolVersion>PROTOCOL_VERSION_30</keycloak.connectionsInfinispan.hotrodProtocolVersion>
             </properties>
             <dependencies>
                 <dependency>
@@ -1219,7 +1244,7 @@
                 <auth.server.crossdc>true</auth.server.crossdc>
                 <keycloak.testsuite.logging.pattern>%d{HH:mm:ss,SSS} [%t] %-5p [%c{1.}] %m%n</keycloak.testsuite.logging.pattern>
                 <keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>false</keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>
-                <keycloak.connectionsInfinispan.hotrodProtocolVersion>2.9</keycloak.connectionsInfinispan.hotrodProtocolVersion>
+                <keycloak.connectionsInfinispan.hotrodProtocolVersion>PROTOCOL_VERSION_30</keycloak.connectionsInfinispan.hotrodProtocolVersion>
                 <skip.clean.second.cache>true</skip.clean.second.cache>
             </properties>
             <build>
@@ -1316,7 +1341,7 @@
                 <auth.server.crossdc>true</auth.server.crossdc>
                 <keycloak.testsuite.logging.pattern>%d{HH:mm:ss,SSS} [%t] %-5p [%c{1.}] %m%n</keycloak.testsuite.logging.pattern>
                 <keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>false</keycloak.connectionsInfinispan.default.remoteStoreSecurityEnabled>
-                <keycloak.connectionsInfinispan.hotrodProtocolVersion>2.9</keycloak.connectionsInfinispan.hotrodProtocolVersion>
+                <keycloak.connectionsInfinispan.hotrodProtocolVersion>PROTOCOL_VERSION_30</keycloak.connectionsInfinispan.hotrodProtocolVersion>
                 <skip.clean.second.cache>true</skip.clean.second.cache>
             </properties>
             <build>
@@ -1400,6 +1425,89 @@
                                     </configuration>
                                 </execution>
                             </executions>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>
+
+        <profile>
+            <id>map-storage-hot-rod</id>
+            <properties>
+                <hotrod.store.enabled>true</hotrod.store.enabled>
+                <skip.copy.hotrod.server>false</skip.copy.hotrod.server>
+                <cache.server>infinispan</cache.server>
+            </properties>
+            <build>
+                <plugins>
+                </plugins>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <artifactId>maven-dependency-plugin</artifactId>
+                            <executions>
+                                <execution>
+                                    <id>unpack-cache-server-standalone-infinispan</id>
+                                    <phase>generate-resources</phase>
+                                    <goals>
+                                        <goal>unpack</goal>
+                                    </goals>
+                                    <configuration>
+                                        <artifactItems>
+                                            <artifactItem>
+                                                <groupId>org.keycloak.testsuite</groupId>
+                                                <artifactId>integration-arquillian-servers-cache-server-infinispan-infinispan</artifactId>
+                                                <version>${project.version}</version>
+                                                <type>zip</type>
+                                                <outputDirectory>${containers.home}</outputDirectory>
+                                            </artifactItem>
+                                        </artifactItems>
+                                        <overWriteIfNewer>true</overWriteIfNewer>
+                                    </configuration>
+                                </execution>
+                            </executions>
+                        </plugin>
+
+                        <plugin>
+                            <artifactId>maven-antrun-plugin</artifactId>
+                            <executions>
+                                <execution>
+                                    <id>copy-cache-server-to-hot-rod-directory</id>
+                                    <phase>process-resources</phase>
+                                    <goals>
+                                        <goal>run</goal>
+                                    </goals>
+                                    <configuration>
+                                        <skip>${skip.copy.hotrod.server}</skip>
+                                        <target>
+                                            <move todir="${cache.server.home}-hot-rod-store">
+                                                <fileset dir="${cache.server.home}"/>
+                                            </move>
+
+                                            <chmod dir="${cache.server.home}-hot-rod-store/bin" perm="ugo+rx" includes="**/*.sh"/>
+                                        </target>
+                                    </configuration>
+                                </execution>
+                            </executions>
+                        </plugin>
+
+                        <plugin>
+                            <groupId>org.apache.maven.plugins</groupId>
+                            <artifactId>maven-surefire-plugin</artifactId>
+                            <configuration>
+                                <systemPropertyVariables>
+                                    <keycloak.authSession.map.storage.provider>hotrod</keycloak.authSession.map.storage.provider>
+                                    <keycloak.client.map.storage.provider>hotrod</keycloak.client.map.storage.provider>
+                                    <keycloak.clientScope.map.storage.provider>hotrod</keycloak.clientScope.map.storage.provider>
+                                    <keycloak.group.map.storage.provider>hotrod</keycloak.group.map.storage.provider>
+                                    <keycloak.role.map.storage.provider>hotrod</keycloak.role.map.storage.provider>
+                                    <keycloak.user.map.storage.provider>hotrod</keycloak.user.map.storage.provider>
+                                    <keycloak.loginFailure.map.storage.provider>hotrod</keycloak.loginFailure.map.storage.provider>
+                                    <keycloak.realm.map.storage.provider>hotrod</keycloak.realm.map.storage.provider>
+                                    <keycloak.userSession.map.storage.provider>hotrod</keycloak.userSession.map.storage.provider>
+                                    <keycloak.authorization.map.storage.provider>hotrod</keycloak.authorization.map.storage.provider>
+                                </systemPropertyVariables>
+                            </configuration>
                         </plugin>
                     </plugins>
                 </pluginManagement>
@@ -2004,7 +2112,7 @@
                 </dependency>
                 <dependency>
                     <groupId>org.hamcrest</groupId>
-                    <artifactId>hamcrest-all</artifactId>
+                    <artifactId>hamcrest</artifactId>
                 </dependency>
                 <dependency>
                     <groupId>org.infinispan</groupId>
@@ -2028,12 +2136,6 @@
                     <groupId>org.keycloak</groupId>
                     <artifactId>keycloak-client-cli-dist</artifactId>
                     <type>zip</type>
-                </dependency>
-
-                <dependency>
-                    <groupId>org.osgi</groupId>
-                    <artifactId>org.osgi.enterprise</artifactId>
-                    <scope>provided</scope>
                 </dependency>
 
                 <!-- Needed for infinispan statistics -->
@@ -2095,6 +2197,9 @@
 
         <profile>
             <id>java11-auth-server</id>
+            <activation>
+                <jdk>[11,)</jdk>
+            </activation>
             <properties>
                 <auth.server.jvm.args.extra>${default.modular.jvm.options}</auth.server.jvm.args.extra>
             </properties>
@@ -2102,6 +2207,9 @@
 
         <profile>
             <id>java11-app-server</id>
+            <activation>
+                <jdk>[11,)</jdk>
+            </activation>
             <properties>
                 <app.server.jvm.args.extra>${default.modular.jvm.options}</app.server.jvm.args.extra>
             </properties>

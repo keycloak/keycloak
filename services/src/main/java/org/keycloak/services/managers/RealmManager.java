@@ -81,7 +81,7 @@ public class RealmManager {
     }
 
     public RealmModel getKeycloakAdminstrationRealm() {
-        return getRealm(Config.getAdminRealm());
+        return getRealmByName(Config.getAdminRealm());
     }
 
     public RealmModel getRealm(String id) {
@@ -93,11 +93,11 @@ public class RealmManager {
     }
 
     public RealmModel createRealm(String name) {
-        return createRealm(name, name);
+        return createRealm(null, name);
     }
 
     public RealmModel createRealm(String id, String name) {
-        if (id == null) {
+        if (id == null || id.trim().isEmpty()) {
             id = KeycloakModelUtils.generateId();
         }
         else {
@@ -299,8 +299,8 @@ public class RealmManager {
 
     public void setupMasterAdminManagement(RealmModel realm) {
         // Need to refresh masterApp for current realm
-        String adminRealmId = Config.getAdminRealm();
-        RealmModel adminRealm = model.getRealm(adminRealmId);
+        String adminRealmName = Config.getAdminRealm();
+        RealmModel adminRealm = model.getRealmByName(adminRealmName);
         ClientModel masterApp = adminRealm.getClientByClientId(KeycloakModelUtils.getMasterRealmAdminApplicationClientId(realm.getName()));
         if (masterApp == null) {
             createMasterAdminManagement(realm);
@@ -322,7 +322,7 @@ public class RealmManager {
             adminRole.addCompositeRole(createRealmRole);
             createRealmRole.setDescription("${role_" + AdminRoles.CREATE_REALM + "}");
         } else {
-            adminRealm = model.getRealm(Config.getAdminRealm());
+            adminRealm = model.getRealmByName(Config.getAdminRealm());
             adminRole = adminRealm.getRole(AdminRoles.ADMIN);
         }
         adminRole.setDescription("${role_"+AdminRoles.ADMIN+"}");

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Red Hat, Inc. and/or its affiliates
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -41,14 +41,17 @@ import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.SearchableFields;
 import org.keycloak.models.UserProvider;
+import org.keycloak.models.map.common.TimeAdapter;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
-import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
+import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.client.ClientStorageProvider;
 
+import java.util.Collection;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -69,20 +72,21 @@ import static org.keycloak.models.UserModel.EMAIL_VERIFIED;
 import static org.keycloak.models.UserModel.FIRST_NAME;
 import static org.keycloak.models.UserModel.LAST_NAME;
 import static org.keycloak.models.UserModel.USERNAME;
+import static org.keycloak.models.map.common.AbstractMapProviderFactory.MapProviderObjectType.USER_AFTER_REMOVE;
+import static org.keycloak.models.map.common.AbstractMapProviderFactory.MapProviderObjectType.USER_BEFORE_REMOVE;
 import static org.keycloak.models.map.storage.QueryParameters.Order.ASCENDING;
 import static org.keycloak.models.map.storage.QueryParameters.withCriteria;
+import static org.keycloak.models.map.storage.criteria.DefaultModelCriteria.criteria;
 
 public class MapUserProvider implements UserProvider.Streams, UserCredentialStore.Streams {
 
     private static final Logger LOG = Logger.getLogger(MapUserProvider.class);
     private final KeycloakSession session;
     final MapKeycloakTransaction<MapUserEntity, UserModel> tx;
-    private final MapStorage<MapUserEntity, UserModel> userStore;
 
     public MapUserProvider(KeycloakSession session, MapStorage<MapUserEntity, UserModel> store) {
         this.session = session;
-        this.userStore = store;
-        this.tx = userStore.createTransaction(session);
+        this.tx = store.createTransaction(session);
         session.getTransactionManager().enlist(tx);
     }
 
@@ -140,23 +144,26 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
 
         getEntityById(realm, user.getId())
                 .ifPresent(userEntity ->
-                        userEntity.addFederatedIdentity(UserFederatedIdentityEntity.fromModel(socialLink)));
+                        userEntity.addFederatedIdentity(MapUserFederatedIdentityEntity.fromModel(socialLink)));
     }
 
     @Override
     public boolean removeFederatedIdentity(RealmModel realm, UserModel user, String socialProvider) {
         LOG.tracef("removeFederatedIdentity(%s, %s, %s)%s", realm, user.getId(), socialProvider, getShortStackTrace());
-        return getEntityById(realm, user.getId())
-                .map(entity -> entity.removeFederatedIdentity(socialProvider))
-                .orElse(false);
+
+        Optional<MapUserEntity> entityById = getEntityById(realm, user.getId());
+        if (!entityById.isPresent()) return false;
+
+        Boolean result = entityById.get().removeFederatedIdentity(socialProvider);
+        return result == null ? true : result; // TODO: make removeFederatedIdentity return Boolean so the caller can correctly handle "I don't know" null answer
     }
 
     @Override
     public void preRemove(RealmModel realm, IdentityProviderModel provider) {
         String socialProvider = provider.getAlias();
         LOG.tracef("preRemove[RealmModel realm, IdentityProviderModel provider](%s, %s)%s", realm, socialProvider, getShortStackTrace());
-        ModelCriteriaBuilder<UserModel> mcb = userStore.createCriteriaBuilder()
-          .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
+        DefaultModelCriteria<UserModel> mcb = criteria();
+        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.IDP_AND_USER, Operator.EQ, socialProvider);
 
         tx.read(withCriteria(mcb))
@@ -167,31 +174,38 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
     public void updateFederatedIdentity(RealmModel realm, UserModel federatedUser, FederatedIdentityModel federatedIdentityModel) {
         LOG.tracef("updateFederatedIdentity(%s, %s, %s)%s", realm, federatedUser.getId(), federatedIdentityModel.getIdentityProvider(), getShortStackTrace());
         getEntityById(realm, federatedUser.getId())
-                .ifPresent(entity -> entity.updateFederatedIdentity(UserFederatedIdentityEntity.fromModel(federatedIdentityModel)));
+                .flatMap(u -> u.getFederatedIdentity(federatedIdentityModel.getIdentityProvider()))
+                .ifPresent(fi -> {
+                    fi.setUserId(federatedIdentityModel.getUserId());
+                    fi.setUserName(federatedIdentityModel.getUserName());
+                    fi.setToken(federatedIdentityModel.getToken());
+                });
     }
 
     @Override
     public Stream<FederatedIdentityModel> getFederatedIdentitiesStream(RealmModel realm, UserModel user) {
         LOG.tracef("getFederatedIdentitiesStream(%s, %s)%s", realm, user.getId(), getShortStackTrace());
         return getEntityById(realm, user.getId())
-                .map(MapUserEntity::getFederatedIdentities).orElseGet(Stream::empty)
-                .map(UserFederatedIdentityEntity::toModel);
+                .map(MapUserEntity::getFederatedIdentities)
+                .map(Collection::stream)
+                .orElseGet(Stream::empty)
+                .map(MapUserFederatedIdentityEntity::toModel);
     }
 
     @Override
     public FederatedIdentityModel getFederatedIdentity(RealmModel realm, UserModel user, String socialProvider) {
         LOG.tracef("getFederatedIdentity(%s, %s, %s)%s", realm, user.getId(), socialProvider, getShortStackTrace());
         return getEntityById(realm, user.getId())
-                .map(userEntity -> userEntity.getFederatedIdentity(socialProvider))
-                .map(UserFederatedIdentityEntity::toModel)
+                .flatMap(userEntity -> userEntity.getFederatedIdentity(socialProvider))
+                .map(MapUserFederatedIdentityEntity::toModel)
                 .orElse(null);
     }
 
     @Override
     public UserModel getUserByFederatedIdentity(RealmModel realm, FederatedIdentityModel socialLink) {
         LOG.tracef("getUserByFederatedIdentity(%s, %s)%s", realm, socialLink, getShortStackTrace());
-        ModelCriteriaBuilder<UserModel> mcb = userStore.createCriteriaBuilder()
-          .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
+        DefaultModelCriteria<UserModel> mcb = criteria();
+        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.IDP_AND_USER, Operator.EQ, socialLink.getIdentityProvider(), socialLink.getUserId());
 
         return tx.read(withCriteria(mcb))
@@ -214,15 +228,15 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
         LOG.tracef("addConsent(%s, %s, %s)%s", realm, userId, consent, getShortStackTrace());
 
         getEntityByIdOrThrow(realm, userId)
-                .addUserConsent(UserConsentEntity.fromModel(consent));
+                .addUserConsent(MapUserConsentEntity.fromModel(consent));
     }
 
     @Override
     public UserConsentModel getConsentByClient(RealmModel realm, String userId, String clientInternalId) {
         LOG.tracef("getConsentByClient(%s, %s, %s)%s", realm, userId, clientInternalId, getShortStackTrace());
         return getEntityById(realm, userId)
-                .map(userEntity -> userEntity.getUserConsent(clientInternalId))
-                .map(consent -> UserConsentEntity.toModel(realm, consent))
+                .flatMap(userEntity -> userEntity.getUserConsent(clientInternalId))
+                .map(consent -> MapUserConsentEntity.toModel(realm, consent))
                 .orElse(null);
     }
 
@@ -231,8 +245,9 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
         LOG.tracef("getConsentByClientStream(%s, %s)%s", realm, userId, getShortStackTrace());
         return getEntityById(realm, userId)
                 .map(MapUserEntity::getUserConsents)
-                .orElse(Stream.empty())
-                .map(consent -> UserConsentEntity.toModel(realm, consent));
+                .map(Collection::stream)
+                .orElseGet(Stream::empty)
+                .map(consent -> MapUserConsentEntity.toModel(realm, consent));
     }
 
     @Override
@@ -240,10 +255,8 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
         LOG.tracef("updateConsent(%s, %s, %s)%s", realm, userId, consent, getShortStackTrace());
 
         MapUserEntity user = getEntityByIdOrThrow(realm, userId);
-        UserConsentEntity userConsentEntity = user.getUserConsent(consent.getClient().getId());
-        if (userConsentEntity == null) {
-            throw new ModelException("Consent not found for client [" + consent.getClient().getId() + "] and user [" + userId + "]");
-        }
+        MapUserConsentEntity userConsentEntity = user.getUserConsent(consent.getClient().getId())
+                .orElseThrow(() -> new ModelException("Consent not found for client [" + consent.getClient().getId() + "] and user [" + userId + "]"));
 
         userConsentEntity.setGrantedClientScopesIds(
                 consent.getGrantedClientScopes().stream()
@@ -257,30 +270,35 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
     @Override
     public boolean revokeConsentForClient(RealmModel realm, String userId, String clientInternalId) {
         LOG.tracef("revokeConsentForClient(%s, %s, %s)%s", realm, userId, clientInternalId, getShortStackTrace());
-        return getEntityById(realm, userId)
-                .map(userEntity -> userEntity.removeUserConsent(clientInternalId))
-                .orElse(false);
+
+        Optional<MapUserEntity> entityById = getEntityById(realm, userId);
+        if (!entityById.isPresent()) return false;
+
+        Boolean result = entityById.get().removeUserConsent(clientInternalId);
+        return result == null ? true : result; // TODO: make revokeConsentForClient return Boolean so the caller can correctly handle "I don't know" null answer
     }
 
     @Override
     public void setNotBeforeForUser(RealmModel realm, UserModel user, int notBefore) {
         LOG.tracef("setNotBeforeForUser(%s, %s, %d)%s", realm, user.getId(), notBefore, getShortStackTrace());
-        getEntityByIdOrThrow(realm, user.getId()).setNotBefore(notBefore);
+        getEntityByIdOrThrow(realm, user.getId()).setNotBefore(TimeAdapter.fromIntegerWithTimeInSecondsToLongWithTimeAsInSeconds(notBefore));
     }
 
     @Override
     public int getNotBeforeOfUser(RealmModel realm, UserModel user) {
         LOG.tracef("getNotBeforeOfUser(%s, %s)%s", realm, user.getId(), getShortStackTrace());
-        return getEntityById(realm, user.getId())
+        Long notBefore = getEntityById(realm, user.getId())
                 .orElseThrow(this::userDoesntExistException)
                 .getNotBefore();
+
+        return notBefore == null ? 0 : TimeAdapter.fromLongWithTimeInSecondsToIntegerWithTimeInSeconds(notBefore);
     }
 
     @Override
     public UserModel getServiceAccount(ClientModel client) {
         LOG.tracef("getServiceAccount(%s)%s", client.getId(), getShortStackTrace());
-        ModelCriteriaBuilder<UserModel> mcb = userStore.createCriteriaBuilder()
-          .compare(SearchableFields.REALM_ID, Operator.EQ, client.getRealm().getId())
+        DefaultModelCriteria<UserModel> mcb = criteria();
+        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, client.getRealm().getId())
           .compare(SearchableFields.SERVICE_ACCOUNT_CLIENT, Operator.EQ, client.getId());
 
         return tx.read(withCriteria(mcb))
@@ -302,8 +320,8 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
     @Override
     public UserModel addUser(RealmModel realm, String id, String username, boolean addDefaultRoles, boolean addDefaultRequiredActions) {
         LOG.tracef("addUser(%s, %s, %s, %s, %s)%s", realm, id, username, addDefaultRoles, addDefaultRequiredActions, getShortStackTrace());
-        ModelCriteriaBuilder<UserModel> mcb = userStore.createCriteriaBuilder()
-          .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
+        DefaultModelCriteria<UserModel> mcb = criteria();
+        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.USERNAME, Operator.EQ, username);
 
         if (tx.getCount(withCriteria(mcb)) > 0) {
@@ -314,7 +332,10 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
             throw new ModelDuplicateException("User exists: " + id);
         }
 
-        MapUserEntity entity = new MapUserEntity(id, realm.getId());
+        MapUserEntity entity = new MapUserEntityImpl();
+        entity.setId(id);
+        entity.setRealmId(realm.getId());
+        entity.setEmailConstraint(KeycloakModelUtils.generateId());
         entity.setUsername(username.toLowerCase());
         entity.setCreatedTimestamp(Time.currentTimeMillis());
 
@@ -342,8 +363,8 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
     @Override
     public void preRemove(RealmModel realm) {
         LOG.tracef("preRemove[RealmModel](%s)%s", realm, getShortStackTrace());
-        ModelCriteriaBuilder<UserModel> mcb = userStore.createCriteriaBuilder()
-          .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
+        DefaultModelCriteria<UserModel> mcb = criteria();
+        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
 
         tx.delete(withCriteria(mcb));
     }
@@ -351,8 +372,8 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
     @Override
     public void removeImportedUsers(RealmModel realm, String storageProviderId) {
         LOG.tracef("removeImportedUsers(%s, %s)%s", realm, storageProviderId, getShortStackTrace());
-        ModelCriteriaBuilder<UserModel> mcb = userStore.createCriteriaBuilder()
-          .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
+        DefaultModelCriteria<UserModel> mcb = criteria();
+        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.FEDERATION_LINK, Operator.EQ, storageProviderId);
 
         tx.delete(withCriteria(mcb));
@@ -361,8 +382,8 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
     @Override
     public void unlinkUsers(RealmModel realm, String storageProviderId) {
         LOG.tracef("unlinkUsers(%s, %s)%s", realm, storageProviderId, getShortStackTrace());
-        ModelCriteriaBuilder<UserModel> mcb = userStore.createCriteriaBuilder()
-          .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
+        DefaultModelCriteria<UserModel> mcb = criteria();
+        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.FEDERATION_LINK, Operator.EQ, storageProviderId);
 
         try (Stream<MapUserEntity> s = tx.read(withCriteria(mcb))) {
@@ -374,8 +395,8 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
     public void preRemove(RealmModel realm, RoleModel role) {
         String roleId = role.getId();
         LOG.tracef("preRemove[RoleModel](%s, %s)%s", realm, roleId, getShortStackTrace());
-        ModelCriteriaBuilder<UserModel> mcb = userStore.createCriteriaBuilder()
-          .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
+        DefaultModelCriteria<UserModel> mcb = criteria();
+        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.ASSIGNED_ROLE, Operator.EQ, roleId);
 
         try (Stream<MapUserEntity> s = tx.read(withCriteria(mcb))) {
@@ -387,8 +408,8 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
     public void preRemove(RealmModel realm, GroupModel group) {
         String groupId = group.getId();
         LOG.tracef("preRemove[GroupModel](%s, %s)%s", realm, groupId, getShortStackTrace());
-        ModelCriteriaBuilder<UserModel> mcb = userStore.createCriteriaBuilder()
-          .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
+        DefaultModelCriteria<UserModel> mcb = criteria();
+        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.ASSIGNED_GROUP, Operator.EQ, groupId);
 
         try (Stream<MapUserEntity> s = tx.read(withCriteria(mcb))) {
@@ -400,8 +421,8 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
     public void preRemove(RealmModel realm, ClientModel client) {
         String clientId = client.getId();
         LOG.tracef("preRemove[ClientModel](%s, %s)%s", realm, clientId, getShortStackTrace());
-        ModelCriteriaBuilder<UserModel> mcb = userStore.createCriteriaBuilder()
-          .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
+        DefaultModelCriteria<UserModel> mcb = criteria();
+        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.CONSENT_FOR_CLIENT, Operator.EQ, clientId);
 
         try (Stream<MapUserEntity> s = tx.read(withCriteria(mcb))) {
@@ -419,13 +440,15 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
         String clientScopeId = clientScope.getId();
         LOG.tracef("preRemove[ClientScopeModel](%s)%s", clientScopeId, getShortStackTrace());
 
-        ModelCriteriaBuilder<UserModel> mcb = userStore.createCriteriaBuilder()
-          .compare(SearchableFields.REALM_ID, Operator.EQ, clientScope.getRealm().getId())
+        DefaultModelCriteria<UserModel> mcb = criteria();
+        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, clientScope.getRealm().getId())
           .compare(SearchableFields.CONSENT_WITH_CLIENT_SCOPE, Operator.EQ, clientScopeId);
 
         try (Stream<MapUserEntity> s = tx.read(withCriteria(mcb))) {
-            s.flatMap(MapUserEntity::getUserConsents)
-              .forEach(consent -> consent.removeGrantedClientScopesIds(clientScopeId));
+            s.map(MapUserEntity::getUserConsents)
+                .filter(Objects::nonNull)
+                .flatMap(Collection::stream)
+                .forEach(consent -> consent.removeGrantedClientScopesId(clientScopeId));
         }
     }
 
@@ -437,8 +460,8 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
             removeImportedUsers(realm, componentId);
         }
         if (component.getProviderType().equals(ClientStorageProvider.class.getName())) {
-            ModelCriteriaBuilder<UserModel> mcb = userStore.createCriteriaBuilder()
-              .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
+            DefaultModelCriteria<UserModel> mcb = criteria();
+            mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
               .compare(SearchableFields.CONSENT_CLIENT_FEDERATION_LINK, Operator.EQ, componentId);
 
             try (Stream<MapUserEntity> s = tx.read(withCriteria(mcb))) {
@@ -450,8 +473,10 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
 
     private Consumer<MapUserEntity> removeConsentsForExternalClient(String idPrefix) {
         return userEntity -> {
-            List<String> consentClientIds = userEntity.getUserConsents()
-              .map(UserConsentEntity::getClientId)
+            Set<MapUserConsentEntity> userConsents = userEntity.getUserConsents();
+            if (userConsents == null || userConsents.isEmpty()) return;
+            List<String> consentClientIds = userConsents.stream()
+              .map(MapUserConsentEntity::getClientId)
               .filter(clientId -> clientId != null && clientId.startsWith(idPrefix))
               .collect(Collectors.toList());
 
@@ -465,8 +490,8 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
     public void grantToAllUsers(RealmModel realm, RoleModel role) {
         String roleId = role.getId();
         LOG.tracef("grantToAllUsers(%s, %s)%s", realm, roleId, getShortStackTrace());
-        ModelCriteriaBuilder<UserModel> mcb = userStore.createCriteriaBuilder()
-          .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
+        DefaultModelCriteria<UserModel> mcb = criteria();
+        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
 
         try (Stream<MapUserEntity> s = tx.read(withCriteria(mcb))) {
             s.forEach(entity -> entity.addRolesMembership(roleId));
@@ -483,8 +508,8 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
     public UserModel getUserByUsername(RealmModel realm, String username) {
         if (username == null) return null;
         LOG.tracef("getUserByUsername(%s, %s)%s", realm, username, getShortStackTrace());
-        ModelCriteriaBuilder<UserModel> mcb = userStore.createCriteriaBuilder()
-          .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
+        DefaultModelCriteria<UserModel> mcb = criteria();
+        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.USERNAME, Operator.ILIKE, username);
 
         try (Stream<MapUserEntity> s = tx.read(withCriteria(mcb))) {
@@ -496,8 +521,8 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
     @Override
     public UserModel getUserByEmail(RealmModel realm, String email) {
         LOG.tracef("getUserByEmail(%s, %s)%s", realm, email, getShortStackTrace());
-        ModelCriteriaBuilder<UserModel> mcb = userStore.createCriteriaBuilder()
-          .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
+        DefaultModelCriteria<UserModel> mcb = criteria();
+        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.EMAIL, Operator.EQ, email);
 
         List<MapUserEntity> usersWithEmail = tx.read(withCriteria(mcb))
@@ -527,8 +552,8 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
     @Override
     public int getUsersCount(RealmModel realm, boolean includeServiceAccount) {
         LOG.tracef("getUsersCount(%s, %s)%s", realm, includeServiceAccount, getShortStackTrace());
-        ModelCriteriaBuilder<UserModel> mcb = userStore.createCriteriaBuilder()
-          .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
+        DefaultModelCriteria<UserModel> mcb = criteria();
+        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
 
         if (! includeServiceAccount) {
             mcb = mcb.compare(SearchableFields.SERVICE_ACCOUNT_CLIENT, Operator.NOT_EXISTS);
@@ -540,8 +565,8 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
     @Override
     public Stream<UserModel> getUsersStream(RealmModel realm, Integer firstResult, Integer maxResults, boolean includeServiceAccounts) {
         LOG.tracef("getUsersStream(%s, %d, %d, %s)%s", realm, firstResult, maxResults, includeServiceAccounts, getShortStackTrace());
-        ModelCriteriaBuilder<UserModel> mcb = userStore.createCriteriaBuilder()
-          .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
+        DefaultModelCriteria<UserModel> mcb = criteria();
+        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
 
         if (! includeServiceAccounts) {
             mcb = mcb.compare(SearchableFields.SERVICE_ACCOUNT_CLIENT, Operator.NOT_EXISTS);
@@ -570,11 +595,11 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
     public Stream<UserModel> searchForUserStream(RealmModel realm, Map<String, String> attributes, Integer firstResult, Integer maxResults) {
         LOG.tracef("searchForUserStream(%s, %s, %d, %d)%s", realm, attributes, firstResult, maxResults, getShortStackTrace());
 
-        ModelCriteriaBuilder<UserModel> mcb = userStore.createCriteriaBuilder()
-          .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
+        final DefaultModelCriteria<UserModel> mcb = criteria();
+        DefaultModelCriteria<UserModel> criteria = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
 
         if (! session.getAttributeOrDefault(UserModel.INCLUDE_SERVICE_ACCOUNT, true)) {
-            mcb = mcb.compare(SearchableFields.SERVICE_ACCOUNT_CLIENT, Operator.NOT_EXISTS);
+            criteria = criteria.compare(SearchableFields.SERVICE_ACCOUNT_CLIENT, Operator.NOT_EXISTS);
         }
 
         final boolean exactSearch = Boolean.parseBoolean(attributes.getOrDefault(UserModel.EXACT, Boolean.FALSE.toString()));
@@ -586,57 +611,60 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
                 continue;
             }
             value = value.trim();
-            
+
             final String searchedString = exactSearch ? value : ("%" + value + "%");
 
             switch (key) {
                 case UserModel.SEARCH:
-                    for (String stringToSearch : value.trim().split("\\s+")) {
-                        if (value.isEmpty()) {
-                            continue;
+                    DefaultModelCriteria<UserModel> searchCriteria = null;
+                    for (String stringToSearch : value.split("\\s+")) {
+                        if (searchCriteria == null) {
+                            searchCriteria = addSearchToModelCriteria(stringToSearch, mcb);
+                        } else {
+                            searchCriteria = mcb.and(searchCriteria, addSearchToModelCriteria(stringToSearch, mcb));
                         }
-                        final String s = exactSearch ? stringToSearch : ("%" + stringToSearch + "%");
-                        mcb = mcb.or(
-                          userStore.createCriteriaBuilder().compare(SearchableFields.USERNAME, Operator.ILIKE, s),
-                          userStore.createCriteriaBuilder().compare(SearchableFields.EMAIL, Operator.ILIKE, s),
-                          userStore.createCriteriaBuilder().compare(SearchableFields.FIRST_NAME, Operator.ILIKE, s),
-                          userStore.createCriteriaBuilder().compare(SearchableFields.LAST_NAME, Operator.ILIKE, s)
-                        );
                     }
-                    break;
 
+                    criteria = mcb.and(criteria, searchCriteria);
+                    break;
                 case USERNAME:
-                    mcb = mcb.compare(SearchableFields.USERNAME, Operator.ILIKE, searchedString);
+                    criteria = criteria.compare(SearchableFields.USERNAME, Operator.ILIKE, searchedString);
                     break;
                 case FIRST_NAME:
-                    mcb = mcb.compare(SearchableFields.FIRST_NAME, Operator.ILIKE, searchedString);
+                    criteria = criteria.compare(SearchableFields.FIRST_NAME, Operator.ILIKE, searchedString);
                     break;
                 case LAST_NAME:
-                    mcb = mcb.compare(SearchableFields.LAST_NAME, Operator.ILIKE, searchedString);
+                    criteria = criteria.compare(SearchableFields.LAST_NAME, Operator.ILIKE, searchedString);
                     break;
                 case EMAIL:
-                    mcb = mcb.compare(SearchableFields.EMAIL, Operator.ILIKE, searchedString);
+                    criteria = criteria.compare(SearchableFields.EMAIL, Operator.ILIKE, searchedString);
                     break;
                 case EMAIL_VERIFIED: {
                     boolean booleanValue = Boolean.parseBoolean(value);
-                    mcb = mcb.compare(SearchableFields.EMAIL_VERIFIED, Operator.EQ, booleanValue);
+                    criteria = criteria.compare(SearchableFields.EMAIL_VERIFIED, Operator.EQ, booleanValue);
                     break;
                 }
                 case UserModel.ENABLED: {
                     boolean booleanValue = Boolean.parseBoolean(value);
-                    mcb = mcb.compare(SearchableFields.ENABLED, Operator.EQ, booleanValue);
+                    criteria = criteria.compare(SearchableFields.ENABLED, Operator.EQ, booleanValue);
                     break;
                 }
                 case UserModel.IDP_ALIAS: {
-                    if (! attributes.containsKey(UserModel.IDP_USER_ID)) {
-                        mcb = mcb.compare(SearchableFields.IDP_AND_USER, Operator.EQ, value);
+                    if (!attributes.containsKey(UserModel.IDP_USER_ID)) {
+                        criteria = criteria.compare(SearchableFields.IDP_AND_USER, Operator.EQ, value);
                     }
                     break;
                 }
                 case UserModel.IDP_USER_ID: {
-                    mcb = mcb.compare(SearchableFields.IDP_AND_USER, Operator.EQ, attributes.get(UserModel.IDP_ALIAS), value);
+                    criteria = criteria.compare(SearchableFields.IDP_AND_USER, Operator.EQ, attributes.get(UserModel.IDP_ALIAS),
+                            value);
                     break;
                 }
+                case UserModel.EXACT:
+                    break;
+                default:
+                    criteria = criteria.compare(SearchableFields.ATTRIBUTE, Operator.EQ, key, value);
+                    break;
             }
         }
 
@@ -651,19 +679,20 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
                 return Stream.empty();
             }
 
-            final ResourceStore resourceStore = session.getProvider(AuthorizationProvider.class).getStoreFactory().getResourceStore();
+            final ResourceStore resourceStore =
+                    session.getProvider(AuthorizationProvider.class).getStoreFactory().getResourceStore();
 
             HashSet<String> authorizedGroups = new HashSet<>(userGroups);
             authorizedGroups.removeIf(id -> {
                 Map<Resource.FilterOption, String[]> values = new EnumMap<>(Resource.FilterOption.class);
-                values.put(Resource.FilterOption.EXACT_NAME, new String[] { "group.resource." + id });
-                return resourceStore.findByResourceServer(values, null, 0, 1).isEmpty();
+                values.put(Resource.FilterOption.EXACT_NAME, new String[] {"group.resource." + id});
+                return resourceStore.find(realm, null, values, 0, 1).isEmpty();
             });
 
-            mcb = mcb.compare(SearchableFields.ASSIGNED_GROUP, Operator.IN, authorizedGroups);
+            criteria = criteria.compare(SearchableFields.ASSIGNED_GROUP, Operator.IN, authorizedGroups);
         }
 
-        return tx.read(withCriteria(mcb).pagination(firstResult, maxResults, SearchableFields.USERNAME))
+        return tx.read(withCriteria(criteria).pagination(firstResult, maxResults, SearchableFields.USERNAME))
                 .map(entityToAdapterFunc(realm))
                 .filter(Objects::nonNull);
     }
@@ -671,8 +700,8 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
     @Override
     public Stream<UserModel> getGroupMembersStream(RealmModel realm, GroupModel group, Integer firstResult, Integer maxResults) {
         LOG.tracef("getGroupMembersStream(%s, %s, %d, %d)%s", realm, group.getId(), firstResult, maxResults, getShortStackTrace());
-        ModelCriteriaBuilder<UserModel> mcb = userStore.createCriteriaBuilder()
-          .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
+        DefaultModelCriteria<UserModel> mcb = criteria();
+        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.ASSIGNED_GROUP, Operator.EQ, group.getId());
 
         return tx.read(withCriteria(mcb).pagination(firstResult, maxResults, SearchableFields.USERNAME))
@@ -682,8 +711,8 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
     @Override
     public Stream<UserModel> searchForUserByUserAttributeStream(RealmModel realm, String attrName, String attrValue) {
         LOG.tracef("searchForUserByUserAttributeStream(%s, %s, %s)%s", realm, attrName, attrValue, getShortStackTrace());
-        ModelCriteriaBuilder<UserModel> mcb = userStore.createCriteriaBuilder()
-          .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
+        DefaultModelCriteria<UserModel> mcb = criteria();
+        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.ATTRIBUTE, Operator.EQ, attrName, attrValue);
 
         return tx.read(withCriteria(mcb).orderBy(SearchableFields.USERNAME, ASCENDING))
@@ -700,7 +729,11 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
         String userId = user.getId();
         Optional<MapUserEntity> userById = getEntityById(realm, userId);
         if (userById.isPresent()) {
+            session.invalidate(USER_BEFORE_REMOVE, realm, user);
+
             tx.delete(userId);
+
+            session.invalidate(USER_AFTER_REMOVE, realm, user);
             return true;
         }
 
@@ -710,8 +743,8 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
     @Override
     public Stream<UserModel> getRoleMembersStream(RealmModel realm, RoleModel role, Integer firstResult, Integer maxResults) {
         LOG.tracef("getRoleMembersStream(%s, %s, %d, %d)%s", realm, role, firstResult, maxResults, getShortStackTrace());
-        ModelCriteriaBuilder<UserModel> mcb = userStore.createCriteriaBuilder()
-          .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
+        DefaultModelCriteria<UserModel> mcb = criteria();
+        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
           .compare(SearchableFields.ASSIGNED_ROLE, Operator.EQ, role.getId());
 
         return tx.read(withCriteria(mcb).pagination(firstResult, maxResults, SearchableFields.USERNAME))
@@ -725,53 +758,59 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
     }
     
     private Consumer<MapUserEntity> updateCredential(CredentialModel credentialModel) {
-        return user -> {
-            UserCredentialEntity credentialEntity = user.getCredential(credentialModel.getId());
-            if (credentialEntity == null) return;
-
-            credentialEntity.setCreatedDate(credentialModel.getCreatedDate());
-            credentialEntity.setUserLabel(credentialModel.getUserLabel());
-            credentialEntity.setType(credentialModel.getType());
-            credentialEntity.setSecretData(credentialModel.getSecretData());
-            credentialEntity.setCredentialData(credentialModel.getCredentialData());
-        };
+        return user -> user.getCredential(credentialModel.getId()).ifPresent(c -> {
+            c.setCreatedDate(credentialModel.getCreatedDate());
+            c.setUserLabel(credentialModel.getUserLabel());
+            c.setType(credentialModel.getType());
+            c.setSecretData(credentialModel.getSecretData());
+            c.setCredentialData(credentialModel.getCredentialData());
+        });
     }
 
     @Override
     public CredentialModel createCredential(RealmModel realm, UserModel user, CredentialModel cred) {
         LOG.tracef("createCredential(%s, %s, %s)%s", realm, user.getId(), cred.getId(), getShortStackTrace());
-        UserCredentialEntity credentialEntity = UserCredentialEntity.fromModel(cred);
+        MapUserEntity userEntity = getEntityByIdOrThrow(realm, user.getId());
+        MapUserCredentialEntity credentialEntity = MapUserCredentialEntity.fromModel(cred);
 
-        getEntityByIdOrThrow(realm, user.getId())
-                .addCredential(credentialEntity);
+        if (userEntity.getCredential(cred.getId()).isPresent()) {
+            throw new ModelDuplicateException("A CredentialModel with given id already exists");
+        }
 
-        return UserCredentialEntity.toModel(credentialEntity);
+        userEntity.addCredential(credentialEntity);
+
+        return MapUserCredentialEntity.toModel(credentialEntity);
     }
 
     @Override
     public boolean removeStoredCredential(RealmModel realm, UserModel user, String id) {
         LOG.tracef("removeStoredCredential(%s, %s, %s)%s", realm, user.getId(), id, getShortStackTrace());
-        return getEntityById(realm, user.getId())
-                .map(mapUserEntity -> mapUserEntity.removeCredential(id))
-                .orElse(false);
+
+        Optional<MapUserEntity> entityById = getEntityById(realm, user.getId());
+        if (!entityById.isPresent()) return false;
+
+        Boolean result = entityById.get().removeCredential(id);
+        return result == null ? true : result; // TODO: make removeStoredCredential return Boolean so the caller can correctly handle "I don't know" null answer
     }
 
     @Override
     public CredentialModel getStoredCredentialById(RealmModel realm, UserModel user, String id) {
         LOG.tracef("getStoredCredentialById(%s, %s, %s)%s", realm, user.getId(), id, getShortStackTrace());
         return getEntityById(realm, user.getId())
-                .map(mapUserEntity -> mapUserEntity.getCredential(id))
-                .map(UserCredentialEntity::toModel)
+                .flatMap(mapUserEntity -> mapUserEntity.getCredential(id))
+                .map(MapUserCredentialEntity::toModel)
                 .orElse(null);
     }
 
     @Override
     public Stream<CredentialModel> getStoredCredentialsStream(RealmModel realm, UserModel user) {
         LOG.tracef("getStoredCredentialsStream(%s, %s)%s", realm, user.getId(), getShortStackTrace());
+
         return getEntityById(realm, user.getId())
                 .map(MapUserEntity::getCredentials)
+                .map(Collection::stream)
                 .orElseGet(Stream::empty)
-                .map(UserCredentialEntity::toModel);
+                .map(MapUserCredentialEntity::toModel);
     }
 
     @Override
@@ -791,43 +830,38 @@ public class MapUserProvider implements UserProvider.Streams, UserCredentialStor
 
     @Override
     public boolean moveCredentialTo(RealmModel realm, UserModel user, String id, String newPreviousCredentialId) {
-        LOG.tracef("moveCredentialTo(%s, %s, %s, %s)%s", realm, user.getId(), id, newPreviousCredentialId, getShortStackTrace());
-        String userId = user.getId();
-        MapUserEntity userEntity = getEntityById(realm, userId).orElse(null);
-        if (userEntity == null) {
-            LOG.warnf("User with id: [%s] not found", userId);
-            return false;
-        }
-
-        // Find index of credential which should be before id in the list
-        int newPreviousCredentialIdIndex = -1; // If newPreviousCredentialId == null we need to put id credential to index 0
-        if (newPreviousCredentialId != null) {
-            newPreviousCredentialIdIndex = userEntity.getCredentialIndex(newPreviousCredentialId);
-            if (newPreviousCredentialIdIndex == -1) { // If not null previous credential not found, print warning and return false
-                LOG.warnf("Credential with id: [%s] for user: [%s] not found", newPreviousCredentialId, userId);
-                return false;
-            }
-        }
-
-        // Find current index of credential (id) which will be moved
-        int currentPositionOfId = userEntity.getCredentialIndex(id);
-        if (currentPositionOfId == -1) {
-            LOG.warnf("Credential with id: [%s] for user: [%s] not found", id, userId);
-            return false;
-        }
-
-        // If id is before newPreviousCredentialId in priority list, it will be moved to position -1
-        if (currentPositionOfId < newPreviousCredentialIdIndex) {
-            newPreviousCredentialIdIndex -= 1;
-        }
-
-        // Move credential to desired index
-        userEntity.moveCredential(currentPositionOfId, newPreviousCredentialIdIndex + 1);
-        return true;
+        LOG.tracef("moveCredentialTo(%s, %s, %s, %s)%s", realm, user, id, newPreviousCredentialId, getShortStackTrace());
+        return getEntityByIdOrThrow(realm, user.getId()).moveCredential(id, newPreviousCredentialId);
     }
 
     @Override
     public void close() {
 
+    }
+
+    private DefaultModelCriteria<UserModel> addSearchToModelCriteria(String value,
+            DefaultModelCriteria<UserModel> mcb) {
+
+        if (value.length() >= 2 && value.charAt(0) == '"' && value.charAt(value.length() - 1) == '"') {
+            // exact search
+            value = value.substring(1, value.length() - 1);
+        } else {
+            if (value.length() >= 2 && value.charAt(0) == '*' && value.charAt(value.length() - 1) == '*') {
+                // infix search
+                value = "%" + value.substring(1, value.length() - 1) + "%";
+            } else {
+                // default to prefix search
+                if (value.length() > 0 && value.charAt(value.length() - 1) == '*') {
+                    value = value.substring(0, value.length() - 1);
+                }
+                value += "%";
+            }
+        }
+
+        return mcb.or(
+                mcb.compare(SearchableFields.USERNAME, Operator.ILIKE, value),
+                mcb.compare(SearchableFields.EMAIL, Operator.ILIKE, value),
+                mcb.compare(SearchableFields.FIRST_NAME, Operator.ILIKE, value),
+                mcb.compare(SearchableFields.LAST_NAME, Operator.ILIKE, value));
     }
 }

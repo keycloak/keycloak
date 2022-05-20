@@ -5,6 +5,10 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.Random;
 
+/**
+ * @deprecated Replaced by {@link SecretGenerator}
+ */
+@Deprecated
 public class RandomString {
 
     /**

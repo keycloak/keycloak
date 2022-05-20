@@ -41,16 +41,24 @@ public class MultivaluedStringProperty {
     @FindBy(xpath = "//button[@data-ng-click='addValueToMultivalued(option.name)']")
     private WebElement plusButton;
 
+    protected List<WebElement> getMinusButtons() {
+        return minusButtons;
+    }
+
+    protected WebElement getPlusButton() {
+        return plusButton;
+    }
+
     public boolean isPresent() {
         try {
-            return plusButton.isDisplayed() && items != null && !items.isEmpty();
+            return getPlusButton().isDisplayed() && getItems() != null && !getItems().isEmpty();
         } catch (NoSuchElementException e) {
             return false;
         }
     }
 
     public void clickAddItem() {
-        plusButton.click();
+        getPlusButton().click();
     }
 
     public List<WebElement> getItems() {
@@ -71,7 +79,10 @@ public class MultivaluedStringProperty {
         clickAddItem();
 
         final List<WebElement> items = getItems();
-        WebElement webElement = items.get(items.size() - 1);
+        final int index = items.size() - 1;
+
+        validateIndex(index);
+        WebElement webElement = items.get(index);
         setTextInputValue(webElement, item);
     }
 
@@ -80,11 +91,12 @@ public class MultivaluedStringProperty {
         if (index == getItems().size() - 1) {
             editItem(index, "");
         } else {
-            minusButtons.get(index).click();
+            getMinusButtons().get(index).click();
         }
     }
 
     private void validateIndex(int index) {
-        if (index >= getItems().size()) throw new AssertionError("Input with index: " + index + " does not exist.");
+        if (index < 0 || index >= getItems().size())
+            throw new AssertionError("Input with index: " + index + " does not exist.");
     }
 }

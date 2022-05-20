@@ -5,7 +5,7 @@
     <parent>
         <artifactId>integration-arquillian-servers-auth-server</artifactId>
         <groupId>org.keycloak.testsuite</groupId>
-        <version>16.0.0-SNAPSHOT</version>
+        <version>999-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -13,18 +13,20 @@
     <artifactId>integration-arquillian-servers-auth-server-quarkus</artifactId>
 
     <properties>
-        <auth.server.home>${project.build.directory}/unpacked/keycloak.x-${project.version}</auth.server.home>
+        <auth.server.home>${project.build.directory}/unpacked/keycloak-${project.version}</auth.server.home>
         <common.resources>${basedir}/../jboss/common</common.resources>
         <session.cache.owners>2</session.cache.owners>
         <offline.session.cache.owners>2</offline.session.cache.owners>
         <login.failure.cache.owners>2</login.failure.cache.owners>
         <auth.server.quarkus.cluster.config>local</auth.server.quarkus.cluster.config>
+        <!-- Path to testsuite/test resources : Themes-->
+        <keycloak.base.test.resource>${project.parent.basedir}/../../tests/base/src/test/resources</keycloak.base.test.resource>
     </properties>
     
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-server-x-dist</artifactId>
+            <artifactId>keycloak-quarkus-dist</artifactId>
             <type>zip</type>
         </dependency>
     </dependencies>
@@ -103,12 +105,61 @@
                                         <include>client.crt</include>
                                         <include>client.key</include>
                                         <include>*.crl</include>
-                                        <!-- KEYCLOAK-6771 Certificate Bound Token -->
                                         <include>other_client.jks</include>
+                                        <include>test-user-obb.jks</include>
                                     </includes>
                                 </resource>
                             </resources>
                             <overwrite>true</overwrite>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>copy-vault-secrets</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${auth.server.home}/secrets</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${common.resources}/vault</directory>
+                                    <includes>
+                                        <include>**</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                            <overwrite>true</overwrite>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>add-extending-theme</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${auth.server.home}/themes</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${keycloak.base.test.resource}/theme</directory>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>add-pw-blacklist-file</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${auth.server.home}/dependency/password-blacklists</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${keycloak.base.test.resource}/password-blacklists</directory>
+                                </resource>
+                            </resources>
                         </configuration>
                     </execution>
                 </executions>
@@ -126,7 +177,7 @@
                             <artifactItems>
                                 <artifactItem>
                                     <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-server-x-dist</artifactId>
+                                    <artifactId>keycloak-quarkus-dist</artifactId>
                                     <version>${project.version}</version>
                                     <type>zip</type>
                                     <outputDirectory>${project.build.directory}/unpacked</outputDirectory>
@@ -145,6 +196,14 @@
                                 <artifactItem>
                                     <groupId>org.keycloak.testsuite</groupId>
                                     <artifactId>integration-arquillian-testsuite-providers</artifactId>
+                                    <version>${project.version}</version>
+                                    <type>jar</type>
+                                    <overWrite>false</overWrite>
+                                    <outputDirectory>${auth.server.home}/providers</outputDirectory>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>org.keycloak.testsuite</groupId>
+                                    <artifactId>integration-arquillian-testsuite-providers-deployment</artifactId>
                                     <version>${project.version}</version>
                                     <type>jar</type>
                                     <overWrite>false</overWrite>

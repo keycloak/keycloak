@@ -20,6 +20,7 @@ import org.jboss.arquillian.container.test.api.ContainerController;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -56,7 +57,10 @@ import org.keycloak.testsuite.util.OAuthClient;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Stream;
+import org.junit.Assume;
+import org.keycloak.models.RealmProvider;
 
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.util.ContainerAssume;
@@ -94,6 +98,8 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
 
     @Before
     public void addProvidersBeforeTest() {
+        Assume.assumeTrue("RealmProvider is not 'jpa'", isJpaRealmProvider());
+
         ComponentRepresentation memProvider = new ComponentRepresentation();
         memProvider.setName("failure");
         memProvider.setProviderId(FailableHardcodedStorageProviderFactory.PROVIDER_ID);
@@ -154,6 +160,8 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
     public void testKeycloak5350() throws Exception {
 
         ContainerAssume.assumeNotAuthServerRemote();
+
+        Assume.assumeTrue("User cache disabled.", isUserCacheEnabled());
 
         oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
         oauth.clientId("offline-client");
@@ -255,6 +263,8 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testKeycloak5926() {
+        Assume.assumeTrue("User cache disabled.", isUserCacheEnabled());
+
         oauth.clientId("test-app");
         oauth.redirectUri(OAuthClient.APP_AUTH_ROOT);
 

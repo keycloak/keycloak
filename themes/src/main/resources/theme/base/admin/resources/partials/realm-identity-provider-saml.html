@@ -125,7 +125,7 @@
             <div class="form-group" data-ng-show="!importFile && !newIdentityProvider">
                 <label class="col-md-2 control-label">{{:: 'endpoints' | translate}}</label>
                 <div class="col-md-6">
-                    <a class="form-control" ng-href="{{callbackUrl}}{{identityProvider.alias}}/endpoint/descriptor" target="_blank">{{:: 'identity-provider.saml.protocol-endpoints.saml' | translate}}</a>
+                    <a class="form-control" ng-href="{{callbackUrl}}{{identityProvider.alias}}/endpoint/descriptor" rel="noopener noreferrer" target="_blank">{{:: 'identity-provider.saml.protocol-endpoints.saml' | translate}}</a>
                 </div>
                 <kc-tooltip>{{:: 'identity-provider.saml.protocol-endpoints.saml.tooltip' | translate}}</kc-tooltip>
             </div>

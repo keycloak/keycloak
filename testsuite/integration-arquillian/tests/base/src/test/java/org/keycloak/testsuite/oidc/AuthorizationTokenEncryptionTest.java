@@ -20,13 +20,16 @@ import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.AesCbcHmacShaContentEncryptionProvider;
 import org.keycloak.crypto.AesGcmContentEncryptionProvider;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.RsaCekManagementProvider;
+import org.keycloak.jose.JOSEHeader;
 import org.keycloak.jose.jwe.JWEConstants;
 import org.keycloak.jose.jwe.JWEException;
+import org.keycloak.jose.jwe.JWEHeader;
 import org.keycloak.jose.jwe.alg.JWEAlgorithmProvider;
 import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
@@ -43,8 +46,10 @@ import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResou
 import org.keycloak.testsuite.pages.*;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
+import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
@@ -199,6 +204,10 @@ public class AuthorizationTokenEncryptionTest extends AbstractTestRealmKeycloakT
             byte[] decodedString = TokenUtil.jweKeyEncryptionVerifyAndDecode(decryptionKEK, jweStr, algorithmProvider, encryptionProvider);
             String authorizationTokenString = new String(decodedString, "UTF-8");
 
+            // a nested JWT (signed and encrypted JWT) needs to set "JWT" to its JOSE Header's "cty" field
+            JWEHeader jweHeader = (JWEHeader) getHeader(parts[0]);
+            Assert.assertEquals("JWT", jweHeader.getContentType());
+
             // verify JWS
             AuthorizationResponseToken authorizationToken = oauth.verifyAuthorizationResponseToken(authorizationTokenString);
             Assert.assertEquals("test-app", authorizationToken.getAudience()[0]);
@@ -243,6 +252,15 @@ public class AuthorizationTokenEncryptionTest extends AbstractTestRealmKeycloakT
                 break;
         }
         return jweEncryptionProvider;
+    }
+
+    private JOSEHeader getHeader(String base64Header) {
+        try {
+            byte[] decodedHeader = Base64Url.decode(base64Header);
+            return JsonSerialization.readValue(decodedHeader, JWEHeader.class);
+        } catch (IOException ioe) {
+            throw new RuntimeException(ioe);
+        }
     }
 
     @Test

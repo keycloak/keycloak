@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -39,7 +39,6 @@ import org.keycloak.authorization.store.PolicyStore;
 import org.keycloak.authorization.store.StoreFactory;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
-import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation;
@@ -112,7 +111,7 @@ public class PolicyResourceService {
             resource.onRemove(policy, authorization);
         }
 
-        policyStore.delete(policy.getId());
+        policyStore.delete(resourceServer.getRealm(), policy.getId());
 
         audit(toRepresentation(policy, authorization), OperationType.DELETE);
 
@@ -155,7 +154,7 @@ public class PolicyResourceService {
             return Response.status(Status.NOT_FOUND).build();
         }
 
-        List<Policy> policies = authorization.getStoreFactory().getPolicyStore().findDependentPolicies(policy.getId(), resourceServer.getId());
+        List<Policy> policies = authorization.getStoreFactory().getPolicyStore().findDependentPolicies(resourceServer, policy.getId());
 
         return Response.ok(policies.stream().map(policy -> {
             PolicyRepresentation representation1 = new PolicyRepresentation();

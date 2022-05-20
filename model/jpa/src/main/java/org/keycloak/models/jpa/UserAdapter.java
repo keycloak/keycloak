@@ -175,8 +175,10 @@ public class UserAdapter implements UserModel.Streams, JpaModel<UserEntity> {
         }
         // Remove all existing
         removeAttribute(name);
-        for (Iterator<String> it = values.stream().filter(Objects::nonNull).iterator(); it.hasNext();) {
-            persistAttributeValue(name, it.next());
+        if (values != null) {
+            for (Iterator<String> it = values.stream().filter(Objects::nonNull).iterator(); it.hasNext();) {
+                persistAttributeValue(name, it.next());
+            }
         }
     }
 
@@ -446,7 +448,7 @@ public class UserAdapter implements UserModel.Streams, JpaModel<UserEntity> {
 
     @Override
     public void grantRole(RoleModel role) {
-        if (hasRole(role)) return;
+        if (hasDirectRole(role)) return;
         grantRoleImpl(role);
     }
 

@@ -28,7 +28,6 @@ import {
     LevelItem,
     Button,
     DataListAction,
-    DataListActionVisibility,
     Dropdown,
     DropdownPosition,
     DropdownItem,
@@ -169,7 +168,7 @@ export class ResourcesTable extends AbstractResourcesTable<CollapsibleResourcesT
                                 ]}
                             />
                             <DataListAction
-                                className={DataListActionVisibility.hiddenOnLg}
+                                visibility={{ lg: 'hidden' }}
                                 aria-labelledby="check-action-item3 check-action-action3"
                                 id="check-action-action3"
                                 aria-label="Actions"
@@ -246,7 +245,7 @@ export class ResourcesTable extends AbstractResourcesTable<CollapsibleResourcesT
                             </DataListAction>
                             <DataListAction
                                 id={`actions-${row}`}
-                                className={css(DataListActionVisibility.visibleOnLg, DataListActionVisibility.hidden)}
+                                visibility={{ default: 'hidden', lg: 'visible' }}
                                 aria-labelledby="Row actions"
                                 aria-label="Actions"
                             >
@@ -319,15 +318,14 @@ export class ResourcesTable extends AbstractResourcesTable<CollapsibleResourcesT
                                     ]}
                                 />
                             </DataListAction>
-
                         </DataListItemRow>
                         <DataListContent
-                            noPadding={false}
+                            hasNoPadding={false}
                             aria-label="Session Details"
                             id={'ex-expand' + row}
                             isHidden={!this.state.isRowOpen[row]}
                         >
-                            <Level gutter='md'>
+                            <Level hasGutter>
                                 <LevelItem><span /></LevelItem>
                                 <LevelItem id={'shared-with-user-message-' + row}>{this.sharedWithUsersMessage(row)}</LevelItem>
                                 <LevelItem><span /></LevelItem>

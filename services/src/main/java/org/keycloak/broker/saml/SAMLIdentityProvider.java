@@ -90,10 +90,13 @@ import javax.xml.stream.XMLStreamWriter;
 import java.io.StringWriter;
 import java.net.URI;
 import java.security.KeyPair;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 
 /**
@@ -189,7 +192,7 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
             }
 
             // Save the current RequestID in the Auth Session as we need to verify it against the ID returned from the IdP
-            request.getAuthenticationSession().setClientNote(SamlProtocol.SAML_REQUEST_ID, authnRequest.getID());
+            request.getAuthenticationSession().setClientNote(SamlProtocol.SAML_REQUEST_ID_BROKER, authnRequest.getID());
 
             if (postBinding) {
                 return binding.postBinding(authnRequestBuilder.toDocument()).request(destinationUrl);
@@ -359,8 +362,7 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
             boolean wantAssertionsEncrypted = getConfig().isWantAssertionsEncrypted();
             String entityId = getEntityId(uriInfo, realm);
             String nameIDPolicyFormat = getConfig().getNameIDPolicyFormat();
-            int attributeConsumingServiceIndex = getConfig().getAttributeConsumingServiceIndex() != null ? getConfig().getAttributeConsumingServiceIndex(): 1;
-            String attributeConsumingServiceName = getConfig().getAttributeConsumingServiceName();
+
 
             List<Element> signingKeys = new LinkedList<>();
             List<Element> encryptionKeys = new LinkedList<>();
@@ -394,41 +396,43 @@ public class SAMLIdentityProvider extends AbstractIdentityProvider<SAMLIdentityP
                 wantAuthnRequestsSigned, wantAssertionsSigned, wantAssertionsEncrypted,
                 entityId, nameIDPolicyFormat, signingKeys, encryptionKeys);
 
-            // Create the AttributeConsumingService
-            AttributeConsumingServiceType attributeConsumingService = new AttributeConsumingServiceType(attributeConsumingServiceIndex);
-            attributeConsumingService.setIsDefault(true);
-
-            if (attributeConsumingServiceName != null && attributeConsumingServiceName.length() > 0)
-            {
-                String currentLocale = realm.getDefaultLocale() == null ? "en": realm.getDefaultLocale();
-                LocalizedNameType attributeConsumingServiceNameElement = new LocalizedNameType(currentLocale);
-                attributeConsumingServiceNameElement.setValue(attributeConsumingServiceName);
-                attributeConsumingService.addServiceName(attributeConsumingServiceNameElement);
-            }
-
-            // Look for the SP descriptor and add the attribute consuming service
-            for (EntityDescriptorType.EDTChoiceType choiceType: entityDescriptor.getChoiceType()) {
-                List<EntityDescriptorType.EDTDescriptorChoiceType> descriptors = choiceType.getDescriptors();
-
-                if (descriptors != null) {
-                    for (EntityDescriptorType.EDTDescriptorChoiceType descriptor: descriptors) {
-                        if (descriptor.getSpDescriptor() != null) {
-                            descriptor.getSpDescriptor().addAttributeConsumerService(attributeConsumingService);
-                        }
-                    }
-                }
-            }
-            
-            // Add the attribute mappers
+            // Create the AttributeConsumingService if at least one attribute importer mapper exists
+            List<Entry<IdentityProviderMapperModel, SamlMetadataDescriptorUpdater>> metadataAttrProviders = new ArrayList<>();
             realm.getIdentityProviderMappersByAliasStream(getConfig().getAlias())
                 .forEach(mapper -> {
                     IdentityProviderMapper target = (IdentityProviderMapper) session.getKeycloakSessionFactory().getProviderFactory(IdentityProviderMapper.class, mapper.getIdentityProviderMapper());
                     if (target instanceof SamlMetadataDescriptorUpdater)
-                    {
-                        SamlMetadataDescriptorUpdater metadataAttrProvider = (SamlMetadataDescriptorUpdater)target;
-                        metadataAttrProvider.updateMetadata(mapper, entityDescriptor);
-                    }
+                        metadataAttrProviders.add(new java.util.AbstractMap.SimpleEntry<>(mapper, (SamlMetadataDescriptorUpdater)target));
                 });
+                
+            if (!metadataAttrProviders.isEmpty()) {
+                int attributeConsumingServiceIndex = getConfig().getAttributeConsumingServiceIndex() != null ? getConfig().getAttributeConsumingServiceIndex() : 1;
+                String attributeConsumingServiceName = getConfig().getAttributeConsumingServiceName();
+                //default value for attributeConsumingServiceName
+                if (attributeConsumingServiceName == null)
+                    attributeConsumingServiceName = realm.getDisplayName() != null ? realm.getDisplayName() : realm.getName() ;
+                AttributeConsumingServiceType attributeConsumingService = new AttributeConsumingServiceType(attributeConsumingServiceIndex);
+                attributeConsumingService.setIsDefault(true);
+
+                String currentLocale = realm.getDefaultLocale() == null ? "en" : realm.getDefaultLocale();
+                LocalizedNameType attributeConsumingServiceNameElement = new LocalizedNameType(currentLocale);
+                attributeConsumingServiceNameElement.setValue(attributeConsumingServiceName);
+                attributeConsumingService.addServiceName(attributeConsumingServiceNameElement);
+
+                // Look for the SP descriptor and add the attribute consuming service
+                for (EntityDescriptorType.EDTChoiceType choiceType : entityDescriptor.getChoiceType()) {
+                    List<EntityDescriptorType.EDTDescriptorChoiceType> descriptors = choiceType.getDescriptors();
+                    for (EntityDescriptorType.EDTDescriptorChoiceType descriptor : descriptors) {
+                        descriptor.getSpDescriptor().addAttributeConsumerService(attributeConsumingService);
+                    }
+                }
+
+                // Add the attribute mappers
+                metadataAttrProviders.forEach(mapper -> {
+                    SamlMetadataDescriptorUpdater metadataAttrProvider = mapper.getValue();
+                    metadataAttrProvider.updateMetadata(mapper.getKey(), entityDescriptor);
+                });
+            }
     
             // Write the metadata and export it to a string
             metadataWriter.writeEntityDescriptor(entityDescriptor);

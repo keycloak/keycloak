@@ -16,7 +16,7 @@
  */
 package org.keycloak.models.map.storage.chm;
 
-import org.keycloak.models.map.common.StringKeyConvertor;
+import org.keycloak.models.map.common.StringKeyConverter;
 import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.storage.SearchableModelField;
 import java.util.Map;
@@ -32,33 +32,33 @@ import java.util.stream.Collectors;
  *
  * @author hmlnarik
  */
-public class MapModelCriteriaBuilder<K, V extends AbstractEntity, M> implements ModelCriteriaBuilder<M> {
+public class MapModelCriteriaBuilder<K, V extends AbstractEntity, M> implements ModelCriteriaBuilder<M, MapModelCriteriaBuilder<K, V, M>> {
 
     @FunctionalInterface
-    public static interface UpdatePredicatesFunc<K, V extends AbstractEntity, M> {
+    public interface UpdatePredicatesFunc<K, V extends AbstractEntity, M> {
         MapModelCriteriaBuilder<K, V, M> apply(MapModelCriteriaBuilder<K, V, M> builder, Operator op, Object[] params);
     }
 
-    private static final Predicate<Object> ALWAYS_TRUE = (e) -> true;
-    private static final Predicate<Object> ALWAYS_FALSE = (e) -> false;
+    protected static final Predicate<Object> ALWAYS_TRUE = (e) -> true;
+    protected static final Predicate<Object> ALWAYS_FALSE = (e) -> false;
     private final Predicate<? super K> keyFilter;
     private final Predicate<? super V> entityFilter;
-    private final Map<SearchableModelField<M>, UpdatePredicatesFunc<K, V, M>> fieldPredicates;
-    private final StringKeyConvertor<K> keyConvertor;
+    private final Map<SearchableModelField<? super M>, UpdatePredicatesFunc<K, V, M>> fieldPredicates;
+    private final StringKeyConverter<K> keyConverter;
 
-    public MapModelCriteriaBuilder(StringKeyConvertor<K> keyConvertor, Map<SearchableModelField<M>, UpdatePredicatesFunc<K, V, M>> fieldPredicates) {
-        this(keyConvertor, fieldPredicates, ALWAYS_TRUE, ALWAYS_TRUE);
+    public MapModelCriteriaBuilder(StringKeyConverter<K> keyConverter, Map<SearchableModelField<? super M>, UpdatePredicatesFunc<K, V, M>> fieldPredicates) {
+        this(keyConverter, fieldPredicates, ALWAYS_TRUE, ALWAYS_TRUE);
     }
 
-    private MapModelCriteriaBuilder(StringKeyConvertor<K> keyConvertor, Map<SearchableModelField<M>, UpdatePredicatesFunc<K, V, M>> fieldPredicates, Predicate<? super K> indexReadFilter, Predicate<? super V> sequentialReadFilter) {
-        this.keyConvertor = keyConvertor;
+    protected MapModelCriteriaBuilder(StringKeyConverter<K> keyConverter, Map<SearchableModelField<? super M>, UpdatePredicatesFunc<K, V, M>> fieldPredicates, Predicate<? super K> indexReadFilter, Predicate<? super V> sequentialReadFilter) {
+        this.keyConverter = keyConverter;
         this.fieldPredicates = fieldPredicates;
         this.keyFilter = indexReadFilter;
         this.entityFilter = sequentialReadFilter;
     }
 
     @Override
-    public MapModelCriteriaBuilder<K, V, M> compare(SearchableModelField<M> modelField, Operator op, Object... values) {
+    public MapModelCriteriaBuilder<K, V, M> compare(SearchableModelField<? super M> modelField, Operator op, Object... values) {
         UpdatePredicatesFunc<K, V, M> method = fieldPredicates.get(modelField);
         if (method == null) {
             throw new IllegalArgumentException("Filter not implemented for field " + modelField);
@@ -70,38 +70,33 @@ public class MapModelCriteriaBuilder<K, V extends AbstractEntity, M> implements 
     @SafeVarargs
     @SuppressWarnings("unchecked")
     @Override
-    public final MapModelCriteriaBuilder<K, V, M> and(ModelCriteriaBuilder<M>... builders) {
+    public final MapModelCriteriaBuilder<K, V, M> and(MapModelCriteriaBuilder<K, V, M>... builders) {
         Predicate<? super K> resIndexFilter = Stream.of(builders).map(MapModelCriteriaBuilder.class::cast).map(MapModelCriteriaBuilder::getKeyFilter).reduce(keyFilter, Predicate::and);
         Predicate<V> resEntityFilter = Stream.of(builders).map(MapModelCriteriaBuilder.class::cast).map(MapModelCriteriaBuilder::getEntityFilter).reduce(entityFilter, Predicate::and);
-        return new MapModelCriteriaBuilder<>(keyConvertor, fieldPredicates, resIndexFilter, resEntityFilter);
+        return instantiateNewInstance(keyConverter, fieldPredicates, resIndexFilter, resEntityFilter);
     }
 
     @SafeVarargs
     @SuppressWarnings("unchecked")
     @Override
-    public final MapModelCriteriaBuilder<K, V, M> or(ModelCriteriaBuilder<M>... builders) {
+    public final MapModelCriteriaBuilder<K, V, M> or(MapModelCriteriaBuilder<K, V, M>... builders) {
         Predicate<? super K> resIndexFilter = Stream.of(builders).map(MapModelCriteriaBuilder.class::cast).map(MapModelCriteriaBuilder::getKeyFilter).reduce(ALWAYS_FALSE, Predicate::or);
         Predicate<V> resEntityFilter = Stream.of(builders).map(MapModelCriteriaBuilder.class::cast).map(MapModelCriteriaBuilder::getEntityFilter).reduce(ALWAYS_FALSE, Predicate::or);
-        return new MapModelCriteriaBuilder<>(
-          keyConvertor,
+        return instantiateNewInstance(
+                keyConverter,
           fieldPredicates,
           v -> keyFilter.test(v) && resIndexFilter.test(v),
           v -> entityFilter.test(v) && resEntityFilter.test(v)
         );
     }
 
-    @SuppressWarnings("unchecked")
     @Override
-    public MapModelCriteriaBuilder<K, V, M> not(ModelCriteriaBuilder<M> builder) {
-        MapModelCriteriaBuilder<K, V, M> b = builder.unwrap(MapModelCriteriaBuilder.class);
-        if (b == null) {
-            throw new ClassCastException("Incompatible class: " + builder.getClass());
-        }
-        Predicate<? super K> resIndexFilter = b.getKeyFilter() == ALWAYS_TRUE ? ALWAYS_TRUE : b.getKeyFilter().negate();
-        Predicate<? super V> resEntityFilter = b.getEntityFilter() == ALWAYS_TRUE ? ALWAYS_TRUE : b.getEntityFilter().negate();
+    public MapModelCriteriaBuilder<K, V, M> not(MapModelCriteriaBuilder<K, V, M> builder) {
+        Predicate<? super K> resIndexFilter = builder.getKeyFilter() == ALWAYS_TRUE ? ALWAYS_TRUE : builder.getKeyFilter().negate();
+        Predicate<? super V> resEntityFilter = builder.getEntityFilter() == ALWAYS_TRUE ? ALWAYS_TRUE : builder.getEntityFilter().negate();
 
-        return new MapModelCriteriaBuilder<>(
-          keyConvertor,
+        return instantiateNewInstance(
+                keyConverter,
           fieldPredicates,
           v -> keyFilter.test(v) && resIndexFilter.test(v),
           v -> entityFilter.test(v) && resEntityFilter.test(v)
@@ -128,7 +123,7 @@ public class MapModelCriteriaBuilder<K, V extends AbstractEntity, M> implements 
             case EXISTS:
             case NOT_EXISTS:
             case IN:
-                return new MapModelCriteriaBuilder<>(keyConvertor, fieldPredicates, this.keyFilter.and(CriteriaOperator.predicateFor(op, convertedValues)), this.entityFilter);
+                return instantiateNewInstance(keyConverter, fieldPredicates, this.keyFilter.and(CriteriaOperator.predicateFor(op, convertedValues)), this.entityFilter);
             default:
                 throw new AssertionError("Invalid operator: " + op);
         }
@@ -142,11 +137,11 @@ public class MapModelCriteriaBuilder<K, V extends AbstractEntity, M> implements 
         for (int i = 0; i < values.length; i ++) {
             Object v = values[i];
             if (v instanceof String) {
-                res[i] = keyConvertor.fromStringSafe((String) v);
+                res[i] = keyConverter.fromStringSafe((String) v);
             } else if (v instanceof Stream) {
-                res[i] = ((Stream<?>) v).map(o -> (o instanceof String) ? keyConvertor.fromStringSafe((String) o) : o);
+                res[i] = ((Stream<?>) v).map(o -> (o instanceof String) ? keyConverter.fromStringSafe((String) o) : o);
             } else if (v instanceof Collection) {
-                res[i] = ((List<?>) v).stream().map(o -> (o instanceof String) ? keyConvertor.fromStringSafe((String) o) : o).collect(Collectors.toList());
+                res[i] = ((List<?>) v).stream().map(o -> (o instanceof String) ? keyConverter.fromStringSafe((String) o) : o).collect(Collectors.toList());
             } else if (v == null) {
                 res[i] = null;
             } else {
@@ -170,6 +165,16 @@ public class MapModelCriteriaBuilder<K, V extends AbstractEntity, M> implements 
             final Predicate<V> p = v -> valueComparator.test(getter.apply(v));
             resEntityFilter = p.and(entityFilter);
         }
-        return new MapModelCriteriaBuilder<>(keyConvertor, fieldPredicates, this.keyFilter, resEntityFilter);
+        return instantiateNewInstance(keyConverter, fieldPredicates, this.keyFilter, resEntityFilter);
+    }
+
+    /**
+     * Return a new instance for nodes in this criteria tree.
+     *
+     * Subclasses can override this method to instantiate a new instance of their subclass. This allows this class to
+     * be extendable.
+     */
+    protected MapModelCriteriaBuilder<K, V, M> instantiateNewInstance(StringKeyConverter<K> keyConverter, Map<SearchableModelField<? super M>, UpdatePredicatesFunc<K, V, M>> fieldPredicates, Predicate<? super K> indexReadFilter, Predicate<? super V> sequentialReadFilter) {
+        return new MapModelCriteriaBuilder<>(keyConverter, fieldPredicates, indexReadFilter, sequentialReadFilter);
     }
 }

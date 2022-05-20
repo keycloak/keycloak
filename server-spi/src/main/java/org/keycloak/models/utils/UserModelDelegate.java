@@ -24,7 +24,6 @@ import org.keycloak.models.UserModel;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Stream;
 
 /**

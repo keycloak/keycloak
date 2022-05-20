@@ -17,6 +17,24 @@
 
 package org.keycloak.testsuite.admin;
 
+import static java.util.Arrays.asList;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.lessThan;
+import static org.hamcrest.Matchers.not;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.keycloak.models.Constants.defaultClients;
+
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -41,6 +59,8 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.util.AdminEventPaths;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.CredentialBuilder;
@@ -49,9 +69,6 @@ import org.keycloak.testsuite.util.OAuthClient.AccessTokenResponse;
 import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
@@ -63,14 +80,9 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static java.util.Arrays.asList;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.junit.Assert.*;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
+import javax.ws.rs.BadRequestException;
+import javax.ws.rs.NotFoundException;
+import javax.ws.rs.core.Response;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -220,15 +232,6 @@ public class ClientTest extends AbstractAdminTest {
         assertEquals("invalid_input", errorRep.getError());
     }
 
-    private void updateClientExpectingSuccessfulClientUpdate(ClientRepresentation rep, String expectedRootUrl, String expectedBaseUrl) {
-
-        realm.clients().get(rep.getId()).update(rep);
-
-        ClientRepresentation stored = realm.clients().get(rep.getId()).toRepresentation();
-        assertEquals(expectedRootUrl, stored.getRootUrl());
-        assertEquals(expectedBaseUrl, stored.getBaseUrl());
-    }
-
     @Test
     public void removeClient() {
         String id = createClient().getId();
@@ -237,6 +240,23 @@ public class ClientTest extends AbstractAdminTest {
         realm.clients().get(id).remove();
         assertNull(ApiUtil.findClientResourceByClientId(realm, "my-app"));
         assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.clientResourcePath(id), ResourceType.CLIENT);
+    }
+
+    @Test
+    public void removeInternalClientExpectingBadRequestException() {
+        final String testRealmClientId = ApiUtil.findClientByClientId(realmsResouce().realm("master"), "test-realm")
+                .toRepresentation().getId();
+
+        assertThrows(BadRequestException.class,
+                () -> realmsResouce().realm("master").clients().get(testRealmClientId).remove());
+
+        defaultClients.forEach(defaultClient -> {
+            final String defaultClientId = ApiUtil.findClientByClientId(realm, defaultClient)
+                    .toRepresentation().getId();
+
+            assertThrows(BadRequestException.class,
+                    () -> realm.clients().get(defaultClientId).remove());
+        });
     }
 
     @Test
@@ -519,6 +539,8 @@ public class ClientTest extends AbstractAdminTest {
         List<UserSessionRepresentation> offlineUserSessions = realm.clients().get(id).getOfflineUserSessions(0, 100);
         assertEquals(1, offlineUserSessions.size());
         assertEquals("testuser", offlineUserSessions.get(0).getUsername());
+        org.hamcrest.MatcherAssert.assertThat(offlineUserSessions.get(0).getLastAccess(),
+            allOf(greaterThan(Time.currentTimeMillis() - 10000L), lessThan(Time.currentTimeMillis())));
 
         userSessions = realm.users().get(userId).getOfflineSessions(id);
         assertEquals("There should be one offline session", 1, userSessions.size());
@@ -543,20 +565,18 @@ public class ClientTest extends AbstractAdminTest {
 
         RoleMappingResource scopesResource = realm.clients().get(id).getScopeMappings();
 
-        RoleRepresentation roleRep1 = RoleBuilder.create().name("role1").build();
-        RoleRepresentation roleRep2 = RoleBuilder.create().name("role2").build();
-        realm.roles().create(roleRep1);
-        realm.roles().create(roleRep2);
+        RoleRepresentation roleRep1 = createRealmRole("realm-composite");
+        RoleRepresentation roleRep2 = createRealmRole("realm-child");
 
-        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.roleResourcePath("role1"), roleRep1, ResourceType.REALM_ROLE);
-        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.roleResourcePath("role2"), roleRep2, ResourceType.REALM_ROLE);
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.roleResourcePath("realm-composite"), roleRep1, ResourceType.REALM_ROLE);
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.roleResourcePath("realm-child"), roleRep2, ResourceType.REALM_ROLE);
 
-        roleRep1 = realm.roles().get("role1").toRepresentation();
-        roleRep2 = realm.roles().get("role2").toRepresentation();
+        roleRep1 = realm.roles().get("realm-composite").toRepresentation();
+        roleRep2 = realm.roles().get("realm-child").toRepresentation();
 
-        realm.roles().get("role1").addComposites(Collections.singletonList(roleRep2));
+        realm.roles().get("realm-composite").addComposites(Collections.singletonList(roleRep2));
 
-        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.roleResourceCompositesPath("role1"), Collections.singletonList(roleRep2), ResourceType.REALM_ROLE);
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.roleResourceCompositesPath("realm-composite"), Collections.singletonList(roleRep2), ResourceType.REALM_ROLE);
 
         String accountMgmtId = realm.clients().findByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).get(0).getId();
         RoleRepresentation viewAccountRoleRep = realm.clients().get(accountMgmtId).roles().get(AccountRoles.VIEW_PROFILE).toRepresentation();
@@ -567,16 +587,17 @@ public class ClientTest extends AbstractAdminTest {
         scopesResource.clientLevel(accountMgmtId).add(Collections.singletonList(viewAccountRoleRep));
         assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientScopeMappingsClientLevelPath(id, accountMgmtId), Collections.singletonList(viewAccountRoleRep), ResourceType.CLIENT_SCOPE_MAPPING);
 
-        Assert.assertNames(scopesResource.realmLevel().listAll(), "role1");
-        Assert.assertNames(scopesResource.realmLevel().listEffective(), "role1", "role2");
-        Assert.assertNames(scopesResource.realmLevel().listAvailable(), "offline_access", Constants.AUTHZ_UMA_AUTHORIZATION, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + REALM_NAME);
+        Assert.assertNames(scopesResource.realmLevel().listAll(), "realm-composite");
+        Assert.assertNames(scopesResource.realmLevel().listEffective(), "realm-composite", "realm-child");
+        Assert.assertNames(scopesResource.realmLevel().listAvailable(), "realm-child", "offline_access",
+                Constants.AUTHZ_UMA_AUTHORIZATION, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + REALM_NAME);
 
         Assert.assertNames(scopesResource.clientLevel(accountMgmtId).listAll(), AccountRoles.VIEW_PROFILE);
         Assert.assertNames(scopesResource.clientLevel(accountMgmtId).listEffective(), AccountRoles.VIEW_PROFILE);
 
         Assert.assertNames(scopesResource.clientLevel(accountMgmtId).listAvailable(), AccountRoles.MANAGE_ACCOUNT, AccountRoles.MANAGE_ACCOUNT_LINKS, AccountRoles.VIEW_APPLICATIONS, AccountRoles.VIEW_CONSENT, AccountRoles.MANAGE_CONSENT, AccountRoles.DELETE_ACCOUNT);
 
-        Assert.assertNames(scopesResource.getAll().getRealmMappings(), "role1");
+        Assert.assertNames(scopesResource.getAll().getRealmMappings(), "realm-composite");
         Assert.assertNames(scopesResource.getAll().getClientMappings().get(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).getMappings(), AccountRoles.VIEW_PROFILE);
 
         scopesResource.realmLevel().remove(Collections.singletonList(roleRep1));
@@ -587,12 +608,79 @@ public class ClientTest extends AbstractAdminTest {
 
         Assert.assertNames(scopesResource.realmLevel().listAll());
         Assert.assertNames(scopesResource.realmLevel().listEffective());
-        Assert.assertNames(scopesResource.realmLevel().listAvailable(), "offline_access", Constants.AUTHZ_UMA_AUTHORIZATION, "role1", "role2", Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + REALM_NAME);
+        Assert.assertNames(scopesResource.realmLevel().listAvailable(), "offline_access", Constants.AUTHZ_UMA_AUTHORIZATION, "realm-composite", "realm-child", Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + REALM_NAME);
         Assert.assertNames(scopesResource.clientLevel(accountMgmtId).listAll());
 
         Assert.assertNames(scopesResource.clientLevel(accountMgmtId).listAvailable(), AccountRoles.VIEW_PROFILE, AccountRoles.MANAGE_ACCOUNT, AccountRoles.MANAGE_ACCOUNT_LINKS, AccountRoles.VIEW_APPLICATIONS, AccountRoles.VIEW_CONSENT, AccountRoles.MANAGE_CONSENT, AccountRoles.DELETE_ACCOUNT);
 
         Assert.assertNames(scopesResource.clientLevel(accountMgmtId).listEffective());
+    }
+
+    /**
+     * Test for KEYCLOAK-10603.
+     */
+    @Test
+    public void rolesCanBeAddedToScopeEvenWhenTheyAreAlreadyIndirectlyAssigned() {
+        Response response =
+                realm.clients().create(ClientBuilder.create().clientId("test-client").fullScopeEnabled(false).build());
+        String testedClientUuid = ApiUtil.getCreatedId(response);
+        getCleanup().addClientUuid(testedClientUuid);
+        response.close();
+
+        createRealmRole("realm-composite");
+        createRealmRole("realm-child");
+        realm.roles().get("realm-composite")
+                .addComposites(Collections.singletonList(realm.roles().get("realm-child").toRepresentation()));
+
+        response = realm.clients().create(ClientBuilder.create().clientId("role-container-client").build());
+        String roleContainerClientUuid = ApiUtil.getCreatedId(response);
+        getCleanup().addClientUuid(roleContainerClientUuid);
+        response.close();
+
+        RoleRepresentation clientCompositeRole = RoleBuilder.create().name("client-composite").build();
+        realm.clients().get(roleContainerClientUuid).roles().create(clientCompositeRole);
+        realm.clients().get(roleContainerClientUuid).roles().create(RoleBuilder.create().name("client-child").build());
+        realm.clients().get(roleContainerClientUuid).roles().get("client-composite").addComposites(Collections
+                .singletonList(
+                        realm.clients().get(roleContainerClientUuid).roles().get("client-child").toRepresentation()));
+
+        // Make indirect assignments: assign composite roles
+        RoleMappingResource scopesResource = realm.clients().get(testedClientUuid).getScopeMappings();
+        scopesResource.realmLevel()
+                .add(Collections.singletonList(realm.roles().get("realm-composite").toRepresentation()));
+        scopesResource.clientLevel(roleContainerClientUuid).add(Collections
+                .singletonList(realm.clients().get(roleContainerClientUuid).roles().get("client-composite")
+                        .toRepresentation()));
+
+        // check state before making the direct assignments
+        Assert.assertNames(scopesResource.realmLevel().listAll(), "realm-composite");
+        Assert.assertNames(scopesResource.realmLevel().listAvailable(), "realm-child", "offline_access",
+                Constants.AUTHZ_UMA_AUTHORIZATION, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + REALM_NAME);
+        Assert.assertNames(scopesResource.realmLevel().listEffective(), "realm-composite", "realm-child");
+
+        Assert.assertNames(scopesResource.clientLevel(roleContainerClientUuid).listAll(), "client-composite");
+        Assert.assertNames(scopesResource.clientLevel(roleContainerClientUuid).listAvailable(), "client-child");
+        Assert.assertNames(scopesResource.clientLevel(roleContainerClientUuid).listEffective(), "client-composite",
+                "client-child");
+
+        // Make direct assignments for roles which are already indirectly assigned
+        scopesResource.realmLevel().add(Collections.singletonList(realm.roles().get("realm-child").toRepresentation()));
+        scopesResource.clientLevel(roleContainerClientUuid).add(Collections
+                .singletonList(
+                        realm.clients().get(roleContainerClientUuid).roles().get("client-child").toRepresentation()));
+
+        // List realm roles
+        Assert.assertNames(scopesResource.realmLevel().listAll(), "realm-composite", "realm-child");
+        Assert.assertNames(scopesResource.realmLevel().listAvailable(), "offline_access",
+                Constants.AUTHZ_UMA_AUTHORIZATION, Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + REALM_NAME);
+        Assert.assertNames(scopesResource.realmLevel().listEffective(), "realm-composite", "realm-child");
+
+        // List client roles
+        Assert.assertNames(scopesResource.clientLevel(roleContainerClientUuid).listAll(), "client-composite",
+                "client-child");
+        Assert.assertNames(scopesResource.clientLevel(roleContainerClientUuid).listAvailable());
+        Assert.assertNames(scopesResource.clientLevel(roleContainerClientUuid).listEffective(), "client-composite",
+                "client-child");
     }
 
     @Test
@@ -614,8 +702,7 @@ public class ClientTest extends AbstractAdminTest {
         RoleMappingResource scopesResource = realm.clients().get(idA).getScopeMappings();
 
         // create a realm role and a role in clientB
-        RoleRepresentation realmRoleRep = RoleBuilder.create().name("realm-role").build();
-        realm.roles().create(realmRoleRep);
+        RoleRepresentation realmRoleRep = createRealmRole("realm-role");
         assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.roleResourcePath(realmRoleRep.getName()), realmRoleRep, ResourceType.REALM_ROLE);
         RoleRepresentation clientBRoleRep = RoleBuilder.create().name("clientB-role").build();
         realm.clients().get(idB).roles().create(clientBRoleRep);
@@ -814,4 +901,13 @@ public class ClientTest extends AbstractAdminTest {
         }
     }
 
+    private RoleRepresentation createRealmRole(String roleName) {
+        RoleRepresentation role = RoleBuilder.create().name(roleName).build();
+        realm.roles().create(role);
+
+        String createdId = realm.roles().get(role.getName()).toRepresentation().getId();
+        getCleanup().addRoleId(createdId);
+
+        return role;
+    }
 }

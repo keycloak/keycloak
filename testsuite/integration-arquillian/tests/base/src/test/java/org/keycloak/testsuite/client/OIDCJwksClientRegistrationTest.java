@@ -207,7 +207,8 @@ public class OIDCJwksClientRegistrationTest extends AbstractClientRegistrationTe
         assertAuthenticateClientSuccess(generatedKeys, response, "a1");
 
         // Assert item in publicKey cache for client1
-        String expectedCacheKey = PublicKeyStorageUtils.getClientModelCacheKey(REALM_NAME, response.getClientId());
+        String expectedCacheKey = PublicKeyStorageUtils.getClientModelCacheKey(
+                adminClient.realm(REALM_NAME).toRepresentation().getId(), response.getClientId());
         Assert.assertTrue(testingClient.testing().cache(InfinispanConnectionProvider.KEYS_CACHE_NAME).contains(expectedCacheKey));
 
         // Assert it's not possible to authenticate as client2 with the same "kid" like client1
@@ -225,7 +226,8 @@ public class OIDCJwksClientRegistrationTest extends AbstractClientRegistrationTe
         assertAuthenticateClientSuccess(generatedKeys, response, "a1");
 
         // Assert item in publicKey cache for client1
-        String expectedCacheKey = PublicKeyStorageUtils.getClientModelCacheKey(REALM_NAME, response.getClientId());
+        String expectedCacheKey = PublicKeyStorageUtils.getClientModelCacheKey(
+                adminClient.realm(REALM_NAME).toRepresentation().getId(), response.getClientId());
         Assert.assertTrue(testingClient.testing().cache(InfinispanConnectionProvider.KEYS_CACHE_NAME).contains(expectedCacheKey));
 
 

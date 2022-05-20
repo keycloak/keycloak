@@ -18,6 +18,7 @@
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
 
     <changeSet author="psilva@redhat.com" id="3.4.1">
+        <validCheckSum>7:c155566c42b4d14ef07059ec3b3bbd8e</validCheckSum>
         <!-- KEYCLOAK-4231, changing length to same value used by COMPONENT_CONFIG.VALUE -->
         <modifyDataType tableName="CLIENT_ATTRIBUTES" columnName="VALUE" newDataType="VARCHAR(4000)"/>
     </changeSet>

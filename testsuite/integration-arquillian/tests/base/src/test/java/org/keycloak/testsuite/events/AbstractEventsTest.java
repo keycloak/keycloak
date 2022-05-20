@@ -20,6 +20,7 @@ package org.keycloak.testsuite.events;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.client.resources.TestingResource;
+import org.keycloak.testsuite.util.RealmBuilder;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,6 +33,14 @@ public abstract class AbstractEventsTest extends AbstractKeycloakTest {
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
+        RealmRepresentation rep1 = RealmBuilder.create().name("realmId").build();
+        rep1.setId("realmId");
+
+        RealmRepresentation rep2 = RealmBuilder.create().name("realmId2").build();
+        rep2.setId("realmId2");
+
+        testRealms.add(rep1);
+        testRealms.add(rep2);
     }
 
     protected TestingResource testing() {

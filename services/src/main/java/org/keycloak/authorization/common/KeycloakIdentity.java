@@ -150,7 +150,7 @@ public class KeycloakIdentity implements Identity {
         ClientModel clientModel = getTargetClient();
         UserModel clientUser = null;
 
-        if (clientModel != null) {
+        if (clientModel != null && clientModel.isServiceAccountsEnabled()) {
             clientUser = this.keycloakSession.users().getServiceAccount(clientModel);
         }
 
@@ -225,7 +225,7 @@ public class KeycloakIdentity implements Identity {
             ClientModel clientModel = getTargetClient();
             UserModel clientUser = null;
 
-            if (clientModel != null) {
+            if (clientModel != null && clientModel.isServiceAccountsEnabled()) {
                 clientUser = this.keycloakSession.users().getServiceAccount(clientModel);
             }
 

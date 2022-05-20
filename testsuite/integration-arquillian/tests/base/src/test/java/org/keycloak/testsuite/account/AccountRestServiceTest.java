@@ -18,6 +18,7 @@ package org.keycloak.testsuite.account;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.junit.Assert;
+import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.UserResource;
@@ -26,10 +27,11 @@ import org.keycloak.authentication.authenticators.browser.WebAuthnPasswordlessAu
 import org.keycloak.authentication.requiredactions.WebAuthnPasswordlessRegisterFactory;
 import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
 import org.keycloak.broker.provider.util.SimpleHttp;
-import org.keycloak.common.Profile;
 import org.keycloak.common.enums.AccountRestApiVersion;
 import org.keycloak.common.util.ObjectUtil;
 import org.keycloak.credential.CredentialTypeMetadata;
+import org.keycloak.events.Details;
+import org.keycloak.events.EventType;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.OTPCredentialModel;
@@ -55,14 +57,15 @@ import org.keycloak.representations.idm.RequiredActionProviderSimpleRepresentati
 import org.keycloak.services.messages.Messages;
 import org.keycloak.services.resources.account.AccountCredentialResource;
 import org.keycloak.services.util.ResolveRelative;
+import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.admin.authentication.AbstractAuthenticationTest;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.TokenUtil;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.validate.validators.EmailValidator;
 
 import javax.ws.rs.core.Response;
@@ -85,8 +88,10 @@ import static org.junit.Assert.assertTrue;
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 @AuthServerContainerExclude(AuthServer.REMOTE)
-@EnableFeature(value = Profile.Feature.WEB_AUTHN, skipRestart = true, onlyForProduct = true)
 public class AccountRestServiceTest extends AbstractRestServiceTest {
+    
+    @Rule
+    public AssertEvents events = new AssertEvents(this);
     
     @Test
     public void testGetUserProfileMetadata_EditUsernameAllowed() throws IOException {
@@ -98,7 +103,13 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         assertUserProfileAttributeMetadata(user, "firstName", "${firstName}", true, false);
         assertUserProfileAttributeMetadata(user, "lastName", "${lastName}", true, false);
     }
-    
+
+    @Test
+    public void testGetUserProfileWithoutMetadata() throws IOException {
+        UserRepresentation user = getUser(false);
+        assertNull(user.getUserProfileMetadata());
+    }
+
     @Test
     public void testGetUserProfileMetadata_EditUsernameDisallowed() throws IOException {
         
@@ -250,6 +261,58 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
     }
 
     @Test
+    public void testUpdateProfileEvent() throws IOException {
+        UserRepresentation user = getUser();
+        String originalUsername = user.getUsername();
+        String originalFirstName = user.getFirstName();
+        String originalLastName = user.getLastName();
+        String originalEmail = user.getEmail();
+        Map<String, List<String>> originalAttributes = new HashMap<>(user.getAttributes());
+
+        try {
+            RealmRepresentation realmRep = adminClient.realm("test").toRepresentation();
+
+            realmRep.setRegistrationEmailAsUsername(false);
+            adminClient.realm("test").update(realmRep);
+
+            user.setEmail("bobby@localhost");
+            user.setFirstName("Homer");
+            user.setLastName("Simpsons");
+            user.getAttributes().put("attr1", Collections.singletonList("val1"));
+            user.getAttributes().put("attr2", Collections.singletonList("val2"));
+
+            user = updateAndGet(user);
+
+            //skip login to the REST API event
+            events.poll();
+            events.expectAccount(EventType.UPDATE_PROFILE).user(user.getId())
+                .detail(Details.CONTEXT, UserProfileContext.ACCOUNT.name())
+                .detail(Details.PREVIOUS_EMAIL, originalEmail)
+                .detail(Details.UPDATED_EMAIL, "bobby@localhost")
+                .detail(Details.PREVIOUS_FIRST_NAME, originalFirstName)
+                .detail(Details.PREVIOUS_LAST_NAME, originalLastName)
+                .detail(Details.UPDATED_FIRST_NAME, "Homer")
+                .detail(Details.UPDATED_LAST_NAME, "Simpsons")
+                .assertEvent();
+            events.assertEmpty();
+            
+        } finally {
+            RealmRepresentation realmRep = adminClient.realm("test").toRepresentation();
+            realmRep.setEditUsernameAllowed(true);
+            adminClient.realm("test").update(realmRep);
+
+            user.setUsername(originalUsername);
+            user.setFirstName(originalFirstName);
+            user.setLastName(originalLastName);
+            user.setEmail(originalEmail);
+            user.setAttributes(originalAttributes);
+            SimpleHttp.Response response = SimpleHttp.doPost(getAccountUrl(null), httpClient).auth(tokenUtil.getToken()).json(user).asResponse();
+            System.out.println(response.asString());
+            assertEquals(204, response.getStatus());
+        }
+    }
+        
+    @Test
     public void testUpdateProfile() throws IOException {
         UserRepresentation user = getUser();
         String originalUsername = user.getUsername();
@@ -278,7 +341,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
             assertEquals("val1", user.getAttributes().get("attr1").get(0));
             assertEquals(1, user.getAttributes().get("attr2").size());
             assertEquals("val2", user.getAttributes().get("attr2").get(0));
-
+            
             // Update attributes
             user.getAttributes().remove("attr1");
             user.getAttributes().get("attr2").add("val3");
@@ -402,7 +465,13 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
     }
 
     protected UserRepresentation getUser() throws IOException {
-        SimpleHttp a = SimpleHttp.doGet(getAccountUrl(null), httpClient).auth(tokenUtil.getToken());
+        return getUser(true);
+    }
+
+    protected UserRepresentation getUser(boolean fetchMetadata) throws IOException {
+        String accountUrl = getAccountUrl(null) + "?userProfileMetadata=" + fetchMetadata;
+        SimpleHttp a = SimpleHttp.doGet(accountUrl, httpClient).auth(tokenUtil.getToken());
+
         try {
             return a.asJson(UserRepresentation.class);
         } catch (IOException e) {
@@ -465,12 +534,14 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         requiredAction.setName(WebAuthnRegisterFactory.PROVIDER_ID);
         requiredAction.setProviderId(WebAuthnRegisterFactory.PROVIDER_ID);
         testRealm().flows().registerRequiredAction(requiredAction);
+        getCleanup().addRequiredAction(requiredAction.getProviderId());
 
         requiredAction = new RequiredActionProviderSimpleRepresentation();
         requiredAction.setId("6789");
         requiredAction.setName(WebAuthnPasswordlessRegisterFactory.PROVIDER_ID);
         requiredAction.setProviderId(WebAuthnPasswordlessRegisterFactory.PROVIDER_ID);
         testRealm().flows().registerRequiredAction(requiredAction);
+        getCleanup().addRequiredAction(requiredAction.getProviderId());
 
         List<AccountCredentialResource.CredentialContainer> credentials = getCredentials();
 
@@ -481,7 +552,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
                 "password-display-name", "password-help-text", "kcAuthenticatorPasswordClass",
                 null, UserModel.RequiredAction.UPDATE_PASSWORD.toString(), false, 1);
 
-        CredentialRepresentation password1 = password.getUserCredentials().get(0);
+        CredentialRepresentation password1 = password.getUserCredentialMetadatas().get(0).getCredential();
         assertNull(password1.getSecretData());
         Assert.assertNotNull(password1.getCredentialData());
 
@@ -520,7 +591,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         Assert.assertEquals(1, credentials.size());
         password = credentials.get(0);
         Assert.assertEquals(PasswordCredentialModel.TYPE, password.getType());
-        Assert.assertEquals(1, password.getUserCredentials().size());
+        Assert.assertEquals(1, password.getUserCredentialMetadatas().size());
 
         // Test password-only and user-credentials
         credentials = SimpleHttp.doGet(getAccountUrl("credentials?" + AccountCredentialResource.TYPE + "=password&" +
@@ -529,7 +600,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         Assert.assertEquals(1, credentials.size());
         password = credentials.get(0);
         Assert.assertEquals(PasswordCredentialModel.TYPE, password.getType());
-        assertNull(password.getUserCredentials());
+        assertNull(password.getUserCredentialMetadatas());
     }
 
 
@@ -748,7 +819,7 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
         Assert.assertEquals(createAction, credential.getCreateAction());
         Assert.assertEquals(updateAction, credential.getUpdateAction());
         Assert.assertEquals(removeable, credential.isRemoveable());
-        Assert.assertEquals(userCredentialsCount, credential.getUserCredentials().size());
+        Assert.assertEquals(userCredentialsCount, credential.getUserCredentialMetadatas().size());
     }
 
     public void testDeleteSessions() throws IOException {

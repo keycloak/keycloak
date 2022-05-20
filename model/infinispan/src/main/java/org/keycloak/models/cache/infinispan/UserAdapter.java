@@ -291,6 +291,12 @@ public class UserAdapter implements CachedUserModel.Streams {
     }
 
     @Override
+    public boolean hasDirectRole(RoleModel role) {
+        if (updated != null) return updated.hasDirectRole(role);
+        return cached.getRoleMappings(modelSupplier).contains(role.getId());
+    }
+
+    @Override
     public boolean hasRole(RoleModel role) {
         if (updated != null) return updated.hasRole(role);
         return cached.getRoleMappings(modelSupplier).contains(role.getId()) ||

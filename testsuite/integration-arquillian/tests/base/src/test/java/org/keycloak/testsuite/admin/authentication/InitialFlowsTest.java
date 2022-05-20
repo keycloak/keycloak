@@ -195,7 +195,7 @@ public class InitialFlowsTest extends AbstractAuthenticationTest {
         addExecExport(flow, "Authentication Options", false, null, true, null, REQUIRED, 20);
 
         execs = new LinkedList<>();
-        addExecInfo(execs, "Browser Redirect/Refresh", "no-cookie-redirect", false, 0, 0, REQUIRED, null, new String[]{REQUIRED});
+        addExecInfo(execs, "Browser Redirect for Cookie free authentication", "no-cookie-redirect", false, 0, 0, REQUIRED, null, new String[]{REQUIRED});
         addExecInfo(execs, "Authentication Options", null, false, 0, 1, REQUIRED, true, new String[]{REQUIRED, ALTERNATIVE, DISABLED, CONDITIONAL});
         addExecInfo(execs, "Basic Auth Challenge", "basic-auth", false, 1, 0, REQUIRED, null, new String[]{REQUIRED, ALTERNATIVE, DISABLED});
         addExecInfo(execs, "Basic Auth Password+OTP", "basic-auth-otp", false, 1, 1, DISABLED, null, new String[]{REQUIRED, ALTERNATIVE, DISABLED});

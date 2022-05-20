@@ -18,6 +18,7 @@ package org.keycloak.testsuite.federation.storage;
 
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -42,7 +43,6 @@ import javax.ws.rs.NotFoundException;
 import java.io.File;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
@@ -61,6 +61,8 @@ public class FederatedStorageExportImportTest extends AbstractAuthTest {
 
     @Before
     public void setDirs() {
+        Assume.assumeTrue("RealmProvider is not 'jpa'", isJpaRealmProvider());
+
         File baseDir = new File(System.getProperty("auth.server.config.dir", "target"));
 
         exportFileAbsolutePath = new File (baseDir, "singleFile-full.json").getAbsolutePath();

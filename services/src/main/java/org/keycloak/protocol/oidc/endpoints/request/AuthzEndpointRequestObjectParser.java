@@ -81,7 +81,7 @@ public class AuthzEndpointRequestObjectParser extends AuthzEndpointRequestParser
     @Override
     protected Integer getIntParameter(String paramName) {
         Object val = this.requestParams.get(paramName);
-        return val==null ? null : Integer.parseInt(getParameter(paramName));
+        return val==null ? null : Integer.valueOf(getParameter(paramName));
     }
 
     @Override
@@ -101,10 +101,10 @@ public class AuthzEndpointRequestObjectParser extends AuthzEndpointRequestParser
                     throw new RuntimeException("Request object signed algorithm not specified");
                 }
 
-                Algorithm requestedSignatureAlgorithm = OIDCAdvancedConfigWrapper.fromClientModel(clientModel)
+                String requestedSignatureAlgorithm = OIDCAdvancedConfigWrapper.fromClientModel(clientModel)
                         .getRequestObjectSignatureAlg();
 
-                if (requestedSignatureAlgorithm != null && !requestedSignatureAlgorithm.name().equals(headerAlgorithm)) {
+                if (requestedSignatureAlgorithm != null && !requestedSignatureAlgorithm.equals(headerAlgorithm)) {
                     throw new RuntimeException(
                             "Request object signed with different algorithm than client requested algorithm");
                 }

@@ -106,7 +106,7 @@ public class ResourceServerService {
 
     public void delete() {
         this.auth.realm().requireManageAuthorization();
-        authorization.getStoreFactory().getResourceServerStore().delete(resourceServer.getId());
+        authorization.getStoreFactory().getResourceServerStore().delete(client);
         audit(OperationType.DELETE, session.getContext().getUri(), false);
     }
 
@@ -133,7 +133,7 @@ public class ResourceServerService {
 
         rep.setClientId(client.getId());
 
-        RepresentationToModel.toModel(rep, authorization);
+        RepresentationToModel.toModel(rep, authorization, client);
 
         audit(OperationType.UPDATE, session.getContext().getUri(), false);
 

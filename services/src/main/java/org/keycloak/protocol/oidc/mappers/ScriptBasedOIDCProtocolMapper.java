@@ -120,7 +120,7 @@ public class ScriptBasedOIDCProtocolMapper extends AbstractOIDCProtocolMapper im
 
   @Override
   public boolean isSupported() {
-    return Profile.isFeatureEnabled(Profile.Feature.SCRIPTS) && Profile.isFeatureEnabled(Profile.Feature.UPLOAD_SCRIPTS);
+    return Profile.isFeatureEnabled(Profile.Feature.SCRIPTS);
   }
 
   @Override
@@ -201,9 +201,8 @@ public class ScriptBasedOIDCProtocolMapper extends AbstractOIDCProtocolMapper im
     ProtocolMapperModel mapper = OIDCAttributeMapperHelper.createClaimMapper(name, userAttribute,
       tokenClaimName, claimType,
       accessToken, idToken,
-      PROVIDER_ID);
+      script);
 
-    mapper.getConfig().put(SCRIPT, script);
     mapper.getConfig().put(ProtocolMapperUtils.MULTIVALUED, String.valueOf(multiValued));
 
     return mapper;

@@ -38,7 +38,12 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.empty;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -53,6 +58,9 @@ public class RoleByIdResourceTest extends AbstractAdminTest {
     private RoleByIdResource resource;
 
     private Map<String, String> ids = new HashMap<>();
+
+    private String clientId;
+
     private String clientUuid;
 
     @Before
@@ -60,7 +68,8 @@ public class RoleByIdResourceTest extends AbstractAdminTest {
         adminClient.realm(REALM_NAME).roles().create(RoleBuilder.create().name("role-a").description("Role A").build());
         adminClient.realm(REALM_NAME).roles().create(RoleBuilder.create().name("role-b").description("Role B").build());
 
-        Response response = adminClient.realm(REALM_NAME).clients().create(ClientBuilder.create().clientId("client-a").build());
+        clientId = "client-a";
+        Response response = adminClient.realm(REALM_NAME).clients().create(ClientBuilder.create().clientId(clientId).build());
         clientUuid = ApiUtil.getCreatedId(response);
         getCleanup().addClientUuid(clientUuid);
         response.close();
@@ -146,12 +155,74 @@ public class RoleByIdResourceTest extends AbstractAdminTest {
         Set<RoleRepresentation> clientComposites = resource.getClientRoleComposites(ids.get("role-a"), clientUuid);
         Assert.assertNames(clientComposites, "role-c");
 
+        composites = resource.searchRoleComposites(ids.get("role-a"), null, null, null);
+        Assert.assertNames(composites, "role-b", "role-c");
+
+        composites = resource.searchRoleComposites(ids.get("role-a"), "b", null, null);
+        Assert.assertNames(composites, "role-b");
+
+        composites = resource.searchRoleComposites(ids.get("role-a"), null, 0, 0);
+        assertThat(composites, is(empty()));
+
+        composites = resource.searchRoleComposites(ids.get("role-a"), null, 0, 1);
+        Assert.assertNames(composites, "role-b");
+
+        composites = resource.searchRoleComposites(ids.get("role-a"), null, 1, 1);
+        Assert.assertNames(composites, "role-c");
+
         resource.deleteComposites(ids.get("role-a"), l);
         assertAdminEvents.assertEvent(realmId, OperationType.DELETE, AdminEventPaths.roleByIdResourceCompositesPath(ids.get("role-a")), l, ResourceType.REALM_ROLE);
 
         assertFalse(resource.getRole(ids.get("role-a")).isComposite());
         assertEquals(0, resource.getRoleComposites(ids.get("role-a")).size());
 
+    }
+
+    /**
+     * see KEYCLOAK-12754
+     */
+    @Test
+    public void createNewMixedRealmCompositeRole() {
+
+        RoleRepresentation newRoleComp = RoleBuilder.create().name("role-mixed-comp").composite().realmComposite("role-a").clientComposite(clientId, "role-c").build();
+        adminClient.realm(REALM_NAME).roles().create(newRoleComp);
+
+        RoleRepresentation roleMixedComp = adminClient.realm(REALM_NAME).roles().get(newRoleComp.getName()).toRepresentation();
+        assertTrue(roleMixedComp.isComposite());
+
+        Predicate<RoleRepresentation> isClientRole = RoleRepresentation::getClientRole;
+
+        Set<RoleRepresentation> roleComposites = resource.getRoleComposites(roleMixedComp.getId());
+        Set<RoleRepresentation> containedRealmRoles = roleComposites.stream().filter(isClientRole.negate()).collect(Collectors.toSet());
+        assertFalse(containedRealmRoles.isEmpty());
+        assertTrue(containedRealmRoles.stream().anyMatch(r -> r.getName().equals("role-a")));
+
+        Set<RoleRepresentation> containedClientRoles = roleComposites.stream().filter(isClientRole).collect(Collectors.toSet());
+        assertFalse(containedClientRoles.isEmpty());
+        assertTrue(containedClientRoles.stream().anyMatch(r -> r.getContainerId().equals(clientUuid) && r.getName().equals("role-c")));
+    }
+
+    /**
+     * see KEYCLOAK-12754
+     */
+    @Test(expected = NotFoundException.class)
+    public void createNewMixedRealmCompositeRoleWithUnknownRealmRoleShouldThrow() {
+
+        String unknownRealmRole = "realm-role-unknown";
+        RoleRepresentation newRoleComp = RoleBuilder.create().name("role-broken-comp1").composite().realmComposite(unknownRealmRole).clientComposite(clientId, "role-c").build();
+
+        adminClient.realm(REALM_NAME).roles().create(newRoleComp);
+    }
+
+    /**
+     * see KEYCLOAK-12754
+     */
+    @Test(expected = NotFoundException.class)
+    public void createNewMixedRealmCompositeRoleWithUnknownClientRoleShouldThrow() {
+
+        String unknownClientRole = "client-role-unknown";
+        RoleRepresentation newRoleComp = RoleBuilder.create().name("role-broken-comp2").composite().realmComposite("role-a").clientComposite(clientId, unknownClientRole).build();
+        adminClient.realm(REALM_NAME).roles().create(newRoleComp);
     }
 
     @Test

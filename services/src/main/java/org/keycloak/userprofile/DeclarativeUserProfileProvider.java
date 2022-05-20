@@ -42,7 +42,6 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
@@ -75,6 +74,7 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
         implements AmphibianProviderFactory<UserProfileProvider> {
 
     public static final String ID = "declarative-user-profile";
+    public static final int PROVIDER_PRIORITY = 1;
     public static final String UP_PIECES_COUNT_COMPONENT_CONFIG_KEY = "config-pieces-count";
     public static final String REALM_USER_PROFILE_ENABLED = "userProfileEnabled";
     private static final String PARSED_CONFIG_COMPONENT_KEY = "kc.user.profile.metadata";
@@ -249,6 +249,11 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
         isDeclarativeConfigurationEnabled = Profile.isFeatureEnabled(Profile.Feature.DECLARATIVE_USER_PROFILE);
     }
 
+    @Override
+    public int order() {
+        return PROVIDER_PRIORITY;
+    }
+
     public ComponentModel getComponentModel() {
         return getComponentModelOrCreate(session);
     }
@@ -420,14 +425,22 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
     }
 
     /**
-     * Get componenet to store our "per realm" configuration into.
+     * Get component to store our "per realm" configuration into.
      *
      * @param session to be used, and take realm from
-     * @return componenet
+     * @return component
      */
     private ComponentModel getComponentModelOrCreate(KeycloakSession session) {
         RealmModel realm = session.getContext().getRealm();
-        return realm.getComponentsStream(realm.getId(), UserProfileProvider.class.getName()).findAny().orElseGet(() -> realm.addComponentModel(new DeclarativeUserProfileModel()));
+        return realm.getComponentsStream(realm.getId(), UserProfileProvider.class.getName()).findAny().orElseGet(() -> realm.addComponentModel(createComponentModel()));
+    }
+
+    /**
+     * Create the component model to store configuration
+     * @return component model
+     */
+    protected ComponentModel createComponentModel() {
+        return new DeclarativeUserProfileModel(getId());
     }
 
     /**

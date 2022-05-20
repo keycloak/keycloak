@@ -103,28 +103,28 @@ public class PermissionClaimTest extends AbstractAuthzTest {
         claimAPolicy = new JSPolicyRepresentation();
 
         claimAPolicy.setName("Claim A Policy");
-        claimAPolicy.setCode("$evaluation.getPermission().addClaim('claim-a', 'claim-a');$evaluation.getPermission().addClaim('claim-a', 'claim-a1');$evaluation.grant();");
+        claimAPolicy.setType("script-scripts/add-claim-a-policy.js");
 
         authorization.policies().js().create(claimAPolicy).close();
 
         claimBPolicy = new JSPolicyRepresentation();
 
         claimBPolicy.setName("Policy Claim B");
-        claimBPolicy.setCode("$evaluation.getPermission().addClaim('claim-b', 'claim-b');$evaluation.grant();");
+        claimBPolicy.setType("script-scripts/add-claim-b-policy.js");
 
         authorization.policies().js().create(claimBPolicy).close();
 
         claimCPolicy = new JSPolicyRepresentation();
 
         claimCPolicy.setName("Policy Claim C");
-        claimCPolicy.setCode("$evaluation.getPermission().addClaim('claim-c', 'claim-c');$evaluation.grant();");
+        claimCPolicy.setType("script-scripts/add-claim-c-policy.js");
 
         authorization.policies().js().create(claimCPolicy).close();
 
         denyPolicy = new JSPolicyRepresentation();
 
         denyPolicy.setName("Deny Policy");
-        denyPolicy.setCode("$evaluation.getPermission().addClaim('deny-policy', 'deny-policy');$evaluation.deny();");
+        denyPolicy.setType("script-scripts/always-deny-with-claim-policy.js");
 
         authorization.policies().js().create(denyPolicy).close();
     }

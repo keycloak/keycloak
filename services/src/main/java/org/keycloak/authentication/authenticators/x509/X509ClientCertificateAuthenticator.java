@@ -85,8 +85,10 @@ public class X509ClientCertificateAuthenticator extends AbstractX509ClientCertif
                 CertificateValidator.CertificateValidatorBuilder builder = certificateValidationParameters(context.getSession(), config);
                 CertificateValidator validator = builder.build(certs);
                 validator.checkRevocationStatus()
+                         .validateTrust()
                          .validateKeyUsage()
                          .validateExtendedKeyUsage()
+                         .validatePolicy()
                          .validateTimestamps();
             } catch(Exception e) {
                 logger.error(e.getMessage(), e);
@@ -137,7 +139,7 @@ public class X509ClientCertificateAuthenticator extends AbstractX509ClientCertif
                 return;
             }
 
-            String bruteForceError = getDisabledByBruteForceEventError(context.getProtector(), context.getSession(), context.getRealm(), user);
+            String bruteForceError = getDisabledByBruteForceEventError(context, user);
             if (bruteForceError != null) {
                 context.getEvent().user(user);
                 context.getEvent().error(bruteForceError);

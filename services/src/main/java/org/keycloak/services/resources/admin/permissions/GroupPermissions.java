@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -28,6 +28,7 @@ import org.keycloak.authorization.store.ResourceStore;
 import org.keycloak.common.Profile;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.authorization.Permission;
 import org.keycloak.services.ForbiddenException;
 
@@ -105,9 +106,9 @@ class GroupPermissions implements GroupPermissionEvaluator, GroupPermissionManag
         Scope manageMembershipScope = root.initializeRealmScope(MANAGE_MEMBERSHIP_SCOPE);
 
         String groupResourceName = getGroupResourceName(group);
-        Resource groupResource = resourceStore.findByName(groupResourceName, server.getId());
+        Resource groupResource = resourceStore.findByName(server, groupResourceName);
         if (groupResource == null) {
-            groupResource = resourceStore.create(groupResourceName, server, server.getId());
+            groupResource = resourceStore.create(server, groupResourceName, server.getClientId());
             Set<Scope> scopeset = new HashSet<>();
             scopeset.add(manageScope);
             scopeset.add(viewScope);
@@ -118,27 +119,27 @@ class GroupPermissions implements GroupPermissionEvaluator, GroupPermissionManag
             groupResource.setType("Group");
         }
         String managePermissionName = getManagePermissionGroup(group);
-        Policy managePermission = policyStore.findByName(managePermissionName, server.getId());
+        Policy managePermission = policyStore.findByName(server, managePermissionName);
         if (managePermission == null) {
             Helper.addEmptyScopePermission(authz, server, managePermissionName, groupResource, manageScope);
         }
         String viewPermissionName = getViewPermissionGroup(group);
-        Policy viewPermission = policyStore.findByName(viewPermissionName, server.getId());
+        Policy viewPermission = policyStore.findByName(server, viewPermissionName);
         if (viewPermission == null) {
             Helper.addEmptyScopePermission(authz, server, viewPermissionName, groupResource, viewScope);
         }
         String manageMembersPermissionName = getManageMembersPermissionGroup(group);
-        Policy manageMembersPermission = policyStore.findByName(manageMembersPermissionName, server.getId());
+        Policy manageMembersPermission = policyStore.findByName(server, manageMembersPermissionName);
         if (manageMembersPermission == null) {
             Helper.addEmptyScopePermission(authz, server, manageMembersPermissionName, groupResource, manageMembersScope);
         }
         String viewMembersPermissionName = getViewMembersPermissionGroup(group);
-        Policy viewMembersPermission = policyStore.findByName(viewMembersPermissionName, server.getId());
+        Policy viewMembersPermission = policyStore.findByName(server, viewMembersPermissionName);
         if (viewMembersPermission == null) {
             Helper.addEmptyScopePermission(authz, server, viewMembersPermissionName, groupResource, viewMembersScope);
         }
         String manageMembershipPermissionName = getManageMembershipPermissionGroup(group);
-        Policy manageMembershipPermission = policyStore.findByName(manageMembershipPermissionName, server.getId());
+        Policy manageMembershipPermission = policyStore.findByName(server, manageMembershipPermissionName);
         if (manageMembershipPermission == null) {
             Helper.addEmptyScopePermission(authz, server, manageMembershipPermissionName, groupResource, manageMembershipScope);
         }
@@ -162,7 +163,7 @@ class GroupPermissions implements GroupPermissionEvaluator, GroupPermissionManag
         ResourceServer server = root.realmResourceServer();
         if (server == null) return false;
 
-        return resourceStore.findByName(getGroupResourceName(group), server.getId()) != null;
+        return resourceStore.findByName(server, getGroupResourceName(group)) != null;
     }
 
     @Override
@@ -178,42 +179,42 @@ class GroupPermissions implements GroupPermissionEvaluator, GroupPermissionManag
     public Policy viewMembersPermission(GroupModel group) {
         ResourceServer server = root.realmResourceServer();
         if (server == null) return null;
-        return policyStore.findByName(getViewMembersPermissionGroup(group), server.getId());
+        return policyStore.findByName(server, getViewMembersPermissionGroup(group));
     }
 
     @Override
     public Policy manageMembersPermission(GroupModel group) {
         ResourceServer server = root.realmResourceServer();
         if (server == null) return null;
-        return policyStore.findByName(getManageMembersPermissionGroup(group), server.getId());
+        return policyStore.findByName(server, getManageMembersPermissionGroup(group));
     }
 
     @Override
     public Policy manageMembershipPermission(GroupModel group) {
         ResourceServer server = root.realmResourceServer();
         if (server == null) return null;
-        return policyStore.findByName(getManageMembershipPermissionGroup(group), server.getId());
+        return policyStore.findByName(server, getManageMembershipPermissionGroup(group));
     }
 
     @Override
     public Policy viewPermission(GroupModel group) {
         ResourceServer server = root.realmResourceServer();
         if (server == null) return null;
-        return policyStore.findByName(getViewPermissionGroup(group), server.getId());
+        return policyStore.findByName(server, getViewPermissionGroup(group));
     }
 
     @Override
     public Policy managePermission(GroupModel group) {
         ResourceServer server = root.realmResourceServer();
         if (server == null) return null;
-        return policyStore.findByName(getManagePermissionGroup(group), server.getId());
+        return policyStore.findByName(server, getManagePermissionGroup(group));
     }
 
     @Override
     public Resource resource(GroupModel group) {
         ResourceServer server = root.realmResourceServer();
         if (server == null) return null;
-        Resource resource =  resourceStore.findByName(getGroupResourceName(group), server.getId());
+        Resource resource =  resourceStore.findByName(server, getGroupResourceName(group));
         if (resource == null) return null;
         return resource;
     }
@@ -325,7 +326,7 @@ class GroupPermissions implements GroupPermissionEvaluator, GroupPermissionManag
 
         Set<String> granted = new HashSet<>();
 
-        resourceStore.findByType("Group", server.getId(), resource -> {
+        resourceStore.findByType(server, "Group", resource -> {
             if (hasPermission(resource, null, VIEW_MEMBERS_SCOPE, MANAGE_MEMBERS_SCOPE)) {
                 granted.add(resource.getName().substring(RESOURCE_NAME_PREFIX.length()));
             }
@@ -400,7 +401,7 @@ class GroupPermissions implements GroupPermissionEvaluator, GroupPermissionManag
             return false;
         }
 
-        Resource resource =  resourceStore.findByName(getGroupResourceName(group), server.getId());
+        Resource resource =  resourceStore.findByName(server, getGroupResourceName(group));
 
         if (resource == null) {
             return false;
@@ -437,33 +438,36 @@ class GroupPermissions implements GroupPermissionEvaluator, GroupPermissionManag
         ResourceServer server = root.realmResourceServer();
         if (server == null) return null;
         String groupResourceName = getGroupResourceName(group);
-        return resourceStore.findByName(groupResourceName, server.getId());
+        return resourceStore.findByName(server, groupResourceName);
     }
 
     private void deletePermissions(GroupModel group) {
         ResourceServer server = root.realmResourceServer();
         if (server == null) return;
+
+        RealmModel realm = server.getRealm();
+
         Policy managePermission = managePermission(group);
         if (managePermission != null) {
-            policyStore.delete(managePermission.getId());
+            policyStore.delete(realm, managePermission.getId());
         }
         Policy viewPermission = viewPermission(group);
         if (viewPermission != null) {
-            policyStore.delete(viewPermission.getId());
+            policyStore.delete(realm, viewPermission.getId());
         }
         Policy manageMembersPermission = manageMembersPermission(group);
         if (manageMembersPermission != null) {
-            policyStore.delete(manageMembersPermission.getId());
+            policyStore.delete(realm, manageMembersPermission.getId());
         }
         Policy viewMembersPermission = viewMembersPermission(group);
         if (viewMembersPermission != null) {
-            policyStore.delete(viewMembersPermission.getId());
+            policyStore.delete(realm, viewMembersPermission.getId());
         }
         Policy manageMembershipPermission = manageMembershipPermission(group);
         if (manageMembershipPermission != null) {
-            policyStore.delete(manageMembershipPermission.getId());
+            policyStore.delete(realm, manageMembershipPermission.getId());
         }
         Resource resource = groupResource(group);
-        if (resource != null) resourceStore.delete(resource.getId());
+        if (resource != null) resourceStore.delete(realm, resource.getId());
     }
 }

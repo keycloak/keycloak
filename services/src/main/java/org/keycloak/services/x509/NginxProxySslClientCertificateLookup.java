@@ -87,8 +87,8 @@ public class NginxProxySslClientCertificateLookup extends AbstractClientCertific
      * @return
      */
     private static String removeBeginEnd(String pem) {
-        pem = pem.replace("-----BEGIN CERTIFICATE-----", "");
-        pem = pem.replace("-----END CERTIFICATE-----", "");
+        pem = pem.replace(PemUtils.BEGIN_CERT, "");
+        pem = pem.replace(PemUtils.END_CERT, "");
         pem = pem.replace("\r\n", "");
         pem = pem.replace("\n", "");
         return pem.trim();
@@ -110,7 +110,7 @@ public class NginxProxySslClientCertificateLookup extends AbstractClientCertific
             log.error("Cannot URL decode the end user TLS Certificate : " + pem,e);
         }
 
-        if (pem.startsWith("-----BEGIN CERTIFICATE-----")) {
+        if (pem.startsWith(PemUtils.BEGIN_CERT)) {
             pem = removeBeginEnd(pem);
         }
 

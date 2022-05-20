@@ -84,8 +84,8 @@ public class RealmLocalizationResource {
     @POST
     @Path("{locale}")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
-    public void patchRealmLocalizationTextsFromFile(@PathParam("locale") String locale, MultipartFormDataInput input)
-            throws IOException {
+    public void createOrUpdateRealmLocalizationTextsFromFile(@PathParam("locale") String locale,
+            MultipartFormDataInput input) {
         this.auth.realm().requireManageRealm();
 
         Map<String, List<InputPart>> formDataMap = input.getFormDataMap();
@@ -97,18 +97,19 @@ public class RealmLocalizationResource {
             TypeReference<HashMap<String, String>> typeRef = new TypeReference<HashMap<String, String>>() {
             };
             Map<String, String> rep = JsonSerialization.readValue(inputStream, typeRef);
-            realm.patchRealmLocalizationTexts(locale, rep);
+            realm.createOrUpdateRealmLocalizationTexts(locale, rep);
         } catch (IOException e) {
             throw new BadRequestException("Could not read file.");
         }
     }
 
-    @PATCH
+    @POST
     @Path("{locale}")
     @Consumes(MediaType.APPLICATION_JSON)
-    public void patchRealmLocalizationTexts(@PathParam("locale") String locale, Map<String, String> loclizationTexts) {
+    public void createOrUpdateRealmLocalizationTexts(@PathParam("locale") String locale,
+            Map<String, String> localizationTexts) {
         this.auth.realm().requireManageRealm();
-        realm.patchRealmLocalizationTexts(locale, loclizationTexts);
+        realm.createOrUpdateRealmLocalizationTexts(locale, localizationTexts);
     }
 
     @Path("{locale}")

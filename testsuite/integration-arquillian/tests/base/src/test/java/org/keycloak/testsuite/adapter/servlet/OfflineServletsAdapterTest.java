@@ -51,7 +51,6 @@ import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
  */
 @AppServerContainer(ContainerConstants.APP_SERVER_UNDERTOW)
 @AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY)
-@AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY_DEPRECATED)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP6)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP71)
@@ -240,7 +239,7 @@ public class OfflineServletsAdapterTest extends AbstractServletsAdapterTest {
             assertThat(offlineClient.getAdditionalGrants(), Matchers.hasItem("Offline Token"));
 
             //This was necessary to be introduced, otherwise other testcases will fail
-            offlineTokenPage.logout();
+            accountAppPage.logout();
             assertCurrentUrlDoesntStartWith(offlineTokenPage);
             loginPage.assertCurrent();
         } finally {
@@ -274,7 +273,8 @@ public class OfflineServletsAdapterTest extends AbstractServletsAdapterTest {
         if (loginPage.isCurrent()) {
             loginPage.login(username, password);
             waitForPageToLoad();
-            offlineTokenPage.logout();
+            accountAppPage.open();
+            accountAppPage.logout();
         }
         setTimeOffset(0);
     }

@@ -3,7 +3,7 @@
     <#if section = "header">
         ${msg("emailVerifyTitle")}
     <#elseif section = "form">
-        <p class="instruction">${msg("emailVerifyInstruction1")}</p>
+        <p class="instruction">${msg("emailVerifyInstruction1",user.email)}</p> 
     <#elseif section = "info">
         <p class="instruction">
             ${msg("emailVerifyInstruction2")}

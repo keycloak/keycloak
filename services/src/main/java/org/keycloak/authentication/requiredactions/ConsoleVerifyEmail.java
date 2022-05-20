@@ -21,7 +21,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.authentication.ConsoleDisplayMode;
-import org.keycloak.common.util.RandomString;
+import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.email.EmailException;
 import org.keycloak.email.EmailTemplateProvider;
 import org.keycloak.events.Details;
@@ -116,7 +116,7 @@ public class ConsoleVerifyEmail implements RequiredActionProvider {
         UserModel user = context.getUser();
         AuthenticationSessionModel authSession = context.getAuthenticationSession();
         EventBuilder event = context.getEvent().clone().event(EventType.SEND_VERIFY_EMAIL).detail(Details.EMAIL, user.getEmail());
-        String code = RandomString.randomCode(8);
+        String code = SecretGenerator.getInstance().randomString(8);
         authSession.setAuthNote(Constants.VERIFY_EMAIL_CODE, code);
         RealmModel realm = session.getContext().getRealm();
 

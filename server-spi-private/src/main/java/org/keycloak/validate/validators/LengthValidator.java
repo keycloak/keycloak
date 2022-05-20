@@ -68,6 +68,12 @@ public class LengthValidator extends AbstractStringValidator implements Configur
         property.setHelpText("The maximum length");
         property.setType(ProviderConfigProperty.STRING_TYPE);
         configProperties.add(property);
+        property = new ProviderConfigProperty();
+        property.setName(KEY_TRIM_DISABLED);
+        property.setLabel("Trimming disabled");
+        property.setHelpText("Disable trimming of the String value before the length check");
+        property.setType(ProviderConfigProperty.BOOLEAN_TYPE);
+        configProperties.add(property);
     }
 
     @Override

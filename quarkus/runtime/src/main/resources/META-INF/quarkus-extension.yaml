@@ -1,5 +1,7 @@
 ---
+artifact: ${project.groupId}:${project.artifactId}:${project.version}
 name: "Keycloak"
+description: "Keycloak Server"
 metadata:
   keywords:
   - "keycloak"

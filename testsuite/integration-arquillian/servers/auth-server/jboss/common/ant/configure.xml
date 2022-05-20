@@ -231,6 +231,7 @@
             </resources>
             <filterset>
                 <filter token="HOTROD_SASL_MECHANISM" value="${hotrod.sasl.mechanism}"/>
+                <filter token="PRELOADING_ENABLED" value="${keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase}"/>
             </filterset>
         </copy>
         <copy todir="${auth.server.home}/standalone/configuration">

@@ -16,21 +16,28 @@
 
 package org.keycloak.credential;
 
+import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 
 import com.webauthn4j.converter.util.ObjectConverter;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
 public class WebAuthnCredentialProviderFactory implements CredentialProviderFactory<WebAuthnCredentialProvider>, EnvironmentDependentProviderFactory {
 
     public static final String PROVIDER_ID = "keycloak-webauthn";
 
-    private static ObjectConverter converter = new ObjectConverter();
+    private ObjectConverter converter;
 
     @Override
     public CredentialProvider create(KeycloakSession session) {
         return new WebAuthnCredentialProvider(session, converter);
+    }
+
+    @Override
+    public void init(Config.Scope config) {
+        converter = new ObjectConverter();
     }
 
     @Override

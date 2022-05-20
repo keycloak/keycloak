@@ -19,7 +19,7 @@ package org.keycloak.models;
 
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.cache.UserCache;
-import org.keycloak.provider.InvalidationHandler;
+import org.keycloak.provider.InvalidationHandler.InvalidableObjectType;
 import org.keycloak.provider.Provider;
 import org.keycloak.services.clientpolicy.ClientPolicyManager;
 import org.keycloak.sessions.AuthenticationSessionProvider;
@@ -33,7 +33,7 @@ import java.util.function.Function;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface KeycloakSession extends InvalidationHandler {
+public interface KeycloakSession {
 
     KeycloakContext getContext();
 
@@ -128,10 +128,9 @@ public interface KeycloakSession extends InvalidationHandler {
     /**
      * Invalidates intermediate states of the given objects, both immediately and at the end of this session.
      * @param type Type of the objects to invalidate
-     * @param ids Identifiers of the invalidated objects
+     * @param params Parameters used for the invalidation
      */
-    @Override
-    void invalidate(InvalidableObjectType type, Object... ids);
+    void invalidate(InvalidableObjectType type, Object... params);
 
     void enlistForClose(Provider provider);
 

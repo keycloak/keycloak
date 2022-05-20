@@ -18,6 +18,7 @@
 package org.keycloak.testsuite.federation.kerberos;
 
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
+import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 
 import java.net.URI;
 import java.security.Principal;
@@ -26,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
-
 import javax.naming.Context;
 import javax.naming.NamingException;
 import javax.naming.directory.Attributes;
@@ -34,7 +34,6 @@ import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
 import javax.security.sasl.Sasl;
 import javax.ws.rs.core.Response;
-
 import org.apache.http.NameValuePair;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.Credentials;
@@ -74,7 +73,6 @@ import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
-import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.pages.AccountPasswordPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.KerberosRule;
@@ -143,8 +141,8 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
     public void beforeAbstractKeycloakTest() throws Exception {
         super.beforeAbstractKeycloakTest();
 
-        testRealmPage.setAuthRealm(AuthRealm.TEST);
-        changePasswordPage.realm(AuthRealm.TEST);
+        testRealmPage.setAuthRealm(TEST);
+        changePasswordPage.realm(TEST);
 
         getKerberosRule().setKrb5ConfPath(testingClient.testing());
 
@@ -204,6 +202,8 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
         AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
         Assert.assertEquals(userId, token.getSubject());
         Assert.assertEquals(expectedUsername, token.getPreferredUsername());
+
+        oauth.idTokenHint(tokenResponse.getIdToken());
 
         return token;
     }
@@ -351,7 +351,8 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
      *
      */
     protected void updateUserStorageProvider(Consumer<ComponentRepresentation> updater) {
-        List<ComponentRepresentation> reps = testRealmResource().components().query("test", UserStorageProvider.class.getName());
+        String parentId = testRealmResource().toRepresentation().getId();
+        List<ComponentRepresentation> reps = testRealmResource().components().query(parentId, UserStorageProvider.class.getName());
         Assert.assertEquals(1, reps.size());
         ComponentRepresentation kerberosProvider = reps.get(0);
 
