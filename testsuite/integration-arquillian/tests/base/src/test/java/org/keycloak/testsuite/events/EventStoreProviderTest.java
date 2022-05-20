@@ -21,39 +21,30 @@ import org.apache.commons.lang3.StringUtils;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Assume;
-import org.junit.Before;
 import org.junit.Test;
-import org.keycloak.common.util.Time;
 import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.EventType;
-import org.keycloak.events.log.JBossLoggingEventListenerProviderFactory;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
-import org.keycloak.testsuite.util.WaitUtils;
+
+import static org.keycloak.testsuite.events.AbstractEventsTest.REALM_NAME_1;
+import static org.keycloak.testsuite.events.AbstractEventsTest.REALM_NAME_2;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  * @author Stan Silvert ssilvert@redhat.com (C) 2016 Red Hat Inc.
  */
 public class EventStoreProviderTest extends AbstractEventsTest {
-
-    public static final String REALM_NAME_1 = "realmName1";
-    public static final String REALM_NAME_2 = "realmName2";
-
-    private String realmId;
-    private String realmId2;
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
@@ -67,12 +58,6 @@ public class EventStoreProviderTest extends AbstractEventsTest {
             adminRealmRep.setEventsExpiration(0);
             testRealms.add(adminRealmRep);
         }
-    }
-
-    @Before
-    public void before() {
-        realmId = adminClient.realm(REALM_NAME_1).toRepresentation().getId();
-        realmId2 = adminClient.realm(REALM_NAME_2).toRepresentation().getId();
     }
 
     @After
