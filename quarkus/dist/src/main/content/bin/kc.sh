@@ -1,19 +1,19 @@
 #!/bin/bash
 
-case "`uname`" in
+case "$(uname)" in
     CYGWIN*)
         IS_CYGWIN="true"
-        CFILE=`cygpath "$0"`
-        RESOLVED_NAME=`readlink -f "$CFILE"`
+        CFILE="$(cygpath "$0")"
+        RESOLVED_NAME="$(readlink -f "$CFILE")"
         ;;
     Darwin*)
-        RESOLVED_NAME=`readlink "$0"`
+        RESOLVED_NAME="$(readlink "$0")"
         ;;
     FreeBSD)
-        RESOLVED_NAME=`readlink -f "$0"`
+        RESOLVED_NAME="$(readlink -f "$0")"
         ;;
     Linux)
-        RESOLVED_NAME=`readlink -f "$0"`
+        RESOLVED_NAME="$(readlink -f "$0")"
         ;;
 esac
 
@@ -22,7 +22,7 @@ if [ "x$RESOLVED_NAME" = "x" ]; then
 fi
 
 GREP="grep"
-DIRNAME=`dirname "$RESOLVED_NAME"`
+DIRNAME="$(dirname "$RESOLVED_NAME")"
 
 abs_path () {
   if [ -z $IS_CYGWIN ] ; then
@@ -36,7 +36,7 @@ SERVER_OPTS="-Dkc.home.dir='$(abs_path '..')'"
 SERVER_OPTS="$SERVER_OPTS -Djboss.server.config.dir='$(abs_path '../conf')'"
 SERVER_OPTS="$SERVER_OPTS -Djava.util.logging.manager=org.jboss.logmanager.LogManager"
 SERVER_OPTS="$SERVER_OPTS -Dquarkus-log-max-startup-records=10000"
-CLASSPATH_OPTS="'"`abs_path "../lib/quarkus-run.jar"`"'"
+CLASSPATH_OPTS="'$(abs_path "../lib/quarkus-run.jar")'"
 
 DEBUG_MODE="${DEBUG:-false}"
 DEBUG_PORT="${DEBUG_PORT:-8787}"
@@ -97,7 +97,7 @@ fi
 
 # Set debug settings if not already set
 if [ "$DEBUG_MODE" = "true" ]; then
-    DEBUG_OPT=`echo "$JAVA_OPTS" | $GREP "\-agentlib:jdwp"`
+    DEBUG_OPT="$(echo "$JAVA_OPTS" | $GREP "\-agentlib:jdwp")"
     if [ "x$DEBUG_OPT" = "x" ]; then
         JAVA_OPTS="$JAVA_OPTS -agentlib:jdwp=transport=dt_socket,address=$DEBUG_PORT,server=y,suspend=$DEBUG_SUSPEND"
     else
