@@ -20,6 +20,7 @@ package org.keycloak.testsuite.rest;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.keycloak.Config;
+import org.keycloak.authorization.policy.evaluation.Realm;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.HtmlUtils;
 import org.keycloak.common.util.Time;
@@ -299,7 +300,9 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Produces(MediaType.APPLICATION_JSON)
     public Response clearEventStore(@QueryParam("realmId") String realmId) {
         EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
-        eventStore.clear(realmId);
+        RealmModel realm = session.realms().getRealm(realmId);
+
+        eventStore.clear(realm);
         return Response.noContent().build();
     }
 
@@ -422,7 +425,9 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Produces(MediaType.APPLICATION_JSON)
     public Response clearAdminEventStore(@QueryParam("realmId") String realmId) {
         EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
-        eventStore.clearAdmin(realmId);
+        RealmModel realm = session.realms().getRealm(realmId);
+
+        eventStore.clearAdmin(realm);
         return Response.noContent().build();
     }
 
@@ -431,7 +436,8 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Produces(MediaType.APPLICATION_JSON)
     public Response clearAdminEventStore(@QueryParam("realmId") String realmId, @QueryParam("olderThan") long olderThan) {
         EventStoreProvider eventStore = session.getProvider(EventStoreProvider.class);
-        eventStore.clearAdmin(realmId, olderThan);
+        RealmModel realm = session.realms().getRealm(realmId);
+        eventStore.clearAdmin(realm, olderThan);
         return Response.noContent().build();
     }
 

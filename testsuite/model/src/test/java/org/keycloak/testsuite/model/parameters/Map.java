@@ -17,12 +17,14 @@
 package org.keycloak.testsuite.model.parameters;
 
 import org.keycloak.authorization.store.StoreFactorySpi;
+import org.keycloak.events.EventStoreSpi;
 import org.keycloak.models.DeploymentStateSpi;
 import org.keycloak.models.UserLoginFailureSpi;
 import org.keycloak.models.UserSessionSpi;
 import org.keycloak.models.dblock.NoLockingDBLockProviderFactory;
 import org.keycloak.models.map.authSession.MapRootAuthenticationSessionProviderFactory;
 import org.keycloak.models.map.authorization.MapAuthorizationStoreFactory;
+import org.keycloak.models.map.events.MapEventStoreProviderFactory;
 import org.keycloak.models.map.loginFailure.MapUserLoginFailureProviderFactory;
 import org.keycloak.models.map.userSession.MapUserSessionProviderFactory;
 import org.keycloak.sessions.AuthenticationSessionSpi;
@@ -33,7 +35,6 @@ import org.keycloak.models.map.group.MapGroupProviderFactory;
 import org.keycloak.models.map.realm.MapRealmProviderFactory;
 import org.keycloak.models.map.role.MapRoleProviderFactory;
 import org.keycloak.models.map.deploymentState.MapDeploymentStateProviderFactory;
-import org.keycloak.models.map.storage.MapStorageProviderFactory;
 import org.keycloak.models.map.storage.MapStorageSpi;
 import org.keycloak.models.map.user.MapUserProviderFactory;
 import org.keycloak.provider.ProviderFactory;
@@ -67,6 +68,7 @@ public class Map extends KeycloakModelParameters {
       .add(MapUserSessionProviderFactory.class)
       .add(MapUserLoginFailureProviderFactory.class)
       .add(NoLockingDBLockProviderFactory.class)
+      .add(MapEventStoreProviderFactory.class)
       .build();
 
     public Map() {
@@ -87,6 +89,7 @@ public class Map extends KeycloakModelParameters {
           .spi(UserSessionSpi.NAME).defaultProvider(MapUserSessionProviderFactory.PROVIDER_ID)
           .spi(UserLoginFailureSpi.NAME).defaultProvider(MapUserLoginFailureProviderFactory.PROVIDER_ID)
           .spi("dblock").defaultProvider(NoLockingDBLockProviderFactory.PROVIDER_ID)
+          .spi(EventStoreSpi.NAME).defaultProvider(MapEventStoreProviderFactory.PROVIDER_ID)
         ;
     }
 }

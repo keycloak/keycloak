@@ -523,44 +523,6 @@
             </build>
         </profile>
         <profile>
-            <id>app-server-wildfly-deprecated</id>
-            <activation>
-                <property>
-                    <name>app.server</name>
-                    <value>wildfly-deprecated</value>
-                </property>
-            </activation>
-            <properties>
-                <app.server>wildfly-deprecated</app.server> <!--in case the profile is called directly-->
-                <app.server.skip.unpack>false</app.server.skip.unpack>
-
-                <arquillian-wildfly-container.version>${wildfly.deprecated.arquillian.wildfly.container}</arquillian-wildfly-container.version>
-            </properties>
-            <dependencies>
-                <dependency>
-                    <groupId>org.keycloak.testsuite</groupId>
-                    <artifactId>integration-arquillian-servers-app-server-wildfly-deprecated</artifactId>
-                    <version>${project.version}</version>
-                    <scope>runtime</scope>
-                </dependency>
-                <!--required by creaper-core-->
-                <dependency>
-                    <groupId>org.wildfly.core</groupId>
-                    <artifactId>wildfly-cli</artifactId>
-                    <scope>test</scope>
-                    <version>${wildfly.deprecated.wildfly.core.version}</version>
-                </dependency>
-            </dependencies>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.commonjava.maven.plugins</groupId>
-                        <artifactId>directory-maven-plugin</artifactId>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
             <id>app-server-eap</id>
             <activation>
                 <property>
@@ -880,9 +842,51 @@
                                 <keycloak.userSession.provider>map</keycloak.userSession.provider>
                                 <keycloak.loginFailure.provider>map</keycloak.loginFailure.provider>
                                 <keycloak.authorization.provider>map</keycloak.authorization.provider>
+                                <keycloak.eventsStore.provider>map</keycloak.eventsStore.provider>
                                 <keycloak.authorizationCache.enabled>false</keycloak.authorizationCache.enabled>
                                 <keycloak.realmCache.enabled>false</keycloak.realmCache.enabled>
                                 <keycloak.userCache.enabled>false</keycloak.userCache.enabled>
+                          </systemPropertyVariables>
+                      </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+        <profile>
+            <id>map-storage-jpa</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-enforcer-plugin</artifactId>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <requireActiveProfile>
+                                    <profiles>map-storage</profiles>
+                                    <message>map-storage profile not active</message>
+                                </requireActiveProfile>
+                            </rules>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <systemPropertyVariables>
+                                <keycloak.map.storage.connectionsJpa.url>${keycloak.map.storage.connectionsJpa.url}</keycloak.map.storage.connectionsJpa.url>
+                                <keycloak.map.storage.connectionsJpa.user>${keycloak.map.storage.connectionsJpa.user}</keycloak.map.storage.connectionsJpa.user>
+                                <keycloak.map.storage.connectionsJpa.password>${keycloak.map.storage.connectionsJpa.password}</keycloak.map.storage.connectionsJpa.password>
+
+                                <keycloak.authSession.map.storage.provider>jpa-map-storage</keycloak.authSession.map.storage.provider>
+                                <keycloak.client.map.storage.provider>jpa-map-storage</keycloak.client.map.storage.provider>
+                                <keycloak.clientScope.map.storage.provider>jpa-map-storage</keycloak.clientScope.map.storage.provider>
+                                <keycloak.group.map.storage.provider>jpa-map-storage</keycloak.group.map.storage.provider>
+                                <keycloak.loginFailure.map.storage.provider>jpa-map-storage</keycloak.loginFailure.map.storage.provider>
+                                <keycloak.realm.map.storage.provider>jpa-map-storage</keycloak.realm.map.storage.provider>
+                                <keycloak.role.map.storage.provider>jpa-map-storage</keycloak.role.map.storage.provider>
                           </systemPropertyVariables>
                       </configuration>
                     </plugin>

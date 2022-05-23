@@ -354,6 +354,14 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
                     new EnvVarBuilder()
                             .withName("KC_HTTP_ENABLED")
                             .withValue("true")
+                            .build(),
+                    new EnvVarBuilder()
+                            .withName("KC_HOSTNAME_STRICT_HTTPS")
+                            .withValue("false")
+                            .build(),
+                    new EnvVarBuilder()
+                            .withName("KC_PROXY")
+                            .withValue("edge")
                             .build());
 
             envVars.addAll(disableTls);
@@ -371,6 +379,10 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
                     new EnvVarBuilder()
                             .withName("KC_HTTPS_CERTIFICATE_KEY_FILE")
                             .withValue(Constants.CERTIFICATES_FOLDER + "/tls.key")
+                            .build(),
+                    new EnvVarBuilder()
+                            .withName("KC_PROXY")
+                            .withValue("passthrough")
                             .build());
 
             envVars.addAll(enabledTls);

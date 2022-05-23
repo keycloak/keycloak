@@ -35,6 +35,16 @@ public class KeycloakIngressE2EIT extends ClusterOperatorTest {
 
                     assertEquals("master", output);
                 });
+
+        Awaitility.await()
+                .ignoreExceptions()
+                .untilAsserted(() -> {
+                    var statusCode = RestAssured.given()
+                            .get("http://" + kubernetesIp + ":80/admin/master/console")
+                            .statusCode();
+
+                    assertEquals(200, statusCode);
+                });
     }
 
     @Test
@@ -54,6 +64,17 @@ public class KeycloakIngressE2EIT extends ClusterOperatorTest {
                             .getString("realm");
 
                     assertEquals("master", output);
+                });
+
+        Awaitility.await()
+                .ignoreExceptions()
+                .untilAsserted(() -> {
+                    var statusCode = RestAssured.given()
+                            .relaxedHTTPSValidation()
+                            .get("https://" + kubernetesIp + ":443/admin/master/console")
+                            .statusCode();
+
+                    assertEquals(200, statusCode);
                 });
     }
 

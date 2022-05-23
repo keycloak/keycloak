@@ -20,6 +20,7 @@ import com.google.common.collect.ImmutableSet;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 import org.keycloak.authorization.store.StoreFactorySpi;
+import org.keycloak.events.EventStoreSpi;
 import org.keycloak.models.DeploymentStateSpi;
 import org.keycloak.models.UserLoginFailureSpi;
 import org.keycloak.models.UserSessionSpi;
@@ -28,6 +29,7 @@ import org.keycloak.models.map.authSession.MapRootAuthenticationSessionProviderF
 import org.keycloak.models.map.authorization.MapAuthorizationStoreFactory;
 import org.keycloak.models.map.client.MapClientProviderFactory;
 import org.keycloak.models.map.clientscope.MapClientScopeProviderFactory;
+import org.keycloak.models.map.events.MapEventStoreProviderFactory;
 import org.keycloak.models.map.storage.hotRod.connections.DefaultHotRodConnectionProviderFactory;
 import org.keycloak.models.map.storage.hotRod.connections.HotRodConnectionProviderFactory;
 import org.keycloak.models.map.storage.hotRod.connections.HotRodConnectionSpi;
@@ -66,8 +68,6 @@ public class HotRodMapStorage extends KeycloakModelParameters {
       .add(ConcurrentHashMapStorageProviderFactory.class) // TODO: this should be removed when we have a HotRod implementation for each area
       .build();
     
-    private static final String STORAGE_CONFIG = "storage.provider";
-
     private HotRodServerRule hotRodServerRule = new HotRodServerRule();
 
     @Override
@@ -84,7 +84,9 @@ public class HotRodMapStorage extends KeycloakModelParameters {
           .spi(UserSessionSpi.NAME).provider(MapUserSessionProviderFactory.PROVIDER_ID).config("storage-user-sessions.provider", HotRodMapStorageProviderFactory.PROVIDER_ID)
                                                                                        .config("storage-client-sessions.provider", HotRodMapStorageProviderFactory.PROVIDER_ID)
           .spi(UserLoginFailureSpi.NAME).provider(MapUserLoginFailureProviderFactory.PROVIDER_ID).config(STORAGE_CONFIG, HotRodMapStorageProviderFactory.PROVIDER_ID)
-          .spi("dblock").provider(NoLockingDBLockProviderFactory.PROVIDER_ID).config(STORAGE_CONFIG, ConcurrentHashMapStorageProviderFactory.PROVIDER_ID);
+          .spi("dblock").provider(NoLockingDBLockProviderFactory.PROVIDER_ID).config(STORAGE_CONFIG, ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
+          .spi(EventStoreSpi.NAME).provider(MapUserSessionProviderFactory.PROVIDER_ID).config("storage-admin-events.provider", ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
+                                                                                       .config("storage-auth-events.provider", ConcurrentHashMapStorageProviderFactory.PROVIDER_ID);
 
         cf.spi(MapStorageSpi.NAME)
                 .provider(ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)

@@ -59,7 +59,12 @@ public class MapGroupProvider implements GroupProvider {
 
     private Function<MapGroupEntity, GroupModel> entityToAdapterFunc(RealmModel realm) {
         // Clone entity before returning back, to avoid giving away a reference to the live object to the caller
-        return origEntity -> new MapGroupAdapter(session, realm, origEntity);
+        return origEntity -> new MapGroupAdapter(session, realm, origEntity) {
+            @Override
+            public Stream<GroupModel> getSubGroupsStream() {
+                return getGroupsByParentId(realm, this.getId());
+            }
+        };
     }
 
     @Override
@@ -297,4 +302,13 @@ public class MapGroupProvider implements GroupProvider {
     public void close() {
     }
 
+    private Stream<GroupModel> getGroupsByParentId(RealmModel realm, String parentId) {
+        LOG.tracef("getGroupsByParentId(%s)%s", parentId, getShortStackTrace());
+        DefaultModelCriteria<GroupModel> mcb = criteria();
+        mcb = mcb
+                .compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
+                .compare(SearchableFields.PARENT_ID, Operator.EQ, parentId);
+
+        return tx.read(withCriteria(mcb)).map(entityToAdapterFunc(realm));
+    }
 }

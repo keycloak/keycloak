@@ -199,7 +199,7 @@
         <spring-boot26.version>2.6.1</spring-boot26.version>
 
         <!-- webauthn support -->
-        <webauthn4j.version>0.12.0.RELEASE</webauthn4j.version>
+        <webauthn4j.version>0.19.3.RELEASE</webauthn4j.version>
         <org.apache.kerby.kerby-asn1.version>2.0.0</org.apache.kerby.kerby-asn1.version>
 
         <!-- WildFly Galleon Build related properties -->
@@ -1218,11 +1218,6 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-wildfly-adapter</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-wildfly-elytron-oidc-adapter</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -1314,11 +1309,6 @@
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-saml-jetty-adapter-core</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-saml-wildfly-adapter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

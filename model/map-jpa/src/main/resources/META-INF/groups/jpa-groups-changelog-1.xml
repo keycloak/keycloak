@@ -48,6 +48,11 @@ limitations under the License.
             <column name="name"/>
             <column name="parentid"/>
         </createIndex>
+        <createIndex tableName="kc_group" indexName="group_realmId_parentId">
+            <!-- list column parentId first, as it is more selective than realmId -->
+            <column name="parentid"/>
+            <column name="realmid"/>
+        </createIndex>
 
         <createTable tableName="kc_group_attribute">
             <column name="id" type="UUID">
