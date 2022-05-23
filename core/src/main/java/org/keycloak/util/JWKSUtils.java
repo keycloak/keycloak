@@ -17,6 +17,7 @@
 
 package org.keycloak.util;
 
+import org.keycloak.common.util.BouncyIntegration;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.jose.jwk.JSONWebKeySet;
@@ -33,6 +34,10 @@ import java.util.logging.Logger;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class JWKSUtils {
+
+    static {
+        BouncyIntegration.init();
+    }
 
     private static final Logger logger = Logger.getLogger(JWKSUtils.class.getName());
 
