@@ -32,11 +32,14 @@ import org.keycloak.representations.idm.authorization.PolicyEnforcementMode;
 public class ResourceServerAdapter implements ResourceServer, CachedModel<ResourceServer> {
     protected CachedResourceServer cached;
     protected StoreFactoryCacheSession cacheSession;
+    private RealmModel realm;
     protected ResourceServer updated;
 
-    public ResourceServerAdapter(CachedResourceServer cached, StoreFactoryCacheSession cacheSession) {
+    public ResourceServerAdapter(RealmModel realm, CachedResourceServer cached,
+            StoreFactoryCacheSession cacheSession) {
         this.cached = cached;
         this.cacheSession = cacheSession;
+        this.realm = realm;
     }
 
     @Override
@@ -126,7 +129,7 @@ public class ResourceServerAdapter implements ResourceServer, CachedModel<Resour
 
     @Override
     public RealmModel getRealm() {
-        return getDelegateForUpdate().getRealm();
+        return realm;
     }
 
     @Override
