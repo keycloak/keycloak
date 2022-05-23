@@ -527,6 +527,78 @@ ifeval::["{kc_dist}" == "wildfly"]
 Once you have a JAR file with a descriptor and the scripts you want to deploy, you just need to copy the JAR to the {project_name} `standalone/deployments/` directory.
 endif::[]
 
+===== Deploy the script engine on Java 15 and later
+
+To run the scripts, JavaScript providers require that a JavaScript engine is available in your Java application. Java 14 and lower versions include the Nashorn JavaScript Engine. It is 
+automatically available as part of the Java itself and JavaScript providers are able to use this script engine by default. However, for Java 15 or higher versions, the script engine is not part
+of the Java itself. It needs to be added to your server because {project_name} does not have any script engine by default. Java 15 and higher versions require an extra step when deploying script
+providers - adding the script engine of your choice to your distribution.
+
+You can use any script engine. However, we only test with the Nashorn JavaScript Engine. The following steps assume that this engine is used:
+
+ifeval::["{kc_dist}" == "quarkus"]
+Install the script engine by copying the nashorn script engine JAR and its dependencies directly to the `KEYCLOAK_HOME/providers` directory. In the `pom.xml` file
+of your script project, you can declare the dependency such as this in the `dependencies` section:
+
+```xml
+<dependency>
+    <groupId>org.openjdk.nashorn</groupId>
+    <artifactId>nashorn-core</artifactId>
+    <version>15.3</version>
+</dependency>
+```
+
+and declare `maven-dependency-plugin` in the `plugins` section to copy the dependencies to the specified directory:
+
+```xml
+<plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-dependency-plugin</artifactId>
+    <executions>
+        <execution>
+                <id>copy-dependencies-quarkus</id>
+                <phase>package</phase>
+            <goals>
+                <goal>copy-dependencies</goal>
+            </goals>
+            <configuration>
+                <outputDirectory>${project.build.directory}/keycloak-server-copy/providers</outputDirectory>
+                <includeArtifactIds>nashorn-core,asm,asm-util,asm-commons</includeArtifactIds>
+            </configuration>
+        </execution>
+    </executions>
+</plugin>
+```
+Once the project is built, copy the script engine and its dependencies to the `KEYCLOAK_HOME/providers` directory.
+```bash
+cp target/keycloak-server-copy/providers/*.jar KEYCLOAK_HOME/providers/
+```
+After re-augment the distribution with `kc.sh build`, the script engine should be deployed and your script providers should work.
+endif::[]
+
+ifeval::["{kc_dist}" == "wildfly"]
+You can install the script engine by adding the new module nashorn-core to your {project_name}. After the server starts, you can run commands similar to these in the `KEYCLOAK_HOME/bin` directory:
+```bash
+export NASHORN_VERSION=15.3
+wget https://repo1.maven.org/maven2/org/openjdk/nashorn/nashorn-core/$NASHORN_VERSION/nashorn-core-$NASHORN_VERSION.jar
+./jboss-cli.sh -c --command="module add --module-root-dir=../modules/system/layers/keycloak/ --name=org.openjdk.nashorn.nashorn-core --resources=./nashorn-core-$NASHORN_VERSION.jar --dependencies=asm.asm,jdk.dynalink"
+rm nashorn-core-$NASHORN_VERSION.jar
+```
+
+In case you want to install your provider into the different module, you can use configuration property `script-engine-module` of the default scripting provider.
+For example, you can use something such as this in your `KEYCLOAK_HOME/standalone/configuration/standalone-*.xml` file:
+```xml
+<spi name="scripting">
+    <provider name="default" enabled="true">
+        <properties>
+            <property name="script-engine-module" value="org.graalvm.js.js-scriptengine"/>
+        </properties>
+    </provider>
+</spi>
+```
+
+endif::[]
+
 ==== Using the {project_name} Admin Console to upload scripts
 
 NOTE: Ability to upload scripts through the Admin Console is deprecated and will be removed in a future version of {project_name}.
