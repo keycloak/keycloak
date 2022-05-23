@@ -22,16 +22,16 @@ import org.keycloak.it.junit5.extension.CLITest;
 import org.keycloak.it.junit5.extension.WithDatabase;
 
 @CLITest
-@WithDatabase(alias = "mariadb")
-public class MariaDBStartDatabaseTest extends AbstractStartDabataseTest {
-
-    @Override
-    protected void assertWrongPassword(CLIResult cliResult) {
-        cliResult.assertMessage("Access denied for user");
-    }
+@WithDatabase(alias = "postgres")
+public class PostgreSQLTest extends BasicDatabaseTest {
 
     @Override
     protected void assertWrongUsername(CLIResult cliResult) {
-        cliResult.assertMessage("Access denied for user 'wrong'");
+        cliResult.assertMessage("ERROR: FATAL: password authentication failed for user \"wrong\"");
+    }
+
+    @Override
+    protected void assertWrongPassword(CLIResult cliResult) {
+        cliResult.assertMessage("ERROR: FATAL: password authentication failed for user");
     }
 }

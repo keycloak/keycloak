@@ -413,6 +413,11 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     }
 
     @Override
+    public void removeProperty(String db) {
+        setProperty(db, null, distPath.resolve("conf").resolve("keycloak.conf").toFile());
+    }
+
+    @Override
     public void setQuarkusProperty(String key, String value) {
         setProperty(key, value, getQuarkusPropertiesFile());
     }
@@ -456,7 +461,11 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         try (
             FileOutputStream out = new FileOutputStream(confFile)
         ) {
-            properties.put(key, value);
+            if (value != null) {
+                properties.put(key, value);
+            } else {
+                properties.remove(key);
+            }
             properties.store(out, "");
         } catch (Exception e) {
             throw new RuntimeException("Failed to update " + confFile, e);
