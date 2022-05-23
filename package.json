@@ -98,7 +98,7 @@
     "snowpack": "^3.8.6",
     "tar-fs": "^2.1.1",
     "ts-jest": "^28.0.2",
-    "ts-node": "^10.7.0",
+    "ts-node": "^10.8.0",
     "typescript": "^4.6.4"
   },
   "lint-staged": {
