@@ -4,6 +4,8 @@
     push:
       tags:
         - '[0-9]+.[0-9]+.[0-9]+'
+    schedule:
+      - cron: '0 0 * * *'
   concurrency: keycloak-container-release
 
   jobs:
@@ -13,6 +15,12 @@
       steps:
       - name: Checkout
         uses: actions/checkout@v3
+
+      - name: Check respin
+        id: respin
+        continue-on-error: true
+        run: |
+          ./.github/scripts/need-respin.sh quay.io/keycloak/keycloak
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
@@ -46,6 +54,7 @@
             type=semver,pattern={{major}}.{{minor}}
 
       - name: Build and push the image
+        if: ${{ ( github.event_name != 'schedule' ) || ( github.event_name == 'schedule' && steps.respin.conclusion == 'success' ) }}
         uses: docker/build-push-action@v3
         with:
           context: quarkus/container

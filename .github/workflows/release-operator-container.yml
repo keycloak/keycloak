@@ -5,6 +5,8 @@ on:
   push:
     tags:
       - '[0-9]+.[0-9]+.[0-9]+'
+  schedule:
+    - cron: '0 0 * * *'
 concurrency: keycloak-operator-container-release
 
 env:
@@ -17,6 +19,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+
+      - name: Check respin
+        id: respin
+        continue-on-error: true
+        run: |
+          ./.github/scripts/need-respin.sh quay.io/keycloak/keycloak-operator
         
       - uses: actions/setup-java@v3
         with:
@@ -56,6 +64,7 @@ jobs:
                       
       - name: Build and push the operator image
         working-directory: operator
+        if: ${{ ( github.event_name != 'schedule' ) || ( github.event_name == 'schedule' && steps.respin.conclusion == 'success' ) }}
         run: |
           echo "${{ steps.meta.outputs.tags }}" | xargs -I {} \
           mvn clean package \
