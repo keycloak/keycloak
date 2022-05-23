@@ -17,6 +17,7 @@ import {
 } from "@patternfly/react-table";
 
 import type PolicyProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/policyProviderRepresentation";
+import { isValidComponentType } from "./policy/PolicyDetails";
 
 type NewPolicyDialogProps = {
   policyProviders?: PolicyProviderRepresentation[];
@@ -60,7 +61,10 @@ export const NewPolicyDialog = ({
               isHoverable
             >
               <Td>{provider.name}</Td>
-              <Td>{t(`policyProvider.${provider.type}`)}</Td>
+              <Td>
+                {isValidComponentType(provider.type!) &&
+                  t(`policyProvider.${provider.type}`)}
+              </Td>
             </Tr>
           ))}
         </Tbody>

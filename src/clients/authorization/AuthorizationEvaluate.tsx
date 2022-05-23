@@ -486,7 +486,7 @@ export const AuthorizationEvaluate = ({ client }: Props) => {
           </FormGroup>
         </FormAccess>
       </FormPanel>
-      <FormPanel className="kc-permissions" title={t("permissions")}>
+      <FormPanel className="kc-permissions" title={t("common:permissions")}>
         <FormAccess isHorizontal role="manage-clients">
           <FormGroup
             label={t("applyToResourceType")}

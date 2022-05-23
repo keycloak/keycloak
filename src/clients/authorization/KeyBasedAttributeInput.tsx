@@ -252,7 +252,7 @@ export const KeyBasedAttributeInput = ({
         <Tr>
           <Td>
             <Button
-              aria-label={t("roles:addAttributeText")}
+              aria-label={t("addAttribute")}
               id="plus-icon"
               variant="link"
               className="kc-attributes__plus-icon"
@@ -264,7 +264,7 @@ export const KeyBasedAttributeInput = ({
               isDisabled={!watchLastValue}
               data-testid="attribute-add-row"
             >
-              {t("roles:addAttributeText")}
+              {t("addAttribute")}
             </Button>
           </Td>
         </Tr>
