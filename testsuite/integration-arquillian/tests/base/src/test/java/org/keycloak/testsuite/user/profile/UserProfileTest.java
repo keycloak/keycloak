@@ -536,6 +536,85 @@ public class UserProfileTest extends AbstractUserProfileTest {
     }
 
     @Test
+    public void testReadonlyEmailCannotBeUpdated() {
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testReadonlyEmailCannotBeUpdated);
+    }
+
+    private static void testReadonlyEmailCannotBeUpdated(KeycloakSession session) {
+        Map<String, Object> attributes = new HashMap<>();
+
+        attributes.put(UserModel.USERNAME, org.keycloak.models.utils.KeycloakModelUtils.generateId());
+        attributes.put(UserModel.EMAIL, "readonly@foo.bar");
+
+        UserProfileProvider provider = getDynamicUserProfileProvider(session);
+
+        // configure email r/o for user
+        provider.setConfiguration("{\"attributes\": [{\"name\": \"email\", \"permissions\": {\"edit\": [ \"admin\"]}}]}");
+
+        UserProfile profile = provider.create(UserProfileContext.ACCOUNT, attributes);
+        UserModel user = profile.create();
+
+        assertThat(profile.getAttributes().nameSet(),
+                containsInAnyOrder(UserModel.USERNAME, UserModel.EMAIL));
+
+        profile = provider.create(UserProfileContext.USER_API, attributes, user);
+
+        Set<String> attributesUpdated = new HashSet<>();
+
+        profile.update((attributeName, userModel, oldValue) -> assertTrue(attributesUpdated.add(attributeName)));
+
+        attributes.put(UserModel.EMAIL, "cannot-change@foo.bar");
+
+        profile = provider.create(UserProfileContext.ACCOUNT, attributes, user);
+
+        try {
+            profile.update();
+            fail("Should fail since email is read only");
+        } catch (ValidationException ve) {
+            assertTrue(ve.isAttributeOnError("email"));
+        }
+
+        assertEquals("E-Mail address shouldn't be changed", "readonly@foo.bar", user.getEmail());
+    }
+
+    @Test
+    public void testUpdateEmail() {
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testUpdateEmail);
+    }
+
+    private static void testUpdateEmail(KeycloakSession session) {
+        Map<String, Object> attributes = new HashMap<>();
+
+        attributes.put(UserModel.USERNAME, org.keycloak.models.utils.KeycloakModelUtils.generateId());
+        attributes.put(UserModel.EMAIL, "canchange@foo.bar");
+
+        UserProfileProvider provider = getDynamicUserProfileProvider(session);
+
+        // configure email r/w for user
+        provider.setConfiguration("{\"attributes\": [{\"name\": \"email\", \"permissions\": {\"edit\": [ \"user\", \"admin\"]}}]}");
+
+        UserProfile profile = provider.create(UserProfileContext.ACCOUNT, attributes);
+        UserModel user = profile.create();
+
+        assertThat(profile.getAttributes().nameSet(),
+                containsInAnyOrder(UserModel.USERNAME, UserModel.EMAIL));
+
+        profile = provider.create(UserProfileContext.USER_API, attributes, user);
+
+        Set<String> attributesUpdated = new HashSet<>();
+
+        profile.update((attributeName, userModel, oldValue) -> assertTrue(attributesUpdated.add(attributeName)));
+
+        attributes.put("email", "changed@foo.bar");
+
+        profile = provider.create(UserProfileContext.ACCOUNT, attributes, user);
+
+        profile.update();
+
+        assertEquals("E-Mail address should have been changed!", "changed@foo.bar", user.getEmail());
+    }
+
+    @Test
     public void testDoNotUpdateUndefinedAttributes() {
         getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testDoNotUpdateUndefinedAttributes);
     }
