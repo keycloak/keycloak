@@ -35,9 +35,4 @@ public @interface WithDatabase {
      * The database name as per database aliases.
      */
     String alias();
-
-    /**
-     * If the {@code db} option must be unset after the running the build command.
-     */
-    boolean removeBuildOptionsAfterBuild() default false;
 }

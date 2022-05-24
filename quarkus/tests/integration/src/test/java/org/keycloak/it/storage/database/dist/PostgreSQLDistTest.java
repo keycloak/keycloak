@@ -29,8 +29,8 @@ import org.keycloak.it.storage.database.PostgreSQLTest;
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
 
-@DistributionTest
-@WithDatabase(alias = "postgres", removeBuildOptionsAfterBuild = true)
+@DistributionTest(removeBuildOptionsAfterBuild = true)
+@WithDatabase(alias = "postgres")
 public class PostgreSQLDistTest extends PostgreSQLTest {
 
     @Test

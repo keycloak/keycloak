@@ -258,10 +258,6 @@ public class CLITestExtension extends QuarkusMainTestExtension {
                 dist.setProperty("db-url", databaseContainer.getJdbcUrl());
 
                 dist.start(List.of("build"));
-
-                if (database.removeBuildOptionsAfterBuild()) {
-                    dist.removeProperty("db");
-                }
             }
         } else {
             // This is for re-creating the H2 database instead of using the default in home
