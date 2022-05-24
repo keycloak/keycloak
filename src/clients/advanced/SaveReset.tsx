@@ -16,7 +16,6 @@ export const SaveReset = ({
   isActive = true,
   ...rest
 }: SaveResetProps) => {
-  console.log(isActive);
   const { t } = useTranslation("common");
   return (
     <ActionGroup {...rest}>
