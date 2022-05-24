@@ -6,16 +6,16 @@ import {
   Label,
   PageSection,
   Toolbar,
+  ToolbarItem,
   ToolbarContent,
   ToggleGroup,
   ToggleGroupItem,
   AlertVariant,
-  ActionGroup,
   Button,
   ButtonVariant,
   DropdownItem,
 } from "@patternfly/react-core";
-import { CheckCircleIcon, PlusIcon, TableIcon } from "@patternfly/react-icons";
+import { CheckCircleIcon, TableIcon } from "@patternfly/react-icons";
 
 import type AuthenticationExecutionInfoRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticationExecutionInfoRepresentation";
 import type { AuthenticationProviderRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigRepresentation";
@@ -317,30 +317,48 @@ export default function FlowDetails() {
         dropdownItems={dropdownItems}
       />
       <PageSection variant="light">
-        {hasExecutions && (
-          <Toolbar id="toolbar">
-            <ToolbarContent>
-              <ToggleGroup>
-                <ToggleGroupItem
-                  icon={<TableIcon />}
-                  aria-label={t("tableView")}
-                  buttonId="tableView"
-                  isSelected={tableView}
-                  onChange={() => setTableView(true)}
-                />
-                <ToggleGroupItem
-                  icon={<i className="fas fa-project-diagram"></i>}
-                  aria-label={t("diagramView")}
-                  buttonId="diagramView"
-                  isSelected={!tableView}
-                  onChange={() => setTableView(false)}
-                />
-              </ToggleGroup>
-            </ToolbarContent>
-          </Toolbar>
-        )}
         {tableView && executionList && hasExecutions && (
           <>
+            <Toolbar id="toolbar">
+              <ToolbarContent>
+                <ToolbarItem>
+                  <ToggleGroup>
+                    <ToggleGroupItem
+                      icon={<TableIcon />}
+                      aria-label={t("tableView")}
+                      buttonId="tableView"
+                      isSelected={tableView}
+                      onChange={() => setTableView(true)}
+                    />
+                    <ToggleGroupItem
+                      icon={<i className="fas fa-project-diagram"></i>}
+                      aria-label={t("diagramView")}
+                      buttonId="diagramView"
+                      isSelected={!tableView}
+                      onChange={() => setTableView(false)}
+                    />
+                  </ToggleGroup>
+                </ToolbarItem>
+                <ToolbarItem>
+                  <Button
+                    data-testid="addStep"
+                    variant="secondary"
+                    onClick={() => setShowAddExecutionDialog(true)}
+                  >
+                    {t("addStep")}
+                  </Button>
+                </ToolbarItem>
+                <ToolbarItem>
+                  <Button
+                    data-testid="addSubFlow"
+                    variant="secondary"
+                    onClick={() => setShowSubFlowDialog(true)}
+                  >
+                    {t("addSubFlow")}
+                  </Button>
+                </ToolbarItem>
+              </ToolbarContent>
+            </Toolbar>
             <DeleteConfirm />
             <DataList
               aria-label="flows"
@@ -427,22 +445,6 @@ export default function FlowDetails() {
                     }}
                   />
                 )}
-                <ActionGroup>
-                  <Button
-                    data-testid="addStep"
-                    variant="link"
-                    onClick={() => setShowAddExecutionDialog(true)}
-                  >
-                    <PlusIcon /> {t("addStep")}
-                  </Button>
-                  <Button
-                    data-testid="addSubFlow"
-                    variant="link"
-                    onClick={() => setShowSubFlowDialog(true)}
-                  >
-                    <PlusIcon /> {t("addSubFlow")}
-                  </Button>
-                </ActionGroup>
               </>
             )}
             <div className="pf-screen-reader" aria-live="assertive">

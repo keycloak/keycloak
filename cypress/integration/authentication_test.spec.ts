@@ -122,7 +122,7 @@ describe("Authentication test", () => {
 
   it("should create flow from scratch", () => {
     const flowName = "Flow";
-    listingPage.goToCreateItem();
+    listingPage.itemExist("Copy of browser").goToCreateItem();
     detailPage.fillCreateForm(
       flowName,
       "Some nice description about what this flow does so that we can use it later",
