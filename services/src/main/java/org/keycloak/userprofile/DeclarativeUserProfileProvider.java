@@ -277,6 +277,7 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
         }
 
         Map<String, UPGroup> groupsByName = asHashMap(parsedConfig.getGroups());
+        RealmModel realm = session.getContext().getRealm();
         int guiOrder = 0;
         
         for (UPAttribute attrConfig : parsedConfig.getAttributes()) {
@@ -343,9 +344,18 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
                 // make sure username and email are writable if permissions are not set
                 if (permissions == null || permissions.isEmpty()) {
                     writeAllowed = AttributeMetadata.ALWAYS_TRUE;
+                    readAllowed = AttributeMetadata.ALWAYS_TRUE;
                 }
 
                 List<AttributeMetadata> atts = decoratedMetadata.getAttribute(attributeName);
+
+                // Add ImmutableAttributeValidator to ensure that attributes that are configured
+                // as read-only are marked as such.
+                // Skip this for username in realms with username = email to allow change of email
+                // address on initial login with profile via idp
+                if (!realm.isRegistrationEmailAsUsername() || !UserModel.USERNAME.equals(attributeName)) {
+                    validators.add(new AttributeValidatorMetadata(ImmutableAttributeValidator.ID));
+                }
 
                 if (atts.isEmpty()) {
                     // attribute metadata doesn't exist so we have to add it. We keep it optional as Abstract base
@@ -356,12 +366,17 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
                             .setAttributeGroupMetadata(groupMetadata);
                 } else {
                     final int localGuiOrder = guiOrder++;
-                    // only add configured validators and annotations if attribute metadata exist
+                    Predicate<AttributeContext> readAllowedFinal = readAllowed;
+                    Predicate<AttributeContext> writeAllowedFinal = writeAllowed;
+
+                    // add configured validators and annotations to existing attribute metadata
                     atts.stream().forEach(c -> c.addValidator(validators)
-                            .addAnnotations(annotations)
-                            .setAttributeDisplayName(attrConfig.getDisplayName())
-                            .setGuiOrder(localGuiOrder)
-                            .setAttributeGroupMetadata(groupMetadata));
+                                        .addAnnotations(annotations)
+                                        .setAttributeDisplayName(attrConfig.getDisplayName())
+                                        .setGuiOrder(localGuiOrder)
+                                        .setAttributeGroupMetadata(groupMetadata)
+                                        .addReadCondition(readAllowedFinal)
+                                        .addWriteCondition(writeAllowedFinal));
                 }
             } else {
                 // always add validation for immutable/read-only attributes
