@@ -20,6 +20,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.AuthenticatedClientSessionModel;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -42,6 +43,8 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.testsuite.model.session.UserSessionPersisterProviderTest.createClients;
 import static org.keycloak.testsuite.model.session.UserSessionPersisterProviderTest.createSessions;
 
@@ -201,5 +204,21 @@ public class UserSessionProviderModelTest extends KeycloakModelTest {
                 InfinispanTestUtil.revertTimeService();
             }
         }
+    }
+
+    @Test
+    public void testCascadeRemovalOfClientSessionOnUserSessionRemoval() {
+        UserSessionModel[] origSessions = inComittedTransaction(session -> { return createSessions(session, realmId); });
+
+        String testAppClientSessionId = withRealm(realmId, (session, realm) -> {
+            ClientModel testApp = realm.getClientByClientId("test-app");
+            UserSessionModel userSessionToBeRemoved = session.sessions().getUserSession(realm, origSessions[0].getId());
+            String returnValue = userSessionToBeRemoved.getAuthenticatedClientSessions().get(testApp.getId()).getId();
+
+            session.sessions().removeUserSession(realm, userSessionToBeRemoved);
+            return returnValue;
+        });
+
+        assertThat(withRealm(realmId, (session, realm) -> session.sessions().getClientSession(origSessions[0], realm.getClientByClientId("test-app"), testAppClientSessionId, false)), nullValue());
     }
 }

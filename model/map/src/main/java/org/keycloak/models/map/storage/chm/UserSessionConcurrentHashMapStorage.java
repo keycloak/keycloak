@@ -92,6 +92,11 @@ public class UserSessionConcurrentHashMapStorage<K> extends ConcurrentHashMapSto
     @SuppressWarnings("unchecked")
     public MapKeycloakTransaction<MapUserSessionEntity, UserSessionModel> createTransaction(KeycloakSession session) {
         MapKeycloakTransaction<MapUserSessionEntity, UserSessionModel> sessionTransaction = session.getAttribute("map-transaction-" + hashCode(), MapKeycloakTransaction.class);
-        return sessionTransaction == null ? new Transaction(clientSessionStore.createTransaction(session), clientSessionStore.getKeyConverter(), cloner, fieldPredicates) : sessionTransaction;
+
+        if (sessionTransaction == null) {
+            sessionTransaction = new Transaction(clientSessionStore.createTransaction(session), clientSessionStore.getKeyConverter(), cloner, fieldPredicates);
+            session.setAttribute("map-transaction-" + hashCode(), sessionTransaction);
+        }
+        return sessionTransaction;
     }
 }
