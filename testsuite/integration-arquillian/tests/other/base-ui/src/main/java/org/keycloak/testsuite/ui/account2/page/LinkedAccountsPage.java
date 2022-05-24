@@ -77,7 +77,7 @@ public class LinkedAccountsPage extends AbstractLoggedInPage {
         @FindBy(xpath = ".//*[contains(@id,'idp-icon')]")
         private WebElement iconElement;
 
-        @FindBy(xpath = ".//*[contains(@id,'idp-badge')]")
+        @FindBy(xpath = ".//*[contains(@id,'idp-label')]")
         private WebElement badgeElement;
 
         @FindBy(xpath = ".//*[contains(@id,'idp-username')]")

@@ -261,14 +261,14 @@ export class DeviceActivityPage extends React.Component<DeviceActivityPageProps,
                           <React.Fragment key={'device-' + deviceIndex + '-session-' + sessionIndex}>
                             <DataListItemRow>
                               <DataListContent aria-label="device-sessions-content" isHidden={false} className="pf-u-flex-grow-1">
-                                <Grid className="signed-in-device-grid" hasGutter>
+                                <Grid id={this.elementId("item",session)} className="signed-in-device-grid" hasGutter>
                                   <GridItem className="device-icon" span={1} rowSpan={2}>
                                     <span>{this.findDeviceTypeIcon(session, device)}</span>
                                   </GridItem>
                                   <GridItem sm={8} md={9} span={10}>
-                                    <span id={this.elementId('browser', session)} className="pf-u-mr-md">{this.findOS(device)} {this.findOSVersion(device)} / {session.browser}</span>
+                                    <span id={this.elementId('browser', session)} className="pf-u-mr-md session-title">{this.findOS(device)} {this.findOSVersion(device)} / {session.browser}</span>
                                     {session.current &&
-                                      <Label color="green"><Msg msgKey="currentSession" /></Label>}
+                                      <Label color="green" id={this.elementId('current-badge', session)}><Msg msgKey="currentSession" /></Label>}
                                   </GridItem>
                                   <GridItem className="pf-u-text-align-right" sm={3} md={2} span={1}>
                                     {!session.current &&
@@ -285,23 +285,23 @@ export class DeviceActivityPage extends React.Component<DeviceActivityPageProps,
                                     <DescriptionList columnModifier={{ sm: '2Col', lg: '3Col' }}>
                                       <DescriptionListGroup>
                                         <DescriptionListTerm>{Msg.localize('ipAddress')}</DescriptionListTerm>
-                                        <DescriptionListDescription>{session.ipAddress}</DescriptionListDescription>
+                                          <DescriptionListDescription id={this.elementId('ip', session)}>{session.ipAddress}</DescriptionListDescription>
                                       </DescriptionListGroup>
                                       <DescriptionListGroup>
-                                        <DescriptionListTerm>{Msg.localize('lastAccessedOn')}</DescriptionListTerm>
-                                        <DescriptionListDescription>{this.time(session.lastAccess)}</DescriptionListDescription>
+                                          <DescriptionListTerm>{Msg.localize('lastAccessedOn')}</DescriptionListTerm>
+                                          <DescriptionListDescription id={this.elementId('last-access', session)}>{this.time(session.lastAccess)}</DescriptionListDescription>
                                       </DescriptionListGroup>
                                       <DescriptionListGroup>
-                                        <DescriptionListTerm>{Msg.localize('clients')}</DescriptionListTerm>
-                                        <DescriptionListDescription>{this.makeClientsString(session.clients)}</DescriptionListDescription>
+                                          <DescriptionListTerm>{Msg.localize('clients')}</DescriptionListTerm>
+                                          <DescriptionListDescription id={this.elementId('clients', session)}>{this.makeClientsString(session.clients)}</DescriptionListDescription>
                                       </DescriptionListGroup>
                                       <DescriptionListGroup>
                                         <DescriptionListTerm>{Msg.localize('started')}</DescriptionListTerm>
-                                        <DescriptionListDescription>{this.time(session.started)}</DescriptionListDescription>
+                                        <DescriptionListDescription id={this.elementId('started', session)}>{this.time(session.started)}</DescriptionListDescription>
                                       </DescriptionListGroup>
                                       <DescriptionListGroup>
                                         <DescriptionListTerm>{Msg.localize('expires')}</DescriptionListTerm>
-                                        <DescriptionListDescription>{this.time(session.expires)}</DescriptionListDescription>
+                                        <DescriptionListDescription id={this.elementId('expires', session)}>{this.time(session.expires)}</DescriptionListDescription>
                                       </DescriptionListGroup>
                                     </DescriptionList>
                                   </GridItem>
