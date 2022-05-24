@@ -12,12 +12,15 @@
 
     "eventsStore": {
         "provider": "${keycloak.eventsStore.provider:jpa}",
+        "jpa": {
+            "max-detail-length": "${keycloak.eventsStore.maxDetailLength:1000}"
+        },
         "map": {
             "storage-admin-events": {
-                "provider": "${keycloak.eventStore.map.storage.provider:concurrenthashmap}"
+                "provider": "${keycloak.adminEventsStore.map.storage.provider:concurrenthashmap}"
             },
             "storage-auth-events": {
-                "provider": "${keycloak.eventStore.map.storage.provider:concurrenthashmap}"
+                "provider": "${keycloak.authEventsStore.map.storage.provider:concurrenthashmap}"
             }
         }
     },

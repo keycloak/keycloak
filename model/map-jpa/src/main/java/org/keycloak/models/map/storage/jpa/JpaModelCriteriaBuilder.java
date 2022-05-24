@@ -17,6 +17,7 @@
 package org.keycloak.models.map.storage.jpa;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;

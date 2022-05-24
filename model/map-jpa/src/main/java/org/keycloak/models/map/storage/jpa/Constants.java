@@ -17,6 +17,8 @@
 package org.keycloak.models.map.storage.jpa;
 
 public interface Constants {
+    public static final Integer CURRENT_SCHEMA_VERSION_ADMIN_EVENT = 1;
+    public static final Integer CURRENT_SCHEMA_VERSION_AUTH_EVENT = 1;
     public static final Integer CURRENT_SCHEMA_VERSION_AUTH_SESSION = 1;
     public static final Integer CURRENT_SCHEMA_VERSION_AUTHZ_PERMISSION = 1;
     public static final Integer CURRENT_SCHEMA_VERSION_AUTHZ_POLICY = 1;

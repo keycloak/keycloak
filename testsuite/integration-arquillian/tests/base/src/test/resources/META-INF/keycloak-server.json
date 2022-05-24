@@ -28,10 +28,10 @@
         },
         "map": {
             "storage-admin-events": {
-                "provider": "${keycloak.eventStore.map.storage.provider:concurrenthashmap}"
+                "provider": "${keycloak.adminEventsStore.map.storage.provider:concurrenthashmap}"
             },
             "storage-auth-events": {
-                "provider": "${keycloak.eventStore.map.storage.provider:concurrenthashmap}"
+                "provider": "${keycloak.authEventsStore.map.storage.provider:concurrenthashmap}"
             }
         }
     },
