@@ -144,11 +144,6 @@ public class UserMapStorage implements UserLookupProvider.Streams, UserStoragePr
                 public String getFederationLink() {
                     return model.getId();
                 }
-
-                @Override
-                public SingleEntityCredentialManager credentialManager() {
-                    return new LegacySingleUserCredentialManager(session, realm, this);
-                }
             };
         }
 

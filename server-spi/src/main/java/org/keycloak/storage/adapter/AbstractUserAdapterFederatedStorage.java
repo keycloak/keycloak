@@ -18,11 +18,13 @@ package org.keycloak.storage.adapter;
 
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.credential.LegacySingleUserCredentialManager;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.SingleEntityCredentialManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModelDefaultMethods;
 import org.keycloak.models.utils.RoleUtils;
@@ -398,6 +400,11 @@ public abstract class AbstractUserAdapterFederatedStorage extends UserModelDefau
     public void setEmailVerified(boolean verified) {
         setSingleAttribute(EMAIL_VERIFIED_ATTRIBUTE, Boolean.toString(verified));
 
+    }
+
+    @Override
+    public SingleEntityCredentialManager credentialManager() {
+        return new LegacySingleUserCredentialManager(session, realm, this);
     }
 
     @Override
