@@ -25,3 +25,22 @@ Spring Boot 1.x reached end of life in 2019. If you are still using Spring Boot 
 In WildFly 25 the legacy security layer was removed, going forward only Elytron will be supported. We recommend anyone using an older version of WildFly to upgrade and leverage native OIDC support in WildFly.
 
 Red Hat customers using Red Hat JBoss Enterprise Application Platform 7.x should use https://access.redhat.com/products/red-hat-single-sign-on[Red Hat Single Sign-On] 7.x adapters. These can be used in combination with the Keycloak server.
+
+= Changes in Keycloak storage
+
+The Keycloak storage is changing, and the current storage, while still supported, will eventually be replaced with a brand-new implementation.
+This change brings better support for cloud-native storages, no-downtime abilities, and better support for implementing custom storages for additional areas apart from users.
+
+It means several deep changes in the supported features of the current store will become _legacy_ features.
+The legacy store and the new store cannot be used simultaneously; only one store can be active at a time.
+
+The most visible change is that the User Storage SPI is incompatible with the new storage API, the Map Storage API.
+Thus, the User Storage SPI will be deprecated with legacy store and will move to a separate module called `keycloak-model-legacy`.
+This change impacts several areas, especially areas related to user federation and custom user providers.
+
+Furthermore, APIs have been consolidated so that the details of the storage layer will be transparent to the REST service layer.
+Specifically, the services will not be able to differentiate cached and non-cached objects, nor specifically access federated versus local storage.
+
+Hence, custom extensions that access objects in local storage or cache through `KeycloakSession`
+methods must be reviewed.
+See link:{upgradingguide_link}[{upgradingguide_name}] for details.

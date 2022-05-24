@@ -1,0 +1,216 @@
+= Changes affecting developers
+
+{project_name} undergoes large refactoring, which impacts existing code.
+Some of these changes require updates to existing code.
+These are in more detailed described below.
+
+== Rationale for changes
+
+{project_name} has several limitations; for example, downtime is needed for upgrading a {project_name} cluster.
+To address the limitations, an in-depth refactor has been initiated.
+
+The changes in this version are mostly attached to storage refactoring and a preparation of a new storage, called map storage. This storage will eventually replace the current storage, which will be called a _legacy store_ with this version.
+The legacy store will still be available in {project_name} for several more versions.
+
+The new store imposes a strict separation of responsibility between the service and storage layers.
+For that reason, the service layer's visibility of an object's origin will be restricted, so it will not be able to discriminate between cached or non-cached objects, or objects originating from local or federated storage.
+
+User storage SPI will become deprecated.
+It will be supported for several more versions, but will be eventually replaced by the Map Storage SPI, which will offer the ability to create custom storages for any recognized area, such as users, roles, clients, or groups.
+
+Extensions that rely on the level of detail available to services in the legacy store will need adjustment to retain this ability for the full deprecation period of the legacy store.
+The following section describes how that adjustment is accomplished.
+
+Using a legacy and map store is mutually exclusive; one store cannot be used while the other is active.
+
+== Changes in the module structure
+
+As part of introducing the new storage functionality, several public APIs around storage functionality in `KeycloakSession` have been consolidated, and some have been deprecated and will be removed in one of the next versions.
+Three new modules have been introduced, and data-oriented code from `server-spi`, `server-spi-private`, and `services` modules have been moved there:
+
+`org.keycloak:keycloak-model-legacy`::
+Contains all public facing APIs from the legacy store, such as the User Storage API.
+
+`org.keycloak:keycloak-model-legacy-private`::
+Contains private implementations that relate to user storage management, such as storage `*Manager` classes.
+
+`org.keycloak:keycloak-model-legacy-services`::
+Contains all REST endpoints that directly operate on the legacy store, and have no meaning in the new store.
+
+These modules will be available as long as legacy stores will be supported.
+After that period, they will be removed.
+
+== Changes in `KeycloakSession`
+
+`KeycloakSession` has been simplified.
+Several methods have been deprecated in `KeycloakSession` and will be removed in a future version.
+
+`KeycloakSession` session contains several methods for obtaining a provider for a particular object type, such as for a `UserProvider` there are `users()`, `userLocalStorage()`, `userCache()`, `userStorageManager()`, and `userFederatedStorage()`.
+This situaton may be confusing for the developer who has to understand the exact meaning of each method, and depends on current store layout.
+The new store does not distinguish federated from local storage.
+
+For both reasons, only the `users()` methods will be kept in `KeycloakSession` and the rest of methods are currently deprecated, return the same object as `users()`, and will eventually be removed.
+The same pattern of deprecation applies to methods all other object areas, e.g. `clients()` or `groups()`.
+
+The deprecated methods in KeycloakSession will be removed in a future release.
+The `keycloak-model-legacy-*` modules will be available for a longer time, but they will eventually be removed.
+
+=== Migrating existing providers that do not depend on the legacy store
+
+Most of the existing providers need no migration.
+Please review your code if it depends on any functionality in regard to cached versus noncached or local versus federated storage.
+As an example, `userLocalStorage()` will now return the same result as `users()`, which might involve a cache if that has been enabled in the local setup.
+
+.Before migration: accessing a deprecated API that redirects to `.users()`
+[source,java,subs="+quotes"]
+----
+session**.userLocalStorage()**;
+----
+
+.After migration: accessing the new API caller does not depend on the legacy storage API
+[source,java,subs="+quotes"]
+----
+session**.users()**;
+----
+
+=== Migrating existing providers that depend on the legacy store
+
+In the rare case when a custom provider needs to distinguish between the mode of a particular provider, access to the deprecated objects is provided by using the `LegacyStoreManagers` data store provider.
+This option will be available only if the legacy modules are part of the deployment.
+
+.Before migration: accessing a deprecated API that redirects to `.users()`
+[source,java,subs="+quotes"]
+----
+session**.userLocalStorage()**;
+----
+
+.After migration: accessing the old functionality via the LegacyStoreManagers API
+[source,java,subs="+quotes"]
+----
+((LegacyDatastoreProvider) session.getProvider(DatastoreProvider.class))**.userLocalStorage()**;
+----
+
+Some user storage related APIs have been wrapped in `org.keycloak.storage.UserStorageUtil` for convenience.
+
+=== Creating custom storage providers
+
+The API for creating a custom storage provider has not been fully stabilized yet, though it is available as a tech preview.
+See the `MapStorageProvider` SPI and its Javadoc for details.
+The availability of the new API is a priority for the next Keycloak version.
+
+== Changes to `RealmModel`
+
+For the interface `RealmModel` the methods `getUserStorageProviders` and `getUserStorageProvidersStream` have been removed.
+`UserStorageUtil.getUserStorageProvidersStream` needs to be used instead.
+
+.Before migration: code will not compile due to the changed API
+[source,java,subs="+quotes"]
+----
+realm**.getUserStorageProviders()**...;
+----
+
+.After migration: use the new API
+[source,java,subs="+quotes"]
+----
+UserStorageUtil**.getUserStorageProvidersStream(realm)**...;
+----
+
+== Interface `UserCache` moved to the legacy module
+
+As the caching status of objects will be trasparent to services, the interface `UserCache`
+has been moved to the module `keycloak-legacy`.
+Calls to `session.userCache()` will therefore return only a `UserProvider`, which is a breaking change.
+
+Code that depends on the legacy implementation should access the `UserCache` directly.
+While such calls might be necessary while caching with the legacy store is used, it will not be necessary when using the new map store, as that one handles caching transparently.
+
+.Before migration: code will not compile due to a changed return type
+[source,java,subs="+quotes"]
+----
+// session.userCache() might return null, null-check omitted for brevity.
+session**.userCache()**.evict(realm, user);
+----
+
+.After migration: use the API directly
+[source,java,subs="+quotes"]
+----
+// session.getProvider(UserCache.class) might return null, null-check omitted for brevity.
+session.**getProvider(UserCache.class)**.evict(realm, user);
+----
+
+To trigger the invalidation of a realm, instead of using the `UserCache` API, consider triggering an event:
+
+.Before migration: code will not compile due to a changed return type
+[source,java,subs="+quotes"]
+----
+UserCache cache = session.getProvider(UserCache.class);
+if (cache != null) cache.clear();
+----
+
+.After migration: use the invalidation API
+[source,java,subs="+quotes"]
+----
+session.invalidate(InvalidationHandler.ObjectType.REALM, realm.getId());
+----
+
+== Credential management for users
+
+Credentials for users were previously managed using `session.userCredentialManager()._method_(realm, user, \...)`.
+The new way is to leverage `user.credentialManager()._method_(\...)`.
+This form gets the credential functionality closer to the API of users, and does not rely on prior knowledge of the user credential's location in regard to realm and storage.
+
+The old APIs have been deprecated, and will only work when the legacy storage is enabled in the deployment.
+The new APIs will work with both old and new storages.
+
+.Before migration: accessing a deprecated API
+[source,java,subs="+quotes"]
+----
+session.userCredentialManager()**.createCredential**(realm, user, credentialModel)
+----
+
+.After migration: accessing the new API
+[source,java,subs="+quotes"]
+----
+user.credentialManager()**.createStoredCredential**(credentialModel)
+----
+
+For a custom `UserStorageProvider`, there is a new method `credentialManager()` that needs to be implemented when returning a `UserModel`.
+As those providers run in an environment with the legacy storage enabled, those must return an instance of the `LegacyUserCredentialManager`:
+
+.Before migration: code will not compile due to the new method `credentialManager()` required by `UserModel`
+[source,java,subs="+quotes"]
+----
+public class MyUserStorageProvider implements UserLookupProvider, ... {
+    /* ... */
+    protected UserModel createAdapter(RealmModel realm, String username) {
+        return new AbstractUserAdapter(session, realm, model) {
+            @Override
+            public String getUsername() {
+                return username;
+            }
+        };
+    }
+}
+----
+
+.After migration: implementation of the API `UserModel.credentialManager()` for the legacy store.
+[source,java,subs="+quotes"]
+----
+public class MyUserStorageProvider implements UserLookupProvider, ... {
+    /* ... */
+    protected UserModel createAdapter(RealmModel realm, String username) {
+        return new AbstractUserAdapter(session, realm, model) {
+            @Override
+            public String getUsername() {
+                return username;
+            }
+
+            @Override
+            public SubjectCredentialManager credentialManager() {
+                return new LegacyUserCredentialManager(session, realm, this);
+            }
+        };
+    }
+}
+----
+
