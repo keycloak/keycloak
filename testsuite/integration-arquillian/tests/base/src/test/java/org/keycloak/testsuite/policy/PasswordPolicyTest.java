@@ -35,6 +35,7 @@ import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.A
 import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.testsuite.util.RealmBuilder;
 
+import java.io.File;
 import java.util.List;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
@@ -192,12 +193,14 @@ public class PasswordPolicyTest extends AbstractKeycloakTest {
 
     @Test
     public void testBlacklistPasswordPolicyDefaultPath() throws Exception {
+        final String SEPARATOR = File.separator;
+
         testingClient.server("passwordPolicy").run(session -> {
             ProviderFactory<PasswordPolicyProvider> passPolicyFact = session.getKeycloakSessionFactory().getProviderFactory(
                     PasswordPolicyProvider.class, BlacklistPasswordPolicyProviderFactory.ID);
             assertThat(passPolicyFact, instanceOf(BlacklistPasswordPolicyProviderFactory.class));
-            assertThat(((BlacklistPasswordPolicyProviderFactory)passPolicyFact).getDefaultBlacklistsBasePath(),
-                    endsWith("/data/password-blacklists/"));
+            assertThat(((BlacklistPasswordPolicyProviderFactory) passPolicyFact).getDefaultBlacklistsBasePath(),
+                    endsWith(SEPARATOR + "data" + SEPARATOR + "password-blacklists" + SEPARATOR));
         });
     }
 
