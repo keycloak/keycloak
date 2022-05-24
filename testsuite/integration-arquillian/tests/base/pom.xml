@@ -890,6 +890,8 @@
                                 <keycloak.authSession.map.storage.provider>jpa</keycloak.authSession.map.storage.provider>
                                 <keycloak.client.map.storage.provider>jpa</keycloak.client.map.storage.provider>
                                 <keycloak.clientScope.map.storage.provider>jpa</keycloak.clientScope.map.storage.provider>
+                                <keycloak.adminEventsStore.map.storage.provider>jpa</keycloak.adminEventsStore.map.storage.provider>
+                                <keycloak.authEventsStore.map.storage.provider>jpa</keycloak.authEventsStore.map.storage.provider>
                                 <keycloak.group.map.storage.provider>jpa</keycloak.group.map.storage.provider>
                                 <keycloak.loginFailure.map.storage.provider>jpa</keycloak.loginFailure.map.storage.provider>
                                 <keycloak.realm.map.storage.provider>jpa</keycloak.realm.map.storage.provider>

@@ -53,8 +53,10 @@ import liquibase.statement.SqlStatement;
  *         &lt;/ext:createJsonIndex&gt;
  *     &lt;/changeSet&gt;
  * </pre>
- * The above configuration is creating an index for the {@code name} property of JSON files stored in column {@code metadata} in
- * table {@code test}.
+ * The above configuration is creating an inverted (GIN) index for the {@code name} property of JSON files stored in column
+ * {@code metadata} in table {@code test}.
+ * <p/>
+ * The {@code jsonProperty} is optional - when it is absent the index will be created for the whole JSON.
  *
  * @author <a href="mailto:sguilhen@redhat.com">Stefan Guilhen</a>
  */
