@@ -20,6 +20,7 @@ import com.google.common.collect.ImmutableSet;
 import java.util.Set;
 import org.jboss.logging.Logger;
 import org.keycloak.authorization.store.StoreFactorySpi;
+import org.keycloak.events.EventStoreSpi;
 import org.keycloak.models.DeploymentStateSpi;
 import org.keycloak.models.UserLoginFailureSpi;
 import org.keycloak.models.UserSessionSpi;
@@ -94,7 +95,8 @@ public class JpaMapStorage extends KeycloakModelParameters {
           .spi(UserLoginFailureSpi.NAME).provider(MapUserLoginFailureProviderFactory.PROVIDER_ID)                       .config(STORAGE_CONFIG, JpaMapStorageProviderFactory.PROVIDER_ID)
           .spi("dblock").provider(NoLockingDBLockProviderFactory.PROVIDER_ID)                                           .config(STORAGE_CONFIG, ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
           .spi(UserSessionSpi.NAME).provider(MapUserSessionProviderFactory.PROVIDER_ID)                                 .config("storage-user-sessions.provider", ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
-                                                                                                                        .config("storage-client-sessions.provider", ConcurrentHashMapStorageProviderFactory.PROVIDER_ID);
-
+                                                                                                                        .config("storage-client-sessions.provider", ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
+          .spi(EventStoreSpi.NAME).provider(MapUserSessionProviderFactory.PROVIDER_ID)                                  .config("storage-admin-events.provider", ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
+                                                                                                                        .config("storage-auth-events.provider", ConcurrentHashMapStorageProviderFactory.PROVIDER_ID);
     }
 }
