@@ -102,11 +102,6 @@ public class BackwardsCompatibilityUserStorage implements UserLookupProvider, Us
                     throw new RuntimeException("Unsupported to change username");
                 }
             }
-
-            @Override
-            public SingleEntityCredentialManager credentialManager() {
-                return new LegacySingleUserCredentialManager(session, realm, this);
-            }
         };
     }
 
