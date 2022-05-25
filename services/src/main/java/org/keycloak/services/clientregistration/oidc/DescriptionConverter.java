@@ -208,6 +208,10 @@ public class DescriptionConverter {
             configWrapper.setTosUri(clientOIDC.getTosUri());
         }
 
+        if (clientOIDC.getPostLogoutRedirectUris() != null) {
+            configWrapper.setPostLogoutRedirectUris(clientOIDC.getPostLogoutRedirectUris());
+        }
+
         // CIBA
         String backchannelTokenDeliveryMode = clientOIDC.getBackchannelTokenDeliveryMode();
         if (backchannelTokenDeliveryMode != null) {
@@ -402,6 +406,9 @@ public class DescriptionConverter {
         }
         if (config.getTokenEndpointAuthSigningAlg() != null) {
             response.setTokenEndpointAuthSigningAlg(config.getTokenEndpointAuthSigningAlg());
+        }
+        if (config.getPostLogoutRedirectUris() != null) {
+            response.setPostLogoutRedirectUris(config.getPostLogoutRedirectUris());
         }
         response.setBackchannelLogoutUri(config.getBackchannelLogoutUrl());
         response.setBackchannelLogoutSessionRequired(config.isBackchannelLogoutSessionRequired());

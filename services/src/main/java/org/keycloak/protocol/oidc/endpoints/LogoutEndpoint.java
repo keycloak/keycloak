@@ -48,6 +48,7 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.SystemClientUtil;
 import org.keycloak.protocol.oidc.BackchannelLogoutResponse;
 import org.keycloak.protocol.oidc.LogoutTokenValidationCode;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.protocol.oidc.OIDCProviderConfig;
@@ -92,6 +93,15 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static org.keycloak.models.UserSessionModel.State.LOGGED_OUT;
+import static org.keycloak.models.UserSessionModel.State.LOGGING_OUT;
+import static org.keycloak.services.resources.LoginActionsService.SESSION_CODE;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -233,7 +243,9 @@ public class LogoutEndpoint {
         String validatedRedirectUri = null;
         if (redirectUri != null) {
             if (client != null) {
-                validatedRedirectUri = RedirectUtils.verifyRedirectUri(session, redirectUri, client);
+                OIDCAdvancedConfigWrapper wrapper = OIDCAdvancedConfigWrapper.fromClientModel(client);
+                Set<String> postLogoutRedirectUris = wrapper.getPostLogoutRedirectUris() != null ? new HashSet(wrapper.getPostLogoutRedirectUris()) : new HashSet<>();
+                validatedRedirectUri = RedirectUtils.verifyRedirectUri(session, client.getRootUrl(), redirectUri, postLogoutRedirectUris, true);
             } else if (clientId == null) {
                 /*
                  * Only call verifyRealmRedirectUri, in case both clientId and client are null - otherwise

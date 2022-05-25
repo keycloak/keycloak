@@ -189,6 +189,7 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
         directUntrustedPublic.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         directUntrustedPublic.setFullScopeAllowed(false);
         directUntrustedPublic.addRedirectUri("*");
+        directUntrustedPublic.setAttribute(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, "+");
         directUntrustedPublic.addProtocolMapper(AudienceProtocolMapper.createClaimMapper("client-exchanger-audience", clientExchanger.getClientId(), null, true, false));
 
         ClientModel directNoSecret = realm.addClient("direct-no-secret");

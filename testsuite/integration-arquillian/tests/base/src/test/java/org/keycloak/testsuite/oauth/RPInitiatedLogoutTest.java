@@ -55,7 +55,10 @@ import org.keycloak.testsuite.pages.LoginPage;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 
 import javax.ws.rs.NotFoundException;
@@ -80,6 +83,7 @@ import org.keycloak.testsuite.pages.PageUtils;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.updaters.UserAttributeUpdater;
+import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
 import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.OAuthClient;
@@ -165,6 +169,43 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
         assertCurrentUrlEquals(redirectUri + "&state=something");
     }
 
+    @Test
+    public void postLogoutRedirect() {
+        OAuthClient.AccessTokenResponse tokenResponse = loginUser();
+        String sessionId = tokenResponse.getSessionState();
+
+        String redirectUri = APP_REDIRECT_URI + "?post_logout";
+
+        List<String> postLogoutRedirectUris = Collections.singletonList(redirectUri);
+        ClientManager.realm(adminClient.realm("test")).clientId("test-app").setPostLogoutRedirectUri(postLogoutRedirectUris);
+
+        String idTokenString = tokenResponse.getIdToken();
+
+        try {
+            String logoutUrl = oauth.getLogoutUrl().postLogoutRedirectUri(redirectUri).idTokenHint(idTokenString).build();
+            driver.navigate().to(logoutUrl);
+
+            events.expectLogout(sessionId).detail(Details.REDIRECT_URI, redirectUri).assertEvent();
+            MatcherAssert.assertThat(false, is(isSessionActive(sessionId)));
+
+            assertCurrentUrlEquals(redirectUri);
+
+            tokenResponse = loginUser();
+            String sessionId2 = tokenResponse.getSessionState();
+            idTokenString = tokenResponse.getIdToken();
+            assertNotEquals(sessionId, sessionId2);
+
+            // Test also "state" parameter is included in the URL after logout. Make sure to use idTokenHint from the last login to match with current browser session
+            logoutUrl = oauth.getLogoutUrl().postLogoutRedirectUri(redirectUri).idTokenHint(idTokenString).state("something").build();
+            driver.navigate().to(logoutUrl);
+            events.expectLogout(sessionId2).detail(Details.REDIRECT_URI, redirectUri).assertEvent();
+            MatcherAssert.assertThat(false, is(isSessionActive(sessionId2)));
+            assertCurrentUrlEquals(redirectUri + "&state=something");
+        } finally {
+            postLogoutRedirectUris = Collections.singletonList("+");
+            ClientManager.realm(adminClient.realm("test")).clientId("test-app").setPostLogoutRedirectUri(postLogoutRedirectUris);
+        }
+    }
 
     @Test
     public void logoutRedirectWithIdTokenHintPointToDifferentSession() {

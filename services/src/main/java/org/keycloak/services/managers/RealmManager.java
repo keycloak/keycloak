@@ -173,6 +173,7 @@ public class RealmManager {
         String baseUrl = "/admin/" + realm.getName() + "/console/";
         adminConsole.setBaseUrl(baseUrl);
         adminConsole.addRedirectUri(baseUrl + "*");
+        adminConsole.setAttribute(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, "+");
         adminConsole.setWebOrigins(Collections.singleton("+"));
 
         adminConsole.setEnabled(true);
@@ -417,6 +418,7 @@ public class RealmManager {
             String baseUrl = "/realms/" + realm.getName() + "/account/";
             accountClient.setBaseUrl(baseUrl);
             accountClient.addRedirectUri(baseUrl + "*");
+            accountClient.setAttribute(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, "+");
 
             accountClient.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
 
@@ -451,6 +453,7 @@ public class RealmManager {
                 accountConsoleClient.setRootUrl(Constants.AUTH_BASE_URL_PROP);
                 accountConsoleClient.setBaseUrl(baseUrl);
                 accountConsoleClient.addRedirectUri(baseUrl + "*");
+                accountConsoleClient.setAttribute(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, "+");
 
                 accountConsoleClient.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
 
