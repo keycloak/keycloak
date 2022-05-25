@@ -63,8 +63,8 @@ public class ClusteringE2EIT extends ClusterOperatorTest {
                 .untilAsserted(() -> assertThat(kcPodsSelector.list().getItems().size()).isEqualTo(2));
 
         Awaitility.await()
-                .atMost(2, MINUTES)
-                .pollDelay(5, SECONDS)
+                .atMost(5, MINUTES)
+                .pollDelay(1, SECONDS)
                 .ignoreExceptions()
                 .untilAsserted(() -> CRAssert.assertKeycloakStatusCondition(crSelector.get(), KeycloakStatusCondition.READY, true));
 
@@ -122,7 +122,11 @@ public class ClusteringE2EIT extends ClusterOperatorTest {
         realmImportSelector.delete();
 
         Log.info("Testing the Keycloak Cluster");
-        Awaitility.await().atMost(5, MINUTES).ignoreExceptions().untilAsserted(() -> {
+        Awaitility.await()
+                .atMost(20, MINUTES)
+                .pollDelay(5, SECONDS)
+                .ignoreExceptions()
+                .untilAsserted(() -> {
             // Get the list of Keycloak pods
             var pods = k8sclient
                     .pods()
@@ -173,11 +177,14 @@ public class ClusteringE2EIT extends ClusterOperatorTest {
         // This is to test passing through the "Service", not 100% deterministic, but a smoke test that things are working as expected
         // Executed here to avoid paying the setup time again
         var service = new KeycloakService(k8sclient, kc);
-        Awaitility.await().atMost(5, MINUTES).ignoreExceptions().untilAsserted(() -> {
+        Awaitility.await()
+                .atMost(20, MINUTES)
+                .pollDelay(5, SECONDS)
+                .ignoreExceptions()
+                .untilAsserted(() -> {
             String token2 = null;
             // Obtaining the token from the first pod
-            // Connecting using port-forward and a fixed port to respect the instance issuer used hostname
-            for (int i = 0; i < (targetInstances * 2); i++) {
+            for (int i = 0; i < (targetInstances + 1); i++) {
 
                 if (token2 == null) {
                     var tokenUrl = "https://" + service.getName() + "." + namespace + ":" + Constants.KEYCLOAK_HTTPS_PORT + "/realms/token-test/protocol/openid-connect/token";

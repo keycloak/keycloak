@@ -21,6 +21,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -146,6 +148,9 @@ public class KeycloakDeploymentE2EIT extends ClusterOperatorTest {
             k8sclient.apps().deployments().createOrReplace(deployment);
 
             Awaitility.await()
+                    .atMost(5, MINUTES)
+                    .pollDelay(1, SECONDS)
+                    .ignoreExceptions()
                     .untilAsserted(() -> {
                         var d = k8sclient.apps().deployments().withName(deploymentName).get();
                         assertThat(d.getMetadata().getLabels().entrySet().containsAll(labels.entrySet())).isTrue(); // additional labels should not be overwritten

@@ -136,6 +136,7 @@ public class KeycloakIngressE2EIT extends ClusterOperatorTest {
         ingressSelector.createOrReplace(currentIngress);
 
         Awaitility.await()
+                .ignoreExceptions()
                 .untilAsserted(() -> {
                     var i = ingressSelector.get();
                     assertThat(i.getMetadata().getLabels().entrySet().containsAll(labels.entrySet())).isTrue(); // additional labels should not be overwritten

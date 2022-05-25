@@ -79,8 +79,8 @@ public class RealmImportE2EIT extends ClusterOperatorTest {
                 .inNamespace(namespace)
                 .withName("example-count0-kc");
         Awaitility.await()
-                .atMost(3, MINUTES)
-                .pollDelay(5, SECONDS)
+                .atMost(5, MINUTES)
+                .pollDelay(1, SECONDS)
                 .ignoreExceptions()
                 .untilAsserted(() -> {
                     CRAssert.assertKeycloakRealmImportStatusCondition(crSelector.get(), DONE, false);
@@ -89,8 +89,8 @@ public class RealmImportE2EIT extends ClusterOperatorTest {
                 });
 
         Awaitility.await()
-                .atMost(3, MINUTES)
-                .pollDelay(5, SECONDS)
+                .atMost(5, MINUTES)
+                .pollDelay(1, SECONDS)
                 .ignoreExceptions()
                 .untilAsserted(() -> {
                     CRAssert.assertKeycloakRealmImportStatusCondition(crSelector.get(), DONE, true);
