@@ -264,7 +264,9 @@ public class UserStorageSyncManager {
                             // Update persistent provider in DB
                             int lastSync = Time.currentTime();
                             persistentFedProvider.setLastSync(lastSync);
-                            persistentRealm.updateComponent(persistentFedProvider);
+                            // This causes too much contention in the COMPONENT_CONFIG table.
+                            // Replace me with a single update statement to the `lastSync` value
+                            //persistentRealm.updateComponent(persistentFedProvider);
 
                             // Update "cached" reference
                             provider.setLastSync(lastSync);
