@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -1431,7 +1432,16 @@ public class RepresentationToModel {
             client.setClientAuthenticatorType(KeycloakModelUtils.getDefaultClientAuthenticatorType());
         }
 
-        client.setSecret(resourceRep.getSecret());
+        // adding secret if the client isn't public nor bearer only
+        if (Objects.nonNull(resourceRep.getSecret())) {
+            client.setSecret(resourceRep.getSecret());
+        } else {
+            if (client.isPublicClient() || client.isBearerOnly()) {
+                client.setSecret(null);
+            } else {
+                KeycloakModelUtils.generateSecret(client);
+            }
+        }
 
         if (resourceRep.getAttributes() != null) {
             for (Map.Entry<String, String> entry : resourceRep.getAttributes().entrySet()) {

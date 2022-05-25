@@ -266,7 +266,8 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         String clientId = response.getClientId();
         ClientRepresentation kcClientRep = getKeycloakClient(clientId);
         Assert.assertFalse(kcClientRep.isPublicClient());
-        Assert.assertNull(kcClientRep.getSecret());
+        Assert.assertFalse(kcClientRep.isBearerOnly());
+        Assert.assertNotNull(kcClientRep.getSecret());
     }
 
     @Test
