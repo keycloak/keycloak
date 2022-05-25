@@ -23,6 +23,9 @@ import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.KeycloakSessionTask;
+import org.keycloak.models.KeycloakTransaction;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.sessions.AuthenticationSessionModel;
@@ -103,9 +106,8 @@ class CodeGenerateUtil {
                 String actionId = Base64Url.encode(SecretGenerator.getInstance().randomBytes());
                 authSession.setAuthNote(ACTIVE_CODE, actionId);
 
-                // We need to set the active code to the authSession in the separate sub-transaction as well
-                // to make sure the change is committed if the main transaction is rolled back later.
-                KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession currentSession) -> {
+                // enlist a transaction that ensures the code is set in the auth session in case the main transaction is rolled back.
+                session.getTransactionManager().enlist(new RollbackDrivenTransaction(session.getKeycloakSessionFactory(), currentSession -> {
                     final RootAuthenticationSessionModel rootAuthenticationSession = currentSession.authenticationSessions()
                             .getRootAuthenticationSession(authSession.getRealm(), authSession.getParentSession().getId());
                     AuthenticationSessionModel authenticationSession = rootAuthenticationSession == null ? null : rootAuthenticationSession
@@ -113,7 +115,7 @@ class CodeGenerateUtil {
                     if (authenticationSession != null) {
                         authenticationSession.setAuthNote(ACTIVE_CODE, actionId);
                     }
-                });
+                }));
                 nextCode = actionId;
             } else {
                 logger.debug("Code already generated for authentication session, using same code");
@@ -138,15 +140,13 @@ class CodeGenerateUtil {
             }
 
             authSession.removeAuthNote(ACTIVE_CODE);
-
-            // We need to remove the active code from the authSession in the separate sub-transaction as well
-            // to make sure the change is committed if the main transaction is rolled back later.
-            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession currentSession) -> {
+            // enlist a transaction that ensures the code is removed in case the main transaction is rolled back.
+            session.getTransactionManager().enlist(new RollbackDrivenTransaction(session.getKeycloakSessionFactory(), currentSession -> {
                 AuthenticationSessionModel authenticationSession = currentSession.authenticationSessions()
                         .getRootAuthenticationSession(authSession.getRealm(), authSession.getParentSession().getId())
                         .getAuthenticationSession(authSession.getClient(), authSession.getTabId());
                 authenticationSession.removeAuthNote(ACTIVE_CODE);
-            });
+            }));
 
             return MessageDigest.isEqual(code.getBytes(), activeCode.getBytes());
         }
@@ -173,5 +173,47 @@ class CodeGenerateUtil {
         }
     }
 
+    /**
+     * A {@link KeycloakTransaction} that runs a task only when {@link #rollback()} is called.
+     */
+    private static class RollbackDrivenTransaction implements KeycloakTransaction {
 
+        private final KeycloakSessionFactory factory;
+        private final KeycloakSessionTask task;
+
+        RollbackDrivenTransaction(final KeycloakSessionFactory factory, final KeycloakSessionTask task) {
+            this.factory = factory;
+            this.task = task;
+        }
+
+        @Override
+        public void begin() {
+            // no-op - this tx doesn't participate in the regular transaction flow, only when rollback is triggered.
+        }
+
+        @Override
+        public void commit() {
+            // no-op - this tx doesn't participate in the regular transaction flow, only when rollback is triggered.
+        }
+
+        @Override
+        public void rollback() {
+            KeycloakModelUtils.runJobInTransaction(this.factory, this.task);
+        }
+
+        @Override
+        public void setRollbackOnly() {
+            // no-op - this tx doesn't participate in the regular transaction flow, only when rollback is triggered.
+        }
+
+        @Override
+        public boolean getRollbackOnly() {
+            return false;
+        }
+
+        @Override
+        public boolean isActive() {
+            return false;
+        }
+    }
 }
