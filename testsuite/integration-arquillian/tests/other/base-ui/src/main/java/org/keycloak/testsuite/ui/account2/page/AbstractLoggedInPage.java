@@ -48,7 +48,7 @@ public abstract class AbstractLoggedInPage extends AbstractAccountPage {
     @Page
     private ContinueCancelModal modal;
 
-    @FindBy(xpath = ".//*[@id='page-heading']//h1")
+    @FindBy(className = "pf-c-title")
     private WebElement pageTitle;
 
     @FindBy(id = "refresh-page")
@@ -84,10 +84,13 @@ public abstract class AbstractLoggedInPage extends AbstractAccountPage {
      * and at some Account Console page (not Welcome Screen), i.e. that the nav bar is visible.
      */
     public void navigateToUsingSidebar() {
+        if (sidebar.isCollapsed()) {
+            sidebar.expand();
+        }
+
         if (getParentPageId() != null) {
             sidebar().clickSubNav(getParentPageId(), getPageId());
-        }
-        else {
+        } else {
             sidebar().clickNav(getPageId());
         }
     }

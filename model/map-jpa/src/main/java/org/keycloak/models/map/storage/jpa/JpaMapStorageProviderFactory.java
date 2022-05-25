@@ -115,7 +115,7 @@ public class JpaMapStorageProviderFactory implements
         MapStorageProviderFactory,
         EnvironmentDependentProviderFactory {
 
-    public static final String PROVIDER_ID = "jpa-map-storage";
+    public static final String PROVIDER_ID = "jpa";
     private static final String SESSION_TX_PREFIX = "jpa-map-tx-";
     private static final AtomicInteger ENUMERATOR = new AtomicInteger(0);
     private static final Logger logger = Logger.getLogger(JpaMapStorageProviderFactory.class);

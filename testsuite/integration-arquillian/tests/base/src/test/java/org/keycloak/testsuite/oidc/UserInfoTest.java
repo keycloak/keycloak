@@ -34,6 +34,7 @@ import org.keycloak.common.util.PemUtils;
 import org.keycloak.common.util.Time;
 import org.keycloak.crypto.AesCbcHmacShaContentEncryptionProvider;
 import org.keycloak.crypto.AesGcmContentEncryptionProvider;
+import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.RsaCekManagementProvider;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -44,7 +45,6 @@ import org.keycloak.jose.jwe.JWEException;
 import org.keycloak.jose.jwe.JWEHeader;
 import org.keycloak.jose.jwe.alg.JWEAlgorithmProvider;
 import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
-import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.jose.jws.crypto.RSAProvider;
@@ -265,27 +265,27 @@ public class UserInfoTest extends AbstractKeycloakTest {
 
     @Test
     public void testSuccessEncryptedResponseSigAlgPS384AlgRSA_OAEPEncA256GCM() throws Exception {
-        testUserInfoSignatureAndEncryption(org.keycloak.crypto.Algorithm.PS384, JWEConstants.RSA_OAEP, JWEConstants.A256GCM);
+        testUserInfoSignatureAndEncryption(Algorithm.PS384, JWEConstants.RSA_OAEP, JWEConstants.A256GCM);
     }
 
     @Test
     public void testSuccessEncryptedResponseSigAlgRS256AlgRSA_OAEP256EncA192CBC_HS384() throws Exception {
-        testUserInfoSignatureAndEncryption(org.keycloak.crypto.Algorithm.RS256, JWEConstants.RSA_OAEP_256, JWEConstants.A192CBC_HS384);
+        testUserInfoSignatureAndEncryption(Algorithm.RS256, JWEConstants.RSA_OAEP_256, JWEConstants.A192CBC_HS384);
     }
 
     @Test
     public void testSuccessEncryptedResponseSigAlgES512AlgRSA1_5EncDefault() throws Exception {
-        testUserInfoSignatureAndEncryption(org.keycloak.crypto.Algorithm.ES512, JWEConstants.RSA1_5, null);
+        testUserInfoSignatureAndEncryption(Algorithm.ES512, JWEConstants.RSA1_5, null);
     }
 
     @Test
     public void testSuccessEncryptedResponseSigAlgES384AlgRSA_OAEPEncA128GCM() throws Exception {
-        testUserInfoSignatureAndEncryption(org.keycloak.crypto.Algorithm.ES384, JWEConstants.RSA_OAEP, JWEConstants.A128GCM);
+        testUserInfoSignatureAndEncryption(Algorithm.ES384, JWEConstants.RSA_OAEP, JWEConstants.A128GCM);
     }
 
     @Test
     public void testSuccessEncryptedResponseSigAlgPS256AlgRSA_OAEP256EncA256CBC_HS512() throws Exception {
-        testUserInfoSignatureAndEncryption(org.keycloak.crypto.Algorithm.PS256, JWEConstants.RSA_OAEP_256, JWEConstants.A256CBC_HS512);
+        testUserInfoSignatureAndEncryption(Algorithm.PS256, JWEConstants.RSA_OAEP_256, JWEConstants.A256CBC_HS512);
     }
 
     @Test
@@ -305,7 +305,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
             clientRep = clientResource.toRepresentation();
             // set UserInfo response signature algorithm and encryption algorithms
             if(sigAlgorithm != null) {
-                OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUserInfoSignedResponseAlg(Enum.valueOf(Algorithm.class, sigAlgorithm));
+                OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUserInfoSignedResponseAlg(sigAlgorithm);
             }
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUserInfoEncryptedResponseAlg(algAlgorithm);
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUserInfoEncryptedResponseEnc(encAlgorithm);
@@ -440,7 +440,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
                     .detail(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN)
                     .detail(Details.USERNAME, "test-user@localhost")
                     .detail(Details.SIGNATURE_REQUIRED, "true")
-                    .detail(Details.SIGNATURE_ALGORITHM, Algorithm.RS256.toString())
+                    .detail(Details.SIGNATURE_ALGORITHM, Algorithm.RS256)
                     .assertEvent();
 
             // Check signature and content
@@ -808,7 +808,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
         return UserInfoClientUtil.testSuccessfulUserInfoResponse(response, "test-user@localhost", "test-user@localhost");
     }
 
-    private void testSuccessSignedResponse(Algorithm sigAlg) throws Exception {
+    private void testSuccessSignedResponse(String sigAlg) throws Exception {
 
         try {
             // Require signed userInfo request
@@ -830,7 +830,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
                         .detail(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN)
                         .detail(Details.USERNAME, "test-user@localhost")
                         .detail(Details.SIGNATURE_REQUIRED, "true")
-                        .detail(Details.SIGNATURE_ALGORITHM, sigAlg.toString())
+                        .detail(Details.SIGNATURE_ALGORITHM, sigAlg)
                         .assertEvent();
 
                 Assert.assertEquals(200, response.getStatus());
@@ -840,7 +840,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
 
                 JWSInput jwsInput = new JWSInput(signedResponse);
 
-                assertEquals(sigAlg.toString(), jwsInput.getHeader().getAlgorithm().name());
+                assertEquals(sigAlg, jwsInput.getHeader().getAlgorithm().name());
 
                 UserInfo userInfo = JsonSerialization.readValue(jwsInput.getContent(), UserInfo.class);
 
@@ -861,7 +861,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUserInfoSignedResponseAlg(null);
             clientResource.update(clientRep);
         } finally {
-            TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, org.keycloak.crypto.Algorithm.RS256);
+            TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, Algorithm.RS256);
         }
     }
 

@@ -15,4 +15,4 @@
 # limitations under the License.
 #
 
-org.keycloak.adapters.saml.wildfly.WildflySamlExtension
+org.keycloak.models.map.events.MapEventStoreProviderFactory

@@ -31,7 +31,6 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>wildfly-adapter</module>
         <module>wildfly-subsystem</module>
     </modules>
 </project>

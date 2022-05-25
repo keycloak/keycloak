@@ -190,6 +190,11 @@ public class IdTokenEncryptionTest extends AbstractTestRealmKeycloakTest {
         testIdTokenSignatureAndEncryption(Algorithm.PS512, JWEConstants.RSA_OAEP, JWEConstants.A256GCM);
     }
 
+    @Test
+    public void testIdTokenEncryptionAlgRSA_OAEPEncDefault() {
+        testIdTokenSignatureAndEncryption(Algorithm.PS256, JWEConstants.RSA_OAEP, null);
+    }
+
     private void testIdTokenSignatureAndEncryption(String sigAlgorithm, String algAlgorithm, String encAlgorithm) {
         ClientResource clientResource = null;
         ClientRepresentation clientRep = null;
@@ -230,6 +235,7 @@ public class IdTokenEncryptionTest extends AbstractTestRealmKeycloakTest {
             Assert.assertEquals("JWT", jweHeader.getContentType());
 
             // verify and decrypt JWE
+            if (encAlgorithm == null) encAlgorithm = JWEConstants.A128CBC_HS256;
             JWEAlgorithmProvider algorithmProvider = getJweAlgorithmProvider(algAlgorithm);
             JWEEncryptionProvider encryptionProvider = getJweEncryptionProvider(encAlgorithm);
             byte[] decodedString = TokenUtil.jweKeyEncryptionVerifyAndDecode(decryptionKEK, jweStr, algorithmProvider, encryptionProvider);

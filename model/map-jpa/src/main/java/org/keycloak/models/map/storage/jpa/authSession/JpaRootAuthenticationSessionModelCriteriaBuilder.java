@@ -41,7 +41,7 @@ public class JpaRootAuthenticationSessionModelCriteriaBuilder extends JpaModelCr
     public JpaRootAuthenticationSessionModelCriteriaBuilder compare(SearchableModelField<? super RootAuthenticationSessionModel> modelField, Operator op, Object... value) {
         switch (op) {
             case EQ:
-                if (modelField.equals(SearchableFields.REALM_ID)) {
+                if (modelField == SearchableFields.REALM_ID) {
 
                     validateValue(value, modelField, op, String.class);
 
@@ -53,7 +53,7 @@ public class JpaRootAuthenticationSessionModelCriteriaBuilder extends JpaModelCr
                 }
 
             case LT:
-                if (modelField.equals(SearchableFields.EXPIRATION)) {
+                if (modelField == SearchableFields.EXPIRATION) {
                     validateValue(value, modelField, op, Number.class);
 
                     Number expiration = (Number) value[0];

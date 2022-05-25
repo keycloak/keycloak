@@ -25,6 +25,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -75,7 +76,7 @@ public class BlacklistPasswordPolicyProviderFactory implements PasswordPolicyPro
 
     public static final String JBOSS_SERVER_DATA_DIR = "jboss.server.data.dir";
 
-    public static final String PASSWORD_BLACKLISTS_FOLDER = "password-blacklists/";
+    public static final String PASSWORD_BLACKLISTS_FOLDER = "password-blacklists" + File.separator;
 
     private ConcurrentMap<String, FileBasedPasswordBlacklist> blacklistRegistry = new ConcurrentHashMap<>();
 
@@ -142,7 +143,7 @@ public class BlacklistPasswordPolicyProviderFactory implements PasswordPolicyPro
      * when no other configuration is in place.
      */
     public String getDefaultBlacklistsBasePath() {
-        return System.getProperty(JBOSS_SERVER_DATA_DIR) + "/" + PASSWORD_BLACKLISTS_FOLDER;
+        return System.getProperty(JBOSS_SERVER_DATA_DIR) + File.separator + PASSWORD_BLACKLISTS_FOLDER;
     }
 
     /**
