@@ -80,3 +80,4 @@ quarkus/data/*.db
 ###############################
 
 /integration/admin-client-jakarta/src/
+/.metadata/

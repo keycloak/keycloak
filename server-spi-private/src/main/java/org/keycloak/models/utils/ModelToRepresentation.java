@@ -690,6 +690,13 @@ public class ModelToRepresentation {
         rep.setNotBefore(clientModel.getNotBefore());
         rep.setNodeReRegistrationTimeout(clientModel.getNodeReRegistrationTimeout());
         rep.setClientAuthenticatorType(clientModel.getClientAuthenticatorType());
+        
+        // adding the secret if non public or bearer only
+        if (clientModel.isBearerOnly() || clientModel.isPublicClient()) {
+            rep.setSecret(null);
+        } else {
+            rep.setSecret(clientModel.getSecret());
+        }
 
         rep.setDefaultClientScopes(new LinkedList<>(clientModel.getClientScopes(true).keySet()));
         rep.setOptionalClientScopes(new LinkedList<>(clientModel.getClientScopes(false).keySet()));
