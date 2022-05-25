@@ -46,4 +46,8 @@ public interface KeycloakDistribution {
     default void copyOrReplaceFileFromClasspath(String file, Path distDir) {
         throw new RuntimeException("Not implemented");
     }
+
+    default void removeProperty(String db) {
+        throw new RuntimeException("Not implemented");
+    }
 }

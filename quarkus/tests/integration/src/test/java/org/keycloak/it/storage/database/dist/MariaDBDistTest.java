@@ -15,15 +15,16 @@
  * limitations under the License.
  */
 
-package org.keycloak.it.storage.database;
+package org.keycloak.it.storage.database.dist;
 
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.CLITest;
 import org.keycloak.it.junit5.extension.WithDatabase;
+import org.keycloak.it.storage.database.BasicDatabaseTest;
 
 @CLITest
 @WithDatabase(alias = "mariadb")
-public class MariaDBStartDatabaseTest extends AbstractStartDabataseTest {
+public class MariaDBDistTest extends BasicDatabaseTest {
 
     @Override
     protected void assertWrongPassword(CLIResult cliResult) {

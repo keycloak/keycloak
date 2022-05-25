@@ -17,38 +17,21 @@
 
 package org.keycloak.it.storage.database;
 
-import org.junit.jupiter.api.Test;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.CLITest;
 import org.keycloak.it.junit5.extension.WithDatabase;
 
-import io.quarkus.test.junit.main.Launch;
-import io.quarkus.test.junit.main.LaunchResult;
-
 @CLITest
-@WithDatabase(alias = "mssql")
-public class MSSQLStartDatabaseTest extends AbstractStartDabataseTest {
-
-    /**
-     * It should be possible to enable XA but here we reproduce a managed environment where only nonXA transaction is supported
-     *
-     * @param result
-     */
-    @Override
-    @Test
-    @Launch({ "--transaction-xa-enabled=false", "start-dev" })
-    void testSuccessful(LaunchResult result) {
-        CLIResult cliResult = (CLIResult) result;
-        cliResult.assertStartedDevMode();
-    }
+@WithDatabase(alias = "oracle")
+public class OracleTest extends BasicDatabaseTest {
 
     @Override
     protected void assertWrongUsername(CLIResult cliResult) {
-        cliResult.assertMessage("ERROR: Login failed for user 'wrong'");
+        cliResult.assertMessage("ORA-01017: invalid username/password; logon denied");
     }
 
     @Override
     protected void assertWrongPassword(CLIResult cliResult) {
-        cliResult.assertMessage("Login failed for user");
+        cliResult.assertMessage("ORA-01017: invalid username/password; logon denied");
     }
 }

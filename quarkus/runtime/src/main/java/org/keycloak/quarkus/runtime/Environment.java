@@ -31,7 +31,6 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import io.quarkus.bootstrap.runner.RunnerClassLoader;
 import io.quarkus.runtime.LaunchMode;
 import io.quarkus.runtime.configuration.ProfileManager;
 import org.apache.commons.lang3.SystemUtils;
@@ -49,11 +48,11 @@ public final class Environment {
     private Environment() {}
 
     public static Boolean isRebuild() {
-        return !isRuntimeMode();
+        return Boolean.getBoolean("quarkus.launch.rebuild");
     }
 
     public static Boolean isRuntimeMode() {
-        return Thread.currentThread().getContextClassLoader() instanceof RunnerClassLoader;
+        return !isRebuild();
     }
 
     public static String getHomeDir() {

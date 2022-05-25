@@ -33,8 +33,6 @@ public @interface WithDatabase {
 
     /**
      * The database name as per database aliases.
-     *
-     * @return the database alias
      */
     String alias();
 }

@@ -38,5 +38,10 @@ public @interface DistributionTest {
     }
 
     ReInstall reInstall() default ReInstall.BEFORE_ALL;
+
+    /**
+     * If any build option must be unset after the running the build command.
+     */
+    boolean removeBuildOptionsAfterBuild() default false;
 }
 

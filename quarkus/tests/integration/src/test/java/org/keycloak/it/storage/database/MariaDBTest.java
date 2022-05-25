@@ -17,25 +17,21 @@
 
 package org.keycloak.it.storage.database;
 
-import org.junit.jupiter.api.Test;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.CLITest;
 import org.keycloak.it.junit5.extension.WithDatabase;
 
-import io.quarkus.test.junit.main.Launch;
-import io.quarkus.test.junit.main.LaunchResult;
-
 @CLITest
-@WithDatabase(alias = "postgres")
-public class PostgreSQLStartDatabaseTest extends AbstractStartDabataseTest {
-
-    @Override
-    protected void assertWrongUsername(CLIResult cliResult) {
-        cliResult.assertMessage("ERROR: FATAL: password authentication failed for user \"wrong\"");
-    }
+@WithDatabase(alias = "mariadb")
+public class MariaDBTest extends BasicDatabaseTest {
 
     @Override
     protected void assertWrongPassword(CLIResult cliResult) {
-        cliResult.assertMessage("ERROR: FATAL: password authentication failed for user");
+        cliResult.assertMessage("Access denied for user");
+    }
+
+    @Override
+    protected void assertWrongUsername(CLIResult cliResult) {
+        cliResult.assertMessage("Access denied for user 'wrong'");
     }
 }
