@@ -45,10 +45,17 @@ public final class Start extends AbstractStartCommand implements Runnable {
     @CommandLine.Option(names = {AUTO_BUILD_OPTION_SHORT, AUTO_BUILD_OPTION_LONG},
             description = "Automatically detects whether the server configuration changed and a new server image must be built" +
                     " prior to starting the server. This option provides an alternative to manually running the '" + Build.NAME + "'" +
-                    " prior to starting the server. Use this configuration carefully in production as it might impact the startup time.",
+                    " prior to starting the server. Use this configuration carefully in production as it might impact the startup time." +
+                    " From version 19.0.0, this option is triggered by default when issuing the 'start' command.",
             paramLabel = NO_PARAM_LABEL,
             order = 1)
     Boolean autoConfig;
+
+    @CommandLine.Option(names = {NO_AUTO_BUILD_OPTION_LONG},
+            description = "Avoids the '--auto-build' automatic run, which from version 19.0.0, is triggered by default when issuing the 'start' command.",
+            paramLabel = NO_PARAM_LABEL,
+            order = 1)
+    Boolean noAutoConfig;
 
     @CommandLine.Mixin
     ImportRealmMixin importRealmMixin;

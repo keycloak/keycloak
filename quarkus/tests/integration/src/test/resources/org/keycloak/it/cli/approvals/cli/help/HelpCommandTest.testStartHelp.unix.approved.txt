@@ -16,6 +16,7 @@ Options:
 -h, --help           This help message.
 --import-realm       Import realms during startup by reading any realm configuration file from the
                        'data/import' directory.
+--no-auto-build      [TBD]
 
 Database:
 

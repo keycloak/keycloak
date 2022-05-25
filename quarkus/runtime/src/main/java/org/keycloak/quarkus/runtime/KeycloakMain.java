@@ -23,6 +23,7 @@ import static org.keycloak.quarkus.runtime.Environment.getProfileOrDefault;
 import static org.keycloak.quarkus.runtime.Environment.isImportExportMode;
 import static org.keycloak.quarkus.runtime.Environment.isTestLaunchMode;
 import static org.keycloak.quarkus.runtime.cli.Picocli.parseAndRun;
+import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.*;
 import static org.keycloak.quarkus.runtime.cli.command.Start.isDevProfileNotAllowed;
 
 import java.io.PrintWriter;
@@ -40,9 +41,11 @@ import org.keycloak.Config;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakTransactionManager;
+import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.quarkus.runtime.cli.ExecutionExceptionHandler;
 import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.common.Version;
+import org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand;
 import org.keycloak.quarkus.runtime.cli.command.Start;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.ApplianceBootstrap;
@@ -82,6 +85,12 @@ public class KeycloakMain implements QuarkusApplication {
             start(errorHandler, errStream);
 
             return;
+        }
+
+        if (cliArgs.contains(NO_AUTO_BUILD_OPTION_LONG)) {
+            cliArgs.remove(AUTO_BUILD_OPTION_LONG);
+            cliArgs.remove(AUTO_BUILD_OPTION_SHORT);
+            cliArgs.remove(NO_AUTO_BUILD_OPTION_LONG);
         }
 
         // parse arguments and execute any of the configured commands

@@ -24,6 +24,7 @@ set "SERVER_OPTS=-Djava.util.logging.manager=org.jboss.logmanager.LogManager -Dq
 set DEBUG_MODE=false
 set DEBUG_PORT_VAR=8787
 set DEBUG_SUSPEND_VAR=n
+set CONFIG_ARGS=
 
 rem Read command-line args, the ~ removes the quotes from the parameter
 :READ-ARGS
@@ -124,6 +125,23 @@ if "x%JAVA_HOME%" == "x" (
 
 set "CLASSPATH_OPTS=%DIRNAME%..\lib\quarkus-run.jar"
 
+rem ============================================================================
+rem Handling the default adding of the '--auto-build' when issuing 'start' operation :: Keeping compatibility and Avoiding the duplicated '--auto-build' input
+rem ============================================================================
+SetLocal EnableDelayedExpansion
+
+call:getQtyOccurenceInString "start" "%CONFIG_ARGS%"
+if %errorlevel% GTR 0 (
+    call:getQtyOccurenceInString "--auto-build" "%CONFIG_ARGS%"
+    if !errorlevel! == 0 (
+        set "CONFIG_ARGS=%CONFIG_ARGS% --auto-build"
+    ) else (
+        echo "WARNING: The '--auto-build' option for 'start' command will be deprecated. When issuing the 'start' command, by default, the '--auto-build' option is automatically added."
+        set "CONFIG_ARGS=%CONFIG_ARGS:--auto-build=% --auto-build"
+    )
+)
+rem ============================================================================
+
 set "JAVA_RUN_OPTS=%JAVA_OPTS% -Dkc.home.dir="%DIRNAME%.." -Djboss.server.config.dir="%DIRNAME%..\conf" -Dkeycloak.theme.dir="%DIRNAME%..\themes" %SERVER_OPTS% -cp "%CLASSPATH_OPTS%" io.quarkus.bootstrap.runner.QuarkusEntryPoint %CONFIG_ARGS%"
 
 SetLocal EnableDelayedExpansion
@@ -137,3 +155,28 @@ if not "!CONFIG_ARGS:%AUTO_BUILD_OPTION%=!"=="!CONFIG_ARGS!" (
 "%JAVA%" %JAVA_RUN_OPTS%
 
 :END
+
+
+:getQtyOccurenceInString
+    set localStringToSearch=%~1
+    set localTargetText=%~2
+	set /a resultOccurrencesCount=0
+
+	if NOT "x%localTargetText%" == "x" (
+		set remainingOptionsTmp=%localTargetText%
+
+		:counterLoop
+		for /f "tokens=1*" %%a in ("%remainingOptionsTmp%") do (
+		 	if "%%~a" == "%localStringToSearch%" (
+		 		set /a "resultOccurrencesCount+=1"
+		 	)
+		 	set remainingOptionsTmp=%%b
+		)
+		if defined remainingOptionsTmp (
+			goto :counterLoop
+		)
+
+	)
+	rem echo "====> localStringToSearch = %localStringToSearch% || resultOccurrencesCount = %resultOccurrencesCount%"
+
+EXIT /b %resultOccurrencesCount%

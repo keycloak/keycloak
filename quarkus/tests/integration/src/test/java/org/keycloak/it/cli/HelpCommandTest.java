@@ -27,6 +27,8 @@ import io.quarkus.test.junit.main.LaunchResult;
 import org.keycloak.quarkus.runtime.cli.command.Start;
 import org.keycloak.quarkus.runtime.cli.command.StartDev;
 
+import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.NO_AUTO_BUILD_OPTION_LONG;
+
 @CLITest
 public class HelpCommandTest {
 
@@ -52,7 +54,7 @@ public class HelpCommandTest {
     }
 
     @Test
-    @Launch({ Start.NAME, "--help" })
+    @Launch({ Start.NAME, "--help", NO_AUTO_BUILD_OPTION_LONG })
     void testStartHelp(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertHelp();

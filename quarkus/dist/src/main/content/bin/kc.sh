@@ -1,5 +1,31 @@
 #!/bin/bash
 
+function printArrayElementsInLines() {
+    local sourceArray=${!1}
+    printf "%s\n" ${sourceArray[@]}
+}
+
+function checkIfArrayContains() {
+    local sourceArray=${!1}
+    local stringToSearch="$2"
+    printArrayElementsInLines sourceArray[@] | grep -q "^$stringToSearch$"
+}
+
+function countOccurrencesInArray() {
+    local sourceArray=${!1}
+    local stringToSearch="$2"
+    let resultOccurrencesCount=0
+
+    for oneElement in ${sourceArray[*]}; do
+        if [ $oneElement == $stringToSearch ]; then
+            resultOccurrencesCount=$((resultOccurrencesCount + 1))
+        fi
+    done
+
+    return ${resultOccurrencesCount}
+}
+
+
 case "`uname`" in
     CYGWIN*)
         CFILE = `cygpath "$0"`
@@ -33,6 +59,7 @@ CONFIG_ARGS=${CONFIG_ARGS:-""}
 
 while [ "$#" -gt 0 ]
 do
+
     case "$1" in
       --debug)
           DEBUG_MODE=true
@@ -46,9 +73,12 @@ do
           break
           ;;
       *)
+
           if [[ $1 = --* || ! $1 =~ ^-D.* ]]; then
             if [[ "$1" = "start-dev" ]]; then
               CONFIG_ARGS="$CONFIG_ARGS --profile=dev $1 --auto-build"
+            elif [[ "$1" = "start" ]]; then
+              CONFIG_ARGS="$CONFIG_ARGS $1 --auto-build"
             else
               CONFIG_ARGS="$CONFIG_ARGS $1"
             fi
@@ -59,6 +89,27 @@ do
     esac
     shift
 done
+
+
+# Handling the default adding of the '--auto-build' when issuing 'start' operation :: Keeping compatibility and Avoiding the duplicated '--auto-build' input
+if checkIfArrayContains CONFIG_ARGS[@] "start" = true; then
+    autoBuildOptionFlagName="--auto-build"
+    countOccurrencesInArray CONFIG_ARGS[@] "${autoBuildOptionFlagName}"
+    autoBuildOptionCount=$?
+
+    if [ "${autoBuildOptionCount}" -gt 1 ]; then
+        echo "WARNING: The '--auto-build' option for 'start' command will be deprecated. When issuing the 'start' command, by default, the '--auto-build' option is automatically added."
+    fi
+
+    while [ "${autoBuildOptionCount}" -gt 1 ]
+    do
+        CONFIG_ARGS=("${CONFIG_ARGS[@]/$autoBuildOptionFlagName}")
+        countOccurrencesInArray CONFIG_ARGS[@] "${autoBuildOptionFlagName}"
+        autoBuildOptionCount=$?
+    done
+
+    # echo ">>> Final Result :: CONFIG_ARGS = $CONFIG_ARGS :: "
+fi
 
 if [ "x$JAVA" = "x" ]; then
     if [ "x$JAVA_HOME" != "x" ]; then
