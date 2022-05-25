@@ -40,6 +40,7 @@ import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
@@ -52,6 +53,12 @@ import io.quarkus.fs.util.ZipUtils;
 import org.apache.commons.io.FileUtils;
 
 import org.keycloak.common.Version;
+import org.keycloak.quarkus.runtime.Environment;
+import org.keycloak.quarkus.runtime.cli.command.Build;
+import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
+import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
+
+import static org.keycloak.quarkus.runtime.Environment.LAUNCH_MODE;
 
 public final class RawKeycloakDistribution implements KeycloakDistribution {
 
@@ -65,13 +72,15 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     private int httpPort;
     private boolean debug;
     private boolean reCreate;
+    private boolean removeBuildOptionsAfterBuild;
     private ExecutorService outputExecutor;
     private boolean inited = false;
 
-    public RawKeycloakDistribution(boolean debug, boolean manualStop, boolean reCreate) {
+    public RawKeycloakDistribution(boolean debug, boolean manualStop, boolean reCreate, boolean removeBuildOptionsAfterBuild) {
         this.debug = debug;
         this.manualStop = manualStop;
         this.reCreate = reCreate;
+        this.removeBuildOptionsAfterBuild = removeBuildOptionsAfterBuild;
         this.distPath = prepareDistribution();
     }
 
@@ -94,6 +103,11 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
             stop();
             throw new RuntimeException("Failed to start the server", cause);
         } finally {
+            if (arguments.contains(Build.NAME) && removeBuildOptionsAfterBuild) {
+                for (PropertyMapper mapper : PropertyMappers.getBuildTimeMappers()) {
+                    removeProperty(mapper.getFrom().substring(3));
+                }
+            }
             if (!manualStop) {
                 stop();
             }
@@ -329,12 +343,27 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
 
     @Override
     public void setProperty(String key, String value) {
-        setProperty(key, value, distPath.resolve("conf").resolve("keycloak.conf").toFile());
+        updateProperties(properties -> properties.put(key, value), distPath.resolve("conf").resolve("keycloak.conf").toFile());
+    }
+
+    @Override
+    public void removeProperty(String key) {
+        updateProperties(new Consumer<Properties>() {
+            @Override
+            public void accept(Properties properties) {
+                properties.remove(key);
+            }
+        }, distPath.resolve("conf").resolve("keycloak.conf").toFile());
     }
 
     @Override
     public void setQuarkusProperty(String key, String value) {
-        setProperty(key, value, getQuarkusPropertiesFile());
+        updateProperties(new Consumer<Properties>() {
+            @Override
+            public void accept(Properties properties) {
+                properties.put(key, value);
+            }
+        }, getQuarkusPropertiesFile());
     }
 
     @Override
@@ -359,27 +388,27 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         }
     }
 
-    private void setProperty(String key, String value, File confFile) {
+    private void updateProperties(Consumer<Properties> propertiesConsumer, File propertiesFile) {
         Properties properties = new Properties();
 
-        if (confFile.exists()) {
+        if (propertiesFile.exists()) {
             try (
-                FileInputStream in = new FileInputStream(confFile);
+                FileInputStream in = new FileInputStream(propertiesFile);
             ) {
 
                 properties.load(in);
             } catch (Exception e) {
-                throw new RuntimeException("Failed to update " + confFile, e);
+                throw new RuntimeException("Failed to update " + propertiesFile, e);
             }
         }
 
         try (
-            FileOutputStream out = new FileOutputStream(confFile)
+            FileOutputStream out = new FileOutputStream(propertiesFile)
         ) {
-            properties.put(key, value);
+            propertiesConsumer.accept(properties);
             properties.store(out, "");
         } catch (Exception e) {
-            throw new RuntimeException("Failed to update " + confFile, e);
+            throw new RuntimeException("Failed to update " + propertiesFile, e);
         }
     }
 

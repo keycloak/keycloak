@@ -17,23 +17,27 @@
 
 package org.keycloak.it.storage.database;
 
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 import org.keycloak.it.junit5.extension.CLIResult;
 
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
 
-public abstract class AbstractStartDabataseTest {
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+public abstract class BasicDatabaseTest {
 
     @Test
-    @Launch({ "start-dev" })
+    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false" })
     void testSuccessful(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        cliResult.assertStartedDevMode();
+        cliResult.assertStarted();
     }
 
     @Test
-    @Launch({ "start-dev", "--db-username=wrong" })
+    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--db-username=wrong" })
     void testWrongUsername(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertMessage("ERROR: Failed to obtain JDBC connection");
@@ -43,7 +47,7 @@ public abstract class AbstractStartDabataseTest {
     protected abstract void assertWrongUsername(CLIResult cliResult);
 
     @Test
-    @Launch({ "start-dev", "--db-password=wrong" })
+    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--db-password=wrong" })
     void testWrongPassword(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertMessage("ERROR: Failed to obtain JDBC connection");
@@ -51,4 +55,23 @@ public abstract class AbstractStartDabataseTest {
     }
 
     protected abstract void assertWrongPassword(CLIResult cliResult);
+
+    @Order(1)
+    @Test
+    @Launch({ "export", "--dir=./target/export"})
+    public void testExportSucceeds(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertMessage("Full model export requested");
+        cliResult.assertMessage("Export finished successfully");
+    }
+
+    @Order(2)
+    @Test
+    @Launch({ "import", "--dir=./target/export" })
+    void testImportSucceeds(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertMessage("target/export");
+        cliResult.assertMessage("Realm 'master' imported");
+        cliResult.assertMessage("Import finished successfully");
+    }
 }

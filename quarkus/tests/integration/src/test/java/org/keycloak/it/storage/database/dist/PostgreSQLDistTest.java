@@ -15,27 +15,28 @@
  * limitations under the License.
  */
 
-package org.keycloak.it.storage.database;
+package org.keycloak.it.storage.database.dist;
+
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 import org.junit.jupiter.api.Test;
 import org.keycloak.it.junit5.extension.CLIResult;
-import org.keycloak.it.junit5.extension.CLITest;
+import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.WithDatabase;
+import org.keycloak.it.storage.database.PostgreSQLTest;
 
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
 
-@CLITest
-@WithDatabase(alias = "oracle")
-public class OracleStartDatabaseTest extends AbstractStartDabataseTest {
+@DistributionTest(removeBuildOptionsAfterBuild = true)
+@WithDatabase(alias = "postgres")
+public class PostgreSQLDistTest extends PostgreSQLTest {
 
-    @Override
-    protected void assertWrongUsername(CLIResult cliResult) {
-        cliResult.assertMessage("ORA-01017: invalid username/password; logon denied");
-    }
-
-    @Override
-    protected void assertWrongPassword(CLIResult cliResult) {
-        cliResult.assertMessage("ORA-01017: invalid username/password; logon denied");
+    @Test
+    @Launch("show-config")
+    public void testDbOptionFromPersistedConfigSource(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        assertThat(cliResult.getOutput(),containsString("postgres (PersistedConfigSource)"));
     }
 }
