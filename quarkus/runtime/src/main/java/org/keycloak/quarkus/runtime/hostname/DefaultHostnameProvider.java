@@ -79,7 +79,7 @@ public final class DefaultHostnameProvider implements HostnameProvider, Hostname
         }
 
         if (ADMIN.equals(urlType)) {
-            return getHostname(originalUriInfo);
+            return adminHostName == null ? getHostname(originalUriInfo) : adminHostName;
         }
 
         return fromFrontChannel(originalUriInfo, URI::getHost, this::getHostname, frontChannelHostName);
