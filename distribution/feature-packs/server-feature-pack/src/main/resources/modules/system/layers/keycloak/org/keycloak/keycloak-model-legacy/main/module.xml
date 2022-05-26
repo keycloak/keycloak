@@ -15,23 +15,24 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-<module xmlns="urn:jboss:module:1.3" name="org.keycloak.keycloak-sssd-federation">
+<module xmlns="urn:jboss:module:1.3" name="org.keycloak.keycloak-model-legacy">
     <properties>
         <property name="jboss.api" value="private"/>
     </properties>
 
     <resources>
-        <artifact name="${org.keycloak:keycloak-sssd-federation}"/>
-        <resource-root path="/usr/share/java/jna.jar"/>
+        <artifact name="${org.keycloak:keycloak-model-legacy}"/>
     </resources>
 
     <dependencies>
+        <module name="org.keycloak.keycloak-common" services="import"/>
+        <module name="org.keycloak.keycloak-core" services="import"/>
+        <module name="org.keycloak.keycloak-server-spi" services="import"/>
+        <module name="org.keycloak.keycloak-server-spi-private" services="import"/>
+        <module name="org.keycloak.keycloak-saml-core-public" services="import"/>
+        <module name="org.keycloak.keycloak-saml-core" services="import"/>
+        <module name="org.keycloak.keycloak-wildfly-extensions" export="true" services="import"/>
         <module name="org.jboss.logging"/>
-        <module name="org.keycloak.keycloak-core" />
-        <module name="org.keycloak.keycloak-server-spi" />
-        <module name="org.keycloak.keycloak-server-spi-private"/>
-        <module name="org.keycloak.keycloak-model-legacy"/>
-        <module name="org.keycloak.keycloak-model-legacy-private"/>
-        <module name="org.keycloak.keycloak-model-legacy-services"/>
     </dependencies>
+
 </module>
