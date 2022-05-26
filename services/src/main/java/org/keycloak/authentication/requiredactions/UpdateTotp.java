@@ -96,7 +96,7 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
         }
         OTPCredentialProvider otpCredentialProvider = (OTPCredentialProvider) context.getSession().getProvider(CredentialProvider.class, "keycloak-otp");
         final Stream<CredentialModel> otpCredentials  = (otpCredentialProvider.isConfiguredFor(context.getRealm(), context.getUser()))
-            ? context.getUser().getUserCredentialManager().getStoredCredentialsByTypeStream(OTPCredentialModel.TYPE)
+            ? context.getUser().credentialManager().getStoredCredentialsByTypeStream(OTPCredentialModel.TYPE)
             : Stream.empty();
         if (otpCredentials.count() >= 1 && Validation.isBlank(userLabel)) {
             Response challenge = context.form()

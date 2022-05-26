@@ -42,7 +42,7 @@ public class HttpBasicAuthenticator implements Authenticator {
 
             if (user != null) {
                 final String password = usernameAndPassword[1];
-                final boolean valid = user.getUserCredentialManager().isValid(UserCredentialModel.password(password));
+                final boolean valid = user.credentialManager().isValid(UserCredentialModel.password(password));
 
                 if (valid) {
                     if (isTemporarilyDisabledByBruteForce(context, user)) {

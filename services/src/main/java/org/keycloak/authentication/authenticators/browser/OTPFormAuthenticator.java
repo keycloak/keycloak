@@ -97,7 +97,7 @@ public class OTPFormAuthenticator extends AbstractUsernameFormAuthenticator impl
             context.challenge(challengeResponse);
             return;
         }
-        boolean valid = context.getUser().getUserCredentialManager().isValid(new UserCredentialModel(credentialId, getCredentialProvider(context.getSession()).getType(), otp));
+        boolean valid = context.getUser().credentialManager().isValid(new UserCredentialModel(credentialId, getCredentialProvider(context.getSession()).getType(), otp));
         if (!valid) {
             context.getEvent().user(userModel)
                     .error(Errors.INVALID_USER_CREDENTIALS);
@@ -130,7 +130,7 @@ public class OTPFormAuthenticator extends AbstractUsernameFormAuthenticator impl
 
     @Override
     public boolean configuredFor(KeycloakSession session, RealmModel realm, UserModel user) {
-        return user.getUserCredentialManager().isConfiguredFor(getCredentialProvider(session).getType());
+        return user.credentialManager().isConfiguredFor(getCredentialProvider(session).getType());
     }
 
     @Override

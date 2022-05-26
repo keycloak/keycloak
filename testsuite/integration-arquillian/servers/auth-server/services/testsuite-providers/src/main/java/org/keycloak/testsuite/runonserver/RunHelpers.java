@@ -56,7 +56,7 @@ public class RunHelpers {
                 return (FetchOnServer) session -> {
                     RealmModel realm = session.getContext().getRealm();
                     UserModel user = session.users().getUserByUsername(realm, username);
-                    List<CredentialModel> storedCredentialsByType = user.getUserCredentialManager().getStoredCredentialsByTypeStream(CredentialRepresentation.PASSWORD)
+                    List<CredentialModel> storedCredentialsByType = user.credentialManager().getStoredCredentialsByTypeStream(CredentialRepresentation.PASSWORD)
                             .collect(Collectors.toList());
                     System.out.println(storedCredentialsByType.size());
                     return storedCredentialsByType.get(0);

@@ -140,7 +140,7 @@ public class AccountConsole {
             boolean isTotpConfigured = false;
             boolean deleteAccountAllowed = false;
             if (user != null) {
-                isTotpConfigured = user.getUserCredentialManager().isConfiguredFor(realm.getOTPPolicy().getType());
+                isTotpConfigured = user.credentialManager().isConfiguredFor(realm.getOTPPolicy().getType());
                 RoleModel deleteAccountRole = realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).getRole(AccountRoles.DELETE_ACCOUNT);
                 deleteAccountAllowed = deleteAccountRole != null && user.hasRole(deleteAccountRole) && realm.getRequiredActionProviderByAlias(DeleteAccount.PROVIDER_ID).isEnabled();
             }

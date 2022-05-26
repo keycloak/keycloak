@@ -20,9 +20,11 @@ package org.keycloak.credential;
 import org.keycloak.common.util.reflections.Types;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.SingleUserCredentialManager;
+import org.keycloak.models.SingleEntityCredentialManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.storage.AbstractStorageManager;
+import org.keycloak.storage.DatastoreProvider;
+import org.keycloak.storage.LegacyStoreManagers;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderFactory;
@@ -40,19 +42,17 @@ import java.util.stream.Stream;
  *
  * @author Alexander Schwartz
  */
-public class LegacySingleUserCredentialManager extends AbstractStorageManager<UserStorageProvider, UserStorageProviderModel> implements SingleUserCredentialManager {
+public class LegacySingleUserCredentialManager extends AbstractStorageManager<UserStorageProvider, UserStorageProviderModel> implements SingleEntityCredentialManager {
 
     private final UserModel user;
     private final KeycloakSession session;
     private final RealmModel realm;
-    private final LegacySingleUserCredentialManagerStrategy strategy;
 
     public LegacySingleUserCredentialManager(KeycloakSession session, RealmModel realm, UserModel user) {
         super(session, UserStorageProviderFactory.class, UserStorageProvider.class, UserStorageProviderModel::new, "user");
         this.user = user;
         this.session = session;
         this.realm = realm;
-        this.strategy = new LegacySingleUserCredentialManagerStrategy(session, realm, user);
     }
 
     @Override
@@ -73,8 +73,6 @@ public class LegacySingleUserCredentialManager extends AbstractStorageManager<Us
                 validate(realm, user, toValidate, validator);
             }
         }
-
-        strategy.validateCredentials(toValidate);
 
         getCredentialProviders(session, CredentialInputValidator.class)
                 .forEach(validator -> validate(realm, user, toValidate, validator));
@@ -97,54 +95,53 @@ public class LegacySingleUserCredentialManager extends AbstractStorageManager<Us
             }
         }
 
-        return strategy.updateCredential(input) ||
-                getCredentialProviders(session, CredentialInputUpdater.class)
-                        .filter(updater -> updater.supportsCredentialType(input.getType()))
-                        .anyMatch(updater -> updater.updateCredential(realm, user, input));
+        return getCredentialProviders(session, CredentialInputUpdater.class)
+                .filter(updater -> updater.supportsCredentialType(input.getType()))
+                .anyMatch(updater -> updater.updateCredential(realm, user, input));
     }
 
     @Override
     public void updateStoredCredential(CredentialModel cred) {
         throwExceptionIfInvalidUser(user);
-        strategy.updateStoredCredential(cred);
+        getStoreForUser(user).updateCredential(realm, user, cred);
     }
 
     @Override
     public CredentialModel createStoredCredential(CredentialModel cred) {
         throwExceptionIfInvalidUser(user);
-        return strategy.createStoredCredential(cred);
+        return getStoreForUser(user).createCredential(realm, user, cred);
     }
 
     @Override
     public boolean removeStoredCredentialById(String id) {
         throwExceptionIfInvalidUser(user);
-        return strategy.removeStoredCredentialById(id);
+        return getStoreForUser(user).removeStoredCredential(realm, user, id);
     }
 
     @Override
     public CredentialModel getStoredCredentialById(String id) {
-        return strategy.getStoredCredentialById(id);
+        return getStoreForUser(user).getStoredCredentialById(realm, user, id);
     }
 
     @Override
     public Stream<CredentialModel> getStoredCredentialsStream() {
-        return strategy.getStoredCredentialsStream();
+        return getStoreForUser(user).getStoredCredentialsStream(realm, user);
     }
 
     @Override
     public Stream<CredentialModel> getStoredCredentialsByTypeStream(String type) {
-        return strategy.getStoredCredentialsByTypeStream(type);
+        return getStoreForUser(user).getStoredCredentialsByTypeStream(realm, user, type);
     }
 
     @Override
     public CredentialModel getStoredCredentialByNameAndType(String name, String type) {
-        return strategy.getStoredCredentialByNameAndType(name, type);
+        return getStoreForUser(user).getStoredCredentialByNameAndType(realm, user, name, type);
     }
 
     @Override
     public boolean moveStoredCredentialTo(String id, String newPreviousCredentialId) {
         throwExceptionIfInvalidUser(user);
-        return strategy.moveStoredCredentialTo(id, newPreviousCredentialId);
+        return getStoreForUser(user).moveCredentialTo(realm, user, id, newPreviousCredentialId);
     }
 
     @Override
@@ -270,6 +267,15 @@ public class LegacySingleUserCredentialManager extends AbstractStorageManager<Us
     private void throwExceptionIfInvalidUser(UserModel user) {
         if (!isValid(user)) {
             throw new RuntimeException("You can not manage credentials for this user");
+        }
+    }
+
+    private UserCredentialStore getStoreForUser(UserModel user) {
+        LegacyStoreManagers p = (LegacyStoreManagers) session.getProvider(DatastoreProvider.class);
+        if (StorageId.isLocalStorage(user.getId())) {
+            return (UserCredentialStore) p.userLocalStorage();
+        } else {
+            return (UserCredentialStore) p.userFederatedStorage();
         }
     }
 

@@ -24,8 +24,8 @@ import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.EntityWithAttributes;
 import org.keycloak.models.map.common.UpdatableEntity;
-import org.keycloak.models.map.credential.DefaultMapSingleUserCredentialManagerEntity;
-import org.keycloak.models.map.credential.MapSingleUserCredentialManagerEntity;
+import org.keycloak.models.map.credential.DefaultMapSingleEntityCredentialManagerEntity;
+import org.keycloak.models.map.credential.MapSingleEntityCredentialManagerEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.util.Collections;
@@ -248,8 +248,7 @@ public interface MapUserEntity extends UpdatableEntity, AbstractEntity, EntityWi
     Long getNotBefore();
     void setNotBefore(Long notBefore);
 
-    @IgnoreForEntityImplementationGenerator
-    default MapSingleUserCredentialManagerEntity getUserCredentialManager() {
-        return new DefaultMapSingleUserCredentialManagerEntity();
+    default MapSingleEntityCredentialManagerEntity credentialManager() {
+        return new DefaultMapSingleEntityCredentialManagerEntity();
     }
 }

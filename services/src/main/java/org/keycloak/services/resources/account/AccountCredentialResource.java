@@ -175,7 +175,7 @@ public class AccountCredentialResource {
                 .collect(Collectors.toList());
         Set<String> enabledCredentialTypes = getEnabledCredentialTypes(credentialProviders);
 
-        Stream<CredentialModel> modelsStream = includeUserCredentials ? user.getUserCredentialManager().getStoredCredentialsStream() : Stream.empty();
+        Stream<CredentialModel> modelsStream = includeUserCredentials ? user.credentialManager().getStoredCredentialsStream() : Stream.empty();
         List<CredentialModel> models = modelsStream.collect(Collectors.toList());
 
         Function<CredentialProvider, CredentialContainer> toCredentialContainer = (credentialProvider) -> {
@@ -204,7 +204,7 @@ public class AccountCredentialResource {
                 userCredentialMetadataModels = credentialMetadataList.stream().map(ModelToRepresentation::toRepresentation).collect(Collectors.toList());
 
                 if (userCredentialMetadataModels.isEmpty() &&
-                        user.getUserCredentialManager().isConfiguredFor(credentialProvider.getType())) {
+                        user.credentialManager().isConfiguredFor(credentialProvider.getType())) {
                     // In case user is federated in the userStorage, he may have credential configured on the userStorage side. We're
                     // creating "dummy" credential representing the credential provided by userStorage
                     CredentialMetadataRepresentation metadataRepresentation = new CredentialMetadataRepresentation();
@@ -279,11 +279,11 @@ public class AccountCredentialResource {
     @NoCache
     public void removeCredential(final @PathParam("credentialId") String credentialId) {
         auth.require(AccountRoles.MANAGE_ACCOUNT);
-        CredentialModel credential = user.getUserCredentialManager().getStoredCredentialById(credentialId);
+        CredentialModel credential = user.credentialManager().getStoredCredentialById(credentialId);
         if (credential == null) {
             throw new NotFoundException("Credential not found");
         }
-        user.getUserCredentialManager().removeStoredCredentialById(credentialId);
+        user.credentialManager().removeStoredCredentialById(credentialId);
     }
 
 
@@ -299,14 +299,14 @@ public class AccountCredentialResource {
     @NoCache
     public void setLabel(final @PathParam("credentialId") String credentialId, String userLabel) {
         auth.require(AccountRoles.MANAGE_ACCOUNT);
-        CredentialModel credential = user.getUserCredentialManager().getStoredCredentialById(credentialId);
+        CredentialModel credential = user.credentialManager().getStoredCredentialById(credentialId);
         if (credential == null) {
             throw new NotFoundException("Credential not found");
         }
 
         try {
             String label = JsonSerialization.readValue(userLabel, String.class);
-            user.getUserCredentialManager().updateCredentialLabel(credentialId, label);
+            user.credentialManager().updateCredentialLabel(credentialId, label);
         } catch (IOException ioe) {
             throw new ErrorResponseException(ErrorResponse.error(Messages.INVALID_REQUEST, Response.Status.BAD_REQUEST));
         }

@@ -292,7 +292,7 @@ public class BackwardsCompatibilityUserStorageTest extends AbstractAuthTest {
         testingClient.server().run(session -> {
             RealmModel realm1 = session.realms().getRealmByName("test");
             UserModel user1 = session.users().getUserByUsername(realm1, "otp1");
-            Assert.assertEquals(0, user1.getUserCredentialManager().getStoredCredentialsStream().count());
+            Assert.assertEquals(0, user1.credentialManager().getStoredCredentialsStream().count());
         });
     }
 

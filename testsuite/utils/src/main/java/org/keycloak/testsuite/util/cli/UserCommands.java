@@ -77,7 +77,7 @@ public class UserCommands {
                 user.setEnabled(true);
                 user.setEmail(username + "@keycloak.org");
                 UserCredentialModel passwordCred = UserCredentialModel.password(password);
-                user.getUserCredentialManager().updateCredential(passwordCred);
+                user.credentialManager().updateCredential(passwordCred);
 
                 for (RoleModel role : roles) {
                     user.grantRole(role);
