@@ -38,15 +38,16 @@
             for reference
         -->
         <resteasy.version>4.7.5.Final</resteasy.version>
-        <jackson.version>2.13.2</jackson.version>
-        <jackson.databind.version>2.13.2.2</jackson.databind.version>
-        <hibernate.core.version>5.6.5.Final</hibernate.core.version>
-        <mysql.driver.version>8.0.28</mysql.driver.version>
+        <jackson.version>2.13.3</jackson.version>
+        <jackson.databind.version>2.13.3</jackson.databind.version>
+        <hibernate.core.version>5.6.9.Final</hibernate.core.version>
+        <mysql.driver.version>8.0.29</mysql.driver.version>
         <postgresql.version>42.3.3</postgresql.version>
+        <mariadb-jdbc.version>3.0.4</mariadb-jdbc.version>
         <microprofile-metrics-api.version>3.0.1</microprofile-metrics-api.version>
         <wildfly.common.version>1.5.4.Final-format-001</wildfly.common.version>
-        <infinispan.version>13.0.9.Final</infinispan.version>
-        <wildfly-elytron.version>1.18.3.Final</wildfly-elytron.version>
+        <infinispan.version>13.0.10.Final</infinispan.version>
+        <wildfly-elytron.version>1.19.0.Final</wildfly-elytron.version>
 
         <!--
             Java EE dependencies. Not available from JDK 11+.
@@ -59,15 +60,15 @@
         <!--
             Quarkiverse dependency versions
          -->
-        <io.quarkiverse.vault.version>1.0.2</io.quarkiverse.vault.version>
+        <io.quarkiverse.vault.version>1.1.0</io.quarkiverse.vault.version>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.plugin.version>3.8.1</maven.compiler.plugin.version>
+        <maven.compiler.plugin.version>3.10.1</maven.compiler.plugin.version>
         <maven.compiler.release>11</maven.compiler.release>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
 
-        <surefire-plugin.version>3.0.0-M5</surefire-plugin.version>
+        <surefire-plugin.version>3.0.0-M6</surefire-plugin.version>
     </properties>
 
     <dependencyManagement>
@@ -79,7 +80,7 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-            
+
             <!-- Override the dependencies below to use the versions used by Keycloak -->
             <dependency>
                 <groupId>org.infinispan</groupId>
@@ -152,6 +153,12 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>${maven.compiler.plugin.version}</version>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.apache.maven.surefire</groupId>
+                    <artifactId>surefire</artifactId>
+                    <version>${surefire-plugin.version}</version>
                 </plugin>
             </plugins>
         </pluginManagement>

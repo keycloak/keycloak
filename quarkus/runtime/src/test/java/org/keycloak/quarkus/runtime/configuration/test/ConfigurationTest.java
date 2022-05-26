@@ -45,7 +45,7 @@ import io.quarkus.runtime.configuration.ConfigUtils;
 import io.smallrye.config.SmallRyeConfigProviderResolver;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.vault.FilesPlainTextVaultProviderFactory;
-import org.mariadb.jdbc.MySQLDataSource;
+import org.mariadb.jdbc.MariaDbDataSource;
 import org.postgresql.xa.PGXADataSource;
 
 public class ConfigurationTest {
@@ -325,7 +325,7 @@ public class ConfigurationTest {
         config = createConfig();
         assertEquals("jdbc:mariadb://localhost:3306/keycloak?test=test&test1=test1", config.getConfigValue("quarkus.datasource.jdbc.url").getValue());
         assertEquals(MariaDBDialect.class.getName(), config.getConfigValue("quarkus.hibernate-orm.dialect").getValue());
-        assertEquals(MySQLDataSource.class.getName(), config.getConfigValue("quarkus.datasource.jdbc.driver").getValue());
+        assertEquals(MariaDbDataSource.class.getName(), config.getConfigValue("quarkus.datasource.jdbc.driver").getValue());
 
         System.setProperty(CLI_ARGS, "--db=postgres");
         config = createConfig();
