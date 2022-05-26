@@ -14,6 +14,9 @@ include::topics/templates/document-attributes-community.adoc[]
 include::topics/templates/release-header.adoc[]
 
 
+== {project_name_full} 19.0.0
+include::topics/19_0_0.adoc[leveloffset=2]
+
 == {project_name_full} 18.0.0
 include::topics/18_0_0.adoc[leveloffset=2]
 

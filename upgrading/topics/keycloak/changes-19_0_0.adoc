@@ -214,3 +214,24 @@ public class MyUserStorageProvider implements UserLookupProvider, ... {
 }
 ----
 
+
+= Deprecated `podDisruptionBudget` in the legacy {project_operator}
+
+With this release, we have deprecated `podDisruptionBudget` field in the Keycloak CR of the https://github.com/keycloak/keycloak-operator[legacy {project_operator}].
+This optional field will be ignored when the Operator is deployed on Kubernetes version 1.25 and higher.
+
+As a workaround, you can manually create the Pod Disruption Budget in your cluster, for example:
+```yaml
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  labels:
+    app: keycloak
+  name: keycloak
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      component: keycloak
+```
+See also the https://kubernetes.io/docs/tasks/run-application/configure-pdb/[Kubernetes Documentation].

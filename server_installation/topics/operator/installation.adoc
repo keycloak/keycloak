@@ -158,5 +158,6 @@ endif::[]
 
 * The usage of embedded DB is not supported in a production environment.
 * Backup CRD is deprecated and not supported in a production environment.
+* The `podDisruptionBudget` field in the Keycloak CR is deprecated and will be ignored when the Operator is deployed on Kubernetes version 1.25 and higher.
 * We fully support using the rest of the CRDs in production, despite the `v1alpha1` version. We do not plan to make any breaking changes in this CRDs version.
 
