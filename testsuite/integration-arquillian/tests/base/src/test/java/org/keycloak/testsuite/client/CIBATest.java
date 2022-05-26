@@ -747,6 +747,16 @@ public class CIBATest extends AbstractClientPoliciesTest {
     }
 
     @Test
+    public void testBackchannelAuthenticationFlowWithClientIdAndSecretInBody() throws Exception {
+        Map<String, String> additionalParameters = new HashMap<>();
+        // these parameters are not included in Authentication Channel Request
+        // if these are included in Backchannel Authentication Request's body part.
+        additionalParameters.put(OAuth2Constants.CLIENT_ID, TEST_CLIENT_NAME);
+        additionalParameters.put(OAuth2Constants.CLIENT_SECRET, TEST_CLIENT_PASSWORD);
+        testBackchannelAuthenticationFlow(true, "ABCDE", additionalParameters);
+    }
+
+    @Test
     public void testBackchannelClientValidations() throws Exception {
         ClientResource clientResource = null;
         ClientRepresentation clientRep = null;
@@ -2728,11 +2738,17 @@ public class CIBATest extends AbstractClientPoliciesTest {
     }
 
     private void testBackchannelAuthenticationFlow(boolean isOfflineAccess, String bindingMessage) throws Exception {
+        testBackchannelAuthenticationFlow(isOfflineAccess, bindingMessage, null);
+    }
+
+    private void testBackchannelAuthenticationFlow(boolean isOfflineAccess, String bindingMessage, Map<String, String> additionalParameters) throws Exception {
         ClientResource clientResource = null;
         ClientRepresentation clientRep = null;
+        if (additionalParameters == null) {
+            additionalParameters = new HashMap<>();
+        }
         try {
             final String username = "nutzername-rot";
-            Map<String, String> additionalParameters = new HashMap<>();
             additionalParameters.put("user_device", "mobile");
 
             // prepare CIBA settings
@@ -2755,6 +2771,8 @@ public class CIBATest extends AbstractClientPoliciesTest {
             if (isOfflineAccess) assertThat(authenticationChannelReq.getScope(), is(containsString(OAuth2Constants.OFFLINE_ACCESS)));
             assertThat(authenticationChannelReq.getScope(), is(containsString(OAuth2Constants.SCOPE_OPENID)));
             assertThat(authenticationChannelReq.getAdditionalParameters().get("user_device"), is(equalTo("mobile")));
+            assertThat(authenticationChannelReq.getAdditionalParameters().get(OAuth2Constants.CLIENT_ID), nullValue());
+            assertThat(authenticationChannelReq.getAdditionalParameters().get(OAuth2Constants.CLIENT_SECRET), nullValue());
 
             // user Authentication Channel completed
             EventRepresentation loginEvent = doAuthenticationChannelCallback(testRequest);
@@ -2786,4 +2804,5 @@ public class CIBATest extends AbstractClientPoliciesTest {
             revertCIBASettings(clientResource, clientRep);
         }
     }
+
 }
