@@ -11,7 +11,6 @@ import org.keycloak.events.Errors;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserCredentialManager;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.RecoveryAuthnCodesCredentialModel;
@@ -58,7 +57,7 @@ public class RecoveryAuthnCodesFormAuthenticator implements Authenticator {
         RealmModel targetRealm = authnFlowContext.getRealm();
         UserModel authenticatedUser = authnFlowContext.getUser();
         if (!isDisabledByBruteForce(authnFlowContext, authenticatedUser)) {
-            boolean isValid = authenticatedUser.getUserCredentialManager().isValid(
+            boolean isValid = authenticatedUser.credentialManager().isValid(
                     UserCredentialModel.buildFromBackupAuthnCode(recoveryAuthnCodeUserInput.replace("-", "")));
             if (!isValid) {
                 Response responseChallenge = createLoginForm(authnFlowContext, true,
@@ -67,14 +66,14 @@ public class RecoveryAuthnCodesFormAuthenticator implements Authenticator {
                 authnFlowContext.failureChallenge(AuthenticationFlowError.INVALID_CREDENTIALS, responseChallenge);
             } else {
                 result = true;
-                Optional<CredentialModel> optUserCredentialFound = authenticatedUser.getUserCredentialManager().getStoredCredentialsByTypeStream(
+                Optional<CredentialModel> optUserCredentialFound = authenticatedUser.credentialManager().getStoredCredentialsByTypeStream(
                         RecoveryAuthnCodesCredentialModel.TYPE).findFirst();
                 RecoveryAuthnCodesCredentialModel recoveryCodeCredentialModel = null;
                 if (optUserCredentialFound.isPresent()) {
                     recoveryCodeCredentialModel = RecoveryAuthnCodesCredentialModel
                             .createFromCredentialModel(optUserCredentialFound.get());
                     if (recoveryCodeCredentialModel.allCodesUsed()) {
-                        authenticatedUser.getUserCredentialManager().removeStoredCredentialById(
+                        authenticatedUser.credentialManager().removeStoredCredentialById(
                                 recoveryCodeCredentialModel.getId());
                     }
                 }
@@ -134,7 +133,7 @@ public class RecoveryAuthnCodesFormAuthenticator implements Authenticator {
 
     @Override
     public boolean configuredFor(KeycloakSession session, RealmModel realm, UserModel user) {
-        return user.getUserCredentialManager().isConfiguredFor(RecoveryAuthnCodesCredentialModel.TYPE);
+        return user.credentialManager().isConfiguredFor(RecoveryAuthnCodesCredentialModel.TYPE);
     }
 
     @Override

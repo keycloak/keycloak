@@ -33,7 +33,6 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 
-import com.webauthn4j.WebAuthnManager;
 import com.webauthn4j.authenticator.Authenticator;
 import com.webauthn4j.authenticator.AuthenticatorImpl;
 import com.webauthn4j.data.AuthenticationData;
@@ -71,13 +70,13 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
             credentialModel.setCreatedDate(Time.currentTimeMillis());
         }
 
-        return user.getUserCredentialManager().createStoredCredential(credentialModel);
+        return user.credentialManager().createStoredCredential(credentialModel);
     }
 
     @Override
     public boolean deleteCredential(RealmModel realm, UserModel user, String credentialId) {
         logger.debugv("Delete WebAuthn credential. username = {0}, credentialId = {1}", user.getUsername(), credentialId);
-        return user.getUserCredentialManager().removeStoredCredentialById(credentialId);
+        return user.credentialManager().removeStoredCredentialById(credentialId);
     }
 
     @Override
@@ -170,7 +169,7 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
     @Override
     public boolean isConfiguredFor(RealmModel realm, UserModel user, String credentialType) {
         if (!supportsCredentialType(credentialType)) return false;
-        return user.getUserCredentialManager().getStoredCredentialsByTypeStream(credentialType).count() > 0;
+        return user.credentialManager().getStoredCredentialsByTypeStream(credentialType).count() > 0;
     }
 
 
@@ -208,7 +207,7 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
 
                     logger.debugv("response.getAuthenticatorData().getFlags() = {0}", authenticationData.getAuthenticatorData().getFlags());
 
-                    CredentialModel credModel = user.getUserCredentialManager().getStoredCredentialById(auth.getCredentialDBId());
+                    CredentialModel credModel = user.credentialManager().getStoredCredentialById(auth.getCredentialDBId());
                     WebAuthnCredentialModel webAuthnCredModel = getCredentialFromModel(credModel);
 
                     // update authenticator counter
@@ -217,7 +216,7 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
                     long count = auth.getCount();
                     if (count > 0) {
                         webAuthnCredModel.updateCounter(count + 1);
-                        user.getUserCredentialManager().updateStoredCredential(webAuthnCredModel);
+                        user.credentialManager().updateStoredCredential(webAuthnCredModel);
                     }
 
                     logger.debugf("Successfully validated WebAuthn credential for user %s", user.getUsername());
@@ -242,7 +241,7 @@ public class WebAuthnCredentialProvider implements CredentialProvider<WebAuthnCr
 
 
     private List<WebAuthnCredentialModelInput> getWebAuthnCredentialModelList(RealmModel realm, UserModel user) {
-        return user.getUserCredentialManager().getStoredCredentialsByTypeStream(getType())
+        return user.credentialManager().getStoredCredentialsByTypeStream(getType())
                 .map(this::getCredentialInputFromCredentialModel)
                 .collect(Collectors.toList());
     }

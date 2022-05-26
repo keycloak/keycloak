@@ -20,13 +20,14 @@ package org.keycloak.models.map.credential;
 import org.keycloak.credential.CredentialInput;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 /**
  * Interface for credential management in entities in the map storage.
  *
  * @author Alexander Schwartz
  */
-public interface MapSingleUserCredentialManagerEntity {
+public interface MapSingleEntityCredentialManagerEntity {
 
     /**
      * Validate the credentials of a user.
@@ -44,4 +45,16 @@ public interface MapSingleUserCredentialManagerEntity {
      * credential type isn't supported of the new credentials aren't valid.
      */
     boolean updateCredential(CredentialInput input);
+
+    /**
+     * Check if the entity is configured for the given credential type.
+     * @param type credential type
+     */
+    boolean isConfiguredFor(String type);
+
+    /**
+     * List the credential types that can be disabled for this user.
+     * @return Stream of credential types
+     */
+    Stream<String> getDisableableCredentialTypesStream();
 }

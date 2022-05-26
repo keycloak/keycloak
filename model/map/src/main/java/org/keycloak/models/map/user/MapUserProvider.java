@@ -41,7 +41,7 @@ import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.SingleUserCredentialManager;
+import org.keycloak.models.SingleEntityCredentialManager;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModel.SearchableFields;
@@ -110,7 +110,7 @@ public class MapUserProvider implements UserProvider.Streams {
             }
 
             @Override
-            public SingleUserCredentialManager getUserCredentialManager() {
+            public SingleEntityCredentialManager credentialManager() {
                 return new MapSingleUserCredentialManager(session, realm, this, entity);
             }
         };

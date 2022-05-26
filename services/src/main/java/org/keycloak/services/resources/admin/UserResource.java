@@ -587,7 +587,7 @@ public class UserResource {
         auth.users().requireManage(user);
         if (credentialTypes == null) return;
         for (String type : credentialTypes) {
-            user.getUserCredentialManager().disableCredentialType(type);
+            user.credentialManager().disableCredentialType(type);
 
         }
     }
@@ -610,7 +610,7 @@ public class UserResource {
         }
 
         try {
-            user.getUserCredentialManager().updateCredential(UserCredentialModel.password(cred.getValue(), false));
+            user.credentialManager().updateCredential(UserCredentialModel.password(cred.getValue(), false));
         } catch (IllegalStateException ise) {
             throw new BadRequestException("Resetting to N old passwords is not allowed.");
         } catch (ReadOnlyException mre) {
@@ -638,7 +638,7 @@ public class UserResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Stream<CredentialRepresentation> credentials(){
         auth.users().requireManage(user);
-        return user.getUserCredentialManager().getStoredCredentialsStream()
+        return user.credentialManager().getStoredCredentialsStream()
                 .map(ModelToRepresentation::toRepresentation)
                 .peek(credentialRepresentation -> credentialRepresentation.setSecretData(null));
     }
@@ -658,7 +658,7 @@ public class UserResource {
         // This has "requireManage" due the compatibility with "credentials()" endpoint. Strictly said, it is reading endpoint, not writing,
         // so may be revisited if to rather use "requireView" here in the future.
         auth.users().requireManage(user);
-        return user.getUserCredentialManager().getConfiguredUserStorageCredentialTypesStream();
+        return user.credentialManager().getConfiguredUserStorageCredentialTypesStream();
     }
 
 
@@ -671,13 +671,13 @@ public class UserResource {
     @NoCache
     public void removeCredential(final @PathParam("credentialId") String credentialId) {
         auth.users().requireManage(user);
-        CredentialModel credential = user.getUserCredentialManager().getStoredCredentialById(credentialId);
+        CredentialModel credential = user.credentialManager().getStoredCredentialById(credentialId);
         if (credential == null) {
             // we do this to make sure somebody can't phish ids
             if (auth.users().canQuery()) throw new NotFoundException("Credential not found");
             else throw new ForbiddenException();
         }
-        user.getUserCredentialManager().removeStoredCredentialById(credentialId);
+        user.credentialManager().removeStoredCredentialById(credentialId);
         adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).success();
     }
 
@@ -689,13 +689,13 @@ public class UserResource {
     @Path("credentials/{credentialId}/userLabel")
     public void setCredentialUserLabel(final @PathParam("credentialId") String credentialId, String userLabel) {
         auth.users().requireManage(user);
-        CredentialModel credential = user.getUserCredentialManager().getStoredCredentialById(credentialId);
+        CredentialModel credential = user.credentialManager().getStoredCredentialById(credentialId);
         if (credential == null) {
             // we do this to make sure somebody can't phish ids
             if (auth.users().canQuery()) throw new NotFoundException("Credential not found");
             else throw new ForbiddenException();
         }
-        user.getUserCredentialManager().updateCredentialLabel(credentialId, userLabel);
+        user.credentialManager().updateCredentialLabel(credentialId, userLabel);
     }
 
     /**
@@ -717,13 +717,13 @@ public class UserResource {
     @POST
     public void moveCredentialAfter(final @PathParam("credentialId") String credentialId, final @PathParam("newPreviousCredentialId") String newPreviousCredentialId){
         auth.users().requireManage(user);
-        CredentialModel credential = user.getUserCredentialManager().getStoredCredentialById(credentialId);
+        CredentialModel credential = user.credentialManager().getStoredCredentialById(credentialId);
         if (credential == null) {
             // we do this to make sure somebody can't phish ids
             if (auth.users().canQuery()) throw new NotFoundException("Credential not found");
             else throw new ForbiddenException();
         }
-        user.getUserCredentialManager().moveStoredCredentialTo(credentialId, newPreviousCredentialId);
+        user.credentialManager().moveStoredCredentialTo(credentialId, newPreviousCredentialId);
     }
 
     /**

@@ -37,7 +37,6 @@ import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.messages.Messages;
@@ -46,7 +45,6 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
-import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -139,7 +137,7 @@ public class UpdatePassword implements RequiredActionProvider, RequiredActionFac
         }
 
         try {
-            user.getUserCredentialManager().updateCredential(UserCredentialModel.password(passwordNew, false));
+            user.credentialManager().updateCredential(UserCredentialModel.password(passwordNew, false));
             context.success();
         } catch (ModelException me) {
             errorEvent.detail(Details.REASON, me.getMessage()).error(Errors.PASSWORD_REJECTED);

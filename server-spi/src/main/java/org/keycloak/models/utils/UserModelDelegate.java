@@ -20,7 +20,7 @@ package org.keycloak.models.utils;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.SingleUserCredentialManager;
+import org.keycloak.models.SingleEntityCredentialManager;
 import org.keycloak.models.UserModel;
 
 import java.util.List;
@@ -211,8 +211,8 @@ public class UserModelDelegate implements UserModel.Streams {
     }
 
     @Override
-    public SingleUserCredentialManager getUserCredentialManager() {
-        return delegate.getUserCredentialManager();
+    public SingleEntityCredentialManager credentialManager() {
+        return delegate.credentialManager();
     }
 
     public UserModel getDelegate() {

@@ -487,7 +487,7 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
             RealmModel realm = session.getContext().getRealm();
             UserModel user = session.users().getUserById(realm, uId);
             assertThat(user, Matchers.notNullValue());
-            List<CredentialModel> storedCredentials = user.getUserCredentialManager().getStoredCredentialsStream().collect(Collectors.toList());
+            List<CredentialModel> storedCredentials = user.credentialManager().getStoredCredentialsStream().collect(Collectors.toList());
             assertThat(storedCredentials, Matchers.hasSize(expectedNumberOfStoredCredentials));
         });
     }

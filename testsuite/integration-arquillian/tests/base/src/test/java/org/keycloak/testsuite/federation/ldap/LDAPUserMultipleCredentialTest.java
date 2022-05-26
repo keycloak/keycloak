@@ -96,7 +96,7 @@ public class LDAPUserMultipleCredentialTest extends AbstractLDAPTest {
             LDAPTestUtils.updateLDAPPassword(ctx.getLdapProvider(), user2, "some-other-password");
             UserModel userWithOtp = session.users().getUserByUsername(appRealm, "test-user-with-otp");
             OTPCredentialModel otpCredential = OTPCredentialModel.createHOTP("DJmQfC73VGFhw7D4QJ8A", 6, 0, "HmacSHA1");
-            userWithOtp.getUserCredentialManager().createStoredCredential(otpCredential);
+            userWithOtp.credentialManager().createStoredCredential(otpCredential);
         });
     }
 

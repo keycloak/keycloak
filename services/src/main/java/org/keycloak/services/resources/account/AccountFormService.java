@@ -600,7 +600,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
             }
 
             UserCredentialModel cred = UserCredentialModel.password(password);
-            if (!user.getUserCredentialManager().isValid(cred)) {
+            if (!user.credentialManager().isValid(cred)) {
                 setReferrerOnPage();
                 errorEvent.error(Errors.INVALID_USER_CREDENTIALS);
                 return account.setError(Status.OK, Messages.INVALID_PASSWORD_EXISTING).createResponse(AccountPages.PASSWORD);
@@ -620,7 +620,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
         }
 
         try {
-            user.getUserCredentialManager().updateCredential(UserCredentialModel.password(passwordNew, false));
+            user.credentialManager().updateCredential(UserCredentialModel.password(passwordNew, false));
         } catch (ReadOnlyException mre) {
             setReferrerOnPage();
             errorEvent.error(Errors.NOT_ALLOWED);
@@ -1028,7 +1028,7 @@ public class AccountFormService extends AbstractSecuredLocalService {
     }
 
     public static boolean isPasswordSet(KeycloakSession session, RealmModel realm, UserModel user) {
-        return user.getUserCredentialManager().isConfiguredFor(PasswordCredentialModel.TYPE);
+        return user.credentialManager().isConfiguredFor(PasswordCredentialModel.TYPE);
     }
 
     private String[] getReferrer() {

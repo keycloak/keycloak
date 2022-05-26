@@ -23,11 +23,11 @@ public class PasswordUtil {
      */
     @Deprecated
     public boolean isConfigured(KeycloakSession session, RealmModel realm, UserModel user) {
-        return user.getUserCredentialManager().isConfiguredFor(PasswordCredentialModel.TYPE);
+        return user.credentialManager().isConfiguredFor(PasswordCredentialModel.TYPE);
     }
 
     public boolean isConfigured() {
-        return user.getUserCredentialManager().isConfiguredFor(PasswordCredentialModel.TYPE);
+        return user.credentialManager().isConfiguredFor(PasswordCredentialModel.TYPE);
     }
 
     public void update() {

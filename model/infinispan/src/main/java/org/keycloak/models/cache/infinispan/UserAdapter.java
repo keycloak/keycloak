@@ -23,7 +23,7 @@ import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.SingleUserCredentialManager;
+import org.keycloak.models.SingleEntityCredentialManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.CachedUserModel;
 import org.keycloak.models.cache.infinispan.entities.CachedUser;
@@ -287,12 +287,12 @@ public class UserAdapter implements CachedUserModel.Streams {
     }
 
     @Override
-    public SingleUserCredentialManager getUserCredentialManager() {
+    public SingleEntityCredentialManager credentialManager() {
         if (updated == null) {
             updated = modelSupplier.get();
             if (updated == null) throw new IllegalStateException("Not found in database");
         }
-        return new SingleUserCredentialManagerCacheAdapter(updated.getUserCredentialManager()) {
+        return new SingleEntityCredentialManagerCacheAdapter(updated.credentialManager()) {
             @Override
             public CredentialModel getStoredCredentialById(String id) {
                 if (!userRegisteredForInvalidation) {
@@ -330,7 +330,7 @@ public class UserAdapter implements CachedUserModel.Streams {
             }
 
             @Override
-            public void invalidateCacheForUser() {
+            public void invalidateCacheForEntity() {
                 if (!userRegisteredForInvalidation) {
                     userProviderCache.registerUserInvalidation(realm, cached);
                     userRegisteredForInvalidation = true;

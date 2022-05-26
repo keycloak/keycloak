@@ -237,13 +237,13 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
 
         UserModel user = session.users().addUser(realm, "user");
         user.setEnabled(true);
-        user.getUserCredentialManager().updateCredential(UserCredentialModel.password("password"));
+        user.credentialManager().updateCredential(UserCredentialModel.password("password"));
         user.grantRole(exampleRole);
         user.grantRole(impersonateRole);
 
         UserModel bad = session.users().addUser(realm, "bad-impersonator");
         bad.setEnabled(true);
-        bad.getUserCredentialManager().updateCredential(UserCredentialModel.password("password"));
+        bad.credentialManager().updateCredential(UserCredentialModel.password("password"));
     }
 
     public static void setUpUserImpersonatePermissions(KeycloakSession session) {
@@ -863,7 +863,7 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
 
         UserModel impersonatedUser = session.users().addUser(realm, "impersonated-user");
         impersonatedUser.setEnabled(true);
-        impersonatedUser.getUserCredentialManager().updateCredential(UserCredentialModel.password("password"));
+        impersonatedUser.credentialManager().updateCredential(UserCredentialModel.password("password"));
         impersonatedUser.grantRole(exampleRole);
     }
 

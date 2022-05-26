@@ -24,7 +24,7 @@ import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.SingleUserCredentialManager;
+import org.keycloak.models.SingleEntityCredentialManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserModelDefaultMethods;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -257,7 +257,7 @@ public class InMemoryUserAdapter extends UserModelDefaultMethods.Streams {
     }
 
     @Override
-    public SingleUserCredentialManager getUserCredentialManager() {
+    public SingleEntityCredentialManager credentialManager() {
         return new LegacySingleUserCredentialManager(session, realm, this);
     }
 

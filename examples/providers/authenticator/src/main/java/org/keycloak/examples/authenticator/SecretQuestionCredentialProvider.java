@@ -24,7 +24,6 @@ import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.CredentialProvider;
 import org.keycloak.credential.CredentialTypeMetadata;
 import org.keycloak.credential.CredentialTypeMetadataContext;
-import org.keycloak.credential.UserCredentialStore;
 import org.keycloak.examples.authenticator.credential.SecretQuestionCredentialModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -57,7 +56,7 @@ public class SecretQuestionCredentialProvider implements CredentialProvider<Secr
         if (challengeResponse == null) {
             return false;
         }
-        CredentialModel credentialModel = user.getUserCredentialManager().getStoredCredentialById(input.getCredentialId());
+        CredentialModel credentialModel = user.credentialManager().getStoredCredentialById(input.getCredentialId());
         SecretQuestionCredentialModel sqcm = getCredentialFromModel(credentialModel);
         return sqcm.getSecretQuestionSecretData().getAnswer().equals(challengeResponse);
     }
@@ -70,7 +69,7 @@ public class SecretQuestionCredentialProvider implements CredentialProvider<Secr
     @Override
     public boolean isConfiguredFor(RealmModel realm, UserModel user, String credentialType) {
         if (!supportsCredentialType(credentialType)) return false;
-        return user.getUserCredentialManager().getStoredCredentialsByTypeStream(credentialType).findAny().isPresent();
+        return user.credentialManager().getStoredCredentialsByTypeStream(credentialType).findAny().isPresent();
     }
 
     @Override
@@ -78,12 +77,12 @@ public class SecretQuestionCredentialProvider implements CredentialProvider<Secr
         if (credentialModel.getCreatedDate() == null) {
             credentialModel.setCreatedDate(Time.currentTimeMillis());
         }
-        return user.getUserCredentialManager().createStoredCredential(credentialModel);
+        return user.credentialManager().createStoredCredential(credentialModel);
     }
 
     @Override
     public boolean deleteCredential(RealmModel realm, UserModel user, String credentialId) {
-        return user.getUserCredentialManager().removeStoredCredentialById(credentialId);
+        return user.credentialManager().removeStoredCredentialById(credentialId);
     }
 
     @Override
