@@ -84,9 +84,9 @@ contain a single realm configuration. Only regular files using the `.json` exten
 
 If a realm already exists in the server, the import operation is skipped.
 
-== Using Environment Variables within the Realm Configuration Files
+=== Using Environment Variables within the Realm Configuration Files
 
-When importing a realm, you are able to use placeholders to resolve values from environment variables for any realm configuration.
+When importing a realm at startup, you are able to use placeholders to resolve values from environment variables for any realm configuration.
 
 .Realm configuration using placeholders
 [source, bash]
