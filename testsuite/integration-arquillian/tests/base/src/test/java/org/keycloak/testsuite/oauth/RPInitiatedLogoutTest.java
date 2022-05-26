@@ -144,6 +144,37 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
 
         assertCurrentUrlEquals(redirectUri);
 
+        tokenResponse = loginUser();
+        String sessionId2 = tokenResponse.getSessionState();
+        idTokenString = tokenResponse.getIdToken();
+        assertNotEquals(sessionId, sessionId2);
+
+        // Test also "state" parameter is included in the URL after logout. Make sure to use idTokenHint from the last login to match with current browser session
+        logoutUrl = oauth.getLogoutUrl().postLogoutRedirectUri(redirectUri).idTokenHint(idTokenString).state("something").build();
+        driver.navigate().to(logoutUrl);
+        events.expectLogout(sessionId2).detail(Details.REDIRECT_URI, redirectUri).assertEvent();
+        Assert.assertThat(false, is(isSessionActive(sessionId2)));
+        assertCurrentUrlEquals(redirectUri + "&state=something");
+    }
+
+
+    @Test
+    public void logoutRedirectWithIdTokenHintPointToDifferentSession() {
+        OAuthClient.AccessTokenResponse tokenResponse = loginUser();
+        String sessionId = tokenResponse.getSessionState();
+
+        String redirectUri = APP_REDIRECT_URI + "?logout";
+
+        String idTokenString = tokenResponse.getIdToken();
+
+        String logoutUrl = oauth.getLogoutUrl().postLogoutRedirectUri(redirectUri).idTokenHint(idTokenString).build();
+        driver.navigate().to(logoutUrl);
+
+        events.expectLogout(sessionId).detail(Details.REDIRECT_URI, redirectUri).assertEvent();
+        Assert.assertThat(false, is(isSessionActive(sessionId)));
+
+        assertCurrentUrlEquals(redirectUri);
+
         loginPage.open();
         loginPage.login("test-user@localhost", "password");
         assertTrue(appPage.isCurrent());
@@ -151,9 +182,11 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
         String sessionId2 = events.expectLogin().assertEvent().getSessionId();
         assertNotEquals(sessionId, sessionId2);
 
-        // Test also "state" parameter is included in the URL after logout
+        // Using idTokenHint of the 1st session. Logout confirmation is needed in such case. Test also "state" parameter is included in the URL after logout
         logoutUrl = oauth.getLogoutUrl().postLogoutRedirectUri(redirectUri).idTokenHint(idTokenString).state("something").build();
         driver.navigate().to(logoutUrl);
+        logoutConfirmPage.assertCurrent();
+        logoutConfirmPage.confirmLogout();
         events.expectLogout(sessionId2).detail(Details.REDIRECT_URI, redirectUri).assertEvent();
         Assert.assertThat(false, is(isSessionActive(sessionId2)));
         assertCurrentUrlEquals(redirectUri + "&state=something");
@@ -237,12 +270,12 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
         events.assertEmpty();
         assertCurrentUrlEquals(APP_REDIRECT_URI);
 
-        loginPage.open();
-        loginPage.login("test-user@localhost", "password");
-        assertTrue(appPage.isCurrent());
-
-        String sessionId2 = events.expectLogin().assertEvent().getSessionId();
+        // Login again in the browser. Ensure to use newest idTokenHint after logout
+        tokenResponse = loginUser();
+        String sessionId2 = tokenResponse.getSessionState();
+        idTokenString = tokenResponse.getIdToken();
         assertNotEquals(sessionId, sessionId2);
+        logoutUrl = oauth.getLogoutUrl().postLogoutRedirectUri(APP_REDIRECT_URI).idTokenHint(idTokenString).build();
 
         driver.navigate().to(logoutUrl);
         events.expectLogout(sessionId2).detail(Details.REDIRECT_URI, APP_REDIRECT_URI).assertEvent();
@@ -518,15 +551,9 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
         String logoutUrl = oauth.getLogoutUrl().postLogoutRedirectUri(APP_REDIRECT_URI).idTokenHint(idTokenString).state("somethingg").build();
         driver.navigate().to(logoutUrl);
 
-        // Assert logout confirmation page. Session still exists. Assert default language on logout page (English)
-        logoutConfirmPage.assertCurrent();
-        Assert.assertEquals("English", logoutConfirmPage.getLanguageDropdownText());
-        Assert.assertThat(true, is(isSessionActive(tokenResponse.getSessionState())));
-        events.assertEmpty();
-        logoutConfirmPage.confirmLogout();
-
+        // Logout confirmation page not shown as id_token_hint was included.
         // Redirected back to the application with expected "state"
-        events.expectLogout(tokenResponse.getSessionState()).removeDetail(Details.REDIRECT_URI).assertEvent();
+        events.expectLogout(tokenResponse.getSessionState()).assertEvent();
         Assert.assertThat(false, is(isSessionActive(tokenResponse.getSessionState())));
         assertCurrentUrlEquals(APP_REDIRECT_URI + "?state=somethingg");
 
@@ -535,15 +562,13 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
     }
 
 
-    // Test logout request without "post logout redirect uri" . Also test "ui_locales" parameter works as expected
+    // Test logout request with only "client_id" parameter. Also test "ui_locales" parameter works as expected
     @Test
-    public void logoutConsentRequiredWithoutPostLogoutRedirectUri() throws IOException {
+    public void logoutWithUiLocalesAndClientIdParameter() throws IOException {
         try (RealmAttributeUpdater updater = new RealmAttributeUpdater(testRealm()).addSupportedLocale("cs").update()) {
-            oauth.clientId("third-party");
-            OAuthClient.AccessTokenResponse tokenResponse = loginUser(true);
-            String idTokenString = tokenResponse.getIdToken();
+            OAuthClient.AccessTokenResponse tokenResponse = loginUser(false);
 
-            String logoutUrl = oauth.getLogoutUrl().idTokenHint(idTokenString).uiLocales("cs").build();
+            String logoutUrl = oauth.getLogoutUrl().clientId("test-app").uiLocales("cs").build();
             driver.navigate().to(logoutUrl);
 
             // Assert logout confirmation page. Session still exists. Assert czech language on logout page
@@ -562,19 +587,15 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
             infoPage.clickBackToApplicationLinkCs();
             WaitUtils.waitForPageToLoad();
             Assert.assertThat(driver.getCurrentUrl(), endsWith("/app/auth"));
-
-            UserResource user = ApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
-            user.revokeConsent("third-party");
         }
     }
 
     @Test
-    public void logoutConsentRequiredWithExpiredCode() throws IOException {
-        oauth.clientId("third-party");
-        OAuthClient.AccessTokenResponse tokenResponse = loginUser(true);
+    public void logoutWithClientIdAndExpiredCode() throws IOException {
+        OAuthClient.AccessTokenResponse tokenResponse = loginUser();
         String idTokenString = tokenResponse.getIdToken();
 
-        driver.navigate().to(oauth.getLogoutUrl().idTokenHint(idTokenString).build());
+        driver.navigate().to(oauth.getLogoutUrl().clientId("test-app").build());
 
         // Assert logout confirmation page. Session still exists
         logoutConfirmPage.assertCurrent();
@@ -594,6 +615,109 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
         // Link "Back to application" present
         errorPage.clickBackToApplication();
         Assert.assertThat(driver.getCurrentUrl(), endsWith("/app/auth"));
+    }
+
+
+    @Test
+    public void logoutWithClientIdAndWithoutIdTokenHint() {
+        OAuthClient.AccessTokenResponse tokenResponse = loginUser();
+
+        String logoutUrl = oauth.getLogoutUrl().postLogoutRedirectUri(APP_REDIRECT_URI).clientId("test-app").state("somethingg").build();
+        driver.navigate().to(logoutUrl);
+
+        // Assert logout confirmation page as id_token_hint was not sent. Session still exists. Assert default language on logout page (English)
+        logoutConfirmPage.assertCurrent();
+        Assert.assertEquals("English", logoutConfirmPage.getLanguageDropdownText());
+        Assert.assertThat(true, is(isSessionActive(tokenResponse.getSessionState())));
+        events.assertEmpty();
+        logoutConfirmPage.confirmLogout();
+
+        // Redirected back to the application with expected "state"
+        events.expectLogout(tokenResponse.getSessionState()).assertEvent();
+        Assert.assertThat(false, is(isSessionActive(tokenResponse.getSessionState())));
+        assertCurrentUrlEquals(APP_REDIRECT_URI + "?state=somethingg");
+    }
+
+
+    @Test
+    public void logoutWithClientIdIdTokenHintAndPostLogoutRedirectUri() {
+        OAuthClient.AccessTokenResponse tokenResponse = loginUser();
+
+        // Test logout with all of "client_id", "id_token_hint" and "post_logout_redirect_uri". Logout should work without confirmation
+        String logoutUrl = oauth.getLogoutUrl()
+                .postLogoutRedirectUri(APP_REDIRECT_URI)
+                .clientId("test-app")
+                .idTokenHint(tokenResponse.getIdToken())
+                .state("somethingg").build();
+        driver.navigate().to(logoutUrl);
+
+        // Logout done and redirected back to the application with expected "state"
+        events.expectLogout(tokenResponse.getSessionState()).assertEvent();
+        Assert.assertThat(false, is(isSessionActive(tokenResponse.getSessionState())));
+        assertCurrentUrlEquals(APP_REDIRECT_URI + "?state=somethingg");
+
+        // Test logout only with "client_id" and "post_logout_redirect_uri". Should automatically redirect as there is no logout (No active browser session)
+        logoutUrl = oauth.getLogoutUrl()
+                .postLogoutRedirectUri(APP_REDIRECT_URI)
+                .clientId("test-app")
+                .state("something2").build();
+        driver.navigate().to(logoutUrl);
+
+        events.assertEmpty();
+        assertCurrentUrlEquals(APP_REDIRECT_URI + "?state=something2");
+    }
+
+
+    @Test
+    public void logoutWithBadClientId() {
+        OAuthClient.AccessTokenResponse tokenResponse = loginUser();
+
+        // Case when client_id points to different client than ID Token.
+        String logoutUrl = oauth.getLogoutUrl()
+                .postLogoutRedirectUri(APP_REDIRECT_URI)
+                .clientId("third-party")
+                .idTokenHint(tokenResponse.getIdToken()).build();
+        driver.navigate().to(logoutUrl);
+
+        errorPage.assertCurrent();
+        Assert.assertEquals("Invalid parameter: id_token_hint", errorPage.getError());
+
+        events.expectLogoutError(Errors.INVALID_TOKEN).client("third-party").assertEvent();
+        Assert.assertThat(true, is(isSessionActive(tokenResponse.getSessionState())));
+
+        // Case when client_id is non-existing client and redirect uri of different client is used
+        logoutUrl = oauth.getLogoutUrl()
+                .postLogoutRedirectUri(APP_REDIRECT_URI)
+                .clientId("non-existing").build();
+        driver.navigate().to(logoutUrl);
+
+        errorPage.assertCurrent();
+        Assert.assertEquals("Invalid redirect uri", errorPage.getError());
+
+        events.expectLogoutError(Errors.INVALID_REDIRECT_URI).assertEvent();
+        Assert.assertThat(true, is(isSessionActive(tokenResponse.getSessionState())));
+
+        // Case when client_id is non-existing client. Confirmation is needed.
+        logoutUrl = oauth.getLogoutUrl()
+                .clientId("non-existing").build();
+        driver.navigate().to(logoutUrl);
+
+        logoutConfirmPage.assertCurrent();
+        logoutConfirmPage.confirmLogout();
+
+        // Info page present. No link "back to the application"
+        infoPage.assertCurrent();
+        Assert.assertEquals("You are logged out", infoPage.getInfo());
+        try {
+            logoutConfirmPage.clickBackToApplicationLink();
+            fail();
+        }
+        catch (NoSuchElementException ex) {
+            // expected
+        }
+
+        events.expectLogout(tokenResponse.getSessionState()).removeDetail(Details.REDIRECT_URI).assertEvent();
+        Assert.assertThat(false, is(isSessionActive(tokenResponse.getSessionState())));
     }
 
 

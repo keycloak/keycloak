@@ -143,6 +143,7 @@ public class LogoutEndpoint {
      *
      * @param deprecatedRedirectUri Parameter "redirect_uri" is not supported by the specification. It is here just for the backwards compatibility
      * @param encodedIdToken Parameter "id_token_hint" as described in the specification.
+     * @param clientId Parameter "client_id" as described in the specification.
      * @param postLogoutRedirectUri Parameter "post_logout_redirect_uri" as described in the specification with the URL to redirect after logout.
      * @param state Parameter "state" as described in the specification. Will be used to send "state" when redirecting back to the application after the logout
      * @param uiLocales Parameter "ui_locales" as described in the specification. Can be used by the client to display pages in specified locale (if any pages are going to be displayed to the user during logout)
@@ -153,6 +154,7 @@ public class LogoutEndpoint {
     @NoCache
     public Response logout(@QueryParam(OIDCLoginProtocol.REDIRECT_URI_PARAM) String deprecatedRedirectUri, // deprecated
                            @QueryParam(OIDCLoginProtocol.ID_TOKEN_HINT) String encodedIdToken,
+                           @QueryParam(OIDCLoginProtocol.CLIENT_ID_PARAM) String clientId,
                            @QueryParam(OIDCLoginProtocol.POST_LOGOUT_REDIRECT_URI_PARAM) String postLogoutRedirectUri,
                            @QueryParam(OIDCLoginProtocol.STATE_PARAM) String state,
                            @QueryParam(OIDCLoginProtocol.UI_LOCALES_PARAM) String uiLocales,
@@ -166,11 +168,19 @@ public class LogoutEndpoint {
             return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_PARAMETER, OIDCLoginProtocol.REDIRECT_URI_PARAM);
         }
 
-        if (postLogoutRedirectUri != null && encodedIdToken == null) {
+        if (postLogoutRedirectUri != null && encodedIdToken == null && clientId == null) {
             event.event(EventType.LOGOUT);
             event.error(Errors.INVALID_REQUEST);
-            logger.warnf("Parameter 'id_token_hint' is required when 'post_logout_redirect_uri' is used.");
+            logger.warnf("Either the parameter 'client_id' or the parameter 'id_token_hint' is required when 'post_logout_redirect_uri' is used.");
             return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.MISSING_PARAMETER, OIDCLoginProtocol.ID_TOKEN_HINT);
+        }
+
+        boolean confirmationNeeded = true;
+        boolean forcedConfirmation = false;
+        ClientModel client = clientId == null ? null : realm.getClientByClientId(clientId);
+        if (clientId != null && client == null) {
+            logger.warnf("Client '%s' not found.", clientId);
+            forcedConfirmation = true;
         }
 
         IDToken idToken = null;
@@ -185,7 +195,26 @@ public class LogoutEndpoint {
             }
         }
 
-        ClientModel client = (idToken == null || idToken.getIssuedFor() == null) ? null : realm.getClientByClientId(idToken.getIssuedFor());
+        if (clientId == null) {
+            // Retrieve client from id_token_hint
+            client = (idToken == null || idToken.getIssuedFor() == null) ? null : realm.getClientByClientId(idToken.getIssuedFor());
+            if (client != null) {
+                confirmationNeeded = false;
+            }
+        } else {
+            // Check client_id and id_token_hint point to the same client
+            if (idToken != null && idToken.getIssuedFor() != null) {
+                if (!idToken.getIssuedFor().equals(clientId)) {
+                    event.event(EventType.LOGOUT);
+                    event.client(clientId);
+                    event.error(Errors.INVALID_TOKEN);
+                    logger.warnf("Parameter client_id is different than the client for which ID Token was issued. Parameter client_id: '%s', ID Token issued for: '%s'.", clientId, idToken.getIssuedFor());
+                    return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_PARAMETER, OIDCLoginProtocol.ID_TOKEN_HINT);
+                } else {
+                    confirmationNeeded = false;
+                }
+            }
+        }
         if (client != null) {
             session.getContext().setClient(client);
         }
@@ -229,8 +258,22 @@ public class LogoutEndpoint {
         LoginFormsProvider loginForm = session.getProvider(LoginFormsProvider.class)
                 .setAuthenticationSession(logoutSession);
 
-        // Client was not sent in id_token_hint or has consentRequired. Logout confirmation screen will be displayed to the user in this case
-        if (client == null || client.isConsentRequired()) {
+        // Check if we have session in the browser. If yes and it is different session than referenced by id_token_hint, the confirmation should be displayed
+        AuthenticationManager.AuthResult authResult = AuthenticationManager.authenticateIdentityCookie(session, realm, false);
+        if (authResult != null) {
+            if (idToken != null && idToken.getSessionState() != null && !idToken.getSessionState().equals(authResult.getSession().getId())) {
+                forcedConfirmation = true;
+            }
+        } else {
+            // Skip confirmation in case that valid redirect URI was setup for given client_id and there is no session in the browser as well as no id_token_hint.
+            // We can do automatic redirect as there is no logout needed at all for this scenario (Session was probably already logged-out before)
+            if (encodedIdToken == null && client != null && validatedRedirectUri != null) {
+                confirmationNeeded = false;
+            }
+        }
+
+        // Logout confirmation screen will be displayed to the user in this case
+        if (confirmationNeeded || forcedConfirmation) {
             return displayLogoutConfirmationScreen(loginForm, logoutSession);
         } else {
             return doBrowserLogout(logoutSession);

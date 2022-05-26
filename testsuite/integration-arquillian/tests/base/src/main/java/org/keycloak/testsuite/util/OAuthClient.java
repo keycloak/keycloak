@@ -206,6 +206,13 @@ public class OAuthClient {
     public class LogoutUrlBuilder {
         private final UriBuilder b = OIDCLoginProtocolService.logoutUrl(UriBuilder.fromUri(baseUrl));
 
+        public LogoutUrlBuilder clientId(String clientId) {
+            if (clientId != null) {
+                b.queryParam(OIDCLoginProtocol.CLIENT_ID_PARAM, clientId);
+            }
+            return this;
+        }
+
         public LogoutUrlBuilder idTokenHint(String idTokenHint) {
             if (idTokenHint != null) {
                 b.queryParam(OIDCLoginProtocol.ID_TOKEN_HINT, idTokenHint);
