@@ -2,12 +2,13 @@ package org.keycloak.storage.datastore;
 
 import org.keycloak.Config;
 import org.keycloak.Config.Scope;
+import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.utils.PostMigrationEvent;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderEvent;
 import org.keycloak.provider.ProviderEventListener;
-import org.keycloak.services.managers.UserStorageSyncManager;
 import org.keycloak.services.scheduled.ClearExpiredClientInitialAccessTokens;
 import org.keycloak.services.scheduled.ClearExpiredEvents;
 import org.keycloak.services.scheduled.ClearExpiredUserSessions;
@@ -16,9 +17,10 @@ import org.keycloak.services.scheduled.ScheduledTaskRunner;
 import org.keycloak.storage.DatastoreProvider;
 import org.keycloak.storage.DatastoreProviderFactory;
 import org.keycloak.storage.LegacyStoreSyncEvent;
+import org.keycloak.storage.managers.UserStorageSyncManager;
 import org.keycloak.timer.TimerProvider;
 
-public class LegacyDatastoreProviderFactory implements DatastoreProviderFactory, ProviderEventListener {
+public class LegacyDatastoreProviderFactory implements DatastoreProviderFactory, ProviderEventListener, EnvironmentDependentProviderFactory {
 
     private static final String PROVIDER_ID = "legacy";
     private long clientStorageProviderTimeout;
@@ -85,6 +87,11 @@ public class LegacyDatastoreProviderFactory implements DatastoreProviderFactory,
         } finally {
             session.close();
         }
+    }
+
+    @Override
+    public boolean isSupported() {
+        return ! Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE);
     }
 
 }
