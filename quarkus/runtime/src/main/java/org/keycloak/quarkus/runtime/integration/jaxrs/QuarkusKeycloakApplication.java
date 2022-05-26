@@ -47,7 +47,6 @@ public class QuarkusKeycloakApplication extends KeycloakApplication {
     @Override
     protected void startup() {
         initializeKeycloakSessionFactory();
-        setupScheduledTasks(sessionFactory);
         createAdminUser();
     }
 
@@ -66,7 +65,7 @@ public class QuarkusKeycloakApplication extends KeycloakApplication {
         QuarkusKeycloakSessionFactory instance = QuarkusKeycloakSessionFactory.getInstance();
         sessionFactory = instance;
         instance.init();
-        sessionFactory.publish(new PostMigrationEvent());
+        sessionFactory.publish(new PostMigrationEvent(sessionFactory));
     }
 
     private void createAdminUser() {
