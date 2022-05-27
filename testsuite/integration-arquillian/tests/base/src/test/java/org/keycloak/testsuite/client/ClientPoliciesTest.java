@@ -118,6 +118,7 @@ import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
 import org.keycloak.testsuite.pages.ErrorPage;
+import org.keycloak.testsuite.pages.LogoutConfirmPage;
 import org.keycloak.testsuite.pages.OAuth2DeviceVerificationPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResource.AuthorizationEndpointRequestObject;
@@ -196,6 +197,9 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
 
     @Page
     protected ErrorPage errorPage;
+
+    @Page
+    protected LogoutConfirmPage logoutConfirmPage;
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
@@ -2939,7 +2943,6 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         } catch (IOException ioe) {
             throw new RuntimeException(ioe);
         }
-        String idTokenHint = accessTokenResponse.getIdToken();
         assertEquals(200, accessTokenResponse.getStatusCode());
 
         // Check token refresh.
@@ -2996,7 +2999,9 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         assertEquals(OAuthErrorException.INVALID_GRANT, accessTokenResponse.getError());
 
         // Check frontchannel logout and login.
-        oauth.idTokenHint(idTokenHint).openLogout();
+        driver.navigate().to(oauth.getLogoutUrl().build());
+        logoutConfirmPage.assertCurrent();
+        logoutConfirmPage.confirmLogout();
         loginResponse = oauth.doLogin(TEST_USER_NAME, TEST_USER_PASSWORD);
         Assert.assertNull(loginResponse.getError());
 
