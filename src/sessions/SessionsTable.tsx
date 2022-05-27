@@ -75,6 +75,10 @@ export default function SessionsTable({
         cellFormatters: [dateFormatter(locale)],
       },
       {
+        name: "ipAddress",
+        displayKey: "events:ipAddress",
+      },
+      {
         name: "clients",
         displayKey: "sessions:clients",
         cellRenderer: ClientsCell,
