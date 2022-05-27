@@ -98,7 +98,32 @@ export const OpenIdConnectCompatibilityModes = ({
           )}
         />
       </FormGroup>
-
+      <FormGroup
+        label={t("useLowerCaseBearerType")}
+        fieldId="useLowerCaseBearerType"
+        hasNoPaddingTop
+        labelIcon={
+          <HelpItem
+            helpText="clients-help:useLowerCaseBearerType"
+            fieldLabelId="clients:useLowerCaseBearerType"
+          />
+        }
+      >
+        <Controller
+          name="attributes.token.response.type.bearer.lower-case"
+          defaultValue="false"
+          control={control}
+          render={({ onChange, value }) => (
+            <Switch
+              id="useLowerCaseBearerType"
+              label={t("common:on")}
+              labelOff={t("common:off")}
+              isChecked={value === "true"}
+              onChange={(value) => onChange(value.toString())}
+            />
+          )}
+        />
+      </FormGroup>
       <ActionGroup>
         <Button variant="secondary" onClick={save}>
           {t("common:save")}

@@ -462,6 +462,7 @@
   "excludeSessionStateFromAuthenticationResponse": "Exclude Session State From Authentication Response",
   "useRefreshTokens": "Use refresh tokens",
   "useRefreshTokenForClientCredentialsGrant": "Use refresh tokens for client credentials grant",
+  "useLowerCaseBearerType": "Use lower-case bearer type in token responses",
   "assertionConsumerServicePostBindingURL": "Assertion Consumer Service POST Binding URL",
   "assertionConsumerServiceRedirectBindingURL": "Assertion Consumer Service Redirect Binding URL",
   "logoutServicePostBindingURL": "Logout Service POST Binding URL",
