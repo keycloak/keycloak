@@ -1000,7 +1000,7 @@ public class TestingResourceProvider implements RealmResourceProvider {
      * See URLUtils.sendPOSTWithWebDriver for more details
      *
      * @param postRequestUrl Absolute URL. It can include query parameters etc. The POST request will be send to this URL
-     * @param encodedFormParameters Encoded parameters in the form of "param1=value1:param2=value2"
+     * @param encodedFormParameters Encoded parameters in the form of "param1=value1&param2=value2"
      * @return
      */
     @GET
