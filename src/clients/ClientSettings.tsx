@@ -67,7 +67,12 @@ export const ClientSettings = ({
     let result = ["generalSettings", "accessSettings"];
 
     if (protocol === "saml") {
-      result = [...result, "samlCapabilityConfig", "signatureAndEncryption"];
+      return [
+        ...result,
+        "samlCapabilityConfig",
+        "signatureAndEncryption",
+        "loginSettings",
+      ];
     } else if (!client.bearerOnly) {
       result = [...result, "capabilityConfig"];
     } else {
@@ -368,6 +373,15 @@ export const ClientSettings = ({
             isDisabled={!(consentRequired && displayOnConsentScreen === "true")}
           />
         </FormGroup>
+        {protocol === "saml" && (
+          <SaveReset
+            className="keycloak__form_actions"
+            name="settings"
+            save={save}
+            reset={reset}
+            isActive={isManager}
+          />
+        )}
       </FormAccess>
       <FormAccess isHorizontal role="manage-clients">
         {protocol === "openid-connect" && (
