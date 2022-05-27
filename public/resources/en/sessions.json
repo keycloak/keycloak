@@ -22,6 +22,7 @@
   "signOutAllActiveSessions": "Sign out all active sessions",
   "signOutAllActiveSessionsQuestion": "Sign out all active sessions?",
   "setToNow": "Set to now",
+  "logoutAllSessions": "Logout all sessions",
   "logoutAllDescription": "If you sign out all active sessions, active subjects in this realm will be signed out.",
   "logoutAllSessionsError": "Error! Failed to log out of all sessions: {{error}}.",
   "setToNowError": "Error! Failed to set notBefore to current date and time.",

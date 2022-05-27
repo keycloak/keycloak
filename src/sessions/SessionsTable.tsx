@@ -1,5 +1,11 @@
 import type UserSessionRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userSessionRepresentation";
-import { List, ListItem, ListVariant } from "@patternfly/react-core";
+import {
+  Button,
+  List,
+  ListItem,
+  ListVariant,
+  ToolbarItem,
+} from "@patternfly/react-core";
 import { CubesIcon } from "@patternfly/react-icons";
 import React, { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -24,12 +30,14 @@ export type SessionsTableProps = {
   loader: LoaderFunction<UserSessionRepresentation>;
   hiddenColumns?: ColumnName[];
   emptyInstructions?: string;
+  logoutUser?: string;
 };
 
 export default function SessionsTable({
   loader,
   hiddenColumns = [],
   emptyInstructions,
+  logoutUser,
 }: SessionsTableProps) {
   const { realm } = useRealm();
   const { whoAmI } = useWhoAmI();
@@ -106,6 +114,20 @@ export default function SessionsTable({
       loader={loader}
       ariaLabelKey="sessions:title"
       searchPlaceholderKey="sessions:searchForSession"
+      toolbarItem={
+        logoutUser && (
+          <ToolbarItem>
+            <Button
+              onClick={async () => {
+                await adminClient.users.logout({ id: logoutUser });
+                refresh();
+              }}
+            >
+              {t("logoutAllSessions")}
+            </Button>
+          </ToolbarItem>
+        )
+      }
       columns={columns}
       actions={[
         {

@@ -22,6 +22,7 @@ export const UserSessions = () => {
         loader={loader}
         hiddenColumns={["username"]}
         emptyInstructions={t("noSessionsForUser")}
+        logoutUser={id}
       />
     </PageSection>
   );
