@@ -27,6 +27,7 @@ import { emailRegexPattern } from "../util";
 import { GroupPickerDialog } from "../components/group/GroupPickerDialog";
 import moment from "moment";
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
+import type RequiredActionProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/requiredActionProviderRepresentation";
 
 export type BruteForced = {
   isBruteForceProtected?: boolean;
@@ -75,17 +76,22 @@ export const UserForm = ({
   const [open, setOpen] = useState(false);
   const [locked, setLocked] = useState(isLocked);
   const [realm, setRealm] = useState<RealmRepresentation>();
+  const [requiredActions, setRequiredActions] = useState<
+    RequiredActionProviderRepresentation[]
+  >([]);
 
   useFetch(
-    async () => {
-      const realm = await adminClient.realms.findOne({ realm: realmName });
+    () =>
+      Promise.all([
+        adminClient.realms.findOne({ realm: realmName }),
+        adminClient.authenticationManagement.getRequiredActions(),
+      ]),
+    ([realm, actions]) => {
       if (!realm) {
         throw new Error(t("common:notFound"));
       }
-      return realm;
-    },
-    (realm) => {
       setRealm(realm);
+      setRequiredActions(actions);
     },
     []
   );
@@ -98,21 +104,6 @@ export const UserForm = ({
       addError("users:unlockError", error);
     }
   };
-
-  const requiredUserActionsOptions = [
-    <SelectOption key={0} value="CONFIGURE_TOTP">
-      {t("configureOTP")}
-    </SelectOption>,
-    <SelectOption key={1} value="UPDATE_PASSWORD">
-      {t("updatePassword")}
-    </SelectOption>,
-    <SelectOption key={2} value="UPDATE_PROFILE">
-      {t("updateProfile")}
-    </SelectOption>,
-    <SelectOption key={3} value="VERIFY_EMAIL">
-      {t("verifyEmail")}
-    </SelectOption>,
-  ];
 
   const clearSelection = () => {
     setRequiredUserActionsDropdownOpen(false);
@@ -372,7 +363,11 @@ export const UserForm = ({
               onClear={clearSelection}
               variant="typeaheadmulti"
             >
-              {requiredUserActionsOptions}
+              {requiredActions.map(({ alias, name }) => (
+                <SelectOption key={alias} value={alias}>
+                  {name}
+                </SelectOption>
+              ))}
             </Select>
           )}
         />
