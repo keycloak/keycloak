@@ -20,12 +20,20 @@ package org.keycloak.provider.wildfly;
 import java.io.File;
 
 import org.jboss.logging.Logger;
+import org.jboss.modules.Module;
+import org.jboss.modules.ModuleIdentifier;
+import org.jboss.modules.ModuleLoadException;
+import org.keycloak.Config;
+import org.keycloak.common.util.Environment;
 import org.keycloak.platform.PlatformProvider;
 import org.keycloak.services.ServicesLogger;
 
 public class WildflyPlatform implements PlatformProvider {
 
     private static final Logger log = Logger.getLogger(WildflyPlatform.class);
+
+    // In this module, the attempt to load script engine will be done by default
+    private static final String DEFAULT_SCRIPT_ENGINE_MODULE = "org.openjdk.nashorn.nashorn-core";
 
     Runnable shutdownHook;
 
@@ -73,5 +81,26 @@ public class WildflyPlatform implements PlatformProvider {
             }
         }
         return tmpDir;
+    }
+
+    @Override
+    public ClassLoader getScriptEngineClassLoader(Config.Scope scriptProviderConfig) {
+        String engineModule = scriptProviderConfig.get("script-engine-module");
+        if (engineModule == null) {
+            engineModule = DEFAULT_SCRIPT_ENGINE_MODULE;
+        }
+
+        try {
+            Module module = Module.getContextModuleLoader().loadModule(ModuleIdentifier.fromString(engineModule));
+            log.infof("Found script engine module '%s'", engineModule);
+            return module.getClassLoader();
+        } catch (ModuleLoadException mle) {
+            if (WildflyUtil.getJavaVersion() >= 15) {
+                log.warnf("Cannot find script engine in the JBoss module '%s'. Please add JavaScript engine to the specified JBoss Module or make sure it is available on the classpath", engineModule);
+            } else {
+                log.debugf("Cannot find script engine in the JBoss module '%s'. Will fallback to the default script engine", engineModule);
+            }
+            return null;
+        }
     }
 }

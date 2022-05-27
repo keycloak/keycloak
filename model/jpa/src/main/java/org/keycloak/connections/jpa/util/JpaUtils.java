@@ -25,7 +25,7 @@ import org.hibernate.jpa.boot.internal.ParsedPersistenceXmlDescriptor;
 import org.hibernate.jpa.boot.internal.PersistenceXmlParser;
 import org.hibernate.jpa.boot.spi.Bootstrap;
 import org.keycloak.connections.jpa.entityprovider.JpaEntityProvider;
-import org.keycloak.connections.jpa.entityprovider.ProxyClassLoader;
+import org.keycloak.utils.ProxyClassLoader;
 import org.keycloak.models.KeycloakSession;
 
 import javax.persistence.EntityManager;

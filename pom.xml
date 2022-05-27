@@ -118,6 +118,7 @@
         <xmlsec.version>2.2.3</xmlsec.version>
         <glassfish.json.version>1.1.6</glassfish.json.version>
         <wildfly.common.version>1.6.0.Final</wildfly.common.version>
+        <nashorn.version>15.3</nashorn.version>
         <ua-parser.version>1.5.2</ua-parser.version>
         <picketbox.version>5.0.3.Final</picketbox.version>
         <google.guava.version>30.1-jre</google.guava.version>
@@ -591,6 +592,11 @@
                 <groupId>org.glassfish</groupId>
                 <artifactId>jakarta.json</artifactId>
                 <version>${glassfish.json.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.openjdk.nashorn</groupId>
+                <artifactId>nashorn-core</artifactId>
+                <version>${nashorn.version}</version>
             </dependency>
 
             <!-- Twitter -->
