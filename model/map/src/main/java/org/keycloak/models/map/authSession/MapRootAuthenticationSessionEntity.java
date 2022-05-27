@@ -85,6 +85,21 @@ public interface MapRootAuthenticationSessionEntity extends AbstractEntity, Upda
     String getRealmId();
     void setRealmId(String realmId);
 
+    /**
+     * Returns a point in time (timestamp in milliseconds since The Epoch) when the root authentication session entity was created or
+     * updated during an authentication process.
+     *
+     * @return a timestamp in milliseconds since The Epoch or {@code null} when the time is unknown
+     */
+    Long getTimestamp();
+
+    /**
+     * Sets a point in the (timestamp in milliseconds since The Epoch) when the root authentication session entity was created or
+     * updated during an authentication process.
+     * @param timestamp a timestamp in milliseconds since The Epoch or {@code null} when the time is unknown
+     */
+    void setTimestamp(Long timestamp);
+
     Set<MapAuthenticationSessionEntity> getAuthenticationSessions();
     void setAuthenticationSessions(Set<MapAuthenticationSessionEntity> authenticationSessions);
     Optional<MapAuthenticationSessionEntity> getAuthenticationSession(String tabId);

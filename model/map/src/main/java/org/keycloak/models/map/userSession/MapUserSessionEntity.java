@@ -76,7 +76,30 @@ public interface MapUserSessionEntity extends AbstractEntity, UpdatableEntity, E
     Boolean isRememberMe();
     void setRememberMe(Boolean rememberMe);
 
+    /**
+     * Returns a point in time (timestamp in milliseconds since The Epoch) when the user session entity was created.
+     *
+     * @return a timestamp in milliseconds since The Epoch or {@code null} when the time is unknown
+     */
+    Long getTimestamp();
+
+    /**
+     * Sets a point in the (timestamp in milliseconds since The Epoch) when the user session entity was created.
+     * @param timestamp a timestamp in milliseconds since The Epoch or {@code null} when the time is unknown
+     */
+    void setTimestamp(Long timestamp);
+
+    /**
+     * Returns a point in time (timestamp in milliseconds since The Epoch) when the user session entity was last refreshed.
+     *
+     * @return a timestamp in milliseconds since The Epoch or {@code null} when the time is unknown
+     */
     Long getLastSessionRefresh();
+
+    /**
+     * Sets a point in the (timestamp in milliseconds since The Epoch) when the user session entity was last refreshed.
+     * @param lastSessionRefresh a timestamp in milliseconds since The Epoch or {@code null} when the time is unknown
+     */
     void setLastSessionRefresh(Long lastSessionRefresh);
 
     Map<String, String> getNotes();

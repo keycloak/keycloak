@@ -50,6 +50,19 @@ public interface MapAuthEventEntity extends UpdatableEntity, AbstractEntity, Exp
 
     }
 
+    /**
+     * Returns a point in time (timestamp in milliseconds since The Epoch) when the event entity was created.
+     *
+     * @return a timestamp in milliseconds since The Epoch or {@code null} when the time is unknown
+     */
+    Long getTimestamp();
+
+    /**
+     * Sets a point in the (timestamp in milliseconds since The Epoch) when the event entity was created.
+     * @param timestamp a timestamp in milliseconds since The Epoch or {@code null} when the time is unknown
+     */
+    void setTimestamp(Long timestamp);
+
     EventType getType();
     void setType(EventType type);
 
