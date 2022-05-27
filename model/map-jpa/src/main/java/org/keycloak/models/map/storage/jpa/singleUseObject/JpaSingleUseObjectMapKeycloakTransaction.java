@@ -22,6 +22,7 @@ import javax.persistence.criteria.Root;
 import javax.persistence.criteria.Selection;
 
 import org.keycloak.models.ActionTokenValueModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.map.singleUseObject.MapSingleUseObjectEntity;
 import org.keycloak.models.map.storage.jpa.JpaMapKeycloakTransaction;
 import org.keycloak.models.map.storage.jpa.JpaModelCriteriaBuilder;
@@ -37,8 +38,8 @@ import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSI
  */
 public class JpaSingleUseObjectMapKeycloakTransaction extends JpaMapKeycloakTransaction<JpaSingleUseObjectEntity, MapSingleUseObjectEntity, ActionTokenValueModel> {
 
-    public JpaSingleUseObjectMapKeycloakTransaction(final EntityManager em) {
-        super(JpaSingleUseObjectEntity.class, ActionTokenValueModel.class, em);
+    public JpaSingleUseObjectMapKeycloakTransaction(KeycloakSession session, final EntityManager em) {
+        super(session, JpaSingleUseObjectEntity.class, ActionTokenValueModel.class, em);
     }
 
     @Override

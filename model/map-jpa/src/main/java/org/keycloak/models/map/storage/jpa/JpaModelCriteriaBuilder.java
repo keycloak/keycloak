@@ -35,7 +35,6 @@ import org.keycloak.models.map.common.StringKeyConverter;
 import org.keycloak.models.map.storage.CriterionNotSupportedException;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
-import org.keycloak.models.map.storage.jpa.role.JpaPredicateFunction;
 import org.keycloak.storage.SearchableModelField;
 
 /**

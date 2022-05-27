@@ -47,6 +47,8 @@ import org.keycloak.representations.account.SessionRepresentation;
 import org.keycloak.services.managers.Auth;
 import org.keycloak.services.managers.AuthenticationManager;
 
+import static org.keycloak.utils.LockObjectsForModification.lockObjectsForModification;
+
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
@@ -148,7 +150,7 @@ public class SessionResource {
     @NoCache
     public Response logout(@PathParam("id") String id) {
         auth.require(AccountRoles.MANAGE_ACCOUNT);
-        UserSessionModel userSession = session.sessions().getUserSession(realm, id);
+        UserSessionModel userSession = lockObjectsForModification(session, () -> session.sessions().getUserSession(realm, id));
         if (userSession != null && userSession.getUser().equals(user)) {
             AuthenticationManager.backchannelLogout(session, userSession, true);
         }

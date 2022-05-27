@@ -20,8 +20,8 @@ import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.ResourceServer.SearchableFields;
 import org.keycloak.models.map.storage.CriterionNotSupportedException;
 import org.keycloak.models.map.storage.jpa.JpaModelCriteriaBuilder;
+import org.keycloak.models.map.storage.jpa.JpaPredicateFunction;
 import org.keycloak.models.map.storage.jpa.authorization.resourceServer.entity.JpaResourceServerEntity;
-import org.keycloak.models.map.storage.jpa.role.JpaPredicateFunction;
 import org.keycloak.storage.SearchableModelField;
 
 public class JpaResourceServerModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaResourceServerEntity, ResourceServer, JpaResourceServerModelCriteriaBuilder> {

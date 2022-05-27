@@ -902,6 +902,7 @@
                                 <keycloak.role.map.storage.provider>jpa</keycloak.role.map.storage.provider>
                                 <keycloak.singleUseObject.map.storage.provider>jpa</keycloak.singleUseObject.map.storage.provider>
                                 <keycloak.user.map.storage.provider>jpa</keycloak.user.map.storage.provider>
+                                <keycloak.userSession.map.storage.provider>jpa</keycloak.userSession.map.storage.provider>
                             </systemPropertyVariables>
                         </configuration>
                     </plugin>

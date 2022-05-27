@@ -23,10 +23,10 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientModel.SearchableFields;
 import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
 import org.keycloak.models.map.storage.CriterionNotSupportedException;
-import org.keycloak.models.map.storage.jpa.client.entity.JpaClientEntity;
-import org.keycloak.models.map.storage.jpa.client.entity.JpaClientAttributeEntity;
 import org.keycloak.models.map.storage.jpa.JpaModelCriteriaBuilder;
-import org.keycloak.models.map.storage.jpa.role.JpaPredicateFunction;
+import org.keycloak.models.map.storage.jpa.JpaPredicateFunction;
+import org.keycloak.models.map.storage.jpa.client.entity.JpaClientAttributeEntity;
+import org.keycloak.models.map.storage.jpa.client.entity.JpaClientEntity;
 import org.keycloak.storage.SearchableModelField;
 
 public class JpaClientModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaClientEntity, ClientModel, JpaClientModelCriteriaBuilder> {

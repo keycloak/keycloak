@@ -45,6 +45,8 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 
+import static org.keycloak.utils.LockObjectsForModification.lockObjectsForModification;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -100,7 +102,7 @@ public class KeycloakOIDCIdentityProvider extends OIDCIdentityProvider {
             if (action.getKeycloakSessionIds() != null) {
                 for (String sessionId : action.getKeycloakSessionIds()) {
                     String brokerSessionId = getConfig().getAlias() + "." + sessionId;
-                    UserSessionModel userSession = session.sessions().getUserSessionByBrokerSessionId(realm, brokerSessionId);
+                    UserSessionModel userSession = lockObjectsForModification(session, () -> session.sessions().getUserSessionByBrokerSessionId(realm, brokerSessionId));
                     if (userSession != null
                             && userSession.getState() != UserSessionModel.State.LOGGING_OUT
                             && userSession.getState() != UserSessionModel.State.LOGGED_OUT

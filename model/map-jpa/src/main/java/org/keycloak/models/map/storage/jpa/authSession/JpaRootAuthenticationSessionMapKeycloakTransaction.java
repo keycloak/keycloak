@@ -20,6 +20,8 @@ import javax.persistence.EntityManager;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.Root;
 import javax.persistence.criteria.Selection;
+
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.map.authSession.MapRootAuthenticationSessionEntity;
 import org.keycloak.models.map.authSession.MapRootAuthenticationSessionEntityDelegate;
 import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_AUTH_SESSION;
@@ -33,8 +35,8 @@ import org.keycloak.sessions.RootAuthenticationSessionModel;
 public class JpaRootAuthenticationSessionMapKeycloakTransaction extends JpaMapKeycloakTransaction<JpaRootAuthenticationSessionEntity, MapRootAuthenticationSessionEntity, RootAuthenticationSessionModel> {
 
     @SuppressWarnings("unchecked")
-    public JpaRootAuthenticationSessionMapKeycloakTransaction(EntityManager em) {
-        super(JpaRootAuthenticationSessionEntity.class, RootAuthenticationSessionModel.class, em);
+    public JpaRootAuthenticationSessionMapKeycloakTransaction(KeycloakSession session, EntityManager em) {
+        super(session, JpaRootAuthenticationSessionEntity.class, RootAuthenticationSessionModel.class, em);
     }
 
     @Override

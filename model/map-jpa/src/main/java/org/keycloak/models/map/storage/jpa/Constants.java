@@ -16,8 +16,6 @@
  */
 package org.keycloak.models.map.storage.jpa;
 
-import javax.persistence.criteria.CriteriaBuilder;
-
 public interface Constants {
     public static final Integer CURRENT_SCHEMA_VERSION_ADMIN_EVENT = 1;
     public static final Integer CURRENT_SCHEMA_VERSION_AUTH_EVENT = 1;
@@ -28,6 +26,7 @@ public interface Constants {
     public static final Integer CURRENT_SCHEMA_VERSION_AUTHZ_RESOURCE_SERVER = 1;
     public static final Integer CURRENT_SCHEMA_VERSION_AUTHZ_SCOPE = 1;
     public static final Integer CURRENT_SCHEMA_VERSION_CLIENT = 1;
+    public static final Integer CURRENT_SCHEMA_VERSION_CLIENT_SESSION = 1;
     public static final Integer CURRENT_SCHEMA_VERSION_CLIENT_SCOPE = 1;
     public static final Integer CURRENT_SCHEMA_VERSION_COMPONENT = 1;
     public static final Integer CURRENT_SCHEMA_VERSION_GROUP = 1;
@@ -39,5 +38,5 @@ public interface Constants {
     public static final Integer CURRENT_SCHEMA_VERSION_USER = 1;
     public static final Integer CURRENT_SCHEMA_VERSION_USER_CONSENT = 1;
     public static final Integer CURRENT_SCHEMA_VERSION_USER_FEDERATED_IDENTITY = 1;
-
+    public static final Integer CURRENT_SCHEMA_VERSION_USER_SESSION = 1;
 }

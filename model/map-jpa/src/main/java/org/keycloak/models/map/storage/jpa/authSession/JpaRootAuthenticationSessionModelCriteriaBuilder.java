@@ -18,8 +18,8 @@ package org.keycloak.models.map.storage.jpa.authSession;
 
 import org.keycloak.models.map.storage.CriterionNotSupportedException;
 import org.keycloak.models.map.storage.jpa.JpaModelCriteriaBuilder;
+import org.keycloak.models.map.storage.jpa.JpaPredicateFunction;
 import org.keycloak.models.map.storage.jpa.authSession.entity.JpaRootAuthenticationSessionEntity;
-import org.keycloak.models.map.storage.jpa.role.JpaPredicateFunction;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel.SearchableFields;
 import org.keycloak.storage.SearchableModelField;

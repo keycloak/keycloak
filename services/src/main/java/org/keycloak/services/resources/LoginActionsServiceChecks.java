@@ -43,6 +43,8 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import org.jboss.logging.Logger;
 
+import static org.keycloak.utils.LockObjectsForModification.lockObjectsForModification;
+
 /**
  *
  * @author hmlnarik
@@ -121,7 +123,7 @@ public class LoginActionsServiceChecks {
             return;
         }
 
-        UserSessionModel userSession = context.getSession().sessions().getUserSession(context.getRealm(), authSessionId);
+        UserSessionModel userSession = lockObjectsForModification(context.getSession(), () -> context.getSession().sessions().getUserSession(context.getRealm(), authSessionId));
         boolean hasNoRequiredActions =
           (userSession == null || userSession.getUser().getRequiredActionsStream().count() == 0)
           &&

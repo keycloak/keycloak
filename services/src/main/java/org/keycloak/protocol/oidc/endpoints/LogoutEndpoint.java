@@ -20,6 +20,7 @@ package org.keycloak.protocol.oidc.endpoints;
 import static org.keycloak.models.UserSessionModel.State.LOGGED_OUT;
 import static org.keycloak.models.UserSessionModel.State.LOGGING_OUT;
 import static org.keycloak.services.resources.LoginActionsService.SESSION_CODE;
+import static org.keycloak.utils.LockObjectsForModification.lockObjectsForModification;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
@@ -425,7 +426,7 @@ public class LogoutEndpoint {
         String idTokenIssuedAtStr = logoutSession.getAuthNote(OIDCLoginProtocol.LOGOUT_VALIDATED_ID_TOKEN_ISSUED_AT);
         if (userSessionIdFromIdToken != null && idTokenIssuedAtStr != null) {
             try {
-                userSession = session.sessions().getUserSession(realm, userSessionIdFromIdToken);
+                userSession = lockObjectsForModification(session, () -> session.sessions().getUserSession(realm, userSessionIdFromIdToken));
 
                 if (userSession != null) {
                     Integer idTokenIssuedAt = Integer.parseInt(idTokenIssuedAtStr);
@@ -439,7 +440,8 @@ public class LogoutEndpoint {
         }
 
         // authenticate identity cookie, but ignore an access token timeout as we're logging out anyways.
-        AuthenticationManager.AuthResult authResult = AuthenticationManager.authenticateIdentityCookie(session, realm, false);
+        AuthenticationManager.AuthResult authResult = lockObjectsForModification(session, 
+                () -> AuthenticationManager.authenticateIdentityCookie(session, realm, false));
         if (authResult != null) {
             userSession = userSession != null ? userSession : authResult.getSession();
             return initiateBrowserLogout(userSession);
@@ -517,7 +519,8 @@ public class LogoutEndpoint {
                 UserSessionManager sessionManager = new UserSessionManager(session);
                 userSessionModel = sessionManager.findOfflineUserSession(realm, token.getSessionState());
             } else {
-                userSessionModel = session.sessions().getUserSession(realm, token.getSessionState());
+                String sessionState = token.getSessionState();
+                userSessionModel = lockObjectsForModification(session, () -> session.sessions().getUserSession(realm, sessionState));
             }
 
             if (userSessionModel != null) {
@@ -617,8 +620,8 @@ public class LogoutEndpoint {
         AtomicReference<BackchannelLogoutResponse> backchannelLogoutResponse = new AtomicReference<>(new BackchannelLogoutResponse());
         backchannelLogoutResponse.get().setLocalLogoutSucceeded(true);
         identityProviderAliases.forEach(identityProviderAlias -> {
-            UserSessionModel userSession = session.sessions().getUserSessionByBrokerSessionId(realm,
-                    identityProviderAlias + "." + sessionId);
+            UserSessionModel userSession = lockObjectsForModification(session, () -> session.sessions().getUserSessionByBrokerSessionId(realm,
+                    identityProviderAlias + "." + sessionId));
 
             if (logoutOfflineSessions) {
                 if (offlineSessionsLazyLoadingEnabled) {

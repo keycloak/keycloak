@@ -24,6 +24,8 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.utils.StringUtil;
 
+import static org.keycloak.utils.LockObjectsForModification.lockObjectsForModification;
+
 public class UserSessionLimitsAuthenticator implements Authenticator {
 
     private static Logger logger = Logger.getLogger(UserSessionLimitsAuthenticator.class);
@@ -51,7 +53,7 @@ public class UserSessionLimitsAuthenticator implements Authenticator {
         if (context.getRealm() != null && context.getUser() != null) {
 
             // Get the session count in this realm for this specific user
-            List<UserSessionModel> userSessionsForRealm = session.sessions().getUserSessionsStream(context.getRealm(), context.getUser()).collect(Collectors.toList());
+            List<UserSessionModel> userSessionsForRealm = lockObjectsForModification(session, () -> session.sessions().getUserSessionsStream(context.getRealm(), context.getUser()).collect(Collectors.toList()));
             int userSessionCountForRealm = userSessionsForRealm.size();
 
             // Get the session count related to the current client for this user

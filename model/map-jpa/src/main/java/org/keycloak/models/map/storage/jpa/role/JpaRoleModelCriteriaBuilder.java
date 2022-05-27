@@ -27,6 +27,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.RoleModel.SearchableFields;
 import org.keycloak.models.map.storage.CriterionNotSupportedException;
 import org.keycloak.models.map.storage.jpa.JpaModelCriteriaBuilder;
+import org.keycloak.models.map.storage.jpa.JpaPredicateFunction;
 import org.keycloak.models.map.storage.jpa.role.entity.JpaRoleCompositeEntity;
 import org.keycloak.models.map.storage.jpa.role.entity.JpaRoleEntity;
 import org.keycloak.storage.SearchableModelField;

@@ -38,6 +38,11 @@
     <class>org.keycloak.models.map.storage.jpa.singleUseObject.entity.JpaSingleUseObjectNoteEntity</class>
     <!--user-login-failures-->
     <class>org.keycloak.models.map.storage.jpa.loginFailure.entity.JpaUserLoginFailureEntity</class>
+    <!--user-sessions-->
+    <class>org.keycloak.models.map.storage.jpa.userSession.entity.JpaClientSessionEntity</class>
+    <class>org.keycloak.models.map.storage.jpa.userSession.entity.JpaClientSessionNoteEntity</class>
+    <class>org.keycloak.models.map.storage.jpa.userSession.entity.JpaUserSessionEntity</class>
+    <class>org.keycloak.models.map.storage.jpa.userSession.entity.JpaUserSessionNoteEntity</class>
     <!--users-->
     <class>org.keycloak.models.map.storage.jpa.user.entity.JpaUserEntity</class>
     <class>org.keycloak.models.map.storage.jpa.user.entity.JpaUserAttributeEntity</class>

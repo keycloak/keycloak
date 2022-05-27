@@ -29,5 +29,6 @@ limitations under the License.
     <include file="META-INF/jpa-roles-changelog.xml"/>
     <include file="META-INF/jpa-single-use-objects-changelog.xml"/>
     <include file="META-INF/jpa-user-login-failures-changelog.xml"/>
+    <include file="META-INF/jpa-user-sessions-changelog.xml"/>
     <include file="META-INF/jpa-users-changelog.xml"/>
 </databaseChangeLog>
