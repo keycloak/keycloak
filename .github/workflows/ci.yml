@@ -606,7 +606,7 @@ jobs:
       - name: Run WebAuthn tests
         if: ${{ github.event_name != 'pull_request' || env.GIT_DIFF != 0 }}
         run: |
-          mvn clean install -nsu -B -Dbrowser=chrome -Pwebauthn -f testsuite/integration-arquillian/tests/other/pom.xml -Dtest=org.keycloak.testsuite.webauthn.**.*Test | misc/log/trimmer.sh
+          mvn clean install -nsu -B -Dbrowser=chromeHeadless -Pwebauthn -f testsuite/integration-arquillian/tests/other/pom.xml -Dtest=org.keycloak.testsuite.webauthn.**.*Test | misc/log/trimmer.sh
           
           TEST_RESULT=${PIPESTATUS[0]}
           find . -path '*/target/surefire-reports/*.xml' | zip -q reports-webauthn-tests.zip -@
