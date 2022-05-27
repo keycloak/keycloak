@@ -16,6 +16,7 @@ import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { TimeSelector } from "../../components/time-selector/TimeSelector";
 import { TokenLifespan } from "./TokenLifespan";
 import { KeyValueInput } from "../../components/key-value-form/KeyValueInput";
+import { MultiLineInput } from "../../components/multi-line-input/MultiLineInput";
 
 type AdvancedSettingsProps = {
   control: Control<Record<string, any>>;
@@ -167,6 +168,18 @@ export const AdvancedSettings = ({
             }
           >
             <KeyValueInput name="attributes.acr.loa.map" />
+          </FormGroup>
+          <FormGroup
+            label={t("defaultACRValues")}
+            fieldId="defaultACRValues"
+            labelIcon={
+              <HelpItem
+                helpText="clients-help:defaultACRValues"
+                fieldLabelId="clients:defaultACRValues"
+              />
+            }
+          >
+            <MultiLineInput name="attributes.default.acr.values" />
           </FormGroup>
         </>
       )}

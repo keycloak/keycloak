@@ -99,6 +99,7 @@
   "keyForCodeExchange": "Choose which code challenge method for PKCE is used. If not specified, keycloak does not applies PKCE to a client unless the client sends an authorization request with appropriate code challenge and code exchange method.",
   "pushedAuthorizationRequestRequired": "Boolean parameter indicating whether the authorization server accepts authorization request data only via the pushed authorization request method.",
   "acrToLoAMapping": "Define which ACR (Authentication Context Class Reference) value is mapped to which LoA (Level of Authentication). The ACR can be any value, whereas the LoA must be numeric.",
+  "defaultACRValues": "Default values to be used as voluntary ACR in case that there is no explicit ACR requested by 'claims' or 'acr_values' parameter in the OIDC request.",
   "assertionConsumerServicePostBindingURL": "SAML POST Binding URL for the client's assertion consumer service (login responses). You can leave this blank if you do not have a URL for this binding.",
   "assertionConsumerServiceRedirectBindingURL": "SAML Redirect Binding URL for the client's assertion consumer service (login responses). You can leave this blank if you do not have a URL for this binding.",
   "logoutServicePostBindingURL": "SAML POST Binding URL for the client's single logout service. You can leave this blank if you are using a different binding",

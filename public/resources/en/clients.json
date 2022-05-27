@@ -477,6 +477,7 @@
   "keyForCodeExchange": "Proof Key for Code Exchange Code Challenge Method",
   "pushedAuthorizationRequestRequired": "Pushed authorization request required",
   "acrToLoAMapping": "ACR to LoA Mapping",
+  "defaultACRValues": "Default ACR Values",
   "authenticationOverrides": "Authentication flow overrides",
   "browserFlow": "Browser Flow",
   "directGrant": "Direct Grant Flow",

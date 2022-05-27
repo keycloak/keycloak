@@ -71,7 +71,7 @@ import { toClientScopesTab } from "./routes/ClientScopeTab";
 import { AuthorizationExport } from "./authorization/AuthorizationExport";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { PermissionsTab } from "../components/permission-tab/PermissionTab";
-import { keyValueToArray } from "../components/key-value-form/key-value-convert";
+import type { KeyValueType } from "../components/key-value-form/key-value-convert";
 import { useAccess } from "../context/access/Access";
 
 type ClientDetailHeaderProps = {
@@ -249,6 +249,12 @@ export default function ClientDetails() {
         )
       );
     }
+    if (client.attributes?.["default.acr.values"]) {
+      form.setValue(
+        "attributes.default.acr.values",
+        stringToMultiline(client.attributes["default.acr.values"])
+      );
+    }
     Object.entries(client.attributes || {})
       .filter(([key]) => key.startsWith("saml.server.signature"))
       .map(([key, value]) =>
@@ -292,6 +298,12 @@ export default function ClientDetails() {
         );
       }
 
+      if (values.attributes?.default?.acr?.values) {
+        values.attributes["default.acr.values"] = toStringValue(
+          values.attributes.default.acr.values
+        );
+      }
+
       const submittedClient =
         convertFormValuesToObject<ClientRepresentation>(values);
 
@@ -304,7 +316,11 @@ export default function ClientDetails() {
 
       if (submittedClient.attributes?.["acr.loa.map"]) {
         submittedClient.attributes["acr.loa.map"] = JSON.stringify(
-          keyValueToArray(submittedClient.attributes["acr.loa.map"])
+          Object.fromEntries(
+            (submittedClient.attributes["acr.loa.map"] as KeyValueType[])
+              .filter(({ key }) => key !== "")
+              .map(({ key, value }) => [key, value])
+          )
         );
       }
 
