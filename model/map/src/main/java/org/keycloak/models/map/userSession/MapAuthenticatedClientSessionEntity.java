@@ -50,6 +50,19 @@ public interface MapAuthenticatedClientSessionEntity extends AbstractEntity, Upd
         }
     }
 
+    /**
+     * Returns a point in time (timestamp in milliseconds since The Epoch) when the client session entity was created or updated (refreshed).
+     *
+     * @return a timestamp in milliseconds since The Epoch or {@code null} when the time is unknown
+     */
+    Long getTimestamp();
+
+    /**
+     * Sets a point in the (timestamp in milliseconds since The Epoch) when the client session entity was created or updated (refreshed).
+     * @param timestamp a timestamp in milliseconds since The Epoch or {@code null} when the time is unknown
+     */
+    void setTimestamp(Long timestamp);
+
     String getRealmId();
     void setRealmId(String realmId);
 

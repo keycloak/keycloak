@@ -57,6 +57,19 @@ public interface MapClientInitialAccessEntity extends UpdatableEntity, AbstractE
         return model;
     }
 
+    /**
+     * Returns a point in time (timestamp in milliseconds since The Epoch) when the client initial access entity was created.
+     *
+     * @return a timestamp in milliseconds since The Epoch or {@code null} when the time is unknown
+     */
+    Long getTimestamp();
+
+    /**
+     * Sets a point in the (timestamp in milliseconds since The Epoch) when the client initial access entity was created.
+     * @param timestamp a timestamp in milliseconds since The Epoch or {@code null} when the time is unknown
+     */
+    void setTimestamp(Long timestamp);
+
     Integer getCount();
     void setCount(Integer count);
 

@@ -48,6 +48,19 @@ public interface MapAdminEventEntity extends UpdatableEntity, AbstractEntity, Ex
 
     }
 
+    /**
+     * Returns a point in time (timestamp in milliseconds since The Epoch) when the event was created.
+     *
+     * @return a timestamp in milliseconds since The Epoch or {@code null} when the time is unknown
+     */
+    Long getTimestamp();
+
+    /**
+     * Sets a point in the (timestamp in milliseconds since The Epoch) when this entity was created.
+     * @param timestamp a timestamp in milliseconds since The Epoch or {@code null} when the time is unknown
+     */
+    void setTimestamp(Long timestamp);
+
     String getRealmId();
     void setRealmId(String realmId);
 
