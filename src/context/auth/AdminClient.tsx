@@ -70,7 +70,7 @@ export async function initAdminClient() {
   await kcAdminClient.init(
     { onLoad: "check-sso", pkceMethod: "S256" },
     {
-      url: environment.authUrl,
+      url: environment.authServerUrl,
       realm: environment.loginRealm,
       clientId: environment.isRunningAsTheme
         ? "security-admin-console"
@@ -79,7 +79,7 @@ export async function initAdminClient() {
   );
 
   kcAdminClient.setConfig({ realmName: environment.loginRealm });
-  kcAdminClient.baseUrl = environment.authUrl;
+  kcAdminClient.baseUrl = environment.authServerUrl;
 
   return kcAdminClient;
 }
