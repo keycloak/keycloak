@@ -71,7 +71,7 @@ export default function SearchGroups() {
     return (
       <Link
         key={group.id}
-        to={`/${realm}/groups/search/${group.link}`}
+        to={`/${realm}/groups/${group.link}`}
         onClick={() =>
           setSubGroups([{ name: t("searchGroups"), id: "search" }, group])
         }
