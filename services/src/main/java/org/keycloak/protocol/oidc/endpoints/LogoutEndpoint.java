@@ -289,6 +289,30 @@ public class LogoutEndpoint {
                 .createLogoutConfirmPage();
     }
 
+    /**
+     * This endpoint can be used either as:
+     *  - OpenID Connect RP-Initiated Logout POST endpoint according to the specification https://openid.net/specs/openid-connect-rpinitiated-1_0.html#RPLogout
+     *  - Legacy Logout endpoint with refresh_token as an argument and client authentication needed. See {@link #logoutToken} for more details
+     *
+     * @return response
+     */
+    @POST
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    public Response logout() {
+        MultivaluedMap<String, String> form = request.getDecodedFormParameters();
+        if (form.containsKey(OAuth2Constants.REFRESH_TOKEN)) {
+            return logoutToken();
+        } else {
+            return logout(form.getFirst(OIDCLoginProtocol.REDIRECT_URI_PARAM),
+                    form.getFirst(OIDCLoginProtocol.ID_TOKEN_HINT),
+                    form.getFirst(OIDCLoginProtocol.CLIENT_ID_PARAM),
+                    form.getFirst(OIDCLoginProtocol.POST_LOGOUT_REDIRECT_URI_PARAM),
+                    form.getFirst(OIDCLoginProtocol.STATE_PARAM),
+                    form.getFirst(OIDCLoginProtocol.UI_LOCALES_PARAM),
+                    form.getFirst(AuthenticationManager.INITIATING_IDP_PARAM));
+        }
+    }
+
     @Path("/logout-confirm")
     @POST
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
@@ -389,9 +413,7 @@ public class LogoutEndpoint {
      *
      * @return
      */
-    @POST
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    public Response logoutToken() {
+    private Response logoutToken() {
         cors = Cors.add(request).auth().allowedMethods("POST").auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
 
         MultivaluedMap<String, String> form = request.getDecodedFormParameters();

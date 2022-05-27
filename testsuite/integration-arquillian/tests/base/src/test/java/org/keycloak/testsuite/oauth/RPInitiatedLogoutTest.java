@@ -36,6 +36,7 @@ import org.keycloak.events.Errors;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.IDToken;
 import org.keycloak.representations.LogoutToken;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -52,6 +53,8 @@ import org.keycloak.testsuite.pages.LoginPage;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.HttpHeaders;
@@ -76,6 +79,7 @@ import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
 import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.OAuthClient;
+import org.keycloak.testsuite.util.URLUtils;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.openqa.selenium.NoSuchElementException;
 
@@ -718,6 +722,51 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
 
         events.expectLogout(tokenResponse.getSessionState()).removeDetail(Details.REDIRECT_URI).assertEvent();
         Assert.assertThat(false, is(isSessionActive(tokenResponse.getSessionState())));
+    }
+
+
+    // Calling RP-Initiated Logout endpoint with POST request. This must be supported according to specification
+    @Test
+    public void logoutWithPostRequest() throws IOException {
+        try (RealmAttributeUpdater updater = new RealmAttributeUpdater(testRealm()).addSupportedLocale("cs").update()) {
+            OAuthClient.AccessTokenResponse tokenResponse = loginUser();
+
+            // Logout with POST request and automatic redirect after logout
+            String redirectUri = APP_REDIRECT_URI + "?logout";
+
+            String idTokenString = tokenResponse.getIdToken();
+            String sessionId = tokenResponse.getSessionState();
+
+            Map<String, String> postParams = new HashMap<>();
+            postParams.put(OIDCLoginProtocol.POST_LOGOUT_REDIRECT_URI_PARAM, redirectUri);
+            postParams.put(OIDCLoginProtocol.ID_TOKEN_HINT, idTokenString);
+            postParams.put(OAuth2Constants.STATE, "my-state");
+            URLUtils.sendPOSTRequestWithWebDriver(oauth.getLogoutUrl().build(), postParams);
+
+            events.expectLogout(tokenResponse.getSessionState()).detail(Details.REDIRECT_URI, redirectUri).assertEvent();
+            Assert.assertThat(false, is(isSessionActive(sessionId)));
+            assertCurrentUrlEquals(redirectUri + "&state=my-state");
+
+            // Logout with showing confirmation screen
+            tokenResponse = loginUser();
+            sessionId = tokenResponse.getSessionState();
+
+            postParams.clear();
+            postParams.put(OIDCLoginProtocol.POST_LOGOUT_REDIRECT_URI_PARAM, redirectUri);
+            postParams.put(OAuth2Constants.CLIENT_ID, "test-app");
+            postParams.put(OAuth2Constants.STATE, "my-state-2");
+            postParams.put(OIDCLoginProtocol.UI_LOCALES_PARAM, "cs");
+            URLUtils.sendPOSTRequestWithWebDriver(oauth.getLogoutUrl().build(), postParams);
+
+            Assert.assertEquals("Odhlašování", PageUtils.getPageTitle(driver)); // Logging out
+            Assert.assertEquals("Čeština", logoutConfirmPage.getLanguageDropdownText());
+            logoutConfirmPage.confirmLogout();
+
+            WaitUtils.waitForPageToLoad();
+            events.expectLogout(tokenResponse.getSessionState()).detail(Details.REDIRECT_URI, redirectUri).assertEvent();
+            Assert.assertThat(false, is(isSessionActive(sessionId)));
+            assertCurrentUrlEquals(redirectUri + "&state=my-state-2");
+        }
     }
 
 
