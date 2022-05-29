@@ -22,6 +22,7 @@ import org.junit.Test;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.common.Profile;
+import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -32,6 +33,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.testsuite.AbstractKeycloakTest;
+import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
 import org.keycloak.testsuite.federation.PassThroughFederatedUserStorageProvider;
 import org.keycloak.testsuite.federation.PassThroughFederatedUserStorageProviderFactory;
@@ -135,6 +137,8 @@ public class AccountLinkTest extends AbstractKeycloakTest {
 
     @Test
     public void testAccountLinkWithUserStorageProvider() {
+        ProfileAssume.assumeFeatureDisabled(Feature.MAP_STORAGE);
+
         String childUsername = PassThroughFederatedUserStorageProvider.PASSTHROUGH_USERNAME;
         String childPassword = PassThroughFederatedUserStorageProvider.INITIAL_PASSWORD;
         String childIdp = CHILD_IDP;
