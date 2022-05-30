@@ -17,12 +17,22 @@
 
 package org.keycloak.it.storage.database.dist;
 
-import org.keycloak.it.junit5.extension.CLITest;
+import org.junit.jupiter.api.Test;
+import org.keycloak.it.junit5.extension.CLIResult;
+import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.WithDatabase;
-import org.keycloak.it.storage.database.MariaDBTest;
 
-@CLITest
-@WithDatabase(alias = "mariadb")
-public class MariaDBDistTest extends MariaDBTest {
+import io.quarkus.test.junit.main.Launch;
+import io.quarkus.test.junit.main.LaunchResult;
 
+@DistributionTest
+@WithDatabase(alias = "postgres")
+public class DatabaseOptionsDistTest {
+
+    @Test
+    @Launch({ "start-dev", "--db-schema=foo" })
+    void testSetSchema(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertStartedDevMode();
+    }
 }
