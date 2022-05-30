@@ -20,6 +20,7 @@ import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.EnvVarSourceBuilder;
+import io.fabric8.kubernetes.api.model.ExecActionBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
@@ -36,7 +37,9 @@ import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusBuilder;
 import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -347,6 +350,7 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
         var kcContainer = deployment.getSpec().getTemplate().getSpec().getContainers().get(0);
         var tlsSecret = this.keycloakCR.getSpec().getTlsSecret();
         var envVars =  kcContainer.getEnv();
+
         if (this.keycloakCR.getSpec().isHttp()) {
             var disableTls = List.of(
                     new EnvVarBuilder()
@@ -363,11 +367,6 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
                             .build());
 
             envVars.addAll(disableTls);
-
-            kcContainer.getReadinessProbe().getExec().setCommand(
-                    List.of("curl", "--head", "--fail", "--silent", "http://127.0.0.1:" + Constants.KEYCLOAK_HTTP_PORT + "/health/ready"));
-            kcContainer.getLivenessProbe().getExec().setCommand(
-                    List.of("curl", "--head", "--fail", "--silent", "http://127.0.0.1:" + Constants.KEYCLOAK_HTTP_PORT + "/health/live"));
         } else {
             var enabledTls = List.of(
                     new EnvVarBuilder()
@@ -400,6 +399,66 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
 
             deployment.getSpec().getTemplate().getSpec().getVolumes().add(volume);
             kcContainer.getVolumeMounts().add(volumeMount);
+        }
+
+        var userRelativePath = readConfigurationValue(Constants.KEYCLOAK_HTTP_RELATIVE_PATH_KEY);
+        var kcRelativePath = (userRelativePath == null) ? "/" : userRelativePath;
+        var protocol = (this.keycloakCR.getSpec().isHttp()) ? "http" : "https";
+        var kcPort = (this.keycloakCR.getSpec().isHttp()) ? Constants.KEYCLOAK_HTTP_PORT : Constants.KEYCLOAK_HTTPS_PORT;
+
+        var baseProbe = new ArrayList<>(List.of("curl", "--head", "--fail", "--silent"));
+
+        if (!this.keycloakCR.getSpec().isHttp()) {
+            baseProbe.add("--insecure");
+        }
+
+        var readyProbe = new ArrayList<>(baseProbe);
+        readyProbe.add(protocol + "://127.0.0.1:" + kcPort + kcRelativePath + "/health/ready");
+        var liveProbe = new ArrayList<>(baseProbe);
+        liveProbe.add(protocol + "://127.0.0.1:" + kcPort + kcRelativePath + "/health/live");
+
+        kcContainer
+                .getReadinessProbe()
+                .setExec(new ExecActionBuilder().withCommand(readyProbe).build());
+        kcContainer
+                .getLivenessProbe()
+                .setExec(new ExecActionBuilder().withCommand(liveProbe).build());
+    }
+
+    public String readConfigurationValue(String key) {
+        if (this.keycloakCR != null &&
+                this.keycloakCR.getSpec() != null &&
+                this.keycloakCR.getSpec().getServerConfiguration() != null
+        ) {
+            var serverConfigValue = this.keycloakCR
+                    .getSpec()
+                    .getServerConfiguration()
+                    .stream()
+                    .filter(sc -> sc.getName().equals(key))
+                    .findFirst();
+            if (serverConfigValue.isPresent()) {
+                if (serverConfigValue.get().getValue() != null) {
+                    return serverConfigValue.get().getValue();
+                } else {
+                    var secretSelector = serverConfigValue.get().getSecret();
+                    if (secretSelector == null) {
+                        throw new IllegalStateException("Secret " + serverConfigValue.get().getName() + " not defined");
+                    }
+                    var secret = client.secrets().inNamespace(getNamespace()).withName(secretSelector.getName()).get();
+                    if (secret == null) {
+                        throw new IllegalStateException("Secret " + secretSelector.getName() + " not found in cluster");
+                    }
+                    if (secret.getData().containsKey(secretSelector.getKey())) {
+                        return new String(Base64.getDecoder().decode(secret.getData().get(secretSelector.getKey())), StandardCharsets.UTF_8);
+                    } else {
+                        throw new IllegalStateException("Secret " + secretSelector.getName() + " doesn't contain the expected key " + secretSelector.getKey());
+                    }
+                }
+            } else {
+                return null;
+            }
+        } else {
+            return null;
         }
     }
 
