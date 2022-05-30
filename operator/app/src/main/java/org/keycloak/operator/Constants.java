@@ -51,4 +51,6 @@ public final class Constants {
 
     public static final String INSECURE_DISABLE = "INSECURE-DISABLE";
     public static final String CERTIFICATES_FOLDER = "/mnt/certificates";
+
+    public static String KEYCLOAK_HTTP_RELATIVE_PATH_KEY = "http-relative-path";
 }
