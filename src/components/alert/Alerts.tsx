@@ -8,14 +8,17 @@ import useRequiredContext from "../../utils/useRequiredContext";
 import useSetTimeout from "../../utils/useSetTimeout";
 import { AlertPanel, AlertType } from "./AlertPanel";
 
-type AlertProps = {
-  addAlert: (
-    message: string,
-    variant?: AlertVariant,
-    description?: string
-  ) => void;
+export type AddAlertFunction = (
+  message: string,
+  variant?: AlertVariant,
+  description?: string
+) => void;
 
-  addError: (message: string, error: any) => void;
+export type AddErrorFunction = (message: string, error: any) => void;
+
+type AlertProps = {
+  addAlert: AddAlertFunction;
+  addError: AddErrorFunction;
 };
 
 export const AlertContext = createContext<AlertProps | undefined>(undefined);

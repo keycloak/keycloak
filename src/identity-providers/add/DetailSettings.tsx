@@ -238,8 +238,6 @@ export default function DetailSettings() {
     return <KeycloakSpinner />;
   }
 
-  const sections = [t("generalSettings"), t("advancedSettings")];
-
   const isOIDC = provider.providerId!.includes("oidc");
   const isSAML = provider.providerId!.includes("saml");
 
@@ -268,14 +266,81 @@ export default function DetailSettings() {
     return components;
   };
 
-  if (isOIDC) {
-    sections.splice(1, 0, t("oidcSettings"));
-  }
+  const sections = [
+    {
+      title: t("generalSettings"),
+      panel: (
+        <FormAccess
+          role="manage-identity-providers"
+          isHorizontal
+          onSubmit={handleSubmit(save)}
+        >
+          {!isOIDC && !isSAML && <GeneralSettings create={false} id={alias} />}
+          {isOIDC && <OIDCGeneralSettings id={alias} />}
+          {isSAML && <SamlGeneralSettings id={alias} />}
+        </FormAccess>
+      ),
+    },
+    {
+      title: t("oidcSettings"),
+      isHidden: !isOIDC,
+      panel: (
+        <>
+          <DiscoverySettings readOnly={false} />
+          <Form isHorizontal className="pf-u-py-lg">
+            <Divider />
+            <OIDCAuthentication create={false} />
+          </Form>
+          <ExtendedNonDiscoverySettings />
+        </>
+      ),
+    },
+    {
+      title: t("samlSettings"),
+      isHidden: !isSAML,
+      panel: <DescriptorSettings readOnly={false} />,
+    },
+    {
+      title: t("reqAuthnConstraints"),
+      isHidden: !isSAML,
+      panel: (
+        <FormAccess
+          role="manage-identity-providers"
+          isHorizontal
+          onSubmit={handleSubmit(save)}
+        >
+          <ReqAuthnConstraints />
+        </FormAccess>
+      ),
+    },
+    {
+      title: t("advancedSettings"),
+      panel: (
+        <FormAccess
+          role="manage-identity-providers"
+          isHorizontal
+          onSubmit={handleSubmit(save)}
+        >
+          <AdvancedSettings isOIDC={isOIDC!} isSAML={isSAML!} />
 
-  if (isSAML) {
-    sections.splice(1, 0, t("samlSettings"));
-    sections.splice(2, 0, t("reqAuthnConstraints"));
-  }
+          <ActionGroup className="keycloak__form_actions">
+            <Button data-testid={"save"} type="submit">
+              {t("common:save")}
+            </Button>
+            <Button
+              data-testid={"revert"}
+              variant="link"
+              onClick={() => {
+                reset();
+              }}
+            >
+              {t("common:revert")}
+            </Button>
+          </ActionGroup>
+        </FormAccess>
+      ),
+    },
+  ];
 
   return (
     <FormProvider {...form}>
@@ -302,61 +367,7 @@ export default function DetailSettings() {
             eventKey="settings"
             title={<TabTitleText>{t("common:settings")}</TabTitleText>}
           >
-            <ScrollForm className="pf-u-px-lg" sections={sections}>
-              <FormAccess
-                role="manage-identity-providers"
-                isHorizontal
-                onSubmit={handleSubmit(save)}
-              >
-                {!isOIDC && !isSAML && (
-                  <GeneralSettings create={false} id={alias} />
-                )}
-                {isOIDC && <OIDCGeneralSettings id={alias} />}
-                {isSAML && <SamlGeneralSettings id={alias} />}
-              </FormAccess>
-              {isOIDC && (
-                <>
-                  <DiscoverySettings readOnly={false} />
-                  <Form isHorizontal className="pf-u-py-lg">
-                    <Divider />
-                    <OIDCAuthentication create={false} />
-                  </Form>
-                  <ExtendedNonDiscoverySettings />
-                </>
-              )}
-              {isSAML && <DescriptorSettings readOnly={false} />}
-              {isSAML && (
-                <FormAccess
-                  role="manage-identity-providers"
-                  isHorizontal
-                  onSubmit={handleSubmit(save)}
-                >
-                  <ReqAuthnConstraints />
-                </FormAccess>
-              )}
-              <FormAccess
-                role="manage-identity-providers"
-                isHorizontal
-                onSubmit={handleSubmit(save)}
-              >
-                <AdvancedSettings isOIDC={isOIDC!} isSAML={isSAML!} />
-
-                <ActionGroup className="keycloak__form_actions">
-                  <Button data-testid={"save"} type="submit">
-                    {t("common:save")}
-                  </Button>
-                  <Button
-                    data-testid={"revert"}
-                    variant="link"
-                    onClick={() => {
-                      reset();
-                    }}
-                  >
-                    {t("common:revert")}
-                  </Button>
-                </ActionGroup>
-              </FormAccess>
-            </ScrollForm>
+            <ScrollForm className="pf-u-px-lg" sections={sections} />
           </Tab>
           <Tab
             id="mappers"

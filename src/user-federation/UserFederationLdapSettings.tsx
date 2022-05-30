@@ -55,23 +55,33 @@ const AddLdapFormContent = ({
     <>
       <ScrollForm
         sections={[
-          t("generalOptions"),
-          t("connectionAndAuthenticationSettings"),
-          t("ldapSearchingAndUpdatingSettings"),
-          t("synchronizationSettings"),
-          t("kerberosIntegration"),
-          t("cacheSettings"),
-          t("advancedSettings"),
+          {
+            title: t("generalOptions"),
+            panel: <LdapSettingsGeneral form={form} vendorEdit={!!id} />,
+          },
+          {
+            title: t("connectionAndAuthenticationSettings"),
+            panel: <LdapSettingsConnection form={form} id={id} />,
+          },
+          {
+            title: t("ldapSearchingAndUpdatingSettings"),
+            panel: <LdapSettingsSearching form={form} />,
+          },
+          {
+            title: t("synchronizationSettings"),
+            panel: <LdapSettingsSynchronization form={form} />,
+          },
+          {
+            title: t("kerberosIntegration"),
+            panel: <LdapSettingsKerberosIntegration form={form} />,
+          },
+          { title: t("cacheSettings"), panel: <SettingsCache form={form} /> },
+          {
+            title: t("advancedSettings"),
+            panel: <LdapSettingsAdvanced form={form} id={id} />,
+          },
         ]}
-      >
-        <LdapSettingsGeneral form={form} vendorEdit={!!id} />
-        <LdapSettingsConnection form={form} id={id} />
-        <LdapSettingsSearching form={form} />
-        <LdapSettingsSynchronization form={form} />
-        <LdapSettingsKerberosIntegration form={form} />
-        <SettingsCache form={form} />
-        <LdapSettingsAdvanced form={form} id={id} />
-      </ScrollForm>
+      />
       <Form onSubmit={form.handleSubmit(save)}>
         <ActionGroup className="keycloak__form_actions">
           <Button

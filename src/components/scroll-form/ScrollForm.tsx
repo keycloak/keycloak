@@ -1,4 +1,4 @@
-import React, { Children, Fragment, FunctionComponent } from "react";
+import React, { Fragment, FunctionComponent, ReactNode, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Grid,
@@ -15,8 +15,14 @@ import { FormPanel } from "./FormPanel";
 
 import "./scroll-form.css";
 
+type ScrollSection = {
+  title: string;
+  panel: ReactNode;
+  isHidden?: boolean;
+};
+
 type ScrollFormProps = GridProps & {
-  sections: string[];
+  sections: ScrollSection[];
   borders?: boolean;
 };
 
@@ -27,33 +33,34 @@ const spacesToHyphens = (string: string): string => {
 export const ScrollForm: FunctionComponent<ScrollFormProps> = ({
   sections,
   borders = false,
-  children,
   ...rest
 }) => {
   const { t } = useTranslation("common");
-  const nodes = Children.toArray(children);
+  const shownSections = useMemo(
+    () => sections.filter(({ isHidden }) => !isHidden),
+    [sections]
+  );
 
   return (
     <Grid hasGutter {...rest}>
       <GridItem span={8}>
-        {sections.map((cat, index) => {
-          const scrollId = spacesToHyphens(cat.toLowerCase());
+        {shownSections.map(({ title, panel }) => {
+          const scrollId = spacesToHyphens(title.toLowerCase());
 
           return (
-            <Fragment key={cat}>
-              {!borders && (
-                <ScrollPanel scrollId={scrollId} title={cat}>
-                  {nodes[index]}
-                </ScrollPanel>
-              )}
-              {borders && (
+            <Fragment key={title}>
+              {borders ? (
                 <FormPanel
                   scrollId={scrollId}
-                  title={cat}
+                  title={title}
                   className="kc-form-panel__panel"
                 >
-                  {nodes[index]}
+                  {panel}
                 </FormPanel>
+              ) : (
+                <ScrollPanel scrollId={scrollId} title={title}>
+                  {panel}
+                </ScrollPanel>
               )}
             </Fragment>
           );
@@ -69,17 +76,17 @@ export const ScrollForm: FunctionComponent<ScrollFormProps> = ({
             label={t("jumpToSection")}
             offset={100}
           >
-            {sections.map((cat) => {
-              const scrollId = spacesToHyphens(cat.toLowerCase());
+            {shownSections.map(({ title }) => {
+              const scrollId = spacesToHyphens(title.toLowerCase());
 
               return (
                 // note that JumpLinks currently does not work with spaces in the href
                 <JumpLinksItem
-                  key={cat}
+                  key={title}
                   href={`#${scrollId}`}
                   data-testid={`jump-link-${scrollId}`}
                 >
-                  {cat}
+                  {title}
                 </JumpLinksItem>
               );
             })}

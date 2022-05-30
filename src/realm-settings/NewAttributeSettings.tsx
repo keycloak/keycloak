@@ -69,17 +69,12 @@ const CreateAttributeFormContent = ({
     <UserProfileProvider>
       <ScrollForm
         sections={[
-          t("generalSettings"),
-          t("permission"),
-          t("validations"),
-          t("annotations"),
+          { title: t("generalSettings"), panel: <AttributeGeneralSettings /> },
+          { title: t("permission"), panel: <AttributePermission /> },
+          { title: t("validations"), panel: <AttributeValidations /> },
+          { title: t("annotations"), panel: <AttributeAnnotations /> },
         ]}
-      >
-        <AttributeGeneralSettings />
-        <AttributePermission />
-        <AttributeValidations />
-        <AttributeAnnotations />
-      </ScrollForm>
+      />
       <Form onSubmit={form.handleSubmit(save)}>
         <ActionGroup className="keycloak__form_actions">
           <Button
