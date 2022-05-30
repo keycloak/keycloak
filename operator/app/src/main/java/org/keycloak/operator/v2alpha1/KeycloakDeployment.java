@@ -366,10 +366,10 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
 
             envVars.addAll(disableTls);
 
+            kcContainer.getStartupProbe().getExec().setCommand(
+                    List.of("curl", "--head", "--fail", "--silent", "http://127.0.0.1:" + Constants.KEYCLOAK_HTTP_PORT + "/health"));
             kcContainer.getReadinessProbe().getExec().setCommand(
                     List.of("curl", "--head", "--fail", "--silent", "http://127.0.0.1:" + Constants.KEYCLOAK_HTTP_PORT + "/health/ready"));
-            kcContainer.getLivenessProbe().getExec().setCommand(
-                    List.of("curl", "--head", "--fail", "--silent", "http://127.0.0.1:" + Constants.KEYCLOAK_HTTP_PORT + "/health/live"));
         } else {
             var enabledTls = List.of(
                     new EnvVarBuilder()

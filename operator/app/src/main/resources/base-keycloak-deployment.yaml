@@ -26,7 +26,7 @@ spec:
           protocol: TCP
         - containerPort: 8080
           protocol: TCP
-        livenessProbe:
+        startupProbe:
           exec:
             command:
               - curl
@@ -34,10 +34,20 @@ spec:
               - --head
               - --fail
               - --silent
-              - https://127.0.0.1:8443/health/live
-          initialDelaySeconds: 20
-          periodSeconds: 2
-          failureThreshold: 150
+              - https://127.0.0.1:8443/health
+          initialDelaySeconds: 2
+          periodSeconds: 1
+          failureThreshold: 300
+        livenessProbe:
+          exec:
+            command:
+              - /bin/sh
+              - -c
+              - 'content="$(cat /proc/1/io)" && while true; do [[ "$content" != "$(cat /proc/1/io)" ]] && exit 0 || sleep 1 ; done'
+          initialDelaySeconds: 2
+          timeoutSeconds: 3
+          periodSeconds: 5
+          failureThreshold: 10
         readinessProbe:
           exec:
             command:
@@ -47,7 +57,7 @@ spec:
               - --fail
               - --silent
               - https://127.0.0.1:8443/health/ready
-          initialDelaySeconds: 20
+          initialDelaySeconds: 2
           periodSeconds: 2
           failureThreshold: 250
       dnsPolicy: ClusterFirst
