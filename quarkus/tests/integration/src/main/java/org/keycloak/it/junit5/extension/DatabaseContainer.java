@@ -18,6 +18,7 @@
 package org.keycloak.it.junit5.extension;
 
 import java.time.Duration;
+import org.jetbrains.annotations.NotNull;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 import org.testcontainers.containers.MariaDBContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -37,7 +38,8 @@ public class DatabaseContainer {
         container = createContainer()
                 .withDatabaseName("keycloak")
                 .withUsername(getUsername())
-                .withPassword(getPassword());
+                .withPassword(getPassword())
+                .withInitScript(resolveInitScript());
 
         container.withStartupTimeout(Duration.ofMinutes(5)).start();
     }
@@ -72,5 +74,9 @@ public class DatabaseContainer {
             default:
                 throw new RuntimeException("Unsupported database: " + alias);
         }
+    }
+
+    private String resolveInitScript() {
+        return String.format("database/scripts/init-%s.sql", alias);
     }
 }

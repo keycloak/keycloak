@@ -35,6 +35,7 @@ import io.quarkus.smallrye.metrics.runtime.SmallRyeMetricsHandler;
 import io.vertx.core.Handler;
 import io.vertx.ext.web.RoutingContext;
 import org.keycloak.common.Profile;
+import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
 import org.keycloak.quarkus.runtime.storage.database.liquibase.FastServiceLocator;
 import org.keycloak.provider.Provider;
@@ -101,7 +102,7 @@ public class KeycloakRecorder {
         return metricsHandler;
     }
 
-    public HibernateOrmIntegrationRuntimeInitListener createUnitListener(String name) {
+    public HibernateOrmIntegrationRuntimeInitListener createUserDefinedUnitListener(String name) {
         return new HibernateOrmIntegrationRuntimeInitListener() {
             @Override
             public void contributeRuntimeProperties(BiConsumer<String, Object> propertyCollector) {
@@ -116,6 +117,15 @@ public class KeycloakRecorder {
                             }
                         });
                 propertyCollector.accept(AvailableSettings.DATASOURCE, instance.get());
+            }
+        };
+    }
+
+    public HibernateOrmIntegrationRuntimeInitListener createDefaultUnitListener() {
+        return new HibernateOrmIntegrationRuntimeInitListener() {
+            @Override
+            public void contributeRuntimeProperties(BiConsumer<String, Object> propertyCollector) {
+                propertyCollector.accept(AvailableSettings.DEFAULT_SCHEMA, Configuration.getRawValue("kc.db-schema"));
             }
         };
     }
