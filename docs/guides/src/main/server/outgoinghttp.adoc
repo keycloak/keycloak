@@ -1,5 +1,6 @@
 <#import "/templates/guide.adoc" as tmpl>
 <#import "/templates/kc.adoc" as kc>
+<#import "/templates/links.adoc" as links>
 
 <@tmpl.guide
 title="Configuring outgoing HTTP requests"
@@ -118,37 +119,8 @@ In this example, the following occurs:
 * A catch-all pattern ends the proxy-mappings, providing a default proxy for all outgoing requests.
 
 == Outgoing HTTPS request truststore
-When Keycloak calls remote HTTPS endpoints, it has to validate the remote server's certificate to ensure it is connecting to a trusted server. This validation is necessary to prevent man-in-the-middle attacks. The certificates of these remote servers or the CA that signed these certificates must be put in a truststore.
 
-This truststore is used to securely connect to identity brokers, LDAP identity providers, when sending emails, and for backchannel communication with client applications. When no truststore is configured, outgoing HTTPS connections use the standard java truststore configuration by default. When no trust can be established, outgoing HTTPS requests fail.
-
-You can add your truststore configuration by entering this command:
-
-<@kc.start parameters="--spi-truststore-file-file=myTrustStore.jks --spi-truststore-file-password=password --spi-truststore-file-hostname-verification-policy=ANY"/>
-
-The following are possible configuration options for this setting:
-
-file::
-The path to a Java keystore file.
-HTTPS requests need a way to verify the host of the server to which they are talking.
-This is what the truststore does.
-The keystore contains one or more trusted host certificates or certificate authorities.
-This truststore file should only contain public certificates of your secured hosts.
-This is _REQUIRED_ if any of these properties are defined.
-
-password::
-Password of the keystore.
-This option is _REQUIRED_ if any of these properties are defined.
-
-hostname-verification-policy::
-For HTTPS requests, this option verifies the hostname of the server's certificate. Default: `WILDCARD`
-* `ANY` means that the hostname is not verified.
-* `WILDCARD` allows wildcards in subdomain names, such as *.foo.com.
-* When using `STRICT`, the Common Name (CN) must match the hostname exactly.
-
-=== Example of a truststore configuration
-The following is an example configuration for a truststore that allows you to create trustful connections to all `mycompany.org` domains and its subdomains:
-
-<@kc.start parameters="--spi-truststore-file-file=path/to/truststore.jks --spi-truststore-file-password=change_me --spi-truststore-file-hostname-verification-policy=WILDCARD"/>
+Please take a look at the <@links.server id="keycloak-truststore"/> guide about how
+to configure a Keycloak Truststore so that Keycloak is able to perform outgoing requests using TLS.
 
 </@tmpl.guide>
