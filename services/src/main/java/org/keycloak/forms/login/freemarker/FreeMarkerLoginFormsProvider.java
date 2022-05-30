@@ -494,6 +494,9 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
                         case REGISTER:
                             b = UriBuilder.fromUri(Urls.realmRegisterPage(baseUri, realm.getName()));
                             break;
+                        case LOGOUT_CONFIRM:
+                            b = UriBuilder.fromUri(Urls.logoutConfirm(baseUri, realm.getName()));
+                            break;
                         default:
                             b = UriBuilder.fromUri(baseUri).path(uriInfo.getPath());
                             break;

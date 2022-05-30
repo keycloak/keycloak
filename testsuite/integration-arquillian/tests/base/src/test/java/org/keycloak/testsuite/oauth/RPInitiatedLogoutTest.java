@@ -21,6 +21,7 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.hamcrest.MatcherAssert;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Rule;
@@ -35,6 +36,7 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.Constants;
+import org.keycloak.models.UserModel;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.IDToken;
@@ -59,13 +61,14 @@ import java.util.Map;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriBuilder;
 
 import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
@@ -76,6 +79,7 @@ import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.pages.PageUtils;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
+import org.keycloak.testsuite.updaters.UserAttributeUpdater;
 import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
 import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.OAuthClient;
@@ -144,7 +148,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
         driver.navigate().to(logoutUrl);
 
         events.expectLogout(sessionId).detail(Details.REDIRECT_URI, redirectUri).assertEvent();
-        Assert.assertThat(false, is(isSessionActive(sessionId)));
+        MatcherAssert.assertThat(false, is(isSessionActive(sessionId)));
 
         assertCurrentUrlEquals(redirectUri);
 
@@ -157,7 +161,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
         logoutUrl = oauth.getLogoutUrl().postLogoutRedirectUri(redirectUri).idTokenHint(idTokenString).state("something").build();
         driver.navigate().to(logoutUrl);
         events.expectLogout(sessionId2).detail(Details.REDIRECT_URI, redirectUri).assertEvent();
-        Assert.assertThat(false, is(isSessionActive(sessionId2)));
+        MatcherAssert.assertThat(false, is(isSessionActive(sessionId2)));
         assertCurrentUrlEquals(redirectUri + "&state=something");
     }
 
@@ -175,7 +179,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
         driver.navigate().to(logoutUrl);
 
         events.expectLogout(sessionId).detail(Details.REDIRECT_URI, redirectUri).assertEvent();
-        Assert.assertThat(false, is(isSessionActive(sessionId)));
+        MatcherAssert.assertThat(false, is(isSessionActive(sessionId)));
 
         assertCurrentUrlEquals(redirectUri);
 
@@ -192,7 +196,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
         logoutConfirmPage.assertCurrent();
         logoutConfirmPage.confirmLogout();
         events.expectLogout(sessionId2).detail(Details.REDIRECT_URI, redirectUri).assertEvent();
-        Assert.assertThat(false, is(isSessionActive(sessionId2)));
+        MatcherAssert.assertThat(false, is(isSessionActive(sessionId2)));
         assertCurrentUrlEquals(redirectUri + "&state=something");
     }
 
@@ -215,7 +219,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
             // should not throw an internal server error. But no logout event is sent as nothing was logged-out
             appPage.assertCurrent();
             events.assertEmpty();
-            Assert.assertThat(false, is(isSessionActive(tokenResponse.getSessionState())));
+            MatcherAssert.assertThat(false, is(isSessionActive(tokenResponse.getSessionState())));
 
             // check if the back channel logout succeeded
             driver.navigate().to(oauth.getLoginFormUrl());
@@ -266,7 +270,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
         String idTokenString = tokenResponse.getIdToken();
 
         adminClient.realm("test").logoutAll();
-        Assert.assertThat(false, is(isSessionActive(sessionId)));
+        MatcherAssert.assertThat(false, is(isSessionActive(sessionId)));
 
         // Try logout even if user already logged-out by admin. Should redirect back to the application, but no logout-event should be triggered
         String logoutUrl = oauth.getLogoutUrl().postLogoutRedirectUri(APP_REDIRECT_URI).idTokenHint(idTokenString).build();
@@ -283,7 +287,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
 
         driver.navigate().to(logoutUrl);
         events.expectLogout(sessionId2).detail(Details.REDIRECT_URI, APP_REDIRECT_URI).assertEvent();
-        Assert.assertThat(false, is(isSessionActive(sessionId2)));
+        MatcherAssert.assertThat(false, is(isSessionActive(sessionId2)));
     }
 
 
@@ -310,7 +314,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
         events.expectLogoutError(OAuthErrorException.INVALID_TOKEN).assertEvent();
 
         // Session still authenticated
-        Assert.assertThat(true, is(isSessionActive(tokenResponse.getSessionState())));
+        MatcherAssert.assertThat(true, is(isSessionActive(tokenResponse.getSessionState())));
     }
 
     @Test
@@ -333,7 +337,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
         }
         events.assertEmpty();
 
-        Assert.assertThat(false, is(isSessionActive(tokenResponse.getSessionState())));
+        MatcherAssert.assertThat(false, is(isSessionActive(tokenResponse.getSessionState())));
     }
 
     @Test
@@ -356,7 +360,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
         }
         events.assertEmpty();
 
-        Assert.assertThat(false, is(isSessionActive(tokenResponse.getSessionState())));
+        MatcherAssert.assertThat(false, is(isSessionActive(tokenResponse.getSessionState())));
     }
 
 
@@ -379,7 +383,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
         events.expectLogoutError(OAuthErrorException.INVALID_REQUEST).assertEvent();
 
         // Assert user still authenticated
-        Assert.assertThat(true, is(isSessionActive(tokenResponse.getSessionState())));
+        MatcherAssert.assertThat(true, is(isSessionActive(tokenResponse.getSessionState())));
     }
 
 
@@ -395,7 +399,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
         events.expectLogoutError(OAuthErrorException.INVALID_REQUEST).assertEvent();
 
         // Assert user still authenticated
-        Assert.assertThat(true, is(isSessionActive(tokenResponse.getSessionState())));
+        MatcherAssert.assertThat(true, is(isSessionActive(tokenResponse.getSessionState())));
     }
 
 
@@ -416,7 +420,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
         events.expectLogoutError(OAuthErrorException.INVALID_REDIRECT_URI).detail(Details.REDIRECT_URI, rootUrlClientRedirectUri).assertEvent();
 
         // Session still authenticated
-        Assert.assertThat(true, is(isSessionActive(tokenResponse.getSessionState())));
+        MatcherAssert.assertThat(true, is(isSessionActive(tokenResponse.getSessionState())));
     }
 
 
@@ -438,7 +442,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
         events.expectLogoutError(OAuthErrorException.INVALID_TOKEN).removeDetail(Details.REDIRECT_URI).assertEvent();
 
         // Session still authenticated
-        Assert.assertThat(true, is(isSessionActive(tokenResponse.getSessionState())));
+        MatcherAssert.assertThat(true, is(isSessionActive(tokenResponse.getSessionState())));
     }
 
 
@@ -451,7 +455,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
 
         // Assert logout confirmation page. Session still exists
         logoutConfirmPage.assertCurrent();
-        Assert.assertThat(true, is(isSessionActive(tokenResponse.getSessionState())));
+        MatcherAssert.assertThat(true, is(isSessionActive(tokenResponse.getSessionState())));
         events.assertEmpty();
         logoutConfirmPage.confirmLogout();
 
@@ -467,7 +471,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
         }
 
         events.expectLogout(tokenResponse.getSessionState()).removeDetail(Details.REDIRECT_URI).assertEvent();
-        Assert.assertThat(false, is(isSessionActive(tokenResponse.getSessionState())));
+        MatcherAssert.assertThat(false, is(isSessionActive(tokenResponse.getSessionState())));
     }
 
 
@@ -483,11 +487,11 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
         Assert.assertEquals("You are logged out", infoPage.getInfo());
 
         events.expectLogout(tokenResponse.getSessionState()).removeDetail(Details.REDIRECT_URI).assertEvent();
-        Assert.assertThat(false, is(isSessionActive(tokenResponse.getSessionState())));
+        MatcherAssert.assertThat(false, is(isSessionActive(tokenResponse.getSessionState())));
 
         infoPage.clickBackToApplicationLink();
         WaitUtils.waitForPageToLoad();
-        Assert.assertThat(driver.getCurrentUrl(), endsWith("/app/auth"));
+        MatcherAssert.assertThat(driver.getCurrentUrl(), endsWith("/app/auth"));
     }
 
 
@@ -500,7 +504,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
 
         // Assert logout confirmation page. Session still exists
         logoutConfirmPage.assertCurrent();
-        Assert.assertThat(true, is(isSessionActive(tokenResponse.getSessionState())));
+        MatcherAssert.assertThat(true, is(isSessionActive(tokenResponse.getSessionState())));
         events.assertEmpty();
 
         // Set time offset to expire "action" inside logoutSession
@@ -511,7 +515,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
         Assert.assertEquals("Logout failed", errorPage.getError());
 
         events.expectLogoutError(Errors.EXPIRED_CODE).assertEvent();
-        Assert.assertThat(true, is(isSessionActive(tokenResponse.getSessionState())));
+        MatcherAssert.assertThat(true, is(isSessionActive(tokenResponse.getSessionState())));
 
         // Link not present
         try {
@@ -532,7 +536,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
 
         // Assert logout confirmation page. Session still exists
         logoutConfirmPage.assertCurrent();
-        Assert.assertThat(true, is(isSessionActive(tokenResponse.getSessionState())));
+        MatcherAssert.assertThat(true, is(isSessionActive(tokenResponse.getSessionState())));
         events.assertEmpty();
 
         // Set time offset to expire "action" inside logoutSession
@@ -558,7 +562,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
         // Logout confirmation page not shown as id_token_hint was included.
         // Redirected back to the application with expected "state"
         events.expectLogout(tokenResponse.getSessionState()).assertEvent();
-        Assert.assertThat(false, is(isSessionActive(tokenResponse.getSessionState())));
+        MatcherAssert.assertThat(false, is(isSessionActive(tokenResponse.getSessionState())));
         assertCurrentUrlEquals(APP_REDIRECT_URI + "?state=somethingg");
 
         UserResource user = ApiUtil.findUserByUsernameId(testRealm(), "test-user@localhost");
@@ -578,19 +582,19 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
             // Assert logout confirmation page. Session still exists. Assert czech language on logout page
             Assert.assertEquals("Odhlašování", PageUtils.getPageTitle(driver)); // Logging out
             Assert.assertEquals("Čeština", logoutConfirmPage.getLanguageDropdownText());
-            Assert.assertThat(true, is(isSessionActive(tokenResponse.getSessionState())));
+            MatcherAssert.assertThat(true, is(isSessionActive(tokenResponse.getSessionState())));
             events.assertEmpty();
             logoutConfirmPage.confirmLogout();
 
             // Info page present with the link "Back to application"
             events.expectLogout(tokenResponse.getSessionState()).removeDetail(Details.REDIRECT_URI).assertEvent();
-            Assert.assertThat(false, is(isSessionActive(tokenResponse.getSessionState())));
+            MatcherAssert.assertThat(false, is(isSessionActive(tokenResponse.getSessionState())));
 
             infoPage.assertCurrent();
             Assert.assertEquals("Odhlášení bylo úspěšné", infoPage.getInfo()); // Logout success message
             infoPage.clickBackToApplicationLinkCs();
             WaitUtils.waitForPageToLoad();
-            Assert.assertThat(driver.getCurrentUrl(), endsWith("/app/auth"));
+            MatcherAssert.assertThat(driver.getCurrentUrl(), endsWith("/app/auth"));
         }
     }
 
@@ -603,7 +607,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
 
         // Assert logout confirmation page. Session still exists
         logoutConfirmPage.assertCurrent();
-        Assert.assertThat(true, is(isSessionActive(tokenResponse.getSessionState())));
+        MatcherAssert.assertThat(true, is(isSessionActive(tokenResponse.getSessionState())));
         events.assertEmpty();
 
         // Set time offset to expire "action" inside logoutSession
@@ -614,11 +618,11 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
         Assert.assertEquals("Logout failed", errorPage.getError());
 
         events.expectLogoutError(Errors.EXPIRED_CODE).assertEvent();
-        Assert.assertThat(true, is(isSessionActive(tokenResponse.getSessionState())));
+        MatcherAssert.assertThat(true, is(isSessionActive(tokenResponse.getSessionState())));
 
         // Link "Back to application" present
         errorPage.clickBackToApplication();
-        Assert.assertThat(driver.getCurrentUrl(), endsWith("/app/auth"));
+        MatcherAssert.assertThat(driver.getCurrentUrl(), endsWith("/app/auth"));
     }
 
 
@@ -632,13 +636,13 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
         // Assert logout confirmation page as id_token_hint was not sent. Session still exists. Assert default language on logout page (English)
         logoutConfirmPage.assertCurrent();
         Assert.assertEquals("English", logoutConfirmPage.getLanguageDropdownText());
-        Assert.assertThat(true, is(isSessionActive(tokenResponse.getSessionState())));
+        MatcherAssert.assertThat(true, is(isSessionActive(tokenResponse.getSessionState())));
         events.assertEmpty();
         logoutConfirmPage.confirmLogout();
 
         // Redirected back to the application with expected "state"
         events.expectLogout(tokenResponse.getSessionState()).assertEvent();
-        Assert.assertThat(false, is(isSessionActive(tokenResponse.getSessionState())));
+        MatcherAssert.assertThat(false, is(isSessionActive(tokenResponse.getSessionState())));
         assertCurrentUrlEquals(APP_REDIRECT_URI + "?state=somethingg");
     }
 
@@ -657,7 +661,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
 
         // Logout done and redirected back to the application with expected "state"
         events.expectLogout(tokenResponse.getSessionState()).assertEvent();
-        Assert.assertThat(false, is(isSessionActive(tokenResponse.getSessionState())));
+        MatcherAssert.assertThat(false, is(isSessionActive(tokenResponse.getSessionState())));
         assertCurrentUrlEquals(APP_REDIRECT_URI + "?state=somethingg");
 
         // Test logout only with "client_id" and "post_logout_redirect_uri". Should automatically redirect as there is no logout (No active browser session)
@@ -687,7 +691,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
         Assert.assertEquals("Invalid parameter: id_token_hint", errorPage.getError());
 
         events.expectLogoutError(Errors.INVALID_TOKEN).client("third-party").assertEvent();
-        Assert.assertThat(true, is(isSessionActive(tokenResponse.getSessionState())));
+        MatcherAssert.assertThat(true, is(isSessionActive(tokenResponse.getSessionState())));
 
         // Case when client_id is non-existing client and redirect uri of different client is used
         logoutUrl = oauth.getLogoutUrl()
@@ -699,7 +703,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
         Assert.assertEquals("Invalid redirect uri", errorPage.getError());
 
         events.expectLogoutError(Errors.INVALID_REDIRECT_URI).assertEvent();
-        Assert.assertThat(true, is(isSessionActive(tokenResponse.getSessionState())));
+        MatcherAssert.assertThat(true, is(isSessionActive(tokenResponse.getSessionState())));
 
         // Case when client_id is non-existing client. Confirmation is needed.
         logoutUrl = oauth.getLogoutUrl()
@@ -721,7 +725,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
         }
 
         events.expectLogout(tokenResponse.getSessionState()).removeDetail(Details.REDIRECT_URI).assertEvent();
-        Assert.assertThat(false, is(isSessionActive(tokenResponse.getSessionState())));
+        MatcherAssert.assertThat(false, is(isSessionActive(tokenResponse.getSessionState())));
     }
 
 
@@ -744,7 +748,7 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
             URLUtils.sendPOSTRequestWithWebDriver(oauth.getLogoutUrl().build(), postParams);
 
             events.expectLogout(tokenResponse.getSessionState()).detail(Details.REDIRECT_URI, redirectUri).assertEvent();
-            Assert.assertThat(false, is(isSessionActive(sessionId)));
+            MatcherAssert.assertThat(false, is(isSessionActive(sessionId)));
             assertCurrentUrlEquals(redirectUri + "&state=my-state");
 
             // Logout with showing confirmation screen
@@ -764,9 +768,132 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
 
             WaitUtils.waitForPageToLoad();
             events.expectLogout(tokenResponse.getSessionState()).detail(Details.REDIRECT_URI, redirectUri).assertEvent();
-            Assert.assertThat(false, is(isSessionActive(sessionId)));
+            MatcherAssert.assertThat(false, is(isSessionActive(sessionId)));
             assertCurrentUrlEquals(redirectUri + "&state=my-state-2");
         }
+    }
+
+
+    @Test
+    public void testLocalizationPreferenceDuringLogout() throws IOException {
+        try (RealmAttributeUpdater realmUpdater = new RealmAttributeUpdater(testRealm()).addSupportedLocale("cs").update()) {
+            OAuthClient.AccessTokenResponse tokenResponse = loginUser();
+
+            // Set localization to the user account to "cs". Ensure that it is shown
+            try (UserAttributeUpdater userUpdater = UserAttributeUpdater.forUserByUsername(testRealm(), "test-user@localhost").setAttribute(UserModel.LOCALE, "cs").update()) {
+                driver.navigate().to(oauth.getLogoutUrl().build());
+                Assert.assertEquals("Odhlašování", PageUtils.getPageTitle(driver)); // Logging out
+                Assert.assertEquals("Čeština", logoutConfirmPage.getLanguageDropdownText());
+
+                // Set localization together with ui_locales param. User localization should have preference
+                driver.navigate().to(oauth.getLogoutUrl().uiLocales("de").build());
+                Assert.assertEquals("Odhlašování", PageUtils.getPageTitle(driver)); // Logging out
+                Assert.assertEquals("Čeština", logoutConfirmPage.getLanguageDropdownText());
+            }
+
+            UserAttributeUpdater.forUserByUsername(testRealm(), "test-user@localhost").removeAttribute(UserModel.LOCALE).update();
+
+            // Removed localization from user account. Now localization set by ui_locales parameter should be used
+            driver.navigate().to(oauth.getLogoutUrl().uiLocales("de").build());
+            Assert.assertEquals("Abmelden", PageUtils.getPageTitle(driver)); // Logging out
+            Assert.assertEquals("Deutsch", logoutConfirmPage.getLanguageDropdownText());
+            logoutConfirmPage.confirmLogout();
+            WaitUtils.waitForPageToLoad();
+            events.expectLogout(tokenResponse.getSessionState()).removeDetail(Details.REDIRECT_URI).assertEvent();
+
+            // Remove ui_locales from logout request. Default locale should be set
+            tokenResponse = loginUser();
+            driver.navigate().to(oauth.getLogoutUrl().build());
+            Assert.assertEquals("Logging out", PageUtils.getPageTitle(driver));
+            Assert.assertEquals("English", logoutConfirmPage.getLanguageDropdownText());
+            logoutConfirmPage.confirmLogout();
+            WaitUtils.waitForPageToLoad();
+            events.expectLogout(tokenResponse.getSessionState()).removeDetail(Details.REDIRECT_URI).assertEvent();
+        }
+    }
+
+
+    @Test
+    public void testLocalizationDuringLogout() throws IOException {
+        try (RealmAttributeUpdater realmUpdater = new RealmAttributeUpdater(testRealm()).addSupportedLocale("cs").update()) {
+            OAuthClient.AccessTokenResponse tokenResponse = loginUser();
+
+            // Display the logout page. Then change the localization to Czech, then back to english and then and logout
+            driver.navigate().to(oauth.getLogoutUrl().build());
+
+            logoutConfirmPage.assertCurrent();
+            logoutConfirmPage.openLanguage("Čeština");
+
+            Assert.assertEquals("Odhlašování", PageUtils.getPageTitle(driver)); // Logging out
+            Assert.assertEquals("Čeština", logoutConfirmPage.getLanguageDropdownText());
+
+            logoutConfirmPage.openLanguage("English");
+
+            Assert.assertEquals("Logging out", PageUtils.getPageTitle(driver));
+            Assert.assertEquals("English", logoutConfirmPage.getLanguageDropdownText());
+
+            // Logout
+            logoutConfirmPage.confirmLogout();
+            infoPage.assertCurrent();
+            Assert.assertEquals("You are logged out", infoPage.getInfo());
+            try {
+                logoutConfirmPage.clickBackToApplicationLink();
+                fail();
+            }
+            catch (NoSuchElementException ex) {
+                // expected
+            }
+
+            // Display logout with ui_locales parameter set to "de"
+            tokenResponse = loginUser();
+            driver.navigate().to(oauth.getLogoutUrl()
+                    .clientId("test-app")
+                    .uiLocales("de")
+                    .build());
+
+            Assert.assertEquals("Abmelden", PageUtils.getPageTitle(driver)); // Logging out
+            Assert.assertEquals("Deutsch", logoutConfirmPage.getLanguageDropdownText());
+
+            // Change locale. It should have preference over the "de" set by ui_locales
+            logoutConfirmPage.openLanguage("Čeština");
+            Assert.assertEquals("Odhlašování", PageUtils.getPageTitle(driver)); // Logging out
+            Assert.assertEquals("Čeština", logoutConfirmPage.getLanguageDropdownText());
+
+            // Logout
+            logoutConfirmPage.confirmLogout();
+
+            infoPage.assertCurrent();
+            Assert.assertEquals("Odhlášení bylo úspěšné", infoPage.getInfo()); // Logout success message
+            infoPage.clickBackToApplicationLinkCs();
+            WaitUtils.waitForPageToLoad();
+            MatcherAssert.assertThat(driver.getCurrentUrl(), endsWith("/app/auth"));
+        }
+    }
+
+
+    @Test
+    public void testIncorrectChangingParameters() throws IOException {
+        OAuthClient.AccessTokenResponse tokenResponse = loginUser();
+
+        // Display the logout page. Then change the localization to Czech and logout
+        driver.navigate().to(oauth.getLogoutUrl().uiLocales("de").build());
+
+        Assert.assertEquals("Abmelden", PageUtils.getPageTitle(driver)); // Logging out
+        logoutConfirmPage.openLanguage("English");
+
+        // Try to manually change value of parameter tab_id to some incorrect value. Error should be shown in this case
+        String currentUrl = driver.getCurrentUrl();
+        String changedUrl = UriBuilder.fromUri(currentUrl)
+                .replaceQueryParam(Constants.TAB_ID, "invalid")
+                .build().toString();
+
+        driver.navigate().to(changedUrl);
+        WaitUtils.waitForPageToLoad();
+
+        errorPage.assertCurrent();
+        Assert.assertEquals("Logout failed", errorPage.getError());
+
+        events.expectLogoutError(Errors.SESSION_EXPIRED).assertEvent();
     }
 
 

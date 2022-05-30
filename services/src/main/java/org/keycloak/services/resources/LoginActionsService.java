@@ -83,6 +83,7 @@ import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.services.util.AuthenticationFlowURLHelper;
 import org.keycloak.services.util.BrowserHistoryHelper;
 import org.keycloak.services.util.CacheControlUtil;
+import org.keycloak.services.util.LocaleUtil;
 import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
@@ -277,15 +278,7 @@ public class LoginActionsService {
     }
 
     protected void processLocaleParam(AuthenticationSessionModel authSession) {
-        if (authSession != null && realm.isInternationalizationEnabled()) {
-            String locale = session.getContext().getUri().getQueryParameters().getFirst(LocaleSelectorProvider.KC_LOCALE_PARAM);
-            if (locale != null) {
-                authSession.setAuthNote(LocaleSelectorProvider.USER_REQUEST_LOCALE, locale);
-
-                LocaleUpdaterProvider localeUpdater = session.getProvider(LocaleUpdaterProvider.class);
-                localeUpdater.updateLocaleCookie(locale);
-            }
-        }
+        LocaleUtil.processLocaleParam(session, realm, authSession);
     }
 
     protected Response processAuthentication(boolean action, String execution, AuthenticationSessionModel authSession, String errorMessage) {

@@ -374,10 +374,10 @@ public class AuthenticationManager {
         } else {
             logoutAuthSession = rootLogoutSession.createAuthenticationSession(client);
             logoutAuthSession.setAction(AuthenticationSessionModel.Action.LOGGING_OUT.name());
-            session.getContext().setClient(client);
             logger.tracef("Creating logout session for client '%s'. Authentication session id: %s", client.getClientId(), rootLogoutSession.getId());
         }
         session.getContext().setAuthenticationSession(logoutAuthSession);
+        session.getContext().setClient(client);
 
         return logoutAuthSession;
     }
