@@ -35,6 +35,7 @@ import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinn
 import type { AttributeForm } from "../../components/key-value-form/AttributeForm";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
+import useLocaleSort, { mapByKey } from "../../utils/useLocaleSort";
 
 export type IdPMapperRepresentationWithAttributes =
   IdentityProviderMapperRepresentation & AttributeForm;
@@ -52,6 +53,7 @@ export default function AddMapper() {
   const { handleSubmit, register, errors } = form;
   const { addAlert, addError } = useAlerts();
   const history = useHistory();
+  const localeSort = useLocaleSort();
 
   const { realm } = useRealm();
   const adminClient = useAdminClient();
@@ -60,11 +62,10 @@ export default function AddMapper() {
   const { id } = useParams<IdentityProviderEditMapperParams>();
 
   const [mapperTypes, setMapperTypes] =
-    useState<Record<string, IdentityProviderMapperTypeRepresentation>>();
-  const [mapperType, setMapperType] = useState<string>();
+    useState<IdentityProviderMapperTypeRepresentation[]>();
 
   const [currentMapper, setCurrentMapper] =
-    useState<IdentityProviderMapperRepresentation>();
+    useState<IdentityProviderMapperTypeRepresentation>();
 
   const save = async (idpMapper: IdentityProviderMapperRepresentation) => {
     const mapper = convertFormValuesToObject(
@@ -148,15 +149,17 @@ export default function AddMapper() {
         adminClient.identityProviders.findMapperTypes({ alias }),
       ]),
     ([mapper, mapperTypes]) => {
+      const mappers = localeSort(Object.values(mapperTypes), mapByKey("name"));
       if (mapper) {
-        setCurrentMapper(mapper);
+        setCurrentMapper(
+          mappers.find(({ id }) => id === mapper.identityProviderMapper)
+        );
         setupForm(mapper);
-        setMapperType(mapper.identityProviderMapper!);
       } else {
-        setMapperType(Object.keys(mapperTypes)[0]);
+        setCurrentMapper(mappers[0]);
       }
 
-      setMapperTypes(mapperTypes);
+      setMapperTypes(mappers);
     },
     []
   );
@@ -167,7 +170,7 @@ export default function AddMapper() {
     form.setValue("config.claims", JSON.parse(mapper.config.claims));
   };
 
-  if (!mapperTypes) {
+  if (!mapperTypes || !currentMapper) {
     return <KeycloakSpinner />;
   }
 
@@ -216,7 +219,7 @@ export default function AddMapper() {
             <KeycloakTextInput
               ref={register()}
               type="text"
-              value={currentMapper?.id}
+              value={currentMapper.id}
               datatest-id="name-input"
               id="kc-name"
               name="name"
@@ -227,20 +230,21 @@ export default function AddMapper() {
             />
           </FormGroup>
         )}
-        <AddMapperForm
-          form={form}
-          id={id}
-          mapperTypes={mapperTypes}
-          updateMapperType={setMapperType}
-          mapperType={mapperType!}
-        />
-        <FormProvider {...form}>
-          {mapperType && mapperTypes[mapperType].properties && (
-            <DynamicComponents
-              properties={mapperTypes[mapperType].properties!}
+        {currentMapper.properties && (
+          <>
+            <AddMapperForm
+              form={form}
+              id={id}
+              mapperTypes={mapperTypes}
+              updateMapperType={setCurrentMapper}
+              mapperType={currentMapper}
             />
-          )}
-        </FormProvider>
+            <FormProvider {...form}>
+              <DynamicComponents properties={currentMapper.properties!} />
+            </FormProvider>{" "}
+          </>
+        )}
+
         <ActionGroup>
           <Button
             data-testid="new-mapper-save-button"

@@ -9,17 +9,19 @@ import {
   ValidatedOptions,
 } from "@patternfly/react-core";
 
+import type { IdentityProviderMapperTypeRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/identityProviderMapperTypeRepresentation";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import type IdentityProviderMapperRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderMapperRepresentation";
 import type { IdPMapperRepresentationWithAttributes } from "./AddMapper";
-import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 
 type AddMapperFormProps = {
-  mapperTypes: Record<string, IdentityProviderMapperRepresentation>;
-  mapperType: string;
+  mapperTypes: IdentityProviderMapperRepresentation[];
+  mapperType: IdentityProviderMapperTypeRepresentation;
   id: string;
-  updateMapperType: (mapperType: string) => void;
+  updateMapperType: (
+    mapperType: IdentityProviderMapperTypeRepresentation
+  ) => void;
   form: UseFormMethods<IdPMapperRepresentationWithAttributes>;
 };
 
@@ -38,10 +40,6 @@ export const AddMapperForm = ({
 
   const syncModes = ["inherit", "import", "legacy", "force"];
   const [syncModeOpen, setSyncModeOpen] = useState(false);
-  const serverInfo = useServerInfo();
-  const mapper = serverInfo.componentTypes?.[
-    "org.keycloak.broker.provider.IdentityProviderMapper"
-  ].find((p) => p.id === mapperType);
 
   return (
     <>
@@ -121,7 +119,7 @@ export const AddMapperForm = ({
         label={t("mapperType")}
         labelIcon={
           <HelpItem
-            helpText={mapper?.helpText}
+            helpText={mapperType.helpText}
             fieldLabelId="identity-providers:mapperType"
           />
         }
@@ -129,7 +127,7 @@ export const AddMapperForm = ({
       >
         <Controller
           name="identityProviderMapper"
-          defaultValue={Object.keys(mapperTypes)[0]}
+          defaultValue={mapperTypes[0].id}
           control={control}
           render={({ onChange, value }) => (
             <Select
@@ -139,25 +137,23 @@ export const AddMapperForm = ({
               required
               onToggle={() => setMapperTypeOpen(!mapperTypeOpen)}
               onSelect={(_, value) => {
-                updateMapperType(value.toString());
-                onChange(value.toString());
+                const mapperType =
+                  value as IdentityProviderMapperTypeRepresentation;
+                updateMapperType(mapperType);
+                onChange(mapperType.id);
                 setMapperTypeOpen(false);
               }}
-              selections={
-                Object.values(mapperTypes).find(
-                  (item) => item.id?.toLowerCase() === value
-                )?.name
-              }
+              selections={mapperType.name}
               variant={SelectVariant.single}
-              aria-label={t("syncMode")}
+              aria-label={t("mapperType")}
               isOpen={mapperTypeOpen}
             >
-              {Object.values(mapperTypes).map((option) => (
+              {mapperTypes.map((option) => (
                 <SelectOption
                   selected={option === value}
                   datatest-id={option.id}
                   key={option.name}
-                  value={option.id}
+                  value={option}
                 >
                   {option.name}
                 </SelectOption>

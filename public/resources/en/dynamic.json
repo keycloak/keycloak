@@ -1,6 +1,7 @@
 {
   "addMultivaluedLabel": "Add {{fieldLabel}}",
   "selectARole": "Select a role",
+  "selectGroup": "Select group",
   "usermodel": {
     "prop": {
       "label": "Property",
