@@ -1,6 +1,7 @@
 <#import "/templates/guide.adoc" as tmpl>
 <#import "/templates/kc.adoc" as kc>
 <#import "/templates/options.adoc" as opts>
+<#import "/templates/links.adoc" as links>
 
 <@tmpl.guide
 title="Using a reverse proxy"
@@ -150,5 +151,12 @@ to load additional certificates from headers `CERT_CHAIN_0` to `CERT_CHAIN_9` if
 |certificate-chain-length
 | The maximum length of the certificate chain.
 |===
+
+==== Configuring the NGINX provider
+
+The NGINX SSL/TLS module does not expose the client certificate chain. Keycloak’s NGINX certificate lookup provider rebuilds it by using the Keycloak truststore.
+
+If you are using this provider, please take a look at the <@links.server id="keycloak-truststore"/> guide about how
+to configure a Keycloak Truststore.
 
 </@tmpl.guide>
