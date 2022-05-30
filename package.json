@@ -75,7 +75,7 @@
     "cypress": "^9.6.1",
     "cypress-file-upload": "^5.0.8",
     "decompress": "^4.2.1",
-    "del": "^6.1.0",
+    "del": "^6.1.1",
     "eslint": "^8.16.0",
     "eslint-config-prettier": "^8.5.0",
     "eslint-plugin-cypress": "^2.12.1",
