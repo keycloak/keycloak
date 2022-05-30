@@ -536,16 +536,20 @@ public class AccountFormService extends AbstractSecuredLocalService {
 
             OTPPolicy policy = realm.getOTPPolicy();
             OTPCredentialModel credentialModel = OTPCredentialModel.createFromPolicy(realm, totpSecret, userLabel);
+
+            EventBuilder errorEvent = event.clone().event(EventType.UPDATE_TOTP_ERROR).client(auth.getClient()).user(auth.getUser());
             if (Validation.isBlank(challengeResponse)) {
                 setReferrerOnPage();
                 return account.setError(Status.OK, Messages.MISSING_TOTP).createResponse(AccountPages.TOTP);
             } else if (!CredentialValidation.validOTP(challengeResponse, credentialModel, policy.getLookAheadWindow())) {
                 setReferrerOnPage();
+                errorEvent.error(Errors.INVALID_TOTP);
                 return account.setError(Status.OK, Messages.INVALID_TOTP).createResponse(AccountPages.TOTP);
             }
 
             if (!CredentialHelper.createOTPCredential(session, realm, user, challengeResponse, credentialModel)) {
                 setReferrerOnPage();
+                errorEvent.error(Errors.INVALID_TOTP);
                 return account.setError(Status.OK, Messages.INVALID_TOTP).createResponse(AccountPages.TOTP);
             }
             event.event(EventType.UPDATE_TOTP).client(auth.getClient()).user(auth.getUser()).success();

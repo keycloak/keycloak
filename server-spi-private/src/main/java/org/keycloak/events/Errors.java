@@ -112,4 +112,6 @@ public interface Errors {
     String SLOW_DOWN = "slow_down";
     String GENERIC_AUTHENTICATION_ERROR= "generic_authentication_error";
 
+    String INVALID_TOTP = "invalid_totp";
+
 }

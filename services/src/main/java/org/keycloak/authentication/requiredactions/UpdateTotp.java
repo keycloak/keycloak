@@ -28,6 +28,7 @@ import org.keycloak.authentication.RequiredActionProvider;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.credential.CredentialProvider;
 import org.keycloak.credential.OTPCredentialProvider;
+import org.keycloak.events.Errors;
 import org.keycloak.events.EventBuilder;
 import org.keycloak.events.EventType;
 import org.keycloak.models.KeycloakSession;
@@ -91,6 +92,7 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
                     .setAttribute("mode", mode)
                     .addError(new FormMessage(Validation.FIELD_OTP_CODE, Messages.INVALID_TOTP))
                     .createResponse(UserModel.RequiredAction.CONFIGURE_TOTP);
+            event.clone().event(EventType.UPDATE_TOTP_ERROR).error(Errors.INVALID_TOTP);
             context.challenge(challenge);
             return;
         }
@@ -112,6 +114,7 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
                     .setAttribute("mode", mode)
                     .addError(new FormMessage(Validation.FIELD_OTP_CODE, Messages.INVALID_TOTP))
                     .createResponse(UserModel.RequiredAction.CONFIGURE_TOTP);
+            event.clone().event(EventType.UPDATE_TOTP_ERROR).error(Errors.INVALID_TOTP);
             context.challenge(challenge);
             return;
         }

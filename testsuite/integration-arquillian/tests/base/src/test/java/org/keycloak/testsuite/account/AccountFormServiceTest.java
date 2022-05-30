@@ -1175,6 +1175,8 @@ public class AccountFormServiceTest extends AbstractTestRealmKeycloakTest {
 
         Assert.assertEquals("Invalid authenticator code.", profilePage.getError());
 
+        events.expectAccount(EventType.UPDATE_TOTP_ERROR).assertEvent();
+
         totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()));
 
         Assert.assertEquals("Mobile authenticator configured.", profilePage.getSuccess());

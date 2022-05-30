@@ -23,6 +23,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.models.credential.OTPCredentialModel;
@@ -76,6 +77,10 @@ public class UserTotpTest extends AbstractTestRealmKeycloakTest {
         Assert.assertTrue(totpPage.isCurrent());
 
         Assert.assertFalse(driver.getPageSource().contains("Remove Google"));
+
+        totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret() + "123"));
+
+        events.expectAccount(EventType.UPDATE_TOTP_ERROR).error(Errors.INVALID_TOTP).assertEvent();
 
         totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()));
 
