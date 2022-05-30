@@ -17,13 +17,16 @@
 
 package org.keycloak.common.util;
 
-
 import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.StringWriter;
-import java.security.*;
+import java.security.Key;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 
@@ -37,10 +40,6 @@ public final class PemUtils {
 
     public static final String BEGIN_CERT = "-----BEGIN CERTIFICATE-----";
     public static final String END_CERT = "-----END CERTIFICATE-----";
-
-    static {
-        BouncyIntegration.init();
-    }
 
     private PemUtils() {
     }

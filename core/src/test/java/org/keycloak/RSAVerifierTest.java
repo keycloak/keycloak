@@ -70,10 +70,6 @@ public class RSAVerifierTest {
     private static X509Certificate[] clientCertificateChain;
     private AccessToken token;
 
-    static {
-        if (Security.getProvider("BC") == null) Security.addProvider(new BouncyCastleProvider());
-    }
-
     public static X509Certificate generateTestCertificate(String subject, String issuer, KeyPair pair)
         throws CertificateException, InvalidKeyException, IOException,
                NoSuchProviderException, OperatorCreationException,

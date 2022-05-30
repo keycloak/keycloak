@@ -57,9 +57,6 @@ import java.util.Date;
  * @version $Revision: 2 $
  */
 public class CertificateUtils {
-    static {
-        BouncyIntegration.init();
-    }
 
     /**
      * Generates version 3 {@link java.security.cert.X509Certificate}.
@@ -119,10 +116,10 @@ public class CertificateUtils {
             certGen.addExtension(Extension.basicConstraints, true, new BasicConstraints(0));
 
             // Content Signer
-            ContentSigner sigGen = new JcaContentSignerBuilder("SHA1WithRSAEncryption").setProvider("BC").build(caPrivateKey);
+            ContentSigner sigGen = new JcaContentSignerBuilder("SHA1WithRSAEncryption").setProvider(BouncyIntegration.PROVIDER).build(caPrivateKey);
 
             // Certificate
-            return new JcaX509CertificateConverter().setProvider("BC").getCertificate(certGen.build(sigGen));
+            return new JcaX509CertificateConverter().setProvider(BouncyIntegration.PROVIDER).getCertificate(certGen.build(sigGen));
         } catch (Exception e) {
             throw new RuntimeException("Error creating X509v3Certificate.", e);
         }

@@ -27,6 +27,7 @@ import javax.crypto.Cipher;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.keycloak.common.util.BouncyIntegration;
 import org.keycloak.jose.jwe.JWE;
 import org.keycloak.jose.jwe.JWEKeyStorage;
 import org.keycloak.jose.jwe.JWEUtils;
@@ -88,7 +89,7 @@ public abstract class AesGcmEncryptionProvider implements JWEEncryptionProvider 
     }
 
     private byte[] encryptBytes(byte[] contentBytes, byte[] ivBytes, Key aesKey, byte[] aad) throws GeneralSecurityException {
-        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding", "BC");
+        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding", BouncyIntegration.PROVIDER);
         GCMParameterSpec gcmParams = new GCMParameterSpec(AUTH_TAG_SIZE_BYTE * 8, ivBytes);
         cipher.init(Cipher.ENCRYPT_MODE, aesKey, gcmParams);
         cipher.updateAAD(aad);
@@ -98,7 +99,7 @@ public abstract class AesGcmEncryptionProvider implements JWEEncryptionProvider 
     }
 
     private byte[] decryptBytes(byte[] encryptedBytes, byte[] ivBytes, Key aesKey, byte[] aad) throws GeneralSecurityException {
-        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding", "BC");
+        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding", BouncyIntegration.PROVIDER);
         GCMParameterSpec gcmParams = new GCMParameterSpec(AUTH_TAG_SIZE_BYTE * 8, ivBytes);
         cipher.init(Cipher.DECRYPT_MODE, aesKey, gcmParams);
         cipher.updateAAD(aad);

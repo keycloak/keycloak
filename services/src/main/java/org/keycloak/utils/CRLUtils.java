@@ -55,11 +55,6 @@ public final class CRLUtils {
 
     private static final Logger log = Logger.getLogger(CRLUtils.class);
 
-
-    static {
-        BouncyIntegration.init();
-    }
-
     private static final String CRL_DISTRIBUTION_POINTS_OID = "2.5.29.31";
 
     /**

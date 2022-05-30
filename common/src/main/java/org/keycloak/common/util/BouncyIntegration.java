@@ -17,8 +17,10 @@
 
 package org.keycloak.common.util;
 
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.jboss.logging.Logger;
 
+import java.lang.reflect.Constructor;
+import java.security.Provider;
 import java.security.Security;
 
 /**
@@ -26,11 +28,37 @@ import java.security.Security;
  * @version $Revision: 1 $
  */
 public class BouncyIntegration {
-    static {
-        if (Security.getProvider("BC") == null) Security.addProvider(new BouncyCastleProvider());
+
+    private static final Logger log = Logger.getLogger(BouncyIntegration.class);
+
+    private static final String[] providerClassNames = {
+            "org.bouncycastle.jce.provider.BouncyCastleProvider",
+            "org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider"
+    };
+
+    public static final String PROVIDER = loadProvider();
+
+    private static String loadProvider() {
+        for (String providerClassName : providerClassNames) {
+            try {
+                Class<?> providerClass = Class.forName(providerClassName, true, BouncyIntegration.class.getClassLoader());
+                Constructor<Provider> constructor = (Constructor<Provider>) providerClass.getConstructor();
+                Provider provider = constructor.newInstance();
+
+                if (Security.getProvider(provider.getName()) == null) {
+                    Security.addProvider(provider);
+                    log.debugv("Loaded {0} security provider", providerClassName);
+                } else {
+                    log.debugv("Security provider {0} already loaded", providerClassName);
+                }
+
+                return provider.getName();
+            } catch (Exception e) {
+                log.debugv("Failed to load {0}", e, providerClassName);
+            }
+        }
+
+        throw new RuntimeException("Failed to load required security provider: BouncyCastleProvider or BouncyCastleFipsProvider");
     }
 
-    public static void init() {
-        // empty, the static class does it
-    }
 }
