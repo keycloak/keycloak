@@ -91,7 +91,6 @@ describe("Clients SAML tests", () => {
         "admin/realms/master/clients/*/certificates/saml.signing"
       ).as("load");
       cy.findByTestId("clientSignature").click({ force: true });
-      cy.waitFor("@load");
 
       modalUtils
         .checkModalTitle('Disable "Client signature required"')
