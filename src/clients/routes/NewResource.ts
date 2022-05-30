@@ -9,7 +9,7 @@ export const NewResourceRoute: RouteDef = {
   path: "/:realm/clients/:id/authorization/resource/new",
   component: lazy(() => import("../authorization/ResourceDetails")),
   breadcrumb: (t) => t("clients:createResource"),
-  access: "manage-clients",
+  access: "view-clients",
 };
 
 export const toCreateResource = (

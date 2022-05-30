@@ -128,7 +128,7 @@ export default function ScopeDetails() {
       <PageSection variant="light">
         <FormAccess
           isHorizontal
-          role="manage-clients"
+          role="view-clients"
           onSubmit={handleSubmit(save)}
         >
           <FormGroup

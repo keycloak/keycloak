@@ -9,7 +9,7 @@ export const NewScopeRoute: RouteDef = {
   path: "/:realm/clients/:id/authorization/scope/new",
   component: lazy(() => import("../authorization/ScopeDetails")),
   breadcrumb: (t) => t("clients:createAuthorizationScope"),
-  access: "manage-clients",
+  access: "view-clients",
 };
 
 export const toNewScope = (

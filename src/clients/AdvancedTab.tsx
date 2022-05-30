@@ -56,6 +56,7 @@ export const AdvancedTab = ({
     protocol,
     authenticationFlowBindingOverrides,
     adminUrl,
+    access,
   },
 }: AdvancedProps) => {
   const { t } = useTranslation("clients");
@@ -197,7 +198,11 @@ export const AdvancedTab = ({
                 tab
               </Trans>
             </Text>
-            <FormAccess role="manage-clients" isHorizontal>
+            <FormAccess
+              role="manage-clients"
+              fineGrainedAccess={access?.configure}
+              isHorizontal
+            >
               <FormGroup
                 label={t("notBefore")}
                 fieldId="kc-not-before"
@@ -258,7 +263,11 @@ export const AdvancedTab = ({
         )}
         {publicClient && (
           <>
-            <FormAccess role="manage-clients" isHorizontal>
+            <FormAccess
+              role="manage-clients"
+              fineGrainedAccess={access?.configure}
+              isHorizontal
+            >
               <FormGroup
                 label={t("nodeReRegistrationTimeout")}
                 fieldId="kc-node-reregistration-timeout"
@@ -393,6 +402,7 @@ export const AdvancedTab = ({
                     setValue(`attributes.${key}`, value)
                   )
                 }
+                hasConfigureAccess={access?.configure}
               />
             </>
           )}
@@ -424,6 +434,7 @@ export const AdvancedTab = ({
               reset={() =>
                 resetFields(["exclude.session.state.from.auth.response"])
               }
+              hasConfigureAccess={access?.configure}
             />
           </>
         )}
@@ -434,6 +445,7 @@ export const AdvancedTab = ({
           <AdvancedSettings
             protocol={protocol}
             control={control}
+            hasConfigureAccess={access?.configure}
             save={() => save()}
             reset={() => {
               resetFields([
@@ -463,6 +475,7 @@ export const AdvancedTab = ({
                 authenticationFlowBindingOverrides?.direct_grant
               );
             }}
+            hasConfigureAccess={access?.configure}
           />
         </>
       </ScrollForm>

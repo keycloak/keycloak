@@ -20,6 +20,7 @@ type AuthenticationOverridesProps = {
   save: () => void;
   reset: () => void;
   protocol?: string;
+  hasConfigureAccess?: boolean;
 };
 
 export const AuthenticationOverrides = ({
@@ -27,6 +28,7 @@ export const AuthenticationOverrides = ({
   control,
   save,
   reset,
+  hasConfigureAccess,
 }: AuthenticationOverridesProps) => {
   const adminClient = useAdminClient();
   const { t } = useTranslation("clients");
@@ -56,7 +58,11 @@ export const AuthenticationOverrides = ({
   );
 
   return (
-    <FormAccess role="manage-clients" isHorizontal>
+    <FormAccess
+      role="manage-clients"
+      fineGrainedAccess={hasConfigureAccess}
+      isHorizontal
+    >
       <FormGroup
         label={t("browserFlow")}
         fieldId="browserFlow"

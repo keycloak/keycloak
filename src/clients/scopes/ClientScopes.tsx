@@ -46,6 +46,7 @@ export type ClientScopesProps = {
   clientId: string;
   protocol: string;
   clientName: string;
+  fineGrainedAccess?: boolean;
 };
 
 export type Row = ClientScopeRepresentation & {
@@ -59,6 +60,7 @@ export const ClientScopes = ({
   clientId,
   protocol,
   clientName,
+  fineGrainedAccess,
 }: ClientScopesProps) => {
   const { t } = useTranslation("clients");
   const adminClient = useAdminClient();
@@ -83,7 +85,7 @@ export const ClientScopes = ({
   const isDedicatedRow = (value: Row) => value.id === DEDICATED_ROW;
 
   const { hasAccess } = useAccess();
-  const isManager = hasAccess("manage-clients");
+  const isManager = hasAccess("manage-clients") || fineGrainedAccess;
 
   const loader = async (first?: number, max?: number, search?: string) => {
     const defaultClientScopes =
@@ -130,7 +132,7 @@ export const ClientScopes = ({
       firstNum,
       firstNum + Number(max)
     );
-    if (firstNum === 0) {
+    if (firstNum === 0 && isManager) {
       return [
         {
           id: DEDICATED_ROW,

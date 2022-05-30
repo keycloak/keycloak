@@ -10,16 +10,22 @@ type OpenIdConnectCompatibilityModesProps = {
   control: Control<Record<string, any>>;
   save: () => void;
   reset: () => void;
+  hasConfigureAccess?: boolean;
 };
 
 export const OpenIdConnectCompatibilityModes = ({
   control,
   save,
   reset,
+  hasConfigureAccess,
 }: OpenIdConnectCompatibilityModesProps) => {
   const { t } = useTranslation("clients");
   return (
-    <FormAccess role="manage-realm" isHorizontal>
+    <FormAccess
+      role="manage-realm"
+      fineGrainedAccess={hasConfigureAccess}
+      isHorizontal
+    >
       <FormGroup
         label={t("excludeSessionStateFromAuthenticationResponse")}
         fieldId="excludeSessionStateFromAuthenticationResponse"

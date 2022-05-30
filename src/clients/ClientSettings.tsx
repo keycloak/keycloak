@@ -49,7 +49,7 @@ export const ClientSettings = ({
   const { realm } = useRealm();
 
   const { hasAccess } = useAccess();
-  const isManager = hasAccess("manage-clients");
+  const isManager = hasAccess("manage-clients") || client.access?.configure;
 
   const [loginThemeOpen, setLoginThemeOpen] = useState(false);
   const loginThemes = useServerInfo().themes!["login"];
@@ -88,7 +88,10 @@ export const ClientSettings = ({
       sections={sections.map((section) => t(section))}
     >
       <Form isHorizontal>
-        <ClientDescription protocol={client.protocol} />
+        <ClientDescription
+          protocol={client.protocol}
+          hasConfigureAccess={client.access?.configure}
+        />
       </Form>
       {protocol === "saml" ? (
         <SamlConfig />
@@ -96,7 +99,11 @@ export const ClientSettings = ({
         !client.bearerOnly && <CapabilityConfig />
       )}
       {protocol === "saml" && <SamlSignature />}
-      <FormAccess isHorizontal role="manage-clients">
+      <FormAccess
+        isHorizontal
+        role="manage-clients"
+        fineGrainedAccess={client.access?.configure}
+      >
         {!client.bearerOnly && (
           <>
             <FormGroup
@@ -259,7 +266,11 @@ export const ClientSettings = ({
           />
         )}
       </FormAccess>
-      <FormAccess isHorizontal role="manage-clients">
+      <FormAccess
+        isHorizontal
+        role="manage-clients"
+        fineGrainedAccess={client.access?.configure}
+      >
         <FormGroup
           label={t("loginTheme")}
           labelIcon={
@@ -383,7 +394,11 @@ export const ClientSettings = ({
           />
         )}
       </FormAccess>
-      <FormAccess isHorizontal role="manage-clients">
+      <FormAccess
+        isHorizontal
+        role="manage-clients"
+        fineGrainedAccess={client.access?.configure}
+      >
         {protocol === "openid-connect" && (
           <>
             <FormGroup

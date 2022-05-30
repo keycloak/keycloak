@@ -13,7 +13,7 @@ export const ResourceDetailsRoute: RouteDef = {
   path: "/:realm/clients/:id/authorization/resource/:resourceId?",
   component: lazy(() => import("../authorization/ResourceDetails")),
   breadcrumb: (t) => t("clients:createResource"),
-  access: "manage-clients",
+  access: "view-clients",
 };
 
 export const toResourceDetails = (

@@ -161,7 +161,10 @@ export default function ClientsSection() {
                   },
                 ];
 
-                if (!isRealmClient(client) && isManager) {
+                if (
+                  !isRealmClient(client) &&
+                  (isManager || client.access?.configure)
+                ) {
                   actions.push({
                     title: t("common:delete"),
                     onClick() {

@@ -33,11 +33,12 @@ import { Certificate } from "./Certificate";
 type KeysProps = {
   save: () => void;
   clientId: string;
+  hasConfigureAccess?: boolean;
 };
 
 const attr = "jwt.credential";
 
-export const Keys = ({ clientId, save }: KeysProps) => {
+export const Keys = ({ clientId, save, hasConfigureAccess }: KeysProps) => {
   const { t } = useTranslation("clients");
   const {
     control,
@@ -125,7 +126,11 @@ export const Keys = ({ clientId, save }: KeysProps) => {
           </TextContent>
         </CardBody>
         <CardBody>
-          <FormAccess role="manage-clients" isHorizontal>
+          <FormAccess
+            role="manage-clients"
+            fineGrainedAccess={hasConfigureAccess}
+            isHorizontal
+          >
             <FormGroup
               hasNoPaddingTop
               label={t("useJwksUrl")}

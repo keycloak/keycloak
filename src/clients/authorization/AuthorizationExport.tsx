@@ -65,7 +65,7 @@ export const AuthorizationExport = () => {
 
   return (
     <PageSection>
-      <FormAccess isHorizontal role="manage-realm" className="pf-u-mt-lg">
+      <FormAccess isHorizontal role="view-realm" className="pf-u-mt-lg">
         <FormGroup
           label={t("authDetails")}
           labelIcon={

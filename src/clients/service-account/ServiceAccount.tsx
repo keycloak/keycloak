@@ -35,7 +35,7 @@ export const ServiceAccount = ({ client }: ServiceAccountProps) => {
   const [serviceAccount, setServiceAccount] = useState<UserRepresentation>();
 
   const { hasAccess } = useAccess();
-  const isManager = hasAccess("manage-clients");
+  const hasManageClients = hasAccess("manage-clients");
 
   useFetch(
     () =>
@@ -128,7 +128,7 @@ export const ServiceAccount = ({ client }: ServiceAccountProps) => {
         name={client.clientId!}
         id={serviceAccount.id!}
         type="users"
-        isManager={isManager}
+        isManager={hasManageClients || client.access?.configure}
         loader={loader}
         save={assignRoles}
         onHideRolesToggle={() => setHide(!hide)}

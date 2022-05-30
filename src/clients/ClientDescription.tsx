@@ -11,9 +11,13 @@ import { KeycloakTextArea } from "../components/keycloak-text-area/KeycloakTextA
 
 type ClientDescriptionProps = {
   protocol?: string;
+  hasConfigureAccess?: boolean;
 };
 
-export const ClientDescription = ({ protocol }: ClientDescriptionProps) => {
+export const ClientDescription = ({
+  protocol,
+  hasConfigureAccess: configure,
+}: ClientDescriptionProps) => {
   const { t } = useTranslation("clients");
   const {
     register,
@@ -21,7 +25,7 @@ export const ClientDescription = ({ protocol }: ClientDescriptionProps) => {
     formState: { errors },
   } = useFormContext<ClientRepresentation>();
   return (
-    <FormAccess role="manage-clients" unWrap>
+    <FormAccess role="manage-clients" fineGrainedAccess={configure} unWrap>
       <FormGroup
         labelIcon={
           <HelpItem helpText="clients-help:clientId" fieldLabelId="clientId" />

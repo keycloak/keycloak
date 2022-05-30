@@ -194,7 +194,7 @@ export default function PermissionDetails() {
       <PageSection variant="light">
         <FormAccess
           isHorizontal
-          role="manage-clients"
+          role="view-clients"
           onSubmit={handleSubmit(save)}
         >
           <FormProvider {...form}>

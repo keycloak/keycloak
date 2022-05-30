@@ -192,7 +192,7 @@ export default function PolicyDetails() {
         <FormAccess
           isHorizontal
           onSubmit={handleSubmit(save)}
-          role="manage-clients"
+          role="view-clients"
         >
           <FormProvider {...form}>
             <NameDescription prefix="policy" />

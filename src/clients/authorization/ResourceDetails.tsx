@@ -179,7 +179,7 @@ export default function ResourceDetails() {
         <FormProvider {...form}>
           <FormAccess
             isHorizontal
-            role="manage-clients"
+            role="view-clients"
             className="keycloak__resource-details__form"
             onSubmit={handleSubmit(save)}
           >

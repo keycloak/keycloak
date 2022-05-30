@@ -9,7 +9,7 @@ export const NewPolicyRoute: RouteDef = {
   path: "/:realm/clients/:id/authorization/policy/new/:policyType",
   component: lazy(() => import("../authorization/policy/PolicyDetails")),
   breadcrumb: (t) => t("clients:createPolicy"),
-  access: "manage-clients",
+  access: "view-clients",
 };
 
 export const toCreatePolicy = (

@@ -20,6 +20,7 @@ import {
 } from "../../components/role-mapping/RoleMapping";
 import type { RoleMappingPayload } from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
 import useToggle from "../../utils/useToggle";
+import { useAccess } from "../../context/access/Access";
 
 type DedicatedScopeProps = {
   client: ClientRepresentation;
@@ -34,6 +35,9 @@ export const DedicatedScope = ({
 
   const [client, setClient] = useState<ClientRepresentation>(initialClient);
   const [hide, toggle] = useToggle();
+
+  const { hasAccess } = useAccess();
+  const isManager = hasAccess("manage-clients") || client.access?.manage;
 
   const loader = async () => {
     const [clients, assignedRoles, effectiveRoles] = await Promise.all([
@@ -118,7 +122,11 @@ export const DedicatedScope = ({
 
   return (
     <PageSection>
-      <FormAccess role="manage-clients" isHorizontal>
+      <FormAccess
+        role="manage-clients"
+        fineGrainedAccess={client.access?.manage}
+        isHorizontal
+      >
         <FormGroup
           hasNoPaddingTop
           label={t("fullScopeAllowed")}
@@ -149,6 +157,7 @@ export const DedicatedScope = ({
             loader={loader}
             save={assignRoles}
             onHideRolesToggle={toggle}
+            isManager={isManager}
           />
         </>
       )}

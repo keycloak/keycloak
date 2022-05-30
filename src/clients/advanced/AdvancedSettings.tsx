@@ -23,6 +23,7 @@ type AdvancedSettingsProps = {
   save: () => void;
   reset: () => void;
   protocol?: string;
+  hasConfigureAccess?: boolean;
 };
 
 export const AdvancedSettings = ({
@@ -30,11 +31,16 @@ export const AdvancedSettings = ({
   save,
   reset,
   protocol,
+  hasConfigureAccess,
 }: AdvancedSettingsProps) => {
   const { t } = useTranslation("clients");
   const [open, setOpen] = useState(false);
   return (
-    <FormAccess role="manage-realm" isHorizontal>
+    <FormAccess
+      role="manage-realm"
+      fineGrainedAccess={hasConfigureAccess}
+      isHorizontal
+    >
       {protocol !== "openid-connect" && (
         <FormGroup
           label={t("assertionLifespan")}

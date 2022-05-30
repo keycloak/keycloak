@@ -347,7 +347,7 @@ export const AuthorizationEvaluate = ({ client }: Props) => {
       >
         <FormAccess
           isHorizontal
-          role="manage-clients"
+          role="view-clients"
           onSubmit={form.handleSubmit(evaluate)}
         >
           <FormGroup
@@ -487,7 +487,7 @@ export const AuthorizationEvaluate = ({ client }: Props) => {
         </FormAccess>
       </FormPanel>
       <FormPanel className="kc-permissions" title={t("common:permissions")}>
-        <FormAccess isHorizontal role="manage-clients">
+        <FormAccess isHorizontal role="view-clients">
           <FormGroup
             label={t("applyToResourceType")}
             fieldId="applyToResourceType"

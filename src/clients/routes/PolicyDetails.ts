@@ -14,7 +14,7 @@ export const PolicyDetailsRoute: RouteDef = {
   path: "/:realm/clients/:id/authorization/policy/:policyId/:policyType",
   component: lazy(() => import("../authorization/policy/PolicyDetails")),
   breadcrumb: (t) => t("clients:createPolicy"),
-  access: "manage-clients",
+  access: "view-clients",
 };
 
 export const toPolicyDetails = (

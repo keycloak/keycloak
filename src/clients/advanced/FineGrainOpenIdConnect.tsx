@@ -20,11 +20,13 @@ import { KeycloakTextInput } from "../../components/keycloak-text-input/Keycloak
 type FineGrainOpenIdConnectProps = {
   save: () => void;
   reset: () => void;
+  hasConfigureAccess?: boolean;
 };
 
 export const FineGrainOpenIdConnect = ({
   save,
   reset,
+  hasConfigureAccess,
 }: FineGrainOpenIdConnectProps) => {
   const { t } = useTranslation("clients");
   const providers = useServerInfo().providers;
@@ -141,7 +143,11 @@ export const FineGrainOpenIdConnect = ({
   ));
 
   return (
-    <FormAccess role="manage-clients" isHorizontal>
+    <FormAccess
+      role="manage-clients"
+      fineGrainedAccess={hasConfigureAccess}
+      isHorizontal
+    >
       <FormGroup
         label={t("logoUrl")}
         fieldId="logoUrl"

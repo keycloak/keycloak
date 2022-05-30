@@ -15,7 +15,7 @@ export const PermissionDetailsRoute: RouteDef = {
   path: "/:realm/clients/:id/authorization/permission/:permissionType/:permissionId",
   component: lazy(() => import("../authorization/PermissionDetails")),
   breadcrumb: (t) => t("clients:permissionDetails"),
-  access: "manage-clients",
+  access: "view-clients",
 };
 
 export const toPermissionDetails = (

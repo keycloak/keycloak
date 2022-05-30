@@ -75,7 +75,7 @@ export default function ImportForm() {
         >
           <FormProvider {...form}>
             <JsonFileUpload id="realm-file" onChange={handleFileChange} />
-            <ClientDescription />
+            <ClientDescription hasConfigureAccess />
             <FormGroup label={t("common:type")} fieldId="kc-type">
               <KeycloakTextInput
                 type="text"
