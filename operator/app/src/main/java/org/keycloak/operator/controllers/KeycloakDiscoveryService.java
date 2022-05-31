@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.operator.v2alpha1;
+package org.keycloak.operator.controllers;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Service;
@@ -23,32 +23,27 @@ import io.fabric8.kubernetes.api.model.ServiceSpec;
 import io.fabric8.kubernetes.api.model.ServiceSpecBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import org.keycloak.operator.Constants;
-import org.keycloak.operator.OperatorManagedResource;
-import org.keycloak.operator.StatusUpdater;
-import org.keycloak.operator.v2alpha1.crds.Keycloak;
-import org.keycloak.operator.v2alpha1.crds.KeycloakStatusBuilder;
+import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusBuilder;
 
 import java.util.Optional;
 
-public class KeycloakService extends OperatorManagedResource implements StatusUpdater<KeycloakStatusBuilder> {
+public class KeycloakDiscoveryService extends OperatorManagedResource implements StatusUpdater<KeycloakStatusBuilder> {
 
     private Service existingService;
-    private final Keycloak keycloak;
 
-    public KeycloakService(KubernetesClient client, Keycloak keycloakCR) {
+    public KeycloakDiscoveryService(KubernetesClient client, Keycloak keycloakCR) {
         super(client, keycloakCR);
-        this.keycloak = keycloakCR;
         this.existingService = fetchExistingService();
     }
 
     private ServiceSpec getServiceSpec() {
-      var port = (this.keycloak.getSpec().isHttp()) ? Constants.KEYCLOAK_HTTP_PORT : Constants.KEYCLOAK_HTTPS_PORT;
       return new ServiceSpecBuilder()
               .addNewPort()
-              .withPort(port)
-              .withProtocol(Constants.KEYCLOAK_SERVICE_PROTOCOL)
+              .withPort(Constants.KEYCLOAK_DISCOVERY_SERVICE_PORT)
               .endPort()
               .withSelector(Constants.DEFAULT_LABELS)
+              .withClusterIP("None")
               .build();
     }
 
@@ -85,12 +80,13 @@ public class KeycloakService extends OperatorManagedResource implements StatusUp
 
     public void updateStatus(KeycloakStatusBuilder status) {
         if (existingService == null) {
-            status.addNotReadyMessage("No existing Keycloak Service found, waiting for creating a new one");
+            status.addNotReadyMessage("No existing Discovery Service found, waiting for creating a new one");
             return;
         }
     }
 
+    @Override
     public String getName() {
-        return cr.getMetadata().getName() + Constants.KEYCLOAK_SERVICE_SUFFIX;
+        return cr.getMetadata().getName() + Constants.KEYCLOAK_DISCOVERY_SERVICE_SUFFIX;
     }
 }

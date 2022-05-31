@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.operator.v2alpha1;
+package org.keycloak.operator.controllers;
 
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
@@ -32,11 +32,9 @@ import io.fabric8.kubernetes.client.utils.Serialization;
 import io.quarkus.logging.Log;
 import org.keycloak.operator.Config;
 import org.keycloak.operator.Constants;
-import org.keycloak.operator.OperatorManagedResource;
-import org.keycloak.operator.StatusUpdater;
-import org.keycloak.operator.v2alpha1.crds.Keycloak;
-import org.keycloak.operator.v2alpha1.crds.KeycloakStatusBuilder;
-import org.keycloak.operator.v2alpha1.crds.ValueOrSecret;
+import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusBuilder;
+import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
 
 import java.util.ArrayList;
 import java.util.HashMap;

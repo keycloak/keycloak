@@ -8,11 +8,11 @@ import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.keycloak.operator.utils.K8sUtils;
-import org.keycloak.operator.v2alpha1.KeycloakAdminSecret;
-import org.keycloak.operator.v2alpha1.KeycloakDeployment;
-import org.keycloak.operator.v2alpha1.KeycloakService;
-import org.keycloak.operator.v2alpha1.crds.Keycloak;
-import org.keycloak.operator.v2alpha1.crds.ValueOrSecret;
+import org.keycloak.operator.controllers.KeycloakAdminSecret;
+import org.keycloak.operator.controllers.KeycloakDeployment;
+import org.keycloak.operator.controllers.KeycloakService;
+import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;

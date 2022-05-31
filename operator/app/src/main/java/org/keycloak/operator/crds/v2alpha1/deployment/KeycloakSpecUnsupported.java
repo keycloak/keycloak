@@ -1,4 +1,4 @@
-package org.keycloak.operator.v2alpha1.crds.keycloakspec;
+package org.keycloak.operator.crds.v2alpha1.deployment;
 
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
@@ -10,16 +10,16 @@ import io.sundr.builder.annotations.BuildableReference;
         @BuildableReference(io.fabric8.kubernetes.api.model.ObjectMeta.class),
         @BuildableReference(io.fabric8.kubernetes.api.model.PodTemplateSpec.class)
 })
-public class Unsupported {
+public class KeycloakSpecUnsupported {
 
     @JsonPropertyDescription("You can configure that will be merged with the one configured by default by the operator.\n" +
             "Use at your own risk, we reserve the possibility to remove/change the way any field gets merged in future releases without notice.\n" +
             "Reference: https://kubernetes.io/docs/concepts/workloads/pods/#pod-templates")
     private PodTemplateSpec podTemplate;
 
-    public Unsupported() {}
+    public KeycloakSpecUnsupported() {}
 
-    public Unsupported(PodTemplateSpec podTemplate) {
+    public KeycloakSpecUnsupported(PodTemplateSpec podTemplate) {
         this.podTemplate = podTemplate;
     }
 

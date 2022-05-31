@@ -7,12 +7,10 @@ import io.fabric8.kubernetes.api.model.ProbeBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
-import org.keycloak.operator.v2alpha1.KeycloakDeployment;
-import org.keycloak.operator.v2alpha1.crds.Keycloak;
-import org.keycloak.operator.v2alpha1.crds.KeycloakSpec;
-import org.keycloak.operator.v2alpha1.crds.keycloakspec.Unsupported;
-
-import java.net.URL;
+import org.keycloak.operator.controllers.KeycloakDeployment;
+import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpec;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpecUnsupported;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -38,7 +36,7 @@ public class PodTemplateTest {
         };
         var kc = new Keycloak();
         var spec = new KeycloakSpec();
-        spec.setUnsupported(new Unsupported(podTemplate));
+        spec.setUnsupported(new KeycloakSpecUnsupported(podTemplate));
         spec.setHostname("example.com");
         spec.setTlsSecret("example-tls-secret");
         kc.setSpec(spec);

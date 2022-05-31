@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.operator.v2alpha1;
+package org.keycloak.operator.controllers;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Secret;
@@ -29,8 +29,7 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEven
 import io.javaoperatorsdk.operator.processing.event.source.informer.Mappers;
 import io.quarkus.logging.Log;
 import org.keycloak.operator.Constants;
-import org.keycloak.operator.OperatorManagedResource;
-import org.keycloak.operator.v2alpha1.crds.Keycloak;
+import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;

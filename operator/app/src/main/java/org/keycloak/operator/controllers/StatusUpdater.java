@@ -1,4 +1,4 @@
-package org.keycloak.operator;
+package org.keycloak.operator.controllers;
 
 public interface StatusUpdater<T> {
 

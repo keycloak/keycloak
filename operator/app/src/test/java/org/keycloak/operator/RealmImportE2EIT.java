@@ -9,9 +9,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.keycloak.operator.utils.CRAssert;
-import org.keycloak.operator.v2alpha1.KeycloakService;
-import org.keycloak.operator.v2alpha1.crds.KeycloakRealmImport;
-import org.keycloak.operator.v2alpha1.crds.keycloakspec.Unsupported;
+import org.keycloak.operator.controllers.KeycloakService;
+import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpecUnsupported;
 
 import java.util.stream.Collectors;
 
@@ -22,9 +22,9 @@ import static org.keycloak.operator.Constants.KEYCLOAK_HTTPS_PORT;
 import static org.keycloak.operator.utils.K8sUtils.deployKeycloak;
 import static org.keycloak.operator.utils.K8sUtils.getDefaultKeycloakDeployment;
 import static org.keycloak.operator.utils.K8sUtils.inClusterCurl;
-import static org.keycloak.operator.v2alpha1.crds.KeycloakRealmImportStatusCondition.DONE;
-import static org.keycloak.operator.v2alpha1.crds.KeycloakRealmImportStatusCondition.HAS_ERRORS;
-import static org.keycloak.operator.v2alpha1.crds.KeycloakRealmImportStatusCondition.STARTED;
+import static org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportStatusCondition.DONE;
+import static org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportStatusCondition.HAS_ERRORS;
+import static org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportStatusCondition.STARTED;
 
 @QuarkusTest
 public class RealmImportE2EIT extends ClusterOperatorTest {
@@ -67,7 +67,7 @@ public class RealmImportE2EIT extends ClusterOperatorTest {
                 .withImagePullSecrets(new LocalObjectReferenceBuilder().withName("my-empty-secret").build())
                 .endSpec()
                 .build();
-        kc.getSpec().setUnsupported(new Unsupported(podTemplate));
+        kc.getSpec().setUnsupported(new KeycloakSpecUnsupported(podTemplate));
         deployKeycloak(k8sclient, kc, false);
 
         // Act

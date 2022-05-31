@@ -19,7 +19,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.keycloak.operator.v2alpha1.crds.Keycloak;
+import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 
 import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.spi.CDI;

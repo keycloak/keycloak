@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.operator.v2alpha1;
+package org.keycloak.operator.controllers;
 
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -30,10 +30,9 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.ResourceNotFoundException;
 import io.fabric8.kubernetes.client.utils.KubernetesResourceUtil;
 import io.quarkus.logging.Log;
-import org.keycloak.operator.OperatorManagedResource;
-import org.keycloak.operator.v2alpha1.crds.Keycloak;
-import org.keycloak.operator.v2alpha1.crds.KeycloakRealmImport;
-import org.keycloak.operator.v2alpha1.crds.KeycloakRealmImportStatusBuilder;
+import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
+import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportStatusBuilder;
 
 import java.util.List;
 import java.util.Optional;

@@ -14,30 +14,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.operator.v2alpha1.crds;
+package org.keycloak.operator.crds.v2alpha1.realmimport;
 
 import java.util.List;
 import java.util.Objects;
 
-/**
- * @author Vaclav Muzikar <vmuzikar@redhat.com>
- */
-public class KeycloakStatus {
-    private List<KeycloakStatusCondition> conditions;
+import static org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportStatusCondition.DONE;
 
-    public List<KeycloakStatusCondition> getConditions() {
+public class KeycloakRealmImportStatus {
+    private List<KeycloakRealmImportStatusCondition> conditions;
+
+    public List<KeycloakRealmImportStatusCondition> getConditions() {
         return conditions;
     }
 
-    public void setConditions(List<KeycloakStatusCondition> conditions) {
+    public void setConditions(List<KeycloakRealmImportStatusCondition> conditions) {
         this.conditions = conditions;
+    }
+
+    public boolean isDone() {
+        return conditions
+                .stream()
+                .anyMatch(c -> c.getStatus() && c.getType().equals(DONE));
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        KeycloakStatus status = (KeycloakStatus) o;
+        KeycloakRealmImportStatus status = (KeycloakRealmImportStatus) o;
         return Objects.equals(getConditions(), status.getConditions());
     }
 

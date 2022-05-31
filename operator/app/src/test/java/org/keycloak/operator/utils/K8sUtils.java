@@ -27,8 +27,8 @@ import io.fabric8.kubernetes.client.utils.KubernetesResourceUtil;
 import io.fabric8.kubernetes.client.utils.Serialization;
 import io.quarkus.logging.Log;
 import org.awaitility.Awaitility;
-import org.keycloak.operator.v2alpha1.crds.Keycloak;
-import org.keycloak.operator.v2alpha1.crds.KeycloakStatusCondition;
+import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
 
 import java.util.Objects;
 import java.util.UUID;

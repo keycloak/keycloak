@@ -19,8 +19,8 @@ package org.keycloak.operator.utils;
 
 import io.fabric8.kubernetes.client.utils.Serialization;
 import io.quarkus.logging.Log;
-import org.keycloak.operator.v2alpha1.crds.Keycloak;
-import org.keycloak.operator.v2alpha1.crds.KeycloakRealmImport;
+import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

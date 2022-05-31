@@ -1,12 +1,11 @@
-package org.keycloak.operator.v2alpha1;
+package org.keycloak.operator.controllers;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.utils.KubernetesResourceUtil;
-import org.keycloak.operator.OperatorManagedResource;
-import org.keycloak.operator.v2alpha1.crds.Keycloak;
+import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 
 import java.util.Optional;
 import java.util.UUID;

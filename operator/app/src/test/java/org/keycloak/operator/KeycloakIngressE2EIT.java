@@ -7,7 +7,7 @@ import io.restassured.RestAssured;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 import org.keycloak.operator.utils.K8sUtils;
-import org.keycloak.operator.v2alpha1.KeycloakIngress;
+import org.keycloak.operator.controllers.KeycloakIngress;
 
 import java.util.Map;
 
