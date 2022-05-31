@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.operator.v2alpha1.crds;
+package org.keycloak.operator.crds.v2alpha1.realmimport;
 
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 import org.keycloak.representations.idm.RealmRepresentation;

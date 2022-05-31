@@ -5,8 +5,8 @@ import io.quarkus.logging.Log;
 import io.quarkus.test.junit.QuarkusTest;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
-import org.keycloak.operator.v2alpha1.KeycloakDiscoveryService;
-import org.keycloak.operator.v2alpha1.KeycloakService;
+import org.keycloak.operator.controllers.KeycloakDiscoveryService;
+import org.keycloak.operator.controllers.KeycloakService;
 import org.keycloak.operator.utils.K8sUtils;
 
 import java.util.Map;

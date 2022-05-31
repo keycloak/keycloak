@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.operator.v2alpha1.crds;
+package org.keycloak.operator.crds.v2alpha1.deployment;
 
 import java.util.ArrayList;
 import java.util.List;

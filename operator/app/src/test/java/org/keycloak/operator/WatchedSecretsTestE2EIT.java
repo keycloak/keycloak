@@ -24,10 +24,10 @@ import org.awaitility.Awaitility;
 import org.bouncycastle.util.encoders.Base64;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import org.keycloak.operator.v2alpha1.WatchedSecretsStore;
-import org.keycloak.operator.v2alpha1.crds.Keycloak;
-import org.keycloak.operator.v2alpha1.crds.KeycloakStatusCondition;
-import org.keycloak.operator.v2alpha1.crds.ValueOrSecret;
+import org.keycloak.operator.controllers.WatchedSecretsStore;
+import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
+import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
 
 import java.util.HashSet;
 import java.util.List;

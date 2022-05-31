@@ -14,11 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.operator.v2alpha1.crds;
+package org.keycloak.operator.crds.v2alpha1.deployment;
 
 import io.fabric8.kubernetes.api.model.Namespaced;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.model.annotation.Group;
+import io.fabric8.kubernetes.model.annotation.Plural;
+import io.fabric8.kubernetes.model.annotation.ShortNames;
 import io.fabric8.kubernetes.model.annotation.Version;
 import io.sundr.builder.annotations.Buildable;
 import io.sundr.builder.annotations.BuildableReference;
@@ -26,12 +28,14 @@ import org.keycloak.operator.Constants;
 
 @Group(Constants.CRDS_GROUP)
 @Version(Constants.CRDS_VERSION)
+@ShortNames(Constants.SHORT_NAME)
+@Plural(Constants.PLURAL_NAME)
 @Buildable(editableEnabled = false, builderPackage = "io.fabric8.kubernetes.api.builder",
         lazyCollectionInitEnabled = false, refs = {
         @BuildableReference(io.fabric8.kubernetes.api.model.ObjectMeta.class),
         @BuildableReference(io.fabric8.kubernetes.client.CustomResource.class),
-        @BuildableReference(org.keycloak.operator.v2alpha1.crds.KeycloakRealmImportSpec.class)
+        @BuildableReference(KeycloakSpec.class)
 })
-public class KeycloakRealmImport extends CustomResource<KeycloakRealmImportSpec, KeycloakRealmImportStatus> implements Namespaced {
+public class Keycloak extends CustomResource<KeycloakSpec, KeycloakStatus> implements Namespaced {
 
 }

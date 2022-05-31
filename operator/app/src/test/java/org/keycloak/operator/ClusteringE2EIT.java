@@ -8,12 +8,12 @@ import io.restassured.RestAssured;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 import org.keycloak.operator.utils.CRAssert;
-import org.keycloak.operator.v2alpha1.KeycloakService;
-import org.keycloak.operator.v2alpha1.crds.Keycloak;
+import org.keycloak.operator.controllers.KeycloakService;
+import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.utils.K8sUtils;
-import org.keycloak.operator.v2alpha1.crds.KeycloakRealmImport;
-import org.keycloak.operator.v2alpha1.crds.KeycloakRealmImportStatusCondition;
-import org.keycloak.operator.v2alpha1.crds.KeycloakStatusCondition;
+import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
+import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportStatusCondition;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
 
 import java.time.Duration;
 

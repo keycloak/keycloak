@@ -14,14 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.keycloak.operator.v2alpha1.crds;
+package org.keycloak.operator.crds.v2alpha1.deployment;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 
 import org.keycloak.operator.Constants;
-import org.keycloak.operator.codegen.configuration.ServerConfig;
-import org.keycloak.operator.v2alpha1.crds.keycloakspec.Unsupported;
 
 import javax.validation.constraints.NotNull;
 import java.util.List;
@@ -52,7 +50,7 @@ public class KeycloakSpec {
     @JsonPropertyDescription(
         "In this section you can configure podTemplate advanced features, not production-ready, and not supported settings.\n" +
         "Use at your own risk and open an issue with your use-case if you don't find an alternative way.")
-    private Unsupported unsupported;
+    private KeycloakSpecUnsupported unsupported;
 
     public String getHostname() {
         return hostname;
@@ -88,11 +86,11 @@ public class KeycloakSpec {
         return this.tlsSecret.equals(Constants.INSECURE_DISABLE);
     }
 
-    public Unsupported getUnsupported() {
+    public KeycloakSpecUnsupported getUnsupported() {
         return unsupported;
     }
 
-    public void setUnsupported(Unsupported unsupported) {
+    public void setUnsupported(KeycloakSpecUnsupported unsupported) {
         this.unsupported = unsupported;
     }
 

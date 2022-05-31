@@ -15,14 +15,17 @@
  * limitations under the License.
  */
 
-package org.keycloak.operator.v2alpha1.crds;
+package org.keycloak.operator.crds.v2alpha1.deployment;
 
 import java.util.Objects;
 
-public class KeycloakRealmImportStatusCondition {
-    public static final String DONE = "Done";
-    public static final String STARTED = "Started";
+/**
+ * @author Vaclav Muzikar <vmuzikar@redhat.com>
+ */
+public class KeycloakStatusCondition {
+    public static final String READY = "Ready";
     public static final String HAS_ERRORS = "HasErrors";
+    public static final String ROLLING_UPDATE = "RollingUpdate";
 
     // string to avoid enums in CRDs
     private String type;
@@ -57,8 +60,8 @@ public class KeycloakRealmImportStatusCondition {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        KeycloakRealmImportStatusCondition that = (KeycloakRealmImportStatusCondition) o;
-        return getType() == that.getType() && Objects.equals(getStatus(), that.getStatus()) && Objects.equals(getMessage(), that.getMessage());
+        KeycloakStatusCondition that = (KeycloakStatusCondition) o;
+        return Objects.equals(getType(), that.getType()) && Objects.equals(getStatus(), that.getStatus()) && Objects.equals(getMessage(), that.getMessage());
     }
 
     @Override

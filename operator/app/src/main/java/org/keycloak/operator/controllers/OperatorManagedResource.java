@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.operator;
+package org.keycloak.operator.controllers;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.OwnerReference;
@@ -24,6 +24,7 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.utils.Serialization;
 import io.quarkus.logging.Log;
+import org.keycloak.operator.Constants;
 
 import java.util.Collections;
 import java.util.HashMap;

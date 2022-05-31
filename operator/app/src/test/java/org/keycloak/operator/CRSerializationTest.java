@@ -2,7 +2,7 @@ package org.keycloak.operator;
 
 import io.fabric8.kubernetes.client.utils.Serialization;
 import org.junit.jupiter.api.Test;
-import org.keycloak.operator.v2alpha1.crds.Keycloak;
+import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;

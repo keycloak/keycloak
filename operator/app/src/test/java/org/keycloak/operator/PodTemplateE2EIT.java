@@ -8,11 +8,11 @@ import io.quarkus.test.junit.QuarkusTest;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 import org.keycloak.operator.utils.CRAssert;
-import org.keycloak.operator.v2alpha1.crds.Keycloak;
+import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.keycloak.operator.v2alpha1.crds.KeycloakStatusCondition.HAS_ERRORS;
+import static org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition.HAS_ERRORS;
 
 @QuarkusTest
 public class PodTemplateE2EIT extends ClusterOperatorTest {

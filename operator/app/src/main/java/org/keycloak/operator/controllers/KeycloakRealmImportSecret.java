@@ -1,4 +1,4 @@
-package org.keycloak.operator.v2alpha1;
+package org.keycloak.operator.controllers;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -7,8 +7,7 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.utils.KubernetesResourceUtil;
-import org.keycloak.operator.OperatorManagedResource;
-import org.keycloak.operator.v2alpha1.crds.KeycloakRealmImport;
+import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
 
 import java.util.Optional;
 
