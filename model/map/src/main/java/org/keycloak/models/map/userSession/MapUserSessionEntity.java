@@ -19,7 +19,6 @@ package org.keycloak.models.map.userSession;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.map.annotations.GenerateEntityImplementations;
 import org.keycloak.models.map.common.AbstractEntity;
-
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.ExpirableEntity;
 import org.keycloak.models.map.common.UpdatableEntity;

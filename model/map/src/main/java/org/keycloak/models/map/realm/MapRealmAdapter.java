@@ -1771,10 +1771,12 @@ public class MapRealmAdapter extends AbstractRealmModel<MapRealmEntity> implemen
         return String.format("%s@%08x", getId(), hashCode());
     }
 
+    @Override
     public CibaConfig getCibaPolicy() {
         return new CibaConfig(this);
     }
 
+    @Override
     public ParConfig getParPolicy() {
         return new ParConfig(this);
     }

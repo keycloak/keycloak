@@ -20,8 +20,6 @@ package org.keycloak.models.map.events;
 import org.keycloak.events.Event;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.AuthDetails;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.map.common.TimeAdapter;
 
 import java.util.Collections;
 import java.util.Map;
