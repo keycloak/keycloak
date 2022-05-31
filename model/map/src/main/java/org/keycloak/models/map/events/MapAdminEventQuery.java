@@ -90,7 +90,7 @@ public class MapAdminEventQuery implements AdminEventQuery {
 
     @Override
     public AdminEventQuery resourceType(ResourceType... resourceTypes) {
-        mcb = mcb.compare(SearchableFields.RESOURCE_TYPE, EQ, Arrays.stream(resourceTypes));
+        mcb = mcb.compare(SearchableFields.RESOURCE_TYPE, IN, Arrays.stream(resourceTypes));
         return this;
     }
 
