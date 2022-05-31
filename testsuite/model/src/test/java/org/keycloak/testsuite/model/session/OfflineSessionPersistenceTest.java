@@ -136,8 +136,9 @@ public class OfflineSessionPersistenceTest extends KeycloakModelTest {
     @RequireProvider(UserSessionPersisterProvider.class)
     @RequireProvider(value = UserSessionProvider.class, only = InfinispanUserSessionProviderFactory.PROVIDER_ID)
     public void testPersistenceMultipleNodesClientSessionAtSameNode() throws InterruptedException {
+        int numClients = 2;
         List<String> clientIds = withRealm(realmId, (session, realm) -> {
-            return IntStream.range(0, 5)
+            return IntStream.range(0, numClients)
               .mapToObj(cid -> session.clients().addClient(realm, "client-" + cid))
               .map(ClientModel::getId)
               .collect(Collectors.toList());
@@ -152,8 +153,8 @@ public class OfflineSessionPersistenceTest extends KeycloakModelTest {
         inIndependentFactories(NUM_FACTORIES, 60, () -> {
             withRealm(realmId, (session, realm) -> {
                 // Create offline sessions
-                userIds.forEach(userId -> createOfflineSessions(session, realm, userId, offlineUserSession -> {
-                  IntStream.range(0, 5)
+                userIds.stream().limit(userIds.size() / 10).forEach(userId -> createOfflineSessions(session, realm, userId, offlineUserSession -> {
+                  IntStream.range(0, numClients)
                     .mapToObj(cid -> session.clients().getClientById(realm, clientIds.get(cid)))
                     // TODO in the future: The following two lines are weird. Why an online client session needs to exist in order to create an offline one?
                     .map(client -> session.sessions().createClientSession(realm, client, offlineUserSession))
@@ -187,7 +188,7 @@ public class OfflineSessionPersistenceTest extends KeycloakModelTest {
         });
 
         reinitializeKeycloakSessionFactory();
-        inIndependentFactories(4, 30, () -> assertOfflineSessionsExist(realmId, clientSessionIds));
+        inIndependentFactories(NUM_FACTORIES + 1, 30, () -> assertOfflineSessionsExist(realmId, clientSessionIds));
     }
 
     @Test(timeout = 90 * 1000)
