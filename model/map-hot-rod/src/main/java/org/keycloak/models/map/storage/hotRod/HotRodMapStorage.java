@@ -56,10 +56,10 @@ public class HotRodMapStorage<K, E extends AbstractHotRodEntity, V extends HotRo
     private static final Logger LOG = Logger.getLogger(HotRodMapStorage.class);
 
     private final RemoteCache<K, E> remoteCache;
-    private final StringKeyConverter<K> keyConverter;
-    private final HotRodEntityDescriptor<E, V> storedEntityDescriptor;
+    protected final StringKeyConverter<K> keyConverter;
+    protected final HotRodEntityDescriptor<E, V> storedEntityDescriptor;
     private final Function<E, V> delegateProducer;
-    private final DeepCloner cloner;
+    protected final DeepCloner cloner;
 
     public HotRodMapStorage(RemoteCache<K, E> remoteCache, StringKeyConverter<K> keyConverter, HotRodEntityDescriptor<E, V> storedEntityDescriptor, DeepCloner cloner) {
         this.remoteCache = remoteCache;
@@ -191,7 +191,13 @@ public class HotRodMapStorage<K, E extends AbstractHotRodEntity, V extends HotRo
 
     @Override
     public MapKeycloakTransaction<V, M> createTransaction(KeycloakSession session) {
-        Map<SearchableModelField<? super M>, MapModelCriteriaBuilder.UpdatePredicatesFunc<K, V, M>> fieldPredicates = MapFieldPredicates.getPredicates((Class<M>) storedEntityDescriptor.getModelTypeClass());
-        return new ConcurrentHashMapKeycloakTransaction<>(this, keyConverter, cloner, fieldPredicates);
+        MapKeycloakTransaction<V, M> sessionTransaction = session.getAttribute("map-transaction-" + hashCode(), MapKeycloakTransaction.class);
+
+        if (sessionTransaction == null) {
+            Map<SearchableModelField<? super M>, MapModelCriteriaBuilder.UpdatePredicatesFunc<K, V, M>> fieldPredicates = MapFieldPredicates.getPredicates((Class<M>) storedEntityDescriptor.getModelTypeClass());
+            sessionTransaction = new ConcurrentHashMapKeycloakTransaction<>(this, keyConverter, cloner, fieldPredicates);
+            session.setAttribute("map-transaction-" + hashCode(), sessionTransaction);
+        }
+        return sessionTransaction;
     }
 }

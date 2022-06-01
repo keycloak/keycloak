@@ -88,5 +88,17 @@
             </indexing>
             <encoding media-type="application/x-protostream"/>
         </distributed-cache>
+        <distributed-cache name="authz" mode="SYNC">
+            <encoding media-type="application/x-protostream"/>
+            <indexing>
+                <indexed-entities>
+                    <indexed-entity>kc.HotRodResourceEntity</indexed-entity>
+                    <indexed-entity>kc.HotRodScopeEntity</indexed-entity>
+                    <indexed-entity>kc.HotRodPolicyEntity</indexed-entity>
+                    <indexed-entity>kc.HotRodPermissionTicketEntity</indexed-entity>
+                    <indexed-entity>kc.HotRodStringPair</indexed-entity>
+                </indexed-entities>
+            </indexing>
+        </distributed-cache>
     </cache-container>
 </infinispan>

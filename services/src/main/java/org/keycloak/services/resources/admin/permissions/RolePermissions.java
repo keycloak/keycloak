@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -74,15 +74,18 @@ class RolePermissions implements RolePermissionEvaluator, RolePermissionManageme
     private void disablePermissions(RoleModel role) {
         ResourceServer server = resourceServer(role);
         if (server == null) return;
+
+        RealmModel realm = server.getRealm();
+
         Policy policy = mapRolePermission(role);
-        if (policy != null) authz.getStoreFactory().getPolicyStore().delete(policy.getId());
+        if (policy != null) authz.getStoreFactory().getPolicyStore().delete(realm, policy.getId());
         policy = mapClientScopePermission(role);
-        if (policy != null) authz.getStoreFactory().getPolicyStore().delete(policy.getId());
+        if (policy != null) authz.getStoreFactory().getPolicyStore().delete(realm, policy.getId());
         policy = mapCompositePermission(role);
-        if (policy != null) authz.getStoreFactory().getPolicyStore().delete(policy.getId());
+        if (policy != null) authz.getStoreFactory().getPolicyStore().delete(realm, policy.getId());
 
         Resource resource = authz.getStoreFactory().getResourceStore().findByName(server, getRoleResourceName(role));
-        if (resource != null) authz.getStoreFactory().getResourceStore().delete(resource.getId());
+        if (resource != null) authz.getStoreFactory().getResourceStore().delete(realm, resource.getId());
     }
 
     @Override

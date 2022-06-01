@@ -25,7 +25,6 @@ import org.keycloak.OAuthErrorException;
 import org.keycloak.TokenCategory;
 import org.keycloak.TokenVerifier;
 import org.keycloak.authentication.authenticators.util.AcrStore;
-import org.keycloak.authentication.authenticators.util.LoAUtil;
 import org.keycloak.broker.oidc.OIDCIdentityProvider;
 import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.cluster.ClusterProvider;
@@ -50,7 +49,7 @@ import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
-import org.keycloak.models.TokenRevocationStoreProvider;
+import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
@@ -64,7 +63,6 @@ import org.keycloak.protocol.oidc.mappers.UserInfoTokenMapper;
 import org.keycloak.rar.AuthorizationDetails;
 import org.keycloak.representations.AuthorizationDetailsJSONRepresentation;
 import org.keycloak.rar.AuthorizationRequestContext;
-import org.keycloak.protocol.oidc.utils.AcrUtils;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
@@ -359,7 +357,7 @@ public class TokenManager {
     }
 
 
-    public RefreshResult refreshAccessToken(KeycloakSession session, UriInfo uriInfo, ClientConnection connection, RealmModel realm, ClientModel authorizedClient,
+    public AccessTokenResponseBuilder refreshAccessToken(KeycloakSession session, UriInfo uriInfo, ClientConnection connection, RealmModel realm, ClientModel authorizedClient,
                                             String encodedRefreshToken, EventBuilder event, HttpHeaders headers, HttpRequest request) throws OAuthErrorException {
         RefreshToken refreshToken = verifyRefreshToken(session, realm, authorizedClient, request, encodedRefreshToken, true);
 
@@ -412,9 +410,7 @@ public class TokenManager {
             responseBuilder.generateIDToken().generateAccessTokenHash();
         }
 
-        AccessTokenResponse res = responseBuilder.build();
-
-        return new RefreshResult(res, TokenUtil.TOKEN_TYPE_OFFLINE.equals(refreshToken.getType()));
+        return responseBuilder;
     }
 
     private void validateTokenReuseForRefresh(KeycloakSession session, RealmModel realm, RefreshToken refreshToken,
@@ -1194,6 +1190,10 @@ public class TokenManager {
             return this;
         }
 
+        public boolean isOfflineToken() {
+            return refreshToken != null && TokenUtil.TOKEN_TYPE_OFFLINE.equals(refreshToken.getType());
+        }
+
         public AccessTokenResponse build() {
             if (accessToken != null) {
                 event.detail(Details.TOKEN_ID, accessToken.getId());
@@ -1281,25 +1281,6 @@ public class TokenManager {
         return TokenUtil.TOKEN_TYPE_BEARER;
     }
 
-    public static class RefreshResult {
-
-        private final AccessTokenResponse response;
-        private final boolean offlineToken;
-
-        private RefreshResult(AccessTokenResponse response, boolean offlineToken) {
-            this.response = response;
-            this.offlineToken = offlineToken;
-        }
-
-        public AccessTokenResponse getResponse() {
-            return response;
-        }
-
-        public boolean isOfflineToken() {
-            return offlineToken;
-        }
-    }
-
     public static class NotBeforeCheck implements TokenVerifier.Predicate<JsonWebToken> {
 
         private final int notBefore;
@@ -1354,8 +1335,8 @@ public class TokenManager {
 
         @Override
         public boolean test(AccessToken token) {
-            TokenRevocationStoreProvider revocationStore = session.getProvider(TokenRevocationStoreProvider.class);
-            return !revocationStore.isRevoked(token.getId());
+            SingleUseObjectProvider singleUseStore = session.getProvider(SingleUseObjectProvider.class);
+            return !singleUseStore.contains(token.getId() + SingleUseObjectProvider.REVOKED_KEY);
         }
     }
 

@@ -70,8 +70,10 @@ import java.util.stream.Collectors;
 )
 @ProtoDoc("@Indexed")
 public class HotRodRealmEntity extends AbstractHotRodEntity {
-    @ProtoField(number = 1, required = true)
-    public int entityVersion = 1;
+
+    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @ProtoField(number = 1)
+    public Integer entityVersion = 1;
 
     @ProtoField(number = 2)
     public String id;
@@ -423,7 +425,7 @@ public class HotRodRealmEntity extends AbstractHotRodEntity {
 
         private boolean checkIfExpired(MapClientInitialAccessEntity cia) {
             return cia.getRemainingCount() < 1 ||
-                    (cia.getExpiration() > 0 && (cia.getTimestamp() + cia.getExpiration()) < Time.currentTime());
+                    (cia.getExpiration() != null && cia.getExpiration() < Time.currentTimeMillis());
         }
     }
     @Override

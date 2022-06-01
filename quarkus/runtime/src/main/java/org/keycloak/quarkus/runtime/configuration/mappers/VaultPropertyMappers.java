@@ -1,5 +1,7 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
+import org.keycloak.config.OptionCategory;
+
 final class VaultPropertyMappers {
 
     private VaultPropertyMappers() {
@@ -46,6 +48,6 @@ final class VaultPropertyMappers {
     }
 
     private static PropertyMapper.Builder builder() {
-        return PropertyMapper.builder(ConfigCategory.VAULT);
+        return PropertyMapper.builder(OptionCategory.VAULT);
     }
 }

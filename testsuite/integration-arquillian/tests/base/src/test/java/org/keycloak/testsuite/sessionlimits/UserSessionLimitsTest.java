@@ -30,7 +30,6 @@ import org.keycloak.models.AuthenticationFlowModel;
 import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -44,8 +43,6 @@ import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.MailUtils;
 import org.keycloak.testsuite.util.OAuthClient;
 
-import java.util.HashMap;
-import java.util.Map;
 import org.keycloak.testsuite.pages.ErrorPage;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 
@@ -53,11 +50,14 @@ import javax.mail.internet.MimeMessage;
 
 import static org.junit.Assert.assertEquals;
 import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
+import static org.keycloak.testsuite.sessionlimits.UserSessionLimitsUtil.assertSessionCount;
+import static org.keycloak.testsuite.sessionlimits.UserSessionLimitsUtil.configureSessionLimits;
+import static org.keycloak.testsuite.sessionlimits.UserSessionLimitsUtil.ERROR_TO_DISPLAY;
 
 @AuthServerContainerExclude(REMOTE)
 public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
-
-    private static final String ERROR_TO_DISPLAY = "This account has too many sessions";
+    private String realmName = "test";
+    private String username = "test-user@localhost";
 
     @Override
     public void configureTestRealm(RealmRepresentation testRealm) {
@@ -75,13 +75,13 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
 
             AuthenticationFlowModel browser = realm.getBrowserFlow();
             configureUsernamePassword(realm, browser);
-            configureSessionLimits(realm, browser);
+            configureSessionLimits(realm, browser, UserSessionLimitsAuthenticatorFactory.DENY_NEW_SESSION, "0", "1");
 
             AuthenticationFlowModel directGrant = realm.getDirectGrantFlow();
-            configureSessionLimits(realm, directGrant);
+            configureSessionLimits(realm, directGrant, UserSessionLimitsAuthenticatorFactory.DENY_NEW_SESSION, "0", "1");
 
             AuthenticationFlowModel resetPasswordFlow = realm.getResetCredentialsFlow();
-            configureSessionLimits(realm, resetPasswordFlow);
+            configureSessionLimits(realm, resetPasswordFlow, UserSessionLimitsAuthenticatorFactory.DENY_NEW_SESSION, "0", "1");
         });
         testContext.setInitialized(true);
     }
@@ -93,27 +93,6 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
         execution.setAuthenticator(UsernamePasswordFormFactory.PROVIDER_ID);
         execution.setPriority(20);
         execution.setAuthenticatorFlow(false);
-        realm.addAuthenticatorExecution(execution);
-    }
-
-    private static void configureSessionLimits(RealmModel realm, AuthenticationFlowModel flow) {
-        AuthenticationExecutionModel execution = new AuthenticationExecutionModel();
-        execution.setParentFlow(flow.getId());
-        execution.setRequirement(AuthenticationExecutionModel.Requirement.REQUIRED);
-        execution.setAuthenticator(UserSessionLimitsAuthenticatorFactory.USER_SESSION_LIMITS);
-        execution.setPriority(30);
-        execution.setAuthenticatorFlow(false);
-
-        AuthenticatorConfigModel configModel = new AuthenticatorConfigModel();
-        Map<String, String> sessionAuthenticatorConfig = new HashMap<>();
-        sessionAuthenticatorConfig.put(UserSessionLimitsAuthenticatorFactory.BEHAVIOR, UserSessionLimitsAuthenticatorFactory.DENY_NEW_SESSION);
-        sessionAuthenticatorConfig.put(UserSessionLimitsAuthenticatorFactory.USER_REALM_LIMIT, "0");
-        sessionAuthenticatorConfig.put(UserSessionLimitsAuthenticatorFactory.USER_CLIENT_LIMIT, "1");
-        sessionAuthenticatorConfig.put(UserSessionLimitsAuthenticatorFactory.ERROR_MESSAGE, ERROR_TO_DISPLAY);
-        configModel.setConfig(sessionAuthenticatorConfig);
-        configModel.setAlias("user-session-limits-" + flow.getId());
-        configModel = realm.addAuthenticatorConfig(configModel);
-        execution.setAuthenticatorConfig(configModel.getId());
         realm.addAuthenticatorExecution(execution);
     }
 
@@ -169,7 +148,7 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
             loginPage.open();
             loginPage.login("test-user@localhost", "password");
             events.expectLogin().assertEvent();
-            assertSessionCount(1);
+            testingClient.server(realmName).run(assertSessionCount(realmName, username, 1));
         } finally {
             setAuthenticatorConfigItem(DefaultAuthenticationFlows.BROWSER_FLOW, UserSessionLimitsAuthenticatorFactory.BEHAVIOR, UserSessionLimitsAuthenticatorFactory.DENY_NEW_SESSION);
         }
@@ -215,7 +194,7 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
             loginPage.open();
             loginPage.login("test-user@localhost", "password");
             events.expectLogin().assertEvent();
-            assertSessionCount(1);
+            testingClient.server(realmName).run(assertSessionCount(realmName, username, 1));
         } finally {
             setAuthenticatorConfigItem(DefaultAuthenticationFlows.BROWSER_FLOW, UserSessionLimitsAuthenticatorFactory.BEHAVIOR, UserSessionLimitsAuthenticatorFactory.DENY_NEW_SESSION);
             setAuthenticatorConfigItem(DefaultAuthenticationFlows.BROWSER_FLOW, UserSessionLimitsAuthenticatorFactory.USER_REALM_LIMIT, "0");
@@ -243,7 +222,7 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
 
             response = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
             assertEquals(200, response.getStatusCode());
-            assertSessionCount(1);
+            testingClient.server(realmName).run(assertSessionCount(realmName, username, 1));
         } finally {
             setAuthenticatorConfigItem(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, UserSessionLimitsAuthenticatorFactory.BEHAVIOR, UserSessionLimitsAuthenticatorFactory.DENY_NEW_SESSION);
         }
@@ -278,7 +257,7 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
 
             response = oauth.doGrantAccessTokenRequest("password", "test-user@localhost", "password");
             assertEquals(200, response.getStatusCode());
-            assertSessionCount(1);
+            testingClient.server(realmName).run(assertSessionCount(realmName, username, 1));
         } finally {
             setAuthenticatorConfigItem(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, UserSessionLimitsAuthenticatorFactory.BEHAVIOR, UserSessionLimitsAuthenticatorFactory.DENY_NEW_SESSION);
             setAuthenticatorConfigItem(DefaultAuthenticationFlows.DIRECT_GRANT_FLOW, UserSessionLimitsAuthenticatorFactory.USER_REALM_LIMIT, "0");
@@ -365,7 +344,7 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
             updatePasswordPage.assertCurrent();
             updatePasswordPage.changePassword("resetPassword", "resetPassword");
 
-            assertSessionCount(1);
+            testingClient.server(realmName).run(assertSessionCount(realmName, username, 1));
         } finally {
             ApiUtil.resetUserPassword(testRealm().users().get(findUser("test-user@localhost").getId()), "password", false);
             setAuthenticatorConfigItem(DefaultAuthenticationFlows.RESET_CREDENTIALS_FLOW, UserSessionLimitsAuthenticatorFactory.BEHAVIOR, UserSessionLimitsAuthenticatorFactory.DENY_NEW_SESSION);
@@ -452,7 +431,7 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
             updatePasswordPage.assertCurrent();
             updatePasswordPage.changePassword("resetPassword", "resetPassword");
 
-            assertSessionCount(1);
+            testingClient.server(realmName).run(assertSessionCount(realmName, username, 1));
         } finally {
             ApiUtil.resetUserPassword(testRealm().users().get(findUser("test-user@localhost").getId()), "password", false);
 
@@ -468,14 +447,7 @@ public class UserSessionLimitsTest extends AbstractTestRealmKeycloakTest {
             AuthenticationFlowModel flow = realm.getFlowByAlias(alias);
             AuthenticatorConfigModel configModel = realm.getAuthenticatorConfigByAlias("user-session-limits-" + flow.getId());
             configModel.getConfig().put(key, value);
-        });
-    }
-
-    private void assertSessionCount(int count) {
-        testingClient.server().run(session -> {
-            RealmModel realm = session.realms().getRealmByName("test");
-            UserModel user = session.users().getUserByUsername(realm, "test-user@localhost");
-            assertEquals(count, session.sessions().getUserSessionsStream(realm, user).count());
+            realm.updateAuthenticatorConfig(configModel);
         });
     }
 }

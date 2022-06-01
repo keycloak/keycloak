@@ -457,7 +457,8 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
     @Override
     public boolean hasDirectScope(RoleModel role) {
         final String id = role == null ? null : role.getId();
-        if (id != null && this.entity.getScopeMappings().contains(id)) {
+        final Collection<String> scopeMappings = this.entity.getScopeMappings();
+        if (id != null && scopeMappings != null && scopeMappings.contains(id)) {
             return true;
         }
 

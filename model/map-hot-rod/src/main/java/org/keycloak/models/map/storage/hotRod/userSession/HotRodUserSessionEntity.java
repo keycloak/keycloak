@@ -35,10 +35,11 @@ import java.util.Set;
 @ProtoDoc("@Indexed")
 public class HotRodUserSessionEntity extends AbstractHotRodEntity {
 
-    @ProtoField(number = 1, required = true)
-    public int entityVersion = 1;
+    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
+    @ProtoField(number = 1)
+    public Integer entityVersion = 1;
 
-    @ProtoField(number = 2, required = true)
+    @ProtoField(number = 2)
     public String id;
 
     @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
@@ -70,12 +71,13 @@ public class HotRodUserSessionEntity extends AbstractHotRodEntity {
     public Boolean rememberMe;
 
     @ProtoField(number = 11)
-    public Long started;
+    public Long timestamp;
 
     @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
     @ProtoField(number = 12)
     public Long lastSessionRefresh;
 
+    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
     @ProtoField(number = 13)
     public Long expiration;
 

@@ -19,6 +19,7 @@ package org.keycloak.testsuite.admin.realm;
 
 import org.apache.commons.io.IOUtils;
 import org.hamcrest.Matchers;
+import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -685,6 +686,7 @@ public class RealmTest extends AbstractAdminTest {
 
     @Test
     public void clearRealmCache() {
+        Assume.assumeTrue("Realm cache disabled.", isRealmCacheEnabled());
         RealmRepresentation realmRep = realm.toRepresentation();
         assertTrue(testingClient.testing().cache("realms").contains(realmRep.getId()));
 
@@ -696,6 +698,7 @@ public class RealmTest extends AbstractAdminTest {
 
     @Test
     public void clearUserCache() {
+        Assume.assumeTrue("User cache disabled.", isUserCacheEnabled());
         UserRepresentation user = new UserRepresentation();
         user.setUsername("clearcacheuser");
         Response response = realm.users().create(user);

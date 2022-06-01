@@ -118,20 +118,19 @@ public class DefaultHotRodConnectionProviderFactory implements HotRodConnectionP
 
         registerSchemata(ProtoSchemaInitializer.INSTANCE);
 
+
+        String reindexCaches = config.get("reindexCaches", null);
         RemoteCacheManagerAdmin administration = remoteCacheManager.administration();
-        if (config.getBoolean("reindexAllCaches", false)) {
+        if (reindexCaches != null && reindexCaches.equals("all")) {
             LOG.infof("Reindexing all caches. This can take a long time to complete. While the rebuild operation is in progress, queries might return fewer results.");
             remoteCaches.forEach(administration::reindexCache);
-        } else {
-            String reindexCaches = config.get("reindexCaches", "");
-            if (reindexCaches != null) {
-                Arrays.stream(reindexCaches.split(","))
-                    .map(String::trim)
-                        .filter(e -> !e.isEmpty())
-                        .filter(remoteCaches::contains)
-                        .peek(cacheName -> LOG.infof("Reindexing %s cache. This can take a long time to complete. While the rebuild operation is in progress, queries might return fewer results.", cacheName))
-                        .forEach(administration::reindexCache);
-            }
+        } else if (reindexCaches != null && !reindexCaches.isEmpty()){
+            Arrays.stream(reindexCaches.split(","))
+                .map(String::trim)
+                    .filter(e -> !e.isEmpty())
+                    .filter(remoteCaches::contains)
+                    .peek(cacheName -> LOG.infof("Reindexing %s cache. This can take a long time to complete. While the rebuild operation is in progress, queries might return fewer results.", cacheName))
+                    .forEach(administration::reindexCache);
         }
     }
 

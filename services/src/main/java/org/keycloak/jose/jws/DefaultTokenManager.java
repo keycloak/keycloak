@@ -297,6 +297,7 @@ public class DefaultTokenManager implements TokenManager {
         if (category == null) return null;
         switch (category) {
             case ID:
+                return getEncryptAlgorithm(OIDCConfigAttributes.ID_TOKEN_ENCRYPTED_RESPONSE_ENC, JWEConstants.A128CBC_HS256);
             case LOGOUT:
                 return getEncryptAlgorithm(OIDCConfigAttributes.ID_TOKEN_ENCRYPTED_RESPONSE_ENC);
             case AUTHORIZATION_RESPONSE:

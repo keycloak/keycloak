@@ -178,7 +178,7 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
         directPublic.setEnabled(true);
         directPublic.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         directPublic.setFullScopeAllowed(false);
-        directPublic.addRedirectUri("https://localhost:8543/auth/realms/master/app/auth");
+        directPublic.addRedirectUri("*");
         directPublic.addProtocolMapper(AudienceProtocolMapper.createClaimMapper("client-exchanger-audience", clientExchanger.getClientId(), null, true, false));
 
         ClientModel directUntrustedPublic = realm.addClient("direct-public-untrusted");
@@ -188,7 +188,7 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
         directUntrustedPublic.setEnabled(true);
         directUntrustedPublic.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         directUntrustedPublic.setFullScopeAllowed(false);
-        directUntrustedPublic.addRedirectUri("https://localhost:8543/auth/realms/master/app/auth");
+        directUntrustedPublic.addRedirectUri("*");
         directUntrustedPublic.addProtocolMapper(AudienceProtocolMapper.createClaimMapper("client-exchanger-audience", clientExchanger.getClientId(), null, true, false));
 
         ClientModel directNoSecret = realm.addClient("direct-no-secret");

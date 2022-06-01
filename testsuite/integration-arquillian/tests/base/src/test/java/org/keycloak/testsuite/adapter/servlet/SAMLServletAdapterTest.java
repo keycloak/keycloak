@@ -173,7 +173,6 @@ import org.xml.sax.SAXException;
  */
 @AppServerContainer(ContainerConstants.APP_SERVER_UNDERTOW)
 @AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY)
-@AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY_DEPRECATED)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP6)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP71)
@@ -939,7 +938,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
     @Test
     // https://issues.jboss.org/browse/KEYCLOAK-3971
     public void salesPostSigTestUnicodeCharacters() {
-        final String username = "ěščřžýáíRoàåéèíñòøöùüßÅÄÖÜ";
+        final String username = "ěščřžýáíroàåéèíñòøöùüßåäöü";
         UserRepresentation user = UserBuilder
           .edit(createUserRepresentation(username, "xyz@redhat.com", "ěščřžýáí", "RoàåéèíñòøöùüßÅÄÖÜ", true))
           .addPassword(PASSWORD)
@@ -965,7 +964,7 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
     @Test
     // https://issues.jboss.org/browse/KEYCLOAK-3971
     public void employeeSigTestUnicodeCharacters() {
-        final String username = "ěščřžýáíRoàåéèíñòøöùüßÅÄÖÜ";
+        final String username = "ěščřžýáíroàåéèíñòøöùüßåäöü";
         UserRepresentation user = UserBuilder
           .edit(createUserRepresentation(username, "xyz@redhat.com", "ěščřžýáí", "RoàåéèíñòøöùüßÅÄÖÜ", true))
           .addPassword(PASSWORD)

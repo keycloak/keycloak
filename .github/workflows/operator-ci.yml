@@ -59,7 +59,7 @@ jobs:
           java-version: ${{ env.JDK_VERSION }}
           cache: 'maven'
       - name: Setup Minikube-Kubernetes
-        uses: manusa/actions-setup-minikube@v2.4.3
+        uses: manusa/actions-setup-minikube@v2.6.0
         with:
           minikube version: ${{ env.MINIKUBE_VERSION }}
           kubernetes version: ${{ env.KUBERNETES_VERSION }}
@@ -76,12 +76,11 @@ jobs:
         run: |
           eval $(minikube -p minikube docker-env)
           (cd quarkus/container && docker build --build-arg KEYCLOAK_DIST=$(ls keycloak-*.tar.gz) . -t keycloak:${{ steps.vars.outputs.version }})
-          (cd operator && ./scripts/build-testing-docker-images.sh ${{ steps.vars.outputs.version }} keycloak custom-keycloak)
+          (cd operator/app && ./scripts/build-testing-docker-images.sh ${{ steps.vars.outputs.version }} keycloak custom-keycloak)
 
       - name: Test operator running locally
-        working-directory: operator
         run: |
-          mvn clean verify \
+          mvn clean verify -Poperator -pl :keycloak-operator -am \
               -Dquarkus.kubernetes.deployment-target=kubernetes \
               -Doperator.keycloak.image=keycloak:${{ steps.vars.outputs.version }} \
               -Dtest.operator.custom.image=custom-keycloak:${{ steps.vars.outputs.version }} \
@@ -105,7 +104,7 @@ jobs:
           java-version: ${{ env.JDK_VERSION }}
           cache: 'maven'
       - name: Setup Minikube-Kubernetes
-        uses: manusa/actions-setup-minikube@v2.4.3
+        uses: manusa/actions-setup-minikube@v2.6.0
         with:
           minikube version: ${{ env.MINIKUBE_VERSION }}
           kubernetes version: ${{ env.KUBERNETES_VERSION }}
@@ -122,13 +121,12 @@ jobs:
         run: |
           eval $(minikube -p minikube docker-env)
           (cd quarkus/container && docker build --build-arg KEYCLOAK_DIST=$(ls keycloak-*.tar.gz) . -t keycloak:${{ steps.vars.outputs.version }})
-          (cd operator && ./scripts/build-testing-docker-images.sh ${{ steps.vars.outputs.version }} keycloak custom-keycloak)
+          (cd operator/app && ./scripts/build-testing-docker-images.sh ${{ steps.vars.outputs.version }} keycloak custom-keycloak)
 
       - name: Test operator running in cluster
-        working-directory: operator
         run: |
           eval $(minikube -p minikube docker-env)
-          mvn clean verify \
+          mvn clean verify -Poperator -pl :keycloak-operator -am \
               -Dquarkus.container-image.build=true \
               -Dquarkus.kubernetes.deployment-target=kubernetes \
               -Doperator.keycloak.image=keycloak:${{ steps.vars.outputs.version }} \
@@ -151,7 +149,7 @@ jobs:
           java-version: ${{ env.JDK_VERSION }}
           cache: 'maven'
       - name: Setup Minikube-Kubernetes
-        uses: manusa/actions-setup-minikube@v2.4.3
+        uses: manusa/actions-setup-minikube@v2.6.0
         with:
           minikube version: ${{ env.MINIKUBE_VERSION }}
           kubernetes version: ${{ env.KUBERNETES_VERSION }}
@@ -165,7 +163,7 @@ jobs:
       - name: Install Yq
         run: sudo snap install yq
       - name: Install OLM
-        working-directory: operator
+        working-directory: operator/app
         run: ./scripts/install-olm.sh
       - name: Download keycloak distribution
         id: download-keycloak-dist
@@ -174,13 +172,13 @@ jobs:
           name: keycloak-distribution
           path: quarkus/container
       - name: Arrange OLM test installation
-        working-directory: operator
+        working-directory: operator/app
         run: |
           eval $(minikube -p minikube docker-env)
           ./scripts/olm-testing.sh ${GITHUB_SHA::6}
 
       - name: Deploy an example Keycloak and wait for it to be ready
-        working-directory: operator
+        working-directory: operator/app
         run: |
           kubectl apply -f src/main/resources/example-postgres.yaml
           ./scripts/check-crds-installed.sh

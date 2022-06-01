@@ -47,6 +47,11 @@ import org.hibernate.jpa.boot.spi.IntegratorProvider;
 import org.hibernate.service.spi.SessionFactoryServiceRegistry;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.authorization.model.PermissionTicket;
+import org.keycloak.authorization.model.Policy;
+import org.keycloak.authorization.model.Resource;
+import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.authorization.model.Scope;
 import org.keycloak.common.Profile;
 import org.keycloak.common.util.StackUtil;
 import org.keycloak.common.util.StringPropertyReplacer;
@@ -89,6 +94,16 @@ import org.keycloak.models.map.storage.MapStorageProviderFactory;
 import org.keycloak.models.map.storage.jpa.authSession.JpaRootAuthenticationSessionMapKeycloakTransaction;
 import org.keycloak.models.map.storage.jpa.authSession.entity.JpaAuthenticationSessionEntity;
 import org.keycloak.models.map.storage.jpa.authSession.entity.JpaRootAuthenticationSessionEntity;
+import org.keycloak.models.map.storage.jpa.authorization.permission.JpaPermissionMapKeycloakTransaction;
+import org.keycloak.models.map.storage.jpa.authorization.permission.entity.JpaPermissionEntity;
+import org.keycloak.models.map.storage.jpa.authorization.policy.JpaPolicyMapKeycloakTransaction;
+import org.keycloak.models.map.storage.jpa.authorization.policy.entity.JpaPolicyEntity;
+import org.keycloak.models.map.storage.jpa.authorization.resource.JpaResourceMapKeycloakTransaction;
+import org.keycloak.models.map.storage.jpa.authorization.resource.entity.JpaResourceEntity;
+import org.keycloak.models.map.storage.jpa.authorization.resourceServer.JpaResourceServerMapKeycloakTransaction;
+import org.keycloak.models.map.storage.jpa.authorization.resourceServer.entity.JpaResourceServerEntity;
+import org.keycloak.models.map.storage.jpa.authorization.scope.JpaScopeMapKeycloakTransaction;
+import org.keycloak.models.map.storage.jpa.authorization.scope.entity.JpaScopeEntity;
 import org.keycloak.models.map.storage.jpa.client.JpaClientMapKeycloakTransaction;
 import org.keycloak.models.map.storage.jpa.client.entity.JpaClientEntity;
 import org.keycloak.models.map.storage.jpa.clientscope.JpaClientScopeMapKeycloakTransaction;
@@ -115,7 +130,7 @@ public class JpaMapStorageProviderFactory implements
         MapStorageProviderFactory,
         EnvironmentDependentProviderFactory {
 
-    public static final String PROVIDER_ID = "jpa-map-storage";
+    public static final String PROVIDER_ID = "jpa";
     private static final String SESSION_TX_PREFIX = "jpa-map-tx-";
     private static final AtomicInteger ENUMERATOR = new AtomicInteger(0);
     private static final Logger logger = Logger.getLogger(JpaMapStorageProviderFactory.class);
@@ -132,6 +147,12 @@ public class JpaMapStorageProviderFactory implements
         //auth-session
         .constructor(JpaRootAuthenticationSessionEntity.class,  JpaRootAuthenticationSessionEntity::new)
         .constructor(JpaAuthenticationSessionEntity.class,      JpaAuthenticationSessionEntity::new)
+        //authz
+        .constructor(JpaResourceServerEntity.class,             JpaResourceServerEntity::new)
+        .constructor(JpaResourceEntity.class,                   JpaResourceEntity::new)
+        .constructor(JpaScopeEntity.class,                      JpaScopeEntity::new)
+        .constructor(JpaPermissionEntity.class,                 JpaPermissionEntity::new)
+        .constructor(JpaPolicyEntity.class,                     JpaPolicyEntity::new)
         //client
         .constructor(JpaClientEntity.class,                     JpaClientEntity::new)
         .constructor(MapProtocolMapperEntity.class,             MapProtocolMapperEntityImpl::new)
@@ -167,6 +188,13 @@ public class JpaMapStorageProviderFactory implements
         MODEL_TO_TX.put(RealmModel.class,                       JpaRealmMapKeycloakTransaction::new);
         MODEL_TO_TX.put(RoleModel.class,                        JpaRoleMapKeycloakTransaction::new);
         MODEL_TO_TX.put(UserLoginFailureModel.class,            JpaUserLoginFailureMapKeycloakTransaction::new);
+
+        //authz
+        MODEL_TO_TX.put(ResourceServer.class,                   JpaResourceServerMapKeycloakTransaction::new);
+        MODEL_TO_TX.put(Resource.class,                         JpaResourceMapKeycloakTransaction::new);
+        MODEL_TO_TX.put(Scope.class,                            JpaScopeMapKeycloakTransaction::new);
+        MODEL_TO_TX.put(PermissionTicket.class,                 JpaPermissionMapKeycloakTransaction::new);
+        MODEL_TO_TX.put(Policy.class,                           JpaPolicyMapKeycloakTransaction::new);
     }
 
     public JpaMapStorageProviderFactory() {
@@ -311,6 +339,20 @@ public class JpaMapStorageProviderFactory implements
     }
 
     public void validateAndUpdateSchema(KeycloakSession session, Class<?> modelType) {
+        /*
+        For authz - there is validation run 5 times. For each authz model class separately.
+        There is single changlelog "jpa-authz-changelog.xml" used.
+        Possible optimization would be to cache: Set<String> validatedModelNames instead of classes. Something like:
+
+        String modelName = ModelEntityUtil.getModelName(modelType);
+        if (modelName == null) {
+            throw new IllegalStateException("Cannot find changlelog for modelClass " + modelType.getName());
+        }
+
+        modelName = modelName.startsWith("authz-") ? "authz" : modelName;
+
+        if (this.validatedModelNames.add(modelName)) {
+        */
         if (this.validatedModels.add(modelType)) {
             Connection connection = getConnection();
             try {

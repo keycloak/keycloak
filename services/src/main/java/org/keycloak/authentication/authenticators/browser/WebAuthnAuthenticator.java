@@ -203,9 +203,8 @@ public class WebAuthnAuthenticator implements Authenticator, CredentialValidator
                 signature
                 );
 
-        AuthenticationParameters authenticationParameters = new AuthenticationParameters(
+        WebAuthnCredentialModelInput.KeycloakWebAuthnAuthenticationParameters authenticationParameters = new WebAuthnCredentialModelInput.KeycloakWebAuthnAuthenticationParameters(
                 server,
-                null, // here authenticator cannot be fetched, set it afterwards in WebAuthnCredentialProvider.isValid()
                 isUVFlagChecked
                 );
 

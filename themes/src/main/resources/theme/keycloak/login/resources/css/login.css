@@ -540,7 +540,8 @@ ul#kc-totp-supported-apps {
 
 #kc-form-login div.form-group:last-of-type,
 #kc-register-form div.form-group:last-of-type,
-#kc-update-profile-form div.form-group:last-of-type {
+#kc-update-profile-form div.form-group:last-of-type,
+#kc-update-email-form div.form-group:last-of-type{
     margin-bottom: 0px;
 }
 

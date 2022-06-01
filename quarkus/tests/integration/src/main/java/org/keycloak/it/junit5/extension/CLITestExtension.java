@@ -54,6 +54,7 @@ public class CLITestExtension extends QuarkusMainTestExtension {
     private static final String KEY_VALUE_SEPARATOR = "[= ]";
     private KeycloakDistribution dist;
     private final Set<String> testSysProps = new HashSet<>();
+    private DatabaseContainer databaseContainer;
 
     @Override
     public void beforeEach(ExtensionContext context) throws Exception {
@@ -81,6 +82,8 @@ public class CLITestExtension extends QuarkusMainTestExtension {
             }
         }
 
+        configureDatabase(context);
+
         if (distConfig != null) {
             onKeepServerAlive(context.getRequiredTestMethod().getAnnotation(KeepServerAlive.class));
 
@@ -96,7 +99,6 @@ public class CLITestExtension extends QuarkusMainTestExtension {
             }
         } else {
             configureProfile(context);
-            configureDatabase(context);
             super.beforeEach(context);
         }
     }
@@ -147,6 +149,10 @@ public class CLITestExtension extends QuarkusMainTestExtension {
         TestConfigArgsConfigSource.setCliArgs(new String[0]);
         for (String property : testSysProps) {
             System.getProperties().remove(property);
+        }
+        if (databaseContainer != null && databaseContainer.isRunning()) {
+            databaseContainer.stop();
+            databaseContainer = null;
         }
     }
 
@@ -237,10 +243,22 @@ public class CLITestExtension extends QuarkusMainTestExtension {
         WithDatabase database = context.getTestClass().orElse(Object.class).getDeclaredAnnotation(WithDatabase.class);
 
         if (database != null) {
-            configureDevServices();
-            setProperty("kc.db", database.alias());
-            // databases like mssql are very strict about password policy
-            setProperty("kc.db-password", "Password1!");
+            if (dist == null) {
+                configureDevServices();
+                setProperty("kc.db", database.alias());
+                setProperty("kc.db-password", DatabaseContainer.DEFAULT_PASSWORD);
+            } else {
+                databaseContainer = new DatabaseContainer(database.alias());
+
+                databaseContainer.start();
+
+                dist.setProperty("db", database.alias());
+                dist.setProperty("db-username", databaseContainer.getUsername());
+                dist.setProperty("db-password", databaseContainer.getPassword());
+                dist.setProperty("db-url", databaseContainer.getJdbcUrl());
+
+                dist.start(List.of("build"));
+            }
         } else {
             // This is for re-creating the H2 database instead of using the default in home
             setProperty("kc.db-url-path", new QuarkusPlatform().getTmpDirectory().getAbsolutePath());

@@ -48,6 +48,7 @@ import org.keycloak.testsuite.pages.LoginPasswordResetPage;
 import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
 import org.keycloak.testsuite.pages.LoginUsernameOnlyPage;
+import org.keycloak.testsuite.pages.LogoutConfirmPage;
 import org.keycloak.testsuite.pages.PasswordPage;
 import org.keycloak.testsuite.pages.RegisterPage;
 import org.keycloak.testsuite.util.FlowUtil;
@@ -109,6 +110,9 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractTestRealmKeycl
 
     @Page
     protected LoginTotpPage loginTotpPage;
+
+    @Page
+    protected LogoutConfirmPage logoutConfirmPage;
 
     @Page
     protected ErrorPage errorPage;
@@ -452,7 +456,9 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractTestRealmKeycl
             accountTotpPage.removeTotp();
 
             // Logout
-            oauth.openLogout();
+            driver.navigate().to(oauth.getLogoutUrl().build());
+            logoutConfirmPage.assertCurrent();
+            logoutConfirmPage.confirmLogout();
 
             /* Verify the 'Device Name' is optional when creating the first OTP credential via the login config TOTP page */
 
@@ -490,7 +496,9 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractTestRealmKeycl
                     .map(WebElement::getText).collect(Collectors.toList()), Matchers.hasItem(""));;
 
             // Logout
-            oauth.openLogout();
+            driver.navigate().to(oauth.getLogoutUrl().build());
+            logoutConfirmPage.assertCurrent();
+            logoutConfirmPage.confirmLogout();
 
             /* Verify the 'Device Name' is required for each next OTP credential created via the login config TOTP page */
 
@@ -544,7 +552,9 @@ public class ResetCredentialsAlternativeFlowsTest extends AbstractTestRealmKeycl
             accountTotpPage.removeTotp();
 
             // Logout
-            oauth.openLogout();
+            driver.navigate().to(oauth.getLogoutUrl().build());
+            logoutConfirmPage.assertCurrent();
+            logoutConfirmPage.confirmLogout();
 
         // Undo setup changes performed within the test
         } finally {

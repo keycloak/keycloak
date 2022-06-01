@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -91,7 +91,7 @@ class IdentityProviderPermissions implements  IdentityProviderPermissionManageme
     private void deletePolicy(String name, ResourceServer server) {
         Policy policy = authz.getStoreFactory().getPolicyStore().findByName(server, name);
         if (policy != null) {
-            authz.getStoreFactory().getPolicyStore().delete(policy.getId());
+            authz.getStoreFactory().getPolicyStore().delete(server.getRealm(), policy.getId());
         }
 
     }
@@ -101,7 +101,7 @@ class IdentityProviderPermissions implements  IdentityProviderPermissionManageme
         if (server == null) return;
         deletePolicy(getExchangeToPermissionName(idp), server);
         Resource resource = authz.getStoreFactory().getResourceStore().findByName(server, getResourceName(idp));;
-        if (resource != null) authz.getStoreFactory().getResourceStore().delete(resource.getId());
+        if (resource != null) authz.getStoreFactory().getResourceStore().delete(server.getRealm(), resource.getId());
     }
 
     @Override

@@ -1,13 +1,12 @@
 /*
- * JBoss, Home of Professional Open Source.
- * Copyright 2016 Red Hat, Inc., and individual contributors
- * as indicated by the @author tags.
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -137,7 +136,6 @@ public final class AuthorizationProvider implements Provider {
      * Returns a {@link PolicyProviderFactory} given a <code>type</code>.
      *
      * @param type the type of the policy provider
-     * @param <F> the expected type of the provider
      * @return a {@link PolicyProviderFactory} with the given <code>type</code>
      */
     public PolicyProviderFactory getProviderFactory(String type) {
@@ -252,21 +250,21 @@ public final class AuthorizationProvider implements Provider {
             }
 
             @Override
-            public void delete(String id) {
-                Scope scope = findById(null, id);
+            public void delete(RealmModel realm, String id) {
+                Scope scope = findById(realm, null, id);
                 PermissionTicketStore ticketStore = AuthorizationProvider.this.getStoreFactory().getPermissionTicketStore();
                 List<PermissionTicket> permissions = ticketStore.findByScope(scope.getResourceServer(), scope);
 
                 for (PermissionTicket permission : permissions) {
-                    ticketStore.delete(permission.getId());
+                    ticketStore.delete(realm, permission.getId());
                 }
 
-                delegate.delete(id);
+                delegate.delete(realm, id);
             }
 
             @Override
-            public Scope findById(ResourceServer resourceServer, String id) {
-                return delegate.findById(resourceServer, id);
+            public Scope findById(RealmModel realm, ResourceServer resourceServer, String id) {
+                return delegate.findById(realm, resourceServer, id);
             }
 
             @Override
@@ -294,10 +292,11 @@ public final class AuthorizationProvider implements Provider {
             @Override
             public Policy create(ResourceServer resourceServer, AbstractPolicyRepresentation representation) {
                 Set<String> resources = representation.getResources();
+                RealmModel realm = resourceServer.getRealm();
 
                 if (resources != null) {
                     representation.setResources(resources.stream().map(id -> {
-                        Resource resource = storeFactory.getResourceStore().findById(resourceServer, id);
+                        Resource resource = storeFactory.getResourceStore().findById(realm, resourceServer, id);
 
                         if (resource == null) {
                             resource = storeFactory.getResourceStore().findByName(resourceServer, id);
@@ -315,7 +314,7 @@ public final class AuthorizationProvider implements Provider {
 
                 if (scopes != null) {
                     representation.setScopes(scopes.stream().map(id -> {
-                        Scope scope = storeFactory.getScopeStore().findById(resourceServer, id);
+                        Scope scope = storeFactory.getScopeStore().findById(realm, resourceServer, id);
 
                         if (scope == null) {
                             scope = storeFactory.getScopeStore().findByName(resourceServer, id);
@@ -334,7 +333,7 @@ public final class AuthorizationProvider implements Provider {
 
                 if (policies != null) {
                     representation.setPolicies(policies.stream().map(id -> {
-                        Policy policy = storeFactory.getPolicyStore().findById(resourceServer, id);
+                        Policy policy = storeFactory.getPolicyStore().findById(realm, resourceServer, id);
 
                         if (policy == null) {
                             policy = storeFactory.getPolicyStore().findByName(resourceServer, id);
@@ -352,8 +351,8 @@ public final class AuthorizationProvider implements Provider {
             }
 
             @Override
-            public void delete(String id) {
-                Policy policy = findById(null, id);
+            public void delete(RealmModel realm, String id) {
+                Policy policy = findById(realm, null, id);
 
                 if (policy != null) {
                     ResourceServer resourceServer = policy.getResourceServer();
@@ -364,7 +363,7 @@ public final class AuthorizationProvider implements Provider {
                             // only remove associated policies created from the policy being deleted
                             if (associatedPolicy.getOwner() != null) {
                                 policy.removeAssociatedPolicy(associatedPolicy);
-                                policyStore.delete(associatedPolicy.getId());
+                                policyStore.delete(realm, associatedPolicy.getId());
                             }
                         }
                     }
@@ -372,17 +371,17 @@ public final class AuthorizationProvider implements Provider {
                     findDependentPolicies(resourceServer, policy.getId()).forEach(dependentPolicy -> {
                         dependentPolicy.removeAssociatedPolicy(policy);
                         if (dependentPolicy.getAssociatedPolicies().isEmpty()) {
-                            delete(dependentPolicy.getId());
+                            delete(realm, dependentPolicy.getId());
                         }
                     });
 
-                    policyStore.delete(id);
+                    policyStore.delete(realm, id);
                 }
             }
 
             @Override
-            public Policy findById(ResourceServer resourceServer, String id) {
-                return policyStore.findById(resourceServer, id);
+            public Policy findById(RealmModel realm, ResourceServer resourceServer, String id) {
+                return policyStore.findById(realm, resourceServer, id);
             }
 
             @Override
@@ -396,8 +395,8 @@ public final class AuthorizationProvider implements Provider {
             }
 
             @Override
-            public List<Policy> findByResourceServer(ResourceServer resourceServer, Map<Policy.FilterOption, String[]> attributes, Integer firstResult, Integer maxResults) {
-                return policyStore.findByResourceServer(resourceServer, attributes, firstResult, maxResults);
+            public List<Policy> find(RealmModel realm, ResourceServer resourceServer, Map<Policy.FilterOption, String[]> attributes, Integer firstResult, Integer maxResults) {
+                return policyStore.find(realm, resourceServer, attributes, firstResult, maxResults);
             }
 
             @Override
@@ -462,14 +461,14 @@ public final class AuthorizationProvider implements Provider {
             }
 
             @Override
-            public void delete(String id) {
-                Resource resource = findById(null, id);
+            public void delete(RealmModel realm, String id) {
+                Resource resource = findById(realm, null, id);
                 StoreFactory storeFactory = AuthorizationProvider.this.getStoreFactory();
                 PermissionTicketStore ticketStore = storeFactory.getPermissionTicketStore();
                 List<PermissionTicket> permissions = ticketStore.findByResource(resource.getResourceServer(), resource);
 
                 for (PermissionTicket permission : permissions) {
-                    ticketStore.delete(permission.getId());
+                    ticketStore.delete(realm, permission.getId());
                 }
 
                 PolicyStore policyStore = storeFactory.getPolicyStore();
@@ -477,38 +476,28 @@ public final class AuthorizationProvider implements Provider {
 
                 for (Policy policyModel : policies) {
                     if (policyModel.getResources().size() == 1) {
-                        policyStore.delete(policyModel.getId());
+                        policyStore.delete(realm, policyModel.getId());
                     } else {
                         policyModel.removeResource(resource);
                     }
                 }
 
-                delegate.delete(id);
+                delegate.delete(realm, id);
             }
 
             @Override
-            public Resource findById(ResourceServer resourceServer, String id) {
-                return delegate.findById(resourceServer, id);
+            public Resource findById(RealmModel realm, ResourceServer resourceServer, String id) {
+                return delegate.findById(realm, resourceServer, id);
             }
 
             @Override
-            public List<Resource> findByOwner(ResourceServer resourceServer, String ownerId) {
-                return delegate.findByOwner(resourceServer, ownerId);
+            public List<Resource> findByOwner(RealmModel realm, ResourceServer resourceServer, String ownerId) {
+                return delegate.findByOwner(realm, resourceServer, ownerId);
             }
 
             @Override
-            public void findByOwner(ResourceServer resourceServer, String ownerId, Consumer<Resource> consumer) {
-                delegate.findByOwner(resourceServer, ownerId, consumer);
-            }
-
-            @Override
-            public List<Resource> findByOwner(ResourceServer resourceServer, String ownerId, Integer firstResult, Integer maxResults) {
-                return delegate.findByOwner(resourceServer, ownerId, firstResult, maxResults);
-            }
-
-            @Override
-            public List<Resource> findByUri(ResourceServer resourceServer, String uri) {
-                return delegate.findByUri(resourceServer, uri);
+            public void findByOwner(RealmModel realm, ResourceServer resourceServer, String ownerId, Consumer<Resource> consumer) {
+                delegate.findByOwner(realm, resourceServer, ownerId, consumer);
             }
 
             @Override
@@ -517,8 +506,8 @@ public final class AuthorizationProvider implements Provider {
             }
 
             @Override
-            public List<Resource> findByResourceServer(ResourceServer resourceServer, Map<Resource.FilterOption, String[]> attributes, Integer firstResult, Integer maxResults) {
-                return delegate.findByResourceServer(resourceServer, attributes, firstResult, maxResults);
+            public List<Resource> find(RealmModel realm, ResourceServer resourceServer, Map<Resource.FilterOption, String[]> attributes, Integer firstResult, Integer maxResults) {
+                return delegate.find(realm, resourceServer, attributes, firstResult, maxResults);
             }
 
             @Override
@@ -549,16 +538,6 @@ public final class AuthorizationProvider implements Provider {
             @Override
             public void findByType(ResourceServer resourceServer, String type, String owner, Consumer<Resource> consumer) {
                 delegate.findByType(resourceServer, type, owner, consumer);
-            }
-
-            @Override
-            public List<Resource> findByType(ResourceServer resourceServer, String type, String owner) {
-                return delegate.findByType(resourceServer, type);
-            }
-
-            @Override
-            public List<Resource> findByTypeInstance(ResourceServer resourceServer, String type) {
-                return delegate.findByTypeInstance(resourceServer, type);
             }
 
             @Override

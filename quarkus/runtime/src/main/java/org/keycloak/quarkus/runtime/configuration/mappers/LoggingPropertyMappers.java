@@ -9,6 +9,7 @@ import java.util.function.BiFunction;
 import java.util.logging.Level;
 
 import org.jboss.logmanager.LogContext;
+import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.Messages;
 
 import io.smallrye.config.ConfigSourceInterceptorContext;
@@ -175,7 +176,7 @@ public final class LoggingPropertyMappers {
         LogContext.getLogContext().getLogger(category).setLevel(toLevel(level));
     }
 
-    private static PropertyMapper.Builder builder() {
-        return PropertyMapper.builder(ConfigCategory.LOGGING);
+    private static <T> PropertyMapper.Builder<T> builder() {
+        return PropertyMapper.builder(OptionCategory.LOGGING);
     }
 }

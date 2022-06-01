@@ -1,5 +1,7 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
+import org.keycloak.config.OptionCategory;
+
 import java.util.Arrays;
 
 
@@ -21,6 +23,6 @@ final class HealthPropertyMappers {
     }
 
     private static PropertyMapper.Builder builder() {
-        return PropertyMapper.builder(ConfigCategory.HEALTH);
+        return PropertyMapper.builder(OptionCategory.HEALTH);
     }
 }

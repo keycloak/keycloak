@@ -238,7 +238,7 @@ public interface MapRealmEntity extends UpdatableEntity, AbstractEntity, EntityW
 
         private boolean checkIfExpired(MapClientInitialAccessEntity cia) {
             return cia.getRemainingCount() < 1 ||
-                    (cia.getExpiration() > 0 && (cia.getTimestamp() + cia.getExpiration()) < Time.currentTime());
+                    (cia.getExpiration() != null && cia.getExpiration() < Time.currentTimeMillis());
         }
     }
 

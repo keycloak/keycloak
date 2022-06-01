@@ -477,16 +477,16 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         ClusterProvider cluster = session.getProvider(ClusterProvider.class);
         cluster.registerListener(REALM_CLEAR_CACHE_EVENTS, (ClusterEvent event) -> {
             if (event instanceof ClearCacheEvent) {
-                sessionFactory.invalidate(ObjectType._ALL_);
+                sessionFactory.invalidate(null, ObjectType._ALL_);
             }
         });
         cluster.registerListener(REALM_INVALIDATION_EVENTS, (ClusterEvent event) -> {
             if (event instanceof RealmUpdatedEvent) {
                 RealmUpdatedEvent rr = (RealmUpdatedEvent) event;
-                sessionFactory.invalidate(ObjectType.REALM, rr.getId());
+                sessionFactory.invalidate(null, ObjectType.REALM, rr.getId());
             } else if (event instanceof RealmRemovedEvent) {
                 RealmRemovedEvent rr = (RealmRemovedEvent) event;
-                sessionFactory.invalidate(ObjectType.REALM, rr.getId());
+                sessionFactory.invalidate(null, ObjectType.REALM, rr.getId());
             }
         });
     }

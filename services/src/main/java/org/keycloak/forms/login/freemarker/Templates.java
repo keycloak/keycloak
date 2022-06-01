@@ -70,6 +70,8 @@ public class Templates {
                 return "webauthn-error.ftl";
             case LOGIN_UPDATE_PROFILE:
                 return "login-update-profile.ftl";
+            case UPDATE_EMAIL:
+                return "update-email.ftl";
             case CODE:
                 return "code.ftl";
             case LOGIN_PAGE_EXPIRED:

@@ -133,13 +133,11 @@ public class DescriptionConverter {
 
         OIDCAdvancedConfigWrapper configWrapper = OIDCAdvancedConfigWrapper.fromClientRepresentation(client);
         if (clientOIDC.getUserinfoSignedResponseAlg() != null) {
-            Algorithm algorithm = Enum.valueOf(Algorithm.class, clientOIDC.getUserinfoSignedResponseAlg());
-            configWrapper.setUserInfoSignedResponseAlg(algorithm);
+            configWrapper.setUserInfoSignedResponseAlg(clientOIDC.getUserinfoSignedResponseAlg());
         }
 
         if (clientOIDC.getRequestObjectSigningAlg() != null) {
-            Algorithm algorithm = Enum.valueOf(Algorithm.class, clientOIDC.getRequestObjectSigningAlg());
-            configWrapper.setRequestObjectSignatureAlg(algorithm);
+            configWrapper.setRequestObjectSignatureAlg(clientOIDC.getRequestObjectSigningAlg());
         }
 
         if (clientOIDC.getUserinfoEncryptedResponseAlg() != null) {
@@ -347,7 +345,7 @@ public class DescriptionConverter {
 
         OIDCAdvancedConfigWrapper config = OIDCAdvancedConfigWrapper.fromClientRepresentation(client);
         if (config.isUserInfoSignatureRequired()) {
-            response.setUserinfoSignedResponseAlg(config.getUserInfoSignedResponseAlg().toString());
+            response.setUserinfoSignedResponseAlg(config.getUserInfoSignedResponseAlg());
         }
         if (config.getUserInfoEncryptedResponseAlg() != null) {
             response.setUserinfoEncryptedResponseAlg(config.getUserInfoEncryptedResponseAlg());
@@ -356,7 +354,7 @@ public class DescriptionConverter {
             response.setUserinfoEncryptedResponseEnc(config.getUserInfoEncryptedResponseEnc());
         }
         if (config.getRequestObjectSignatureAlg() != null) {
-            response.setRequestObjectSigningAlg(config.getRequestObjectSignatureAlg().toString());
+            response.setRequestObjectSigningAlg(config.getRequestObjectSignatureAlg());
         }
         if (config.getRequestObjectEncryptionAlg() != null) {
             response.setRequestObjectEncryptionAlg(config.getRequestObjectEncryptionAlg());

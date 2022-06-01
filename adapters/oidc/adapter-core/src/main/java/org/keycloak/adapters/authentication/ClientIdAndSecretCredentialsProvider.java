@@ -45,7 +45,7 @@ public class ClientIdAndSecretCredentialsProvider implements ClientCredentialsPr
 
     @Override
     public void init(KeycloakDeployment deployment, Object config) {
-        clientSecret = (String) config;
+        clientSecret = (config == null ? null : config.toString());
     }
 
     @Override

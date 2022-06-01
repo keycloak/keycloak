@@ -17,15 +17,15 @@
 
 package org.keycloak.testsuite.pages;
 
+import static org.keycloak.testsuite.util.UIUtils.clickLink;
+import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
+
 import org.jboss.arquillian.graphene.page.Page;
 import org.keycloak.testsuite.util.UIUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.FindBy;
-
-import static org.keycloak.testsuite.util.UIUtils.clickLink;
-import static org.keycloak.testsuite.util.UIUtils.getTextFromElement;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -56,30 +56,16 @@ public class LoginUpdateProfilePage extends AbstractPage {
     @FindBy(className = "alert-error")
     private WebElement loginAlertErrorMessage;
 
-    public void update(String firstName, String lastName, String email) {
-        updateWithDepartment(firstName, lastName, null, email);
+    public void update(String firstName, String lastName) {
+        prepareUpdate().firstName(firstName).lastName(lastName).submit();
     }
-    
-    public void updateWithDepartment(String firstName, String lastName, String department, String email) {
-        if (firstName != null) {
-            firstNameInput.clear();
-            firstNameInput.sendKeys(firstName);
-        }
-        if (lastName != null) {
-            lastNameInput.clear();
-            lastNameInput.sendKeys(lastName);
-        }
-        if (email != null) {
-            emailInput.clear();
-            emailInput.sendKeys(email);
-        }
 
-        if(department != null) {
-            departmentInput.clear();
-            departmentInput.sendKeys(department);
-        }
-        
-        clickLink(submitButton);
+    public void update(String firstName, String lastName, String email) {
+        prepareUpdate().firstName(firstName).lastName(lastName).email(email).submit();
+    }
+
+    public Update prepareUpdate() {
+        return new Update(this);
     }
 
     public void cancel() {
@@ -101,11 +87,11 @@ public class LoginUpdateProfilePage extends AbstractPage {
     public String getLastName() {
         return lastNameInput.getAttribute("value");
     }
-
+    
     public String getEmail() {
         return emailInput.getAttribute("value");
     }
-    
+
     public String getDepartment() {
         return departmentInput.getAttribute("value");
     }
@@ -145,6 +131,61 @@ public class LoginUpdateProfilePage extends AbstractPage {
             return cancelAIAButton.isDisplayed();
         } catch (NoSuchElementException e) {
             return false;
+        }
+    }
+
+    public static class Update {
+        private final LoginUpdateProfilePage page;
+        private String firstName;
+        private String lastName;
+        private String department;
+        private String email;
+
+        protected Update(LoginUpdateProfilePage page) {
+            this.page = page;
+        }
+
+        public Update firstName(String firstName) {
+            this.firstName = firstName;
+            return this;
+        }
+
+        public Update lastName(String lastName) {
+            this.lastName = lastName;
+            return this;
+        }
+
+        public Update department(String department) {
+            this.department = department;
+            return this;
+        }
+
+        public Update email(String email) {
+            this.email = email;
+            return this;
+        }
+
+        public void submit() {
+            if (firstName != null) {
+                page.firstNameInput.clear();
+                page.firstNameInput.sendKeys(firstName);
+            }
+            if (lastName != null) {
+                page.lastNameInput.clear();
+                page.lastNameInput.sendKeys(lastName);
+            }
+
+            if(department != null) {
+                page.departmentInput.clear();
+                page.departmentInput.sendKeys(department);
+            }
+
+            if (email != null) {
+                page.emailInput.clear();
+                page.emailInput.sendKeys(email);
+            }
+
+            clickLink(page.submitButton);
         }
     }
 

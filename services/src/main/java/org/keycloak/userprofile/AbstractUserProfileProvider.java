@@ -25,6 +25,7 @@ import static org.keycloak.userprofile.UserProfileContext.ACCOUNT_OLD;
 import static org.keycloak.userprofile.UserProfileContext.IDP_REVIEW;
 import static org.keycloak.userprofile.UserProfileContext.REGISTRATION_PROFILE;
 import static org.keycloak.userprofile.UserProfileContext.REGISTRATION_USER_CREATION;
+import static org.keycloak.userprofile.UserProfileContext.UPDATE_EMAIL;
 import static org.keycloak.userprofile.UserProfileContext.UPDATE_PROFILE;
 import static org.keycloak.userprofile.UserProfileContext.USER_API;
 
@@ -36,8 +37,8 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
 import org.keycloak.Config;
+import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -57,7 +58,6 @@ import org.keycloak.userprofile.validator.UsernameHasValueValidator;
 import org.keycloak.userprofile.validator.UsernameIDNHomographValidator;
 import org.keycloak.userprofile.validator.UsernameMutationValidator;
 import org.keycloak.validate.ValidatorConfig;
-import org.keycloak.validate.validators.EmailValidator;
 
 /**
  * <p>A base class for {@link UserProfileProvider} implementations providing the main hooks for customizations.
@@ -97,9 +97,19 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
                 return !realm.isRegistrationEmailAsUsername();
             case UPDATE_PROFILE:
                 return realm.isEditUsernameAllowed();
+            case UPDATE_EMAIL:
+                return false;
             default:
                 return true;
         }
+    }
+
+    private static boolean editEmailCondition(AttributeContext c) {
+        return !Profile.isFeatureEnabled(Profile.Feature.UPDATE_EMAIL) || (c.getContext() != UPDATE_PROFILE && c.getContext() != ACCOUNT);
+    }
+
+    private static boolean readEmailCondition(AttributeContext c) {
+        return !Profile.isFeatureEnabled(Profile.Feature.UPDATE_EMAIL) || c.getContext() != UPDATE_PROFILE;
     }
 
     public static Pattern getRegexPatternString(String[] builtinReadOnlyAttributes) {
@@ -177,6 +187,9 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
         addContextualProfileMetadata(configureUserProfile(createDefaultProfile(ACCOUNT_OLD, readOnlyValidator)));
         addContextualProfileMetadata(configureUserProfile(createDefaultProfile(REGISTRATION_PROFILE, readOnlyValidator)));
         addContextualProfileMetadata(configureUserProfile(createDefaultProfile(UPDATE_PROFILE, readOnlyValidator)));
+        if (Profile.isFeatureEnabled(Profile.Feature.UPDATE_EMAIL)) {
+            addContextualProfileMetadata(configureUserProfile(createDefaultProfile(UPDATE_EMAIL, readOnlyValidator)));
+        }
         addContextualProfileMetadata(configureUserProfile(createRegistrationUserCreationProfile()));
         addContextualProfileMetadata(configureUserProfile(createUserResourceValidation(config)));
     }
@@ -304,7 +317,9 @@ public abstract class AbstractUserProfileProvider<U extends UserProfileProvider>
                 new AttributeValidatorMetadata(DuplicateUsernameValidator.ID),
                 new AttributeValidatorMetadata(UsernameMutationValidator.ID)).setAttributeDisplayName("${username}");
 
-        metadata.addAttribute(UserModel.EMAIL, -1, 
+        metadata.addAttribute(UserModel.EMAIL, -1,
+                AbstractUserProfileProvider::editEmailCondition,
+                AbstractUserProfileProvider::readEmailCondition,
                 new AttributeValidatorMetadata(BlankAttributeValidator.ID, BlankAttributeValidator.createConfig(Messages.MISSING_EMAIL, false)),
         		new AttributeValidatorMetadata(DuplicateEmailValidator.ID),
         		new AttributeValidatorMetadata(EmailExistsAsUsernameValidator.ID))

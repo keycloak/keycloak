@@ -434,7 +434,7 @@ public class FAPI1Test extends AbstractClientPoliciesTest {
         OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientRepresentation(client);
         Assert.assertTrue(clientConfig.isUseMtlsHokToken());
         Assert.assertEquals(Algorithm.PS256, clientConfig.getIdTokenSignedResponseAlg());
-        Assert.assertEquals(Algorithm.PS256, clientConfig.getRequestObjectSignatureAlg().toString());
+        Assert.assertEquals(Algorithm.PS256, clientConfig.getRequestObjectSignatureAlg());
         Assert.assertFalse(client.isFullScopeAllowed());
     }
 
@@ -497,7 +497,7 @@ public class FAPI1Test extends AbstractClientPoliciesTest {
         ClientRepresentation client = getClientByAdmin(clientUUID);
         OIDCAdvancedConfigWrapper clientConfig = OIDCAdvancedConfigWrapper.fromClientRepresentation(client);
         Assert.assertEquals(Algorithm.ES256, clientConfig.getIdTokenSignedResponseAlg());
-        Assert.assertEquals(Algorithm.PS256, clientConfig.getRequestObjectSignatureAlg().toString());
+        Assert.assertEquals(Algorithm.PS256, clientConfig.getRequestObjectSignatureAlg());
 
         // Test default algorithms set everywhere
         clientUUID = createClientByAdmin("client-jwt-default-alg", (ClientRepresentation clientRep) -> {
@@ -507,7 +507,7 @@ public class FAPI1Test extends AbstractClientPoliciesTest {
         clientConfig = OIDCAdvancedConfigWrapper.fromClientRepresentation(client);
         Assert.assertEquals(Algorithm.PS256, clientConfig.getIdTokenSignedResponseAlg());
         Assert.assertEquals(Algorithm.PS256, clientConfig.getRequestObjectSignatureAlg().toString());
-        Assert.assertEquals(Algorithm.PS256, clientConfig.getUserInfoSignedResponseAlg().toString());
+        Assert.assertEquals(Algorithm.PS256, clientConfig.getUserInfoSignedResponseAlg());
         Assert.assertEquals(Algorithm.PS256, clientConfig.getTokenEndpointAuthSigningAlg());
         Assert.assertEquals(Algorithm.PS256, client.getAttributes().get(OIDCConfigAttributes.ACCESS_TOKEN_SIGNED_RESPONSE_ALG));
 
@@ -541,14 +541,14 @@ public class FAPI1Test extends AbstractClientPoliciesTest {
         // Create request without 'nbf' . Should fail in FAPI1 advanced client policy
         TestingOIDCEndpointsApplicationResource.AuthorizationEndpointRequestObject requestObject = createValidRequestObjectForSecureRequestObjectExecutor("foo");
         requestObject.nbf(null);
-        registerRequestObject(requestObject, "foo", org.keycloak.jose.jws.Algorithm.PS256, true);
+        registerRequestObject(requestObject, "foo", Algorithm.PS256, true);
         oauth.openLoginForm();
         assertRedirectedToClientWithError(OAuthErrorException.INVALID_REQUEST_URI,false, "Missing parameter in the 'request' object: nbf");
 
         // Create valid request object - more extensive testing of 'request' object is in ClientPoliciesTest.testSecureRequestObjectExecutor()
         requestObject = createValidRequestObjectForSecureRequestObjectExecutor("foo");
         requestObject.setNonce("123456"); // Nonce from method "checkNonceAndStateForCurrentClientDuringLogin()"
-        registerRequestObject(requestObject, "foo", org.keycloak.jose.jws.Algorithm.PS256, true);
+        registerRequestObject(requestObject, "foo", Algorithm.PS256, true);
 
         // Check response type
         oauth.openLoginForm();
@@ -557,14 +557,14 @@ public class FAPI1Test extends AbstractClientPoliciesTest {
         // Add the response_Type including token. Should fail
         oauth.responseType(OIDCResponseType.CODE + " " + OIDCResponseType.ID_TOKEN + " " + OIDCResponseType.TOKEN);
         requestObject.setResponseType(OIDCResponseType.CODE + " " + OIDCResponseType.ID_TOKEN + " " + OIDCResponseType.TOKEN);
-        registerRequestObject(requestObject, "foo", org.keycloak.jose.jws.Algorithm.PS256, true);
+        registerRequestObject(requestObject, "foo", Algorithm.PS256, true);
         oauth.openLoginForm();
         assertRedirectedToClientWithError(OAuthErrorException.INVALID_REQUEST,true, "invalid response_type");
 
         // Set correct response_type for FAPI 1 Advanced
         oauth.responseType(OIDCResponseType.CODE + " " + OIDCResponseType.ID_TOKEN);
         requestObject.setResponseType(OIDCResponseType.CODE + " " + OIDCResponseType.ID_TOKEN);
-        registerRequestObject(requestObject, "foo", org.keycloak.jose.jws.Algorithm.PS256, true);
+        registerRequestObject(requestObject, "foo", Algorithm.PS256, true);
         oauth.openLoginForm();
         loginPage.assertCurrent();
 
@@ -637,7 +637,7 @@ public class FAPI1Test extends AbstractClientPoliciesTest {
         requestObject.setNonce("123456"); // Nonce from method "checkNonceAndStateForCurrentClientDuringLogin()"
         oauth.responseType(OIDCResponseType.CODE + " " + OIDCResponseType.ID_TOKEN);
         requestObject.setResponseType(OIDCResponseType.CODE + " " + OIDCResponseType.ID_TOKEN);
-        registerRequestObject(requestObject, "foo", org.keycloak.jose.jws.Algorithm.PS256, true);
+        registerRequestObject(requestObject, "foo", Algorithm.PS256, true);
         oauth.openLoginForm();
         loginPage.assertCurrent();
 

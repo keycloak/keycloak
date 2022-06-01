@@ -19,6 +19,7 @@ package org.keycloak.models.map.storage.jpa.realm;
 import java.util.function.BiFunction;
 
 import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.JoinType;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 
@@ -54,20 +55,20 @@ public class JpaRealmModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaRea
     public JpaRealmModelCriteriaBuilder compare(SearchableModelField<? super RealmModel> modelField, Operator op, Object... value) {
         switch(op) {
             case EQ:
-                if (modelField.equals(RealmModel.SearchableFields.NAME)) {
+                if (modelField == RealmModel.SearchableFields.NAME) {
                     validateValue(value, modelField, op, String.class);
                     return new JpaRealmModelCriteriaBuilder((cb, root) ->
                             cb.equal(root.get(modelField.getName()), value[0])
                     );
-                } else if (modelField.equals(RealmModel.SearchableFields.COMPONENT_PROVIDER_TYPE)) {
+                } else if (modelField == RealmModel.SearchableFields.COMPONENT_PROVIDER_TYPE) {
                     validateValue(value, modelField, op, String.class);
                     return new JpaRealmModelCriteriaBuilder((cb, root) ->
-                            cb.equal(root.join("components").get("providerType"), value[0]), true);
+                            cb.equal(root.join("components", JoinType.LEFT).get("providerType"), value[0]), true);
                 } else {
                     throw new CriterionNotSupportedException(modelField, op);
                 }
             case EXISTS:
-                if (modelField.equals(RealmModel.SearchableFields.CLIENT_INITIAL_ACCESS)) {
+                if (modelField == RealmModel.SearchableFields.CLIENT_INITIAL_ACCESS) {
                     return new JpaRealmModelCriteriaBuilder((cb, root) ->
                         cb.isTrue(cb.function("->", JsonbType.class, root.get("metadata"),
                                 cb.literal("fClientInitialAccesses")).isNotNull())

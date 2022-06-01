@@ -62,7 +62,6 @@ import org.openqa.selenium.support.ui.WebDriverWait;
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 @AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY_CLUSTER)
-@AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY_DEPRECATED_CLUSTER)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP_CLUSTER)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP6_CLUSTER)
 public class OIDCAdapterClusterTest extends AbstractAdapterClusteredTest {

@@ -444,6 +444,17 @@ public class SAMLEndpoint {
                     assertionElement = DocumentUtil.getElement(holder.getSamlDocument(), new QName(JBossSAMLConstants.ASSERTION.get()));
                 }
 
+                // Validate the response Issuer
+                final String responseIssuer = responseType.getIssuer() != null ? responseType.getIssuer().getValue(): null;
+                final boolean responseIssuerValidationSuccess = config.getIdpEntityId() == null ||
+                    (responseIssuer != null && responseIssuer.equals(config.getIdpEntityId()));
+                if (!responseIssuerValidationSuccess) {
+                    logger.errorf("Response Issuer validation failed: expected %s, actual %s", config.getIdpEntityId(), responseIssuer);
+                    event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
+                    event.error(Errors.INVALID_SAML_RESPONSE);
+                    return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.INVALID_REQUESTER);
+                }
+
                 // Validate InResponseTo attribute: must match the generated request ID
                 String expectedRequestId = authSession.getClientNote(SamlProtocol.SAML_REQUEST_ID_BROKER);
                 final boolean inResponseToValidationSuccess = validateInResponseToAttribute(responseType, expectedRequestId);
@@ -470,7 +481,20 @@ public class SAMLEndpoint {
                     // This methods writes the parsed and decrypted id back on the responseType parameter:
                     AssertionUtil.decryptId(responseType, keys.getPrivateKey());
                 }
+
                 AssertionType assertion = responseType.getAssertions().get(0).getAssertion();
+
+                // Validate the assertion Issuer
+                final String assertionIssuer = assertion.getIssuer() != null ? assertion.getIssuer().getValue(): null;
+                final boolean assertionIssuerValidationSuccess = config.getIdpEntityId() == null ||
+                    (assertionIssuer != null && assertionIssuer.equals(config.getIdpEntityId()));
+                if (!assertionIssuerValidationSuccess) {
+                    logger.errorf("Assertion Issuer validation failed: expected %s, actual %s", config.getIdpEntityId(), assertionIssuer);
+                    event.event(EventType.IDENTITY_PROVIDER_RESPONSE);
+                    event.error(Errors.INVALID_SAML_RESPONSE);
+                    return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.INVALID_REQUESTER);
+                }
+
                 NameIDType subjectNameID = getSubjectNameID(assertion);
                 String principal = getPrincipal(assertion);
 

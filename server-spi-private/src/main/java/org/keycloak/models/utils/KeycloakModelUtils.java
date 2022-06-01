@@ -707,6 +707,10 @@ public final class KeycloakModelUtils {
      * if underlying model is clientScope or client
      */
     public static ClientScopeModel findClientScopeById(RealmModel realm, ClientModel client, String clientScopeId) {
+        if (client.getId().equals(clientScopeId)) {
+            return client;
+        }
+
         ClientScopeModel clientScope = realm.getClientScopeById(clientScopeId);
 
         if (clientScope ==  null) {

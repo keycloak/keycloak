@@ -174,10 +174,11 @@ public class ClientModelTest extends AbstractKeycloakTest {
             currentSession = sessionClientRoleRemoveTx2;
             RealmModel realm = currentSession.realms().getRealmByName(realmName);
 
-            ClientModel scoped = realm.getClientByClientId("scoped");
             ClientModel from = realm.getClientByClientId("from");
             RoleModel role = currentSession.roles().getRoleById(realm, roleId);
             from.removeRole(role);
+
+            ClientModel scoped = realm.getClientByClientId("scoped");
 
             // used to throw an NPE
             assertThat("Scope Mappings is not 0", scoped.getScopeMappingsStream().count(), is(0L));

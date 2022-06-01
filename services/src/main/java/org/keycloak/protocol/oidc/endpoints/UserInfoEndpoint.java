@@ -270,7 +270,7 @@ public class UserInfoEndpoint {
                 }
             }
             event.detail(Details.SIGNATURE_REQUIRED, "true");
-            event.detail(Details.SIGNATURE_ALGORITHM, cfg.getUserInfoSignedResponseAlg().toString());
+            event.detail(Details.SIGNATURE_ALGORITHM, cfg.getUserInfoSignedResponseAlg());
         } else if (cfg.isUserInfoEncryptionRequired()) {
             try {
                 responseBuilder = Response.ok(jweFromContent(JsonSerialization.writeValueAsString(claims), null))

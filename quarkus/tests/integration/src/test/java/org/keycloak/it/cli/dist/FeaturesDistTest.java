@@ -7,6 +7,8 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.condition.EnabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.RawDistOnly;
@@ -56,8 +58,21 @@ public class FeaturesDistTest {
     }
 
     @Test
+    @EnabledOnOs(value = { OS.LINUX, OS.MAC }, disabledReason = "different shell escaping behaviour on Windows.")
     @Launch({StartDev.NAME, "--features=token-exchange,admin-fine-grained-authz"})
     public void testEnableMultipleFeatures(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertStartedDevMode();
+        assertThat(cliResult.getOutput(), CoreMatchers.allOf(
+                containsString("Preview feature enabled: admin_fine_grained_authz"),
+                containsString("Preview feature enabled: token_exchange")));
+        assertFalse(cliResult.getOutput().contains("declarative-user-profile"));
+    }
+
+    @Test
+    @EnabledOnOs(value = { OS.WINDOWS }, disabledReason = "different shell escaping behaviour on Windows.")
+    @Launch({StartDev.NAME, "--features=\"token-exchange,admin-fine-grained-authz\""})
+    public void testWinEnableMultipleFeatures(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertStartedDevMode();
         assertThat(cliResult.getOutput(), CoreMatchers.allOf(

@@ -48,6 +48,9 @@ public interface MapResourceEntity extends UpdatableEntity, AbstractEntity, Enti
         }
     }
 
+    String getRealmId();
+    void setRealmId(String realmId);
+
     String getName();
     void setName(String name);
 

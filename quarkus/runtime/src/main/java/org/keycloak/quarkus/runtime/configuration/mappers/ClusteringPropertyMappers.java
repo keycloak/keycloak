@@ -3,6 +3,7 @@ package org.keycloak.quarkus.runtime.configuration.mappers;
 import java.util.Arrays;
 import java.util.function.BiFunction;
 
+import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.Environment;
 
 import io.smallrye.config.ConfigSourceInterceptorContext;
@@ -34,7 +35,8 @@ final class ClusteringPropertyMappers {
                 builder().from("cache-config-file")
                         .mapFrom("cache")
                         .to("kc.spi-connections-infinispan-quarkus-config-file")
-                        .description("Defines the file from which cache configuration should be loaded from.")
+                        .description("Defines the file from which cache configuration should be loaded from. "
+                                + "The configuration file is relative to the 'conf/' directory.")
                         .transformer(new BiFunction<String, ConfigSourceInterceptorContext, String>() {
                             @Override
                             public String apply(String value, ConfigSourceInterceptorContext context) {
@@ -63,6 +65,6 @@ final class ClusteringPropertyMappers {
     }
 
     private static PropertyMapper.Builder builder() {
-        return PropertyMapper.builder(ConfigCategory.CLUSTERING);
+        return PropertyMapper.builder(OptionCategory.CLUSTERING);
     }
 }

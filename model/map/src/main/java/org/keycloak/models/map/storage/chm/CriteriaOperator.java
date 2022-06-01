@@ -16,6 +16,7 @@
  */
 package org.keycloak.models.map.storage.chm;
 
+import org.jboss.logging.Logger;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 import java.util.Arrays;
 import java.util.Collection;
@@ -24,11 +25,8 @@ import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Objects;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -45,6 +43,7 @@ class CriteriaOperator {
 
     private static final Predicate<Object> ALWAYS_FALSE = o -> false;
     private static final Predicate<Object> ALWAYS_TRUE = o -> true;
+    private static final Pattern LIKE_PATTERN_DELIMITER = Pattern.compile("%+");
 
     static {
         OPERATORS.put(Operator.EQ, CriteriaOperator::eq);
@@ -70,7 +69,7 @@ class CriteriaOperator {
     /**
      * Returns a predicate {@code P(x)} for comparing {@code value} and {@code x} as {@code x OP value}.
      * <b>Implementation note:</b> Note that this may mean reverse logic to e.g. {@link Comparable#compareTo}.
-     * @param operator
+     * @param op
      * @param value
      * @return
      */
@@ -196,20 +195,18 @@ class CriteriaOperator {
                 return ALWAYS_TRUE;
             }
 
-            boolean anyBeginning = sValue.startsWith("%");
-            boolean anyEnd = sValue.endsWith("%");
-
-            Pattern pValue = Pattern.compile(
-              (anyBeginning ? ".*" : "")
-              + Pattern.quote(sValue.substring(anyBeginning ? 1 : 0, sValue.length() - (anyEnd ? 1 : 0)))
-              + (anyEnd ? ".*" : ""),
-              Pattern.DOTALL
-            );
+            Pattern pValue = Pattern.compile(quoteRegex(sValue), Pattern.DOTALL);
             return o -> {
                 return o instanceof String && pValue.matcher((String) o).matches();
             };
         }
         return ALWAYS_FALSE;
+    }
+
+    private static String quoteRegex(String pattern) {
+        return LIKE_PATTERN_DELIMITER.splitAsStream(pattern).map(Pattern::quote)
+                .collect(Collectors.joining(".*"))
+                + (pattern.endsWith("%") ? ".*" : "");
     }
 
     public static Predicate<Object> ilike(Object[] value) {
@@ -221,15 +218,7 @@ class CriteriaOperator {
                 return ALWAYS_TRUE;
             }
 
-            boolean anyBeginning = sValue.startsWith("%");
-            boolean anyEnd = sValue.endsWith("%");
-
-            Pattern pValue = Pattern.compile(
-              (anyBeginning ? ".*" : "")
-              + Pattern.quote(sValue.substring(anyBeginning ? 1 : 0, sValue.length() - (anyEnd ? 1 : 0)))
-              + (anyEnd ? ".*" : ""),
-              Pattern.CASE_INSENSITIVE + Pattern.DOTALL
-            );
+            Pattern pValue = Pattern.compile(quoteRegex(sValue), Pattern.CASE_INSENSITIVE + Pattern.DOTALL);
             return o -> {
                 return o instanceof String && pValue.matcher((String) o).matches();
             };
@@ -261,8 +250,7 @@ class CriteriaOperator {
             try {
                 return o != null && op.isComparisonTrue(cValue.compareTo(o));
             } catch (ClassCastException ex) {
-                LOG.log(Level.WARNING, "Incomparable argument type for comparison operation: {0}", cValue.getClass().getSimpleName());
-                return false;
+                throw new IllegalArgumentException("Incomparable argument type for comparison operation: " + cValue.getClass().getSimpleName() + " vs. " + o.getClass().getSimpleName(), ex);
             }
         }
 

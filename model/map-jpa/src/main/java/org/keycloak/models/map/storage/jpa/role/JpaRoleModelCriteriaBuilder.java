@@ -16,25 +16,18 @@
  */
 package org.keycloak.models.map.storage.jpa.role;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.BiFunction;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaBuilder.In;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.RoleModel.SearchableFields;
-import org.keycloak.models.map.common.StringKeyConverter.UUIDKey;
 import org.keycloak.models.map.storage.CriterionNotSupportedException;
 import org.keycloak.models.map.storage.jpa.JpaModelCriteriaBuilder;
+import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
 import org.keycloak.models.map.storage.jpa.role.entity.JpaRoleEntity;
 import org.keycloak.storage.SearchableModelField;
 
@@ -53,19 +46,30 @@ public class JpaRoleModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaRole
     public JpaRoleModelCriteriaBuilder compare(SearchableModelField<? super RoleModel> modelField, Operator op, Object... value) {
         switch (op) {
             case EQ:
-                if (modelField.equals(SearchableFields.REALM_ID) ||
-                    modelField.equals(SearchableFields.CLIENT_ID) ||
-                    modelField.equals(SearchableFields.NAME)) {
+                if (modelField == SearchableFields.REALM_ID ||
+                    modelField == SearchableFields.CLIENT_ID ||
+                    modelField == SearchableFields.NAME) {
+
                     validateValue(value, modelField, op, String.class);
 
                     return new JpaRoleModelCriteriaBuilder((cb, root) -> 
                         cb.equal(root.get(modelField.getName()), value[0])
                     );
+                } else if (modelField == SearchableFields.COMPOSITE_ROLE) {
+
+                    validateValue(value, modelField, op, String.class);
+
+                    return new JpaRoleModelCriteriaBuilder((cb, root) ->
+                            cb.isTrue(cb.function("@>",
+                                    Boolean.TYPE,
+                                    cb.function("->", JsonbType.class, root.get("metadata"), cb.literal("fCompositeRoles")),
+                                    cb.literal(convertToJson(value[0]))))
+                    );
                 } else {
                     throw new CriterionNotSupportedException(modelField, op);
                 }
             case NE:
-                if (modelField.equals(SearchableFields.IS_CLIENT_ROLE)) {
+                if (modelField == SearchableFields.IS_CLIENT_ROLE) {
                     
                     validateValue(value, modelField, op, Boolean.class);
 
@@ -76,49 +80,23 @@ public class JpaRoleModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaRole
                     throw new CriterionNotSupportedException(modelField, op);
                 }
             case IN:
-                if (modelField.equals(SearchableFields.ID)) {
-                    if (value == null || value.length == 0) throw new CriterionNotSupportedException(modelField, op);
+                if (modelField ==SearchableFields.ID) {
 
-                    final Collection<?> collectionValues;
-                    if (value.length == 1) {
+                    Set<UUID> uuids = getUuidsForInOperator(value, modelField);
 
-                        if (value[0] instanceof Object[]) {
-                            collectionValues = Arrays.asList(value[0]);
-                        } else if (value[0] instanceof Collection) {
-                            collectionValues = (Collection) value[0];
-                        } else if (value[0] instanceof Stream) {
-                            try (Stream<?> str = ((Stream) value[0])) {
-                                collectionValues = str.collect(Collectors.toCollection(ArrayList::new));
-                            }
-                        } else {
-                            collectionValues = Collections.singleton(value[0]);
-                        }
-
-                    } else  {
-                        collectionValues = new HashSet(Arrays.asList(value));
-                    }
-
-                    if (collectionValues.isEmpty()) {
-                        return new JpaRoleModelCriteriaBuilder((cb, root) -> cb.or());
-                    }
+                    if (uuids.isEmpty()) return new JpaRoleModelCriteriaBuilder((cb, root) -> cb.or());
 
                     return new JpaRoleModelCriteriaBuilder((cb, root) ->  {
                         In<UUID> in = cb.in(root.get("id"));
-                        for (Object id : collectionValues) {
-                            try {
-                                in.value(UUIDKey.INSTANCE.fromString(Objects.toString(id, null)));
-                            } catch (IllegalArgumentException e) {
-                                throw new CriterionNotSupportedException(modelField, op, id + " id is not in uuid format.", e);
-                            }
-                        }
+                        uuids.forEach(uuid -> in.value(uuid));
                         return in;
                     });
                 } else {
                     throw new CriterionNotSupportedException(modelField, op);
                 }
             case ILIKE:
-                if (modelField.equals(SearchableFields.NAME) ||
-                    modelField.equals(SearchableFields.DESCRIPTION)) {
+                if (modelField == SearchableFields.NAME ||
+                    modelField == SearchableFields.DESCRIPTION) {
 
                     validateValue(value, modelField, op, String.class);
 

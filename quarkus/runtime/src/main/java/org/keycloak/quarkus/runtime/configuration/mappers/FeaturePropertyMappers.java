@@ -3,6 +3,7 @@ package org.keycloak.quarkus.runtime.configuration.mappers;
 import java.util.ArrayList;
 import java.util.List;
 import org.keycloak.common.Profile;
+import org.keycloak.config.OptionCategory;
 
 final class FeaturePropertyMappers {
 
@@ -39,6 +40,6 @@ final class FeaturePropertyMappers {
     }
 
     private static PropertyMapper.Builder builder() {
-        return PropertyMapper.builder(ConfigCategory.FEATURE).isBuildTimeProperty(true);
+        return PropertyMapper.builder(OptionCategory.FEATURE).isBuildTimeProperty(true);
     }
 }

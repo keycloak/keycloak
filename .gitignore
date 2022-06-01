@@ -75,3 +75,9 @@ target
 # Quarkus ephemeral data #
 ##########################
 quarkus/data/*.db
+
+# Jakarta transformed sources #
+###############################
+
+/integration/admin-client-jakarta/src/
+/.metadata/

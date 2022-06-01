@@ -20,6 +20,7 @@ import org.keycloak.models.map.annotations.GenerateEntityImplementations;
 import org.keycloak.models.map.common.AbstractEntity;
 
 import org.keycloak.models.map.common.DeepCloner;
+import org.keycloak.models.map.common.ExpirableEntity;
 import org.keycloak.models.map.common.UpdatableEntity;
 import java.util.Map;
 
@@ -30,7 +31,7 @@ import java.util.Map;
         inherits = "org.keycloak.models.map.userSession.MapAuthenticatedClientSessionEntity.AbstractAuthenticatedClientSessionEntity"
 )
 @DeepCloner.Root
-public interface MapAuthenticatedClientSessionEntity extends AbstractEntity, UpdatableEntity {
+public interface MapAuthenticatedClientSessionEntity extends AbstractEntity, UpdatableEntity, ExpirableEntity {
 
     abstract class AbstractAuthenticatedClientSessionEntity extends UpdatableEntity.Impl implements MapAuthenticatedClientSessionEntity {
 
@@ -49,6 +50,19 @@ public interface MapAuthenticatedClientSessionEntity extends AbstractEntity, Upd
         }
     }
 
+    /**
+     * Returns a point in time (timestamp in milliseconds since The Epoch) when the client session entity was created or updated (refreshed).
+     *
+     * @return a timestamp in milliseconds since The Epoch or {@code null} when the time is unknown
+     */
+    Long getTimestamp();
+
+    /**
+     * Sets a point in the (timestamp in milliseconds since The Epoch) when the client session entity was created or updated (refreshed).
+     * @param timestamp a timestamp in milliseconds since The Epoch or {@code null} when the time is unknown
+     */
+    void setTimestamp(Long timestamp);
+
     String getRealmId();
     void setRealmId(String realmId);
 
@@ -63,13 +77,6 @@ public interface MapAuthenticatedClientSessionEntity extends AbstractEntity, Upd
 
     String getRedirectUri();
     void setRedirectUri(String redirectUri);
-
-    Long getTimestamp();
-    void setTimestamp(Long timestamp);
-
-    Long getExpiration();
-    void setExpiration(Long expiration);
-
     String getAction();
     void setAction(String action);
 

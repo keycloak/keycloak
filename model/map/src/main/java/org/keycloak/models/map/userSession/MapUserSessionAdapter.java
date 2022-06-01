@@ -91,19 +91,19 @@ public abstract class MapUserSessionAdapter extends AbstractUserSessionModel {
 
     @Override
     public int getStarted() {
-        Long started = entity.getStarted();
-        return started != null ? TimeAdapter.fromLongWithTimeInSecondsToIntegerWithTimeInSeconds(started) : 0;
+        Long started = entity.getTimestamp();
+        return started != null ? TimeAdapter.fromLongWithTimeInSecondsToIntegerWithTimeInSeconds(TimeAdapter.fromMilliSecondsToSeconds(started)) : 0;
     }
 
     @Override
     public int getLastSessionRefresh() {
         Long lastSessionRefresh = entity.getLastSessionRefresh();
-        return lastSessionRefresh != null ? TimeAdapter.fromLongWithTimeInSecondsToIntegerWithTimeInSeconds(lastSessionRefresh) : 0;
+        return lastSessionRefresh != null ? TimeAdapter.fromLongWithTimeInSecondsToIntegerWithTimeInSeconds(TimeAdapter.fromMilliSecondsToSeconds(lastSessionRefresh)) : 0;
     }
 
     @Override
     public void setLastSessionRefresh(int seconds) {
-        entity.setLastSessionRefresh(TimeAdapter.fromIntegerWithTimeInSecondsToLongWithTimeAsInSeconds(seconds));
+        entity.setLastSessionRefresh(TimeAdapter.fromSecondsToMilliseconds(seconds));
     }
 
     @Override
@@ -215,9 +215,9 @@ public abstract class MapUserSessionAdapter extends AbstractUserSessionModel {
         entity.setBrokerSessionId(brokerSessionId);
         entity.setBrokerUserId(brokerUserId);
 
-        int currentTime = Time.currentTime();
-        entity.setStarted(TimeAdapter.fromIntegerWithTimeInSecondsToLongWithTimeAsInSeconds(currentTime));
-        entity.setLastSessionRefresh(TimeAdapter.fromIntegerWithTimeInSecondsToLongWithTimeAsInSeconds(currentTime));
+        long currentTime = Time.currentTimeMillis();
+        entity.setTimestamp(currentTime);
+        entity.setLastSessionRefresh(currentTime);
 
         entity.setState(null);
 

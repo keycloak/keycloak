@@ -143,11 +143,11 @@ public class ConcurrentHashMapStorageTest extends KeycloakModelTest {
         assertClientsPersisted(component1Id, component2Id, idMain, id1, id2);
 
         // Invalidate one component and check that the storage still contains what it should
-        getFactory().invalidate(ObjectType.COMPONENT, component1Id);
+        getFactory().invalidate(null, ObjectType.COMPONENT, component1Id);
         assertClientsPersisted(component1Id, component2Id, idMain, id1, id2);
 
         // Invalidate whole realm and check that the storage still contains what it should
-        getFactory().invalidate(ObjectType.REALM, realmId);
+        getFactory().invalidate(null, ObjectType.REALM, realmId);
         assertClientsPersisted(component1Id, component2Id, idMain, id1, id2);
 
         // Refresh factory (akin server restart) and check that the storage still contains what it should

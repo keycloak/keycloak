@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -85,6 +86,7 @@ public class JsonbType extends AbstractSingleColumnStandardBasicType<Object> imp
     public static final ObjectMapper MAPPER = new ObjectMapper()
             .configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
             .enable(SerializationFeature.INDENT_OUTPUT)
+            .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
             .setSerializationInclusion(JsonInclude.Include.NON_NULL)
             .setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.NONE)
             .setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY)
@@ -258,20 +260,14 @@ public class JsonbType extends AbstractSingleColumnStandardBasicType<Object> imp
             try {
                 return MAPPER.writeValueAsString(value);
             } catch (IOException e) {
-                throw new HibernateException("unable to tranform value: " + value + " as String.", e);
+                throw new HibernateException("unable to transform value: " + value + " as String.", e);
             }
         }
 
         @Override
         public boolean areEqual(Object one, Object another) {
             if (one == another) return true;
-            if (one == null || another == null) return Objects.equals(one, another);
-            try {
-                return MAPPER.readTree(toString(one)).equals(
-                       MAPPER.readTree(toString(another)));
-            } catch (IOException e) {
-                throw new HibernateException("unable to perform areEqual", e);
-            }
+            return Objects.equals(one, another);
         }
     }
 }
