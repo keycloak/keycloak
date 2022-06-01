@@ -12,7 +12,7 @@ export default class SessionsPage {
   clearNotBeforeButton = "clear-not-before-button";
   notBeforeInput = "not-before-input";
   logoutAll = "logout-all";
-  logoutAllConfirm = "logout-all-confirm-button";
+  logoutAllConfirm = "confirm";
 
   setToNow() {
     cy.findByTestId(this.actionDropdown).should("exist").click();

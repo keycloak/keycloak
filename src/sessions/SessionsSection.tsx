@@ -6,18 +6,22 @@ import { useTranslation } from "react-i18next";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useAdminClient } from "../context/auth/AdminClient";
 import helpUrls from "../help-urls";
-import { LogoutAllSessionsModal } from "./LogoutAllSessionsModal";
 import { RevocationModal } from "./RevocationModal";
 import SessionsTable from "./SessionsTable";
+import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
+import { useAlerts } from "../components/alert/Alerts";
+import { useRealm } from "../context/realm-context/RealmContext";
 
 import "./SessionsSection.css";
 
 export default function SessionsSection() {
-  const adminClient = useAdminClient();
   const { t } = useTranslation("sessions");
+
+  const adminClient = useAdminClient();
+  const { addError } = useAlerts();
+  const { realm } = useRealm();
+
   const [revocationModalOpen, setRevocationModalOpen] = useState(false);
-  const [logoutAllSessionsModalOpen, setLogoutAllSessionsModalOpen] =
-    useState(false);
   const [activeClientDetails, setActiveClientDetails] = useState<
     ClientRepresentation[]
   >([]);
@@ -25,10 +29,6 @@ export default function SessionsSection() {
 
   const handleRevocationModalToggle = () => {
     setRevocationModalOpen(!revocationModalOpen);
-  };
-
-  const handleLogoutAllSessionsModalToggle = () => {
-    setLogoutAllSessionsModalOpen(!logoutAllSessionsModalOpen);
   };
 
   const loader = async () => {
@@ -63,6 +63,20 @@ export default function SessionsSection() {
     return userSessions;
   };
 
+  const [toggleLogoutDialog, LogoutConfirm] = useConfirmDialog({
+    titleKey: "sessions:logoutAllSessions",
+    messageKey: "sessions:logoutAllDescription",
+    continueButtonLabel: "common:confirm",
+    onConfirm: async () => {
+      try {
+        await adminClient.realms.logoutAll({ realm });
+        adminClient.keycloak?.logout({ redirectUri: "" });
+      } catch (error) {
+        addError("sessions:logoutAllSessionsError", error);
+      }
+    },
+  });
+
   const dropdownItems = [
     <DropdownItem
       key="toggle-modal"
@@ -77,7 +91,7 @@ export default function SessionsSection() {
       data-testid="logout-all"
       component="button"
       isDisabled={noSessions}
-      onClick={() => handleLogoutAllSessionsModalToggle()}
+      onClick={toggleLogoutDialog}
     >
       {t("signOutAllActiveSessions")}
     </DropdownItem>,
@@ -85,6 +99,7 @@ export default function SessionsSection() {
 
   return (
     <>
+      <LogoutConfirm />
       <ViewHeader
         dropdownItems={dropdownItems}
         titleKey="sessions:title"
@@ -99,11 +114,6 @@ export default function SessionsSection() {
             save={() => {
               handleRevocationModalToggle();
             }}
-          />
-        )}
-        {logoutAllSessionsModalOpen && (
-          <LogoutAllSessionsModal
-            handleModalToggle={handleLogoutAllSessionsModalToggle}
           />
         )}
         <SessionsTable loader={loader} />

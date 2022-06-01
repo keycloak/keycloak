@@ -12,6 +12,8 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 
 import { toClient } from "../clients/routes/Client";
+import { useAlerts } from "../components/alert/Alerts";
+import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import {
   Field,
@@ -43,8 +45,9 @@ export default function SessionsTable({
   const { whoAmI } = useWhoAmI();
   const { t } = useTranslation("sessions");
   const adminClient = useAdminClient();
-  const [key, setKey] = useState(0);
+  const { addError } = useAlerts();
   const locale = whoAmI.getLocale();
+  const [key, setKey] = useState(0);
   const refresh = () => setKey((value) => value + 1);
 
   const columns = useMemo(() => {
@@ -98,6 +101,20 @@ export default function SessionsTable({
     );
   }, [realm, locale, hiddenColumns]);
 
+  const [toggleLogoutDialog, LogoutConfirm] = useConfirmDialog({
+    titleKey: "sessions:logoutAllSessions",
+    messageKey: "sessions:logoutAllDescription",
+    continueButtonLabel: "common:confirm",
+    onConfirm: async () => {
+      try {
+        await adminClient.users.logout({ id: logoutUser! });
+        refresh();
+      } catch (error) {
+        addError("sessions:logoutAllSessionsError", error);
+      }
+    },
+  });
+
   async function onClickSignOut(session: UserSessionRepresentation) {
     await adminClient.realms.deleteSession({ realm, session: session.id! });
 
@@ -109,42 +126,40 @@ export default function SessionsTable({
   }
 
   return (
-    <KeycloakDataTable
-      key={key}
-      loader={loader}
-      ariaLabelKey="sessions:title"
-      searchPlaceholderKey="sessions:searchForSession"
-      toolbarItem={
-        logoutUser && (
-          <ToolbarItem>
-            <Button
-              onClick={async () => {
-                await adminClient.users.logout({ id: logoutUser });
-                refresh();
-              }}
-            >
-              {t("logoutAllSessions")}
-            </Button>
-          </ToolbarItem>
-        )
-      }
-      columns={columns}
-      actions={[
-        {
-          title: t("common:signOut"),
-          onRowClick: onClickSignOut,
-        },
-      ]}
-      emptyState={
-        <ListEmptyState
-          hasIcon
-          icon={CubesIcon}
-          message={t("noSessions")}
-          instructions={
-            emptyInstructions ? emptyInstructions : t("noSessionsDescription")
-          }
-        />
-      }
-    />
+    <>
+      <LogoutConfirm />
+      <KeycloakDataTable
+        key={key}
+        loader={loader}
+        ariaLabelKey="sessions:title"
+        searchPlaceholderKey="sessions:searchForSession"
+        toolbarItem={
+          logoutUser && (
+            <ToolbarItem>
+              <Button onClick={toggleLogoutDialog}>
+                {t("logoutAllSessions")}
+              </Button>
+            </ToolbarItem>
+          )
+        }
+        columns={columns}
+        actions={[
+          {
+            title: t("common:signOut"),
+            onRowClick: onClickSignOut,
+          },
+        ]}
+        emptyState={
+          <ListEmptyState
+            hasIcon
+            icon={CubesIcon}
+            message={t("noSessions")}
+            instructions={
+              emptyInstructions ? emptyInstructions : t("noSessionsDescription")
+            }
+          />
+        }
+      />
+    </>
   );
 }
