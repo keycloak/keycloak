@@ -77,7 +77,10 @@ export default function GroupsSection() {
       if (isNavigationStateInValid) {
         const groups: GroupRepresentation[] = [];
         for (const i of ids!) {
-          const group = await adminClient.groups.findOne({ id: i });
+          const group =
+            i !== "search"
+              ? await adminClient.groups.findOne({ id: i })
+              : { name: t("searchGroups"), id: "search" };
           if (group) {
             groups.push(group);
           } else {

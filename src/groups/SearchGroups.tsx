@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
@@ -22,7 +22,6 @@ import { useAdminClient } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { GroupPath } from "../components/group/GroupPath";
-import { useSubGroups } from "./SubGroupsContext";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useAccess } from "../context/access/Access";
 
@@ -44,12 +43,6 @@ export default function SearchGroups() {
   const { hasAccess } = useAccess();
   const isManager = hasAccess("manage-users", "query-clients");
 
-  const { setSubGroups } = useSubGroups();
-  useEffect(
-    () => setSubGroups([{ name: t("searchGroups"), id: "search" }]),
-    []
-  );
-
   const deleteTerm = (id: string) => {
     const index = searchTerms.indexOf(id);
     searchTerms.splice(index, 1);
@@ -69,13 +62,7 @@ export default function SearchGroups() {
     if (!isManager) return <span>{group.name}</span>;
 
     return (
-      <Link
-        key={group.id}
-        to={`/${realm}/groups/${group.link}`}
-        onClick={() =>
-          setSubGroups([{ name: t("searchGroups"), id: "search" }, group])
-        }
-      >
+      <Link key={group.id} to={`/${realm}/groups/search/${group.link}`}>
         {group.name}
       </Link>
     );

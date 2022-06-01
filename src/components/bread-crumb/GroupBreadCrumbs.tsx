@@ -33,7 +33,7 @@ export const GroupBreadCrumbs = () => {
           <BreadcrumbItem key={group.id} isActive={isLastGroup}>
             {!isLastGroup && (
               <Link
-                to={location.pathname.substr(
+                to={location.pathname.substring(
                   0,
                   location.pathname.indexOf(group.id!) + group.id!.length
                 )}
