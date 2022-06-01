@@ -84,7 +84,7 @@ The process of reviewing proposed changes differs depending of the size and impa
 
 A minor change is a bug fix, a smaller enhancement or a smaller addition to existing features.
 
-To propose a minor change, simply create an issue in our [issue tracker](https://issues.jboss.org/browse/KEYCLOAK) and
+To propose a minor change, simply create an issue in our [issue tracker](https://github.com/keycloak/keycloak/issues) and
 send a pull request.
 
 A maintainer will be responsible for ultimately approving the pull request. The maintainer may do a deep review of the
