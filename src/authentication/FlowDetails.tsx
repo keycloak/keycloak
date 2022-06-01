@@ -317,7 +317,7 @@ export default function FlowDetails() {
         dropdownItems={dropdownItems}
       />
       <PageSection variant="light">
-        {tableView && executionList && hasExecutions && (
+        {executionList && hasExecutions && (
           <>
             <Toolbar id="toolbar">
               <ToolbarContent>
@@ -360,65 +360,69 @@ export default function FlowDetails() {
               </ToolbarContent>
             </Toolbar>
             <DeleteConfirm />
-            <DataList
-              aria-label="flows"
-              onDragFinish={(order) => {
-                const withoutHeaderId = order.slice(1);
-                setLiveText(
-                  t("common:onDragFinish", { list: dragged?.displayName })
-                );
-                const change = executionList.getChange(
-                  dragged!,
-                  withoutHeaderId
-                );
-                executeChange(dragged!, change);
-              }}
-              onDragStart={(id) => {
-                const item = executionList.findExecution(id)!;
-                setLiveText(
-                  t("common:onDragStart", { item: item.displayName })
-                );
-                setDragged(item);
-                if (!item.isCollapsed) {
-                  item.isCollapsed = true;
-                  setExecutionList(executionList.clone());
+            {tableView && (
+              <DataList
+                aria-label={t("flows")}
+                onDragFinish={(order) => {
+                  const withoutHeaderId = order.slice(1);
+                  setLiveText(
+                    t("common:onDragFinish", { list: dragged?.displayName })
+                  );
+                  const change = executionList.getChange(
+                    dragged!,
+                    withoutHeaderId
+                  );
+                  executeChange(dragged!, change);
+                }}
+                onDragStart={(id) => {
+                  const item = executionList.findExecution(id)!;
+                  setLiveText(
+                    t("common:onDragStart", { item: item.displayName })
+                  );
+                  setDragged(item);
+                  if (!item.isCollapsed) {
+                    item.isCollapsed = true;
+                    setExecutionList(executionList.clone());
+                  }
+                }}
+                onDragMove={() =>
+                  setLiveText(
+                    t("common:onDragMove", { item: dragged?.displayName })
+                  )
                 }
-              }}
-              onDragMove={() =>
-                setLiveText(
-                  t("common:onDragMove", { item: dragged?.displayName })
-                )
-              }
-              onDragCancel={() => setLiveText(t("common:onDragCancel"))}
-              itemOrder={[
-                "header",
-                ...executionList.order().map((ex) => ex.id!),
-              ]}
-            >
-              <FlowHeader />
-              <>
-                {executionList.expandableList.map((execution) => (
-                  <FlowRow
-                    builtIn={!!builtIn}
-                    key={execution.id}
-                    execution={execution}
-                    onRowClick={(execution) => {
-                      execution.isCollapsed = !execution.isCollapsed;
-                      setExecutionList(executionList.clone());
-                    }}
-                    onRowChange={update}
-                    onAddExecution={(execution, type) =>
-                      addExecution(execution.displayName!, type)
-                    }
-                    onAddFlow={(flow) => addFlow(execution.displayName!, flow)}
-                    onDelete={(execution) => {
-                      setSelectedExecution(execution);
-                      toggleDeleteDialog();
-                    }}
-                  />
-                ))}
-              </>
-            </DataList>
+                onDragCancel={() => setLiveText(t("common:onDragCancel"))}
+                itemOrder={[
+                  "header",
+                  ...executionList.order().map((ex) => ex.id!),
+                ]}
+              >
+                <FlowHeader />
+                <>
+                  {executionList.expandableList.map((execution) => (
+                    <FlowRow
+                      builtIn={!!builtIn}
+                      key={execution.id}
+                      execution={execution}
+                      onRowClick={(execution) => {
+                        execution.isCollapsed = !execution.isCollapsed;
+                        setExecutionList(executionList.clone());
+                      }}
+                      onRowChange={update}
+                      onAddExecution={(execution, type) =>
+                        addExecution(execution.displayName!, type)
+                      }
+                      onAddFlow={(flow) =>
+                        addFlow(execution.displayName!, flow)
+                      }
+                      onDelete={(execution) => {
+                        setSelectedExecution(execution);
+                        toggleDeleteDialog();
+                      }}
+                    />
+                  ))}
+                </>
+              </DataList>
+            )}
             {flow && (
               <>
                 {showAddExecutionDialog && (
