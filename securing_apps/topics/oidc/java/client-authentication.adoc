@@ -45,6 +45,7 @@ For set up on the adapter side you need to have something like this in your `key
     "client-keystore-password": "storepass",
     "client-key-password": "keypass",
     "client-key-alias": "clientkey",
+    "algorithm": "RS256",
     "token-expiration": 10
   }
 }
@@ -52,6 +53,10 @@ For set up on the adapter side you need to have something like this in your `key
 
 With this configuration, the keystore file `keystore-client.jks` must be available on classpath in your WAR. If you do not use the prefix `classpath:`
 you can point to any file on the file system where the client application is running.
+
+The `algorithm` field specifies the algorithm used for the Signed JWT and it defaults to `RS256`. This field should be in sync with the key pair.
+For example, the `RS256` algorithm needs a RSA key pair while the `ES256` algorithm requires an EC key pair. Please refer to
+https://datatracker.ietf.org/doc/html/rfc7518#section-3[Cryptographic Algorithms for Digital Signatures and MACs] for more information.
 
 ifeval::[{project_community}==true]
 For inspiration, you can take a look at the examples distribution into the main demo example into the `product-portal` application.
