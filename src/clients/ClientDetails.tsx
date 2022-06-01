@@ -611,6 +611,14 @@ export default function ClientDetails() {
                 <ServiceAccount client={client} />
               </Tab>
             )}
+            <Tab
+              id="sessions"
+              data-testid="sessionsTab"
+              title={<TabTitleText>{t("sessions")}</TabTitleText>}
+              {...route("sessions")}
+            >
+              <ClientSessions client={client} />
+            </Tab>
             {permissionsEnabled && (hasManageClients || client.access?.manage) && (
               <Tab
                 id="permissions"
@@ -628,14 +636,6 @@ export default function ClientDetails() {
               {...route("advanced")}
             >
               <AdvancedTab save={save} client={client} />
-            </Tab>
-            <Tab
-              id="sessions"
-              data-testid="sessionsTab"
-              title={<TabTitleText>{t("sessions")}</TabTitleText>}
-              {...route("sessions")}
-            >
-              <ClientSessions client={client} />
             </Tab>
           </RoutableTabs>
         </FormProvider>
