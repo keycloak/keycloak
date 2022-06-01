@@ -282,7 +282,10 @@ public class UserStorageManager extends AbstractStorageManager<UserStorageProvid
 
     @Override
     public boolean removeUser(RealmModel realm, UserModel user) {
-        if (getFederatedStorage() != null) getFederatedStorage().preRemove(realm, user);
+        if (getFederatedStorage() != null && user.getServiceAccountClientLink() == null) {
+            getFederatedStorage().preRemove(realm, user);
+        }
+
         StorageId storageId = new StorageId(user.getId());
 
         if (storageId.getProviderId() == null) {
