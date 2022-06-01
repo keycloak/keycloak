@@ -1,4 +1,21 @@
-package org.keycloak.operator;
+/*
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.keycloak.operator.testsuite.integration;
 
 import io.fabric8.kubernetes.api.model.networking.v1.ServiceBackendPortBuilder;
 import io.quarkus.logging.Log;
@@ -6,7 +23,8 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.RestAssured;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
-import org.keycloak.operator.utils.K8sUtils;
+import org.keycloak.operator.Constants;
+import org.keycloak.operator.testsuite.utils.K8sUtils;
 import org.keycloak.operator.controllers.KeycloakIngress;
 
 import java.util.Map;
@@ -15,7 +33,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @QuarkusTest
-public class KeycloakIngressE2EIT extends ClusterOperatorTest {
+public class KeycloakIngressTest extends BaseOperatorTest {
 
     @Test
     public void testIngressOnHTTP() {

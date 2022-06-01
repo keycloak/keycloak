@@ -1,4 +1,21 @@
-package org.keycloak.operator;
+/*
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.keycloak.operator.testsuite.integration;
 
 import io.fabric8.kubernetes.api.model.LocalObjectReferenceBuilder;
 import io.fabric8.kubernetes.api.model.PodTemplateSpecBuilder;
@@ -8,7 +25,7 @@ import org.awaitility.Awaitility;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
-import org.keycloak.operator.utils.CRAssert;
+import org.keycloak.operator.testsuite.utils.CRAssert;
 import org.keycloak.operator.controllers.KeycloakService;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpecUnsupported;
@@ -19,15 +36,15 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.keycloak.operator.Constants.KEYCLOAK_HTTPS_PORT;
-import static org.keycloak.operator.utils.K8sUtils.deployKeycloak;
-import static org.keycloak.operator.utils.K8sUtils.getDefaultKeycloakDeployment;
-import static org.keycloak.operator.utils.K8sUtils.inClusterCurl;
+import static org.keycloak.operator.testsuite.utils.K8sUtils.deployKeycloak;
+import static org.keycloak.operator.testsuite.utils.K8sUtils.getDefaultKeycloakDeployment;
+import static org.keycloak.operator.testsuite.utils.K8sUtils.inClusterCurl;
 import static org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportStatusCondition.DONE;
 import static org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportStatusCondition.HAS_ERRORS;
 import static org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImportStatusCondition.STARTED;
 
 @QuarkusTest
-public class RealmImportE2EIT extends ClusterOperatorTest {
+public class RealmImportTest extends BaseOperatorTest {
 
     @Override
     @BeforeEach

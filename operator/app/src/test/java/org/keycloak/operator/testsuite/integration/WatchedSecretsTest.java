@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.operator;
+package org.keycloak.operator.testsuite.integration;
 
 import io.fabric8.kubernetes.api.model.Secret;
 import io.quarkus.logging.Log;
@@ -24,6 +24,7 @@ import org.awaitility.Awaitility;
 import org.bouncycastle.util.encoders.Base64;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.keycloak.operator.Constants;
 import org.keycloak.operator.controllers.WatchedSecretsStore;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
@@ -37,15 +38,15 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.keycloak.operator.utils.CRAssert.assertKeycloakStatusCondition;
-import static org.keycloak.operator.utils.K8sUtils.deployKeycloak;
-import static org.keycloak.operator.utils.K8sUtils.getDefaultKeycloakDeployment;
+import static org.keycloak.operator.testsuite.utils.CRAssert.assertKeycloakStatusCondition;
+import static org.keycloak.operator.testsuite.utils.K8sUtils.deployKeycloak;
+import static org.keycloak.operator.testsuite.utils.K8sUtils.getDefaultKeycloakDeployment;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
 @QuarkusTest
-public class WatchedSecretsTestE2EIT extends ClusterOperatorTest {
+public class WatchedSecretsTest extends BaseOperatorTest {
     @Test
     public void testSecretsAreWatched() {
         try {
