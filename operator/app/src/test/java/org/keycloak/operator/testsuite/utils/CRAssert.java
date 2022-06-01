@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.operator.utils;
+package org.keycloak.operator.testsuite.utils;
 
 import io.fabric8.kubernetes.client.utils.Serialization;
 import io.quarkus.logging.Log;
