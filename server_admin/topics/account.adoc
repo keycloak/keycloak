@@ -2,12 +2,12 @@
 
 == Account Console
 
-{project_name} users can manage their accounts through the Account Console. Users can manage their profiles, add two-factor authentication, include identity provider acounts, and manage device activity.
+{project_name} users can manage their accounts through the Account Console. Users can configure their profiles, add two-factor authentication, include identity provider accounts, and oversee device activity.
 
 [role="_additional-resources"]
 .Additional resources
 
-* The Account Console is completely themeable and internationalizable as is the case with all {project_name} user interfaces. For example, you can add attributes to the *Personal Info* page. For more details, see the link:{developerguide_link}[{developerguide_name}].
+* The Account Console can be configured in terms of appearance and language preferences. An example is adding attributes to the *Personal info* page by clicking *Personal info* link and completing and saving details. For more information, see reference:{developerguide_link}[{developerguide_name}].
 
 === Accessing the Account Console
 
@@ -22,7 +22,7 @@ Any user can access the Account Console.
 . Enter your login name and password.
 
 .Account Console
-image:images/account-console-intro.png[Account Console]
+image:{project_images}/account-console-intro.png[Account Console]
 
 === Configuring ways to sign in
 
@@ -36,14 +36,14 @@ You can sign in to this console using basic authentication (a login name and pas
 
 .Procedure
 
-. Click *Account Security* in the menu.
+. Click *Account security* in the menu.
 
-. Click *Signing In*.
+. Click *Signing in*.
 
-. Click *Set Up Authenticator Application*.
+. Click *Set up authenticator application*.
 +
-.Signing In
-image:images/account-console-signing-in.png[Signing In]
+.Signing in
+image:{project_images}/account-console-signing-in.png[Signing in]
 
 . Follow the directions that appear on the screen to use either
  https://freeotp.github.io/[FreeOTP] or https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2[Google Authenticator] on your mobile device as your OTP generator.
@@ -69,7 +69,7 @@ image:images/account-console-signing-in.png[Signing In]
 . Click *Set up Security Key*.
 +
 .Signing In
-image:images/account-console-signing-in-webauthn-2factor.png[Signing In With Security Key]
+image:{project_images}/account-console-signing-in-webauthn-2factor.png[Signing In With Security Key]
 
 . Prepare your WebAuthn Security Key. How you prepare this key depends on the type of WebAuthn security key you use. For example, for a USB based Yubikey, you may need to put your key into the USB port on your laptop.
 
@@ -94,7 +94,7 @@ image:images/account-console-signing-in-webauthn-2factor.png[Signing In With Sec
 . Click *Set up Security Key* in the *Passwordless* section.
 +
 .Signing In
-image:images/account-console-signing-in-webauthn-passwordless.png[Signing In With Security Key]
+image:{project_images}/account-console-signing-in-webauthn-passwordless.png[Signing In With Security Key]
 
 . Prepare your WebAuthn Security Key. How you prepare this key depends on the type of WebAuthn security key you use. For example, for a USB based Yubikey, you may need to put your key into the USB port on your laptop.
 
@@ -110,14 +110,14 @@ You can view the devices that are logged in to your account.
 
 .Procedure
 
-. Click *Account Security* in the menu.
-. Click *Device Activity*.
+. Click *Account security* in the menu.
+. Click *Device activity*.
 . Log out a device if it looks suspicious.
 
 .Devices
-image:images/account-console-device.png[Devices]
+image:{project_images}/account-console-device.png[Devices]
 
-=== Adding an identity provider acccount
+=== Adding an identity provider account
 
 You can link your account with an <<_identity_broker, identity broker>>. This option is often used to link social provider accounts.
 
@@ -125,26 +125,25 @@ You can link your account with an <<_identity_broker, identity broker>>. This op
 
 . Log into the Admin Console.
 
-. Click *Identity Providers* in the menu.
-
-. Click *Add provider*.
+. Click *Identity providers* in the menu.
 
 . Select a provider and complete the fields.
 
 . Return to the Account Console.
 
-. Click *Account Security* in the menu.
+. Click *Account security* in the menu.
 
-. Click *Linked Accounts*.
+. Click *Linked accounts*.
 
 The identity provider you added appears in this page.
 
 .Linked Accounts
-image:images/account-console-linked.png[Linked Accounts]
+image:{project_images}/account-console-linked.png[Linked Accounts]
 
 === Accessing other applications
 
 The *Applications* menu item shows users which applications you can access. In this case, only the Account Console is available.
 
 .Applications
-image:images/account-console-applications.png[Applications]
+
+image:{project_images}/account-console-applications.png[Applications]
