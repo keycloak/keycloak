@@ -156,8 +156,8 @@ export default function GroupsSection() {
             inset={{
               default: "insetNone",
               md: "insetSm",
-              xl: "inset2xl",
-              "2xl": "insetLg",
+              xl: "insetLg",
+              "2xl": "inset2xl",
             }}
             activeKey={activeTab}
             onSelect={(_, key) => setActiveTab(key as number)}

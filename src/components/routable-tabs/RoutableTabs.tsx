@@ -56,9 +56,8 @@ export const RoutableTabs = ({
       component={TabsComponent.nav}
       inset={{
         default: "insetNone",
-        md: "insetSm",
-        xl: "inset2xl",
-        "2xl": "insetLg",
+        xl: "insetLg",
+        "2xl": "inset2xl",
       }}
       {...otherProps}
     >
