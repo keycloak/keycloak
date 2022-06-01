@@ -210,7 +210,7 @@ export default function ClientProfileForm() {
         ]}
         divider
         dropdownItems={
-          !globalProfile
+          editMode && !globalProfile
             ? [
                 <DropdownItem
                   key="delete"
