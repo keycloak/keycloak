@@ -149,6 +149,11 @@ public class AdminRoot {
         return service;
     }
 
+    @Path("v2/clients")
+    public ClientExampleResource getNewClientResource() {
+        return new ClientExampleResource();
+    }
+
 
     protected AdminAuth authenticateRealmAdminRequest(HttpHeaders headers) {
         String tokenString = AppAuthManager.extractAuthorizationHeaderToken(headers);

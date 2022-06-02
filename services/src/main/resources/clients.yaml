@@ -1,0 +1,271 @@
+openapi: 3.0.0
+info:
+  title: Admin Rest API v2
+  version: '1.0'
+  description: 'Example of how we could create a contract fist based rest api'
+servers:
+  -
+    url: '{scheme}://localhost:8180/{basePath}'
+    variables:
+      scheme:
+        enum:
+          - https
+          - http
+        default: http
+      basePath:
+        default: /admin/realms/
+paths:
+  /clients:
+    summary: Path used to manage the list of clients.
+    description: >-
+      The REST endpoint/path used to list and create zero or more `Client` entities.  This path contains
+      a `GET` and `POST` operation to perform the list and create tasks, respectively.
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PartialClient'
+          description: Successful response - returns an array of `PartialClient` entities.
+      operationId: getClients
+      summary: List All Clients
+      description: Gets a list of all `PartialClient` entities.
+    post:
+      requestBody:
+        description: A new `Client` to be created.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Client'
+        required: true
+      responses:
+        '201':
+          description: Successful response.
+      operationId: createClient
+      summary: Create a Client
+      description: Creates a new instance of a `Client`.
+  '/clients/{clientId}':
+    summary: Path used to manage a single Client.
+    description: >-
+      The REST endpoint/path used to get, update, and delete single instances of an `Client`.  This path
+      contains `GET`, `PUT`, and `DELETE` operations used to perform the get, update, and delete tasks,
+      respectively.
+    get:
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Client'
+          description: Successful response - returns a single `Client`.
+      operationId: getClient
+      summary: Get a Client
+      description: Gets the details of a single instance of a `Client`.
+    put:
+      requestBody:
+        description: Updated `Client` information.
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Client'
+        required: true
+      responses:
+        '202':
+          description: Successful response.
+      operationId: updateClient
+      summary: Update a Client
+      description: Updates an existing `Client`.
+    delete:
+      responses:
+        '204':
+          description: Successful response.
+      operationId: deleteClient
+      summary: Delete a Client
+      description: Deletes an existing `Client`.
+    parameters:
+      -
+        name: clientId
+        description: A unique identifier for a `Client`.
+        schema:
+          type: string
+        in: path
+        required: true
+components:
+  schemas:
+    ErrorModel:
+      type: object
+      properties:
+        code:
+          type: string
+    Client:
+      title: Root Type for Client
+      description: ''
+      required:
+        - id
+        - clientId
+        - protocol
+        - access
+      type: object
+      properties:
+        id:
+          type: string
+          readOnly: true
+        clientId:
+          type: string
+        rootUrl:
+          type: string
+        adminUrl:
+          type: string
+        surrogateAuthRequired:
+          type: boolean
+        enabled:
+          type: boolean
+        alwaysDisplayInConsole:
+          type: boolean
+        clientAuthenticatorType:
+          type: string
+        redirectUris:
+          type: array
+          items:
+            type: string
+        webOrigins:
+          type: array
+          items:
+            type: string
+        notBefore:
+          format: int32
+          type: integer
+        bearerOnly:
+          type: boolean
+        consentRequired:
+          type: boolean
+        standardFlowEnabled:
+          type: boolean
+        implicitFlowEnabled:
+          type: boolean
+        directAccessGrantsEnabled:
+          type: boolean
+        serviceAccountsEnabled:
+          type: boolean
+        publicClient:
+          type: boolean
+        frontchannelLogout:
+          type: boolean
+        protocol:
+          type: string
+        attributes:
+          type: object
+          properties:
+            backchannel.logout.session.required:
+              type: string
+            backchannel.logout.revoke.offline.tokens:
+              type: string
+        authenticationFlowBindingOverrides:
+          type: object
+        fullScopeAllowed:
+          type: boolean
+        nodeReRegistrationTimeout:
+          format: int32
+          type: integer
+        defaultClientScopes:
+          type: array
+          items:
+            type: string
+        optionalClientScopes:
+          type: array
+          items:
+            type: string
+        access:
+          properties:
+            view:
+              type: boolean
+            configure:
+              type: boolean
+            manage:
+              type: boolean
+      example:
+        id: bfae6a3b-ff81-48ee-a545-99d300b0c09d
+        clientId: security-admin-console-v2
+        rootUrl: 'http://localhost:8080/'
+        adminUrl: 'http://localhost:8080/'
+        surrogateAuthRequired: false
+        enabled: true
+        alwaysDisplayInConsole: false
+        clientAuthenticatorType: client-secret
+        redirectUris:
+          - 'http://localhost:8080/*'
+        webOrigins:
+          - 'http://localhost:8080'
+        notBefore: 0
+        bearerOnly: false
+        consentRequired: false
+        standardFlowEnabled: true
+        implicitFlowEnabled: false
+        directAccessGrantsEnabled: true
+        serviceAccountsEnabled: false
+        publicClient: true
+        frontchannelLogout: false
+        protocol: openid-connect
+        attributes:
+          backchannel.logout.session.required: 'true'
+          backchannel.logout.revoke.offline.tokens: 'false'
+        authenticationFlowBindingOverrides: {}
+        fullScopeAllowed: true
+        nodeReRegistrationTimeout: -1
+        defaultClientScopes:
+          - web-origins
+          - roles
+          - profile
+          - email
+        optionalClientScopes:
+          - address
+          - phone
+          - offline_access
+          - microprofile-jwt
+        access:
+          view: true
+          configure: true
+          manage: true
+    PartialClient:
+      description: ''
+      required:
+        - id
+        - clientId
+      type: object
+      properties:
+        id:
+          description: ''
+          type: string
+          readOnly: true
+        clientId:
+          description: ''
+          type: string
+        protocol:
+          description: ''
+          type: string
+        description:
+          description: ''
+          type: string
+        baseUrl:
+          description: ''
+          type: string
+      example:
+        id: ebf0406a-5c70-4a04-8a29-25267c9d50bc
+        clientId: admin-cli
+        protocol: openid-connect
+        description: ''
+        baseUrl: /realms/master/account/
+  securitySchemes:
+    JWT:
+      type: apiKey
+      description: |
+        You can create a JSON Web Token (JWT) during auth.
+        Usage format: `Bearer <JWT>`
+      name: Authorization
+      in: header
+tags:
+  -
+    name: master
