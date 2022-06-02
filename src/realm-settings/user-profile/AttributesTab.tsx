@@ -24,6 +24,8 @@ import { toAttribute } from "../routes/Attribute";
 import type { UserProfileAttribute } from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
 import useToggle from "../../utils/useToggle";
 
+const RESTRICTED_ATTRIBUTES = ["username", "email"];
+
 type movedAttributeType = UserProfileAttribute;
 
 export const AttributesTab = () => {
@@ -182,6 +184,7 @@ export const AttributesTab = () => {
           },
           {
             title: t("common:delete"),
+            isActionable: ({ name }) => !RESTRICTED_ATTRIBUTES.includes(name!),
             onClick: (_key, _idx, component) => {
               setAttributeToDelete(component.name);
               toggleDeleteDialog();

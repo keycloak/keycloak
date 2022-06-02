@@ -20,11 +20,13 @@ export type Field<T> = {
   cellRenderer?: (row: T) => ReactNode;
 };
 
+export type Action<T> = IAction & { isActionable?: (item: T) => boolean };
+
 type DraggableTableProps<T> = Omit<TableComposableProps, "data" | "ref"> & {
   keyField: string;
   columns: Field<T>[];
   data: T[];
-  actions?: IAction[];
+  actions?: Action<T>[];
   onDragFinish: (dragged: string, newOrder: string[]) => void;
 };
 
@@ -217,7 +219,14 @@ export function DraggableTable<T>({
             ))}
             {actions && (
               <Td isActionCell>
-                <ActionsColumn items={actions} rowData={row} />
+                <ActionsColumn
+                  items={actions.map(({ isActionable, ...action }) =>
+                    isActionable
+                      ? { ...action, isDisabled: !isActionable(row) }
+                      : action
+                  )}
+                  rowData={row}
+                />
               </Td>
             )}
           </Tr>
