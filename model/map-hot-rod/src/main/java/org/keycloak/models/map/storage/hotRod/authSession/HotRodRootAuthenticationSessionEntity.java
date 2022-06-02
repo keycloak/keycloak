@@ -51,8 +51,7 @@ public class HotRodRootAuthenticationSessionEntity extends AbstractHotRodEntity 
     @AutoProtoSchemaBuilder(
             includeClasses = {
                     HotRodRootAuthenticationSessionEntity.class,
-                    HotRodAuthenticationSessionEntity.class,
-                    HotRodExecutionStatus.class,
+                    HotRodAuthenticationSessionEntity.class
             },
             schemaFilePath = "proto/",
             schemaPackageName = CommonPrimitivesProtoSchemaInitializer.HOT_ROD_ENTITY_PACKAGE,
