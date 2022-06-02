@@ -64,18 +64,21 @@ public class HotRodSingleUseObjectEntity extends AbstractHotRodEntity {
     public String id;
 
     @ProtoField(number = 3)
-    public String userId;
+    public String objectKey;
 
     @ProtoField(number = 4)
-    public String actionId;
+    public String userId;
 
     @ProtoField(number = 5)
-    public String actionVerificationNonce;
+    public String actionId;
 
     @ProtoField(number = 6)
-    public Long expiration;
+    public String actionVerificationNonce;
 
     @ProtoField(number = 7)
+    public Long expiration;
+
+    @ProtoField(number = 8)
     public Set<HotRodPair<String, String>> notes;
 
     public static abstract class AbstractHotRodSingleUseObjectEntityDelegate extends UpdatableHotRodEntityDelegateImpl<HotRodSingleUseObjectEntity> implements MapSingleUseObjectEntity {

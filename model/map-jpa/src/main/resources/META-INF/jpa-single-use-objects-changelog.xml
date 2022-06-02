@@ -18,15 +18,6 @@ limitations under the License.
 
 
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
-    <!-- aggregate changelog for cockroachdb -->
-    <include file="META-INF/jpa-auth-sessions-changelog.xml"/>
-    <include file="META-INF/jpa-authz-changelog.xml"/>
-    <include file="META-INF/jpa-client-scopes-changelog.xml"/>
-    <include file="META-INF/jpa-clients-changelog.xml"/>
-    <include file="META-INF/jpa-events-changelog.xml"/>
-    <include file="META-INF/jpa-groups-changelog.xml"/>
-    <include file="META-INF/jpa-realms-changelog.xml"/>
-    <include file="META-INF/jpa-roles-changelog.xml"/>
-    <include file="META-INF/jpa-single-use-objects-changelog.xml"/>
-    <include file="META-INF/jpa-user-login-failures-changelog.xml"/>
+    <!-- format of id of changelog file names: jpa-single-use-objects-changelog-${org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_SINGLE_USE_OBJECT}.xml -->
+    <include file="META-INF/single-use-objects/jpa-single-use-objects-changelog-1.xml"/>
 </databaseChangeLog>

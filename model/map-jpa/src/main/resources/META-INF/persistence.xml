@@ -33,6 +33,9 @@
     <class>org.keycloak.models.map.storage.jpa.role.entity.JpaRoleEntity</class>
     <class>org.keycloak.models.map.storage.jpa.role.entity.JpaRoleCompositeEntity</class>
     <class>org.keycloak.models.map.storage.jpa.role.entity.JpaRoleAttributeEntity</class>
+    <!--sinle-use-objects-->
+    <class>org.keycloak.models.map.storage.jpa.singleUseObject.entity.JpaSingleUseObjectEntity</class>
+    <class>org.keycloak.models.map.storage.jpa.singleUseObject.entity.JpaSingleUseObjectNoteEntity</class>
     <!--user-login-failures-->
     <class>org.keycloak.models.map.storage.jpa.loginFailure.entity.JpaUserLoginFailureEntity</class>
   </persistence-unit>
