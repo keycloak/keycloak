@@ -142,11 +142,11 @@ public class MapSingleUseObjectProvider implements ActionTokenStoreProvider, Sin
         MapSingleUseObjectEntity singleUseEntity = getWithExpiration(key);
 
         if (singleUseEntity != null) {
-            throw new ModelDuplicateException("Single-use object entity exists: " + singleUseEntity.getId());
+            throw new ModelDuplicateException("Single-use object entity exists: " + singleUseEntity.getObjectKey());
         }
 
         singleUseEntity = new MapSingleUseObjectEntityImpl();
-        singleUseEntity.setId(key);
+        singleUseEntity.setObjectKey(key);
         singleUseEntity.setExpiration(Time.currentTimeMillis() + TimeAdapter.fromSecondsToMilliseconds(lifespanSeconds));
         singleUseEntity.setNotes(notes);
 
@@ -174,7 +174,7 @@ public class MapSingleUseObjectProvider implements ActionTokenStoreProvider, Sin
 
         if (singleUseEntity != null) {
             Map<String, String> notes = singleUseEntity.getNotes();
-            if (actionTokenStoreTx.delete(key)) {
+            if (actionTokenStoreTx.delete(singleUseEntity.getId())) {
                 return notes == null ? Collections.emptyMap() : Collections.unmodifiableMap(notes);
             }
         }
@@ -204,7 +204,7 @@ public class MapSingleUseObjectProvider implements ActionTokenStoreProvider, Sin
             return false;
         } else {
             singleUseEntity = new MapSingleUseObjectEntityImpl();
-            singleUseEntity.setId(key);
+            singleUseEntity.setObjectKey(key);
             singleUseEntity.setExpiration(Time.currentTimeMillis() + TimeAdapter.fromSecondsToMilliseconds(lifespanInSeconds));
 
             actionTokenStoreTx.create(singleUseEntity);
@@ -228,10 +228,13 @@ public class MapSingleUseObjectProvider implements ActionTokenStoreProvider, Sin
     }
 
     private MapSingleUseObjectEntity getWithExpiration(String key) {
-        MapSingleUseObjectEntity singleUseEntity = actionTokenStoreTx.read(key);
+        DefaultModelCriteria<ActionTokenValueModel> mcb = criteria();
+        mcb = mcb.compare(ActionTokenValueModel.SearchableFields.OBJECT_KEY, ModelCriteriaBuilder.Operator.EQ, key);
+
+        MapSingleUseObjectEntity singleUseEntity = actionTokenStoreTx.read(withCriteria(mcb)).findFirst().orElse(null);
         if (singleUseEntity != null) {
             if (isExpired(singleUseEntity, false)) {
-                actionTokenStoreTx.delete(key);
+                actionTokenStoreTx.delete(singleUseEntity.getId());
             } else {
                 return singleUseEntity;
             }

@@ -28,6 +28,7 @@ public interface ActionTokenValueModel {
 
     class SearchableFields {
         public static final SearchableModelField<ActionTokenValueModel> ID                          = new SearchableModelField<>("id", String.class);
+        public static final SearchableModelField<ActionTokenValueModel> OBJECT_KEY                  = new SearchableModelField<>("objectKey", String.class);
         public static final SearchableModelField<ActionTokenValueModel> USER_ID                     = new SearchableModelField<>("userId", String.class);
         public static final SearchableModelField<ActionTokenValueModel> ACTION_ID                   = new SearchableModelField<>("actionId", String.class);
         public static final SearchableModelField<ActionTokenValueModel> ACTION_VERIFICATION_NONCE   = new SearchableModelField<>("actionVerificationNonce", String.class);

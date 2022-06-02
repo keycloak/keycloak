@@ -58,6 +58,7 @@ import org.keycloak.common.util.StringPropertyReplacer;
 import org.keycloak.component.AmphibianProviderFactory;
 import org.keycloak.events.Event;
 import org.keycloak.events.admin.AdminEvent;
+import org.keycloak.models.ActionTokenValueModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.GroupModel;
@@ -126,6 +127,8 @@ import org.keycloak.models.map.storage.jpa.realm.entity.JpaComponentEntity;
 import org.keycloak.models.map.storage.jpa.realm.entity.JpaRealmEntity;
 import org.keycloak.models.map.storage.jpa.role.JpaRoleMapKeycloakTransaction;
 import org.keycloak.models.map.storage.jpa.role.entity.JpaRoleEntity;
+import org.keycloak.models.map.storage.jpa.singleUseObject.JpaSingleUseObjectMapKeycloakTransaction;
+import org.keycloak.models.map.storage.jpa.singleUseObject.entity.JpaSingleUseObjectEntity;
 import org.keycloak.models.map.storage.jpa.updater.MapJpaUpdaterProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
@@ -184,7 +187,9 @@ public class JpaMapStorageProviderFactory implements
         .constructor(MapWebAuthnPolicyEntity.class,             MapWebAuthnPolicyEntityImpl::new)
         //role
         .constructor(JpaRoleEntity.class,                       JpaRoleEntity::new)
-        //user login-failure
+        //single-use-object
+        .constructor(JpaSingleUseObjectEntity.class,            JpaSingleUseObjectEntity::new)
+        //user-login-failure
         .constructor(JpaUserLoginFailureEntity.class,           JpaUserLoginFailureEntity::new)
         .build();
 
@@ -199,6 +204,7 @@ public class JpaMapStorageProviderFactory implements
         MODEL_TO_TX.put(GroupModel.class,                       JpaGroupMapKeycloakTransaction::new);
         MODEL_TO_TX.put(RealmModel.class,                       JpaRealmMapKeycloakTransaction::new);
         MODEL_TO_TX.put(RoleModel.class,                        JpaRoleMapKeycloakTransaction::new);
+        MODEL_TO_TX.put(ActionTokenValueModel.class,            JpaSingleUseObjectMapKeycloakTransaction::new);
         MODEL_TO_TX.put(UserLoginFailureModel.class,            JpaUserLoginFailureMapKeycloakTransaction::new);
 
         //authz
