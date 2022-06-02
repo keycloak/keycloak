@@ -89,7 +89,7 @@ When it is omitted, the incoming request headers are used.
 .Invoked command:
 [source, bash]
 ----
-curl GET "https://localhost:8080/realms/master/.well-known/openid-configuration" | jq .
+curl -X GET "http://localhost:8080/realms/master/.well-known/openid-configuration" | jq .
 ----
 
 .Result:
