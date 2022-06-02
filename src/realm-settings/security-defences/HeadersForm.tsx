@@ -30,19 +30,19 @@ export const HeadersForm = ({ save, reset }: HeadersFormProps) => {
     >
       <HelpLinkTextInput
         fieldName="browserSecurityHeaders.xFrameOptions"
-        url="https://datatracker.ietf.org/doc/html/rfc7034"
+        url="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Frame-Options"
       />
       <HelpLinkTextInput
         fieldName="browserSecurityHeaders.contentSecurityPolicy"
-        url="https://www.w3.org/TR/CSP/"
+        url="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy"
       />
       <HelpLinkTextInput
         fieldName="browserSecurityHeaders.contentSecurityPolicyReportOnly"
-        url="https://www.w3.org/TR/CSP/"
+        url="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Security-Policy-Report-Only"
       />
       <HelpLinkTextInput
         fieldName="browserSecurityHeaders.xContentTypeOptions"
-        url="https://owasp.org/index.php/List_of_useful_HTTP_headers"
+        url="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Content-Type-Options"
       />
       <HelpLinkTextInput
         fieldName="browserSecurityHeaders.xRobotsTag"
@@ -50,11 +50,11 @@ export const HeadersForm = ({ save, reset }: HeadersFormProps) => {
       />
       <HelpLinkTextInput
         fieldName="browserSecurityHeaders.xXSSProtection"
-        url="https://owasp.org/www-project-secure-headers/#xxxsp"
+        url="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-XSS-Protection"
       />
       <HelpLinkTextInput
         fieldName="browserSecurityHeaders.strictTransportSecurity"
-        url="https://owasp.org/www-project-secure-headers/#hsts"
+        url="https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security"
       />
 
       <ActionGroup>
