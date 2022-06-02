@@ -43,9 +43,11 @@ public class ServerConfigGen {
                 field.addSingleMemberAnnotation(
                         ANNOTATION_JSON_PROPERTY,
                         new StringLiteralExpr(o.getKey()));
-                field.addSingleMemberAnnotation(
-                        ANNOTATION_JSON_PROPERTY_DESCRIPTION,
-                        new StringLiteralExpr(StringEscapeUtils.escapeJava(o.getDescription())));
+                if (o.getDescription() != null) {
+                    field.addSingleMemberAnnotation(
+                            ANNOTATION_JSON_PROPERTY_DESCRIPTION,
+                            new StringLiteralExpr(StringEscapeUtils.escapeJava(o.getDescription())));
+                }
                 field.createGetter();
                 field.createSetter();
             }

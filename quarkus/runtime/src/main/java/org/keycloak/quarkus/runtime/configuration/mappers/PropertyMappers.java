@@ -1,12 +1,9 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
-import io.quarkus.runtime.QuarkusApplication;
-import io.quarkus.runtime.configuration.ConfigurationRuntimeConfig;
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
-import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -173,4 +170,5 @@ public final class PropertyMappers {
             return super.put(key, value);
         }
     }
+
 }

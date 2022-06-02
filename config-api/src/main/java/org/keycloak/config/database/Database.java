@@ -15,16 +15,17 @@
  * limitations under the License.
  */
 
-package org.keycloak.quarkus.runtime.storage.database;
-
-import static java.util.Arrays.asList;
+package org.keycloak.config.database;
 
 import java.io.File;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
+
+import static java.util.Arrays.asList;
 
 public final class Database {
 
@@ -96,7 +97,7 @@ public final class Database {
         return DATABASES.keySet().stream().sorted().toArray(String[]::new);
     }
 
-    private enum Vendor {
+    public enum Vendor {
         H2("h2",
                 "org.h2.jdbcx.JdbcDataSource",
                 "org.h2.Driver",
@@ -186,6 +187,11 @@ public final class Database {
 
         public boolean isOfKind(String dbKind) {
             return databaseKind.equals(dbKind);
+        }
+
+        @Override
+        public String toString() {
+            return databaseKind.toLowerCase(Locale.ROOT);
         }
     }
 }
