@@ -46,8 +46,6 @@ public class HotRodResourceServerEntity extends AbstractHotRodEntity {
     @AutoProtoSchemaBuilder(
             includeClasses = {
                     HotRodResourceServerEntity.class,
-                    HotRodPolicyEnforcementMode.class,
-                    HotRodDecisionStrategy.class
             },
             schemaFilePath = "proto/",
             schemaPackageName = CommonPrimitivesProtoSchemaInitializer.HOT_ROD_ENTITY_PACKAGE)
@@ -76,10 +74,10 @@ public class HotRodResourceServerEntity extends AbstractHotRodEntity {
     public Boolean allowRemoteResourceManagement;
 
     @ProtoField(number = 6)
-    public HotRodPolicyEnforcementMode policyEnforcementMode;
+    public Integer policyEnforcementMode;
 
     @ProtoField(number = 7)
-    public HotRodDecisionStrategy decisionStrategy;
+    public Integer decisionStrategy;
 
     public static abstract class AbstractHotRodResourceServerEntity extends UpdatableHotRodEntityDelegateImpl<HotRodResourceServerEntity> implements MapResourceServerEntity {
 

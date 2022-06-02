@@ -48,8 +48,7 @@ public class HotRodUserSessionEntity extends AbstractHotRodEntity {
 
     @AutoProtoSchemaBuilder(
             includeClasses = {
-                    HotRodUserSessionEntity.class,
-                    HotRodSessionState.class
+                    HotRodUserSessionEntity.class
             },
             schemaFilePath = "proto/",
             schemaPackageName = CommonPrimitivesProtoSchemaInitializer.HOT_ROD_ENTITY_PACKAGE,
@@ -110,7 +109,7 @@ public class HotRodUserSessionEntity extends AbstractHotRodEntity {
     public Set<HotRodStringPair> notes;
 
     @ProtoField(number = 15)
-    public HotRodSessionState state;
+    public Integer state;
 
     @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
     @ProtoField(number = 16)

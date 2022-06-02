@@ -48,12 +48,11 @@ public class HotRodPolicyEntity extends AbstractHotRodEntity {
 
     @AutoProtoSchemaBuilder(
             includeClasses = {
-                    HotRodPolicyEntity.class,
-                    HotRodLogic.class
+                    HotRodPolicyEntity.class
             },
             schemaFilePath = "proto/",
             schemaPackageName = CommonPrimitivesProtoSchemaInitializer.HOT_ROD_ENTITY_PACKAGE,
-            dependsOn = {CommonPrimitivesProtoSchemaInitializer.class, HotRodResourceServerEntity.HotRodResourceServerEntitySchema.class}
+            dependsOn = {CommonPrimitivesProtoSchemaInitializer.class}
     )
     public interface HotRodPolicyEntitySchema extends GeneratedSchema {
         HotRodPolicyEntitySchema INSTANCE = new HotRodPolicyEntitySchemaImpl();
@@ -88,10 +87,10 @@ public class HotRodPolicyEntity extends AbstractHotRodEntity {
     public String type;
 
     @ProtoField(number = 8)
-    public HotRodDecisionStrategy decisionStrategy;
+    public Integer decisionStrategy;
 
     @ProtoField(number = 9)
-    public HotRodLogic logic;
+    public Integer logic;
 
     @ProtoField(number = 10)
     @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")

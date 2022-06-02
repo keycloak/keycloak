@@ -17,25 +17,11 @@
 
 package org.keycloak.models.map.storage.hotRod.common;
 
-import org.keycloak.events.EventType;
-import org.keycloak.events.admin.OperationType;
-import org.keycloak.models.AuthenticationExecutionModel;
-import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.storage.hotRod.authSession.HotRodAuthenticationSessionEntity;
-import org.keycloak.models.map.storage.hotRod.authorization.HotRodDecisionStrategy;
-import org.keycloak.models.map.storage.hotRod.authorization.HotRodLogic;
-import org.keycloak.models.map.storage.hotRod.authorization.HotRodPolicyEnforcementMode;
-import org.keycloak.models.map.storage.hotRod.events.HotRodEventType;
-import org.keycloak.models.map.storage.hotRod.events.HotRodOperationType;
 import org.keycloak.models.map.storage.hotRod.realm.entity.HotRodLocalizationTexts;
-import org.keycloak.models.map.storage.hotRod.realm.entity.HotRodRequirement;
 import org.keycloak.models.map.storage.hotRod.user.HotRodUserConsentEntity;
 import org.keycloak.models.map.storage.hotRod.user.HotRodUserFederatedIdentityEntity;
-import org.keycloak.models.map.storage.hotRod.userSession.HotRodSessionState;
-import org.keycloak.representations.idm.authorization.DecisionStrategy;
-import org.keycloak.representations.idm.authorization.Logic;
-import org.keycloak.representations.idm.authorization.PolicyEnforcementMode;
 
 import java.util.HashMap;
 import java.util.List;
@@ -143,14 +129,6 @@ public class HotRodTypesUtils {
         return hotRodAuthenticationSessionEntity.tabId;
     }
 
-    public static AuthenticationExecutionModel.Requirement migrateHotRodRequirementToRequirement(HotRodRequirement p0) {
-        return p0 == null ? null : AuthenticationExecutionModel.Requirement.values()[p0.ordinal()];
-    }
-
-    public static HotRodRequirement migrateRequirementToHotRodRequirement(AuthenticationExecutionModel.Requirement p0) {
-        return p0 == null ? null : HotRodRequirement.values()[p0.ordinal()];
-    }
-
     public static String getKey(HotRodLocalizationTexts hotRodLocalizationTexts) {
         return hotRodLocalizationTexts.getLocale();
     }
@@ -166,53 +144,5 @@ public class HotRodTypesUtils {
         hotRodLocalizationTexts.setValues(migrateMapToSet(p1, HotRodTypesUtils::createHotRodPairFromMapEntry));
 
         return hotRodLocalizationTexts;
-    }
-
-    public static UserSessionModel.State migrateHotRodSessionStateToState(HotRodSessionState hotRodState) {
-        return UserSessionModel.State.valueOf(hotRodState.name());
-    }
-
-    public static HotRodSessionState migrateStateToHotRodSessionState(UserSessionModel.State state) {
-        return HotRodSessionState.valueOf(state.name());
-    }
-
-    public static HotRodDecisionStrategy migrateDecisionStrategyToHotRodDecisionStrategy(DecisionStrategy p0) {
-        return p0 == null ? null : HotRodDecisionStrategy.values()[p0.ordinal()];
-    }
-
-    public static DecisionStrategy migrateHotRodDecisionStrategyToDecisionStrategy(HotRodDecisionStrategy p0) {
-        return p0 == null ? null :  DecisionStrategy.values()[p0.ordinal()];
-    }
-
-    public static HotRodPolicyEnforcementMode migratePolicyEnforcementModeToHotRodPolicyEnforcementMode(PolicyEnforcementMode p0) {
-        return p0 == null ? null :  HotRodPolicyEnforcementMode.values()[p0.ordinal()];
-    }
-
-    public static PolicyEnforcementMode migrateHotRodPolicyEnforcementModeToPolicyEnforcementMode(HotRodPolicyEnforcementMode p0) {
-        return p0 == null ? null :  PolicyEnforcementMode.values()[p0.ordinal()];
-    }
-
-    public static HotRodLogic migrateLogicToHotRodLogic(Logic p0) {
-        return p0 == null ? null :  HotRodLogic.values()[p0.ordinal()];
-    }
-
-    public static Logic migrateHotRodLogicToLogic(HotRodLogic p0) {
-        return p0 == null ? null :  Logic.values()[p0.ordinal()];
-    }
-
-    public static OperationType migrateHotRodOperationTypeToOperationType(HotRodOperationType p0) {
-        return p0 == null ? null :  OperationType.values()[p0.ordinal()];
-    }
-
-    public static HotRodOperationType migrateOperationTypeToHotRodOperationType(OperationType p0) {
-        return p0 == null ? null :  HotRodOperationType.values()[p0.ordinal()];
-    }
-
-    public static HotRodEventType migrateEventTypeToHotRodEventType(EventType p0) {
-        return p0 == null ? null :  HotRodEventType.values()[p0.ordinal()];
-    }
-
-    public static EventType migrateHotRodEventTypeToEventType(HotRodEventType p0) {
-        return p0 == null ? null :  EventType.values()[p0.ordinal()];
     }
 }

@@ -59,7 +59,6 @@ import org.keycloak.models.map.storage.hotRod.realm.entity.HotRodOTPPolicyEntity
 import org.keycloak.models.map.storage.hotRod.realm.entity.HotRodRequiredActionProviderEntity;
 import org.keycloak.models.map.storage.hotRod.realm.entity.HotRodRequiredActionProviderEntityDelegate;
 import org.keycloak.models.map.storage.hotRod.realm.entity.HotRodRequiredCredentialEntity;
-import org.keycloak.models.map.storage.hotRod.realm.entity.HotRodRequirement;
 import org.keycloak.models.map.storage.hotRod.realm.entity.HotRodWebAuthnPolicyEntity;
 
 import java.util.Collections;
@@ -96,7 +95,6 @@ public class HotRodRealmEntity extends AbstractHotRodEntity {
                     HotRodOTPPolicyEntity.class,
                     HotRodRequiredActionProviderEntity.class,
                     HotRodRequiredCredentialEntity.class,
-                    HotRodRequirement.class,
                     HotRodWebAuthnPolicyEntity.class,
                     HotRodRealmEntity.class
             },

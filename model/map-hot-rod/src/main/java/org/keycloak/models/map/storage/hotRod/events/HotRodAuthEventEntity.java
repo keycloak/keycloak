@@ -45,8 +45,7 @@ public class HotRodAuthEventEntity extends AbstractHotRodEntity {
 
     @AutoProtoSchemaBuilder(
             includeClasses = {
-                    HotRodAuthEventEntity.class,
-                    HotRodEventType.class,
+                    HotRodAuthEventEntity.class
             },
             schemaFilePath = "proto/",
             schemaPackageName = CommonPrimitivesProtoSchemaInitializer.HOT_ROD_ENTITY_PACKAGE,
@@ -65,7 +64,7 @@ public class HotRodAuthEventEntity extends AbstractHotRodEntity {
 
     @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
     @ProtoField(number = 3)
-    public HotRodEventType type;
+    public Integer type;
 
     @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
     @ProtoField(number = 4)
