@@ -138,6 +138,11 @@ export default function EventsSection() {
     commitFilters();
   }
 
+  function resetSearch() {
+    reset();
+    commitFilters();
+  }
+
   function removeFilter(key: keyof UserEventSearchForm) {
     const formValues: UserEventSearchForm = { ...getValues() };
     delete formValues[key];
@@ -342,13 +347,19 @@ export default function EventsSection() {
               </FormGroup>
               <ActionGroup>
                 <Button
-                  className="keycloak__user_events_search__form_btn"
                   variant={"primary"}
                   onClick={submitSearch}
                   data-testid="search-events-btn"
                   isDisabled={!isDirty}
                 >
                   {t("searchUserEventsBtn")}
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={resetSearch}
+                  isDisabled={!isDirty}
+                >
+                  {t("resetBtn")}
                 </Button>
               </ActionGroup>
             </Form>

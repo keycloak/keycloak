@@ -147,6 +147,11 @@ export const AdminEvents = () => {
     commitFilters();
   }
 
+  function resetSearch() {
+    reset();
+    commitFilters();
+  }
+
   function removeFilter(key: keyof AdminEventSearchForm) {
     const formValues: AdminEventSearchForm = { ...getValues() };
     delete formValues[key];
@@ -437,13 +442,19 @@ export const AdminEvents = () => {
               </FormGroup>
               <ActionGroup>
                 <Button
-                  className="keycloak__user_events_search__form_btn"
                   variant={"primary"}
                   onClick={submitSearch}
                   data-testid="search-events-btn"
                   isDisabled={!isDirty}
                 >
                   {t("searchAdminEventsBtn")}
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={resetSearch}
+                  isDisabled={!isDirty}
+                >
+                  {t("resetBtn")}
                 </Button>
               </ActionGroup>
             </Form>

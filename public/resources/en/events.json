@@ -31,5 +31,6 @@
   "attribute": "Attribute",
   "value": "Value",
   "representation": "Representation",
-  "noUserDetails": "No user details"
+  "noUserDetails": "No user details",
+  "resetBtn": "Reset"
 }
