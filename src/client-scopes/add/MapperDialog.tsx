@@ -105,7 +105,7 @@ export const AddMapperDialog = (props: AddMapperDialogProps) => {
                 key="confirm"
                 isDisabled={rows.length === 0 || selectedRows.length === 0}
                 onClick={() => {
-                  props.onConfirm(selectedRows);
+                  props.onConfirm(selectedRows.map(({ item }) => item));
                   props.toggleDialog();
                 }}
               >
