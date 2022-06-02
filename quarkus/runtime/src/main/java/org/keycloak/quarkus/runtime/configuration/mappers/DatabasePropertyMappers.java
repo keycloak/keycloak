@@ -3,14 +3,14 @@ package org.keycloak.quarkus.runtime.configuration.mappers;
 import io.quarkus.datasource.common.runtime.DatabaseKind;
 import io.smallrye.config.ConfigSourceInterceptorContext;
 import io.smallrye.config.ConfigValue;
-import org.keycloak.config.OptionCategory;
-import org.keycloak.quarkus.runtime.storage.database.Database;
+import org.keycloak.config.DatabaseOptions;
+import org.keycloak.config.database.Database;
 
 import java.util.Optional;
 import java.util.function.BiFunction;
 
-import static java.util.Arrays.asList;
 import static org.keycloak.quarkus.runtime.Messages.invalidDatabaseVendor;
+import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 import static org.keycloak.quarkus.runtime.integration.QuarkusPlatform.addInitializationException;
 
 final class DatabasePropertyMappers {
@@ -19,119 +19,99 @@ final class DatabasePropertyMappers {
 
     public static PropertyMapper[] getDatabasePropertyMappers() {
         return new PropertyMapper[] {
-                builder().from("db-dialect")
+                fromOption(DatabaseOptions.DB_DIALECT)
                         .mapFrom("db")
                         .to("quarkus.hibernate-orm.dialect")
-                        .isBuildTimeProperty(true)
                         .transformer(DatabasePropertyMappers::transformDialect)
-                        .hidden(true)
                         .build(),
-                builder().from("db-driver")
+                fromOption(DatabaseOptions.DB_DRIVER)
                         .mapFrom("db")
-                        .defaultValue(Database.getDriver("dev-file", true).get())
                         .to("quarkus.datasource.jdbc.driver")
-                        .transformer(DatabasePropertyMappers::getXaOrNonXaDriver)
-                        .hidden(true)
+                        .transformer(DatabasePropertyMappers.getXaOrNonXaDriver())
                         .build(),
-                builder().from("db").
-                        to("quarkus.datasource.db-kind")
-                        .isBuildTimeProperty(true)
-                        .transformer(toDatabaseKind())
-                        .description("The database vendor. Possible values are: " + String.join(", ", Database.getAliases()))
+                fromOption(DatabaseOptions.DB)
+                        .to("quarkus.datasource.db-kind")
+                        .transformer(DatabasePropertyMappers::toDatabaseKind)
                         .paramLabel("vendor")
-                        .expectedValues(asList(Database.getAliases()))
                         .build(),
-                builder().from("db-url")
+                fromOption(DatabaseOptions.DB_URL)
                         .to("quarkus.datasource.jdbc.url")
                         .mapFrom("db")
-                        .transformer((value, context) -> Database.getDefaultUrl(value).orElse(value))
-                        .description("The full database JDBC URL. If not provided, a default URL is set based on the selected database vendor. " +
-                                "For instance, if using 'postgres', the default JDBC URL would be 'jdbc:postgresql://localhost/keycloak'. ")
+                        .transformer(DatabasePropertyMappers.getDatabaseUrl())
                         .paramLabel("jdbc-url")
                         .build(),
-                builder().from("db-url-host")
+                fromOption(DatabaseOptions.DB_URL_HOST)
                         .to("kc.db-url-host")
-                        .description("Sets the hostname of the default JDBC URL of the chosen vendor. If the `db-url` option is set, this option is ignored.")
                         .paramLabel("hostname")
                         .build(),
-                builder().from("db-url-database")
+                fromOption(DatabaseOptions.DB_URL_DATABASE)
                         .to("kc.db-url-database")
-                        .description("Sets the database name of the default JDBC URL of the chosen vendor. If the `db-url` option is set, this option is ignored.")
                         .paramLabel("dbname")
                         .build(),
-                builder().from("db-url-port")
+                fromOption(DatabaseOptions.DB_URL_PORT)
                         .to("kc.db-url-port")
-                        .description("Sets the port of the default JDBC URL of the chosen vendor. If the `db-url` option is set, this option is ignored.")
                         .paramLabel("port")
                         .build(),
-                builder().from("db-url-properties")
+                fromOption(DatabaseOptions.DB_URL_PROPERTIES)
                         .to("kc.db-url-properties")
-                        .description("Sets the properties of the default JDBC URL of the chosen vendor. If the `db-url` option is set, this option is ignored.")
                         .paramLabel("properties")
                         .build(),
-                builder().from("db-username")
+                fromOption(DatabaseOptions.DB_USERNAME)
                         .to("quarkus.datasource.username")
                         .mapFrom("db")
                         .transformer(DatabasePropertyMappers::resolveUsername)
-                        .description("The username of the database user.")
                         .paramLabel("username")
                         .build(),
-                builder().from("db-password")
+                fromOption(DatabaseOptions.DB_PASSWORD)
                         .to("quarkus.datasource.password")
                         .mapFrom("db")
                         .transformer(DatabasePropertyMappers::resolvePassword)
-                        .description("The password of the database user.")
                         .paramLabel("password")
                         .isMasked(true)
                         .build(),
-                builder().from("db-schema")
+                fromOption(DatabaseOptions.DB_SCHEMA)
                         .to("quarkus.hibernate-orm.database.default-schema")
-                        .description("The database schema to be used.")
                         .paramLabel("schema")
                         .build(),
-                builder().from("db-pool-initial-size")
+                fromOption(DatabaseOptions.DB_POOL_INITIAL_SIZE)
                         .to("quarkus.datasource.jdbc.initial-size")
-                        .description("The initial size of the connection pool.")
                         .paramLabel("size")
                         .build(),
-                builder().from("db-pool-min-size")
+                fromOption(DatabaseOptions.DB_POOL_MIN_SIZE)
                         .to("quarkus.datasource.jdbc.min-size")
-                        .description("The minimal size of the connection pool.")
                         .paramLabel("size")
                         .build(),
-                builder().from("db-pool-max-size")
+                fromOption(DatabaseOptions.DB_POOL_MAX_SIZE)
                         .to("quarkus.datasource.jdbc.max-size")
-                        .defaultValue(String.valueOf(100))
-                        .description("The maximum size of the connection pool.")
                         .paramLabel("size")
                         .build()
         };
     }
 
-    private static String getXaOrNonXaDriver(String db, ConfigSourceInterceptorContext context) {
-        ConfigValue xaEnabledConfigValue = context.proceed("kc.transaction-xa-enabled");
-
-        boolean isXaEnabled = xaEnabledConfigValue == null || Boolean.parseBoolean(xaEnabledConfigValue.getValue());
-
-        return Database.getDriver(db, isXaEnabled).orElse(db);
+    private static BiFunction<String, ConfigSourceInterceptorContext, String> getDatabaseUrl() {
+        return (s, c) -> Database.getDefaultUrl(s).orElse(s);
     }
 
-    private static BiFunction<String, ConfigSourceInterceptorContext, String> toDatabaseKind() {
-        return (db, context) -> {
-            Optional<String> databaseKind = Database.getDatabaseKind(db);
+    private static BiFunction<String, ConfigSourceInterceptorContext, String> getXaOrNonXaDriver() {
+        return (String db, ConfigSourceInterceptorContext context) -> {
+            ConfigValue xaEnabledConfigValue = context.proceed("kc.transaction-xa-enabled");
 
-            if (databaseKind.isPresent()) {
-                return databaseKind.get();
-            }
+            boolean isXaEnabled = xaEnabledConfigValue == null || Boolean.parseBoolean(xaEnabledConfigValue.getValue());
 
-            addInitializationException(invalidDatabaseVendor(db, Database.getAliases()));
-
-            return "h2";
+            return Database.getDriver(db, isXaEnabled).orElse(db);
         };
     }
 
-    private static <T> PropertyMapper.Builder<T> builder() {
-        return PropertyMapper.builder(OptionCategory.DATABASE);
+    private static String toDatabaseKind(String db, ConfigSourceInterceptorContext context) {
+        Optional<String> databaseKind = Database.getDatabaseKind(db);
+
+        if (databaseKind.isPresent()) {
+            return databaseKind.get();
+        }
+
+        addInitializationException(invalidDatabaseVendor(db, Database.getAliases()));
+
+        return "h2";
     }
 
     private static String resolveUsername(String value, ConfigSourceInterceptorContext context) {

@@ -24,6 +24,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.api.condition.OS;
+import org.keycloak.config.LoggingOptions;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.RawDistOnly;
@@ -142,7 +143,7 @@ public class LoggingDistTest {
     @EnabledOnOs(value = { OS.LINUX, OS.MAC }, disabledReason = "different shell escaping behaviour on Windows.")
     @Launch({ "start-dev", "--log=console,file"})
     void testKeycloakLogFileCreated(RawDistRootPath path) {
-        Path logFilePath = Paths.get(path.getDistRootPath() + File.separator + LoggingPropertyMappers.DEFAULT_LOG_PATH);
+        Path logFilePath = Paths.get(path.getDistRootPath() + File.separator + LoggingOptions.DEFAULT_LOG_PATH);
         File logFile = new File(logFilePath.toString());
         assertTrue(logFile.isFile(), "Log file does not exist!");
     }
@@ -151,7 +152,7 @@ public class LoggingDistTest {
     @EnabledOnOs(value = { OS.WINDOWS }, disabledReason = "different shell escaping behaviour on Windows.")
     @Launch({ "start-dev", "--log=\"console,file\""})
     void testWinKeycloakLogFileCreated(RawDistRootPath path) {
-        Path logFilePath = Paths.get(path.getDistRootPath() + File.separator + LoggingPropertyMappers.DEFAULT_LOG_PATH);
+        Path logFilePath = Paths.get(path.getDistRootPath() + File.separator + LoggingOptions.DEFAULT_LOG_PATH);
         File logFile = new File(logFilePath.toString());
         assertTrue(logFile.isFile(), "Log file does not exist!");
     }
@@ -160,7 +161,7 @@ public class LoggingDistTest {
     @EnabledOnOs(value = { OS.LINUX, OS.MAC }, disabledReason = "different shell escaping behaviour on Windows.")
     @Launch({ "start-dev", "--log=console,file", "--log-file-format=\"%d{HH:mm:ss} %-5p [%c{1.}] (%t) %s%e%n\""})
     void testFileLoggingHasDifferentFormat(RawDistRootPath path) throws IOException {
-        Path logFilePath = Paths.get(path.getDistRootPath() + File.separator + LoggingPropertyMappers.DEFAULT_LOG_PATH);
+        Path logFilePath = Paths.get(path.getDistRootPath() + File.separator + LoggingOptions.DEFAULT_LOG_PATH);
         File logFile = new File(logFilePath.toString());
 
         String data = FileUtils.readFileToString(logFile, Charset.defaultCharset());

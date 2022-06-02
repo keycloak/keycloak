@@ -19,9 +19,9 @@ public class Option<T> {
     private final boolean buildTime;
     private final String description;
     private final Optional<T> defaultValue;
-    private final List<T> expectedValues;
+    private final List<String> expectedValues;
 
-    public Option(Class<T> type, String key, OptionCategory category, Set<Runtime> supportedRuntimes, boolean buildTime, String description, Optional<T> defaultValue, List<T> expectedValues) {
+    public Option(Class<T> type, String key, OptionCategory category, Set<Runtime> supportedRuntimes, boolean buildTime, String description, Optional<T> defaultValue, List<String> expectedValues) {
         this.type = type;
         this.key = key;
         this.category = category;
@@ -58,8 +58,21 @@ public class Option<T> {
         return defaultValue;
     }
 
-    public List<T> getExpectedValues() {
+    public List<String> getExpectedValues() {
         return expectedValues;
+    }
+
+    public Option<T> withRuntimeSpecificDefault(T defaultValue) {
+        return new Option<T>(
+            this.type,
+            this.key,
+            this.category,
+            this.supportedRuntimes,
+            this.buildTime,
+            this.description,
+            Optional.ofNullable(defaultValue),
+            this.expectedValues
+        );
     }
 
 }

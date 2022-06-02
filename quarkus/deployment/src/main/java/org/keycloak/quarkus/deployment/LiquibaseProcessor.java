@@ -81,7 +81,7 @@ class LiquibaseProcessor {
     private void filterImplementations(Class<?> types, String dbKind, Set<ClassInfo> classes) {
         if (Database.class.equals(types)) {
             // removes unsupported databases
-            classes.removeIf(classInfo -> !org.keycloak.quarkus.runtime.storage.database.Database.isLiquibaseDatabaseSupported(classInfo.name().toString(), dbKind));
+            classes.removeIf(classInfo -> !org.keycloak.config.database.Database.isLiquibaseDatabaseSupported(classInfo.name().toString(), dbKind));
         }
     }
 }

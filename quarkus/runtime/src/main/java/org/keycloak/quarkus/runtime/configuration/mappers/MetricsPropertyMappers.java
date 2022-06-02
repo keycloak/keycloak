@@ -1,8 +1,8 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
-import org.keycloak.config.OptionCategory;
+import org.keycloak.config.MetricsOptions;
 
-import java.util.Arrays;
+import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
 
 final class MetricsPropertyMappers {
@@ -11,18 +11,11 @@ final class MetricsPropertyMappers {
 
     public static PropertyMapper[] getMetricsPropertyMappers() {
         return new PropertyMapper[] {
-                builder().from("metrics-enabled")
+                fromOption(MetricsOptions.METRICS_ENABLED)
                         .to("quarkus.datasource.metrics.enabled")
-                        .isBuildTimeProperty(true)
-                        .defaultValue(Boolean.FALSE.toString())
-                        .description("If the server should expose metrics. If enabled, metrics are available at the '/metrics' endpoint.")
                         .paramLabel(Boolean.TRUE + "|" + Boolean.FALSE)
-                        .expectedValues(Arrays.asList(Boolean.TRUE.toString(), Boolean.FALSE.toString()))
                         .build()
         };
     }
 
-    private static PropertyMapper.Builder builder() {
-        return PropertyMapper.builder(OptionCategory.METRICS);
-    }
 }

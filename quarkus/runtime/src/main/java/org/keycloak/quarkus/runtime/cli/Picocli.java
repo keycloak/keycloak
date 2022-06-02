@@ -47,6 +47,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
+import org.keycloak.config.MultiOption;
 import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.cli.command.Build;
 import org.keycloak.quarkus.runtime.cli.command.ImportRealmMixin;
@@ -420,6 +421,9 @@ public final class Picocli {
 
                 if (mapper.getType() != null) {
                     optBuilder.type(mapper.getType());
+                    if (mapper.getOption() instanceof MultiOption) {
+                        optBuilder.auxiliaryTypes(((MultiOption<?>) mapper.getOption()).getAuxiliaryType());
+                    }
                 } else {
                     optBuilder.type(String.class);
                 }

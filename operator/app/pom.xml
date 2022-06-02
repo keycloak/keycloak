@@ -111,7 +111,7 @@
         <!-- Keycloak -->
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-common</artifactId>
+            <artifactId>keycloak-config-api</artifactId>
         </dependency>
 
         <!-- Test -->
