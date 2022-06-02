@@ -75,7 +75,7 @@ with password `secret` .
 
 Then in your web browser open `http://localhost:8080/kerberos-portal` . You should be logged-in automatically through SPNEGO without displaying Keycloak login screen.
 Keycloak will also transmit the delegated GSS credential to the application inside access token and application will be able to login with this credential
-to the LDAP server and retrieve some data from it (Actually it just retrieve few simple data about authenticated user himself).
+to the LDAP server and retrieve some data from it (Actually it just retrieve few simple data about authenticated user themself).
 
 
 Troubleshooting
