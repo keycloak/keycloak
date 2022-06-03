@@ -411,7 +411,7 @@ export default function FlowDetails() {
                       onAddExecution={(execution, type) =>
                         addExecution(execution.displayName!, type)
                       }
-                      onAddFlow={(flow) =>
+                      onAddFlow={(execution, flow) =>
                         addFlow(execution.displayName!, flow)
                       }
                       onDelete={(execution) => {

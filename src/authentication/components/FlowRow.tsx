@@ -34,7 +34,7 @@ type FlowRowProps = {
     execution: ExpandableExecution,
     type: AuthenticationProviderRepresentation
   ) => void;
-  onAddFlow: (flow: Flow) => void;
+  onAddFlow: (execution: ExpandableExecution, flow: Flow) => void;
   onDelete: (execution: ExpandableExecution) => void;
 };
 
@@ -129,16 +129,16 @@ export const FlowRow = ({
       </DataListItem>
       {!execution.isCollapsed &&
         hasSubList &&
-        execution.executionList?.map((execution) => (
+        execution.executionList?.map((ex) => (
           <FlowRow
             builtIn={builtIn}
-            key={execution.id}
-            execution={execution}
+            key={ex.id}
+            execution={ex}
             onRowClick={onRowClick}
             onRowChange={onRowChange}
             onAddExecution={onAddExecution}
             onAddFlow={onAddFlow}
-            onDelete={() => onDelete(execution)}
+            onDelete={onDelete}
           />
         ))}
     </>

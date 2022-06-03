@@ -20,7 +20,7 @@ type EditFlowDropdownProps = {
     execution: ExpandableExecution,
     type: AuthenticationProviderRepresentation
   ) => void;
-  onAddFlow: (flow: Flow) => void;
+  onAddFlow: (execution: ExpandableExecution, flow: Flow) => void;
 };
 
 export const EditFlowDropdown = ({
@@ -95,7 +95,7 @@ export const EditFlowDropdown = ({
             name={execution.displayName!}
             onCancel={() => setType(undefined)}
             onConfirm={(flow) => {
-              onAddFlow(flow);
+              onAddFlow(execution, flow);
               setType(undefined);
             }}
           />
