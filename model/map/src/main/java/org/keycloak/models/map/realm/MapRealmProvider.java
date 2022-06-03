@@ -91,12 +91,30 @@ public class MapRealmProvider implements RealmProvider {
 
         LOG.tracef("getRealm(%s)%s", id, getShortStackTrace());
 
+        RealmModel cachedRealm = realmByName.values().stream().filter(realmModel -> realmModel.getId().equals(id)).findAny().orElse(null);
+        if (cachedRealm != null) {
+            return cachedRealm;
+        }
+
         MapRealmEntity entity = tx.read(id);
-        return entity == null ? null : entityToAdapter(entity);
+        RealmModel realmModel = entity == null ? null : entityToAdapter(entity);
+
+        if (realmModel != null) {
+            realmByName.put(realmModel.getName(), realmModel);
+        }
+
+        return realmModel;
     }
+
+    private final Map<String, RealmModel> realmByName = new HashMap<>();
 
     @Override
     public RealmModel getRealmByName(String name) {
+        RealmModel cachedRealm = realmByName.get(name);
+        if (cachedRealm != null && cachedRealm.getName().equals(name)) {
+            return cachedRealm;
+        }
+
         if (name == null) return null;
 
         LOG.tracef("getRealmByName(%s)%s", name, getShortStackTrace());
@@ -109,7 +127,11 @@ public class MapRealmProvider implements RealmProvider {
                 .map(MapRealmEntity::getId)
                 .orElse(null);
         //we need to go via session.realms() not to bypass cache
-        return realmId == null ? null : session.realms().getRealm(realmId);
+        RealmModel realmModel = realmId == null ? null : session.realms().getRealm(realmId);
+        if (realmModel != null) {
+            realmByName.put(realmModel.getName(), realmModel);
+        }
+        return realmModel;
     }
 
     @Override
@@ -143,6 +165,8 @@ public class MapRealmProvider implements RealmProvider {
         tx.delete(id);
 
         session.invalidate(REALM_AFTER_REMOVE, realm);
+
+        realmByName.entrySet().removeIf(entry -> entry.getValue().getId().equals(id));
 
         return true;
     }

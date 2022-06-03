@@ -18,6 +18,7 @@
 package org.keycloak.models.map.client;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
@@ -208,6 +209,8 @@ public class MapClientProvider implements ClientProvider {
 
         session.invalidate(CLIENT_AFTER_REMOVE, client);
 
+        clientByClientId.entrySet().removeIf(entry -> entry.getValue().getId().equals(id));
+
         return true;
     }
 
@@ -227,11 +230,51 @@ public class MapClientProvider implements ClientProvider {
 
         LOG.tracef("getClientById(%s, %s)%s", realm, id, getShortStackTrace());
 
+        ClientModel cachedClient = clientByClientId.entrySet().stream()
+                .filter(clientModel -> clientModel.getValue().getId().equals(id) && clientModel.getKey().getRealmId().equals(realm.getId()))
+                .findAny().map(Map.Entry::getValue).orElse(null);
+        if (cachedClient != null) {
+            return cachedClient;
+        }
+
         MapClientEntity entity = tx.read(id);
-        return (entity == null || ! entityRealmFilter(realm).test(entity))
-          ? null
-          : entityToAdapterFunc(realm).apply(entity);
+        ClientModel clientModel = (entity == null || !entityRealmFilter(realm).test(entity))
+                ? null
+                : entityToAdapterFunc(realm).apply(entity);
+        if (clientModel != null) {
+            clientByClientId.put(new CacheKey(realm.getId(), clientModel.getClientId()), clientModel);
+        }
+        return clientModel;
     }
+
+
+    private final static class CacheKey {
+        private final String realmId;
+        private final String clientId;
+        private CacheKey(String realmId, String clientId) {
+            this.realmId = realmId;
+            this.clientId = clientId;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            CacheKey cacheKey = (CacheKey) o;
+            return Objects.equals(realmId, cacheKey.realmId) && Objects.equals(clientId, cacheKey.clientId);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(realmId, clientId);
+        }
+
+        public String getRealmId() {
+            return realmId;
+        }
+    }
+
+    private final Map<CacheKey, ClientModel> clientByClientId = new HashMap<>();
 
     @Override
     public ClientModel getClientByClientId(RealmModel realm, String clientId) {
@@ -240,15 +283,25 @@ public class MapClientProvider implements ClientProvider {
         }
         LOG.tracef("getClientByClientId(%s, %s)%s", realm, clientId, getShortStackTrace());
 
+        CacheKey cacheKey = new CacheKey(realm.getId(), clientId);
+        ClientModel cachedClient = clientByClientId.get(cacheKey);
+        if (cachedClient != null && cachedClient.getClientId().equals(clientId)) {
+            return cachedClient;
+        }
+
         DefaultModelCriteria<ClientModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
                 .compare(SearchableFields.CLIENT_ID, Operator.EQ, clientId);
 
-        return tx.read(withCriteria(mcb))
-          .map(entityToAdapterFunc(realm))
-          .findFirst()
-          .orElse(null)
-        ;
+        ClientModel clientModel = tx.read(withCriteria(mcb))
+                .map(entityToAdapterFunc(realm))
+                .findFirst()
+                .orElse(null);
+        if (clientModel != null) {
+            clientByClientId.put(cacheKey, clientModel);
+        }
+
+        return clientModel;
     }
 
     @Override
@@ -365,6 +418,8 @@ public class MapClientProvider implements ClientProvider {
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
 
         tx.delete(withCriteria(mcb));
+
+        clientByClientId.entrySet().removeIf(entry -> entry.getKey().getRealmId().equals(realm.getId()));
     }
 
     @Override
