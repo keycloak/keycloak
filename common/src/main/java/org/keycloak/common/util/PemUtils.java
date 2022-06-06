@@ -73,13 +73,23 @@ public final class PemUtils {
      * @throws Exception
      */
     public static PublicKey decodePublicKey(String pem) {
+        return decodePublicKey(pem, "RSA");
+    }
+
+    /**
+     * Decode a Public Key from a PEM string
+     * @param pem The pem encoded pblic key
+     * @param type The type of the key (RSA, EC,...)
+     * @return The public key or null
+     */
+    public static PublicKey decodePublicKey(String pem, String type) {
         if (pem == null) {
             return null;
         }
 
         try {
             byte[] der = pemToDer(pem);
-            return DerUtils.decodePublicKey(der);
+            return DerUtils.decodePublicKey(der, type);
         } catch (Exception e) {
             throw new PemException(e);
         }

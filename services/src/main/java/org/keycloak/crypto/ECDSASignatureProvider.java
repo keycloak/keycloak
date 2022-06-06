@@ -29,8 +29,20 @@ public class ECDSASignatureProvider implements SignatureProvider {
     }
 
     @Override
+    public SignatureSignerContext signer(KeyWrapper key) throws SignatureException {
+        SignatureProvider.checkKeyForSignature(key, algorithm, KeyType.EC);
+        return new ServerECDSASignatureSignerContext(key);
+    }
+
+    @Override
     public SignatureVerifierContext verifier(String kid) throws VerificationException {
         return new ServerECDSASignatureVerifierContext(session, kid, algorithm);
+    }
+
+    @Override
+    public SignatureVerifierContext verifier(KeyWrapper key) throws VerificationException {
+        SignatureProvider.checkKeyForVerification(key, algorithm, KeyType.EC);
+        return new ServerECDSASignatureVerifierContext(key);
     }
 
     @Override
