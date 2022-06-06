@@ -23,6 +23,7 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
+import org.jboss.logging.Logger;
 import org.keycloak.models.ScriptModel;
 import org.keycloak.platform.Platform;
 import org.keycloak.services.ServicesLogger;
@@ -34,6 +35,8 @@ import org.keycloak.utils.ProxyClassLoader;
  * @author <a href="mailto:thomas.darimont@gmail.com">Thomas Darimont</a>
  */
 public class DefaultScriptingProvider implements ScriptingProvider {
+
+    private static final Logger logger = Logger.getLogger(DefaultScriptingProvider.class);
 
     private final DefaultScriptingProviderFactory factory;
 
@@ -135,6 +138,8 @@ public class DefaultScriptingProvider implements ScriptingProvider {
             } else {
                 scriptClassLoader = DefaultScriptingProvider.class.getClassLoader();
             }
+
+            logger.debugf("Using classloader %s to load script engine", scriptClassLoader);
 
             Thread.currentThread().setContextClassLoader(scriptClassLoader);
             return new ScriptEngineManager().getEngineByMimeType(script.getMimeType());
