@@ -43,6 +43,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.testsuite.model.session.UserSessionPersisterProviderTest.createClients;
@@ -220,5 +221,32 @@ public class UserSessionProviderModelTest extends KeycloakModelTest {
         });
 
         assertThat(withRealm(realmId, (session, realm) -> session.sessions().getClientSession(origSessions[0], realm.getClientByClientId("test-app"), testAppClientSessionId, false)), nullValue());
+    }
+
+    @Test
+    public void testClientSessionIsNotPersistedForTransientUserSession() {
+        Object[] transientUserSessionWithClientSessionId = inComittedTransaction(session -> {
+            RealmModel realm = session.realms().getRealm(realmId);
+            UserSessionModel userSession = session.sessions().createUserSession(null, realm, session.users().getUserByUsername(realm, "user1"), "user1", "127.0.0.1", "form", false, null, null, UserSessionModel.SessionPersistenceState.TRANSIENT);
+
+            ClientModel testApp = realm.getClientByClientId("test-app");
+            AuthenticatedClientSessionModel clientSession = session.sessions().createClientSession(realm, testApp, userSession);
+            
+            // assert the client sessions are present
+            assertThat(session.sessions().getClientSession(userSession, testApp, clientSession.getId(), false), notNullValue());
+            Object[] result = new Object[2];
+            result[0] = userSession;
+            result[1] = clientSession.getId();
+            return result;
+        });
+
+        inComittedTransaction(session -> {
+            RealmModel realm = session.realms().getRealm(realmId);
+            ClientModel testApp = realm.getClientByClientId("test-app");
+            UserSessionModel userSession = (UserSessionModel) transientUserSessionWithClientSessionId[0];
+            String clientSessionId = (String) transientUserSessionWithClientSessionId[1];
+            // in new transaction transient session should not be present
+            assertThat(session.sessions().getClientSession(userSession, testApp, clientSessionId, false), nullValue());
+        });
     }
 }
