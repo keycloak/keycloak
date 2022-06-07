@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.List;
 import org.junit.Test;
 import org.keycloak.common.util.Base64Url;
+import org.keycloak.common.util.BouncyIntegration;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.JavaAlgorithm;
@@ -128,9 +129,7 @@ public class JWKTest {
 
     @Test
     public void publicEs256() throws Exception {
-        Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
-
-        KeyPairGenerator keyGen = KeyPairGenerator.getInstance("EC");
+        KeyPairGenerator keyGen = KeyPairGenerator.getInstance("EC", BouncyIntegration.PROVIDER);
         SecureRandom randomGen = SecureRandom.getInstance("SHA1PRNG");
         ECGenParameterSpec ecSpec = new ECGenParameterSpec("secp256r1");
         keyGen.initialize(ecSpec, randomGen);

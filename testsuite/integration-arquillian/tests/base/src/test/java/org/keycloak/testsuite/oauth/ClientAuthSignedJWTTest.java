@@ -32,7 +32,6 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
@@ -80,6 +79,7 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
@@ -91,6 +91,7 @@ import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.util.JsonSerialization;
 
+import javax.ws.rs.core.Response;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -115,14 +116,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.ws.rs.core.Response;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -138,11 +135,6 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
     private static RealmRepresentation testRealm;
     private static ClientRepresentation app1, app2, app3;
     private static UserRepresentation defaultUser, serviceAccountUser;
-
-    @BeforeClass
-    public static void beforeClientAuthSignedJWTTest() {
-        BouncyIntegration.init();
-    }
 
     @Override
     public void beforeAbstractKeycloakTest() throws Exception {
@@ -1389,7 +1381,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
     }
 
     private static KeyStore getKeystore(InputStream is, String storePassword, String format) throws Exception {
-        KeyStore keyStore = format.equals("JKS") ? KeyStore.getInstance(format) : KeyStore.getInstance(format, "BC");
+        KeyStore keyStore = format.equals("JKS") ? KeyStore.getInstance(format) : KeyStore.getInstance(format, BouncyIntegration.PROVIDER);
         keyStore.load(is, storePassword.toCharArray());
         return keyStore;
     }
@@ -1462,14 +1454,14 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
     private static PrivateKey decodePrivateKey(byte[] der, String algorithm) throws NoSuchAlgorithmException, InvalidKeySpecException, NoSuchProviderException {
         PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(der);
         String keyAlg = getKeyAlgorithmFromJwaAlgorithm(algorithm);
-        KeyFactory kf = KeyFactory.getInstance(keyAlg, "BC");
+        KeyFactory kf = KeyFactory.getInstance(keyAlg, BouncyIntegration.PROVIDER);
         return kf.generatePrivate(spec);
     }
 
     private static PublicKey decodePublicKey(byte[] der, String algorithm) throws NoSuchAlgorithmException, InvalidKeySpecException, NoSuchProviderException {
         X509EncodedKeySpec spec = new X509EncodedKeySpec(der);
         String keyAlg = getKeyAlgorithmFromJwaAlgorithm(algorithm);
-        KeyFactory kf = KeyFactory.getInstance(keyAlg, "BC");
+        KeyFactory kf = KeyFactory.getInstance(keyAlg, BouncyIntegration.PROVIDER);
         return kf.generatePublic(spec);
     }
 

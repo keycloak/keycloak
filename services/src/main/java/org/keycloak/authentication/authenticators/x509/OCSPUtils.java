@@ -78,11 +78,6 @@ import org.apache.http.impl.client.CloseableHttpClient;
 
 public final class OCSPUtils {
 
-
-    static {
-        BouncyIntegration.init();
-    }
-
     private final static Logger logger = Logger.getLogger(""+OCSPUtils.class);
 
     private static int OCSP_CONNECT_TIMEOUT = 10000; // 10 sec
@@ -314,7 +309,7 @@ public final class OCSPUtils {
                 for (X509CertificateHolder certHolder : certs) {
                     try {
                         X509Certificate tempCert = new JcaX509CertificateConverter()
-                                .setProvider("BC").getCertificate(certHolder);
+                                .setProvider(BouncyIntegration.PROVIDER).getCertificate(certHolder);
                         X500Name respName = new X500Name(tempCert.getSubjectX500Principal().getName());
                         if (responderName.equals(respName)) {
                             signingCert = tempCert;
@@ -332,7 +327,7 @@ public final class OCSPUtils {
                 for (X509CertificateHolder certHolder : certs) {
                     try {
                         X509Certificate tempCert = new JcaX509CertificateConverter()
-                                .setProvider("BC").getCertificate(certHolder);
+                                .setProvider(BouncyIntegration.PROVIDER).getCertificate(certHolder);
 
                         SubjectKeyIdentifier subjectKeyIdentifier = null;
                         if (certHolder.getExtensions() != null) {
@@ -452,7 +447,7 @@ public final class OCSPUtils {
     private static boolean verifySignature(BasicOCSPResp basicOcspResponse, X509Certificate cert) {
         try {
             ContentVerifierProvider contentVerifier = new JcaContentVerifierProviderBuilder()
-                    .setProvider("BC").build(cert.getPublicKey());
+                    .setProvider(BouncyIntegration.PROVIDER).build(cert.getPublicKey());
             return basicOcspResponse.isSignatureValid(contentVerifier);
         } catch (OperatorCreationException e) {
             logger.log(Level.FINE, "Unable to construct OCSP content signature verifier\n{0}", e.getMessage());

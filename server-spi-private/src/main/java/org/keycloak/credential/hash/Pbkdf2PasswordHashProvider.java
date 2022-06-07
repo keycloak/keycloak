@@ -18,6 +18,7 @@
 package org.keycloak.credential.hash;
 
 import org.keycloak.common.util.Base64;
+import org.keycloak.common.util.BouncyIntegration;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.credential.PasswordCredentialModel;
 
@@ -25,6 +26,7 @@ import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.SecureRandom;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
@@ -124,8 +126,8 @@ public class Pbkdf2PasswordHashProvider implements PasswordHashProvider {
 
     private SecretKeyFactory getSecretKeyFactory() {
         try {
-            return SecretKeyFactory.getInstance(pbkdf2Algorithm);
-        } catch (NoSuchAlgorithmException e) {
+            return SecretKeyFactory.getInstance(pbkdf2Algorithm, BouncyIntegration.PROVIDER);
+        } catch (NoSuchAlgorithmException | NoSuchProviderException e) {
             throw new RuntimeException("PBKDF2 algorithm not found", e);
         }
     }

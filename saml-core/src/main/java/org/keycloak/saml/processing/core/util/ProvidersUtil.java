@@ -44,7 +44,7 @@ public class ProvidersUtil {
                 // register Apache Santuario 1.5.x XMLDSig version
                 addXMLDSigRI();
                 // register BC provider if available (to have additional encryption algorithms, etc.)
-                addJceProvider("BC", "org.bouncycastle.jce.provider.BouncyCastleProvider");
+//                addJceProvider("BC", "org.bouncycastle.jce.provider.BouncyCastleProvider");
                 return true;
             }
         });
