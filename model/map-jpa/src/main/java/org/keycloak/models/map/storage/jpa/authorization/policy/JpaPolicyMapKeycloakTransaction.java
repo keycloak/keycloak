@@ -34,7 +34,7 @@ public class JpaPolicyMapKeycloakTransaction extends JpaMapKeycloakTransaction<J
 
     @SuppressWarnings("unchecked")
     public JpaPolicyMapKeycloakTransaction(EntityManager em) {
-        super(JpaPolicyEntity.class, em);
+        super(JpaPolicyEntity.class, Policy.class, em);
     }
 
     @Override

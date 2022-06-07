@@ -34,7 +34,7 @@ public class JpaRootAuthenticationSessionMapKeycloakTransaction extends JpaMapKe
 
     @SuppressWarnings("unchecked")
     public JpaRootAuthenticationSessionMapKeycloakTransaction(EntityManager em) {
-        super(JpaRootAuthenticationSessionEntity.class, em);
+        super(JpaRootAuthenticationSessionEntity.class, RootAuthenticationSessionModel.class, em);
     }
 
     @Override

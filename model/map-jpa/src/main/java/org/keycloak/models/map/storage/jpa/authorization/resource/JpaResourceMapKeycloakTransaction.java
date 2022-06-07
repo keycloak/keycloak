@@ -34,7 +34,7 @@ public class JpaResourceMapKeycloakTransaction extends JpaMapKeycloakTransaction
 
     @SuppressWarnings("unchecked")
     public JpaResourceMapKeycloakTransaction(EntityManager em) {
-        super(JpaResourceEntity.class, em);
+        super(JpaResourceEntity.class, Resource.class, em);
     }
 
     @Override

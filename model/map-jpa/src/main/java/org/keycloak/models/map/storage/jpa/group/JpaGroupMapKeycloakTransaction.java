@@ -34,7 +34,7 @@ public class JpaGroupMapKeycloakTransaction extends JpaMapKeycloakTransaction<Jp
 
     @SuppressWarnings("unchecked")
     public JpaGroupMapKeycloakTransaction(EntityManager em) {
-        super(JpaGroupEntity.class, em);
+        super(JpaGroupEntity.class, GroupModel.class, em);
     }
 
     @Override
