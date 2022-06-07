@@ -43,7 +43,7 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
 
     private GenericContainer getKeycloakContainer() {
         if (!distributionFile.exists()) {
-            throw new RuntimeException("Distribution archive " + distributionFile.getAbsolutePath() +" doesn't exists");
+            throw new RuntimeException("Distribution archive " + distributionFile.getAbsolutePath() +" doesn't exist");
         }
         return new GenericContainer(
                 new ImageFromDockerfile("keycloak-under-test", false)
