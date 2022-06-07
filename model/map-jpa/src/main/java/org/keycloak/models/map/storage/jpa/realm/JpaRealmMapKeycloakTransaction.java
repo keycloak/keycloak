@@ -40,7 +40,7 @@ import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSI
 public class JpaRealmMapKeycloakTransaction extends JpaMapKeycloakTransaction<JpaRealmEntity, MapRealmEntity, RealmModel> {
 
     public JpaRealmMapKeycloakTransaction(final EntityManager em) {
-        super(JpaRealmEntity.class, em);
+        super(JpaRealmEntity.class, RealmModel.class, em);
     }
 
     @Override

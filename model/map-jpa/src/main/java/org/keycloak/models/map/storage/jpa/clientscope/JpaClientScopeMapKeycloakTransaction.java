@@ -34,7 +34,7 @@ public class JpaClientScopeMapKeycloakTransaction extends JpaMapKeycloakTransact
 
     @SuppressWarnings("unchecked")
     public JpaClientScopeMapKeycloakTransaction(EntityManager em) {
-        super(JpaClientScopeEntity.class, em);
+        super(JpaClientScopeEntity.class, ClientScopeModel.class, em);
     }
 
     @Override

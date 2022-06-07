@@ -41,7 +41,7 @@ public class JpaUserLoginFailureMapKeycloakTransaction extends JpaMapKeycloakTra
 
     @SuppressWarnings("unchecked")
     public JpaUserLoginFailureMapKeycloakTransaction(EntityManager em) {
-        super(JpaUserLoginFailureEntity.class, em);
+        super(JpaUserLoginFailureEntity.class, UserLoginFailureModel.class, em);
     }
 
     @Override

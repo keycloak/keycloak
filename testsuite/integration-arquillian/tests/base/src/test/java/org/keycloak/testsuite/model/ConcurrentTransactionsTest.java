@@ -109,10 +109,14 @@ public class ConcurrentTransactionsTest extends AbstractTestRealmKeycloakTest {
                                 throw new IllegalStateException("Timeout when waiting for updateLatch");
                             }
 
-                            logger.info("transaction1: Going to read client again");
+                            // the behavior upon reading client information would depend on the store:
+                            // * it might return the new values if this really touches the store and it using read committed and not repeatable read
+                            // * it might return the old values if the information is cached within the current session (either explicitly, or implicitly using the JPA persistence context), or using repeatable read
+                            // * it might throw an exception if a concurrent modification exception occurred when reading additional data from the store and read committed is used
 
-                            client1 = currentSession.clients().getClientByClientId(realm1, "client");
-                            logger.info("transaction1: secret: " + client1.getSecret());
+                            // logger.info("transaction1: Going to read client again");
+                            // client1 = currentSession.clients().getClientByClientId(realm1, "client");
+                            // logger.info("transaction1: secret: " + client1.getSecret());
 
                         } catch (Exception e) {
                             exceptionHolder.set(e);

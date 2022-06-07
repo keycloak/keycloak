@@ -34,7 +34,7 @@ public class JpaRoleMapKeycloakTransaction extends JpaMapKeycloakTransaction<Jpa
 
     @SuppressWarnings("unchecked")
     public JpaRoleMapKeycloakTransaction(EntityManager em) {
-        super(JpaRoleEntity.class, em);
+        super(JpaRoleEntity.class, RoleModel.class, em);
     }
 
     @Override
