@@ -104,12 +104,10 @@ public class MapRealmProvider implements RealmProvider {
         DefaultModelCriteria<RealmModel> mcb = criteria();
         mcb = mcb.compare(SearchableFields.NAME, Operator.EQ, name);
 
-        String realmId = tx.read(withCriteria(mcb))
+        return tx.read(withCriteria(mcb))
                 .findFirst()
-                .map(MapRealmEntity::getId)
+                .map(this::entityToAdapter)
                 .orElse(null);
-        //we need to go via session.realms() not to bypass cache
-        return realmId == null ? null : session.realms().getRealm(realmId);
     }
 
     @Override
