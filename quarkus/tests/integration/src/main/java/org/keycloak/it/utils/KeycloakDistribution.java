@@ -1,5 +1,6 @@
 package org.keycloak.it.utils;
 
+import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.quarkus.runtime.Environment;
 import java.nio.file.Path;
 import java.util.List;
@@ -9,7 +10,10 @@ public interface KeycloakDistribution {
     String SCRIPT_CMD = Environment.isWindows() ? "kc.bat" : "kc.sh";
     String SCRIPT_CMD_INVOKABLE = Environment.isWindows() ? SCRIPT_CMD : "./"+SCRIPT_CMD;
 
-    void start(List<String> arguments);
+    CLIResult run(List<String> arguments);
+    default CLIResult run(String... arguments) {
+        return run(List.of(arguments));
+    }
 
     void stop();
 
@@ -47,7 +51,7 @@ public interface KeycloakDistribution {
         throw new RuntimeException("Not implemented");
     }
 
-    default void removeProperty(String db) {
+    default void removeProperty(String name) {
         throw new RuntimeException("Not implemented");
     }
 }

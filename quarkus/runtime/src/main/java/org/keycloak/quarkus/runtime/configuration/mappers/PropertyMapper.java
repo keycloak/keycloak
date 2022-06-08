@@ -16,6 +16,7 @@
  */
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
+import static org.keycloak.quarkus.runtime.Environment.isRebuild;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.OPTION_PART_SEPARATOR;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.OPTION_PART_SEPARATOR_CHAR;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.toCliFormat;
@@ -109,6 +110,11 @@ public class PropertyMapper<T> {
             from = name.replace(to.substring(0, to.lastIndexOf('.')), from.substring(0, from.lastIndexOf(OPTION_PART_SEPARATOR_CHAR)));
         }
 
+        if (isRebuild() && isRunTime() && name.startsWith(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX)) {
+            // during re-aug do not resolve the server runtime properties and avoid they included by quarkus in the default value config source
+            return ConfigValue.builder().withName(name).build();
+        }
+
         // try to obtain the value for the property we want to map first
         ConfigValue config = context.proceed(from);
 
@@ -184,6 +190,10 @@ public class PropertyMapper<T> {
 
     public boolean isBuildTime() {
         return this.option.isBuildTime();
+    }
+
+    public boolean isRunTime() {
+        return !this.option.isBuildTime();
     }
 
     public String getTo() {
