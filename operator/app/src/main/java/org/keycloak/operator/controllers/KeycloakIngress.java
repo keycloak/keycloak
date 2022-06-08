@@ -29,7 +29,7 @@ import java.util.Optional;
 
 public class KeycloakIngress extends OperatorManagedResource implements StatusUpdater<KeycloakStatusBuilder> {
 
-    private Ingress existingIngress;
+    private final Ingress existingIngress;
     private final Keycloak keycloak;
 
     public KeycloakIngress(KubernetesClient client, Keycloak keycloakCR) {
@@ -40,19 +40,21 @@ public class KeycloakIngress extends OperatorManagedResource implements StatusUp
 
     @Override
     protected Optional<HasMetadata> getReconciledResource() {
-        var defaultIngress = newIngress();
-        if (keycloak.getSpec().isDisableDefaultIngress() && existingIngress != null) {
-            client.network().v1().ingresses().inNamespace(getNamespace()).delete(existingIngress);
-            return Optional.empty();
-        } else if (existingIngress == null) {
-            return Optional.of(defaultIngress);
-        } else {
-            if (existingIngress.getMetadata().getAnnotations() == null) {
-                existingIngress.getMetadata().setAnnotations(new HashMap<>());
+        if (keycloak.getSpec().isDisableDefaultIngress()) {
+            if (existingIngress != null) {
+                deleteExistingIngress();
             }
-            existingIngress.getMetadata().getAnnotations().putAll(defaultIngress.getMetadata().getAnnotations());
-            existingIngress.setSpec(defaultIngress.getSpec());
-            return Optional.of(existingIngress);
+            return Optional.empty();
+        } else {
+            var defaultIngress = newIngress();
+            var resultIngress = (existingIngress != null) ? existingIngress : defaultIngress;
+
+            if (resultIngress.getMetadata().getAnnotations() == null) {
+                resultIngress.getMetadata().setAnnotations(new HashMap<>());
+            }
+            resultIngress.getMetadata().getAnnotations().putAll(defaultIngress.getMetadata().getAnnotations());
+            resultIngress.setSpec(defaultIngress.getSpec());
+            return Optional.of(resultIngress);
         }
     }
 
@@ -101,7 +103,11 @@ public class KeycloakIngress extends OperatorManagedResource implements StatusUp
         return ingress;
     }
 
-    private Ingress fetchExistingIngress() {
+    protected void deleteExistingIngress() {
+        client.network().v1().ingresses().inNamespace(getNamespace()).delete(existingIngress);
+    }
+
+    protected Ingress fetchExistingIngress() {
         return client
                 .network()
                 .v1()
@@ -112,7 +118,7 @@ public class KeycloakIngress extends OperatorManagedResource implements StatusUp
     }
 
     public void updateStatus(KeycloakStatusBuilder status) {
-        if (existingIngress == null) {
+        if (!keycloak.getSpec().isDisableDefaultIngress() && existingIngress == null) {
             status.addNotReadyMessage("No existing Keycloak Ingress found, waiting for creating a new one");
             return;
         }
