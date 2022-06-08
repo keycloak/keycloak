@@ -35,7 +35,7 @@ import org.keycloak.it.junit5.extension.approvalTests.KcNamerFactory;
 
 public interface CLIResult extends LaunchResult {
 
-    static Object create(List<String> outputStream, List<String> errStream, int exitCode) {
+    static CLIResult create(List<String> outputStream, List<String> errStream, int exitCode) {
         return new CLIResult() {
             @Override
             public List<String> getOutputStream() {
