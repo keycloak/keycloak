@@ -1029,9 +1029,8 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
                 .asJson(ConsentRepresentation.class);
         assertTrue(consentRepresentation.getCreatedDate() > 0);
         assertTrue(consentRepresentation.getLastUpdatedDate() > 0);
-        assertEquals(2, consentRepresentation.getGrantedScopes().size());
-        assertEquals(requestedScopes.get(0).getId(), consentRepresentation.getGrantedScopes().get(0).getId());
-        assertEquals(requestedScopes.get(1).getId(), consentRepresentation.getGrantedScopes().get(1).getId());
+        assertThat(consentRepresentation.getGrantedScopes().stream().map(ConsentScopeRepresentation::getId).collect(Collectors.toList()),
+                containsInAnyOrder(requestedScopes.stream().map(ClientScopeRepresentation::getId).toArray()));
 
         events.poll();
         String expectedScopeDetails = requestedScopes.stream().map(cs->cs.getName()).collect(Collectors.joining(" "));
