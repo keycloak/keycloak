@@ -122,8 +122,8 @@ import org.keycloak.testsuite.pages.LogoutConfirmPage;
 import org.keycloak.testsuite.pages.OAuth2DeviceVerificationPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResource.AuthorizationEndpointRequestObject;
-import org.keycloak.testsuite.services.clientpolicy.condition.TestRaiseExeptionConditionFactory;
-import org.keycloak.testsuite.services.clientpolicy.executor.TestRaiseExeptionExecutorFactory;
+import org.keycloak.testsuite.services.clientpolicy.condition.TestRaiseExceptionConditionFactory;
+import org.keycloak.testsuite.services.clientpolicy.executor.TestRaiseExceptionExecutorFactory;
 import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.ClientPoliciesUtil;
@@ -169,6 +169,7 @@ import static org.keycloak.testsuite.util.ClientPoliciesUtil.createSecureRespons
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createSecureSigningAlgorithmEnforceExecutorConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createSecureSigningAlgorithmForSignedJwtEnforceExecutorConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createTestRaiseExeptionConditionConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createTestRaiseExeptionExecutorConfig;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
@@ -734,7 +735,7 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         // register policies
         String json = (new ClientPoliciesBuilder()).addPolicy(
                 (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Fyrsta Stefnan", Boolean.TRUE)
-                        .addCondition(TestRaiseExeptionConditionFactory.PROVIDER_ID,
+                        .addCondition(TestRaiseExceptionConditionFactory.PROVIDER_ID,
                                 createTestRaiseExeptionConditionConfig())
                         .toRepresentation()
         ).toString();
@@ -2083,7 +2084,8 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         // register profiles
         String json = (new ClientProfilesBuilder()).addProfile(
                 (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Den Forste Profilen")
-                        .addExecutor(TestRaiseExeptionExecutorFactory.PROVIDER_ID, null)
+                        .addExecutor(TestRaiseExceptionExecutorFactory.PROVIDER_ID,
+                                createTestRaiseExeptionExecutorConfig(Arrays.asList(ClientPolicyEvent.SERVICE_ACCOUNT_TOKEN_REQUEST)))
                         .toRepresentation()
         ).toString();
         updateProfiles(json);
@@ -2358,7 +2360,9 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         // register profiles
         String json = (new ClientProfilesBuilder()).addProfile(
                 (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Den Forste Profilen")
-                        .addExecutor(TestRaiseExeptionExecutorFactory.PROVIDER_ID, null)
+                        .addExecutor(TestRaiseExceptionExecutorFactory.PROVIDER_ID,
+                                createTestRaiseExeptionExecutorConfig(Arrays.asList(
+                                        ClientPolicyEvent.REGISTERED, ClientPolicyEvent.UPDATED, ClientPolicyEvent.UNREGISTER)))
                         .toRepresentation()
         ).toString();
         updateProfiles(json);
@@ -2632,7 +2636,8 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         // register profiles
         String json = (new ClientProfilesBuilder()).addProfile(
                 (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Den Forste Profilen")
-                        .addExecutor(TestRaiseExeptionExecutorFactory.PROVIDER_ID, null)
+                        .addExecutor(TestRaiseExceptionExecutorFactory.PROVIDER_ID,
+                                createTestRaiseExeptionExecutorConfig(Arrays.asList(ClientPolicyEvent.DEVICE_AUTHORIZATION_REQUEST)))
                         .toRepresentation()
         ).toString();
         updateProfiles(json);
@@ -2688,7 +2693,8 @@ public class ClientPoliciesTest extends AbstractClientPoliciesTest {
         // register profiles
         String json = (new ClientProfilesBuilder()).addProfile(
                 (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Den Forste Profilen")
-                        .addExecutor(TestRaiseExeptionExecutorFactory.PROVIDER_ID, null)
+                        .addExecutor(TestRaiseExceptionExecutorFactory.PROVIDER_ID,
+                                createTestRaiseExeptionExecutorConfig(Arrays.asList(ClientPolicyEvent.DEVICE_TOKEN_REQUEST)))
                         .toRepresentation()
         ).toString();
         updateProfiles(json);

@@ -17,6 +17,8 @@
 
 package org.keycloak.testsuite.services.clientpolicy.executor;
 
+import java.util.List;
+
 import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
@@ -25,19 +27,42 @@ import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.representations.idm.ClientPolicyExecutorConfigurationRepresentation;
 import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProvider;
 
-public class TestRaiseExeptionExecutor implements ClientPolicyExecutorProvider<ClientPolicyExecutorConfigurationRepresentation> {
+public class TestRaiseExceptionExecutor implements ClientPolicyExecutorProvider<TestRaiseExceptionExecutor.Configuration> {
 
-    private static final Logger logger = Logger.getLogger(TestRaiseExeptionExecutor.class);
+    private static final Logger logger = Logger.getLogger(TestRaiseExceptionExecutor.class);
 
     protected final KeycloakSession session;
+    private Configuration configuration;
 
-    public TestRaiseExeptionExecutor(KeycloakSession session) {
+    public TestRaiseExceptionExecutor(KeycloakSession session) {
         this.session = session;
     }
 
     @Override
+    public void setupConfiguration(TestRaiseExceptionExecutor.Configuration config) {
+        this.configuration = config;
+    }
+
+    @Override
+    public Class<Configuration> getExecutorConfigurationClass() {
+        return Configuration.class;
+    }
+
+    public static class Configuration extends ClientPolicyExecutorConfigurationRepresentation {
+        protected List<ClientPolicyEvent> events;
+
+        public List<ClientPolicyEvent> getEvents() {
+            return events;
+        }
+
+        public void setEvents(List<ClientPolicyEvent> events) {
+            this.events = events;
+        }
+    }
+
+    @Override
     public String getProviderId() {
-        return TestRaiseExeptionExecutorFactory.PROVIDER_ID;
+        return TestRaiseExceptionExecutorFactory.PROVIDER_ID;
     }
 
     @Override
@@ -47,20 +72,9 @@ public class TestRaiseExeptionExecutor implements ClientPolicyExecutorProvider<C
 
     private boolean isThrowExceptionNeeded(ClientPolicyEvent event) {
         logger.tracev("Client Policy Trigger Event = {0}",  event);
-        switch (event) {
-            case REGISTERED:
-            case UPDATED:
-            case UNREGISTER:
-            case SERVICE_ACCOUNT_TOKEN_REQUEST:
-            case BACKCHANNEL_AUTHENTICATION_REQUEST:
-            case BACKCHANNEL_TOKEN_REQUEST:
-            case PUSHED_AUTHORIZATION_REQUEST:
-            case DEVICE_AUTHORIZATION_REQUEST:
-            case DEVICE_TOKEN_REQUEST:
-                return true;
-            default :
-                return false;
+        if (configuration != null && configuration.getEvents() != null && !configuration.getEvents().isEmpty()) {
+            return configuration.getEvents().contains(event);
         }
-
+        return false;
     }
 }
