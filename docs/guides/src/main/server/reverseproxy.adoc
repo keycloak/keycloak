@@ -43,6 +43,15 @@ Take extra precautions to ensure that the X-Forwarded-For header is set by your 
 If this header is incorrectly configured, rogue clients can set this header and trick Keycloak into thinking the client is connected from a different IP address than the actual address.
 This precaution can more be critical if you do any deny or allow listing of IP addresses.
 
+=== Exposing the administration console
+
+By default, the administration console URLs are created solely based on the requests to resolve the proper scheme, host name, and port. For instance,
+if you are using the `edge` proxy mode and your proxy is misconfigured, backend requests from your TLS termination proxy are going to use plain HTTP and potentially cause the administration
+console from being accessible because URLs are going to be created using the `http` scheme and the proxy does not support plain HTTP.
+
+In order to proper expose the administration console, you should make sure that your proxy is setting the `X-Forwarded-*` headers herein mentioned in order
+to create URLs using the scheme, host name, and port, being exposed by your proxy.
+
 === Exposed path recommendations
 When using a reverse proxy, Keycloak only requires certain paths need to be exposed.
 The following table shows the recommended paths to expose.
