@@ -43,6 +43,7 @@ import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientRolesCo
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientScopesConditionConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientUpdateContextConditionConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createSecureCibaAuthenticationRequestSigningAlgorithmExecutorConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createTestRaiseExeptionExecutorConfig;
 
 import java.io.IOException;
 import java.net.URI;
@@ -109,7 +110,7 @@ import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
 import org.keycloak.testsuite.rest.representation.TestAuthenticationChannelRequest;
 import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResource.AuthorizationEndpointRequestObject;
-import org.keycloak.testsuite.services.clientpolicy.executor.TestRaiseExeptionExecutorFactory;
+import org.keycloak.testsuite.services.clientpolicy.executor.TestRaiseExceptionExecutorFactory;
 import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
 import org.keycloak.testsuite.util.Matchers;
@@ -1789,7 +1790,8 @@ public class CIBATest extends AbstractClientPoliciesTest {
         // register profiles
         String json = (new ClientProfilesBuilder()).addProfile(
                 (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Den Forste Profilen")
-                    .addExecutor(TestRaiseExeptionExecutorFactory.PROVIDER_ID, null)
+                    .addExecutor(TestRaiseExceptionExecutorFactory.PROVIDER_ID,
+                            createTestRaiseExeptionExecutorConfig(Arrays.asList(ClientPolicyEvent.BACKCHANNEL_AUTHENTICATION_REQUEST)))
                     .toRepresentation()
                 ).toString();
         updateProfiles(json);
@@ -1848,7 +1850,8 @@ public class CIBATest extends AbstractClientPoliciesTest {
         // register profiles
         String json = (new ClientProfilesBuilder()).addProfile(
                 (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Den Forste Profilen")
-                    .addExecutor(TestRaiseExeptionExecutorFactory.PROVIDER_ID, null)
+                    .addExecutor(TestRaiseExceptionExecutorFactory.PROVIDER_ID,
+                            createTestRaiseExeptionExecutorConfig(Arrays.asList(ClientPolicyEvent.BACKCHANNEL_TOKEN_REQUEST)))
                     .toRepresentation()
                 ).toString();
         updateProfiles(json);
@@ -2216,7 +2219,8 @@ public class CIBATest extends AbstractClientPoliciesTest {
         // register profiles
         String json = (new ClientProfilesBuilder()).addProfile(
                 (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Het Eerste Profiel")
-                    .addExecutor(TestRaiseExeptionExecutorFactory.PROVIDER_ID, null)
+                    .addExecutor(TestRaiseExceptionExecutorFactory.PROVIDER_ID,
+                            createTestRaiseExeptionExecutorConfig(Arrays.asList(ClientPolicyEvent.BACKCHANNEL_AUTHENTICATION_REQUEST)))
                     .toRepresentation()
                 ).toString();
         updateProfiles(json);
@@ -2242,6 +2246,14 @@ public class CIBATest extends AbstractClientPoliciesTest {
         response = oauth.doBackchannelAuthenticationRequest(clientConfidentialId, clientConfidentialSecret, username, bindingMessage, null, null, additionalParameters);
         assertThat(response.getStatusCode(), is(equalTo(200)));
         Assert.assertNotNull(response.getAuthReqId());
+
+        json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Het Eerste Profiel")
+                    .addExecutor(TestRaiseExceptionExecutorFactory.PROVIDER_ID,
+                            createTestRaiseExeptionExecutorConfig(Arrays.asList(ClientPolicyEvent.BACKCHANNEL_TOKEN_REQUEST)))
+                    .toRepresentation()
+                ).toString();
+        updateProfiles(json);
 
         json = (new ClientPoliciesBuilder()).addPolicy(
                 (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Het Eerste Beleid", Boolean.TRUE)

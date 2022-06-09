@@ -28,9 +28,9 @@ import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepres
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public class TestRaiseExeptionCondition extends AbstractClientPolicyConditionProvider<TestRaiseExeptionCondition.Configuration> {
+public class TestRaiseExceptionCondition extends AbstractClientPolicyConditionProvider<TestRaiseExceptionCondition.Configuration> {
 
-    public TestRaiseExeptionCondition(KeycloakSession session) {
+    public TestRaiseExceptionCondition(KeycloakSession session) {
         super(session);
     }
 
@@ -44,7 +44,7 @@ public class TestRaiseExeptionCondition extends AbstractClientPolicyConditionPro
 
     @Override
     public String getProviderId() {
-        return TestRaiseExeptionConditionFactory.PROVIDER_ID;
+        return TestRaiseExceptionConditionFactory.PROVIDER_ID;
     }
 
     @Override

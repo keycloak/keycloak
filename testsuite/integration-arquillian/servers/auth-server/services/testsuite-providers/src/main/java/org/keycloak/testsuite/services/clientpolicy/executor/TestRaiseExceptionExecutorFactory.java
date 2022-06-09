@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.testsuite.services.clientpolicy.condition;
+package org.keycloak.testsuite.services.clientpolicy.executor;
 
 import java.util.Collections;
 import java.util.List;
@@ -24,19 +24,16 @@ import org.keycloak.Config.Scope;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
-import org.keycloak.services.clientpolicy.condition.ClientPolicyConditionProvider;
-import org.keycloak.services.clientpolicy.condition.ClientPolicyConditionProviderFactory;
+import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProvider;
+import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProviderFactory;
 
-/**
- * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
- */
-public class TestRaiseExeptionConditionFactory implements ClientPolicyConditionProviderFactory {
+public class TestRaiseExceptionExecutorFactory implements ClientPolicyExecutorProviderFactory {
 
     public static final String PROVIDER_ID = "test-raise-exception";
 
     @Override
-    public ClientPolicyConditionProvider create(KeycloakSession session) {
-        return new TestRaiseExeptionCondition(session);
+    public ClientPolicyExecutorProvider create(KeycloakSession session) {
+        return new TestRaiseExceptionExecutor(session);
     }
 
     @Override
@@ -58,7 +55,7 @@ public class TestRaiseExeptionConditionFactory implements ClientPolicyConditionP
 
     @Override
     public String getHelpText() {
-        return null;
+        return "NA";
     }
 
     @Override
