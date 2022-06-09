@@ -10,6 +10,7 @@ rules:
       - extensions
     resources:
       - deployments
+      - statefulsets
     verbs:
       - get
       - list
