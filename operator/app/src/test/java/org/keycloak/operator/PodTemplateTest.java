@@ -21,6 +21,10 @@ public class PodTemplateTest {
     Deployment getDeployment(PodTemplateSpec podTemplate) {
         var config = new Config(){
             @Override
+            public boolean useStatefulset() {
+                return false;
+            }
+            @Override
             public Keycloak keycloak() {
                 return new Keycloak() {
                     @Override

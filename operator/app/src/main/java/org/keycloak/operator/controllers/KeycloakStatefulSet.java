@@ -17,65 +17,85 @@
 package org.keycloak.operator.controllers;
 
 import io.fabric8.kubernetes.api.model.Container;
+import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.EnvVarBuilder;
+import io.fabric8.kubernetes.api.model.EnvVarSourceBuilder;
+import io.fabric8.kubernetes.api.model.ExecActionBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.IntOrString;
+import io.fabric8.kubernetes.api.model.PodTemplateSpec;
+import io.fabric8.kubernetes.api.model.ResourceRequirements;
+import io.fabric8.kubernetes.api.model.VolumeBuilder;
+import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
-import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
+import io.fabric8.kubernetes.api.model.apps.StatefulSet;
+import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.quarkus.logging.Log;
 import org.keycloak.operator.Config;
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusBuilder;
+import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
 
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
-public class KeycloakDeployment extends AbstractKeycloak<Deployment> {
+import static io.smallrye.config.common.utils.StringUtil.replaceNonAlphanumericByUnderscores;
 
-    public KeycloakDeployment(KubernetesClient client, Config config, Keycloak keycloakCR, Deployment existing, String adminSecretName) {
+public class KeycloakStatefulSet extends AbstractKeycloak<StatefulSet> {
+
+    public KeycloakStatefulSet(KubernetesClient client, Config config, Keycloak keycloakCR, StatefulSet existing, String adminSecretName) {
         super(client, config, keycloakCR, existing, adminSecretName);
     }
 
     @Override
     public Optional<HasMetadata> getReconciledResource() {
-        Deployment baseDeployment = new DeploymentBuilder(this.base).build(); // clone not to change the base template
-        Deployment reconciledDeployment;
+        StatefulSet baseStatefulSet = new StatefulSetBuilder(this.base).build(); // clone not to change the base template
+        StatefulSet reconciledStatefulSet;
         if (existing == null) {
-            Log.info("No existing Deployment found, using the default");
-            reconciledDeployment = baseDeployment;
-        }
-        else {
-            Log.info("Existing Deployment found, updating specs");
-            reconciledDeployment = new DeploymentBuilder(existing).build();
+            Log.info("No existing StatefulSet found, using the default");
+            reconciledStatefulSet = baseStatefulSet;
+        } else {
+            Log.info("Existing StatefulSet found, updating specs");
+            reconciledStatefulSet = new StatefulSetBuilder(existing).build();
 
             // don't overwrite metadata, just specs
-            reconciledDeployment.setSpec(baseDeployment.getSpec());
+            reconciledStatefulSet.setSpec(baseStatefulSet.getSpec());
 
             // don't overwrite annotations in pod templates to support rolling restarts
             if (existing.getSpec() != null && existing.getSpec().getTemplate() != null) {
                 mergeMaps(
-                        Optional.ofNullable(reconciledDeployment.getSpec().getTemplate().getMetadata()).map(m -> m.getAnnotations()).orElse(null),
+                        Optional.ofNullable(reconciledStatefulSet.getSpec().getTemplate().getMetadata()).map(m -> m.getAnnotations()).orElse(null),
                         Optional.ofNullable(existing.getSpec().getTemplate().getMetadata()).map(m -> m.getAnnotations()).orElse(null),
-                        annotations -> reconciledDeployment.getSpec().getTemplate().getMetadata().setAnnotations(annotations));
+                        annotations -> reconciledStatefulSet.getSpec().getTemplate().getMetadata().setAnnotations(annotations));
             }
         }
 
-        return Optional.of(reconciledDeployment);
+        return Optional.of(reconciledStatefulSet);
     }
 
     @Override
-    protected Deployment fetchExisting() {
+    protected StatefulSet fetchExisting() {
         return client
                 .apps()
-                .deployments()
+                .statefulSets()
                 .inNamespace(getNamespace())
                 .withName(getName())
                 .get();
     }
 
     @Override
-    protected Deployment createBase() {
-        Deployment baseDeployment = new DeploymentBuilder()
+    protected StatefulSet createBase() {
+        StatefulSet baseStatefulSet = new StatefulSetBuilder()
                 .withNewMetadata()
                 .endMetadata()
                 .withNewSpec()
@@ -114,22 +134,16 @@ public class KeycloakDeployment extends AbstractKeycloak<Deployment> {
                             .endContainer()
                         .endSpec()
                     .endTemplate()
-                .withNewStrategy()
-                    .withNewRollingUpdate()
-                        .withMaxSurge(new IntOrString("25%"))
-                        .withMaxUnavailable(new IntOrString("25%"))
-                    .endRollingUpdate()
-                .endStrategy()
                 .endSpec()
                 .build();
 
-        baseDeployment.getMetadata().setName(getName());
-        baseDeployment.getMetadata().setNamespace(getNamespace());
-        baseDeployment.getSpec().getSelector().setMatchLabels(Constants.DEFAULT_LABELS);
-        baseDeployment.getSpec().setReplicas(keycloakCR.getSpec().getInstances());
-        baseDeployment.getSpec().getTemplate().getMetadata().setLabels(Constants.DEFAULT_LABELS);
+        baseStatefulSet.getMetadata().setName(getName());
+        baseStatefulSet.getMetadata().setNamespace(getNamespace());
+        baseStatefulSet.getSpec().getSelector().setMatchLabels(Constants.DEFAULT_LABELS);
+        baseStatefulSet.getSpec().setReplicas(keycloakCR.getSpec().getInstances());
+        baseStatefulSet.getSpec().getTemplate().getMetadata().setLabels(Constants.DEFAULT_LABELS);
 
-        Container container = baseDeployment.getSpec().getTemplate().getSpec().getContainers().get(0);
+        Container container = baseStatefulSet.getSpec().getTemplate().getSpec().getContainers().get(0);
         var customImage = Optional.ofNullable(keycloakCR.getSpec().getImage());
         container.setImage(customImage.orElse(config.keycloak().image()));
         if (customImage.isEmpty()) {
@@ -141,25 +155,24 @@ public class KeycloakDeployment extends AbstractKeycloak<Deployment> {
         container.setEnv(getEnvVars());
 
         configureHostname(container);
-        configureTLS(baseDeployment.getSpec().getTemplate());
-        mergePodTemplate(baseDeployment.getSpec().getTemplate());
+        configureTLS(baseStatefulSet.getSpec().getTemplate());
+        mergePodTemplate(baseStatefulSet.getSpec().getTemplate());
 
-        return baseDeployment;
+        return baseStatefulSet;
     }
-
 
     public void updateStatus(KeycloakStatusBuilder status) {
         validatePodTemplate(status);
         if (existing == null) {
-            status.addNotReadyMessage("No existing Deployment found, waiting for creating a new one");
+            status.addNotReadyMessage("No existing StatefulSet found, waiting for creating a new one");
             return;
         }
 
         var replicaFailure = existing.getStatus().getConditions().stream()
                 .filter(d -> d.getType().equals("ReplicaFailure")).findFirst();
         if (replicaFailure.isPresent()) {
-            status.addNotReadyMessage("Deployment failures");
-            status.addErrorMessage("Deployment failure: " + replicaFailure.get());
+            status.addNotReadyMessage("StatefulSet failures");
+            status.addErrorMessage("StatefulSet failure: " + replicaFailure.get());
             return;
         }
 
@@ -176,16 +189,17 @@ public class KeycloakDeployment extends AbstractKeycloak<Deployment> {
             // https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#progressing-deployment
             if (p.getStatus().equals("True") &&
                     (reason.equals("NewReplicaSetCreated") || reason.equals("FoundNewReplicaSet") || reason.equals("ReplicaSetUpdated"))) {
-                status.addRollingUpdateMessage("Rolling out deployment update");
+                status.addRollingUpdateMessage("Rolling out statefulset update");
             }
         });
     }
 
     @Override
     public void rollingRestart() {
-        client.apps().deployments()
+        client.apps().statefulSets()
                 .inNamespace(getNamespace())
                 .withName(getName())
                 .rolling().restart();
     }
+
 }

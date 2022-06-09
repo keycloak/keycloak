@@ -25,6 +25,7 @@ import io.smallrye.config.ConfigMapping;
 @ConfigMapping(prefix = "operator")
 public interface Config {
     Keycloak keycloak();
+    boolean useStatefulset();
 
     interface Keycloak {
         String image();
