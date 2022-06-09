@@ -22,6 +22,7 @@ import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.EnvVarSourceBuilder;
 import io.fabric8.kubernetes.api.model.ExecActionBuilder;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.VolumeBuilder;
@@ -29,7 +30,6 @@ import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.utils.Serialization;
 import io.quarkus.logging.Log;
 import org.keycloak.operator.Config;
 import org.keycloak.operator.Constants;
@@ -463,8 +463,53 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
     }
 
     private Deployment createBaseDeployment() {
-        var is = this.getClass().getResourceAsStream("/base-keycloak-deployment.yaml");
-        Deployment baseDeployment = Serialization.unmarshal(is, Deployment.class);
+        Deployment baseDeployment = new DeploymentBuilder()
+                .withNewMetadata()
+                .endMetadata()
+                .withNewSpec()
+                    .withNewSelector()
+                        .addToMatchLabels("app", "")
+                    .endSelector()
+                    .withNewTemplate()
+                        .withNewMetadata()
+                            .addToLabels("app", "")
+                        .endMetadata()
+                        .withNewSpec()
+                        .withRestartPolicy("Always")
+                        .withTerminationGracePeriodSeconds(30L)
+                        .withDnsPolicy("ClusterFirst")
+                        .addNewContainer()
+                            .withName("keycloak")
+                            .withArgs("start")
+                            .addNewPort()
+                                .withContainerPort(8443)
+                                .withProtocol("TCP")
+                            .endPort()
+                            .addNewPort()
+                                .withContainerPort(8080)
+                                .withProtocol("TCP")
+                            .endPort()
+                            .withNewReadinessProbe()
+                                .withInitialDelaySeconds(20)
+                                .withPeriodSeconds(2)
+                                .withFailureThreshold(250)
+                            .endReadinessProbe()
+                            .withNewLivenessProbe()
+                                .withInitialDelaySeconds(20)
+                                .withPeriodSeconds(2)
+                                .withFailureThreshold(150)
+                            .endLivenessProbe()
+                            .endContainer()
+                        .endSpec()
+                    .endTemplate()
+                .withNewStrategy()
+                    .withNewRollingUpdate()
+                        .withMaxSurge(new IntOrString("25%"))
+                        .withMaxUnavailable(new IntOrString("25%"))
+                    .endRollingUpdate()
+                .endStrategy()
+                .endSpec()
+                .build();
 
         baseDeployment.getMetadata().setName(getName());
         baseDeployment.getMetadata().setNamespace(getNamespace());
