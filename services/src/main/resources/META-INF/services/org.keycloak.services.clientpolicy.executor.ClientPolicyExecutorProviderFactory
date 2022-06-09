@@ -18,3 +18,4 @@ org.keycloak.services.clientpolicy.executor.RejectResourceOwnerPasswordCredentia
 org.keycloak.services.clientpolicy.executor.ClientSecretRotationExecutorFactory
 org.keycloak.services.clientpolicy.executor.RejectRequestExecutorFactory
 org.keycloak.services.clientpolicy.executor.IntentClientBindCheckExecutorFactory
+org.keycloak.services.clientpolicy.executor.SuppressRefreshTokenRotationExecutorFactory
