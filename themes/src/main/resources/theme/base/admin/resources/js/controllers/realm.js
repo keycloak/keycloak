@@ -104,7 +104,7 @@ module.controller('GlobalCtrl', function($scope, $http, Auth, Current, $location
         if(Current.realm !== null && currentRealm !== Current.realm.id) {
             currentRealm = Current.realm.id;
             translateProvider.translations(locale, resourceBundle);
-            RealmSpecificLocalizationTexts.get({id: Current.realm.realm, locale: locale}, function (localizationTexts) {
+            RealmSpecificLocalizationTexts.get({id: Current.realm.realm, locale: locale, useRealmDefaultLocaleFallback:true}, function (localizationTexts) {
                 translateProvider.translations(locale, localizationTexts.toJSON());
             })
         }

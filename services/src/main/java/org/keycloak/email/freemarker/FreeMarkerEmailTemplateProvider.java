@@ -48,6 +48,7 @@ import org.keycloak.theme.FreeMarkerUtil;
 import org.keycloak.theme.Theme;
 import org.keycloak.theme.beans.LinkExpirationFormatterMethod;
 import org.keycloak.theme.beans.MessageFormatterMethod;
+import org.keycloak.utils.StringUtil;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -229,6 +230,10 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
             Locale locale = session.getContext().resolveLocale(user);
             attributes.put("locale", locale);
             Properties rb = new Properties();
+            if(!StringUtil.isNotBlank(realm.getDefaultLocale()))
+            {
+                rb.putAll(realm.getRealmLocalizationTextsByLocale(realm.getDefaultLocale()));
+            }
             rb.putAll(theme.getMessages(locale));
             rb.putAll(realm.getRealmLocalizationTextsByLocale(locale.toLanguageTag()));
             attributes.put("msg", new MessageFormatterMethod(locale, rb));
