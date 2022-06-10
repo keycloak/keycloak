@@ -22,7 +22,7 @@ jobs:
           cache: maven
       
       - name: Build Quarkus
-        run: mvn -pl quarkus/dist -am -DskipTests clean install
+        run: mvn -Psnyk-quarkus -pl quarkus/dist -am -DskipTests clean install
 
       - uses: snyk/actions/setup@master
       - name: Check for vulnerabilities

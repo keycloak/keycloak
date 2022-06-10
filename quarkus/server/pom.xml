@@ -50,4 +50,15 @@
             </plugin>
         </plugins>
     </build>
+    <profiles>
+        <profile>
+            <id>snyk-quarkus</id>
+            <dependencies>
+                <dependency>
+                    <groupId>org.keycloak</groupId>
+                    <artifactId>keycloak-quarkus-server-deployment</artifactId>
+                </dependency>
+            </dependencies>
+        </profile>
+    </profiles>
 </project>
