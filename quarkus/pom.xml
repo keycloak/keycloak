@@ -38,8 +38,8 @@
             for reference
         -->
         <resteasy.version>4.7.5.Final</resteasy.version>
-        <jackson.version>2.13.2</jackson.version>
-        <jackson.databind.version>2.13.2.2</jackson.databind.version>
+        <jackson.version>2.13.3</jackson.version>
+        <jackson.databind.version>2.13.3</jackson.databind.version>
         <hibernate.core.version>5.6.5.Final</hibernate.core.version>
         <mysql.driver.version>8.0.28</mysql.driver.version>
         <postgresql.version>42.3.3</postgresql.version>
@@ -59,7 +59,7 @@
         <!--
             Quarkiverse dependency versions
          -->
-        <io.quarkiverse.vault.version>1.0.2</io.quarkiverse.vault.version>
+        <io.quarkiverse.vault.version>1.1.0</io.quarkiverse.vault.version>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.plugin.version>3.8.1</maven.compiler.plugin.version>
