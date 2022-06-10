@@ -17,7 +17,7 @@ const initOptions = async (
 ): Promise<InitOptions> => {
   const constructLoadPath: LoadPathOption = (_, namespaces) => {
     if (namespaces[0] === "overrides") {
-      return `/admin/realms/${adminClient.realmName}/localization/{{lng}}`;
+      return `/admin/realms/${adminClient.realmName}/localization/{{lng}}?useRealmDefaultLocaleFallback=true`;
     } else {
       return `${environment.resourceUrl}/resources/{{lng}}/{{ns}}.json`;
     }
