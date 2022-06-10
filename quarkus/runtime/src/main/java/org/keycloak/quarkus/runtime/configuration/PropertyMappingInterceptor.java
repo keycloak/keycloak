@@ -39,8 +39,6 @@ import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
  */
 public class PropertyMappingInterceptor implements ConfigSourceInterceptor {
 
-    private final boolean isQuarkusPropertiesEnabled = QuarkusPropertiesConfigSource.isQuarkusPropertiesEnabled();
-
     @Override
     public ConfigValue getValue(ConfigSourceInterceptorContext context, String name) {
         ConfigValue value = PropertyMappers.getValue(context, name);
