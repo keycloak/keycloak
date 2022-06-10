@@ -253,8 +253,8 @@ public class KeycloakUriBuilder {
 
         StringBuilder sb = new StringBuilder();
         if (scheme != null) sb.append(scheme).append(':');
-        if (ssp != null)
-            sb.append(ssp);
+//        if (ssp != null) //null case will cause exception thrown on above code
+        sb.append(ssp);
         if (fragment != null && fragment.length() > 0) sb.append('#').append(fragment);
         URI uri = URI.create(sb.toString());
 

@@ -19,13 +19,13 @@ package org.keycloak.common.util;
 /**
  * @author pedroigor
  */
-public class HtmlUtils {
+    public class HtmlUtils {
 
     /**
      * <p>Escapes the value for a HTML element attribute.</p>
      *
      * @param value
-     * @return
+     * @return string in HTML format
      */
     public static String escapeAttribute(String value) {
         StringBuilder escaped = new StringBuilder();

@@ -74,7 +74,7 @@ public class HostUtils {
     }
 
     /**
-     * Methods returns InetAddress for localhost
+     * Method returns InetAddress for localhost
      *
      * @return InetAddress of the localhost
      * @throws UnknownHostException if localhost could not be resolved

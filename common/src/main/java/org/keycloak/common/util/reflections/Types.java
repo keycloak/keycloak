@@ -593,10 +593,10 @@ public class Types {
                 TypeVariable tv = (TypeVariable) types[j];
                 types[j] = typeVarMap.get(tv.getName());
             }
-            else
-            {
-                types[j] = types[j];
-            }
+//            else //useless logic
+//            {
+//                types[j] = types[j];
+//            }
         }
         return types;
     }
