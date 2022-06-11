@@ -1,6 +1,6 @@
 
 
-.keycloak_help-header-description {
+div.keycloak_help-header-description {
   padding-top: var(--pf-global--spacer--lg);
   overflow-wrap: break-word;
   white-space: normal;

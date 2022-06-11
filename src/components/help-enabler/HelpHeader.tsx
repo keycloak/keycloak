@@ -12,8 +12,9 @@ import { ExternalLinkAltIcon, HelpIcon } from "@patternfly/react-icons";
 import React, { createContext, FunctionComponent, useState } from "react";
 import { useTranslation } from "react-i18next";
 import useRequiredContext from "../../utils/useRequiredContext";
-import "./help-header.css";
 import helpUrls from "../../help-urls";
+
+import "./help-header.css";
 
 type HelpContextProps = {
   enabled: boolean;
