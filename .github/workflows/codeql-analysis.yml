@@ -1,15 +1,7 @@
 name: CodeQL
 on:
-  push:
-    branches: [main]
-    paths-ignore:
-      - cypress/**
-      - mocks/**
-  pull_request:
-    branches: [main]
-    paths-ignore:
-      - cypress/**
-      - mocks/**
+  schedule:
+    - cron: "0 2 * * *"
 env:
   NODE_VERSION: 18
 jobs:
