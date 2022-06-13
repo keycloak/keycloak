@@ -62,14 +62,10 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-quarkus-server</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-common</artifactId>
             <exclusions>
                 <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
+                    <groupId>org.keycloak</groupId>
+                    <artifactId>keycloak-admin-ui</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
