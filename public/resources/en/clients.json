@@ -48,6 +48,8 @@
   "evaluate": "Evaluate",
   "reevaluate": "Re-evaluate",
   "showAuthData": "Show authorization data",
+  "authData": "Authorization data",
+  "authDataDescription": "Represents a token carrying authorization data as a result of the processing of an authorization request. This representation is basically what Keycloak issues to clients asking for permission. Check the `authorization` claim for the permissions that where granted based on the current authorization request. ",
   "results": "Results",
   "allResults": "All results",
   "resultPermit": "Result-Permit",

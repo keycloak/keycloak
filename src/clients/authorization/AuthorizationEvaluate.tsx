@@ -26,6 +26,7 @@ import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { FormPanel } from "../../components/scroll-form/FormPanel";
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
+import type AccessTokenRepresentation from "@keycloak/keycloak-admin-client/lib/defs/accessTokenAuthorization";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import type ResourceEvaluation from "@keycloak/keycloak-admin-client/lib/defs/resourceEvaluation";
 import { useRealm } from "../../context/realm-context/RealmContext";
@@ -36,13 +37,15 @@ import type ResourceRepresentation from "@keycloak/keycloak-admin-client/lib/def
 import type ScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/scopeRepresentation";
 import type { KeyValueType } from "../../components/key-value-form/key-value-convert";
 import { TableComposable, Th, Thead, Tr } from "@patternfly/react-table";
-import "./auth-evaluate.css";
 import { AuthorizationEvaluateResource } from "./AuthorizationEvaluateResource";
 import { SearchIcon } from "@patternfly/react-icons";
 import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { useAccess } from "../../context/access/Access";
 import { ForbiddenSection } from "../../ForbiddenSection";
+import { AuthorizationDataModal } from "./AuthorizationDataModal";
+
+import "./auth-evaluate.css";
 
 interface EvaluateFormInputs
   extends Omit<ResourceEvaluation, "context" | "resources"> {
@@ -121,6 +124,7 @@ export const AuthorizationEvaluate = ({ client }: Props) => {
   const [evaluateResults, setEvaluateResults] = useState<
     EvaluationResultRepresentation[]
   >([]);
+  const [access, setAccess] = useState<AccessTokenRepresentation>();
   const [showEvaluateResults, setShowEvaluateResults] = useState(false);
   const searchQueryRef = useRef("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -210,6 +214,7 @@ export const AuthorizationEvaluate = ({ client }: Props) => {
     );
 
     setEvaluateResults(evaluation.results);
+    setAccess(evaluation.rpt);
     setShowEvaluateResults(true);
     return evaluateResults;
   };
@@ -340,9 +345,7 @@ export const AuthorizationEvaluate = ({ client }: Props) => {
         >
           {t("clients:reevaluate")}
         </Button>
-        <Button data-testid="authorization-revert" variant="secondary">
-          {t("showAuthData")}
-        </Button>
+        <AuthorizationDataModal data={access!} />
       </ActionGroup>
     </PageSection>
   ) : (
@@ -643,14 +646,6 @@ export const AuthorizationEvaluate = ({ client }: Props) => {
             onClick={() => reset()}
           >
             {t("common:revert")}
-          </Button>
-          <Button
-            data-testid="authorization-revert"
-            variant="primary"
-            onClick={() => reset()}
-            isDisabled
-          >
-            {t("lastEvaluation")}
           </Button>
         </ActionGroup>
       </FormPanel>
