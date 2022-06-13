@@ -14,7 +14,7 @@ import { AddStepModal, FlowType } from "./modals/AddStepModal";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { AddSubFlowModal, Flow } from "./modals/AddSubFlowModal";
 
-type EditFlowDropdownProps = {
+type AddFlowDropdownProps = {
   execution: ExpandableExecution;
   onAddExecution: (
     execution: ExpandableExecution,
@@ -23,11 +23,11 @@ type EditFlowDropdownProps = {
   onAddFlow: (execution: ExpandableExecution, flow: Flow) => void;
 };
 
-export const EditFlowDropdown = ({
+export const AddFlowDropdown = ({
   execution,
   onAddExecution,
   onAddFlow,
-}: EditFlowDropdownProps) => {
+}: AddFlowDropdownProps) => {
   const { t } = useTranslation("authentication");
   const adminClient = useAdminClient();
 
@@ -45,7 +45,7 @@ export const EditFlowDropdown = ({
   );
 
   return (
-    <Tooltip content={t("common:edit")}>
+    <Tooltip content={t("common:add")}>
       <>
         <Dropdown
           isPlain

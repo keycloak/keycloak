@@ -21,7 +21,8 @@ import type { Flow } from "./modals/AddSubFlowModal";
 import { FlowTitle } from "./FlowTitle";
 import { FlowRequirementDropdown } from "./FlowRequirementDropdown";
 import { ExecutionConfigModal } from "./ExecutionConfigModal";
-import { EditFlowDropdown } from "./EditFlowDropdown";
+import { AddFlowDropdown } from "./AddFlowDropdown";
+import { EditFlow } from "./EditFlow";
 
 import "./flow-row.css";
 
@@ -104,11 +105,14 @@ export const FlowRow = ({
                   <ExecutionConfigModal execution={execution} />
                 )}
                 {execution.authenticationFlow && !builtIn && (
-                  <EditFlowDropdown
-                    execution={execution}
-                    onAddExecution={onAddExecution}
-                    onAddFlow={onAddFlow}
-                  />
+                  <>
+                    <AddFlowDropdown
+                      execution={execution}
+                      onAddExecution={onAddExecution}
+                      onAddFlow={onAddFlow}
+                    />
+                    <EditFlow execution={execution} onRowChange={onRowChange} />
+                  </>
                 )}
                 {!builtIn && (
                   <Tooltip content={t("common:delete")}>
