@@ -50,6 +50,7 @@ import {
   routableTab,
   RoutableTabs,
 } from "../components/routable-tabs/RoutableTabs";
+import { useAccess } from "../context/access/Access";
 
 import "./user-section.css";
 
@@ -71,6 +72,9 @@ export default function UsersSection() {
 
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
+
+  const { hasAccess } = useAccess();
+  const isManager = hasAccess("manage-users");
 
   useFetch(
     async () => {
@@ -376,7 +380,7 @@ export default function UsersSection() {
                   />
                 )
               }
-              toolbarItem={toolbar}
+              toolbarItem={isManager ? toolbar : undefined}
               actionResolver={(rowData: IRowData) => {
                 const user: UserRepresentation = rowData.data;
                 if (!user.access?.manage) return [];

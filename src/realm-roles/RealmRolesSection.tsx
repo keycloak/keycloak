@@ -4,9 +4,13 @@ import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useAdminClient } from "../context/auth/AdminClient";
 import { RolesList } from "./RolesList";
 import helpUrls from "../help-urls";
+import { useAccess } from "../context/access/Access";
 
 export default function RealmRolesSection() {
   const adminClient = useAdminClient();
+
+  const { hasAccess } = useAccess();
+  const isManager = hasAccess("manage-realm");
 
   const loader = (first?: number, max?: number, search?: string) => {
     const params: { [name: string]: string | number } = {
@@ -31,7 +35,7 @@ export default function RealmRolesSection() {
         helpUrl={helpUrls.realmRolesUrl}
       />
       <PageSection variant="light" padding={{ default: "noPadding" }}>
-        <RolesList loader={loader} />
+        <RolesList loader={loader} isReadOnly={!isManager} />
       </PageSection>
     </>
   );

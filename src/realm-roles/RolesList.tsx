@@ -25,7 +25,7 @@ type RolesListProps = {
   paginated?: boolean;
   parentRoleId?: string;
   messageBundle?: string;
-  isReadOnly?: boolean;
+  isReadOnly: boolean;
   loader?: (
     first?: number,
     max?: number,
@@ -52,7 +52,7 @@ export const RolesList = ({
   paginated = true,
   parentRoleId,
   messageBundle = "roles",
-  isReadOnly = false,
+  isReadOnly,
 }: RolesListProps) => {
   const { t } = useTranslation(messageBundle);
   const history = useHistory();
