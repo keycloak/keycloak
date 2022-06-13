@@ -118,6 +118,8 @@
   "verifyEmailHelpText": "Require user to verify their email address after initial login or after address changes are submitted.",
   "userInfoSettings": "User info settings",
   "editUsername": "Edit username",
+  "enableSwitchSuccess": "{{switch}} changed successfully",
+  "enableSwitchError": "Could not enable / disable due to {{error}}",
   "testConnection": "Test connection",
   "testConnectionSuccess": "Success! SMTP connection successful. E-mail was sent!",
   "testConnectionError": "Error! Failed to send email.",

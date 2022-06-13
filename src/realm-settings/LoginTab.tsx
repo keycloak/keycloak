@@ -1,11 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import {
-  AlertVariant,
-  FormGroup,
-  PageSection,
-  Switch,
-} from "@patternfly/react-core";
+import { FormGroup, PageSection, Switch } from "@patternfly/react-core";
 import { FormAccess } from "../components/form-access/FormAccess";
 import { HelpItem } from "../components/help-enabler/HelpItem";
 import { FormPanel } from "../components/scroll-form/FormPanel";
@@ -31,11 +26,7 @@ export const RealmSettingsLoginTab = ({
   const adminClient = useAdminClient();
   const { realm: realmName } = useRealm();
 
-  const updateSwitchValue = async (
-    onChange: (newValue: boolean) => void,
-    value: boolean
-  ) => {
-    onChange(value);
+  const updateSwitchValue = async (name: string) => {
     const switchValues = form.getValues();
 
     try {
@@ -45,10 +36,10 @@ export const RealmSettingsLoginTab = ({
         },
         switchValues
       );
-      addAlert(t("deleteClientPolicySuccess"), AlertVariant.success);
+      addAlert(t("enableSwitchSuccess", { switch: t(name) }));
       refresh();
     } catch (error) {
-      addError(t("deleteClientPolicyError"), error);
+      addError(t("enableSwitchError"), error);
     }
   };
 
@@ -83,7 +74,8 @@ export const RealmSettingsLoginTab = ({
                   labelOff={t("common:off")}
                   isChecked={value}
                   onChange={(value) => {
-                    updateSwitchValue(onChange, value);
+                    onChange(value);
+                    updateSwitchValue("userRegistration");
                   }}
                 />
               )}
@@ -114,7 +106,8 @@ export const RealmSettingsLoginTab = ({
                   labelOff={t("common:off")}
                   isChecked={value}
                   onChange={(value) => {
-                    updateSwitchValue(onChange, value);
+                    onChange(value);
+                    updateSwitchValue("forgotPassword");
                   }}
                 />
               )}
@@ -144,7 +137,8 @@ export const RealmSettingsLoginTab = ({
                   labelOff={t("common:off")}
                   isChecked={value}
                   onChange={(value) => {
-                    updateSwitchValue(onChange, value);
+                    onChange(value);
+                    updateSwitchValue("rememberMe");
                   }}
                 />
               )}
@@ -178,7 +172,8 @@ export const RealmSettingsLoginTab = ({
                   labelOff={t("common:off")}
                   isChecked={value}
                   onChange={(value) => {
-                    updateSwitchValue(onChange, value);
+                    onChange(value);
+                    updateSwitchValue("emailAsUsername");
                   }}
                 />
               )}
@@ -208,7 +203,8 @@ export const RealmSettingsLoginTab = ({
                   labelOff={t("common:off")}
                   isChecked={value}
                   onChange={(value) => {
-                    updateSwitchValue(onChange, value);
+                    onChange(value);
+                    updateSwitchValue("loginWithEmail");
                   }}
                 />
               )}
@@ -241,7 +237,8 @@ export const RealmSettingsLoginTab = ({
                     !form.getValues().registrationEmailAsUsername
                   }
                   onChange={(value) => {
-                    updateSwitchValue(onChange, value);
+                    onChange(value);
+                    updateSwitchValue("duplicateEmails");
                   }}
                   isDisabled={
                     form.getValues().loginWithEmailAllowed ||
@@ -276,7 +273,8 @@ export const RealmSettingsLoginTab = ({
                   labelOff={t("common:off")}
                   isChecked={value}
                   onChange={(value) => {
-                    updateSwitchValue(onChange, value);
+                    onChange(value);
+                    updateSwitchValue("verifyEmail");
                   }}
                 />
               )}
@@ -313,7 +311,8 @@ export const RealmSettingsLoginTab = ({
                   labelOff={t("common:off")}
                   isChecked={value}
                   onChange={(value) => {
-                    updateSwitchValue(onChange, value);
+                    onChange(value);
+                    updateSwitchValue("userInfoSettings");
                   }}
                 />
               )}
