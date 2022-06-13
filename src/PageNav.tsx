@@ -1,5 +1,5 @@
 import React from "react";
-import { useHistory, useRouteMatch } from "react-router-dom";
+import { NavLink, useHistory, useRouteMatch } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   Nav,
@@ -52,17 +52,19 @@ export const PageNav: React.FunctionComponent = () => {
     }
 
     //remove "/realm-name" from the start of the path
-    const activeItem = history.location.pathname.substr(realm.length + 1);
+    const activeItem = history.location.pathname.substring(realm.length + 1);
     return (
-      <NavItem
+      <NavLink
         id={"nav-item" + path.replace("/", "-")}
         to={`/${realm}${path}`}
-        isActive={
+        className="pf-c-nav__link"
+        activeClassName="pf-m-current"
+        isActive={() =>
           path === activeItem || (path !== "/" && activeItem.startsWith(path))
         }
       >
         {t(title)}
-      </NavItem>
+      </NavLink>
     );
   };
 
