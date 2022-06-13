@@ -41,6 +41,8 @@ import { AuthorizationEvaluateResource } from "./AuthorizationEvaluateResource";
 import { SearchIcon } from "@patternfly/react-icons";
 import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
+import { useAccess } from "../../context/access/Access";
+import { ForbiddenSection } from "../../ForbiddenSection";
 
 interface EvaluateFormInputs
   extends Omit<ResourceEvaluation, "context" | "resources"> {
@@ -142,6 +144,10 @@ export const AuthorizationEvaluate = ({ client }: Props) => {
       ),
     [evaluateResults, filter, searchQuery]
   );
+
+  const { hasAccess } = useAccess();
+  if (!hasAccess("view-users"))
+    return <ForbiddenSection permissionNeeded="view-users" />;
 
   useFetch(
     () =>
