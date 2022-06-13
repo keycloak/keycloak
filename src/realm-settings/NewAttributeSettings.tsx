@@ -114,7 +114,7 @@ export default function NewAttributeSettings() {
     }));
 
   useFetch(
-    () => adminClient.users.getProfile({ realm }),
+    () => adminClient.users.getProfile(),
     (config) => {
       setConfig(config);
       const {
@@ -175,7 +175,8 @@ export default function NewAttributeSettings() {
           },
           profileConfig.isRequired
             ? { required: profileConfig.required }
-            : undefined
+            : undefined,
+          profileConfig.group ? { group: profileConfig.group } : undefined
         );
       });
 
@@ -193,7 +194,8 @@ export default function NewAttributeSettings() {
           },
           profileConfig.isRequired
             ? { required: profileConfig.required }
-            : undefined
+            : undefined,
+          profileConfig.group ? { group: profileConfig.group } : undefined
         ),
       ] as UserProfileAttribute);
 
@@ -201,6 +203,7 @@ export default function NewAttributeSettings() {
 
     try {
       await adminClient.users.updateProfile({
+        ...config,
         attributes: updatedAttributes as UserProfileAttribute[],
         realm,
       });

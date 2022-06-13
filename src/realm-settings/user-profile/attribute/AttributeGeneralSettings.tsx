@@ -15,6 +15,7 @@ import { FormAccess } from "../../../components/form-access/FormAccess";
 import { KeycloakTextInput } from "../../../components/keycloak-text-input/KeycloakTextInput";
 import { useAdminClient, useFetch } from "../../../context/auth/AdminClient";
 import type ClientScopeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientScopeRepresentation";
+import type UserProfileConfig from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
 import type { AttributeParams } from "../../routes/Attribute";
 import { useParams } from "react-router-dom";
 import { isEqual } from "lodash-es";
@@ -33,6 +34,7 @@ export const AttributeGeneralSettings = () => {
   const form = useFormContext();
   const [clientScopes, setClientScopes] =
     useState<ClientScopeRepresentation[]>();
+  const [config, setConfig] = useState<UserProfileConfig>();
   const [selectEnabledWhenOpen, setSelectEnabledWhenOpen] = useState(false);
   const [selectRequiredForOpen, setSelectRequiredForOpen] = useState(false);
   const [isAttributeGroupDropdownOpen, setIsAttributeGroupDropdownOpen] =
@@ -58,13 +60,8 @@ export const AttributeGeneralSettings = () => {
     defaultValue: false,
   });
 
-  useFetch(
-    () => adminClient.clientScopes.find(),
-    (clientScopes) => {
-      setClientScopes(clientScopes);
-    },
-    []
-  );
+  useFetch(() => adminClient.clientScopes.find(), setClientScopes, []);
+  useFetch(() => adminClient.users.getProfile(), setConfig, []);
 
   return (
     <FormAccess role="manage-realm" isHorizontal>
@@ -128,7 +125,7 @@ export const AttributeGeneralSettings = () => {
         fieldId="kc-attribute-group"
       >
         <Controller
-          name="attributeGroup"
+          name="group"
           defaultValue=""
           control={form.control}
           render={({ onChange, value }) => (
@@ -142,13 +139,14 @@ export const AttributeGeneralSettings = () => {
                 onChange(value.toString());
                 setIsAttributeGroupDropdownOpen(false);
               }}
-              selections={value}
+              selections={[value || t("common:choose")]}
               variant={SelectVariant.single}
             >
-              <SelectOption key={0} value="" isPlaceholder>
-                Select a group
-              </SelectOption>
-              <SelectOption key={1} value=""></SelectOption>
+              {config?.groups?.map((group) => (
+                <SelectOption key={group.name} value={group.name}>
+                  {group.name}
+                </SelectOption>
+              ))}
             </Select>
           )}
         ></Controller>
