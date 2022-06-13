@@ -89,7 +89,7 @@
     "jest": "^28.1.0",
     "jest-environment-jsdom": "^28.1.0",
     "lint-staged": "^13.0.0",
-    "node-fetch": "^3.2.5",
+    "node-fetch": "^3.2.6",
     "postcss": "^8.4.14",
     "postcss-import": "^14.1.0",
     "postcss-svg": "^3.0.0",
