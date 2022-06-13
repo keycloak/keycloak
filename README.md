@@ -98,80 +98,34 @@ npm run start:rh-sso
 
 All themes are located in the `themes/` directory of the project, if you want to create a new theme you can create a new directory here and name it the same as your theme. Copy the files from the default theme here and customize them to your liking.
 
-## Keycloak UI Test Suite in Cypress
+## Integration testing with Cypress
 
-This repository contains the UI tests for Keycloak developed with Cypress framework
+This repository contains integration tests developed with the [Cypress framework](https://www.cypress.io/).
 
 ### Prerequisites
 
-* `Keycloak distribution` has to be [downloaded](https://www.keycloak.org/downloads) and started on 8081 port.  
-**note**: the port in at the test suite side in [cypress.json](cypress.json) or at the Keycloak side, see [Keycloak Getting Started Guide](https://www.keycloak.org/docs/latest/getting_started/#starting-the-keycloak-server),
-* `npm package manager` has to be [downloaded](https://nodejs.org/en/download/) and installed.
+Ensure the Keycloak and development server are running as [outlined previously](#running-the-keycloak-server) in this document.
 
-### via Cypress Test Runner
 
-**By using `npx`:**
+### Running the tests
 
-**note**: [npx](https://www.npmjs.com/package/npx) is included with `npm > v5.2` or can be installed separately.
+You can run the tests using the interactive graphical user interface using the following command:
 
-```shell
-npx cypress open
+```bash
+npm run cy:open
 ```
 
-After a moment, the Cypress Test Runner will launch:
-
- ![test_runner](images/cypress-test-runner.png)
-
-### via terminal
-
-**By executing:**
-
-```shell
-$(npm bin)/cypress run
+Alternatively the tests can also run headless as follows:
+```
+npm run cy:run
 ```
 
-...or...
+For more information about the Cypress command-line interface consult [the documentation](https://docs.cypress.io/guides/guides/command-line).
 
-```shell
-./node_modules/.bin/cypress run
-```
+### Project Structure
 
-...or... (requires npm@5.2.0 or greater)
-
-```shell
-npx cypress run
-```
-
-**To execute a specific test on a specific browser run:**
-
-```shell
-cypress run --spec "cypress/integration/example-test.spec.js" --browser chrome
-```
-
-**note**: the complete list of parameters can be found in the [official Cypress documentation](https://docs.cypress.io/guides/guides/command-line.html#Commands).
-
+You can find information about the project structure in the [official Cypress documentation](https://docs.cypress.io/guides/core-concepts/writing-and-organizing-tests#Folder-structure). 
 Read more about [how to write tests](./cypress/WRITING_TESTS.md)
-
-## Project Structure
-
-```text
-/assets (added to .gitignore)
-  /videos - if test fails, the video is stored here
-  /screenshots - if test fails, the screenshot is stored here
-/cypress
-  /fixtures - external pieces of static data that can be used by your tests
-  /integration - used for test files (supported filetypes are .js, .jsx, .coffee and .cjsx)
-  /plugins
-    - index.js - extends Cypress behaviour, custom plugins are imported before every single spec file run
-  /support - reusable behaviour
-    - commands.js - custom commands
-    - index.js - runs before each test file
-
-/cypress.json - Cypress configuration file
-/jsconfig.json - Cypress code autocompletion is enabled here
-```
-
-**note**: More about the project structure in the [official Cypress documentation](https://docs.cypress.io/guides/core-concepts/writing-and-organizing-tests.html#Folder-Structure).
 
 ## License
 

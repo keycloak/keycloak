@@ -101,7 +101,7 @@ jobs:
           KEYCLOAK_ADMIN_PASSWORD: admin
 
       - name: Run Cypress
-        uses: cypress-io/github-action@v2
+        uses: cypress-io/github-action@v4
         with:
           install: false
           record: true
