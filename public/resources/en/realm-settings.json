@@ -347,6 +347,11 @@
   "required": "Required",
   "requiredFor": "Required for",
   "requiredWhen": "Required when",
+  "requiredForLabel": {
+    "both": "Both users and admins",
+    "users": "Only users",
+    "admins": "Only admins"
+  },
   "whoCanEdit": "Who can edit?",
   "whoCanView": "Who can view?",
   "user": "User",

@@ -162,6 +162,7 @@ export default function NewAttributeSettings() {
           return attribute;
         }
 
+        delete attribute.required;
         return Object.assign(
           {
             ...attribute,

@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unnecessary-condition */
-/* eslint-disable prettier/prettier */
 import React, { useState } from "react";
 import {
   Divider,
@@ -24,9 +22,9 @@ import { isEqual } from "lodash-es";
 import "../../realm-settings-section.css";
 
 const REQUIRED_FOR = [
-  { label: "Both users and admins", value: ["admin", "user"] },
-  { label: "Only users", value: ["user"] },
-  { label: "Only admins", value: ["admin"] },
+  { label: "requiredForLabel.both", value: ["admin", "user"] },
+  { label: "requiredForLabel.users", value: ["user"] },
+  { label: "requiredForLabel.admins", value: ["admin"] },
 ] as const;
 
 export const AttributeGeneralSettings = () => {
@@ -292,7 +290,7 @@ export const AttributeGeneralSettings = () => {
                       onChange={() => {
                         onChange(option.value);
                       }}
-                      label={option.label}
+                      label={t(option.label)}
                       className="kc-requiredFor-option"
                     />
                   ))}
