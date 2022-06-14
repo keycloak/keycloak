@@ -43,7 +43,7 @@ import java.util.stream.Collectors;
 
 import static org.keycloak.models.map.storage.hotRod.IckleQueryOperators.C;
 import static org.keycloak.models.map.storage.hotRod.IckleQueryOperators.findAvailableNamedParam;
-import static org.keycloak.models.map.storage.hotRod.common.ProtoSchemaInitializer.HOT_ROD_ENTITY_PACKAGE;
+import static org.keycloak.models.map.storage.hotRod.common.CommonPrimitivesProtoSchemaInitializer.HOT_ROD_ENTITY_PACKAGE;
 
 public class IckleQueryMapModelCriteriaBuilder<E extends AbstractHotRodEntity, M> implements ModelCriteriaBuilder<M, IckleQueryMapModelCriteriaBuilder<E, M>> {
 

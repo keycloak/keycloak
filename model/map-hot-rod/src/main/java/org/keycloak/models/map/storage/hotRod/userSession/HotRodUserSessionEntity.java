@@ -17,11 +17,16 @@
 
 package org.keycloak.models.map.storage.hotRod.userSession;
 
+import org.infinispan.protostream.GeneratedSchema;
+import org.infinispan.protostream.annotations.AutoProtoSchemaBuilder;
 import org.infinispan.protostream.annotations.ProtoDoc;
 import org.infinispan.protostream.annotations.ProtoField;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.map.annotations.GenerateHotRodEntityImplementation;
+import org.keycloak.models.map.annotations.IgnoreForEntityImplementationGenerator;
+import org.keycloak.models.map.storage.hotRod.authorization.HotRodResourceServerEntity;
 import org.keycloak.models.map.storage.hotRod.common.AbstractHotRodEntity;
+import org.keycloak.models.map.storage.hotRod.common.CommonPrimitivesProtoSchemaInitializer;
 import org.keycloak.models.map.storage.hotRod.common.HotRodStringPair;
 import org.keycloak.models.map.storage.hotRod.common.UpdatableHotRodEntityDelegateImpl;
 import org.keycloak.models.map.userSession.MapUserSessionEntity;
@@ -30,14 +35,33 @@ import java.util.Set;
 
 @GenerateHotRodEntityImplementation(
         implementInterface = "org.keycloak.models.map.userSession.MapUserSessionEntity",
-        inherits = "org.keycloak.models.map.storage.hotRod.userSession.HotRodUserSessionEntity.AbstractHotRodUserSessionEntityDelegate"
+        inherits = "org.keycloak.models.map.storage.hotRod.userSession.HotRodUserSessionEntity.AbstractHotRodUserSessionEntityDelegate",
+        topLevelEntity = true,
+        modelClass = "org.keycloak.models.UserSessionModel"
 )
 @ProtoDoc("@Indexed")
+@ProtoDoc("schema-version: " + HotRodResourceServerEntity.VERSION)
 public class HotRodUserSessionEntity extends AbstractHotRodEntity {
+
+    @IgnoreForEntityImplementationGenerator
+    public static final int VERSION = 1;
+
+    @AutoProtoSchemaBuilder(
+            includeClasses = {
+                    HotRodUserSessionEntity.class,
+                    HotRodSessionState.class
+            },
+            schemaFilePath = "proto/",
+            schemaPackageName = CommonPrimitivesProtoSchemaInitializer.HOT_ROD_ENTITY_PACKAGE,
+            dependsOn = {CommonPrimitivesProtoSchemaInitializer.class}
+    )
+    public interface HotRodUserSessionEntitySchema extends GeneratedSchema {
+        HotRodUserSessionEntitySchema INSTANCE = new HotRodUserSessionEntitySchemaImpl();
+    }
 
     @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
     @ProtoField(number = 1)
-    public Integer entityVersion = 1;
+    public Integer entityVersion = VERSION;
 
     @ProtoField(number = 2)
     public String id;
