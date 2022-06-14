@@ -101,7 +101,7 @@ public interface UserCredentialManager extends UserCredentialStore {
      * @param realm
      * @param user
      * @return
-     * @deprecated Use {@link UserModel#credentialManager()} and {@link SingleEntityCredentialManager#getDisableableCredentialTypesStream()} instead.
+     * @deprecated Use {@link UserModel#credentialManager()} and {@link SubjectCredentialManager#getDisableableCredentialTypesStream()} instead.
      */
     @Deprecated
     Set<String> getDisableableCredentialTypes(RealmModel realm, UserModel user);
@@ -158,7 +158,7 @@ public interface UserCredentialManager extends UserCredentialStore {
      * Return credential types, which are provided by the user storage where user is stored. Returned values can contain for example "password", "otp" etc.
      * This will always return empty list for "local" users, which are not backed by any user storage
      *
-     * @deprecated Use {@link UserModel#credentialManager()} and then call {@link SingleEntityCredentialManager#getConfiguredUserStorageCredentialTypesStream()}
+     * @deprecated Use {@link UserModel#credentialManager()} and then call {@link SubjectCredentialManager#getConfiguredUserStorageCredentialTypesStream()}
      * instead.
      */
     @Deprecated

@@ -27,7 +27,7 @@ import java.util.stream.Stream;
 /**
  * Validates and manages the credentials of a known entity (for example, a user).
  */
-public interface SingleEntityCredentialManager {
+public interface SubjectCredentialManager {
 
     /**
      * Validate a list of credentials.

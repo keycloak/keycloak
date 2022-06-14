@@ -20,7 +20,7 @@ package org.keycloak.credential;
 import org.keycloak.common.util.reflections.Types;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.SingleEntityCredentialManager;
+import org.keycloak.models.SubjectCredentialManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.storage.AbstractStorageManager;
 import org.keycloak.storage.DatastoreProvider;
@@ -38,17 +38,15 @@ import java.util.stream.Stream;
 /**
  * Handling credentials for a given user for the legacy store.
  *
- * Its companion is the MapSingleUserCredentialManagerStrategy that doesn't contain storage related elements.
- *
  * @author Alexander Schwartz
  */
-public class LegacySingleUserCredentialManager extends AbstractStorageManager<UserStorageProvider, UserStorageProviderModel> implements SingleEntityCredentialManager {
+public class LegacyUserCredentialManager extends AbstractStorageManager<UserStorageProvider, UserStorageProviderModel> implements SubjectCredentialManager {
 
     private final UserModel user;
     private final KeycloakSession session;
     private final RealmModel realm;
 
-    public LegacySingleUserCredentialManager(KeycloakSession session, RealmModel realm, UserModel user) {
+    public LegacyUserCredentialManager(KeycloakSession session, RealmModel realm, UserModel user) {
         super(session, UserStorageProviderFactory.class, UserStorageProvider.class, UserStorageProviderModel::new, "user");
         this.user = user;
         this.session = session;

@@ -27,7 +27,7 @@ import org.keycloak.credential.CredentialProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.SingleEntityCredentialManager;
+import org.keycloak.models.SubjectCredentialManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.map.user.MapUserCredentialEntity;
 import org.keycloak.models.map.user.MapUserEntity;
@@ -47,14 +47,14 @@ import java.util.stream.Stream;
  *
  * @author Alexander Schwartz
  */
-public class MapSingleUserCredentialManager implements SingleEntityCredentialManager {
+public class MapUserCredentialManager implements SubjectCredentialManager {
 
     private final UserModel user;
     private final KeycloakSession session;
     private final RealmModel realm;
     private final MapUserEntity entity;
 
-    public MapSingleUserCredentialManager(KeycloakSession session, RealmModel realm, UserModel user, MapUserEntity entity) {
+    public MapUserCredentialManager(KeycloakSession session, RealmModel realm, UserModel user, MapUserEntity entity) {
         this.user = user;
         this.session = session;
         this.realm = realm;
