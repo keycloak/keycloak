@@ -17,7 +17,7 @@
 package org.keycloak.credential;
 
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.SingleEntityCredentialManager;
+import org.keycloak.models.SubjectCredentialManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.provider.Provider;
 
@@ -47,7 +47,7 @@ public interface UserCredentialStore extends Provider {
     CredentialModel getStoredCredentialById(RealmModel realm, UserModel user, String id);
 
     /**
-     * @deprecated Use {@link SingleEntityCredentialManager#getStoredCredentialsStream()} instead.
+     * @deprecated Use {@link SubjectCredentialManager#getStoredCredentialsStream()} instead.
      */
     @Deprecated
     List<CredentialModel> getStoredCredentials(RealmModel realm, UserModel user);
@@ -65,7 +65,7 @@ public interface UserCredentialStore extends Provider {
     }
 
     /**
-     * @deprecated Use {@link SingleEntityCredentialManager#getStoredCredentialsByTypeStream(String)}
+     * @deprecated Use {@link SubjectCredentialManager#getStoredCredentialsByTypeStream(String)}
      * instead.
      */
     @Deprecated

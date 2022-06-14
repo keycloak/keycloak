@@ -301,7 +301,7 @@ public interface UserModel extends RoleMapperModel {
     /**
      * Instance of a user credential manager to validate and update the credentials of this user.
      */
-    SingleEntityCredentialManager credentialManager();
+    SubjectCredentialManager credentialManager();
 
     enum RequiredAction {
         VERIFY_EMAIL,
