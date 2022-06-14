@@ -17,23 +17,43 @@
 
 package org.keycloak.models.map.storage.hotRod.loginFailure;
 
+import org.infinispan.protostream.GeneratedSchema;
+import org.infinispan.protostream.annotations.AutoProtoSchemaBuilder;
 import org.infinispan.protostream.annotations.ProtoDoc;
 import org.infinispan.protostream.annotations.ProtoField;
 import org.keycloak.models.map.annotations.GenerateHotRodEntityImplementation;
+import org.keycloak.models.map.annotations.IgnoreForEntityImplementationGenerator;
 import org.keycloak.models.map.loginFailure.MapUserLoginFailureEntity;
 import org.keycloak.models.map.storage.hotRod.common.AbstractHotRodEntity;
+import org.keycloak.models.map.storage.hotRod.common.CommonPrimitivesProtoSchemaInitializer;
 import org.keycloak.models.map.storage.hotRod.common.UpdatableHotRodEntityDelegateImpl;
 
 @GenerateHotRodEntityImplementation(
         implementInterface = "org.keycloak.models.map.loginFailure.MapUserLoginFailureEntity",
-        inherits = "org.keycloak.models.map.storage.hotRod.loginFailure.HotRodUserLoginFailureEntity.AbstractHotRodUserLoginFailureEntityDelegate"
+        inherits = "org.keycloak.models.map.storage.hotRod.loginFailure.HotRodUserLoginFailureEntity.AbstractHotRodUserLoginFailureEntityDelegate",
+        topLevelEntity = true,
+        modelClass = "org.keycloak.models.UserLoginFailureModel"
 )
 @ProtoDoc("@Indexed")
+@ProtoDoc("schema-version: " + HotRodUserLoginFailureEntity.VERSION)
 public class HotRodUserLoginFailureEntity extends AbstractHotRodEntity {
+
+    @IgnoreForEntityImplementationGenerator
+    public static final int VERSION = 1;
+
+    @AutoProtoSchemaBuilder(
+            includeClasses = {
+                    HotRodUserLoginFailureEntity.class
+            },
+            schemaFilePath = "proto/",
+            schemaPackageName = CommonPrimitivesProtoSchemaInitializer.HOT_ROD_ENTITY_PACKAGE)
+    public interface HotRodUserLoginFailureEntitySchema extends GeneratedSchema {
+        HotRodUserLoginFailureEntitySchema INSTANCE = new HotRodUserLoginFailureEntitySchemaImpl();
+    }
 
     @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
     @ProtoField(number = 1)
-    public Integer entityVersion = 1;
+    public Integer entityVersion = VERSION;
 
     @ProtoField(number = 2)
     public String id;
