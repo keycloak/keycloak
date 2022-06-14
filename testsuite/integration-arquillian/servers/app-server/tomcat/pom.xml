@@ -37,6 +37,7 @@
         <skip.dependencies.for.tomcat>false</skip.dependencies.for.tomcat>
 
         <tomcat.reactive-streams.version>1.0.2</tomcat.reactive-streams.version>
+        <tomcat.javax.json.bind-api.version>1.0</tomcat.javax.json.bind-api.version>
         <tomcat.validation-api.version>1.0.0.GA</tomcat.validation-api.version>
     </properties>
 
@@ -146,6 +147,11 @@
                                             <groupId>org.jboss.logging</groupId>
                                             <artifactId>jboss-logging</artifactId>
                                             <version>${jboss.logging.version}</version>
+                                        </artifactItem>
+                                        <artifactItem>
+                                            <groupId>javax.json.bind</groupId>
+                                            <artifactId>javax.json.bind-api</artifactId>
+                                            <version>${tomcat.javax.json.bind-api.version}</version>
                                         </artifactItem>
                                         <artifactItem>
                                             <groupId>javax.validation</groupId>
