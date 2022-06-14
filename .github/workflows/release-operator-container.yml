@@ -22,11 +22,7 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: ${{ env.JDK_VERSION }}
-          cache: 'maven'
-
-      - name: Build locally Keycloak artifacts to avoid depending on Maven
-        run: |
-          mvn -P operator -pl operator -am clean install -DskipTests     
+          cache: 'maven'   
 
       - name: Login to Quay
         uses: docker/login-action@v2
@@ -54,12 +50,14 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
                       
-      - name: Build and push the operator image
-        working-directory: operator
+      - name: Build the operator image
+        run: |
+          mvn clean package -Poperator -pl :keycloak-operator -am \
+              -DskipTests \
+              -Dquarkus.jib.image-id-file=image-id.txt \
+              -Dquarkus.container-image.build=true
+
+      - name: Tag and push the operator images
         run: |
           echo "${{ steps.meta.outputs.tags }}" | xargs -I {} \
-          mvn clean package \
-              -DskipTests \
-              -Dquarkus.container-image.image={} \
-              -Dquarkus.container-image.build=true \
-              -Dquarkus.container-image.push=true
+            sh -c "docker tag $(cat operator/app/target/image-id.txt) {} && docker push {}"
