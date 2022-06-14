@@ -27,7 +27,7 @@ import java.util.stream.Stream;
  *
  * @author Alexander Schwartz
  */
-public interface MapSingleEntityCredentialManagerEntity {
+public interface MapSubjectCredentialManagerEntity {
 
     /**
      * Validate the credentials of a user.
