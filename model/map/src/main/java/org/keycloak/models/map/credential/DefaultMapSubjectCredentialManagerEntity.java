@@ -23,12 +23,12 @@ import java.util.List;
 import java.util.stream.Stream;
 
 /**
- * Standard implementation for a {@link MapSingleEntityCredentialManagerEntity} where the store doesn't provide
+ * Standard implementation for a {@link MapSubjectCredentialManagerEntity} where the store doesn't provide
  * validation of credentials.
  *
  * @author Alexander Schwartz
  */
-public class DefaultMapSingleEntityCredentialManagerEntity implements MapSingleEntityCredentialManagerEntity {
+public class DefaultMapSubjectCredentialManagerEntity implements MapSubjectCredentialManagerEntity {
     @Override
     public void validateCredentials(List<CredentialInput> inputs) {
     }
