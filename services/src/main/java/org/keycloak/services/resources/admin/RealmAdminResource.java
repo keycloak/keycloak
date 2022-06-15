@@ -85,7 +85,6 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.cache.CacheRealmProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
@@ -1078,23 +1077,6 @@ public class RealmAdminResource {
         ExportOptions options = new ExportOptions(false, clientsExported, groupsAndRolesExported, clientsExported);
         RealmRepresentation rep = ExportUtils.exportRealm(session, realm, options, false);
         return stripForExport(session, rep);
-    }
-
-    /**
-     * Clear realm cache
-     *
-     */
-    @Path("clear-realm-cache")
-    @POST
-    public void clearRealmCache() {
-        auth.realm().requireManageRealm();
-
-        CacheRealmProvider cache = session.getProvider(CacheRealmProvider.class);
-        if (cache != null) {
-            cache.clear();
-        }
-
-        adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).success();
     }
 
     /**

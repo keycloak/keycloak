@@ -16,3 +16,4 @@
 #
 
 org.keycloak.models.cache.CacheUserProviderSpi
+org.keycloak.models.cache.CacheRealmProviderSpi
