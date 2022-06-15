@@ -1077,8 +1077,12 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
         }
 
         Time.setOffset(tokenTimeOffset);
-        String jwt = jwtProvider.createSignedRequestToken(app1.getClientId(), getRealmInfoUrl());
-        Time.setOffset(0);
+        String jwt;
+        try {
+            jwt = jwtProvider.createSignedRequestToken(app1.getClientId(), getRealmInfoUrl());
+        } finally {
+            Time.setOffset(0);
+        }
         return doClientCredentialsGrantRequest(jwt);
     }
 

@@ -142,16 +142,18 @@ public class UserSessionProviderTest extends AbstractTestRealmKeycloakTest {
         UserSessionModel[] sessions = createSessions(session);
 
         Time.setOffset(100);
+        try {
 
-        UserSessionModel userSession = session.sessions().getUserSession(realm, sessions[0].getId());
-        assertSession(userSession, session.users().getUserByUsername(realm, "user1"), "127.0.0.1", started, started, "test-app", "third-party");
+            UserSessionModel userSession = session.sessions().getUserSession(realm, sessions[0].getId());
+            assertSession(userSession, session.users().getUserByUsername(realm, "user1"), "127.0.0.1", started, started, "test-app", "third-party");
 
-        userSession.restartSession(realm, session.users().getUserByUsername(realm, "user2"), "user2", "127.0.0.6", "form", true, null, null);
+            userSession.restartSession(realm, session.users().getUserByUsername(realm, "user2"), "user2", "127.0.0.6", "form", true, null, null);
 
-        userSession = session.sessions().getUserSession(realm, sessions[0].getId());
-        assertSession(userSession, session.users().getUserByUsername(realm, "user2"), "127.0.0.6", started + 100, started + 100);
-
-        Time.setOffset(0);
+            userSession = session.sessions().getUserSession(realm, sessions[0].getId());
+            assertSession(userSession, session.users().getUserByUsername(realm, "user2"), "127.0.0.6", started + 100, started + 100);
+        } finally {
+            Time.setOffset(0);
+        }
     }
 
     @Test
