@@ -57,7 +57,6 @@ org.keycloak.executors.ExecutorsSpi
 org.keycloak.theme.ThemeSpi
 org.keycloak.truststore.TruststoreSpi
 org.keycloak.connections.httpclient.HttpClientSpi
-org.keycloak.models.cache.CacheRealmProviderSpi
 org.keycloak.authentication.AuthenticatorSpi
 org.keycloak.authentication.ClientAuthenticatorSpi
 org.keycloak.authentication.RequiredActionSpi
