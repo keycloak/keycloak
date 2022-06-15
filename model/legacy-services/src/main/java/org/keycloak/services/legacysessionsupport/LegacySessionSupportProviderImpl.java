@@ -21,6 +21,7 @@ import org.keycloak.credential.UserCredentialStoreManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserCredentialManager;
 import org.keycloak.models.LegacySessionSupportProvider;
+import org.keycloak.models.cache.UserCache;
 
 /**
  * @author Alexander Schwartz
@@ -43,6 +44,11 @@ public class LegacySessionSupportProviderImpl implements LegacySessionSupportPro
     public UserCredentialManager userCredentialManager() {
         // UserCacheSession calls session.userCredentialManager().onCache(), therefore can't trigger a warning here at the moment.
         return new UserCredentialStoreManager(session);
+    }
+
+    @Override
+    public UserCache userCache() {
+        return session.getProvider(UserCache.class);
     }
 
 }
