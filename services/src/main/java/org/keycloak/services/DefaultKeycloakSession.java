@@ -162,6 +162,7 @@ public class DefaultKeycloakSession implements KeycloakSession {
     }
 
     @Override
+    @Deprecated
     public UserFederatedStorageProvider userFederatedStorage() {
         if (userFederatedStorageProvider == null) {
             userFederatedStorageProvider = getProvider(UserFederatedStorageProvider.class);

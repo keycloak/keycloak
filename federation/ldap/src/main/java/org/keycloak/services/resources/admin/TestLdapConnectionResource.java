@@ -41,27 +41,16 @@ import javax.ws.rs.core.Response;
  * @version $Revision: 1 $
  */
 public class TestLdapConnectionResource {
-    private static final Logger logger = Logger.getLogger(TestLdapConnectionResource.class);
-
     protected RealmModel realm;
 
     protected AdminPermissionEvaluator auth;
 
-    protected AdminEventBuilder adminEvent;
-
-    @Context
-    protected ClientConnection clientConnection;
-
     @Context
     protected KeycloakSession session;
 
-    @Context
-    protected HttpHeaders headers;
-
-    public TestLdapConnectionResource(RealmModel realm, AdminPermissionEvaluator auth, AdminEventBuilder adminEvent) {
+    public TestLdapConnectionResource(RealmModel realm, AdminPermissionEvaluator auth) {
         this.auth = auth;
         this.realm = realm;
-        this.adminEvent = adminEvent;
     }
 
     /**
