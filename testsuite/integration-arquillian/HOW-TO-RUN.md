@@ -278,7 +278,7 @@ Run the test (Update according to your DB connection, versions etc):
 
     mvn -B -f testsuite/integration-arquillian/pom.xml \
       clean install \
-      -Pjpa,auth-server-wildfly,db-mariadb,auth-server-migration \
+      -Pjpa,auth-server-wildfly,db-mariadb,auth-server-migration-legacy \
       -Dauth.server.jboss.startup.timeout=900 \
       -Dtest=MigrationTest \
       -Dmigration.mode=auto \
