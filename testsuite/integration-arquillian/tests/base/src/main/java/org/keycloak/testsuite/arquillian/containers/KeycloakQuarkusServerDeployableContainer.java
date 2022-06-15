@@ -27,6 +27,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.SystemUtils;
 import org.jboss.arquillian.container.spi.client.container.DeployableContainer;
 import org.jboss.arquillian.container.spi.client.container.DeploymentException;
 import org.jboss.arquillian.container.spi.client.container.LifecycleException;
@@ -149,8 +150,7 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
 
     private String[] getProcessCommands() {
         List<String> commands = new ArrayList<>();
-
-        commands.add("./kc.sh");
+        commands.add(getCommand());
         commands.add("-v");
         commands.add("start");
         commands.add("--http-enabled=true");
@@ -295,6 +295,13 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
     public void restartServer() throws Exception {
         stop();
         start();
+    }
+
+    private static String getCommand() {
+        if (SystemUtils.IS_OS_WINDOWS) {
+            return "kc.bat";
+        }
+        return "./kc.sh";
     }
 
     public List<String> getAdditionalBuildArgs() {
