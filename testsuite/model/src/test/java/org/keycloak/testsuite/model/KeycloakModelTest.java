@@ -24,6 +24,7 @@ import org.keycloak.authorization.AuthorizationSpi;
 import org.keycloak.authorization.DefaultAuthorizationProviderFactory;
 import org.keycloak.authorization.store.StoreFactorySpi;
 import org.keycloak.cluster.ClusterSpi;
+import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentFactoryProviderFactory;
 import org.keycloak.component.ComponentFactorySpi;
 import org.keycloak.events.EventStoreSpi;
@@ -557,13 +558,15 @@ public abstract class KeycloakModelTest {
     }
 
     @Before
-    public void createEnvironment() {
+    public final void createEnvironment() {
+        Time.setOffset(0);
         USE_DEFAULT_FACTORY = isUseSameKeycloakSessionFactoryForAllThreads();
         KeycloakModelUtils.runJobInTransaction(getFactory(), this::createEnvironment);
     }
 
     @After
-    public void cleanEnvironment() {
+    public final void cleanEnvironment() {
+        Time.setOffset(0);
         if (getFactory() == null) {
             reinitializeKeycloakSessionFactory();
         }
