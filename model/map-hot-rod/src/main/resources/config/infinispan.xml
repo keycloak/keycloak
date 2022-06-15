@@ -94,6 +94,7 @@
             <encoding media-type="application/x-protostream"/>
             <indexing>
                 <indexed-entities>
+                    <indexed-entity>kc.HotRodResourceServerEntity</indexed-entity>
                     <indexed-entity>kc.HotRodResourceEntity</indexed-entity>
                     <indexed-entity>kc.HotRodScopeEntity</indexed-entity>
                     <indexed-entity>kc.HotRodPolicyEntity</indexed-entity>

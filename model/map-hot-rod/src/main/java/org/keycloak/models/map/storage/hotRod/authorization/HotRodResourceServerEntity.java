@@ -29,6 +29,7 @@ import org.keycloak.models.map.storage.hotRod.common.UpdatableHotRodEntityDelega
         implementInterface = "org.keycloak.models.map.authorization.entity.MapResourceServerEntity",
         inherits = "org.keycloak.models.map.storage.hotRod.authorization.HotRodResourceServerEntity.AbstractHotRodResourceServerEntity"
 )
+@ProtoDoc("@Indexed")
 public class HotRodResourceServerEntity extends AbstractHotRodEntity {
 
     @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
