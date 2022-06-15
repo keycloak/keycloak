@@ -15,5 +15,4 @@
 # limitations under the License.
 #
 
-org.keycloak.services.resources.admin.UserStorageProviderRealmAdminProvider
-org.keycloak.services.resources.admin.ClearUserCacheRealmAdminProvider
+org.keycloak.models.cache.CacheUserProviderSpi

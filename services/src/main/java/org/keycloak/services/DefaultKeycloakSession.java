@@ -39,7 +39,6 @@ import org.keycloak.models.UserCredentialManager;
 import org.keycloak.models.UserLoginFailureProvider;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.UserSessionProvider;
-import org.keycloak.models.cache.UserCache;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
@@ -111,9 +110,13 @@ public class DefaultKeycloakSession implements KeycloakSession {
     }
 
     @Override
-    public UserCache userCache() {
-        return getProvider(UserCache.class);
-
+    @Deprecated
+    public UserProvider userCache() {
+        LegacySessionSupportProvider provider = this.getProvider(LegacySessionSupportProvider.class);
+        if (provider == null) {
+            throw new IllegalStateException("legacy support for userCache is not enabled");
+        }
+        return provider.userCache();
     }
 
     @Override
