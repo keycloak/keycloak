@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { cloneDeep, isEqual, uniqWith } from "lodash-es";
-import { Controller, useForm, useFormContext, useWatch } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import {
   ActionGroup,
   AlertVariant,
@@ -49,10 +49,10 @@ import { PaginatingTableToolbar } from "../components/table-toolbar/PaginatingTa
 import { SearchIcon } from "@patternfly/react-icons";
 import { useWhoAmI } from "../context/whoami/WhoAmI";
 import type { KeyValueType } from "../components/key-value-form/key-value-convert";
+import { convertToFormValues } from "../util";
 
 type LocalizationTabProps = {
   save: (realm: RealmRepresentation) => void;
-  reset: () => void;
   refresh: () => void;
   realm: RealmRepresentation;
 };
@@ -67,11 +67,7 @@ export type BundleForm = {
   messageBundle: KeyValueType;
 };
 
-export const LocalizationTab = ({
-  save,
-  reset,
-  realm,
-}: LocalizationTabProps) => {
+export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
   const { t } = useTranslation("realm-settings");
   const adminClient = useAdminClient();
   const [addMessageBundleModalOpen, setAddMessageBundleModalOpen] =
@@ -82,7 +78,9 @@ export const LocalizationTab = ({
   const [filterDropdownOpen, setFilterDropdownOpen] = useState(false);
   const [selectMenuLocale, setSelectMenuLocale] = useState(DEFAULT_LOCALE);
 
-  const { getValues, control, handleSubmit, formState } = useFormContext();
+  const { setValue, getValues, control, handleSubmit, formState } = useForm({
+    shouldUnregister: false,
+  });
   const [selectMenuValueSelected, setSelectMenuValueSelected] = useState(false);
   const [messageBundles, setMessageBundles] = useState<[string, string][]>([]);
   const [tableRows, setTableRows] = useState<IRow[]>([]);
@@ -92,6 +90,15 @@ export const LocalizationTab = ({
   const { addAlert, addError } = useAlerts();
   const { realm: currentRealm } = useRealm();
   const { whoAmI } = useWhoAmI();
+
+  const setupForm = () => {
+    convertToFormValues(realm, setValue);
+    if (realm.supportedLocales?.length === 0) {
+      setValue("supportedLocales", [DEFAULT_LOCALE]);
+    }
+  };
+
+  useEffect(setupForm, []);
 
   const watchSupportedLocales = useWatch<string[]>({
     control,
@@ -475,7 +482,7 @@ export const LocalizationTab = ({
             >
               {t("common:save")}
             </Button>
-            <Button variant="link" onClick={reset}>
+            <Button variant="link" onClick={setupForm}>
               {t("common:revert")}
             </Button>
           </ActionGroup>

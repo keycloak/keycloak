@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Controller, useFormContext, useWatch } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import {
   ActionGroup,
   Button,
@@ -27,6 +27,7 @@ import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 
 import "./realm-settings-section.css";
 import { useWhoAmI } from "../context/whoami/WhoAmI";
+import { convertToFormValues } from "../util";
 
 type RealmSettingsSessionsTabProps = {
   realm: RealmRepresentation;
@@ -60,8 +61,8 @@ export const RealmSettingsTokensTab = ({
     javaKeystoreAlgOptions!
   );
 
-  const form = useFormContext<RealmRepresentation>();
-  const { control } = form;
+  const form = useForm<RealmRepresentation>({ shouldUnregister: false });
+  const { setValue, control } = form;
 
   const offlineSessionMaxEnabled = useWatch({
     control,
@@ -80,6 +81,10 @@ export const RealmSettingsTokensTab = ({
     name: "revokeRefreshToken",
     defaultValue: false,
   });
+
+  useEffect(() => {
+    convertToFormValues(realm, setValue);
+  }, []);
 
   return (
     <PageSection variant="light">

@@ -237,7 +237,6 @@ describe("Realm settings events tab tests", () => {
     sidebarPage.goToRealmSettings();
 
     cy.findByTestId("rs-localization-tab").click();
-
     cy.findByTestId("internationalization-disabled").click({ force: true });
 
     cy.get(realmSettingsPage.supportedLocalesTypeahead)
@@ -245,10 +244,14 @@ describe("Realm settings events tab tests", () => {
       .get(".pf-c-select__menu-item")
       .contains("Dansk")
       .click();
-
     cy.get("#kc-l-supported-locales").click();
 
+    cy.intercept("GET", `/admin/realms/${realmName}/localization/en*`).as(
+      "load"
+    );
+
     cy.findByTestId("localization-tab-save").click();
+    cy.wait("@load");
 
     addBundle();
 

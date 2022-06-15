@@ -1,6 +1,6 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { Controller, useFormContext, useWatch } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import {
   ActionGroup,
   Button,
@@ -14,6 +14,7 @@ import { FormAccess } from "../components/form-access/FormAccess";
 import { HelpItem } from "../components/help-enabler/HelpItem";
 import { FormPanel } from "../components/scroll-form/FormPanel";
 import { TimeSelector } from "../components/time-selector/TimeSelector";
+import { convertToFormValues } from "../util";
 
 import "./realm-settings-section.css";
 
@@ -28,23 +29,21 @@ export const RealmSettingsSessionsTab = ({
 }: RealmSettingsSessionsTabProps) => {
   const { t } = useTranslation("realm-settings");
 
-  const {
-    control,
-    handleSubmit,
-    reset: resetForm,
-    formState,
-  } = useFormContext<RealmRepresentation>();
+  const { setValue, control, handleSubmit, formState } =
+    useForm<RealmRepresentation>({
+      shouldUnregister: false,
+    });
 
   const offlineSessionMaxEnabled = useWatch({
     control,
     name: "offlineSessionMaxLifespanEnabled",
   });
 
-  const reset = () => {
-    if (realm) {
-      resetForm(realm);
-    }
+  const setupForm = () => {
+    convertToFormValues(realm, setValue);
   };
+
+  useEffect(setupForm, []);
 
   return (
     <PageSection variant="light">
@@ -399,7 +398,7 @@ export const RealmSettingsSessionsTab = ({
             >
               {t("common:save")}
             </Button>
-            <Button variant="link" onClick={reset}>
+            <Button variant="link" onClick={setupForm}>
               {t("common:revert")}
             </Button>
           </ActionGroup>

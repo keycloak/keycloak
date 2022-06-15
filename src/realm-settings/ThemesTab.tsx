@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Controller, useFormContext } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import {
   ActionGroup,
   Button,
@@ -15,15 +15,16 @@ import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/r
 import { FormAccess } from "../components/form-access/FormAccess";
 import { HelpItem } from "../components/help-enabler/HelpItem";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
+import { convertToFormValues } from "../util";
 
 type RealmSettingsThemesTabProps = {
+  realm: RealmRepresentation;
   save: (realm: RealmRepresentation) => void;
-  reset: () => void;
 };
 
 export const RealmSettingsThemesTab = ({
+  realm,
   save,
-  reset,
 }: RealmSettingsThemesTabProps) => {
   const { t } = useTranslation("realm-settings");
 
@@ -32,8 +33,13 @@ export const RealmSettingsThemesTab = ({
   const [adminConsoleThemeOpen, setAdminConsoleThemeOpen] = useState(false);
   const [emailThemeOpen, setEmailThemeOpen] = useState(false);
 
-  const { control, handleSubmit } = useFormContext();
+  const { control, handleSubmit, setValue } = useForm<RealmRepresentation>();
   const themeTypes = useServerInfo().themes!;
+
+  const setupForm = () => {
+    convertToFormValues(realm, setValue);
+  };
+  useEffect(setupForm, []);
 
   return (
     <PageSection variant="light">
@@ -217,7 +223,7 @@ export const RealmSettingsThemesTab = ({
           <Button variant="primary" type="submit" data-testid="themes-tab-save">
             {t("common:save")}
           </Button>
-          <Button variant="link" onClick={reset}>
+          <Button variant="link" onClick={setupForm}>
             {t("common:revert")}
           </Button>
         </ActionGroup>

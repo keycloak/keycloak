@@ -6,12 +6,12 @@ import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/r
 import { HeadersForm } from "./HeadersForm";
 import { BruteForceDetection } from "./BruteForceDetection";
 
-type SecurityDefencesProps = {
+type SecurityDefensesProps = {
+  realm: RealmRepresentation;
   save: (realm: RealmRepresentation) => void;
-  reset: () => void;
 };
 
-export const SecurityDefences = ({ save, reset }: SecurityDefencesProps) => {
+export const SecurityDefenses = ({ realm, save }: SecurityDefensesProps) => {
   const { t } = useTranslation("realm-settings");
   const [activeTab, setActiveTab] = useState(10);
   return (
@@ -25,7 +25,7 @@ export const SecurityDefences = ({ save, reset }: SecurityDefencesProps) => {
         title={<TabTitleText>{t("headers")}</TabTitleText>}
       >
         <PageSection variant="light">
-          <HeadersForm save={save} reset={reset} />
+          <HeadersForm realm={realm} save={save} />
         </PageSection>
       </Tab>
       <Tab
@@ -34,7 +34,7 @@ export const SecurityDefences = ({ save, reset }: SecurityDefencesProps) => {
         title={<TabTitleText>{t("bruteForceDetection")}</TabTitleText>}
       >
         <PageSection variant="light">
-          <BruteForceDetection save={save} reset={reset} />
+          <BruteForceDetection realm={realm} save={save} />
         </PageSection>
       </Tab>
     </Tabs>

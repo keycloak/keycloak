@@ -5,7 +5,6 @@ import { FormAccess } from "../components/form-access/FormAccess";
 import { HelpItem } from "../components/help-enabler/HelpItem";
 import { FormPanel } from "../components/scroll-form/FormPanel";
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
-import { Controller, useForm } from "react-hook-form";
 import { useAdminClient } from "../context/auth/AdminClient";
 import { useAlerts } from "../components/alert/Alerts";
 import { useRealm } from "../context/realm-context/RealmContext";
@@ -15,26 +14,31 @@ type RealmSettingsLoginTabProps = {
   refresh: () => void;
 };
 
+type SwitchType = { [K in keyof RealmRepresentation]: boolean };
+
 export const RealmSettingsLoginTab = ({
   realm,
   refresh,
 }: RealmSettingsLoginTabProps) => {
   const { t } = useTranslation("realm-settings");
 
-  const form = useForm<RealmRepresentation>({ mode: "onChange" });
   const { addAlert, addError } = useAlerts();
   const adminClient = useAdminClient();
   const { realm: realmName } = useRealm();
 
-  const updateSwitchValue = async (name: string) => {
-    const switchValues = form.getValues();
+  const updateSwitchValue = async (switches: SwitchType | SwitchType[]) => {
+    const name = Array.isArray(switches)
+      ? Object.keys(switches[0])[0]
+      : Object.keys(switches)[0];
 
     try {
       await adminClient.realms.update(
         {
           realm: realmName,
         },
-        switchValues
+        Array.isArray(switches)
+          ? switches.reduce((realm, s) => Object.assign(realm, s), realm)
+          : Object.assign(realm, switches)
       );
       addAlert(t("enableSwitchSuccess", { switch: t(name) }));
       refresh();
@@ -51,66 +55,50 @@ export const RealmSettingsLoginTab = ({
       >
         <FormAccess isHorizontal role="manage-realm">
           <FormGroup
-            label={t("userRegistration")}
+            label={t("registrationAllowed")}
             fieldId="kc-user-reg"
             labelIcon={
               <HelpItem
                 helpText={t("userRegistrationHelpText")}
-                fieldLabelId="realm-settings:userRegistration"
+                fieldLabelId="realm-settings:registrationAllowed"
               />
             }
             hasNoPaddingTop
           >
-            <Controller
-              name="registrationAllowed"
-              defaultValue={realm.registrationAllowed}
-              control={form.control}
-              render={({ onChange, value }) => (
-                <Switch
-                  id="kc-user-reg-switch"
-                  data-testid="user-reg-switch"
-                  value={value ? "on" : "off"}
-                  label={t("common:on")}
-                  labelOff={t("common:off")}
-                  isChecked={value}
-                  onChange={(value) => {
-                    onChange(value);
-                    updateSwitchValue("userRegistration");
-                  }}
-                />
-              )}
+            <Switch
+              id="kc-user-reg-switch"
+              data-testid="user-reg-switch"
+              value={realm.registrationAllowed ? "on" : "off"}
+              label={t("common:on")}
+              labelOff={t("common:off")}
+              isChecked={realm.registrationAllowed}
+              onChange={(value) => {
+                updateSwitchValue({ registrationAllowed: value });
+              }}
             />
           </FormGroup>
           <FormGroup
-            label={t("forgotPassword")}
+            label={t("resetPasswordAllowed")}
             fieldId="kc-forgot-pw"
             labelIcon={
               <HelpItem
                 helpText="realm-settings:forgotPasswordHelpText"
-                fieldLabelId="realm-settings:forgotPassword"
+                fieldLabelId="realm-settings:resetPasswordAllowed"
               />
             }
             hasNoPaddingTop
           >
-            <Controller
+            <Switch
+              id="kc-forgot-pw-switch"
+              data-testid="forgot-pw-switch"
               name="resetPasswordAllowed"
-              defaultValue={realm.resetPasswordAllowed}
-              control={form.control}
-              render={({ onChange, value }) => (
-                <Switch
-                  id="kc-forgot-pw-switch"
-                  data-testid="forgot-pw-switch"
-                  name="resetPasswordAllowed"
-                  value={value ? "on" : "off"}
-                  label={t("common:on")}
-                  labelOff={t("common:off")}
-                  isChecked={value}
-                  onChange={(value) => {
-                    onChange(value);
-                    updateSwitchValue("forgotPassword");
-                  }}
-                />
-              )}
+              value={realm.resetPasswordAllowed ? "on" : "off"}
+              label={t("common:on")}
+              labelOff={t("common:off")}
+              isChecked={realm.resetPasswordAllowed}
+              onChange={(value) => {
+                updateSwitchValue({ resetPasswordAllowed: value });
+              }}
             />
           </FormGroup>
           <FormGroup
@@ -124,24 +112,16 @@ export const RealmSettingsLoginTab = ({
             }
             hasNoPaddingTop
           >
-            <Controller
-              name="rememberMe"
-              defaultValue={realm.rememberMe}
-              control={form.control}
-              render={({ onChange, value }) => (
-                <Switch
-                  id="kc-remember-me-switch"
-                  data-testid="remember-me-switch"
-                  value={value ? "on" : "off"}
-                  label={t("common:on")}
-                  labelOff={t("common:off")}
-                  isChecked={value}
-                  onChange={(value) => {
-                    onChange(value);
-                    updateSwitchValue("rememberMe");
-                  }}
-                />
-              )}
+            <Switch
+              id="kc-remember-me-switch"
+              data-testid="remember-me-switch"
+              value={realm.rememberMe ? "on" : "off"}
+              label={t("common:on")}
+              labelOff={t("common:off")}
+              isChecked={realm.rememberMe}
+              onChange={(value) => {
+                updateSwitchValue({ rememberMe: value });
+              }}
             />
           </FormGroup>
         </FormAccess>
@@ -149,103 +129,92 @@ export const RealmSettingsLoginTab = ({
       <FormPanel className="kc-email-settings" title={t("emailSettings")}>
         <FormAccess isHorizontal role="manage-realm">
           <FormGroup
-            label={t("emailAsUsername")}
+            label={t("registrationEmailAsUsername")}
             fieldId="kc-email-as-username"
             labelIcon={
               <HelpItem
                 helpText="realm-settings:emailAsUsernameHelpText"
-                fieldLabelId="realm-settings:emailAsUsername"
+                fieldLabelId="realm-settings:registrationEmailAsUsername"
               />
             }
             hasNoPaddingTop
           >
-            <Controller
-              name="registrationEmailAsUsername"
-              defaultValue={realm.registrationEmailAsUsername}
-              control={form.control}
-              render={({ onChange, value }) => (
-                <Switch
-                  id="kc-email-as-username-switch"
-                  data-testid="email-as-username-switch"
-                  value={value ? "on" : "off"}
-                  label={t("common:on")}
-                  labelOff={t("common:off")}
-                  isChecked={value}
-                  onChange={(value) => {
-                    onChange(value);
-                    updateSwitchValue("emailAsUsername");
-                  }}
-                />
-              )}
+            <Switch
+              id="kc-email-as-username-switch"
+              data-testid="email-as-username-switch"
+              value={realm.registrationEmailAsUsername ? "on" : "off"}
+              label={t("common:on")}
+              labelOff={t("common:off")}
+              isChecked={realm.registrationEmailAsUsername}
+              onChange={(value) => {
+                updateSwitchValue([
+                  {
+                    registrationEmailAsUsername: value,
+                  },
+                  {
+                    duplicateEmailsAllowed: false,
+                  },
+                ]);
+              }}
             />
           </FormGroup>
           <FormGroup
-            label={t("loginWithEmail")}
+            label={t("loginWithEmailAllowed")}
             fieldId="kc-login-with-email"
             labelIcon={
               <HelpItem
                 helpText="realm-settings:loginWithEmailHelpText"
-                fieldLabelId="realm-settings:loginWithEmail"
+                fieldLabelId="realm-settings:loginWithEmailAllowed"
               />
             }
             hasNoPaddingTop
           >
-            <Controller
-              name="loginWithEmailAllowed"
-              defaultValue={realm.loginWithEmailAllowed}
-              control={form.control}
-              render={({ onChange, value }) => (
-                <Switch
-                  id="kc-login-with-email-switch"
-                  data-testid="login-with-email-switch"
-                  value={value ? "on" : "off"}
-                  label={t("common:on")}
-                  labelOff={t("common:off")}
-                  isChecked={value}
-                  onChange={(value) => {
-                    onChange(value);
-                    updateSwitchValue("loginWithEmail");
-                  }}
-                />
-              )}
+            <Switch
+              id="kc-login-with-email-switch"
+              data-testid="login-with-email-switch"
+              value={realm.loginWithEmailAllowed ? "on" : "off"}
+              label={t("common:on")}
+              labelOff={t("common:off")}
+              isChecked={realm.loginWithEmailAllowed}
+              onChange={(value) => {
+                updateSwitchValue([
+                  {
+                    loginWithEmailAllowed: value,
+                  },
+                  { duplicateEmailsAllowed: false },
+                ]);
+              }}
             />
           </FormGroup>
           <FormGroup
-            label={t("duplicateEmails")}
+            label={t("duplicateEmailsAllowed")}
             fieldId="kc-duplicate-emails"
             labelIcon={
               <HelpItem
                 helpText="realm-settings:duplicateEmailsHelpText"
-                fieldLabelId="realm-settings:duplicateEmails"
+                fieldLabelId="realm-settings:duplicateEmailsAllowed"
               />
             }
             hasNoPaddingTop
           >
-            <Controller
-              name="duplicateEmailsAllowed"
-              defaultValue={realm.duplicateEmailsAllowed}
-              control={form.control}
-              render={({ onChange }) => (
-                <Switch
-                  id="kc-duplicate-emails-switch"
-                  data-testid="duplicate-emails-switch"
-                  label={t("common:on")}
-                  labelOff={t("common:off")}
-                  isChecked={
-                    form.getValues().duplicateEmailsAllowed &&
-                    !form.getValues().loginWithEmailAllowed &&
-                    !form.getValues().registrationEmailAsUsername
-                  }
-                  onChange={(value) => {
-                    onChange(value);
-                    updateSwitchValue("duplicateEmails");
-                  }}
-                  isDisabled={
-                    form.getValues().loginWithEmailAllowed ||
-                    form.getValues().registrationEmailAsUsername
-                  }
-                />
-              )}
+            <Switch
+              id="kc-duplicate-emails-switch"
+              data-testid="duplicate-emails-switch"
+              label={t("common:on")}
+              labelOff={t("common:off")}
+              isChecked={
+                realm.duplicateEmailsAllowed ||
+                realm.loginWithEmailAllowed ||
+                realm.registrationEmailAsUsername
+              }
+              onChange={(value) => {
+                updateSwitchValue({
+                  duplicateEmailsAllowed: value,
+                });
+              }}
+              isDisabled={
+                realm.loginWithEmailAllowed || realm.registrationEmailAsUsername
+              }
             />
           </FormGroup>
           <FormGroup
@@ -259,25 +228,17 @@ export const RealmSettingsLoginTab = ({
             }
             hasNoPaddingTop
           >
-            <Controller
+            <Switch
+              id="kc-verify-email-switch"
+              data-testid="verify-email-switch"
               name="verifyEmail"
-              defaultValue={realm.verifyEmail}
-              control={form.control}
-              render={({ onChange, value }) => (
-                <Switch
-                  id="kc-verify-email-switch"
-                  data-testid="verify-email-switch"
-                  name="verifyEmail"
-                  value={value ? "on" : "off"}
-                  label={t("common:on")}
-                  labelOff={t("common:off")}
-                  isChecked={value}
-                  onChange={(value) => {
-                    onChange(value);
-                    updateSwitchValue("verifyEmail");
-                  }}
-                />
-              )}
+              value={realm.verifyEmail ? "on" : "off"}
+              label={t("common:on")}
+              labelOff={t("common:off")}
+              isChecked={realm.verifyEmail}
+              onChange={(value) => {
+                updateSwitchValue({ verifyEmail: value });
+              }}
             />
           </FormGroup>
         </FormAccess>
@@ -288,34 +249,26 @@ export const RealmSettingsLoginTab = ({
       >
         <FormAccess isHorizontal role="manage-realm">
           <FormGroup
-            label={t("editUsername")}
+            label={t("editUsernameAllowed")}
             fieldId="kc-edit-username"
             labelIcon={
               <HelpItem
                 helpText="realm-settings-help:editUsername"
-                fieldLabelId="realm-settings:editUsername"
+                fieldLabelId="realm-settings:editUsernameAllowed"
               />
             }
             hasNoPaddingTop
           >
-            <Controller
-              name="editUsernameAllowed"
-              defaultValue={realm.editUsernameAllowed}
-              control={form.control}
-              render={({ onChange, value }) => (
-                <Switch
-                  id="kc-edit-username-switch"
-                  data-testid="edit-username-switch"
-                  value={value ? "on" : "off"}
-                  label={t("common:on")}
-                  labelOff={t("common:off")}
-                  isChecked={value}
-                  onChange={(value) => {
-                    onChange(value);
-                    updateSwitchValue("userInfoSettings");
-                  }}
-                />
-              )}
+            <Switch
+              id="kc-edit-username-switch"
+              data-testid="edit-username-switch"
+              value={realm.editUsernameAllowed ? "on" : "off"}
+              label={t("common:on")}
+              labelOff={t("common:off")}
+              isChecked={realm.editUsernameAllowed}
+              onChange={(value) => {
+                updateSwitchValue({ editUsernameAllowed: value });
+              }}
             />
           </FormGroup>
         </FormAccess>

@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Controller, useFormContext } from "react-hook-form";
+import { Controller, FormProvider, useForm } from "react-hook-form";
 import {
   ActionGroup,
   Button,
@@ -16,7 +16,7 @@ import {
 } from "@patternfly/react-core";
 
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
-import { getBaseUrl } from "../util";
+import { convertToFormValues, getBaseUrl } from "../util";
 import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 import { useAdminClient } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
@@ -24,31 +24,47 @@ import { FormAccess } from "../components/form-access/FormAccess";
 import { HelpItem } from "../components/help-enabler/HelpItem";
 import { FormattedLink } from "../components/external-link/FormattedLink";
 import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
+import { KeyValueInput } from "../components/key-value-form/KeyValueInput";
 
 type RealmSettingsGeneralTabProps = {
+  realm: RealmRepresentation;
   save: (realm: RealmRepresentation) => void;
-  reset: () => void;
 };
 
 export const RealmSettingsGeneralTab = ({
+  realm,
   save,
-  reset,
 }: RealmSettingsGeneralTabProps) => {
   const { t } = useTranslation("realm-settings");
   const adminClient = useAdminClient();
   const { realm: realmName } = useRealm();
+  const form = useForm<RealmRepresentation>({ shouldUnregister: false });
   const {
     register,
     control,
     handleSubmit,
+    setValue,
     formState: { isDirty },
-  } = useFormContext();
+  } = form;
   const isFeatureEnabled = useIsFeatureEnabled();
   const [open, setOpen] = useState(false);
 
   const baseUrl = getBaseUrl(adminClient);
 
   const requireSslTypes = ["all", "external", "none"];
+
+  const setupForm = () => {
+    convertToFormValues(realm, setValue);
+    if (realm.attributes?.["acr.loa.map"]) {
+      const result = Object.entries(
+        JSON.parse(realm.attributes["acr.loa.map"])
+      ).flatMap(([key, value]) => ({ key, value }));
+      result.concat({ key: "", value: "" });
+      setValue("attributes.acr.loa.map", result);
+    }
+  };
+
+  useEffect(setupForm, []);
 
   return (
     <PageSection variant="light">
@@ -144,6 +160,20 @@ export const RealmSettingsGeneralTab = ({
           />
         </FormGroup>
         <FormGroup
+          label={t("clients:acrToLoAMapping")}
+          fieldId="acrToLoAMapping"
+          labelIcon={
+            <HelpItem
+              helpText="clients-help:acrToLoAMapping"
+              fieldLabelId="clients:acrToLoAMapping"
+            />
+          }
+        >
+          <FormProvider {...form}>
+            <KeyValueInput name="attributes.acr.loa.map" />
+          </FormProvider>
+        </FormGroup>
+        <FormGroup
           hasNoPaddingTop
           label={t("userManagedAccess")}
           labelIcon={
@@ -237,7 +267,7 @@ export const RealmSettingsGeneralTab = ({
           <Button
             data-testid="general-tab-revert"
             variant="link"
-            onClick={reset}
+            onClick={setupForm}
           >
             {t("common:revert")}
           </Button>
