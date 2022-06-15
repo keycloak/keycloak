@@ -301,7 +301,7 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
         if (SystemUtils.IS_OS_WINDOWS) {
             return "kc.bat";
         }
-        return "kc.sh";
+        return "./kc.sh";
     }
 
     public List<String> getAdditionalBuildArgs() {
