@@ -12,6 +12,11 @@ final class HostnamePropertyMappers {
                         .description("Hostname for the Keycloak server.")
                         .paramLabel("hostname")
                         .build(),
+                builder().from("hostname-admin")
+                        .to("kc.spi-hostname-default-admin")
+                        .description("The hostname for accessing the administration console. Use this option if you are exposing the administration console using a hostname other than the value set to the 'hostname' option.")
+                        .paramLabel("hostname")
+                        .build(),
                 builder().from("hostname-strict")
                         .to("kc.spi-hostname-default-strict")
                         .description("Disables dynamically resolving the hostname from request headers. Should always be set to true in production, unless proxy verifies the Host header.")

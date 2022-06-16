@@ -55,6 +55,20 @@ To reduce attack surface, the administration endpoints for Keycloak and the Admi
 Therefore, you can secure them by using a reverse proxy.
 For more information about which paths to expose using a reverse proxy, see the <@links.server id="reverseproxy"/> Guide.
 
+==== Exposing the administration console using a different hostname
+
+The administration console can be exposed using a hostname other than what you set to the frontend URLs via the `hostname` option. For that,
+you can set the `hostname-admin` option as follows:
+
+<@kc.start parameters="--hostname=myurl --hostname-admin=myadminurl"/>
+
+When the `hostname-admin` option is set the URLs used by the administration console will have that hostname hardcoded in them. Otherwise,
+the URLs used by the administration console are going to be based on the hostname from the request.
+
+If you don't set this option and the administration console is accessed using a hostname other than what is set to the frontend URLs, you
+might get an error from the server telling you that the redirect URI used by the console is invalid. In this case, you should update the
+`security-admin-console` client to add a valid redirect URI based on the hostname you want the administration console to be accessible.
+
 == Overriding the hostname path
 When running Keycloak behind a reverse proxy, you may expose Keycloak using a different context path such as `myproxy.url/mykeycloak`.
 To perform this action, you can override the hostname path to use the path defined in your reverse proxyas shown in this example:

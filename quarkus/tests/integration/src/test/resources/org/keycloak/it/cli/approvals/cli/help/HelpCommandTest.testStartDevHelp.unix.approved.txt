@@ -46,6 +46,10 @@ Hostname:
 
 --hostname <hostname>
                      Hostname for the Keycloak server.
+--hostname-admin <hostname>
+                     The hostname for accessing the administration console. Use this option if you
+                       are exposing the administration console using a hostname other than the
+                       value set to the 'hostname' option.
 --hostname-path <path>
                      This should be set if proxy uses a different context-path for Keycloak.
 --hostname-port <port>
