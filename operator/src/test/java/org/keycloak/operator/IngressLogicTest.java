@@ -3,11 +3,12 @@ package org.keycloak.operator;
 import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
 import io.fabric8.kubernetes.api.model.networking.v1.IngressBuilder;
 import org.junit.jupiter.api.Test;
-import org.keycloak.operator.controllers.KeycloakIngress;
-import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.utils.K8sUtils;
+import org.keycloak.operator.v2alpha1.KeycloakIngress;
+import org.keycloak.operator.v2alpha1.crds.Keycloak;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class IngressLogicTest {
 
