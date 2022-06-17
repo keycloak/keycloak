@@ -1057,6 +1057,78 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
     }
 
     @Test
+    public void refreshTokenClientSessionMaxLifespan() throws Exception {
+        oauth.doLogin("test-user@localhost", "password");
+
+        EventRepresentation loginEvent = events.expectLogin().assertEvent();
+
+        String sessionId = loginEvent.getSessionId();
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+
+        events.poll();
+
+        String refreshId = oauth.parseRefreshToken(tokenResponse.getRefreshToken()).getId();
+
+        ClientResource client = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
+        ClientRepresentation clientRepresentation = client.toRepresentation();
+
+        RealmResource realm = adminClient.realm("test");
+        RealmRepresentation rep = realm.toRepresentation();
+        Integer originalSsoSessionMaxLifespan = rep.getSsoSessionMaxLifespan();
+
+        try {
+            rep.setSsoSessionMaxLifespan(10);
+            // rep.setSsoSessionIdleTimeout(4);
+            realm.update(rep);
+
+            clientRepresentation.getAttributes().put(OIDCConfigAttributes.CLIENT_SESSION_MAX_LIFESPAN, "5");
+            client.update(clientRepresentation);
+
+            tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken(), "password");
+            assert(tokenResponse.getRefreshExpiresIn() >= 0);
+
+            setTimeOffset(1);
+
+            tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken(), "password");
+            assert(tokenResponse.getRefreshExpiresIn() >= 0);
+
+            setTimeOffset(7);
+
+            oauth.doSilentLogin();
+            code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+
+            tokenResponse = oauth.doAccessTokenRequest(code, "password");
+            assertEquals(200, tokenResponse.getStatusCode());
+            assert(tokenResponse.getRefreshExpiresIn() >= 0);
+
+            setTimeOffset(9);
+
+            tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken(), "password");
+            assertEquals(200, tokenResponse.getStatusCode());
+            assert(tokenResponse.getRefreshExpiresIn() >= 0);
+
+            setTimeOffset(11);
+
+            tokenResponse = oauth.doRefreshTokenRequest(tokenResponse.getRefreshToken(), "password");
+            assertEquals(400, tokenResponse.getStatusCode());
+            assertNull(tokenResponse.getAccessToken());
+            assertNull(tokenResponse.getRefreshToken());
+
+            events.expectRefresh(refreshId, sessionId).error(Errors.INVALID_TOKEN);
+        } finally {
+            rep.setSsoSessionMaxLifespan(originalSsoSessionMaxLifespan);
+            realm.update(rep);
+            clientRepresentation.getAttributes().put(OIDCConfigAttributes.CLIENT_SESSION_MAX_LIFESPAN, null);
+            client.update(clientRepresentation);
+
+            events.clear();
+            resetTimeOffset();
+        }
+    }
+
+    @Test
     public void testCheckSsl() throws Exception {
         Client client = AdminClientUtil.createResteasyClient();
         try {
