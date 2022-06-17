@@ -504,8 +504,9 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
                     .endTemplate()
                 .withNewStrategy()
                     .withNewRollingUpdate()
-                        .withMaxSurge(new IntOrString("25%"))
-                        .withMaxUnavailable(new IntOrString("25%"))
+                        // Same defaults as for a StatefulSet: https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/#maximum-unavailable-pods
+                        .withNewMaxSurge(1) // maximum number of Pods that can be created over the desired number of Pods
+                        .withNewMaxUnavailable(1) // maximum number of Pods that can be unavailable during the update process
                     .endRollingUpdate()
                 .endStrategy()
                 .endSpec()
