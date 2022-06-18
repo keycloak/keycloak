@@ -41,7 +41,7 @@ To set these headers, consult the documentation for your reverse proxy.
 
 Take extra precautions to ensure that the X-Forwarded-For header is set by your reverse proxy.
 If this header is incorrectly configured, rogue clients can set this header and trick Keycloak into thinking the client is connected from a different IP address than the actual address.
-This precaution can more be critical if you do any deny or allow listing of IP addresses.
+This precaution can be more critical if you do any deny or allow listing of IP addresses.
 
 === Exposed path recommendations
 When using a reverse proxy, Keycloak only requires certain paths need to be exposed.
