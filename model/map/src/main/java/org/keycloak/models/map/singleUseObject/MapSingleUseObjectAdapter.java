@@ -46,7 +46,7 @@ public class MapSingleUseObjectAdapter extends AbstractSingleUseObjectModel<MapS
     @Override
     public int getExpiration() {
         Long expiration = entity.getExpiration();
-        return expiration != null ? TimeAdapter.fromLongWithTimeInSecondsToIntegerWithTimeInSeconds(expiration) : 0;
+        return expiration != null ? TimeAdapter.fromLongWithTimeInSecondsToIntegerWithTimeInSeconds(TimeAdapter.fromMilliSecondsToSeconds(expiration)) : 0;
     }
 
     @Override

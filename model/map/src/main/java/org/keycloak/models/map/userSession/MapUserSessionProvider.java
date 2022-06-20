@@ -49,6 +49,7 @@ import java.util.stream.Stream;
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
 import static org.keycloak.models.UserSessionModel.CORRESPONDING_SESSION_ID;
 import static org.keycloak.models.UserSessionModel.SessionPersistenceState.TRANSIENT;
+import static org.keycloak.models.map.common.ExpirationUtils.isExpired;
 import static org.keycloak.models.map.storage.QueryParameters.withCriteria;
 import static org.keycloak.models.map.storage.criteria.DefaultModelCriteria.criteria;
 import static org.keycloak.models.map.userSession.SessionExpiration.setClientSessionExpiration;
@@ -87,8 +88,7 @@ public class MapUserSessionProvider implements UserSessionProvider {
         // Clone entity before returning back, to avoid giving away a reference to the live object to the caller
         return (origEntity) -> {
             if (origEntity == null) return null;
-            long expiration = origEntity.getExpiration() != null ? origEntity.getExpiration() : 0L;
-            if (expiration <= Time.currentTimeMillis()) {
+            if (isExpired(origEntity, false)) {
                 if (TRANSIENT == origEntity.getPersistenceState()) {
                     transientUserSessions.remove(origEntity.getId());
                 } else {
@@ -119,8 +119,7 @@ public class MapUserSessionProvider implements UserSessionProvider {
         // Clone entity before returning back, to avoid giving away a reference to the live object to the caller
         return origEntity -> {
             if (origEntity == null) return null;
-            long expiration = origEntity.getExpiration() != null ? origEntity.getExpiration() : 0L;
-            if (expiration <= Time.currentTimeMillis()) {
+            if (isExpired(origEntity, false)) {
                 userSession.removeAuthenticatedClientSessions(Arrays.asList(origEntity.getClientId()));
                 // if a client session is found among transient ones we can skip call to store
                 if (transientClientSessions.remove(origEntity.getId()) == null) {

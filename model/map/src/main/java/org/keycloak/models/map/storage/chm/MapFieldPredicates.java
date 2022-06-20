@@ -235,6 +235,7 @@ public class MapFieldPredicates {
         put(ACTION_TOKEN_PREDICATES, ActionTokenValueModel.SearchableFields.USER_ID,                    MapSingleUseObjectEntity::getUserId);
         put(ACTION_TOKEN_PREDICATES, ActionTokenValueModel.SearchableFields.ACTION_ID,                  MapSingleUseObjectEntity::getActionId);
         put(ACTION_TOKEN_PREDICATES, ActionTokenValueModel.SearchableFields.ACTION_VERIFICATION_NONCE,  MapSingleUseObjectEntity::getActionVerificationNonce);
+        put(ACTION_TOKEN_PREDICATES, ActionTokenValueModel.SearchableFields.EXPIRATION,                 MapSingleUseObjectEntity::getExpiration);
     }
 
     static {

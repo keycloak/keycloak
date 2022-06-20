@@ -17,7 +17,6 @@
 
 package org.keycloak.models.map.realm;
 
-import org.keycloak.common.util.Time;
 import org.keycloak.models.map.annotations.GenerateEntityImplementations;
 import org.keycloak.models.map.annotations.IgnoreForEntityImplementationGenerator;
 import org.keycloak.models.map.common.AbstractEntity;
@@ -42,6 +41,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static org.keycloak.models.map.common.ExpirationUtils.isExpired;
 
 @GenerateEntityImplementations(
         inherits = "org.keycloak.models.map.realm.MapRealmEntity.AbstractRealmEntity"
@@ -237,8 +238,7 @@ public interface MapRealmEntity extends UpdatableEntity, AbstractEntity, EntityW
         }
 
         private boolean checkIfExpired(MapClientInitialAccessEntity cia) {
-            return cia.getRemainingCount() < 1 ||
-                    (cia.getExpiration() != null && cia.getExpiration() < Time.currentTimeMillis());
+            return cia.getRemainingCount() < 1 || isExpired(cia, true);
         }
     }
 

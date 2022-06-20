@@ -28,7 +28,6 @@ import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
-import org.keycloak.models.utils.SessionExpiration;
 import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
@@ -41,6 +40,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
+import static org.keycloak.models.map.common.ExpirationUtils.isExpired;
 import static org.keycloak.models.map.storage.QueryParameters.withCriteria;
 import static org.keycloak.models.map.storage.criteria.DefaultModelCriteria.criteria;
 import static org.keycloak.models.utils.SessionExpiration.getAuthSessionLifespan;
@@ -65,13 +65,11 @@ public class MapRootAuthenticationSessionProvider implements AuthenticationSessi
 
     private Function<MapRootAuthenticationSessionEntity, RootAuthenticationSessionModel> entityToAdapterFunc(RealmModel realm) {
         return origEntity -> {
-            //return new MapRootAuthenticationSessionAdapter(session, realm, origEntity);
-            Long expiration = origEntity.getExpiration();
-            if (expiration == null || Time.currentTimeMillis() < origEntity.getExpiration())  {
-                return new MapRootAuthenticationSessionAdapter(session, realm, origEntity);
-            } else {
+            if (isExpired(origEntity, true)) {
                 tx.delete(origEntity.getId());
                 return null;
+            } else {
+                return new MapRootAuthenticationSessionAdapter(session, realm, origEntity);
             }
         };
     }
