@@ -1667,7 +1667,7 @@ public class RepresentationToModel {
         if (rep.getProtocolMappers() != null) {
             Map<String,ProtocolMapperModel> existingProtocolMappers =
                     resource.getProtocolMappersStream().collect(Collectors.toMap(mapper ->
-                            generateProtocolNameKey(mapper.getProtocol(), mapper.getName()), Function.identity()));
+                            generateProtocolNameKey(mapper.getProtocol(), mapper.getName()), Function.identity(), (prev, curr) -> curr));
 
 
             for (ProtocolMapperRepresentation protocolMapperRepresentation : rep.getProtocolMappers()) {
