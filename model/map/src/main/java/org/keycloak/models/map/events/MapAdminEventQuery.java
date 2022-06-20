@@ -126,14 +126,6 @@ public class MapAdminEventQuery implements AdminEventQuery {
 
     @Override
     public Stream<AdminEvent> getResultStream() {
-        // Add expiration condition to not load expired events
-        mcb = mcb.and(
-                criteria.or(
-                        criteria.compare(AdminEvent.SearchableFields.EXPIRATION, ModelCriteriaBuilder.Operator.NOT_EXISTS),
-                        criteria.compare(AdminEvent.SearchableFields.EXPIRATION, ModelCriteriaBuilder.Operator.GT,
-                                Time.currentTimeMillis())
-                ));
-
         return resultProducer.apply(QueryParameters.withCriteria(mcb)
                 .offset(firstResult)
                 .limit(maxResults)

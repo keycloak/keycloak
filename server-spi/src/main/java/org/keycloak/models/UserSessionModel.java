@@ -44,7 +44,6 @@ public interface UserSessionModel {
         public static final SearchableModelField<UserSessionModel> BROKER_USER_ID  = new SearchableModelField<>("brokerUserId", String.class);
         public static final SearchableModelField<UserSessionModel> IS_OFFLINE  = new SearchableModelField<>("isOffline", Boolean.class);
         public static final SearchableModelField<UserSessionModel> LAST_SESSION_REFRESH  = new SearchableModelField<>("lastSessionRefresh", Long.class);
-        public static final SearchableModelField<UserSessionModel> EXPIRATION  = new SearchableModelField<>("expiration", Long.class);
     }
 
     /**
