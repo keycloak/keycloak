@@ -1,8 +1,9 @@
 package org.keycloak.crypto.integration;
 
+import java.util.ServiceLoader;
+
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.BouncyIntegration;
-import org.keycloak.common.util.reflections.Reflections;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -15,6 +16,7 @@ public class CryptoIntegration {
 
     public static CryptoProvider getProvider() {
         if (securityProvider == null) {
+            logger.debugf("Using BouncyCastle provider: %s", BouncyIntegration.PROVIDER);
             securityProvider = detectProvider();
             logger.infof("Detected security provider: %s", securityProvider);
         }
@@ -28,20 +30,14 @@ public class CryptoIntegration {
     }
 
 
-    // Try to auto-detect provider. Currently autodetected based on whether we have BC or BCFIPS on the classpath. Should be probably improved and rather
-    // detected based on the system security settings or with ServiceLoader etc. Ideally, the BouncyCastle implementation should be chosen based on the SecurityProvider rather than vice-versa.
+    // Try to auto-detect provider
     private static CryptoProvider detectProvider() {
-        if (BouncyIntegration.PROVIDER.equals("BCFIPS")) {
-            try {
-                // TODO This may not work on Wildfly (assuming FIPS module will be different Wildfly module than keycloak-core). May need to be improved (EG. with usage of org.keycloak.platform.Platform)
-                Class<CryptoProvider> clazz = Reflections.classForName("org.keycloak.crypto.fips.FIPS1402Provider", CryptoIntegration.class.getClassLoader());
-                return clazz.newInstance();
-            } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-                throw new RuntimeException("Exception when trying to create FIPS provider. Thread classloader: " + Thread.currentThread().getContextClassLoader(), e);
-            }
-        } else {
-            return new DefaultCryptoProvider();
+        // TODO This may not work on Wildfly (assuming FIPS module will be different Wildfly module than keycloak-core). May need to be improved (EG. with usage of org.keycloak.platform.Platform)
+        for (CryptoProvider cryptoProvider : ServiceLoader.load(CryptoProvider.class, CryptoIntegration.class.getClassLoader())) {
+            return cryptoProvider;
         }
+        // Fallback. This should not be needed once DefaultCryptoProvider is moved into separate module like "crypto/default" and provided via ServiceLoader
+        return new DefaultCryptoProvider();
     }
 
 }
