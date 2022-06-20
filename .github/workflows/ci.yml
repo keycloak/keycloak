@@ -298,8 +298,8 @@ jobs:
         with:
           fetch-depth: 2
 
-      - name: Check whether this phase should run
-        run: echo "GIT_DIFF=$[ $( git diff --name-only HEAD^ | egrep -ic 'crossdc|infinispan' ) + $( git diff HEAD^ pom.xml | egrep -ic '\+\s+<wildfly.version>' ) ]" >> $GITHUB_ENV
+#      - name: Check whether this phase should run
+#        run: echo "GIT_DIFF=$[ $( git diff --name-only HEAD^ | egrep -ic 'crossdc|infinispan' ) + $( git diff HEAD^ pom.xml | egrep -ic '\+\s+<wildfly.version>' ) ]" >> $GITHUB_ENV
 
       - uses: actions/setup-java@v3
         if: ${{ github.event_name != 'pull_request' || env.GIT_DIFF != 0 }}
