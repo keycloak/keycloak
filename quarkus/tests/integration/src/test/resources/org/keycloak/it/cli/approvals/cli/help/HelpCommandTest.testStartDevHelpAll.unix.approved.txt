@@ -64,8 +64,8 @@ Database:
 Transaction:
 
 --transaction-xa-enabled <true|false>
-                     Manually override the transaction type. Transaction type XA and the
-                       appropriate driver is used by default. Default: true.
+                     If set to false, Keycloak uses a non-XA datasource in case the database does
+                       not support XA transactions. Default: true.
 
 Feature:
 
