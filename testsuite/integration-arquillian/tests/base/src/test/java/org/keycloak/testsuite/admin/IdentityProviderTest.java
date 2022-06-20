@@ -718,16 +718,32 @@ public class IdentityProviderTest extends AbstractAdminTest {
 
     @Test
     public void testSamlImportAndExport() throws URISyntaxException, IOException, ParsingException {
+        testSamlImport("saml-idp-metadata.xml");
 
+        // Perform export, and make sure some of the values are like they're supposed to be
+        Response response = realm.identityProviders().get("saml").export("xml");
+        Assert.assertEquals(200, response.getStatus());
+        String body = response.readEntity(String.class);
+        response.close();
+
+        assertSamlExport(body);
+    }
+
+    @Test
+    public void testSamlImportWithAnyEncryptionMethod() throws URISyntaxException, IOException, ParsingException {
+        testSamlImport("saml-idp-metadata-encryption-methods.xml");
+    }
+
+    private void testSamlImport(String fileName) throws URISyntaxException, IOException, ParsingException {
         // Use import-config to convert IDPSSODescriptor file into key value pairs
         // to use when creating a SAML Identity Provider
         MultipartFormDataOutput form = new MultipartFormDataOutput();
         form.addFormData("providerId", "saml", MediaType.TEXT_PLAIN_TYPE);
 
-        URL idpMeta = getClass().getClassLoader().getResource("admin-test/saml-idp-metadata.xml");
+        URL idpMeta = getClass().getClassLoader().getResource("admin-test/"+fileName);
         byte [] content = Files.readAllBytes(Paths.get(idpMeta.toURI()));
         String body = new String(content, Charset.forName("utf-8"));
-        form.addFormData("file", body, MediaType.APPLICATION_XML_TYPE, "saml-idp-metadata.xml");
+        form.addFormData("file", body, MediaType.APPLICATION_XML_TYPE, fileName);
 
         Map<String, String> result = realm.identityProviders().importFrom(form);
         assertSamlImport(result, SIGNING_CERT_1,true);
@@ -745,13 +761,6 @@ public class IdentityProviderTest extends AbstractAdminTest {
         Assert.assertEquals("identityProviders instance count", 1, providers.size());
         assertEqual(rep, providers.get(0));
 
-        // Perform export, and make sure some of the values are like they're supposed to be
-        Response response = realm.identityProviders().get("saml").export("xml");
-        Assert.assertEquals(200, response.getStatus());
-        body = response.readEntity(String.class);
-        response.close();
-
-        assertSamlExport(body);
     }
     
     @Test
