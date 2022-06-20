@@ -92,7 +92,7 @@
     "postcss": "^8.4.14",
     "postcss-import": "^14.1.0",
     "postcss-svg": "^3.0.0",
-    "prettier": "^2.6.2",
+    "prettier": "^2.7.1",
     "progress-promise": "^0.0.6",
     "snowpack": "^3.8.6",
     "tar-fs": "^2.1.1",
