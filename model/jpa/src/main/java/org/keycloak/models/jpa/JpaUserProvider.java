@@ -1030,7 +1030,7 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
         }
         return toModel(entity);
     }
-  
+
     @Override
     public boolean removeStoredCredential(RealmModel realm, UserModel user, String id) {
         CredentialEntity entity = credentialStore.removeCredentialEntity(realm, user, id);
@@ -1125,13 +1125,13 @@ public class JpaUserProvider implements UserProvider, UserCredentialStore {
 
     @Override
     public void updateLoginTimestamp(UserModel userModel) {
-        UserEntity entity = em.find(UserEntity.class, userModel.getId());
-        if (entity == null) return;
-        long time = Time.currentTimeMillis();
-        userModel.setLoginTimestamp(time);
-        entity.setLoginTimestamp(time);
-        em.persist(entity);
-        em.flush();
+//        UserEntity entity = em.find(UserEntity.class, userModel.getId());
+//        if (entity == null) return;
+//        long time = Time.currentTimeMillis();
+//        if(time-entity.getLoginTimestamp()>5000) {
+//            entity.setLoginTimestamp(time);
+//            em.persist(entity);
+//        }
     }
 
     @Override

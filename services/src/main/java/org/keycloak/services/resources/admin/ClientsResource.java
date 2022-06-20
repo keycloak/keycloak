@@ -504,7 +504,7 @@ public class ClientsResource {
         PolicyStore policyStore = storeFactory.getPolicyStore();
         ClientModel clientModel = realm.getClientById(clientId);
         final Set<Resource> resources = new LinkedHashSet<>();
-        if (clientModel != null && resourceServer != null && auth.clients().canView(clientModel)) {
+        if (clientModel != null && resourceServer != null && auth.clients().canView(clientModel) && policyStore!=null) {
             UserModel user = session.users().getUserById(userId, realm);
             Set<RoleModel> userRoles = new HashSet<>();
             Set<RoleModel> roles = clientModel.getRoles();
