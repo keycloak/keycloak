@@ -29,8 +29,6 @@ import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 
 import java.util.stream.Stream;
 
-import static org.keycloak.models.map.common.ExpirationUtils.isExpired;
-
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
@@ -74,8 +72,7 @@ public class SingleUseObjectConcurrentHashMapStorage<K, V extends AbstractEntity
         SingleUseObjectModelCriteriaBuilder mcb = criteria.flashToModelCriteriaBuilder(createSingleUseObjectCriteriaBuilder());
         if (mcb.isValid()) {
             MapSingleUseObjectEntity value = read(mcb.getKey());
-            if (value == null || (mcb.checkExpiration() && isExpired(value, false))) return Stream.empty();
-            return Stream.of(value);
+            return value != null ? Stream.of(value) : Stream.empty();
         }
 
         return super.read(queryParameters);

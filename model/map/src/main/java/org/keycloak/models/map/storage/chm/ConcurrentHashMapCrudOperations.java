@@ -23,6 +23,9 @@ public interface ConcurrentHashMapCrudOperations<V extends AbstractEntity & Upda
     /**
      * Returns object with the given {@code key} from the storage or {@code null} if object does not exist.
      * <br>
+     * If {@code V} implements {@link org.keycloak.models.map.common.ExpirableEntity} this method should not return
+     * entities that are expired. See {@link org.keycloak.models.map.common.ExpirableEntity} JavaDoc for more details.
+     *
      * TODO: Consider returning {@code Optional<V>} instead.
      * @param key Key of the object. Must not be {@code null}.
      * @return See description
@@ -56,6 +59,9 @@ public interface ConcurrentHashMapCrudOperations<V extends AbstractEntity & Upda
     /**
      * Returns stream of objects satisfying given {@code criteria} from the storage.
      * The criteria are specified in the given criteria builder based on model properties.
+     *
+     * If {@code V} implements {@link org.keycloak.models.map.common.ExpirableEntity} this method should not return
+     * entities that are expired. See {@link org.keycloak.models.map.common.ExpirableEntity} JavaDoc for more details.
      *
      * @param queryParameters parameters for the query like firstResult, maxResult, requested ordering, etc.
      * @return Stream of objects. Never returns {@code null}.

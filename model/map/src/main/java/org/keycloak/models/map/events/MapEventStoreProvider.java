@@ -123,14 +123,7 @@ public class MapEventStoreProvider implements EventStoreProvider {
     @Override
     public void clearExpiredEvents() {
         LOG.tracef("clearExpiredEvents()%s", getShortStackTrace());
-
-        authEventsTX.delete(QueryParameters.withCriteria(DefaultModelCriteria.<Event>criteria()
-                        .compare(Event.SearchableFields.EXPIRATION, ModelCriteriaBuilder.Operator.LE,
-                                Time.currentTimeMillis())));
-
-        adminEventsTX.delete(QueryParameters.withCriteria(DefaultModelCriteria.<AdminEvent>criteria()
-                .compare(AdminEvent.SearchableFields.EXPIRATION, ModelCriteriaBuilder.Operator.LE,
-                        Time.currentTimeMillis())));
+        LOG.warnf("Clearing expired entities should not be triggered manually. It is responsibility of the store to clear these.");
     }
 
     /** ADMIN EVENTS **/

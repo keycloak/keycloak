@@ -35,4 +35,8 @@ public class ExpirationUtils {
         if (!allowInfiniteValues && expiration == null) return false;
         return expiration != null && expiration <= Time.currentTimeMillis();
     }
+
+    public static boolean isNotExpired(Object entity) {
+        return !isExpired((ExpirableEntity) entity, true);
+    }
 }

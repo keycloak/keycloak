@@ -75,8 +75,7 @@ public class MapSingleUseObjectProvider implements ActionTokenStoreProvider, Sin
         DefaultModelCriteria<ActionTokenValueModel> mcb = criteria();
         mcb = mcb.compare(ActionTokenValueModel.SearchableFields.USER_ID, ModelCriteriaBuilder.Operator.EQ, actionTokenKey.getUserId())
                 .compare(ActionTokenValueModel.SearchableFields.ACTION_ID, ModelCriteriaBuilder.Operator.EQ, actionTokenKey.getActionId())
-                .compare(ActionTokenValueModel.SearchableFields.ACTION_VERIFICATION_NONCE, ModelCriteriaBuilder.Operator.EQ, actionTokenKey.getActionVerificationNonce().toString())
-                .compare(ActionTokenValueModel.SearchableFields.EXPIRATION, ModelCriteriaBuilder.Operator.GT, Time.currentTimeMillis());
+                .compare(ActionTokenValueModel.SearchableFields.ACTION_VERIFICATION_NONCE, ModelCriteriaBuilder.Operator.EQ, actionTokenKey.getActionVerificationNonce().toString());
 
         ActionTokenValueModel existing = actionTokenStoreTx.read(withCriteria(mcb))
                 .findFirst().map(this::singleUseEntityToAdapter).orElse(null);
@@ -106,8 +105,7 @@ public class MapSingleUseObjectProvider implements ActionTokenStoreProvider, Sin
         DefaultModelCriteria<ActionTokenValueModel> mcb = criteria();
         mcb = mcb.compare(ActionTokenValueModel.SearchableFields.USER_ID, ModelCriteriaBuilder.Operator.EQ, key.getUserId())
                 .compare(ActionTokenValueModel.SearchableFields.ACTION_ID, ModelCriteriaBuilder.Operator.EQ, key.getActionId())
-                .compare(ActionTokenValueModel.SearchableFields.ACTION_VERIFICATION_NONCE, ModelCriteriaBuilder.Operator.EQ, key.getActionVerificationNonce().toString())
-                .compare(ActionTokenValueModel.SearchableFields.EXPIRATION, ModelCriteriaBuilder.Operator.GT, Time.currentTimeMillis());
+                .compare(ActionTokenValueModel.SearchableFields.ACTION_VERIFICATION_NONCE, ModelCriteriaBuilder.Operator.EQ, key.getActionVerificationNonce().toString());
 
         return actionTokenStoreTx.read(withCriteria(mcb))
                 .findFirst().map(this::singleUseEntityToAdapter).orElse(null);
@@ -124,9 +122,7 @@ public class MapSingleUseObjectProvider implements ActionTokenStoreProvider, Sin
         DefaultModelCriteria<ActionTokenValueModel> mcb = criteria();
         mcb = mcb.compare(ActionTokenValueModel.SearchableFields.USER_ID, ModelCriteriaBuilder.Operator.EQ, key.getUserId())
                 .compare(ActionTokenValueModel.SearchableFields.ACTION_ID, ModelCriteriaBuilder.Operator.EQ, key.getActionId())
-                .compare(ActionTokenValueModel.SearchableFields.ACTION_VERIFICATION_NONCE, ModelCriteriaBuilder.Operator.EQ, key.getActionVerificationNonce().toString())
-                .compare(ActionTokenValueModel.SearchableFields.EXPIRATION, ModelCriteriaBuilder.Operator.GT, Time.currentTimeMillis());
-
+                .compare(ActionTokenValueModel.SearchableFields.ACTION_VERIFICATION_NONCE, ModelCriteriaBuilder.Operator.EQ, key.getActionVerificationNonce().toString());
         MapSingleUseObjectEntity mapSingleUseObjectEntity = actionTokenStoreTx.read(withCriteria(mcb)).findFirst().orElse(null);
         if (mapSingleUseObjectEntity != null) {
             ActionTokenValueModel actionToken = singleUseEntityToAdapter(mapSingleUseObjectEntity);

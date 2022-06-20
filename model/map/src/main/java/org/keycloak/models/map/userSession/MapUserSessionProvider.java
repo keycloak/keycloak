@@ -207,8 +207,7 @@ public class MapUserSessionProvider implements UserSessionProvider {
                 .compare(AuthenticatedClientSessionModel.SearchableFields.USER_SESSION_ID, Operator.EQ, userSession.getId())
                 .compare(AuthenticatedClientSessionModel.SearchableFields.REALM_ID, Operator.EQ, userSession.getRealm().getId())
                 .compare(AuthenticatedClientSessionModel.SearchableFields.CLIENT_ID, Operator.EQ, client.getId())
-                .compare(AuthenticatedClientSessionModel.SearchableFields.IS_OFFLINE, Operator.EQ, offline)
-                .compare(AuthenticatedClientSessionModel.SearchableFields.EXPIRATION, Operator.GT, Time.currentTimeMillis());
+                .compare(AuthenticatedClientSessionModel.SearchableFields.IS_OFFLINE, Operator.EQ, offline);
 
         return clientSessionTx.read(withCriteria(mcb))
                 .findFirst()
@@ -606,9 +605,7 @@ public class MapUserSessionProvider implements UserSessionProvider {
         // first get a user entity by ID
         DefaultModelCriteria<UserSessionModel> mcb = criteria();
         mcb = mcb.compare(UserSessionModel.SearchableFields.REALM_ID, Operator.EQ, realm.getId())
-                .compare(UserSessionModel.SearchableFields.ID, Operator.EQ, userSessionId)
-                .compare(UserSessionModel.SearchableFields.EXPIRATION, Operator.GT, Time.currentTimeMillis())
-        ;
+                .compare(UserSessionModel.SearchableFields.ID, Operator.EQ, userSessionId);
 
         // check if it's an offline user session
         MapUserSessionEntity userSessionEntity = userSessionTx.read(withCriteria(mcb)).findFirst().orElse(null);
@@ -637,8 +634,7 @@ public class MapUserSessionProvider implements UserSessionProvider {
     private DefaultModelCriteria<UserSessionModel> realmAndOfflineCriteriaBuilder(RealmModel realm, boolean offline) {
         return DefaultModelCriteria.<UserSessionModel>criteria()
                 .compare(UserSessionModel.SearchableFields.REALM_ID, Operator.EQ, realm.getId())
-                .compare(UserSessionModel.SearchableFields.IS_OFFLINE, Operator.EQ, offline)
-                .compare(UserSessionModel.SearchableFields.EXPIRATION, Operator.GT, Time.currentTimeMillis());
+                .compare(UserSessionModel.SearchableFields.IS_OFFLINE, Operator.EQ, offline);
     }
 
     private MapUserSessionEntity getUserSessionById(String id) {

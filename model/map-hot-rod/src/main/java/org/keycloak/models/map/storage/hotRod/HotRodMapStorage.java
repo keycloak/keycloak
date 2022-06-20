@@ -23,9 +23,12 @@ import org.infinispan.commons.util.CloseableIterator;
 import org.infinispan.query.dsl.Query;
 import org.infinispan.query.dsl.QueryFactory;
 import org.jboss.logging.Logger;
+import org.keycloak.common.util.Time;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.DeepCloner;
+import org.keycloak.models.map.common.ExpirableEntity;
+import org.keycloak.models.map.storage.ModelEntityUtil;
 import org.keycloak.models.map.storage.hotRod.common.AbstractHotRodEntity;
 import org.keycloak.models.map.storage.hotRod.common.HotRodEntityDelegate;
 import org.keycloak.models.map.storage.hotRod.common.HotRodEntityDescriptor;
@@ -48,6 +51,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import static org.keycloak.models.map.common.ExpirationUtils.isExpired;
 import static org.keycloak.models.map.storage.hotRod.common.HotRodUtils.paginateQuery;
 import static org.keycloak.utils.StreamsUtil.closing;
 
@@ -60,6 +64,7 @@ public class HotRodMapStorage<K, E extends AbstractHotRodEntity, V extends HotRo
     protected final HotRodEntityDescriptor<E, V> storedEntityDescriptor;
     private final Function<E, V> delegateProducer;
     protected final DeepCloner cloner;
+    protected boolean isExpirableEntity;
 
     public HotRodMapStorage(RemoteCache<K, E> remoteCache, StringKeyConverter<K> keyConverter, HotRodEntityDescriptor<E, V> storedEntityDescriptor, DeepCloner cloner) {
         this.remoteCache = remoteCache;
@@ -67,6 +72,7 @@ public class HotRodMapStorage<K, E extends AbstractHotRodEntity, V extends HotRo
         this.storedEntityDescriptor = storedEntityDescriptor;
         this.cloner = cloner;
         this.delegateProducer = storedEntityDescriptor.getHotRodDelegateProvider();
+        this.isExpirableEntity = ExpirableEntity.class.isAssignableFrom(ModelEntityUtil.getEntityType(storedEntityDescriptor.getModelTypeClass()));
     }
 
     @Override
@@ -86,7 +92,10 @@ public class HotRodMapStorage<K, E extends AbstractHotRodEntity, V extends HotRo
     public V read(String key) {
         Objects.requireNonNull(key, "Key must be non-null");
         K k = keyConverter.fromStringSafe(key);
-        return delegateProducer.apply(remoteCache.get(k));
+
+        V v = delegateProducer.apply(remoteCache.get(k));
+        if (v == null || v.getHotRodEntity() == null) return null;
+        return isExpirableEntity && isExpired((ExpirableEntity) v, true) ? null : v;
     }
 
     @Override
@@ -109,11 +118,21 @@ public class HotRodMapStorage<K, E extends AbstractHotRodEntity, V extends HotRo
         return modelFieldName + " " + orderString;
     }
 
+    private static String isNotExpiredIckleWhereClause() {
+        return "(" + IckleQueryOperators.C + ".expiration > " + Time.currentTimeMillis() + " OR "
+                + IckleQueryOperators.C + ".expiration is null)";
+    }
+
     @Override
     public Stream<V> read(QueryParameters<M> queryParameters) {
         IckleQueryMapModelCriteriaBuilder<E, M> iqmcb = queryParameters.getModelCriteriaBuilder()
                 .flashToModelCriteriaBuilder(createCriteriaBuilder());
         String queryString = iqmcb.getIckleQuery();
+
+        // Temporary solution until https://github.com/keycloak/keycloak/issues/12068 is fixed
+        if (isExpirableEntity) {
+            queryString += (queryString.contains("WHERE") ? " AND " : " WHERE ") + isNotExpiredIckleWhereClause();
+        }
 
         if (!queryParameters.getOrderBy().isEmpty()) {
             queryString += " ORDER BY " + queryParameters.getOrderBy().stream().map(HotRodMapStorage::toOrderString)

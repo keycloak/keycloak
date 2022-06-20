@@ -33,7 +33,6 @@ public class Event {
         public static final SearchableModelField<Event> CLIENT_ID      = new SearchableModelField<>("clientId", String.class);
         public static final SearchableModelField<Event> USER_ID        = new SearchableModelField<>("userId", String.class);
         public static final SearchableModelField<Event> TIMESTAMP      = new SearchableModelField<>("timestamp", Long.class);
-        public static final SearchableModelField<Event> EXPIRATION     = new SearchableModelField<>("expiration", Long.class);
         public static final SearchableModelField<Event> IP_ADDRESS     = new SearchableModelField<>("ipAddress", String.class);
         public static final SearchableModelField<Event> EVENT_TYPE     = new SearchableModelField<>("eventType", EventType.class);
     }

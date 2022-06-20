@@ -31,7 +31,6 @@ public interface ActionTokenValueModel {
         public static final SearchableModelField<ActionTokenValueModel> USER_ID                     = new SearchableModelField<>("userId", String.class);
         public static final SearchableModelField<ActionTokenValueModel> ACTION_ID                   = new SearchableModelField<>("actionId", String.class);
         public static final SearchableModelField<ActionTokenValueModel> ACTION_VERIFICATION_NONCE   = new SearchableModelField<>("actionVerificationNonce", String.class);
-        public static final SearchableModelField<ActionTokenValueModel> EXPIRATION                  = new SearchableModelField<>("expiration", Long.class);
     }
     
     /**
