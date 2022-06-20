@@ -35,6 +35,7 @@ import java.util.Collections;
 import java.util.Map;
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
+import static org.keycloak.models.map.common.ExpirationUtils.isExpired;
 import static org.keycloak.models.map.storage.QueryParameters.withCriteria;
 import static org.keycloak.models.map.storage.criteria.DefaultModelCriteria.criteria;
 
@@ -55,12 +56,11 @@ public class MapSingleUseObjectProvider implements ActionTokenStoreProvider, Sin
     }
 
     private ActionTokenValueModel singleUseEntityToAdapter(MapSingleUseObjectEntity origEntity) {
-        long expiration = origEntity.getExpiration() != null ? origEntity.getExpiration() : 0L;
-        if (Time.currentTime() < expiration)  {
-            return new MapSingleUseObjectAdapter(session, origEntity);
-        } else {
+        if (isExpired(origEntity, false)) {
             actionTokenStoreTx.delete(origEntity.getId());
             return null;
+        } else {
+            return new MapSingleUseObjectAdapter(session, origEntity);
         }
     }
 
@@ -75,7 +75,8 @@ public class MapSingleUseObjectProvider implements ActionTokenStoreProvider, Sin
         DefaultModelCriteria<ActionTokenValueModel> mcb = criteria();
         mcb = mcb.compare(ActionTokenValueModel.SearchableFields.USER_ID, ModelCriteriaBuilder.Operator.EQ, actionTokenKey.getUserId())
                 .compare(ActionTokenValueModel.SearchableFields.ACTION_ID, ModelCriteriaBuilder.Operator.EQ, actionTokenKey.getActionId())
-                .compare(ActionTokenValueModel.SearchableFields.ACTION_VERIFICATION_NONCE, ModelCriteriaBuilder.Operator.EQ, actionTokenKey.getActionVerificationNonce().toString());
+                .compare(ActionTokenValueModel.SearchableFields.ACTION_VERIFICATION_NONCE, ModelCriteriaBuilder.Operator.EQ, actionTokenKey.getActionVerificationNonce().toString())
+                .compare(ActionTokenValueModel.SearchableFields.EXPIRATION, ModelCriteriaBuilder.Operator.GT, Time.currentTimeMillis());
 
         ActionTokenValueModel existing = actionTokenStoreTx.read(withCriteria(mcb))
                 .findFirst().map(this::singleUseEntityToAdapter).orElse(null);
@@ -85,7 +86,7 @@ public class MapSingleUseObjectProvider implements ActionTokenStoreProvider, Sin
             actionTokenStoreEntity.setUserId(actionTokenKey.getUserId());
             actionTokenStoreEntity.setActionId(actionTokenKey.getActionId());
             actionTokenStoreEntity.setActionVerificationNonce(actionTokenKey.getActionVerificationNonce().toString());
-            actionTokenStoreEntity.setExpiration(TimeAdapter.fromIntegerWithTimeInSecondsToLongWithTimeAsInSeconds(actionTokenKey.getExpiration()));
+            actionTokenStoreEntity.setExpiration(TimeAdapter.fromSecondsToMilliseconds(actionTokenKey.getExpiration()));
             actionTokenStoreEntity.setNotes(notes);
 
             LOG.debugf("Adding used action token to actionTokens cache: %s", actionTokenKey.toString());
@@ -105,7 +106,8 @@ public class MapSingleUseObjectProvider implements ActionTokenStoreProvider, Sin
         DefaultModelCriteria<ActionTokenValueModel> mcb = criteria();
         mcb = mcb.compare(ActionTokenValueModel.SearchableFields.USER_ID, ModelCriteriaBuilder.Operator.EQ, key.getUserId())
                 .compare(ActionTokenValueModel.SearchableFields.ACTION_ID, ModelCriteriaBuilder.Operator.EQ, key.getActionId())
-                .compare(ActionTokenValueModel.SearchableFields.ACTION_VERIFICATION_NONCE, ModelCriteriaBuilder.Operator.EQ, key.getActionVerificationNonce().toString());
+                .compare(ActionTokenValueModel.SearchableFields.ACTION_VERIFICATION_NONCE, ModelCriteriaBuilder.Operator.EQ, key.getActionVerificationNonce().toString())
+                .compare(ActionTokenValueModel.SearchableFields.EXPIRATION, ModelCriteriaBuilder.Operator.GT, Time.currentTimeMillis());
 
         return actionTokenStoreTx.read(withCriteria(mcb))
                 .findFirst().map(this::singleUseEntityToAdapter).orElse(null);
@@ -122,7 +124,8 @@ public class MapSingleUseObjectProvider implements ActionTokenStoreProvider, Sin
         DefaultModelCriteria<ActionTokenValueModel> mcb = criteria();
         mcb = mcb.compare(ActionTokenValueModel.SearchableFields.USER_ID, ModelCriteriaBuilder.Operator.EQ, key.getUserId())
                 .compare(ActionTokenValueModel.SearchableFields.ACTION_ID, ModelCriteriaBuilder.Operator.EQ, key.getActionId())
-                .compare(ActionTokenValueModel.SearchableFields.ACTION_VERIFICATION_NONCE, ModelCriteriaBuilder.Operator.EQ, key.getActionVerificationNonce().toString());
+                .compare(ActionTokenValueModel.SearchableFields.ACTION_VERIFICATION_NONCE, ModelCriteriaBuilder.Operator.EQ, key.getActionVerificationNonce().toString())
+                .compare(ActionTokenValueModel.SearchableFields.EXPIRATION, ModelCriteriaBuilder.Operator.GT, Time.currentTimeMillis());
 
         MapSingleUseObjectEntity mapSingleUseObjectEntity = actionTokenStoreTx.read(withCriteria(mcb)).findFirst().orElse(null);
         if (mapSingleUseObjectEntity != null) {
@@ -148,7 +151,7 @@ public class MapSingleUseObjectProvider implements ActionTokenStoreProvider, Sin
 
         singleUseEntity = new MapSingleUseObjectEntityImpl();
         singleUseEntity.setId(key);
-        singleUseEntity.setExpiration((long) Time.currentTime() + lifespanSeconds);
+        singleUseEntity.setExpiration(Time.currentTimeMillis() + TimeAdapter.fromSecondsToMilliseconds(lifespanSeconds));
         singleUseEntity.setNotes(notes);
 
         actionTokenStoreTx.create(singleUseEntity);
@@ -206,7 +209,7 @@ public class MapSingleUseObjectProvider implements ActionTokenStoreProvider, Sin
         } else {
             singleUseEntity = new MapSingleUseObjectEntityImpl();
             singleUseEntity.setId(key);
-            singleUseEntity.setExpiration((long) Time.currentTime() + lifespanInSeconds);
+            singleUseEntity.setExpiration(Time.currentTimeMillis() + TimeAdapter.fromSecondsToMilliseconds(lifespanInSeconds));
 
             actionTokenStoreTx.create(singleUseEntity);
 
@@ -231,11 +234,11 @@ public class MapSingleUseObjectProvider implements ActionTokenStoreProvider, Sin
     private MapSingleUseObjectEntity getWithExpiration(String key) {
         MapSingleUseObjectEntity singleUseEntity = actionTokenStoreTx.read(key);
         if (singleUseEntity != null) {
-            long expiration = singleUseEntity.getExpiration() != null ? singleUseEntity.getExpiration() : 0L;
-            if (Time.currentTime() < expiration) {
+            if (isExpired(singleUseEntity, false)) {
+                actionTokenStoreTx.delete(key);
+            } else {
                 return singleUseEntity;
             }
-            actionTokenStoreTx.delete(key);
         }
         return null;
     }

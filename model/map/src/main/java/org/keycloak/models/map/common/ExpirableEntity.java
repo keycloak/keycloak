@@ -34,7 +34,8 @@ public interface ExpirableEntity extends AbstractEntity {
     /**
      * Returns a point in the time (timestamp in milliseconds since The Epoch) when this entity expires.
      *
-     * @return a timestamp in milliseconds since The Epoch or {@code null} if this entity never expires.
+     * @return a timestamp in milliseconds since The Epoch or {@code null} if this entity never expires
+     *         or expiration is not known.
      */
     Long getExpiration();
 

@@ -38,6 +38,7 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
+import static org.keycloak.models.map.common.ExpirationUtils.isExpired;
 import static org.keycloak.models.map.events.EventUtils.modelToEntity;
 
 public class MapEventStoreProvider implements EventStoreProvider {
@@ -79,9 +80,8 @@ public class MapEventStoreProvider implements EventStoreProvider {
     }
 
     private boolean filterExpired(ExpirableEntity event) {
-        Long expiration = event.getExpiration();
         // Check if entity is expired
-        if (expiration != null && expiration <= Time.currentTimeMillis()) {
+        if (isExpired(event, true)) {
             // Remove entity
             authEventsTX.delete(event.getId());
 
