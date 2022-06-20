@@ -106,6 +106,8 @@ curl -X POST \
 ----
 
 Example of a authorization request when a client is seeking access to any resource and scope protected by a resource server.
+NOTE: This will not evaluate the permissions for all resources. Instead, the permissions for resources owned by the resource server, owned by the requesting user,
+and explicitly granted to the requesting user by other owners are evaluated.
 
 [source,bash,subs="attributes+"]
 ----
