@@ -423,18 +423,25 @@ public class ConfigurationTest {
         System.setProperty(CLI_ARGS, "--db=mssql" + ARG_SEPARATOR + "--transaction-xa-enabled=false");
         assertTrue(System.getProperty(CLI_ARGS, "").contains("mssql"));
 
-        SmallRyeConfig config = createConfig();
-        assertEquals("com.microsoft.sqlserver.jdbc.SQLServerDriver", config.getConfigValue("quarkus.datasource.jdbc.driver").getValue());
-        assertEquals("enabled", config.getConfigValue("quarkus.datasource.jdbc.transactions").getValue());
+        SmallRyeConfig jtaEnabledConfig = createConfig();
+        assertEquals("com.microsoft.sqlserver.jdbc.SQLServerDriver", jtaEnabledConfig.getConfigValue("quarkus.datasource.jdbc.driver").getValue());
+        assertEquals("enabled", jtaEnabledConfig.getConfigValue("quarkus.datasource.jdbc.transactions").getValue());
 
         System.setProperty(CLI_ARGS, "--db=mssql" + ARG_SEPARATOR + "--transaction-xa-enabled=true");
         assertTrue(System.getProperty(CLI_ARGS, "").contains("mssql"));
-        SmallRyeConfig config2 = createConfig();
+        SmallRyeConfig xaConfig = createConfig();
 
-        assertEquals("com.microsoft.sqlserver.jdbc.SQLServerXADataSource", config2.getConfigValue("quarkus.datasource.jdbc.driver").getValue());
-        assertEquals("xa", config2.getConfigValue("quarkus.datasource.jdbc.transactions").getValue());
+        assertEquals("com.microsoft.sqlserver.jdbc.SQLServerXADataSource", xaConfig.getConfigValue("quarkus.datasource.jdbc.driver").getValue());
+        assertEquals("xa", xaConfig.getConfigValue("quarkus.datasource.jdbc.transactions").getValue());
+
+        System.setProperty(CLI_ARGS, "--db=mssql" + ARG_SEPARATOR + "--transaction-jta-enabled=false");
+        SmallRyeConfig jtaDisabledConfig = createConfig();
+
+        assertEquals("com.microsoft.sqlserver.jdbc.SQLServerDriver", jtaDisabledConfig.getConfigValue("quarkus.datasource.jdbc.driver").getValue());
+        assertEquals("disabled", jtaDisabledConfig.getConfigValue("quarkus.datasource.jdbc.transactions").getValue());
     }
-    
+
+    @Test
     public void testResolveHealthOption() {
         System.setProperty(CLI_ARGS, "--health-enabled=true");
         SmallRyeConfig config = createConfig();
