@@ -58,7 +58,7 @@
     "@testing-library/cypress": "^8.0.3",
     "@testing-library/jest-dom": "^5.16.4",
     "@testing-library/react": "^12.1.5",
-    "@testing-library/react-hooks": "^8.0.0",
+    "@testing-library/react-hooks": "^8.0.1",
     "@types/dagre": "^0.7.47",
     "@types/file-saver": "^2.0.5",
     "@types/flat": "^5.0.2",
