@@ -25,6 +25,7 @@ import java.util.Map;
 import javax.xml.parsers.SAXParserFactory;
 
 import liquibase.Scope;
+import liquibase.database.core.CockroachDatabase;
 import liquibase.ui.LoggerUIService;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
@@ -124,6 +125,10 @@ public class QuarkusLiquibaseConnectionProvider implements LiquibaseConnectionPr
         }
 
         String changelog = QuarkusJpaUpdaterProvider.CHANGELOG;
+
+        if (database instanceof CockroachDatabase) {
+            changelog = QuarkusJpaUpdaterProvider.CHANGELOG_CRDB;
+        }
 
         logger.debugf("Using changelog file %s and changelogTableName %s", changelog, database.getDatabaseChangeLogTableName());
 

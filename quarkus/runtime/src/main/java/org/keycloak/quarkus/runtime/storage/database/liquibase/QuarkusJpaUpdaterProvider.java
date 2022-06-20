@@ -70,6 +70,8 @@ public class QuarkusJpaUpdaterProvider implements JpaUpdaterProvider {
     private static final Logger logger = Logger.getLogger(QuarkusJpaUpdaterProvider.class);
 
     public static final String CHANGELOG = "META-INF/jpa-changelog-master.xml";
+    public static final String CHANGELOG_CRDB = "META-INF/jpa-changelog-master-crdb.xml";
+
     private static final String DEPLOYMENT_ID_COLUMN = "DEPLOYMENT_ID";
     public static final String VERIFY_AND_RUN_MASTER_CHANGELOG = "VERIFY_AND_RUN_MASTER_CHANGELOG";
 

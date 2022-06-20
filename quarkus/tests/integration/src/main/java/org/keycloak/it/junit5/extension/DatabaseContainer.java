@@ -18,10 +18,11 @@
 package org.keycloak.it.junit5.extension;
 
 import java.time.Duration;
-import org.jetbrains.annotations.NotNull;
+import org.testcontainers.containers.CockroachContainer;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 import org.testcontainers.containers.MariaDBContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.utility.DockerImageName;
 
 public class DatabaseContainer {
 
@@ -35,11 +36,16 @@ public class DatabaseContainer {
     }
 
     void start() {
-        container = createContainer()
-                .withDatabaseName("keycloak")
-                .withUsername(getUsername())
-                .withPassword(getPassword())
-                .withInitScript(resolveInitScript());
+        if(alias.equals("cockroach")) {
+            container = createContainer()
+                    .withInitScript(resolveInitScript());
+        } else {
+            container = createContainer()
+                    .withDatabaseName("keycloak")
+                    .withUsername(getUsername())
+                    .withPassword(getPassword())
+                    .withInitScript(resolveInitScript());
+        }
 
         container.withStartupTimeout(Duration.ofMinutes(5)).start();
     }
@@ -49,6 +55,9 @@ public class DatabaseContainer {
     }
 
     String getJdbcUrl() {
+        if (alias.equals("cockroach")){
+            return "jdbc:postgresql://" + container.getHost() + ":" + container.getMappedPort(26257) + "/keycloak";
+        }
         return container.getJdbcUrl();
     }
 
@@ -71,6 +80,8 @@ public class DatabaseContainer {
                 return new PostgreSQLContainer("postgres:alpine");
             case "mariadb":
                 return new MariaDBContainer("mariadb:10.5.9");
+            case "cockroach":
+                return new CockroachContainer(DockerImageName.parse("cockroachdb/cockroach:v22.1.1"));
             default:
                 throw new RuntimeException("Unsupported database: " + alias);
         }

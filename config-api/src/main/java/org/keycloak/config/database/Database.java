@@ -153,7 +153,14 @@ public final class Database {
                 "org.hibernate.dialect.Oracle12cDialect",
                 "jdbc:oracle:thin:@//${kc.db-url-host:localhost}:${kc.db-url-port:1521}/${kc.db-url-database:keycloak}",
                 asList("liquibase.database.core.OracleDatabase")
-        );
+        ),
+        COCKROACH("cockroach",
+                "org.postgresql.xa.PGXADataSource",
+                "org.postgresql.Driver",
+                "org.hibernate.dialect.CockroachDB201Dialect",
+                "jdbc:postgresql://${kc.db-url-host:localhost}:${kc.db-url-port:26257}/${kc.db-url-database:keycloak}${kc.db-url-properties:}",
+                asList("liquibase.database.core.CockroachDatabase")
+        );;
 
         final String databaseKind;
         final String xaDriver;

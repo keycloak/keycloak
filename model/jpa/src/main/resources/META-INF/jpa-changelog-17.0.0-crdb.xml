@@ -1,0 +1,2089 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext" xmlns:pro="http://www.liquibase.org/xml/ns/pro" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd http://www.liquibase.org/xml/ns/pro http://www.liquibase.org/xml/ns/pro/liquibase-pro-4.6.xsd http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.6.xsd">
+    <changeSet author="garth (generated)" id="1648153483142-1">
+        <createTable tableName="client">
+            <column name="id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_7"/>
+            </column>
+            <column defaultValueBoolean="false" name="enabled" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueBoolean="false" name="full_scope_allowed" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column name="client_id" type="VARCHAR(255)"/>
+            <column name="not_before" type="INTEGER"/>
+            <column defaultValueBoolean="false" name="public_client" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column name="secret" type="VARCHAR(255)"/>
+            <column name="base_url" type="VARCHAR(255)"/>
+            <column defaultValueBoolean="false" name="bearer_only" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column name="management_url" type="VARCHAR(255)"/>
+            <column defaultValueBoolean="false" name="surrogate_auth_required" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column name="realm_id" type="VARCHAR(36)"/>
+            <column name="protocol" type="VARCHAR(255)"/>
+            <column defaultValueNumeric="0" name="node_rereg_timeout" type="INTEGER"/>
+            <column defaultValueBoolean="false" name="frontchannel_logout" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueBoolean="false" name="consent_required" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(255)"/>
+            <column defaultValueBoolean="false" name="service_accounts_enabled" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column name="client_authenticator_type" type="VARCHAR(255)"/>
+            <column name="root_url" type="VARCHAR(255)"/>
+            <column name="description" type="VARCHAR(255)"/>
+            <column name="registration_token" type="VARCHAR(255)"/>
+            <column defaultValueBoolean="true" name="standard_flow_enabled" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueBoolean="false" name="implicit_flow_enabled" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueBoolean="false" name="direct_access_grants_enabled" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueBoolean="false" name="always_display_in_console" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-2">
+        <createTable tableName="keycloak_role">
+            <column name="id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_a"/>
+            </column>
+            <column name="client_realm_constraint" type="VARCHAR(255)"/>
+            <column defaultValueBoolean="false" name="client_role" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="VARCHAR(255)"/>
+            <column name="name" type="VARCHAR(255)"/>
+            <column name="realm_id" type="VARCHAR(255)"/>
+            <column name="client" type="VARCHAR(36)"/>
+            <column name="realm" type="VARCHAR(36)"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-3">
+        <createTable tableName="realm">
+            <column name="id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_4a"/>
+            </column>
+            <column name="access_code_lifespan" type="INTEGER"/>
+            <column name="user_action_lifespan" type="INTEGER"/>
+            <column name="access_token_lifespan" type="INTEGER"/>
+            <column name="account_theme" type="VARCHAR(255)"/>
+            <column name="admin_theme" type="VARCHAR(255)"/>
+            <column name="email_theme" type="VARCHAR(255)"/>
+            <column defaultValueBoolean="false" name="enabled" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueBoolean="false" name="events_enabled" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column name="events_expiration" type="BIGINT"/>
+            <column name="login_theme" type="VARCHAR(255)"/>
+            <column name="name" type="VARCHAR(255)"/>
+            <column name="not_before" type="INTEGER"/>
+            <column name="password_policy" type="VARCHAR(2550)"/>
+            <column defaultValueBoolean="false" name="registration_allowed" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueBoolean="false" name="remember_me" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueBoolean="false" name="reset_password_allowed" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueBoolean="false" name="social" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ssl_required" type="VARCHAR(255)"/>
+            <column name="sso_idle_timeout" type="INTEGER"/>
+            <column name="sso_max_lifespan" type="INTEGER"/>
+            <column defaultValueBoolean="false" name="update_profile_on_soc_login" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueBoolean="false" name="verify_email" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column name="master_admin_client" type="VARCHAR(36)"/>
+            <column name="login_lifespan" type="INTEGER"/>
+            <column defaultValueBoolean="false" name="internationalization_enabled" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column name="default_locale" type="VARCHAR(255)"/>
+            <column defaultValueBoolean="false" name="reg_email_as_username" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueBoolean="false" name="admin_events_enabled" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueBoolean="false" name="admin_events_details_enabled" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueBoolean="false" name="edit_username_allowed" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="0" name="otp_policy_counter" type="INTEGER"/>
+            <column defaultValueNumeric="1" name="otp_policy_window" type="INTEGER"/>
+            <column defaultValueNumeric="30" name="otp_policy_period" type="INTEGER"/>
+            <column defaultValueNumeric="6" name="otp_policy_digits" type="INTEGER"/>
+            <column defaultValue="HmacSHA1" name="otp_policy_alg" type="VARCHAR(36)"/>
+            <column defaultValue="totp" name="otp_policy_type" type="VARCHAR(36)"/>
+            <column name="browser_flow" type="VARCHAR(36)"/>
+            <column name="registration_flow" type="VARCHAR(36)"/>
+            <column name="direct_grant_flow" type="VARCHAR(36)"/>
+            <column name="reset_credentials_flow" type="VARCHAR(36)"/>
+            <column name="client_auth_flow" type="VARCHAR(36)"/>
+            <column defaultValueNumeric="0" name="offline_session_idle_timeout" type="INTEGER"/>
+            <column defaultValueBoolean="false" name="revoke_refresh_token" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="0" name="access_token_life_implicit" type="INTEGER"/>
+            <column defaultValueBoolean="true" name="login_with_email_allowed" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueBoolean="false" name="duplicate_emails_allowed" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column name="docker_auth_flow" type="VARCHAR(36)"/>
+            <column defaultValueNumeric="0" name="refresh_token_max_reuse" type="INTEGER"/>
+            <column defaultValueBoolean="false" name="allow_user_managed_access" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="0" name="sso_max_lifespan_remember_me" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="0" name="sso_idle_timeout_remember_me" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="default_role" type="VARCHAR(255)"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-4">
+        <createTable tableName="realm_required_credential">
+            <column name="type" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="form_label" type="VARCHAR(255)"/>
+            <column defaultValueBoolean="false" name="input" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueBoolean="false" name="secret" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column name="realm_id" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-5">
+        <createTable tableName="user_entity">
+            <column name="id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_fb"/>
+            </column>
+            <column name="email" type="VARCHAR(255)"/>
+            <column name="email_constraint" type="VARCHAR(255)"/>
+            <column defaultValueBoolean="false" name="email_verified" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueBoolean="false" name="enabled" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column name="federation_link" type="VARCHAR(255)"/>
+            <column name="first_name" type="VARCHAR(255)"/>
+            <column name="last_name" type="VARCHAR(255)"/>
+            <column name="realm_id" type="VARCHAR(255)"/>
+            <column name="username" type="VARCHAR(255)"/>
+            <column name="created_timestamp" type="BIGINT"/>
+            <column name="service_account_client_link" type="VARCHAR(255)"/>
+            <column defaultValueNumeric="0" name="not_before" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-6">
+        <createTable tableName="user_session">
+            <column name="id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_57"/>
+            </column>
+            <column name="auth_method" type="VARCHAR(255)"/>
+            <column name="ip_address" type="VARCHAR(255)"/>
+            <column name="last_session_refresh" type="INTEGER"/>
+            <column name="login_username" type="VARCHAR(255)"/>
+            <column name="realm_id" type="VARCHAR(255)"/>
+            <column defaultValueBoolean="false" name="remember_me" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column name="started" type="INTEGER"/>
+            <column name="user_id" type="VARCHAR(255)"/>
+            <column name="user_session_state" type="INTEGER"/>
+            <column name="broker_session_id" type="VARCHAR(255)"/>
+            <column name="broker_user_id" type="VARCHAR(255)"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-7">
+        <createTable tableName="identity_provider">
+            <column name="internal_id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_2b"/>
+            </column>
+            <column defaultValueBoolean="false" name="enabled" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column name="provider_alias" type="VARCHAR(255)"/>
+            <column name="provider_id" type="VARCHAR(255)"/>
+            <column defaultValueBoolean="false" name="store_token" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueBoolean="false" name="authenticate_by_default" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column name="realm_id" type="VARCHAR(36)"/>
+            <column defaultValueBoolean="true" name="add_token_role" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueBoolean="false" name="trust_email" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column name="first_broker_login_flow_id" type="VARCHAR(36)"/>
+            <column name="post_broker_login_flow_id" type="VARCHAR(36)"/>
+            <column name="provider_display_name" type="VARCHAR(255)"/>
+            <column defaultValueBoolean="false" name="link_only" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-8">
+        <createTable tableName="authentication_execution">
+            <column name="id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_auth_exec_pk"/>
+            </column>
+            <column name="alias" type="VARCHAR(255)"/>
+            <column name="authenticator" type="VARCHAR(36)"/>
+            <column name="realm_id" type="VARCHAR(36)"/>
+            <column name="flow_id" type="VARCHAR(36)"/>
+            <column name="requirement" type="INTEGER"/>
+            <column name="priority" type="INTEGER"/>
+            <column defaultValueBoolean="false" name="authenticator_flow" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column name="auth_flow_id" type="VARCHAR(36)"/>
+            <column name="auth_config" type="VARCHAR(36)"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-9">
+        <createTable tableName="user_required_action">
+            <column name="user_id" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValue=" " name="required_action" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-10">
+        <createTable tableName="authentication_flow">
+            <column name="id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_auth_flow_pk"/>
+            </column>
+            <column name="alias" type="VARCHAR(255)"/>
+            <column name="description" type="VARCHAR(255)"/>
+            <column name="realm_id" type="VARCHAR(36)"/>
+            <column defaultValue="basic-flow" name="provider_id" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueBoolean="false" name="top_level" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueBoolean="false" name="built_in" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-11">
+        <createTable tableName="user_attribute">
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="value" type="VARCHAR(255)"/>
+            <column name="user_id" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValue="sybase-needs-something-here" name="id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_user_attribute_pk"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-12">
+        <createTable tableName="required_action_provider">
+            <column name="id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_req_act_prv_pk"/>
+            </column>
+            <column name="alias" type="VARCHAR(255)"/>
+            <column name="name" type="VARCHAR(255)"/>
+            <column name="realm_id" type="VARCHAR(36)"/>
+            <column defaultValueBoolean="false" name="enabled" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueBoolean="false" name="default_action" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column name="provider_id" type="VARCHAR(255)"/>
+            <column name="priority" type="INTEGER"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-13">
+        <createTable tableName="group_attribute">
+            <column defaultValue="sybase-needs-something-here" name="id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_group_attribute_pk"/>
+            </column>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="value" type="VARCHAR(255)"/>
+            <column name="group_id" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-14">
+        <createTable tableName="offline_client_session">
+            <column name="user_session_id" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="client_id" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="offline_flag" type="VARCHAR(4)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="timestamp" type="INTEGER"/>
+            <column name="data" type="TEXT"/>
+            <column defaultValue="local" name="client_storage_provider" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValue="local" name="external_client_id" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-15">
+        <createTable tableName="user_role_mapping">
+            <column name="role_id" type="VARCHAR(255)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_c"/>
+            </column>
+            <column name="user_id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_c"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-16">
+        <createTable tableName="user_group_membership">
+            <column name="group_id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_user_group"/>
+            </column>
+            <column name="user_id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_user_group"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-17">
+        <createTable tableName="user_consent">
+            <column name="id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_grntcsnt_pm"/>
+            </column>
+            <column name="client_id" type="VARCHAR(255)"/>
+            <column name="user_id" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_date" type="BIGINT"/>
+            <column name="last_updated_date" type="BIGINT"/>
+            <column name="client_storage_provider" type="VARCHAR(36)"/>
+            <column name="external_client_id" type="VARCHAR(255)"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-18">
+        <createTable tableName="credential">
+            <column name="id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_f"/>
+            </column>
+            <column name="salt" type="BYTEA"/>
+            <column name="type" type="VARCHAR(255)"/>
+            <column name="user_id" type="VARCHAR(36)"/>
+            <column name="created_date" type="BIGINT"/>
+            <column name="user_label" type="VARCHAR(255)"/>
+            <column name="secret_data" type="TEXT"/>
+            <column name="credential_data" type="TEXT"/>
+            <column name="priority" type="INTEGER"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-19">
+        <createTable tableName="federated_identity">
+            <column name="identity_provider" type="VARCHAR(255)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_40"/>
+            </column>
+            <column name="realm_id" type="VARCHAR(36)"/>
+            <column name="federated_user_id" type="VARCHAR(255)"/>
+            <column name="federated_username" type="VARCHAR(255)"/>
+            <column name="token" type="TEXT"/>
+            <column name="user_id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_40"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-20">
+        <createTable tableName="resource_server">
+            <column name="id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="pk_resource_server"/>
+            </column>
+            <column defaultValueBoolean="false" name="allow_rs_remote_mgmt" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column name="policy_enforce_mode" type="VARCHAR(15)">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueNumeric="1" name="decision_strategy" type="SMALLINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-21">
+        <createTable tableName="fed_user_required_action">
+            <column defaultValue=" " name="required_action" type="VARCHAR(255)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constr_fed_required_action"/>
+            </column>
+            <column name="user_id" type="VARCHAR(255)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constr_fed_required_action"/>
+            </column>
+            <column name="realm_id" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="storage_provider_id" type="VARCHAR(36)"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-22">
+        <createTable tableName="associated_policy">
+            <column name="policy_id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_farsrpap"/>
+            </column>
+            <column name="associated_policy_id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_farsrpap"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-23">
+        <createTable tableName="authenticator_config">
+            <column name="id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_auth_pk"/>
+            </column>
+            <column name="alias" type="VARCHAR(255)"/>
+            <column name="realm_id" type="VARCHAR(36)"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-24">
+        <createTable tableName="client_session">
+            <column name="id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_8"/>
+            </column>
+            <column name="client_id" type="VARCHAR(36)"/>
+            <column name="redirect_uri" type="VARCHAR(255)"/>
+            <column name="state" type="VARCHAR(255)"/>
+            <column name="timestamp" type="INTEGER"/>
+            <column name="session_id" type="VARCHAR(36)"/>
+            <column name="auth_method" type="VARCHAR(255)"/>
+            <column name="realm_id" type="VARCHAR(255)"/>
+            <column name="auth_user_id" type="VARCHAR(36)"/>
+            <column name="current_action" type="VARCHAR(36)"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-25">
+        <createTable tableName="component">
+            <column name="id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constr_component_pk"/>
+            </column>
+            <column name="name" type="VARCHAR(255)"/>
+            <column name="parent_id" type="VARCHAR(36)"/>
+            <column name="provider_id" type="VARCHAR(36)"/>
+            <column name="provider_type" type="VARCHAR(255)"/>
+            <column name="realm_id" type="VARCHAR(36)"/>
+            <column name="sub_type" type="VARCHAR(255)"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-26">
+        <createTable tableName="component_config">
+            <column name="id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constr_component_config_pk"/>
+            </column>
+            <column name="component_id" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="value" type="VARCHAR(4000)"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-27">
+        <createTable tableName="composite_role">
+            <column name="composite" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_composite_role"/>
+            </column>
+            <column name="child_role" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_composite_role"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-28">
+        <createTable tableName="group_role_mapping">
+            <column name="role_id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_group_role"/>
+            </column>
+            <column name="group_id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_group_role"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-29">
+        <createTable tableName="identity_provider_mapper">
+            <column name="id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_idpm"/>
+            </column>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="idp_alias" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="idp_mapper_name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="realm_id" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-30">
+        <createTable tableName="protocol_mapper">
+            <column name="id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_pcm"/>
+            </column>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="protocol" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="protocol_mapper_name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="client_id" type="VARCHAR(36)"/>
+            <column name="client_scope_id" type="VARCHAR(36)"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-31">
+        <createTable tableName="realm_attribute">
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_9"/>
+            </column>
+            <column name="realm_id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_9"/>
+            </column>
+            <column name="value" type="TEXT"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-32">
+        <createTable tableName="realm_default_groups">
+            <column name="realm_id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constr_realm_default_groups"/>
+            </column>
+            <column name="group_id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constr_realm_default_groups"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-33">
+        <createTable tableName="realm_enabled_event_types">
+            <column name="realm_id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constr_realm_enabl_event_types"/>
+            </column>
+            <column name="value" type="VARCHAR(255)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constr_realm_enabl_event_types"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-34">
+        <createTable tableName="realm_events_listeners">
+            <column name="realm_id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constr_realm_events_listeners"/>
+            </column>
+            <column name="value" type="VARCHAR(255)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constr_realm_events_listeners"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-35">
+        <createTable tableName="realm_supported_locales">
+            <column name="realm_id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constr_realm_supported_locales"/>
+            </column>
+            <column name="value" type="VARCHAR(255)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constr_realm_supported_locales"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-36">
+        <createTable tableName="redirect_uris">
+            <column name="client_id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_redirect_uris"/>
+            </column>
+            <column name="value" type="VARCHAR(255)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_redirect_uris"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-37">
+        <createTable tableName="resource_policy">
+            <column name="resource_id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_farsrpp"/>
+            </column>
+            <column name="policy_id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_farsrpp"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-38">
+        <createTable tableName="resource_scope">
+            <column name="resource_id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_farsrsp"/>
+            </column>
+            <column name="scope_id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_farsrsp"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-39">
+        <createTable tableName="scope_mapping">
+            <column name="client_id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_81"/>
+            </column>
+            <column name="role_id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_81"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-40">
+        <createTable tableName="scope_policy">
+            <column name="scope_id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_farsrsps"/>
+            </column>
+            <column name="policy_id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_farsrsps"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-41">
+        <createTable tableName="user_federation_mapper">
+            <column name="id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_fedmapperpm"/>
+            </column>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="federation_provider_id" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="federation_mapper_type" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="realm_id" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-42">
+        <createTable tableName="user_federation_provider">
+            <column name="id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_5c"/>
+            </column>
+            <column name="changed_sync_period" type="INTEGER"/>
+            <column name="display_name" type="VARCHAR(255)"/>
+            <column name="full_sync_period" type="INTEGER"/>
+            <column name="last_sync" type="INTEGER"/>
+            <column name="priority" type="INTEGER"/>
+            <column name="provider_name" type="VARCHAR(255)"/>
+            <column name="realm_id" type="VARCHAR(36)"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-43">
+        <createTable tableName="web_origins">
+            <column name="client_id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_web_origins"/>
+            </column>
+            <column name="value" type="VARCHAR(255)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_web_origins"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-44">
+        <createTable tableName="client_initial_access">
+            <column name="id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="cnstr_client_init_acc_pk"/>
+            </column>
+            <column name="realm_id" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="timestamp" type="INTEGER"/>
+            <column name="expiration" type="INTEGER"/>
+            <column name="count" type="INTEGER"/>
+            <column name="remaining_count" type="INTEGER"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-45">
+        <createTable tableName="resource_server_policy">
+            <column name="id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_farsrp"/>
+            </column>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="VARCHAR(255)"/>
+            <column name="type" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="decision_strategy" type="VARCHAR(20)"/>
+            <column name="logic" type="VARCHAR(20)"/>
+            <column name="resource_server_id" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="owner" type="VARCHAR(255)"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-46">
+        <createTable tableName="resource_server_resource">
+            <column name="id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_farsr"/>
+            </column>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="type" type="VARCHAR(255)"/>
+            <column name="icon_uri" type="VARCHAR(255)"/>
+            <column name="owner" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="resource_server_id" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column defaultValueBoolean="false" name="owner_managed_access" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+            <column name="display_name" type="VARCHAR(255)"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-47">
+        <createTable tableName="resource_server_scope">
+            <column name="id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_farsrs"/>
+            </column>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="icon_uri" type="VARCHAR(255)"/>
+            <column name="resource_server_id" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="display_name" type="VARCHAR(255)"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-48">
+        <createTable tableName="fed_user_attribute">
+            <column name="id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constr_fed_user_attr_pk"/>
+            </column>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="user_id" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="realm_id" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="storage_provider_id" type="VARCHAR(36)"/>
+            <column name="value" type="VARCHAR(2024)"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-49">
+        <createTable tableName="fed_user_consent">
+            <column name="id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constr_fed_user_consent_pk"/>
+            </column>
+            <column name="client_id" type="VARCHAR(255)"/>
+            <column name="user_id" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="realm_id" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="storage_provider_id" type="VARCHAR(36)"/>
+            <column name="created_date" type="BIGINT"/>
+            <column name="last_updated_date" type="BIGINT"/>
+            <column name="client_storage_provider" type="VARCHAR(36)"/>
+            <column name="external_client_id" type="VARCHAR(255)"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-50">
+        <createTable tableName="fed_user_credential">
+            <column name="id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constr_fed_user_cred_pk"/>
+            </column>
+            <column name="salt" type="BYTEA"/>
+            <column name="type" type="VARCHAR(255)"/>
+            <column name="created_date" type="BIGINT"/>
+            <column name="user_id" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="realm_id" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="storage_provider_id" type="VARCHAR(36)"/>
+            <column name="user_label" type="VARCHAR(255)"/>
+            <column name="secret_data" type="TEXT"/>
+            <column name="credential_data" type="TEXT"/>
+            <column name="priority" type="INTEGER"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-51">
+        <createTable tableName="fed_user_group_membership">
+            <column name="group_id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constr_fed_user_group"/>
+            </column>
+            <column name="user_id" type="VARCHAR(255)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constr_fed_user_group"/>
+            </column>
+            <column name="realm_id" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="storage_provider_id" type="VARCHAR(36)"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-52">
+        <createTable tableName="fed_user_role_mapping">
+            <column name="role_id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constr_fed_user_role"/>
+            </column>
+            <column name="user_id" type="VARCHAR(255)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constr_fed_user_role"/>
+            </column>
+            <column name="realm_id" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="storage_provider_id" type="VARCHAR(36)"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-53">
+        <createTable tableName="client_scope_client">
+            <column name="client_id" type="VARCHAR(255)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="c_cli_scope_bind"/>
+            </column>
+            <column name="scope_id" type="VARCHAR(255)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="c_cli_scope_bind"/>
+            </column>
+            <column defaultValueBoolean="false" name="default_scope" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-54">
+        <createTable tableName="default_client_scope">
+            <column name="realm_id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="r_def_cli_scope_bind"/>
+            </column>
+            <column name="scope_id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="r_def_cli_scope_bind"/>
+            </column>
+            <column defaultValueBoolean="false" name="default_scope" type="BOOLEAN">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-55">
+        <createTable tableName="client_scope">
+            <column name="id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="pk_cli_template"/>
+            </column>
+            <column name="name" type="VARCHAR(255)"/>
+            <column name="realm_id" type="VARCHAR(36)"/>
+            <column name="description" type="VARCHAR(255)"/>
+            <column name="protocol" type="VARCHAR(255)"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-56">
+        <createTable tableName="client_scope_role_mapping">
+            <column name="scope_id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="pk_template_scope"/>
+            </column>
+            <column name="role_id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="pk_template_scope"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-57">
+        <createTable tableName="client_scope_attributes">
+            <column name="scope_id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="pk_cl_tmpl_attr"/>
+            </column>
+            <column name="value" type="VARCHAR(2048)"/>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="pk_cl_tmpl_attr"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-58">
+        <createTable tableName="user_consent_client_scope">
+            <column name="user_consent_id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_grntcsnt_clsc_pm"/>
+            </column>
+            <column name="scope_id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_grntcsnt_clsc_pm"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-59">
+        <createTable tableName="resource_attribute">
+            <column defaultValue="sybase-needs-something-here" name="id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="res_attr_pk"/>
+            </column>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="value" type="VARCHAR(255)"/>
+            <column name="resource_id" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-60">
+        <createTable tableName="role_attribute">
+            <column name="id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_role_attribute_pk"/>
+            </column>
+            <column name="role_id" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="value" type="VARCHAR(255)"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-61">
+        <createTable tableName="offline_user_session">
+            <column name="user_session_id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_offl_us_ses_pk2"/>
+            </column>
+            <column name="user_id" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="realm_id" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_on" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="offline_flag" type="VARCHAR(4)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_offl_us_ses_pk2"/>
+            </column>
+            <column name="data" type="TEXT"/>
+            <column defaultValueNumeric="0" name="last_session_refresh" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-62">
+        <createTable tableName="migration_model">
+            <column name="id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_migmod"/>
+            </column>
+            <column name="version" type="VARCHAR(36)"/>
+            <column defaultValueNumeric="0" name="update_time" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-63">
+        <createTable tableName="event_entity">
+            <column name="id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_4"/>
+            </column>
+            <column name="client_id" type="VARCHAR(255)"/>
+            <column name="details_json" type="VARCHAR(2550)"/>
+            <column name="error" type="VARCHAR(255)"/>
+            <column name="ip_address" type="VARCHAR(255)"/>
+            <column name="realm_id" type="VARCHAR(255)"/>
+            <column name="session_id" type="VARCHAR(255)"/>
+            <column name="event_time" type="BIGINT"/>
+            <column name="type" type="VARCHAR(255)"/>
+            <column name="user_id" type="VARCHAR(255)"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-64">
+        <createTable tableName="client_attributes">
+            <column name="client_id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_3c"/>
+            </column>
+            <column name="value" type="VARCHAR(4000)"/>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_3c"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-65">
+        <createTable tableName="keycloak_group">
+            <column name="id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_group"/>
+            </column>
+            <column name="name" type="VARCHAR(255)"/>
+            <column name="parent_group" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="realm_id" type="VARCHAR(36)"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-66">
+        <createTable tableName="resource_server_perm_ticket">
+            <column name="id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_fapmt"/>
+            </column>
+            <column name="owner" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="requester" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_timestamp" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="granted_timestamp" type="BIGINT"/>
+            <column name="resource_id" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="scope_id" type="VARCHAR(36)"/>
+            <column name="resource_server_id" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="policy_id" type="VARCHAR(36)"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-67">
+        <createIndex indexName="idx_client_id" tableName="client">
+            <column name="client_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-68">
+        <addUniqueConstraint columnNames="realm_id, client_id" constraintName="uk_b71cjlbenv945rb6gcon438at" tableName="client"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-69">
+        <createIndex indexName="idx_keycloak_role_client" tableName="keycloak_role">
+            <column name="client"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-70">
+        <createIndex indexName="idx_keycloak_role_realm" tableName="keycloak_role">
+            <column name="realm"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-71">
+        <addUniqueConstraint columnNames="name, client_realm_constraint" constraintName="UK_J3RWUVD56ONTGSUHOGM184WW2-2" tableName="keycloak_role"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-72">
+        <createIndex indexName="idx_realm_master_adm_cli" tableName="realm">
+            <column name="master_admin_client"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-73">
+        <addUniqueConstraint columnNames="name" constraintName="uk_orvsdmla56612eaefiq6wl5oi" tableName="realm"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-74">
+        <createIndex indexName="idx_user_email" tableName="user_entity">
+            <column name="email"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-75">
+        <createIndex indexName="idx_user_service_account" tableName="user_entity">
+            <column name="realm_id"/>
+            <column name="service_account_client_link"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-76">
+        <addUniqueConstraint columnNames="realm_id, email_constraint" constraintName="uk_dykn684sl8up1crfei6eckhd7" tableName="user_entity"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-77">
+        <addUniqueConstraint columnNames="realm_id, username" constraintName="uk_ru8tt6t700s9v50bu18ws5ha6" tableName="user_entity"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-78">
+        <createIndex indexName="idx_ident_prov_realm" tableName="identity_provider">
+            <column name="realm_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-79">
+        <addUniqueConstraint columnNames="provider_alias, realm_id" constraintName="uk_2daelwnibji49avxsrtuf6xj33" tableName="identity_provider"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-80">
+        <createIndex indexName="idx_auth_exec_realm_flow" tableName="authentication_execution">
+            <column name="realm_id"/>
+            <column name="flow_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-81">
+        <createIndex indexName="idx_auth_exec_flow" tableName="authentication_execution">
+            <column name="flow_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-82">
+        <createIndex indexName="idx_user_reqactions" tableName="user_required_action">
+            <column name="user_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-83">
+        <createIndex indexName="idx_auth_flow_realm" tableName="authentication_flow">
+            <column name="realm_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-84">
+        <createIndex indexName="idx_user_attribute" tableName="user_attribute">
+            <column name="user_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-85">
+        <createIndex indexName="idx_user_attribute_name" tableName="user_attribute">
+            <column name="name"/>
+            <column name="value"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-86">
+        <createIndex indexName="idx_req_act_prov_realm" tableName="required_action_provider">
+            <column name="realm_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-87">
+        <createIndex indexName="idx_group_attr_group" tableName="group_attribute">
+            <column name="group_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-88">
+        <createIndex indexName="idx_us_sess_id_on_cl_sess" tableName="offline_client_session">
+            <column name="user_session_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-89">
+        <createIndex indexName="idx_offline_css_preload" tableName="offline_client_session">
+            <column name="client_id"/>
+            <column name="offline_flag"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-90">
+        <createIndex indexName="idx_user_role_mapping" tableName="user_role_mapping">
+            <column name="user_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-91">
+        <createIndex indexName="idx_user_group_mapping" tableName="user_group_membership">
+            <column name="user_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-92">
+        <createIndex indexName="idx_user_consent" tableName="user_consent">
+            <column name="user_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-93">
+        <addUniqueConstraint columnNames="client_id, client_storage_provider, external_client_id, user_id" constraintName="uk_jkuwuvd56ontgsuhogm8uewrt" tableName="user_consent"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-94">
+        <createIndex indexName="idx_user_credential" tableName="credential">
+            <column name="user_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-95">
+        <createIndex indexName="idx_fedidentity_user" tableName="federated_identity">
+            <column name="user_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-96">
+        <createIndex indexName="idx_fedidentity_feduser" tableName="federated_identity">
+            <column name="federated_user_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-97">
+        <createIndex indexName="idx_fu_required_action" tableName="fed_user_required_action">
+            <column name="user_id"/>
+            <column name="required_action"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-98">
+        <createIndex indexName="idx_fu_required_action_ru" tableName="fed_user_required_action">
+            <column name="realm_id"/>
+            <column name="user_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-99">
+        <createIndex indexName="idx_assoc_pol_assoc_pol_id" tableName="associated_policy">
+            <column name="associated_policy_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-100">
+        <createIndex indexName="idx_auth_config_realm" tableName="authenticator_config">
+            <column name="realm_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-101">
+        <createIndex indexName="idx_client_session_session" tableName="client_session">
+            <column name="session_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-102">
+        <createIndex indexName="idx_component_realm" tableName="component">
+            <column name="realm_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-103">
+        <createIndex indexName="idx_component_provider_type" tableName="component">
+            <column name="provider_type"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-104">
+        <createIndex indexName="idx_compo_config_compo" tableName="component_config">
+            <column name="component_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-105">
+        <createIndex indexName="idx_composite" tableName="composite_role">
+            <column name="composite"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-106">
+        <createIndex indexName="idx_composite_child" tableName="composite_role">
+            <column name="child_role"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-107">
+        <createIndex indexName="idx_group_role_mapp_group" tableName="group_role_mapping">
+            <column name="group_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-108">
+        <createIndex indexName="idx_id_prov_mapp_realm" tableName="identity_provider_mapper">
+            <column name="realm_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-109">
+        <createIndex indexName="idx_protocol_mapper_client" tableName="protocol_mapper">
+            <column name="client_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-110">
+        <createIndex indexName="idx_clscope_protmap" tableName="protocol_mapper">
+            <column name="client_scope_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-111">
+        <createIndex indexName="idx_realm_attr_realm" tableName="realm_attribute">
+            <column name="realm_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-112">
+        <createIndex indexName="idx_realm_def_grp_realm" tableName="realm_default_groups">
+            <column name="realm_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-113">
+        <addUniqueConstraint columnNames="group_id" constraintName="con_group_id_def_groups" tableName="realm_default_groups"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-114">
+        <createIndex indexName="idx_realm_evt_types_realm" tableName="realm_enabled_event_types">
+            <column name="realm_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-115">
+        <createIndex indexName="idx_realm_evt_list_realm" tableName="realm_events_listeners">
+            <column name="realm_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-116">
+        <createIndex indexName="idx_realm_supp_local_realm" tableName="realm_supported_locales">
+            <column name="realm_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-117">
+        <createIndex indexName="idx_redir_uri_client" tableName="redirect_uris">
+            <column name="client_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-118">
+        <createIndex indexName="idx_res_policy_policy" tableName="resource_policy">
+            <column name="policy_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-119">
+        <createIndex indexName="idx_res_scope_scope" tableName="resource_scope">
+            <column name="scope_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-120">
+        <createIndex indexName="idx_scope_mapping_role" tableName="scope_mapping">
+            <column name="role_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-121">
+        <createIndex indexName="idx_scope_policy_policy" tableName="scope_policy">
+            <column name="policy_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-122">
+        <createIndex indexName="idx_usr_fed_map_fed_prv" tableName="user_federation_mapper">
+            <column name="federation_provider_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-123">
+        <createIndex indexName="idx_usr_fed_map_realm" tableName="user_federation_mapper">
+            <column name="realm_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-124">
+        <createIndex indexName="idx_usr_fed_prv_realm" tableName="user_federation_provider">
+            <column name="realm_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-125">
+        <createIndex indexName="idx_web_orig_client" tableName="web_origins">
+            <column name="client_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-126">
+        <createIndex indexName="idx_client_init_acc_realm" tableName="client_initial_access">
+            <column name="realm_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-127">
+        <createIndex indexName="idx_res_serv_pol_res_serv" tableName="resource_server_policy">
+            <column name="resource_server_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-128">
+        <addUniqueConstraint columnNames="name, resource_server_id" constraintName="uk_frsrpt700s9v50bu18ws5ha6" tableName="resource_server_policy"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-129">
+        <createIndex indexName="idx_res_srv_res_res_srv" tableName="resource_server_resource">
+            <column name="resource_server_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-130">
+        <addUniqueConstraint columnNames="name, owner, resource_server_id" constraintName="uk_frsr6t700s9v50bu18ws5ha6" tableName="resource_server_resource"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-131">
+        <createIndex indexName="idx_res_srv_scope_res_srv" tableName="resource_server_scope">
+            <column name="resource_server_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-132">
+        <addUniqueConstraint columnNames="name, resource_server_id" constraintName="uk_frsrst700s9v50bu18ws5ha6" tableName="resource_server_scope"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-133">
+        <createIndex indexName="idx_fu_attribute" tableName="fed_user_attribute">
+            <column name="user_id"/>
+            <column name="realm_id"/>
+            <column name="name"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-134">
+        <createIndex indexName="idx_fu_consent_ru" tableName="fed_user_consent">
+            <column name="realm_id"/>
+            <column name="user_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-135">
+        <createIndex indexName="idx_fu_cnsnt_ext" tableName="fed_user_consent">
+            <column name="user_id"/>
+            <column name="client_storage_provider"/>
+            <column name="external_client_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-136">
+        <createIndex indexName="idx_fu_consent" tableName="fed_user_consent">
+            <column name="user_id"/>
+            <column name="client_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-137">
+        <createIndex indexName="idx_fu_credential" tableName="fed_user_credential">
+            <column name="user_id"/>
+            <column name="type"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-138">
+        <createIndex indexName="idx_fu_credential_ru" tableName="fed_user_credential">
+            <column name="realm_id"/>
+            <column name="user_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-139">
+        <createIndex indexName="idx_fu_group_membership" tableName="fed_user_group_membership">
+            <column name="user_id"/>
+            <column name="group_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-140">
+        <createIndex indexName="idx_fu_group_membership_ru" tableName="fed_user_group_membership">
+            <column name="realm_id"/>
+            <column name="user_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-141">
+        <createIndex indexName="idx_fu_role_mapping" tableName="fed_user_role_mapping">
+            <column name="user_id"/>
+            <column name="role_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-142">
+        <createIndex indexName="idx_fu_role_mapping_ru" tableName="fed_user_role_mapping">
+            <column name="realm_id"/>
+            <column name="user_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-143">
+        <createIndex indexName="idx_clscope_cl" tableName="client_scope_client">
+            <column name="client_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-144">
+        <createIndex indexName="idx_cl_clscope" tableName="client_scope_client">
+            <column name="scope_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-145">
+        <createIndex indexName="idx_defcls_realm" tableName="default_client_scope">
+            <column name="realm_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-146">
+        <createIndex indexName="idx_defcls_scope" tableName="default_client_scope">
+            <column name="scope_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-147">
+        <createIndex indexName="idx_realm_clscope" tableName="client_scope">
+            <column name="realm_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-148">
+        <addUniqueConstraint columnNames="realm_id, name" constraintName="uk_cli_scope" tableName="client_scope"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-149">
+        <createIndex indexName="idx_clscope_role" tableName="client_scope_role_mapping">
+            <column name="scope_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-150">
+        <createIndex indexName="idx_role_clscope" tableName="client_scope_role_mapping">
+            <column name="role_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-151">
+        <createIndex indexName="idx_clscope_attrs" tableName="client_scope_attributes">
+            <column name="scope_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-152">
+        <createIndex indexName="idx_usconsent_clscope" tableName="user_consent_client_scope">
+            <column name="user_consent_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-153">
+        <createIndex indexName="idx_role_attribute" tableName="role_attribute">
+            <column name="role_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-154">
+        <createIndex indexName="idx_offline_uss_createdon" tableName="offline_user_session">
+            <column name="created_on"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-155">
+        <createIndex indexName="idx_offline_uss_preload" tableName="offline_user_session">
+            <column name="offline_flag"/>
+            <column name="created_on"/>
+            <column name="user_session_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-156">
+        <createIndex indexName="idx_offline_uss_by_user" tableName="offline_user_session">
+            <column name="user_id"/>
+            <column name="realm_id"/>
+            <column name="offline_flag"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-157">
+        <createIndex indexName="idx_offline_uss_by_usersess" tableName="offline_user_session">
+            <column name="realm_id"/>
+            <column name="offline_flag"/>
+            <column name="user_session_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-158">
+        <createIndex indexName="idx_update_time" tableName="migration_model">
+            <column defaultValueNumeric="0" name="update_time"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-159">
+        <createIndex indexName="idx_event_time" tableName="event_entity">
+            <column name="realm_id"/>
+            <column name="event_time"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-160">
+        <createIndex indexName="idx_client_att_by_name_value" tableName="client_attributes">
+            <column name="name"/>
+            <column computed="true" name="((value)::character varying(250))"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-161">
+        <addUniqueConstraint columnNames="realm_id, parent_group, name" constraintName="sibling_names" tableName="keycloak_group"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-162">
+        <addUniqueConstraint columnNames="owner, requester, resource_server_id, resource_id, scope_id" constraintName="uk_frsr6t700s9v50bu18ws5pmt" tableName="resource_server_perm_ticket"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-163">
+        <createTable tableName="admin_event_entity">
+            <column name="id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_admin_event_entity"/>
+            </column>
+            <column name="admin_event_time" type="BIGINT"/>
+            <column name="realm_id" type="VARCHAR(255)"/>
+            <column name="operation_type" type="VARCHAR(255)"/>
+            <column name="auth_realm_id" type="VARCHAR(255)"/>
+            <column name="auth_client_id" type="VARCHAR(255)"/>
+            <column name="auth_user_id" type="VARCHAR(255)"/>
+            <column name="ip_address" type="VARCHAR(255)"/>
+            <column name="resource_path" type="VARCHAR(2550)"/>
+            <column name="representation" type="TEXT"/>
+            <column name="error" type="VARCHAR(255)"/>
+            <column name="resource_type" type="VARCHAR(64)"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-164">
+        <createTable tableName="authenticator_config_entry">
+            <column name="authenticator_id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_auth_cfg_pk"/>
+            </column>
+            <column name="value" type="TEXT"/>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_auth_cfg_pk"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-165">
+        <createTable tableName="broker_link">
+            <column name="identity_provider" type="VARCHAR(255)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constr_broker_link_pk"/>
+            </column>
+            <column name="storage_provider_id" type="VARCHAR(255)"/>
+            <column name="realm_id" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="broker_user_id" type="VARCHAR(255)"/>
+            <column name="broker_username" type="VARCHAR(255)"/>
+            <column name="token" type="TEXT"/>
+            <column name="user_id" type="VARCHAR(255)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constr_broker_link_pk"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-166">
+        <createTable tableName="client_auth_flow_bindings">
+            <column name="client_id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="c_cli_flow_bind"/>
+            </column>
+            <column name="flow_id" type="VARCHAR(36)"/>
+            <column name="binding_name" type="VARCHAR(255)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="c_cli_flow_bind"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-167">
+        <createTable tableName="client_node_registrations">
+            <column name="client_id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_84"/>
+            </column>
+            <column name="value" type="INTEGER"/>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_84"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-168">
+        <createTable tableName="client_session_auth_status">
+            <column name="authenticator" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="status" type="INTEGER"/>
+            <column name="client_session" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-169">
+        <createTable tableName="client_session_note">
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="value" type="VARCHAR(255)"/>
+            <column name="client_session" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-170">
+        <createTable tableName="client_session_prot_mapper">
+            <column name="protocol_mapper_id" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="client_session" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-171">
+        <createTable tableName="client_session_role">
+            <column name="role_id" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="client_session" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-172">
+        <createTable tableName="client_user_session_note">
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="value" type="VARCHAR(2048)"/>
+            <column name="client_session" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-173">
+        <createTable tableName="fed_user_consent_cl_scope">
+            <column name="user_consent_id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_fgrntcsnt_clsc_pm"/>
+            </column>
+            <column name="scope_id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_fgrntcsnt_clsc_pm"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-174">
+        <createTable tableName="federated_user">
+            <column name="id" type="VARCHAR(255)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constr_federated_user"/>
+            </column>
+            <column name="storage_provider_id" type="VARCHAR(255)"/>
+            <column name="realm_id" type="VARCHAR(36)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-175">
+        <createTable tableName="identity_provider_config">
+            <column name="identity_provider_id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_d"/>
+            </column>
+            <column name="value" type="TEXT"/>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_d"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-176">
+        <createTable tableName="idp_mapper_config">
+            <column name="idp_mapper_id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_idpmconfig"/>
+            </column>
+            <column name="value" type="TEXT"/>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_idpmconfig"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-177">
+        <createTable tableName="policy_config">
+            <column name="policy_id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_dpc"/>
+            </column>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_dpc"/>
+            </column>
+            <column name="value" type="TEXT"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-178">
+        <createTable tableName="protocol_mapper_config">
+            <column name="protocol_mapper_id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_pmconfig"/>
+            </column>
+            <column name="value" type="TEXT"/>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_pmconfig"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-179">
+        <createTable tableName="realm_localizations">
+            <column name="realm_id" type="VARCHAR(255)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="realm_localizations_pkey"/>
+            </column>
+            <column name="locale" type="VARCHAR(255)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="realm_localizations_pkey"/>
+            </column>
+            <column name="texts" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-180">
+        <createTable tableName="realm_smtp_config">
+            <column name="realm_id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_e"/>
+            </column>
+            <column name="value" type="VARCHAR(255)"/>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_e"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-181">
+        <createTable tableName="required_action_config">
+            <column name="required_action_id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_req_act_cfg_pk"/>
+            </column>
+            <column name="value" type="TEXT"/>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_req_act_cfg_pk"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-182">
+        <createTable tableName="resource_uris">
+            <column name="resource_id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_resour_uris_pk"/>
+            </column>
+            <column name="value" type="VARCHAR(255)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_resour_uris_pk"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-183">
+        <createTable tableName="user_federation_config">
+            <column name="user_federation_provider_id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_f9"/>
+            </column>
+            <column name="value" type="VARCHAR(255)"/>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_f9"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-184">
+        <createTable tableName="user_federation_mapper_config">
+            <column name="user_federation_mapper_id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_fedmapper_cfg_pm"/>
+            </column>
+            <column name="value" type="VARCHAR(255)"/>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_fedmapper_cfg_pm"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-185">
+        <createTable tableName="user_session_note">
+            <column name="user_session" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_usn_pk"/>
+            </column>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="constraint_usn_pk"/>
+            </column>
+            <column name="value" type="VARCHAR(2048)"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-186">
+        <createTable tableName="username_login_failure">
+            <column name="realm_id" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="CONSTRAINT_17-2"/>
+            </column>
+            <column name="username" type="VARCHAR(255)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="CONSTRAINT_17-2"/>
+            </column>
+            <column name="failed_login_not_before" type="INTEGER"/>
+            <column name="last_failure" type="BIGINT"/>
+            <column name="last_ip_failure" type="VARCHAR(255)"/>
+            <column name="num_failures" type="INTEGER"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-187">
+        <addPrimaryKey columnNames="client_session, name" constraintName="constr_cl_usr_ses_note" tableName="client_user_session_note"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-188">
+        <addPrimaryKey columnNames="client_session, role_id" constraintName="constraint_5" tableName="client_session_role"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-189">
+        <addPrimaryKey columnNames="client_session, name" constraintName="constraint_5e" tableName="client_session_note"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-190">
+        <addPrimaryKey columnNames="realm_id, type" constraintName="constraint_92" tableName="realm_required_credential"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-191">
+        <addPrimaryKey columnNames="client_session, authenticator" constraintName="constraint_auth_status_pk" tableName="client_session_auth_status"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-192">
+        <addPrimaryKey columnNames="client_session, protocol_mapper_id" constraintName="constraint_cs_pmp_pk" tableName="client_session_prot_mapper"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-193">
+        <addPrimaryKey columnNames="user_session_id, client_id, client_storage_provider, external_client_id, offline_flag" constraintName="constraint_offl_cl_ses_pk3" tableName="offline_client_session"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-194">
+        <addPrimaryKey columnNames="required_action, user_id" constraintName="constraint_required_action" tableName="user_required_action"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-195">
+        <addForeignKeyConstraint baseColumnNames="client_session" baseTableName="client_session_auth_status" constraintName="auth_status_constraint" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="client_session" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-196">
+        <addForeignKeyConstraint baseColumnNames="realm_id" baseTableName="identity_provider" constraintName="fk2b4ebc52ae5c3b34" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="realm" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-197">
+        <addForeignKeyConstraint baseColumnNames="client_id" baseTableName="client_attributes" constraintName="fk3c47c64beacca966" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="client" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-198">
+        <addForeignKeyConstraint baseColumnNames="user_id" baseTableName="federated_identity" constraintName="fk404288b92ef007a6" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="user_entity" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-199">
+        <addForeignKeyConstraint baseColumnNames="client_id" baseTableName="client_node_registrations" constraintName="fk4129723ba992f594" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="client" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-200">
+        <addForeignKeyConstraint baseColumnNames="client_session" baseTableName="client_session_note" constraintName="fk5edfb00ff51c2736" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="client_session" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-201">
+        <addForeignKeyConstraint baseColumnNames="user_session" baseTableName="user_session_note" constraintName="fk5edfb00ff51d3472" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="user_session" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-202">
+        <addForeignKeyConstraint baseColumnNames="client_session" baseTableName="client_session_role" constraintName="fk_11b7sgqw18i532811v7o2dv76" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="client_session" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-203">
+        <addForeignKeyConstraint baseColumnNames="client_id" baseTableName="redirect_uris" constraintName="fk_1burs8pb4ouj97h5wuppahv9f" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="client" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-204">
+        <addForeignKeyConstraint baseColumnNames="realm_id" baseTableName="user_federation_provider" constraintName="fk_1fj32f6ptolw2qy60cd8n01e8" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="realm" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-205">
+        <addForeignKeyConstraint baseColumnNames="client_session" baseTableName="client_session_prot_mapper" constraintName="fk_33a8sgqw18i532811v7o2dk89" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="client_session" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-206">
+        <addForeignKeyConstraint baseColumnNames="realm_id" baseTableName="realm_required_credential" constraintName="fk_5hg65lybevavkqfki3kponh9v" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="realm" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-207">
+        <addForeignKeyConstraint baseColumnNames="resource_id" baseTableName="resource_attribute" constraintName="fk_5hrm2vlf9ql5fu022kqepovbr" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="resource_server_resource" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-208">
+        <addForeignKeyConstraint baseColumnNames="user_id" baseTableName="user_attribute" constraintName="fk_5hrm2vlf9ql5fu043kqepovbr" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="user_entity" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-209">
+        <addForeignKeyConstraint baseColumnNames="user_id" baseTableName="user_required_action" constraintName="fk_6qj3w1jw9cvafhe19bwsiuvmd" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="user_entity" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-210">
+        <addForeignKeyConstraint baseColumnNames="realm" baseTableName="keycloak_role" constraintName="fk_6vyqfe4cn4wlq8r6kt5vdsj5c" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="realm" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-211">
+        <addForeignKeyConstraint baseColumnNames="realm_id" baseTableName="realm_smtp_config" constraintName="fk_70ej8xdxgxd0b9hh6180irr0o" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="realm" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-212">
+        <addForeignKeyConstraint baseColumnNames="realm_id" baseTableName="realm_attribute" constraintName="fk_8shxd6l3e9atqukacxgpffptw" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="realm" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-213">
+        <addForeignKeyConstraint baseColumnNames="composite" baseTableName="composite_role" constraintName="fk_a63wvekftu8jo1pnj81e7mce2" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="keycloak_role" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-214">
+        <addForeignKeyConstraint baseColumnNames="flow_id" baseTableName="authentication_execution" constraintName="fk_auth_exec_flow" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="authentication_flow" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-215">
+        <addForeignKeyConstraint baseColumnNames="realm_id" baseTableName="authentication_execution" constraintName="fk_auth_exec_realm" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="realm" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-216">
+        <addForeignKeyConstraint baseColumnNames="realm_id" baseTableName="authentication_flow" constraintName="fk_auth_flow_realm" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="realm" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-217">
+        <addForeignKeyConstraint baseColumnNames="realm_id" baseTableName="authenticator_config" constraintName="fk_auth_realm" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="realm" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-218">
+        <addForeignKeyConstraint baseColumnNames="session_id" baseTableName="client_session" constraintName="fk_b4ao2vcvat6ukau74wbwtfqo1" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="user_session" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-219">
+        <addForeignKeyConstraint baseColumnNames="user_id" baseTableName="user_role_mapping" constraintName="fk_c4fqv34p1mbylloxang7b1q3l" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="user_entity" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-220">
+        <addForeignKeyConstraint baseColumnNames="scope_id" baseTableName="client_scope_attributes" constraintName="fk_cl_scope_attr_scope" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="client_scope" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-221">
+        <addForeignKeyConstraint baseColumnNames="scope_id" baseTableName="client_scope_role_mapping" constraintName="fk_cl_scope_rm_scope" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="client_scope" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-222">
+        <addForeignKeyConstraint baseColumnNames="client_session" baseTableName="client_user_session_note" constraintName="fk_cl_usr_ses_note" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="client_session" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-223">
+        <addForeignKeyConstraint baseColumnNames="client_scope_id" baseTableName="protocol_mapper" constraintName="fk_cli_scope_mapper" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="client_scope" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-224">
+        <addForeignKeyConstraint baseColumnNames="realm_id" baseTableName="client_initial_access" constraintName="fk_client_init_acc_realm" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="realm" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-225">
+        <addForeignKeyConstraint baseColumnNames="component_id" baseTableName="component_config" constraintName="fk_component_config" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="component" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-226">
+        <addForeignKeyConstraint baseColumnNames="realm_id" baseTableName="component" constraintName="fk_component_realm" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="realm" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-227">
+        <addForeignKeyConstraint baseColumnNames="realm_id" baseTableName="realm_default_groups" constraintName="fk_def_groups_realm" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="realm" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-228">
+        <addForeignKeyConstraint baseColumnNames="user_federation_mapper_id" baseTableName="user_federation_mapper_config" constraintName="fk_fedmapper_cfg" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="user_federation_mapper" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-229">
+        <addForeignKeyConstraint baseColumnNames="federation_provider_id" baseTableName="user_federation_mapper" constraintName="fk_fedmapperpm_fedprv" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="user_federation_provider" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-230">
+        <addForeignKeyConstraint baseColumnNames="realm_id" baseTableName="user_federation_mapper" constraintName="fk_fedmapperpm_realm" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="realm" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-231">
+        <addForeignKeyConstraint baseColumnNames="associated_policy_id" baseTableName="associated_policy" constraintName="fk_frsr5s213xcx4wnkog82ssrfy" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="resource_server_policy" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-232">
+        <addForeignKeyConstraint baseColumnNames="policy_id" baseTableName="scope_policy" constraintName="fk_frsrasp13xcx4wnkog82ssrfy" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="resource_server_policy" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-233">
+        <addForeignKeyConstraint baseColumnNames="resource_server_id" baseTableName="resource_server_perm_ticket" constraintName="fk_frsrho213xcx4wnkog82sspmt" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="resource_server" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-234">
+        <addForeignKeyConstraint baseColumnNames="resource_server_id" baseTableName="resource_server_resource" constraintName="fk_frsrho213xcx4wnkog82ssrfy" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="resource_server" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-235">
+        <addForeignKeyConstraint baseColumnNames="resource_id" baseTableName="resource_server_perm_ticket" constraintName="fk_frsrho213xcx4wnkog83sspmt" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="resource_server_resource" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-236">
+        <addForeignKeyConstraint baseColumnNames="scope_id" baseTableName="resource_server_perm_ticket" constraintName="fk_frsrho213xcx4wnkog84sspmt" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="resource_server_scope" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-237">
+        <addForeignKeyConstraint baseColumnNames="policy_id" baseTableName="associated_policy" constraintName="fk_frsrpas14xcx4wnkog82ssrfy" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="resource_server_policy" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-238">
+        <addForeignKeyConstraint baseColumnNames="scope_id" baseTableName="scope_policy" constraintName="fk_frsrpass3xcx4wnkog82ssrfy" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="resource_server_scope" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-239">
+        <addForeignKeyConstraint baseColumnNames="policy_id" baseTableName="resource_server_perm_ticket" constraintName="fk_frsrpo2128cx4wnkog82ssrfy" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="resource_server_policy" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-240">
+        <addForeignKeyConstraint baseColumnNames="resource_server_id" baseTableName="resource_server_policy" constraintName="fk_frsrpo213xcx4wnkog82ssrfy" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="resource_server" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-241">
+        <addForeignKeyConstraint baseColumnNames="resource_id" baseTableName="resource_scope" constraintName="fk_frsrpos13xcx4wnkog82ssrfy" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="resource_server_resource" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-242">
+        <addForeignKeyConstraint baseColumnNames="resource_id" baseTableName="resource_policy" constraintName="fk_frsrpos53xcx4wnkog82ssrfy" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="resource_server_resource" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-243">
+        <addForeignKeyConstraint baseColumnNames="policy_id" baseTableName="resource_policy" constraintName="fk_frsrpp213xcx4wnkog82ssrfy" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="resource_server_policy" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-244">
+        <addForeignKeyConstraint baseColumnNames="scope_id" baseTableName="resource_scope" constraintName="fk_frsrps213xcx4wnkog82ssrfy" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="resource_server_scope" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-245">
+        <addForeignKeyConstraint baseColumnNames="resource_server_id" baseTableName="resource_server_scope" constraintName="fk_frsrso213xcx4wnkog82ssrfy" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="resource_server" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-246">
+        <addForeignKeyConstraint baseColumnNames="child_role" baseTableName="composite_role" constraintName="fk_gr7thllb9lu8q4vqa4524jjy8" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="keycloak_role" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-247">
+        <addForeignKeyConstraint baseColumnNames="user_consent_id" baseTableName="user_consent_client_scope" constraintName="fk_grntcsnt_clsc_usc" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="user_consent" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-248">
+        <addForeignKeyConstraint baseColumnNames="user_id" baseTableName="user_consent" constraintName="fk_grntcsnt_user" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="user_entity" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-249">
+        <addForeignKeyConstraint baseColumnNames="group_id" baseTableName="group_attribute" constraintName="fk_group_attribute_group" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="keycloak_group" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-250">
+        <addForeignKeyConstraint baseColumnNames="group_id" baseTableName="group_role_mapping" constraintName="fk_group_role_group" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="keycloak_group" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-251">
+        <addForeignKeyConstraint baseColumnNames="realm_id" baseTableName="realm_enabled_event_types" constraintName="fk_h846o4h0w8epx5nwedrf5y69j" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="realm" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-252">
+        <addForeignKeyConstraint baseColumnNames="realm_id" baseTableName="realm_events_listeners" constraintName="fk_h846o4h0w8epx5nxev9f5y69j" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="realm" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-253">
+        <addForeignKeyConstraint baseColumnNames="realm_id" baseTableName="identity_provider_mapper" constraintName="fk_idpm_realm" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="realm" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-254">
+        <addForeignKeyConstraint baseColumnNames="idp_mapper_id" baseTableName="idp_mapper_config" constraintName="fk_idpmconfig" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="identity_provider_mapper" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-255">
+        <addForeignKeyConstraint baseColumnNames="client_id" baseTableName="web_origins" constraintName="fk_lojpho213xcx4wnkog82ssrfy" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="client" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-256">
+        <addForeignKeyConstraint baseColumnNames="client_id" baseTableName="scope_mapping" constraintName="fk_ouse064plmlr732lxjcn1q5f1" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="client" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-257">
+        <addForeignKeyConstraint baseColumnNames="client_id" baseTableName="protocol_mapper" constraintName="fk_pcm_realm" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="client" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-258">
+        <addForeignKeyConstraint baseColumnNames="user_id" baseTableName="credential" constraintName="fk_pfyr0glasqyl0dei3kl69r6v0" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="user_entity" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-259">
+        <addForeignKeyConstraint baseColumnNames="protocol_mapper_id" baseTableName="protocol_mapper_config" constraintName="fk_pmconfig" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="protocol_mapper" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-260">
+        <addForeignKeyConstraint baseColumnNames="realm_id" baseTableName="default_client_scope" constraintName="fk_r_def_cli_scope_realm" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="realm" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-261">
+        <addForeignKeyConstraint baseColumnNames="realm_id" baseTableName="required_action_provider" constraintName="fk_req_act_realm" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="realm" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-262">
+        <addForeignKeyConstraint baseColumnNames="resource_id" baseTableName="resource_uris" constraintName="fk_resource_server_uris" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="resource_server_resource" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-263">
+        <addForeignKeyConstraint baseColumnNames="role_id" baseTableName="role_attribute" constraintName="fk_role_attribute_id" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="keycloak_role" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-264">
+        <addForeignKeyConstraint baseColumnNames="realm_id" baseTableName="realm_supported_locales" constraintName="fk_supported_locales_realm" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="realm" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-265">
+        <addForeignKeyConstraint baseColumnNames="user_federation_provider_id" baseTableName="user_federation_config" constraintName="fk_t13hpu1j94r2ebpekr39x5eu5" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="user_federation_provider" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-266">
+        <addForeignKeyConstraint baseColumnNames="user_id" baseTableName="user_group_membership" constraintName="fk_user_group_user" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="user_entity" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-267">
+        <addForeignKeyConstraint baseColumnNames="policy_id" baseTableName="policy_config" constraintName="fkdc34197cf864c4e43" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="id" referencedTableName="resource_server_policy" validate="true"/>
+    </changeSet>
+    <changeSet author="garth (generated)" id="1648153483142-268">
+        <addForeignKeyConstraint baseColumnNames="identity_provider_id" baseTableName="identity_provider_config" constraintName="fkdc4897cf864c4e43" deferrable="false" initiallyDeferred="false" onDelete="NO ACTION" onUpdate="NO ACTION" referencedColumnNames="internal_id" referencedTableName="identity_provider" validate="true"/>
+    </changeSet>
+</databaseChangeLog>

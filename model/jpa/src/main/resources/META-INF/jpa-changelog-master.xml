@@ -74,4 +74,6 @@
     <include file="META-INF/jpa-changelog-17.0.0.xml"/>
     <include file="META-INF/jpa-changelog-18.0.0.xml"/>
 
+    <!-- place new includes following jpa-changelog-17.0.0.xml in the
+         jpa-changelog-master-crdb.xml file *IN ADDITION TO* here. -->
 </databaseChangeLog>

@@ -25,12 +25,15 @@ import org.keycloak.it.junit5.extension.DistributionTest;
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
+
 @DistributionTest
 public class OptionValidationDistTest {
 
     @Test
     @Launch({"build", "--db=invalid"})
     public void failInvalidOptionValue(LaunchResult result) {
-        Assertions.assertTrue(result.getErrorOutput().contains("Invalid value for option '--db': invalid. Expected values are: dev-file, dev-mem, mariadb, mssql, mysql, oracle, postgres"));
+        assertThat(result.getErrorOutput(), containsString("Invalid value for option '--db': invalid. Expected values are: cockroach, dev-file, dev-mem, mariadb, mssql, mysql, oracle, postgres"));
     }
 }

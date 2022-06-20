@@ -70,6 +70,8 @@ public class LiquibaseJpaUpdaterProvider implements JpaUpdaterProvider {
 
     public static final String CHANGELOG = "META-INF/jpa-changelog-master.xml";
 
+    public static final String CHANGELOG_CRDB = "META-INF/jpa-changelog-master-crdb.xml";
+
     public static final String DEPLOYMENT_ID_COLUMN = "DEPLOYMENT_ID";
 
     private final KeycloakSession session;

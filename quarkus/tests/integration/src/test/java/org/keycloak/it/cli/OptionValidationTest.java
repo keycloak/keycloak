@@ -36,14 +36,14 @@ public class OptionValidationTest {
     @Launch({"build", "--db"})
     public void failMissingOptionValue(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        assertThat(cliResult.getErrorOutput(), containsString("Missing required value for option '--db' (vendor). Expected values are: dev-file, dev-mem, mariadb, mssql, mysql, oracle, postgres"));
+        assertThat(cliResult.getErrorOutput(), containsString("Missing required value for option '--db' (vendor). Expected values are: cockroach, dev-file, dev-mem, mariadb, mssql, mysql, oracle, postgres"));
     }
 
     @Test
     @Launch({"build", "--db", "foo", "bar"})
     public void failMultipleOptionValue(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        assertThat(cliResult.getErrorOutput(), containsString("Option '--db' expects a single value (vendor) Expected values are: dev-file, dev-mem, mariadb, mssql, mysql, oracle, postgres"));
+        assertThat(cliResult.getErrorOutput(), containsString("Option '--db' expects a single value (vendor) Expected values are: cockroach, dev-file, dev-mem, mariadb, mssql, mysql, oracle, postgres"));
     }
 
     @Test

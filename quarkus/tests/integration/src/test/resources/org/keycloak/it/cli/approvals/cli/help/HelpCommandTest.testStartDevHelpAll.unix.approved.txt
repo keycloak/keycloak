@@ -29,8 +29,8 @@ Cluster:
 
 Database:
 
---db <vendor>        The database vendor. Possible values are: dev-file, dev-mem, mariadb, mssql,
-                       mysql, oracle, postgres
+--db <vendor>        The database vendor. Possible values are: cockroach, dev-file, dev-mem,
+                       mariadb, mssql, mysql, oracle, postgres
 --db-password <password>
                      The password of the database user.
 --db-pool-initial-size <size>
@@ -60,8 +60,8 @@ Database:
 Transaction:
 
 --transaction-xa-enabled <true|false>
-                     Manually override the transaction type. Transaction type XA and the
-                       appropriate driver is used by default. Default: true.
+                     If set to false, Keycloak uses a non-XA datasource in case the database does
+                       not support XA transactions. Default: true.
 
 Feature:
 
