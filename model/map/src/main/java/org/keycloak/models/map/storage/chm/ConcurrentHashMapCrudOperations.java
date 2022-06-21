@@ -37,6 +37,9 @@ public interface ConcurrentHashMapCrudOperations<V extends AbstractEntity & Upda
      * Updates the object with the key of the {@code value}'s ID in the storage if it already exists.
      *
      * @param value Updated value
+     * @return the previous value associated with the specified key, or null if there was no mapping for the key.
+     *         (A null return can also indicate that the map previously associated null with the key,
+     *         if the implementation supports null values.)
      * @throws NullPointerException if the object or its {@code id} is {@code null}
      * @see AbstractEntity#getId()
      */

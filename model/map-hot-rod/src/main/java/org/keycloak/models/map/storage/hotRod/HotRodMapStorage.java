@@ -93,15 +93,25 @@ public class HotRodMapStorage<K, E extends AbstractHotRodEntity, V extends HotRo
         Objects.requireNonNull(key, "Key must be non-null");
         K k = keyConverter.fromStringSafe(key);
 
-        V v = delegateProducer.apply(remoteCache.get(k));
-        if (v == null || v.getHotRodEntity() == null) return null;
-        return isExpirableEntity && isExpired((ExpirableEntity) v, true) ? null : v;
+        // Obtain value from Infinispan
+        E hotRodEntity = remoteCache.get(k);
+        if (hotRodEntity == null) return null;
+
+        // Create delegate that implements Map*Entity
+        V delegateEntity = delegateProducer.apply(hotRodEntity);
+
+        // Check expiration if necessary and return value
+        return isExpirableEntity && isExpired((ExpirableEntity) delegateEntity, true) ? null : delegateEntity;
     }
 
     @Override
     public V update(V value) {
         K key = keyConverter.fromStringSafe(value.getId());
-        return delegateProducer.apply(remoteCache.replace(key, value.getHotRodEntity()));
+
+        E previousValue = remoteCache.replace(key, value.getHotRodEntity());
+        if (previousValue == null) return null;
+
+        return delegateProducer.apply(previousValue);
     }
 
     @Override
