@@ -215,7 +215,9 @@ public class SessionCodeChecks {
         if (client == null) {
             event.error(Errors.CLIENT_NOT_FOUND);
             response = ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.UNKNOWN_LOGIN_REQUESTER);
-            clientCode.removeExpiredClientSession();
+            if (clientCode != null) {
+                clientCode.removeExpiredClientSession();
+            }
             return false;
         }
 
@@ -225,7 +227,9 @@ public class SessionCodeChecks {
         if (!client.isEnabled()) {
             event.error(Errors.CLIENT_DISABLED);
             response = ErrorPage.error(session,authSession, Response.Status.BAD_REQUEST, Messages.LOGIN_REQUESTER_NOT_ENABLED);
-            clientCode.removeExpiredClientSession();
+            if (clientCode != null) { 
+                clientCode.removeExpiredClientSession();
+            }
             return false;
         }
 
