@@ -1770,6 +1770,7 @@
                         <forkMode>once</forkMode>
                         <argLine>-Djava.awt.headless=true ${surefire.memory.settings} ${surefire.system.args} -Duser.language=en -Duser.region=US</argLine>
                         <runOrder>alphabetical</runOrder>
+                        <failIfNoSpecifiedTests>false</failIfNoSpecifiedTests>
                     </configuration>
                 </plugin>
                 <plugin>
