@@ -123,7 +123,6 @@ The rest of this chapter discusses the setup requirements and provides examples 
 For simplicity's sake, let's call a token minted by the current realm as an _internal_ token and a token minted by
 an external realm or identity provider as an _external_ token.
 
-
 === Internal token to internal token exchange
 
 With an internal token to token exchange you have an existing token minted to a specific client and you want to exchange
@@ -196,10 +195,18 @@ curl -X POST \
     http://localhost:8080{kc_realms_path}/myrealm/protocol/openid-connect/token
 ----
 
-
 The `subject_token` parameter must be an access token for the target realm.  If your `requested_token_type` parameter
 is a refresh token type, then the response will contain both an access token, refresh token, and expiration.  Here's
 an example JSON response you get back from this call.
+
+When the `audience` parameter is not set, the value of the parameter defaults to the client making the token exchange request.
+
+Unlike with confidential clients, public clients are not allowed to perform token exchanges using tokens from other clients.
+If you are passing a `subject_token`, the (confidential) client that was issued the token should either match the client making the request or, if issued to a different client,
+the client making the request should be among the audiences set to the token.
+
+If you are explicitly setting a target `audience` (with a client different from the client making the request), you should also make sure that the `token-exchange` scope permission is configured for the client set to the `audience` parameter to allow
+the client making the request to successfully complete the exchange.
 
 [source,json]
 ----
