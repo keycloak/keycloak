@@ -460,7 +460,7 @@
   "authorizationSignedResponseAlg": "Authorization response signature algorithm",
   "authorizationEncryptedResponseAlg": "Authorization response encryption key management algorithm",
   "authorizationEncryptedResponseEnc": "Authorization response encryption content encryption algorithm",
-  "openIdConnectCompatibilityModes": "Open ID Connect Compatibly Modes",
+  "openIdConnectCompatibilityModes": "Open ID Connect Compatibility Modes",
   "excludeSessionStateFromAuthenticationResponse": "Exclude Session State From Authentication Response",
   "useRefreshTokens": "Use refresh tokens",
   "useRefreshTokenForClientCredentialsGrant": "Use refresh tokens for client credentials grant",
