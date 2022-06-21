@@ -90,7 +90,9 @@ export const AddMapperDialog = (props: AddMapperDialogProps) => {
       variant={ModalVariant.medium}
       header={
         <TextContent>
-          <Text component={TextVariants.h1}>{t("addPredefinedMappers")}</Text>
+          <Text component={TextVariants.h1}>
+            {isBuiltIn ? t("addPredefinedMappers") : t("emptySecondaryAction")}
+          </Text>
           <Text>{t("predefinedMappingDescription")}</Text>
         </TextContent>
       }
