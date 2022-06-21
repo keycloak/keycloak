@@ -41,6 +41,7 @@ import org.keycloak.services.clientpolicy.condition.ClientUpdaterSourceRolesCond
 import org.keycloak.services.clientpolicy.executor.ConsentRequiredExecutor;
 import org.keycloak.services.clientpolicy.executor.FullScopeDisabledExecutor;
 import org.keycloak.services.clientpolicy.executor.HolderOfKeyEnforcerExecutor;
+import org.keycloak.services.clientpolicy.executor.IntentClientBindCheckExecutor;
 import org.keycloak.services.clientpolicy.executor.PKCEEnforcerExecutor;
 import org.keycloak.services.clientpolicy.executor.RejectResourceOwnerPasswordCredentialsGrantExecutor;
 import org.keycloak.services.clientpolicy.executor.SecureClientAuthenticatorExecutor;
@@ -217,6 +218,13 @@ public final class ClientPoliciesUtil {
     public static RejectResourceOwnerPasswordCredentialsGrantExecutor.Configuration createRejectisResourceOwnerPasswordCredentialsGrantExecutorConfig(Boolean autoConfigure) {
         RejectResourceOwnerPasswordCredentialsGrantExecutor.Configuration config = new RejectResourceOwnerPasswordCredentialsGrantExecutor.Configuration();
         config.setAutoConfigure(autoConfigure);
+        return config;
+    }
+
+    public static IntentClientBindCheckExecutor.Configuration createIntentClientBindCheckExecutorConfig(String intentName, String endpoint) {
+        IntentClientBindCheckExecutor.Configuration config = new IntentClientBindCheckExecutor.Configuration();
+        config.setIntentName(intentName);
+        config.setIntentClientBindCheckEndpoint(endpoint);
         return config;
     }
 
