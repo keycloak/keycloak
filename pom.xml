@@ -75,6 +75,12 @@
         <apache.mime4j.version>0.6</apache.mime4j.version>
         <jboss.dmr.version>1.5.1.Final</jboss.dmr.version>
         <bouncycastle.version>1.68</bouncycastle.version>
+
+        <!-- TODO Are these correct versions? -->
+        <bouncycastle.fips.version>1.0.2.3</bouncycastle.fips.version>
+        <bouncycastle.pkixfips.version>1.0.5</bouncycastle.pkixfips.version>
+        <bouncycastle.tlsfips.version>1.0.12.2</bouncycastle.tlsfips.version>
+
         <cxf.version>3.3.10</cxf.version>
         <cxf.jetty.version>3.3.10</cxf.jetty.version>
         <cxf.jaxrs.version>3.3.10</cxf.jaxrs.version>
@@ -269,6 +275,7 @@
         <module>boms</module>
         <module>common</module>
         <module>core</module>
+        <module>crypto</module>
         <module>dependencies</module>
         <module>docs</module>
         <module>server-spi</module>
@@ -360,6 +367,21 @@
                 <groupId>org.bouncycastle</groupId>
                 <artifactId>bcpkix-jdk15on</artifactId>
                 <version>${bouncycastle.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bc-fips</artifactId>
+                <version>${bouncycastle.fips.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bctls-fips</artifactId>
+                <version>${bouncycastle.tlsfips.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcpkix-fips</artifactId>
+                <version>${bouncycastle.pkixfips.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.github.ua-parser</groupId>
@@ -1579,6 +1601,11 @@
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-client-registration-cli</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-fips1402</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
