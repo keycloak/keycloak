@@ -31,8 +31,9 @@ import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import javax.persistence.criteria.Selection;
 import org.jboss.logging.Logger;
-import static org.keycloak.models.map.storage.jpa.PaginationUtils.paginateQuery;
+import org.keycloak.common.util.Time;
 import org.keycloak.models.map.common.AbstractEntity;
+import org.keycloak.models.map.common.ExpirableEntity;
 import org.keycloak.models.map.common.StringKeyConverter;
 import org.keycloak.models.map.common.StringKeyConverter.UUIDKey;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
@@ -40,7 +41,9 @@ import org.keycloak.models.map.storage.QueryParameters;
 import org.keycloak.models.map.storage.chm.MapFieldPredicates;
 import org.keycloak.models.map.storage.chm.MapModelCriteriaBuilder;
 
+import static org.keycloak.models.map.common.ExpirationUtils.isExpired;
 import static org.keycloak.models.map.storage.jpa.JpaMapStorageProviderFactory.CLONER;
+import static org.keycloak.models.map.storage.jpa.PaginationUtils.paginateQuery;
 import static org.keycloak.utils.StreamsUtil.closing;
 
 public abstract class JpaMapKeycloakTransaction<RE extends JpaRootEntity, E extends AbstractEntity, M> implements MapKeycloakTransaction<E, M> {
@@ -48,6 +51,7 @@ public abstract class JpaMapKeycloakTransaction<RE extends JpaRootEntity, E exte
     private static final Logger logger = Logger.getLogger(JpaMapKeycloakTransaction.class);
     private final Class<RE> entityType;
     private final Class<M> modelType;
+    private final boolean isExpirableEntity;
     protected EntityManager em;
 
     @SuppressWarnings("unchecked")
@@ -55,6 +59,7 @@ public abstract class JpaMapKeycloakTransaction<RE extends JpaRootEntity, E exte
         this.em = em;
         this.entityType = entityType;
         this.modelType = modelType;
+        this.isExpirableEntity = ExpirableEntity.class.isAssignableFrom(entityType);
     }
 
     protected abstract Selection<? extends RE> selectCbConstruct(CriteriaBuilder cb, Root<RE> root);
@@ -98,7 +103,8 @@ public abstract class JpaMapKeycloakTransaction<RE extends JpaRootEntity, E exte
         if (key == null) return null;
         UUID uuid = StringKeyConverter.UUIDKey.INSTANCE.fromStringSafe(key);
         if (uuid == null) return null;
-        return mapToEntityDelegateUnique(em.find(entityType, uuid));
+        E e = mapToEntityDelegateUnique(em.find(entityType, uuid));
+        return e != null && isExpirableEntity && isExpired((ExpirableEntity) e, true) ? null : e;
     }
 
     @Override
@@ -132,6 +138,10 @@ public abstract class JpaMapKeycloakTransaction<RE extends JpaRootEntity, E exte
         }
 
         BiFunction<CriteriaBuilder, Root<RE>, Predicate> predicateFunc = mcb.getPredicateFunc();
+        if (this.isExpirableEntity) {
+            predicateFunc = predicateFunc != null ? predicateFunc.andThen(predicate -> cb.and(predicate, notExpired(cb, root)))
+                                                  : this::notExpired;
+        }
         if (predicateFunc != null) query.where(predicateFunc.apply(cb, root));
 
         return closing(paginateQuery(em.createQuery(query), queryParameters.getOffset(), queryParameters.getLimit()).getResultStream())
@@ -232,5 +242,10 @@ public abstract class JpaMapKeycloakTransaction<RE extends JpaRootEntity, E exte
     @Override
     public boolean isActive() {
         return em.getTransaction().isActive();
+    }
+
+    private Predicate notExpired(final CriteriaBuilder cb, final Root<RE> root) {
+        return cb.or(cb.greaterThan(root.get("expiration"), Time.currentTimeMillis()),
+                    cb.isNull(root.get("expiration")));
     }
 }
