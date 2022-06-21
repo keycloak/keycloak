@@ -33,7 +33,7 @@ public class Options {
         options = PropertyMappers.getMappers().stream()
                 .filter(m -> !m.isHidden())
                 .filter(propertyMapper -> Objects.nonNull(propertyMapper.getDescription()))
-                .map(m -> new Option(m.getFrom(), m.getCategory(), m.isBuildTime(), m.getDescription(), (String) m.getDefaultValue().map(d -> d.toString()).orElse(null), m.getExpectedValues()))
+                .map(m -> new Option(m.getFrom(), m.getCategory(), m.isBuildTime(), m.getDescription(), (String) m.getDefaultValue().map(Object::toString).orElse(null), m.getExpectedValues()))
                 .sorted(Comparator.comparing(Option::getKey))
                 .collect(Collectors.toMap(Option::getKey, o -> o, (o1, o2) -> o1, LinkedHashMap::new)); // Need to ignore duplicate keys??
         ProviderManager providerManager = Providers.getProviderManager(Thread.currentThread().getContextClassLoader());

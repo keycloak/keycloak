@@ -54,4 +54,8 @@ public interface KeycloakDistribution {
     default void removeProperty(String name) {
         throw new RuntimeException("Not implemented");
     }
+
+    default void setEnvVar(String kc_db_username, String bad) {
+        throw new RuntimeException("Not implemented");
+    }
 }
