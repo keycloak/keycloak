@@ -169,6 +169,7 @@ public class GenerateHotRodEntityImplementationsProcessor extends AbstractGenera
                 pw.println("    " +
                         "public " + hotRodSimpleClassName + "(" + className + " " + ENTITY_VARIABLE + ") {"
                 );
+                pw.println("        java.util.Objects.requireNonNull(" + ENTITY_VARIABLE + ");");
                 pw.println("        this." + ENTITY_VARIABLE + " = " + ENTITY_VARIABLE + ";");
                 if (usingGeneratedCloner) {
                     pw.println("        this.cloner = DeepCloner.DUMB_CLONER;");

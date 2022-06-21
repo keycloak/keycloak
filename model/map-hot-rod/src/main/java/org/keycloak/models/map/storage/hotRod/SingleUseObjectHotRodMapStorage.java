@@ -95,8 +95,7 @@ public class SingleUseObjectHotRodMapStorage<K, E extends AbstractHotRodEntity, 
         SingleUseObjectModelCriteriaBuilder mcb = criteria.flashToModelCriteriaBuilder(createSingleUseObjectCriteriaBuilder());
         if (mcb.isValid()) {
             HotRodSingleUseObjectEntityDelegate value = read(mcb.getKey());
-
-            return value != null && value.getHotRodEntity() != null ? Stream.of(value) : Stream.empty();
+            return value != null ? Stream.of(value) : Stream.empty();
         }
 
         return super.read(queryParameters);
