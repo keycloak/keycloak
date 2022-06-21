@@ -401,7 +401,7 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
             kcContainer.getVolumeMounts().add(volumeMount);
         }
 
-        var userRelativePath = readConfigurationValue(Constants.KEYCLOAK_HTTP_RELATIVE_PATH_KEY);
+        var userRelativePath = this.keycloakCR.getSpec().getServerConfiguration().getHttpRelativePath();
         var kcRelativePath = (userRelativePath == null) ? "/" : userRelativePath;
         var protocol = (this.keycloakCR.getSpec().isHttp()) ? "http" : "https";
         var kcPort = (this.keycloakCR.getSpec().isHttp()) ? Constants.KEYCLOAK_HTTP_PORT : Constants.KEYCLOAK_HTTPS_PORT;
@@ -423,43 +423,6 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
         kcContainer
                 .getLivenessProbe()
                 .setExec(new ExecActionBuilder().withCommand(liveProbe).build());
-    }
-
-    public String readConfigurationValue(String key) {
-        if (this.keycloakCR != null &&
-                this.keycloakCR.getSpec() != null &&
-                this.keycloakCR.getSpec().getServerConfiguration() != null
-        ) {
-            var serverConfigValue = this.keycloakCR
-                    .getSpec()
-                    .getServerConfiguration()
-                    .stream()
-                    .filter(sc -> sc.getName().equals(key))
-                    .findFirst();
-            if (serverConfigValue.isPresent()) {
-                if (serverConfigValue.get().getValue() != null) {
-                    return serverConfigValue.get().getValue();
-                } else {
-                    var secretSelector = serverConfigValue.get().getSecret();
-                    if (secretSelector == null) {
-                        throw new IllegalStateException("Secret " + serverConfigValue.get().getName() + " not defined");
-                    }
-                    var secret = client.secrets().inNamespace(getNamespace()).withName(secretSelector.getName()).get();
-                    if (secret == null) {
-                        throw new IllegalStateException("Secret " + secretSelector.getName() + " not found in cluster");
-                    }
-                    if (secret.getData().containsKey(secretSelector.getKey())) {
-                        return new String(Base64.getDecoder().decode(secret.getData().get(secretSelector.getKey())), StandardCharsets.UTF_8);
-                    } else {
-                        throw new IllegalStateException("Secret " + secretSelector.getName() + " doesn't contain the expected key " + secretSelector.getKey());
-                    }
-                }
-            } else {
-                return null;
-            }
-        } else {
-            return null;
-        }
     }
 
     private Deployment createBaseDeployment() {
@@ -543,10 +506,11 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
                 .collect(Collectors.toList());
 
         // merge with the CR; the values in CR take precedence
-        if (keycloakCR.getSpec().getServerConfiguration() != null) {
-            serverConfig.removeAll(keycloakCR.getSpec().getServerConfiguration());
-            serverConfig.addAll(keycloakCR.getSpec().getServerConfiguration());
-        }
+        // TODO: fix me
+//        if (keycloakCR.getSpec().getServerConfiguration() != null) {
+//            serverConfig.removeAll(keycloakCR.getSpec().getServerConfiguration());
+//            serverConfig.addAll(keycloakCR.getSpec().getServerConfiguration());
+//        }
 
         // set env vars
         serverConfigSecretsNames = new HashSet<>();

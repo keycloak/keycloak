@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 
 import org.keycloak.operator.Constants;
+import org.keycloak.operator.codegen.configuration.ServerConfig;
 
 import javax.validation.constraints.NotNull;
 import java.util.List;
@@ -30,12 +31,14 @@ public class KeycloakSpec {
     private int instances = 1;
     @JsonPropertyDescription("Custom Keycloak image to be used.")
     private String image;
+
     @JsonPropertyDescription("Configuration of the Keycloak server.\n" +
             "expressed as a keys (reference: https://www.keycloak.org/server/all-config) and values that can be either direct values or references to secrets.")
-    private List<ValueOrSecret> serverConfiguration; // can't use Set due to a bug in Sundrio https://github.com/sundrio/sundrio/issues/316
+    private ServerConfig serverConfiguration;
 
-    // TODO: switch to this serverConfig when all the options are ported
-    // private ServerConfig serverConfig;
+    @JsonPropertyDescription("Additional configuration for the Keycloak server.\n" +
+            "expressed as a keys (reference: https://www.keycloak.org/server/all-config) and values that can be either direct values or references to secrets.")
+    private List<ValueOrSecret> additionalServerConfiguration; // can't use Set due to a bug in Sundrio https://github.com/sundrio/sundrio/issues/316
 
     @NotNull
     @JsonPropertyDescription("Hostname for the Keycloak server.\n" +
@@ -110,11 +113,19 @@ public class KeycloakSpec {
         this.image = image;
     }
 
-    public List<ValueOrSecret> getServerConfiguration() {
+    public ServerConfig getServerConfiguration() {
         return serverConfiguration;
     }
 
-    public void setServerConfiguration(List<ValueOrSecret> serverConfiguration) {
+    public void setServerConfiguration(ServerConfig serverConfiguration) {
         this.serverConfiguration = serverConfiguration;
+    }
+
+    public List<ValueOrSecret> getAdditionalServerConfiguration() {
+        return additionalServerConfiguration;
+    }
+
+    public void setAdditionalServerConfiguration(List<ValueOrSecret> serverConfiguration) {
+        this.additionalServerConfiguration = additionalServerConfiguration;
     }
 }

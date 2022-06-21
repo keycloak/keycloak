@@ -21,6 +21,12 @@ import java.util.stream.Collectors;
 
 public class ServerConfigGen {
 
+    public static final String STRING_TYPE = "java.lang.String";
+    public static final String FILE_TYPE = "java.io.File";
+    public static final String LIST_TYPE = "java.util.List";
+    public static final String VALUE_OR_SECRET = "org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret";
+    public static final String SECRET_KEY_SELECTOR = "io.fabric8.kubernetes.api.model.SecretKeySelector";
+
     public static final String ANNOTATION_JSON_PROPERTY = "com.fasterxml.jackson.annotation.JsonProperty";
     public static final String ANNOTATION_JSON_PROPERTY_DESCRIPTION = "com.fasterxml.jackson.annotation.JsonPropertyDescription";
 
@@ -38,8 +44,9 @@ public class ServerConfigGen {
         AllOptions.ALL_OPTIONS.forEach(o -> {
             if (o.getSupportedRuntimes().contains(Option.Runtime.OPERATOR)) {
                 String fieldName = toCamelCase(o.getKey());
+                String fieldType = typeConversion(o.getType().getCanonicalName());
 
-                FieldDeclaration field = serverConfig.addField(o.getType().getCanonicalName(), fieldName, Modifier.Keyword.PRIVATE);
+                FieldDeclaration field = serverConfig.addField(fieldType, fieldName, Modifier.Keyword.PRIVATE);
                 field.addSingleMemberAnnotation(
                         ANNOTATION_JSON_PROPERTY,
                         new StringLiteralExpr(o.getKey()));
@@ -54,6 +61,18 @@ public class ServerConfigGen {
         });
 
         writeToFile(dest.resolve(className + ".java").toFile(), cu.toString());
+    }
+
+    private String typeConversion(String originalType) {
+        if (originalType.equals(STRING_TYPE)) {
+            return VALUE_OR_SECRET;
+        } else if (originalType.equals(FILE_TYPE)) {
+            return SECRET_KEY_SELECTOR;
+        } else if (originalType.equals(LIST_TYPE)) {
+            return STRING_TYPE; // FIXME
+        } else {
+            return originalType;
+        }
     }
 
     private void writeToFile(File file, String str) {
