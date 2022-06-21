@@ -210,11 +210,7 @@ public class JpaEventStoreProvider implements EventStoreProvider {
         adminEventEntity.setRealmId(adminEvent.getRealmId());
         setAuthDetails(adminEventEntity, adminEvent.getAuthDetails());
         adminEventEntity.setOperationType(adminEvent.getOperationType().toString());
-
-        if (adminEvent.getResourceTypeAsString() != null) {
-            adminEventEntity.setResourceType(adminEvent.getResourceTypeAsString());
-        }
-
+        adminEventEntity.setResourceType(adminEvent.getResourceType());
         adminEventEntity.setResourcePath(adminEvent.getResourcePath());
         adminEventEntity.setError(adminEvent.getError());
         
@@ -231,11 +227,7 @@ public class JpaEventStoreProvider implements EventStoreProvider {
         adminEvent.setRealmId(adminEventEntity.getRealmId());
         setAuthDetails(adminEvent, adminEventEntity);
         adminEvent.setOperationType(OperationType.valueOf(adminEventEntity.getOperationType()));
-
-        if (adminEventEntity.getResourceType() != null) {
-            adminEvent.setResourceTypeAsString(adminEventEntity.getResourceType());
-        }
-
+        adminEvent.setResourceType(adminEventEntity.getResourceType());
         adminEvent.setResourcePath(adminEventEntity.getResourcePath());
         adminEvent.setError(adminEventEntity.getError());
         
