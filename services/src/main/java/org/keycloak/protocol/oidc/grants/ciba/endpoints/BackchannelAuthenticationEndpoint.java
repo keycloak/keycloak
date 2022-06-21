@@ -31,6 +31,7 @@ import org.keycloak.models.OAuth2DeviceUserCodeModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.UserModel;
+import org.keycloak.protocol.oidc.TokenManager;
 import org.keycloak.protocol.oidc.grants.ciba.CibaGrantType;
 import org.keycloak.protocol.oidc.grants.ciba.channel.AuthenticationChannelProvider;
 import org.keycloak.protocol.oidc.grants.ciba.channel.CIBAAuthenticationRequest;
@@ -171,6 +172,10 @@ public class BackchannelAuthenticationEndpoint extends AbstractCibaEndpoint {
         String scope = endpointRequest.getScope();
         if (scope == null) {
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "missing parameter : scope",
+                    Response.Status.BAD_REQUEST);
+        }
+        if (!TokenManager.isValidScope(scope, client)) {
+            throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Invalid scopes: " + scope,
                     Response.Status.BAD_REQUEST);
         }
         request.setScope(scope);
