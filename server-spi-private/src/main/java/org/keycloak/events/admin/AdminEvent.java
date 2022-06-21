@@ -64,7 +64,7 @@ public class AdminEvent {
         this.time = toCopy.getTime();
         this.realmId = toCopy.getRealmId();
         this.authDetails = new AuthDetails(toCopy.getAuthDetails());
-        this.resourceType = toCopy.getResourceTypeAsString();
+        this.resourceType = toCopy.getResourceType();
         this.operationType = toCopy.getOperationType();
         this.resourcePath = toCopy.getResourcePath();
         this.representation = toCopy.getRepresentation();
@@ -186,35 +186,11 @@ public class AdminEvent {
      *
      * @return
      */
-    public ResourceType getResourceType() {
-        if (resourceType == null) {
-          return null;
-        }
-        try {
-            return ResourceType.valueOf(resourceType);
-        }
-        catch (IllegalArgumentException e) {
-            return ResourceType.CUSTOM;
-        }
-    }
-
-    public void setResourceType(ResourceType resourceType) {
-        this.resourceType = resourceType == null ? null  : resourceType.toString();
-    }
-
-    /**
-     * Returns the type as string. Custom resource types with values different from {@link ResourceType} are possible. In this case {@link #getResourceType()} returns <code>CUSTOM</code>.
-     *
-     * @return
-     */
-    public String getResourceTypeAsString() {
+    public String getResourceType() {
         return resourceType;
     }
 
-    /**
-     * Setter for custom resource types with values different from {@link ResourceType}.
-     */
-    public void setResourceTypeAsString(String resourceType) {
+    public void setResourceType(String resourceType) {
         this.resourceType = resourceType;
     }
 }

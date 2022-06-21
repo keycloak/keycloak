@@ -282,9 +282,7 @@ public class ModelToRepresentation {
             rep.setAuthDetails(toRepresentation(adminEvent.getAuthDetails()));
         }
         rep.setOperationType(adminEvent.getOperationType().toString());
-        if (adminEvent.getResourceTypeAsString() != null) {
-            rep.setResourceType(adminEvent.getResourceTypeAsString());
-        }
+        rep.setResourceType(adminEvent.getResourceType());
         rep.setResourcePath(adminEvent.getResourcePath());
         rep.setRepresentation(adminEvent.getRepresentation());
         rep.setError(adminEvent.getError());
