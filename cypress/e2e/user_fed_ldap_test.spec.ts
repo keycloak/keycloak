@@ -88,6 +88,10 @@ const deletedSuccessMessage = "The user federation provider has been deleted.";
 const deleteModalTitle = "Delete user federation provider?";
 const disableModalTitle = "Disable user federation provider?";
 const nonWritableFailMessage = "User federation provider could not be saved:";
+const validatePasswordPolicyFailMessage =
+  "User federation provider could not be saved: Validate Password Policy is applicable only with WRITABLE edit mode";
+const userImportingDisabledFailMessage =
+  "User federation provider could not be saved: Can not disable Importing users when LDAP provider mode is UNSYNCED";
 
 const ldapTestSuccessMsg = "Successfully connected to LDAP";
 const ldapTestFailMsg =
@@ -427,8 +431,19 @@ describe("User Federation LDAP tests", () => {
     providersPage.clickExistingCard(firstLdapName);
 
     providersPage.fillSelect(providersPage.ldapEditModeInput, editModeUnsynced);
+
+    providersPage.toggleSwitch(providersPage.importUsers);
+
+    providersPage.save(provider);
+    masthead.checkNotificationMessage(validatePasswordPolicyFailMessage);
+
     providersPage.toggleSwitch(providersPage.importUsers);
     providersPage.toggleSwitch(providersPage.validatePwPolicySwitch);
+    providersPage.save(provider);
+
+    masthead.checkNotificationMessage(userImportingDisabledFailMessage);
+
+    providersPage.toggleSwitch(providersPage.importUsers);
 
     providersPage.save(provider);
     masthead.checkNotificationMessage(savedSuccessMessage);

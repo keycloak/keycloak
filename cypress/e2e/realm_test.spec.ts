@@ -86,9 +86,8 @@ describe("Realm tests", () => {
     cy.findByText("Delete").click();
     modalUtils.confirmModal();
     masthead.checkNotificationMessage("The realm has been deleted");
-  });
 
-  it("Should update realms on delete", () => {
+    // Show current realms
     sidebarPage.showCurrentRealms(2);
   });
 
@@ -109,9 +108,8 @@ describe("Realm tests", () => {
     masthead.checkNotificationMessage("Realm created");
 
     cy.wait(["@fetch"]);
-  });
 
-  it("Should show current realms", () => {
+    // Show current realms
     sidebarPage.showCurrentRealms(4);
   });
 
