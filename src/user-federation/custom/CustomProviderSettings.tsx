@@ -1,5 +1,5 @@
-import React from "react";
-import { useHistory, useParams } from "react-router-dom";
+import React, { useState } from "react";
+import { Link, useHistory, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { FormProvider, useForm } from "react-hook-form";
 import {
@@ -41,7 +41,8 @@ export default function CustomProviderSettings() {
 
   const adminClient = useAdminClient();
   const { addAlert, addError } = useAlerts();
-  const { realm } = useRealm();
+  const { realm: realmName } = useRealm();
+  const [parentId, setParentId] = useState("");
 
   useFetch(
     async () => {
@@ -60,17 +61,26 @@ export default function CustomProviderSettings() {
     []
   );
 
+  useFetch(
+    () =>
+      adminClient.realms.findOne({
+        realm: realmName,
+      }),
+    (realm) => setParentId(realm?.id!),
+    []
+  );
+
   const save = async (component: ComponentRepresentation) => {
     const saveComponent = {
       ...component,
       providerId,
       providerType: "org.keycloak.storage.UserStorageProvider",
-      parentId: realm,
+      parentId,
     };
     try {
       if (!id) {
         await adminClient.components.create(saveComponent);
-        history.push(toUserFederation({ realm }));
+        history.push(toUserFederation({ realm: realmName }));
       } else {
         await adminClient.components.update({ id }, saveComponent);
       }
@@ -128,7 +138,9 @@ export default function CustomProviderSettings() {
             </Button>
             <Button
               variant="link"
-              onClick={() => history.push(toUserFederation({ realm }))}
+              component={(props) => (
+                <Link {...props} to={toUserFederation({ realm: realmName })} />
+              )}
               data-testid="custom-cancel"
             >
               {t("common:cancel")}
