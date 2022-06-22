@@ -22,35 +22,20 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
-import java.util.Objects;
 
-/**
- * @author Vaclav Muzikar <vmuzikar@redhat.com>
- */
 public class ValueOrSecret {
-    private String name;
     private String value;
     private SecretKeySelector secret;
 
     public ValueOrSecret() {
     }
 
-    public ValueOrSecret(String name, String value) {
-        this.name = name;
+    public ValueOrSecret(String value) {
         this.value = value;
     }
 
-    public ValueOrSecret(String name, SecretKeySelector secret) {
-        this.name = name;
+    public ValueOrSecret(SecretKeySelector secret) {
         this.secret = secret;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
     }
 
     public String getValue() {
@@ -67,19 +52,6 @@ public class ValueOrSecret {
 
     public void setSecret(SecretKeySelector secret) {
         this.secret = secret;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        ValueOrSecret that = (ValueOrSecret) o;
-        return getName().equals(that.getName()); // comparing just name as it doesn't make sense to have more than one config value with the same name
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(getName());
     }
 
     public String readConfigurationValue(KubernetesClient client, String namespace) {

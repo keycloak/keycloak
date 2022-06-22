@@ -63,6 +63,7 @@ public class LoggingOptions {
             .category(OptionCategory.LOGGING)
             .defaultValue(DEFAULT_CONSOLE_OUTPUT)
             .description("Set the log output to JSON or default (plain) unstructured logging.")
+            .runtimes(Option.Runtime.QUARKUS, Option.Runtime.DOCS)
             .expectedValues(Output.values())
             .build();
 

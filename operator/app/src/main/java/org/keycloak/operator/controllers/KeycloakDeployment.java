@@ -16,6 +16,8 @@
  */
 package org.keycloak.operator.controllers;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
@@ -25,16 +27,19 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
+import io.fabric8.kubernetes.api.model.SecretKeySelector;
 import io.fabric8.kubernetes.api.model.VolumeBuilder;
 import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.utils.Serialization;
 import io.quarkus.logging.Log;
 import org.keycloak.operator.Config;
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusBuilder;
+import org.keycloak.operator.crds.v2alpha1.deployment.NamedValueOrSecret;
 import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
 
 import java.nio.charset.StandardCharsets;
@@ -60,6 +65,8 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
     private final String adminSecretName;
 
     private Set<String> serverConfigSecretsNames;
+    DA QUI
+    private Set<String> serverConfigSecretsToBeMounted;
 
     public KeycloakDeployment(KubernetesClient client, Config config, Keycloak keycloakCR, Deployment existingDeployment, String adminSecretName) {
         super(client, keycloakCR);
@@ -499,18 +506,68 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
         return baseDeployment;
     }
 
+    // Methods used by the generated code
+    public static <T> EnvVar getEnvVar(String name, T value) {
+        if (value == null) {
+            return null;
+        }
+
+        var builder = new EnvVarBuilder().withName(name);
+        if (value instanceof ValueOrSecret) {
+            var valueOrSec = (ValueOrSecret) value;
+            if (valueOrSec.getSecret() != null) {
+                builder.withValueFrom(
+                        new EnvVarSourceBuilder().withSecretKeyRef(valueOrSec.getSecret()).build());
+            } else {
+                builder.withValue(valueOrSec.getValue());
+            }
+        } else if (value instanceof SecretKeySelector) {
+            var secretKey = (SecretKeySelector) value;
+            builder
+                .withValue("/mnt/" + secretKey.getName() + "-volume/" + secretKey.getKey());
+        } else {
+            builder
+                .withValue(value.toString());
+        }
+
+        return builder.build();
+    }
+
+    public static <T> String getWatchedSecret(T value) {
+        if (value instanceof ValueOrSecret) {
+            var valueOrSec = (ValueOrSecret) value;
+            // TODO check that watching plays well with optionals
+            if (valueOrSec.getSecret() != null) {
+                return valueOrSec.getSecret().getName();
+            }
+        } else if (value instanceof SecretKeySelector) {
+            var secretKey = (SecretKeySelector) value;
+            return secretKey.getName();
+        }
+
+        return null;
+    }
+
+    public static <T> String getMountSecret(T value) {
+        if (value instanceof SecretKeySelector) {
+            var secretKey = (SecretKeySelector) value;
+            return secretKey.getName();
+        }
+
+        return null;
+    }
+
     private List<EnvVar> getEnvVars() {
         // default config values
-        List<ValueOrSecret> serverConfig = Constants.DEFAULT_DIST_CONFIG.entrySet().stream()
-                .map(e -> new ValueOrSecret(e.getKey(), e.getValue()))
+        List<NamedValueOrSecret> serverConfig = Constants.DEFAULT_DIST_CONFIG.entrySet().stream()
+                .map(e -> new NamedValueOrSecret(e.getKey(), e.getValue()))
                 .collect(Collectors.toList());
 
-        // merge with the CR; the values in CR take precedence
-        // TODO: fix me
-//        if (keycloakCR.getSpec().getServerConfiguration() != null) {
-//            serverConfig.removeAll(keycloakCR.getSpec().getServerConfiguration());
-//            serverConfig.addAll(keycloakCR.getSpec().getServerConfiguration());
-//        }
+        // merge with the additionalServerConfig CR; the values in CR take precedence
+        if (keycloakCR.getSpec().getAdditionalServerConfiguration() != null) {
+            serverConfig.removeAll(keycloakCR.getSpec().getAdditionalServerConfiguration());
+            serverConfig.addAll(keycloakCR.getSpec().getAdditionalServerConfiguration());
+        }
 
         // set env vars
         serverConfigSecretsNames = new HashSet<>();
@@ -528,6 +585,16 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
                     return envBuilder.build();
                 })
                 .collect(Collectors.toList());
+
+        Log.warn("DEBUG");
+        keycloakCR
+                .getSpec()
+                .getServerConfiguration()
+                .getAllEnvVars()
+                .forEach(ev -> Log.warn(ev.getName() + " -> " + ev.getValue()));
+
+        envVars.addAll(keycloakCR.getSpec().getServerConfiguration().getAllEnvVars());
+        serverConfigSecretsNames.addAll(keycloakCR.getSpec().getServerConfiguration().getAllWatchedSecrets());
         Log.infof("Found config secrets names: %s", serverConfigSecretsNames);
 
         envVars.add(

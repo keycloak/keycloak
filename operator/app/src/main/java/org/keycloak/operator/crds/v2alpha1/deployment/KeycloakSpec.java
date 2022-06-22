@@ -32,13 +32,12 @@ public class KeycloakSpec {
     @JsonPropertyDescription("Custom Keycloak image to be used.")
     private String image;
 
-    @JsonPropertyDescription("Configuration of the Keycloak server.\n" +
-            "expressed as a keys (reference: https://www.keycloak.org/server/all-config) and values that can be either direct values or references to secrets.")
+    @JsonPropertyDescription("Configuration of the Keycloak server (reference: https://www.keycloak.org/server/all-config).")
     private ServerConfig serverConfiguration;
 
     @JsonPropertyDescription("Additional configuration for the Keycloak server.\n" +
             "expressed as a keys (reference: https://www.keycloak.org/server/all-config) and values that can be either direct values or references to secrets.")
-    private List<ValueOrSecret> additionalServerConfiguration; // can't use Set due to a bug in Sundrio https://github.com/sundrio/sundrio/issues/316
+    private List<NamedValueOrSecret> additionalServerConfiguration; // can't use Set due to a bug in Sundrio https://github.com/sundrio/sundrio/issues/316
 
     @NotNull
     @JsonPropertyDescription("Hostname for the Keycloak server.\n" +
@@ -121,11 +120,11 @@ public class KeycloakSpec {
         this.serverConfiguration = serverConfiguration;
     }
 
-    public List<ValueOrSecret> getAdditionalServerConfiguration() {
+    public List<NamedValueOrSecret> getAdditionalServerConfiguration() {
         return additionalServerConfiguration;
     }
 
-    public void setAdditionalServerConfiguration(List<ValueOrSecret> serverConfiguration) {
+    public void setAdditionalServerConfiguration(List<NamedValueOrSecret> additionalServerConfiguration) {
         this.additionalServerConfiguration = additionalServerConfiguration;
     }
 }
