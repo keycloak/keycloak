@@ -67,6 +67,7 @@ import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserLoginFailureModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.dblock.DBLockProvider;
 import org.keycloak.models.map.client.MapProtocolMapperEntity;
 import org.keycloak.models.map.client.MapProtocolMapperEntityImpl;
@@ -130,6 +131,12 @@ import org.keycloak.models.map.storage.jpa.role.entity.JpaRoleEntity;
 import org.keycloak.models.map.storage.jpa.singleUseObject.JpaSingleUseObjectMapKeycloakTransaction;
 import org.keycloak.models.map.storage.jpa.singleUseObject.entity.JpaSingleUseObjectEntity;
 import org.keycloak.models.map.storage.jpa.updater.MapJpaUpdaterProvider;
+import org.keycloak.models.map.storage.jpa.user.JpaUserMapKeycloakTransaction;
+import org.keycloak.models.map.storage.jpa.user.entity.JpaUserConsentEntity;
+import org.keycloak.models.map.storage.jpa.user.entity.JpaUserEntity;
+import org.keycloak.models.map.storage.jpa.user.entity.JpaUserFederatedIdentityEntity;
+import org.keycloak.models.map.user.MapUserCredentialEntity;
+import org.keycloak.models.map.user.MapUserCredentialEntityImpl;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
@@ -153,26 +160,26 @@ public class JpaMapStorageProviderFactory implements
     private final String sessionTxKey;
 
     public final static DeepCloner CLONER = new DeepCloner.Builder()
-        //auth-session
+        //auth-sessions
         .constructor(JpaRootAuthenticationSessionEntity.class,  JpaRootAuthenticationSessionEntity::new)
         .constructor(JpaAuthenticationSessionEntity.class,      JpaAuthenticationSessionEntity::new)
-        //authz
+        //authorization
         .constructor(JpaResourceServerEntity.class,             JpaResourceServerEntity::new)
         .constructor(JpaResourceEntity.class,                   JpaResourceEntity::new)
         .constructor(JpaScopeEntity.class,                      JpaScopeEntity::new)
         .constructor(JpaPermissionEntity.class,                 JpaPermissionEntity::new)
         .constructor(JpaPolicyEntity.class,                     JpaPolicyEntity::new)
-        //client
+        //clients
         .constructor(JpaClientEntity.class,                     JpaClientEntity::new)
         .constructor(MapProtocolMapperEntity.class,             MapProtocolMapperEntityImpl::new)
-        //client-scope
+        //client-scopes
         .constructor(JpaClientScopeEntity.class,                JpaClientScopeEntity::new)
-        //event
+        //events
         .constructor(JpaAdminEventEntity.class,                 JpaAdminEventEntity::new)
         .constructor(JpaAuthEventEntity.class,                  JpaAuthEventEntity::new)
-        //group
+        //groups
         .constructor(JpaGroupEntity.class,                      JpaGroupEntity::new)
-        //realm
+        //realms
         .constructor(JpaRealmEntity.class,                      JpaRealmEntity::new)
         .constructor(JpaComponentEntity.class,                  JpaComponentEntity::new)
         .constructor(MapAuthenticationExecutionEntity.class,    MapAuthenticationExecutionEntityImpl::new)
@@ -185,34 +192,48 @@ public class JpaMapStorageProviderFactory implements
         .constructor(MapRequiredActionProviderEntity.class,     MapRequiredActionProviderEntityImpl::new)
         .constructor(MapRequiredCredentialEntity.class,         MapRequiredCredentialEntityImpl::new)
         .constructor(MapWebAuthnPolicyEntity.class,             MapWebAuthnPolicyEntityImpl::new)
-        //role
+        //roles
         .constructor(JpaRoleEntity.class,                       JpaRoleEntity::new)
-        //single-use-object
+        //single-use-objects
         .constructor(JpaSingleUseObjectEntity.class,            JpaSingleUseObjectEntity::new)
-        //user-login-failure
+        //user-login-failures
         .constructor(JpaUserLoginFailureEntity.class,           JpaUserLoginFailureEntity::new)
+        //users
+        .constructor(JpaUserEntity.class,                       JpaUserEntity::new)
+        .constructor(JpaUserConsentEntity.class,                JpaUserConsentEntity::new)
+        .constructor(JpaUserFederatedIdentityEntity.class,      JpaUserFederatedIdentityEntity::new)
+        .constructor(MapUserCredentialEntity.class,             MapUserCredentialEntityImpl::new)
         .build();
 
     private static final Map<Class<?>, Function<EntityManager, MapKeycloakTransaction>> MODEL_TO_TX = new HashMap<>();
     static {
+        //auth-sessions
         MODEL_TO_TX.put(RootAuthenticationSessionModel.class,   JpaRootAuthenticationSessionMapKeycloakTransaction::new);
-        MODEL_TO_TX.put(ClientScopeModel.class,                 JpaClientScopeMapKeycloakTransaction::new);
-        MODEL_TO_TX.put(ClientModel.class,                      JpaClientMapKeycloakTransaction::new);
-        //event
-        MODEL_TO_TX.put(AdminEvent.class,                       JpaAdminEventMapKeycloakTransaction::new);
-        MODEL_TO_TX.put(Event.class,                            JpaAuthEventMapKeycloakTransaction::new);
-        MODEL_TO_TX.put(GroupModel.class,                       JpaGroupMapKeycloakTransaction::new);
-        MODEL_TO_TX.put(RealmModel.class,                       JpaRealmMapKeycloakTransaction::new);
-        MODEL_TO_TX.put(RoleModel.class,                        JpaRoleMapKeycloakTransaction::new);
-        MODEL_TO_TX.put(ActionTokenValueModel.class,            JpaSingleUseObjectMapKeycloakTransaction::new);
-        MODEL_TO_TX.put(UserLoginFailureModel.class,            JpaUserLoginFailureMapKeycloakTransaction::new);
-
-        //authz
+        //authorization
         MODEL_TO_TX.put(ResourceServer.class,                   JpaResourceServerMapKeycloakTransaction::new);
         MODEL_TO_TX.put(Resource.class,                         JpaResourceMapKeycloakTransaction::new);
         MODEL_TO_TX.put(Scope.class,                            JpaScopeMapKeycloakTransaction::new);
         MODEL_TO_TX.put(PermissionTicket.class,                 JpaPermissionMapKeycloakTransaction::new);
         MODEL_TO_TX.put(Policy.class,                           JpaPolicyMapKeycloakTransaction::new);
+        //clients
+        MODEL_TO_TX.put(ClientModel.class,                      JpaClientMapKeycloakTransaction::new);
+        //client-scopes
+        MODEL_TO_TX.put(ClientScopeModel.class,                 JpaClientScopeMapKeycloakTransaction::new);
+        //events
+        MODEL_TO_TX.put(AdminEvent.class,                       JpaAdminEventMapKeycloakTransaction::new);
+        MODEL_TO_TX.put(Event.class,                            JpaAuthEventMapKeycloakTransaction::new);
+        //groups
+        MODEL_TO_TX.put(GroupModel.class,                       JpaGroupMapKeycloakTransaction::new);
+        //realms
+        MODEL_TO_TX.put(RealmModel.class,                       JpaRealmMapKeycloakTransaction::new);
+        //roles
+        MODEL_TO_TX.put(RoleModel.class,                        JpaRoleMapKeycloakTransaction::new);
+        //single-use-objects
+        MODEL_TO_TX.put(ActionTokenValueModel.class,            JpaSingleUseObjectMapKeycloakTransaction::new);
+        //user-login-failures
+        MODEL_TO_TX.put(UserLoginFailureModel.class,            JpaUserLoginFailureMapKeycloakTransaction::new);
+        //users
+        MODEL_TO_TX.put(UserModel.class,                        JpaUserMapKeycloakTransaction::new);
     }
 
     public JpaMapStorageProviderFactory() {

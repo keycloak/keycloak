@@ -196,7 +196,7 @@ public class ConcurrentTransactionsTest extends AbstractTestRealmKeycloakTest {
 
     // KEYCLOAK-3296 , KEYCLOAK-3494
     @Test
-    @ModelTest
+    @ModelTest(skipForMapStorage = true) // skipped for map storage - to be revisited (GHI #12910)
     public void removeUserAttribute(KeycloakSession session) throws Exception {
 
         try {
