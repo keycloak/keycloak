@@ -32,5 +32,6 @@
 
     <modules>
         <module>fips1402</module>
+        <module>default</module>
     </modules>
 </project>

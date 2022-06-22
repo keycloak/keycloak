@@ -25,7 +25,9 @@ import org.keycloak.adapters.authentication.ClientCredentialsProviderUtils;
 import org.keycloak.adapters.authorization.PolicyEnforcer;
 import org.keycloak.adapters.rotation.HardcodedPublicKeyLocator;
 import org.keycloak.adapters.rotation.JWKPublicKeyLocator;
+import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.enums.SslRequired;
+import org.keycloak.common.util.BouncyIntegration;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.enums.TokenStore;
 import org.keycloak.representations.adapters.config.AdapterConfig;
@@ -181,6 +183,8 @@ public class KeycloakDeploymentBuilder {
     }
 
     public static KeycloakDeployment build(InputStream is) {
+        CryptoIntegration.setClassLoader(KeycloakDeploymentBuilder.class.getClassLoader());
+        log.debugv("BouncyCastle provider: {0}", BouncyIntegration.PROVIDER);
         AdapterConfig adapterConfig = loadAdapterConfig(is);
         return new KeycloakDeploymentBuilder().internalBuild(adapterConfig);
     }

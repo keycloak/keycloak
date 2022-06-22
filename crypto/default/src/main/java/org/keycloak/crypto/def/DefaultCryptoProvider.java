@@ -1,34 +1,30 @@
-package org.keycloak.crypto.fips;
+package org.keycloak.crypto.def;
 
 import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
 import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 
-import org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.keycloak.common.crypto.CryptoProvider;
 import org.keycloak.common.crypto.CryptoProviderTypes;
 
-
 /**
- * Integration based on FIPS 140-2
- *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class FIPS1402Provider implements CryptoProvider {
+public class DefaultCryptoProvider implements CryptoProvider {
 
     private Map<String, Supplier<?>> providers = new HashMap<>();
 
-    public FIPS1402Provider() {
-        providers.put(CryptoProviderTypes.BC_SECURITY_PROVIDER, BouncyCastleFipsProvider::new);
-        providers.put(CryptoProviderTypes.AES_KEY_WRAP_ALGORITHM_PROVIDER, FIPSAesKeyWrapAlgorithmProvider::new);
+    public DefaultCryptoProvider() {
+        providers.put(CryptoProviderTypes.BC_SECURITY_PROVIDER, BouncyCastleProvider::new);
+        providers.put(CryptoProviderTypes.AES_KEY_WRAP_ALGORITHM_PROVIDER, AesKeyWrapAlgorithmProvider::new);
     }
 
     @Override
-    public SecureRandom getSecureRandom() throws NoSuchAlgorithmException, NoSuchProviderException {
-        return SecureRandom.getInstance("DEFAULT","BCFIPS");
+    public SecureRandom getSecureRandom() throws NoSuchAlgorithmException {
+        return SecureRandom.getInstance("SHA1PRNG");
     }
 
     @Override
