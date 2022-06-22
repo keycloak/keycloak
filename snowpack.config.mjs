@@ -40,6 +40,8 @@ export default {
   ],
   optimize: {
     bundle: true,
+    splitting: true,
+    minify: true,
   },
   devOptions: {
     hmrErrorOverlay: false,
