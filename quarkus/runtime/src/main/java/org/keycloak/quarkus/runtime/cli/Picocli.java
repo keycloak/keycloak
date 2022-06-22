@@ -260,7 +260,7 @@ public final class Picocli {
             if (runtimeValue == null && isNotBlank(persistedValue)) {
                 PropertyMapper mapper = PropertyMappers.getMapper(propertyName);
 
-                if (mapper != null && persistedValue.equals(mapper.getDefaultValue().orElse(null))) {
+                if (mapper != null && persistedValue.equals(mapper.getDefaultValue().map(Object::toString).orElse(null))) {
                     // same as default
                     continue;
                 }
