@@ -587,10 +587,12 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
     }
 
     private boolean canManageByGroup(UserModel user) {
+        if (authz == null) return false;
         return evaluateHierarchy(user, (group) -> root.groups().canManageMembers(group));
 
     }
     private boolean canViewByGroup(UserModel user) {
+        if (authz == null) return false;
         return evaluateHierarchy(user, (group) -> root.groups().getGroupsWithViewPermission(group));
     }
 
