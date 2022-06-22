@@ -223,8 +223,6 @@ public class LegacyDatastoreProvider implements DatastoreProvider, LegacyStoreMa
         return new LegacyExportImportManager(session);
     }
 
-    @Override
-    @Deprecated
     public MigrationManager getMigrationManager() {
         return new LegacyMigrationManager(session);
     }

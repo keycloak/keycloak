@@ -21,21 +21,20 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.storage.DatastoreProvider;
+import org.keycloak.storage.datastore.LegacyDatastoreProvider;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-@Deprecated // as this will be moved to a legacy module
 public class MigrationModelManager {
 
-
     public static void migrate(KeycloakSession session) {
-        session.getProvider(DatastoreProvider.class).getMigrationManager().migrate();
+        ((LegacyDatastoreProvider) session.getProvider(DatastoreProvider.class)).getMigrationManager().migrate();
     }
 
     public static void migrateImport(KeycloakSession session, RealmModel realm, RealmRepresentation rep, boolean skipUserDependent) {
-        session.getProvider(DatastoreProvider.class).getMigrationManager().migrate(realm, rep, skipUserDependent);
+        ((LegacyDatastoreProvider) session.getProvider(DatastoreProvider.class)).getMigrationManager().migrate(realm, rep, skipUserDependent);
     }
 
 }

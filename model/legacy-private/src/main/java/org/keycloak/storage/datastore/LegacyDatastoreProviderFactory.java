@@ -20,6 +20,7 @@ package org.keycloak.storage.datastore;
 import org.keycloak.Config;
 import org.keycloak.Config.Scope;
 import org.keycloak.common.Profile;
+import org.keycloak.migration.MigrationModelManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.utils.PostMigrationEvent;
@@ -33,6 +34,7 @@ import org.keycloak.services.scheduled.ClusterAwareScheduledTaskRunner;
 import org.keycloak.services.scheduled.ScheduledTaskRunner;
 import org.keycloak.storage.DatastoreProvider;
 import org.keycloak.storage.DatastoreProviderFactory;
+import org.keycloak.storage.LegacyStoreMigrateRepresentationEvent;
 import org.keycloak.storage.LegacyStoreSyncEvent;
 import org.keycloak.storage.managers.UserStorageSyncManager;
 import org.keycloak.timer.TimerProvider;
@@ -86,6 +88,9 @@ public class LegacyDatastoreProviderFactory implements DatastoreProviderFactory,
         } else if (event instanceof LegacyStoreSyncEvent) {
             LegacyStoreSyncEvent ev = (LegacyStoreSyncEvent) event;
             UserStorageSyncManager.notifyToRefreshPeriodicSyncAll(ev.getSession(), ev.getRealm(), ev.getRemoved());
+        } else if (event instanceof LegacyStoreMigrateRepresentationEvent) {
+            LegacyStoreMigrateRepresentationEvent ev = (LegacyStoreMigrateRepresentationEvent) event;
+            MigrationModelManager.migrateImport(ev.getSession(), ev.getRealm(), ev.getRep(), ev.isSkipUserDependent());
         }
     }    
 
