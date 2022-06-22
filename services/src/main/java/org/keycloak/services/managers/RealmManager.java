@@ -19,7 +19,6 @@ package org.keycloak.services.managers;
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.common.enums.SslRequired;
-import org.keycloak.migration.MigrationModelManager;
 import org.keycloak.models.AccountRoles;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.BrowserSecurityHeaders;
@@ -52,6 +51,7 @@ import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.sessions.AuthenticationSessionProvider;
+import org.keycloak.storage.LegacyStoreMigrateRepresentationEvent;
 import org.keycloak.storage.LegacyStoreSyncEvent;
 import org.keycloak.services.clientregistration.policy.DefaultClientRegistrationPolicies;
 
@@ -592,7 +592,7 @@ public class RealmManager {
         setupClientRegistrations(realm);
 
         if (rep.getKeycloakVersion() != null) {
-            MigrationModelManager.migrateImport(session, realm, rep, skipUserDependent);
+            LegacyStoreMigrateRepresentationEvent.fire(session, realm, rep, skipUserDependent);
         }
 
         session.clientPolicy().updateRealmModelFromRepresentation(realm, rep);

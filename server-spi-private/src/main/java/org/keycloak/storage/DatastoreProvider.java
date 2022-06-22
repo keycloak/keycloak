@@ -41,7 +41,4 @@ public interface DatastoreProvider extends Provider {
     UserProvider users();
 
     ExportImportManager getExportImportManager();
-
-    MigrationManager getMigrationManager();
-
 }

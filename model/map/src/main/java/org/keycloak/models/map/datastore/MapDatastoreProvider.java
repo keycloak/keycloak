@@ -21,14 +21,11 @@ import org.keycloak.models.ClientProvider;
 import org.keycloak.models.ClientScopeProvider;
 import org.keycloak.models.GroupProvider;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleProvider;
 import org.keycloak.models.UserProvider;
-import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.storage.DatastoreProvider;
 import org.keycloak.storage.ExportImportManager;
-import org.keycloak.storage.MigrationManager;
 
 public class MapDatastoreProvider implements DatastoreProvider {
 
@@ -75,21 +72,6 @@ public class MapDatastoreProvider implements DatastoreProvider {
     @Override
     public ExportImportManager getExportImportManager() {
         return new MapExportImportManager(session);
-    }
-
-    @Override
-    public MigrationManager getMigrationManager() {
-        return new MigrationManager() {
-            @Override
-            public void migrate() {
-                // Do not migrate the datasources
-            }
-
-            @Override
-            public void migrate(RealmModel realm, RealmRepresentation rep, boolean skipUserDependent) {
-                // Do not migrate the representation: assume it is the latest
-            }
-        };
     }
 
 }
