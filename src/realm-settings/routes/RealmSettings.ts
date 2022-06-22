@@ -11,12 +11,12 @@ export type RealmSettingsTab =
   | "keys"
   | "events"
   | "localization"
-  | "securityDefences"
+  | "security-defenses"
   | "sessions"
   | "tokens"
-  | "clientPolicies"
-  | "userProfile"
-  | "userRegistration";
+  | "client-policies"
+  | "user-profile"
+  | "user-registration";
 
 export type RealmSettingsParams = {
   realm: string;

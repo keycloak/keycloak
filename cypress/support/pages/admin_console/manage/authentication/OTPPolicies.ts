@@ -1,9 +1,6 @@
 export default class OTPPolicies {
   goToTab() {
-    cy.get("#pf-tab-policies-policies")
-      .click()
-      .get("#pf-tab-2-otpPolicy")
-      .click();
+    cy.findAllByTestId("policies").click().get("#pf-tab-2-otpPolicy").click();
     return this;
   }
 

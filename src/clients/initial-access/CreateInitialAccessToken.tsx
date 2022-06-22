@@ -57,7 +57,7 @@ export default function CreateInitialAccessToken() {
           toggleDialog={() => {
             setToken("");
             addAlert(t("tokenSaveSuccess"), AlertVariant.success);
-            history.push(toClients({ realm, tab: "initialAccessToken" }));
+            history.push(toClients({ realm, tab: "initial-access-token" }));
           }}
         />
       )}
@@ -147,7 +147,7 @@ export default function CreateInitialAccessToken() {
               component={(props) => (
                 <Link
                   {...props}
-                  to={toClients({ realm, tab: "initialAccessToken" })}
+                  to={toClients({ realm, tab: "initial-access-token" })}
                 />
               )}
             >

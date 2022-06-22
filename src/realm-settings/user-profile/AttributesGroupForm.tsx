@@ -99,7 +99,7 @@ export default function AttributesGroupForm() {
     const success = await save({ ...config, groups });
 
     if (success) {
-      history.push(toUserProfile({ realm, tab: "attributesGroup" }));
+      history.push(toUserProfile({ realm, tab: "attributes-group" }));
     }
   };
 
@@ -193,7 +193,7 @@ export default function AttributesGroupForm() {
               component={(props) => (
                 <Link
                   {...props}
-                  to={toUserProfile({ realm, tab: "attributesGroup" })}
+                  to={toUserProfile({ realm, tab: "attributes-group" })}
                 />
               )}
             >

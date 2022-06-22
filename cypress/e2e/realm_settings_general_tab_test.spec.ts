@@ -29,10 +29,16 @@ describe("Realm settings general tab tests", () => {
 
   it("Test all general tab switches", () => {
     sidebarPage.goToRealmSettings();
-    realmSettingsPage.toggleSwitch(realmSettingsPage.managedAccessSwitch);
+    realmSettingsPage.toggleSwitch(
+      realmSettingsPage.managedAccessSwitch,
+      false
+    );
     realmSettingsPage.save(realmSettingsPage.generalSaveBtn);
     masthead.checkNotificationMessage("Realm successfully updated", true);
-    realmSettingsPage.toggleSwitch(realmSettingsPage.managedAccessSwitch);
+    realmSettingsPage.toggleSwitch(
+      realmSettingsPage.managedAccessSwitch,
+      false
+    );
     realmSettingsPage.save(realmSettingsPage.generalSaveBtn);
     masthead.checkNotificationMessage("Realm successfully updated", true);
 

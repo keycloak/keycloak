@@ -6,7 +6,7 @@ import type { RouteDef } from "../../route-config";
 export type AddClientPolicyParams = { realm: string };
 
 export const AddClientPolicyRoute: RouteDef = {
-  path: "/:realm/realm-settings/clientPolicies/policies/add-client-policy",
+  path: "/:realm/realm-settings/client-policies/policies/add-client-policy",
   component: lazy(() => import("../NewClientPolicyForm")),
   breadcrumb: (t) => t("realm-settings:createPolicy"),
   access: "manage-clients",

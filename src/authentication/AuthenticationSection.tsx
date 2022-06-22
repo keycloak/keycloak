@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useHistory } from "react-router-dom";
 import { Trans, useTranslation } from "react-i18next";
 import { sortBy } from "lodash-es";
 import {
@@ -16,7 +16,6 @@ import {
 import type AuthenticationFlowRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticationFlowRepresentation";
 import { useAdminClient } from "../context/auth/AdminClient";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
-import { KeycloakTabs } from "../components/keycloak-tabs/KeycloakTabs";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useRealm } from "../context/realm-context/RealmContext";
@@ -32,6 +31,11 @@ import { Policies } from "./policies/Policies";
 import helpUrls from "../help-urls";
 import { BindFlowDialog } from "./BindFlowDialog";
 import { UsedBy } from "./components/UsedBy";
+import {
+  routableTab,
+  RoutableTabs,
+} from "../components/routable-tabs/RoutableTabs";
+import { AuthenticationTab, toAuthentication } from "./routes/Authentication";
 
 import "./authentication-section.css";
 
@@ -54,6 +58,7 @@ export default function AuthenticationSection() {
   const { t } = useTranslation("authentication");
   const adminClient = useAdminClient();
   const { realm } = useRealm();
+  const history = useHistory();
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
   const { addAlert, addError } = useAlerts();
@@ -162,6 +167,12 @@ export default function AuthenticationSection() {
     </>
   );
 
+  const route = (tab: AuthenticationTab) =>
+    routableTab({
+      to: toAuthentication({ realm, tab }),
+      history,
+    });
+
   return (
     <>
       <DeleteConfirm />
@@ -192,10 +203,14 @@ export default function AuthenticationSection() {
         divider={false}
       />
       <PageSection variant="light" className="pf-u-p-0">
-        <KeycloakTabs isBox>
+        <RoutableTabs
+          isBox
+          defaultLocation={toAuthentication({ realm, tab: "flows" })}
+        >
           <Tab
-            eventKey="flows"
+            data-testid="flows"
             title={<TabTitleText>{t("flows")}</TabTitleText>}
+            {...route("flows")}
           >
             <KeycloakDataTable
               key={key}
@@ -275,20 +290,20 @@ export default function AuthenticationSection() {
             />
           </Tab>
           <Tab
-            id="requiredActions"
-            eventKey="requiredActions"
+            data-testid="requiredActions"
             title={<TabTitleText>{t("requiredActions")}</TabTitleText>}
+            {...route("required-actions")}
           >
             <RequiredActions />
           </Tab>
           <Tab
-            id="policies"
-            eventKey="policies"
+            data-testid="policies"
             title={<TabTitleText>{t("policies")}</TabTitleText>}
+            {...route("policies")}
           >
             <Policies />
           </Tab>
-        </KeycloakTabs>
+        </RoutableTabs>
       </PageSection>
     </>
   );

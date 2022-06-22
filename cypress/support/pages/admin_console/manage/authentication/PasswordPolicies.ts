@@ -1,6 +1,6 @@
 export default class PasswordPolicies {
   goToTab() {
-    cy.get("#pf-tab-policies-policies").click();
+    cy.findAllByTestId("policies").click();
     return this;
   }
 

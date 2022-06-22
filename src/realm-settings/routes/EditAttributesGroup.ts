@@ -9,7 +9,7 @@ export type EditAttributesGroupParams = {
 };
 
 export const EditAttributesGroupRoute: RouteDef = {
-  path: "/:realm/realm-settings/userProfile/attributesGroup/edit/:name",
+  path: "/:realm/realm-settings/user-profile/attributesGroup/edit/:name",
   component: lazy(() => import("../user-profile/AttributesGroupDetails")),
   breadcrumb: (t) => t("attributes-group:editGroupText"),
   access: "view-realm",

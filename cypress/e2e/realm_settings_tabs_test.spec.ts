@@ -30,7 +30,10 @@ describe("Realm settings tabs tests", () => {
   it("shows the 'user profile' tab if enabled", () => {
     sidebarPage.goToRealmSettings();
     cy.findByTestId(realmSettingsPage.userProfileTab).should("not.exist");
-    realmSettingsPage.toggleSwitch(realmSettingsPage.profileEnabledSwitch);
+    realmSettingsPage.toggleSwitch(
+      realmSettingsPage.profileEnabledSwitch,
+      false
+    );
     realmSettingsPage.save(realmSettingsPage.generalSaveBtn);
     masthead.checkNotificationMessage("Realm successfully updated");
     cy.findByTestId(realmSettingsPage.userProfileTab).should("exist");
@@ -46,8 +49,6 @@ describe("Realm settings tabs tests", () => {
     realmSettingsPage.toggleSwitch(realmSettingsPage.rememberMeSwitch);
 
     realmSettingsPage.toggleSwitch(realmSettingsPage.loginWithEmailSwitch);
-
-    realmSettingsPage.toggleSwitch(realmSettingsPage.duplicateEmailsSwitch);
 
     // Check values
     cy.findByTestId(realmSettingsPage.userRegSwitch).should("have.value", "on");
@@ -87,7 +88,9 @@ describe("Realm settings tabs tests", () => {
     realmSettingsPage.toggleCheck(realmSettingsPage.enableSslCheck);
     realmSettingsPage.toggleCheck(realmSettingsPage.enableStartTlsCheck);
     realmSettingsPage.fillHostField("localhost");
+    cy.intercept(`/admin/realms/${realmName}/users/*`).as("load");
     cy.findByTestId(realmSettingsPage.testConnectionButton).click();
+    cy.wait("@load");
 
     realmSettingsPage.fillEmailField(
       "example" + (Math.random() + 1).toString(36).substring(7) + "@example.com"

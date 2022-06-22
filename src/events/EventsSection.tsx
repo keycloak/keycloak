@@ -31,8 +31,7 @@ import moment from "moment";
 import React, { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Trans, useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
-import { KeycloakTabs } from "../components/keycloak-tabs/KeycloakTabs";
+import { Link, useHistory } from "react-router-dom";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { ViewHeader } from "../components/view-header/ViewHeader";
@@ -42,8 +41,14 @@ import { useRealm } from "../context/realm-context/RealmContext";
 import { toRealmSettings } from "../realm-settings/routes/RealmSettings";
 import { toUser } from "../user/routes/User";
 import { AdminEvents } from "./AdminEvents";
-import "./events.css";
 import helpUrls from "../help-urls";
+import {
+  routableTab,
+  RoutableTabs,
+} from "../components/routable-tabs/RoutableTabs";
+import { EventsTab, toEvents } from "./routes/Events";
+
+import "./events.css";
 
 type UserEventSearchForm = {
   client: string;
@@ -411,6 +416,13 @@ export default function EventsSection() {
     );
   };
 
+  const history = useHistory();
+  const route = (tab: EventsTab) =>
+    routableTab({
+      to: toEvents({ realm, tab }),
+      history,
+    });
+
   return (
     <>
       <ViewHeader
@@ -429,10 +441,13 @@ export default function EventsSection() {
         divider={false}
       />
       <PageSection variant="light" className="pf-u-p-0">
-        <KeycloakTabs isBox>
+        <RoutableTabs
+          isBox
+          defaultLocation={toEvents({ realm, tab: "user-events" })}
+        >
           <Tab
-            eventKey="userEvents"
             title={<TabTitleText>{t("userEvents")}</TabTitleText>}
+            {...route("user-events")}
           >
             <div className="keycloak__events_table">
               <KeycloakDataTable
@@ -486,13 +501,13 @@ export default function EventsSection() {
             </div>
           </Tab>
           <Tab
-            eventKey="adminEvents"
             title={<TabTitleText>{t("adminEvents")}</TabTitleText>}
             data-testid="admin-events-tab"
+            {...route("admin-events")}
           >
             <AdminEvents />
           </Tab>
-        </KeycloakTabs>
+        </RoutableTabs>
       </PageSection>
     </>
   );

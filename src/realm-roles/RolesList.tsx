@@ -78,7 +78,7 @@ export const RolesList = ({
     ) : (
       <>
         <Link
-          to={toRealmSettings({ realm: realmName, tab: "userRegistration" })}
+          to={toRealmSettings({ realm: realmName, tab: "user-registration" })}
         >
           {role.name}{" "}
         </Link>

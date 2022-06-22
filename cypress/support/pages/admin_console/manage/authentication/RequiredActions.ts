@@ -10,7 +10,7 @@ export default class RequiredActions {
   }
 
   goToTab() {
-    cy.get("#pf-tab-requiredActions-requiredActions").click();
+    cy.findByTestId("requiredActions").click();
   }
 
   enableAction(name: string) {

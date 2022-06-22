@@ -3,7 +3,7 @@ import { lazy } from "react";
 import { generatePath } from "react-router-dom";
 import type { RouteDef } from "../../route-config";
 
-export type ClientsTab = "list" | "initialAccessToken";
+export type ClientsTab = "list" | "initial-access-token";
 
 export type ClientsParams = {
   realm: string;

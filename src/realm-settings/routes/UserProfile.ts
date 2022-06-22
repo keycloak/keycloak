@@ -3,7 +3,7 @@ import { lazy } from "react";
 import { generatePath } from "react-router-dom";
 import type { RouteDef } from "../../route-config";
 
-export type UserProfileTab = "attributes" | "attributesGroup" | "jsonEditor";
+export type UserProfileTab = "attributes" | "attributes-group" | "json-editor";
 
 export type UserProfileParams = {
   realm: string;
@@ -11,7 +11,7 @@ export type UserProfileParams = {
 };
 
 export const UserProfileRoute: RouteDef = {
-  path: "/:realm/realm-settings/userProfile/:tab",
+  path: "/:realm/realm-settings/user-profile/:tab",
   component: lazy(() => import("../RealmSettingsSection")),
   breadcrumb: (t) => t("realm-settings:userProfile"),
   access: "view-realm",

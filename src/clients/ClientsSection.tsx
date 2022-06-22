@@ -13,11 +13,10 @@ import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/
 import type { ClientQuery } from "@keycloak/keycloak-admin-client/lib/resources/clients";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
+import { Link, useHistory } from "react-router-dom";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { formattedLinkTableCell } from "../components/external-link/FormattedLink";
-import { KeycloakTabs } from "../components/keycloak-tabs/KeycloakTabs";
 import {
   Action,
   KeycloakDataTable,
@@ -33,6 +32,11 @@ import { toImportClient } from "./routes/ImportClient";
 import { isRealmClient, getProtocolName } from "./utils";
 import helpUrls from "../help-urls";
 import { useAccess } from "../context/access/Access";
+import {
+  routableTab,
+  RoutableTabs,
+} from "../components/routable-tabs/RoutableTabs";
+import { ClientsTab, toClients } from "./routes/Clients";
 
 export default function ClientsSection() {
   const { t } = useTranslation("clients");
@@ -41,6 +45,7 @@ export default function ClientsSection() {
   const adminClient = useAdminClient();
   const { realm } = useRealm();
   const baseUrl = getBaseUrl(adminClient);
+  const history = useHistory();
 
   const [key, setKey] = useState(0);
   const refresh = () => setKey(new Date().getTime());
@@ -127,6 +132,12 @@ export default function ClientsSection() {
     );
   };
 
+  const route = (tab: ClientsTab) =>
+    routableTab({
+      to: toClients({ realm, tab }),
+      history,
+    });
+
   return (
     <>
       <ViewHeader
@@ -136,11 +147,18 @@ export default function ClientsSection() {
         divider={false}
       />
       <PageSection variant="light" className="pf-u-p-0">
-        <KeycloakTabs isBox>
+        <RoutableTabs
+          mountOnEnter
+          isBox
+          defaultLocation={toClients({
+            realm,
+            tab: "list",
+          })}
+        >
           <Tab
             data-testid="list"
-            eventKey="list"
             title={<TabTitleText>{t("clientsList")}</TabTitleText>}
+            {...route("list")}
           >
             <DeleteConfirm />
             <KeycloakDataTable
@@ -220,12 +238,12 @@ export default function ClientsSection() {
           </Tab>
           <Tab
             data-testid="initialAccessToken"
-            eventKey="initialAccessToken"
             title={<TabTitleText>{t("initialAccessToken")}</TabTitleText>}
+            {...route("initial-access-token")}
           >
             <InitialAccessTokenList />
           </Tab>
-        </KeycloakTabs>
+        </RoutableTabs>
       </PageSection>
     </>
   );

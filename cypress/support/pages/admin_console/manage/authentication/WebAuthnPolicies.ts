@@ -4,15 +4,12 @@ export default class WebAuthnPolicies {
     return this;
   }
   goToTab() {
-    cy.get("#pf-tab-policies-policies")
-      .click()
-      .get("#pf-tab-3-webauthnPolicy")
-      .click();
+    cy.findByTestId("policies").click().get("#pf-tab-3-webauthnPolicy").click();
     return this;
   }
 
   goToPasswordlessTab() {
-    cy.get("#pf-tab-policies-policies")
+    cy.findByTestId("policies")
       .click()
       .get("#pf-tab-4-webauthnPasswordlessPolicy")
       .click();

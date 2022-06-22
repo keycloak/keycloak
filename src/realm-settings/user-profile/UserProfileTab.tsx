@@ -38,7 +38,7 @@ export const UserProfileTab = () => {
           title={<TabTitleText>{t("attributesGroup")}</TabTitleText>}
           data-testid="attributesGroupTab"
           {...routableTab({
-            to: toUserProfile({ realm, tab: "attributesGroup" }),
+            to: toUserProfile({ realm, tab: "attributes-group" }),
             history,
           })}
         >
@@ -48,7 +48,7 @@ export const UserProfileTab = () => {
           title={<TabTitleText>{t("jsonEditor")}</TabTitleText>}
           data-testid="jsonEditorTab"
           {...routableTab({
-            to: toUserProfile({ realm, tab: "jsonEditor" }),
+            to: toUserProfile({ realm, tab: "json-editor" }),
             history,
           })}
         >

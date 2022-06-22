@@ -327,7 +327,7 @@ export const RealmSettingsTabs = ({
           <Tab
             title={<TabTitleText>{t("securityDefences")}</TabTitleText>}
             data-testid="rs-security-defenses-tab"
-            {...route("securityDefences")}
+            {...route("security-defenses")}
           >
             <SecurityDefenses realm={realm} save={save} />
           </Tab>
@@ -350,7 +350,7 @@ export const RealmSettingsTabs = ({
               <TabTitleText>{t("realm-settings:clientPolicies")}</TabTitleText>
             }
             data-testid="rs-clientPolicies-tab"
-            {...route("clientPolicies")}
+            {...route("client-policies")}
           >
             <RoutableTabs
               mountOnEnter
@@ -405,7 +405,7 @@ export const RealmSettingsTabs = ({
                   <TabTitleText>{t("realm-settings:userProfile")}</TabTitleText>
                 }
                 data-testid="rs-user-profile-tab"
-                {...route("userProfile")}
+                {...route("user-profile")}
               >
                 <UserProfileTab />
               </Tab>
@@ -413,7 +413,7 @@ export const RealmSettingsTabs = ({
           <Tab
             title={<TabTitleText>{t("userRegistration")}</TabTitleText>}
             data-testid="rs-userRegistration-tab"
-            {...route("userRegistration")}
+            {...route("user-registration")}
           >
             <UserRegistration />
           </Tab>

@@ -188,11 +188,11 @@ export default class RealmSettingsPage extends CommonPage {
   private clientPolicyDrpDwn = '[data-testid="action-dropdown"] button';
   private deleteclientPolicyDrpDwn = "deleteClientPolicyDropdown";
   private clientProfileOne =
-    'a[href*="realm-settings/clientPolicies/Test/edit-profile"]';
+    'a[href*="realm-settings/client-policies/Test/edit-profile"]';
   private clientProfileTwo =
-    'a[href*="realm-settings/clientPolicies/Edit/edit-profile"]';
+    'a[href*="realm-settings/client-policies/Edit/edit-profile"]';
   private clientPolicy =
-    'a[href*="realm-settings/clientPolicies/Test/edit-policy"]';
+    'a[href*="realm-settings/client-policies/Test/edit-policy"]';
   private reloadBtn = "reloadProfile";
   private addExecutor = "addExecutor";
   private addExecutorDrpDwn = ".pf-c-select__toggle";
@@ -381,8 +381,12 @@ export default class RealmSettingsPage extends CommonPage {
     cy.findByTestId(this.disabledKeysOption).click();
   }
 
-  toggleSwitch(switchName: string) {
+  toggleSwitch(switchName: string, waitFor: boolean | undefined = true) {
+    cy.intercept("/admin/realms/*").as("load");
     cy.findByTestId(switchName).click({ force: true });
+    if (waitFor) {
+      cy.wait("@load");
+    }
 
     return this;
   }
@@ -516,7 +520,7 @@ export default class RealmSettingsPage extends CommonPage {
     );
 
     cy.findByTestId(this.offlineSessionIdleInput).clear().type("7");
-    this.toggleSwitch(this.offlineSessionMaxSwitch);
+    this.toggleSwitch(this.offlineSessionMaxSwitch, false);
 
     cy.findByTestId(this.loginTimeoutInput).clear().type("9");
     this.changeTimeUnit(
@@ -533,7 +537,7 @@ export default class RealmSettingsPage extends CommonPage {
   }
 
   populateTokensPage() {
-    this.toggleSwitch(this.revokeRefreshTokenSwitch);
+    this.toggleSwitch(this.revokeRefreshTokenSwitch, false);
 
     cy.findByTestId(this.accessTokenLifespanInput)
       .focus()
@@ -840,7 +844,7 @@ export default class RealmSettingsPage extends CommonPage {
       `/admin/realms/${this.realmName}/client-policies/profiles*`
     ).as("profilesFetch");
     cy.get(
-      'a[href*="realm-settings/clientPolicies/' + name + '/edit-profile"]'
+      'a[href*="realm-settings/client-policies/' + name + '/edit-profile"]'
     ).click();
     cy.wait("@profilesFetch");
     return this;

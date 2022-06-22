@@ -102,7 +102,7 @@ describe("Realm settings events tab tests", () => {
     cy.findByTestId("rs-events-tab").click();
     cy.wait("@load");
     realmSettingsPage
-      .toggleSwitch(realmSettingsPage.enableEvents)
+      .toggleSwitch(realmSettingsPage.enableEvents, false)
       .save(realmSettingsPage.eventsUserSave);
     masthead.checkNotificationMessage("Successfully saved configuration");
     realmSettingsPage.clearEvents("user");
@@ -148,14 +148,14 @@ describe("Realm settings events tab tests", () => {
 
     cy.findByTestId("option-ecdsa-generated").click();
     realmSettingsPage.enterConsoleDisplayName("test_ecdsa-generated");
-    realmSettingsPage.toggleSwitch("active");
+    realmSettingsPage.toggleSwitch("active", false);
     realmSettingsPage.addProvider();
 
     realmSettingsPage.toggleAddProviderDropdown();
 
     cy.findByTestId("option-hmac-generated").click();
     realmSettingsPage.enterConsoleDisplayName("test_hmac-generated");
-    realmSettingsPage.toggleSwitch("enabled");
+    realmSettingsPage.toggleSwitch("enabled", false);
     realmSettingsPage.addProvider();
 
     realmSettingsPage.toggleAddProviderDropdown();

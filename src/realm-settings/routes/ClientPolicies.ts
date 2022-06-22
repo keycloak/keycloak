@@ -11,7 +11,7 @@ export type ClientPoliciesParams = {
 };
 
 export const ClientPoliciesRoute: RouteDef = {
-  path: "/:realm/realm-settings/clientPolicies/:tab",
+  path: "/:realm/realm-settings/client-policies/:tab",
   component: lazy(() => import("../RealmSettingsSection")),
   breadcrumb: (t) => t("realm-settings:clientPolicies"),
   access: "view-realm",

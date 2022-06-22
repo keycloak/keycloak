@@ -10,7 +10,7 @@ export type ExecutorParams = {
 };
 
 export const ExecutorRoute: RouteDef = {
-  path: "/:realm/realm-settings/clientPolicies/:profileName/edit-profile/:executorName",
+  path: "/:realm/realm-settings/client-policies/:profileName/edit-profile/:executorName",
   component: lazy(() => import("../ExecutorForm")),
   breadcrumb: (t) => t("realm-settings:executorDetails"),
   access: ["manage-realm"],

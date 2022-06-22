@@ -9,7 +9,7 @@ export type NewClientPolicyConditionParams = {
 };
 
 export const NewClientPolicyConditionRoute: RouteDef = {
-  path: "/:realm/realm-settings/clientPolicies/:policyName?/edit-policy/create-condition",
+  path: "/:realm/realm-settings/client-policies/:policyName?/edit-policy/create-condition",
   component: lazy(() => import("../NewClientPolicyCondition")),
   breadcrumb: (t) => t("realm-settings:addCondition"),
   access: "manage-clients",

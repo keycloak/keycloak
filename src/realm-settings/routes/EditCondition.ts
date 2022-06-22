@@ -10,7 +10,7 @@ export type EditClientPolicyConditionParams = {
 };
 
 export const EditClientPolicyConditionRoute: RouteDef = {
-  path: "/:realm/realm-settings/clientPolicies/:policyName?/edit-policy/:conditionName/edit-condition",
+  path: "/:realm/realm-settings/client-policies/:policyName?/edit-policy/:conditionName/edit-condition",
   component: lazy(() => import("../NewClientPolicyCondition")),
   breadcrumb: (t) => t("realm-settings:editCondition"),
   access: "manage-clients",

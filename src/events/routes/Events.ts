@@ -3,7 +3,7 @@ import { lazy } from "react";
 import { generatePath } from "react-router-dom";
 import type { RouteDef } from "../../route-config";
 
-export type EventsTab = "userEvents" | "adminEvents";
+export type EventsTab = "user-events" | "admin-events";
 
 export type EventsParams = {
   realm: string;
