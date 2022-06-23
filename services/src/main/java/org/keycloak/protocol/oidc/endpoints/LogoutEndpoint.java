@@ -17,6 +17,10 @@
 
 package org.keycloak.protocol.oidc.endpoints;
 
+import static org.keycloak.models.UserSessionModel.State.LOGGED_OUT;
+import static org.keycloak.models.UserSessionModel.State.LOGGING_OUT;
+import static org.keycloak.services.resources.LoginActionsService.SESSION_CODE;
+
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.HttpRequest;
@@ -72,6 +76,10 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.util.TokenUtil;
 
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.OPTIONS;
@@ -83,13 +91,6 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static org.keycloak.models.UserSessionModel.State.LOGGED_OUT;
-import static org.keycloak.models.UserSessionModel.State.LOGGING_OUT;
-import static org.keycloak.services.resources.LoginActionsService.SESSION_CODE;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -162,20 +163,27 @@ public class LogoutEndpoint {
                            @QueryParam(OIDCLoginProtocol.UI_LOCALES_PARAM) String uiLocales,
                            @QueryParam(AuthenticationManager.INITIATING_IDP_PARAM) String initiatingIdp) {
 
-        if (deprecatedRedirectUri != null && !providerConfig.isLegacyLogoutRedirectUri()) {
-            event.event(EventType.LOGOUT);
-            event.error(Errors.INVALID_REQUEST);
-            logger.warnf("Parameter 'redirect_uri' no longer supported. Please use 'post_logout_redirect_uri' with 'id_token_hint' for this endpoint. Alternatively you can enable backwards compatibility option '%s' of oidc login protocol in the server configuration.",
-                    OIDCLoginProtocolFactory.CONFIG_LEGACY_LOGOUT_REDIRECT_URI);
-            return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_PARAMETER, OIDCLoginProtocol.REDIRECT_URI_PARAM);
+        if (!providerConfig.isLegacyLogoutRedirectUri()) {
+            if (deprecatedRedirectUri != null) {
+                event.event(EventType.LOGOUT);
+                event.error(Errors.INVALID_REQUEST);
+                logger.warnf("Parameter 'redirect_uri' no longer supported. Please use 'post_logout_redirect_uri' with 'id_token_hint' for this endpoint. Alternatively you can enable backwards compatibility option '%s' of oidc login protocol in the server configuration.",
+                        OIDCLoginProtocolFactory.CONFIG_LEGACY_LOGOUT_REDIRECT_URI);
+                return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.INVALID_PARAMETER, OIDCLoginProtocol.REDIRECT_URI_PARAM);
+            }
+
+            if (postLogoutRedirectUri != null && encodedIdToken == null && clientId == null) {
+                event.event(EventType.LOGOUT);
+                event.error(Errors.INVALID_REQUEST);
+                logger.warnf(
+                        "Either the parameter 'client_id' or the parameter 'id_token_hint' is required when 'post_logout_redirect_uri' is used.");
+                return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.MISSING_PARAMETER,
+                        OIDCLoginProtocol.ID_TOKEN_HINT);
+            }
         }
 
-        if (postLogoutRedirectUri != null && encodedIdToken == null && clientId == null) {
-            event.event(EventType.LOGOUT);
-            event.error(Errors.INVALID_REQUEST);
-            logger.warnf("Either the parameter 'client_id' or the parameter 'id_token_hint' is required when 'post_logout_redirect_uri' is used.");
-            return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.MISSING_PARAMETER, OIDCLoginProtocol.ID_TOKEN_HINT);
-        }
+        deprecatedRedirectUri = providerConfig.isLegacyLogoutRedirectUri() ? deprecatedRedirectUri : null;
+        final String redirectUri = postLogoutRedirectUri != null ? postLogoutRedirectUri : deprecatedRedirectUri;
 
         boolean confirmationNeeded = true;
         boolean forcedConfirmation = false;
@@ -222,12 +230,15 @@ public class LogoutEndpoint {
         }
 
         String validatedRedirectUri = null;
-        if (postLogoutRedirectUri != null || deprecatedRedirectUri != null) {
-            String redirectUri = postLogoutRedirectUri != null ? postLogoutRedirectUri : deprecatedRedirectUri;
+        if (redirectUri != null) {
             if (client != null) {
                 validatedRedirectUri = RedirectUtils.verifyRedirectUri(session, redirectUri, client);
-            } else if (providerConfig.isLegacyLogoutRedirectUri()) {
-                validatedRedirectUri = RedirectUtils.verifyRealmRedirectUri(session, deprecatedRedirectUri);
+            } else if (clientId == null) {
+                /*
+                 * Only call verifyRealmRedirectUri, in case both clientId and client are null - otherwise
+                 * the logout uri contains a non-existing client, and we should show an INVALID_REDIRECT_URI error
+                 */
+                validatedRedirectUri = RedirectUtils.verifyRealmRedirectUri(session, redirectUri);
             }
 
             if (validatedRedirectUri == null) {
