@@ -80,7 +80,6 @@ org.keycloak.keys.KeySpi
 org.keycloak.storage.DatastoreSpi
 org.keycloak.storage.clientscope.ClientScopeStorageProviderSpi
 org.keycloak.storage.role.RoleStorageProviderSpi
-org.keycloak.storage.group.GroupStorageProviderSpi
 org.keycloak.crypto.SignatureSpi
 org.keycloak.crypto.ClientSignatureVerifierSpi
 org.keycloak.crypto.HashSpi
