@@ -1932,6 +1932,7 @@
                             <artifactId>maven-surefire-plugin</artifactId>
                             <configuration>
                                 <systemPropertyVariables>
+                                    <migration.import.file.name>${migration.import.file.name}</migration.import.file.name>
                                     <migrated.auth.server.version>${migrated.auth.server.version}</migrated.auth.server.version>
                                     <auth.server.migration>true</auth.server.migration>
                                     <keycloak.migration.home>${containers.home}/auth-server-migration</keycloak.migration.home>

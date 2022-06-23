@@ -32,6 +32,7 @@ public class KeycloakQuarkusConfiguration implements ContainerConfiguration {
     private String profile;
     private String javaOpts;
     private boolean reaugmentBeforeStart;
+    private String importFile = System.getProperty("migration.import.file.name");
 
     @Override
     public void validate() throws ConfigurationException {
@@ -154,5 +155,14 @@ public class KeycloakQuarkusConfiguration implements ContainerConfiguration {
     public void setDebugPort(int debugPort) {
         this.debugPort = debugPort;
     }
+
+    public String getImportFile() {
+        return importFile;
+    }
+
+    public void setImportFile(String importFile) {
+        this.importFile = importFile;
+    }
+
 
 }
