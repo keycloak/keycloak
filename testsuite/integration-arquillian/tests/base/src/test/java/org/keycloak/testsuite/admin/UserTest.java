@@ -2786,6 +2786,42 @@ public class UserTest extends AbstractAdminTest {
     }
 
     @Test
+    public void testGetSearchedGroupsForUserFullRepresentation() {
+        RealmResource realm = adminClient.realms().realm("test");
+
+        String userName = "averagejoe";
+        String groupName1 = "group1WithAttribute";
+        String groupName2 = "group2WithAttribute";
+        Map<String, List<String>> attributes1 = new HashMap<String, List<String>>();
+        attributes1.put("attribute1", Arrays.asList("attribute1"));
+        Map<String, List<String>> attributes2 = new HashMap<String, List<String>>();
+        attributes2.put("attribute2", Arrays.asList("attribute2"));
+
+        UserRepresentation userRepresentation = UserBuilder
+                .edit(createUserRepresentation(userName, "joe@average.com", "average", "joe", true))
+                .addPassword("password")
+                .build();
+
+        try (Creator<UserResource> u = Creator.create(realm, userRepresentation);
+             Creator<GroupResource> g1 = Creator.create(realm, GroupBuilder.create().name(groupName1).attributes(attributes1).build());
+             Creator<GroupResource> g2 = Creator.create(realm, GroupBuilder.create().name(groupName2).attributes(attributes2).build())) {
+
+            String group1Id = g1.id();
+            String group2Id = g2.id();
+            UserResource user = u.resource();
+            user.joinGroup(group1Id);
+            user.joinGroup(group2Id);
+
+            List<GroupRepresentation> userGroups = user.groups("group2", false);
+            assertFalse(userGroups.isEmpty());
+            assertTrue(userGroups.get(0).getAttributes().containsKey("attribute2"));
+
+            userGroups = user.groups("group3", false);
+            assertTrue(userGroups.isEmpty());
+        }
+    }
+
+    @Test
     public void groupMembershipPaginated() {
         String userId = createUser(UserBuilder.create().username("user-a").build());
 
