@@ -434,4 +434,8 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
         }
     }
 
+
+    // TODO: a test using a file
+    // TODO: check logLevel upper vs. lower case
+    // TODO: compare current outcome with https://gist.github.com/andreaTP/d2baf122fdc71793d1d66f42f5ae89c6
 }
