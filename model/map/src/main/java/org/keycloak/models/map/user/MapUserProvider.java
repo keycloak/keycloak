@@ -54,8 +54,6 @@ import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.storage.StorageId;
-import org.keycloak.storage.client.ClientStorageProvider;
 
 import java.util.Collection;
 import java.util.EnumMap;
@@ -66,7 +64,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -465,33 +462,6 @@ public class MapUserProvider implements UserProvider.Streams {
 
     @Override
     public void preRemove(RealmModel realm, ComponentModel component) {
-        String componentId = component.getId();
-        LOG.tracef("preRemove[ComponentModel](%s, %s)%s", realm, componentId, getShortStackTrace());
-        if (component.getProviderType().equals(ClientStorageProvider.class.getName())) {
-            DefaultModelCriteria<UserModel> mcb = criteria();
-            mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
-              .compare(SearchableFields.CONSENT_CLIENT_FEDERATION_LINK, Operator.EQ, componentId);
-
-            try (Stream<MapUserEntity> s = tx.read(withCriteria(mcb))) {
-                String providerIdS = new StorageId(componentId, "").getId();
-                s.forEach(removeConsentsForExternalClient(providerIdS));
-            }
-        }
-    }
-
-    private Consumer<MapUserEntity> removeConsentsForExternalClient(String idPrefix) {
-        return userEntity -> {
-            Set<MapUserConsentEntity> userConsents = userEntity.getUserConsents();
-            if (userConsents == null || userConsents.isEmpty()) return;
-            List<String> consentClientIds = userConsents.stream()
-              .map(MapUserConsentEntity::getClientId)
-              .filter(clientId -> clientId != null && clientId.startsWith(idPrefix))
-              .collect(Collectors.toList());
-
-            if (! consentClientIds.isEmpty()) {
-                consentClientIds.forEach(userEntity::removeUserConsent);
-            }
-        };
     }
 
     @Override

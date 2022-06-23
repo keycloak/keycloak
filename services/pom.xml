@@ -184,10 +184,6 @@
             </exclusions>
         </dependency>
         <dependency>
-            <groupId>com.openshift</groupId>
-            <artifactId>openshift-restclient-java</artifactId>
-        </dependency>
-        <dependency>
             <groupId>com.webauthn4j</groupId>
             <artifactId>webauthn4j-core</artifactId>
         </dependency>
