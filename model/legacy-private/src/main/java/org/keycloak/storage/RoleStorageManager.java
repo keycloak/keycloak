@@ -23,6 +23,7 @@ import org.keycloak.common.util.reflections.Types;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.LegacyRealmModel;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -71,9 +72,8 @@ public class RoleStorageManager implements RoleProvider {
         return getStorageProviderInstance(session, storageModel, factory);
     }
 
-
     public static <T> Stream<RoleStorageProviderModel> getStorageProviders(RealmModel realm, KeycloakSession session, Class<T> type) {
-        return realm.getRoleStorageProvidersStream()
+        return ((LegacyRealmModel) realm).getRoleStorageProvidersStream()
                 .filter(model -> {
                     RoleStorageProviderFactory factory = getRoleStorageProviderFactory(model, session);
                     if (factory == null) {
@@ -162,9 +162,9 @@ public class RoleStorageManager implements RoleProvider {
     /**
      * Obtaining roles from an external role storage is time-bounded. In case the external role storage
      * isn't available at least roles from a local storage are returned. For this purpose
-     * the {@link org.keycloak.services.DefaultKeycloakSessionFactory#getRoleStorageProviderTimeout()} property is used.
+     * the <code>org.keycloak.services.DefaultKeycloakSessionFactory#getRoleStorageProviderTimeout()</code> property is used.
      * Default value is 3000 milliseconds and it's configurable.
-     * See {@link org.keycloak.services.DefaultKeycloakSessionFactory} for details.
+     * See <code>org.keycloak.services.DefaultKeycloakSessionFactory</code> for details.
      */
     @Override
     public Stream<RoleModel> searchForRolesStream(RealmModel realm, String search, Integer first, Integer max) {
@@ -229,9 +229,9 @@ public class RoleStorageManager implements RoleProvider {
     /**
      * Obtaining roles from an external role storage is time-bounded. In case the external role storage
      * isn't available at least roles from a local storage are returned. For this purpose
-     * the {@link org.keycloak.services.DefaultKeycloakSessionFactory#getRoleStorageProviderTimeout()} property is used.
+     * the <code>org.keycloak.services.DefaultKeycloakSessionFactory#getRoleStorageProviderTimeout()} property is used.
      * Default value is 3000 milliseconds and it's configurable.
-     * See {@link org.keycloak.services.DefaultKeycloakSessionFactory} for details.
+     * See <code>org.keycloak.services.DefaultKeycloakSessionFactory</code> for details.
      */
     @Override
     public Stream<RoleModel> searchForClientRolesStream(ClientModel client, String search, Integer first, Integer max) {
