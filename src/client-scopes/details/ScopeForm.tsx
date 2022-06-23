@@ -286,6 +286,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
           control={control}
           render={({ onChange, value }) => (
             <KeycloakTextInput
+              id="kc-gui-order"
               type="number"
               value={value}
               data-testid="displayOrder"
