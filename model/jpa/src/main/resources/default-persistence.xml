@@ -83,7 +83,7 @@
         <class>org.keycloak.storage.jpa.entity.FederatedUserGroupMembershipEntity</class>
         <class>org.keycloak.storage.jpa.entity.FederatedUserRequiredActionEntity</class>
         <class>org.keycloak.storage.jpa.entity.FederatedUserRoleMappingEntity</class>
-        
+
         <exclude-unlisted-classes>true</exclude-unlisted-classes>
 
         <properties>

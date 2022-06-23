@@ -431,6 +431,10 @@ public final class Picocli {
                 argGroupBuilder.addArg(optBuilder.build());
             }
 
+            if (argGroupBuilder.args().isEmpty()) {
+                continue;
+            }
+
             cSpec.addArgGroup(argGroupBuilder.build());
         }
     }

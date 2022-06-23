@@ -79,6 +79,7 @@ import io.vertx.core.Handler;
 import io.vertx.ext.web.RoutingContext;
 import org.hibernate.cfg.AvailableSettings;
 import org.hibernate.jpa.boot.internal.ParsedPersistenceXmlDescriptor;
+import org.hibernate.jpa.boot.internal.PersistenceXmlParser;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationTarget;
 import org.jboss.jandex.DotName;
@@ -225,6 +226,14 @@ class KeycloakProcessor {
                         .setInitListener(recorder.createUserDefinedUnitListener(properties.getProperty(AvailableSettings.DATASOURCE))));
             }
         }
+    }
+
+    @BuildStep(onlyIf = IsDefaultPersistenceUnitEnabled.class)
+    void produceDefaultPersistenceUnit(BuildProducer<PersistenceXmlDescriptorBuildItem> producer) {
+        ParsedPersistenceXmlDescriptor descriptor = PersistenceXmlParser.locateIndividualPersistenceUnit(
+                Thread.currentThread().getContextClassLoader().getResource("default-persistence.xml"));
+
+        producer.produce(new PersistenceXmlDescriptorBuildItem(descriptor));
     }
 
     private void configureJpaProperties(ParsedPersistenceXmlDescriptor descriptor, HibernateOrmConfig config,
