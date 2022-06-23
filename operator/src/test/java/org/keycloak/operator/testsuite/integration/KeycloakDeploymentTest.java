@@ -20,7 +20,7 @@ package org.keycloak.operator.testsuite.integration;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.SecretKeySelectorBuilder;
-import io.fabric8.kubernetes.api.model.apps.DeploymentSpecBuilder;
+import io.fabric8.kubernetes.api.model.apps.StatefulSetSpecBuilder;
 import io.quarkus.logging.Log;
 import io.quarkus.test.junit.QuarkusTest;
 import org.awaitility.Awaitility;
@@ -65,17 +65,17 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
 
             // Check Operator has deployed Keycloak
             Log.info("Checking Operator has deployed Keycloak deployment");
-            assertThat(k8sclient.apps().deployments().inNamespace(namespace).withName(deploymentName).get()).isNotNull();
+            assertThat(k8sclient.apps().statefulSets().inNamespace(namespace).withName(deploymentName).get()).isNotNull();
 
             // Check Keycloak has correct replicas
             Log.info("Checking Keycloak pod has ready replicas == 1");
-            assertThat(k8sclient.apps().deployments().inNamespace(namespace).withName(deploymentName).get().getStatus().getReadyReplicas()).isEqualTo(1);
+            assertThat(k8sclient.apps().statefulSets().inNamespace(namespace).withName(deploymentName).get().getStatus().getReadyReplicas()).isEqualTo(1);
 
             // Delete CR
             Log.info("Deleting Keycloak CR and watching cleanup");
             k8sclient.resources(Keycloak.class).delete(kc);
             Awaitility.await()
-                    .untilAsserted(() -> assertThat(k8sclient.apps().deployments().inNamespace(namespace).withName(deploymentName).get()).isNull());
+                    .untilAsserted(() -> assertThat(k8sclient.apps().statefulSets().inNamespace(namespace).withName(deploymentName).get()).isNull());
         } catch (Exception e) {
             savePodLogs();
             throw e;
@@ -99,7 +99,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
             Awaitility.await()
                     .during(Duration.ofSeconds(15)) // check if the Deployment is stable
                     .untilAsserted(() -> {
-                        var c = k8sclient.apps().deployments().inNamespace(namespace).withName(deploymentName).get()
+                        var c = k8sclient.apps().statefulSets().inNamespace(namespace).withName(deploymentName).get()
                                 .getSpec().getTemplate().getSpec().getContainers().get(0);
                         assertThat(c.getImage()).isEqualTo("quay.io/keycloak/non-existing-keycloak");
                         assertThat(c.getEnv().stream()
@@ -132,7 +132,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
                     .ignoreExceptions()
                     .untilAsserted(() -> {
                         Log.info("Asserting default value was overwritten by CR value");
-                        var c = k8sclient.apps().deployments().inNamespace(namespace).withName(kc.getMetadata().getName()).get()
+                        var c = k8sclient.apps().statefulSets().inNamespace(namespace).withName(kc.getMetadata().getName()).get()
                                 .getSpec().getTemplate().getSpec().getContainers().get(0);
 
                         assertThat(c.getEnv()).contains(e);
@@ -151,29 +151,29 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
             deployKeycloak(k8sclient, kc, true);
 
             Log.info("Trying to delete deployment");
-            assertThat(k8sclient.apps().deployments().withName(deploymentName).delete()).isTrue();
+            assertThat(k8sclient.apps().statefulSets().withName(deploymentName).delete()).isTrue();
             Awaitility.await()
-                    .untilAsserted(() -> assertThat(k8sclient.apps().deployments().withName(deploymentName).get()).isNotNull());
+                    .untilAsserted(() -> assertThat(k8sclient.apps().statefulSets().withName(deploymentName).get()).isNotNull());
 
             waitForKeycloakToBeReady(k8sclient, kc); // wait for reconciler to calm down to avoid race condititon
 
             Log.info("Trying to modify deployment");
 
-            var deployment = k8sclient.apps().deployments().withName(deploymentName).get();
+            var deployment = k8sclient.apps().statefulSets().withName(deploymentName).get();
             var labels = Map.of("address", "EvergreenTerrace742");
             var flandersEnvVar = new EnvVarBuilder().withName("NEIGHBOR").withValue("Stupid Flanders!").build();
-            var origSpecs = new DeploymentSpecBuilder(deployment.getSpec()).build(); // deep copy
+            var origSpecs = new StatefulSetSpecBuilder(deployment.getSpec()).build(); // deep copy
 
             deployment.getMetadata().getLabels().putAll(labels);
             deployment.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(List.of(flandersEnvVar));
-            k8sclient.apps().deployments().createOrReplace(deployment);
+            k8sclient.apps().statefulSets().createOrReplace(deployment);
 
             Awaitility.await()
                     .atMost(5, MINUTES)
                     .pollDelay(1, SECONDS)
                     .ignoreExceptions()
                     .untilAsserted(() -> {
-                        var d = k8sclient.apps().deployments().withName(deploymentName).get();
+                        var d = k8sclient.apps().statefulSets().withName(deploymentName).get();
                         assertThat(d.getMetadata().getLabels().entrySet().containsAll(labels.entrySet())).isTrue(); // additional labels should not be overwritten
                         assertThat(d.getSpec()).isEqualTo(origSpecs); // specs should be reconciled back to original values
                     });
@@ -286,15 +286,36 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
     @Test
     public void testInitialAdminUser() {
         try {
+            var kc = getDefaultKeycloakDeployment();
+            var kcAdminSecret = new KeycloakAdminSecret(k8sclient, kc);
+
+            k8sclient
+                    .resources(Keycloak.class)
+                    .inNamespace(namespace)
+                    .delete();
+            k8sclient
+                    .secrets()
+                    .inNamespace(namespace)
+                    .withName(kcAdminSecret.getName())
+                    .delete();
+
+            // Making sure no other Keycloak pod is still around
+            Awaitility.await()
+                    .ignoreExceptions()
+                    .untilAsserted(() ->
+                            assertThat(k8sclient
+                                    .pods()
+                                    .inNamespace(namespace)
+                                    .withLabel("app", "keycloak")
+                                    .list()
+                                    .getItems()
+                                    .size()).isZero());
             // Recreating the database to keep this test isolated
             deleteDB();
             deployDB();
-            var kc = getDefaultKeycloakDeployment();
             deployKeycloak(k8sclient, kc, true);
-
             var decoder = Base64.getDecoder();
             var service = new KeycloakService(k8sclient, kc);
-            var kcAdminSecret = new KeycloakAdminSecret(k8sclient, kc);
 
             AtomicReference<String> adminUsername = new AtomicReference<>();
             AtomicReference<String> adminPassword = new AtomicReference<>();

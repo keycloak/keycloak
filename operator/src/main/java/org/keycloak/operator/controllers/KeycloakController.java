@@ -17,7 +17,7 @@
 package org.keycloak.operator.controllers;
 
 import io.fabric8.kubernetes.api.model.Service;
-import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
@@ -61,8 +61,8 @@ public class KeycloakController implements Reconciler<Keycloak>, EventSourceInit
     public List<EventSource> prepareEventSources(EventSourceContext<Keycloak> context) {
         String namespace = context.getConfigurationService().getClientConfiguration().getNamespace();
 
-        SharedIndexInformer<Deployment> deploymentInformer =
-                client.apps().deployments().inNamespace(namespace)
+        SharedIndexInformer<StatefulSet> deploymentInformer =
+                client.apps().statefulSets().inNamespace(namespace)
                         .withLabels(Constants.DEFAULT_LABELS)
                         .runnableInformer(0);
 
