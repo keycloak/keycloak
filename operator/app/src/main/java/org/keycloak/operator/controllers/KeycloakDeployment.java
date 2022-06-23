@@ -65,8 +65,6 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
     private final String adminSecretName;
 
     private Set<String> serverConfigSecretsNames;
-    DA QUI
-    private Set<String> serverConfigSecretsToBeMounted;
 
     public KeycloakDeployment(KubernetesClient client, Config config, Keycloak keycloakCR, Deployment existingDeployment, String adminSecretName) {
         super(client, keycloakCR);
@@ -408,6 +406,25 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
             kcContainer.getVolumeMounts().add(volumeMount);
         }
 
+        // TODO: check what happens in case of duplicates
+        for (var configVolume: keycloakCR.getSpec().getServerConfiguration().getAllMountSecrets()) {
+            var volume = new VolumeBuilder()
+                    .withName(configVolume.getName())
+                    .withNewSecret()
+                    .withSecretName(configVolume.getName())
+                    .withOptional(configVolume.getOptional())
+                    .endSecret()
+                    .build();
+
+            var volumeMount = new VolumeMountBuilder()
+                    .withName(configVolume.getName())
+                    .withMountPath("/mnt/" + configVolume.getName() + "-volume")
+                    .build();
+
+            deployment.getSpec().getTemplate().getSpec().getVolumes().add(volume);
+            kcContainer.getVolumeMounts().add(volumeMount);
+        }
+
         var userRelativePath = this.keycloakCR.getSpec().getServerConfiguration().getHttpRelativePath();
         var kcRelativePath = (userRelativePath == null) ? "/" : userRelativePath;
         var protocol = (this.keycloakCR.getSpec().isHttp()) ? "http" : "https";
@@ -512,7 +529,7 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
             return null;
         }
 
-        var builder = new EnvVarBuilder().withName(name);
+        var builder = new EnvVarBuilder().withName(getEnvVarName(name));
         if (value instanceof ValueOrSecret) {
             var valueOrSec = (ValueOrSecret) value;
             if (valueOrSec.getSecret() != null) {
@@ -548,13 +565,12 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
         return null;
     }
 
-    public static <T> String getMountSecret(T value) {
+    public static <T> SecretKeySelector getMountSecret(T value) {
         if (value instanceof SecretKeySelector) {
-            var secretKey = (SecretKeySelector) value;
-            return secretKey.getName();
+            return (SecretKeySelector) value;
+        } else {
+            return null;
         }
-
-        return null;
     }
 
     private List<EnvVar> getEnvVars() {
@@ -586,14 +602,18 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
                 })
                 .collect(Collectors.toList());
 
-        Log.warn("DEBUG");
-        keycloakCR
-                .getSpec()
-                .getServerConfiguration()
-                .getAllEnvVars()
-                .forEach(ev -> Log.warn(ev.getName() + " -> " + ev.getValue()));
+        // "serverConfiguration" should rewrite anything was there:
+        var serverConfigEnvVars = keycloakCR.getSpec().getServerConfiguration().getAllEnvVars();
 
-        envVars.addAll(keycloakCR.getSpec().getServerConfiguration().getAllEnvVars());
+        Log.error("DEBUG 1");
+        serverConfigEnvVars.stream().forEach(e -> Log.warn(e.getName() + " -> " + e.getValue()));
+
+        envVars.removeIf(e -> serverConfigEnvVars.stream().anyMatch(scev -> scev.getName().equals(e.getName())));
+        envVars.addAll(serverConfigEnvVars);
+
+        Log.error("DEBUG 2");
+        envVars.stream().forEach(e -> Log.warn(e.getName() + " -> " + e.getValue()));
+
         serverConfigSecretsNames.addAll(keycloakCR.getSpec().getServerConfiguration().getAllWatchedSecrets());
         Log.infof("Found config secrets names: %s", serverConfigSecretsNames);
 

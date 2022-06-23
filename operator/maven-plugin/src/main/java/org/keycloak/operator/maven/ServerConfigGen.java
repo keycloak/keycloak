@@ -65,7 +65,7 @@ public class ServerConfigGen {
         allWatchedSecrets.append("{" + LIST_TYPE + "<" + STRING_TYPE + "> all = new java.util.ArrayList<>();");
 
         StringBuilder allMountSecrets = new StringBuilder();
-        allMountSecrets.append("{" + LIST_TYPE + "<" + STRING_TYPE + "> all = new java.util.ArrayList<>();");
+        allMountSecrets.append("{" + LIST_TYPE + "<" + SECRET_KEY_SELECTOR + "> all = new java.util.ArrayList<>();");
 
         AllOptions.ALL_OPTIONS.forEach(o -> {
             if (o.getSupportedRuntimes().contains(Option.Runtime.OPERATOR)) {
@@ -89,7 +89,7 @@ public class ServerConfigGen {
                 MethodDeclaration getEnvVar = serverConfig.addMethod(fieldName + "EnvVar", Modifier.Keyword.PRIVATE);
                 getEnvVar.setType(ENV_VAR_TYPE);
                 getEnvVar.setBody(new BlockStmt().addStatement(
-                        "return org.keycloak.operator.controllers.KeycloakDeployment.getEnvVar(\"" + fieldName + "\", " + fieldName + ");"
+                        "return org.keycloak.operator.controllers.KeycloakDeployment.getEnvVar(\"" + o.getKey() + "\", " + fieldName + ");"
                 ));
 
                 envVarsBody.append("all.add(" + fieldName + "EnvVar());\n");
@@ -105,7 +105,7 @@ public class ServerConfigGen {
 
                 // Create a "Secrets to be mounted" extractor
                 MethodDeclaration getMountSecret = serverConfig.addMethod(fieldName + "MountSecret", Modifier.Keyword.PRIVATE);
-                getMountSecret.setType(STRING_TYPE);
+                getMountSecret.setType(SECRET_KEY_SELECTOR);
                 getMountSecret.setBody(new BlockStmt().addStatement(
                         "return org.keycloak.operator.controllers.KeycloakDeployment.getMountSecret(" + fieldName + ");"
                 ));
@@ -125,7 +125,7 @@ public class ServerConfigGen {
         getAllWatchedSecrets.setBody(new BlockStmt().addStatement(allWatchedSecrets.toString()));
 
         MethodDeclaration getAllMountSecrets = serverConfig.addMethod("getAllMountSecrets", Modifier.Keyword.PUBLIC);
-        getAllMountSecrets.setType(LIST_TYPE + "<" + STRING_TYPE + ">");
+        getAllMountSecrets.setType(LIST_TYPE + "<" + SECRET_KEY_SELECTOR + ">");
         allMountSecrets.append("all.removeAll(java.util.Collections.singleton(null));return all;}");
         getAllMountSecrets.setBody(new BlockStmt().addStatement(allMountSecrets.toString()));
 
