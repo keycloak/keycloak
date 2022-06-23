@@ -464,7 +464,7 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: ${{ env.DEFAULT_JDK_VERSION }}
-          cahe: 'maven'
+          cache: 'maven'
       - name: Cleanup org.keycloak artifacts
         run: rm -rf ~/.m2/repository/org/keycloak >/dev/null || true
 
