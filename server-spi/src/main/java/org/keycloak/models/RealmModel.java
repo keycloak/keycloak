@@ -23,8 +23,6 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderEvent;
 import org.keycloak.storage.SearchableModelField;
-import org.keycloak.storage.role.RoleStorageProvider;
-import org.keycloak.storage.role.RoleStorageProviderModel;
 
 import java.util.List;
 import java.util.Map;
@@ -657,25 +655,6 @@ public interface RealmModel extends RoleContainerModel {
     Stream<ComponentModel> getComponentsStream();
 
     ComponentModel getComponent(String id);
-
-    /**
-     * @deprecated Use {@link #getRoleStorageProvidersStream() getRoleStorageProvidersStream} instead.
-     */
-    @Deprecated
-    default List<RoleStorageProviderModel> getRoleStorageProviders() {
-        return getRoleStorageProvidersStream().collect(Collectors.toList());
-    }
-
-    /**
-     * Returns sorted {@link RoleStorageProviderModel RoleStorageProviderModel} as a stream.
-     * It should be used with forEachOrdered if the ordering is required.
-     * @return Sorted stream of {@link RoleStorageProviderModel}. Never returns {@code null}.
-     */
-    default Stream<RoleStorageProviderModel> getRoleStorageProvidersStream() {
-        return getComponentsStream(getId(), RoleStorageProvider.class.getName())
-                .map(RoleStorageProviderModel::new)
-                .sorted(RoleStorageProviderModel.comparator);
-    }
 
     /**
      * Returns stream of ComponentModels that represent StorageProviders for class storageProviderClass in this realm.
