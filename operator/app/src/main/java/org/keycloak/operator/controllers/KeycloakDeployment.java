@@ -604,15 +604,8 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
 
         // "serverConfiguration" should rewrite anything was there:
         var serverConfigEnvVars = keycloakCR.getSpec().getServerConfiguration().getAllEnvVars();
-
-        Log.error("DEBUG 1");
-        serverConfigEnvVars.stream().forEach(e -> Log.warn(e.getName() + " -> " + e.getValue()));
-
         envVars.removeIf(e -> serverConfigEnvVars.stream().anyMatch(scev -> scev.getName().equals(e.getName())));
         envVars.addAll(serverConfigEnvVars);
-
-        Log.error("DEBUG 2");
-        envVars.stream().forEach(e -> Log.warn(e.getName() + " -> " + e.getValue()));
 
         serverConfigSecretsNames.addAll(keycloakCR.getSpec().getServerConfiguration().getAllWatchedSecrets());
         Log.infof("Found config secrets names: %s", serverConfigSecretsNames);
