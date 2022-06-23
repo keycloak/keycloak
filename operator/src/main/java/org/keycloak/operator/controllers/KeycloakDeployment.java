@@ -31,6 +31,7 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.quarkus.logging.Log;
+import io.sundr.codegen.api.SystemOutput;
 import org.keycloak.operator.Config;
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
@@ -521,8 +522,9 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
         Container container = baseDeployment.getSpec().getTemplate().getSpec().getContainers().get(0);
         var customImage = Optional.ofNullable(keycloakCR.getSpec().getImage());
         container.setImage(customImage.orElse(config.keycloak().image()));
-        if (customImage.isEmpty()) {
-            container.getArgs().add("--auto-build");
+
+        if (customImage.isPresent()) {
+            container.getArgs().add("--no-auto-build");
         }
 
         container.setImagePullPolicy(config.keycloak().imagePullPolicy());
