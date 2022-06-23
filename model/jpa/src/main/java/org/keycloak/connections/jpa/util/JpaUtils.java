@@ -58,7 +58,10 @@ public class JpaUtils {
 
     public static EntityManagerFactory createEntityManagerFactory(KeycloakSession session, String unitName, Map<String, Object> properties, boolean jta) {
         PersistenceUnitTransactionType txType = jta ? PersistenceUnitTransactionType.JTA : PersistenceUnitTransactionType.RESOURCE_LOCAL;
-        List<ParsedPersistenceXmlDescriptor> persistenceUnits = PersistenceXmlParser.locatePersistenceUnits(properties);
+        List<ParsedPersistenceXmlDescriptor> persistenceUnits = new ArrayList<>(PersistenceXmlParser.locatePersistenceUnits(properties));
+
+        persistenceUnits.add(PersistenceXmlParser.locateIndividualPersistenceUnit(JpaUtils.class.getClassLoader().getResource("default-persistence.xml")));
+
         for (ParsedPersistenceXmlDescriptor persistenceUnit : persistenceUnits) {
             if (persistenceUnit.getName().equals(unitName)) {
                 List<Class<?>> providedEntities = getProvidedEntities(session);

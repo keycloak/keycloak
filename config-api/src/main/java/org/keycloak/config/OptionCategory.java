@@ -3,6 +3,7 @@ package org.keycloak.config;
 public enum OptionCategory {
     // ordered by name asc
     CLUSTERING("Cluster", 10),
+    STORAGE("Storage", 15),
     DATABASE("Database", 20),
     TRANSACTION("Transaction",30),
     FEATURE("Feature", 40),
