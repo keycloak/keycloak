@@ -43,6 +43,7 @@
   "chooseAMapperType": "Choose a mapper type",
   "addPredefinedMappers": "Add predefined mappers",
   "predefinedMappingDescription": "Choose any of the predefined mappings from this table",
+  "configureMappingDescription": "Choose any of the mappings from this table",
   "mappingTable": "Table with predefined mapping",
   "scope": "Scope",
   "roleMappingUpdatedSuccess": "Role mapping updated",

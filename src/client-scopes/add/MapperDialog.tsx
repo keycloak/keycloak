@@ -93,7 +93,11 @@ export const AddMapperDialog = (props: AddMapperDialogProps) => {
           <Text component={TextVariants.h1}>
             {isBuiltIn ? t("addPredefinedMappers") : t("emptySecondaryAction")}
           </Text>
-          <Text>{t("predefinedMappingDescription")}</Text>
+          <Text>
+            {isBuiltIn
+              ? t("predefinedMappingDescription")
+              : t("configureMappingDescription")}
+          </Text>
         </TextContent>
       }
       isOpen={props.open}
