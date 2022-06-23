@@ -52,6 +52,7 @@ import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.ServerURLs;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlDoesntStartWith;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
@@ -144,6 +145,27 @@ public class LegacyLogoutTest extends AbstractTestRealmKeycloakTest {
         // Redirected back to the application with expected state
         events.expectLogout(sessionId).removeDetail(Details.REDIRECT_URI).assertEvent();
         Assert.assertThat(false, is(isSessionActive(sessionId)));
+        assertCurrentUrlEquals(APP_REDIRECT_URI);
+    }
+
+    // Test with "post_logout_redirect_uri" without "id_token_hint":  User should confirm logout.
+    @Test
+    public void logoutWithPostLogoutUriWithoutIdTokenHint() {
+        OAuthClient.AccessTokenResponse tokenResponse = loginUser();
+        String sessionId = tokenResponse.getSessionState();
+
+        String logoutUrl = oauth.getLogoutUrl().postLogoutRedirectUri(APP_REDIRECT_URI).build();
+        driver.navigate().to(logoutUrl);
+
+        // Assert logout confirmation page. Session still exists. Assert default language on logout page (English)
+        logoutConfirmPage.assertCurrent();
+        assertThat(true, is(isSessionActive(sessionId)));
+        events.assertEmpty();
+        logoutConfirmPage.confirmLogout();
+
+        // Redirected back to the application with expected state
+        events.expectLogout(sessionId).removeDetail(Details.REDIRECT_URI).assertEvent();
+        assertThat(false, is(isSessionActive(sessionId)));
         assertCurrentUrlEquals(APP_REDIRECT_URI);
     }
 
