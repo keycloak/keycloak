@@ -20,12 +20,9 @@ package org.keycloak.models;
 import java.util.Comparator;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.component.ComponentModel;
-import org.keycloak.credential.CredentialInput;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderEvent;
 import org.keycloak.storage.SearchableModelField;
-import org.keycloak.storage.client.ClientStorageProvider;
-import org.keycloak.storage.client.ClientStorageProviderModel;
 import org.keycloak.storage.role.RoleStorageProvider;
 import org.keycloak.storage.role.RoleStorageProviderModel;
 
@@ -660,25 +657,6 @@ public interface RealmModel extends RoleContainerModel {
     Stream<ComponentModel> getComponentsStream();
 
     ComponentModel getComponent(String id);
-
-    /**
-     * @deprecated Use {@link #getClientStorageProvidersStream() getClientStorageProvidersStream} instead.
-     */
-    @Deprecated
-    default List<ClientStorageProviderModel> getClientStorageProviders() {
-        return getClientStorageProvidersStream().collect(Collectors.toList());
-    }
-
-    /**
-     * Returns sorted {@link ClientStorageProviderModel ClientStorageProviderModel} as a stream.
-     * It should be used with forEachOrdered if the ordering is required.
-     * @return Sorted stream of {@link ClientStorageProviderModel}. Never returns {@code null}.
-     */
-    default Stream<ClientStorageProviderModel> getClientStorageProvidersStream() {
-        return getComponentsStream(getId(), ClientStorageProvider.class.getName())
-                .map(ClientStorageProviderModel::new)
-                .sorted(ClientStorageProviderModel.comparator);
-    }
 
     /**
      * @deprecated Use {@link #getRoleStorageProvidersStream() getRoleStorageProvidersStream} instead.

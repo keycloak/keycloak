@@ -17,6 +17,7 @@
 package org.keycloak.models.cache;
 
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.LegacyRealmModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.provider.ProviderEvent;
 
@@ -28,7 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface CachedRealmModel extends RealmModel {
+public interface CachedRealmModel extends LegacyRealmModel {
 
     interface RealmCachedEvent extends ProviderEvent {
         CachedRealmModel getRealm();
