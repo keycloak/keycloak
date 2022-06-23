@@ -164,5 +164,10 @@
   "userModelAttributeName": "User model attribute name",
   "attributeValue": "Attribute value",
   "selectRole": "Select role",
-  "group": "Group"
+  "group": "Group",
+  "providerId": "Provider ID",
+  "providerType": "Provider Type",
+  "parentId": "Parent ID",
+  "kerberosPrincipal": "Kerberos Principal",
+  "kerberosKeyTab": "Kerberos Key Tab"
 }

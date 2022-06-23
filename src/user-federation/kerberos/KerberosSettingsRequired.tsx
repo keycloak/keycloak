@@ -81,6 +81,7 @@ export const KerberosSettingsRequired = ({
             name="providerId"
             defaultValue="kerberos"
             ref={form.register}
+            aria-label={t("providerId")}
           />
           <KeycloakTextInput
             hidden
@@ -89,6 +90,7 @@ export const KerberosSettingsRequired = ({
             name="providerType"
             defaultValue="org.keycloak.storage.UserStorageProvider"
             ref={form.register}
+            aria-label={t("providerType")}
           />
           <KeycloakTextInput
             hidden
@@ -97,6 +99,7 @@ export const KerberosSettingsRequired = ({
             name="parentId"
             defaultValue={realm}
             ref={form.register}
+            aria-label={t("parentId")}
           />
 
           <KeycloakTextInput
@@ -112,6 +115,7 @@ export const KerberosSettingsRequired = ({
             })}
             data-testid="kerberos-name"
             validated={form.errors.name ? "error" : "default"}
+            aria-label={t("consoleDisplayName")}
           />
         </FormGroup>
 
@@ -142,6 +146,7 @@ export const KerberosSettingsRequired = ({
               },
             })}
             data-testid="kerberos-realm"
+            aria-label={t("kerberosRealm")}
             validated={
               form.errors.config?.kerberosRealm?.[0] ? "error" : "default"
             }
@@ -175,6 +180,7 @@ export const KerberosSettingsRequired = ({
               },
             })}
             data-testid="kerberos-principal"
+            aria-label={t("kerberosPrincipal")}
             validated={
               form.errors.config?.serverPrincipal?.[0] ? "error" : "default"
             }
@@ -206,6 +212,7 @@ export const KerberosSettingsRequired = ({
               },
             })}
             data-testid="kerberos-keytab"
+            aria-label={t("kerberosKeyTab")}
             validated={form.errors.config?.keyTab?.[0] ? "error" : "default"}
           />
         </FormGroup>
