@@ -51,6 +51,9 @@ limitations under the License.
             <column name="id" type="UUID">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
+            <column name="version" type="INTEGER" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
             <column name="fk_root" type="UUID">
                 <constraints foreignKeyName="auth_session_fk_root_fkey" references="kc_auth_root_session(id)" deleteCascade="true"/>
             </column>
