@@ -524,9 +524,8 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
 
     @Override
     public Stream<ProtocolMapperModel> getProtocolMappersStream() {
-        final Map<String, MapProtocolMapperEntity> protocolMappers = entity.getProtocolMappers();
-        return protocolMappers == null ? Stream.empty() : protocolMappers.values().stream().distinct()
-          .map(pmUtils::toModel);
+        final Set<MapProtocolMapperEntity> protocolMappers = entity.getProtocolMappers();
+        return protocolMappers == null ? Stream.empty() : protocolMappers.stream().distinct().map(pmUtils::toModel);
     }
 
     @Override
@@ -544,7 +543,7 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
             pm.setConfig(new HashMap<>());
         }
 
-        entity.setProtocolMapper(pm.getId(), pm);
+        entity.addProtocolMapper(pm);
         return pmUtils.toModel(pm);
     }
 
@@ -560,23 +559,25 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
     public void updateProtocolMapper(ProtocolMapperModel mapping) {
         final String id = mapping == null ? null : mapping.getId();
         if (id != null) {
-            entity.setProtocolMapper(id, MapProtocolMapperUtils.fromModel(mapping));
+            entity.getProtocolMapper(id).ifPresent((pmEntity) -> {
+                entity.removeProtocolMapper(id);
+                addProtocolMapper(mapping);
+            });
         }
     }
 
     @Override
     public ProtocolMapperModel getProtocolMapperById(String id) {
-        MapProtocolMapperEntity protocolMapper = entity.getProtocolMapper(id);
-        return protocolMapper == null ? null : pmUtils.toModel(protocolMapper);
+        return entity.getProtocolMapper(id).map(pmUtils::toModel).orElse(null);
     }
 
     @Override
     public ProtocolMapperModel getProtocolMapperByName(String protocol, String name) {
-        final Map<String, MapProtocolMapperEntity> protocolMappers = entity.getProtocolMappers();
+        final Set<MapProtocolMapperEntity> protocolMappers = entity.getProtocolMappers();
         if (! Objects.equals(protocol, safeGetProtocol())) {
             return null;
         }
-        return protocolMappers == null ? null : protocolMappers.values().stream()
+        return protocolMappers == null ? null : protocolMappers.stream()
           .filter(pm -> Objects.equals(pm.getName(), name))
           .map(pmUtils::toModel)
           .findAny()
