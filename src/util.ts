@@ -40,6 +40,8 @@ const sortProvider = (
   }
 };
 
+export const toKey = (value: string) => value.replace(/\s/g, "-");
+
 export const exportClient = (client: ClientRepresentation): void => {
   const clientCopy = cloneDeep(client);
   delete clientCopy.id;

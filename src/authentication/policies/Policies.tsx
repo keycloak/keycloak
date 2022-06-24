@@ -40,6 +40,7 @@ export const Policies = () => {
       activeKey={subTab}
       onSelect={(_, key) => setSubTab(key as number)}
       mountOnEnter
+      unmountOnExit
     >
       <Tab
         id="passwordPolicy"

@@ -106,6 +106,7 @@ export const PolicyRow = ({
             variant="link"
             className="keycloak__policies_authentication__minus-icon"
             onClick={() => onRemove(id)}
+            aria-label={t("common:remove")}
           >
             <MinusCircleIcon />
           </Button>

@@ -126,6 +126,7 @@ const WebauthnSelect = ({
                 : SelectVariant.single
             }
             aria-label={t(name)}
+            typeAheadAriaLabel={t(name)}
             isOpen={open}
           >
             {options.map((option) => (

@@ -53,7 +53,7 @@ export const AddFlowDropdown = ({
           data-testid={`${execution.displayName}-edit-dropdown`}
           isOpen={open}
           toggle={
-            <DropdownToggle onToggle={setOpen}>
+            <DropdownToggle onToggle={setOpen} aria-label={t("common:add")}>
               <PlusIcon />
             </DropdownToggle>
           }

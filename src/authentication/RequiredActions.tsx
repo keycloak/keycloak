@@ -8,6 +8,7 @@ import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { DraggableTable } from "./components/DraggableTable";
 import { useAlerts } from "../components/alert/Alerts";
 import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
+import { toKey } from "../util";
 
 type DataType = RequiredActionProviderRepresentation &
   RequiredActionProviderSimpleRepresentation;
@@ -137,7 +138,7 @@ export const RequiredActions = () => {
           displayKey: "common:enabled",
           cellRenderer: (row) => (
             <Switch
-              id={`enable-${row.name}`}
+              id={`enable-${toKey(row.name)}`}
               label={t("common:on")}
               labelOff={t("common:off")}
               isChecked={row.enabled}
@@ -152,7 +153,7 @@ export const RequiredActions = () => {
           displayKey: "authentication:setAsDefaultAction",
           cellRenderer: (row) => (
             <Switch
-              id={`default-${row.name}`}
+              id={`default-${toKey(row.name)}`}
               label={t("common:on")}
               isDisabled={!row.enabled}
               labelOff={!row.enabled ? t("disabledOff") : t("common:off")}

@@ -60,11 +60,13 @@ export const FlowRow = ({
       >
         <DataListItemRow
           className="keycloak__authentication__flow-row"
-          aria-level={execution.level}
+          aria-level={execution.level! + 1}
+          role="heading"
+          aria-labelledby={execution.id}
         >
           <DataListControl>
             <DataListDragButton
-              aria-labelledby={execution.displayName}
+              aria-labelledby={execution.id}
               aria-describedby={t("common-help:dragHelp")}
             />
           </DataListControl>
@@ -81,6 +83,7 @@ export const FlowRow = ({
               <DataListCell key={`${execution.id}-name`}>
                 {!execution.authenticationFlow && (
                   <FlowTitle
+                    id={execution.id}
                     key={execution.id}
                     title={execution.displayName!}
                   />
