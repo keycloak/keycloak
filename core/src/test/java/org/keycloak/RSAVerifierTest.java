@@ -63,32 +63,32 @@ public class RSAVerifierTest {
     private AccessToken token;
 
     public static X509Certificate generateTestCertificate(String subject, String issuer, KeyPair pair)
-        throws CertificateException, InvalidKeyException, IOException,
-               NoSuchProviderException,
-               SignatureException
-    {
-        X509CertificateBuilder cbuilder = new X509CertificateBuilder();
+            throws CertificateException, InvalidKeyException, IOException,
+            NoSuchProviderException,
+            SignatureException {
+        // TODO: Use CertificateUtils instead
+        X500Principal issuerdn = new X500Principal(issuer);
+        X500Principal subjectdn = new X500Principal(subject);
 
-        X500Principal issuerdn = new X500Principal("CN=" + issuer);
-        X500Principal subjectdn = new X500Principal("CN=" + subject);
-        cbuilder.setIssuerDn(issuerdn);
-        cbuilder.setSubjectDn(subjectdn);
+        ZonedDateTime notBefore = ZonedDateTime.ofInstant((new Date(System.currentTimeMillis() - 10000)).toInstant(),
+                ZoneId.systemDefault());
+        ZonedDateTime notAfter = ZonedDateTime.ofInstant((new Date(System.currentTimeMillis() + 10000)).toInstant(),
+                ZoneId.systemDefault());
 
-        ZonedDateTime notBefore = ZonedDateTime.ofInstant((new Date(System.currentTimeMillis() - 10000)).toInstant(), 
-                  ZoneId.systemDefault());
-                  ZonedDateTime notAfter = ZonedDateTime.ofInstant((new Date(System.currentTimeMillis() + 10000)).toInstant(), 
-                  ZoneId.systemDefault());
+        X509CertificateBuilder cbuilder = new X509CertificateBuilder()
+                .setIssuerDn(issuerdn)
+                .setSubjectDn(subjectdn)
 
-        cbuilder.setNotValidBefore(notBefore);
-        cbuilder.setNotValidAfter(notAfter);
+                .setNotValidBefore(notBefore)
+                .setNotValidAfter(notAfter)
 
-        cbuilder.setSigningKey(pair.getPrivate());
-        cbuilder.setPublicKey(pair.getPublic());
+                .setSigningKey(pair.getPrivate())
+                .setPublicKey(pair.getPublic())
 
-        cbuilder.setSignatureAlgorithmName("SHA256withRSA");
+                .setSignatureAlgorithmName("SHA256withRSA");
 
         return cbuilder.build();
-        
+
     }
 
     @BeforeClass
@@ -113,22 +113,6 @@ public class RSAVerifierTest {
                 .issuer("http://localhost:8080/auth/realm")
                 .addAccess("service").addRole("admin");
     }
-
-    // TODO: Removing test as it doesn't appear to add value
-    // @Test
-    // public void testPemWriter() {
-    //     PublicKey realmPublicKey = idpPair.getPublic();
-    //     StringWriter sw = new StringWriter();
-    //     JcaPEMWriter writer = new JcaPEMWriter(sw);
-    //     try {
-    //         writer.writeObject(realmPublicKey);
-    //         writer.flush();
-    //     } catch (IOException e) {
-    //         throw new RuntimeException(e);
-    //     }
-    //     System.out.println(sw.toString());
-    // }
-
 
     @Test
     public void testSimpleVerification() throws Exception {

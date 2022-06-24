@@ -17,21 +17,6 @@
 
 package org.keycloak.common.util;
 
-// import org.bouncycastle.asn1.x500.X500Name;
-// import org.bouncycastle.asn1.x509.BasicConstraints;
-// import org.bouncycastle.asn1.x509.ExtendedKeyUsage;
-// import org.bouncycastle.asn1.x509.Extension;
-// import org.bouncycastle.asn1.x509.KeyPurposeId;
-// import org.bouncycastle.asn1.x509.KeyUsage;
-// import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-// import org.bouncycastle.cert.X509CertificateHolder;
-// import org.bouncycastle.cert.X509v1CertificateBuilder;
-// import org.bouncycastle.cert.X509v3CertificateBuilder;
-// import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
-// import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
-// import org.bouncycastle.operator.ContentSigner;
-// import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
-
 import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.PrivateKey;
@@ -39,19 +24,28 @@ import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 
 import javax.security.auth.x500.X500Principal;
 
+import org.wildfly.security.x500.X500;
+import org.wildfly.security.x500.cert.AuthorityKeyIdentifierExtension;
+import org.wildfly.security.x500.cert.BasicConstraintsExtension;
+import org.wildfly.security.x500.cert.ExtendedKeyUsageExtension;
+import org.wildfly.security.x500.cert.KeyUsage;
+import org.wildfly.security.x500.cert.KeyUsageExtension;
+import org.wildfly.security.x500.cert.SubjectKeyIdentifierExtension;
 import org.wildfly.security.x500.cert.X509CertificateBuilder;
 
 /**
  * The Class CertificateUtils provides utility functions for generation of V1 and V3 {@link java.security.cert.X509Certificate}
  *
+ * @author <a href="mailto:david.anderson@redhat.com">David Anderson</a>
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @author <a href="mailto:giriraj.sharma27@gmail.com">Giriraj Sharma</a>
- * @version $Revision: 2 $
+ * @version $Revision: 3 $
  */
 public class CertificateUtils {
 
@@ -67,78 +61,66 @@ public class CertificateUtils {
      * 
      * @throws Exception the exception
      */
-    public static X509Certificate generateV3Certificate(KeyPair keyPair, PrivateKey caPrivateKey, X509Certificate caCert,
+    public static X509Certificate generateV3Certificate(KeyPair keyPair, PrivateKey caPrivateKey,
+            X509Certificate caCert,
             String subject) throws Exception {
         try {
-            X509CertificateBuilder cbuilder = new X509CertificateBuilder();
 
-            //X500Principal issuerdn = new X500Principal("CN=" + issuer);
-        X500Principal subjectdn = new X500Principal("CN=" + subject);
-        //cbuilder.setIssuerDn(issuerdn);
-        cbuilder.setSubjectDn(subjectdn);
+            X500Principal subjectdn = new X500Principal(subject);
+            X500Principal issuerdn = subjectdn;
+            if (caCert != null) {
+                issuerdn = caCert.getSubjectX500Principal();
+            }
 
-        ZonedDateTime notBefore = ZonedDateTime.ofInstant((new Date(System.currentTimeMillis() - 100000)).toInstant(),
-                ZoneId.systemDefault());
-        Calendar calendar = Calendar.getInstance();
-        calendar.add(Calendar.YEAR, 10);
-        Date validityEndDate = new Date(calendar.getTime().getTime());
-        ZonedDateTime notAfter = ZonedDateTime.ofInstant(validityEndDate.toInstant(),
-                ZoneId.systemDefault());
+            // Validity
+            ZonedDateTime notBefore = ZonedDateTime.ofInstant(new Date(System.currentTimeMillis()).toInstant(),
+                    ZoneId.systemDefault());
+            Calendar calendar = Calendar.getInstance();
+            calendar.add(Calendar.YEAR, 3);
+            Date validityEndDate = new Date(calendar.getTime().getTime());
+            ZonedDateTime notAfter = ZonedDateTime.ofInstant(validityEndDate.toInstant(),
+                    ZoneId.systemDefault());
+            // Serial Number
+            SecureRandom random = SecureRandom.getInstance("SHA1PRNG");
+            BigInteger serialNumber = BigInteger.valueOf(Math.abs(random.nextInt()));
+            // Extended Key Usage
+            ArrayList<String> ekuList = new ArrayList<String>();
+            ekuList.add(X500.OID_KP_EMAIL_PROTECTION);
+            ekuList.add(X500.OID_KP_SERVER_AUTH);
 
-        cbuilder.setNotValidBefore(notBefore);
-        cbuilder.setNotValidAfter(notAfter);
+            X509CertificateBuilder cbuilder = new X509CertificateBuilder()
+                    .setSubjectDn(subjectdn)
+                    .setIssuerDn(issuerdn)
 
-        cbuilder.setSigningKey(keyPair.getPrivate());
-        cbuilder.setPublicKey(keyPair.getPublic());
+                    .setNotValidBefore(notBefore)
+                    .setNotValidAfter(notAfter)
 
-        cbuilder.setSignatureAlgorithmName("SHA256withRSA");
+                    .setSigningKey(keyPair.getPrivate())
+                    .setPublicKey(keyPair.getPublic())
 
-        return cbuilder.build();
-            // X500Name subjectDN = new X500Name("CN=" + subject);
+                    .setSerialNumber(serialNumber)
 
-            // // Serial Number
-            // SecureRandom random = SecureRandom.getInstance("SHA1PRNG");
-            // BigInteger serialNumber = BigInteger.valueOf(Math.abs(random.nextInt()));
+                    .setSignatureAlgorithmName("SHA256withRSA")
 
-            // // Validity
-            // Date notBefore = new Date(System.currentTimeMillis());
-            // Date notAfter = new Date(System.currentTimeMillis() + (((1000L * 60 * 60 * 24 * 30)) * 12) * 3);
+                    .setSigningKey(caPrivateKey)
 
-            // // SubjectPublicKeyInfo
-            // SubjectPublicKeyInfo subjPubKeyInfo = SubjectPublicKeyInfo.getInstance(keyPair.getPublic().getEncoded());
+                    // Subject Key Identifier Extension
+                    .addExtension(new SubjectKeyIdentifierExtension(keyPair.getPublic().getEncoded()))
 
-            // X509v3CertificateBuilder certGen = new X509v3CertificateBuilder(new X500Name(caCert.getSubjectDN().getName()),
-            //         serialNumber, notBefore, notAfter, subjectDN, subjPubKeyInfo);
+                    // Authority Key Identifier
+                    .addExtension(new AuthorityKeyIdentifierExtension(keyPair.getPublic().getEncoded(), null, null))
 
-            // JcaX509ExtensionUtils x509ExtensionUtils = new JcaX509ExtensionUtils();
+                    // Key Usage
+                    .addExtension(
+                            new KeyUsageExtension(KeyUsage.digitalSignature, KeyUsage.keyCertSign, KeyUsage.cRLSign))
 
-            // // Subject Key Identifier
-            // certGen.addExtension(Extension.subjectKeyIdentifier, false,
-            //         x509ExtensionUtils.createSubjectKeyIdentifier(subjPubKeyInfo));
+                    .addExtension(new ExtendedKeyUsageExtension(false, ekuList))
 
-            // // Authority Key Identifier
-            // certGen.addExtension(Extension.authorityKeyIdentifier, false,
-            //         x509ExtensionUtils.createAuthorityKeyIdentifier(subjPubKeyInfo));
+                    // Basic Constraints
+                    .addExtension(new BasicConstraintsExtension(true, true, 0));
 
-            // // Key Usage
-            // certGen.addExtension(Extension.keyUsage, false, new KeyUsage(KeyUsage.digitalSignature | KeyUsage.keyCertSign
-            //         | KeyUsage.cRLSign));
+            return cbuilder.build();
 
-            // // Extended Key Usage
-            // KeyPurposeId[] EKU = new KeyPurposeId[2];
-            // EKU[0] = KeyPurposeId.id_kp_emailProtection;
-            // EKU[1] = KeyPurposeId.id_kp_serverAuth;
-
-            // certGen.addExtension(Extension.extendedKeyUsage, false, new ExtendedKeyUsage(EKU));
-
-            // // Basic Constraints
-            // certGen.addExtension(Extension.basicConstraints, true, new BasicConstraints(0));
-
-            // // Content Signer
-            // ContentSigner sigGen = new JcaContentSignerBuilder("SHA1WithRSAEncryption").setProvider(BouncyIntegration.PROVIDER).build(caPrivateKey);
-
-            // // Certificate
-            // return new JcaX509CertificateConverter().setProvider(BouncyIntegration.PROVIDER).getCertificate(certGen.build(sigGen));
         } catch (Exception e) {
             throw new RuntimeException("Error creating X509v3Certificate.", e);
         }
@@ -158,64 +140,39 @@ public class CertificateUtils {
         return generateV1SelfSignedCertificate(caKeyPair, subject, BigInteger.valueOf(System.currentTimeMillis()));
     }
 
-    public static X509Certificate generateV1SelfSignedCertificate(KeyPair caKeyPair, String subject, BigInteger serialNumber) {
+    public static X509Certificate generateV1SelfSignedCertificate(KeyPair caKeyPair, String subject,
+            BigInteger serialNumber) {
         try {
-            X509CertificateBuilder cbuilder = new X509CertificateBuilder();
 
-        //X500Principal issuerdn = new X500Principal("CN=" + issuer);
-        X500Principal subjectdn = new X500Principal("CN=" + subject);
-        //cbuilder.setIssuerDn(issuerdn);
-        cbuilder.setSubjectDn(subjectdn);
-        cbuilder.setIssuerDn(subjectdn);
+            X500Principal subjectdn = new X500Principal(subject);
 
-        ZonedDateTime notBefore = ZonedDateTime.ofInstant((new Date(System.currentTimeMillis() - 100000)).toInstant(),
-                ZoneId.systemDefault());
-        Calendar calendar = Calendar.getInstance();
-        calendar.add(Calendar.YEAR, 10);
-        Date validityEndDate = new Date(calendar.getTime().getTime());
-        ZonedDateTime notAfter = ZonedDateTime.ofInstant(validityEndDate.toInstant(),
-                ZoneId.systemDefault());
+            ZonedDateTime notBefore = ZonedDateTime.ofInstant(
+                    (new Date(System.currentTimeMillis() - 100000)).toInstant(),
+                    ZoneId.systemDefault());
+            Calendar calendar = Calendar.getInstance();
+            calendar.add(Calendar.YEAR, 10);
+            Date validityEndDate = new Date(calendar.getTime().getTime());
+            ZonedDateTime notAfter = ZonedDateTime.ofInstant(validityEndDate.toInstant(),
+                    ZoneId.systemDefault());
 
-        cbuilder.setNotValidBefore(notBefore);
-        cbuilder.setNotValidAfter(notAfter);
+            X509CertificateBuilder cbuilder = new X509CertificateBuilder()
+                    .setSubjectDn(subjectdn)
+                    .setIssuerDn(subjectdn)
+                    .setNotValidBefore(notBefore)
+                    .setNotValidAfter(notAfter)
 
-        cbuilder.setSigningKey(caKeyPair.getPrivate());
-        cbuilder.setPublicKey(caKeyPair.getPublic());
+                    .setSigningKey(caKeyPair.getPrivate())
+                    .setPublicKey(caKeyPair.getPublic())
 
-        cbuilder.setSignatureAlgorithmName("SHA256withRSA");
+                    .setSerialNumber(serialNumber)
 
-        return cbuilder.build();
-            // X500Name subjectDN = new X500Name("CN=" + subject);
-            // Date validityStartDate = new Date(System.currentTimeMillis() - 100000);
-            // Calendar calendar = Calendar.getInstance();
-            // calendar.add(Calendar.YEAR, 10);
-            // Date validityEndDate = new Date(calendar.getTime().getTime());
-            // SubjectPublicKeyInfo subPubKeyInfo = SubjectPublicKeyInfo.getInstance(caKeyPair.getPublic().getEncoded());
+                    .setSignatureAlgorithmName("SHA256withRSA");
 
-            // X509v1CertificateBuilder builder = new X509v1CertificateBuilder(subjectDN, serialNumber, validityStartDate,
-            //         validityEndDate, subjectDN, subPubKeyInfo);
-            // X509CertificateHolder holder = builder.build(createSigner(caKeyPair.getPrivate()));
+            return cbuilder.build();
 
-            // return new JcaX509CertificateConverter().getCertificate(holder);
         } catch (Exception e) {
             throw new RuntimeException("Error creating X509v1Certificate.", e);
         }
     }
 
-    /**
-     * Creates the content signer for generation of Version 1 {@link java.security.cert.X509Certificate}.
-     *
-     * @param privateKey the private key
-     *
-     * @return the content signer
-     */
-    // public static ContentSigner createSigner(PrivateKey privateKey) {
-    //     try {
-    //         JcaContentSignerBuilder signerBuilder = new JcaContentSignerBuilder("SHA256WithRSAEncryption");
-    //              //   .setProvider(BouncyIntegration.PROVIDER);
-    //         return signerBuilder.build(privateKey);
-    //     } catch (Exception e) {
-    //         throw new RuntimeException("Could not create content signer.", e);
-    //     }
-    // }
 }
