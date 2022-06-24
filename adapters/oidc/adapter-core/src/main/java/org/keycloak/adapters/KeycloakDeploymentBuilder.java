@@ -183,8 +183,7 @@ public class KeycloakDeploymentBuilder {
     }
 
     public static KeycloakDeployment build(InputStream is) {
-        CryptoIntegration.setClassLoader(KeycloakDeploymentBuilder.class.getClassLoader());
-        log.debugv("BouncyCastle provider: {0}", BouncyIntegration.PROVIDER);
+        CryptoIntegration.init(KeycloakDeploymentBuilder.class.getClassLoader());
         AdapterConfig adapterConfig = loadAdapterConfig(is);
         return new KeycloakDeploymentBuilder().internalBuild(adapterConfig);
     }

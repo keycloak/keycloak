@@ -92,8 +92,7 @@ public class KeycloakApplication extends Application {
 
             logger.debugv("PlatformProvider: {0}", platform.getClass().getName());
             logger.debugv("RestEasy provider: {0}", Resteasy.getProvider().getClass().getName());
-            CryptoIntegration.setClassLoader(KeycloakApplication.class.getClassLoader());
-            logger.debugv("BouncyCastle provider: {0}", BouncyIntegration.PROVIDER);
+            CryptoIntegration.init(KeycloakApplication.class.getClassLoader());
 
             loadConfig();
 

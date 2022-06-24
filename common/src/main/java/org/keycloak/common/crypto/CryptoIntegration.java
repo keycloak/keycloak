@@ -1,13 +1,13 @@
 package org.keycloak.common.crypto;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.ServiceLoader;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import org.jboss.logging.Logger;
+import org.keycloak.common.util.BouncyIntegration;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -16,32 +16,25 @@ public class CryptoIntegration {
 
     protected static final Logger logger = Logger.getLogger(CryptoIntegration.class);
 
-    private static volatile CryptoProvider securityProvider;
+    private static volatile AtomicReference<CryptoProvider> securityProvider = new AtomicReference<>();
 
-    private static volatile ClassLoader classLoader;
-
-    public static void setClassLoader(ClassLoader classLoader) {
-        CryptoIntegration.classLoader = classLoader;
+    public static void init(ClassLoader classLoader) {
+        securityProvider.set(detectProvider(classLoader));
+        logger.debugv("BouncyCastle provider: {0}", BouncyIntegration.PROVIDER);
     }
 
     public static CryptoProvider getProvider() {
-        if (securityProvider == null) {
-            securityProvider = detectProvider();
-            logger.infof("Detected security provider: %s", securityProvider.getClass().getName());
+        CryptoProvider cryptoProvider = securityProvider.get();
+        if (cryptoProvider == null) {
+            securityProvider.compareAndSet(null, detectProvider(CryptoIntegration.class.getClassLoader()));
+            cryptoProvider = securityProvider.get();
         }
-        return securityProvider;
-    }
-
-
-    // This can be possibly set by the configuration (SPI) to override the "detected" instance
-    public static void setProvider(CryptoProvider provider) {
-        securityProvider = provider;
+        return cryptoProvider;
     }
 
 
     // Try to auto-detect provider
-    private static CryptoProvider detectProvider() {
-        ClassLoader classLoader = CryptoIntegration.classLoader != null ? CryptoIntegration.classLoader : CryptoIntegration.class.getClassLoader();
+    private static CryptoProvider detectProvider(ClassLoader classLoader) {
         List<CryptoProvider> foundProviders = StreamSupport.stream(ServiceLoader.load(CryptoProvider.class, classLoader).spliterator(), false)
                 .collect(Collectors.toList());
 
@@ -51,6 +44,7 @@ public class CryptoIntegration {
             throw new IllegalStateException("Multiple crypto providers loaded with the classLoader: " + classLoader +
                     ". Make sure only one cryptoProvider available on the classpath. Available providers: " +foundProviders);
         } else {
+            logger.infof("Detected security provider: %s", securityProvider.getClass().getName());
             return foundProviders.get(0);
         }
     }
