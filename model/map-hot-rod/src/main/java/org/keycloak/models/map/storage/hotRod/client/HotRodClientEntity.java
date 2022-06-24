@@ -24,12 +24,14 @@ import org.keycloak.models.map.storage.hotRod.common.AbstractHotRodEntity;
 import org.keycloak.models.map.storage.hotRod.common.HotRodAttributeEntity;
 import org.keycloak.models.map.storage.hotRod.common.HotRodPair;
 import org.keycloak.models.map.client.MapClientEntity;
+import org.keycloak.models.map.client.MapProtocolMapperEntity;
 import org.keycloak.models.map.storage.hotRod.common.UpdatableHotRodEntityDelegateImpl;
 
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -189,6 +191,20 @@ public class HotRodClientEntity extends AbstractHotRodEntity {
             return clientScopes == null ? Stream.empty() : clientScopes.entrySet().stream()
                     .filter(me -> Objects.equals(me.getValue(), defaultScope))
                     .map(Map.Entry::getKey);
+        }
+
+        @Override
+        public Optional<MapProtocolMapperEntity> getProtocolMapper(String id) {
+            Set<MapProtocolMapperEntity> mappers = getProtocolMappers();
+            if (mappers == null || mappers.isEmpty()) return Optional.empty();
+
+            return mappers.stream().filter(m -> Objects.equals(m.getId(), id)).findFirst();
+        }
+
+        @Override
+        public void removeProtocolMapper(String id) {
+            HotRodClientEntity entity = getHotRodEntity();
+            entity.updated |= entity.protocolMappers != null && entity.protocolMappers.removeIf(m -> Objects.equals(m.id, id));
         }
     }
 
