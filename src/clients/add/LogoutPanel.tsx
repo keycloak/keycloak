@@ -37,75 +37,71 @@ export const LogoutPanel = ({
       role="manage-clients"
       className="pf-u-pb-xl"
     >
-      {protocol === "openid-connect" && (
-        <>
+      <FormGroup
+        label={t("frontchannelLogout")}
+        labelIcon={
+          <HelpItem
+            helpText="clients-help:frontchannelLogout"
+            fieldLabelId="clients:frontchannelLogout"
+          />
+        }
+        fieldId="kc-frontchannelLogout"
+        hasNoPaddingTop
+      >
+        <Controller
+          name="frontchannelLogout"
+          defaultValue={true}
+          control={control}
+          render={({ onChange, value }) => (
+            <Switch
+              id="kc-frontchannelLogout-switch"
+              label={t("common:on")}
+              labelOff={t("common:off")}
+              isChecked={value.toString() === "true"}
+              onChange={(value) => onChange(value.toString())}
+            />
+          )}
+        />
+      </FormGroup>
+      {protocol === "openid-connect" &&
+        frontchannelLogout?.toString() === "true" && (
           <FormGroup
-            label={t("frontchannelLogout")}
+            label={t("frontchannelLogoutUrl")}
+            fieldId="frontchannelLogoutUrl"
             labelIcon={
               <HelpItem
-                helpText="clients-help:frontchannelLogout"
-                fieldLabelId="clients:frontchannelLogout"
+                helpText="clients-help:frontchannelLogoutUrl"
+                fieldLabelId="clients:frontchannelLogoutUrl"
               />
             }
-            fieldId="frontchannelLogout"
-            hasNoPaddingTop
+            helperTextInvalid={
+              errors.attributes?.frontchannel?.logout?.url?.message
+            }
+            validated={
+              errors.attributes?.frontchannel?.logout?.url?.message
+                ? ValidatedOptions.error
+                : ValidatedOptions.default
+            }
           >
-            <Controller
-              name="frontchannelLogout"
-              defaultValue={true}
-              control={control}
-              render={({ onChange, value }) => (
-                <Switch
-                  id="frontchannelLogout"
-                  label={t("common:on")}
-                  labelOff={t("common:off")}
-                  isChecked={value.toString() === "true"}
-                  onChange={(value) => onChange(value.toString())}
-                />
-              )}
-            />
-          </FormGroup>
-          {frontchannelLogout?.toString() === "true" && (
-            <FormGroup
-              label={t("frontchannelLogoutUrl")}
-              fieldId="frontchannelLogoutUrl"
-              labelIcon={
-                <HelpItem
-                  helpText="clients-help:frontchannelLogoutUrl"
-                  fieldLabelId="clients:frontchannelLogoutUrl"
-                />
-              }
-              helperTextInvalid={
-                errors.attributes?.frontchannel?.logout?.url?.message
-              }
+            <KeycloakTextInput
+              type="text"
+              id="frontchannelLogoutUrl"
+              name="attributes.frontchannel.logout.url"
+              ref={register({
+                validate: (uri) =>
+                  ((uri.startsWith("https://") || uri.startsWith("http://")) &&
+                    !uri.includes("*")) ||
+                  uri === "" ||
+                  t("frontchannelUrlInvalid").toString(),
+              })}
               validated={
                 errors.attributes?.frontchannel?.logout?.url?.message
                   ? ValidatedOptions.error
                   : ValidatedOptions.default
               }
-            >
-              <KeycloakTextInput
-                type="text"
-                id="frontchannelLogoutUrl"
-                name="attributes.frontchannel.logout.url"
-                ref={register({
-                  validate: (uri) =>
-                    ((uri.startsWith("https://") ||
-                      uri.startsWith("http://")) &&
-                      !uri.includes("*")) ||
-                    uri === "" ||
-                    t("frontchannelUrlInvalid").toString(),
-                })}
-                validated={
-                  errors.attributes?.frontchannel?.logout?.url?.message
-                    ? ValidatedOptions.error
-                    : ValidatedOptions.default
-                }
-              />
-            </FormGroup>
-          )}
-        </>
-      )}
+            />
+          </FormGroup>
+        )}
       <FormGroup
         label={t("backchannelLogoutUrl")}
         fieldId="backchannelLogoutUrl"

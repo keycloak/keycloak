@@ -39,39 +39,36 @@ describe("Realm settings tabs tests", () => {
     cy.findByTestId(realmSettingsPage.userProfileTab).should("exist");
   });
 
+  // Clicking multiple toggles in succession causes quick re-renderings of the screen
+  // and there will be a noticeable flicker during the test.
+  // Sometimes, this will screw up the test and cause Cypress to hang.
+  // Clicking to another section each time fixes the problem.
+  function reloadRealm() {
+    sidebarPage.goToClientScopes();
+    sidebarPage.goToRealmSettings();
+    cy.findByTestId("rs-login-tab").click();
+  }
+
+  function testToggle(realmSwitch: string, expectedValue: string) {
+    realmSettingsPage.toggleSwitch(realmSwitch);
+    reloadRealm();
+    cy.findByTestId(realmSwitch).should("have.value", expectedValue);
+  }
+
   it("Go to login tab", () => {
     sidebarPage.goToRealmSettings();
     cy.findByTestId("rs-login-tab").click();
-    realmSettingsPage.toggleSwitch(realmSettingsPage.userRegSwitch);
 
-    realmSettingsPage.toggleSwitch(realmSettingsPage.forgotPwdSwitch);
+    testToggle(realmSettingsPage.userRegSwitch, "on");
+    testToggle(realmSettingsPage.forgotPwdSwitch, "on");
+    testToggle(realmSettingsPage.rememberMeSwitch, "on");
+    testToggle(realmSettingsPage.loginWithEmailSwitch, "off");
+    testToggle(realmSettingsPage.duplicateEmailsSwitch, "on");
 
-    realmSettingsPage.toggleSwitch(realmSettingsPage.rememberMeSwitch);
-
-    realmSettingsPage.toggleSwitch(realmSettingsPage.loginWithEmailSwitch);
-
-    // Check values
-    cy.findByTestId(realmSettingsPage.userRegSwitch).should("have.value", "on");
-    cy.findByTestId(realmSettingsPage.forgotPwdSwitch).should(
-      "have.value",
-      "on"
-    );
-    cy.findByTestId(realmSettingsPage.rememberMeSwitch).should(
-      "have.value",
-      "on"
-    );
+    // Check other values
     cy.findByTestId(realmSettingsPage.emailAsUsernameSwitch).should(
       "have.value",
       "off"
-    );
-    cy.findByTestId(realmSettingsPage.loginWithEmailSwitch).should(
-      "have.value",
-      "off"
-    );
-
-    cy.findByTestId(realmSettingsPage.duplicateEmailsSwitch).should(
-      "have.value",
-      "on"
     );
 
     cy.findByTestId(realmSettingsPage.verifyEmailSwitch).should(
