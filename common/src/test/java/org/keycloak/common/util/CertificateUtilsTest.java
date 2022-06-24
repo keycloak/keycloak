@@ -37,7 +37,7 @@ public class CertificateUtilsTest {
     public void testV3SelfSignedCertificate() throws Exception {
 
         KeyPair keyPair = KeyPairGenerator.getInstance("RSA").generateKeyPair();
-        String subject = "Test";
+        String subject = "CN=Test";
         
         X509Certificate caCert = null;
         PrivateKey caPrivateKey = keyPair.getPrivate();
@@ -52,19 +52,19 @@ public class CertificateUtilsTest {
     public void testV3SignedCertificate() throws Exception {
 
         KeyPair cakeyPair = KeyPairGenerator.getInstance("RSA").generateKeyPair();
-        String casubject = "CATest";
+        String casubject = "CN=CATest";
         PrivateKey caPrivateKey = cakeyPair.getPrivate();
         
         X509Certificate caCert = CertificateUtils.generateV3Certificate(cakeyPair, caPrivateKey, null, casubject);
 
         KeyPair keyPair = KeyPairGenerator.getInstance("RSA").generateKeyPair();
-        String subject = "Test";
+        String subject = "CN=Test";
 
         X509Certificate cert = CertificateUtils.generateV3Certificate(keyPair, caPrivateKey, caCert, subject);
 
         cert.checkValidity();
-        Assert.assertEquals("CN="+casubject,cert.getIssuerDN().getName());
-        Assert.assertEquals("CN="+subject, cert.getSubjectDN().getName());
+        Assert.assertEquals(casubject,cert.getIssuerDN().getName());
+        Assert.assertEquals(subject, cert.getSubjectDN().getName());
 
     }
 
