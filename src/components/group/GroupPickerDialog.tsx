@@ -257,7 +257,7 @@ export const GroupPickerDialog = ({
 
                       setSelectedRows(newSelectedRows);
                     }}
-                    aria-labelledby="data-list-check"
+                    aria-labelledby={`select-${group.name}`}
                   />
                 )}
 
@@ -265,16 +265,19 @@ export const GroupPickerDialog = ({
                   dataListCells={[
                     <DataListCell key={`name-${group.id}`}>
                       {filter === "" ? (
-                        group.name
+                        <span id={`select-${group.name}`}>{group.name}</span>
                       ) : (
-                        <GroupPath group={findSubGroup(group, filter)} />
+                        <GroupPath
+                          id={`select-${group.name}`}
+                          group={findSubGroup(group, filter)}
+                        />
                       )}
                     </DataListCell>,
                   ]}
                 />
                 <DataListAction
+                  id="actions"
                   aria-labelledby={`select-${group.name}`}
-                  id={`select-${group.name}`}
                   aria-label={t("groupName")}
                   isPlainButtonAction
                 >

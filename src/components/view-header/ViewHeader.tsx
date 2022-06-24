@@ -84,6 +84,8 @@ export const ViewHeader = ({
     setIsLowerDropdownOpen(!isLowerDropdownOpen);
   };
 
+  const toKey = (value: string) => value.replace(/\s/g, "-");
+
   return (
     <>
       <PageSection variant="light">
@@ -121,7 +123,7 @@ export const ViewHeader = ({
                 {onToggle && (
                   <ToolbarItem>
                     <Switch
-                      id={`${titleKey}-switch`}
+                      id={`${toKey(titleKey)}-switch`}
                       data-testid={`${titleKey}-switch`}
                       label={t("common:enabled")}
                       labelOff={t("common:disabled")}
@@ -135,7 +137,7 @@ export const ViewHeader = ({
                     {helpTextKey && (
                       <HelpItem
                         helpText={t(helpTextKey)}
-                        fieldLabelId={`${titleKey}-switch`}
+                        fieldLabelId={`${toKey(titleKey)}-switch`}
                       />
                     )}
                   </ToolbarItem>

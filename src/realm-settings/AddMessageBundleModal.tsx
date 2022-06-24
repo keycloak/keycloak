@@ -69,7 +69,7 @@ export const AddMessageBundleModal = ({
         <FormGroup
           label={t("common:key")}
           name="key"
-          fieldId="key"
+          fieldId="key-id"
           helperTextInvalid={t("common:required")}
           validated={
             errors.key ? ValidatedOptions.error : ValidatedOptions.default
@@ -81,7 +81,7 @@ export const AddMessageBundleModal = ({
             ref={register({ required: true })}
             autoFocus
             type="text"
-            id="add-key"
+            id="key-id"
             name="key"
             validated={
               errors.key ? ValidatedOptions.error : ValidatedOptions.default
@@ -102,7 +102,7 @@ export const AddMessageBundleModal = ({
             data-testid="value-input"
             ref={register({ required: true })}
             type="text"
-            id="add-value"
+            id="value-id"
             name="value"
             validated={
               errors.value ? ValidatedOptions.error : ValidatedOptions.default

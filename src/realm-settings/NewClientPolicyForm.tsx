@@ -459,7 +459,7 @@ export default function NewClientPolicyForm() {
         >
           <FormGroup
             label={t("common:name")}
-            fieldId="kc-name"
+            fieldId="kc-client-profile-name"
             isRequired
             helperTextInvalid={t("common:required")}
             validated={
