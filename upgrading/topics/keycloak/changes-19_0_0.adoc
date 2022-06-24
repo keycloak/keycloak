@@ -115,6 +115,41 @@ realm**.getUserStorageProviders()**...;
 UserStorageUtil**.getUserStorageProvidersStream(realm)**...;
 ----
 
+The methods `getClientStorageProviders`, `getClientStorageProvidersStream`, `getRoleStorageProviders` and `getRoleStorageProvidersStream` have been removed as well.
+Code which depends on these methods and runs with the legacy storage enabled should cast the instance as follows:
+
+.Before migration: code will not compile due to the changed API
+[source,java,subs="+quotes"]
+----
+realm**.getClientStorageProvidersStream()**...;
+----
+
+.After migration: cast the instance to the legacy interface
+[source,java,subs="+quotes"]
+----
+((LegacyRealmModel) realm)**.getClientStorageProvidersStream()**...;
+----
+
+Similarly, code that used to implement the interface `RealmModel` and wants to provide these methods should implement the new interface `LegacyRealmModel`. This interface is a sub-interface of `RealmModel` and includes the old methods:
+
+.Before migration: code implements the old interface
+[source,java,subs="+quotes"]
+----
+public class MyClass extends RealmModel {
+    /* might not compile due to @Override annotations for methods no longer present
+       in the interface RealmModel. */
+    /* ... */
+}
+----
+
+.After migration: code implements the new interface
+[source,java,subs="+quotes"]
+----
+public class MyClass extends LegacyRealmModel {
+    /* ... */
+}
+----
+
 == Interface `UserCache` moved to the legacy module
 
 As the caching status of objects will be trasparent to services, the interface `UserCache`
