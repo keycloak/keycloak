@@ -156,9 +156,8 @@ enabled TRACE logging. If it is too big, the good alternative is to include just
 added to the log during the operation, which causes the issues to you.
 
 
-- When you create LDAP provider, message appear in the server log in the INFO level starting with:
+- When you create an LDAP provider, a message appears in the server log in the INFO level starting with:
 
- When you create LDAP provider, message appear in the server log in the INFO level starting with:
 
 ```
 Creating new LDAP Store for the LDAP storage provider: ...
@@ -174,8 +173,6 @@ Mapper for provider: XXX, Mapper name: YYY, Provider: ZZZ ...
 Note those messages are displayed just with the enabled DEBUG logging.
 
 - For tracking the performance or connection pooling issues, consider setting the value of property `Connection Pool Debug Level` of
-
-For tracking the performance or connection pooling issues, consider setting the value of property `Connection Pool Debug Level` of
 the LDAP provider to value `all`. This will add lots of additional messages to server log with the included logging for the LDAP connection
 pooling. This can be used to track the issues related to connection pooling or performance.
 
@@ -189,8 +186,3 @@ with your LDAP server.
 in your environment. For example if login of some user takes lot of time, you can consider attach his LDAP entry showing count of `member` attributes
 of various "group" entries. In this case, it might be useful to add if those group entries are mapped to some Group LDAP mapper (or Role LDAP Mapper)
 in {project_name} etc.
-
-For the case of reporting LDAP issue, you may consider to attach some part of your LDAP tree with the target data, which causes issues
-in your environment. For example if login of some user takes lot of time, you can consider attach his LDAP entry showing count of `member` attributes
-of various "group" entries. In this case, it might be useful to add if those group entries are mapped to some Group LDAP mapper (or Role LDAP Mapper)
-in {project_name} and so on.
