@@ -13,12 +13,24 @@ export default class GroupModal {
     );
   };
 
+  textArea() {
+    return cy.get(".pf-c-code-editor__code textarea");
+  }
+
   importButton() {
     return cy.findByTestId("import-button");
   }
 
   cancelButton() {
     return cy.findByTestId("cancel-button");
+  }
+
+  clearButton() {
+    return cy.get("button").contains("Clear");
+  }
+
+  clickClearConfirmButton() {
+    cy.findByTestId("clear-button").click();
   }
 
   closeButton() {

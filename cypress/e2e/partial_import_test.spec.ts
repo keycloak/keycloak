@@ -14,21 +14,27 @@ describe("Partial import test", () => {
   const realmSettings = new RealmSettings();
 
   beforeEach(() => {
-    keycloakBefore();
-    loginPage.logIn();
-    sidebarPage.goToRealm(TEST_REALM);
     sidebarPage.goToRealmSettings();
     realmSettings.clickActionMenu();
   });
 
-  before(async () => {
-    await adminClient.createRealm(TEST_REALM);
-    await adminClient.createRealm(TEST_REALM_2);
+  before(() => {
+    cy.wrap(null).then(() =>
+      Promise.all([
+        adminClient.createRealm(TEST_REALM),
+        adminClient.createRealm(TEST_REALM_2),
+      ])
+    );
+    keycloakBefore();
+    loginPage.logIn();
+    sidebarPage.goToRealm(TEST_REALM);
   });
 
   after(async () => {
-    await adminClient.deleteRealm(TEST_REALM);
-    await adminClient.deleteRealm(TEST_REALM_2);
+    await Promise.all([
+      adminClient.deleteRealm(TEST_REALM),
+      adminClient.deleteRealm(TEST_REALM_2),
+    ]);
   });
 
   it("Opens and closes partial import dialog", () => {
@@ -40,7 +46,7 @@ describe("Partial import test", () => {
 
   it("Import button only enabled if JSON has something to import", () => {
     modal.open();
-    cy.get(".pf-c-code-editor__code textarea").type("{}");
+    modal.textArea().type("{}");
     modal.importButton().should("be.disabled");
     modal.cancelButton().click();
   });
@@ -107,7 +113,19 @@ describe("Partial import test", () => {
 
     cy.contains("One record added");
     cy.contains("customer-portal");
+    modal.closeButton().click();
   });
 
-  // Unfortunately, the PatternFly FileUpload component does not create an id for the clear button.  So we can't easily test that function right now.
+  it("Should clear the input with the button", () => {
+    modal.open();
+
+    //clear button should be disabled if there is nothing in the dialog
+    modal.clearButton().should("be.disabled");
+    modal.textArea().type("{}");
+    modal.textArea().get(".view-lines").should("have.text", "{}");
+    modal.clearButton().should("not.be.disabled");
+    modal.clearButton().click();
+    modal.clickClearConfirmButton();
+    modal.textArea().get(".view-lines").should("have.text", "");
+  });
 });
