@@ -78,5 +78,17 @@ public class CertificateUtilsTest {
 
         cert.checkValidity();
     }
+
+    @Test
+    public void testV1SelfSignedCertificate_withRealmName() throws NoSuchAlgorithmException, CertificateExpiredException, CertificateNotYetValidException {
+
+        KeyPair keyPair = KeyPairGenerator.getInstance("RSA").generateKeyPair();
+        String subject = "TestRealm";
+
+        X509Certificate cert = CertificateUtils.generateV1SelfSignedCertificate(keyPair, subject);
+
+        cert.checkValidity();
+        Assert.assertEquals("CN="+subject, cert.getSubjectDN().getName());
+    }
     
 }

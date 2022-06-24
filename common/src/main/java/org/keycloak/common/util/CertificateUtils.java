@@ -66,7 +66,7 @@ public class CertificateUtils {
             String subject) throws Exception {
         try {
 
-            X500Principal subjectdn = new X500Principal(subject);
+            X500Principal subjectdn = subjectToX500Principle(subject);
             X500Principal issuerdn = subjectdn;
             if (caCert != null) {
                 issuerdn = caCert.getSubjectX500Principal();
@@ -144,7 +144,7 @@ public class CertificateUtils {
             BigInteger serialNumber) {
         try {
 
-            X500Principal subjectdn = new X500Principal(subject);
+            X500Principal subjectdn = subjectToX500Principle(subject);
 
             ZonedDateTime notBefore = ZonedDateTime.ofInstant(
                     (new Date(System.currentTimeMillis() - 100000)).toInstant(),
@@ -173,6 +173,14 @@ public class CertificateUtils {
         } catch (Exception e) {
             throw new RuntimeException("Error creating X509v1Certificate.", e);
         }
+    }
+
+    // Some subject names will not conform to the RFC format
+    private static X500Principal subjectToX500Principle(String subject) {
+        if(!subject.startsWith("CN=")) {
+            subject = "CN="+subject;
+        }
+        return new X500Principal(subject);
     }
 
 }
