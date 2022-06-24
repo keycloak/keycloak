@@ -29,7 +29,7 @@ export enum FilterSession {
 
 export default class ListingPage extends CommonElements {
   private searchInput =
-    ".pf-c-toolbar__item .pf-c-search-input__text-input:visible";
+    ".pf-c-toolbar__item .pf-c-text-input-group__text-input:visible";
   private tableToolbar = ".pf-c-toolbar";
   private itemsRows = "table:visible";
   private deleteUserButton = "delete-user-btn";
@@ -96,7 +96,7 @@ export default class ListingPage extends CommonElements {
     if (searchValue) {
       cy.get(this.searchInput).type(searchValue);
     }
-    cy.get(this.searchBtn).click();
+    cy.get(this.searchBtn).click({ force: true });
 
     if (wait) {
       cy.wait(["@search"]);

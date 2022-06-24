@@ -12,9 +12,7 @@ export type KeycloakTextAreaProps = Omit<
   Pick<HTMLProps<HTMLTextAreaElement>, "onChange">;
 
 export const KeycloakTextArea = forwardRef<
-  // TODO: This is typed incorrectly and will have to be replaced with 'HTMLTextAreaElement'.
-  // More information: https://github.com/patternfly/patternfly-react/pull/7397
-  HTMLInputElement,
+  HTMLTextAreaElement,
   KeycloakTextAreaProps
 >(({ onChange, ...props }, ref) => {
   const onChangeForward: TextAreaProps["onChange"] = (_, event) =>

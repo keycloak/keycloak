@@ -16,7 +16,7 @@ export default class TableToolbar extends CommonElements {
     this.searchBtn =
       this.parentSelector + "button[aria-label='Search']:visible";
     this.searchInput =
-      this.parentSelector + ".pf-c-search-input__text-input:visible";
+      this.parentSelector + ".pf-c-text-input-group__text-input:visible";
     this.changeTypeBtn = this.parentSelector + "#change-type-dropdown";
     this.nextPageBtn = this.parentSelector + "button[data-action=next]";
     this.previousPageBtn = this.parentSelector + "button[data-action=previous]";
@@ -52,7 +52,7 @@ export default class TableToolbar extends CommonElements {
   }
 
   clickSearchButton() {
-    cy.get(this.searchBtn).click();
+    cy.get(this.searchBtn).click({ force: true });
     return this;
   }
 
@@ -79,7 +79,7 @@ export default class TableToolbar extends CommonElements {
     if (searchValue) {
       cy.get(this.searchInput).type(searchValue);
     }
-    cy.get(this.searchBtn).click();
+    this.clickSearchButton();
     if (wait) {
       cy.wait(["@search"]);
     }
