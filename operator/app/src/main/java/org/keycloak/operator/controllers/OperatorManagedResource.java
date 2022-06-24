@@ -53,9 +53,20 @@ public abstract class OperatorManagedResource {
                 setDefaultLabels(resource);
                 setOwnerReferences(resource);
 
-                Log.debugf("Creating or updating resource: %s", resource);
-                resource = client.resource(resource).inNamespace(getNamespace()).createOrReplace();
-                Log.debugf("Successfully created or updated resource: %s", resource);
+                var current = client.resource(resource).inNamespace(getNamespace()).fromServer().get();
+                if (current == null) {
+                    Log.debugf("Creating resource: %s", resource);
+                    resource = client.resource(resource).inNamespace(getNamespace()).createOrReplace();
+                    Log.debugf("Successfully created resource: %s", resource);
+                } else {
+                    if (current.getMetadata().getResourceVersion().equals(resource.getMetadata().getResourceVersion())) {
+                        Log.debugf("Updating resource: %s", resource);
+                        resource = client.resource(resource).inNamespace(getNamespace()).createOrReplace();
+                        Log.debugf("Successfully updated resource: %s", resource);
+                    } else {
+                        throw new IllegalArgumentException("Failing update, resource version changed in the cluster for: " + resource.getClass() + " :" + current.getMetadata().getResourceVersion() + " / " + resource.getMetadata().getResourceVersion());
+                    }
+                }
             } catch (Exception e) {
                 Log.error("Failed to create or update resource");
                 Log.error(Serialization.asYaml(resource));

@@ -100,7 +100,7 @@ public class KeycloakRealmImportJob extends OperatorManagedResource {
     private Job buildJob(PodTemplateSpec keycloakPodTemplate) {
         keycloakPodTemplate.getSpec().setRestartPolicy("Never");
 
-        return new JobBuilder()
+        var job = new JobBuilder()
                 .withNewMetadata()
                 .withName(getName())
                 .withNamespace(getNamespace())
@@ -109,6 +109,12 @@ public class KeycloakRealmImportJob extends OperatorManagedResource {
                 .withTemplate(keycloakPodTemplate)
                 .endSpec()
                 .build();
+
+        if (existingJob != null) {
+            job.getMetadata().setResourceVersion(existingJob.getMetadata().getResourceVersion());
+        }
+
+        return job;
     }
 
     private Volume buildSecretVolume() {

@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
+import io.fabric8.kubernetes.api.model.batch.v1.Job;
+import io.fabric8.kubernetes.api.model.batch.v1.JobBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.utils.KubernetesResourceUtil;
 import org.keycloak.operator.crds.v2alpha1.realmimport.KeycloakRealmImport;
@@ -15,6 +17,7 @@ public class KeycloakRealmImportSecret extends OperatorManagedResource {
 
     private final KeycloakRealmImport realmCR;
     private final String secretName;
+    private final Secret existingSecret;
     private final ObjectMapper jsonMapper;
 
     public KeycloakRealmImportSecret(KubernetesClient client, KeycloakRealmImport realmCR, ObjectMapper jsonMapper) {
@@ -22,6 +25,7 @@ public class KeycloakRealmImportSecret extends OperatorManagedResource {
         this.realmCR = realmCR;
         this.jsonMapper = jsonMapper;
         this.secretName = KubernetesResourceUtil.sanitizeName(getName() + "-" + realmCR.getSpec().getRealm().getRealm() + "-realm");
+        existingSecret = fetchExistingSecret();
     }
 
     @Override
@@ -38,13 +42,27 @@ public class KeycloakRealmImportSecret extends OperatorManagedResource {
             throw new RuntimeException("Failed to read the Realm Representation", cause);
         }
 
-        return new SecretBuilder()
+        var secret = new SecretBuilder()
                 .withNewMetadata()
                 .withName(secretName)
                 .withNamespace(getNamespace())
                 .endMetadata()
                 .addToStringData(fileName, content)
                 .build();
+
+        if (existingSecret != null) {
+            secret.getMetadata().setResourceVersion(existingSecret.getMetadata().getResourceVersion());
+        }
+
+        return secret;
+    }
+
+    private Secret fetchExistingSecret() {
+        return client
+                .secrets()
+                .inNamespace(getNamespace())
+                .withName(getSecretName())
+                .get();
     }
 
     @Override
