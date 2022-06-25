@@ -1,19 +1,20 @@
 :project_community: false
 :project_product: true
 :project_name: Red Hat Single Sign-On
-:project_versionMvn: 15.0.2.redhat-00001
-:project_versionNpm: 15.0.2.redhat-00001
+:project_versionMvn: 18.0.0.redhat-00001
+:project_versionNpm: 18.0.0.redhat-00001
 :project_images: rhsso-images
+:cdate: 2022
 
 :standalone:
 :api-management!:
 :on-prem:
 
 :project_name_full: Red Hat Single Sign-On
-:project_version_base: 7.5
-:project_version: 7.5.0
-:keycloak_upgrade_version: 15.0.2
-:project_versionDoc: 7.5
+:project_version_base: 7.6
+:project_version: 7.6.0
+:keycloak_upgrade_version: 18.0.0
+:project_versionDoc: 7.6
 :project_templates_base_url: https://raw.githubusercontent.com/jboss-container-images/redhat-sso-7-openshift-image/sso75-dev/templates
 :project_latest_image_tag: {project_versionDoc}
 :project_doc_base_url: https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/{project_versionDoc}/html-single

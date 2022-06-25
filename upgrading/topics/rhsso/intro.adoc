@@ -52,7 +52,7 @@ You can migrate to Red Hat Single Sign-On, the supported Red Hat product, from K
 .Prerequisites
 
 * To learn about new features before the upgrade, review the xref:release_changes[changes].
-* Verify that you have installed the correct version of Keycloak as a starting point. To migrate to Red Hat Single Sign-On {project_versionDoc}, you need Keycloak {keycloak_upgrade_version}.
+* Verify that you have installed the correct version of Keycloak as a starting point. To migrate to Red Hat Single Sign-On {project_versionDoc}, first install Keycloak {keycloak_upgrade_version}.
 
 .Procedure
 
