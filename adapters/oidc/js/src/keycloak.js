@@ -30,7 +30,7 @@ function logPromiseDeprecation() {
     }
 }
 
-function Keycloak (config) {
+function Keycloak (config) {  
     if (!(this instanceof Keycloak)) {
         return new Keycloak(config);
     }
@@ -311,7 +311,7 @@ function Keycloak (config) {
 
             return promise.promise;
         }
-
+        
         configPromise.then(function () {
             domReady()
                 .then(check3pCookiesSupported)
@@ -1299,13 +1299,20 @@ function Keycloak (config) {
 
     function check3pCookiesSupported() {
         var promise = createPromise();
+       
+        // If init() has been called once
+        if(loginIframe.iframe3p){
+            promise.setSuccess();
+            return promise.promise;
+        }
 
         if (loginIframe.enable || kc.silentCheckSsoRedirectUri) {
-            var iframe = document.createElement('iframe');
-            iframe.setAttribute('src', kc.endpoints.thirdPartyCookiesIframe());
-            iframe.setAttribute('title', 'keycloak-3p-check-iframe' );
-            iframe.style.display = 'none';
-            document.body.appendChild(iframe);
+                var iframe = document.createElement('iframe');
+                loginIframe.iframe3p = iframe;
+                iframe.setAttribute('src', kc.endpoints.thirdPartyCookiesIframe());
+                iframe.setAttribute('title', 'keycloak-3p-check-iframe' );
+                iframe.style.display = 'none';
+                document.body.appendChild(iframe);
 
             var messageCallback = function(event) {
                 if (iframe.contentWindow !== event.source) {
@@ -1324,6 +1331,7 @@ function Keycloak (config) {
                 }
 
                 document.body.removeChild(iframe);
+                loginIframe.iframe3p = undefined
                 window.removeEventListener("message", messageCallback);
                 promise.setSuccess();
             };
