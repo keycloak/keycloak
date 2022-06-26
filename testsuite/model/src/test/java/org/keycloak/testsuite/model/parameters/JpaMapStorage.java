@@ -93,7 +93,7 @@ public class JpaMapStorage extends KeycloakModelParameters {
           .spi("realm").provider(MapRealmProviderFactory.PROVIDER_ID)                                                   .config(STORAGE_CONFIG, JpaMapStorageProviderFactory.PROVIDER_ID)
           .spi("role").provider(MapRoleProviderFactory.PROVIDER_ID)                                                     .config(STORAGE_CONFIG, JpaMapStorageProviderFactory.PROVIDER_ID)
           .spi(DeploymentStateSpi.NAME).provider(MapDeploymentStateProviderFactory.PROVIDER_ID)                         .config(STORAGE_CONFIG, ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
-          .spi(StoreFactorySpi.NAME).provider(MapAuthorizationStoreFactory.PROVIDER_ID)                                 .config(STORAGE_CONFIG, ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
+          .spi(StoreFactorySpi.NAME).provider(MapAuthorizationStoreFactory.PROVIDER_ID)                                 .config(STORAGE_CONFIG, JpaMapStorageProviderFactory.PROVIDER_ID)
           .spi("user").provider(MapUserProviderFactory.PROVIDER_ID)                                                     .config(STORAGE_CONFIG, ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
           .spi(UserLoginFailureSpi.NAME).provider(MapUserLoginFailureProviderFactory.PROVIDER_ID)                       .config(STORAGE_CONFIG, JpaMapStorageProviderFactory.PROVIDER_ID)
           .spi("dblock").provider(NoLockingDBLockProviderFactory.PROVIDER_ID)                                           .config(STORAGE_CONFIG, ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
