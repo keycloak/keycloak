@@ -9,13 +9,13 @@ public class DatabaseOptions {
 
     public static final Option<String> DB_DIALECT = new OptionBuilder<>("db-dialect", String.class)
             .category(OptionCategory.DATABASE)
-            .runtimes(Option.Runtime.OPERATOR)
+            .hidden()
             .buildTime(true)
             .build();
 
     public static final Option<String> DB_DRIVER = new OptionBuilder<>("db-driver", String.class)
             .category(OptionCategory.DATABASE)
-            .runtimes(Option.Runtime.OPERATOR)
+            .hidden()
             .defaultValue(Database.getDriver("dev-file", true).get())
             .build();
 

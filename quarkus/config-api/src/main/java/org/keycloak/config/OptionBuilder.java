@@ -12,7 +12,7 @@ public class OptionBuilder<T> {
     private final Class<T> auxiliaryType;
     private final String key;
     private OptionCategory category;
-    private Set<Option.Runtime> supportedRuntimes;
+    private boolean hidden;
     private boolean build;
     private String description;
     private Optional<T> defaultValue;
@@ -23,7 +23,7 @@ public class OptionBuilder<T> {
         this.auxiliaryType = null;
         this.key = key;
         category = OptionCategory.GENERAL;
-        supportedRuntimes = Arrays.stream(Option.Runtime.values()).collect(Collectors.toSet());
+        hidden = false;
         build = false;
         description = null;
         defaultValue = Boolean.class.equals(type) ? Optional.of((T) Boolean.FALSE) : Optional.empty();
@@ -38,7 +38,7 @@ public class OptionBuilder<T> {
         this.auxiliaryType = auxiliaryType;
         this.key = key;
         category = OptionCategory.GENERAL;
-        supportedRuntimes = Arrays.stream(Option.Runtime.values()).collect(Collectors.toSet());
+        hidden = false;
         build = false;
         description = null;
         defaultValue = Boolean.class.equals(type) ? Optional.of((T) Boolean.FALSE) : Optional.empty();
@@ -53,15 +53,8 @@ public class OptionBuilder<T> {
         return this;
     }
 
-    public OptionBuilder<T> runtimes(Option.Runtime ... runtimes) {
-        this.supportedRuntimes.clear();
-        this.supportedRuntimes.addAll(Arrays.asList(runtimes));
-        return this;
-    }
-
-    public OptionBuilder<T> runtimes(Set<Option.Runtime> runtimes) {
-        this.supportedRuntimes.clear();
-        this.supportedRuntimes.addAll(runtimes);
+    public OptionBuilder<T> hidden() {
+        this.hidden = true;
         return this;
     }
 
@@ -112,9 +105,9 @@ public class OptionBuilder<T> {
 
     public Option<T> build() {
         if (auxiliaryType != null) {
-            return new MultiOption<T>(type, auxiliaryType, key, category, supportedRuntimes, build, description, defaultValue, expectedValues);
+            return new MultiOption<T>(type, auxiliaryType, key, category, hidden, build, description, defaultValue, expectedValues);
         } else {
-            return new Option<T>(type, key, category, supportedRuntimes, build, description, defaultValue, expectedValues);
+            return new Option<T>(type, key, category, hidden, build, description, defaultValue, expectedValues);
         }
     }
 

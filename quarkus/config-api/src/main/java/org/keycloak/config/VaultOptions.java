@@ -27,21 +27,21 @@ public class VaultOptions {
     public static final Option VAULT_UNMAPPED = new OptionBuilder<>("vault-", String.class)
             .category(OptionCategory.VAULT)
             .description("Maps any vault option to their corresponding properties in quarkus-vault extension.")
-            .runtimes()
+            .hidden()
             .buildTime(true)
             .build();
 
     public static final Option VAULT_URL = new OptionBuilder<>("vault-url", String.class)
             .category(OptionCategory.VAULT)
             .description("The vault server url.")
-            .runtimes()
+            .hidden()
             .buildTime(true)
             .build();
 
     public static final Option VAULT_KV_PATHS = new OptionBuilder("vault-kv-paths", Map.class, String.class)
             .category(OptionCategory.VAULT)
             .description("A set of one or more key/value paths that should be used when looking up secrets.")
-            .runtimes()
+            .hidden()
             .build();
 
     public static final List<Option<?>> ALL_OPTIONS = new ArrayList<>();
