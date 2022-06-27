@@ -22,6 +22,7 @@ import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.Authenticator;
 import org.keycloak.constants.AdapterConstants;
+import org.keycloak.events.Details;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -78,6 +79,8 @@ public class IdentityProviderAuthenticator implements Authenticator {
     protected void redirect(AuthenticationFlowContext context, String providerId, String loginHint) {
         IdentityProviderModel idp = context.getSession().identityProviders().getByAlias(providerId);
         if (idp != null && idp.isEnabled()) {
+            context.getAuthenticationSession().setAuthNote(AuthenticationProcessor.CLIENT_FLOW_ID, context.getFlowId());
+            context.getAuthenticationSession().setAuthNote(AuthenticationProcessor.CLIENT_AUTHENTICATION_EXECUTION, context.getExecution().getId());
             String accessCode = new ClientSessionCode<>(context.getSession(), context.getRealm(), context.getAuthenticationSession()).getOrGenerateCode();
             String clientId = context.getAuthenticationSession().getClient().getClientId();
             String tabId = context.getAuthenticationSession().getTabId();
@@ -101,6 +104,9 @@ public class IdentityProviderAuthenticator implements Authenticator {
 
     @Override
     public void action(AuthenticationFlowContext context) {
+        //If IDENTITY_PROVIDER_USERNAME is not null, then user has logged in via IdP -> return success
+        if (context.getAuthenticationSession().getUserSessionNotes().get(Details.IDENTITY_PROVIDER_USERNAME) != null)
+            context.success();
     }
 
     @Override

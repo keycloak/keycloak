@@ -153,6 +153,20 @@ public class DefaultAuthenticationFlow implements AuthenticationFlow {
         } else return response;
     }
 
+    @Override
+    public Response continueClientAuthAfterIdPLogin(AuthenticationExecutionModel model){
+        AuthenticatorFactory factory = getAuthenticatorFactory(model);
+        Authenticator authenticator = createAuthenticator(factory);
+        AuthenticationProcessor.Result result = processor.createAuthenticatorContext(model, null, null);
+        authenticator.action(result);
+        Response response = processResult(result, true);
+        if (response == null) {
+            return continueAuthenticationAfterSuccessfulAction(model);
+        } else {
+            return response;
+        }
+    }
+
 
     /**
      * Called after "actionExecutionModel" execution is finished (Either successful or attempted). Find the next appropriate authentication

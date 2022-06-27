@@ -93,6 +93,9 @@ public class KcOidcFirstBrokerLoginNewAuthTest extends AbstractInitializedBaseBr
         loginTotpPage.assertCurrent();
         loginTotpPage.login(totp.generateTOTP(totpSecret));
 
+        //return to client flow -> otp has been configured -> ask again
+        loginTotpPage.login(totp.generateTOTP(totpSecret));
+
         assertUserAuthenticatedInConsumer(consumerRealmUserId);
     }
 
@@ -131,7 +134,7 @@ public class KcOidcFirstBrokerLoginNewAuthTest extends AbstractInitializedBaseBr
 
         // Create user and link him with TOTP
         String consumerRealmUserId = createUser("consumer");
-        addTOTPToUser("consumer");
+        String totpSecret = addTOTPToUser("consumer");
 
         loginWithBrokerAndConfirmLinkAccount();
 
@@ -149,6 +152,9 @@ public class KcOidcFirstBrokerLoginNewAuthTest extends AbstractInitializedBaseBr
         // Login with password
         Assert.assertTrue(passwordPage.isCurrent("consumer"));
         passwordPage.login("password");
+
+        //return to client flow -> otp has been configured -> ask again
+        loginTotpPage.login(totp.generateTOTP(totpSecret));
 
         assertUserAuthenticatedInConsumer(consumerRealmUserId);
     }
@@ -182,6 +188,9 @@ public class KcOidcFirstBrokerLoginNewAuthTest extends AbstractInitializedBaseBr
         loginTotpPage.assertCurrent();
 
         // Login with OTP now
+        loginTotpPage.login(totp.generateTOTP(totpSecret));
+
+        //return to client flow -> otp has been configured -> ask again
         loginTotpPage.login(totp.generateTOTP(totpSecret));
 
         assertUserAuthenticatedInConsumer(consumerRealmUserId);

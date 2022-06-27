@@ -19,8 +19,10 @@ package org.keycloak.authentication.authenticators.browser;
 
 import org.keycloak.WebAuthnConstants;
 import org.keycloak.authentication.AuthenticationFlowContext;
+import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.AuthenticatorUtil;
 import org.keycloak.authentication.Authenticator;
+import org.keycloak.events.Details;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -52,18 +54,21 @@ public class UsernamePasswordForm extends AbstractUsernameFormAuthenticator impl
 
     @Override
     public void action(AuthenticationFlowContext context) {
-        MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
-        if (formData.containsKey("cancel")) {
-            context.cancelLogin();
-            return;
-        } else if (webauthnAuth != null && webauthnAuth.isPasskeysEnabled()
-                && (formData.containsKey(WebAuthnConstants.AUTHENTICATOR_DATA) || formData.containsKey(WebAuthnConstants.ERROR))) {
-            // webauth form submission, try to action using the webauthn authenticator
-            webauthnAuth.action(context);
-            return;
-        } else if (!validateForm(context, formData)) {
-            // normal username and form authenticator
-            return;
+        // If IDENTITY_PROVIDER_USERNAME is not null, user has logged in via IdP -> return success
+        if (context.getAuthenticationSession().getUserSessionNotes().get(Details.IDENTITY_PROVIDER_USERNAME) == null) {
+            MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
+            if (formData.containsKey("cancel")) {
+                context.cancelLogin();
+                return;
+            } else if (webauthnAuth != null && webauthnAuth.isPasskeysEnabled()
+                    && (formData.containsKey(WebAuthnConstants.AUTHENTICATOR_DATA) || formData.containsKey(WebAuthnConstants.ERROR))) {
+                // webauth form submission, try to action using the webauthn authenticator
+                webauthnAuth.action(context);
+                return;
+            } else if (!validateForm(context, formData)) {
+                // normal username and form authenticator
+                return;
+            }
         }
         context.success(PasswordCredentialModel.TYPE);
     }
@@ -86,6 +91,8 @@ public class UsernamePasswordForm extends AbstractUsernameFormAuthenticator impl
     public void authenticate(AuthenticationFlowContext context) {
         MultivaluedMap<String, String> formData = new MultivaluedHashMap<>();
         String loginHint = context.getAuthenticationSession().getClientNote(OIDCLoginProtocol.LOGIN_HINT_PARAM);
+        context.getAuthenticationSession().setAuthNote(AuthenticationProcessor.CLIENT_FLOW_ID, context.getFlowId());
+        context.getAuthenticationSession().setAuthNote(AuthenticationProcessor.CLIENT_AUTHENTICATION_EXECUTION, context.getExecution().getId());
 
         String rememberMeUsername = AuthenticationManager.getRememberMeUsername(context.getSession());
 
