@@ -283,7 +283,11 @@ export const GroupPickerDialog = ({
                 >
                   {((hasSubgroups(group) && filter === "") ||
                     type === "selectOne") && (
-                    <Button isDisabled variant="link">
+                    <Button
+                      isDisabled
+                      variant="link"
+                      aria-label={t("common:select")}
+                    >
                       <AngleRightIcon />
                     </Button>
                   )}
