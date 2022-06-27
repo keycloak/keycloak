@@ -49,6 +49,12 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-core</artifactId>
+            <scope>test</scope>
+            <type>test-jar</type>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
             <artifactId>${keycloak.crypto.artifactId}</artifactId>
             <scope>test</scope>
         </dependency>

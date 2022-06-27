@@ -17,12 +17,12 @@ public interface CryptoProvider {
     SecureRandom getSecureRandom() throws NoSuchAlgorithmException, NoSuchProviderException;
     
     /**
-     * Get some cryptographic utility implementation. Returned implementation can be dependent according to if we have
-     * non-fips bouncycastle or fips bouncycastle on the classpath. The implementation should be previously registered by {@link #registerUtility(String, Object)}
+     * Get some algorithm provider implementation. Returned implementation can be dependent according to if we have
+     * non-fips bouncycastle or fips bouncycastle on the classpath.
      * 
      * @param clazz Returned class.
-     * @param typeId Type of the utility, which we want to return 
+     * @param algorithm Type of the algorithm, which we want to return
      * @return 
      */
-    <T> T getCryptoUtility(Class<T> clazz, String typeId);
+    <T> T getAlgorithmProvider(Class<T> clazz, String algorithm);
 }

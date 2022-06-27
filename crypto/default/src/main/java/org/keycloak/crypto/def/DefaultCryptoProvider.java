@@ -28,10 +28,10 @@ public class DefaultCryptoProvider implements CryptoProvider {
     }
 
     @Override
-    public <T> T getCryptoUtility(Class<T> clazz, String typeId) {
-        Object o = providers.get(typeId).get();
+    public <T> T getAlgorithmProvider(Class<T> clazz, String algorithm) {
+        Object o = providers.get(algorithm).get();
         if (o == null) {
-            throw new IllegalArgumentException("Not found provider of type: " + typeId);
+            throw new IllegalArgumentException("Not found provider of algorithm: " + algorithm);
         }
         return clazz.cast(o);
     }

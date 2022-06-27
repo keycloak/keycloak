@@ -14,7 +14,7 @@ public class DefaultCryptoUnitTest {
 
     @Test
     public void testDefaultCrypto() throws Exception {
-        JWEAlgorithmProvider jweAlg = CryptoIntegration.getProvider().getCryptoUtility(JWEAlgorithmProvider.class, CryptoProviderTypes.AES_KEY_WRAP_ALGORITHM_PROVIDER);
+        JWEAlgorithmProvider jweAlg = CryptoIntegration.getProvider().getAlgorithmProvider(JWEAlgorithmProvider.class, CryptoProviderTypes.AES_KEY_WRAP_ALGORITHM_PROVIDER);
         Assert.assertEquals(jweAlg.getClass(), AesKeyWrapAlgorithmProvider.class);
     }
 }

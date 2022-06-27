@@ -16,18 +16,23 @@ public class CryptoIntegration {
 
     protected static final Logger logger = Logger.getLogger(CryptoIntegration.class);
 
-    private static volatile AtomicReference<CryptoProvider> securityProvider = new AtomicReference<>();
+    private static final Object lock = new Object();
+    private static volatile CryptoProvider cryptoProvider;
 
     public static void init(ClassLoader classLoader) {
-        securityProvider.set(detectProvider(classLoader));
-        logger.debugv("BouncyCastle provider: {0}", BouncyIntegration.PROVIDER);
+        if (cryptoProvider == null) {
+            synchronized (lock) {
+                if (cryptoProvider == null) {
+                    cryptoProvider = detectProvider(classLoader);
+                    logger.debugv("BouncyCastle provider: {0}", BouncyIntegration.PROVIDER);
+                }
+            }
+        }
     }
 
     public static CryptoProvider getProvider() {
-        CryptoProvider cryptoProvider = securityProvider.get();
         if (cryptoProvider == null) {
-            securityProvider.compareAndSet(null, detectProvider(CryptoIntegration.class.getClassLoader()));
-            cryptoProvider = securityProvider.get();
+            throw new IllegalStateException("Illegal state. Please init first before obtaining provider");
         }
         return cryptoProvider;
     }

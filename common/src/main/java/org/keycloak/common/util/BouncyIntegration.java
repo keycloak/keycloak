@@ -35,7 +35,7 @@ public class BouncyIntegration {
     public static final String PROVIDER = loadProvider();
 
     private static String loadProvider() {
-        Provider provider = CryptoIntegration.getProvider().getCryptoUtility(Provider.class, CryptoProviderTypes.BC_SECURITY_PROVIDER);
+        Provider provider = CryptoIntegration.getProvider().getAlgorithmProvider(Provider.class, CryptoProviderTypes.BC_SECURITY_PROVIDER);
         if (provider == null) {
             throw new RuntimeException("Failed to load required security provider: BouncyCastleProvider or BouncyCastleFipsProvider");
         }
