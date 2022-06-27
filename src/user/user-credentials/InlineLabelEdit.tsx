@@ -88,6 +88,7 @@ export const InlineLabelEdit = ({
             <>
               {credential.userLabel}
               <Button
+                aria-label={t("editUserLabel")}
                 variant="link"
                 className="kc-editUserLabel-btn"
                 onClick={toggle}

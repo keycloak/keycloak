@@ -95,6 +95,7 @@ export const ScopeSelect = ({
           aria-labelledby={t("scopes")}
           validated={errors.scopes ? "error" : "default"}
           isDisabled={!!preSelected}
+          typeAheadAriaLabel={t("scopes")}
         >
           {toSelectOptions(scopes)}
         </Select>

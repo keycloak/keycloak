@@ -53,7 +53,7 @@ export const CredentialsResetActionMultiSelect = () => {
               event.stopPropagation();
               onChange([]);
             }}
-            aria-label={t("resetActions")}
+            typeAheadAriaLabel={t("resetActions")}
           >
             {Object.values(RequiredActionAlias).map((action, index) => (
               <SelectOption

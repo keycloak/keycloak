@@ -143,6 +143,7 @@ export const ResourcesPolicySelect = ({
           aria-labelledby={t(name)}
           isDisabled={!!preSelected}
           validated={errors[name] ? "error" : "default"}
+          typeAheadAriaLabel={t(name)}
         >
           {toSelectOptions()}
         </Select>

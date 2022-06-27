@@ -167,6 +167,7 @@ export const UserForm = ({
           <FormGroup label={t("common:id")} fieldId="kc-id" isRequired>
             <KeycloakTextInput
               id={user.id}
+              aria-label={t("userID")}
               value={user.id}
               type="text"
               isReadOnly
@@ -179,6 +180,7 @@ export const UserForm = ({
               )}
               type="text"
               id="kc-created-at"
+              aria-label={t("createdAt")}
               name="createdTimestamp"
               isReadOnly
             />
@@ -197,6 +199,7 @@ export const UserForm = ({
             ref={register()}
             type="text"
             id="kc-username"
+            aria-label={t("username")}
             name="username"
             isReadOnly={!!user?.id && !realm?.editUsernameAllowed}
           />
@@ -258,6 +261,7 @@ export const UserForm = ({
           data-testid="firstName-input"
           type="text"
           id="kc-firstname"
+          aria-label={t("firstName")}
           name="firstName"
         />
       </FormGroup>
