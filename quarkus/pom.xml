@@ -159,6 +159,7 @@
     </build>
     
     <modules>
+        <module>config-api</module>
         <module>runtime</module>
         <module>deployment</module>
         <module>server</module>
