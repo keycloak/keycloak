@@ -80,7 +80,7 @@
     "eslint-plugin-cypress": "^2.12.1",
     "eslint-plugin-lodash": "^7.4.0",
     "eslint-plugin-prettier": "^4.0.0",
-    "eslint-plugin-react": "^7.30.0",
+    "eslint-plugin-react": "^7.30.1",
     "fork-ts-checker-webpack-plugin": "^7.2.11",
     "gunzip-maybe": "^1.4.2",
     "http2-proxy": "^5.0.53",
