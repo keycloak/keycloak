@@ -131,7 +131,7 @@ export class ApplicationsPage extends React.Component<ApplicationsPageProps, App
     return (
       <ContentPage
         title={Msg.localize('applicationsPageTitle')}
-        introMessage="Manage your application permissions."
+        introMessage={Msg.localize('applicationsPageSubTitle')}
       >
         <PageSection isFilled variant={PageSectionVariants.light}>
 
