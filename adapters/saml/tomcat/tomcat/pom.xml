@@ -28,10 +28,6 @@
 
     <artifactId>keycloak-saml-tomcat-adapter</artifactId>
     <name>Keycloak Tomcat SAML Integration</name>
-    <properties>
-        <maven.compiler.target>1.8</maven.compiler.target>
-        <maven.compiler.source>1.8</maven.compiler.source>
-    </properties>
     <description />
 
     <dependencies>

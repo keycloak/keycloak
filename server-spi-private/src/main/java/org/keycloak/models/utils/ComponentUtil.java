@@ -22,13 +22,13 @@ import org.keycloak.component.ComponentFactory;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserProvider;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.storage.OnCreateComponent;
 import org.keycloak.storage.OnUpdateComponent;
-import org.keycloak.storage.UserStorageProviderFactory;
 
 import java.util.HashMap;
 import java.util.List;
@@ -94,15 +94,17 @@ public class ComponentUtil {
     public static void notifyCreated(KeycloakSession session, RealmModel realm, ComponentModel model) {
         ComponentFactory factory = getComponentFactory(session, model);
         factory.onCreate(session, realm, model);
-        if (factory instanceof UserStorageProviderFactory) {
-            ((OnCreateComponent)session.userStorageManager()).onCreate(session, realm, model);
+        UserProvider users = session.users();
+        if (users instanceof OnCreateComponent) {
+            ((OnCreateComponent) users).onCreate(session, realm, model);
         }
     }
     public static void notifyUpdated(KeycloakSession session, RealmModel realm, ComponentModel oldModel, ComponentModel newModel) {
         ComponentFactory factory = getComponentFactory(session, newModel);
         factory.onUpdate(session, realm, oldModel, newModel);
-        if (factory instanceof UserStorageProviderFactory) {
-            ((OnUpdateComponent)session.userStorageManager()).onUpdate(session, realm, oldModel, newModel);
+        UserProvider users = session.users();
+        if (users instanceof OnUpdateComponent) {
+            ((OnUpdateComponent) users).onUpdate(session, realm, oldModel, newModel);
         }
     }
     public static void notifyPreRemove(KeycloakSession session, RealmModel realm, ComponentModel model) {

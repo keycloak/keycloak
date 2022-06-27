@@ -80,8 +80,8 @@ jobs:
 
       - name: Test operator running locally
         run: |
-          mvn clean verify -Poperator -pl :keycloak-operator -am \
-              -Dquarkus.kubernetes.deployment-target=kubernetes \
+          mvn clean install -Poperator -pl :keycloak-operator -am \
+              -Dquarkus.kubernetes.image-pull-policy=IfNotPresent \
               -Doperator.keycloak.image=keycloak:${{ steps.vars.outputs.version }} \
               -Dtest.operator.custom.image=custom-keycloak:${{ steps.vars.outputs.version }} \
               -Doperator.keycloak.image-pull-policy=Never \
@@ -126,9 +126,9 @@ jobs:
       - name: Test operator running in cluster
         run: |
           eval $(minikube -p minikube docker-env)
-          mvn clean verify -Poperator -pl :keycloak-operator -am \
+          mvn clean install -Poperator -pl :keycloak-operator -am \
               -Dquarkus.container-image.build=true \
-              -Dquarkus.kubernetes.deployment-target=kubernetes \
+              -Dquarkus.kubernetes.image-pull-policy=IfNotPresent \
               -Doperator.keycloak.image=keycloak:${{ steps.vars.outputs.version }} \
               -Dquarkus.jib.jvm-arguments="-Djava.util.logging.manager=org.jboss.logmanager.LogManager","-Doperator.keycloak.image-pull-policy=Never" \
               -Dtest.operator.custom.image=custom-keycloak:${{ steps.vars.outputs.version }} \

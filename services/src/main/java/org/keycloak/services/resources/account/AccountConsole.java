@@ -48,6 +48,7 @@ import org.keycloak.theme.Theme;
 import org.keycloak.theme.beans.MessageFormatterMethod;
 import org.keycloak.urls.UrlType;
 import org.keycloak.utils.MediaType;
+import org.keycloak.utils.StringUtil;
 
 /**
  * Created by st on 29/03/17.
@@ -115,6 +116,9 @@ public class AccountConsole {
             Locale locale = session.getContext().resolveLocale(user);
             map.put("locale", locale.toLanguageTag());
             Properties messages = theme.getMessages(locale);
+            if(StringUtil.isNotBlank(realm.getDefaultLocale())) {
+                messages.putAll(realm.getRealmLocalizationTextsByLocale(realm.getDefaultLocale()));
+            }
             messages.putAll(realm.getRealmLocalizationTextsByLocale(locale.toLanguageTag()));
             map.put("msg", new MessageFormatterMethod(locale, messages));
             map.put("msgJSON", messagesToJsonString(messages));
@@ -136,7 +140,7 @@ public class AccountConsole {
             boolean isTotpConfigured = false;
             boolean deleteAccountAllowed = false;
             if (user != null) {
-                isTotpConfigured = session.userCredentialManager().isConfiguredFor(realm, user, realm.getOTPPolicy().getType());
+                isTotpConfigured = user.credentialManager().isConfiguredFor(realm.getOTPPolicy().getType());
                 RoleModel deleteAccountRole = realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).getRole(AccountRoles.DELETE_ACCOUNT);
                 deleteAccountAllowed = deleteAccountRole != null && user.hasRole(deleteAccountRole) && realm.getRequiredActionProviderByAlias(DeleteAccount.PROVIDER_ID).isEnabled();
             }

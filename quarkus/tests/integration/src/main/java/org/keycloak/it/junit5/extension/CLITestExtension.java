@@ -55,6 +55,7 @@ public class CLITestExtension extends QuarkusMainTestExtension {
     private KeycloakDistribution dist;
     private final Set<String> testSysProps = new HashSet<>();
     private DatabaseContainer databaseContainer;
+    private CLIResult result;
 
     @Override
     public void beforeEach(ExtensionContext context) throws Exception {
@@ -95,7 +96,7 @@ public class CLITestExtension extends QuarkusMainTestExtension {
                 onBeforeStartDistribution(context.getRequiredTestClass().getAnnotation(BeforeStartDistribution.class));
                 onBeforeStartDistribution(context.getRequiredTestMethod().getAnnotation(BeforeStartDistribution.class));
 
-                dist.start(Arrays.asList(launch.value()));
+                result = dist.run(Arrays.asList(launch.value()));
             }
         } else {
             configureProfile(context);
@@ -154,6 +155,7 @@ public class CLITestExtension extends QuarkusMainTestExtension {
             databaseContainer.stop();
             databaseContainer = null;
         }
+        result = null;
     }
 
     @Override
@@ -190,22 +192,16 @@ public class CLITestExtension extends QuarkusMainTestExtension {
         Class<?> type = parameterContext.getParameter().getType();
 
         if (type == LaunchResult.class) {
-            List<String> outputStream;
-            List<String> errStream;
-            int exitCode;
-
             boolean isDistribution = getDistributionConfig(context) != null;
 
             if (isDistribution) {
-                outputStream = dist.getOutputStream();
-                errStream = dist.getErrorStream();
-                exitCode = dist.getExitCode();
-            } else {
-                LaunchResult result = (LaunchResult) super.resolveParameter(parameterContext, context);
-                outputStream = result.getOutputStream();
-                errStream = result.getErrorStream();
-                exitCode = result.exitCode();
+                return result;
             }
+
+            LaunchResult result = (LaunchResult) super.resolveParameter(parameterContext, context);
+            List<String> outputStream = result.getOutputStream();
+            List<String> errStream = result.getErrorStream();
+            int exitCode = result.exitCode();
 
             return CLIResult.create(outputStream, errStream, exitCode);
         }
@@ -213,6 +209,13 @@ public class CLITestExtension extends QuarkusMainTestExtension {
         if (type.equals(RawDistRootPath.class)) {
             //assuming the path to the distribution directory
             return getDistPath();
+        }
+
+        if (type.equals(KeycloakDistribution.class)) {
+            if (dist == null) {
+                throw new RuntimeException("Only tests annotated with " + DistributionTest.class + " can inject a distribution instance");
+            }
+            return dist;
         }
 
         // for now, no support for manual launching using QuarkusMainLauncher
@@ -223,7 +226,7 @@ public class CLITestExtension extends QuarkusMainTestExtension {
     public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext)
             throws ParameterResolutionException {
         Class<?> type = parameterContext.getParameter().getType();
-        return type == LaunchResult.class || type == RawDistRootPath.class;
+        return type == LaunchResult.class || type == RawDistRootPath.class || (dist != null && type == KeycloakDistribution.class);
     }
 
     private void configureProfile(ExtensionContext context) {
@@ -257,7 +260,7 @@ public class CLITestExtension extends QuarkusMainTestExtension {
                 dist.setProperty("db-password", databaseContainer.getPassword());
                 dist.setProperty("db-url", databaseContainer.getJdbcUrl());
 
-                dist.start(List.of("build"));
+                dist.run("build");
             }
         } else {
             // This is for re-creating the H2 database instead of using the default in home

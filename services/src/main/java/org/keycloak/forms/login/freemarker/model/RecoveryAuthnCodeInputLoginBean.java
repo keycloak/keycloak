@@ -11,10 +11,7 @@ public class RecoveryAuthnCodeInputLoginBean {
     private final int codeNumber;
 
     public RecoveryAuthnCodeInputLoginBean(KeycloakSession session, RealmModel realm, UserModel user) {
-        CredentialModel credentialModel = session.userCredentialManager()
-                                                 .getStoredCredentialsByTypeStream(realm,
-                                                                                   user,
-                                                                                   RecoveryAuthnCodesCredentialModel.TYPE)
+        CredentialModel credentialModel = user.credentialManager().getStoredCredentialsByTypeStream(RecoveryAuthnCodesCredentialModel.TYPE)
                                                  .findFirst().get();
 
         RecoveryAuthnCodesCredentialModel recoveryCodeCredentialModel = RecoveryAuthnCodesCredentialModel.createFromCredentialModel(credentialModel);

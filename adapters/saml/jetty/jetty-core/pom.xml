@@ -29,9 +29,6 @@
     <artifactId>keycloak-saml-jetty-adapter-core</artifactId>
     <name>Keycloak Jetty Core SAML Integration</name>
     <properties>
-        <maven.compiler.target>1.8</maven.compiler.target>
-        <maven.compiler.source>1.8</maven.compiler.source>
-
         <jetty9.version>8.1.17.v20150415</jetty9.version>
         <keycloak.osgi.export>
             org.keycloak.adapters.jetty.core.*

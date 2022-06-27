@@ -45,7 +45,6 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.ScopeContainerModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.CertificateRepresentation;
-import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.transaction.JtaTransactionManagerLookup;
 
 import javax.crypto.spec.SecretKeySpec;
@@ -391,24 +390,6 @@ public final class KeycloakModelUtils {
 
     // USER FEDERATION RELATED STUFF
 
-
-    public static UserStorageProviderModel findUserStorageProviderByName(String displayName, RealmModel realm) {
-        if (displayName == null) {
-            return null;
-        }
-
-        return realm.getUserStorageProvidersStream()
-                .filter(fedProvider -> Objects.equals(fedProvider.getName(), displayName))
-                .findFirst()
-                .orElse(null);
-    }
-
-    public static UserStorageProviderModel findUserStorageProviderById(String fedProviderId, RealmModel realm) {
-        return realm.getUserStorageProvidersStream()
-                .filter(fedProvider -> Objects.equals(fedProvider.getId(), fedProviderId))
-                .findFirst()
-                .orElse(null);
-    }
 
     public static ComponentModel createComponentModel(String name, String parentId, String providerId, String providerType, String... config) {
         ComponentModel mapperModel = new ComponentModel();

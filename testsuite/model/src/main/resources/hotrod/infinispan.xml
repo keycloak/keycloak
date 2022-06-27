@@ -90,6 +90,7 @@
             <encoding media-type="application/x-protostream"/>
             <indexing>
                 <indexed-entities>
+                    <indexed-entity>kc.HotRodResourceServerEntity</indexed-entity>
                     <indexed-entity>kc.HotRodResourceEntity</indexed-entity>
                     <indexed-entity>kc.HotRodScopeEntity</indexed-entity>
                     <indexed-entity>kc.HotRodPolicyEntity</indexed-entity>
@@ -97,6 +98,30 @@
                     <indexed-entity>kc.HotRodStringPair</indexed-entity>
                 </indexed-entities>
             </indexing>
+        </distributed-cache>
+        <distributed-cache name="auth-events" mode="SYNC">
+            <encoding media-type="application/x-protostream"/>
+            <indexing>
+                <indexed-entities>
+                    <indexed-entity>kc.HotRodAuthEventEntity</indexed-entity>
+                </indexed-entities>
+            </indexing>
+        </distributed-cache>
+        <distributed-cache name="admin-events" mode="SYNC">
+            <encoding media-type="application/x-protostream"/>
+            <indexing>
+                <indexed-entities>
+                    <indexed-entity>kc.HotRodAdminEventEntity</indexed-entity>
+                </indexed-entities>
+            </indexing>
+        </distributed-cache>
+        <distributed-cache name="single-use-objects" mode="SYNC">
+            <indexing>
+                <indexed-entities>
+                    <indexed-entity>kc.HotRodSingleUseObjectEntity</indexed-entity>
+                </indexed-entities>
+            </indexing>
+            <encoding media-type="application/x-protostream"/>
         </distributed-cache>
     </cache-container>
 </infinispan>

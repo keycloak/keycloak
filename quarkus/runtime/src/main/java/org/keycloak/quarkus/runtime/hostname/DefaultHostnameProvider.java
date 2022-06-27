@@ -79,7 +79,7 @@ public final class DefaultHostnameProvider implements HostnameProvider, Hostname
         }
 
         if (ADMIN.equals(urlType)) {
-            return getHostname(originalUriInfo);
+            return adminHostName == null ? getHostname(originalUriInfo) : adminHostName;
         }
 
         return fromFrontChannel(originalUriInfo, URI::getHost, this::getHostname, frontChannelHostName);
@@ -166,19 +166,22 @@ public final class DefaultHostnameProvider implements HostnameProvider, Hostname
 
     protected URI getRealmFrontEndUrl() {
         KeycloakSession session = Resteasy.getContextData(KeycloakSession.class);
-        URI realmUrl = (URI) session.getAttribute(REALM_URI_SESSION_ATTRIBUTE);
+        RealmModel realm = session.getContext().getRealm();
+
+        if (realm == null) {
+            return null;
+        }
+
+        String realmUriKey = realm.getId() + REALM_URI_SESSION_ATTRIBUTE;
+        URI realmUrl = (URI) session.getAttribute(realmUriKey);
 
         if (realmUrl == null) {
-            RealmModel realm = session.getContext().getRealm();
+            String frontendUrl = realm.getAttribute("frontendUrl");
 
-            if (realm != null) {
-                String frontendUrl = realm.getAttribute("frontendUrl");
-
-                if (isNotBlank(frontendUrl)) {
-                    realmUrl = URI.create(frontendUrl);
-                    session.setAttribute(DefaultHostnameProvider.REALM_URI_SESSION_ATTRIBUTE, realmUrl);
-                    return realmUrl;
-                }
+            if (isNotBlank(frontendUrl)) {
+                realmUrl = URI.create(frontendUrl);
+                session.setAttribute(realmUriKey, realmUrl);
+                return realmUrl;
             }
         }
 

@@ -36,7 +36,9 @@ import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
@@ -54,6 +56,7 @@ import io.quarkus.fs.util.ZipUtils;
 import org.apache.commons.io.FileUtils;
 
 import org.keycloak.common.Version;
+import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.quarkus.runtime.Environment;
 import org.keycloak.quarkus.runtime.cli.command.Build;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
@@ -76,6 +79,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     private boolean removeBuildOptionsAfterBuild;
     private ExecutorService outputExecutor;
     private boolean inited = false;
+    private Map<String, String> envVars = new HashMap<>();
 
     public RawKeycloakDistribution(boolean debug, boolean manualStop, boolean reCreate, boolean removeBuildOptionsAfterBuild) {
         this.debug = debug;
@@ -86,7 +90,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     }
 
     @Override
-    public void start(List<String> arguments) {
+    public CLIResult run(List<String> arguments) {
         reset();
         if (manualStop && isRunning()) {
             throw new IllegalStateException("Server already running. You should manually stop the server before starting it again.");
@@ -111,8 +115,11 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
             }
             if (!manualStop) {
                 stop();
+                envVars.clear();
             }
         }
+
+        return CLIResult.create(getOutputStream(), getErrorStream(), getExitCode());
     }
 
     @Override
@@ -129,7 +136,6 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
                 keycloak.destroy();
                 keycloak.waitFor(10, TimeUnit.SECONDS);
                 exitCode = keycloak.exitValue();
-
             } catch (Exception cause) {
                 if (Environment.isWindows()) {
                     try {
@@ -325,7 +331,7 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
 
             File distFile = new File("../../dist/" + File.separator + "target" + File.separator + "keycloak-" + Version.VERSION_KEYCLOAK + ".zip");
             if (!distFile.exists()) {
-                throw new RuntimeException("Distribution archive " + distFile.getAbsolutePath() +" doesn't exists");
+                throw new RuntimeException("Distribution archive " + distFile.getAbsolutePath() +" doesn't exist");
             }
             distRootPath.toFile().mkdirs();
             String distDirName = distFile.getName();
@@ -409,6 +415,8 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         builder.environment().put("KEYCLOAK_ADMIN", "admin");
         builder.environment().put("KEYCLOAK_ADMIN_PASSWORD", "admin");
 
+        builder.environment().putAll(envVars);
+
         keycloak = builder.start();
     }
 
@@ -423,11 +431,16 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
     }
 
     @Override
-    public void removeProperty(String key) {
+    public void setEnvVar(String key, String value) {
+        this.envVars.put(key, value);
+    }
+
+    @Override
+    public void removeProperty(String name) {
         updateProperties(new Consumer<Properties>() {
             @Override
             public void accept(Properties properties) {
-                properties.remove(key);
+                properties.remove(name);
             }
         }, distPath.resolve("conf").resolve("keycloak.conf").toFile());
     }

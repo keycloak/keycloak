@@ -17,10 +17,7 @@
 
 package org.keycloak.common.util;
 
-import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.x500.X500Name;
-import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.ExtendedKeyUsage;
 import org.bouncycastle.asn1.x509.Extension;
@@ -28,17 +25,11 @@ import org.bouncycastle.asn1.x509.KeyPurposeId;
 import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.cert.X509CertificateHolder;
-import org.bouncycastle.cert.X509ExtensionUtils;
 import org.bouncycastle.cert.X509v1CertificateBuilder;
 import org.bouncycastle.cert.X509v3CertificateBuilder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
-import org.bouncycastle.crypto.util.PrivateKeyFactory;
+import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
 import org.bouncycastle.operator.ContentSigner;
-import org.bouncycastle.operator.DefaultDigestAlgorithmIdentifierFinder;
-import org.bouncycastle.operator.DefaultSignatureAlgorithmIdentifierFinder;
-import org.bouncycastle.operator.DigestCalculator;
-import org.bouncycastle.operator.bc.BcDigestCalculatorProvider;
-import org.bouncycastle.operator.bc.BcRSAContentSignerBuilder;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 
 import java.math.BigInteger;
@@ -57,9 +48,6 @@ import java.util.Date;
  * @version $Revision: 2 $
  */
 public class CertificateUtils {
-    static {
-        BouncyIntegration.init();
-    }
 
     /**
      * Generates version 3 {@link java.security.cert.X509Certificate}.
@@ -92,9 +80,7 @@ public class CertificateUtils {
             X509v3CertificateBuilder certGen = new X509v3CertificateBuilder(new X500Name(caCert.getSubjectDN().getName()),
                     serialNumber, notBefore, notAfter, subjectDN, subjPubKeyInfo);
 
-            DigestCalculator digCalc = new BcDigestCalculatorProvider()
-                    .get(new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1));
-            X509ExtensionUtils x509ExtensionUtils = new X509ExtensionUtils(digCalc);
+            JcaX509ExtensionUtils x509ExtensionUtils = new JcaX509ExtensionUtils();
 
             // Subject Key Identifier
             certGen.addExtension(Extension.subjectKeyIdentifier, false,
@@ -119,10 +105,10 @@ public class CertificateUtils {
             certGen.addExtension(Extension.basicConstraints, true, new BasicConstraints(0));
 
             // Content Signer
-            ContentSigner sigGen = new JcaContentSignerBuilder("SHA1WithRSAEncryption").setProvider("BC").build(caPrivateKey);
+            ContentSigner sigGen = new JcaContentSignerBuilder("SHA1WithRSAEncryption").setProvider(BouncyIntegration.PROVIDER).build(caPrivateKey);
 
             // Certificate
-            return new JcaX509CertificateConverter().setProvider("BC").getCertificate(certGen.build(sigGen));
+            return new JcaX509CertificateConverter().setProvider(BouncyIntegration.PROVIDER).getCertificate(certGen.build(sigGen));
         } catch (Exception e) {
             throw new RuntimeException("Error creating X509v3Certificate.", e);
         }
@@ -170,11 +156,9 @@ public class CertificateUtils {
      */
     public static ContentSigner createSigner(PrivateKey privateKey) {
         try {
-            AlgorithmIdentifier sigAlgId = new DefaultSignatureAlgorithmIdentifierFinder().find("SHA256WithRSAEncryption");
-            AlgorithmIdentifier digAlgId = new DefaultDigestAlgorithmIdentifierFinder().find(sigAlgId);
-
-            return new BcRSAContentSignerBuilder(sigAlgId, digAlgId)
-                    .build(PrivateKeyFactory.createKey(privateKey.getEncoded()));
+            JcaContentSignerBuilder signerBuilder = new JcaContentSignerBuilder("SHA256WithRSAEncryption")
+                    .setProvider(BouncyIntegration.PROVIDER);
+            return signerBuilder.build(privateKey);
         } catch (Exception e) {
             throw new RuntimeException("Could not create content signer.", e);
         }

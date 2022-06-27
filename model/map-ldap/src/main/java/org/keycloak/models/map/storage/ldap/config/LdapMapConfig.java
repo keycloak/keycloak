@@ -21,7 +21,6 @@ import org.keycloak.Config;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.map.storage.ldap.role.config.LdapMapRoleMapperConfig;
-import org.keycloak.storage.UserStorageProvider;
 
 import javax.naming.directory.SearchControls;
 import java.util.Collection;
@@ -269,15 +268,6 @@ public class LdapMapConfig {
 
     public boolean isStartTls() {
         return Boolean.parseBoolean(config.getFirst(LDAPConstants.START_TLS));
-    }
-
-    public UserStorageProvider.EditMode getEditMode() {
-        String editModeString = config.getFirst(LDAPConstants.EDIT_MODE);
-        if (editModeString == null) {
-            return UserStorageProvider.EditMode.READ_ONLY;
-        } else {
-            return UserStorageProvider.EditMode.valueOf(editModeString);
-        }
     }
 
     public void addBinaryAttribute(String attrName) {

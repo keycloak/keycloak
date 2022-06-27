@@ -25,6 +25,7 @@ import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.UserModelDelegate;
+import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.LDAPConfig;
@@ -64,13 +65,13 @@ import java.util.stream.Stream;
 public class LDAPTestUtils {
 
     public static UserModel addLocalUser(KeycloakSession session, RealmModel realm, String username, String email, String password) {
-        UserModel user = session.userLocalStorage().addUser(realm, username);
+        UserModel user = UserStoragePrivateUtil.userLocalStorage(session).addUser(realm, username);
         user.setEmail(email);
         user.setEnabled(true);
 
         UserCredentialModel creds = UserCredentialModel.password(password);
 
-        session.userCredentialManager().updateCredential(realm, user, creds);
+        user.credentialManager().updateCredential(creds);
         return user;
     }
 
@@ -83,7 +84,7 @@ public class LDAPTestUtils {
         if (password == null) {
             return;
         }
-        session.userCredentialManager().updateCredential(appRealm, user, (UserCredentialModel) UserCredentialModel.password(username));
+        user.credentialManager().updateCredential((UserCredentialModel) UserCredentialModel.password(username));
     }
 
     public static LDAPObject addLDAPUser(LDAPStorageProvider ldapProvider, RealmModel realm, final String username,

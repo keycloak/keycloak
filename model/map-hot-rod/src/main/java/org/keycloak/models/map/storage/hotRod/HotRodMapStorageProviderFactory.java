@@ -26,6 +26,9 @@ import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.common.Profile;
 import org.keycloak.component.AmphibianProviderFactory;
+import org.keycloak.models.ActionTokenValueModel;
+import org.keycloak.events.Event;
+import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
@@ -47,6 +50,8 @@ import org.keycloak.models.map.authSession.MapRootAuthenticationSessionEntity;
 import org.keycloak.models.map.clientscope.MapClientScopeEntity;
 import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.StringKeyConverter;
+import org.keycloak.models.map.events.MapAdminEventEntity;
+import org.keycloak.models.map.events.MapAuthEventEntity;
 import org.keycloak.models.map.group.MapGroupEntity;
 import org.keycloak.models.map.loginFailure.MapUserLoginFailureEntity;
 import org.keycloak.models.map.realm.MapRealmEntity;
@@ -62,6 +67,7 @@ import org.keycloak.models.map.realm.entity.MapRequiredActionProviderEntity;
 import org.keycloak.models.map.realm.entity.MapRequiredCredentialEntity;
 import org.keycloak.models.map.realm.entity.MapWebAuthnPolicyEntity;
 import org.keycloak.models.map.role.MapRoleEntity;
+import org.keycloak.models.map.singleUseObject.MapSingleUseObjectEntity;
 import org.keycloak.models.map.storage.hotRod.authSession.HotRodAuthenticationSessionEntityDelegate;
 import org.keycloak.models.map.storage.hotRod.authSession.HotRodRootAuthenticationSessionEntity;
 import org.keycloak.models.map.storage.hotRod.authSession.HotRodRootAuthenticationSessionEntityDelegate;
@@ -77,6 +83,10 @@ import org.keycloak.models.map.storage.hotRod.authorization.HotRodScopeEntity;
 import org.keycloak.models.map.storage.hotRod.authorization.HotRodScopeEntityDelegate;
 import org.keycloak.models.map.storage.hotRod.common.AbstractHotRodEntity;
 import org.keycloak.models.map.storage.hotRod.common.HotRodEntityDelegate;
+import org.keycloak.models.map.storage.hotRod.events.HotRodAdminEventEntity;
+import org.keycloak.models.map.storage.hotRod.events.HotRodAdminEventEntityDelegate;
+import org.keycloak.models.map.storage.hotRod.events.HotRodAuthEventEntity;
+import org.keycloak.models.map.storage.hotRod.events.HotRodAuthEventEntityDelegate;
 import org.keycloak.models.map.storage.hotRod.loginFailure.HotRodUserLoginFailureEntity;
 import org.keycloak.models.map.storage.hotRod.loginFailure.HotRodUserLoginFailureEntityDelegate;
 import org.keycloak.models.map.storage.hotRod.role.HotRodRoleEntity;
@@ -108,6 +118,8 @@ import org.keycloak.models.map.storage.hotRod.realm.entity.HotRodOTPPolicyEntity
 import org.keycloak.models.map.storage.hotRod.realm.entity.HotRodRequiredActionProviderEntityDelegate;
 import org.keycloak.models.map.storage.hotRod.realm.entity.HotRodRequiredCredentialEntityDelegate;
 import org.keycloak.models.map.storage.hotRod.realm.entity.HotRodWebAuthnPolicyEntityDelegate;
+import org.keycloak.models.map.storage.hotRod.singleUseObject.HotRodSingleUseObjectEntity;
+import org.keycloak.models.map.storage.hotRod.singleUseObject.HotRodSingleUseObjectEntityDelegate;
 import org.keycloak.models.map.storage.hotRod.user.HotRodUserConsentEntityDelegate;
 import org.keycloak.models.map.storage.hotRod.user.HotRodUserCredentialEntityDelegate;
 import org.keycloak.models.map.storage.hotRod.user.HotRodUserEntity;
@@ -151,6 +163,8 @@ public class HotRodMapStorageProviderFactory implements AmphibianProviderFactory
 
             .constructor(MapRoleEntity.class,                       HotRodRoleEntityDelegate::new)
 
+            .constructor(MapSingleUseObjectEntity.class,            HotRodSingleUseObjectEntityDelegate::new)
+
             .constructor(MapUserEntity.class,                       HotRodUserEntityDelegate::new)
             .constructor(MapUserCredentialEntity.class,             HotRodUserCredentialEntityDelegate::new)
             .constructor(MapUserFederatedIdentityEntity.class,      HotRodUserFederatedIdentityEntityDelegate::new)
@@ -179,6 +193,9 @@ public class HotRodMapStorageProviderFactory implements AmphibianProviderFactory
             .constructor(MapScopeEntity.class,                      HotRodScopeEntityDelegate::new)
             .constructor(MapPolicyEntity.class,                     HotRodPolicyEntityDelegate::new)
             .constructor(MapPermissionTicketEntity.class,           HotRodPermissionTicketEntityDelegate::new)
+
+            .constructor(MapAuthEventEntity.class,                  HotRodAuthEventEntityDelegate::new)
+            .constructor(MapAdminEventEntity.class,                 HotRodAdminEventEntityDelegate::new)
 
             .build();
 
@@ -230,6 +247,12 @@ public class HotRodMapStorageProviderFactory implements AmphibianProviderFactory
                 new HotRodEntityDescriptor<>(RealmModel.class,
                         HotRodRealmEntity.class,
                         HotRodRealmEntityDelegate::new));
+
+        // single-use object storage descriptor
+        ENTITY_DESCRIPTOR_MAP.put(ActionTokenValueModel.class,
+                new HotRodEntityDescriptor<>(ActionTokenValueModel.class,
+                        HotRodSingleUseObjectEntity.class,
+                        HotRodSingleUseObjectEntityDelegate::new));
 
        // User sessions descriptor
         ENTITY_DESCRIPTOR_MAP.put(UserSessionModel.class,
@@ -293,6 +316,17 @@ public class HotRodMapStorageProviderFactory implements AmphibianProviderFactory
                         return "authz";
                     }
                 });
+
+        // Events
+        ENTITY_DESCRIPTOR_MAP.put(Event.class,
+                new HotRodEntityDescriptor<>(Event.class,
+                        HotRodAuthEventEntity.class,
+                        HotRodAuthEventEntityDelegate::new));
+
+        ENTITY_DESCRIPTOR_MAP.put(AdminEvent.class,
+                new HotRodEntityDescriptor<>(AdminEvent.class,
+                        HotRodAdminEventEntity.class,
+                        HotRodAdminEventEntityDelegate::new));
     }
 
     @Override
@@ -317,6 +351,8 @@ public class HotRodMapStorageProviderFactory implements AmphibianProviderFactory
             HotRodMapStorage clientSessionStore = getHotRodStorage(session, AuthenticatedClientSessionModel.class);
             return new HotRodUserSessionMapStorage(clientSessionStore, connectionProvider.getRemoteCache(entityDescriptor.getCacheName()), StringKeyConverter.StringKey.INSTANCE, entityDescriptor, CLONER);
 
+        } else if (modelType == ActionTokenValueModel.class) {
+            return new SingleUseObjectHotRodMapStorage(connectionProvider.getRemoteCache(entityDescriptor.getCacheName()), StringKeyConverter.StringKey.INSTANCE, entityDescriptor, CLONER);
         }
         return new HotRodMapStorage<>(connectionProvider.getRemoteCache(entityDescriptor.getCacheName()), StringKeyConverter.StringKey.INSTANCE, entityDescriptor, CLONER);
     }

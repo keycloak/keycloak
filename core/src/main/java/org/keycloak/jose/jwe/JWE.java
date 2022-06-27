@@ -17,15 +17,10 @@
 
 package org.keycloak.jose.jwe;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.security.spec.KeySpec;
-
 import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.Base64Url;
-import org.keycloak.common.util.BouncyIntegration;
-import org.keycloak.jose.JOSEHeader;
 import org.keycloak.jose.JOSE;
+import org.keycloak.jose.JOSEHeader;
 import org.keycloak.jose.jwe.alg.JWEAlgorithmProvider;
 import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
 import org.keycloak.util.JsonSerialization;
@@ -34,15 +29,14 @@ import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.spec.KeySpec;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class JWE implements JOSE {
-
-    static {
-        BouncyIntegration.init();
-    }
 
     private JWEHeader header;
     private String base64Header;

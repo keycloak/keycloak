@@ -38,6 +38,7 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
+import static org.keycloak.models.map.common.ExpirationUtils.isExpired;
 import static org.keycloak.models.map.events.EventUtils.modelToEntity;
 
 public class MapEventStoreProvider implements EventStoreProvider {
@@ -79,9 +80,8 @@ public class MapEventStoreProvider implements EventStoreProvider {
     }
 
     private boolean filterExpired(ExpirableEntity event) {
-        Long expiration = event.getExpiration();
         // Check if entity is expired
-        if (expiration != null && expiration <= Time.currentTimeMillis()) {
+        if (isExpired(event, true)) {
             // Remove entity
             authEventsTX.delete(event.getId());
 
@@ -123,14 +123,7 @@ public class MapEventStoreProvider implements EventStoreProvider {
     @Override
     public void clearExpiredEvents() {
         LOG.tracef("clearExpiredEvents()%s", getShortStackTrace());
-
-        authEventsTX.delete(QueryParameters.withCriteria(DefaultModelCriteria.<Event>criteria()
-                        .compare(Event.SearchableFields.EXPIRATION, ModelCriteriaBuilder.Operator.LE,
-                                Time.currentTimeMillis())));
-
-        adminEventsTX.delete(QueryParameters.withCriteria(DefaultModelCriteria.<AdminEvent>criteria()
-                .compare(AdminEvent.SearchableFields.EXPIRATION, ModelCriteriaBuilder.Operator.LE,
-                        Time.currentTimeMillis())));
+        LOG.warnf("Clearing expired entities should not be triggered manually. It is responsibility of the store to clear these.");
     }
 
     /** ADMIN EVENTS **/

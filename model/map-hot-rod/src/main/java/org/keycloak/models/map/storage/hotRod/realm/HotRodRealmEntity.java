@@ -19,7 +19,6 @@ package org.keycloak.models.map.storage.hotRod.realm;
 
 import org.infinispan.protostream.annotations.ProtoDoc;
 import org.infinispan.protostream.annotations.ProtoField;
-import org.keycloak.common.util.Time;
 import org.keycloak.models.map.annotations.GenerateHotRodEntityImplementation;
 import org.keycloak.models.map.common.UpdatableEntity;
 import org.keycloak.models.map.realm.MapRealmEntity;
@@ -63,6 +62,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static org.keycloak.models.map.common.ExpirationUtils.isExpired;
 
 @GenerateHotRodEntityImplementation(
         implementInterface = "org.keycloak.models.map.realm.MapRealmEntity",
@@ -424,8 +425,7 @@ public class HotRodRealmEntity extends AbstractHotRodEntity {
         }
 
         private boolean checkIfExpired(MapClientInitialAccessEntity cia) {
-            return cia.getRemainingCount() < 1 ||
-                    (cia.getExpiration() != null && cia.getExpiration() < Time.currentTimeMillis());
+            return cia.getRemainingCount() < 1 || isExpired(cia, true);
         }
     }
     @Override

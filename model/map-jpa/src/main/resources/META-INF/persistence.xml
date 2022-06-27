@@ -18,6 +18,10 @@
     <!--clients-->
     <class>org.keycloak.models.map.storage.jpa.client.entity.JpaClientEntity</class>
     <class>org.keycloak.models.map.storage.jpa.client.entity.JpaClientAttributeEntity</class>
+    <!--events-->
+    <class>org.keycloak.models.map.storage.jpa.event.admin.entity.JpaAdminEventEntity</class>
+    <class>org.keycloak.models.map.storage.jpa.event.auth.entity.JpaAuthEventEntity</class>
+    <class>org.keycloak.models.map.storage.jpa.event.auth.entity.JpaAuthEventDetailEntity</class>
     <!--groups-->
     <class>org.keycloak.models.map.storage.jpa.group.entity.JpaGroupEntity</class>
     <class>org.keycloak.models.map.storage.jpa.group.entity.JpaGroupAttributeEntity</class>

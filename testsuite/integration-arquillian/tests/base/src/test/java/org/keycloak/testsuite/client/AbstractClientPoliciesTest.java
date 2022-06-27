@@ -188,11 +188,6 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
-    @BeforeClass
-    public static void beforeClientPoliciesTest() {
-        BouncyIntegration.init();
-    }
-
     @Rule
     public AssertEvents events = new AssertEvents(this);
 
@@ -405,14 +400,14 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
     private PrivateKey decodePrivateKey(byte[] der, String algorithm) throws NoSuchAlgorithmException, InvalidKeySpecException, NoSuchProviderException {
         PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(der);
         String keyAlg = getKeyAlgorithmFromJwaAlgorithm(algorithm);
-        KeyFactory kf = KeyFactory.getInstance(keyAlg, "BC");
+        KeyFactory kf = KeyFactory.getInstance(keyAlg, BouncyIntegration.PROVIDER);
         return kf.generatePrivate(spec);
     }
 
     private PublicKey decodePublicKey(byte[] der, String algorithm) throws NoSuchAlgorithmException, InvalidKeySpecException, NoSuchProviderException {
         X509EncodedKeySpec spec = new X509EncodedKeySpec(der);
         String keyAlg = getKeyAlgorithmFromJwaAlgorithm(algorithm);
-        KeyFactory kf = KeyFactory.getInstance(keyAlg, "BC");
+        KeyFactory kf = KeyFactory.getInstance(keyAlg, BouncyIntegration.PROVIDER);
         return kf.generatePublic(spec);
     }
 

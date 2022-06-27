@@ -17,13 +17,16 @@
 
 package org.keycloak.common.util;
 
-
 import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.StringWriter;
-import java.security.*;
+import java.security.Key;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 
@@ -37,10 +40,6 @@ public final class PemUtils {
 
     public static final String BEGIN_CERT = "-----BEGIN CERTIFICATE-----";
     public static final String END_CERT = "-----END CERTIFICATE-----";
-
-    static {
-        BouncyIntegration.init();
-    }
 
     private PemUtils() {
     }
@@ -74,13 +73,23 @@ public final class PemUtils {
      * @throws Exception
      */
     public static PublicKey decodePublicKey(String pem) {
+        return decodePublicKey(pem, "RSA");
+    }
+
+    /**
+     * Decode a Public Key from a PEM string
+     * @param pem The pem encoded pblic key
+     * @param type The type of the key (RSA, EC,...)
+     * @return The public key or null
+     */
+    public static PublicKey decodePublicKey(String pem, String type) {
         if (pem == null) {
             return null;
         }
 
         try {
             byte[] der = pemToDer(pem);
-            return DerUtils.decodePublicKey(der);
+            return DerUtils.decodePublicKey(der, type);
         } catch (Exception e) {
             throw new PemException(e);
         }

@@ -43,6 +43,7 @@ import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientRolesCo
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientScopesConditionConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientUpdateContextConditionConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createSecureCibaAuthenticationRequestSigningAlgorithmExecutorConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createTestRaiseExeptionExecutorConfig;
 
 import java.io.IOException;
 import java.net.URI;
@@ -109,7 +110,7 @@ import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
 import org.keycloak.testsuite.rest.representation.TestAuthenticationChannelRequest;
 import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResource.AuthorizationEndpointRequestObject;
-import org.keycloak.testsuite.services.clientpolicy.executor.TestRaiseExeptionExecutorFactory;
+import org.keycloak.testsuite.services.clientpolicy.executor.TestRaiseExceptionExecutorFactory;
 import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
 import org.keycloak.testsuite.util.Matchers;
@@ -1789,7 +1790,8 @@ public class CIBATest extends AbstractClientPoliciesTest {
         // register profiles
         String json = (new ClientProfilesBuilder()).addProfile(
                 (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Den Forste Profilen")
-                    .addExecutor(TestRaiseExeptionExecutorFactory.PROVIDER_ID, null)
+                    .addExecutor(TestRaiseExceptionExecutorFactory.PROVIDER_ID,
+                            createTestRaiseExeptionExecutorConfig(Arrays.asList(ClientPolicyEvent.BACKCHANNEL_AUTHENTICATION_REQUEST)))
                     .toRepresentation()
                 ).toString();
         updateProfiles(json);
@@ -1848,7 +1850,8 @@ public class CIBATest extends AbstractClientPoliciesTest {
         // register profiles
         String json = (new ClientProfilesBuilder()).addProfile(
                 (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Den Forste Profilen")
-                    .addExecutor(TestRaiseExeptionExecutorFactory.PROVIDER_ID, null)
+                    .addExecutor(TestRaiseExceptionExecutorFactory.PROVIDER_ID,
+                            createTestRaiseExeptionExecutorConfig(Arrays.asList(ClientPolicyEvent.BACKCHANNEL_TOKEN_REQUEST)))
                     .toRepresentation()
                 ).toString();
         updateProfiles(json);
@@ -2216,7 +2219,8 @@ public class CIBATest extends AbstractClientPoliciesTest {
         // register profiles
         String json = (new ClientProfilesBuilder()).addProfile(
                 (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Het Eerste Profiel")
-                    .addExecutor(TestRaiseExeptionExecutorFactory.PROVIDER_ID, null)
+                    .addExecutor(TestRaiseExceptionExecutorFactory.PROVIDER_ID,
+                            createTestRaiseExeptionExecutorConfig(Arrays.asList(ClientPolicyEvent.BACKCHANNEL_AUTHENTICATION_REQUEST)))
                     .toRepresentation()
                 ).toString();
         updateProfiles(json);
@@ -2242,6 +2246,14 @@ public class CIBATest extends AbstractClientPoliciesTest {
         response = oauth.doBackchannelAuthenticationRequest(clientConfidentialId, clientConfidentialSecret, username, bindingMessage, null, null, additionalParameters);
         assertThat(response.getStatusCode(), is(equalTo(200)));
         Assert.assertNotNull(response.getAuthReqId());
+
+        json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Het Eerste Profiel")
+                    .addExecutor(TestRaiseExceptionExecutorFactory.PROVIDER_ID,
+                            createTestRaiseExeptionExecutorConfig(Arrays.asList(ClientPolicyEvent.BACKCHANNEL_TOKEN_REQUEST)))
+                    .toRepresentation()
+                ).toString();
+        updateProfiles(json);
 
         json = (new ClientPoliciesBuilder()).addPolicy(
                 (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Het Eerste Beleid", Boolean.TRUE)
@@ -2283,6 +2295,34 @@ public class CIBATest extends AbstractClientPoliciesTest {
         assertThat(idToken.getIssuedFor(), is(equalTo(clientConfidentialId)));
         assertThat(idToken.getAudience()[0], is(equalTo(idToken.getIssuedFor())));
 
+    }
+
+    @Test
+    public void testBackchannelAuthenticationFlowWithInvalidScope() throws Exception {
+        ClientResource clientResource = null;
+        ClientRepresentation clientRep = null;
+        try {
+            final String username = "nutzername-rot";
+            final String bindingMessage = "valid_binding_message";
+            final String invalidScope = "not_exist_scope";
+
+            // prepare CIBA settings
+            clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
+            assertThat(clientResource, notNullValue());
+
+            clientRep = clientResource.toRepresentation();
+            prepareCIBASettings(clientResource, clientRep);
+            oauth.scope(invalidScope);
+
+            // user Backchannel Authentication Request
+            AuthenticationRequestAcknowledgement response = oauth.doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, bindingMessage, null, null, null);
+            assertThat(response.getStatusCode(), is(equalTo(400)));
+            assertThat(response.getError(), is(OAuthErrorException.INVALID_REQUEST));
+            assertThat(response.getErrorDescription(), is("Invalid scopes: " + OAuth2Constants.SCOPE_OPENID + " " + invalidScope));
+
+        } finally {
+            revertCIBASettings(clientResource, clientRep);
+        }
     }
 
     private void testBackchannelAuthenticationFlowNotRegisterSigAlgInAdvanceWithSignedAuthentication(String clientName, boolean useRequestUri, String requestedSigAlg, String sigAlg, int statusCode, String errorDescription) throws Exception {

@@ -24,6 +24,7 @@ import org.keycloak.authorization.AuthorizationSpi;
 import org.keycloak.authorization.DefaultAuthorizationProviderFactory;
 import org.keycloak.authorization.store.StoreFactorySpi;
 import org.keycloak.cluster.ClusterSpi;
+import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentFactoryProviderFactory;
 import org.keycloak.component.ComponentFactorySpi;
 import org.keycloak.events.EventStoreSpi;
@@ -50,6 +51,8 @@ import org.keycloak.provider.ProviderManager;
 import org.keycloak.provider.Spi;
 import org.keycloak.services.DefaultComponentFactoryProviderFactory;
 import org.keycloak.services.DefaultKeycloakSessionFactory;
+import org.keycloak.storage.DatastoreProviderFactory;
+import org.keycloak.storage.DatastoreSpi;
 import org.keycloak.timer.TimerSpi;
 import com.google.common.collect.ImmutableSet;
 
@@ -226,6 +229,7 @@ public abstract class KeycloakModelTest {
       .add(UserLoginFailureSpi.class)
       .add(UserSessionSpi.class)
       .add(UserSpi.class)
+      .add(DatastoreSpi.class)
       .build();
 
     private static final Set<Class<? extends ProviderFactory>> ALLOWED_FACTORIES = ImmutableSet.<Class<? extends ProviderFactory>>builder()
@@ -233,6 +237,7 @@ public abstract class KeycloakModelTest {
       .add(DefaultAuthorizationProviderFactory.class)
       .add(DefaultExecutorsProviderFactory.class)
       .add(DeploymentStateProviderFactory.class)
+      .add(DatastoreProviderFactory.class)
       .build();
 
     protected static final List<KeycloakModelParameters> MODEL_PARAMETERS;
@@ -311,7 +316,7 @@ public abstract class KeycloakModelTest {
             }
         };
         res.init();
-        res.publish(new PostMigrationEvent());
+        res.publish(new PostMigrationEvent(res));
         return res;
     }
 
@@ -557,13 +562,15 @@ public abstract class KeycloakModelTest {
     }
 
     @Before
-    public void createEnvironment() {
+    public final void createEnvironment() {
+        Time.setOffset(0);
         USE_DEFAULT_FACTORY = isUseSameKeycloakSessionFactoryForAllThreads();
         KeycloakModelUtils.runJobInTransaction(getFactory(), this::createEnvironment);
     }
 
     @After
-    public void cleanEnvironment() {
+    public final void cleanEnvironment() {
+        Time.setOffset(0);
         if (getFactory() == null) {
             reinitializeKeycloakSessionFactory();
         }

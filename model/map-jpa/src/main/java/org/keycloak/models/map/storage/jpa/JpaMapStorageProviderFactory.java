@@ -56,6 +56,8 @@ import org.keycloak.common.Profile;
 import org.keycloak.common.util.StackUtil;
 import org.keycloak.common.util.StringPropertyReplacer;
 import org.keycloak.component.AmphibianProviderFactory;
+import org.keycloak.events.Event;
+import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.GroupModel;
@@ -108,6 +110,10 @@ import org.keycloak.models.map.storage.jpa.client.JpaClientMapKeycloakTransactio
 import org.keycloak.models.map.storage.jpa.client.entity.JpaClientEntity;
 import org.keycloak.models.map.storage.jpa.clientscope.JpaClientScopeMapKeycloakTransaction;
 import org.keycloak.models.map.storage.jpa.clientscope.entity.JpaClientScopeEntity;
+import org.keycloak.models.map.storage.jpa.event.admin.JpaAdminEventMapKeycloakTransaction;
+import org.keycloak.models.map.storage.jpa.event.admin.entity.JpaAdminEventEntity;
+import org.keycloak.models.map.storage.jpa.event.auth.JpaAuthEventMapKeycloakTransaction;
+import org.keycloak.models.map.storage.jpa.event.auth.entity.JpaAuthEventEntity;
 import org.keycloak.models.map.storage.jpa.group.JpaGroupMapKeycloakTransaction;
 import org.keycloak.models.map.storage.jpa.group.entity.JpaGroupEntity;
 import org.keycloak.models.map.storage.jpa.hibernate.listeners.JpaAutoFlushListener;
@@ -158,6 +164,9 @@ public class JpaMapStorageProviderFactory implements
         .constructor(MapProtocolMapperEntity.class,             MapProtocolMapperEntityImpl::new)
         //client-scope
         .constructor(JpaClientScopeEntity.class,                JpaClientScopeEntity::new)
+        //event
+        .constructor(JpaAdminEventEntity.class,                 JpaAdminEventEntity::new)
+        .constructor(JpaAuthEventEntity.class,                  JpaAuthEventEntity::new)
         //group
         .constructor(JpaGroupEntity.class,                      JpaGroupEntity::new)
         //realm
@@ -184,6 +193,9 @@ public class JpaMapStorageProviderFactory implements
         MODEL_TO_TX.put(RootAuthenticationSessionModel.class,   JpaRootAuthenticationSessionMapKeycloakTransaction::new);
         MODEL_TO_TX.put(ClientScopeModel.class,                 JpaClientScopeMapKeycloakTransaction::new);
         MODEL_TO_TX.put(ClientModel.class,                      JpaClientMapKeycloakTransaction::new);
+        //event
+        MODEL_TO_TX.put(AdminEvent.class,                       JpaAdminEventMapKeycloakTransaction::new);
+        MODEL_TO_TX.put(Event.class,                            JpaAuthEventMapKeycloakTransaction::new);
         MODEL_TO_TX.put(GroupModel.class,                       JpaGroupMapKeycloakTransaction::new);
         MODEL_TO_TX.put(RealmModel.class,                       JpaRealmMapKeycloakTransaction::new);
         MODEL_TO_TX.put(RoleModel.class,                        JpaRoleMapKeycloakTransaction::new);

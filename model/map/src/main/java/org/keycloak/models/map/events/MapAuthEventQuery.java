@@ -17,12 +17,10 @@
 
 package org.keycloak.models.map.events;
 
-import org.keycloak.common.util.Time;
 import org.keycloak.events.Event;
 import org.keycloak.events.Event.SearchableFields;
 import org.keycloak.events.EventQuery;
 import org.keycloak.events.EventType;
-import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.models.map.storage.QueryParameters;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 
@@ -43,7 +41,6 @@ public class MapAuthEventQuery implements EventQuery {
     private Integer firstResult;
     private Integer maxResults;
     private DefaultModelCriteria<Event> mcb = criteria();
-    private final DefaultModelCriteria<Event> criteria = criteria();
     private final Function<QueryParameters<Event>, Stream<Event>> resultProducer;
 
     public MapAuthEventQuery(Function<QueryParameters<Event>, Stream<Event>> resultProducer) {
@@ -106,14 +103,6 @@ public class MapAuthEventQuery implements EventQuery {
 
     @Override
     public Stream<Event> getResultStream() {
-        // Add expiration condition to not load expired events
-        mcb = mcb.and(
-                criteria.or(
-                        criteria.compare(Event.SearchableFields.EXPIRATION, ModelCriteriaBuilder.Operator.NOT_EXISTS),
-                        criteria.compare(Event.SearchableFields.EXPIRATION, ModelCriteriaBuilder.Operator.GT,
-                                Time.currentTimeMillis())
-                ));
-
         return resultProducer.apply(QueryParameters.withCriteria(mcb)
                 .offset(firstResult)
                 .limit(maxResults)

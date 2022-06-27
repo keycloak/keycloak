@@ -1506,6 +1506,9 @@
                                     <keycloak.realm.map.storage.provider>hotrod</keycloak.realm.map.storage.provider>
                                     <keycloak.userSession.map.storage.provider>hotrod</keycloak.userSession.map.storage.provider>
                                     <keycloak.authorization.map.storage.provider>hotrod</keycloak.authorization.map.storage.provider>
+                                    <keycloak.eventStore.map.storage.provider>hotrod</keycloak.eventStore.map.storage.provider>
+                                    <keycloak.actionToken.map.storage.provider>hotrod</keycloak.actionToken.map.storage.provider>
+                                    <keycloak.singleUseObject.map.storage.provider>hotrod</keycloak.singleUseObject.map.storage.provider>
                                 </systemPropertyVariables>
                             </configuration>
                         </plugin>
@@ -1782,6 +1785,89 @@
         <!-- Profiles for migration tests-->
 
         <profile>
+            <id>auth-server-migration-legacy</id>
+            <properties>
+                <migration.import.file>target/test-classes/migration-test/migration-realm-${migrated.auth.server.version}.json</migration.import.file>
+                <migration.import.props.previous>
+                    -Dkeycloak.migration.action=import
+                    -Dkeycloak.migration.provider=singleFile
+                    -Dkeycloak.migration.file=${migration.import.file}
+                    -Dkeycloak.migration.strategy=OVERWRITE_EXISTING
+                </migration.import.props.previous>
+                <skip.add.user.json>true</skip.add.user.json>
+            </properties>
+            <dependencies>
+            <dependency>
+                <groupId>org.wildfly.arquillian</groupId>
+                <artifactId>wildfly-arquillian-container-managed</artifactId>
+            </dependency>
+            </dependencies>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-enforcer-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>enforce</goal>
+                                </goals>
+                                <configuration>
+                                    <rules>
+                                        <requireProperty>
+                                            <property>migrated.auth.server.version</property>
+                                        </requireProperty>
+                                        <requireProperty>
+                                            <property>migration.mode</property>
+                                        </requireProperty>
+                                    </rules>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+                <pluginManagement>
+                    <plugins>
+                        <plugin>
+                            <artifactId>maven-dependency-plugin</artifactId>
+                            <executions>
+                                <execution>
+                                    <id>unpack-migrated-auth-server-jboss</id>
+                                    <phase>generate-resources</phase>
+                                    <goals>
+                                        <goal>unpack</goal>
+                                    </goals>
+                                    <configuration>
+                                        <artifactItems>
+                                            <artifactItem>
+                                                <groupId>org.keycloak.testsuite</groupId>
+                                                <artifactId>integration-arquillian-migration-server-legacy</artifactId>
+                                                <version>${project.version}</version>
+                                                <type>zip</type>
+                                            </artifactItem>
+                                        </artifactItems>
+                                        <outputDirectory>${containers.home}</outputDirectory>
+                                        <overWriteIfNewer>true</overWriteIfNewer>
+                                    </configuration>
+                                </execution>
+                            </executions>
+                        </plugin>
+                        <plugin>
+                            <artifactId>maven-surefire-plugin</artifactId>
+                            <configuration>
+                                <systemPropertyVariables>
+                                    <migrated.auth.server.version>${migrated.auth.server.version}</migrated.auth.server.version>
+                                    <auth.server.migration.legacy>true</auth.server.migration.legacy>
+                                    <keycloak.migration.home>${containers.home}/auth-server-migration-legacy</keycloak.migration.home>
+                                    <migration.import.props.previous>${migration.import.props.previous}</migration.import.props.previous>
+                                </systemPropertyVariables>
+                            </configuration>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>
+
+        <profile>
             <id>auth-server-migration</id>
             <properties>
                 <migration.import.file>target/test-classes/migration-test/migration-realm-${migrated.auth.server.version}.json</migration.import.file>
@@ -1822,7 +1908,7 @@
                             <artifactId>maven-dependency-plugin</artifactId>
                             <executions>
                                 <execution>
-                                    <id>unpack-migrated-auth-server-jboss</id>
+                                    <id>unpack-migrated-auth-server</id>
                                     <phase>generate-resources</phase>
                                     <goals>
                                         <goal>unpack</goal>
@@ -1847,7 +1933,7 @@
                             <configuration>
                                 <systemPropertyVariables>
                                     <migrated.auth.server.version>${migrated.auth.server.version}</migrated.auth.server.version>
-                                    <auth.server.jboss.migration>true</auth.server.jboss.migration>
+                                    <auth.server.migration>true</auth.server.migration>
                                     <keycloak.migration.home>${containers.home}/auth-server-migration</keycloak.migration.home>
                                     <migration.import.props.previous>${migration.import.props.previous}</migration.import.props.previous>
                                 </systemPropertyVariables>

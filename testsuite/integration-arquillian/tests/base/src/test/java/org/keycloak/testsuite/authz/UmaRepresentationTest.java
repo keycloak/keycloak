@@ -158,7 +158,7 @@ public class UmaRepresentationTest extends AbstractResourceServerTest {
 
         AuthorizationBean authorizationBean  = new AuthorizationBean(session, realm, null, session.getContext().getUri());
         ClientModel client = session.getContext().getRealm().getClientByClientId("resource-server-test");
-        UserModel user = session.userStorageManager().getUserByUsername(session.getContext().getRealm(), "marta");
+        UserModel user = session.users().getUserByUsername(session.getContext().getRealm(), "marta");
         ResourceServer resourceServer = authorization.getStoreFactory().getResourceServerStore().findByClient(client);
         ResourceBean resourceBean = authorizationBean.new ResourceBean(
             authorization.getStoreFactory().getResourceStore().findByName(

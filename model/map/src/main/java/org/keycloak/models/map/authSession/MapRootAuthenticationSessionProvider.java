@@ -28,7 +28,6 @@ import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
-import org.keycloak.models.utils.SessionExpiration;
 import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
@@ -41,6 +40,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
+import static org.keycloak.models.map.common.ExpirationUtils.isExpired;
 import static org.keycloak.models.map.storage.QueryParameters.withCriteria;
 import static org.keycloak.models.map.storage.criteria.DefaultModelCriteria.criteria;
 import static org.keycloak.models.utils.SessionExpiration.getAuthSessionLifespan;
@@ -65,13 +65,11 @@ public class MapRootAuthenticationSessionProvider implements AuthenticationSessi
 
     private Function<MapRootAuthenticationSessionEntity, RootAuthenticationSessionModel> entityToAdapterFunc(RealmModel realm) {
         return origEntity -> {
-            //return new MapRootAuthenticationSessionAdapter(session, realm, origEntity);
-            Long expiration = origEntity.getExpiration();
-            if (expiration == null || Time.currentTimeMillis() < origEntity.getExpiration())  {
-                return new MapRootAuthenticationSessionAdapter(session, realm, origEntity);
-            } else {
+            if (isExpired(origEntity, true)) {
                 tx.delete(origEntity.getId());
                 return null;
+            } else {
+                return new MapRootAuthenticationSessionAdapter(session, realm, origEntity);
             }
         };
     }
@@ -137,21 +135,14 @@ public class MapRootAuthenticationSessionProvider implements AuthenticationSessi
 
     @Override
     public void removeAllExpired() {
-        session.realms().getRealmsStream().forEach(this::removeExpired);
+        LOG.tracef("removeAllExpired()%s", getShortStackTrace());
+        LOG.warnf("Clearing expired entities should not be triggered manually. It is responsibility of the store to clear these.");
     }
 
     @Override
     public void removeExpired(RealmModel realm) {
-        Objects.requireNonNull(realm, "The provided realm can't be null!");
-        LOG.debugf("Removing expired sessions");
-
-        DefaultModelCriteria<RootAuthenticationSessionModel> mcb = criteria();
-        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
-          .compare(SearchableFields.EXPIRATION, Operator.LT, Time.currentTimeMillis());
-
-        long deletedCount = tx.delete(withCriteria(mcb));
-
-        LOG.debugf("Removed %d expired authentication sessions for realm '%s'", deletedCount, realm.getName());
+        LOG.tracef("removeExpired(%s)%s", realm, getShortStackTrace());
+        LOG.warnf("Clearing expired entities should not be triggered manually. It is responsibility of the store to clear these.");
     }
 
     @Override

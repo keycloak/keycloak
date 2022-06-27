@@ -34,6 +34,7 @@ import java.util.stream.Collectors;
 import io.quarkus.runtime.LaunchMode;
 import io.quarkus.runtime.configuration.ProfileManager;
 import org.apache.commons.lang3.SystemUtils;
+import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 
 public final class Environment {
 
@@ -43,8 +44,8 @@ public final class Environment {
     public static final String DATA_PATH = "/data";
     public static final String DEFAULT_THEMES_PATH = "/themes";
     public static final String DEV_PROFILE_VALUE = "dev";
+    public static final String PROD_PROFILE_VALUE = "prod";
     public static final String LAUNCH_MODE = "kc.launch.mode";
-
     private Environment() {}
 
     public static Boolean isRebuild() {
@@ -116,7 +117,7 @@ public final class Environment {
     public static String getCurrentOrPersistedProfile() {
         String profile = getProfile();
         if(profile == null) {
-            profile = getConfig().getRawValue(PROFILE);
+            profile = PersistedConfigSource.getInstance().getValue(PROFILE);
         }
         return profile;
     }

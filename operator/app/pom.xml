@@ -23,8 +23,8 @@
         -->
         <resteasy.version>4.7.5.Final</resteasy.version>
         <wildfly.common.version>1.5.4.Final-format-001</wildfly.common.version>
-        <jackson.version>2.13.2</jackson.version>
-        <jackson.databind.version>2.13.2.2</jackson.databind.version>
+        <jackson.version>2.13.3</jackson.version>
+        <jackson.databind.version>2.13.3</jackson.databind.version>
         <kubernetes-client.version>5.12.2</kubernetes-client.version>
 
         <compiler-plugin.version>3.8.1</compiler-plugin.version>
@@ -34,11 +34,10 @@
         <maven.compiler.target>11</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <quarkus.operator.sdk.version>3.0.7</quarkus.operator.sdk.version>
-        <quarkus.version>2.7.5.Final</quarkus.version>
+        <quarkus.operator.sdk.version>3.0.8</quarkus.operator.sdk.version>
+        <quarkus.version>2.7.6.Final</quarkus.version>
         <quarkus.container-image.group>keycloak</quarkus.container-image.group>
         <quarkus.jib.base-jvm-image>registry.access.redhat.com/ubi8/openjdk-11-runtime</quarkus.jib.base-jvm-image>
-        <maven-failsafe-plugin.version>2.22.0</maven-failsafe-plugin.version>
     </properties>
     
     <dependencyManagement>
@@ -112,7 +111,7 @@
         <!-- Keycloak -->
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-common</artifactId>
+            <artifactId>keycloak-config-api</artifactId>
         </dependency>
 
         <!-- Test -->
@@ -263,13 +262,17 @@
                 </executions>
             </plugin>
             <plugin>
-                <artifactId>maven-failsafe-plugin</artifactId>
-                <version>${maven-failsafe-plugin.version}</version>
+                <artifactId>maven-surefire-plugin</artifactId>
                 <executions>
+                <!--
+                    need to run at "verify" to support testing with images (which are built at "package")
+                    using surefire instead of failsafe to align with rest of the KC project
+                -->
                     <execution>
+                        <id>default-test</id>
+                        <phase>verify</phase>
                         <goals>
-                            <goal>integration-test</goal>
-                            <goal>verify</goal>
+                            <goal>test</goal>
                         </goals>
                     </execution>
                 </executions>

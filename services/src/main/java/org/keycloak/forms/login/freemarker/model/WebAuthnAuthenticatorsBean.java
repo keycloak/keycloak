@@ -38,7 +38,7 @@ public class WebAuthnAuthenticatorsBean {
 
     public WebAuthnAuthenticatorsBean(KeycloakSession session, RealmModel realm, UserModel user, String credentialType) {
         // should consider multiple credentials in the future, but only single credential supported now.
-        this.authenticators = session.userCredentialManager().getStoredCredentialsByTypeStream(realm, user, credentialType)
+        this.authenticators = user.credentialManager().getStoredCredentialsByTypeStream(credentialType)
                 .map(WebAuthnCredentialModel::createFromCredentialModel)
                 .map(webAuthnCredential -> {
                     String credentialId = Base64Url.encodeBase64ToBase64Url(webAuthnCredential.getWebAuthnCredentialData().getCredentialId());

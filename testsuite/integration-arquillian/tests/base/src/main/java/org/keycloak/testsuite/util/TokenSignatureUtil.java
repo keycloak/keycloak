@@ -30,6 +30,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.common.util.Base64;
+import org.keycloak.common.util.BouncyIntegration;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.JavaAlgorithm;
@@ -188,7 +189,7 @@ public class TokenSignatureUtil {
     private static Signature getSignature(String sigAlgName) {
         try {
             // use Bouncy Castle for signature verification intentionally
-            Signature signature = Signature.getInstance(JavaAlgorithm.getJavaAlgorithm(sigAlgName), "BC");
+            Signature signature = Signature.getInstance(JavaAlgorithm.getJavaAlgorithm(sigAlgName), BouncyIntegration.PROVIDER);
             return signature;
         } catch (Exception e) {
             throw new RuntimeException(e);

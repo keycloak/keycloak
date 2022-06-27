@@ -118,37 +118,38 @@ public class LastSessionRefreshUnitTest extends AbstractKeycloakTest {
 
         @Override
         public void run(KeycloakSession session) {
-            // Long timer interval. No message due the timer wasn't executed
-            CrossDCLastSessionRefreshStore customStore1 = createStoreInstance(session, 100000, 10);
-            Time.setOffset(100);
-
             try {
-                Thread.sleep(50);
-            } catch (InterruptedException ie) {
-                throw new RuntimeException();
-            }
-            Assert.assertEquals(0, counter.get());
+                // Long timer interval. No message due the timer wasn't executed
+                CrossDCLastSessionRefreshStore customStore1 = createStoreInstance(session, 100000, 10);
+                Time.setOffset(100);
 
-            // Short timer interval 10 ms. 1 message due the interval is executed and lastRun was in the past due to Time.setOffset
-            CrossDCLastSessionRefreshStore customStore2 = createStoreInstance(session, 10, 10);
-            Time.setOffset(200);
+                try {
+                    Thread.sleep(50);
+                } catch (InterruptedException ie) {
+                    throw new RuntimeException();
+                }
+                Assert.assertEquals(0, counter.get());
 
-            Retry.execute(() -> {
+                // Short timer interval 10 ms. 1 message due the interval is executed and lastRun was in the past due to Time.setOffset
+                CrossDCLastSessionRefreshStore customStore2 = createStoreInstance(session, 10, 10);
+                Time.setOffset(200);
+
+                Retry.execute(() -> {
+                    Assert.assertEquals(1, counter.get());
+                }, 100, 10);
+
                 Assert.assertEquals(1, counter.get());
-            }, 100, 10);
 
-            Assert.assertEquals(1, counter.get());
-
-            // Another sleep won't send message. lastRun was updated
-            try {
-                Thread.sleep(50);
-            } catch (InterruptedException ie) {
-                throw new RuntimeException();
+                // Another sleep won't send message. lastRun was updated
+                try {
+                    Thread.sleep(50);
+                } catch (InterruptedException ie) {
+                    throw new RuntimeException();
+                }
+                Assert.assertEquals(1, counter.get());
+            } finally {
+                Time.setOffset(0);
             }
-            Assert.assertEquals(1, counter.get());
-
-
-            Time.setOffset(0);
         }
 
     }

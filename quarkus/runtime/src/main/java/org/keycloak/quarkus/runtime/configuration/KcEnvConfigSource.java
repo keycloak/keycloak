@@ -18,10 +18,12 @@
 package org.keycloak.quarkus.runtime.configuration;
 
 import static io.smallrye.config.common.utils.StringUtil.replaceNonAlphanumericByUnderscores;
-import static org.keycloak.quarkus.runtime.configuration.Configuration.getMappedPropertyName;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
+import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 
 import io.smallrye.config.EnvConfigSource;
 
@@ -37,9 +39,22 @@ public class KcEnvConfigSource extends EnvConfigSource {
 
         for (Map.Entry<String, String> entry : System.getenv().entrySet()) {
             String key = entry.getKey();
+            String value = entry.getValue();
 
             if (key.startsWith(kcPrefix)) {
-                properties.put(getMappedPropertyName(key), entry.getValue());
+                properties.put(key, value);
+
+                PropertyMapper mapper = PropertyMappers.getMapper(key);
+
+                if (mapper != null) {
+                    String to = mapper.getTo();
+
+                    if (to != null) {
+                        properties.put(to, value);
+                    }
+
+                    properties.put(mapper.getFrom(), value);
+                }
             }
         }
 

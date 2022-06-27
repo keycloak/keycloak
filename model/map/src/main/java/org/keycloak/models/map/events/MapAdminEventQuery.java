@@ -17,13 +17,11 @@
 
 package org.keycloak.models.map.events;
 
-import org.keycloak.common.util.Time;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.AdminEvent.SearchableFields;
 import org.keycloak.events.admin.AdminEventQuery;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
-import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.models.map.storage.QueryParameters;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 
@@ -45,7 +43,6 @@ public class MapAdminEventQuery implements AdminEventQuery {
     private Integer firstResult;
     private Integer maxResults;
     private DefaultModelCriteria<AdminEvent> mcb = criteria();
-    private final DefaultModelCriteria<AdminEvent> criteria = criteria();
     private final Function<QueryParameters<AdminEvent>, Stream<AdminEvent>> resultProducer;
 
     public MapAdminEventQuery(Function<QueryParameters<AdminEvent>, Stream<AdminEvent>> resultProducer) {
@@ -90,7 +87,7 @@ public class MapAdminEventQuery implements AdminEventQuery {
 
     @Override
     public AdminEventQuery resourceType(ResourceType... resourceTypes) {
-        mcb = mcb.compare(SearchableFields.RESOURCE_TYPE, EQ, Arrays.stream(resourceTypes));
+        mcb = mcb.compare(SearchableFields.RESOURCE_TYPE, IN, Arrays.stream(resourceTypes));
         return this;
     }
 
@@ -126,14 +123,6 @@ public class MapAdminEventQuery implements AdminEventQuery {
 
     @Override
     public Stream<AdminEvent> getResultStream() {
-        // Add expiration condition to not load expired events
-        mcb = mcb.and(
-                criteria.or(
-                        criteria.compare(AdminEvent.SearchableFields.EXPIRATION, ModelCriteriaBuilder.Operator.NOT_EXISTS),
-                        criteria.compare(AdminEvent.SearchableFields.EXPIRATION, ModelCriteriaBuilder.Operator.GT,
-                                Time.currentTimeMillis())
-                ));
-
         return resultProducer.apply(QueryParameters.withCriteria(mcb)
                 .offset(firstResult)
                 .limit(maxResults)

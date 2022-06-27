@@ -35,7 +35,7 @@ import org.keycloak.it.junit5.extension.approvalTests.KcNamerFactory;
 
 public interface CLIResult extends LaunchResult {
 
-    static Object create(List<String> outputStream, List<String> errStream, int exitCode) {
+    static CLIResult create(List<String> outputStream, List<String> errStream, int exitCode) {
         return new CLIResult() {
             @Override
             public List<String> getOutputStream() {
@@ -101,7 +101,7 @@ public interface CLIResult extends LaunchResult {
     }
 
     default void assertBuildRuntimeMismatchWarning(String quarkusBuildtimePropKey) {
-        assertTrue(getOutput().contains(" - " + quarkusBuildtimePropKey + " is set to 'false' but it is build time fixed to 'true'. Did you change the property " + quarkusBuildtimePropKey + " after building the application?"));
+        assertTrue(getOutput().contains(" - " + quarkusBuildtimePropKey + " is set to 'true' but it is build time fixed to 'false'. Did you change the property " + quarkusBuildtimePropKey + " after building the application?"));
     }
 
     default boolean isClustered() {

@@ -195,6 +195,8 @@ public class KeycloakIdentity implements Identity {
                     while (valueIterator.hasNext()) {
                         values.add(valueIterator.next().asText());
                     }
+                } else if (fieldValue.isObject()) {
+                    values.add(fieldValue.toString());
                 } else {
                     String value = fieldValue.asText();
 

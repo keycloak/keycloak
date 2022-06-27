@@ -17,11 +17,13 @@
 
 package org.keycloak.models.cache.infinispan;
 
+import org.keycloak.credential.CredentialModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.SubjectCredentialManager;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.CachedUserModel;
 import org.keycloak.models.cache.infinispan.entities.CachedUser;
@@ -33,6 +35,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
@@ -50,6 +53,7 @@ public class UserAdapter implements CachedUserModel.Streams {
     protected final KeycloakSession keycloakSession;
     protected final RealmModel realm;
     protected volatile UserModel updated;
+    private boolean userRegisteredForInvalidation;
 
     public UserAdapter(CachedUser cached, UserCacheSession userProvider, KeycloakSession keycloakSession, RealmModel realm) {
         this.cached = cached;
@@ -97,8 +101,12 @@ public class UserAdapter implements CachedUserModel.Streams {
     public UserModel getDelegateForUpdate() {
         if (updated == null) {
             userProviderCache.registerUserInvalidation(realm, cached);
+            userRegisteredForInvalidation = true;
             updated = modelSupplier.get();
             if (updated == null) throw new IllegalStateException("Not found in database");
+        } else if (!userRegisteredForInvalidation) {
+            userProviderCache.registerUserInvalidation(realm, cached);
+            userRegisteredForInvalidation = true;
         }
         return updated;
     }
@@ -279,6 +287,59 @@ public class UserAdapter implements CachedUserModel.Streams {
     }
 
     @Override
+    public SubjectCredentialManager credentialManager() {
+        if (updated == null) {
+            updated = modelSupplier.get();
+            if (updated == null) throw new IllegalStateException("Not found in database");
+        }
+        return new SubjectCredentialManagerCacheAdapter(updated.credentialManager()) {
+            @Override
+            public CredentialModel getStoredCredentialById(String id) {
+                if (!userRegisteredForInvalidation) {
+                    return cached.getStoredCredentials(modelSupplier).stream().filter(credential ->
+                                    Objects.equals(id, credential.getId()))
+                            .findFirst().orElse(null);
+                }
+                return super.getStoredCredentialById(id);
+            }
+
+            @Override
+            public Stream<CredentialModel> getStoredCredentialsStream() {
+                if (!userRegisteredForInvalidation) {
+                    return cached.getStoredCredentials(modelSupplier).stream();
+                }
+                return super.getStoredCredentialsStream();
+            }
+
+            @Override
+            public Stream<CredentialModel> getStoredCredentialsByTypeStream(String type) {
+                if (!userRegisteredForInvalidation) {
+                    return cached.getStoredCredentials(modelSupplier).stream().filter(credential -> Objects.equals(type, credential.getType()));
+                }
+                return super.getStoredCredentialsByTypeStream(type);
+            }
+
+            @Override
+            public CredentialModel getStoredCredentialByNameAndType(String name, String type) {
+                if (!userRegisteredForInvalidation) {
+                    return cached.getStoredCredentials(modelSupplier).stream().filter(credential ->
+                            Objects.equals(type, credential.getType()) && Objects.equals(name, credential.getUserLabel()))
+                            .findFirst().orElse(null);
+                }
+                return super.getStoredCredentialByNameAndType(name, type);
+            }
+
+            @Override
+            public void invalidateCacheForEntity() {
+                if (!userRegisteredForInvalidation) {
+                    userProviderCache.registerUserInvalidation(realm, cached);
+                    userRegisteredForInvalidation = true;
+                }
+            }
+        };
+    }
+
+    @Override
     public Stream<RoleModel> getRealmRoleMappingsStream() {
         if (updated != null) return updated.getRealmRoleMappingsStream();
         return getRoleMappingsStream().filter(r -> RoleUtils.isRealmRole(r, realm));
@@ -392,4 +453,5 @@ public class UserAdapter implements CachedUserModel.Streams {
     private UserModel getUserModel() {
         return userProviderCache.getDelegate().getUserById(realm, cached.getId());
     }
+
 }

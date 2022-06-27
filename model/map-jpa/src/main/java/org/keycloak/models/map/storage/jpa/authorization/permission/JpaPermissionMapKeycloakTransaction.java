@@ -34,7 +34,7 @@ public class JpaPermissionMapKeycloakTransaction extends JpaMapKeycloakTransacti
 
     @SuppressWarnings("unchecked")
     public JpaPermissionMapKeycloakTransaction(EntityManager em) {
-        super(JpaPermissionEntity.class, em);
+        super(JpaPermissionEntity.class, PermissionTicket.class, em);
     }
 
     @Override

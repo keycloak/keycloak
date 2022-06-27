@@ -52,17 +52,6 @@ public class JpaRootAuthenticationSessionModelCriteriaBuilder extends JpaModelCr
                     throw new CriterionNotSupportedException(modelField, op);
                 }
 
-            case LT:
-                if (modelField == SearchableFields.EXPIRATION) {
-                    validateValue(value, modelField, op, Number.class);
-
-                    Number expiration = (Number) value[0];
-                    return new JpaRootAuthenticationSessionModelCriteriaBuilder((cb, root) -> 
-                        cb.lt(root.get(modelField.getName()), expiration)
-                    );
-                } else {
-                    throw new CriterionNotSupportedException(modelField, op);
-                }
             default:
                 throw new CriterionNotSupportedException(modelField, op);
         }

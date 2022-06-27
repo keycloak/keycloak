@@ -17,22 +17,12 @@
 
 package org.keycloak.it.storage.database.dist;
 
-import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.CLITest;
 import org.keycloak.it.junit5.extension.WithDatabase;
-import org.keycloak.it.storage.database.BasicDatabaseTest;
+import org.keycloak.it.storage.database.MariaDBTest;
 
 @CLITest
 @WithDatabase(alias = "mariadb")
-public class MariaDBDistTest extends BasicDatabaseTest {
+public class MariaDBDistTest extends MariaDBTest {
 
-    @Override
-    protected void assertWrongPassword(CLIResult cliResult) {
-        cliResult.assertMessage("Access denied for user");
-    }
-
-    @Override
-    protected void assertWrongUsername(CLIResult cliResult) {
-        cliResult.assertMessage("Access denied for user 'wrong'");
-    }
 }

@@ -22,6 +22,8 @@ import org.jboss.resteasy.plugins.providers.multipart.InputPart;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import javax.ws.rs.NotAcceptableException;
 import javax.ws.rs.NotFoundException;
+
+import org.keycloak.common.util.BouncyIntegration;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.common.util.StreamUtil;
 import org.keycloak.events.admin.OperationType;
@@ -228,7 +230,7 @@ public class ClientAttributeCertificateResource {
         try {
             KeyStore keyStore = null;
             if (keystoreFormat.equals("JKS")) keyStore = KeyStore.getInstance("JKS");
-            else keyStore = KeyStore.getInstance(keystoreFormat, "BC");
+            else keyStore = KeyStore.getInstance(keystoreFormat, BouncyIntegration.PROVIDER);
             keyStore.load(inputParts.get(0).getBody(InputStream.class, null), storePassword);
             try {
                 privateKey = (PrivateKey)keyStore.getKey(keyAlias, keyPassword);
@@ -332,7 +334,7 @@ public class ClientAttributeCertificateResource {
             String format = config.getFormat();
             KeyStore keyStore;
             if (format.equals("JKS")) keyStore = KeyStore.getInstance("JKS");
-            else keyStore = KeyStore.getInstance(format, "BC");
+            else keyStore = KeyStore.getInstance(format, BouncyIntegration.PROVIDER);
             keyStore.load(null, null);
             String keyAlias = config.getKeyAlias();
             if (keyAlias == null) keyAlias = client.getClientId();

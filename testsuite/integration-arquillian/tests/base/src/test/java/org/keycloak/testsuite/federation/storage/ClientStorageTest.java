@@ -24,6 +24,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.events.Details;
@@ -42,6 +43,7 @@ import org.keycloak.storage.client.ClientStorageProvider;
 import org.keycloak.storage.client.ClientStorageProviderModel;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.auth.page.AuthRealm;
@@ -78,6 +80,7 @@ import static org.junit.Assert.assertThat;
 import static org.keycloak.testsuite.admin.ApiUtil.findUserByUsername;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.util.AdminClientUtil;
+import org.junit.BeforeClass;
 
 /**
  * Test that clients can override auth flows
@@ -112,6 +115,11 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
         return id;
     }
 
+    @BeforeClass
+    public static void checkNotMapStorage() {
+        ProfileAssume.assumeFeatureDisabled(Feature.MAP_STORAGE);
+    }
+
     @Before
     public void addProvidersBeforeTest() throws URISyntaxException, IOException {
         ComponentRepresentation provider = new ComponentRepresentation();
@@ -143,7 +151,7 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
             testingClient.server().run(session -> {
                 RealmModel realm = session.realms().getRealmByName(AuthRealm.TEST);
 
-                assertThat(session.clientStorageManager()
+                assertThat(session.clients()
                             .searchClientsByClientIdStream(realm, "client", null, null)
                             .map(ClientModel::getClientId)
                             .collect(Collectors.toList()),
@@ -153,7 +161,7 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
                         );
 
                 // test the pagination; the clients from local storage (root-url-client) are fetched first
-                assertThat(session.clientStorageManager()
+                assertThat(session.clients()
                                 .searchClientsByClientIdStream(realm, "client", 0, 1)
                                 .map(ClientModel::getClientId)
                                 .collect(Collectors.toList()),
@@ -161,7 +169,7 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
                                 not(hasItem(hardcodedClient)),
                                 hasItem("root-url-client"))
                 );
-                assertThat(session.clientStorageManager()
+                assertThat(session.clients()
                                 .searchClientsByClientIdStream(realm, "client", 1, 1)
                                 .map(ClientModel::getClientId)
                                 .collect(Collectors.toList()),
@@ -179,7 +187,7 @@ public class ClientStorageTest extends AbstractTestRealmKeycloakTest {
 
             testingClient.server().run(session -> {
                 // search for clients and check hardcoded-client is not present
-                assertThat(session.clientStorageManager()
+                assertThat(session.clients()
                         .searchClientsByClientIdStream(session.realms().getRealmByName(AuthRealm.TEST), "client", null, null)
                         .map(ClientModel::getClientId)
                         .collect(Collectors.toList()),

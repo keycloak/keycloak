@@ -27,7 +27,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -48,6 +47,8 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
+
+import com.fasterxml.jackson.core.type.TypeReference;
 
 import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
@@ -77,21 +78,20 @@ import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.LDAPConstants;
+import org.keycloak.models.LegacySessionSupportProvider;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.cache.CacheRealmProvider;
-import org.keycloak.models.cache.UserCache;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.models.utils.StripSecretsUtils;
 import org.keycloak.partialimport.PartialImportManager;
 import org.keycloak.protocol.oidc.TokenManager;
+import org.keycloak.provider.InvalidationHandler;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -103,22 +103,17 @@ import org.keycloak.representations.idm.ManagementPermissionReference;
 import org.keycloak.representations.idm.PartialImportRepresentation;
 import org.keycloak.representations.idm.RealmEventsConfigRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.TestLdapConnectionRepresentation;
 import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.managers.AuthenticationManager;
-import org.keycloak.services.managers.LDAPServerCapabilitiesManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.managers.ResourceAdminManager;
-import org.keycloak.services.managers.UserStorageSyncManager;
+import org.keycloak.services.resources.admin.ext.AdminRealmResourceProvider;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionManagement;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
-import org.keycloak.representations.idm.LDAPCapabilityRepresentation;
+import org.keycloak.storage.LegacyStoreSyncEvent;
 import org.keycloak.utils.ProfileHelper;
 import org.keycloak.utils.ReservedCharValidator;
-
-import com.fasterxml.jackson.core.type.TypeReference;
-import org.keycloak.utils.ServicesUtils;
 
 /**
  * Base resource class for the admin REST api of one realm
@@ -437,9 +432,7 @@ public class RealmAdminResource {
             RepresentationToModel.updateRealm(rep, realm, session);
 
             // Refresh periodic sync tasks for configured federationProviders
-            UserStorageSyncManager usersSyncManager = new UserStorageSyncManager();
-            realm.getUserStorageProvidersStream().forEachOrdered(fedProvider ->
-                    usersSyncManager.notifyToRefreshPeriodicSync(session, realm, fedProvider, false));
+            LegacyStoreSyncEvent.fire(session, realm, false);
 
             // This populates the map in DefaultKeycloakContext to be used when treating the event
             session.getContext().getUri();
@@ -447,8 +440,7 @@ public class RealmAdminResource {
             adminEvent.operation(OperationType.UPDATE).representation(StripSecretsUtils.strip(rep)).success();
             
             if (rep.isDuplicateEmailsAllowed() != null && rep.isDuplicateEmailsAllowed() != wasDuplicateEmailsAllowed) {
-                UserCache cache = session.getProvider(UserCache.class);
-                if (cache != null) cache.clear();
+                session.invalidate(InvalidationHandler.ObjectType.REALM, realm.getId());
             }
             
             return Response.noContent().build();
@@ -532,12 +524,18 @@ public class RealmAdminResource {
     }
 
 
-    @Path("user-storage")
-    public UserStorageProviderResource userStorage() {
-        UserStorageProviderResource fed = new UserStorageProviderResource(realm, auth, adminEvent);
-        ResteasyProviderFactory.getInstance().injectProperties(fed);
-        //resourceContext.initResource(fed);
-        return fed;
+    @Path("{extension}")
+    public Object extension(@PathParam("extension") String extension) {
+        AdminRealmResourceProvider provider = session.getProvider(AdminRealmResourceProvider.class, extension);
+        if (provider != null) {
+            Object resource = provider.getResource(session, realm, auth, adminEvent);
+            if (resource != null) {
+                ResteasyProviderFactory.getInstance().injectProperties(resource);
+                return resource;
+            }
+        }
+
+        throw new NotFoundException();
     }
 
     @Path("authentication")
@@ -921,65 +919,6 @@ public class RealmAdminResource {
     }
 
     /**
-     * Test LDAP connection
-     *
-     * @param action
-     * @param connectionUrl
-     * @param bindDn
-     * @param bindCredential
-     * @return
-     */
-    @Path("testLDAPConnection")
-    @POST
-    @NoCache
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    @Deprecated
-    public Response testLDAPConnection(@FormParam("action") String action, @FormParam("connectionUrl") String connectionUrl,
-                                       @FormParam("bindDn") String bindDn, @FormParam("bindCredential") String bindCredential,
-                                       @FormParam("useTruststoreSpi") String useTruststoreSpi, @FormParam("connectionTimeout") String connectionTimeout,
-                                       @FormParam("componentId") String componentId, @FormParam("startTls") String startTls) {
-        auth.realm().requireManageRealm();
-
-        TestLdapConnectionRepresentation config = new TestLdapConnectionRepresentation(action, connectionUrl, bindDn, bindCredential, useTruststoreSpi, connectionTimeout, startTls, LDAPConstants.AUTH_TYPE_SIMPLE);
-        config.setComponentId(componentId);
-        boolean result = LDAPServerCapabilitiesManager.testLDAP(config, session, realm);
-        return result ? Response.noContent().build() : ErrorResponse.error("LDAP test error", Response.Status.BAD_REQUEST);
-    }
-
-    /**
-     * Test LDAP connection
-     * @return
-     */
-    @Path("testLDAPConnection")
-    @POST
-    @NoCache
-    @Consumes(MediaType.APPLICATION_JSON)
-    public Response testLDAPConnection(TestLdapConnectionRepresentation config) {
-        boolean result = LDAPServerCapabilitiesManager.testLDAP(config, session, realm);
-        return result ? Response.noContent().build() : ErrorResponse.error("LDAP test error", Response.Status.BAD_REQUEST);
-    }
-
-    /**
-     * Get LDAP supported extensions.
-     * @param config LDAP configuration
-     * @return
-     */
-    @POST
-    @Path("ldap-server-capabilities")
-    @NoCache
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(javax.ws.rs.core.MediaType.APPLICATION_JSON)
-    public Response ldapServerCapabilities(TestLdapConnectionRepresentation config) {
-        auth.realm().requireManageRealm();
-        try {
-            Set<LDAPCapabilityRepresentation> ldapCapabilities = LDAPServerCapabilitiesManager.queryServerCapabilities(config, session, realm);
-            return Response.ok().entity(ldapCapabilities).build();
-        } catch (Exception e) {
-            return ErrorResponse.error("ldapServerCapabilities error", Status.BAD_REQUEST);
-        }
-    }
-
-    /**
      * Test SMTP connection with current logged in user
      *
      * @param config SMTP server configuration
@@ -1037,7 +976,7 @@ public class RealmAdminResource {
     public Stream<GroupRepresentation> getDefaultGroups() {
         auth.realm().requireViewRealm();
 
-        return realm.getDefaultGroupsStream().map(ServicesUtils::groupToBriefRepresentation);
+        return realm.getDefaultGroupsStream().map(ModelToRepresentation::groupToBriefRepresentation);
     }
     @PUT
     @NoCache
@@ -1138,40 +1077,6 @@ public class RealmAdminResource {
         ExportOptions options = new ExportOptions(false, clientsExported, groupsAndRolesExported, clientsExported);
         RealmRepresentation rep = ExportUtils.exportRealm(session, realm, options, false);
         return stripForExport(session, rep);
-    }
-
-    /**
-     * Clear realm cache
-     *
-     */
-    @Path("clear-realm-cache")
-    @POST
-    public void clearRealmCache() {
-        auth.realm().requireManageRealm();
-
-        CacheRealmProvider cache = session.getProvider(CacheRealmProvider.class);
-        if (cache != null) {
-            cache.clear();
-        }
-
-        adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).success();
-    }
-
-    /**
-     * Clear user cache
-     *
-     */
-    @Path("clear-user-cache")
-    @POST
-    public void clearUserCache() {
-        auth.realm().requireManageRealm();
-
-        UserCache cache = session.getProvider(UserCache.class);
-        if (cache != null) {
-            cache.clear();
-        }
-
-        adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).success();
     }
 
     /**
