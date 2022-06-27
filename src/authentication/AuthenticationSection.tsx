@@ -228,43 +228,38 @@ export default function AuthenticationSection() {
                   </Button>
                 </ToolbarItem>
               }
-              actionResolver={({ data }) => {
-                const defaultActions = [
-                  {
-                    title: t("duplicate"),
-                    onClick: () => {
-                      toggleOpen();
-                      setSelectedFlow(data);
-                    },
+              actionResolver={({ data }) => [
+                {
+                  title: t("duplicate"),
+                  onClick: () => {
+                    toggleOpen();
+                    setSelectedFlow(data);
                   },
-                  ...(data.providerId !== "client-flow"
-                    ? [
-                        {
-                          title: t("bindFlow"),
-                          onClick: () => {
-                            toggleBindFlow();
-                            setSelectedFlow(data);
-                          },
+                },
+                ...(data.usedBy.type !== "default" &&
+                data.providerId !== "client-flow"
+                  ? [
+                      {
+                        title: t("bindFlow"),
+                        onClick: () => {
+                          toggleBindFlow();
+                          setSelectedFlow(data);
                         },
-                      ]
-                    : []),
-                ];
-                // remove delete when it's in use or default flow
-                if (data.builtIn || data.usedBy.values.length > 0) {
-                  return defaultActions;
-                } else {
-                  return [
-                    {
-                      title: t("common:delete"),
-                      onClick: () => {
-                        setSelectedFlow(data);
-                        toggleDeleteDialog();
                       },
-                    },
-                    ...defaultActions,
-                  ];
-                }
-              }}
+                    ]
+                  : []),
+                ...(!data.builtIn && data.usedBy.values.length === 0
+                  ? [
+                      {
+                        title: t("common:delete"),
+                        onClick: () => {
+                          setSelectedFlow(data);
+                          toggleDeleteDialog();
+                        },
+                      },
+                    ]
+                  : []),
+              ]}
               columns={[
                 {
                   name: "alias",
