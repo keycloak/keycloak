@@ -44,7 +44,7 @@ public class CryptoIntegration {
             throw new IllegalStateException("Multiple crypto providers loaded with the classLoader: " + classLoader +
                     ". Make sure only one cryptoProvider available on the classpath. Available providers: " +foundProviders);
         } else {
-            logger.infof("Detected security provider: %s", securityProvider.getClass().getName());
+            logger.infof("Detected security provider: %s", foundProviders.get(0).getClass().getName());
             return foundProviders.get(0);
         }
     }
