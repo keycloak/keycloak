@@ -57,6 +57,9 @@ public class SingleUseObjectConcurrentHashMapStorage<K, V extends AbstractEntity
             if (value.getUserId() != null && value.getActionId() != null && value.getActionVerificationNonce() != null) {
                 value.setId(value.getUserId() + ":" + value.getActionId() + ":" + value.getActionVerificationNonce());
             }
+            if (value.getObjectKey() != null) {
+                value.setId(value.getObjectKey());
+            }
         }
         return super.create(value);
     }
