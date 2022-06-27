@@ -114,7 +114,7 @@ export const ManageOrderDialog = ({
         {sortBy(providers, "config.guiOrder").map((provider) => (
           <DataListItem
             aria-labelledby={provider.alias}
-            id={provider.alias}
+            id={`${provider.alias}-item`}
             key={provider.alias}
           >
             <DataListItemRow>

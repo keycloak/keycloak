@@ -58,7 +58,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
     <div className="pf-c-form pf-m-horizontal">
       <FormGroup
         label={t("serviceProviderEntityId")}
-        fieldId="kc-service-provider-entity-id"
+        fieldId="kc-saml-service-provider-entity-id"
         labelIcon={
           <HelpItem
             helpText="identity-providers-help:serviceProviderEntityId"
@@ -70,7 +70,7 @@ const Fields = ({ readOnly }: DescriptorSettingsProps) => {
           type="text"
           name="config.entityId"
           data-testid="serviceProviderEntityId"
-          id="kc-service-provider-entity-id"
+          id="kc-saml-service-provider-entity-id"
           ref={register()}
         />
       </FormGroup>
