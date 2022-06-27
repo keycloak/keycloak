@@ -22,7 +22,7 @@ public class StorageOptions {
     public static final Option<Boolean> DEFAULT_PERSISTENCE_UNIT_ENABLED = new OptionBuilder<>("storage-default-persistence-unit-enabled", Boolean.class)
             .category(OptionCategory.STORAGE)
             .defaultValue(true)
-            .runtimes(Option.Runtime.OPERATOR)
+            .hidden()
             .buildTime(true)
             .build();
 

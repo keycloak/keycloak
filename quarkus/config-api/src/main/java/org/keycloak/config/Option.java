@@ -6,26 +6,20 @@ import java.util.Set;
 
 public class Option<T> {
 
-    public enum Runtime {
-        QUARKUS,
-        DOCS,
-        OPERATOR;
-    }
-
     private final Class<T> type;
     private final String key;
     private final OptionCategory category;
-    private final Set<Runtime> supportedRuntimes;
+    private final boolean hidden;
     private final boolean buildTime;
     private final String description;
     private final Optional<T> defaultValue;
     private final List<String> expectedValues;
 
-    public Option(Class<T> type, String key, OptionCategory category, Set<Runtime> supportedRuntimes, boolean buildTime, String description, Optional<T> defaultValue, List<String> expectedValues) {
+    public Option(Class<T> type, String key, OptionCategory category, boolean hidden, boolean buildTime, String description, Optional<T> defaultValue, List<String> expectedValues) {
         this.type = type;
         this.key = key;
         this.category = category;
-        this.supportedRuntimes = supportedRuntimes;
+        this.hidden = hidden;
         this.buildTime = buildTime;
         this.description = description;
         this.defaultValue = defaultValue;
@@ -36,9 +30,7 @@ public class Option<T> {
         return type;
     }
 
-    public Set<Runtime> getSupportedRuntimes() {
-        return supportedRuntimes;
-    }
+    public boolean isHidden() { return hidden; }
 
     public boolean isBuildTime() {
         return buildTime;
@@ -67,7 +59,7 @@ public class Option<T> {
             this.type,
             this.key,
             this.category,
-            this.supportedRuntimes,
+            this.hidden,
             this.buildTime,
             this.description,
             Optional.ofNullable(defaultValue),

@@ -163,9 +163,7 @@ public class PropertyMapper<T> {
         return this.option.getCategory();
     }
 
-    public boolean isHidden() {
-        return !this.option.getSupportedRuntimes().contains(Option.Runtime.QUARKUS);
-    }
+    public boolean isHidden() { return this.option.isHidden(); }
 
     public boolean isBuildTime() {
         return this.option.isBuildTime();

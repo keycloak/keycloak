@@ -80,12 +80,12 @@ public class LoggingOptions {
 
     public static final Option<Boolean> LOG_CONSOLE_ENABLED = new OptionBuilder<>("log-console-enabled", Boolean.class)
             .category(OptionCategory.LOGGING)
-            .runtimes(Collections.emptySet())
+            .hidden()
             .build();
 
     public static final Option LOG_FILE_ENABLED = new OptionBuilder<>("log-file-enabled", Boolean.class)
             .category(OptionCategory.LOGGING)
-            .runtimes(Collections.emptySet())
+            .hidden()
             .build();
 
     public static final Option<File> LOG_FILE = new OptionBuilder<>("log-file", File.class)

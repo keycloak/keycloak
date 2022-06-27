@@ -24,7 +24,7 @@ public class HostnameOptions {
     public static final Option HOSTNAME_STRICT_HTTPS = new OptionBuilder<>("hostname-strict-https", Boolean.class)
             .category(OptionCategory.HOSTNAME)
             .description("Forces URLs to use HTTPS. Only needed if proxy does not properly set the X-Forwarded-Proto header.")
-            .runtimes(Option.Runtime.OPERATOR)
+            .hidden()
             .defaultValue(Boolean.TRUE)
             .build();
 
