@@ -70,7 +70,7 @@
     "@types/react-router-dom": "^5.3.3",
     "@types/snowpack-env": "^2.3.4",
     "@types/tar-fs": "^2.0.1",
-    "@typescript-eslint/eslint-plugin": "^5.28.0",
+    "@typescript-eslint/eslint-plugin": "^5.29.0",
     "@typescript-eslint/parser": "^5.28.0",
     "cypress": "^10.1.0",
     "decompress": "^4.2.1",
