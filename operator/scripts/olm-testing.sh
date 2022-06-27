@@ -10,7 +10,7 @@ VERSION="86400000.0.0"
 
 # Build Keycloak Docker image (the keycloak tar.gz should already be in the container folder)
 (
-  cd $SCRIPT_DIR/../../../quarkus/container
+  cd $SCRIPT_DIR/../../quarkus/container
   
   docker build --build-arg KEYCLOAK_DIST=$(ls keycloak-*.tar.gz) . -t "ttl.sh/${UUID}keycloak:${VERSION}"
   docker push "ttl.sh/${UUID}keycloak:${VERSION}"
@@ -18,7 +18,7 @@ VERSION="86400000.0.0"
 
 # Build the operator Docker image
 (
-  cd $SCRIPT_DIR/../../../
+  cd $SCRIPT_DIR/../../
   mvn clean package -Poperator -pl :keycloak-operator -am \
     -Dquarkus.container-image.build=true \
     -Dquarkus.container-image.image="ttl.sh/${UUID}keycloak-operator:${VERSION}" \

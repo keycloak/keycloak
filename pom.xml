@@ -1931,16 +1931,6 @@
         </profile>
 
         <profile>
-            <id>config-api</id>
-            <activation>
-                <jdk>[11,)</jdk>
-            </activation>
-            <modules>
-                <module>config-api</module>
-            </modules>
-        </profile>
-
-        <profile>
             <id>quarkus</id>
             <activation>
                 <jdk>[11,)</jdk>
