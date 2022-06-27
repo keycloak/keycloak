@@ -57,51 +57,50 @@ export const LogoutPanel = ({
               id="kc-frontchannelLogout-switch"
               label={t("common:on")}
               labelOff={t("common:off")}
-              isChecked={value.toString() === "true"}
-              onChange={(value) => onChange(value.toString())}
+              isChecked={value}
+              onChange={onChange}
             />
           )}
         />
       </FormGroup>
-      {protocol === "openid-connect" &&
-        frontchannelLogout?.toString() === "true" && (
-          <FormGroup
-            label={t("frontchannelLogoutUrl")}
-            fieldId="frontchannelLogoutUrl"
-            labelIcon={
-              <HelpItem
-                helpText="clients-help:frontchannelLogoutUrl"
-                fieldLabelId="clients:frontchannelLogoutUrl"
-              />
-            }
-            helperTextInvalid={
-              errors.attributes?.frontchannel?.logout?.url?.message
-            }
+      {protocol === "openid-connect" && frontchannelLogout && (
+        <FormGroup
+          label={t("frontchannelLogoutUrl")}
+          fieldId="frontchannelLogoutUrl"
+          labelIcon={
+            <HelpItem
+              helpText="clients-help:frontchannelLogoutUrl"
+              fieldLabelId="clients:frontchannelLogoutUrl"
+            />
+          }
+          helperTextInvalid={
+            errors.attributes?.frontchannel?.logout?.url?.message
+          }
+          validated={
+            errors.attributes?.frontchannel?.logout?.url?.message
+              ? ValidatedOptions.error
+              : ValidatedOptions.default
+          }
+        >
+          <KeycloakTextInput
+            type="text"
+            id="frontchannelLogoutUrl"
+            name="attributes.frontchannel.logout.url"
+            ref={register({
+              validate: (uri) =>
+                ((uri.startsWith("https://") || uri.startsWith("http://")) &&
+                  !uri.includes("*")) ||
+                uri === "" ||
+                t("frontchannelUrlInvalid").toString(),
+            })}
             validated={
               errors.attributes?.frontchannel?.logout?.url?.message
                 ? ValidatedOptions.error
                 : ValidatedOptions.default
             }
-          >
-            <KeycloakTextInput
-              type="text"
-              id="frontchannelLogoutUrl"
-              name="attributes.frontchannel.logout.url"
-              ref={register({
-                validate: (uri) =>
-                  ((uri.startsWith("https://") || uri.startsWith("http://")) &&
-                    !uri.includes("*")) ||
-                  uri === "" ||
-                  t("frontchannelUrlInvalid").toString(),
-              })}
-              validated={
-                errors.attributes?.frontchannel?.logout?.url?.message
-                  ? ValidatedOptions.error
-                  : ValidatedOptions.default
-              }
-            />
-          </FormGroup>
-        )}
+          />
+        </FormGroup>
+      )}
       <FormGroup
         label={t("backchannelLogoutUrl")}
         fieldId="backchannelLogoutUrl"
