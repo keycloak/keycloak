@@ -25,7 +25,7 @@
     "server:import-client": "./scripts/import-client.mjs"
   },
   "dependencies": {
-    "@keycloak/keycloak-admin-client": "^19.0.0-dev.13",
+    "@keycloak/keycloak-admin-client": "^19.0.0-dev.14",
     "@patternfly/patternfly": "^4.196.7",
     "@patternfly/react-code-editor": "^4.62.3",
     "@patternfly/react-core": "^4.221.3",
