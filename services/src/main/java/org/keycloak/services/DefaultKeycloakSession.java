@@ -176,78 +176,67 @@ public class DefaultKeycloakSession implements KeycloakSession {
     @Override
     @Deprecated
     public UserProvider userLocalStorage() {
-        log.warnf("The semantics of this method have changed: Please see the migration guide on how to migrate.%s", StackUtil.getShortStackTrace());
-        return users();
+        throw new IllegalStateException("Access to the legacy store is no longer possible via this method. Adjust your code according to the Keycloak 19 Upgrading Guide.");
     }
 
     @Override
     @Deprecated
     public RealmProvider realmLocalStorage() {
-        return realms();
+        throw new IllegalStateException("Access to the legacy store is no longer possible via this method. Adjust your code according to the Keycloak 19 Upgrading Guide.");
     }
 
     @Override
     @Deprecated
     public ClientProvider clientLocalStorage() {
-        return clients();
+        throw new IllegalStateException("Access to the legacy store is no longer possible via this method. Adjust your code according to the Keycloak 19 Upgrading Guide.");
     }
 
     @Override
     @Deprecated
     public ClientScopeProvider clientScopeLocalStorage() {
-        return clientScopes();
+        throw new IllegalStateException("Access to the legacy store is no longer possible via this method. Adjust your code according to the Keycloak 19 Upgrading Guide.");
     }
 
     @Override
     @Deprecated
     public GroupProvider groupLocalStorage() {
-        return groups();
+        throw new IllegalStateException("Access to the legacy store is no longer possible via this method. Adjust your code according to the Keycloak 19 Upgrading Guide.");
     }
 
     @Override
     @Deprecated
     public ClientProvider clientStorageManager() {
-        return clients();
+        throw new IllegalStateException("Access to the legacy store is no longer possible via this method. Adjust your code according to the Keycloak 19 Upgrading Guide.");
     }
 
     @Override
     @Deprecated
     public ClientScopeProvider clientScopeStorageManager() {
-        return clientScopes();
+        throw new IllegalStateException("Access to the legacy store is no longer possible via this method. Adjust your code according to the Keycloak 19 Upgrading Guide.");
     }
 
     @Override
     @Deprecated
     public RoleProvider roleLocalStorage() {
-        return roles();
+        throw new IllegalStateException("Access to the legacy store is no longer possible via this method. Adjust your code according to the Keycloak 19 Upgrading Guide.");
     }
 
     @Override
     @Deprecated
     public RoleProvider roleStorageManager() {
-        return roles();
+        throw new IllegalStateException("Access to the legacy store is no longer possible via this method. Adjust your code according to the Keycloak 19 Upgrading Guide.");
     }
 
     @Override
     @Deprecated
     public GroupProvider groupStorageManager() {
-        return groups();
+        throw new IllegalStateException("Access to the legacy store is no longer possible via this method. Adjust your code according to the Keycloak 19 Upgrading Guide.");
     }
-
-    private final ThreadLocal<Boolean> recursionPreventionUserStorageManager = new ThreadLocal<>();
 
     @Override
     @Deprecated
     public UserProvider userStorageManager() {
-        if(recursionPreventionUserStorageManager.get() != null) {
-            throw new IllegalStateException("userStorageManager() is being called recursively. Please adjust your code according to the Keycloak 19 migration guide.");
-        }
-        try {
-            recursionPreventionUserStorageManager.set(Boolean.TRUE);
-            return users();
-        } finally {
-            recursionPreventionUserStorageManager.remove();
-        }
+        throw new IllegalStateException("Access to the legacy store is no longer possible via this method. Adjust your code according to the Keycloak 19 Upgrading Guide.");
     }
 
     @Override
