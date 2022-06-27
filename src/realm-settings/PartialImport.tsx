@@ -65,8 +65,7 @@ const INITIAL_RESOURCES: Readonly<ResourceChecked> = {
 };
 
 export const PartialImportDialog = (props: PartialImportProps) => {
-  const tRealm = useTranslation("realm-settings").t;
-  const { t } = useTranslation("partial-import");
+  const { t } = useTranslation("realm-settings");
   const adminClient = useAdminClient();
   const { realm } = useRealm();
 
@@ -273,7 +272,7 @@ export const PartialImportDialog = (props: PartialImportProps) => {
       });
       setImportResponse(importResults);
     } catch (error) {
-      addError("partial-import:importFail", error);
+      addError("realm-settings:importFail", error);
     }
 
     setImportInProgress(false);
@@ -283,7 +282,7 @@ export const PartialImportDialog = (props: PartialImportProps) => {
     return (
       <Modal
         variant={ModalVariant.medium}
-        title={tRealm("partialImport")}
+        title={t("partialImport")}
         isOpen={props.open}
         onClose={props.toggleDialog}
         actions={[
@@ -447,7 +446,7 @@ export const PartialImportDialog = (props: PartialImportProps) => {
     return (
       <Modal
         variant={ModalVariant.medium}
-        title={tRealm("partialImport")}
+        title={t("partialImport")}
         isOpen={props.open}
         onClose={props.toggleDialog}
         actions={[

@@ -3,11 +3,11 @@ import {
   AlertVariant,
   Button,
   ButtonVariant,
-  Checkbox,
+  Form,
+  FormGroup,
   Modal,
   ModalVariant,
-  Stack,
-  StackItem,
+  Switch,
   Text,
   TextContent,
 } from "@patternfly/react-core";
@@ -19,6 +19,8 @@ import { useAdminClient } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { prettyPrintJSON } from "../util";
 
+import "./partial-export.css";
+
 export type PartialExportDialogProps = {
   isOpen: boolean;
   onClose: () => void;
@@ -28,7 +30,7 @@ export const PartialExportDialog = ({
   isOpen,
   onClose,
 }: PartialExportDialogProps) => {
-  const { t } = useTranslation();
+  const { t } = useTranslation("realm-settings");
   const { realm } = useRealm();
   const adminClient = useAdminClient();
   const { addAlert, addError } = useAlerts();
@@ -56,10 +58,10 @@ export const PartialExportDialog = ({
         "realm-export.json"
       );
 
-      addAlert(t("partial-export:exportSuccess"), AlertVariant.success);
+      addAlert(t("exportSuccess"), AlertVariant.success);
       onClose();
     } catch (error) {
-      addError("partial-export:exportFail", error);
+      addError("exportFail", error);
     }
 
     setIsExporting(false);
@@ -68,7 +70,7 @@ export const PartialExportDialog = ({
   return (
     <Modal
       variant={ModalVariant.small}
-      title={t("realm-settings:partialExport")}
+      title={t("partialExport")}
       isOpen={isOpen}
       onClose={onClose}
       actions={[
@@ -90,41 +92,53 @@ export const PartialExportDialog = ({
         </Button>,
       ]}
     >
-      <Stack hasGutter>
-        <StackItem>
-          <TextContent>
-            <Text>{t("partial-export:partialExportHeaderText")}</Text>
-          </TextContent>
-        </StackItem>
-        <StackItem>
-          <Checkbox
+      <TextContent>
+        <Text>{t("partialExportHeaderText")}</Text>
+      </TextContent>
+      <Form
+        isHorizontal
+        className="keycloak__realm-settings__partial-import_form"
+      >
+        <FormGroup
+          label={t("includeGroupsAndRoles")}
+          fieldId="include-groups-and-roles-check"
+          hasNoPaddingTop
+        >
+          <Switch
             id="include-groups-and-roles-check"
-            label={t("partial-export:includeGroupsAndRoles")}
+            data-testid="include-groups-and-roles-check"
             isChecked={exportGroupsAndRoles}
             onChange={setExportGroupsAndRoles}
+            label={t("common:on")}
+            labelOff={t("common:off")}
           />
-        </StackItem>
-        <StackItem>
-          <Checkbox
+        </FormGroup>
+        <FormGroup
+          label={t("includeClients")}
+          fieldId="include-clients-check"
+          hasNoPaddingTop
+        >
+          <Switch
             id="include-clients-check"
-            label={t("partial-export:includeClients")}
-            isChecked={exportClients}
+            data-testid="include-clients-check"
             onChange={setExportClients}
+            isChecked={exportClients}
+            label={t("common:on")}
+            labelOff={t("common:off")}
           />
-        </StackItem>
-        {showWarning && (
-          <StackItem>
-            <Alert
-              data-testid="warning-message"
-              variant="warning"
-              title={t("partial-export:exportWarningTitle")}
-              isInline
-            >
-              {t("partial-export:exportWarningDescription")}
-            </Alert>
-          </StackItem>
-        )}
-      </Stack>
+        </FormGroup>
+      </Form>
+
+      {showWarning && (
+        <Alert
+          data-testid="warning-message"
+          variant="warning"
+          title={t("exportWarningTitle")}
+          isInline
+        >
+          {t("exportWarningDescription")}
+        </Alert>
+      )}
     </Modal>
   );
 };
