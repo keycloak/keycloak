@@ -17,6 +17,7 @@ import ClientDetailsPage, {
 } from "../support/pages/admin_console/manage/clients/client_details/ClientDetailsPage";
 import CommonPage from "../support/pages/CommonPage";
 import ListingPage from "../support/pages/admin_console/ListingPage";
+import AttributesTab from "../support/pages/admin_console/manage/AttributesTab";
 
 let itemId = "client_crud";
 const loginPage = new LoginPage();
@@ -25,6 +26,7 @@ const createClientPage = new CreateClientPage();
 const clientDetailsPage = new ClientDetailsPage();
 const commonPage = new CommonPage();
 const listingPage = new ListingPage();
+const attributesTab = new AttributesTab();
 
 describe("Clients test", () => {
   describe("Client details - Client scopes subtab", () => {
@@ -490,8 +492,10 @@ describe("Clients test", () => {
       commonPage.tableUtils().clickRowItemLink(itemId);
       rolesTab.goToAttributesTab();
       cy.wait(["@load", "@load"]);
-      rolesTab.addAttribute(1, "crud_attribute_key", "crud_attribute_value");
-      rolesTab.checkRowItemsEqualTo(1);
+      attributesTab
+        .addAttribute("crud_attribute_key", "crud_attribute_value")
+        .save();
+      attributesTab.asseertRowItemsEqualTo(1);
       commonPage
         .masthead()
         .checkNotificationMessage("The role has been saved", true);
@@ -502,7 +506,7 @@ describe("Clients test", () => {
       commonPage.tableUtils().clickRowItemLink(itemId);
       rolesTab.goToAttributesTab();
       cy.wait(["@load", "@load"]);
-      rolesTab.deleteAttribute(1);
+      attributesTab.deleteAttribute(1);
       commonPage
         .masthead()
         .checkNotificationMessage("The role has been saved", true);

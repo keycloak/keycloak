@@ -61,6 +61,8 @@ export default class ListingPage extends CommonElements {
   private toolbarChangeType = "#change-type-dropdown";
   private tableNameColumnPrefix = "name-column-";
   private rowGroup = "table:visible tbody[role='rowgroup']";
+  private tableHeaderCheckboxItemAllRows =
+    "input[aria-label='Select all rows']";
 
   showPreviousPageTableItems() {
     cy.get(this.previousPageBtn).first().click();
@@ -171,6 +173,11 @@ export default class ListingPage extends CommonElements {
       .parentsUntil("tbody")
       .find(this.itemCheckbox)
       .click();
+    return this;
+  }
+
+  clickTableHeaderItemCheckboxAllRows() {
+    cy.get(this.tableHeaderCheckboxItemAllRows).click();
     return this;
   }
 

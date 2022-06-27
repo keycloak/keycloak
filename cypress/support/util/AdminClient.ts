@@ -95,6 +95,11 @@ class AdminClient {
     return await this.client.users.create(user);
   }
 
+  async addUserToGroup(userId: string, groupId: string) {
+    await this.login();
+    await this.client.users.addToGroup({ id: userId, groupId });
+  }
+
   async createUserInGroup(username: string, groupId: string) {
     await this.login();
     const user = await this.createUser({ username, enabled: true });

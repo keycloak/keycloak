@@ -141,10 +141,7 @@ describe("User creation", () => {
   it("User attributes test", () => {
     listingPage.goToItemDetails(itemId);
 
-    attributesTab
-      .goToAttributesTab()
-      .fillLastRow("key", "value")
-      .saveAttribute();
+    attributesTab.goToAttributesTab().addAttribute("key", "value").save();
 
     masthead.checkNotificationMessage("The user has been saved");
   });
@@ -158,8 +155,8 @@ describe("User creation", () => {
     const attributeKey = "key-multiple";
     attributesTab
       .goToAttributesTab()
-      .fillLastRow(attributeKey, "other value")
-      .saveAttribute();
+      .addAttribute(attributeKey, "other value")
+      .save();
 
     cy.wait("@save-user").should(({ request, response }) => {
       expect(response?.statusCode).to.equal(204);

@@ -7,6 +7,7 @@ import CreateClientPage from "../support/pages/admin_console/manage/clients/Crea
 import Masthead from "../support/pages/admin_console/Masthead";
 import ModalUtils from "../support/util/ModalUtils";
 import { keycloakBefore } from "../support/util/keycloak_hooks";
+import GroupPage from "../support/pages/admin_console/manage/groups/GroupPage";
 
 const loginPage = new LoginPage();
 const masthead = new Masthead();
@@ -14,6 +15,7 @@ const sidebarPage = new SidebarPage();
 const listingPage = new ListingPage();
 const groupModal = new GroupModal();
 const createClientPage = new CreateClientPage();
+const groupPage = new GroupPage();
 
 const providersPage = new ProviderPage();
 const modalUtils = new ModalUtils();
@@ -115,11 +117,8 @@ describe("User Fed LDAP mapper tests", () => {
   // create a new group
   it("Create group", () => {
     sidebarPage.goToGroups();
-    groupModal
-      .open("no-groups-in-this-realm-empty-action")
-      .fillGroupForm(groupName)
-      .clickCreate();
-
+    groupPage.openCreateGroupModal(true);
+    groupModal.setGroupNameInput(groupName).create();
     masthead.checkNotificationMessage(groupCreatedSuccess);
   });
 

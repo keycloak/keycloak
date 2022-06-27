@@ -53,44 +53,6 @@ export default class ClientRolesTab extends CommonPage {
     return this;
   }
 
-  clickAddAnAttributeButton() {
-    cy.findByTestId("attributes-add-row").click();
-    return this;
-  }
-
-  clickDeleteAttributeButton(row: number) {
-    cy.findByTestId(`attributes[${row - 1}].remove`).click();
-    return this;
-  }
-
-  addAttribute(rowIndex: number, key: string, value: string) {
-    cy.findAllByTestId(`attributes[${rowIndex - 1}].key`).type(key);
-    cy.findAllByTestId(`attributes[${rowIndex - 1}].value`).type(value);
-    this.clickAddAnAttributeButton();
-    this.formUtils().save();
-    return this;
-  }
-
-  deleteAttribute(rowIndex: number) {
-    this.clickDeleteAttributeButton(rowIndex);
-    this.formUtils().save();
-
-    cy.findAllByTestId(`attributes[${rowIndex - 1}].key`).should(
-      "have.value",
-      ""
-    );
-    cy.findAllByTestId(`attributes[${rowIndex - 1}].value`).should(
-      "have.value",
-      ""
-    );
-    return this;
-  }
-
-  checkRowItemsEqualTo(amount: number) {
-    cy.findAllByTestId("row").its("length").should("be.eq", amount);
-    return this;
-  }
-
   hideInheritedRoles() {
     cy.get(this.hideInheritedRolesChkBox).check();
     return this;

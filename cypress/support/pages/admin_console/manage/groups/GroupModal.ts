@@ -1,30 +1,30 @@
-export default class GroupModal {
-  private nameInput = "groupNameInput";
-  private createButton = "createGroup";
+import ModalUtils from "../../../../util/ModalUtils";
+
+export default class GroupModal extends ModalUtils {
+  private createGroupModalTitle = "Create a group";
+  private groupNameInput = "groupNameInput";
+  private createGroupBnt = "createGroup";
   private renameButton = "renameGroup";
 
-  open(name?: string) {
-    if (name) {
-      cy.findByTestId(name).click();
-    } else {
-      cy.get("button").contains("Create").click();
-    }
+  public setGroupNameInput(name: string) {
+    cy.findByTestId(this.groupNameInput).clear().type(name);
     return this;
   }
 
-  fillGroupForm(name = "") {
-    cy.findByTestId(this.nameInput).clear().type(name);
+  public create() {
+    cy.findByTestId(this.createGroupBnt).click();
     return this;
   }
 
-  clickCreate() {
-    cy.findByTestId(this.createButton).click();
-
-    return this;
-  }
-
-  clickRename() {
+  public rename() {
     cy.findByTestId(this.renameButton).click();
+    return this;
+  }
+
+  public assertCreateGroupModalVisible(isVisible: boolean) {
+    super
+      .assertModalVisible(isVisible)
+      .assertModalTitleEqual(this.createGroupModalTitle);
     return this;
   }
 }

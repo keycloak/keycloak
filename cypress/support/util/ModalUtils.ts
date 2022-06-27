@@ -1,7 +1,8 @@
+import PageObject from "../pages/admin_console/components/PageObject";
 import TablePage from "../pages/admin_console/components/TablePage";
-import CommonElements from "../pages/CommonElements";
 
-export default class ModalUtils extends CommonElements {
+export default class ModalUtils extends PageObject {
+  private modalDiv = ".pf-c-modal-box";
   private modalTitle = ".pf-c-modal-box .pf-c-modal-box__title-text";
   private modalMessage = ".pf-c-modal-box .pf-c-modal-box__body";
   private confirmModalBtn = "confirm";
@@ -10,18 +11,16 @@ export default class ModalUtils extends CommonElements {
   private copyToClipboardBtn = '[id*="copy-button"]';
   private addModalDropdownBtn = "#add-dropdown > button";
   private addModalDropdownItem = "#add-dropdown [role='menuitem']";
+  private primaryBtn = ".pf-c-button.pf-m-primary";
+  private addBtn = "add";
   private tablePage = new TablePage(TablePage.tableSelector);
-
-  constructor() {
-    super(".pf-c-modal-box");
-  }
 
   table() {
     return this.tablePage;
   }
 
   add() {
-    cy.get(this.primaryBtn).contains("Add").click();
+    cy.findByTestId(this.addBtn).click();
     return this;
   }
 
@@ -69,8 +68,8 @@ export default class ModalUtils extends CommonElements {
   }
 
   checkModalTitle(title: string) {
-    cy.get(this.modalTitle).invoke("text").should("eq", title);
-
+    //deprecated
+    this.assertModalTitleEqual(title);
     return this;
   }
 
@@ -86,9 +85,24 @@ export default class ModalUtils extends CommonElements {
   }
 
   assertModalHasElement(elementSelector: string, exist: boolean) {
-    cy.get(this.parentSelector)
+    cy.get(this.modalDiv)
       .find(elementSelector)
       .should((exist ? "" : ".not") + "exist");
+    return this;
+  }
+
+  assertModalVisible(isVisible: boolean) {
+    super.assertIsVisible(cy.get(this.modalDiv), isVisible);
+    return this;
+  }
+
+  assertModalExist(exist: boolean) {
+    super.assertExist(cy.get(this.modalDiv), exist);
+    return this;
+  }
+
+  assertModalTitleEqual(text: string) {
+    cy.get(this.modalTitle).invoke("text").should("eq", text);
     return this;
   }
 }

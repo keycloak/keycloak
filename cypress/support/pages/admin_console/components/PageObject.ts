@@ -11,6 +11,9 @@ export default class PageObject {
   private chipGroup = ".pf-c-chip-group";
   private chipGroupCloseBtn = ".pf-c-chip-group__close";
   private chipItem = ".pf-c-chip-group__list-item";
+  private emptyStateDiv = ".pf-c-empty-state:visible";
+  private toolbarActionsButton = ".pf-c-toolbar button[aria-label='Actions']";
+  private breadcrumbItem = ".pf-c-breadcrumb .pf-c-breadcrumb__item";
 
   protected assertExist(element: Cypress.Chainable<JQuery>, exist: boolean) {
     element.should((!exist ? "not." : "") + "exist");
@@ -90,7 +93,7 @@ export default class PageObject {
     itemName: string,
     element?: Cypress.Chainable<JQuery>
   ) {
-    (element ?? cy.get(this.drpDwnMenuItem)).contains(itemName).click();
+    (element ?? cy.get(this.drpDwnMenuItem).contains(itemName)).click();
     return this;
   }
 
@@ -194,7 +197,7 @@ export default class PageObject {
     itemName: string,
     element?: Cypress.Chainable<JQuery>
   ) {
-    element = element ?? cy.get(this.selectMenuItem);
+    element = element ?? cy.get(this.selectMenuItem).contains(itemName);
     return this.clickDropdownMenuItem(itemName, element);
   }
 
@@ -299,6 +302,12 @@ export default class PageObject {
     return this;
   }
 
+  protected clickToolbarAction(itemName: string) {
+    cy.get(this.toolbarActionsButton).click();
+    this.clickDropdownMenuItem(itemName);
+    return this;
+  }
+
   protected assertChipItemExist(itemName: string, exist: boolean) {
     cy.get(this.chipItem).within(() => {
       cy.contains(itemName).should((exist ? "" : "not.") + "exist");
@@ -315,6 +324,20 @@ export default class PageObject {
       this.getChipGroup(groupName).contains(this.chipItem, itemName),
       exist
     );
+    return this;
+  }
+
+  protected assertEmptyStateExist(exist: boolean) {
+    if (exist) {
+      cy.get(this.emptyStateDiv).should("exist").should("be.visible");
+    } else {
+      cy.get(this.emptyStateDiv).should("not.exist");
+    }
+    return this;
+  }
+
+  protected clickBreadcrumbItem(itemName: string) {
+    cy.get(this.breadcrumbItem).contains(itemName).click();
     return this;
   }
 }

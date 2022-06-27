@@ -1,4 +1,6 @@
-export default class MoveGroupModal {
+import ModalUtils from "../../../../util/ModalUtils";
+
+export default class MoveGroupModal extends ModalUtils {
   private moveButton = "groups:moveHere-button";
   private title = ".pf-c-modal-box__title";
 
