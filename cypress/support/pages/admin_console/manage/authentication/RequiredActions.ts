@@ -2,11 +2,16 @@ export default class RequiredActions {
   private toId(name: string) {
     return name.replace(/\s/g, "\\ ");
   }
+
+  private toKey(name: string) {
+    return name.replace(/\s/g, "-");
+  }
+
   private getEnabled(name: string) {
-    return `#enable-${this.toId(name)}`;
+    return `#enable-${this.toKey(name)}`;
   }
   private getDefault(name: string) {
-    return `#default-${this.toId(name)}`;
+    return `#default-${this.toKey(name)}`;
   }
 
   goToTab() {
@@ -39,17 +44,7 @@ export default class RequiredActions {
   }
 
   moveRowTo(from: string, to: string) {
-    cy.get("#" + this.toId(from))
-      .trigger("dragstart", {
-        dataTransfer: new DataTransfer(),
-      })
-      .trigger("dragleave");
-
-    cy.get("#" + this.toId(to))
-      .trigger("dragenter")
-      .trigger("dragover")
-      .trigger("drop")
-      .trigger("dragend");
+    cy.get("#" + this.toId(from)).drag("#" + this.toId(to));
 
     return this;
   }

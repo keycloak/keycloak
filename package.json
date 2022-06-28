@@ -48,6 +48,7 @@
     "use-react-router-breadcrumbs": "^2.0.2"
   },
   "devDependencies": {
+    "@4tw/cypress-drag-drop": "^2.2.0",
     "@cypress/webpack-batteries-included-preprocessor": "^2.2.3",
     "@cypress/webpack-preprocessor": "^5.12.0",
     "@octokit/rest": "^18.12.0",

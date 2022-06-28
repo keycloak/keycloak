@@ -9,10 +9,13 @@ import RequiredActions from "../support/pages/admin_console/manage/authenticatio
 import adminClient from "../support/util/AdminClient";
 import PasswordPolicies from "../support/pages/admin_console/manage/authentication/PasswordPolicies";
 import ModalUtils from "../support/util/ModalUtils";
+import CommonPage from "../support/pages/CommonPage";
+import BindFlowModal from "../support/pages/admin_console/manage/authentication/BindFlowModal";
 
 const loginPage = new LoginPage();
 const masthead = new Masthead();
 const sidebarPage = new SidebarPage();
+const commonPage = new CommonPage();
 const listingPage = new ListingPage();
 
 describe("Authentication test", () => {
@@ -21,13 +24,27 @@ describe("Authentication test", () => {
   const modalUtil = new ModalUtils();
 
   before(() => {
+    cy.wrap(adminClient.createRealm("test"));
     keycloakBefore();
     loginPage.logIn();
-    sidebarPage.waitForPageLoad();
+    sidebarPage.goToRealm("Test");
   });
+
+  after(() => adminClient.deleteRealm("test"));
 
   beforeEach(() => {
     sidebarPage.goToAuthentication();
+  });
+
+  it("authentication empty search test", () => {
+    commonPage.tableToolbarUtils().searchItem("", false);
+    commonPage.tableUtils().checkIfExists(true);
+  });
+
+  it("authentication search flow", () => {
+    const itemId = "Browser";
+    commonPage.tableToolbarUtils().searchItem(itemId, false);
+    commonPage.tableUtils().checkRowItemExists(itemId);
   });
 
   it("should create duplicate of existing flow", () => {
@@ -52,19 +69,25 @@ describe("Authentication test", () => {
     );
   });
 
-  it("should show the details of a flow as a table", () => {
+  it("Should show the details of a flow as a table", () => {
     listingPage.goToItemDetails("Copy of browser");
 
     detailPage.executionExists("Cookie");
   });
 
-  it.skip("should move kerberos down", () => {
+  it("Should move kerberos down", () => {
     listingPage.goToItemDetails("Copy of browser");
 
-    detailPage.moveRowTo("Kerberos", "Identity Provider Redirector");
+    const fromRow = "Kerberos";
+    detailPage.expectPriorityChange(fromRow, () => {
+      detailPage.moveRowTo(
+        fromRow,
+        `[data-testid="Identity Provider Redirector"]`
+      );
+    });
   });
 
-  it("should change requirement of cookie", () => {
+  it("Should change requirement of cookie", () => {
     listingPage.goToItemDetails("Copy of browser");
 
     detailPage.changeRequirement("Cookie", "Required");
@@ -72,7 +95,7 @@ describe("Authentication test", () => {
     masthead.checkNotificationMessage("Flow successfully updated");
   });
 
-  it("should switch to diagram mode", () => {
+  it("Should switch to diagram mode", () => {
     listingPage.goToItemDetails("Copy of browser");
 
     detailPage.goToDiagram();
@@ -80,7 +103,7 @@ describe("Authentication test", () => {
     cy.get(".react-flow").should("exist");
   });
 
-  it("should add a execution", () => {
+  it("Should add a execution", () => {
     listingPage.goToItemDetails("Copy of browser");
     detailPage.addExecution(
       "Copy of browser forms",
@@ -101,7 +124,7 @@ describe("Authentication test", () => {
     masthead.checkNotificationMessage("Flow successfully updated");
   });
 
-  it("should add a sub-flow", () => {
+  it("Should add a sub-flow", () => {
     const flowName = "SubFlow";
     listingPage.goToItemDetails("Copy of browser");
     detailPage.addSubFlow(
@@ -120,9 +143,16 @@ describe("Authentication test", () => {
     detailPage.executionExists("Cookie", false);
   });
 
+  it("Should set as default in action menu", () => {
+    const bindFlow = new BindFlowModal();
+    listingPage.clickRowDetails("Copy of browser").clickDetailMenu("Bind flow");
+    bindFlow.fill("Direct grant flow").save();
+    masthead.checkNotificationMessage("Flow successfully updated");
+  });
+
+  const flowName = "Empty Flow";
   it("should create flow from scratch", () => {
-    const flowName = "Flow";
-    listingPage.itemExist("Copy of browser").goToCreateItem();
+    listingPage.goToCreateItem();
     detailPage.fillCreateForm(
       flowName,
       "Some nice description about what this flow does so that we can use it later",
@@ -134,6 +164,12 @@ describe("Authentication test", () => {
     masthead.checkNotificationMessage("Flow successfully updated");
 
     detailPage.flowExists(flowName);
+  });
+
+  it("Should delete a flow from action menu", () => {
+    listingPage.clickRowDetails(flowName).clickDetailMenu("Delete");
+    modalUtil.confirmModal();
+    masthead.checkNotificationMessage("Flow successfully deleted");
   });
 });
 
@@ -152,9 +188,7 @@ describe("Required actions", () => {
     requiredActionsPage.goToTab();
   });
 
-  after(() => {
-    adminClient.deleteRealm("Test");
-  });
+  after(() => adminClient.deleteRealm("Test"));
 
   it("should enable delete account", () => {
     const action = "Delete Account";

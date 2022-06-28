@@ -45,6 +45,7 @@ import {
 import { AddClientProfileModal } from "./AddClientProfileModal";
 import type ClientProfileRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientProfileRepresentation";
 import { toClientPolicies } from "./routes/ClientPolicies";
+import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner";
 
 import "./realm-settings-section.css";
 
@@ -74,7 +75,7 @@ export default function NewClientPolicyForm() {
   const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();
   const adminClient = useAdminClient();
-  const [policies, setPolicies] = useState<ClientPolicyRepresentation[]>([]);
+  const [policies, setPolicies] = useState<ClientPolicyRepresentation[]>();
   const [clientProfiles, setClientProfiles] = useState<
     ClientProfileRepresentation[]
   >([]);
@@ -126,6 +127,10 @@ export default function NewClientPolicyForm() {
       },
     });
 
+    if (!policies) {
+      return <KeycloakSpinner />;
+    }
+
     return (
       <>
         <DisableConfirm />
@@ -134,7 +139,7 @@ export default function NewClientPolicyForm() {
           titleKey={
             showAddConditionsAndProfilesForm || policyName
               ? formValues.name!
-              : t("createPolicy")
+              : "realm-settings:createPolicy"
           }
           divider
           dropdownItems={
@@ -206,7 +211,9 @@ export default function NewClientPolicyForm() {
     });
   };
 
-  const policy = policies.filter((policy) => policy.name === policyName);
+  const policy = (policies || []).filter(
+    (policy) => policy.name === policyName
+  );
   const policyConditions = policy[0]?.conditions || [];
   const policyProfiles = policy[0]?.profiles || [];
 
@@ -226,20 +233,20 @@ export default function NewClientPolicyForm() {
     };
 
     const getAllPolicies = () => {
-      const policyNameExists = policies.some(
+      const policyNameExists = policies?.some(
         (policy) => policy.name === createdPolicy.name
       );
 
       if (policyNameExists) {
-        return policies.map((policy) =>
+        return policies?.map((policy) =>
           policy.name === createdPolicy.name ? createdPolicy : policy
         );
       } else if (createdForm.name !== policyName) {
         return policies
-          .filter((item) => item.name !== policyName)
+          ?.filter((item) => item.name !== policyName)
           .concat(createdForm);
       }
-      return policies.concat(createdForm);
+      return policies?.concat(createdForm);
     };
 
     try {
@@ -269,7 +276,7 @@ export default function NewClientPolicyForm() {
     continueButtonLabel: t("delete"),
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
-      const updatedPolicies = policies.filter(
+      const updatedPolicies = policies?.filter(
         (policy) => policy.name !== policyName
       );
 
@@ -313,7 +320,7 @@ export default function NewClientPolicyForm() {
             addError(t("deleteConditionError"), error);
           }
         } else {
-          const updatedPolicies = policies.filter(
+          const updatedPolicies = policies?.filter(
             (policy) => policy.name !== policyName
           );
 
@@ -358,7 +365,7 @@ export default function NewClientPolicyForm() {
           addError(t("deleteClientPolicyProfileError"), error);
         }
       } else {
-        const updatedPolicies = policies.filter(
+        const updatedPolicies = policies?.filter(
           (policy) => policy.name !== policyName
         );
 
@@ -396,18 +403,18 @@ export default function NewClientPolicyForm() {
       conditions: currentPolicy?.conditions,
     };
 
-    const index = policies.findIndex(
+    const index = policies?.findIndex(
       (policy) => createdPolicy.name === policy.name
     );
 
-    if (index === -1) {
+    if (!index || index === -1) {
       return;
     }
 
     const newPolicies = [
-      ...policies.slice(0, index),
+      ...(policies || []).slice(0, index),
       createdPolicy,
-      ...policies.slice(index + 1),
+      ...(policies || []).slice(index + 1),
     ];
 
     try {
