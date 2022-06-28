@@ -19,5 +19,5 @@ package org.keycloak.representations.overrides;
 
 import java.util.ArrayList;
 
-public class NoSubGroupsGroupRepresentationList extends ArrayList<NoSubGroupsGroupRepresentation> {
+public class NonCyclicGroupRepresentationList extends ArrayList<NonCyclicGroupRepresentation> {
 }

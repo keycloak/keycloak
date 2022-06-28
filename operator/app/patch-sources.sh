@@ -17,7 +17,7 @@ function addAnnotation() {
 
 addAnnotation \
   "protected List<GroupRepresentation> subGroups;" \
-  "@io.fabric8.crd.generator.annotation.SchemaFrom(type = org.keycloak.representations.overrides.NoSubGroupsGroupRepresentationList.class)" \
+  "@io.fabric8.crd.generator.annotation.SchemaFrom(type = org.keycloak.representations.overrides.NonCyclicGroupRepresentationList.class)" \
   target/keycloak-core/org/keycloak/representations/idm/GroupRepresentation.java
 
 addAnnotation \
@@ -37,7 +37,7 @@ addAnnotation \
 
 addAnnotation \
   "private MultivaluedHashMap<String, ComponentExportRepresentation> subComponents = new MultivaluedHashMap<>();" \
-  "@io.fabric8.crd.generator.annotation.SchemaFrom(type = org.keycloak.representations.overrides.NoSubcomponentsComponentExportRepresentationMap.class)" \
+  "@io.fabric8.crd.generator.annotation.SchemaFrom(type = org.keycloak.representations.overrides.NonCyclicComponentExportRepresentationMap.class)" \
   target/keycloak-core/org/keycloak/representations/idm/ComponentExportRepresentation.java
 
 addAnnotation \

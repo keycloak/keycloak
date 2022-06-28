@@ -17,4 +17,8 @@
 
 package org.keycloak.representations.overrides;
 
-public class NoSubcomponentsComponentExportRepresentation extends BaseComponentExportRepresentation { }
+import java.util.HashMap;
+import java.util.List;
+
+public class NonCyclicComponentExportRepresentationMap extends HashMap<String, List<ComponentExportRepresentation10Subcomponents>> {
+}

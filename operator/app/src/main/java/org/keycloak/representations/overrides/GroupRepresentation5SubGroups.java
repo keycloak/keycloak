@@ -17,4 +17,17 @@
 
 package org.keycloak.representations.overrides;
 
-public class NoSubcomponentsComponentExportRepresentation extends BaseComponentExportRepresentation { }
+import java.util.List;
+
+public class GroupRepresentation5SubGroups extends BaseGroupRepresentation {
+
+    protected List<GroupRepresentation4SubGroups> subGroups;
+
+    public List<GroupRepresentation4SubGroups> getSubGroups() {
+        return subGroups;
+    }
+
+    public void setSubGroups(List<GroupRepresentation4SubGroups> subGroups) {
+        this.subGroups = subGroups;
+    }
+}

@@ -46,6 +46,11 @@ The recommended way to obtain a `RealmRepresentation` is leveraging the export f
 * convert the json to yaml
 * copy-paste the obtained yaml as body for the `realm` key (make sure the indentation is correct)
 
+.Note:
+[NOTE]
+The inlined realm definition is limited in the nesting level of `subGroups` and `subComponents`. +
+The Kubernetes API doesn't allow full cyclic recursion and those fields are limited to 10 levels of nesting.
+
 === Applying the Realm Import CR
 
 Use `kubectl` to create the CR in the correct cluster namespace:
