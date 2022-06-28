@@ -461,16 +461,25 @@ public class ConfigurationTest {
         SmallRyeConfig config = createConfig();
         assertEquals("true", config.getConfigValue("quarkus.log.console.enable").getValue());
         assertEquals("true", config.getConfigValue("quarkus.log.file.enable").getValue());
+        assertEquals("false", config.getConfigValue("quarkus.log.handler.gelf.enabled").getValue());
 
         System.setProperty(CLI_ARGS, "--log=file");
         SmallRyeConfig config2 = createConfig();
         assertEquals("false", config2.getConfigValue("quarkus.log.console.enable").getValue());
         assertEquals("true", config2.getConfigValue("quarkus.log.file.enable").getValue());
+        assertEquals("false", config2.getConfigValue("quarkus.log.handler.gelf.enabled").getValue());
 
         System.setProperty(CLI_ARGS, "--log=console");
         SmallRyeConfig config3 = createConfig();
         assertEquals("true", config3.getConfigValue("quarkus.log.console.enable").getValue());
         assertEquals("false", config3.getConfigValue("quarkus.log.file.enable").getValue());
+        assertEquals("false", config3.getConfigValue("quarkus.log.handler.gelf.enabled").getValue());
+
+        System.setProperty(CLI_ARGS, "--log=console,gelf");
+        SmallRyeConfig config4 = createConfig();
+        assertEquals("true", config4.getConfigValue("quarkus.log.console.enable").getValue());
+        assertEquals("false", config4.getConfigValue("quarkus.log.file.enable").getValue());
+        assertEquals("true", config4.getConfigValue("quarkus.log.handler.gelf.enabled").getValue());
     }
 
     @Test

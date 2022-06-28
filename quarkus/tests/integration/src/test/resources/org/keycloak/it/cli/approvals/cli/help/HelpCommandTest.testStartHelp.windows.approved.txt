@@ -115,7 +115,7 @@ Vault:
 Logging:
 
 --log <handler>      Enable one or more log handlers in a comma-separated list. Available log
-                       handlers are: console,file Default: console.
+                       handlers are: console,file,gelf Default: console.
 --log-console-color <true|false>
                      Enable or disable colors when logging to console. Default: false.
 --log-console-format <format>
@@ -130,6 +130,27 @@ Logging:
 --log-file-format <format>
                      Set a format specific to file log entries. Default: %d{yyyy-MM-dd HH:mm:ss,
                        SSS} %-5p [%c] (%t) %s%e%n.
+--log-gelf-facility <name>
+                     The facility (name of the process) that sends the message. Default: keycloak.
+--log-gelf-host <hostname>
+                     Hostname of the Logstash or Graylog Host. By default UDP is used, prefix the
+                       host with 'tcp:' to switch to TCP. Example: 'tcp:localhost' Default:
+                       localhost.
+--log-gelf-include-location <true|false>
+                     Include source code location. Default: true.
+--log-gelf-include-message-parameters <true|false>
+                     Include message parameters from the log event. Default: true.
+--log-gelf-include-stack-trace <true|false>
+                     If set to true, occuring stack traces are included in the 'StackTrace' field
+                       in the gelf output. Default: true.
+--log-gelf-max-message-size <size>
+                     Maximum message size (in bytes). If the message size is exceeded, gelf will
+                       submit the message in multiple chunks. Default: 8192.
+--log-gelf-port <port>
+                     The port the Logstash or Graylog Host is called on. Default: 12201.
+--log-gelf-timestamp-format <pattern>
+                     Set the format for the gelf timestamp field. Uses Java SimpleDateFormat
+                       pattern. Default: yyyy-MM-dd HH:mm:ss,SSS.
 --log-level <category:level>
                      The log level of the root category or a comma-separated list of individual
                        categories and their levels. For the root category, you don't need to

@@ -25,7 +25,7 @@ public final class LoggingPropertyMappers {
 
     public static PropertyMapper[] getMappers() {
         return new PropertyMapper[] {
-                fromOption(LoggingOptions.log)
+                fromOption(LoggingOptions.LOG)
                         .paramLabel("<handler>")
                         .build(),
                 fromOption(LoggingOptions.LOG_CONSOLE_OUTPUT)
@@ -64,6 +64,48 @@ public final class LoggingPropertyMappers {
                         .to("quarkus.log.level")
                         .transformer(LoggingPropertyMappers::resolveLogLevel)
                         .paramLabel("category:level")
+                        .build(),
+                fromOption(LoggingOptions.LOG_GELF_ENABLED)
+                        .mapFrom("log")
+                        .to("quarkus.log.handler.gelf.enabled")
+                        .paramLabel(Boolean.TRUE + "|" + Boolean.FALSE)
+                        .transformer(LoggingPropertyMappers.resolveLogHandler("gelf"))
+                        .build(),
+                fromOption(LoggingOptions.LOG_GELF_HOST)
+                        .to("quarkus.log.handler.gelf.host")
+                        .paramLabel("hostname")
+                        .build(),
+                fromOption(LoggingOptions.LOG_GELF_PORT)
+                        .to("quarkus.log.handler.gelf.port")
+                        .paramLabel("port")
+                        .build(),
+                fromOption(LoggingOptions.LOG_GELF_VERSION)
+                        .to("quarkus.log.handler.gelf.version")
+                        .paramLabel("version")
+                        .build(),
+                fromOption(LoggingOptions.LOG_GELF_INCLUDE_STACK_TRACE)
+                        .to("quarkus.log.handler.gelf.extract-stack-trace")
+                        .paramLabel(Boolean.TRUE + "|" + Boolean.FALSE)
+                        .build(),
+                fromOption(LoggingOptions.LOG_GELF_TIMESTAMP_FORMAT)
+                        .to("quarkus.log.handler.gelf.timestamp-pattern")
+                        .paramLabel("pattern")
+                        .build(),
+                fromOption(LoggingOptions.LOG_GELF_FACILITY)
+                        .to("quarkus.log.handler.gelf.facility")
+                        .paramLabel("name")
+                        .build(),
+                fromOption(LoggingOptions.LOG_GELF_MAX_MSG_SIZE)
+                        .to("quarkus.log.handler.gelf.maximum-message-size")
+                        .paramLabel("size")
+                        .build(),
+                fromOption(LoggingOptions.LOG_GELF_INCLUDE_LOG_MSG_PARAMS)
+                        .to("quarkus.log.handler.gelf.include-log-message-parameters")
+                        .paramLabel(Boolean.TRUE + "|" + Boolean.FALSE)
+                        .build(),
+                fromOption(LoggingOptions.LOG_GELF_INCLUDE_LOCATION)
+                        .to("quarkus.log.handler.gelf.include-location")
+                        .paramLabel(Boolean.TRUE + "|" + Boolean.FALSE)
                         .build()
         };
     }
@@ -80,7 +122,7 @@ public final class LoggingPropertyMappers {
             }
 
             String[] logHandlerValues = handlers.split(",");
-            List<String> availableLogHandlers = Arrays.stream(LoggingOptions.Handler.values()).map(h -> h.name()).collect(Collectors.toList());
+            List<String> availableLogHandlers = Arrays.stream(LoggingOptions.Handler.values()).map(Enum::name).collect(Collectors.toList());
 
             if (!availableLogHandlers.containsAll(List.of(logHandlerValues))) {
                 addInitializationException(Messages.notRecognizedValueInList("log", handlers, String.join(",", availableLogHandlers)));
