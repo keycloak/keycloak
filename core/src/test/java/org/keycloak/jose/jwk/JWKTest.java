@@ -138,7 +138,7 @@ public abstract class JWKTest {
     @Test
     public void publicEs256() throws Exception {
         KeyPairGenerator keyGen = KeyPairGenerator.getInstance("EC", BouncyIntegration.PROVIDER);
-        SecureRandom randomGen = CryptoIntegration.getProvider().getSecureRandom();
+        SecureRandom randomGen = new SecureRandom();
         ECGenParameterSpec ecSpec = new ECGenParameterSpec("secp256r1");
         keyGen.initialize(ecSpec, randomGen);
         KeyPair keyPair = keyGen.generateKeyPair();

@@ -1,8 +1,5 @@
 package org.keycloak.common.crypto;
 
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.SecureRandom;
 import java.security.spec.ECParameterSpec;
 
 /**
@@ -13,25 +10,20 @@ import java.security.spec.ECParameterSpec;
 public interface CryptoProvider {
 
     /**
-     * @return secureRandom implementation based on the available security algorithms according to environment (FIPS non-fips)
-     */
-    SecureRandom getSecureRandom() throws NoSuchAlgorithmException, NoSuchProviderException;
-    
-    /**
      * Get some algorithm provider implementation. Returned implementation can be dependent according to if we have
      * non-fips bouncycastle or fips bouncycastle on the classpath.
-     * 
+     *
      * @param clazz Returned class.
      * @param algorithm Type of the algorithm, which we want to return
-     * @return 
+     * @return
      */
     <T> T getAlgorithmProvider(Class<T> clazz, String algorithm);
 
     /**
      * Get CertificateUtils implementation. Returned implementation can be dependent according to if we have
      * non-fips bouncycastle or fips bouncycastle on the classpath.
-     * 
-     * @return  
+     *
+     * @return
      */
     public CertificateUtilsProvider getCertificateUtils();
 
@@ -39,15 +31,15 @@ public interface CryptoProvider {
     /**
      * Get PEMUtils implementation. Returned implementation can be dependent according to if we have
      * non-fips bouncycastle or fips bouncycastle on the classpath.
-     * 
-     * @return  
+     *
+     * @return
      */
     public PemUtilsProvider getPemUtils();
 
 
     /**
      * Create the param spec for the EC curve
-     * 
+     *
      * @param curveName
      * @return
      */
