@@ -199,8 +199,9 @@ public class JPAPolicyStore implements PolicyStore {
 
         List<String> result = paginateQuery(query, firstResult, maxResults).getResultList();
         List<Policy> list = new LinkedList<>();
+        PolicyStore policyStore = provider.getStoreFactory().getPolicyStore();
         for (String id : result) {
-            Policy policy = provider.getStoreFactory().getPolicyStore().findById(JPAAuthorizationStoreFactory.NULL_REALM, resourceServer, id);
+            Policy policy = policyStore.findById(JPAAuthorizationStoreFactory.NULL_REALM, resourceServer, id);
             if (Objects.nonNull(policy)) {
                 list.add(policy);
             }
