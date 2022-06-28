@@ -16,18 +16,18 @@
  */
 package org.keycloak.models.map.storage.jpa.role;
 
+import java.util.Arrays;
 import java.util.Set;
 import java.util.UUID;
-import java.util.function.BiFunction;
-import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaBuilder.In;
-import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
+import javax.persistence.criteria.Subquery;
+
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.RoleModel.SearchableFields;
 import org.keycloak.models.map.storage.CriterionNotSupportedException;
 import org.keycloak.models.map.storage.jpa.JpaModelCriteriaBuilder;
-import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
+import org.keycloak.models.map.storage.jpa.role.entity.JpaRoleCompositeEntity;
 import org.keycloak.models.map.storage.jpa.role.entity.JpaRoleEntity;
 import org.keycloak.storage.SearchableModelField;
 
@@ -37,12 +37,11 @@ public class JpaRoleModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaRole
         super(JpaRoleModelCriteriaBuilder::new);
     }
 
-    private JpaRoleModelCriteriaBuilder(BiFunction<CriteriaBuilder, Root<JpaRoleEntity>, Predicate> predicateFunc) {
+    private JpaRoleModelCriteriaBuilder(JpaPredicateFunction<JpaRoleEntity> predicateFunc) {
         super(JpaRoleModelCriteriaBuilder::new, predicateFunc);
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public JpaRoleModelCriteriaBuilder compare(SearchableModelField<? super RoleModel> modelField, Operator op, Object... value) {
         switch (op) {
             case EQ:
@@ -52,19 +51,27 @@ public class JpaRoleModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaRole
 
                     validateValue(value, modelField, op, String.class);
 
-                    return new JpaRoleModelCriteriaBuilder((cb, root) -> 
+                    return new JpaRoleModelCriteriaBuilder((cb, query, root) ->
                         cb.equal(root.get(modelField.getName()), value[0])
                     );
                 } else if (modelField == SearchableFields.COMPOSITE_ROLE) {
 
                     validateValue(value, modelField, op, String.class);
 
-                    return new JpaRoleModelCriteriaBuilder((cb, root) ->
-                            cb.isTrue(cb.function("@>",
-                                    Boolean.TYPE,
-                                    cb.function("->", JsonbType.class, root.get("metadata"), cb.literal("fCompositeRoles")),
-                                    cb.literal(convertToJson(value[0]))))
-                    );
+                    return new JpaRoleModelCriteriaBuilder((cb, query, root) -> {
+
+                        // using a sub-query here instead of a join as a sub-query will work also for deletions.
+                        Subquery<UUID> subquery = query.subquery(UUID.class);
+                        Root<JpaRoleCompositeEntity> subRoot = subquery.from(JpaRoleCompositeEntity.class);
+                        subquery.select(subRoot.get("key").get("roleId"));
+                        In<Object> roleChildId = cb.in(subRoot.get("key").get("childRoleId"));
+                        Arrays.stream(value).forEach(roleChildId::value);
+                        subquery.where(roleChildId);
+
+                        In<UUID> in = cb.in(root.get("id"));
+                        in.value(subquery);
+                        return in;
+                    });
                 } else {
                     throw new CriterionNotSupportedException(modelField, op);
                 }
@@ -73,7 +80,7 @@ public class JpaRoleModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaRole
                     
                     validateValue(value, modelField, op, Boolean.class);
 
-                    return new JpaRoleModelCriteriaBuilder((cb, root) -> 
+                    return new JpaRoleModelCriteriaBuilder((cb, query, root) ->
                         ((Boolean) value[0]) ? cb.isNull(root.get("clientId")) : cb.isNotNull(root.get("clientId"))
                     );
                 } else {
@@ -84,11 +91,11 @@ public class JpaRoleModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaRole
 
                     Set<UUID> uuids = getUuidsForInOperator(value, modelField);
 
-                    if (uuids.isEmpty()) return new JpaRoleModelCriteriaBuilder((cb, root) -> cb.or());
+                    if (uuids.isEmpty()) return new JpaRoleModelCriteriaBuilder((cb, query, root) -> cb.or());
 
-                    return new JpaRoleModelCriteriaBuilder((cb, root) ->  {
+                    return new JpaRoleModelCriteriaBuilder((cb, query, root) ->  {
                         In<UUID> in = cb.in(root.get("id"));
-                        uuids.forEach(uuid -> in.value(uuid));
+                        uuids.forEach(in::value);
                         return in;
                     });
                 } else {
@@ -100,7 +107,7 @@ public class JpaRoleModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaRole
 
                     validateValue(value, modelField, op, String.class);
 
-                    return new JpaRoleModelCriteriaBuilder((cb, root) -> 
+                    return new JpaRoleModelCriteriaBuilder((cb, query, root) ->
                         cb.like(cb.lower(root.get(modelField.getName())), value[0].toString().toLowerCase())
                     );
                 } else {

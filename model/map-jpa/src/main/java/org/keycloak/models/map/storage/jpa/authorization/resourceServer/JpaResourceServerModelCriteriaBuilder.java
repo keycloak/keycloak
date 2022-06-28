@@ -16,15 +16,12 @@
  */
 package org.keycloak.models.map.storage.jpa.authorization.resourceServer;
 
-import java.util.function.BiFunction;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.ResourceServer.SearchableFields;
 import org.keycloak.models.map.storage.CriterionNotSupportedException;
 import org.keycloak.models.map.storage.jpa.JpaModelCriteriaBuilder;
 import org.keycloak.models.map.storage.jpa.authorization.resourceServer.entity.JpaResourceServerEntity;
+import org.keycloak.models.map.storage.jpa.role.JpaPredicateFunction;
 import org.keycloak.storage.SearchableModelField;
 
 public class JpaResourceServerModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaResourceServerEntity, ResourceServer, JpaResourceServerModelCriteriaBuilder> {
@@ -33,7 +30,7 @@ public class JpaResourceServerModelCriteriaBuilder extends JpaModelCriteriaBuild
         super(JpaResourceServerModelCriteriaBuilder::new);
     }
 
-    private JpaResourceServerModelCriteriaBuilder(BiFunction<CriteriaBuilder, Root<JpaResourceServerEntity>, Predicate> predicateFunc) {
+    private JpaResourceServerModelCriteriaBuilder(JpaPredicateFunction<JpaResourceServerEntity> predicateFunc) {
         super(JpaResourceServerModelCriteriaBuilder::new, predicateFunc);
     }
 
@@ -46,7 +43,7 @@ public class JpaResourceServerModelCriteriaBuilder extends JpaModelCriteriaBuild
 
                     validateValue(value, modelField, op, String.class);
 
-                    return new JpaResourceServerModelCriteriaBuilder((cb, root) -> 
+                    return new JpaResourceServerModelCriteriaBuilder((cb, query, root) ->
                         cb.equal(root.get(modelField.getName()), value[0])
                     );
                 } else {

@@ -31,6 +31,7 @@
     <class>org.keycloak.models.map.storage.jpa.realm.entity.JpaRealmAttributeEntity</class>
     <!--roles-->
     <class>org.keycloak.models.map.storage.jpa.role.entity.JpaRoleEntity</class>
+    <class>org.keycloak.models.map.storage.jpa.role.entity.JpaRoleCompositeEntity</class>
     <class>org.keycloak.models.map.storage.jpa.role.entity.JpaRoleAttributeEntity</class>
     <!--user-login-failures-->
     <class>org.keycloak.models.map.storage.jpa.loginFailure.entity.JpaUserLoginFailureEntity</class>

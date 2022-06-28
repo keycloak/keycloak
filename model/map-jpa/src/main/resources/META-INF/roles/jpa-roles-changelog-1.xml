@@ -73,6 +73,20 @@ limitations under the License.
             <column name="name"/>
             <column name="VALUE(255)" valueComputed="VALUE(255)"/>
         </createIndex>
+        <createTable tableName="kc_role_composite">
+            <column name="role_id" type="UUID">
+                <constraints foreignKeyName="role_composite_fk_root_fkey" references="kc_role(id)" deleteCascade="true" nullable="false"/>
+            </column>
+            <column name="child_role_id" type="KC_KEY">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <!-- this primary key will also be used to search by role_id -->
+        <addPrimaryKey columnNames="role_id, child_role_id"
+                       tableName="kc_role_composite" />
+        <createIndex tableName="kc_role_composite" indexName="role_composite_child_role_id">
+            <column name="child_role_id"/>
+        </createIndex>
         <modifySql dbms="postgresql,cockroachdb">
             <replace replace="VALUE(255)" with="(value::varchar(250))"/>
         </modifySql>

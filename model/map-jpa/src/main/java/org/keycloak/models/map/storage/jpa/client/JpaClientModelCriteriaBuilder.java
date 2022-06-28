@@ -16,12 +16,9 @@
  */
 package org.keycloak.models.map.storage.jpa.client;
 
-import java.util.function.BiFunction;
-import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.Join;
 import javax.persistence.criteria.JoinType;
-import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
+
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientModel.SearchableFields;
 import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
@@ -29,6 +26,7 @@ import org.keycloak.models.map.storage.CriterionNotSupportedException;
 import org.keycloak.models.map.storage.jpa.client.entity.JpaClientEntity;
 import org.keycloak.models.map.storage.jpa.client.entity.JpaClientAttributeEntity;
 import org.keycloak.models.map.storage.jpa.JpaModelCriteriaBuilder;
+import org.keycloak.models.map.storage.jpa.role.JpaPredicateFunction;
 import org.keycloak.storage.SearchableModelField;
 
 public class JpaClientModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaClientEntity, ClientModel, JpaClientModelCriteriaBuilder> {
@@ -37,7 +35,7 @@ public class JpaClientModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaCl
         super(JpaClientModelCriteriaBuilder::new);
     }
 
-    private JpaClientModelCriteriaBuilder(BiFunction<CriteriaBuilder, Root<JpaClientEntity>, Predicate> predicateFunc) {
+    private JpaClientModelCriteriaBuilder(JpaPredicateFunction<JpaClientEntity> predicateFunc) {
         super(JpaClientModelCriteriaBuilder::new, predicateFunc);
     }
 
@@ -50,19 +48,19 @@ public class JpaClientModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaCl
 
                     validateValue(value, modelField, op, String.class);
 
-                    return new JpaClientModelCriteriaBuilder((cb, root) -> 
+                    return new JpaClientModelCriteriaBuilder((cb, query, root) ->
                         cb.equal(root.get(modelField.getName()), value[0])
                     );
                 } else if (modelField == SearchableFields.ENABLED) {
                     validateValue(value, modelField, op, Boolean.class);
 
-                    return new JpaClientModelCriteriaBuilder((cb, root) -> 
+                    return new JpaClientModelCriteriaBuilder((cb, query, root) ->
                         cb.equal(root.get(modelField.getName()), value[0])
                     );
                 } else if (modelField == SearchableFields.SCOPE_MAPPING_ROLE) {
                     validateValue(value, modelField, op, String.class);
 
-                    return new JpaClientModelCriteriaBuilder((cb, root) -> 
+                    return new JpaClientModelCriteriaBuilder((cb, query, root) ->
                         cb.isTrue(cb.function("@>",
                             Boolean.TYPE,
                             cb.function("->", JsonbType.class, root.get("metadata"), cb.literal("fScopeMappings")),
@@ -71,7 +69,7 @@ public class JpaClientModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaCl
                 } else if (modelField == SearchableFields.ALWAYS_DISPLAY_IN_CONSOLE) {
                     validateValue(value, modelField, op, Boolean.class);
 
-                    return new JpaClientModelCriteriaBuilder((cb, root) -> 
+                    return new JpaClientModelCriteriaBuilder((cb, query, root) ->
                         cb.equal(
                             cb.function("->", JsonbType.class, root.get("metadata"), cb.literal("fAlwaysDisplayInConsole")), 
                             cb.literal(convertToJson(value[0])))
@@ -79,7 +77,7 @@ public class JpaClientModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaCl
                 } else if (modelField == SearchableFields.ATTRIBUTE) {
                     validateValue(value, modelField, op, String.class, String.class);
 
-                    return new JpaClientModelCriteriaBuilder((cb, root) -> {
+                    return new JpaClientModelCriteriaBuilder((cb, query, root) -> {
                         Join<JpaClientEntity, JpaClientAttributeEntity> join = root.join("attributes", JoinType.LEFT);
                         return cb.and(
                             cb.equal(join.get("name"), value[0]), 
@@ -94,7 +92,7 @@ public class JpaClientModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaCl
                 if (modelField == SearchableFields.CLIENT_ID) {
                     validateValue(value, modelField, op, String.class);
 
-                    return new JpaClientModelCriteriaBuilder((cb, root) -> 
+                    return new JpaClientModelCriteriaBuilder((cb, query, root) ->
                         cb.like(cb.lower(root.get(modelField.getName())), value[0].toString().toLowerCase())
                     );
                 }

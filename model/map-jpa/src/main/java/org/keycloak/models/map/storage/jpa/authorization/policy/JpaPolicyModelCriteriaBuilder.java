@@ -20,13 +20,10 @@ import java.util.Collection;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
-import java.util.function.BiFunction;
-import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaBuilder.In;
 import javax.persistence.criteria.Join;
 import javax.persistence.criteria.JoinType;
-import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
+
 import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Policy.SearchableFields;
 import org.keycloak.models.map.common.StringKeyConverter.UUIDKey;
@@ -36,6 +33,7 @@ import org.keycloak.models.map.storage.jpa.JpaModelCriteriaBuilder;
 import org.keycloak.models.map.storage.jpa.authorization.policy.entity.JpaPolicyConfigEntity;
 import org.keycloak.models.map.storage.jpa.authorization.policy.entity.JpaPolicyEntity;
 import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
+import org.keycloak.models.map.storage.jpa.role.JpaPredicateFunction;
 import org.keycloak.storage.SearchableModelField;
 
 public class JpaPolicyModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaPolicyEntity, Policy, JpaPolicyModelCriteriaBuilder> {
@@ -44,7 +42,7 @@ public class JpaPolicyModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaPo
         super(JpaPolicyModelCriteriaBuilder::new);
     }
 
-    private JpaPolicyModelCriteriaBuilder(BiFunction<CriteriaBuilder, Root<JpaPolicyEntity>, Predicate> predicateFunc) {
+    private JpaPolicyModelCriteriaBuilder(JpaPredicateFunction<JpaPolicyEntity> predicateFunc) {
         super(JpaPolicyModelCriteriaBuilder::new, predicateFunc);
     }
 
@@ -57,7 +55,7 @@ public class JpaPolicyModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaPo
 
                     validateValue(value, modelField, op, String.class);
 
-                    return new JpaPolicyModelCriteriaBuilder((cb, root) -> {
+                    return new JpaPolicyModelCriteriaBuilder((cb, query, root) -> {
                         UUID uuid = UUIDKey.INSTANCE.fromStringSafe(Objects.toString(value[0], null));
                         if (uuid == null) return cb.or();
                         return cb.equal(root.get(modelField.getName()), uuid);
@@ -68,13 +66,13 @@ public class JpaPolicyModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaPo
 
                     validateValue(value, modelField, op, String.class);
 
-                    return new JpaPolicyModelCriteriaBuilder((cb, root) -> 
+                    return new JpaPolicyModelCriteriaBuilder((cb, query, root) ->
                         cb.equal(root.get(modelField.getName()), value[0])
                     );
                 } else if (modelField == SearchableFields.ASSOCIATED_POLICY_ID) {
                     validateValue(value, modelField, op, String.class);
 
-                    return new JpaPolicyModelCriteriaBuilder((cb, root) -> {
+                    return new JpaPolicyModelCriteriaBuilder((cb, query, root) -> {
                         UUID uuid = UUIDKey.INSTANCE.fromStringSafe(Objects.toString(value[0], null));
                         if (uuid == null) return cb.or();
                         return cb.equal(root.join("policyIds", JoinType.LEFT), uuid);
@@ -83,7 +81,7 @@ public class JpaPolicyModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaPo
 
                     validateValue(value, modelField, op, String.class);
 
-                    return new JpaPolicyModelCriteriaBuilder((cb, root) -> {
+                    return new JpaPolicyModelCriteriaBuilder((cb, query, root) -> {
                         UUID uuid = UUIDKey.INSTANCE.fromStringSafe(Objects.toString(value[0], null));
                         if (uuid == null) return cb.or();
                         return cb.equal(root.join("resourceIds", JoinType.LEFT), uuid);
@@ -94,18 +92,18 @@ public class JpaPolicyModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaPo
 
             case NOT_EXISTS:
                 if (modelField == SearchableFields.OWNER) {
-                    return new JpaPolicyModelCriteriaBuilder((cb, root) ->
+                    return new JpaPolicyModelCriteriaBuilder((cb, query, root) ->
                         cb.isNull(cb.function("->", JsonbType.class, root.get("metadata"), cb.literal("fOwner")))
                     );
                 } else if (modelField == SearchableFields.RESOURCE_ID) {
-                    return new JpaPolicyModelCriteriaBuilder((cb, root) -> {
+                    return new JpaPolicyModelCriteriaBuilder((cb, query, root) -> {
                         return cb.isNull(root.join("resourceIds", JoinType.LEFT));
                     });
                 } else if (modelField == SearchableFields.CONFIG) {
 
                     validateValue(value, modelField, op, String.class);
 
-                    return new JpaPolicyModelCriteriaBuilder((cb, root) -> {
+                    return new JpaPolicyModelCriteriaBuilder((cb, query, root) -> {
                         Join<JpaPolicyEntity, JpaPolicyConfigEntity> join = root.join("config", JoinType.LEFT);
                         return cb.isNull(join.get("name"));
                     });
@@ -117,7 +115,7 @@ public class JpaPolicyModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaPo
                 if (modelField == SearchableFields.CONFIG) {
                     validateValue(value, modelField, op, String.class, String.class);
 
-                    return new JpaPolicyModelCriteriaBuilder((cb, root) ->  {
+                    return new JpaPolicyModelCriteriaBuilder((cb, query, root) ->  {
                         Join<JpaPolicyEntity, JpaPolicyConfigEntity> join = root.join("config", JoinType.LEFT);
                         return cb.and(
                             cb.equal(join.get("name"), value[0]), 
@@ -134,7 +132,7 @@ public class JpaPolicyModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaPo
 
                     validateValue(value, modelField, op, String.class);
 
-                    return new JpaPolicyModelCriteriaBuilder((cb, root) -> 
+                    return new JpaPolicyModelCriteriaBuilder((cb, query, root) ->
                         cb.like(cb.lower(root.get(modelField.getName())), value[0].toString().toLowerCase())
                     );
                 } else {
@@ -146,9 +144,9 @@ public class JpaPolicyModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaPo
 
                     Set<UUID> uuids = getUuidsForInOperator(value, modelField);
 
-                    if (uuids.isEmpty()) return new JpaPolicyModelCriteriaBuilder((cb, root) -> cb.or());
+                    if (uuids.isEmpty()) return new JpaPolicyModelCriteriaBuilder((cb, query, root) -> cb.or());
 
-                    return new JpaPolicyModelCriteriaBuilder((cb, root) ->  {
+                    return new JpaPolicyModelCriteriaBuilder((cb, query, root) ->  {
                         In<UUID> in = cb.in(root.get("id"));
                         uuids.forEach(in::value);
                         return in;
@@ -158,10 +156,10 @@ public class JpaPolicyModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaPo
                     final Collection<?> collectionValues = getValuesForInOperator(value, modelField);
 
                     if (collectionValues.isEmpty()) {
-                        return new JpaPolicyModelCriteriaBuilder((cb, root) -> cb.or());
+                        return new JpaPolicyModelCriteriaBuilder((cb, query, root) -> cb.or());
                     }
 
-                    return new JpaPolicyModelCriteriaBuilder((cb, root) ->  {
+                    return new JpaPolicyModelCriteriaBuilder((cb, query, root) ->  {
                         In<String> in = cb.in(root.get("type"));
                         for (Object type : collectionValues) {
                             if (! (type instanceof String)) throw new CriterionNotSupportedException(modelField, op, type + " type is not String.");
@@ -173,9 +171,9 @@ public class JpaPolicyModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaPo
 
                     final Collection<?> collectionValues = getValuesForInOperator(value, modelField);
 
-                    if (collectionValues.isEmpty()) return new JpaPolicyModelCriteriaBuilder((cb, root) -> cb.or());
+                    if (collectionValues.isEmpty()) return new JpaPolicyModelCriteriaBuilder((cb, query, root) -> cb.or());
 
-                    return new JpaPolicyModelCriteriaBuilder((cb, root) ->  {
+                    return new JpaPolicyModelCriteriaBuilder((cb, query, root) ->  {
                         In<String> in = cb.in(root.get("owner"));
                         collectionValues.forEach(owner -> {
                             if (! (owner instanceof String)) throw new CriterionNotSupportedException(modelField, op, owner + " owner is not String.");
@@ -187,9 +185,9 @@ public class JpaPolicyModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaPo
 
                     Set<UUID> scopeUuids = getUuidsForInOperator(value, modelField);
 
-                    if (scopeUuids.isEmpty()) return new JpaPolicyModelCriteriaBuilder((cb, root) -> cb.or());
+                    if (scopeUuids.isEmpty()) return new JpaPolicyModelCriteriaBuilder((cb, query, root) -> cb.or());
 
-                    return new JpaPolicyModelCriteriaBuilder((cb, root) ->  {
+                    return new JpaPolicyModelCriteriaBuilder((cb, query, root) ->  {
                         In<UUID> in = cb.in(root.join("scopeIds", JoinType.LEFT));
                         scopeUuids.forEach(in::value);
                         return in;
@@ -198,9 +196,9 @@ public class JpaPolicyModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaPo
                     
                     Set<UUID> resourceUuids = getUuidsForInOperator(value, modelField);
 
-                    if (resourceUuids.isEmpty()) return new JpaPolicyModelCriteriaBuilder((cb, root) -> cb.or());
+                    if (resourceUuids.isEmpty()) return new JpaPolicyModelCriteriaBuilder((cb, query, root) -> cb.or());
 
-                    return new JpaPolicyModelCriteriaBuilder((cb, root) ->  {
+                    return new JpaPolicyModelCriteriaBuilder((cb, query, root) ->  {
                         In<UUID> in = cb.in(root.join("resourceIds", JoinType.LEFT));
                         resourceUuids.forEach(in::value);
                         return in;

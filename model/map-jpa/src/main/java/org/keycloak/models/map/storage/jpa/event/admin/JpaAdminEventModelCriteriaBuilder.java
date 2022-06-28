@@ -19,17 +19,15 @@ package org.keycloak.models.map.storage.jpa.event.admin;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
 
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.models.map.storage.CriterionNotSupportedException;
 import org.keycloak.models.map.storage.jpa.JpaModelCriteriaBuilder;
 import org.keycloak.models.map.storage.jpa.event.admin.entity.JpaAdminEventEntity;
+import org.keycloak.models.map.storage.jpa.role.JpaPredicateFunction;
 import org.keycloak.storage.SearchableModelField;
 import org.keycloak.util.EnumWithStableIndex;
 
@@ -55,7 +53,7 @@ public class JpaAdminEventModelCriteriaBuilder extends JpaModelCriteriaBuilder<J
         super(JpaAdminEventModelCriteriaBuilder::new);
     }
 
-    private JpaAdminEventModelCriteriaBuilder(BiFunction<CriteriaBuilder, Root<JpaAdminEventEntity>, Predicate> predicateFunc) {
+    private JpaAdminEventModelCriteriaBuilder(JpaPredicateFunction<JpaAdminEventEntity> predicateFunc) {
         super(JpaAdminEventModelCriteriaBuilder::new, predicateFunc);
     }
 
@@ -66,7 +64,7 @@ public class JpaAdminEventModelCriteriaBuilder extends JpaModelCriteriaBuilder<J
                 if (modelField == AdminEvent.SearchableFields.REALM_ID) {
 
                     validateValue(value, modelField, op, String.class);
-                    return new JpaAdminEventModelCriteriaBuilder((cb, root) ->
+                    return new JpaAdminEventModelCriteriaBuilder((cb, query, root) ->
                             cb.equal(root.get(modelField.getName()), value[0])
                     );
                 } else if (modelField == AdminEvent.SearchableFields.AUTH_CLIENT_ID ||
@@ -75,7 +73,7 @@ public class JpaAdminEventModelCriteriaBuilder extends JpaModelCriteriaBuilder<J
                         modelField == AdminEvent.SearchableFields.AUTH_IP_ADDRESS) {
 
                     validateValue(value, modelField, op, String.class);
-                    return new JpaAdminEventModelCriteriaBuilder((cb, root) ->
+                    return new JpaAdminEventModelCriteriaBuilder((cb, query, root) ->
                             cb.equal(
                                     cb.function("->>", String.class, root.get("metadata"),
                                             cb.literal(FIELD_TO_JSON_PROP.get(modelField.getName()))), value[0])
@@ -88,7 +86,7 @@ public class JpaAdminEventModelCriteriaBuilder extends JpaModelCriteriaBuilder<J
 
                     validateValue(value, modelField, op, Number.class);
 
-                    return new JpaAdminEventModelCriteriaBuilder((cb, root) ->
+                    return new JpaAdminEventModelCriteriaBuilder((cb, query, root) ->
                             cb.le(root.get(modelField.getName()), (Number) value[0])
                     );
                 } else {
@@ -98,7 +96,7 @@ public class JpaAdminEventModelCriteriaBuilder extends JpaModelCriteriaBuilder<J
                 if (modelField == AdminEvent.SearchableFields.TIMESTAMP) {
                     validateValue(value, modelField, op, Number.class);
 
-                    return new JpaAdminEventModelCriteriaBuilder((cb, root) ->
+                    return new JpaAdminEventModelCriteriaBuilder((cb, query, root) ->
                             cb.lt(root.get(modelField.getName()), (Number) value[0])
                     );
                 } else {
@@ -108,7 +106,7 @@ public class JpaAdminEventModelCriteriaBuilder extends JpaModelCriteriaBuilder<J
                 if (modelField == AdminEvent.SearchableFields.RESOURCE_PATH) {
                     validateValue(value, modelField, op, String.class);
 
-                    return new JpaAdminEventModelCriteriaBuilder((cb, root) ->
+                    return new JpaAdminEventModelCriteriaBuilder((cb, query, root) ->
                             cb.like(
                                     cb.function("->>", String.class, root.get("metadata"), cb.literal(FIELD_TO_JSON_PROP.get(modelField.getName()))),
                                     value[0].toString())
@@ -120,7 +118,7 @@ public class JpaAdminEventModelCriteriaBuilder extends JpaModelCriteriaBuilder<J
                 if (modelField == AdminEvent.SearchableFields.TIMESTAMP) {
                     validateValue(value, modelField, op, Number.class);
 
-                    return new JpaAdminEventModelCriteriaBuilder((cb, root) ->
+                    return new JpaAdminEventModelCriteriaBuilder((cb, query, root) ->
                             cb.ge(root.get(modelField.getName()), (Number) value[0])
                     );
                 } else {
@@ -131,9 +129,9 @@ public class JpaAdminEventModelCriteriaBuilder extends JpaModelCriteriaBuilder<J
                     Set<Integer> values = super.getValuesForInOperator(value, modelField).stream()
                             .map(o -> ((EnumWithStableIndex) o).getStableIndex()).collect(Collectors.toSet());
 
-                    if (values.isEmpty()) return new JpaAdminEventModelCriteriaBuilder((cb, root) -> cb.or());
+                    if (values.isEmpty()) return new JpaAdminEventModelCriteriaBuilder((cb, query, root) -> cb.or());
 
-                    return new JpaAdminEventModelCriteriaBuilder((cb, root) -> {
+                    return new JpaAdminEventModelCriteriaBuilder((cb, query, root) -> {
                         CriteriaBuilder.In<Integer> in = cb.in(cb.function("->>", String.class, root.get("metadata"),
                                 cb.literal(FIELD_TO_JSON_PROP.get(modelField.getName()))).as(Integer.class));
                         values.forEach(in::value);
@@ -144,9 +142,9 @@ public class JpaAdminEventModelCriteriaBuilder extends JpaModelCriteriaBuilder<J
                     Set<String> values = super.getValuesForInOperator(value, modelField).stream()
                             .map(Object::toString).collect(Collectors.toSet());
 
-                    if (values.isEmpty()) return new JpaAdminEventModelCriteriaBuilder((cb, root) -> cb.or());
+                    if (values.isEmpty()) return new JpaAdminEventModelCriteriaBuilder((cb, query, root) -> cb.or());
 
-                    return new JpaAdminEventModelCriteriaBuilder((cb, root) -> {
+                    return new JpaAdminEventModelCriteriaBuilder((cb, query, root) -> {
                         CriteriaBuilder.In<String> in = cb.in(cb.function("->>", String.class, root.get("metadata"),
                                                               cb.literal(FIELD_TO_JSON_PROP.get(modelField.getName()))));
                         values.forEach(in::value);

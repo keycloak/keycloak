@@ -16,15 +16,12 @@
  */
 package org.keycloak.models.map.storage.jpa.clientscope;
 
-import java.util.function.BiFunction;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientScopeModel.SearchableFields;
 import org.keycloak.models.map.storage.CriterionNotSupportedException;
 import org.keycloak.models.map.storage.jpa.JpaModelCriteriaBuilder;
 import org.keycloak.models.map.storage.jpa.clientscope.entity.JpaClientScopeEntity;
+import org.keycloak.models.map.storage.jpa.role.JpaPredicateFunction;
 import org.keycloak.storage.SearchableModelField;
 
 public class JpaClientScopeModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaClientScopeEntity, ClientScopeModel, JpaClientScopeModelCriteriaBuilder> {
@@ -33,7 +30,7 @@ public class JpaClientScopeModelCriteriaBuilder extends JpaModelCriteriaBuilder<
         super(JpaClientScopeModelCriteriaBuilder::new);
     }
 
-    private JpaClientScopeModelCriteriaBuilder(BiFunction<CriteriaBuilder, Root<JpaClientScopeEntity>, Predicate> predicateFunc) {
+    private JpaClientScopeModelCriteriaBuilder(JpaPredicateFunction<JpaClientScopeEntity> predicateFunc) {
         super(JpaClientScopeModelCriteriaBuilder::new, predicateFunc);
     }
 
@@ -46,7 +43,7 @@ public class JpaClientScopeModelCriteriaBuilder extends JpaModelCriteriaBuilder<
 
                     validateValue(value, modelField, op, String.class);
 
-                    return new JpaClientScopeModelCriteriaBuilder((cb, root) -> 
+                    return new JpaClientScopeModelCriteriaBuilder((cb, query, root) ->
                         cb.equal(root.get(modelField.getName()), value[0])
                     );
                 } else {
