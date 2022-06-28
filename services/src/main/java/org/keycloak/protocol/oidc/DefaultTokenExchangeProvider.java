@@ -29,6 +29,7 @@ import org.keycloak.broker.provider.IdentityProviderFactory;
 import org.keycloak.broker.provider.IdentityProviderMapper;
 import org.keycloak.broker.provider.IdentityProviderMapperSyncModeDelegate;
 import org.keycloak.common.ClientConnection;
+import org.keycloak.common.constants.ServiceAccountConstants;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
@@ -369,6 +370,13 @@ public class DefaultTokenExchangeProvider implements TokenExchangeProvider {
         authSession.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
         authSession.setClientNote(OIDCLoginProtocol.ISSUER, Urls.realmIssuer(session.getContext().getUri().getBaseUri(), realm.getName()));
         authSession.setClientNote(OIDCLoginProtocol.SCOPE_PARAM, scope);
+
+        if (targetUserSession == null) {
+            // if no session is associated with a subject_token, a stateless session is created to only allow building a token to the audience
+            targetUserSession = session.sessions().createUserSession(authSession.getParentSession().getId(), realm, targetUser, targetUser.getUsername(),
+                    clientConnection.getRemoteAddr(), ServiceAccountConstants.CLIENT_AUTH, false, null, null, UserSessionModel.SessionPersistenceState.PERSISTENT);
+
+        }
 
         event.session(targetUserSession);
 
