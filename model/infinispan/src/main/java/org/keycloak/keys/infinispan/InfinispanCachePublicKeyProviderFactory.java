@@ -21,13 +21,15 @@ import org.infinispan.Cache;
 import org.keycloak.Config;
 import org.keycloak.cluster.ClusterEvent;
 import org.keycloak.cluster.ClusterProvider;
+import org.keycloak.common.Profile;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.cache.CachePublicKeyProvider;
 import org.keycloak.models.cache.CachePublicKeyProviderFactory;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
-public class InfinispanCachePublicKeyProviderFactory implements CachePublicKeyProviderFactory {
+public class InfinispanCachePublicKeyProviderFactory implements CachePublicKeyProviderFactory, EnvironmentDependentProviderFactory {
 
     public static final String PROVIDER_ID = "infinispan";
 
@@ -65,6 +67,11 @@ public class InfinispanCachePublicKeyProviderFactory implements CachePublicKeyPr
                 }
             }
         }
+    }
+
+    @Override
+    public boolean isSupported() {
+        return !Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE);
     }
 
     @Override
