@@ -209,6 +209,15 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
         noRefreshToken.setFullScopeAllowed(false);
         noRefreshToken.getAttributes().put(OIDCConfigAttributes.USE_REFRESH_TOKEN, "false");
 
+        ClientModel serviceAccount = realm.addClient("my-service-account");
+        serviceAccount.setClientId("my-service-account");
+        serviceAccount.setPublicClient(false);
+        serviceAccount.setServiceAccountsEnabled(true);
+        serviceAccount.setEnabled(true);
+        serviceAccount.setSecret("secret");
+        serviceAccount.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        serviceAccount.setFullScopeAllowed(false);
+
         // permission for client to client exchange to "target" client
         ClientPolicyRepresentation clientRep = new ClientPolicyRepresentation();
         clientRep.setName("to");
@@ -216,6 +225,7 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
         clientRep.addClient(legal.getId());
         clientRep.addClient(directLegal.getId());
         clientRep.addClient(noRefreshToken.getId());
+        clientRep.addClient(serviceAccount.getId());
 
         ResourceServer server = management.realmResourceServer();
         Policy clientPolicy = management.authz().getStoreFactory().getPolicyStore().create(server, clientRep);
@@ -302,6 +312,27 @@ public class ClientTokenExchangeTest extends AbstractKeycloakTest {
         {
             response = oauth.doTokenExchange(TEST, accessToken, "target", "illegal", "secret");
             Assert.assertEquals(403, response.getStatusCode());
+        }
+    }
+
+    @Test
+    @UncaughtServerErrorExpected
+    public void testExchangeUsingServiceAccount() throws Exception {
+        testingClient.server().run(ClientTokenExchangeTest::setupRealm);
+
+        oauth.realm(TEST);
+        oauth.clientId("my-service-account");
+        OAuthClient.AccessTokenResponse response = oauth.doClientCredentialsGrantAccessTokenRequest("secret");
+        String accessToken = response.getAccessToken();
+
+        {
+            response = oauth.doTokenExchange(TEST, accessToken, "target", "my-service-account", "secret");
+            String exchangedTokenString = response.getAccessToken();
+            TokenVerifier<AccessToken> verifier = TokenVerifier.create(exchangedTokenString, AccessToken.class);
+            AccessToken exchangedToken = verifier.parse().getToken();
+            Assert.assertEquals("my-service-account", exchangedToken.getIssuedFor());
+            Assert.assertEquals("target", exchangedToken.getAudience()[0]);
+            Assert.assertEquals(exchangedToken.getPreferredUsername(), "service-account-my-service-account");
         }
     }
 
