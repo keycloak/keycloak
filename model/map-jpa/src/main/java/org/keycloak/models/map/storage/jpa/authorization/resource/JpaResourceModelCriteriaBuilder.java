@@ -20,12 +20,9 @@ import java.util.Collection;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
-import java.util.function.BiFunction;
-import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaBuilder.In;
 import javax.persistence.criteria.JoinType;
-import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
+
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.Resource.SearchableFields;
 import org.keycloak.models.map.common.StringKeyConverter.UUIDKey;
@@ -33,6 +30,7 @@ import org.keycloak.models.map.storage.CriterionNotSupportedException;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.models.map.storage.jpa.JpaModelCriteriaBuilder;
 import org.keycloak.models.map.storage.jpa.authorization.resource.entity.JpaResourceEntity;
+import org.keycloak.models.map.storage.jpa.role.JpaPredicateFunction;
 import org.keycloak.storage.SearchableModelField;
 
 public class JpaResourceModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaResourceEntity, Resource, JpaResourceModelCriteriaBuilder> {
@@ -41,7 +39,7 @@ public class JpaResourceModelCriteriaBuilder extends JpaModelCriteriaBuilder<Jpa
         super(JpaResourceModelCriteriaBuilder::new);
     }
 
-    private JpaResourceModelCriteriaBuilder(BiFunction<CriteriaBuilder, Root<JpaResourceEntity>, Predicate> predicateFunc) {
+    private JpaResourceModelCriteriaBuilder(JpaPredicateFunction<JpaResourceEntity> predicateFunc) {
         super(JpaResourceModelCriteriaBuilder::new, predicateFunc);
     }
 
@@ -54,7 +52,7 @@ public class JpaResourceModelCriteriaBuilder extends JpaModelCriteriaBuilder<Jpa
 
                     validateValue(value, modelField, op, String.class);
 
-                    return new JpaResourceModelCriteriaBuilder((cb, root) -> {
+                    return new JpaResourceModelCriteriaBuilder((cb, query, root) -> {
                         UUID uuid = UUIDKey.INSTANCE.fromStringSafe(Objects.toString(value[0], null));
                         if (uuid == null) return cb.or();
                         return cb.equal(root.get(modelField.getName()), uuid);
@@ -66,19 +64,19 @@ public class JpaResourceModelCriteriaBuilder extends JpaModelCriteriaBuilder<Jpa
 
                     validateValue(value, modelField, op, String.class);
 
-                    return new JpaResourceModelCriteriaBuilder((cb, root) -> 
+                    return new JpaResourceModelCriteriaBuilder((cb, query, root) ->
                         cb.equal(root.get(modelField.getName()), value[0])
                     );
                 } else if (modelField == SearchableFields.OWNER_MANAGED_ACCESS) {
                     validateValue(value, modelField, op, Boolean.class);
 
-                    return new JpaResourceModelCriteriaBuilder((cb, root) -> 
+                    return new JpaResourceModelCriteriaBuilder((cb, query, root) ->
                         cb.equal(root.get(modelField.getName()), value[0])
                     );
                 } else if (modelField == SearchableFields.URI) {
                     validateValue(value, modelField, op, String.class);
 
-                    return new JpaResourceModelCriteriaBuilder((cb, root) -> {
+                    return new JpaResourceModelCriteriaBuilder((cb, query, root) -> {
                         return cb.equal(root.join("uris", JoinType.LEFT), value[0]);
                     });
                 } else {
@@ -89,7 +87,7 @@ public class JpaResourceModelCriteriaBuilder extends JpaModelCriteriaBuilder<Jpa
                 if (modelField == SearchableFields.OWNER) {
                     validateValue(value, modelField, op, String.class);
 
-                    return new JpaResourceModelCriteriaBuilder((cb, root) -> 
+                    return new JpaResourceModelCriteriaBuilder((cb, query, root) ->
                         cb.equal(root.get(modelField.getName()), value[0]).not()
                     );
                 } else {
@@ -98,7 +96,7 @@ public class JpaResourceModelCriteriaBuilder extends JpaModelCriteriaBuilder<Jpa
 
             case EXISTS:
                 if (modelField == SearchableFields.URI) {
-                    return new JpaResourceModelCriteriaBuilder((cb, root) -> {
+                    return new JpaResourceModelCriteriaBuilder((cb, query, root) -> {
                         return cb.isNotNull(root.join("uris", JoinType.LEFT));
                     });
                 } else {
@@ -111,7 +109,7 @@ public class JpaResourceModelCriteriaBuilder extends JpaModelCriteriaBuilder<Jpa
 
                     validateValue(value, modelField, op, String.class);
 
-                    return new JpaResourceModelCriteriaBuilder((cb, root) -> 
+                    return new JpaResourceModelCriteriaBuilder((cb, query, root) ->
                         cb.like(cb.lower(root.get(modelField.getName())), value[0].toString().toLowerCase())
                     );
                 } else {
@@ -123,9 +121,9 @@ public class JpaResourceModelCriteriaBuilder extends JpaModelCriteriaBuilder<Jpa
 
                     Set<UUID> uuids = getUuidsForInOperator(value, modelField);
 
-                    if (uuids.isEmpty()) return new JpaResourceModelCriteriaBuilder((cb, root) -> cb.or());
+                    if (uuids.isEmpty()) return new JpaResourceModelCriteriaBuilder((cb, query, root) -> cb.or());
 
-                    return new JpaResourceModelCriteriaBuilder((cb, root) ->  {
+                    return new JpaResourceModelCriteriaBuilder((cb, query, root) ->  {
                         In<UUID> in = cb.in(root.get("id"));
                         uuids.forEach(uuid -> in.value(uuid));
                         return in;
@@ -134,9 +132,9 @@ public class JpaResourceModelCriteriaBuilder extends JpaModelCriteriaBuilder<Jpa
 
                     final Collection<?> collectionValues = getValuesForInOperator(value, modelField);
 
-                    if (collectionValues.isEmpty()) return new JpaResourceModelCriteriaBuilder((cb, root) -> cb.or());
+                    if (collectionValues.isEmpty()) return new JpaResourceModelCriteriaBuilder((cb, query, root) -> cb.or());
 
-                    return new JpaResourceModelCriteriaBuilder((cb, root) ->  {
+                    return new JpaResourceModelCriteriaBuilder((cb, query, root) ->  {
                         In<String> in = cb.in(root.get("owner"));
                         collectionValues.forEach(owner -> {
                             if (! (owner instanceof String)) throw new CriterionNotSupportedException(modelField, op, owner + " owner is not String.");
@@ -148,9 +146,9 @@ public class JpaResourceModelCriteriaBuilder extends JpaModelCriteriaBuilder<Jpa
 
                     Set<UUID> scopeUuids = getUuidsForInOperator(value, modelField);
 
-                    if (scopeUuids.isEmpty()) return new JpaResourceModelCriteriaBuilder((cb, root) -> cb.or());
+                    if (scopeUuids.isEmpty()) return new JpaResourceModelCriteriaBuilder((cb, query, root) -> cb.or());
 
-                    return new JpaResourceModelCriteriaBuilder((cb, root) ->  {
+                    return new JpaResourceModelCriteriaBuilder((cb, query, root) ->  {
                         In<UUID> in = cb.in(root.join("scopeIds", JoinType.LEFT));
                         scopeUuids.forEach(in::value);
                         return in;
@@ -159,9 +157,9 @@ public class JpaResourceModelCriteriaBuilder extends JpaModelCriteriaBuilder<Jpa
 
                     final Collection<?> collectionValues = getValuesForInOperator(value, modelField);
 
-                    if (collectionValues.isEmpty()) return new JpaResourceModelCriteriaBuilder((cb, root) -> cb.or());
+                    if (collectionValues.isEmpty()) return new JpaResourceModelCriteriaBuilder((cb, query, root) -> cb.or());
 
-                    return new JpaResourceModelCriteriaBuilder((cb, root) ->  {
+                    return new JpaResourceModelCriteriaBuilder((cb, query, root) ->  {
                         In<String> in = cb.in(root.join("uris", JoinType.LEFT));
                         collectionValues.forEach(uri -> {
                             if (! (uri instanceof String)) throw new CriterionNotSupportedException(modelField, op, uri + " uri is not String.");

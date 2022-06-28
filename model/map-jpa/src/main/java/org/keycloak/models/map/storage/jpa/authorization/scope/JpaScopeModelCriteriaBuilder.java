@@ -19,11 +19,8 @@ package org.keycloak.models.map.storage.jpa.authorization.scope;
 import java.util.Collection;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.function.BiFunction;
-import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaBuilder.In;
-import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
+
 import org.keycloak.authorization.model.Scope;
 import org.keycloak.authorization.model.Scope.SearchableFields;
 import org.keycloak.models.map.common.StringKeyConverter.UUIDKey;
@@ -31,6 +28,7 @@ import org.keycloak.models.map.storage.CriterionNotSupportedException;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.models.map.storage.jpa.JpaModelCriteriaBuilder;
 import org.keycloak.models.map.storage.jpa.authorization.scope.entity.JpaScopeEntity;
+import org.keycloak.models.map.storage.jpa.role.JpaPredicateFunction;
 import org.keycloak.storage.SearchableModelField;
 
 public class JpaScopeModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaScopeEntity, Scope, JpaScopeModelCriteriaBuilder> {
@@ -39,7 +37,7 @@ public class JpaScopeModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaSco
         super(JpaScopeModelCriteriaBuilder::new);
     }
 
-    private JpaScopeModelCriteriaBuilder(BiFunction<CriteriaBuilder, Root<JpaScopeEntity>, Predicate> predicateFunc) {
+    private JpaScopeModelCriteriaBuilder(JpaPredicateFunction<JpaScopeEntity> predicateFunc) {
         super(JpaScopeModelCriteriaBuilder::new, predicateFunc);
     }
 
@@ -52,7 +50,7 @@ public class JpaScopeModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaSco
 
                     validateValue(value, modelField, op, String.class);
 
-                    return new JpaScopeModelCriteriaBuilder((cb, root) -> {
+                    return new JpaScopeModelCriteriaBuilder((cb, query, root) -> {
                         UUID uuid = UUIDKey.INSTANCE.fromStringSafe(Objects.toString(value[0], null));
                         if (uuid == null) return cb.or();
                         return cb.equal(root.get(modelField.getName()), uuid);
@@ -62,7 +60,7 @@ public class JpaScopeModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaSco
 
                     validateValue(value, modelField, op, String.class);
 
-                    return new JpaScopeModelCriteriaBuilder((cb, root) -> 
+                    return new JpaScopeModelCriteriaBuilder((cb, query, root) ->
                         cb.equal(root.get(modelField.getName()), value[0])
                     );
                 } else {
@@ -74,7 +72,7 @@ public class JpaScopeModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaSco
 
                     validateValue(value, modelField, op, String.class);
 
-                    return new JpaScopeModelCriteriaBuilder((cb, root) -> 
+                    return new JpaScopeModelCriteriaBuilder((cb, query, root) ->
                         cb.like(cb.lower(root.get(modelField.getName())), value[0].toString().toLowerCase())
                     );
                 } else {
@@ -87,10 +85,10 @@ public class JpaScopeModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaSco
                     final Collection<?> collectionValues = getValuesForInOperator(value, modelField);
 
                     if (collectionValues.isEmpty()) {
-                        return new JpaScopeModelCriteriaBuilder((cb, root) -> cb.or());
+                        return new JpaScopeModelCriteriaBuilder((cb, query, root) -> cb.or());
                     }
 
-                    return new JpaScopeModelCriteriaBuilder((cb, root) ->  {
+                    return new JpaScopeModelCriteriaBuilder((cb, query, root) ->  {
                         In<UUID> in = cb.in(root.get("id"));
                         for (Object id : collectionValues) {
                             try {

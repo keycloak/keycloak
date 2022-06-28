@@ -19,17 +19,15 @@ package org.keycloak.models.map.storage.jpa.event.auth;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
 
 import org.keycloak.events.Event;
 import org.keycloak.models.map.storage.CriterionNotSupportedException;
 import org.keycloak.models.map.storage.jpa.JpaModelCriteriaBuilder;
 import org.keycloak.models.map.storage.jpa.event.auth.entity.JpaAuthEventEntity;
+import org.keycloak.models.map.storage.jpa.role.JpaPredicateFunction;
 import org.keycloak.storage.SearchableModelField;
 import org.keycloak.util.EnumWithStableIndex;
 
@@ -47,7 +45,7 @@ public class JpaAuthEventModelCriteriaBuilder extends JpaModelCriteriaBuilder<Jp
         super(JpaAuthEventModelCriteriaBuilder::new);
     }
 
-    private JpaAuthEventModelCriteriaBuilder(BiFunction<CriteriaBuilder, Root<JpaAuthEventEntity>, Predicate> predicateFunc) {
+    private JpaAuthEventModelCriteriaBuilder(JpaPredicateFunction<JpaAuthEventEntity> predicateFunc) {
         super(JpaAuthEventModelCriteriaBuilder::new, predicateFunc);
     }
 
@@ -58,7 +56,7 @@ public class JpaAuthEventModelCriteriaBuilder extends JpaModelCriteriaBuilder<Jp
                 if (modelField == Event.SearchableFields.REALM_ID) {
 
                     validateValue(value, modelField, op, String.class);
-                    return new JpaAuthEventModelCriteriaBuilder((cb, root) ->
+                    return new JpaAuthEventModelCriteriaBuilder((cb, query, root) ->
                             cb.equal(root.get(modelField.getName()), value[0])
                     );
                 } else if (modelField == Event.SearchableFields.CLIENT_ID ||
@@ -66,7 +64,7 @@ public class JpaAuthEventModelCriteriaBuilder extends JpaModelCriteriaBuilder<Jp
                         modelField == Event.SearchableFields.IP_ADDRESS) {
 
                     validateValue(value, modelField, op, String.class);
-                    return new JpaAuthEventModelCriteriaBuilder((cb, root) ->
+                    return new JpaAuthEventModelCriteriaBuilder((cb, query, root) ->
                             cb.equal(
                                     cb.function("->>", String.class, root.get("metadata"),
                                             cb.literal(FIELD_TO_JSON_PROP.get(modelField.getName()))), value[0])
@@ -79,7 +77,7 @@ public class JpaAuthEventModelCriteriaBuilder extends JpaModelCriteriaBuilder<Jp
 
                     validateValue(value, modelField, op, Number.class);
 
-                    return new JpaAuthEventModelCriteriaBuilder((cb, root) ->
+                    return new JpaAuthEventModelCriteriaBuilder((cb, query, root) ->
                             cb.le(root.get(modelField.getName()), (Number) value[0])
                     );
                 } else {
@@ -89,7 +87,7 @@ public class JpaAuthEventModelCriteriaBuilder extends JpaModelCriteriaBuilder<Jp
                 if (modelField == Event.SearchableFields.TIMESTAMP) {
                     validateValue(value, modelField, op, Number.class);
 
-                    return new JpaAuthEventModelCriteriaBuilder((cb, root) ->
+                    return new JpaAuthEventModelCriteriaBuilder((cb, query, root) ->
                             cb.lt(root.get(modelField.getName()), (Number) value[0])
                     );
                 } else {
@@ -99,7 +97,7 @@ public class JpaAuthEventModelCriteriaBuilder extends JpaModelCriteriaBuilder<Jp
                 if (modelField == Event.SearchableFields.TIMESTAMP) {
                     validateValue(value, modelField, op, Number.class);
 
-                    return new JpaAuthEventModelCriteriaBuilder((cb, root) ->
+                    return new JpaAuthEventModelCriteriaBuilder((cb, query, root) ->
                             cb.ge(root.get(modelField.getName()), (Number) value[0])
                     );
                 } else {
@@ -110,9 +108,9 @@ public class JpaAuthEventModelCriteriaBuilder extends JpaModelCriteriaBuilder<Jp
                     Set<Integer> values = super.getValuesForInOperator(value, modelField).stream()
                             .map(o -> ((EnumWithStableIndex) o).getStableIndex()).collect(Collectors.toSet());
 
-                    if (values.isEmpty()) return new JpaAuthEventModelCriteriaBuilder((cb, root) -> cb.or());
+                    if (values.isEmpty()) return new JpaAuthEventModelCriteriaBuilder((cb, query, root) -> cb.or());
 
-                    return new JpaAuthEventModelCriteriaBuilder((cb, root) -> {
+                    return new JpaAuthEventModelCriteriaBuilder((cb, query, root) -> {
                         CriteriaBuilder.In<Integer> in = cb.in(cb.function("->>", String.class, root.get("metadata"),
                                 cb.literal(FIELD_TO_JSON_PROP.get(modelField.getName()))).as(Integer.class));
                         values.forEach(in::value);

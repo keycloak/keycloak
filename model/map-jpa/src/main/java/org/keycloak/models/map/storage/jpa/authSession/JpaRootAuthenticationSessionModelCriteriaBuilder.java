@@ -16,13 +16,10 @@
  */
 package org.keycloak.models.map.storage.jpa.authSession;
 
-import java.util.function.BiFunction;
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
 import org.keycloak.models.map.storage.CriterionNotSupportedException;
 import org.keycloak.models.map.storage.jpa.JpaModelCriteriaBuilder;
 import org.keycloak.models.map.storage.jpa.authSession.entity.JpaRootAuthenticationSessionEntity;
+import org.keycloak.models.map.storage.jpa.role.JpaPredicateFunction;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel.SearchableFields;
 import org.keycloak.storage.SearchableModelField;
@@ -33,7 +30,7 @@ public class JpaRootAuthenticationSessionModelCriteriaBuilder extends JpaModelCr
         super(JpaRootAuthenticationSessionModelCriteriaBuilder::new);
     }
 
-    private JpaRootAuthenticationSessionModelCriteriaBuilder(BiFunction<CriteriaBuilder, Root<JpaRootAuthenticationSessionEntity>, Predicate> predicateFunc) {
+    private JpaRootAuthenticationSessionModelCriteriaBuilder(JpaPredicateFunction<JpaRootAuthenticationSessionEntity> predicateFunc) {
         super(JpaRootAuthenticationSessionModelCriteriaBuilder::new, predicateFunc);
     }
 
@@ -45,7 +42,7 @@ public class JpaRootAuthenticationSessionModelCriteriaBuilder extends JpaModelCr
 
                     validateValue(value, modelField, op, String.class);
 
-                    return new JpaRootAuthenticationSessionModelCriteriaBuilder((cb, root) -> 
+                    return new JpaRootAuthenticationSessionModelCriteriaBuilder((cb, query, root) ->
                         cb.equal(root.get(modelField.getName()), value[0])
                     );
                 } else {

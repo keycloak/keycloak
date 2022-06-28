@@ -19,11 +19,8 @@ package org.keycloak.models.map.storage.jpa.authorization.permission;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
-import java.util.function.BiFunction;
-import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaBuilder.In;
-import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
+
 import org.keycloak.authorization.model.PermissionTicket;
 import org.keycloak.authorization.model.PermissionTicket.SearchableFields;
 import org.keycloak.models.map.common.StringKeyConverter.UUIDKey;
@@ -32,6 +29,7 @@ import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.models.map.storage.jpa.JpaModelCriteriaBuilder;
 import org.keycloak.models.map.storage.jpa.authorization.permission.entity.JpaPermissionEntity;
 import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
+import org.keycloak.models.map.storage.jpa.role.JpaPredicateFunction;
 import org.keycloak.storage.SearchableModelField;
 
 public class JpaPermissionModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaPermissionEntity, PermissionTicket, JpaPermissionModelCriteriaBuilder> {
@@ -40,7 +38,7 @@ public class JpaPermissionModelCriteriaBuilder extends JpaModelCriteriaBuilder<J
         super(JpaPermissionModelCriteriaBuilder::new);
     }
 
-    private JpaPermissionModelCriteriaBuilder(BiFunction<CriteriaBuilder, Root<JpaPermissionEntity>, Predicate> predicateFunc) {
+    private JpaPermissionModelCriteriaBuilder(JpaPredicateFunction<JpaPermissionEntity> predicateFunc) {
         super(JpaPermissionModelCriteriaBuilder::new, predicateFunc);
     }
 
@@ -56,7 +54,7 @@ public class JpaPermissionModelCriteriaBuilder extends JpaModelCriteriaBuilder<J
 
                     validateValue(value, modelField, op, String.class);
 
-                    return new JpaPermissionModelCriteriaBuilder((cb, root) -> {
+                    return new JpaPermissionModelCriteriaBuilder((cb, query, root) -> {
                         UUID uuid = UUIDKey.INSTANCE.fromStringSafe(Objects.toString(value[0], null));
                         if (uuid == null) return cb.or();
                         return cb.equal(root.get(modelField.getName()), uuid);
@@ -67,7 +65,7 @@ public class JpaPermissionModelCriteriaBuilder extends JpaModelCriteriaBuilder<J
 
                     validateValue(value, modelField, op, String.class);
 
-                    return new JpaPermissionModelCriteriaBuilder((cb, root) -> 
+                    return new JpaPermissionModelCriteriaBuilder((cb, query, root) ->
                         cb.equal(root.get(modelField.getName()), value[0])
                     );
                 } else {
@@ -78,12 +76,12 @@ public class JpaPermissionModelCriteriaBuilder extends JpaModelCriteriaBuilder<J
                 if (modelField == SearchableFields.SCOPE_ID ||
                     modelField == SearchableFields.REQUESTER) {
 
-                    return new JpaPermissionModelCriteriaBuilder((cb, root) -> 
+                    return new JpaPermissionModelCriteriaBuilder((cb, query, root) ->
                         cb.isNotNull(root.get(modelField.getName()))
                     );
                 } else if (modelField ==  SearchableFields.GRANTED_TIMESTAMP) { 
 
-                    return new JpaPermissionModelCriteriaBuilder((cb, root) -> 
+                    return new JpaPermissionModelCriteriaBuilder((cb, query, root) ->
                         cb.isNotNull(cb.function("->", JsonbType.class, root.get("metadata"), cb.literal("fGrantedTimestamp")))
                     );
                 } else {
@@ -94,12 +92,12 @@ public class JpaPermissionModelCriteriaBuilder extends JpaModelCriteriaBuilder<J
                 if (modelField == SearchableFields.SCOPE_ID ||
                     modelField == SearchableFields.REQUESTER) {
 
-                    return new JpaPermissionModelCriteriaBuilder((cb, root) -> 
+                    return new JpaPermissionModelCriteriaBuilder((cb, query, root) ->
                         cb.isNull(root.get(modelField.getName()))
                     );
                 } else if (modelField == SearchableFields.GRANTED_TIMESTAMP) { 
 
-                    return new JpaPermissionModelCriteriaBuilder((cb, root) -> 
+                    return new JpaPermissionModelCriteriaBuilder((cb, query, root) ->
                         cb.isNull(cb.function("->", JsonbType.class, root.get("metadata"), cb.literal("fGrantedTimestamp")))
                     );
                 } else {
@@ -111,9 +109,9 @@ public class JpaPermissionModelCriteriaBuilder extends JpaModelCriteriaBuilder<J
 
                     Set<UUID> uuids = getUuidsForInOperator(value, modelField);
 
-                    if (uuids.isEmpty()) return new JpaPermissionModelCriteriaBuilder((cb, root) -> cb.or());
+                    if (uuids.isEmpty()) return new JpaPermissionModelCriteriaBuilder((cb, query, root) -> cb.or());
 
-                    return new JpaPermissionModelCriteriaBuilder((cb, root) ->  {
+                    return new JpaPermissionModelCriteriaBuilder((cb, query, root) ->  {
                         In<UUID> in = cb.in(root.get(modelField.getName()));
                         uuids.forEach(in::value);
                         return in;

@@ -22,17 +22,15 @@ import javax.persistence.criteria.Root;
 import javax.persistence.criteria.Selection;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.map.role.MapRoleEntity;
-import org.keycloak.models.map.role.MapRoleEntityDelegate;
 import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_ROLE;
 import org.keycloak.models.map.storage.jpa.JpaMapKeycloakTransaction;
 import org.keycloak.models.map.storage.jpa.JpaModelCriteriaBuilder;
 import org.keycloak.models.map.storage.jpa.JpaRootEntity;
-import org.keycloak.models.map.storage.jpa.role.delegate.JpaRoleDelegateProvider;
+import org.keycloak.models.map.storage.jpa.role.delegate.JpaMapRoleEntityDelegate;
 import org.keycloak.models.map.storage.jpa.role.entity.JpaRoleEntity;
 
 public class JpaRoleMapKeycloakTransaction extends JpaMapKeycloakTransaction<JpaRoleEntity, MapRoleEntity, RoleModel> {
 
-    @SuppressWarnings("unchecked")
     public JpaRoleMapKeycloakTransaction(EntityManager em) {
         super(JpaRoleEntity.class, RoleModel.class, em);
     }
@@ -62,6 +60,6 @@ public class JpaRoleMapKeycloakTransaction extends JpaMapKeycloakTransaction<Jpa
 
     @Override
     protected MapRoleEntity mapToEntityDelegate(JpaRoleEntity original) {
-        return new MapRoleEntityDelegate(new JpaRoleDelegateProvider(original, em));
+        return new JpaMapRoleEntityDelegate(original, em);
     }
 }

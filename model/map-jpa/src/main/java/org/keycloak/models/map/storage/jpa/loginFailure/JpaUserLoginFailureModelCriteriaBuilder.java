@@ -16,16 +16,11 @@
  */
 package org.keycloak.models.map.storage.jpa.loginFailure;
 
-import java.util.function.BiFunction;
-
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
-
 import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.map.storage.CriterionNotSupportedException;
 import org.keycloak.models.map.storage.jpa.JpaModelCriteriaBuilder;
 import org.keycloak.models.map.storage.jpa.loginFailure.entity.JpaUserLoginFailureEntity;
+import org.keycloak.models.map.storage.jpa.role.JpaPredicateFunction;
 import org.keycloak.storage.SearchableModelField;
 
 /**
@@ -39,7 +34,7 @@ public class JpaUserLoginFailureModelCriteriaBuilder extends JpaModelCriteriaBui
         super(JpaUserLoginFailureModelCriteriaBuilder::new);
     }
 
-    private JpaUserLoginFailureModelCriteriaBuilder(BiFunction<CriteriaBuilder, Root<JpaUserLoginFailureEntity>, Predicate> predicateFunc) {
+    private JpaUserLoginFailureModelCriteriaBuilder(JpaPredicateFunction<JpaUserLoginFailureEntity> predicateFunc) {
         super(JpaUserLoginFailureModelCriteriaBuilder::new, predicateFunc);
     }
 
@@ -52,7 +47,7 @@ public class JpaUserLoginFailureModelCriteriaBuilder extends JpaModelCriteriaBui
 
                     validateValue(value, modelField, op, String.class);
 
-                    return new JpaUserLoginFailureModelCriteriaBuilder((cb, root) ->
+                    return new JpaUserLoginFailureModelCriteriaBuilder((cb, subQueryProvider, root) ->
                             cb.equal(root.get(modelField.getName()), value[0])
                     );
                 } else {
