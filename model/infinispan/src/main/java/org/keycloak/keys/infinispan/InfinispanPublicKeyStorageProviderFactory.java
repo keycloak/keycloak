@@ -25,8 +25,6 @@ import java.util.concurrent.FutureTask;
 import org.infinispan.Cache;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
-import org.keycloak.cluster.ClusterEvent;
-import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.keys.PublicKeyStorageProvider;
@@ -48,10 +46,6 @@ public class InfinispanPublicKeyStorageProviderFactory implements PublicKeyStora
 
     public static final String PROVIDER_ID = "infinispan";
 
-    public static final String KEYS_CLEAR_CACHE_EVENTS = "KEYS_CLEAR_CACHE_EVENTS";
-
-    public static final String PUBLIC_KEY_STORAGE_INVALIDATION_EVENT = "PUBLIC_KEY_STORAGE_INVALIDATION_EVENT";
-
     private volatile Cache<String, PublicKeysEntry> keysCache;
 
     private final Map<String, FutureTask<PublicKeysEntry>> tasksInProgress = new ConcurrentHashMap<>();
@@ -69,20 +63,6 @@ public class InfinispanPublicKeyStorageProviderFactory implements PublicKeyStora
             synchronized (this) {
                 if (keysCache == null) {
                     this.keysCache = session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.KEYS_CACHE_NAME);
-
-                    ClusterProvider cluster = session.getProvider(ClusterProvider.class);
-                    cluster.registerListener(PUBLIC_KEY_STORAGE_INVALIDATION_EVENT, (ClusterEvent event) -> {
-
-                        PublicKeyStorageInvalidationEvent invalidationEvent = (PublicKeyStorageInvalidationEvent) event;
-                        keysCache.remove(invalidationEvent.getCacheKey());
-
-                    });
-
-                    cluster.registerListener(KEYS_CLEAR_CACHE_EVENTS, (ClusterEvent event) -> {
-
-                        keysCache.clear();
-
-                    });
                 }
             }
         }
