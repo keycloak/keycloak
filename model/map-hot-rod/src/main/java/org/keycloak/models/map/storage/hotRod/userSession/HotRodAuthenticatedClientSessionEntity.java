@@ -32,93 +32,47 @@ import org.keycloak.models.map.userSession.MapAuthenticatedClientSessionEntity;
 import java.util.Set;
 
 @GenerateHotRodEntityImplementation(
-        implementInterface = "org.keycloak.models.map.userSession.MapAuthenticatedClientSessionEntity",
-        inherits = "org.keycloak.models.map.storage.hotRod.userSession.HotRodAuthenticatedClientSessionEntity.AbstractHotRodAuthenticatedClientSessionEntityDelegate",
-        topLevelEntity = true,
-        modelClass = "org.keycloak.models.AuthenticatedClientSessionModel"
+        implementInterface = "org.keycloak.models.map.userSession.MapAuthenticatedClientSessionEntity"
 )
 @ProtoDoc("@Indexed")
-@ProtoDoc("schema-version: " + HotRodAuthenticatedClientSessionEntity.VERSION)
 public class HotRodAuthenticatedClientSessionEntity extends AbstractHotRodEntity {
 
-    @IgnoreForEntityImplementationGenerator
-    public static final int VERSION = 1;
-
-    @AutoProtoSchemaBuilder(
-            includeClasses = {
-                    HotRodAuthenticatedClientSessionEntity.class
-            },
-            schemaFilePath = "proto/",
-            schemaPackageName = CommonPrimitivesProtoSchemaInitializer.HOT_ROD_ENTITY_PACKAGE,
-            dependsOn = {CommonPrimitivesProtoSchemaInitializer.class}
-    )
-    public interface HotRodAuthenticatedClientSessionEntitySchema extends GeneratedSchema {
-        HotRodAuthenticatedClientSessionEntitySchema INSTANCE = new HotRodAuthenticatedClientSessionEntitySchemaImpl();
-    }
-
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
     @ProtoField(number = 1)
-    public Integer entityVersion = VERSION;
-
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
-    @ProtoField(number = 2)
     public String id;
 
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
-    @ProtoField(number = 3)
-    public String userSessionId;
-
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
-    @ProtoField(number = 4)
+    @ProtoField(number = 2)
     public String realmId;
 
     @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
-    @ProtoField(number = 5)
+    @ProtoField(number = 3)
     public String clientId;
 
-    @ProtoField(number = 6)
+    @ProtoField(number = 4)
     public String authMethod;
 
-    @ProtoField(number = 7)
+    @ProtoField(number = 5)
     public String redirectUri;
 
-    @ProtoField(number = 8)
+    @ProtoField(number = 6)
     public Long timestamp;
 
-    @ProtoField(number = 9)
+    @ProtoField(number = 7)
     public Long expiration;
 
-    @ProtoField(number = 10)
+    @ProtoField(number = 8)
     public String action;
 
-    @ProtoField(number = 11)
+    @ProtoField(number = 9)
     public Set<HotRodPair<String, String>> notes;
 
-    @ProtoField(number = 12)
+    @ProtoField(number = 10)
     public String currentRefreshToken;
 
-    @ProtoField(number = 13)
+    @ProtoField(number = 11)
     public Integer currentRefreshTokenUseCount;
 
-    @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
-    @ProtoField(number = 14)
+    @ProtoField(number = 12)
     public Boolean offline;
-
-    public static abstract class AbstractHotRodAuthenticatedClientSessionEntityDelegate extends UpdatableHotRodEntityDelegateImpl<HotRodAuthenticatedClientSessionEntity> implements MapAuthenticatedClientSessionEntity {
-
-        @Override
-        public String getId() {
-            return getHotRodEntity().id;
-        }
-
-        @Override
-        public void setId(String id) {
-            HotRodAuthenticatedClientSessionEntity entity = getHotRodEntity();
-            if (entity.id != null) throw new IllegalStateException("Id cannot be changed");
-            entity.id = id;
-            entity.updated |= id != null;
-        }
-    }
 
     @Override
     public boolean equals(Object o) {

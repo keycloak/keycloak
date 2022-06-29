@@ -32,7 +32,9 @@ import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.map.userSession.MapUserSessionProvider;
 import org.keycloak.models.session.UserSessionPersisterProvider;
+import org.keycloak.models.sessions.infinispan.InfinispanUserSessionProviderFactory;
 import org.keycloak.models.sessions.infinispan.changes.sessions.PersisterLastSessionRefreshStoreFactory;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.ResetTimeOffsetEvent;
 import org.keycloak.testsuite.model.KeycloakModelTest;
 import org.keycloak.testsuite.model.RequireProvider;
@@ -208,30 +210,37 @@ public class UserSessionProviderModelTest extends KeycloakModelTest {
     }
 
     @Test
-    public void testCascadeRemovalOfClientSessionOnUserSessionRemoval() {
-        UserSessionModel[] origSessions = inComittedTransaction(session -> { return createSessions(session, realmId); });
-
-        String testAppClientSessionId = withRealm(realmId, (session, realm) -> {
-            ClientModel testApp = realm.getClientByClientId("test-app");
-            UserSessionModel userSessionToBeRemoved = session.sessions().getUserSession(realm, origSessions[0].getId());
-            String returnValue = userSessionToBeRemoved.getAuthenticatedClientSessions().get(testApp.getId()).getId();
-
-            session.sessions().removeUserSession(realm, userSessionToBeRemoved);
-            return returnValue;
-        });
-
-        assertThat(withRealm(realmId, (session, realm) -> session.sessions().getClientSession(origSessions[0], realm.getClientByClientId("test-app"), testAppClientSessionId, false)), nullValue());
-    }
-
-    @Test
-    public void testClientSessionIsNotPersistedForTransientUserSession() {
-        Object[] transientUserSessionWithClientSessionId = inComittedTransaction(session -> {
+    public void testTransientUserSessionIsNotPersisted() {
+        String id = inComittedTransaction(session -> {
             RealmModel realm = session.realms().getRealm(realmId);
-            UserSessionModel userSession = session.sessions().createUserSession(null, realm, session.users().getUserByUsername(realm, "user1"), "user1", "127.0.0.1", "form", false, null, null, UserSessionModel.SessionPersistenceState.TRANSIENT);
+            UserSessionModel userSession = session.sessions().createUserSession(KeycloakModelUtils.generateId(), realm, session.users().getUserByUsername(realm, "user1"), "user1", "127.0.0.1", "form", false, null, null, UserSessionModel.SessionPersistenceState.TRANSIENT);
 
             ClientModel testApp = realm.getClientByClientId("test-app");
             AuthenticatedClientSessionModel clientSession = session.sessions().createClientSession(realm, testApp, userSession);
             
+            // assert the client sessions are present
+            assertThat(session.sessions().getClientSession(userSession, testApp, clientSession.getId(), false), notNullValue());
+            return userSession.getId();
+        });
+
+        inComittedTransaction(session -> {
+            RealmModel realm = session.realms().getRealm(realmId);
+            UserSessionModel userSession = session.sessions().getUserSession(realm, id);
+
+            // in new transaction transient session should not be present
+            assertThat(userSession, nullValue());
+        });
+    }
+
+    @Test
+    @RequireProvider(value = UserSessionProvider.class, only = InfinispanUserSessionProviderFactory.PROVIDER_ID)
+    public void testClientSessionIsNotPersistedForTransientUserSession() {
+        Object[] transientUserSessionWithClientSessionId = inComittedTransaction(session -> {
+            RealmModel realm = session.realms().getRealm(realmId);
+            UserSessionModel userSession = session.sessions().createUserSession(null, realm, session.users().getUserByUsername(realm, "user1"), "user1", "127.0.0.1", "form", false, null, null, UserSessionModel.SessionPersistenceState.TRANSIENT);
+            ClientModel testApp = realm.getClientByClientId("test-app");
+            AuthenticatedClientSessionModel clientSession = session.sessions().createClientSession(realm, testApp, userSession);
+
             // assert the client sessions are present
             assertThat(session.sessions().getClientSession(userSession, testApp, clientSession.getId(), false), notNullValue());
             Object[] result = new Object[2];
@@ -239,7 +248,6 @@ public class UserSessionProviderModelTest extends KeycloakModelTest {
             result[1] = clientSession.getId();
             return result;
         });
-
         inComittedTransaction(session -> {
             RealmModel realm = session.realms().getRealm(realmId);
             ClientModel testApp = realm.getClientByClientId("test-app");

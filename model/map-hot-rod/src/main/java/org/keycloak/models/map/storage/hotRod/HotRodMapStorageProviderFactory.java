@@ -98,7 +98,6 @@ import org.keycloak.models.map.storage.hotRod.user.HotRodUserEntityDelegate;
 import org.keycloak.models.map.storage.hotRod.user.HotRodUserFederatedIdentityEntityDelegate;
 import org.keycloak.models.map.storage.hotRod.userSession.HotRodAuthenticatedClientSessionEntityDelegate;
 import org.keycloak.models.map.storage.hotRod.userSession.HotRodUserSessionEntityDelegate;
-import org.keycloak.models.map.storage.hotRod.userSession.HotRodUserSessionMapStorage;
 import org.keycloak.models.map.user.MapUserConsentEntity;
 import org.keycloak.models.map.user.MapUserCredentialEntity;
 import org.keycloak.models.map.user.MapUserEntity;
@@ -113,7 +112,6 @@ import java.util.concurrent.ConcurrentHashMap;
 public class HotRodMapStorageProviderFactory implements AmphibianProviderFactory<MapStorageProvider>, MapStorageProviderFactory, EnvironmentDependentProviderFactory {
 
     public static final String PROVIDER_ID = "hotrod";
-    private static final Logger LOG = Logger.getLogger(HotRodMapStorageProviderFactory.class);
     private final Map<Class<?>, HotRodMapStorage> storages = new ConcurrentHashMap<>();
 
 
@@ -176,7 +174,6 @@ public class HotRodMapStorageProviderFactory implements AmphibianProviderFactory
     }
 
     public <E extends AbstractHotRodEntity, V extends HotRodEntityDelegate<E> & AbstractEntity, M> HotRodMapStorage<String, E, V, M> getHotRodStorage(KeycloakSession session, Class<M> modelType, MapStorageProviderFactory.Flag... flags) {
-        if (modelType == UserSessionModel.class) getHotRodStorage(session, AuthenticatedClientSessionModel.class, flags);
         return storages.computeIfAbsent(modelType, c -> createHotRodStorage(session, modelType, flags));
     }
 
@@ -184,11 +181,7 @@ public class HotRodMapStorageProviderFactory implements AmphibianProviderFactory
         HotRodConnectionProvider connectionProvider = session.getProvider(HotRodConnectionProvider.class);
         HotRodEntityDescriptor<E, V> entityDescriptor = (HotRodEntityDescriptor<E, V>) getEntityDescriptor(modelType);
 
-        if (modelType == UserSessionModel.class) {
-            HotRodMapStorage clientSessionStore = getHotRodStorage(session, AuthenticatedClientSessionModel.class);
-            return new HotRodUserSessionMapStorage(clientSessionStore, connectionProvider.getRemoteCache(entityDescriptor.getCacheName()), StringKeyConverter.StringKey.INSTANCE, entityDescriptor, CLONER);
-
-        } else if (modelType == ActionTokenValueModel.class) {
+        if (modelType == ActionTokenValueModel.class) {
             return new SingleUseObjectHotRodMapStorage(connectionProvider.getRemoteCache(entityDescriptor.getCacheName()), StringKeyConverter.StringKey.INSTANCE, entityDescriptor, CLONER);
         }
         return new HotRodMapStorage<>(connectionProvider.getRemoteCache(entityDescriptor.getCacheName()), StringKeyConverter.StringKey.INSTANCE, entityDescriptor, CLONER);

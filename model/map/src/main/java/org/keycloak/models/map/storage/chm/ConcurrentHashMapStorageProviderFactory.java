@@ -240,15 +240,7 @@ public class ConcurrentHashMapStorageProviderFactory implements AmphibianProvide
         LOG.debugf("Initializing new map storage: %s", mapName);
 
         ConcurrentHashMapStorage<K, V, M> store;
-        if (modelType == UserSessionModel.class) {
-            ConcurrentHashMapStorage clientSessionStore = getStorage(AuthenticatedClientSessionModel.class);
-            store = new UserSessionConcurrentHashMapStorage(clientSessionStore, kc, CLONER) {
-                @Override
-                public String toString() {
-                    return "ConcurrentHashMapStorage(" + mapName + suffix + ")";
-                }
-            };
-        } else if(modelType == ActionTokenValueModel.class) {
+        if(modelType == ActionTokenValueModel.class) {
             store = new SingleUseObjectConcurrentHashMapStorage(kc, CLONER) {
                 @Override
                 public String toString() {
@@ -299,14 +291,7 @@ public class ConcurrentHashMapStorageProviderFactory implements AmphibianProvide
         /* From ConcurrentHashMapStorage.computeIfAbsent javadoc:
          *
          *   "... the computation [...] must not attempt to update any other mappings of this map."
-         *
-         * For UserSessionModel, there is a separate clientSessionStore in this CHM implementation. Thus
-         * we cannot guarantee that this won't be the case e.g. for user and client sessions. Hence we need
-         * to prepare clientSessionStore outside computeIfAbsent, otherwise deadlock occurs.
          */
-        if (modelType == UserSessionModel.class) {
-            getStorage(AuthenticatedClientSessionModel.class, flags);
-        }
         return (ConcurrentHashMapStorage<K, V, M>) storages.computeIfAbsent(name, n -> loadMap(name, modelType, f));
     }
 
