@@ -6,11 +6,16 @@ import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.security.cert.X509Certificate;
 
+import org.junit.ClassRule;
+import org.keycloak.rule.CryptoInitRule;
 import org.junit.Test;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.common.util.StreamUtil;
 
 public class CertificatePemIdentityExtractorTest {
+
+    @ClassRule
+    public static CryptoInitRule cryptoInitRule = new CryptoInitRule();
 
     @Test
     public void testExtractsCertInPemFormat() throws Exception {

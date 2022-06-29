@@ -1059,6 +1059,12 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-core</artifactId>
+                <type>test-jar</type>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-config-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -1600,7 +1606,12 @@
             </dependency>
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-fips1402</artifactId>
+                <artifactId>keycloak-crypto-default</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-crypto-fips1402</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -2122,6 +2133,30 @@
                     </plugin>
                 </plugins>
             </build>
+        </profile>
+
+        <profile>
+            <id>crypto-default</id>
+            <activation>
+                <property>
+                    <name>!fips140-2</name>
+                </property>
+            </activation>
+            <properties>
+                <keycloak.crypto.artifactId>keycloak-crypto-default</keycloak.crypto.artifactId>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>fips140-2</id>
+            <activation>
+                <property>
+                    <name>fips140-2</name>
+                </property>
+            </activation>
+            <properties>
+                <keycloak.crypto.artifactId>keycloak-crypto-fips1402</keycloak.crypto.artifactId>
+            </properties>
         </profile>
 
     </profiles>

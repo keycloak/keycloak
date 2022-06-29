@@ -10,7 +10,10 @@ With OpenJDK 11 on the classpath, run this from the project root directory:
 mvn clean install -DskipTests=true -Dfips140-2 -Pquarkus
 ```
 The property `fips140-2` is used to trigger maven profile to build keycloak+quarkus distribution with `bouncycastle-fips` dependencies instead of plain `bouncycastle`
-and also with `keycloak-fips140-2` module containing some security code dependent on bouncycastle-fips APIs.
+and also with `keycloak-crypto-fips1402` module containing some security code dependent on bouncycastle-fips APIs.
+
+Note, that if you ommit the `fips140-2` property from the command above, then the quarkus distribution will be built
+with the plain non-fips bouncycastle dependencies and with `keycloak-crypto-default` module.
 
 Then unzip and check only bouncycastle-fips libraries are inside "lib" directory:
 ```

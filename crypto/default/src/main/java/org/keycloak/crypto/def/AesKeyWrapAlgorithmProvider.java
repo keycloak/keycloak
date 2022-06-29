@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.jose.jwe.alg;
+package org.keycloak.crypto.def;
 
 import java.security.Key;
 
@@ -23,6 +23,7 @@ import org.bouncycastle.crypto.Wrapper;
 import org.bouncycastle.crypto.engines.AESWrapEngine;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.keycloak.jose.jwe.JWEKeyStorage;
+import org.keycloak.jose.jwe.alg.JWEAlgorithmProvider;
 import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
 
 /**

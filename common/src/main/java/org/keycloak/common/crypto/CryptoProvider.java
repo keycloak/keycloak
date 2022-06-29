@@ -1,10 +1,8 @@
-package org.keycloak.crypto.integration;
+package org.keycloak.common.crypto;
 
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.SecureRandom;
-
-import org.keycloak.jose.jwe.alg.JWEAlgorithmProvider;
 
 /**
  * Abstraction to handle differences between the APIs for non-fips and fips mode
@@ -17,6 +15,14 @@ public interface CryptoProvider {
      * @return secureRandom implementation based on the available security algorithms according to environment (FIPS non-fips)
      */
     SecureRandom getSecureRandom() throws NoSuchAlgorithmException, NoSuchProviderException;
-
-    JWEAlgorithmProvider getAesKeyWrapAlgorithmProvider();
+    
+    /**
+     * Get some algorithm provider implementation. Returned implementation can be dependent according to if we have
+     * non-fips bouncycastle or fips bouncycastle on the classpath.
+     * 
+     * @param clazz Returned class.
+     * @param algorithm Type of the algorithm, which we want to return
+     * @return 
+     */
+    <T> T getAlgorithmProvider(Class<T> clazz, String algorithm);
 }

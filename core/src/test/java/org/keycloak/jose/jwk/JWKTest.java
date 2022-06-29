@@ -19,13 +19,17 @@ package org.keycloak.jose.jwk;
 
 import java.util.Arrays;
 import java.util.List;
+
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.BouncyIntegration;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.JavaAlgorithm;
-import org.keycloak.crypto.integration.CryptoIntegration;
+import org.keycloak.common.crypto.CryptoIntegration;
+import org.keycloak.rule.CryptoInitRule;
 import org.keycloak.util.JsonSerialization;
 
 import java.nio.charset.StandardCharsets;
@@ -47,9 +51,14 @@ import static org.junit.Assert.assertTrue;
 import static org.keycloak.common.util.CertificateUtils.generateV1SelfSignedCertificate;
 
 /**
+ * This is not tested in keycloak-core. The subclasses should be created in the crypto modules to make sure it is tested with corresponding modules (bouncycastle VS bouncycastle-fips)
+ *
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class JWKTest {
+public abstract class JWKTest {
+
+    @ClassRule
+    public static CryptoInitRule cryptoInitRule = new CryptoInitRule();
 
     @Test
     public void publicRs256() throws Exception {

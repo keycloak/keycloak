@@ -25,7 +25,9 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.junit.Assert;
+import org.junit.ClassRule;
 import org.junit.Ignore;
+import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.Base64Url;
@@ -36,11 +38,17 @@ import org.keycloak.jose.jwe.alg.RsaKeyEncryptionJWEAlgorithmProvider;
 import org.keycloak.jose.jwe.enc.AesCbcHmacShaJWEEncryptionProvider;
 import org.keycloak.jose.jwe.enc.AesGcmJWEEncryptionProvider;
 import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
+import org.keycloak.rule.CryptoInitRule;
 
 /**
+ * This is not tested in keycloak-core. The subclasses should be created in the crypto modules to make sure it is tested with corresponding modules (bouncycastle VS bouncycastle-fips)
+ *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class JWETest {
+public abstract class JWETest {
+
+    @ClassRule
+    public static CryptoInitRule cryptoInitRule = new CryptoInitRule();
 
     private static final String PAYLOAD = "Hello world! How are you man? I hope you are fine. This is some quite a long text, which is much longer than just simple 'Hello World'";
 

@@ -26,14 +26,32 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>keycloak-fips1402</artifactId>
-    <name>Keycloak FIPS 140-2 Integration</name>
+    <artifactId>keycloak-crypto-fips1402</artifactId>
+    <name>Keycloak Crypto FIPS 140-2 Integration</name>
     <description/>
 
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-core</artifactId>
+            <!-- TODO: These exclusions can be removed once we remove dependency of keycloak-core on bouncycastle -->
+            <exclusions>
+                <exclusion>
+                    <groupId>org.bouncycastle</groupId>
+                    <artifactId>bcprov-jdk15on</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.bouncycastle</groupId>
+                    <artifactId>bcpkix-jdk15on</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-core</artifactId>
+            <scope>test</scope>
+            <type>test-jar</type>
+            <!-- TODO: These exclusions can be removed once we remove dependency of keycloak-core on bouncycastle -->
             <exclusions>
                 <exclusion>
                     <groupId>org.bouncycastle</groupId>

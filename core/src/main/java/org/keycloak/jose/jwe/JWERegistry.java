@@ -20,7 +20,8 @@ package org.keycloak.jose.jwe;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.keycloak.crypto.integration.CryptoIntegration;
+import org.keycloak.common.crypto.CryptoIntegration;
+import org.keycloak.common.crypto.CryptoProviderTypes;
 import org.keycloak.jose.jwe.alg.DirectAlgorithmProvider;
 import org.keycloak.jose.jwe.alg.JWEAlgorithmProvider;
 import org.keycloak.jose.jwe.alg.RsaKeyEncryption256JWEAlgorithmProvider;
@@ -47,7 +48,7 @@ class JWERegistry {
     static {
         // Provider 'dir' just directly uses encryption keys for encrypt/decrypt content.
         ALG_PROVIDERS.put(JWEConstants.DIR, new DirectAlgorithmProvider());
-        ALG_PROVIDERS.put(JWEConstants.A128KW, CryptoIntegration.getProvider().getAesKeyWrapAlgorithmProvider());
+        ALG_PROVIDERS.put(JWEConstants.A128KW, CryptoIntegration.getProvider().getAlgorithmProvider(JWEAlgorithmProvider.class, CryptoProviderTypes.AES_KEY_WRAP_ALGORITHM_PROVIDER));
         ALG_PROVIDERS.put(JWEConstants.RSA_OAEP, new RsaKeyEncryptionJWEAlgorithmProvider("RSA/ECB/OAEPWithSHA-1AndMGF1Padding"));
         ALG_PROVIDERS.put(JWEConstants.RSA_OAEP_256, new RsaKeyEncryption256JWEAlgorithmProvider("RSA/ECB/OAEPWithSHA-256AndMGF1Padding"));
 

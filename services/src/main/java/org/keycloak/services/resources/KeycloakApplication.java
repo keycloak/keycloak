@@ -19,6 +19,8 @@ package org.keycloak.services.resources;
 import com.fasterxml.jackson.core.type.TypeReference;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
+import org.keycloak.common.crypto.CryptoIntegration;
+import org.keycloak.common.util.BouncyIntegration;
 import org.keycloak.common.util.Resteasy;
 import org.keycloak.config.ConfigProviderFactory;
 import org.keycloak.exportimport.ExportImportManager;
@@ -90,6 +92,7 @@ public class KeycloakApplication extends Application {
 
             logger.debugv("PlatformProvider: {0}", platform.getClass().getName());
             logger.debugv("RestEasy provider: {0}", Resteasy.getProvider().getClass().getName());
+            CryptoIntegration.init(KeycloakApplication.class.getClassLoader());
 
             loadConfig();
 

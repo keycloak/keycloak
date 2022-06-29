@@ -19,9 +19,12 @@ package org.keycloak.saml.processing.core.parsers.saml;
 import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.keycloak.common.crypto.CryptoIntegration;
+import org.keycloak.common.crypto.CryptoProvider;
 import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.DerUtils;
 import org.keycloak.common.util.StreamUtil;
@@ -127,6 +130,11 @@ public class SAMLParserTest {
 
     @Rule
     public ExpectedException thrown = ExpectedException.none();
+
+    @BeforeClass
+    public static void initCrypto() {
+        CryptoIntegration.init(CryptoProvider.class.getClassLoader());
+    }
 
     @Before
     public void initParser() {
