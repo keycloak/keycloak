@@ -20,6 +20,7 @@
     "test": "jest",
     "cy:open": "cypress open --e2e --browser chrome",
     "cy:run": "cypress run --browser chrome",
+    "cy:check-types": "tsc --project cypress/tsconfig.json",
     "prepare": "husky install",
     "server:start": "./scripts/start-server.mjs",
     "server:import-client": "./scripts/import-client.mjs"
@@ -49,8 +50,6 @@
   },
   "devDependencies": {
     "@4tw/cypress-drag-drop": "^2.2.0",
-    "@cypress/webpack-batteries-included-preprocessor": "^2.2.3",
-    "@cypress/webpack-preprocessor": "^5.12.0",
     "@octokit/rest": "^18.12.0",
     "@snowpack/app-scripts-react": "^2.0.1",
     "@snowpack/plugin-postcss": "^1.4.3",
@@ -82,7 +81,6 @@
     "eslint-plugin-lodash": "^7.4.0",
     "eslint-plugin-prettier": "^4.0.0",
     "eslint-plugin-react": "^7.30.1",
-    "fork-ts-checker-webpack-plugin": "^7.2.11",
     "gunzip-maybe": "^1.4.2",
     "http2-proxy": "^5.0.53",
     "husky": "^8.0.1",

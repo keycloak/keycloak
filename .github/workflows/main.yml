@@ -42,7 +42,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        command: [lint, test, build]
+        command: [lint, test, build, "cy:check-types"]
     steps:
       - name: Restore setup
         uses: actions/cache@v3
