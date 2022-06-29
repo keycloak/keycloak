@@ -10,14 +10,8 @@ export default class PriorityDialog {
   }
 
   moveRowTo(from: string, to: string) {
-    cy.findByTestId(from).trigger("dragstart").trigger("dragleave");
-
-    cy.findByTestId(to)
-      .trigger("dragenter")
-      .trigger("dragover")
-      .trigger("drop")
-      .trigger("dragend");
-
+    cy.findByTestId(to).as("target");
+    cy.findByTestId(from).drag("@target");
     return this;
   }
 
