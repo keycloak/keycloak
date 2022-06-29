@@ -38,6 +38,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.Config;
+import org.keycloak.models.map.storage.chm.ConcurrentHashMapStorageProviderFactory;
 import org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 
@@ -126,6 +127,11 @@ public class ConfigurationTest {
         assertEquals("warn", createConfig().getRawValue("kc.log-level"));
         putEnvVar("SOME_LOG_LEVEL", "debug");
         assertEquals("debug", createConfig().getRawValue("kc.log-level"));
+    }
+
+    @Test
+    public void testSanitizeKey() {
+        assertEquals("string", initConfig("map-storage", ConcurrentHashMapStorageProviderFactory.PROVIDER_ID).get("keyType.realms"));
     }
 
     @Test

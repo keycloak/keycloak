@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.quarkus.runtime.storage.infinispan;
+package org.keycloak.quarkus.runtime.storage.legacy.infinispan;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;

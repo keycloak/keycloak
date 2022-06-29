@@ -59,7 +59,7 @@ public class LoggingOptions {
             return super.toString().toLowerCase(Locale.ROOT);
         }
     }
-    public static final Option LOG_CONSOLE_OUTPUT = new OptionBuilder<>("log-console-output", Output.class)
+    public static final Option<Output> LOG_CONSOLE_OUTPUT = new OptionBuilder<>("log-console-output", Output.class)
             .category(OptionCategory.LOGGING)
             .defaultValue(DEFAULT_CONSOLE_OUTPUT)
             .description("Set the log output to JSON or default (plain) unstructured logging.")

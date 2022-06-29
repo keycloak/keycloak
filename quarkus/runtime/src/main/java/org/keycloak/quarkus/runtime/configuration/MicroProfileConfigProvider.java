@@ -131,7 +131,7 @@ public class MicroProfileConfigProvider implements Config.ConfigProvider {
         }
 
         private <T> T getValue(String key, Class<T> clazz, T defaultValue) {
-            return config.getOptionalValue(toDashCase(prefix.concat(OPTION_PART_SEPARATOR).concat(key)), clazz).orElse(defaultValue);
+            return config.getOptionalValue(toDashCase(prefix.concat(OPTION_PART_SEPARATOR).concat(key.replace('.', '-'))), clazz).orElse(defaultValue);
         }
     }
 

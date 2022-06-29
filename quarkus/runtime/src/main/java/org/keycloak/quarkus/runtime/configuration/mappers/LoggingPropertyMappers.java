@@ -1,5 +1,6 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
+import static java.util.Optional.of;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 import static org.keycloak.quarkus.runtime.integration.QuarkusPlatform.addInitializationException;
 
@@ -7,6 +8,7 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
@@ -29,12 +31,7 @@ public final class LoggingPropertyMappers {
                 fromOption(LoggingOptions.LOG_CONSOLE_OUTPUT)
                         .to("quarkus.log.console.json")
                         .paramLabel("default|json")
-                        .transformer((value, context) -> {
-                            if(value.equals(LoggingOptions.DEFAULT_CONSOLE_OUTPUT.name().toLowerCase(Locale.ROOT))) {
-                                return Boolean.FALSE.toString();
-                            }
-                            return Boolean.TRUE.toString();
-                        })
+                        .transformer(LoggingPropertyMappers::resolveLogConsoleOutput)
                         .build(),
                 fromOption(LoggingOptions.LOG_CONSOLE_FORMAT)
                         .to("quarkus.log.console.format")
@@ -71,38 +68,40 @@ public final class LoggingPropertyMappers {
         };
     }
 
-    private static BiFunction<String, ConfigSourceInterceptorContext, String> resolveLogHandler(String handler) {
+    private static BiFunction<Optional<String>, ConfigSourceInterceptorContext, Optional<String>> resolveLogHandler(String handler) {
         return (parentValue, context) -> {
-
             //we want to fall back to console to not have nothing shown up when wrong values are set.
             String consoleDependantErrorResult = handler.equals(LoggingOptions.DEFAULT_LOG_HANDLER.name()) ? Boolean.TRUE.toString() : Boolean.FALSE.toString();
+            String handlers = parentValue.get();
 
-            if(parentValue.isBlank()) {
+            if(handlers.isBlank()) {
                 addInitializationException(Messages.emptyValueForKey("log"));
-                return consoleDependantErrorResult;
+                return of(consoleDependantErrorResult);
             }
 
-            String[] logHandlerValues = parentValue.split(",");
+            String[] logHandlerValues = handlers.split(",");
             List<String> availableLogHandlers = Arrays.stream(LoggingOptions.Handler.values()).map(h -> h.name()).collect(Collectors.toList());
 
             if (!availableLogHandlers.containsAll(List.of(logHandlerValues))) {
-                addInitializationException(Messages.notRecognizedValueInList("log", parentValue, String.join(",", availableLogHandlers)));
-                return consoleDependantErrorResult;
+                addInitializationException(Messages.notRecognizedValueInList("log", handlers, String.join(",", availableLogHandlers)));
+                return of(consoleDependantErrorResult);
             }
 
             for (String handlerInput : logHandlerValues) {
                 if (handlerInput.equals(handler)) {
-                    return Boolean.TRUE.toString();
+                    return of(Boolean.TRUE.toString());
                 }
             }
 
-            return Boolean.FALSE.toString();
+            return of(Boolean.FALSE.toString());
         };
     }
 
-    private static String resolveFileLogLocation(String value, ConfigSourceInterceptorContext configSourceInterceptorContext) {
-        if (value.endsWith(File.separator)) {
-            return value + LoggingOptions.DEFAULT_LOG_FILENAME;
+    private static Optional<String> resolveFileLogLocation(Optional<String> value, ConfigSourceInterceptorContext configSourceInterceptorContext) {
+        String location = value.get();
+
+        if (location.endsWith(File.separator)) {
+            return of(location + LoggingOptions.DEFAULT_LOG_FILENAME);
         }
 
         return value;
@@ -116,10 +115,10 @@ public final class LoggingPropertyMappers {
         LogContext.getLogContext().getLogger(category).setLevel(toLevel(level));
     }
 
-    private static String resolveLogLevel(String value, ConfigSourceInterceptorContext configSourceInterceptorContext) {
-        String rootLevel = LoggingOptions.DEFAULT_LOG_LEVEL.name();
+    private static Optional<String> resolveLogLevel(Optional<String> value, ConfigSourceInterceptorContext configSourceInterceptorContext) {
+        Optional<String> rootLevel = of(LoggingOptions.DEFAULT_LOG_LEVEL.name());
 
-        for (String level : value.split(",")) {
+        for (String level : value.get().split(",")) {
             String[] parts = level.split(":");
             String category = null;
             String categoryLevel;
@@ -144,12 +143,20 @@ public final class LoggingPropertyMappers {
             }
 
             if (category == null) {
-                rootLevel = levelType.getName();
+                rootLevel = of(levelType.getName());
             } else {
                 setCategoryLevel(category, levelType.getName());
             }
         }
 
         return rootLevel;
+    }
+
+    private static Optional<String> resolveLogConsoleOutput(Optional<String> value, ConfigSourceInterceptorContext context) {
+        if (value.get().equals(LoggingOptions.DEFAULT_CONSOLE_OUTPUT.name().toLowerCase(Locale.ROOT))) {
+            return of(Boolean.FALSE.toString());
+        }
+
+        return of(Boolean.TRUE.toString());
     }
 }
