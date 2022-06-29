@@ -27,7 +27,7 @@ The `<provider-id>` is the id of the provider you want to configure. This is the
 
 The `<property>` is the actual name of the property you want to set for a given provider.
 
-All those names (for spi, provider, and property) should be in lower case and if the name is in camel-case such as `myKeycloakProvider`, it should include slashes (`-`) before upper-case letters as follows: `my-keycloak-provider`.
+All those names (for spi, provider, and property) should be in lower case and if the name is in camel-case such as `myKeycloakProvider`, it should include dashes (`-`) before upper-case letters as follows: `my-keycloak-provider`.
 
 Taking the `HttpClientSpi` SPI as an example, the name of the SPI is `connectionsHttpClient` and one of the provider implementations available is named `default`. In order to set the `connectionPoolSize` property you would use a configuration option as follows:
 
