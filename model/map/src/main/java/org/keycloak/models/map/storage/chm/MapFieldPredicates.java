@@ -83,7 +83,6 @@ import static org.keycloak.models.UserSessionModel.CORRESPONDING_SESSION_ID;
  */
 public class MapFieldPredicates {
 
-    public static final Map<SearchableModelField<AuthenticatedClientSessionModel>, UpdatePredicatesFunc<Object, MapAuthenticatedClientSessionEntity, AuthenticatedClientSessionModel>> CLIENT_SESSION_PREDICATES = basePredicates(AuthenticatedClientSessionModel.SearchableFields.ID);
     public static final Map<SearchableModelField<ClientModel>, UpdatePredicatesFunc<Object, MapClientEntity, ClientModel>> CLIENT_PREDICATES = basePredicates(ClientModel.SearchableFields.ID);
     public static final Map<SearchableModelField<ClientScopeModel>, UpdatePredicatesFunc<Object, MapClientScopeEntity, ClientScopeModel>> CLIENT_SCOPE_PREDICATES = basePredicates(ClientScopeModel.SearchableFields.ID);
     public static final Map<SearchableModelField<GroupModel>, UpdatePredicatesFunc<Object, MapGroupEntity, GroupModel>> GROUP_PREDICATES = basePredicates(GroupModel.SearchableFields.ID);
@@ -201,12 +200,6 @@ public class MapFieldPredicates {
         put(USER_SESSION_PREDICATES, UserSessionModel.SearchableFields.IS_OFFLINE,                MapUserSessionEntity::isOffline);
         put(USER_SESSION_PREDICATES, UserSessionModel.SearchableFields.LAST_SESSION_REFRESH,      MapUserSessionEntity::getLastSessionRefresh);
 
-        put(CLIENT_SESSION_PREDICATES, AuthenticatedClientSessionModel.SearchableFields.REALM_ID,         MapAuthenticatedClientSessionEntity::getRealmId);
-        put(CLIENT_SESSION_PREDICATES, AuthenticatedClientSessionModel.SearchableFields.CLIENT_ID,        MapAuthenticatedClientSessionEntity::getClientId);
-        put(CLIENT_SESSION_PREDICATES, AuthenticatedClientSessionModel.SearchableFields.USER_SESSION_ID,  MapAuthenticatedClientSessionEntity::getUserSessionId);
-        put(CLIENT_SESSION_PREDICATES, AuthenticatedClientSessionModel.SearchableFields.IS_OFFLINE,       MapAuthenticatedClientSessionEntity::isOffline);
-        put(CLIENT_SESSION_PREDICATES, AuthenticatedClientSessionModel.SearchableFields.TIMESTAMP,        MapAuthenticatedClientSessionEntity::getTimestamp);
-
         put(USER_LOGIN_FAILURE_PREDICATES, UserLoginFailureModel.SearchableFields.REALM_ID,  MapUserLoginFailureEntity::getRealmId);
         put(USER_LOGIN_FAILURE_PREDICATES, UserLoginFailureModel.SearchableFields.USER_ID,   MapUserLoginFailureEntity::getUserId);
 
@@ -247,7 +240,6 @@ public class MapFieldPredicates {
         PREDICATES.put(PermissionTicket.class,                  AUTHZ_PERMISSION_TICKET_PREDICATES);
         PREDICATES.put(Policy.class,                            AUTHZ_POLICY_PREDICATES);
         PREDICATES.put(UserSessionModel.class,                  USER_SESSION_PREDICATES);
-        PREDICATES.put(AuthenticatedClientSessionModel.class,   CLIENT_SESSION_PREDICATES);
         PREDICATES.put(UserLoginFailureModel.class,             USER_LOGIN_FAILURE_PREDICATES);
         PREDICATES.put(Event.class,                             AUTH_EVENTS_PREDICATES);
         PREDICATES.put(AdminEvent.class,                        ADMIN_EVENTS_PREDICATES);
@@ -539,7 +531,7 @@ public class MapFieldPredicates {
 
     private static MapModelCriteriaBuilder<Object, MapUserSessionEntity, UserSessionModel> checkUserSessionContainsAuthenticatedClientSession(MapModelCriteriaBuilder<Object, MapUserSessionEntity, UserSessionModel> mcb, Operator op, Object[] values) {
         String clientId = ensureEqSingleValue(UserSessionModel.SearchableFields.CLIENT_ID, "client_id", op, values);
-        Function<MapUserSessionEntity, ?> getter = use -> (use.getAuthenticatedClientSession(clientId) != null);
+        Function<MapUserSessionEntity, ?> getter = use -> (use.getAuthenticatedClientSession(clientId).isPresent());
         return mcb.fieldCompare(Boolean.TRUE::equals, getter);
     }
 

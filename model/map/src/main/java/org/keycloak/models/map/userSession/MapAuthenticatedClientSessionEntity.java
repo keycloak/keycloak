@@ -69,9 +69,6 @@ public interface MapAuthenticatedClientSessionEntity extends AbstractEntity, Upd
     String getClientId();
     void setClientId(String clientId);
 
-    String getUserSessionId();
-    void setUserSessionId(String userSessionId);
-
     String getAuthMethod();
     void setAuthMethod(String authMethod);
 

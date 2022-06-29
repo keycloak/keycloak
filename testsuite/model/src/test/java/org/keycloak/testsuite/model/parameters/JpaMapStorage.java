@@ -101,8 +101,7 @@ public class JpaMapStorage extends KeycloakModelParameters {
           .spi(ActionTokenStoreSpi.NAME).provider(MapSingleUseObjectProviderFactory.PROVIDER_ID)                        .config(STORAGE_CONFIG, JpaMapStorageProviderFactory.PROVIDER_ID)
           .spi(SingleUseObjectSpi.NAME).provider(MapSingleUseObjectProviderFactory.PROVIDER_ID)                         .config(STORAGE_CONFIG, JpaMapStorageProviderFactory.PROVIDER_ID)
           .spi("publicKeyStorage").provider(MapPublicKeyStorageProviderFactory.PROVIDER_ID)                     .config(STORAGE_CONFIG, ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
-          .spi(UserSessionSpi.NAME).provider(MapUserSessionProviderFactory.PROVIDER_ID)                                 .config("storage-user-sessions.provider", ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
-                                                                                                                        .config("storage-client-sessions.provider", ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
+          .spi(UserSessionSpi.NAME).provider(MapUserSessionProviderFactory.PROVIDER_ID)                                 .config(STORAGE_CONFIG, ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
           .spi(EventStoreSpi.NAME).provider(MapUserSessionProviderFactory.PROVIDER_ID)                                  .config("storage-admin-events.provider", JpaMapStorageProviderFactory.PROVIDER_ID)
                                                                                                                         .config("storage-auth-events.provider", JpaMapStorageProviderFactory.PROVIDER_ID);
     }

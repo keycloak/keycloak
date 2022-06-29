@@ -32,6 +32,7 @@ import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
+import org.keycloak.models.utils.KeycloakModelUtils;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -63,25 +64,17 @@ public class MapUserSessionProvider implements UserSessionProvider {
     private static final Logger LOG = Logger.getLogger(MapUserSessionProvider.class);
     private final KeycloakSession session;
     protected final MapKeycloakTransaction<MapUserSessionEntity, UserSessionModel> userSessionTx;
-    protected final MapKeycloakTransaction<MapAuthenticatedClientSessionEntity, AuthenticatedClientSessionModel> clientSessionTx;
 
     /**
      * Storage for transient user sessions which lifespan is limited to one request.
      */
     private final Map<String, MapUserSessionEntity> transientUserSessions = new HashMap<>();
-    /**
-     * Storage for client sessions where parent is transient user session. Lifespan is limited to one request. 
-     */
-    private final Map<String, MapAuthenticatedClientSessionEntity> transientClientSessions = new HashMap<>();
 
-    public MapUserSessionProvider(KeycloakSession session, MapStorage<MapUserSessionEntity, UserSessionModel> userSessionStore,
-                                  MapStorage<MapAuthenticatedClientSessionEntity, AuthenticatedClientSessionModel> clientSessionStore) {
+    public MapUserSessionProvider(KeycloakSession session, MapStorage<MapUserSessionEntity, UserSessionModel> userSessionStore) {
         this.session = session;
         userSessionTx = userSessionStore.createTransaction(session);
-        clientSessionTx = clientSessionStore.createTransaction(session);
 
         session.getTransactionManager().enlistAfterCompletion(userSessionTx);
-        session.getTransactionManager().enlistAfterCompletion(clientSessionTx);
     }
 
     private Function<MapUserSessionEntity, UserSessionModel> userEntityToAdapterFunc(RealmModel realm) {
@@ -96,55 +89,7 @@ public class MapUserSessionProvider implements UserSessionProvider {
                 }
                 return null;
             } else {
-                return new MapUserSessionAdapter(session, realm, origEntity) {
-                    @Override
-                    public void removeAuthenticatedClientSessions(Collection<String> removedClientUKS) {
-                        removedClientUKS.forEach(entity::removeAuthenticatedClientSession);
-                    }
-
-                    @Override
-                    public void setLastSessionRefresh(int lastSessionRefresh) {
-                        entity.setLastSessionRefresh(TimeAdapter.fromSecondsToMilliseconds(lastSessionRefresh));
-                        // whenever the lastSessionRefresh is changed recompute the expiration time
-                        setUserSessionExpiration(entity, realm);
-                    }
-                };
-            }
-        };
-    }
-
-    private Function<MapAuthenticatedClientSessionEntity, AuthenticatedClientSessionModel> clientEntityToAdapterFunc(RealmModel realm,
-                                                                                                                     ClientModel client,
-                                                                                                                     UserSessionModel userSession) {
-        // Clone entity before returning back, to avoid giving away a reference to the live object to the caller
-        return origEntity -> {
-            if (origEntity == null) return null;
-            if (isExpired(origEntity, false)) {
-                userSession.removeAuthenticatedClientSessions(Arrays.asList(origEntity.getClientId()));
-                // if a client session is found among transient ones we can skip call to store
-                if (transientClientSessions.remove(origEntity.getId()) == null) {
-                    clientSessionTx.delete(origEntity.getId());
-                }
-                return null;
-            } else {
-                return new MapAuthenticatedClientSessionAdapter(session, realm, client, userSession, origEntity) {
-                    @Override
-                    public void detachFromUserSession() {
-                        this.userSession = null;
-
-                        // if a client session is found among transient ones we can skip call to store
-                        if (transientClientSessions.remove(entity.getId()) == null) {
-                            clientSessionTx.delete(entity.getId());
-                        }
-                    }
-
-                    @Override
-                    public void setTimestamp(int timestamp) {
-                        entity.setTimestamp(TimeAdapter.fromSecondsToMilliseconds(timestamp));
-                        // whenever the timestamp is changed recompute the expiration time
-                        setClientSessionExpiration(entity, realm, client);
-                    }
-                };
+                return new MapUserSessionAdapter(session, realm, origEntity);
             }
         };
     }
@@ -164,24 +109,22 @@ public class MapUserSessionProvider implements UserSessionProvider {
             throw new IllegalStateException("User session entity does not exist: " + userSession.getId());
         }
 
+        if (userSessionEntity.getAuthenticatedClientSession(client.getId()).isPresent()) {
+            userSessionEntity.removeAuthenticatedClientSession(client.getId());
+        }
+
         MapAuthenticatedClientSessionEntity entity = createAuthenticatedClientSessionEntityInstance(null, userSession.getId(),
                 realm.getId(), client.getId(), false);
         String started = entity.getTimestamp() != null ? String.valueOf(TimeAdapter.fromMilliSecondsToSeconds(entity.getTimestamp())) : String.valueOf(0);
         entity.setNote(AuthenticatedClientSessionModel.STARTED_AT_NOTE, started);
         setClientSessionExpiration(entity, realm, client);
 
-        if (TRANSIENT == userSessionEntity.getPersistenceState()) {
-            if (entity.getId() == null) {
-                entity.setId(UUID.randomUUID().toString());
-            }
-            transientClientSessions.put(entity.getId(), entity);
-        } else {
-            entity = clientSessionTx.create(entity);
-        }
+        userSessionEntity.addAuthenticatedClientSession(entity);
 
-        userSessionEntity.setAuthenticatedClientSession(client.getId(), entity.getId());
-
-        return clientEntityToAdapterFunc(realm, client, userSession).apply(entity);
+        // We need to load the clientSession through userModel so we return an entity that is included within the
+        // transaction and also, so we not avoid all the checks present in the adapter, for example expiration
+        UserSessionModel userSessionModel = userEntityToAdapterFunc(realm).apply(userSessionEntity);
+        return userSessionModel == null ? null : userSessionModel.getAuthenticatedClientSessionByClient(client.getId());
     }
 
     @Override
@@ -190,29 +133,7 @@ public class MapUserSessionProvider implements UserSessionProvider {
         LOG.tracef("getClientSession(%s, %s, %s, %s)%s", userSession, client,
                 clientSessionId, offline, getShortStackTrace());
 
-        Objects.requireNonNull(userSession, "The provided user session cannot be null!");
-        Objects.requireNonNull(client, "The provided client cannot be null!");
-        if (clientSessionId == null) {
-            return null;
-        }
-
-        MapAuthenticatedClientSessionEntity entity = transientClientSessions.get(clientSessionId);
-
-        if (entity != null) {
-            return clientEntityToAdapterFunc(client.getRealm(), client, userSession).apply(entity);
-        }
-
-        DefaultModelCriteria<AuthenticatedClientSessionModel> mcb = criteria();
-        mcb = mcb.compare(AuthenticatedClientSessionModel.SearchableFields.ID, Operator.EQ, clientSessionId)
-                .compare(AuthenticatedClientSessionModel.SearchableFields.USER_SESSION_ID, Operator.EQ, userSession.getId())
-                .compare(AuthenticatedClientSessionModel.SearchableFields.REALM_ID, Operator.EQ, userSession.getRealm().getId())
-                .compare(AuthenticatedClientSessionModel.SearchableFields.CLIENT_ID, Operator.EQ, client.getId())
-                .compare(AuthenticatedClientSessionModel.SearchableFields.IS_OFFLINE, Operator.EQ, offline);
-
-        return clientSessionTx.read(withCriteria(mcb))
-                .findFirst()
-                .map(clientEntityToAdapterFunc(client.getRealm(), client, userSession))
-                .orElse(null);
+        return userSession.getAuthenticatedClientSessionByClient(client.getId());
     }
 
     @Override
@@ -492,16 +413,24 @@ public class MapUserSessionProvider implements UserSessionProvider {
         int currentTime = Time.currentTime();
         clientSessionEntity.setNote(AuthenticatedClientSessionModel.STARTED_AT_NOTE, String.valueOf(currentTime));
         clientSessionEntity.setTimestamp(Time.currentTimeMillis());
-        setClientSessionExpiration(clientSessionEntity, clientSession.getRealm(), clientSession.getClient());
-        clientSessionEntity = clientSessionTx.create(clientSessionEntity);
+        RealmModel realm = clientSession.getRealm();
+        setClientSessionExpiration(clientSessionEntity, realm, clientSession.getClient());
 
-        Optional<MapUserSessionEntity> userSessionEntity = getOfflineUserSessionEntityStream(clientSession.getRealm(), offlineUserSession.getId()).findFirst();
+        Optional<MapUserSessionEntity> userSessionEntity = getOfflineUserSessionEntityStream(realm, offlineUserSession.getId()).findFirst();
         if (userSessionEntity.isPresent()) {
-            userSessionEntity.get().setAuthenticatedClientSession(clientSession.getClient().getId(), clientSessionEntity.getId());
+            MapUserSessionEntity userSession = userSessionEntity.get();
+            String clientId = clientSession.getClient().getId();
+            if (userSession.getAuthenticatedClientSession(clientId).isPresent()) {
+                userSession.removeAuthenticatedClientSession(clientId);
+            }
+
+            userSession.addAuthenticatedClientSession(clientSessionEntity);
+
+            UserSessionModel userSessionModel = userEntityToAdapterFunc(realm).apply(userSession);
+            return userSessionModel == null ? null : userSessionModel.getAuthenticatedClientSessionByClient(clientId);
         }
 
-        return clientEntityToAdapterFunc(clientSession.getRealm(),
-                clientSession.getClient(), offlineUserSession).apply(clientSessionEntity);
+        return null;
     }
 
     @Override
@@ -582,14 +511,12 @@ public class MapUserSessionProvider implements UserSessionProvider {
 
                     // Update timestamp to same value as userSession. LastSessionRefresh of userSession from DB will have correct value
                     clientSession.setTimestamp(userSessionEntity.getLastSessionRefresh());
-
-                    clientSession = clientSessionTx.create(clientSession);
-                    userSessionEntity.setAuthenticatedClientSession(entry.getKey(), clientSession.getId());
+                    userSessionEntity.addAuthenticatedClientSession(clientSession);
                 }
 
                 return userSessionEntity;
             })
-            .forEach(use -> userSessionTx.create(use));
+            .forEach(userSessionTx::create);
     }
 
     @Override
@@ -698,8 +625,7 @@ public class MapUserSessionProvider implements UserSessionProvider {
     private MapAuthenticatedClientSessionEntity createAuthenticatedClientSessionEntityInstance(String id, String userSessionId, String realmId,
                                                                                                String clientId, boolean offline) {
         MapAuthenticatedClientSessionEntityImpl clientSessionEntity = new MapAuthenticatedClientSessionEntityImpl();
-        clientSessionEntity.setId(id);
-        clientSessionEntity.setUserSessionId(userSessionId);
+        clientSessionEntity.setId(id == null ? KeycloakModelUtils.generateId() : id);
         clientSessionEntity.setRealmId(realmId);
         clientSessionEntity.setClientId(clientId);
         clientSessionEntity.setOffline(offline);

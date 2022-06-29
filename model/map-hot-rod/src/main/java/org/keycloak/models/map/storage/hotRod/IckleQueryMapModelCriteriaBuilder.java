@@ -80,8 +80,7 @@ public class IckleQueryMapModelCriteriaBuilder<E extends AbstractHotRodEntity, M
         INFINISPAN_NAME_OVERRIDES.put(RealmModel.SearchableFields.COMPONENT_PROVIDER_TYPE, "components.providerType");
 
         INFINISPAN_NAME_OVERRIDES.put(UserSessionModel.SearchableFields.IS_OFFLINE, "offline");
-        INFINISPAN_NAME_OVERRIDES.put(UserSessionModel.SearchableFields.CLIENT_ID, "authenticatedClientSessions.key");
-        INFINISPAN_NAME_OVERRIDES.put(AuthenticatedClientSessionModel.SearchableFields.IS_OFFLINE, "offline");
+        INFINISPAN_NAME_OVERRIDES.put(UserSessionModel.SearchableFields.CLIENT_ID, "authenticatedClientSessions.clientId");
 
         INFINISPAN_NAME_OVERRIDES.put(Resource.SearchableFields.SCOPE_ID, "scopeIds");
 
