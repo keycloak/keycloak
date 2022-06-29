@@ -49,19 +49,23 @@ Several methods have been deprecated in `KeycloakSession` and will be removed in
 This situaton may be confusing for the developer who has to understand the exact meaning of each method, and depends on current store layout.
 The new store does not distinguish federated from local storage.
 
-For both reasons, only the `users()` methods will be kept in `KeycloakSession` and the rest of methods are currently deprecated, return the same object as `users()`, and will eventually be removed.
-The same pattern of deprecation applies to methods all other object areas, e.g. `clients()` or `groups()`.
+For those reasons, only the `users()` method will be kept in `KeycloakSession`, and should replace all other calls listed above.
+The rest of the methods are deprecated, and will eventually be removed.
+The same pattern of deprecation applies to methods of other object areas, such as `clients()` or `groups()`.
+All methods ending in `++*StorageManager()++` and `++*LocalStorage++()` now throw an exception when being called, as there is no direct replacement in the new store.
+The next section describes how to migrate those calls to the new API or use the legacy API while using the old store.
 
 The deprecated methods in KeycloakSession will be removed in a future release.
-The `keycloak-model-legacy-*` modules will be available for a longer time, but they will eventually be removed.
+The `keycloak-model-legacy-*` modules will be available for a longer time and will eventually be removed.
 
 === Migrating existing providers that do not depend on the legacy store
 
-Most of the existing providers need no migration.
-Please review your code if it depends on any functionality in regard to cached versus noncached or local versus federated storage.
-As an example, `userLocalStorage()` will now return the same result as `users()`, which might involve a cache if that has been enabled in the local setup.
+The existing providers need no migration if they do not call a deprecated method, which should be the case for most providers.
 
-.Before migration: accessing a deprecated API that redirects to `.users()`
+If the provider uses deprecated methods, but does not rely on local versus non-local storage, changing a call from the now deprecated `userLocalStorage()` to the method `users()` is the best option.
+Be aware that the semantics change here as the new method involves a cache if that has been enabled in the local setup.
+
+.Before migration: accessing a deprecated API that now throws an exception
 [source,java,subs="+quotes"]
 ----
 session**.userLocalStorage()**;
@@ -78,7 +82,7 @@ session**.users()**;
 In the rare case when a custom provider needs to distinguish between the mode of a particular provider, access to the deprecated objects is provided by using the `LegacyStoreManagers` data store provider.
 This option will be available only if the legacy modules are part of the deployment.
 
-.Before migration: accessing a deprecated API that redirects to `.users()`
+.Before migration: accessing a deprecated API that now throws an exception
 [source,java,subs="+quotes"]
 ----
 session**.userLocalStorage()**;
