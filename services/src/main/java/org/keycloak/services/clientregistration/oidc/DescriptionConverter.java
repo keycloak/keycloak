@@ -17,15 +17,14 @@
 
 package org.keycloak.services.clientregistration.oidc;
 
+import com.google.common.collect.Streams;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.ClientAuthenticator;
 import org.keycloak.authentication.ClientAuthenticatorFactory;
-import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKParser;
-import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.models.CibaConfig;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
@@ -51,8 +50,6 @@ import org.keycloak.util.JWKSUtils;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.StringUtil;
 
-import com.google.common.collect.Streams;
-
 import java.io.IOException;
 import java.net.URI;
 import java.security.PublicKey;
@@ -67,8 +64,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.keycloak.models.OAuth2DeviceConfig.OAUTH2_DEVICE_AUTHORIZATION_GRANT_ENABLED;
 import static org.keycloak.models.CibaConfig.OIDC_CIBA_GRANT_ENABLED;
+import static org.keycloak.models.OAuth2DeviceConfig.OAUTH2_DEVICE_AUTHORIZATION_GRANT_ENABLED;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -245,7 +242,7 @@ public class DescriptionConverter {
             configWrapper.setFrontChannelLogoutSessionRequired(false);
         } else {
             configWrapper.setFrontChannelLogoutSessionRequired(clientOIDC.getFrontchannelLogoutSessionRequired());
-        }        
+        }
 
         if (clientOIDC.getDefaultAcrValues() != null) {
             configWrapper.setAttributeMultivalued(Constants.DEFAULT_ACR_VALUES, clientOIDC.getDefaultAcrValues());
@@ -324,12 +321,12 @@ public class DescriptionConverter {
             if (oidcClientAuthMethods != null && !oidcClientAuthMethods.isEmpty()) {
                 response.setTokenEndpointAuthMethod(oidcClientAuthMethods.iterator().next());
             }
-        }
 
-        if (client.getClientAuthenticatorType().equals(ClientIdAndSecretAuthenticator.PROVIDER_ID)) {
-            response.setClientSecret(client.getSecret());
-            response.setClientSecretExpiresAt(
+            if (clientAuth.supportsSecret()) {
+                response.setClientSecret(client.getSecret());
+                response.setClientSecretExpiresAt(
                     OIDCClientSecretConfigWrapper.fromClientRepresentation(client).getClientSecretExpirationTime());
+            }
         }
 
         response.setClientName(client.getName());

@@ -16,6 +16,28 @@
  */
 package org.keycloak.authentication.authenticators.client;
 
+import org.jboss.logging.Logger;
+import org.keycloak.OAuth2Constants;
+import org.keycloak.authentication.AuthenticationFlowError;
+import org.keycloak.authentication.ClientAuthenticationFlowContext;
+import org.keycloak.common.util.Time;
+import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.models.AuthenticationExecutionModel.Requirement;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.SingleUseObjectProvider;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
+import org.keycloak.protocol.oidc.OIDCClientSecretConfigWrapper;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.representations.JsonWebToken;
+import org.keycloak.services.ServicesLogger;
+import org.keycloak.services.Urls;
+
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -24,29 +46,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-
-import org.jboss.logging.Logger;
-import org.keycloak.OAuth2Constants;
-import org.keycloak.authentication.AuthenticationFlowError;
-import org.keycloak.authentication.ClientAuthenticationFlowContext;
-import org.keycloak.common.util.Time;
-import org.keycloak.jose.jws.JWSInput;
-import org.keycloak.models.AuthenticationExecutionModel.Requirement;
-import org.keycloak.models.SingleUseObjectProvider;
-import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
-import org.keycloak.protocol.oidc.OIDCClientSecretConfigWrapper;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.RealmModel;
-import org.keycloak.protocol.oidc.OIDCConfigAttributes;
-import org.keycloak.provider.ProviderConfigProperty;
-import org.keycloak.representations.JsonWebToken;
-import org.keycloak.services.ServicesLogger;
-import org.keycloak.services.Urls;
 
 /**
  * Client authentication based on JWT signed by client secret instead of private key .
@@ -252,6 +251,11 @@ public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
         } else {
             return Collections.emptySet();
         }
+    }
+
+    @Override
+    public boolean supportsSecret() {
+        return true;
     }
 
     @Override

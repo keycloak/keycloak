@@ -285,6 +285,30 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
     }
 
     @Test
+    public void testClientSecretsWithAuthMethod() throws ClientRegistrationException {
+        OIDCClientRepresentation clientRep = createRep();
+        clientRep.setGrantTypes(Collections.singletonList(OAuth2Constants.CLIENT_CREDENTIALS));
+        clientRep.setTokenEndpointAuthMethod(OIDCLoginProtocol.CLIENT_SECRET_JWT);
+
+        OIDCClientRepresentation response = reg.oidc().create(clientRep);
+        Assert.assertEquals("client_secret_jwt", response.getTokenEndpointAuthMethod());
+        Assert.assertNotNull(response.getClientSecret());
+        Assert.assertNotNull(response.getClientSecretExpiresAt());
+
+        ClientRepresentation kcClientRep = getKeycloakClient(response.getClientId());
+        Assert.assertFalse(kcClientRep.isPublicClient());
+        Assert.assertNotNull(kcClientRep.getSecret());
+
+        // Updating
+        reg.auth(Auth.token(response));
+        response.setTokenEndpointAuthMethod(OIDCLoginProtocol.TLS_CLIENT_AUTH);
+        OIDCClientRepresentation updated = reg.oidc().update(response);
+        Assert.assertEquals("tls_client_auth", updated.getTokenEndpointAuthMethod());
+        Assert.assertNull(updated.getClientSecret());
+        Assert.assertNull(updated.getClientSecretExpiresAt());
+    }
+
+    @Test
     public void createClientFrontchannelLogoutSettings() throws ClientRegistrationException {
         // When frontchannelLogutSessionRequired is not set, it should be false by default per OIDC Client registration specification
         OIDCClientRepresentation clientRep = createRep();

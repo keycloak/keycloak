@@ -204,6 +204,11 @@ public class ClientIdAndSecretAuthenticator extends AbstractClientAuthenticator 
         }
     }
 
+    @Override
+    public boolean supportsSecret() {
+        return true;
+    }
+
     private void reportFailedAuth(ClientAuthenticationFlowContext context) {
         Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.UNAUTHORIZED.getStatusCode(), "unauthorized_client", "Invalid client secret");
         context.failure(AuthenticationFlowError.INVALID_CLIENT_CREDENTIALS, challengeResponse);
