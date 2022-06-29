@@ -99,6 +99,8 @@ public class DefaultRequiredActions {
         addUpdateLocaleAction(realm);
         addDeleteAccountAction(realm);
         addUpdateEmailAction(realm);
+        addWebAuthnRegisterAction(realm);
+        addWebAuthnPasswordlessRegisterAction(realm);
     }
 
     public static void addDeleteAccountAction(RealmModel realm) {
@@ -138,6 +140,42 @@ public class DefaultRequiredActions {
             updateEmail.setDefaultAction(false);
             updateEmail.setPriority(70);
             realm.addRequiredActionProvider(updateEmail);
+        }
+    }
+
+    public static void addWebAuthnRegisterAction(RealmModel realm) {
+        final String PROVIDER_ID = "webauthn-register";
+
+        final boolean isWebAuthnFeatureEnabled = Profile.isFeatureEnabled(Profile.Feature.WEB_AUTHN);
+        final boolean isRequiredActionActive = realm.getRequiredActionProviderByAlias(PROVIDER_ID) != null;
+
+        if (isWebAuthnFeatureEnabled && !isRequiredActionActive) {
+            final RequiredActionProviderModel webauthnRegister = new RequiredActionProviderModel();
+            webauthnRegister.setEnabled(true);
+            webauthnRegister.setAlias(PROVIDER_ID);
+            webauthnRegister.setName("Webauthn Register");
+            webauthnRegister.setProviderId(PROVIDER_ID);
+            webauthnRegister.setDefaultAction(false);
+            webauthnRegister.setPriority(70);
+            realm.addRequiredActionProvider(webauthnRegister);
+        }
+    }
+
+    public static void addWebAuthnPasswordlessRegisterAction(RealmModel realm) {
+        final String PROVIDER_ID = "webauthn-register-passwordless";
+
+        final boolean isWebAuthnFeatureEnabled = Profile.isFeatureEnabled(Profile.Feature.WEB_AUTHN);
+        final boolean isRequiredActionActive = realm.getRequiredActionProviderByAlias(PROVIDER_ID) != null;
+
+        if (isWebAuthnFeatureEnabled && !isRequiredActionActive) {
+            final RequiredActionProviderModel webauthnRegister = new RequiredActionProviderModel();
+            webauthnRegister.setEnabled(true);
+            webauthnRegister.setAlias(PROVIDER_ID);
+            webauthnRegister.setName("Webauthn Register Passwordless");
+            webauthnRegister.setProviderId(PROVIDER_ID);
+            webauthnRegister.setDefaultAction(false);
+            webauthnRegister.setPriority(80);
+            realm.addRequiredActionProvider(webauthnRegister);
         }
     }
 }
