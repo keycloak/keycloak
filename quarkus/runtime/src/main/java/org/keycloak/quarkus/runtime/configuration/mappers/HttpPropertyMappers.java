@@ -9,7 +9,9 @@ import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 
 import java.io.File;
 import java.nio.file.Paths;
+import java.util.Optional;
 
+import static java.util.Optional.of;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers.getMapper;
 import static org.keycloak.quarkus.runtime.integration.QuarkusPlatform.addInitializationException;
@@ -91,8 +93,8 @@ final class HttpPropertyMappers {
         };
     }
 
-    private static String getHttpEnabledTransformer(String value, ConfigSourceInterceptorContext context) {
-        boolean enabled = Boolean.parseBoolean(value);
+    private static Optional<String> getHttpEnabledTransformer(Optional<String> value, ConfigSourceInterceptorContext context) {
+        boolean enabled = Boolean.parseBoolean(value.get());
         ConfigValue proxy = context.proceed(MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX + "proxy");
 
         if (Environment.isDevMode() || Environment.isImportExportMode()
@@ -112,7 +114,7 @@ final class HttpPropertyMappers {
             }
         }
 
-        return enabled ? "enabled" : "disabled";
+        return of(enabled ? "enabled" : "disabled");
     }
 
     private static String getDefaultKeystorePathValue() {

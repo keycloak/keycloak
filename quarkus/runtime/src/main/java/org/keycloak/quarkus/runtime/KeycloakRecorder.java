@@ -41,7 +41,7 @@ import org.keycloak.quarkus.runtime.storage.database.liquibase.FastServiceLocato
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
-import org.keycloak.quarkus.runtime.storage.infinispan.CacheManagerFactory;
+import org.keycloak.quarkus.runtime.storage.legacy.infinispan.CacheManagerFactory;
 
 import io.quarkus.runtime.RuntimeValue;
 import io.quarkus.runtime.ShutdownContext;

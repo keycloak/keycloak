@@ -20,6 +20,7 @@ package org.keycloak.quarkus.runtime;
 import static org.keycloak.quarkus.runtime.Environment.getKeycloakModeFromProfile;
 import static org.keycloak.quarkus.runtime.Environment.isDevProfile;
 import static org.keycloak.quarkus.runtime.Environment.getProfileOrDefault;
+import static org.keycloak.quarkus.runtime.Environment.isImportExportMode;
 import static org.keycloak.quarkus.runtime.Environment.isTestLaunchMode;
 import static org.keycloak.quarkus.runtime.cli.Picocli.parseAndRun;
 import static org.keycloak.quarkus.runtime.cli.command.Start.isDevProfileNotAllowed;
@@ -35,10 +36,17 @@ import io.quarkus.runtime.ApplicationLifecycleManager;
 import io.quarkus.runtime.Quarkus;
 
 import org.jboss.logging.Logger;
+import org.keycloak.Config;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.KeycloakTransactionManager;
 import org.keycloak.quarkus.runtime.cli.ExecutionExceptionHandler;
 import org.keycloak.quarkus.runtime.cli.Picocli;
 import org.keycloak.common.Version;
 import org.keycloak.quarkus.runtime.cli.command.Start;
+import org.keycloak.services.ServicesLogger;
+import org.keycloak.services.managers.ApplianceBootstrap;
+import org.keycloak.services.resources.KeycloakApplication;
 
 import io.quarkus.runtime.QuarkusApplication;
 import io.quarkus.runtime.annotations.QuarkusMain;
@@ -49,6 +57,9 @@ import io.quarkus.runtime.annotations.QuarkusMain;
 @QuarkusMain(name = "keycloak")
 @ApplicationScoped
 public class KeycloakMain implements QuarkusApplication {
+
+    private static final String KEYCLOAK_ADMIN_ENV_VAR = "KEYCLOAK_ADMIN";
+    private static final String KEYCLOAK_ADMIN_PASSWORD_ENV_VAR = "KEYCLOAK_ADMIN_PASSWORD";
 
     public static void main(String[] args) {
         System.setProperty("kc.version", Version.VERSION_KEYCLOAK);
@@ -110,13 +121,17 @@ public class KeycloakMain implements QuarkusApplication {
      */
     @Override
     public int run(String... args) throws Exception {
+        if (!isImportExportMode()) {
+            createAdminUser();
+        }
+
         if (isDevProfile()) {
             Logger.getLogger(KeycloakMain.class).warnf("Running the server in development mode. DO NOT use this configuration in production.");
         }
 
         int exitCode = ApplicationLifecycleManager.getExitCode();
 
-        if (isTestLaunchMode()) {
+        if (isTestLaunchMode() || isImportExportMode()) {
             // in test mode we exit immediately
             // we should be managing this behavior more dynamically depending on the tests requirements (short/long lived)
             Quarkus.asyncExit(exitCode);
@@ -125,5 +140,36 @@ public class KeycloakMain implements QuarkusApplication {
         }
 
         return exitCode;
+    }
+
+    private void createAdminUser() {
+        String adminUserName = System.getenv(KEYCLOAK_ADMIN_ENV_VAR);
+        String adminPassword = System.getenv(KEYCLOAK_ADMIN_PASSWORD_ENV_VAR);
+
+        if ((adminUserName == null || adminUserName.trim().length() == 0)
+                || (adminPassword == null || adminPassword.trim().length() == 0)) {
+            return;
+        }
+
+        KeycloakSessionFactory sessionFactory = KeycloakApplication.getSessionFactory();
+        KeycloakSession session = sessionFactory.create();
+        KeycloakTransactionManager transaction = session.getTransactionManager();
+
+        try {
+            transaction.begin();
+
+            new ApplianceBootstrap(session).createMasterRealmUser(adminUserName, adminPassword);
+            ServicesLogger.LOGGER.addUserSuccess(adminUserName, Config.getAdminRealm());
+
+            transaction.commit();
+        } catch (IllegalStateException e) {
+            session.getTransactionManager().rollback();
+            ServicesLogger.LOGGER.addUserFailedUserExists(adminUserName, Config.getAdminRealm());
+        } catch (Throwable t) {
+            session.getTransactionManager().rollback();
+            ServicesLogger.LOGGER.addUserFailed(t, adminUserName, Config.getAdminRealm());
+        } finally {
+            session.close();
+        }
     }
 }

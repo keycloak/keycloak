@@ -88,14 +88,14 @@ public class CLITestExtension extends QuarkusMainTestExtension {
         if (distConfig != null) {
             onKeepServerAlive(context.getRequiredTestMethod().getAnnotation(KeepServerAlive.class));
 
+            if (dist == null) {
+                dist = createDistribution(distConfig);
+            }
+
+            onBeforeStartDistribution(context.getRequiredTestClass().getAnnotation(BeforeStartDistribution.class));
+            onBeforeStartDistribution(context.getRequiredTestMethod().getAnnotation(BeforeStartDistribution.class));
+
             if (launch != null) {
-                if (dist == null) {
-                    dist = createDistribution(distConfig);
-                }
-
-                onBeforeStartDistribution(context.getRequiredTestClass().getAnnotation(BeforeStartDistribution.class));
-                onBeforeStartDistribution(context.getRequiredTestMethod().getAnnotation(BeforeStartDistribution.class));
-
                 result = dist.run(Arrays.asList(launch.value()));
             }
         } else {
@@ -226,7 +226,7 @@ public class CLITestExtension extends QuarkusMainTestExtension {
     public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext)
             throws ParameterResolutionException {
         Class<?> type = parameterContext.getParameter().getType();
-        return type == LaunchResult.class || type == RawDistRootPath.class || (dist != null && type == KeycloakDistribution.class);
+        return type == LaunchResult.class || type == RawDistRootPath.class || type == KeycloakDistribution.class;
     }
 
     private void configureProfile(ExtensionContext context) {
