@@ -321,9 +321,11 @@
                                 <systemProperty><key>keycloak.actionToken.provider</key><value>map</value></systemProperty>
                                 <systemProperty><key>keycloak.singleUseObject.provider</key><value>map</value></systemProperty>
                                 <systemProperty><key>keycloak.eventsStore.provider</key><value>map</value></systemProperty>
+                                <systemProperty><key>keycloak.publicKeyStorage.provider</key><value>map</value></systemProperty>
                                 <systemProperty><key>keycloak.authorizationCache.enabled</key><value>false</value></systemProperty>
                                 <systemProperty><key>keycloak.realmCache.enabled</key><value>false</value></systemProperty>
                                 <systemProperty><key>keycloak.userCache.enabled</key><value>false</value></systemProperty>
+                                <systemProperty><key>keycloak.publicKeyCache.enabled</key><value>false</value></systemProperty>
                             </systemProperties>
                         </configuration>
                     </plugin>
