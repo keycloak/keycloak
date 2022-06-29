@@ -849,9 +849,11 @@
                                 <keycloak.eventsStore.provider>map</keycloak.eventsStore.provider>
                                 <keycloak.actionToken.provider>map</keycloak.actionToken.provider>
                                 <keycloak.singleUseObject.provider>map</keycloak.singleUseObject.provider>
+                                <keycloak.publicKeyStorage.provider>map</keycloak.publicKeyStorage.provider>
                                 <keycloak.authorizationCache.enabled>false</keycloak.authorizationCache.enabled>
                                 <keycloak.realmCache.enabled>false</keycloak.realmCache.enabled>
                                 <keycloak.userCache.enabled>false</keycloak.userCache.enabled>
+                                <keycloak.publicKeyCache.enabled>false</keycloak.publicKeyCache.enabled>
                                 <keycloak.userSessionPersister.provider></keycloak.userSessionPersister.provider>
                           </systemPropertyVariables>
                       </configuration>
