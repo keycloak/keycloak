@@ -30,8 +30,6 @@ import org.keycloak.models.cache.UserCacheProviderFactory;
 import org.keycloak.models.cache.infinispan.entities.Revisioned;
 import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
 import org.keycloak.provider.InvalidationHandler;
-import org.keycloak.provider.InvalidationHandler.InvalidableObjectType;;
-import org.keycloak.provider.InvalidationHandler.ObjectType;;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
