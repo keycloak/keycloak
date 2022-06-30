@@ -559,7 +559,9 @@ public class TestingResourceProvider implements RealmResourceProvider {
         event.setAuthDetails(repToModel(rep.getAuthDetails()));
         event.setError(rep.getError());
         event.setOperationType(OperationType.valueOf(rep.getOperationType()));
-        event.setResourceType(rep.getResourceType());
+        if (rep.getResourceType() != null) {
+            event.setResourceTypeAsString(rep.getResourceType());
+        }
         event.setRealmId(rep.getRealmId());
         event.setRepresentation(rep.getRepresentation());
         event.setResourcePath(rep.getResourcePath());

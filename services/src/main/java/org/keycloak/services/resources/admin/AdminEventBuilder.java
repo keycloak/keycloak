@@ -24,6 +24,7 @@ import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.AuthDetails;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -112,8 +113,16 @@ public class AdminEventBuilder {
         return this;
     }
 
-    public AdminEventBuilder resource(String resourceType){
+    public AdminEventBuilder resource(ResourceType resourceType){
         adminEvent.setResourceType(resourceType);
+        return this;
+    }
+
+    /**
+     * Setter for custom resource types with values different from {@link ResourceType}.
+     */
+    public AdminEventBuilder resource(String resourceType){
+        adminEvent.setResourceTypeAsString(resourceType);
         return this;
     }
 

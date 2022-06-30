@@ -50,7 +50,7 @@ public class EventUtils {
         adminEvent.setRealmId(adminEventEntity.getRealmId());
         setAuthDetails(adminEvent, adminEventEntity);
         adminEvent.setOperationType(adminEventEntity.getOperationType());
-        adminEvent.setResourceType(adminEventEntity.getResourceType());
+        adminEvent.setResourceTypeAsString(adminEventEntity.getResourceType());
         adminEvent.setResourcePath(adminEventEntity.getResourcePath());
         adminEvent.setError(adminEventEntity.getError());
 
@@ -68,7 +68,7 @@ public class EventUtils {
         mapAdminEvent.setRealmId(adminEvent.getRealmId());
         setAuthDetails(mapAdminEvent, adminEvent.getAuthDetails());
         mapAdminEvent.setOperationType(adminEvent.getOperationType());
-        mapAdminEvent.setResourceType(adminEvent.getResourceType());
+        mapAdminEvent.setResourceType(adminEvent.getResourceTypeAsString());
         mapAdminEvent.setResourcePath(adminEvent.getResourcePath());
         mapAdminEvent.setError(adminEvent.getError());
 

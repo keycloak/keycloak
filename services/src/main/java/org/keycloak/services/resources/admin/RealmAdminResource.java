@@ -849,8 +849,14 @@ public class RealmAdminResource {
         }
 
         if (resourceTypes != null && !resourceTypes.isEmpty()) {
-            query.resourceType(resourceTypes);
+            ResourceType[] t = new ResourceType[resourceTypes.size()];
+            for (int i = 0; i < t.length; i++) {
+                t[i] = ResourceType.valueOf(resourceTypes.get(i));
+            }
+            query.resourceType(t);
         }
+
+
 
         if(dateFrom != null) {
             SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");

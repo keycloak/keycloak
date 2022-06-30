@@ -136,7 +136,7 @@ public class JBossLoggingEventListenerProvider implements EventListenerProvider 
             sb.append(", ipAddress=");
             sb.append(adminEvent.getAuthDetails().getIpAddress());
             sb.append(", resourceType=");
-            sb.append(adminEvent.getResourceType());
+            sb.append(adminEvent.getResourceTypeAsString());
             sb.append(", resourcePath=");
             sb.append(adminEvent.getResourcePath());
 
