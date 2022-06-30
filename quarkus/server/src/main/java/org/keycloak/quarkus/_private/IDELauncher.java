@@ -1,5 +1,8 @@
 package org.keycloak.quarkus._private;
 
+import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -26,6 +29,13 @@ public class IDELauncher {
 
     public static void main(String[] args) {
         List<String> devArgs = new ArrayList<>();
+
+        if (System.getProperty("kc.home.dir") == null) {
+            // direct the auto-created files to the target folder, so they are cleaned by "mvn clean"
+            // users can still provide a different folder by setting the property when starting it from their IDE.
+            Path path = Paths.get(System.getProperty("user.dir"), "target", "kc");
+            System.setProperty("kc.home.dir", path.toAbsolutePath().toString());
+        }
 
         devArgs.addAll(Arrays.asList(args));
 
