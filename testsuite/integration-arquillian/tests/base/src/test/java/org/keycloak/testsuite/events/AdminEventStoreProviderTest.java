@@ -19,10 +19,14 @@ package org.keycloak.testsuite.events;
 
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Test;
+import org.keycloak.events.EventStoreProvider;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.models.jpa.entities.RealmAttributes;
 import org.keycloak.representations.idm.AdminEventRepresentation;
 import org.keycloak.representations.idm.AuthDetailsRepresentation;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 
 import java.text.ParseException;
@@ -30,7 +34,9 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
+
 import java.util.List;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:giriraj.sharma27@gmail.com">Giriraj Sharma</a>
@@ -190,6 +196,52 @@ public class AdminEventStoreProviderTest extends AbstractEventsTest {
         testing().clearAdminEventStore(realmId, System.currentTimeMillis() - 10000);
 
         Assert.assertEquals(2, testing().getAdminEvents(null, null, null, null, null, null, null, null, null, null, null).size());
+    }
+
+    @Test
+    public void expireOld() {
+        Assume.assumeTrue("Map storage event store provider does not support changing expiration of existing events", keycloakUsingProviderWithId(EventStoreProvider.class, "jpa"));
+        testing().onAdminEvent(create(System.currentTimeMillis() - 30000, realmId, OperationType.CREATE, realmId, "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
+        testing().onAdminEvent(create(System.currentTimeMillis() - 20000, realmId, OperationType.CREATE, realmId, "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
+        testing().onAdminEvent(create(System.currentTimeMillis(), realmId, OperationType.CREATE, realmId, "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
+        testing().onAdminEvent(create(System.currentTimeMillis(), realmId, OperationType.CREATE, realmId, "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
+        testing().onAdminEvent(create(System.currentTimeMillis() - 30000, realmId2, OperationType.CREATE, realmId, "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
+        testing().onAdminEvent(create(System.currentTimeMillis(), realmId2, OperationType.CREATE, realmId, "clientId", "userId", "127.0.0.1", "/admin/realms/master", "error"), false);
+
+        // Set expiration of events for realmId .
+        RealmRepresentation realm = realmsResouce().realm(REALM_NAME_1).toRepresentation();
+        Map<String, String> attributes = realm.getAttributes();
+        attributes.put(RealmAttributes.ADMIN_EVENTS_EXPIRATION,"10");
+        realm.setAttributes(attributes);
+        realmsResouce().realm(REALM_NAME_1).update(realm);
+
+        // The first 2 events from realmId will be deleted
+        testing().clearExpiredEvents();
+        Assert.assertEquals(4, testing().getAdminEvents(null, null, null, null, null, null, null, null, null, null, null).size());
+
+        // Set expiration of events for realmId2 as well
+        RealmRepresentation realm2 = realmsResouce().realm(REALM_NAME_2).toRepresentation();
+        Map<String, String> attributes2 = realm2.getAttributes();
+        attributes2.put(RealmAttributes.ADMIN_EVENTS_EXPIRATION,"10");
+        realm2.setAttributes(attributes2);
+        realmsResouce().realm(REALM_NAME_2).update(realm2);
+
+        // The first event from realmId2 will be deleted now
+        testing().clearExpiredEvents();
+        Assert.assertEquals(3, testing().getAdminEvents(null, null, null, null, null, null, null, null, null, null, null).size());
+
+        // set time offset to the future. The remaining 2 events from realmId and 1 event from realmId2 should be expired now
+        setTimeOffset(150);
+        testing().clearExpiredEvents();
+        Assert.assertEquals(0, testing().getAdminEvents(REALM_NAME_1, null, null, null, null, null, null, null, null, null, null).size());
+
+        // Revert expirations
+        attributes.put(RealmAttributes.ADMIN_EVENTS_EXPIRATION,"0");
+        realm.setAttributes(attributes);
+        realmsResouce().realm(REALM_NAME_1).update(realm);
+        attributes2.put(RealmAttributes.ADMIN_EVENTS_EXPIRATION,"0");
+        realm2.setAttributes(attributes2);
+        realmsResouce().realm(REALM_NAME_2).update(realm2);
     }
 
     @Test

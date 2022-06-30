@@ -135,8 +135,16 @@ public class MapEventStoreProvider implements EventStoreProvider {
         if (id != null && authEventsTX.read(id) != null) {
             throw new ModelDuplicateException("Event already exists: " + id);
         }
-
-        adminEventsTX.create(modelToEntity(event, includeRepresentation));
+        String realmId = event.getRealmId();
+        MapAdminEventEntity entity = modelToEntity(event,includeRepresentation);
+        if (realmId != null) {
+            RealmModel realm = session.realms().getRealm(realmId);
+            Long expiration = realm.getAttribute("adminEventsExpiration",0L);
+            if (realm != null &&  expiration > 0) {
+                entity.setExpiration(Time.currentTimeMillis() + (expiration * 1000));
+            }
+        }
+        adminEventsTX.create(entity);
     }
 
     @Override
