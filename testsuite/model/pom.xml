@@ -13,7 +13,7 @@
     <name>Tests for logical storage layer</name>
     <description>Tests for storage layer functionality targetting logical layer, i.e. models</description>
     <packaging>jar</packaging>
-    
+
     <properties>
         <keycloak.connectionsJpa.driver>org.h2.Driver</keycloak.connectionsJpa.driver>
         <keycloak.connectionsJpa.database>keycloak</keycloak.connectionsJpa.database>
@@ -28,7 +28,7 @@
         <keycloak.profile.feature.map_storage>disabled</keycloak.profile.feature.map_storage>
         <keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase>false</keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase>
     </properties>
-    
+
     <dependencies>
         <dependency>
             <groupId>junit</groupId>
@@ -41,8 +41,8 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
+            <groupId>ch.qos.reload4j</groupId>
+            <artifactId>reload4j</artifactId>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -149,7 +149,7 @@
                 <configuration>
                     <argLine>@{argLine}</argLine>
                     <systemPropertyVariables>
-                        <!-- keycloak.model.parameters lists parameter classes from 
+                        <!-- keycloak.model.parameters lists parameter classes from
                              org.keycloak.model.parameters package and determine enabled providers -->
                         <keycloak.model.parameters>${keycloak.model.parameters}</keycloak.model.parameters>
                         <keycloak.connectionsJpa.default.driver>${keycloak.connectionsJpa.driver}</keycloak.connectionsJpa.default.driver>
@@ -187,10 +187,10 @@
                         </configuration>
                     </execution>
                 </executions>
-            </plugin>                        
+            </plugin>
         </plugins>
     </build>
-    
+
     <profiles>
         <profile>
             <id>legacy-jpa</id>
@@ -337,5 +337,5 @@
         </profile>
 
     </profiles>
-    
+
 </project>

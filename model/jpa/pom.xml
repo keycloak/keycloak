@@ -40,7 +40,7 @@
         <jdbc.mvn.version>${h2.version}</jdbc.mvn.version>
         <log4j.configuration>file:${project.build.directory}/dependency/log4j.properties</log4j.configuration>
     </properties>
-    
+
     <dependencies>
         <dependency>
             <groupId>org.bouncycastle</groupId>
@@ -114,8 +114,8 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
+            <groupId>ch.qos.reload4j</groupId>
+            <artifactId>reload4j</artifactId>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>

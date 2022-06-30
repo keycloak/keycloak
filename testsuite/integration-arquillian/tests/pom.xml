@@ -2067,8 +2067,8 @@
                 </dependency>-->
 
                 <dependency>
-                    <groupId>log4j</groupId>
-                    <artifactId>log4j</artifactId>
+                    <groupId>ch.qos.reload4j</groupId>
+                    <artifactId>reload4j</artifactId>
                 </dependency>
                 <dependency>
                     <groupId>org.slf4j</groupId>
@@ -2429,14 +2429,14 @@
                 <tomcat.javax.net.ssl.properties>-Djavax.net.ssl.trustStore=${app.server.home}/lib/keycloak.truststore -Djavax.net.ssl.trustStorePassword=secret</tomcat.javax.net.ssl.properties>
             </properties>
         </profile>
-        
+
         <profile>
             <id>cache-auth</id>
             <properties>
                 <cache.server.auth>true</cache.server.auth>
             </properties>
         </profile>
-        
+
     </profiles>
 
 </project>

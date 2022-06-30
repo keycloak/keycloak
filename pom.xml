@@ -104,12 +104,12 @@
         <jboss-transaction-api_1.3_spec>2.0.0.Final</jboss-transaction-api_1.3_spec>
         <jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec.version>2.0.1.Final</jboss.spec.javax.xml.bind.jboss-jaxb-api_2.3_spec.version>
         <jboss.spec.javax.servlet.jsp.jboss-jsp-api_2.3_spec.version>2.0.0.Final</jboss.spec.javax.servlet.jsp.jboss-jsp-api_2.3_spec.version>
-        <log4j.version>1.2.17</log4j.version>
+        <reload4j.version>1.2.21</reload4j.version>
         <resteasy.version>3.15.1.Final</resteasy.version>
         <resteasy.undertow.version>${resteasy.version}</resteasy.undertow.version>
         <owasp.html.sanitizer.version>20211018.2</owasp.html.sanitizer.version>
-        <slf4j-api.version>1.7.30</slf4j-api.version>
-        <slf4j.version>1.7.30</slf4j.version>
+        <slf4j-api.version>1.7.36</slf4j-api.version>
+        <slf4j.version>1.7.36</slf4j.version>
         <sun.istack.version>3.0.10</sun.istack.version>
         <sun.xml.bind.version>2.3.3-b02</sun.xml.bind.version>
         <javax.xml.bind.jaxb.version>2.4.0-b180830.0359</javax.xml.bind.jaxb.version>
@@ -404,8 +404,8 @@
                 <version>${resteasy.version}</version>
                 <exclusions>
                     <exclusion>
-                        <groupId>log4j</groupId>
-                        <artifactId>log4j</artifactId>
+                        <groupId>ch.qos.reload4j</groupId>
+                        <artifactId>reload4j</artifactId>
                     </exclusion>
                     <exclusion>
                         <groupId>org.slf4j</groupId>
@@ -544,9 +544,9 @@
                 <version>${jboss.logging.tools.version}</version>
             </dependency>
             <dependency>
-                <groupId>log4j</groupId>
-                <artifactId>log4j</artifactId>
-                <version>${log4j.version}</version>
+                <groupId>ch.qos.reload4j</groupId>
+                <artifactId>reload4j</artifactId>
+                <version>${reload4j.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>

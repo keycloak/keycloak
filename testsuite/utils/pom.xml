@@ -57,8 +57,8 @@
             <artifactId>keycloak-wildfly-adduser</artifactId>
         </dependency>
         <dependency>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
+            <groupId>ch.qos.reload4j</groupId>
+            <artifactId>reload4j</artifactId>
             <scope>compile</scope>
         </dependency>
         <dependency>
@@ -88,8 +88,8 @@
             <artifactId>resteasy-jaxrs</artifactId>
             <exclusions>
                 <exclusion>
-                    <groupId>log4j</groupId>
-                    <artifactId>log4j</artifactId>
+                    <groupId>ch.qos.reload4j</groupId>
+                    <artifactId>reload4j</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
