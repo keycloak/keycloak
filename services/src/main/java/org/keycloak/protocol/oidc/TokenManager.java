@@ -198,8 +198,10 @@ public class TokenManager {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale token");
         }
 
-        // Setup clientScopes from refresh token to the context
-        String oldTokenScope = oldToken.getScope();
+        // Setup clientScopes from clientSession referenced by refreshToken to the context.
+        // Note: we need to use the scopes from the client session note here,
+        // to ensure that mappers for scopes with "includeInTokenScope" set to "false" are also applied.
+        String oldTokenScope = clientSession.getNote(OAuth2Constants.SCOPE);
 
         // Case when offline token is migrated from previous version
         if (oldTokenScope == null && userSession.isOffline()) {
