@@ -91,7 +91,18 @@
                         <button class="btn btn-danger" type="submit" data-ng-click="clearAdminEvents()" >{{:: 'clear-admin-events' | translate}}</button>
                     </div>
                 </div>
-                
+                <div class="form-group" data-ng-show="eventsConfig.adminEventsEnabled">
+                    <label class="col-md-2 control-label" for="expiration">{{:: 'expiration' | translate}}</label>
+                    <kc-tooltip>{{:: 'events.expiration.tooltip' | translate}}</kc-tooltip>
+                    <div class="col-md-6 time-selector">
+                        <input class="form-control" type="number" data-ng-model="realm.attributes.adminEventsExpiration" id="adminEventsExpiration" name="adminEventsExpiration" min="0"/>
+                        <select class="form-control" name="adminEventsExpirationUnit" data-ng-model="realm.attributes.adminEventsExpirationUnit">
+                            <option value="Minutes">{{:: 'minutes' | translate}}</option>
+                            <option value="Hours">{{:: 'hours' | translate}}</option>
+                            <option value="Days">{{:: 'days' | translate}}</option>
+                        </select>
+                    </div>
+                </div>
             </fieldset>
 
             <div class="form-group" data-ng-show="access.manageEvents">
