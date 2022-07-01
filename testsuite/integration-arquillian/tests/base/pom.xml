@@ -852,6 +852,7 @@
                                 <keycloak.authorizationCache.enabled>false</keycloak.authorizationCache.enabled>
                                 <keycloak.realmCache.enabled>false</keycloak.realmCache.enabled>
                                 <keycloak.userCache.enabled>false</keycloak.userCache.enabled>
+                                <keycloak.userSessionPersister.provider></keycloak.userSessionPersister.provider>
                           </systemPropertyVariables>
                       </configuration>
                     </plugin>
