@@ -60,6 +60,6 @@ These templates contain environment variables specific to {project_name} that en
 === Version compatibility and support
 For details about OpenShift image version compatibility, see the https://access.redhat.com/articles/2342861[Supported Configurations] page.
 
-NOTE: The {project_openshift_product_name} image version number between 7.0 and 7.3 are deprecated and they will no longer receive updates of image and application templates.
+NOTE: The {project_openshift_product_name} image version number between 7.0 and 7.4 are deprecated and they will no longer receive updates of image and application templates.
 
-To deploy new applications, use the version 7.4 or {project_version} of the {project_openshift_product_name} image along with the application templates specific to these image versions.
+To deploy new applications, use the version 7.5 or {project_version} of the {project_openshift_product_name} image along with the application templates specific to these image versions.
