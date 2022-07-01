@@ -20,3 +20,4 @@ org.keycloak.models.cache.CacheRealmProviderSpi
 org.keycloak.storage.client.ClientStorageProviderSpi
 org.keycloak.storage.group.GroupStorageProviderSpi
 org.keycloak.storage.clientscope.ClientScopeStorageProviderSpi
+org.keycloak.models.session.UserSessionPersisterSpi
