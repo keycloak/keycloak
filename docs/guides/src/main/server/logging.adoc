@@ -12,6 +12,7 @@ Keycloak uses the jboss logmanager logging framework. The high-level overview fo
 * root
 ** console (_default_)
 ** file
+** gelf
 
 == Logging: Root configuration
 Logging is done on a per-category basis in Keycloak. You can configure logging for the root log level, or for more specific categories like `org.hibernate` or `org.keycloak`. In this guide, you will learn how to configure logging.
@@ -57,7 +58,7 @@ The example above sets the root log level for all loggers to INFO, and the hiber
 To enable one or more log handlers, run the following command:
 <@kc.start parameters="--log=<handler1>,<handler2>"/>
 
-The available handlers are `console` and `file`. The more specific handler configuration mentioned below will only take effect when the handler is added to this comma-separated list.
+The available handlers are `console`, `file` and `gelf`. The more specific handler configuration mentioned below will only take effect when the handler is added to this comma-separated list.
 
 == Console Log Handler
 The console log handler is enabled by default, providing unstructured log messages for the console.
@@ -155,11 +156,282 @@ You can configure a different logging format for the file log handler by running
 
 Please see the <<Configuring the console log format>> section in this guide for more information and a table of the available pattern configuration.
 
-== Configuring raw quarkus logging properties
-At the time of writing, the logging features of the quarkus based Keycloak are basic, yet powerful. Nevertheless, expect more to come and feel free to join the https://github.com/keycloak/keycloak/discussions/8870[discussion] at GitHub.
+== Centralized logging using Gelf
+Keycloak is able to send logs to a centralized log management system like Graylog, Logstash (inside the Elastic Stack or ELK - Elasticsearch, Logstash, Kibana) or Fluentd (inside EFK - Elasticsearch, Fluentd, Kibana). Keycloak leverages the features of the https://quarkus.io/guides/centralized-log-management[Quarkus Logging Gelf] extension to provide support for these environments.
 
-When you need a temporary solution, e.g. for logging to a file or using syslog instead of console, you can check out the https://github.com/keycloak/keycloak/discussions/8870[Quarkus logging guide]. It is possible to use all properties mentioned there, as long as no other than the base logging dependency is involved. For example it is possible to set the log handler to file, but not to use json output, yet, as you would need to provide another dependency for json output to work.
+=== Enable the Gelf handler
+To enable logging using Gelf, you have to add it to the list of activated log handlers.
 
-To use raw quarkus properties, please refer to the <@links.server id="configuration"/> guide at section _Using unsupported server options_.
+.Example:
+<@kc.start parameters="--log=console,gelf"/>
+
+=== Configure the Gelf handler
+
+To configure the Host and Port of your centralized logging system, run the following command and substitute the values with your specific values:
+.Host and port of the Gelf server:
+<@kc.start parameters="--log=console,gelf --log-gelf-host=myhost --log-gelf-port=12345"/>
+
+By default, when the Gelf handler is enabled, the host is using `localhost` as host value and UDP for communication. If you want to use TCP instead of UDP, prefix the host value with `tcp:`. The Default port is `12201`.
+
+.Include or exclude Stacktraces
+By default, Keycloak includes the complete Stacktrace inside the field `StackTrace`. If you do not want to include this field, run the following command:
+
+<@kc.start parameters="--log=console,gelf --log-gelf-include-stack-trace=false"/>
+
+.Configure the timestamp format
+To change the format of the `timestamp` field, for example to only include the date and time down to seconds, run the following command:
+
+<@kc.start parameters="--log=console,gelf --log-gelf-timestamp-format=\"\'yyyy-MM-dd HH:mm:ss\'\""/>
+You may consider to use the config file instead to avoid escaping:
+
+[source, conf]
+----
+log-gelf-timestamp-format=yyyy-MM-dd HH:mm:ss
+----
+
+The default timestamp format is `yyyy-MM-dd HH:mm:ss,SSS`. You can use the https://docs.oracle.com/javase/10/docs/api/java/text/SimpleDateFormat.html[available SimpleDateFormat patterns] to define your needed timestamp.
+
+.Configure the facility
+To set the field `facility` - an indicator of the process or program that is the source of the log messages - to your preferred identifier (Default: keycloak), run the following command:
+
+<@kc.start parameters="--log=console,gelf --log-gelf-facility=MyKeycloak"/>
+
+When you need to configure Keycloak using the CLI and want the facility to contain whitespaces, run the command like below instead:
+
+<@kc.start parameters="--log=console,gelf --log-gelf-facility=\"\'my keycloak\'\""/>
+
+You may consider to use the config file instead to avoid escaping:
+[source, conf]
+----
+log-gelf-facility=my keycloak
+----
+
+.Configure the default message size
+To change the default message size of 8kb (8192 bytes) of Keycloaks gelf log messages, run the following command:
+
+<@kc.start parameters="--log=console,gelf --log-gelf-max-message-size=16384"/>
+
+The maximum size of one gelf log message has to be set in Bytes. The example above increases the size to 16kb. When messages exceed the maximum size, gelf will submit the message in multiple chunks.
+
+.Configure sending of message parameters
+By default, Keycloak includes message parameters of the occured log event. These fields are shown in the output as `MessageParam0`, `MessageParam1`, and so on, depending on the parameter length.
+To switch off this behaviour, run the following command:
+
+<@kc.start parameters="--log=console,gelf --log-gelf-include-message-parameters=false"/>
+
+.Configure sending of source code location
+By default, Keycloak includes the fields `SourceClassName`, `SourceMethodName` and `SourceSimpleClassName` in the gelf log messages to make it for example easier to see the location of an occured exception. To stop sending these fields, run the following command:
+
+<@kc.start parameters="--log=console,gelf --log-gelf-include-location=false"/>
+
+=== Example: Send logs to Graylog
+The following example shows how to send Keycloak logs to the Graylog centralized logging stack. It assumes you have a container tool like https://www.docker.com/[docker] installed to spin up the `compose.yml`.
+
+==== Spin up the Graylog stack
+The composed stack consists of:
+
+* Graylog
+* ElasticSearch
+* MongoDB
+
+[source, yaml]
+----
+version: '3.8'
+
+services:
+  elasticsearch:
+    image: docker.io/elastic/elasticsearch:7.17.4
+    ports:
+      - "9200:9200"
+    environment:
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+      discovery.type: "single-node"
+    networks:
+      - graylog
+
+  mongo:
+    image: mongo:4.0
+    networks:
+      - graylog
+
+  graylog:
+    image: graylog/graylog:4.3.2
+    ports:
+      - "9000:9000"
+      - "12201:12201/udp"
+      - "1514:1514"
+    environment:
+      GRAYLOG_HTTP_EXTERNAL_URI: "http://127.0.0.1:9000/"
+      # CHANGE ME (must be at least 16 characters)!
+      GRAYLOG_PASSWORD_SECRET: "forpasswordencryption"
+      # Password: admin
+      GRAYLOG_ROOT_PASSWORD_SHA2: "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918"
+    networks:
+      - graylog
+    depends_on:
+      - elasticsearch
+      - mongo
+
+networks:
+  graylog:
+    driver: bridge
+----
+
+Copy and save the example locally into a `compose.yml` file and run:
+
+[source,bash]
+----
+docker compose up -d
+----
+After a few seconds the Stack should be ready to serve requests.
+
+==== Create a Graylog UDP Input
+After the stack is up and running, you need to create a UDP Input Graylog listens to. You can do it from the Graylog web UI (System → Input → Select GELF UDP) available at http://localhost:9000 or using the API:
+
+This `curl` example creates a new GELF UDP Input using the API and the default Graylog login credentials (admin/admin).
+
+[source, bash]
+----
+curl -H "Content-Type: application/json" -H "Authorization: Basic YWRtaW46YWRtaW4=" -H "X-Requested-By: curl" -X POST -v -d \
+'{"title":"udp input","configuration":{"recv_buffer_size":262144,"bind_address":"0.0.0.0","port":12201,"decompress_size_limit":8388608},"type":"org.graylog2.inputs.gelf.udp.GELFUDPInput","global":true}' \
+http://localhost:9000/api/system/inputs
+----
+
+If the stack is still in the bootstrap phase, you receive a response containing `* Empty reply from server`. A successfull response includes `HTTP/1.1 201 Created` to indicate that the UDP input is created.
+
+==== Configure Keycloak to send logs using Gelf
+Keycloak needs to be configured to send logs using Gelf. The appropriate configuration can be seen in the keycloak.conf example below.
+
+Note that for this example to work, it is not really necessary to add the `log-gelf-host` and `log-gelf-port` values to your configuration, as these are the defaults and only shown for illustrational purposes.
+. Keycloak Gelf Configuration
+
+[source, conf]
+----
+log=console,gelf
+log-gelf-host=localhost
+log-gelf-port=12201
+----
+
+==== Graylog: See the results
+Open your web browser, navigate to `http://localhost:9000`, login to the Graylog web UI using the admin credentials (admin/admin) and navigate to Streams → All Messages. Start updating the stream by pressing the play button in the up right corner. Then start Keycloak using `start` or `start-dev` and your gelf config. After a few seconds, Keycloaks messages will appear in the Graylog dashboard.
+
+=== Example Setup using the ELK Stack
+The following example shows how to send Keycloak logs to the ELK centralized logging stack. It assumes you have a container tool like https://www.docker.com/[docker] installed to spin up the `compose.yml`.
+
+==== Enable the logstash gelf plugin and create a pipeline
+Logstash uses an input plugin that can understand and parse the GELF format. To activate it when spinning up the ELK stack later on, create a directory `pipelines` and a file `gelf.conf` located in this directory. Then create an empty `compose.yml` in the parent directory.
+
+.File Structure:
+[source]
+----
+/ELK
+  - compose.yml
+  - pipelines/
+    - gelf.conf
+----
+
+
+Add the following contents to `pipelines/gelf.conf` and save it:
+
+[source, conf]
+----
+input {
+  gelf {
+    port => 12201
+  }
+}
+output {
+  stdout {}
+  elasticsearch {
+    hosts => ["http://elasticsearch:9200"]
+  }
+}
+----
+
+This file activates and configures the logstash gelf plugin and points it to the right elasticsearch instance.
+
+==== Spin up the ELK stack
+The composed stack consists of:
+
+* ElasticSearch
+* Logstash
+* Kibana
+
+Copy the following content to your `compose.yml` file:
+
+[source, yaml]
+----
+# Launch Elasticsearch
+version: '3.8'
+
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch-oss:6.8.2
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    environment:
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+    networks:
+      - elk
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash-oss:6.8.2
+    volumes:
+      - source: ./pipelines #the source dir gelf.conf resides
+        target: /usr/share/logstash/pipeline
+        type: bind
+    ports:
+      - "12201:12201/udp"
+      - "5000:5000"
+      - "9600:9600"
+    networks:
+      - elk
+    depends_on:
+      - elasticsearch
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana-oss:6.8.2
+    ports:
+      - "5601:5601"
+    networks:
+      - elk
+    depends_on:
+      - elasticsearch
+
+networks:
+  elk:
+    driver: bridge
+----
+Spin up the stack running the following command:
+
+[source, bash]
+----
+docker compose up -d
+----
+After a few seconds the Stack should be ready to serve requests.
+
+==== Configure Keycloak to send logs using Gelf
+Keycloak needs to be configured to send logs using Gelf. The appropriate configuration can be seen in the keycloak.conf example below.
+
+Note that for this example to work, it is not really necessary to add the `log-gelf-host` and `log-gelf-port` values to your configuration, as these are the defaults and only shown for illustrational purposes.
+. Keycloak Gelf Configuration
+
+[source, conf]
+----
+log=console,gelf
+log-gelf-host=localhost
+log-gelf-port=12201
+----
+
+With this configuration applied, start keycloak using `start-dev` or `start`.
+
+==== Kibana: See the results
+Open http://localhost:5601 to reach the Kibana dashboard. The exact configuration of a good monitoring dashboard is out of scope for this guide. The easiest way to find out if logs sent by Keycloak are delivered to Kibana is to open the http://localhost:5601/app/kibana#/dev_tools/console?_g=()[Dev Tools] and execute the default `match_all` query. The logs should appear in the result field.
+
+=== Configure additional key values
+Currently, the Keycloak configuration does not support partly dynamic configuration keys, as they are used in quarkus properties, e.g. when defining `quarkus.log.handler.gelf.additional-field.<my-name>.value`.
+
+In order to add additional user-defined fields, you can provide them directly through a quarkus.properties file. Please refer to the <@links.server id="configuration"/> guide at section _Using unsupported server options_.
 
 </@tmpl.guide>

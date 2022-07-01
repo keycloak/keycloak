@@ -21,12 +21,12 @@ import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.events.admin.AdminEvent.SearchableFields;
 import org.keycloak.events.admin.AdminEventQuery;
 import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.map.storage.QueryParameters;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 
 import java.util.Arrays;
 import java.util.Date;
-import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -86,8 +86,8 @@ public class MapAdminEventQuery implements AdminEventQuery {
     }
 
     @Override
-    public AdminEventQuery resourceType(List<String> resourceTypes) {
-        mcb = mcb.compare(SearchableFields.RESOURCE_TYPE, IN, resourceTypes);
+    public AdminEventQuery resourceType(ResourceType... resourceTypes) {
+        mcb = mcb.compare(SearchableFields.RESOURCE_TYPE, IN, Arrays.stream(resourceTypes));
         return this;
     }
 

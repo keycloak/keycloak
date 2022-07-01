@@ -84,6 +84,11 @@
             <artifactId>quarkus-logging-json</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-logging-gelf</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>org.wildfly.security</groupId>
             <artifactId>wildfly-elytron</artifactId>
             <version>${wildfly-elytron.version}</version>
@@ -288,6 +293,16 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-config-api</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-model-map</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>

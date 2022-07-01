@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,20 +15,18 @@
  * limitations under the License.
  */
 
-package org.keycloak.quarkus.runtime.storage.infinispan;
+package org.keycloak.quarkus.deployment;
 
-import org.keycloak.cluster.ManagedCacheManagerProvider;
-import org.keycloak.Config;
+import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalBooleanValue;
 
-import io.quarkus.arc.Arc;
+import java.util.function.BooleanSupplier;
+import org.keycloak.quarkus.runtime.Environment;
 
-/**
- * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
- */
-public final class QuarkusCacheManagerProvider implements ManagedCacheManagerProvider {
+public class IsLegacyStoreEnabled implements BooleanSupplier {
 
     @Override
-    public <C> C getCacheManager(Config.Scope config) {
-        return (C) Arc.container().instance(CacheManagerFactory.class).get().getOrCreate();
+    public boolean getAsBoolean() {
+        return getOptionalBooleanValue("kc.storage-legacy-enabled").get();
     }
+
 }

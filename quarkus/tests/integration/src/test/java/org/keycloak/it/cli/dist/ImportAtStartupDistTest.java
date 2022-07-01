@@ -44,7 +44,7 @@ public class ImportAtStartupDistTest {
 
     @Test
     @BeforeStartDistribution(CreateRealmConfigurationFileAndDir.class)
-    @Launch({"start-dev", "--import-realm", "--log-level=org.keycloak.quarkus.runtime.storage.database.jpa:debug"})
+    @Launch({"start-dev", "--import-realm", "--log-level=org.keycloak.services.resources.KeycloakApplication:debug"})
     void testImportAndIgnoreDirectory(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertMessage("Imported realm quickstart-realm from file");
@@ -53,7 +53,7 @@ public class ImportAtStartupDistTest {
 
     @Test
     @BeforeStartDistribution(CreateRealmConfigurationFileWithUnsupportedExtension.class)
-    @Launch({"start-dev", "--import-realm", "--log-level=org.keycloak.quarkus.runtime.storage.database.jpa:debug"})
+    @Launch({"start-dev", "--import-realm", "--log-level=org.keycloak.services.resources.KeycloakApplication:debug"})
     void testIgnoreFileWithUnsupportedExtension(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertMessage("Ignoring import file because it is not a valid file");

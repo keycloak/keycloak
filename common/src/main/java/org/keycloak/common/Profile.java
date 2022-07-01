@@ -103,7 +103,13 @@ public class Profile {
     }
 
     public static void init() {
-        CURRENT = new Profile(null);
+        PropertyResolver resolver = null;
+
+        if (CURRENT != null) {
+            resolver = CURRENT.propertyResolver;
+        }
+
+        CURRENT = new Profile(resolver);
     }
 
     public static String getName() {

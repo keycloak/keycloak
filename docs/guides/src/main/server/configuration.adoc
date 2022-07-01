@@ -188,7 +188,7 @@ However, you might need to use properties directly from Quarkus to enable a spec
 As much as possible, avoid using properties directly from Quarkus. If your need is essential, consider opening an https://github.com/keycloak/keycloak/issues/new?assignees=&labels=kind%2Fenhancement%2Cstatus%2Ftriage&template=enhancement.yml[issue] first and help us
 to improve the server configuration.
 
-If that's not possible for you, you can configure the server using Quarkus properties, perform the following steps:
+If that's not possible, you can configure the server using Quarkus properties. Perform the following steps:
 
 . Create a `conf/quarkus.properties` file and define any property you need.
 
@@ -196,6 +196,6 @@ For a complete list of Quarkus properties, see the https://quarkus.io/guides/all
 
 When a raw quarkus property is a runtime property, it is also handled as runtime property for keycloak. When a quarkus property is a build time property, you have to invoke a new keycloak build first for the property to apply.
 
-Note that some quarkus properties are mapped to internally by the Keycloak configuration, for example `quarkus.http.port` and similar properties that are needed to configure Keycloak. If the property is used by Keycloak, and you define the same property key in the quarkus.properties file, the keycloak configuration value takes precedence over the raw quarkus configuration value, so the value you set in `quarkus.properties` will be ignored when there is a value in the actual Keycloak configuration.
+Note that some quarkus properties are mapped by the Keycloak configuration, for example `quarkus.http.port` and similar properties that are needed to configure Keycloak. If the property is used by Keycloak, and you define the same property key in the quarkus.properties file, the keycloak configuration value takes precedence over the raw quarkus configuration value, so the value you set in `quarkus.properties` will be ignored when there is a matching value in the actual Keycloak configuration.
 
 </@tmpl.guide>

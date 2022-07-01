@@ -22,6 +22,7 @@ import org.keycloak.Config;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.util.BouncyIntegration;
 import org.keycloak.common.util.Resteasy;
+import org.keycloak.common.util.StringPropertyReplacer;
 import org.keycloak.config.ConfigProviderFactory;
 import org.keycloak.exportimport.ExportImportManager;
 import org.keycloak.models.KeycloakSession;
@@ -58,12 +59,14 @@ import javax.ws.rs.core.Application;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.StringTokenizer;
@@ -137,7 +140,7 @@ public class KeycloakApplication extends Application {
                 }
             }
         });
-                
+
         if (exportImportManager[0].isRunExport()) {
             exportImportManager[0].runExport();
         }
@@ -252,9 +255,22 @@ public class KeycloakApplication extends Application {
                 String file = tokenizer.nextToken().trim();
                 RealmRepresentation rep;
                 try {
-                    rep = loadJson(new FileInputStream(file), RealmRepresentation.class);
-                } catch (FileNotFoundException e) {
-                    throw new RuntimeException(e);
+                    Path filePath = Paths.get(file);
+
+                    if (!(Files.exists(filePath) && Files.isRegularFile(filePath) && filePath.toString().endsWith(".json"))) {
+                        logger.debugf("Ignoring import file because it is not a valid file: %s", file);
+                        continue;
+                    }
+
+                    rep = JsonSerialization.readValue(StringPropertyReplacer.replaceProperties(
+                            new String(Files.readAllBytes(filePath), "UTF-8"), new StringPropertyReplacer.PropertyResolver() {
+                                @Override
+                                public String resolve(String property) {
+                                    return Optional.ofNullable(System.getenv(property)).orElse(null);
+                                }
+                            }), RealmRepresentation.class);
+                } catch (Exception cause) {
+                    throw new RuntimeException("Failed to parse realm configuration file: " + file, cause);
                 }
                 importRealm(rep, "file " + file);
             }
@@ -354,13 +370,4 @@ public class KeycloakApplication extends Application {
             }
         }
     }
-
-    private static <T> T loadJson(InputStream is, Class<T> type) {
-        try {
-            return JsonSerialization.readValue(is, type);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to parse json", e);
-        }
-    }
-
 }

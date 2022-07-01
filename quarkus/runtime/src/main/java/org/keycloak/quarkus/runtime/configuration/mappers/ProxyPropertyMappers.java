@@ -2,8 +2,9 @@ package org.keycloak.quarkus.runtime.configuration.mappers;
 
 import io.smallrye.config.ConfigSourceInterceptorContext;
 
-import java.util.function.BiFunction;
+import java.util.Optional;
 
+import static java.util.Optional.of;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 import static org.keycloak.quarkus.runtime.integration.QuarkusPlatform.addInitializationException;
 
@@ -16,12 +17,12 @@ final class ProxyPropertyMappers {
 
     public static PropertyMapper[] getProxyPropertyMappers() {
         return new PropertyMapper[] {
-                fromOption(ProxyOptions.proxy)
+                fromOption(ProxyOptions.PROXY)
                         .to("quarkus.http.proxy.proxy-address-forwarding")
                         .transformer(ProxyPropertyMappers::getValidProxyModeValue)
                         .paramLabel("mode")
                         .build(),
-                fromOption(ProxyOptions.proxyForwardedHost)
+                fromOption(ProxyOptions.PROXY_FORWARDED_HOST)
                         .to("quarkus.http.proxy.enable-forwarded-host")
                         .mapFrom("proxy")
                         .transformer(ProxyPropertyMappers::getResolveEnableForwardedHost)
@@ -29,22 +30,24 @@ final class ProxyPropertyMappers {
         };
     }
 
-    private static String getValidProxyModeValue(String mode, ConfigSourceInterceptorContext context) {
+    private static Optional<String> getValidProxyModeValue(Optional<String> value, ConfigSourceInterceptorContext context) {
+        String mode = value.get();
+
         switch (mode) {
             case "none":
-                return "false";
+                return of(Boolean.FALSE.toString());
             case "edge":
             case "reencrypt":
             case "passthrough":
-                return "true";
+                return of(Boolean.TRUE.toString());
             default:
                 addInitializationException(Messages.invalidProxyMode(mode));
-                return "false";
+                return of(Boolean.FALSE.toString());
         }
     }
 
-    private static String getResolveEnableForwardedHost(String proxy, ConfigSourceInterceptorContext context) {
-        return String.valueOf(!"none".equals(proxy));
+    private static Optional<String> getResolveEnableForwardedHost(Optional<String> proxy, ConfigSourceInterceptorContext context) {
+        return of(String.valueOf(!ProxyOptions.Mode.none.name().equals(proxy)));
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,14 +17,17 @@
 
 package org.keycloak.models.map.storage.hotRod.common;
 
-import org.infinispan.protostream.annotations.ProtoDoc;
 import org.infinispan.protostream.annotations.ProtoField;
 
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 
-
+/**
+ * !!! Please do not change this class !!!
+ *
+ * If some change is needed please create a new version of this class and solve the migration on top-level entities.
+ *
+ */
 public class HotRodAttributeEntityNonIndexed {
     @ProtoField(number = 1)
     public String name;

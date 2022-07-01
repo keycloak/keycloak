@@ -7,8 +7,8 @@ import org.keycloak.config.DatabaseOptions;
 import org.keycloak.config.database.Database;
 
 import java.util.Optional;
-import java.util.function.BiFunction;
 
+import static java.util.Optional.of;
 import static org.keycloak.quarkus.runtime.Messages.invalidDatabaseVendor;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 import static org.keycloak.quarkus.runtime.integration.QuarkusPlatform.addInitializationException;
@@ -27,7 +27,7 @@ final class DatabasePropertyMappers {
                 fromOption(DatabaseOptions.DB_DRIVER)
                         .mapFrom("db")
                         .to("quarkus.datasource.jdbc.driver")
-                        .transformer(DatabasePropertyMappers.getXaOrNonXaDriver())
+                        .transformer(DatabasePropertyMappers::getXaOrNonXaDriver)
                         .build(),
                 fromOption(DatabaseOptions.DB)
                         .to("quarkus.datasource.db-kind")
@@ -37,7 +37,7 @@ final class DatabasePropertyMappers {
                 fromOption(DatabaseOptions.DB_URL)
                         .to("quarkus.datasource.jdbc.url")
                         .mapFrom("db")
-                        .transformer(DatabasePropertyMappers.getDatabaseUrl())
+                        .transformer(DatabasePropertyMappers::getDatabaseUrl)
                         .paramLabel("jdbc-url")
                         .build(),
                 fromOption(DatabaseOptions.DB_URL_HOST)
@@ -88,46 +88,62 @@ final class DatabasePropertyMappers {
         };
     }
 
-    private static BiFunction<String, ConfigSourceInterceptorContext, String> getDatabaseUrl() {
-        return (s, c) -> Database.getDefaultUrl(s).orElse(s);
+    private static Optional<String> getDatabaseUrl(Optional<String> value, ConfigSourceInterceptorContext c) {
+        Optional<String> url = Database.getDefaultUrl(value.get());
+
+        if (url.isPresent()) {
+            return url;
+        }
+
+        return value;
     }
 
-    private static BiFunction<String, ConfigSourceInterceptorContext, String> getXaOrNonXaDriver() {
-        return (String db, ConfigSourceInterceptorContext context) -> {
-            ConfigValue xaEnabledConfigValue = context.proceed("kc.transaction-xa-enabled");
+    private static Optional<String> getXaOrNonXaDriver(Optional<String> value, ConfigSourceInterceptorContext context) {
+        ConfigValue xaEnabledConfigValue = context.proceed("kc.transaction-xa-enabled");
+            ConfigValue jtaEnabledConfiguration = context.proceed("kc.transaction-jta-enabled");
 
-            boolean isXaEnabled = xaEnabledConfigValue == null || Boolean.parseBoolean(xaEnabledConfigValue.getValue());
+        boolean isXaEnabled = xaEnabledConfigValue == null || Boolean.parseBoolean(xaEnabledConfigValue.getValue());
+        boolean isJtaEnabled = jtaEnabledConfiguration == null || Boolean.parseBoolean(jtaEnabledConfiguration.getValue());
 
-            return Database.getDriver(db, isXaEnabled).orElse(db);
-        };
+        if(!isJtaEnabled) {
+            isXaEnabled = false;
+        }
+
+        Optional<String> driver = Database.getDriver(value.get(), isXaEnabled);
+
+        if (driver.isPresent()) {
+            return driver;
+        }
+
+        return value;
     }
 
-    private static String toDatabaseKind(String db, ConfigSourceInterceptorContext context) {
-        Optional<String> databaseKind = Database.getDatabaseKind(db);
+    private static Optional<String> toDatabaseKind(Optional<String> db, ConfigSourceInterceptorContext context) {
+        Optional<String> databaseKind = Database.getDatabaseKind(db.get());
 
         if (databaseKind.isPresent()) {
-            return databaseKind.get();
+            return databaseKind;
         }
 
-        addInitializationException(invalidDatabaseVendor(db, Database.getAliases()));
+        addInitializationException(invalidDatabaseVendor(db.get(), Database.getAliases()));
 
-        return "h2";
+        return of("h2");
     }
 
-    private static String resolveUsername(String value, ConfigSourceInterceptorContext context) {
+    private static Optional<String> resolveUsername(Optional<String> value, ConfigSourceInterceptorContext context) {
         if (isDevModeDatabase(context)) {
-            return "sa";
+            return of("sa");
         }
 
-        return Database.getDatabaseKind(value).isEmpty() ? value : null;
+        return Database.getDatabaseKind(value.get()).isEmpty() ? value : null;
     }
 
-    private static String resolvePassword(String value, ConfigSourceInterceptorContext context) {
+    private static Optional<String> resolvePassword(Optional<String> value, ConfigSourceInterceptorContext context) {
         if (isDevModeDatabase(context)) {
-            return "password";
+            return of("password");
         }
 
-        return Database.getDatabaseKind(value).isEmpty() ? value : null;
+        return Database.getDatabaseKind(value.get()).isEmpty() ? value : null;
     }
 
     private static boolean isDevModeDatabase(ConfigSourceInterceptorContext context) {
@@ -135,13 +151,19 @@ final class DatabasePropertyMappers {
         return Database.getDatabaseKind(db).get().equals(DatabaseKind.H2);
     }
 
-    private static String transformDialect(String db, ConfigSourceInterceptorContext context) {
-        Optional<String> databaseKind = Database.getDatabaseKind(db);
+    private static Optional<String> transformDialect(Optional<String> db, ConfigSourceInterceptorContext context) {
+        Optional<String> databaseKind = Database.getDatabaseKind(db.get());
 
         if (databaseKind.isEmpty()) {
             return db;
         }
 
-        return Database.getDialect(db).orElse(Database.getDialect("dev-file").get());
+        Optional<String> dialect = Database.getDialect(db.get());
+
+        if (dialect.isPresent()) {
+            return dialect;
+        }
+
+        return Database.getDialect("dev-file");
     }
 }

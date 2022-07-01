@@ -5,7 +5,10 @@ import org.keycloak.quarkus.runtime.Environment;
 
 import io.smallrye.config.ConfigSourceInterceptorContext;
 
+import static java.util.Optional.of;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
+
+import java.util.Optional;
 
 final class ClusteringPropertyMappers {
 
@@ -30,11 +33,11 @@ final class ClusteringPropertyMappers {
         };
     }
 
-    private static String resolveConfigFile(String value, ConfigSourceInterceptorContext context) {
-        if ("local".equals(value)) {
-            return "cache-local.xml";
-        } else if ("ispn".equals(value)) {
-            return "cache-ispn.xml";
+    private static Optional<String> resolveConfigFile(Optional<String> value, ConfigSourceInterceptorContext context) {
+        if ("local".equals(value.get())) {
+            return of("cache-local.xml");
+        } else if ("ispn".equals(value.get())) {
+            return of("cache-ispn.xml");
         }
 
         String pathPrefix;
@@ -46,6 +49,6 @@ final class ClusteringPropertyMappers {
             pathPrefix = homeDir + "/conf/";
         }
 
-        return pathPrefix + value;
+        return of(pathPrefix + value.get());
     }
 }

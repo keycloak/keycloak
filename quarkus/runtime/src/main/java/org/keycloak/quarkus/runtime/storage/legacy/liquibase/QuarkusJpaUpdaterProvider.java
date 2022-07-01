@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.quarkus.runtime.storage.database.liquibase;
+package org.keycloak.quarkus.runtime.storage.legacy.liquibase;
 
 import java.io.File;
 import java.io.FileWriter;

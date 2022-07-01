@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 Red Hat, Inc. and/or its affiliates
+ * Copyright 2021 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,18 +15,20 @@
  * limitations under the License.
  */
 
-package org.keycloak.quarkus.deployment;
+package org.keycloak.quarkus.runtime.storage.legacy.infinispan;
 
-import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalBooleanValue;
+import org.keycloak.cluster.ManagedCacheManagerProvider;
+import org.keycloak.Config;
 
-import java.util.function.BooleanSupplier;
-import org.keycloak.quarkus.runtime.Environment;
+import io.quarkus.arc.Arc;
 
-public class IsDefaultPersistenceUnitEnabled implements BooleanSupplier {
+/**
+ * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
+ */
+public final class QuarkusCacheManagerProvider implements ManagedCacheManagerProvider {
 
     @Override
-    public boolean getAsBoolean() {
-        return getOptionalBooleanValue("kc.storage-default-persistence-unit-enabled").get();
+    public <C> C getCacheManager(Config.Scope config) {
+        return (C) Arc.container().instance(CacheManagerFactory.class).get().getOrCreate();
     }
-
 }
