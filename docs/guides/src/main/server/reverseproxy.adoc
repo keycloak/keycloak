@@ -43,6 +43,12 @@ Take extra precautions to ensure that the X-Forwarded-For header is set by your 
 If this header is incorrectly configured, rogue clients can set this header and trick Keycloak into thinking the client is connected from a different IP address than the actual address.
 This precaution can more be critical if you do any deny or allow listing of IP addresses.
 
+== Trust the proxy to set hostname
+
+By default, Keycloak needs to know under which hostname it will be called. If your reverse proxy is configured to check for the correct hostname, you can set Keycloak to accept any hostname.
+
+<@kc.start parameters="--proxy <mode> --hostname-strict=false"/>
+
 === Exposing the administration console
 
 By default, the administration console URLs are created solely based on the requests to resolve the proper scheme, host name, and port. For instance,
