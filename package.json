@@ -84,7 +84,7 @@
     "gunzip-maybe": "^1.4.2",
     "http2-proxy": "^5.0.53",
     "husky": "^8.0.1",
-    "jest": "^28.1.1",
+    "jest": "^28.1.2",
     "jest-environment-jsdom": "^28.1.1",
     "lint-staged": "^13.0.3",
     "node-fetch": "^3.2.6",
