@@ -144,6 +144,10 @@ public class MapRoleAdapter extends AbstractRoleModel<MapRoleEntity> implements 
         return getAttributes().getOrDefault(name, Collections.EMPTY_LIST).stream();
     }
 
+    public RealmModel getRealm() {
+        return realm;
+    }
+
     @Override
     public String toString() {
         return String.format("%s@%08x", getName(), System.identityHashCode(this));

@@ -97,6 +97,8 @@ public class RealmsAdminResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Stream<RealmRepresentation> getRealms(@DefaultValue("false") @QueryParam("briefRepresentation") boolean briefRepresentation) {
         Stream<RealmRepresentation> realms = session.realms().getRealmsStream()
+                // TODO: remove the filtering by master realm before merging this. This has only be done to make the UI usable with lots of realms
+                .filter(realm -> realm.getName().equals("master"))
                 .map(realm -> toRealmRep(realm, briefRepresentation))
                 .filter(Objects::nonNull);
         return throwIfEmpty(realms, new ForbiddenException());

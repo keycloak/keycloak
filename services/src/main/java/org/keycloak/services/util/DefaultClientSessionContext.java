@@ -270,7 +270,7 @@ public class DefaultClientSessionContext implements ClientSessionContext {
     private Set<RoleModel> loadRoles() {
         UserModel user = clientSession.getUserSession().getUser();
         ClientModel client = clientSession.getClient();
-        return TokenManager.getAccess(user, client, getClientScopesStream());
+        return TokenManager.getAccess(session, user, client, getClientScopesStream());
     }
 
 
@@ -295,7 +295,7 @@ public class DefaultClientSessionContext implements ClientSessionContext {
 
     private Set<RoleModel> loadUserRoles() {
         UserModel user = clientSession.getUserSession().getUser();
-        return RoleUtils.getDeepUserRoleMappings(user);
+        return RoleUtils.getDeepUserRoleMappings(session, user);
     }
 
 }

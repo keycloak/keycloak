@@ -255,7 +255,8 @@ public class AdminConsole {
     }
 
     private void addMasterRealmAccess(UserModel user, Map<String, Set<String>> realmAdminAccess) {
-        session.realms().getRealmsStream().forEach(realm -> {
+        // TODO: remove the filtering by master realm before merging this. This has only be done to make the UI usable with lots of realms
+        session.realms().getRealmsStream().filter(realm -> realm.getName().equals("master")).forEach(realm -> {
             ClientModel realmAdminApp = realm.getMasterAdminClient();
             getRealmAdminAccess(realm, realmAdminApp, user, realmAdminAccess);
         });

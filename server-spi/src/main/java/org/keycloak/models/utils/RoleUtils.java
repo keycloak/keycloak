@@ -19,6 +19,7 @@ package org.keycloak.models.utils;
 
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleContainerModel;
 import org.keycloak.models.RoleModel;
@@ -217,10 +218,10 @@ public class RoleUtils {
      * @param user
      * @return all user role mappings including all groups of user. Composite roles will be expanded
      */
-    public static Set<RoleModel> getDeepUserRoleMappings(UserModel user) {
+    public static Set<RoleModel> getDeepUserRoleMappings(KeycloakSession session, UserModel user) {
         Set<RoleModel> roleMappings = user.getRoleMappingsStream().collect(Collectors.toSet());
         user.getGroupsStream().forEach(group -> addGroupRoles(group, roleMappings));
-        return expandCompositeRoles(roleMappings);
+        return session.roles().expandCompositeRoles(roleMappings.stream()).collect(Collectors.toSet());
     }
 
 

@@ -584,8 +584,8 @@ public class TokenManager {
     }
 
 
-    public static Set<RoleModel> getAccess(UserModel user, ClientModel client, Stream<ClientScopeModel> clientScopes) {
-        Set<RoleModel> roleMappings = RoleUtils.getDeepUserRoleMappings(user);
+    public static Set<RoleModel> getAccess(KeycloakSession session, UserModel user, ClientModel client, Stream<ClientScopeModel> clientScopes) {
+        Set<RoleModel> roleMappings = RoleUtils.getDeepUserRoleMappings(session, user);
 
         if (client.isFullScopeAllowed()) {
             if (logger.isTraceEnabled()) {

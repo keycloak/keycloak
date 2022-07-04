@@ -187,7 +187,7 @@ public class ApplicationsBean {
                 client.getClientScopes(false).values().stream());
         allClientScopes = Stream.concat(allClientScopes, Stream.of(client)).distinct();
 
-        Set<RoleModel> availableRoles = TokenManager.getAccess(user, client, allClientScopes);
+        Set<RoleModel> availableRoles = TokenManager.getAccess(session, user, client, allClientScopes);
 
         // Don't show applications, which user doesn't have access into (any available roles)
         // unless this is can be changed by approving/revoking consent

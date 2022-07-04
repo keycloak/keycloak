@@ -20,6 +20,7 @@ import java.util.stream.Stream;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.utils.RoleUtils;
 
 /**
  * Abstraction interface for lookup of both realm roles and client roles by id, name and description.
@@ -71,4 +72,19 @@ public interface RoleLookupProvider {
      * Never returns {@code null}.
      */
     Stream<RoleModel> searchForClientRolesStream(ClientModel client, String search, Integer first, Integer max);
+
+    /**
+     * Check if the target role is one of the roles or one of the composite roles of the role.
+     * @param roles roles to search in (haystack).
+     * @param targetRoles role to search (needle).
+     * @return <code>true</code> if found,  .
+     */
+    default boolean hasRole(Stream<RoleModel> roles, Stream<RoleModel> targetRoles) {
+        return targetRoles.anyMatch(targetRole -> RoleUtils.hasRole(roles, targetRole));
+    }
+
+    default Stream<RoleModel> expandCompositeRoles(Stream<RoleModel> roles) {
+        return RoleUtils.expandCompositeRolesStream(roles);
+    }
+
 }

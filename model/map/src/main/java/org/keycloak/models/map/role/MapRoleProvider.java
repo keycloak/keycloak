@@ -17,8 +17,11 @@
 
 package org.keycloak.models.map.role;
 
+import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.jboss.logging.Logger;
 import org.keycloak.models.ClientModel;
@@ -27,11 +30,13 @@ import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
+import org.keycloak.models.map.storage.MapKeycloakTransactionWithHasRole;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.RoleModel.SearchableFields;
 import org.keycloak.models.RoleProvider;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
+import org.keycloak.models.utils.RoleUtils;
 
 import static org.keycloak.common.util.StackUtil.getShortStackTrace;
 import static org.keycloak.models.map.common.AbstractMapProviderFactory.MapProviderObjectType.ROLE_AFTER_REMOVE;
@@ -285,6 +290,52 @@ public class MapRoleProvider implements RoleProvider {
         mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId())
                 .compare(SearchableFields.COMPOSITE_ROLE, Operator.EQ, role.getId());
         tx.read(withCriteria(mcb)).forEach(mapRoleEntity -> mapRoleEntity.removeCompositeRole(role.getId()));
+    }
+
+    @Override
+    public boolean hasRole(Stream<RoleModel> roles, Stream<RoleModel> targetRoles) {
+        if (tx instanceof MapKeycloakTransactionWithHasRole) {
+            List<MapRoleAdapter> rolesList = roles.map(roleModel -> ((MapRoleAdapter) roleModel)).collect(Collectors.toList());
+            if (rolesList.size() == 0) {
+                return false;
+            }
+            String realmId = rolesList.get(0).getRealm().getId();
+            // TODO: check if all roles are part of the same realm
+            Set<String> rolesAsSet = rolesList.stream().map(RoleModel::getId).collect(Collectors.toSet());
+            Set<String> targetRolesAsSet = targetRoles.map(RoleModel::getId).collect(Collectors.toSet());
+            // fast path: the targetRoles is assumed to be smaller. If this is already contained in the roles, don't go to the store.
+            for (String roleId : targetRolesAsSet) {
+                if (rolesAsSet.contains(roleId)) {
+                    return true;
+                }
+            }
+
+            return ((MapKeycloakTransactionWithHasRole<MapRoleEntity, RoleModel>) tx).hasRole(realmId, rolesAsSet, targetRolesAsSet);
+        }
+        return RoleProvider.super.hasRole(roles, targetRoles);
+    }
+
+    @Override
+    public Stream<RoleModel> expandCompositeRoles(Stream<RoleModel> roles) {
+        if (tx instanceof MapKeycloakTransactionWithHasRole) {
+            List<RoleModel> rolesAsList = roles.collect(Collectors.toList());
+            if (rolesAsList.size() == 0) {
+                return Stream.empty();
+            }
+            // fetch the first role here to retrieve the realm used to the next step
+            RoleModel first = rolesAsList.get(0);
+            String realmId = ((MapRoleAdapter) first).getRealm().getId();
+            // make it failsafe and ensure that all roles are from the same realm
+            for (RoleModel roleModel : rolesAsList) {
+                if (!Objects.equals(((MapRoleAdapter) roleModel).getRealm().getId(), realmId)) {
+                    throw new IllegalArgumentException("all realms should be of realmId" + realmId + ", now found role " + roleModel.getId() + " from realmId " + ((MapRoleAdapter) roleModel).getRealm().getId());
+                }
+            }
+            Set<MapRoleEntity> entities = ((MapKeycloakTransactionWithHasRole<MapRoleEntity, RoleModel>) tx).expandCompositeRoles(realmId,
+                    rolesAsList.stream().map(RoleModel::getId).collect(Collectors.toSet()));
+            return entities.stream().map(mapRoleEntity -> entityToAdapterFunc(((MapRoleAdapter) first).getRealm()).apply(mapRoleEntity));
+        }
+        return RoleUtils.expandCompositeRolesStream(roles);
     }
 
     @Override
