@@ -11,7 +11,6 @@ import {
   SplitItem,
   ToolbarItem,
 } from "@patternfly/react-core";
-import moment from "moment";
 
 import { AdvancedProps, parseResult } from "../AdvancedTab";
 import { useAlerts } from "../../components/alert/Alerts";
@@ -23,6 +22,7 @@ import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTa
 import { TimeSelector } from "../../components/time-selector/TimeSelector";
 import { useAdminClient } from "../../context/auth/AdminClient";
 import { AddHostDialog } from ".././advanced/AddHostDialog";
+import useFormatDate, { FORMAT_DATE_AND_TIME } from "../../utils/useFormatDate";
 
 export const ClusteringPanel = ({
   save,
@@ -32,6 +32,7 @@ export const ClusteringPanel = ({
   const { control } = useFormContext();
   const adminClient = useAdminClient();
   const { addAlert, addError } = useAlerts();
+  const formatDate = useFormatDate();
 
   const [nodes, setNodes] = useState(registeredNodes || {});
   const [expanded, setExpanded] = useState(false);
@@ -116,7 +117,7 @@ export const ClusteringPanel = ({
           clientId={id!}
           isOpen={addNodeOpen}
           onAdded={(node) => {
-            nodes[node] = moment.now() / 1000;
+            nodes[node] = Date.now() / 1000;
             refresh();
           }}
           onClose={() => setAddNodeOpen(false)}
@@ -179,7 +180,10 @@ export const ClusteringPanel = ({
                 cellFormatters: [
                   (value) =>
                     value
-                      ? moment(parseInt(value.toString()) * 1000).format("LLL")
+                      ? formatDate(
+                          new Date(parseInt(value.toString()) * 1000),
+                          FORMAT_DATE_AND_TIME
+                        )
                       : "",
                 ],
               },

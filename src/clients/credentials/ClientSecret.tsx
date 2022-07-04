@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useFormContext } from "react-hook-form";
 import {
@@ -13,10 +13,10 @@ import {
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import { PasswordInput } from "../../components/password-input/PasswordInput";
 import { CopyToClipboardButton } from "../scopes/CopyToClipboardButton";
-import { useWhoAmI } from "../../context/whoami/WhoAmI";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { useAdminClient } from "../../context/auth/AdminClient";
 import { useAlerts } from "../../components/alert/Alerts";
+import useFormatDate from "../../utils/useFormatDate";
 
 export type ClientSecretProps = {
   client: ClientRepresentation;
@@ -61,21 +61,14 @@ const SecretInput = ({ id, buttonLabel, secret, toggle }: SecretInputProps) => {
 
 const ExpireDateFormatter = ({ time }: { time: number }) => {
   const { t } = useTranslation("clients");
-  const { whoAmI } = useWhoAmI();
-  const locale = whoAmI.getLocale();
-  const formatter = useMemo(
-    () =>
-      new Intl.DateTimeFormat(locale, {
-        dateStyle: "full",
-        timeStyle: "long",
-      }),
-    [locale]
-  );
-
+  const formatDate = useFormatDate();
   const unixTimeToString = (time: number) =>
     time
       ? t("secretExpiresOn", {
-          time: formatter.format(time * 1000),
+          time: formatDate(new Date(time * 1000), {
+            dateStyle: "full",
+            timeStyle: "long",
+          }),
         })
       : undefined;
 

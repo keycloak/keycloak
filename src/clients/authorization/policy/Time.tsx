@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import moment from "moment";
 import { Controller, useFormContext } from "react-hook-form";
 import {
   DatePicker,
@@ -17,19 +16,26 @@ import {
 import { HelpItem } from "../../../components/help-enabler/HelpItem";
 
 const DATE_TIME_FORMAT = /(\d\d\d\d-\d\d-\d\d)? (\d\d?):(\d\d?)/;
+const padDateSegment = (value: number) => value.toString().padStart(2, "0");
 
 const DateTime = ({ name }: { name: string }) => {
   const { control } = useFormContext();
 
   const parseDate = (value: string, date?: Date): string => {
-    const parts = value.match(DATE_TIME_FORMAT);
-    if (date) {
-      const parsedDate = moment(date).format("yyyy-MM-DD");
-      return `${parsedDate} ${parts ? parts[2] : "00"}:${
-        parts ? parts[3] : "00"
-      }:00`;
+    if (!date) {
+      return value;
     }
-    return value;
+
+    const parts = value.match(DATE_TIME_FORMAT);
+    const parsedDate = [
+      date.getFullYear(),
+      padDateSegment(date.getMonth() + 1),
+      padDateSegment(date.getDate()),
+    ].join("-");
+
+    return `${parsedDate} ${parts ? parts[2] : "00"}:${
+      parts ? parts[3] : "00"
+    }:00`;
   };
 
   const parseTime = (

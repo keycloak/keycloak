@@ -24,7 +24,6 @@ import {
 } from "@patternfly/react-table";
 import { CodeEditor, Language } from "@patternfly/react-code-editor";
 import type AdminEventRepresentation from "@keycloak/keycloak-admin-client/lib/defs/adminEventRepresentation";
-import moment from "moment";
 import React, { FunctionComponent, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -35,6 +34,7 @@ import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTex
 import { useAdminClient } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
+import useFormatDate, { FORMAT_DATE_AND_TIME } from "../utils/useFormatDate";
 import { prettyPrintJSON } from "../util";
 import { CellResourceLinkRenderer } from "./ResourceLinks";
 
@@ -92,6 +92,7 @@ export const AdminEvents = () => {
   const adminClient = useAdminClient();
   const { realm } = useRealm();
   const serverInfo = useServerInfo();
+  const formatDate = useFormatDate();
   const resourceTypes = serverInfo.enums?.["resourceType"];
   const operationTypes = serverInfo.enums?.["operationType"];
 
@@ -572,7 +573,8 @@ export const AdminEvents = () => {
           {
             name: "time",
             displayKey: "events:time",
-            cellRenderer: (row) => moment(row.time).format("LLL"),
+            cellRenderer: (row) =>
+              formatDate(new Date(row.time!), FORMAT_DATE_AND_TIME),
           },
           {
             name: "resourcePath",

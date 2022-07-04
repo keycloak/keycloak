@@ -1,4 +1,3 @@
-import moment from "moment";
 import CommonPage from "../../../../../CommonPage";
 
 export default class AdvancedTab extends CommonPage {
@@ -40,7 +39,13 @@ export default class AdvancedTab extends CommonPage {
   }
 
   checkRevocationIsSetToNow() {
-    cy.get(this.notBeforeInput).should("have.value", moment().format("LLL"));
+    cy.get(this.notBeforeInput).should(
+      "have.value",
+      new Date().toLocaleString("en-US", {
+        dateStyle: "long",
+        timeStyle: "short",
+      })
+    );
 
     return this;
   }

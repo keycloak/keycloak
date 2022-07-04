@@ -10,7 +10,6 @@ import {
   Tooltip,
   Text,
 } from "@patternfly/react-core";
-import moment from "moment";
 
 import { AdvancedProps, parseResult } from "../AdvancedTab";
 import { useAlerts } from "../../components/alert/Alerts";
@@ -20,6 +19,7 @@ import { KeycloakTextInput } from "../../components/keycloak-text-input/Keycloak
 import { useAdminClient } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { toClient } from "../routes/Client";
+import useFormatDate, { FORMAT_DATE_AND_TIME } from "../../utils/useFormatDate";
 
 export const RevocationPanel = ({
   save,
@@ -32,6 +32,7 @@ export const RevocationPanel = ({
   const adminClient = useAdminClient();
   const { realm } = useRealm();
   const { addAlert } = useAlerts();
+  const formatDate = useFormatDate();
 
   const { getValues, setValue, register } = useFormContext();
 
@@ -44,10 +45,10 @@ export const RevocationPanel = ({
     register(revocationFieldName);
   }, [register]);
 
-  const formatDate = () => {
+  const getNotBeforeValue = () => {
     const date = getValues(revocationFieldName);
     if (date > 0) {
-      return moment(date * 1000).format("LLL");
+      return formatDate(new Date(date * 1000), FORMAT_DATE_AND_TIME);
     } else {
       return t("common:none");
     }
@@ -92,13 +93,13 @@ export const RevocationPanel = ({
               id="kc-not-before"
               name="notBefore"
               isReadOnly
-              value={formatDate()}
+              value={getNotBeforeValue()}
             />
             <Button
               id="setToNow"
               variant="control"
               onClick={() => {
-                setNotBefore(moment.now() / 1000, "notBeforeSetToNow");
+                setNotBefore(Date.now() / 1000, "notBeforeSetToNow");
               }}
             >
               {t("setToNow")}

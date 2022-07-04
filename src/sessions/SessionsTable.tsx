@@ -24,7 +24,7 @@ import { useAdminClient } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useWhoAmI } from "../context/whoami/WhoAmI";
 import { toUser } from "../user/routes/User";
-import { dateFormatter } from "../util";
+import useFormatDate from "../utils/useFormatDate";
 
 export type ColumnName = "username" | "start" | "lastAccess" | "clients";
 
@@ -46,7 +46,7 @@ export default function SessionsTable({
   const { t } = useTranslation("sessions");
   const adminClient = useAdminClient();
   const { addError } = useAlerts();
-  const locale = whoAmI.getLocale();
+  const formatDate = useFormatDate();
   const [key, setKey] = useState(0);
   const refresh = () => setKey((value) => value + 1);
 
@@ -78,12 +78,12 @@ export default function SessionsTable({
       {
         name: "start",
         displayKey: "sessions:started",
-        cellFormatters: [dateFormatter(locale)],
+        cellRenderer: (row) => formatDate(new Date(row.start!)),
       },
       {
         name: "lastAccess",
         displayKey: "sessions:lastAccess",
-        cellFormatters: [dateFormatter(locale)],
+        cellRenderer: (row) => formatDate(new Date(row.lastAccess!)),
       },
       {
         name: "ipAddress",
@@ -99,7 +99,7 @@ export default function SessionsTable({
     return defaultColumns.filter(
       ({ name }) => !hiddenColumns.includes(name as ColumnName)
     );
-  }, [realm, locale, hiddenColumns]);
+  }, [realm, hiddenColumns]);
 
   const [toggleLogoutDialog, LogoutConfirm] = useConfirmDialog({
     titleKey: "sessions:logoutAllSessions",

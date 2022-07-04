@@ -15,15 +15,16 @@ import { cellWidth } from "@patternfly/react-table";
 import { sortBy } from "lodash-es";
 import type UserConsentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userConsentRepresentation";
 import { CubesIcon } from "@patternfly/react-icons";
-import moment from "moment";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { useAlerts } from "../components/alert/Alerts";
+import useFormatDate from "../utils/useFormatDate";
 
 export const UserConsents = () => {
   const [selectedClient, setSelectedClient] =
     useState<UserConsentRepresentation>();
   const { t } = useTranslation("roles");
   const { addAlert, addError } = useAlerts();
+  const formatDate = useFormatDate();
   const [key, setKey] = useState(0);
 
   const adminClient = useAdminClient();
@@ -57,16 +58,6 @@ export const UserConsents = () => {
         ))}
       </ChipGroup>
     );
-  };
-
-  const createdRenderer = ({ createDate }: UserConsentRepresentation) => {
-    return <>{moment(createDate).format("MM/DD/YY hh:MM A")}</>;
-  };
-
-  const lastUpdatedRenderer = ({
-    lastUpdatedDate,
-  }: UserConsentRepresentation) => {
-    return <>{moment(lastUpdatedDate).format("MM/DD/YY hh:MM A")}</>;
   };
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
@@ -115,18 +106,18 @@ export const UserConsents = () => {
             transforms: [cellWidth(30)],
           },
           {
-            name: "createdDate",
+            name: "createDate",
             displayKey: "clients:created",
-            cellFormatters: [emptyFormatter()],
-            cellRenderer: createdRenderer,
             transforms: [cellWidth(20)],
+            cellRenderer: ({ createDate }) =>
+              createDate ? formatDate(new Date(createDate)) : "—",
           },
           {
             name: "lastUpdatedDate",
             displayKey: "clients:lastUpdated",
-            cellFormatters: [emptyFormatter()],
-            cellRenderer: lastUpdatedRenderer,
             transforms: [cellWidth(10)],
+            cellRenderer: ({ lastUpdatedDate }) =>
+              lastUpdatedDate ? formatDate(new Date(lastUpdatedDate)) : "—",
           },
         ]}
         actions={[

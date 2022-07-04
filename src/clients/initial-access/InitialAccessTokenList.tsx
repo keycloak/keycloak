@@ -1,7 +1,6 @@
 import { AlertVariant, Button, ButtonVariant } from "@patternfly/react-core";
 import { wrappable } from "@patternfly/react-table";
 import type ClientInitialAccessPresentation from "@keycloak/keycloak-admin-client/lib/defs/clientInitialAccessPresentation";
-import moment from "moment";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useHistory } from "react-router-dom";
@@ -12,6 +11,7 @@ import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTa
 import { useAdminClient } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { toCreateInitialAccessToken } from "../routes/CreateInitialAccessToken";
+import useFormatDate, { FORMAT_DATE_AND_TIME } from "../../utils/useFormatDate";
 
 export const InitialAccessTokenList = () => {
   const { t } = useTranslation("clients");
@@ -19,6 +19,7 @@ export const InitialAccessTokenList = () => {
   const adminClient = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
+  const formatDate = useFormatDate();
 
   const history = useHistory();
 
@@ -85,14 +86,16 @@ export const InitialAccessTokenList = () => {
           {
             name: "timestamp",
             displayKey: "clients:timestamp",
-            cellRenderer: (row) => moment(row.timestamp! * 1000).format("LLL"),
+            cellRenderer: (row) =>
+              formatDate(new Date(row.timestamp! * 1000), FORMAT_DATE_AND_TIME),
           },
           {
             name: "expiration",
             displayKey: "clients:expires",
             cellRenderer: (row) =>
-              moment(row.timestamp! * 1000 + row.expiration! * 1000).format(
-                "LLL"
+              formatDate(
+                new Date(row.timestamp! * 1000 + row.expiration! * 1000),
+                FORMAT_DATE_AND_TIME
               ),
           },
           {

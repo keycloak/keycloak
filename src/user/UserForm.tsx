@@ -24,8 +24,8 @@ import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/g
 import { useAlerts } from "../components/alert/Alerts";
 import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 import { emailRegexPattern } from "../util";
+import useFormatDate from "../utils/useFormatDate";
 import { GroupPickerDialog } from "../components/group/GroupPickerDialog";
-import moment from "moment";
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import type RequiredActionProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/requiredActionProviderRepresentation";
 
@@ -52,6 +52,7 @@ export const UserForm = ({
 }: UserFormProps) => {
   const { t } = useTranslation("users");
   const { realm: realmName } = useRealm();
+  const formatDate = useFormatDate();
 
   const [
     isRequiredUserActionsDropdownOpen,
@@ -175,9 +176,7 @@ export const UserForm = ({
           </FormGroup>
           <FormGroup label={t("createdAt")} fieldId="kc-created-at" isRequired>
             <KeycloakTextInput
-              value={moment(user.createdTimestamp).format(
-                "MM/DD/YY hh:MM:ss A"
-              )}
+              value={formatDate(new Date(user.createdTimestamp!))}
               type="text"
               id="kc-created-at"
               aria-label={t("createdAt")}

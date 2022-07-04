@@ -27,7 +27,6 @@ import type EventRepresentation from "@keycloak/keycloak-admin-client/lib/defs/e
 import type EventType from "@keycloak/keycloak-admin-client/lib/defs/eventTypes";
 import type { RealmEventsConfigRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/realmEventsConfigRepresentation";
 import { pickBy } from "lodash-es";
-import moment from "moment";
 import React, { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Trans, useTranslation } from "react-i18next";
@@ -40,6 +39,7 @@ import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { toRealmSettings } from "../realm-settings/routes/RealmSettings";
 import { toUser } from "../user/routes/User";
+import useFormatDate, { FORMAT_DATE_AND_TIME } from "../utils/useFormatDate";
 import { AdminEvents } from "./AdminEvents";
 import helpUrls from "../help-urls";
 import {
@@ -94,6 +94,7 @@ export default function EventsSection() {
   const { t } = useTranslation("events");
   const adminClient = useAdminClient();
   const { realm } = useRealm();
+  const formatDate = useFormatDate();
   const [key, setKey] = useState(0);
   const [searchDropdownOpen, setSearchDropdownOpen] = useState(false);
   const [selectOpen, setSelectOpen] = useState(false);
@@ -467,8 +468,9 @@ export default function EventsSection() {
                   {
                     name: "time",
                     displayKey: "events:time",
-                    cellRenderer: (row) => moment(row.time).format("LLL"),
                     cellFormatters: [expandable],
+                    cellRenderer: (row) =>
+                      formatDate(new Date(row.time!), FORMAT_DATE_AND_TIME),
                   },
                   {
                     name: "userId",
