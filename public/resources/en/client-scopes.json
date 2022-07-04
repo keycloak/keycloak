@@ -52,5 +52,6 @@
     "all": "All",
     "saml": "SAML",
     "openid-connect": "openid-connect"
-  }
+  },
+  "headerName": "header name"
 }
