@@ -72,7 +72,7 @@
     "@types/tar-fs": "^2.0.1",
     "@typescript-eslint/eslint-plugin": "^5.29.0",
     "@typescript-eslint/parser": "^5.29.0",
-    "cypress": "^10.2.0",
+    "cypress": "^10.3.0",
     "decompress": "^4.2.1",
     "del": "^6.1.1",
     "eslint": "^8.19.0",
