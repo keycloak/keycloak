@@ -21,12 +21,12 @@ const secondLdapVendor = "Other";
 const updatedLdapName = `${firstLdapName}-updated`;
 
 // connection and authentication settings
-const connectionUrlValid = "ldap://ldap.forumsys.com:389";
+const connectionUrlValid = "ldap://www.zflexldap.com";
 const bindTypeSimple = "simple";
 const truststoreSpiOnlyLdaps = "Only for ldaps";
 const connectionTimeoutTwoSecs = "2000";
-const bindDnCnDc = "cn=read-only-admin,dc=example,dc=com";
-const bindCredsValid = "password";
+const bindDnCnDc = "cn=ro_admin,ou=sysadmins,dc=zflexsoftware,dc=com";
+const bindCredsValid = "zflexpass";
 
 const connectionUrlInvalid = "ldap://nowhere.com";
 const bindTypeNone = "none";
@@ -98,9 +98,12 @@ const ldapTestFailMsg =
   "Error when trying to connect to LDAP. See server.log for details. LDAP test error";
 
 describe("User Federation LDAP tests", () => {
-  beforeEach(() => {
+  before(() => {
     keycloakBefore();
     loginPage.logIn();
+  });
+
+  beforeEach(() => {
     sidebarPage.goToUserFederation();
     cy.intercept("GET", "/admin/realms/master").as("getProvider");
   });
@@ -264,7 +267,7 @@ describe("User Federation LDAP tests", () => {
     sidebarPage.goToUserFederation();
   });
 
-  it.skip("Should make changes and pass connection and authentication tests", () => {
+  it("Should make changes and pass connection and authentication tests", () => {
     providersPage.clickExistingCard(firstLdapName);
 
     providersPage.fillLdapConnectionData(
