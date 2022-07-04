@@ -58,7 +58,7 @@ describe("Identity provider test", () => {
       masthead.checkNotificationMessage(createSuccessMsg, true);
     });
 
-    it("should change order of providers", () => {
+    it.skip("should change order of providers", () => {
       const orderDialog = new OrderDialog();
       const providers = [identityProviderName, "facebook", "bitbucket"];
 
@@ -134,10 +134,11 @@ describe("Identity provider test", () => {
     it("clean up providers", () => {
       const modalUtils = new ModalUtils();
 
-      sidebarPage.goToIdentityProviders();
-      listingPage.itemExist("bitbucket").deleteItem("bitbucket");
-      modalUtils.checkModalTitle(deletePrompt).confirmModal();
-      masthead.checkNotificationMessage(deleteSuccessMsg, true);
+      // TODO: Re-enable this code when the 'should change order of providers' is no longer skipped.
+      // sidebarPage.goToIdentityProviders();
+      // listingPage.itemExist("bitbucket").deleteItem("bitbucket");
+      // modalUtils.checkModalTitle(deletePrompt).confirmModal();
+      // masthead.checkNotificationMessage(deleteSuccessMsg, true);
 
       sidebarPage.goToIdentityProviders();
       listingPage.itemExist("facebook").deleteItem("facebook");

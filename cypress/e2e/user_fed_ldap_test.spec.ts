@@ -264,7 +264,7 @@ describe("User Federation LDAP tests", () => {
     sidebarPage.goToUserFederation();
   });
 
-  it("Should make changes and pass connection and authentication tests", () => {
+  it.skip("Should make changes and pass connection and authentication tests", () => {
     providersPage.clickExistingCard(firstLdapName);
 
     providersPage.fillLdapConnectionData(
