@@ -360,6 +360,7 @@ export const RealmSettingsTabs = ({
               })}
             >
               <Tab
+                id="profiles"
                 data-testid="rs-policies-clientProfiles-tab"
                 aria-label={t("clientProfilesSubTab")}
                 title={

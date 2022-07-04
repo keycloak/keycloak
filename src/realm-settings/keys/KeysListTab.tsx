@@ -147,7 +147,7 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
               setPublicKey(publicKey!);
             }}
             variant="secondary"
-            id="kc-rsa-public-key"
+            id={publicKey}
           >
             {t("publicKeys").slice(0, -1)}
           </Button>
@@ -157,7 +157,8 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
               setCertificate(certificate!);
             }}
             variant="secondary"
-            id="kc-certificate"
+            id={certificate}
+            className="kc-certificate"
           >
             {t("certificate")}
           </Button>

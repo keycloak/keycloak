@@ -44,7 +44,7 @@ article.pf-c-card.pf-m-flat.kc-email-connection
   padding-bottom: var(--pf-global--spacer--2xl);
 }
 
-button#kc-certificate.pf-c-button.pf-m-secondary {
+button.kc-certificate.pf-c-button.pf-m-secondary {
   margin-left: var(--pf-global--spacer--md);
 }
 
