@@ -22,8 +22,8 @@ import org.keycloak.migration.ModelVersion;
 import org.keycloak.models.ImpersonationConstants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
+import org.keycloak.models.LegacyRealmModel;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.UserCache;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.DefaultRequiredActions;
@@ -69,7 +69,7 @@ public class MigrateTo1_4_0 implements Migration {
 
     private void migrateLDAPMappers(KeycloakSession session, RealmModel realm) {
         List<String> mandatoryInLdap = Arrays.asList("username", "username-cn", "first name", "last name");
-        UserStorageUtil.getUserStorageProvidersStream(realm)
+        ((LegacyRealmModel) realm).getUserStorageProvidersStream()
                 .filter(providerModel -> Objects.equals(providerModel.getProviderId(), LDAPConstants.LDAP_PROVIDER))
                 .forEachOrdered(providerModel -> realm.getComponentsStream(providerModel.getId())
                         .filter(mapper -> mandatoryInLdap.contains(mapper.getName()))
