@@ -27,6 +27,7 @@ import javax.persistence.criteria.Root;
 import org.keycloak.models.ActionTokenValueModel;
 import org.keycloak.models.map.storage.CriterionNotSupportedException;
 import org.keycloak.models.map.storage.jpa.JpaModelCriteriaBuilder;
+import org.keycloak.models.map.storage.jpa.role.JpaPredicateFunction;
 import org.keycloak.models.map.storage.jpa.singleUseObject.entity.JpaSingleUseObjectEntity;
 import org.keycloak.storage.SearchableModelField;
 
@@ -48,7 +49,7 @@ public class JpaSingleUseObjectModelCriteriaBuilder extends JpaModelCriteriaBuil
         super(JpaSingleUseObjectModelCriteriaBuilder::new);
     }
 
-    public JpaSingleUseObjectModelCriteriaBuilder(BiFunction<CriteriaBuilder, Root<JpaSingleUseObjectEntity>, Predicate> predicateFunc) {
+    public JpaSingleUseObjectModelCriteriaBuilder(JpaPredicateFunction<JpaSingleUseObjectEntity> predicateFunc) {
         super(JpaSingleUseObjectModelCriteriaBuilder::new, predicateFunc);
     }
 
@@ -62,13 +63,13 @@ public class JpaSingleUseObjectModelCriteriaBuilder extends JpaModelCriteriaBuil
 
                     validateValue(value, modelField, op, String.class);
 
-                    return new JpaSingleUseObjectModelCriteriaBuilder((cb, root) ->
+                    return new JpaSingleUseObjectModelCriteriaBuilder((cb, query, root) ->
                             cb.equal(cb.function("->>", String.class, root.get("metadata"),
                                     cb.literal(FIELD_TO_JSON_PROP.get(modelField.getName()))), value[0])
                     );
                 } else if(modelField == ActionTokenValueModel.SearchableFields.OBJECT_KEY) {
                     validateValue(value, modelField, op, String.class);
-                    return new JpaSingleUseObjectModelCriteriaBuilder((cb, root) ->
+                    return new JpaSingleUseObjectModelCriteriaBuilder((cb, query, root) ->
                             cb.equal(root.get(modelField.getName()), value[0])
                     );
                 } else {
