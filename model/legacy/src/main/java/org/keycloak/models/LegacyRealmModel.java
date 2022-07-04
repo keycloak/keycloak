@@ -18,6 +18,8 @@
 package org.keycloak.models;
 
 import org.keycloak.models.RealmModel;
+import org.keycloak.storage.UserStorageProvider;
+import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.client.ClientStorageProvider;
 import org.keycloak.storage.client.ClientStorageProviderModel;
 import org.keycloak.storage.role.RoleStorageProvider;
@@ -67,6 +69,25 @@ public interface LegacyRealmModel extends RealmModel {
         return getComponentsStream(getId(), RoleStorageProvider.class.getName())
                 .map(RoleStorageProviderModel::new)
                 .sorted(RoleStorageProviderModel.comparator);
+    }
+
+    /**
+     * @deprecated Use {@link #getUserStorageProvidersStream() getUserStorageProvidersStream} instead.
+     */
+    @Deprecated
+    default List<UserStorageProviderModel> getUserStorageProviders() {
+        return getUserStorageProvidersStream().collect(Collectors.toList());
+    }
+
+    /**
+     * Returns sorted {@link UserStorageProviderModel UserStorageProviderModel} as a stream.
+     * It should be used with forEachOrdered if the ordering is required.
+     * @return Sorted stream of {@link UserStorageProviderModel}. Never returns {@code null}.
+     */
+    default Stream<UserStorageProviderModel> getUserStorageProvidersStream() {
+        return getComponentsStream(getId(), UserStorageProvider.class.getName())
+                .map(UserStorageProviderModel::new)
+                .sorted(UserStorageProviderModel.comparator);
     }
 
 }
