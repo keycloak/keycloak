@@ -47,6 +47,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
+import org.keycloak.config.ConfigSupportLevel;
 import org.keycloak.config.MultiOption;
 import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.cli.command.Build;
@@ -399,12 +400,15 @@ public final class Picocli {
 
             for(PropertyMapper mapper: mappersInCategory) {
                 String name = mapper.getCliFormat();
+
                 String description = mapper.getDescription();
 
                 if (description == null || cSpec.optionsMap().containsKey(name) || name.endsWith(OPTION_PART_SEPARATOR)) {
                     //when key is already added or has no description, don't add.
                     continue;
                 }
+
+                description = getDescriptionByCategorySupportLevel(category, mapper);
 
                 Iterable<String> expectedValues = mapper.getExpectedValues();
 
@@ -437,6 +441,23 @@ public final class Picocli {
 
             cSpec.addArgGroup(argGroupBuilder.build());
         }
+    }
+
+    private static String getDescriptionByCategorySupportLevel(OptionCategory category, PropertyMapper<?> mapper) {
+        String result;
+
+        switch(category.getSupportLevel()) {
+            case PREVIEW:
+                result = "Preview: " + mapper.getDescription();
+                break;
+            case EXPERIMENTAL:
+                result = "Experimental: " + mapper.getDescription();
+                break;
+            default:
+                result = mapper.getDescription();
+        }
+
+        return result;
     }
 
     public static void println(CommandLine cmd, String message) {

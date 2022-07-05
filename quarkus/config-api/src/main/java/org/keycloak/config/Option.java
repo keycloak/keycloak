@@ -44,7 +44,7 @@ public class Option<T> {
         return category;
     }
 
-    public String getDescription() { return description; }
+    public String getDescription() { return getDescriptionByCategorySupportLevel(description); }
 
     public Optional<T> getDefaultValue() {
         return defaultValue;
@@ -67,4 +67,20 @@ public class Option<T> {
         );
     }
 
+    private String getDescriptionByCategorySupportLevel(String description) {
+        String result;
+
+        switch(this.getCategory().getSupportLevel()) {
+            case PREVIEW:
+                result = "Preview: " + this.getDescription();
+                break;
+            case EXPERIMENTAL:
+                result = "Experimental: " + this.getDescription();
+                break;
+            default:
+                result = this.getDescription();
+        }
+
+        return result;
+    }
 }
