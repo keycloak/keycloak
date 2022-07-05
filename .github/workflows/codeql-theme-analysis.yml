@@ -7,7 +7,9 @@ name: "CodeQL Themes"
 
 on:
   push:
-    branches-ignore: [main]
+    branches-ignore:
+      - 'main'
+      - 'dependabot/**'
   pull_request:
     branches: [main]
     paths: 

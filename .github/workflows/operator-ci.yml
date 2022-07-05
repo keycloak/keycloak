@@ -4,6 +4,9 @@ on:
   push:
     branches-ignore: [main]
   pull_request:
+    paths-ignore:
+      - '.github/workflows/**'
+      - '!.github/workflows/operator-ci.yml'
   schedule:
     - cron: '0 0 * * *'
 
