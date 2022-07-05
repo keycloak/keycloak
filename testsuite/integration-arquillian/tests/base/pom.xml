@@ -855,6 +855,8 @@
                                 <keycloak.userCache.enabled>false</keycloak.userCache.enabled>
                                 <keycloak.publicKeyCache.enabled>false</keycloak.publicKeyCache.enabled>
                                 <keycloak.userSessionPersister.provider></keycloak.userSessionPersister.provider>
+                                <keycloak.publicKeyCache.enabled>false</keycloak.publicKeyCache.enabled>
+                                <systemProperty><key>auth.server.quarkus.storage</key><value>chm</value></systemProperty>
                           </systemPropertyVariables>
                       </configuration>
                     </plugin>

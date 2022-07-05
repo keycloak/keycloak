@@ -21,16 +21,22 @@ import org.keycloak.testsuite.arquillian.annotation.EnableFeatures;
 import org.keycloak.testsuite.arquillian.annotation.SetDefaultProvider;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.util.SpiProvidersSwitchingUtils;
+import org.keycloak.utils.StringUtil;
 import org.wildfly.extras.creaper.core.online.OnlineManagementClient;
 import org.wildfly.extras.creaper.core.online.operations.admin.Administration;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -52,19 +58,96 @@ public class KeycloakContainerFeaturesController {
     @Inject
     private Event<StopContainer> stopContainerEvent;
 
-    public enum FeatureAction {
-        ENABLE(KeycloakTestingClient::enableFeature),
-        DISABLE(KeycloakTestingClient::disableFeature);
+    public interface FeatureAction {
+        public static FeatureAction ENABLE = new FeatureAction() {
+            @Override
+            public void accept(KeycloakTestingClient testingClient, SuiteContext context, Profile.Feature feature) {
+                if (context.getAuthServerInfo().isQuarkus()) {
+                    KeycloakQuarkusServerDeployableContainer container = (KeycloakQuarkusServerDeployableContainer) context.getAuthServerInfo().getArquillianContainer().getDeployableContainer();
+                    List<String> features = new ArrayList<>(container.getAdditionalBuildArgs());
+                    String[] current = null;
+                    Iterator<String> iterator = features.iterator();
 
-        private BiConsumer<KeycloakTestingClient, Profile.Feature> featureConsumer;
+                    while (iterator.hasNext()) {
+                        String options = iterator.next();
+                        String featuresOptionName = "--features=";
 
-        FeatureAction(BiConsumer<KeycloakTestingClient, Profile.Feature> featureConsumer) {
-            this.featureConsumer = featureConsumer;
-        }
+                        if (options.startsWith(featuresOptionName)) {
+                            current = options.substring(featuresOptionName.length()).split(",");
+                            iterator.remove();
+                            break;
+                        }
+                    }
 
-        public void accept(KeycloakTestingClient testingClient, Profile.Feature feature) {
-            featureConsumer.accept(testingClient, feature);
-        }
+                    if (current == null) {
+                        features.add("--features=" + feature.name().toLowerCase().replace('_', '-'));
+                    } else {
+                        features.add("--features=" + String.join(",", current));
+                    }
+
+                    container.setAdditionalBuildArgs(features);
+
+                    try {
+                        container.restartServer();
+                    } catch (Exception e) {
+                        throw new RuntimeException("Failed to restart server when updating feature: " + feature);
+                    }
+                } else {
+                    testingClient.enableFeature(feature);
+                }
+            }
+
+            @Override
+            public String name() {
+                return "ENABLED";
+            }
+        };
+        public static FeatureAction DISABLE = new FeatureAction() {
+            @Override
+            public void accept(KeycloakTestingClient testingClient, SuiteContext context, Profile.Feature feature) {
+                if (context.getAuthServerInfo().isQuarkus()) {
+                    KeycloakQuarkusServerDeployableContainer container = (KeycloakQuarkusServerDeployableContainer) context.getAuthServerInfo().getArquillianContainer().getDeployableContainer();
+                    List<String> features = new ArrayList<>(container.getAdditionalBuildArgs());
+                    String featureName = feature.name().toLowerCase().replace('_', '-');
+                    String[] current = null;
+                    Iterator<String> iterator = features.iterator();
+                    String featuresOptionName = "--features=";
+
+                    while (iterator.hasNext()) {
+                        String options = iterator.next();
+
+                        if (options.startsWith(featuresOptionName)) {
+                            current = options.substring(featuresOptionName.length()).replaceAll(featureName, "").split(",");
+                            iterator.remove();
+                            break;
+                        }
+                    }
+
+                    if (!new ArrayList<>(Arrays.asList(current)).removeIf(StringUtil::isBlank)) {
+                        features.add("--features=" + String.join(",", current));
+                    }
+
+                    container.setAdditionalBuildArgs(features);
+
+                    try {
+                        container.restartServer();
+                    } catch (Exception e) {
+                        throw new RuntimeException("Failed to restart server when updating feature: " + feature);
+                    }
+                } else {
+                    testingClient.disableFeature(feature);
+                }
+            }
+
+            @Override
+            public String name() {
+                return "DISABLED";
+            }
+        };
+
+        void accept(KeycloakTestingClient testingClient, SuiteContext context, Profile.Feature feature);
+
+        String name();
     }
 
     public enum State {
@@ -99,7 +182,7 @@ public class KeycloakContainerFeaturesController {
         public void performAction() {
             if ((action == FeatureAction.ENABLE && !ProfileAssume.isFeatureEnabled(feature))
                     || (action == FeatureAction.DISABLE && ProfileAssume.isFeatureEnabled(feature))) {
-                action.accept(testContextInstance.get().getTestingClient(), feature);
+                action.accept(testContextInstance.get().getTestingClient(), suiteContextInstance.get(), feature);
                 SetDefaultProvider setDefaultProvider = annotatedElement.getAnnotation(SetDefaultProvider.class);
                 if (setDefaultProvider != null) {
                     try {

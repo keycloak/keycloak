@@ -326,6 +326,7 @@
                                 <systemProperty><key>keycloak.realmCache.enabled</key><value>false</value></systemProperty>
                                 <systemProperty><key>keycloak.userCache.enabled</key><value>false</value></systemProperty>
                                 <systemProperty><key>keycloak.publicKeyCache.enabled</key><value>false</value></systemProperty>
+                                <systemProperty><key>auth.server.quarkus.storage</key><value>chm</value></systemProperty>
                             </systemProperties>
                         </configuration>
                     </plugin>

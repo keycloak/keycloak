@@ -19,6 +19,7 @@
         <offline.session.cache.owners>2</offline.session.cache.owners>
         <login.failure.cache.owners>2</login.failure.cache.owners>
         <auth.server.quarkus.cluster.config>local</auth.server.quarkus.cluster.config>
+        <auth.server.quarkus.storage>legacy</auth.server.quarkus.storage>
         <!-- Path to testsuite/test resources : Themes-->
         <keycloak.base.test.resource>${project.parent.basedir}/../../tests/base/src/test/resources</keycloak.base.test.resource>
     </properties>
@@ -246,6 +247,7 @@
                             <target>
                                 <ant antfile="ant/configure.xml" target="config" >
                                     <property name="auth.server.home">${auth.server.home}</property>
+                                    <property name="auth.server.quarkus.storage">${auth.server.quarkus.storage}</property>
                                 </ant>
                             </target>
                         </configuration>
@@ -260,6 +262,13 @@
             <id>auth-server-cluster-quarkus</id>
             <properties>
                 <auth.server.quarkus.cluster.config>ha</auth.server.quarkus.cluster.config>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>map-storage</id>
+            <properties>
+                <auth.server.quarkus.storage>chm</auth.server.quarkus.storage>
             </properties>
         </profile>
 

@@ -479,6 +479,11 @@ public abstract class AbstractKeycloakTest {
 
 
     public void importRealm(RealmRepresentation realm) {
+        try {
+            reconnectAdminClient();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         if (modifyRealmForSSL()) {
             if (AUTH_SERVER_SSL_REQUIRED) {
                 log.debugf("Modifying %s for SSL", realm.getId());

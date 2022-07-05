@@ -193,7 +193,9 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Path("/set-testing-infinispan-time-service")
     @Produces(MediaType.APPLICATION_JSON)
     public Response setTestingInfinispanTimeService() {
-        InfinispanTestUtil.setTestingTimeService(session);
+        if (!Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE)) {
+            InfinispanTestUtil.setTestingTimeService(session);
+        }
         return Response.noContent().build();
     }
 
@@ -201,7 +203,11 @@ public class TestingResourceProvider implements RealmResourceProvider {
     @Path("/revert-testing-infinispan-time-service")
     @Produces(MediaType.APPLICATION_JSON)
     public Response revertTestingInfinispanTimeService() {
-        InfinispanTestUtil.revertTimeService();
+        if (Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE)) {
+            Time.setOffset(0);
+        } else {
+            InfinispanTestUtil.revertTimeService();
+        }
         return Response.noContent().build();
     }
 

@@ -82,7 +82,11 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
         container.destroy();
         try {
             container.waitFor(10, TimeUnit.SECONDS);
+            log.infof("Server successfully stopped");
         } catch (InterruptedException e) {
+            String destroyingForciblyMessage = "Destroying forcibly the server process";
+            log.warn(destroyingForciblyMessage);
+            log.debug(destroyingForciblyMessage, e);
             container.destroyForcibly();
         }
     }
@@ -138,8 +142,10 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
             builder.environment().put("JAVA_OPTS", javaOpts);
         }
 
-        builder.environment().put("KEYCLOAK_ADMIN", "admin");
-        builder.environment().put("KEYCLOAK_ADMIN_PASSWORD", "admin");
+        if (!restart.get()) {
+            builder.environment().put("KEYCLOAK_ADMIN", "admin");
+            builder.environment().put("KEYCLOAK_ADMIN_PASSWORD", "admin");
+        }
 
         if (restart.compareAndSet(false, true)) {
             FileUtils.deleteDirectory(configuration.getProvidersPath().resolve("data").toFile());
@@ -183,6 +189,9 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
             } else {
                 commands.add("--cache-config-file=cluster-" + cacheMode + ".xml");
             }
+
+            commands.add("--storage=" + System.getProperty("auth.server.quarkus.storage", "legacy"));
+            commands.add("--vault=file");
         }
 
         commands.addAll(getAdditionalBuildArgs());

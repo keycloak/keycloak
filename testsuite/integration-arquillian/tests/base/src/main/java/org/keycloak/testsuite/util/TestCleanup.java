@@ -257,6 +257,11 @@ public class TestCleanup {
     }
 
     private Keycloak getAdminClient() {
+        try {
+            testContext.reconnectAdminClient();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         return testContext.getAdminClient();
     }
 

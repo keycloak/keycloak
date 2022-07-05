@@ -7,6 +7,8 @@
             <arg value="build"/>
             <arg value="--http-relative-path=/auth"/>
             <arg value="--cache=local"/>
+            <arg value="--vault=file"/>
+            <arg value="--storage=${auth.server.quarkus.storage}"/>
         </exec>
     </target>
 
