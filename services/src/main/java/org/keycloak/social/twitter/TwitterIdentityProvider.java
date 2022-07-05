@@ -218,8 +218,8 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
 
                 identity.setUsername(twitterUser.getScreenName());
                 identity.setEmail(twitterUser.getEmail());
-                identity.setName(twitterUser.getName());
-
+                identity.setFirstName(twitterUser.getName());
+                identity.setLastName("");
 
                 StringBuilder tokenBuilder = new StringBuilder();
 
