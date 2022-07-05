@@ -23,9 +23,13 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.SystemUtils;
@@ -41,6 +45,7 @@ import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.descriptor.api.Descriptor;
 import org.keycloak.testsuite.arquillian.SuiteContext;
+import org.keycloak.testsuite.util.FileUtil;
 
 /**
  * @author mhajas
@@ -48,12 +53,13 @@ import org.keycloak.testsuite.arquillian.SuiteContext;
 public class KeycloakQuarkusServerDeployableContainer implements DeployableContainer<KeycloakQuarkusConfiguration> {
 
     private static final String AUTH_SERVER_QUARKUS_MAP_STORAGE_PROFILE = "auth.server.quarkus.mapStorage.profile";
-
     private static final Logger log = Logger.getLogger(KeycloakQuarkusServerDeployableContainer.class);
-
+    private static final String SCRIPT_CMD = SystemUtils.IS_OS_WINDOWS ? "kc.bat" : "kc.sh";
+    private static final String SCRIPT_CMD_INVOKABLE = SystemUtils.IS_OS_WINDOWS ? SCRIPT_CMD : "./" + SCRIPT_CMD;
+    private static final int DEFAULT_SHUTDOWN_TIMEOUT_SECONDS = 10;
+    private static AtomicBoolean isStartupNeeded = new AtomicBoolean(true);
     private KeycloakQuarkusConfiguration configuration;
     private Process container;
-    private static AtomicBoolean restart = new AtomicBoolean();
 
     @Inject
     private Instance<SuiteContext> suiteContext;
@@ -83,11 +89,16 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
 
     @Override
     public void stop() throws LifecycleException {
-        container.destroy();
         try {
-            container.waitFor(10, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
+            // On Windows, we need to make sure sub-processes are terminated first
+            destroyDescendantsOnWindows(false);
+
+            container.destroy();
+            container.waitFor(DEFAULT_SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        } catch (Exception cause) {
+            destroyDescendantsOnWindows(true);
             container.destroyForcibly();
+            throw new RuntimeException("Failed to stop the server", cause);
         }
     }
 
@@ -131,6 +142,39 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
 
     }
 
+    private void destroyDescendantsOnWindows(boolean force) {
+        if (!SystemUtils.IS_OS_WINDOWS) {
+            return;
+        }
+
+        CompletableFuture allProcesses = CompletableFuture.completedFuture(null);
+
+        for (ProcessHandle process : container.descendants().collect(Collectors.toList())) {
+            if (force) {
+                process.destroyForcibly();
+            } else {
+                process.destroy();
+            }
+
+            allProcesses = CompletableFuture.allOf(allProcesses, process.onExit());
+        }
+
+        try {
+            allProcesses.get(DEFAULT_SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        } catch (Exception cause) {
+            throw new RuntimeException("Failed to terminate descendants processes", cause);
+        }
+
+        try {
+            // TODO: remove this. do not ask why, but on Windows we are here even though the process was previously terminated
+            // without this pause, tests re-installing dist before tests should fail
+            // looks like pausing the current thread let windows to cleanup processes?
+            // more likely it is env dependent
+            Thread.sleep(500);
+        } catch (InterruptedException e) {
+        }
+    }
+
     private void importRealm() throws IOException, URISyntaxException {
         if (suiteContext.get().isAuthServerMigrationEnabled() && configuration.getImportFile() != null) {
             final String importFileName = configuration.getImportFile();
@@ -144,7 +188,7 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
             final File wrkDir = configuration.getProvidersPath().resolve("bin").toFile();
             final List<String> commands = new ArrayList<>();
 
-            commands.add(getCommand());
+            commands.add(getInvokableStartupCommand());
             commands.add("import");
             commands.add("--file=" + wrkDir.toPath().relativize(path));
 
@@ -167,8 +211,8 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
         builder.environment().put("KEYCLOAK_ADMIN", "admin");
         builder.environment().put("KEYCLOAK_ADMIN_PASSWORD", "admin");
 
-        if (restart.compareAndSet(false, true)) {
-            FileUtils.deleteDirectory(configuration.getProvidersPath().resolve("data").toFile());
+        if (isStartupNeeded.compareAndSet(false, true)) {
+            FileUtil.deleteDirectory(configuration.getProvidersPath().resolve("data"));
         }
 
         return builder.start();
@@ -176,10 +220,22 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
 
     private String[] getProcessCommands() {
         List<String> commands = new ArrayList<>();
-        commands.add(getCommand());
-        commands.add("-v");
+        commands.add(getInvokableStartupCommand());
+
+        if(!SystemUtils.IS_OS_WINDOWS) {
+            commands.add("-v"); // see #11185, has to be fixed before using -v on windows.
+        }
+
         commands.add("start");
         commands.add("--optimized");
+
+
+        if (SystemUtils.IS_OS_WINDOWS && isStartupNeeded.compareAndSet(true, false)) {
+            log.infof("===== FIRST START: Re-augmenting... =====");
+            commands.removeIf("--optimised"::equals);
+            commands.add("--http-relative-path=/auth");
+            commands.add("--cache=local");
+        }
         commands.add("--http-enabled=true");
 
         if (Boolean.parseBoolean(System.getProperty("auth.server.debug", "false"))) {
@@ -201,7 +257,7 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
         String mapStorageProfile = System.getProperty(AUTH_SERVER_QUARKUS_MAP_STORAGE_PROFILE);
         // only run build during restarts or when running cluster tests
 
-        if (restart.get() || "ha".equals(System.getProperty("auth.server.quarkus.cluster.config"))) {
+        if (isStartupNeeded.get() || "ha".equals(System.getProperty("auth.server.quarkus.cluster.config"))) {
             commands.removeIf("--optimized"::equals);
             commands.add("--http-relative-path=/auth");
 
@@ -338,6 +394,40 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
         return TimeUnit.SECONDS.toMillis(configuration.getStartupTimeoutInSeconds());
     }
 
+    private void killChildProcessesOnWindows(boolean isForced) {
+        for (ProcessHandle childProcessHandle : container.children().collect(Collectors.toList())) {
+            CompletableFuture<ProcessHandle> onExit = childProcessHandle.onExit();
+            if (isForced) {
+                childProcessHandle.destroyForcibly();
+            } else {
+                childProcessHandle.destroy();
+            }
+            // windows doesn't wait for child process termination,
+            // so parent process returns immediately with exitCode 1, but childs are still running,
+            // leading to distribution startup failure bc files that should be deleted
+            // are still used by another process. So we wait here until the child
+            // process(es) are really deleted.
+            onExit.join();
+        }
+    }
+
+    private void deleteTempFilesOnWindows(Path dPath) {
+        if (Files.exists(dPath)) {
+            try (Stream<Path> walk = Files.walk(dPath)) {
+                walk.sorted(Comparator.reverseOrder())
+                        .forEach(s -> {
+                            try {
+                                Files.delete(s);
+                            } catch (IOException e) {
+                                throw new RuntimeException("Could not delete temp directory for distribution", e);
+                            }
+                        });
+            } catch (IOException e) {
+                throw new RuntimeException("Could not traverse temp directory for distribution to delete files", e);
+            }
+        }
+    }
+
     public void resetConfiguration() {
         additionalBuildArgs = Collections.emptyList();
     }
@@ -353,11 +443,11 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
         start();
     }
 
-    private static String getCommand() {
+    private String getInvokableStartupCommand() {
         if (SystemUtils.IS_OS_WINDOWS) {
-            return "kc.bat";
+            return configuration.getProvidersPath().resolve("bin") + File.separator + SCRIPT_CMD_INVOKABLE;
         }
-        return "./kc.sh";
+        return SCRIPT_CMD_INVOKABLE;
     }
 
     public List<String> getAdditionalBuildArgs() {
