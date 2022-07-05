@@ -855,6 +855,7 @@
                                 <keycloak.userCache.enabled>false</keycloak.userCache.enabled>
                                 <keycloak.publicKeyCache.enabled>false</keycloak.publicKeyCache.enabled>
                                 <keycloak.userSessionPersister.provider></keycloak.userSessionPersister.provider>
+                                <keycloak.userFederatedStorage.provider></keycloak.userFederatedStorage.provider>
                           </systemPropertyVariables>
                       </configuration>
                     </plugin>
