@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2021 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,34 +15,42 @@
  * limitations under the License.
  */
 
-package org.keycloak.events.jpa;
+package org.keycloak.models.map.stickysession;
 
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
-import org.keycloak.connections.jpa.JpaConnectionProvider;
-import org.keycloak.events.EventStoreProvider;
-import org.keycloak.events.EventStoreProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
+import org.keycloak.sessions.StickySessionEncoderProvider;
+import org.keycloak.sessions.StickySessionEncoderProviderFactory;
 
-/**
- * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
- */
-public class JpaEventStoreProviderFactory implements EventStoreProviderFactory, EnvironmentDependentProviderFactory {
-
-    public static final String ID = "jpa";
-    private int maxDetailLength;
+public class MapStickySessionEncoderProvider implements StickySessionEncoderProviderFactory, StickySessionEncoderProvider,
+        EnvironmentDependentProviderFactory {
 
     @Override
-    public EventStoreProvider create(KeycloakSession session) {
-        JpaConnectionProvider connection = session.getProvider(JpaConnectionProvider.class);
-        return new JpaEventStoreProvider(session, connection.getEntityManager(), maxDetailLength);
+    public StickySessionEncoderProvider create(KeycloakSession session) {
+        return this;
+    }
+
+    @Override
+    public String encodeSessionId(String sessionId) {
+        return sessionId;
+    }
+
+    @Override
+    public String decodeSessionId(String encodedSessionId) {
+        return encodedSessionId;
+    }
+
+    @Override
+    public boolean shouldAttachRoute() {
+        return false;
     }
 
     @Override
     public void init(Config.Scope config) {
-        maxDetailLength = config.getInt("max-detail-length", 0);
+
     }
 
     @Override
@@ -52,15 +60,17 @@ public class JpaEventStoreProviderFactory implements EventStoreProviderFactory, 
 
     @Override
     public void close() {
+
     }
 
     @Override
     public String getId() {
-        return ID;
+        return "map";
     }
 
     @Override
     public boolean isSupported() {
-        return !Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE);
+        return Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE);
     }
+
 }

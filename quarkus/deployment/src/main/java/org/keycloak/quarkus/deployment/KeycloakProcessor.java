@@ -88,6 +88,7 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.plugins.server.servlet.ResteasyContextParameters;
 import org.jboss.resteasy.spi.ResteasyDeployment;
 import org.keycloak.Config;
+import org.keycloak.connections.infinispan.DefaultInfinispanConnectionProviderFactory;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.connections.jpa.JpaConnectionSpi;
 import org.keycloak.quarkus.runtime.QuarkusProfile;
@@ -165,7 +166,8 @@ class KeycloakProcessor {
             RequestHostnameProviderFactory.class,
             FilesPlainTextVaultProviderFactory.class,
             BlacklistPasswordPolicyProviderFactory.class,
-            ClasspathThemeResourceProviderFactory.class);
+            ClasspathThemeResourceProviderFactory.class,
+            DefaultInfinispanConnectionProviderFactory.class);
 
     static {
         DEPLOYEABLE_SCRIPT_PROVIDERS.put(AUTHENTICATORS, KeycloakProcessor::registerScriptAuthenticator);
