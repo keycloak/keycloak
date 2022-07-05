@@ -35,9 +35,10 @@ Cluster:
                      Define the default stack to use for cluster communication and node discovery.
                        This option only takes effect if 'cache' is set to 'ispn'. Default: udp.
 
-Storage:
+Storage (Experimental):
 
---storage <type>     Sets a storage mechanism. Possible values are: legacy, chm. Default: legacy.
+--storage <type>     Experimental: Sets a storage mechanism. Possible values are: legacy, chm. Default:
+                       legacy.
 
 Database:
 

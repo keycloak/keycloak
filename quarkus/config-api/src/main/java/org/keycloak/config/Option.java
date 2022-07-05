@@ -2,7 +2,6 @@ package org.keycloak.config;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 public class Option<T> {
 
@@ -21,7 +20,7 @@ public class Option<T> {
         this.category = category;
         this.hidden = hidden;
         this.buildTime = buildTime;
-        this.description = description;
+        this.description = getDescriptionByCategorySupportLevel(description);
         this.defaultValue = defaultValue;
         this.expectedValues = expectedValues;
     }
@@ -67,4 +66,22 @@ public class Option<T> {
         );
     }
 
+    private String getDescriptionByCategorySupportLevel(String description) {
+        if(description == null || description.isBlank()) {
+            return description;
+        }
+
+        switch(this.getCategory().getSupportLevel()) {
+            case PREVIEW:
+                description = "Preview: " + description;
+                break;
+            case EXPERIMENTAL:
+                description = "Experimental: " + description;
+                break;
+            default:
+                description = description;
+        }
+
+        return description;
+    }
 }

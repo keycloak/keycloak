@@ -47,6 +47,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
+import org.keycloak.config.ConfigSupportLevel;
 import org.keycloak.config.MultiOption;
 import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.cli.command.Build;
@@ -399,6 +400,7 @@ public final class Picocli {
 
             for(PropertyMapper mapper: mappersInCategory) {
                 String name = mapper.getCliFormat();
+
                 String description = mapper.getDescription();
 
                 if (description == null || cSpec.optionsMap().containsKey(name) || name.endsWith(OPTION_PART_SEPARATOR)) {
