@@ -1,5 +1,6 @@
-import { useContext } from "react";
 import type { Context } from "react";
+import { useContext } from "react";
+import { isDefined } from "./isDefined";
 
 /**
  * Passes the call to `useContext` and throw an exception if the resolved value is either `null` or `undefined`.
@@ -13,8 +14,8 @@ export default function useRequiredContext<T>(
 ): NonNullable<T> {
   const resolved = useContext(context);
 
-  if (resolved !== undefined && resolved !== null) {
-    return resolved as NonNullable<T>;
+  if (isDefined(resolved)) {
+    return resolved;
   }
 
   throw new Error(
