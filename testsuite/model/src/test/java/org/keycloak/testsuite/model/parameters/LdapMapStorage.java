@@ -105,7 +105,8 @@ public class LdapMapStorage extends KeycloakModelParameters {
                 .spi(EventStoreSpi.NAME).config("map.storage-admin-events.provider", ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
                 .spi(EventStoreSpi.NAME).config("map.storage-auth-events.provider", ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
                 .spi(ActionTokenStoreSpi.NAME).config("map.storage.provider", ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
-                .spi(SingleUseObjectSpi.NAME).config("map.storage.provider", ConcurrentHashMapStorageProviderFactory.PROVIDER_ID);
+                .spi(SingleUseObjectSpi.NAME).config("map.storage.provider", ConcurrentHashMapStorageProviderFactory.PROVIDER_ID)
+                .spi("publicKeyStorage").config("map.storage.provider", ConcurrentHashMapStorageProviderFactory.PROVIDER_ID);
 
     }
 

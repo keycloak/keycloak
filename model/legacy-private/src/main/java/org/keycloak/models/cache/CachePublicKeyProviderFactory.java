@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,12 +15,9 @@
  * limitations under the License.
  */
 
-package org.keycloak.keys;
+package org.keycloak.models.cache;
 
 import org.keycloak.provider.ProviderFactory;
 
-/**
- * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
- */
-public interface PublicKeyStorageProviderFactory<T extends PublicKeyStorageProvider> extends ProviderFactory<T> {
+public interface CachePublicKeyProviderFactory extends ProviderFactory<CachePublicKeyProvider> {
 }

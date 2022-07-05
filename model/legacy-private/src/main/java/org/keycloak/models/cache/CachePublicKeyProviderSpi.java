@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Red Hat, Inc. and/or its affiliates
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,12 +15,31 @@
  * limitations under the License.
  */
 
-package org.keycloak.keys;
+package org.keycloak.models.cache;
 
+import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
+import org.keycloak.provider.Spi;
 
-/**
- * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
- */
-public interface PublicKeyStorageProviderFactory<T extends PublicKeyStorageProvider> extends ProviderFactory<T> {
+public class CachePublicKeyProviderSpi implements Spi {
+
+    @Override
+    public boolean isInternal() {
+        return true;
+    }
+
+    @Override
+    public String getName() {
+        return "publicKeyCache";
+    }
+
+    @Override
+    public Class<? extends Provider> getProviderClass() {
+        return CachePublicKeyProvider.class;
+    }
+
+    @Override
+    public Class<? extends ProviderFactory> getProviderFactoryClass() {
+        return CachePublicKeyProviderFactory.class;
+    }
 }

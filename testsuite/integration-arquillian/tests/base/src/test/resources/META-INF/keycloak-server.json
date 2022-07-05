@@ -160,6 +160,15 @@
         }
     },
 
+    "publicKeyStorage": {
+        "provider": "${keycloak.publicKeyStorage.provider:infinispan}",
+        "map": {
+            "storage": {
+                "provider": "${keycloak.publicKeyStorage.map.storage.provider:concurrenthashmap}"
+            }
+        }
+    },
+
     "mapStorage": {
         "concurrenthashmap": {
             "dir": "${project.build.directory:target}",
@@ -206,6 +215,12 @@
         },
         "mem": {
             "maxSize": 20000
+        }
+    },
+
+    "publicKeyCache": {
+        "default" : {
+            "enabled": "${keycloak.publicKeyCache.enabled:true}"
         }
     },
 

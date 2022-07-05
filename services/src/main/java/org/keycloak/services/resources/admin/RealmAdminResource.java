@@ -1079,23 +1079,6 @@ public class RealmAdminResource {
         return stripForExport(session, rep);
     }
 
-    /**
-     * Clear cache of external public keys (Public keys of clients or Identity providers)
-     *
-     */
-    @Path("clear-keys-cache")
-    @POST
-    public void clearKeysCache() {
-        auth.realm().requireManageRealm();
-
-        PublicKeyStorageProvider cache = session.getProvider(PublicKeyStorageProvider.class);
-        if (cache != null) {
-            cache.clearCache();
-        }
-
-        adminEvent.operation(OperationType.ACTION).resourcePath(session.getContext().getUri()).success();
-    }
-
     @Path("keys")
     public KeyResource keys() {
         KeyResource resource =  new KeyResource(realm, session, this.auth);
