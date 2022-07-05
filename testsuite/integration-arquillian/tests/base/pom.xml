@@ -900,6 +900,7 @@
                                 <keycloak.realm.map.storage.provider>jpa</keycloak.realm.map.storage.provider>
                                 <keycloak.role.map.storage.provider>jpa</keycloak.role.map.storage.provider>
                                 <keycloak.singleUseObject.map.storage.provider>jpa</keycloak.singleUseObject.map.storage.provider>
+                                <keycloak.user.map.storage.provider>jpa</keycloak.user.map.storage.provider>
                             </systemPropertyVariables>
                         </configuration>
                     </plugin>

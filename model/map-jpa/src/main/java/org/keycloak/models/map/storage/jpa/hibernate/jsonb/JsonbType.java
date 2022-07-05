@@ -78,6 +78,8 @@ import org.keycloak.models.map.realm.entity.MapRequiredCredentialEntity;
 import org.keycloak.models.map.realm.entity.MapRequiredCredentialEntityImpl;
 import org.keycloak.models.map.realm.entity.MapWebAuthnPolicyEntity;
 import org.keycloak.models.map.realm.entity.MapWebAuthnPolicyEntityImpl;
+import org.keycloak.models.map.user.MapUserCredentialEntity;
+import org.keycloak.models.map.user.MapUserCredentialEntityImpl;
 import org.keycloak.util.EnumWithStableIndex;
 
 public class JsonbType extends AbstractSingleColumnStandardBasicType<Object> implements DynamicParameterizedType {
@@ -102,7 +104,9 @@ public class JsonbType extends AbstractSingleColumnStandardBasicType<Object> imp
                     .addAbstractTypeMapping(MapOTPPolicyEntity.class, MapOTPPolicyEntityImpl.class)
                     .addAbstractTypeMapping(MapRequiredActionProviderEntity.class, MapRequiredActionProviderEntityImpl.class)
                     .addAbstractTypeMapping(MapRequiredCredentialEntity.class, MapRequiredCredentialEntityImpl.class)
-                    .addAbstractTypeMapping(MapWebAuthnPolicyEntity.class, MapWebAuthnPolicyEntityImpl.class))
+                    .addAbstractTypeMapping(MapWebAuthnPolicyEntity.class, MapWebAuthnPolicyEntityImpl.class)
+                    // user abstract type mappings
+                    .addAbstractTypeMapping(MapUserCredentialEntity.class, MapUserCredentialEntityImpl.class))
             .addMixIn(UpdatableEntity.class, IgnoreUpdatedMixIn.class)
             .addMixIn(DeepCloner.class, IgnoredTypeMixIn.class)
             .addMixIn(EntityWithAttributes.class, IgnoredMetadataFieldsMixIn.class)

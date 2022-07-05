@@ -184,7 +184,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             user.singleAttribute("formatted", "6 Foo Street");
             user.singleAttribute("phone", "617-777-6666");
             user.singleAttribute("json-attribute", "{\"a\": 1, \"b\": 2, \"c\": [{\"a\": 1, \"b\": 2}], \"d\": {\"a\": 1, \"b\": 2}}");
-            user.getAttributes().put("json-attribute-multi", Arrays.asList("{\"a\": 1, \"b\": 2, \"c\": [{\"a\": 1, \"b\": 2}], \"d\": {\"a\": 1, \"b\": 2}}", "{\"a\": 1, \"b\": 2, \"c\": [{\"a\": 1, \"b\": 2}], \"d\": {\"a\": 1, \"b\": 2}}"));
+            user.getAttributes().put("json-attribute-multi", Arrays.asList("{\"a\": 1, \"b\": 2, \"c\": [{\"a\": 1, \"b\": 2}], \"d\": {\"a\": 1, \"b\": 2}}", "{\"a\": 3, \"b\": 4, \"c\": [{\"a\": 1, \"b\": 2}], \"d\": {\"a\": 1, \"b\": 2}}"));
 
             List<String> departments = Arrays.asList("finance", "development");
             user.getAttributes().put("departments", departments);
