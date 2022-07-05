@@ -317,7 +317,7 @@ describe("Client Scopes test", () => {
   describe("Scope test", () => {
     const scopeTab = new RoleMappingTab("client-scope");
     const scopeName = "address";
-    it("Assign role", () => {
+    it.skip("Assign role", () => {
       const role = "admin";
       listingPage.searchItem(scopeName, false).goToItemDetails(scopeName);
       scopeTab.goToScopeTab().assignRole().selectRow(role).assign();
