@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { sortBy } from "lodash-es";
 import {
-  AlertVariant,
   Button,
   ButtonVariant,
   DataList,
@@ -68,18 +67,22 @@ export const ManagePriorityDialog = ({
         <Button
           id="modal-confirm"
           key="confirm"
-          onClick={() => {
-            order.map(async (name, index) => {
+          onClick={async () => {
+            const updates = order.map((name, index) => {
               const component = components!.find((c) => c.name === name)!;
               component.config!.priority = [index.toString()];
-              try {
-                const id = component.id!;
-                await adminClient.components.update({ id }, component);
-                addAlert(t("orderChangeSuccess"), AlertVariant.success);
-              } catch (error) {
-                addError("orderChangeError", error);
-              }
+              return adminClient.components.update(
+                { id: component.id! },
+                component
+              );
             });
+
+            try {
+              await Promise.all(updates);
+              addAlert(t("orderChangeSuccess"));
+            } catch (error) {
+              addError("orderChangeError", error);
+            }
 
             onClose();
           }}
@@ -110,28 +113,23 @@ export const ManagePriorityDialog = ({
         onDragCancel={onDragCancel}
         itemOrder={order}
       >
-        {sortBy(components, "config.priority").map((component) => (
+        {sortBy(components, "config.priority", "name").map((component) => (
           <DataListItem
-            aria-labelledby={component.name}
-            id={`${component.name}-item`}
+            aria-label={component.name}
+            id={component.name}
             key={component.name}
           >
             <DataListItemRow>
               <DataListControl>
-                <DataListDragButton
-                  aria-label="Reorder"
-                  aria-labelledby={component.name}
-                  aria-describedby={t("manageOrderItemAria")}
-                  aria-pressed="false"
-                />
+                <DataListDragButton aria-label={t("manageOrderItemAria")} />
               </DataListControl>
               <DataListItemCells
                 dataListCells={[
                   <DataListCell
-                    key={`${component.name}-cell`}
+                    key={component.name}
                     data-testid={component.name}
                   >
-                    <span id={component.name}>{component.name}</span>
+                    {component.name}
                   </DataListCell>,
                 ]}
               />

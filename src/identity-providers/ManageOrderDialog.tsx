@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { sortBy } from "lodash-es";
 import {
-  AlertVariant,
   Button,
   ButtonVariant,
   DataList,
@@ -69,17 +68,19 @@ export const ManageOrderDialog = ({
           id="modal-confirm"
           data-testid="confirm"
           key="confirm"
-          onClick={() => {
-            order.map(async (alias, index) => {
+          onClick={async () => {
+            const updates = order.map((alias, index) => {
               const provider = providers.find((p) => p.alias === alias)!;
               provider.config!.guiOrder = index;
-              try {
-                await adminClient.identityProviders.update({ alias }, provider);
-                addAlert(t("orderChangeSuccess"), AlertVariant.success);
-              } catch (error) {
-                addError("identity-providers:orderChangeError", error);
-              }
+              return adminClient.identityProviders.update({ alias }, provider);
             });
+
+            try {
+              await Promise.all(updates);
+              addAlert(t("orderChangeSuccess"));
+            } catch (error) {
+              addError("identity-providers:orderChangeError", error);
+            }
 
             onClose();
           }}
@@ -111,28 +112,23 @@ export const ManageOrderDialog = ({
         onDragCancel={onDragCancel}
         itemOrder={order}
       >
-        {sortBy(providers, "config.guiOrder").map((provider) => (
+        {sortBy(providers, "config.guiOrder", "alias").map((provider) => (
           <DataListItem
-            aria-labelledby={provider.alias}
-            id={`${provider.alias}-item`}
+            aria-label={provider.alias}
+            id={provider.alias}
             key={provider.alias}
           >
             <DataListItemRow>
               <DataListControl>
-                <DataListDragButton
-                  aria-label="Reorder"
-                  aria-labelledby={provider.alias}
-                  aria-describedby={t("manageOrderItemAria")}
-                  aria-pressed="false"
-                />
+                <DataListDragButton aria-label={t("manageOrderItemAria")} />
               </DataListControl>
               <DataListItemCells
                 dataListCells={[
                   <DataListCell
-                    key={`${provider.alias}-cell`}
+                    key={provider.alias}
                     data-testid={provider.alias}
                   >
-                    <span id={provider.alias}>{provider.alias}</span>
+                    {provider.alias}
                   </DataListCell>,
                 ]}
               />

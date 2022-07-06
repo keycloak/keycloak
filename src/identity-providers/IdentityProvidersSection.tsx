@@ -48,7 +48,7 @@ export default function IdentityProvidersSection() {
   const { realm } = useRealm();
   const history = useHistory();
   const [key, setKey] = useState(0);
-  const refresh = () => setKey(new Date().getTime());
+  const refresh = () => setKey(key + 1);
 
   const [addProviderOpen, setAddProviderOpen] = useState(false);
   const [manageDisplayDialog, setManageDisplayDialog] = useState(false);
@@ -69,12 +69,10 @@ export default function IdentityProvidersSection() {
       return provider.identityProviders!;
     },
     (providers) => {
-      setProviders(providers);
+      setProviders(sortBy(providers, ["config.guiOrder", "alias"]));
     },
-    []
+    [key]
   );
-
-  const loader = () => Promise.resolve(sortBy(providers, "alias"));
 
   const DetailLink = (identityProvider: IdentityProviderRepresentation) => (
     <Link
@@ -160,7 +158,10 @@ export default function IdentityProvidersSection() {
       <DeleteConfirm />
       {manageDisplayDialog && (
         <ManageOrderDialog
-          onClose={() => setManageDisplayDialog(false)}
+          onClose={() => {
+            setManageDisplayDialog(false);
+            refresh();
+          }}
           providers={providers.filter((p) => p.enabled)}
         />
       )}
@@ -212,8 +213,7 @@ export default function IdentityProvidersSection() {
         )}
         {providers.length !== 0 && (
           <KeycloakDataTable
-            key={key}
-            loader={loader}
+            loader={providers}
             ariaLabelKey="common:identityProviders"
             searchPlaceholderKey="identity-providers:searchForProvider"
             toolbarItem={
