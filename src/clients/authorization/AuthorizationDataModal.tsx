@@ -9,7 +9,7 @@ import {
   TextVariants,
 } from "@patternfly/react-core";
 
-import type AccessTokenRepresentation from "@keycloak/keycloak-admin-client/lib/defs/accessTokenAuthorization";
+import type AccessTokenRepresentation from "@keycloak/keycloak-admin-client/lib/defs/accessTokenRepresentation";
 import { KeycloakTextArea } from "../../components/keycloak-text-area/KeycloakTextArea";
 import useToggle from "../../utils/useToggle";
 import { prettyPrintJSON } from "../../util";
@@ -36,6 +36,7 @@ export const AuthorizationDataModal = ({
       <Modal
         variant={ModalVariant.medium}
         isOpen={show}
+        aria-label={t("authData")}
         header={
           <TextContent>
             <Text component={TextVariants.h1}>{t("authData")}</Text>

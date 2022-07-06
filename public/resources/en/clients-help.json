@@ -69,6 +69,7 @@
   "fineGrainSamlEndpointConfig": "This section to configure exact URLs for Assertion Consumer and Single Logout Service.",
   "logoUrl": "URL that references a logo for the Client application",
   "policyUrl": "URL that the Relying Party Client provides to the End-User to read about the how the profile data will be used",
+  "policyUsers": "Specifies which user(s) are allowed by this policy.",
   "termsOfServiceUrl": "URL that the Relying Party Client provides to the End-User to read about the Relying Party's terms of service",
   "accessTokenSignatureAlgorithm": "JWA algorithm used for signing access tokens.",
   "idTokenSignatureAlgorithm": "JWA algorithm used for signing ID tokens.",
