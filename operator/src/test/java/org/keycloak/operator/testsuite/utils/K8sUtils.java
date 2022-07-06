@@ -28,11 +28,13 @@ import io.fabric8.kubernetes.client.utils.Serialization;
 import io.quarkus.logging.Log;
 import org.awaitility.Awaitility;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatus;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
 
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
@@ -73,20 +75,20 @@ public final class K8sUtils {
 
     public static void waitForKeycloakToBeReady(KubernetesClient client, Keycloak kc) {
         Log.infof("Waiting for Keycloak \"%s\"", kc.getMetadata().getName());
+        AtomicReference<KeycloakStatus> oldStatus = new AtomicReference<>();
         Awaitility.await()
                 .pollInterval(1, TimeUnit.SECONDS)
                 .timeout(5, TimeUnit.MINUTES)
                 .ignoreExceptions()
-                .untilAsserted(() -> {
-                    var currentKc = client
-                            .resources(Keycloak.class)
-                            .inNamespace(kc.getMetadata().getNamespace())
-                            .withName(kc.getMetadata().getName())
-                            .get();
-
-                    CRAssert.assertKeycloakStatusCondition(currentKc, KeycloakStatusCondition.READY, true);
-                    CRAssert.assertKeycloakStatusCondition(currentKc, KeycloakStatusCondition.HAS_ERRORS, false);
-                });
+                .until(() -> client
+                                .resources(Keycloak.class)
+                                .inNamespace(kc.getMetadata().getNamespace())
+                                .withName(kc.getMetadata().getName())
+                                .get(),
+                        new AssertingMatcher<>(currentKc -> {
+                            CRAssert.assertKeycloakStatusCondition(currentKc, KeycloakStatusCondition.READY, true);
+                            CRAssert.assertKeycloakStatusCondition(currentKc, KeycloakStatusCondition.HAS_ERRORS, false);
+                        }));
     }
 
     public static String inClusterCurl(KubernetesClient k8sclient, String namespace, String url) {

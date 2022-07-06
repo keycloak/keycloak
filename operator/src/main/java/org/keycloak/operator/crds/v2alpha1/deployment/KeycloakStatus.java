@@ -45,4 +45,11 @@ public class KeycloakStatus {
     public int hashCode() {
         return Objects.hash(getConditions());
     }
+
+    @Override
+    public String toString() {
+        return "KeycloakStatus{" +
+                "conditions=" + conditions +
+                '}';
+    }
 }
