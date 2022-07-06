@@ -54,17 +54,19 @@ export const PageNav: React.FunctionComponent = () => {
     //remove "/realm-name" from the start of the path
     const activeItem = history.location.pathname.substring(realm.length + 1);
     return (
-      <NavLink
-        id={"nav-item" + path.replace("/", "-")}
-        to={`/${realm}${path}`}
-        className="pf-c-nav__link"
-        activeClassName="pf-m-current"
-        isActive={() =>
-          path === activeItem || (path !== "/" && activeItem.startsWith(path))
-        }
-      >
-        {t(title)}
-      </NavLink>
+      <li>
+        <NavLink
+          id={"nav-item" + path.replace("/", "-")}
+          to={`/${realm}${path}`}
+          className="pf-c-nav__link"
+          activeClassName="pf-m-current"
+          isActive={() =>
+            path === activeItem || (path !== "/" && activeItem.startsWith(path))
+          }
+        >
+          {t(title)}
+        </NavLink>
+      </li>
     );
   };
 
