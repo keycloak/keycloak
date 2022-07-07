@@ -17,7 +17,7 @@
     "lint": "eslint . --ext js,jsx,mjs,ts,tsx",
     "start": "snowpack dev",
     "start:rh-sso": "THEME_NAME=rh-sso snowpack dev",
-    "test": "jest",
+    "test": "vitest",
     "cy:open": "cypress open --e2e --browser chrome",
     "cy:run": "cypress run --browser chrome",
     "cy:check-types": "tsc --project cypress/tsconfig.json",
@@ -71,6 +71,7 @@
     "@types/tar-fs": "^2.0.1",
     "@typescript-eslint/eslint-plugin": "^5.30.4",
     "@typescript-eslint/parser": "^5.30.4",
+    "@vitejs/plugin-react": "^1.3.2",
     "cypress": "^10.3.0",
     "decompress": "^4.2.1",
     "del": "^6.1.1",
@@ -83,8 +84,6 @@
     "gunzip-maybe": "^1.4.2",
     "http2-proxy": "^5.0.53",
     "husky": "^8.0.1",
-    "jest": "^28.1.2",
-    "jest-environment-jsdom": "^28.1.2",
     "lint-staged": "^13.0.3",
     "node-fetch": "^3.2.6",
     "postcss": "^8.4.14",
@@ -94,9 +93,9 @@
     "progress-promise": "^0.0.6",
     "snowpack": "^3.8.6",
     "tar-fs": "^2.1.1",
-    "ts-jest": "^28.0.5",
     "ts-node": "^10.8.2",
-    "typescript": "^4.7.4"
+    "typescript": "^4.7.4",
+    "vitest": "^0.17.0"
   },
   "lint-staged": {
     "*.{js,jsx,mjs,ts,tsx}": "eslint --cache --fix"

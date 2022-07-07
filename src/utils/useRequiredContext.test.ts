@@ -1,11 +1,11 @@
 import type { Context } from "react";
 import { useContext } from "react";
-import { mocked } from "jest-mock";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import useRequiredContext from "./useRequiredContext";
 
-jest.mock("react");
+vi.mock("react");
 
-const useContextMock = mocked(useContext);
+const useContextMock = vi.mocked(useContext);
 
 describe("useRequiredContext", () => {
   beforeEach(() => {

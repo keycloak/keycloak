@@ -1,13 +1,14 @@
 /**
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-import { fireEvent, screen, render } from "@testing-library/react";
 import React from "react";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
 import { useConfirmDialog } from "./ConfirmDialog";
 
 describe("ConfirmDialog", () => {
   it("renders a simple confirm dialog", () => {
-    const onConfirm = jest.fn();
+    const onConfirm = vi.fn();
     const Test = () => {
       const [toggle, ConfirmDialog] = useConfirmDialog({
         titleKey: "Delete app02?",

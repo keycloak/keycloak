@@ -1,4 +1,5 @@
 import type PasswordPolicyTypeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/passwordPolicyTypeRepresentation";
+import { describe, expect, it } from "vitest";
 import { parsePolicy, serializePolicy, SubmittedValues } from "./util";
 
 describe("serializePolicy", () => {

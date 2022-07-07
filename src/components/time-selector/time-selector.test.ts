@@ -1,3 +1,4 @@
+import { describe, expect, it } from "vitest";
 import { getTimeUnit, toHumanFormat } from "./TimeSelector";
 
 describe("Time conversion functions", () => {

@@ -1,10 +1,11 @@
+import { describe, expect, it, vi } from "vitest";
 import {
   arrayToKeyValue,
   keyValueToArray,
   KeyValueType,
 } from "./key-value-convert";
 
-jest.mock("react");
+vi.mock("react");
 
 describe("Tests the convert functions for attribute input", () => {
   it("converts empty array into form value", () => {

@@ -1,6 +1,7 @@
+import { describe, expect, it, vi } from "vitest";
 import { convertFormValuesToObject, convertToFormValues } from "./util";
 
-jest.mock("react");
+vi.mock("react");
 
 describe("Tests the form convert util functions", () => {
   it("convert to form values", () => {
@@ -116,7 +117,7 @@ describe("Tests the form convert util functions", () => {
     const given = {
       config: { group: ["one"], another: { nested: ["value"] } },
     };
-    const setValue = jest.fn();
+    const setValue = vi.fn();
 
     //when
     convertToFormValues(given, setValue);

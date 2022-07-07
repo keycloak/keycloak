@@ -1,11 +1,12 @@
 /**
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-import { render, waitFor } from "@testing-library/react";
+import React, { FunctionComponent } from "react";
 import type KeycloakAdminClient from "@keycloak/keycloak-admin-client";
 import type { ServerInfoRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/serverInfoRepesentation";
-import React, { FunctionComponent } from "react";
+import { render, waitFor } from "@testing-library/react";
 import { HashRouter } from "react-router-dom";
+import { describe, expect, it } from "vitest";
 import { AccessContextProvider } from "../../context/access/Access";
 import { AdminClient } from "../../context/auth/AdminClient";
 import { RealmContext } from "../../context/realm-context/RealmContext";

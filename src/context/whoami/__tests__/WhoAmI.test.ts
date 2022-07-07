@@ -1,9 +1,10 @@
 /**
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
-import whoamiMock from "./mock-whoami.json";
-import { WhoAmI } from "../WhoAmI";
 import type WhoAmIRepresentation from "@keycloak/keycloak-admin-client/lib/defs/whoAmIRepresentation";
+import { expect, test } from "vitest";
+import { WhoAmI } from "../WhoAmI";
+import whoamiMock from "./mock-whoami.json";
 
 test("returns display name", () => {
   const whoami = new WhoAmI(whoamiMock as WhoAmIRepresentation);

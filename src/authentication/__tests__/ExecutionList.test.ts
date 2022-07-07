@@ -1,3 +1,4 @@
+import { describe, expect, it } from "vitest";
 import { ExecutionList, IndexChange, LevelChange } from "../execution-model";
 
 describe("ExecutionList", () => {

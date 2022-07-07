@@ -1,7 +1,8 @@
 /**
- * @jest-environment jsdom
+ * @vitest-environment jsdom
  */
 import { act, renderHook } from "@testing-library/react-hooks";
+import { describe, expect, it } from "vitest";
 import useToggle from "./useToggle";
 
 describe("useToggle", () => {
