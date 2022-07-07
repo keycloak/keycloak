@@ -104,22 +104,7 @@ The availability of the new API is a priority for the next Keycloak version.
 
 == Changes to `RealmModel`
 
-For the interface `RealmModel` the methods `getUserStorageProviders` and `getUserStorageProvidersStream` have been removed.
-`UserStorageUtil.getUserStorageProvidersStream` needs to be used instead.
-
-.Before migration: code will not compile due to the changed API
-[source,java,subs="+quotes"]
-----
-realm**.getUserStorageProviders()**...;
-----
-
-.After migration: use the new API
-[source,java,subs="+quotes"]
-----
-UserStorageUtil**.getUserStorageProvidersStream(realm)**...;
-----
-
-The methods `getClientStorageProviders`, `getClientStorageProvidersStream`, `getRoleStorageProviders` and `getRoleStorageProvidersStream` have been removed as well.
+The methods getUserStorageProviders`, `getUserStorageProvidersStream`, `getClientStorageProviders`, `getClientStorageProvidersStream`, `getRoleStorageProviders` and `getRoleStorageProvidersStream` have been removed.
 Code which depends on these methods and runs with the legacy storage enabled should cast the instance as follows:
 
 .Before migration: code will not compile due to the changed API
