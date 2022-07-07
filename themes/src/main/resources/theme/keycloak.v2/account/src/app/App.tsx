@@ -33,7 +33,6 @@ import { KeycloakContext } from './keycloak-service/KeycloakContext';
 
 declare function toggleReact(): void;
 declare function isWelcomePage(): boolean;
-declare function loggedInUserName(): string;
 
 declare const brandImg: string;
 declare const brandUrl: string;
