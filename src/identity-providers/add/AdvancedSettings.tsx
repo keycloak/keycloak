@@ -152,7 +152,7 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
       >
         <Controller
           name="config.syncMode"
-          defaultValue={syncModes[0]}
+          defaultValue={syncModes[0].toUpperCase()}
           control={control}
           render={({ onChange, value }) => (
             <Select
