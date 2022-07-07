@@ -153,7 +153,7 @@
 
         <!-- Databases -->
         <mysql.version>8.0.23</mysql.version>
-        <mysql.driver.version>8.0.23</mysql.driver.version>
+        <mysql.driver.version>8.0.28</mysql.driver.version>
         <postgresql.version>13.2</postgresql.version>
         <postgresql.driver.version>42.3.3</postgresql.driver.version>
         <mariadb.version>10.3.27</mariadb.version>
