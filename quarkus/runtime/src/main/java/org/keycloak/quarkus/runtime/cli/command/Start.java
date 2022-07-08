@@ -52,7 +52,7 @@ public final class Start extends AbstractStartCommand implements Runnable {
     Boolean autoConfig;
 
     @CommandLine.Option(names = {NO_AUTO_BUILD_OPTION_LONG},
-            description = "Avoids the '--auto-build' automatic run, which from version 19.0.0, is triggered by default when issuing the 'start' command.",
+            description = "Avoids the automatic run of the '--auto-build' option, which from version 19.0.0, is triggered by default when issuing the 'start' command.",
             paramLabel = NO_PARAM_LABEL,
             order = 1)
     Boolean noAutoConfig;

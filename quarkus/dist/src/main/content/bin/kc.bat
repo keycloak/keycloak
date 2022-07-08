@@ -140,6 +140,15 @@ if %errorlevel% GTR 0 (
         set "CONFIG_ARGS=%CONFIG_ARGS:--auto-build=% --auto-build"
     )
 )
+
+rem Handling the --no-auto-build for 'start-dev' command
+call:getQtyOccurenceInString "start-dev" "%CONFIG_ARGS%"
+if %errorlevel% GTR 0 (
+    call:getQtyOccurenceInString "--no-auto-build" "%CONFIG_ARGS%"
+    if !errorlevel! GTR 0 (
+        echo "The --no-auto-build' option has no effect for 'start-dev' command, which always run '--auto-build' by default."
+    )
+)
 rem ============================================================================
 
 set "JAVA_RUN_OPTS=%JAVA_OPTS% -Dkc.home.dir="%DIRNAME%.." -Djboss.server.config.dir="%DIRNAME%..\conf" -Dkeycloak.theme.dir="%DIRNAME%..\themes" %SERVER_OPTS% -cp "%CLASSPATH_OPTS%" io.quarkus.bootstrap.runner.QuarkusEntryPoint %CONFIG_ARGS%"

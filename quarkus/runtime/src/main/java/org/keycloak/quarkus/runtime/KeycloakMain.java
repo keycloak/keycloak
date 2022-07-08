@@ -87,7 +87,7 @@ public class KeycloakMain implements QuarkusApplication {
             return;
         }
 
-        if (cliArgs.contains(NO_AUTO_BUILD_OPTION_LONG)) {
+        if (cliArgs.contains(Start.NAME) && cliArgs.contains(NO_AUTO_BUILD_OPTION_LONG)) {
             cliArgs.remove(AUTO_BUILD_OPTION_LONG);
             cliArgs.remove(AUTO_BUILD_OPTION_SHORT);
             cliArgs.remove(NO_AUTO_BUILD_OPTION_LONG);

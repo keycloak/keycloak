@@ -1,16 +1,5 @@
 #!/bin/bash
 
-function printArrayElementsInLines() {
-    local sourceArray=${!1}
-    printf "%s\n" ${sourceArray[@]}
-}
-
-function checkIfArrayContains() {
-    local sourceArray=${!1}
-    local stringToSearch="$2"
-    printArrayElementsInLines sourceArray[@] | grep -q "^$stringToSearch$"
-}
-
 function countOccurrencesInArray() {
     local sourceArray=${!1}
     local stringToSearch="$2"
@@ -90,9 +79,9 @@ do
     shift
 done
 
-
 # Handling the default adding of the '--auto-build' when issuing 'start' operation :: Keeping compatibility and Avoiding the duplicated '--auto-build' input
-if checkIfArrayContains CONFIG_ARGS[@] "start" = true; then
+TMP_CHECK_IF_START_CMD=`echo $CONFIG_ARGS | $GREP "start"`
+if [ "x$TMP_CHECK_IF_START_CMD" != "x" ]; then
     autoBuildOptionFlagName="--auto-build"
     countOccurrencesInArray CONFIG_ARGS[@] "${autoBuildOptionFlagName}"
     autoBuildOptionCount=$?
@@ -107,8 +96,6 @@ if checkIfArrayContains CONFIG_ARGS[@] "start" = true; then
         countOccurrencesInArray CONFIG_ARGS[@] "${autoBuildOptionFlagName}"
         autoBuildOptionCount=$?
     done
-
-    # echo ">>> Final Result :: CONFIG_ARGS = $CONFIG_ARGS :: "
 fi
 
 if [ "x$JAVA" = "x" ]; then
@@ -146,6 +133,17 @@ fi
 CLASSPATH_OPTS="'$DIRNAME'/../lib/quarkus-run.jar"
 
 JAVA_RUN_OPTS="$JAVA_OPTS $SERVER_OPTS -cp $CLASSPATH_OPTS io.quarkus.bootstrap.runner.QuarkusEntryPoint ${CONFIG_ARGS#?}"
+
+# Handling the --no-auto-build for 'start-dev' command
+TMP_CHECK_IF_START_CMD=`echo $CONFIG_ARGS | $GREP "start-dev"`
+if [ "x$TMP_CHECK_IF_START_CMD" != "x" ]; then
+    noAutoBuildOptionFlagName="--no-auto-build"
+
+    TMP_CHECK_IF_START_CMD=`echo $CONFIG_ARGS | $GREP "no-auto-build"`
+    if [ "x$TMP_CHECK_IF_START_CMD" != "x" ]; then
+        echo "The --no-auto-build' option has no effect for 'start-dev' command, which always run '--auto-build' by default."
+    fi
+fi
 
 if [[ $CONFIG_ARGS = *"--auto-build"* ]]; then
     eval "$JAVA" -Dkc.config.rebuild-and-exit=true $JAVA_RUN_OPTS

@@ -12,11 +12,13 @@ Options:
                        server image must be built prior to starting the server. This option
                        provides an alternative to manually running the 'build' prior to starting
                        the server. Use this configuration carefully in production as it might
-                       impact the startup time.
+                       impact the startup time. From version 19.0.0, this option is triggered by
+                       default when issuing the 'start' command.
 -h, --help           This help message.
 --import-realm       Import realms during startup by reading any realm configuration file from the
                        'data/import' directory.
---no-auto-build      [TBD]
+--no-auto-build      Avoids the automatic run of the '--auto-build' option, which from version
+                       19.0.0, is triggered by default when issuing the 'start' command.
 
 Database:
 

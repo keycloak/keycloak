@@ -17,21 +17,20 @@
 
 package org.keycloak.it.junit5.extension;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
-import static org.testcontainers.shaded.org.hamcrest.MatcherAssert.assertThat;
-import static org.testcontainers.shaded.org.hamcrest.Matchers.containsString;
-
-import java.util.List;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.approvaltests.Approvals;
 import io.quarkus.test.junit.main.LaunchResult;
+import org.approvaltests.Approvals;
 import org.approvaltests.namer.NamedEnvironment;
 import org.keycloak.it.junit5.extension.approvalTests.KcNamerFactory;
+
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.testcontainers.shaded.org.hamcrest.MatcherAssert.assertThat;
+import static org.testcontainers.shaded.org.hamcrest.Matchers.containsString;
+import static org.testcontainers.shaded.org.hamcrest.Matchers.not;
 
 public interface CLIResult extends LaunchResult {
 
@@ -93,7 +92,7 @@ public interface CLIResult extends LaunchResult {
     }
 
     default void assertNoMessage(String message) {
-        assertFalse(getOutput().contains(message));
+        assertThat(getOutput(), not(containsString(message)));
     }
 
     default void assertBuild() {
