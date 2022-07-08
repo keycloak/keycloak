@@ -35,7 +35,7 @@
     "dagre": "^0.8.5",
     "file-saver": "^2.0.5",
     "flat": "^5.0.2",
-    "i18next": "^21.8.11",
+    "i18next": "^21.8.13",
     "i18next-http-backend": "^1.4.1",
     "lodash-es": "^4.17.21",
     "react": "^17.0.2",
