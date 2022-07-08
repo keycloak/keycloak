@@ -95,7 +95,7 @@
     "tar-fs": "^2.1.1",
     "ts-node": "^10.8.2",
     "typescript": "^4.7.4",
-    "vitest": "^0.17.0"
+    "vitest": "^0.17.1"
   },
   "lint-staged": {
     "*.{js,jsx,mjs,ts,tsx}": "eslint --cache --fix"
