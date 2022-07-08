@@ -91,7 +91,7 @@
     "postcss-svg": "^3.0.0",
     "prettier": "^2.7.1",
     "progress-promise": "^0.0.6",
-    "snowpack": "^3.8.6",
+    "snowpack": "3.8.6",
     "tar-fs": "^2.1.1",
     "ts-node": "^10.8.2",
     "typescript": "^4.7.4",
