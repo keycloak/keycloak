@@ -49,7 +49,7 @@
   },
   "devDependencies": {
     "@4tw/cypress-drag-drop": "^2.2.1",
-    "@octokit/rest": "^18.12.0",
+    "@octokit/rest": "^19.0.1",
     "@snowpack/app-scripts-react": "^2.0.1",
     "@snowpack/plugin-postcss": "^1.4.3",
     "@snowpack/plugin-react-refresh": "^2.5.0",
