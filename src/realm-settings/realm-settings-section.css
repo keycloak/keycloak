@@ -180,11 +180,6 @@ article.pf-c-card.pf-m-flat.kc-login-settings-template
   padding: var(--pf-global--spacer--sm);
 }
 
-.kc-help-text {
-  margin: var(--pf-global--spacer--sm);
-  font-size: var(--pf-global--FontSize--sm);
-}
-
 .kc-profiles-config-section {
   align-items: center;
 }

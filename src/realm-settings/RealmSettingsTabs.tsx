@@ -10,6 +10,7 @@ import {
   PageSection,
   Tab,
   TabTitleText,
+  Tooltip,
 } from "@patternfly/react-core";
 
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
@@ -44,7 +45,6 @@ import { PartialImportDialog } from "./PartialImport";
 import { PartialExportDialog } from "./PartialExport";
 import { RealmSettingsTab, toRealmSettings } from "./routes/RealmSettings";
 import { LocalizationTab } from "./LocalizationTab";
-import { HelpItem } from "../components/help-enabler/HelpItem";
 import { UserRegistration } from "./UserRegistration";
 import { toDashboard } from "../dashboard/routes/Dashboard";
 import environment from "../environment";
@@ -363,16 +363,11 @@ export const RealmSettingsTabs = ({
                 id="profiles"
                 data-testid="rs-policies-clientProfiles-tab"
                 aria-label={t("clientProfilesSubTab")}
-                title={
-                  <TabTitleText>
-                    {t("profiles")}
-                    <span className="kc-help-text">
-                      <HelpItem
-                        helpText="realm-settings:clientPoliciesProfilesHelpText"
-                        fieldLabelId="realm-settings:clientPoliciesProfiles"
-                      />
-                    </span>
-                  </TabTitleText>
+                title={<TabTitleText>{t("profiles")}</TabTitleText>}
+                tooltip={
+                  <Tooltip
+                    content={t("realm-settings:clientPoliciesProfilesHelpText")}
+                  />
                 }
                 {...policiesRoute("profiles")}
               >
@@ -383,16 +378,11 @@ export const RealmSettingsTabs = ({
                 data-testid="rs-policies-clientPolicies-tab"
                 aria-label={t("clientPoliciesSubTab")}
                 {...policiesRoute("policies")}
-                title={
-                  <TabTitleText>
-                    {t("policies")}
-                    <span className="kc-help-text">
-                      <HelpItem
-                        helpText="realm-settings:clientPoliciesPoliciesHelpText"
-                        fieldLabelId="realm-settings:clientPoliciesPolicies"
-                      />
-                    </span>
-                  </TabTitleText>
+                title={<TabTitleText>{t("policies")}</TabTitleText>}
+                tooltip={
+                  <Tooltip
+                    content={t("realm-settings:clientPoliciesPoliciesHelpText")}
+                  />
                 }
               >
                 <PoliciesTab />
