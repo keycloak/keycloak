@@ -57,6 +57,7 @@ export const FlowRow = ({
         className="keycloak__authentication__flow-item"
         id={execution.id}
         isExpanded={!execution.isCollapsed}
+        aria-labelledby={`title-id-${execution.id}`}
       >
         <DataListItemRow
           className="keycloak__authentication__flow-row"
@@ -65,17 +66,14 @@ export const FlowRow = ({
           aria-labelledby={execution.id}
         >
           <DataListControl>
-            <DataListDragButton
-              aria-labelledby={execution.id}
-              aria-describedby={t("common-help:dragHelp")}
-            />
+            <DataListDragButton aria-label={t("common-help:dragHelp")} />
           </DataListControl>
           {hasSubList && (
             <DataListToggle
               onClick={() => onRowClick(execution)}
               isExpanded={!execution.isCollapsed}
               id={`toggle1-${execution.id}`}
-              aria-controls={`expand-${execution.id}`}
+              aria-controls={execution.executionList![0].id}
             />
           )}
           <DataListItemCells
@@ -83,7 +81,7 @@ export const FlowRow = ({
               <DataListCell key={`${execution.id}-name`}>
                 {!execution.authenticationFlow && (
                   <FlowTitle
-                    id={execution.id}
+                    id={`title-id-${execution.id}`}
                     key={execution.id}
                     title={execution.displayName!}
                   />
