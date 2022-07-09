@@ -226,9 +226,10 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
   ) => {
     setTableRows((prev) => {
       const newRows = cloneDeep(prev);
-      (
-        newRows[rowIndex]?.cells?.[cellIndex] as IEditableTextCell
-      ).props.editableValue = newValue;
+      const textCell = newRows[rowIndex]?.cells?.[
+        cellIndex
+      ] as IEditableTextCell;
+      textCell.props.editableValue = newValue;
       return newRows;
     });
   };

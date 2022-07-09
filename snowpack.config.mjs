@@ -25,6 +25,17 @@ export default {
   },
   plugins: [
     "@snowpack/plugin-postcss",
+    [
+      "@snowpack/plugin-webpack",
+      {
+        outputPattern: {
+          css: "[name].[contenthash].css",
+        },
+        extendConfig: {
+          output: { publicPath: "auto", path: path.resolve(".", "build") },
+        },
+      },
+    ],
     "@snowpack/plugin-react-refresh",
     "@snowpack/plugin-typescript",
   ],
@@ -38,11 +49,6 @@ export default {
         }),
     },
   ],
-  optimize: {
-    bundle: true,
-    splitting: true,
-    minify: true,
-  },
   devOptions: {
     hmrErrorOverlay: false,
   },

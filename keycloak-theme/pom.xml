@@ -212,9 +212,10 @@
                             <value>href="${resourceUrl}/</value>
                         </replacement>
                         <replacement>
-                            <token><![CDATA[</body>]]></token>
+                            <token><![CDATA[<body style="height: 100%;">]]></token>
                             <value xml:space="preserve">
 <![CDATA[
+<body style="height: 100%;">
   <script id="environment" type="application/json">
     {
       "loginRealm": "${loginRealm!"master"}",
@@ -228,7 +229,6 @@
       "isRunningAsTheme": true
     }
   </script>
-</body>
 ]]>
 </value>
                         </replacement>
