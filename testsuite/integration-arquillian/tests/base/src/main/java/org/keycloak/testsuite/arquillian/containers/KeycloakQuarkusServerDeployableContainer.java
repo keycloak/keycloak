@@ -8,13 +8,15 @@ import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
@@ -22,7 +24,6 @@ import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -70,6 +71,7 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
     @Override
     public void start() throws LifecycleException {
         try {
+            importRealm();
             container = startContainer();
             waitForReadiness();
         } catch (Exception e) {
@@ -125,6 +127,28 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
     @Override
     public void undeploy(Descriptor descriptor) throws DeploymentException {
 
+    }
+
+    private void importRealm() throws IOException, URISyntaxException {
+        if (suiteContext.get().isAuthServerMigrationEnabled() && configuration.getImportFile() != null) {
+            final String importFileName = configuration.getImportFile();
+
+            log.infof("Importing realm from file '%s'", importFileName);
+
+            final URL url = getClass().getResource("/migration-test/" + importFileName);
+            if (url == null) throw new IllegalArgumentException("Cannot find migration import file");
+
+            final Path path = Paths.get(url.toURI());
+            final File wrkDir = configuration.getProvidersPath().resolve("bin").toFile();
+            final List<String> commands = new ArrayList<>();
+
+            commands.add(getCommand());
+            commands.add("import");
+            commands.add("--file=" + wrkDir.toPath().relativize(path));
+
+            final ProcessBuilder pb = new ProcessBuilder(commands);
+            pb.directory(wrkDir).inheritIO().start();
+        }
     }
 
     private Process startContainer() throws IOException {

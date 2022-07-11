@@ -286,10 +286,34 @@ Run the test (Update according to your DB connection, versions etc):
       -Dprevious.product.unpacked.folder.name=keycloak-$OLD_KEYCLOAK_VERSION \
       -Dmigration.import.file.name=migration-realm-$OLD_KEYCLOAK_VERSION.json \
       -Dauth.server.ssl.required=false \
-      -Djdbc.mvn.version=2.2.4
+      -Djdbc.mvn.version=2.2.4 \
+      -Dsurefire.failIfNoSpecifiedTests=false
 
 
 For the available versions of old keycloak server, you can take a look to [this directory](tests/base/src/test/resources/migration-test) .
+
+### DB migration test with Quarkus
+It is possible to execute DB migration tests for Keycloak with Quarkus distribution by specifying auth server as `-Pauth-server-quarkus` 
+and instead of the `auth-server-migration-legacy`, use only `auth-server-migration`.
+
+The first version of Keycloak on Quarkus is version `17.0.0`.
+Therefore, it is not possible to define the older version.
+You can execute those tests as follows:
+```
+export OLD_KEYCLOAK_VERSION=17.0.0
+
+mvn -B -f testsuite/integration-arquillian/pom.xml \
+  clean install \
+  -Pjpa,auth-server-quarkus,db-mariadb,auth-server-migration \
+  -Dtest=MigrationTest \
+  -Dmigration.mode=auto \
+  -Dmigrated.auth.server.version=$OLD_KEYCLOAK_VERSION \
+  -Dprevious.product.unpacked.folder.name=keycloak-$OLD_KEYCLOAK_VERSION \
+  -Dmigration.import.file.name=migration-realm-$OLD_KEYCLOAK_VERSION.json \
+  -Dauth.server.ssl.required=false \
+  -Djdbc.mvn.version=2.2.4 \
+  -Dsurefire.failIfNoSpecifiedTests=false
+```
 
 ### DB migration test with manual mode
 

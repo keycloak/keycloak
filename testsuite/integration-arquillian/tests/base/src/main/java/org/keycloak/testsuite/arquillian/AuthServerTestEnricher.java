@@ -457,6 +457,7 @@ public class AuthServerTestEnricher {
         if (suiteContext.isAuthServerMigrationEnabled()) {
             log.info("## STOP old container: " + suiteContext.getMigratedAuthServerInfo().getQualifier());
             stopContainerEvent.fire(new StopContainer(suiteContext.getMigratedAuthServerInfo().getArquillianContainer()));
+            suiteContext.setMigratedAuthServerInfo(null);
         }
     }
 

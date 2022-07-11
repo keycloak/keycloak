@@ -751,13 +751,16 @@
             <property name="enabled">${auth.server.migration}</property>
             <property name="adapterImplClass">org.keycloak.testsuite.arquillian.containers.KeycloakQuarkusServerDeployableContainer</property>
             <property name="bindHttpPortOffset">${auth.server.port.offset}</property>
-            <property name="javaOpts">-Xms512m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=512m -Djava.net.preferIPv4Stack=true</property>
-            <property name="javaVmArguments">
-                ${migration.import.props.previous}
+            <property name="importFile">${migration.import.file.name}</property>
+            <property name="javaOpts">
+                -Xms512m
+                -Xmx512m
+                -XX:MetaspaceSize=96M
+                -XX:MaxMetaspaceSize=512m
+                -Djava.net.preferIPv4Stack=true
                 ${auth.server.memory.settings}
                 -Dauth.server.db.host=${auth.server.db.host}
             </property>
-            <property name="managementPort">${auth.server.management.port}</property>
         </configuration>
     </container>
 
