@@ -24,14 +24,20 @@ import org.infinispan.protostream.annotations.ProtoField;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.map.annotations.GenerateHotRodEntityImplementation;
 import org.keycloak.models.map.annotations.IgnoreForEntityImplementationGenerator;
+import org.keycloak.models.map.common.DeepCloner;
+import org.keycloak.models.map.common.delegate.DelegateProvider;
 import org.keycloak.models.map.storage.hotRod.authorization.HotRodResourceServerEntity;
 import org.keycloak.models.map.common.UpdatableEntity;
+import org.keycloak.models.map.storage.hotRod.client.HotRodClientEntityDelegate;
 import org.keycloak.models.map.storage.hotRod.common.AbstractHotRodEntity;
 import org.keycloak.models.map.storage.hotRod.common.CommonPrimitivesProtoSchemaInitializer;
+import org.keycloak.models.map.storage.hotRod.common.HotRodEntityDelegate;
 import org.keycloak.models.map.storage.hotRod.common.HotRodStringPair;
+import org.keycloak.models.map.storage.hotRod.common.HotRodTypesUtils;
 import org.keycloak.models.map.storage.hotRod.common.UpdatableHotRodEntityDelegateImpl;
 import org.keycloak.models.map.userSession.MapAuthenticatedClientSessionEntity;
 import org.keycloak.models.map.userSession.MapUserSessionEntity;
+import org.keycloak.models.map.userSession.MapUserSessionEntityDelegate;
 
 import java.util.Collections;
 import java.util.Objects;
@@ -54,7 +60,7 @@ public class HotRodUserSessionEntity extends AbstractHotRodEntity {
     @AutoProtoSchemaBuilder(
             includeClasses = {
                     HotRodUserSessionEntity.class,
-                    HotRodAuthenticatedClientSessionEntity.class,
+                    HotRodAuthenticatedClientSessionEntityReference.class,
             },
             schemaFilePath = "proto/",
             schemaPackageName = CommonPrimitivesProtoSchemaInitializer.HOT_ROD_ENTITY_PACKAGE,
@@ -119,7 +125,7 @@ public class HotRodUserSessionEntity extends AbstractHotRodEntity {
 
     @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
     @ProtoField(number = 16)
-    public Set<HotRodAuthenticatedClientSessionEntity> authenticatedClientSessions;
+    public Set<HotRodAuthenticatedClientSessionEntityReference> authenticatedClientSessions;
 
     @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
     @ProtoField(number = 17)
@@ -166,15 +172,18 @@ public class HotRodUserSessionEntity extends AbstractHotRodEntity {
 
         @Override
         public Optional<MapAuthenticatedClientSessionEntity> getAuthenticatedClientSession(String clientUUID) {
-            Set<HotRodAuthenticatedClientSessionEntity> acss = getHotRodEntity().authenticatedClientSessions;
+            Set<HotRodAuthenticatedClientSessionEntityReference> acss = getHotRodEntity().authenticatedClientSessions;
             if (acss == null || acss.isEmpty()) return Optional.empty();
 
-            return acss.stream().filter(acs -> Objects.equals(acs.clientId, clientUUID)).findFirst().map(HotRodAuthenticatedClientSessionEntityDelegate::new);
+            return acss.stream()
+                    .filter(acs -> Objects.equals(acs.clientId, clientUUID))
+                    .findFirst()
+                    .map(HotRodTypesUtils::migrateHotRodAuthenticatedClientSessionEntityReferenceToMapAuthenticatedClientSessionEntity);
         }
 
         @Override
         public Boolean removeAuthenticatedClientSession(String clientUUID) {
-            Set<HotRodAuthenticatedClientSessionEntity> acss = getHotRodEntity().authenticatedClientSessions;
+            Set<HotRodAuthenticatedClientSessionEntityReference> acss = getHotRodEntity().authenticatedClientSessions;
             boolean removed = acss != null && acss.removeIf(uc -> Objects.equals(uc.clientId, clientUUID));
             getHotRodEntity().updated |= removed;
             return removed;
