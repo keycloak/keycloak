@@ -17,16 +17,20 @@
 
 package org.keycloak.quarkus.deployment;
 
+import static org.keycloak.config.StorageOptions.STORAGE;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalBooleanValue;
+import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
 
 import java.util.function.BooleanSupplier;
+import org.keycloak.config.StorageOptions;
 import org.keycloak.quarkus.runtime.Environment;
+import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 
 public class IsLegacyStoreEnabled implements BooleanSupplier {
 
     @Override
     public boolean getAsBoolean() {
-        return getOptionalBooleanValue("kc.storage-legacy-enabled").get();
+        return getOptionalBooleanValue(NS_KEYCLOAK_PREFIX.concat(STORAGE.getKey())).isEmpty();
     }
 
 }

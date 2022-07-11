@@ -111,6 +111,7 @@ public class KeycloakMain implements QuarkusApplication {
             errorHandler.error(errStream,
                     String.format("Unexpected error when starting the server in (%s) mode", getKeycloakModeFromProfile(getProfileOrDefault("prod"))),
                     cause.getCause());
+            System.exit(1);
         } finally {
             Thread.currentThread().setContextClassLoader(originalCl);
         }
