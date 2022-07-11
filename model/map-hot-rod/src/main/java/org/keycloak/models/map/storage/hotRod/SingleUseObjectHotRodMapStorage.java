@@ -61,17 +61,10 @@ public class SingleUseObjectHotRodMapStorage<K, E extends AbstractHotRodEntity, 
     }
 
     @Override
-    public MapKeycloakTransaction<HotRodSingleUseObjectEntityDelegate, ActionTokenValueModel> createTransaction(KeycloakSession session) {
-        MapKeycloakTransaction<HotRodSingleUseObjectEntityDelegate, ActionTokenValueModel> transaction = session.getAttribute("map-transaction-" + hashCode(), MapKeycloakTransaction.class);
-
-        if (transaction == null) {
-            Map<SearchableModelField<? super ActionTokenValueModel>, MapModelCriteriaBuilder.UpdatePredicatesFunc<K, HotRodSingleUseObjectEntityDelegate, ActionTokenValueModel>> fieldPredicates =
-                    MapFieldPredicates.getPredicates((Class<ActionTokenValueModel>) storedEntityDescriptor.getModelTypeClass());
-            transaction = new SingleUseObjectKeycloakTransaction(this, keyConverter, cloner, fieldPredicates);
-            session.setAttribute("map-transaction-" + hashCode(), transaction);
-        }
-
-        return transaction;
+    protected MapKeycloakTransaction<HotRodSingleUseObjectEntityDelegate, ActionTokenValueModel> createTransactionInternal(KeycloakSession session) {
+        Map<SearchableModelField<? super ActionTokenValueModel>, MapModelCriteriaBuilder.UpdatePredicatesFunc<K, HotRodSingleUseObjectEntityDelegate, ActionTokenValueModel>> fieldPredicates =
+                MapFieldPredicates.getPredicates((Class<ActionTokenValueModel>) storedEntityDescriptor.getModelTypeClass());
+       return new SingleUseObjectKeycloakTransaction(this, keyConverter, cloner, fieldPredicates);
     }
 
     @Override

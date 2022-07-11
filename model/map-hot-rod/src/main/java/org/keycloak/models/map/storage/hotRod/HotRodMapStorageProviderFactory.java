@@ -54,6 +54,10 @@ import org.keycloak.models.map.realm.entity.MapRequiredCredentialEntity;
 import org.keycloak.models.map.realm.entity.MapWebAuthnPolicyEntity;
 import org.keycloak.models.map.role.MapRoleEntity;
 import org.keycloak.models.map.singleUseObject.MapSingleUseObjectEntity;
+import org.keycloak.models.map.storage.MapKeycloakTransaction;
+import org.keycloak.models.map.storage.chm.ConcurrentHashMapKeycloakTransaction;
+import org.keycloak.models.map.storage.chm.MapFieldPredicates;
+import org.keycloak.models.map.storage.chm.MapModelCriteriaBuilder;
 import org.keycloak.models.map.storage.hotRod.authSession.HotRodAuthenticationSessionEntityDelegate;
 import org.keycloak.models.map.storage.hotRod.authSession.HotRodRootAuthenticationSessionEntityDelegate;
 import org.keycloak.models.map.storage.hotRod.authorization.HotRodPermissionTicketEntityDelegate;
@@ -96,8 +100,10 @@ import org.keycloak.models.map.storage.hotRod.user.HotRodUserConsentEntityDelega
 import org.keycloak.models.map.storage.hotRod.user.HotRodUserCredentialEntityDelegate;
 import org.keycloak.models.map.storage.hotRod.user.HotRodUserEntityDelegate;
 import org.keycloak.models.map.storage.hotRod.user.HotRodUserFederatedIdentityEntityDelegate;
+import org.keycloak.models.map.storage.hotRod.userSession.HotRodAuthenticatedClientSessionEntity;
 import org.keycloak.models.map.storage.hotRod.userSession.HotRodAuthenticatedClientSessionEntityDelegate;
 import org.keycloak.models.map.storage.hotRod.userSession.HotRodUserSessionEntityDelegate;
+import org.keycloak.models.map.storage.hotRod.userSession.HotRodUserSessionTransaction;
 import org.keycloak.models.map.user.MapUserConsentEntity;
 import org.keycloak.models.map.user.MapUserCredentialEntity;
 import org.keycloak.models.map.user.MapUserEntity;
@@ -105,6 +111,7 @@ import org.keycloak.models.map.user.MapUserFederatedIdentityEntity;
 import org.keycloak.models.map.userSession.MapAuthenticatedClientSessionEntity;
 import org.keycloak.models.map.userSession.MapUserSessionEntity;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
+import org.keycloak.storage.SearchableModelField;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -114,6 +121,7 @@ public class HotRodMapStorageProviderFactory implements AmphibianProviderFactory
     public static final String PROVIDER_ID = "hotrod";
     private final Map<Class<?>, HotRodMapStorage> storages = new ConcurrentHashMap<>();
 
+    private static final Map<SearchableModelField<AuthenticatedClientSessionModel>, MapModelCriteriaBuilder.UpdatePredicatesFunc<Object, AbstractEntity, AuthenticatedClientSessionModel>> clientSessionPredicates = MapFieldPredicates.basePredicates(HotRodAuthenticatedClientSessionEntity.ID);
 
     private final static DeepCloner CLONER = new DeepCloner.Builder()
             .constructor(MapRootAuthenticationSessionEntity.class,  HotRodRootAuthenticationSessionEntityDelegate::new)
@@ -174,6 +182,9 @@ public class HotRodMapStorageProviderFactory implements AmphibianProviderFactory
     }
 
     public <E extends AbstractHotRodEntity, V extends HotRodEntityDelegate<E> & AbstractEntity, M> HotRodMapStorage<String, E, V, M> getHotRodStorage(KeycloakSession session, Class<M> modelType, MapStorageProviderFactory.Flag... flags) {
+        // We need to preload client session store before we load user session store to avoid recursive update of storages map
+        if (modelType == UserSessionModel.class) getHotRodStorage(session, AuthenticatedClientSessionModel.class, flags);
+
         return storages.computeIfAbsent(modelType, c -> createHotRodStorage(session, modelType, flags));
     }
 
@@ -183,6 +194,28 @@ public class HotRodMapStorageProviderFactory implements AmphibianProviderFactory
 
         if (modelType == ActionTokenValueModel.class) {
             return new SingleUseObjectHotRodMapStorage(connectionProvider.getRemoteCache(entityDescriptor.getCacheName()), StringKeyConverter.StringKey.INSTANCE, entityDescriptor, CLONER);
+        } if (modelType == AuthenticatedClientSessionModel.class) {
+            return new HotRodMapStorage(connectionProvider.getRemoteCache(entityDescriptor.getCacheName()),
+                    StringKeyConverter.StringKey.INSTANCE,
+                    entityDescriptor,
+                    CLONER) {
+                @Override
+                protected MapKeycloakTransaction createTransactionInternal(KeycloakSession session) {
+                    return new ConcurrentHashMapKeycloakTransaction(this, keyConverter, cloner, clientSessionPredicates);
+                }
+            };
+        } if (modelType == UserSessionModel.class) {
+            HotRodMapStorage clientSessionStore = getHotRodStorage(session, AuthenticatedClientSessionModel.class);
+            return new HotRodMapStorage(connectionProvider.getRemoteCache(entityDescriptor.getCacheName()),
+                    StringKeyConverter.StringKey.INSTANCE,
+                    entityDescriptor,
+                    CLONER) {
+                @Override
+                protected MapKeycloakTransaction createTransactionInternal(KeycloakSession session) {
+                    Map<SearchableModelField<? super UserSessionModel>, MapModelCriteriaBuilder.UpdatePredicatesFunc<String, MapUserSessionEntity, UserSessionModel>> fieldPredicates = MapFieldPredicates.getPredicates((Class<UserSessionModel>) storedEntityDescriptor.getModelTypeClass());
+                    return new HotRodUserSessionTransaction(this, keyConverter, cloner, fieldPredicates, clientSessionStore.createTransaction(session));
+                }
+            };
         }
         return new HotRodMapStorage<>(connectionProvider.getRemoteCache(entityDescriptor.getCacheName()), StringKeyConverter.StringKey.INSTANCE, entityDescriptor, CLONER);
     }

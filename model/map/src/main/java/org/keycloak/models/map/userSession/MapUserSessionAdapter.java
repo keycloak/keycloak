@@ -20,6 +20,7 @@ import org.keycloak.common.util.Time;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelIllegalStateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 
@@ -144,7 +145,12 @@ public class MapUserSessionAdapter extends AbstractUserSessionModel {
     }
 
     public boolean filterAndRemoveExpiredClientSessions(MapAuthenticatedClientSessionEntity clientSession) {
-        if (isExpired(clientSession, false)) {
+        try {
+            if (isExpired(clientSession, false)) {
+                entity.removeAuthenticatedClientSession(clientSession.getClientId());
+                return false;
+            }
+        } catch (ModelIllegalStateException ex) {
             entity.removeAuthenticatedClientSession(clientSession.getClientId());
             return false;
         }
