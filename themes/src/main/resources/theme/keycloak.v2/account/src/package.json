@@ -52,7 +52,7 @@
     "eslint-plugin-jsx-a11y": "^6.2.1",
     "eslint-plugin-react": "^7.12.4",
     "rollup-plugin-postcss": "^2.5.0",
-    "shx": "^0.3.2",
+    "shx": "^0.3.4",
     "snowpack": "^1.7.1",
     "typescript": "^3.8.3"
   },
