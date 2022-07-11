@@ -12,7 +12,7 @@
     "angular-route": "1.8.0",
     "angular-sanitize": "1.8.0",
     "angular-translate": "2.18.2",
-    "angular-translate-loader-url": "2.18.2",
+    "angular-translate-loader-url": "2.19.0",
     "angular-treeview": "0.1.5",
     "angular-ui-select2": "0.0.5",
     "autofill-event": "0.0.1",
