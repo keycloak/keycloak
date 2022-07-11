@@ -23,7 +23,7 @@
   "dependencies": {
     "@patternfly/patternfly": "^4.125.3",
     "@patternfly/react-core": "^4.147.0",
-    "@patternfly/react-icons": "^4.11.8",
+    "@patternfly/react-icons": "^4.75.1",
     "@patternfly/react-styles": "^4.11.8",
     "react": "npm:@pika/react@^16.13.1",
     "react-dom": "npm:@pika/react-dom@^16.13.1",
