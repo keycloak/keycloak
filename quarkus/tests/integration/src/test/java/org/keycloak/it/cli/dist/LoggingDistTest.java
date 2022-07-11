@@ -135,7 +135,7 @@ public class LoggingDistTest {
     void testWinLogLevelSettingsAppliedWhenJsonEnabled(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         assertFalse(cliResult.getOutput().contains("\"loggerName\":\"io.quarkus\",\"level\":\"INFO\")"));
-        assertTrue(cliResult.getOutput().contains("\"loggerName\":\"org.keycloak.quarkus.runtime.storage.database.jpa.QuarkusJpaConnectionProviderFactory\",\"level\":\"DEBUG\""));
+        assertTrue(cliResult.getOutput().contains("\"loggerName\":\"org.keycloak.services.resources.KeycloakApplication\",\"level\":\"DEBUG\""));
         assertTrue(cliResult.getOutput().contains("\"loggerName\":\"org.infinispan.CONTAINER\",\"level\":\"INFO\""));
     }
 
