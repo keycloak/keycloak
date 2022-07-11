@@ -37,7 +37,7 @@
     "@babel/preset-env": "^7.13.15",
     "@babel/preset-react": "^7.8.3",
     "@babel/preset-typescript": "^7.8.3",
-    "@types/node": "^13.9.8",
+    "@types/node": "^18.0.3",
     "@types/react": "^16.9.23",
     "@types/react-dom": "^16.9.5",
     "@types/react-router-dom": "^4.3.1",
