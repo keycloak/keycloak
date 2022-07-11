@@ -22,7 +22,7 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@patternfly/patternfly": "^4.125.3",
-    "@patternfly/react-core": "^4.147.0",
+    "@patternfly/react-core": "^4.224.1",
     "@patternfly/react-icons": "^4.11.8",
     "@patternfly/react-styles": "^4.11.8",
     "react": "npm:@pika/react@^16.13.1",
