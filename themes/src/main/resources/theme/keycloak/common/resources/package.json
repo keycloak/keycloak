@@ -5,7 +5,7 @@
   "license": "Apache-2.0",
   "repository": "https://github.com/keycloak/keycloak",
   "dependencies": {
-    "angular": "1.8.0",
+    "angular": "1.8.3",
     "angular-cookies": "1.8.0",
     "angular-loader": "1.8.0",
     "angular-resource": "1.8.0",
