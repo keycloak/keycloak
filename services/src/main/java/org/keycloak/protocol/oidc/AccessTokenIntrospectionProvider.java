@@ -23,6 +23,10 @@ import org.keycloak.TokenVerifier;
 import org.keycloak.common.VerificationException;
 import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.crypto.SignatureVerifierContext;
+import org.keycloak.events.Details;
+import org.keycloak.events.Errors;
+import org.keycloak.events.EventBuilder;
+import org.keycloak.events.EventType;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -38,9 +42,9 @@ import javax.ws.rs.core.Response;
  */
 public class AccessTokenIntrospectionProvider implements TokenIntrospectionProvider {
 
-    private final KeycloakSession session;
+    protected final KeycloakSession session;
     private final TokenManager tokenManager;
-    private final RealmModel realm;
+    protected final RealmModel realm;
     private static final Logger logger = Logger.getLogger(AccessTokenIntrospectionProvider.class);
 
     public AccessTokenIntrospectionProvider(KeycloakSession session) {
@@ -49,9 +53,9 @@ public class AccessTokenIntrospectionProvider implements TokenIntrospectionProvi
         this.tokenManager = new TokenManager();
     }
 
-    public Response introspect(String token) {
+    public Response introspect(String token, EventBuilder eventBuilder) {
         try {
-            AccessToken accessToken = verifyAccessToken(token);
+            AccessToken accessToken = verifyAccessToken(token, eventBuilder);
             ObjectNode tokenMetadata;
 
             if (accessToken != null) {
@@ -70,17 +74,21 @@ public class AccessTokenIntrospectionProvider implements TokenIntrospectionProvi
                 }
             } else {
                 tokenMetadata = JsonSerialization.createObjectNode();
+                eventBuilder.detail(Details.REASON, "Access token verification returned null access token");
+                eventBuilder.error(Errors.TOKEN_INTROSPECTION_FAILED);
             }
 
             tokenMetadata.put("active", accessToken != null);
 
             return Response.ok(JsonSerialization.writeValueAsBytes(tokenMetadata)).type(MediaType.APPLICATION_JSON_TYPE).build();
         } catch (Exception e) {
+            eventBuilder.detail(Details.REASON, e.getMessage());
+            eventBuilder.error(Errors.TOKEN_INTROSPECTION_FAILED);
             throw new RuntimeException("Error creating token introspection response.", e);
         }
     }
 
-    protected AccessToken verifyAccessToken(String token) {
+    protected AccessToken verifyAccessToken(String token, EventBuilder eventBuilder) {
         AccessToken accessToken;
 
         try {
@@ -93,12 +101,13 @@ public class AccessTokenIntrospectionProvider implements TokenIntrospectionProvi
             accessToken = verifier.verify().getToken();
         } catch (VerificationException e) {
             logger.debugf("JWT check failed: %s", e.getMessage());
+            eventBuilder.detail("Verification exception", e.getMessage());
             return null;
         }
 
         RealmModel realm = this.session.getContext().getRealm();
 
-        return tokenManager.checkTokenValidForIntrospection(session, realm, accessToken, false) ? accessToken : null;
+        return tokenManager.checkTokenValidForIntrospection(session, realm, accessToken, false, eventBuilder) ? accessToken : null;
     }
 
     @Override

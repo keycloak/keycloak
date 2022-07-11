@@ -363,10 +363,11 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
         // Check that it is not possible to introspect token anymore
         Assert.assertFalse(getIntrospectionResponse("service-account-cl", "secret1", tokenString));
         // TODO: This would be better to be "INTROSPECT_TOKEN_ERROR"
-        events.expect(EventType.INTROSPECT_TOKEN)
+        events.expect(EventType.INTROSPECT_TOKEN_ERROR)
                 .client("service-account-cl")
                 .user(Matchers.isEmptyOrNullString())
                 .session(Matchers.isEmptyOrNullString())
+                .error(Errors.TOKEN_INTROSPECTION_FAILED)
                 .assertEvent();
     }
 

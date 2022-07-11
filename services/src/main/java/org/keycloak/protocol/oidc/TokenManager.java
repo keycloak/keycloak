@@ -233,9 +233,14 @@ public class TokenManager {
      * @param updateTimestamps
      * @return
      */
-    public boolean checkTokenValidForIntrospection(KeycloakSession session, RealmModel realm, AccessToken token, boolean updateTimestamps) {
+    public boolean checkTokenValidForIntrospection(KeycloakSession session, RealmModel realm, AccessToken token, boolean updateTimestamps, EventBuilder eventBuilder) {
         ClientModel client = realm.getClientByClientId(token.getIssuedFor());
-        if (client == null || !client.isEnabled()) {
+        if (client == null) {
+            eventBuilder.detail("Client not found", String.format("Could not find client for %s", token.getIssuedFor()));
+            return false;
+        }
+        if(!client.isEnabled()){
+            eventBuilder.detail("Client disabled", String.format("Client %s is disabled", client.getClientId()));
             return false;
         }
 
@@ -245,6 +250,7 @@ public class TokenManager {
                     .verify();
         } catch (VerificationException e) {
             logger.debugf("JWT check failed: %s", e.getMessage());
+            eventBuilder.detail("JWT check failed", e.getMessage());
             return false;
         }
 
@@ -282,6 +288,7 @@ public class TokenManager {
             if (realm.isRevokeRefreshToken()
                 && (tokenType.equals(TokenUtil.TOKEN_TYPE_REFRESH) || tokenType.equals(TokenUtil.TOKEN_TYPE_OFFLINE))
                 && !validateTokenReuseForIntrospection(session, realm, token)) {
+                eventBuilder.detail("Token not valid for introspection", "Realm revoke refresh token = true, token type is "+tokenType+ " and token is not eligible for introspection");
                 return false;
             }
 
@@ -293,7 +300,7 @@ public class TokenManager {
                 }
             }
         }
-
+        eventBuilder.detail("Token valid for introspection", String.valueOf(valid));
         return valid;
     }
 
