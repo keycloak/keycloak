@@ -10,7 +10,7 @@
     "angular-loader": "1.8.0",
     "angular-resource": "1.8.0",
     "angular-route": "1.8.0",
-    "angular-sanitize": "1.8.0",
+    "angular-sanitize": "1.8.3",
     "angular-translate": "2.18.2",
     "angular-translate-loader-url": "2.18.2",
     "angular-treeview": "0.1.5",
