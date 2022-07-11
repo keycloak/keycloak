@@ -56,12 +56,6 @@ limitations under the License.
             <column name="name"/>
         </createIndex>
         <addUniqueConstraint tableName="kc_authz_resource" columnNames="realmid, resourceserverid, name, owner"/>
-        <addForeignKeyConstraint constraintName="authz_resource_fk_root_fkey"
-                                 baseTableName="kc_authz_resource"
-                                 baseColumnNames="resourceserverid"
-                                 referencedTableName="kc_authz_resource_server"
-                                 referencedColumnNames="id"
-                                 onDelete="CASCADE"/>
 
         <createTable tableName="kc_authz_resource_scope">
             <column name="resource_id" type="UUID">
@@ -117,6 +111,22 @@ limitations under the License.
         <!-- see https://go.crdb.dev/issue-v/31632/v21.2 for the current status of the implementation -->
         <addUniqueConstraint tableName="kc_authz_resource_scope" columnNames="resource_id, scope_id" deferrable="true" initiallyDeferred="true" />
         <addUniqueConstraint tableName="kc_authz_resource_attribute" columnNames="fk_root, name, value" deferrable="true" initiallyDeferred="true" />
+
+        <!-- unimplemented on CockroachDB: computed column "XXX" cannot reference a foreign key
+             See: https://go.crdb.dev/issue-v/46672/v21.2 -->
+        <addForeignKeyConstraint constraintName="authz_resource_fk_root_fkey"
+                                 baseTableName="kc_authz_resource"
+                                 baseColumnNames="resourceserverid"
+                                 referencedTableName="kc_authz_resource_server"
+                                 referencedColumnNames="id"
+                                 onDelete="CASCADE"/>
     </changeSet>
-    
+
+    <changeSet author="keycloak" id="authz-resource-3" dbms="cockroachdb">
+        <!-- placeholder for foreign key on computed column to allow fast looking by resourceserverid -->
+        <createIndex tableName="kc_authz_resource" indexName="authz_resource_fk_root_fkey">
+            <column name="resourceserverid"/>
+        </createIndex>
+    </changeSet>
+
 </databaseChangeLog>
