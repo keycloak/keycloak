@@ -17,35 +17,35 @@
 
 package org.keycloak.common.util;
 
-import org.bouncycastle.asn1.x500.X500Name;
-import org.bouncycastle.asn1.x509.BasicConstraints;
-import org.bouncycastle.asn1.x509.ExtendedKeyUsage;
-import org.bouncycastle.asn1.x509.Extension;
-import org.bouncycastle.asn1.x509.KeyPurposeId;
-import org.bouncycastle.asn1.x509.KeyUsage;
-import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.cert.X509CertificateHolder;
-import org.bouncycastle.cert.X509v1CertificateBuilder;
-import org.bouncycastle.cert.X509v3CertificateBuilder;
-import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
-import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
-import org.bouncycastle.operator.ContentSigner;
-import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
-
 import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+
+import javax.security.auth.x500.X500Principal;
+
+import org.wildfly.security.x500.X500;
+import org.wildfly.security.x500.cert.AuthorityKeyIdentifierExtension;
+import org.wildfly.security.x500.cert.BasicConstraintsExtension;
+import org.wildfly.security.x500.cert.ExtendedKeyUsageExtension;
+import org.wildfly.security.x500.cert.KeyUsage;
+import org.wildfly.security.x500.cert.KeyUsageExtension;
+import org.wildfly.security.x500.cert.SubjectKeyIdentifierExtension;
+import org.wildfly.security.x500.cert.X509CertificateBuilder;
 
 /**
  * The Class CertificateUtils provides utility functions for generation of V1 and V3 {@link java.security.cert.X509Certificate}
  *
+ * @author <a href="mailto:david.anderson@redhat.com">David Anderson</a>
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @author <a href="mailto:giriraj.sharma27@gmail.com">Giriraj Sharma</a>
- * @version $Revision: 2 $
+ * @version $Revision: 3 $
  */
 public class CertificateUtils {
 
@@ -61,54 +61,66 @@ public class CertificateUtils {
      * 
      * @throws Exception the exception
      */
-    public static X509Certificate generateV3Certificate(KeyPair keyPair, PrivateKey caPrivateKey, X509Certificate caCert,
+    public static X509Certificate generateV3Certificate(KeyPair keyPair, PrivateKey caPrivateKey,
+            X509Certificate caCert,
             String subject) throws Exception {
         try {
-            X500Name subjectDN = new X500Name("CN=" + subject);
 
+            X500Principal subjectdn = subjectToX500Principle(subject);
+            X500Principal issuerdn = subjectdn;
+            if (caCert != null) {
+                issuerdn = caCert.getSubjectX500Principal();
+            }
+
+            // Validity
+            ZonedDateTime notBefore = ZonedDateTime.ofInstant(new Date(System.currentTimeMillis()).toInstant(),
+                    ZoneId.systemDefault());
+            Calendar calendar = Calendar.getInstance();
+            calendar.add(Calendar.YEAR, 3);
+            Date validityEndDate = new Date(calendar.getTime().getTime());
+            ZonedDateTime notAfter = ZonedDateTime.ofInstant(validityEndDate.toInstant(),
+                    ZoneId.systemDefault());
             // Serial Number
             SecureRandom random = SecureRandom.getInstance("SHA1PRNG");
             BigInteger serialNumber = BigInteger.valueOf(Math.abs(random.nextInt()));
-
-            // Validity
-            Date notBefore = new Date(System.currentTimeMillis());
-            Date notAfter = new Date(System.currentTimeMillis() + (((1000L * 60 * 60 * 24 * 30)) * 12) * 3);
-
-            // SubjectPublicKeyInfo
-            SubjectPublicKeyInfo subjPubKeyInfo = SubjectPublicKeyInfo.getInstance(keyPair.getPublic().getEncoded());
-
-            X509v3CertificateBuilder certGen = new X509v3CertificateBuilder(new X500Name(caCert.getSubjectDN().getName()),
-                    serialNumber, notBefore, notAfter, subjectDN, subjPubKeyInfo);
-
-            JcaX509ExtensionUtils x509ExtensionUtils = new JcaX509ExtensionUtils();
-
-            // Subject Key Identifier
-            certGen.addExtension(Extension.subjectKeyIdentifier, false,
-                    x509ExtensionUtils.createSubjectKeyIdentifier(subjPubKeyInfo));
-
-            // Authority Key Identifier
-            certGen.addExtension(Extension.authorityKeyIdentifier, false,
-                    x509ExtensionUtils.createAuthorityKeyIdentifier(subjPubKeyInfo));
-
-            // Key Usage
-            certGen.addExtension(Extension.keyUsage, false, new KeyUsage(KeyUsage.digitalSignature | KeyUsage.keyCertSign
-                    | KeyUsage.cRLSign));
-
             // Extended Key Usage
-            KeyPurposeId[] EKU = new KeyPurposeId[2];
-            EKU[0] = KeyPurposeId.id_kp_emailProtection;
-            EKU[1] = KeyPurposeId.id_kp_serverAuth;
+            ArrayList<String> ekuList = new ArrayList<String>();
+            ekuList.add(X500.OID_KP_EMAIL_PROTECTION);
+            ekuList.add(X500.OID_KP_SERVER_AUTH);
 
-            certGen.addExtension(Extension.extendedKeyUsage, false, new ExtendedKeyUsage(EKU));
+            X509CertificateBuilder cbuilder = new X509CertificateBuilder()
+                    .setSubjectDn(subjectdn)
+                    .setIssuerDn(issuerdn)
 
-            // Basic Constraints
-            certGen.addExtension(Extension.basicConstraints, true, new BasicConstraints(0));
+                    .setNotValidBefore(notBefore)
+                    .setNotValidAfter(notAfter)
 
-            // Content Signer
-            ContentSigner sigGen = new JcaContentSignerBuilder("SHA1WithRSAEncryption").setProvider(BouncyIntegration.PROVIDER).build(caPrivateKey);
+                    .setSigningKey(keyPair.getPrivate())
+                    .setPublicKey(keyPair.getPublic())
 
-            // Certificate
-            return new JcaX509CertificateConverter().setProvider(BouncyIntegration.PROVIDER).getCertificate(certGen.build(sigGen));
+                    .setSerialNumber(serialNumber)
+
+                    .setSignatureAlgorithmName("SHA256withRSA")
+
+                    .setSigningKey(caPrivateKey)
+
+                    // Subject Key Identifier Extension
+                    .addExtension(new SubjectKeyIdentifierExtension(keyPair.getPublic().getEncoded()))
+
+                    // Authority Key Identifier
+                    .addExtension(new AuthorityKeyIdentifierExtension(keyPair.getPublic().getEncoded(), null, null))
+
+                    // Key Usage
+                    .addExtension(
+                            new KeyUsageExtension(KeyUsage.digitalSignature, KeyUsage.keyCertSign, KeyUsage.cRLSign))
+
+                    .addExtension(new ExtendedKeyUsageExtension(false, ekuList))
+
+                    // Basic Constraints
+                    .addExtension(new BasicConstraintsExtension(true, true, 0));
+
+            return cbuilder.build();
+
         } catch (Exception e) {
             throw new RuntimeException("Error creating X509v3Certificate.", e);
         }
@@ -128,39 +140,47 @@ public class CertificateUtils {
         return generateV1SelfSignedCertificate(caKeyPair, subject, BigInteger.valueOf(System.currentTimeMillis()));
     }
 
-    public static X509Certificate generateV1SelfSignedCertificate(KeyPair caKeyPair, String subject, BigInteger serialNumber) {
+    public static X509Certificate generateV1SelfSignedCertificate(KeyPair caKeyPair, String subject,
+            BigInteger serialNumber) {
         try {
-            X500Name subjectDN = new X500Name("CN=" + subject);
-            Date validityStartDate = new Date(System.currentTimeMillis() - 100000);
+
+            X500Principal subjectdn = subjectToX500Principle(subject);
+
+            ZonedDateTime notBefore = ZonedDateTime.ofInstant(
+                    (new Date(System.currentTimeMillis() - 100000)).toInstant(),
+                    ZoneId.systemDefault());
             Calendar calendar = Calendar.getInstance();
             calendar.add(Calendar.YEAR, 10);
             Date validityEndDate = new Date(calendar.getTime().getTime());
-            SubjectPublicKeyInfo subPubKeyInfo = SubjectPublicKeyInfo.getInstance(caKeyPair.getPublic().getEncoded());
+            ZonedDateTime notAfter = ZonedDateTime.ofInstant(validityEndDate.toInstant(),
+                    ZoneId.systemDefault());
 
-            X509v1CertificateBuilder builder = new X509v1CertificateBuilder(subjectDN, serialNumber, validityStartDate,
-                    validityEndDate, subjectDN, subPubKeyInfo);
-            X509CertificateHolder holder = builder.build(createSigner(caKeyPair.getPrivate()));
+            X509CertificateBuilder cbuilder = new X509CertificateBuilder()
+                    .setSubjectDn(subjectdn)
+                    .setIssuerDn(subjectdn)
+                    .setNotValidBefore(notBefore)
+                    .setNotValidAfter(notAfter)
 
-            return new JcaX509CertificateConverter().getCertificate(holder);
+                    .setSigningKey(caKeyPair.getPrivate())
+                    .setPublicKey(caKeyPair.getPublic())
+
+                    .setSerialNumber(serialNumber)
+
+                    .setSignatureAlgorithmName("SHA256withRSA");
+
+            return cbuilder.build();
+
         } catch (Exception e) {
             throw new RuntimeException("Error creating X509v1Certificate.", e);
         }
     }
 
-    /**
-     * Creates the content signer for generation of Version 1 {@link java.security.cert.X509Certificate}.
-     *
-     * @param privateKey the private key
-     *
-     * @return the content signer
-     */
-    public static ContentSigner createSigner(PrivateKey privateKey) {
-        try {
-            JcaContentSignerBuilder signerBuilder = new JcaContentSignerBuilder("SHA256WithRSAEncryption")
-                    .setProvider(BouncyIntegration.PROVIDER);
-            return signerBuilder.build(privateKey);
-        } catch (Exception e) {
-            throw new RuntimeException("Could not create content signer.", e);
+    // Some subject names will not conform to the RFC format
+    private static X500Principal subjectToX500Principle(String subject) {
+        if(!subject.startsWith("CN=")) {
+            subject = "CN="+subject;
         }
+        return new X500Principal(subject);
     }
+
 }
