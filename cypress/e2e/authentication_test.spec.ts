@@ -87,6 +87,20 @@ describe("Authentication test", () => {
     });
   });
 
+  it("Should edit flow details", () => {
+    const name = "Copy of browser";
+    listingPage.goToItemDetails(name);
+    const commonPage = new CommonPage();
+
+    commonPage
+      .actionToolbarUtils()
+      .clickActionToggleButton()
+      .clickDropdownItem("Edit info");
+
+    duplicateFlowModal.fill(name, "Other description");
+    masthead.checkNotificationMessage("Flow successfully updated");
+  });
+
   it("Should change requirement of cookie", () => {
     listingPage.goToItemDetails("Copy of browser");
 

@@ -81,7 +81,7 @@ export const FlowRow = ({
               <DataListCell key={`${execution.id}-name`}>
                 {!execution.authenticationFlow && (
                   <FlowTitle
-                    id={`title-id-${execution.id}`}
+                    id={execution.id}
                     key={execution.id}
                     title={execution.displayName!}
                   />

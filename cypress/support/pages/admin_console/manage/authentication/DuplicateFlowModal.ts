@@ -1,14 +1,14 @@
 export default class DuplicateFlowModal {
-  private aliasInput = "alias";
+  private nameInput = "name";
   private descriptionInput = "description";
   private confirmButton = "confirm";
   private errorText = ".pf-m-error";
 
   fill(name?: string, description?: string) {
-    cy.findByTestId(this.aliasInput).clear();
+    cy.findByTestId(this.nameInput).clear();
     if (name) {
-      cy.findByTestId(this.aliasInput).type(name);
-      if (description) cy.get(this.descriptionInput).type(description);
+      cy.findByTestId(this.nameInput).type(name);
+      if (description) cy.findByTestId(this.descriptionInput).type(description);
     }
 
     cy.findByTestId(this.confirmButton).click();

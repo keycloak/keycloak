@@ -15,7 +15,9 @@ export const FlowTitle = ({ id, title }: FlowTitleProps) => {
       className="keycloak__authentication__title"
       isFlat
     >
-      <CardBody id={id}>{title}</CardBody>
+      <CardBody data-id={id} id={`title-id-${id}`}>
+        {title}
+      </CardBody>
     </Card>
   );
 };

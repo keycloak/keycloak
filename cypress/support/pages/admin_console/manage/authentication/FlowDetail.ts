@@ -23,7 +23,7 @@ export default class FlowDetails {
 
   expectPriorityChange(execution: string, callback: () => void) {
     cy.findAllByTestId(execution).then((rowDetails) => {
-      const executionId = rowDetails.children().attr("id");
+      const executionId = rowDetails.children().attr("data-id");
       cy.intercept(
         "POST",
         `/admin/realms/test/authentication/executions/${executionId}/lower-priority`
@@ -101,7 +101,7 @@ export default class FlowDetails {
     description: string,
     type: "Basic flow" | "Client flow"
   ) {
-    cy.findByTestId("alias").type(name);
+    cy.findByTestId("name").type(name);
     cy.findByTestId("description").type(description);
     cy.get("#flowType").click().parent().contains(type).click();
     cy.findByTestId("create").click();
