@@ -17,10 +17,6 @@ export default class Masthead extends CommonElements {
     return this;
   }
 
-  get isMobileMode() {
-    return window.parent[0].innerWidth < 1024;
-  }
-
   setMobileMode(isMobileMode: boolean) {
     if (isMobileMode) {
       cy.viewport("iphone-6");
@@ -35,11 +31,12 @@ export default class Masthead extends CommonElements {
   }
 
   userDropdown() {
-    if (this.isMobileMode) {
-      return cy.get(this.userDrpDwnKebab);
-    } else {
-      return cy.get(this.userDrpDwn);
-    }
+    return cy
+      .document()
+      .then(({ documentElement }) => documentElement.getBoundingClientRect())
+      .then(({ width }) =>
+        cy.get(width < 1024 ? this.userDrpDwnKebab : this.userDrpDwn)
+      );
   }
 
   signOut() {
