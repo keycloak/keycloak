@@ -6,7 +6,7 @@
   "repository": "https://github.com/keycloak/keycloak",
   "dependencies": {
     "angular": "1.8.3",
-    "angular-cookies": "1.8.0",
+    "angular-cookies": "1.8.3",
     "angular-loader": "1.8.3",
     "angular-resource": "1.8.3",
     "angular-route": "1.8.3",
