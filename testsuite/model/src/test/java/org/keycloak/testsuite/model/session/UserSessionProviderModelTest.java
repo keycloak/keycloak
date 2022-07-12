@@ -16,6 +16,8 @@
  */
 package org.keycloak.testsuite.model.session;
 
+import org.hamcrest.Matchers;
+import org.infinispan.client.hotrod.RemoteCache;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.common.util.Time;
@@ -30,8 +32,13 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
+import org.keycloak.models.map.storage.ModelEntityUtil;
+import org.keycloak.models.map.storage.chm.ConcurrentHashMapStorageProviderFactory;
+import org.keycloak.models.map.storage.hotRod.connections.DefaultHotRodConnectionProviderFactory;
+import org.keycloak.models.map.storage.hotRod.connections.HotRodConnectionProvider;
+import org.keycloak.models.map.storage.hotRod.userSession.HotRodUserSessionEntity;
 import org.keycloak.models.map.userSession.MapUserSessionProvider;
-import org.keycloak.models.session.UserSessionPersisterProvider;
+import org.keycloak.models.map.userSession.MapUserSessionProviderFactory;
 import org.keycloak.models.sessions.infinispan.InfinispanUserSessionProviderFactory;
 import org.keycloak.models.sessions.infinispan.changes.sessions.PersisterLastSessionRefreshStoreFactory;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -41,13 +48,18 @@ import org.keycloak.testsuite.model.RequireProvider;
 import org.keycloak.testsuite.model.infinispan.InfinispanTestUtil;
 import org.keycloak.timer.TimerProvider;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assume.assumeFalse;
 import static org.keycloak.testsuite.model.session.UserSessionPersisterProviderTest.createClients;
 import static org.keycloak.testsuite.model.session.UserSessionPersisterProviderTest.createSessions;
 
@@ -254,6 +266,50 @@ public class UserSessionProviderModelTest extends KeycloakModelTest {
             String clientSessionId = (String) transientUserSessionWithClientSessionId[1];
             // in new transaction transient session should not be present
             assertThat(session.sessions().getClientSession(userSession, testApp, clientSessionId, false), nullValue());
+        });
+    }
+
+    @Test
+    @RequireProvider(value = HotRodConnectionProvider.class, only = DefaultHotRodConnectionProviderFactory.PROVIDER_ID)
+    public void testRemoteCachesParallel() throws InterruptedException {
+        inIndependentFactories(4, 30, () -> inComittedTransaction(session -> {
+            HotRodConnectionProvider provider = session.getProvider(HotRodConnectionProvider.class);
+            RemoteCache<String, HotRodUserSessionEntity> remoteCache = provider.getRemoteCache(ModelEntityUtil.getModelName(UserSessionModel.class));
+            HotRodUserSessionEntity userSessionEntity = new HotRodUserSessionEntity();
+            userSessionEntity.id = UUID.randomUUID().toString();
+            remoteCache.put(userSessionEntity.id, userSessionEntity);
+        }));
+
+        inComittedTransaction(session -> {
+            HotRodConnectionProvider provider = session.getProvider(HotRodConnectionProvider.class);
+            RemoteCache<String, HotRodUserSessionEntity> remoteCache = provider.getRemoteCache(ModelEntityUtil.getModelName(UserSessionModel.class));
+            assertThat(remoteCache.size(), Matchers.is(4));
+        });
+    }
+
+    @Test
+    public void testCreateUserSessionsParallel() throws InterruptedException {
+        // Skip the test if MapUserSessionProvider == CHM
+        String usProvider = CONFIG.getConfig().get("userSessions.provider");
+        String usMapStorageProvider = CONFIG.getConfig().get("userSessions.map.storage.provider");
+        assumeFalse(MapUserSessionProviderFactory.PROVIDER_ID.equals(usProvider) &&
+                (usMapStorageProvider == null || ConcurrentHashMapStorageProviderFactory.PROVIDER_ID.equals(usMapStorageProvider)));
+
+        Set<String> userSessionIds = Collections.newSetFromMap(new ConcurrentHashMap<>());
+
+        inIndependentFactories(4, 30, () -> withRealm(realmId, (session, realm) -> {
+            UserModel user = session.users().getUserByUsername(realm, "user1");
+            UserSessionModel userSession = session.sessions().createUserSession(realm, user, "user1", "", "", false, null, null);
+            userSessionIds.add(userSession.getId());
+
+            return null;
+        }));
+
+        assertThat(userSessionIds, Matchers.iterableWithSize(4));
+
+        withRealm(realmId, (session, realm) -> {
+            userSessionIds.forEach(id -> Assert.assertNotNull(session.sessions().getUserSession(realm, id)));
+            return null;
         });
     }
 }
