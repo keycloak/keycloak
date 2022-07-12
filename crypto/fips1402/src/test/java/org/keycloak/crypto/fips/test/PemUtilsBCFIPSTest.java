@@ -1,26 +1,13 @@
-package org.keycloak.common.util;
+package org.keycloak.crypto.fips.test;
 
 import org.junit.Test;
+import org.keycloak.common.util.PemUtils;
 
 import java.security.NoSuchAlgorithmException;
 
 import static org.junit.Assert.assertEquals;
 
-public class PemUtilsTest {
-
-    @Test
-    public void testGenerateThumbprintBytesSha1() throws NoSuchAlgorithmException {
-        String[] test = new String[] {"abcdefg"};
-        byte[] digest = PemUtils.generateThumbprintBytes(test, "SHA-1");
-        assertEquals(20, digest.length);
-    }
-
-    @Test
-    public void testGenerateThumbprintBytesSha256() throws NoSuchAlgorithmException {
-        String[] test = new String[] {"abcdefg"};
-        byte[] digest = PemUtils.generateThumbprintBytes(test, "SHA-256");
-        assertEquals(32, digest.length);
-    }
+public class PemUtilsBCFIPSTest {
 
     @Test
     public void testGenerateThumbprintSha1() throws NoSuchAlgorithmException {

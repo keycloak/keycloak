@@ -9,6 +9,8 @@ import java.util.function.Supplier;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.keycloak.common.crypto.CryptoProvider;
 import org.keycloak.common.crypto.CryptoProviderTypes;
+import org.keycloak.common.crypto.CertificateUtils;
+import org.keycloak.common.crypto.PemUtils;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -35,4 +37,15 @@ public class DefaultCryptoProvider implements CryptoProvider {
         }
         return clazz.cast(o);
     }
+
+    @Override
+    public CertificateUtils getCertificateUtils() {
+        return new CertificateUtilsBC();
+    }
+
+    @Override
+    public PemUtils getPemUtils() {
+        return new PemUtilsBC();
+    }
+
 }

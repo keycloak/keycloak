@@ -10,6 +10,8 @@ import java.util.function.Supplier;
 import org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider;
 import org.keycloak.common.crypto.CryptoProvider;
 import org.keycloak.common.crypto.CryptoProviderTypes;
+import org.keycloak.common.crypto.CertificateUtils;
+import org.keycloak.common.crypto.PemUtils;
 
 
 /**
@@ -38,5 +40,15 @@ public class FIPS1402Provider implements CryptoProvider {
             throw new IllegalArgumentException("Not found provider of algorithm: " + algorithm);
         }
         return clazz.cast(o);
+    }
+
+    @Override
+    public CertificateUtils getCertificateUtils() {
+        return new CertificateUtilsBCFIPS();
+    }
+
+    @Override
+    public PemUtils getPemUtils() {
+        return new PemUtilsBCFIPS();
     }
 }

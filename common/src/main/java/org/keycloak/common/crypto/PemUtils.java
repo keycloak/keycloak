@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.common.util;
+package org.keycloak.common.crypto;
 
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
@@ -24,22 +24,17 @@ import java.security.PublicKey;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 
-import org.keycloak.common.crypto.CryptoIntegration;
-
 /**
  * Utility classes to extract PublicKey, PrivateKey, and X509Certificate from openssl generated PEM files
  *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class PemUtils {
+public interface PemUtils {
 
     public static final String BEGIN_CERT = "-----BEGIN CERTIFICATE-----";
     public static final String END_CERT = "-----END CERTIFICATE-----";
 
-    static {
-        CryptoIntegration.init(ClassLoader.getSystemClassLoader());
-    }
 
     /**
      * Decode a X509 Certificate from a PEM string
@@ -48,9 +43,7 @@ public class PemUtils {
      * @return
      * @throws Exception
      */
-    public static X509Certificate decodeCertificate(String cert) {
-        return CryptoIntegration.getProvider().getPemUtils().decodeCertificate(cert);
-    }
+    public X509Certificate decodeCertificate(String cert);
 
 
     /**
@@ -60,9 +53,7 @@ public class PemUtils {
      * @return
      * @throws Exception
      */
-    public static PublicKey decodePublicKey(String pem) {
-        return CryptoIntegration.getProvider().getPemUtils().decodePublicKey(pem);
-    }
+    public PublicKey decodePublicKey(String pem);
 
     /**
      * Decode a Public Key from a PEM string
@@ -70,9 +61,7 @@ public class PemUtils {
      * @param type The type of the key (RSA, EC,...)
      * @return The public key or null
      */
-    public static PublicKey decodePublicKey(String pem, String type){
-        return CryptoIntegration.getProvider().getPemUtils().decodePublicKey(pem, type);
-    }
+    public PublicKey decodePublicKey(String pem, String type);
 
 
     /**
@@ -82,9 +71,7 @@ public class PemUtils {
      * @return
      * @throws Exception
      */
-    public static PrivateKey decodePrivateKey(String pem){
-        return CryptoIntegration.getProvider().getPemUtils().decodePrivateKey(pem);
-    }
+    public PrivateKey decodePrivateKey(String pem);
 
 
     /**
@@ -94,9 +81,7 @@ public class PemUtils {
      * @return
      * @throws Exception
      */
-    public static String encodeKey(Key key){
-        return CryptoIntegration.getProvider().getPemUtils().encodeKey(key);
-    }
+    public String encodeKey(Key key);
 
     /**
      * Encode a X509 Certificate to a PEM string
@@ -104,20 +89,12 @@ public class PemUtils {
      * @param certificate
      * @return
      */
-    public static String encodeCertificate(Certificate certificate){
-        return CryptoIntegration.getProvider().getPemUtils().encodeCertificate(certificate);
-    }
+    public String encodeCertificate(Certificate certificate);
 
-    public static byte[] pemToDer(String pem){
-        return CryptoIntegration.getProvider().getPemUtils().pemToDer(pem);
-    }
+    public byte[] pemToDer(String pem);
 
-    public static String removeBeginEnd(String pem){
-        return CryptoIntegration.getProvider().getPemUtils().removeBeginEnd(pem);
-    }
+    public String removeBeginEnd(String pem);
 
-    public static String generateThumbprint(String[] certChain, String encoding) throws NoSuchAlgorithmException{
-        return CryptoIntegration.getProvider().getPemUtils().generateThumbprint(certChain, encoding);
-    }
+    public String generateThumbprint(String[] certChain, String encoding) throws NoSuchAlgorithmException;
 
 }
