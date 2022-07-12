@@ -403,7 +403,7 @@ one of the specified levels. If it is not able to return one of the specified le
 in the authentication flow), then {project_name} will throw an error.
 
 [[_user_session_limits]]
-*User session limits*
+==== User session limits
 
 Limits on the number of session that a user can have can be configured. Sessions can be limited per realm or per client.
 
