@@ -502,7 +502,7 @@ export default function NewClientPolicyForm() {
             </Button>
             <Button
               id="cancelCreatePolicy"
-              variant="secondary"
+              variant="link"
               onClick={() =>
                 showAddConditionsAndProfilesForm || policyName
                   ? reset()
@@ -516,7 +516,7 @@ export default function NewClientPolicyForm() {
               data-testid="cancelCreatePolicy"
             >
               {showAddConditionsAndProfilesForm
-                ? t("common:revert")
+                ? t("common:reload")
                 : t("common:cancel")}
             </Button>
           </ActionGroup>

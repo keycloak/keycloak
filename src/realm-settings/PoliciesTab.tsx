@@ -302,7 +302,7 @@ export const PoliciesTab = () => {
               {t("save")}
             </Button>
             <Button
-              variant={ButtonVariant.secondary}
+              variant={ButtonVariant.link}
               data-testid="jsonEditor-reloadBtn"
               onClick={() => {
                 setCode(prettyPrintJSON(tablePolicies));
