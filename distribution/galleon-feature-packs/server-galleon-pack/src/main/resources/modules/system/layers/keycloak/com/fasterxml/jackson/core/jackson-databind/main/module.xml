@@ -1,0 +1,32 @@
+<?xml version="1.0" standalone="no"?>
+<!--
+  ~ Copyright 2022 Red Hat, Inc. and/or its affiliates
+  ~ and other contributors as indicated by the @author tags.
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+<module xmlns="urn:jboss:module:1.9" name="com.fasterxml.jackson.core.jackson-databind">
+     <resources>
+        <artifact name="${com.fasterxml.jackson.core:jackson-databind}"></artifact>
+    </resources>
+
+    <dependencies>
+        <module name="java.desktop"></module>
+        <module name="java.logging"></module>
+        <module name="java.sql"></module>
+        <module name="java.xml"></module>
+        <!--WFLY-14219 Remove deprecated <module name="javax.api"/> -->
+        <module name="com.fasterxml.jackson.core.jackson-annotations"></module>
+        <module name="com.fasterxml.jackson.core.jackson-core"></module>
+    </dependencies>
+</module>
