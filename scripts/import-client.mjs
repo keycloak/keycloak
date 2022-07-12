@@ -11,7 +11,7 @@ const ADMIN_PASSWORD = "admin";
 await importClient();
 
 async function importClient() {
-  const adminClient = new KcAdminClient.default({
+  const adminClient = new KcAdminClient({
     baseUrl: "http://127.0.0.1:8180",
     realmName: "master",
   });
