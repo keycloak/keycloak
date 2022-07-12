@@ -1,5 +1,7 @@
 import { defineConfig } from "cypress";
 import del from "del";
+import path from "node:path";
+import { build, InlineConfig } from "vite";
 
 export default defineConfig({
   projectId: "j4yhox",
@@ -17,6 +19,7 @@ export default defineConfig({
   },
   e2e: {
     setupNodeEvents(on) {
+      on("file:preprocessor", vitePreprocessor);
       on("after:spec", async (spec, results) => {
         if (!results.video) {
           return;
@@ -38,3 +41,66 @@ export default defineConfig({
     specPattern: "cypress/e2e/**/*.{js,jsx,ts,tsx}",
   },
 });
+
+const cache: Record<string, string> = {};
+
+// See https://adamlynch.com/preprocess-cypress-tests-with-vite/
+async function vitePreprocessor(file: Cypress.FileObject) {
+  const { filePath, outputPath, shouldWatch } = file;
+
+  if (cache[filePath]) {
+    return cache[filePath];
+  }
+
+  const filename = path.basename(outputPath);
+  const filenameWithoutExtension = path.basename(
+    outputPath,
+    path.extname(outputPath)
+  );
+
+  const viteConfig: InlineConfig = {
+    build: {
+      emptyOutDir: false,
+      minify: false,
+      outDir: path.dirname(outputPath),
+      sourcemap: true,
+      write: true,
+    },
+  };
+
+  if (filename.endsWith(".html")) {
+    viteConfig.build!.rollupOptions = {
+      input: {
+        [filenameWithoutExtension]: filePath,
+      },
+    };
+  } else {
+    viteConfig.build!.lib = {
+      entry: filePath,
+      fileName: () => filename,
+      formats: ["es"],
+      name: filenameWithoutExtension,
+    };
+  }
+
+  if (shouldWatch) {
+    // @ts-ignore
+    viteConfig.build.watch = true;
+  }
+
+  const watcher = await build(viteConfig);
+
+  if ("on" in watcher) {
+    watcher.on("event", (event) => {
+      if (event.code === "END") {
+        file.emit("rerun");
+      }
+    });
+    file.on("close", () => {
+      delete cache[filePath];
+      watcher.close();
+    });
+  }
+
+  return (cache[filePath] = outputPath);
+}

@@ -96,6 +96,7 @@
     "tar-fs": "^2.1.1",
     "ts-node": "^10.8.2",
     "typescript": "^4.7.4",
+    "vite": "^2.9.14",
     "vitest": "^0.18.0"
   },
   "lint-staged": {
