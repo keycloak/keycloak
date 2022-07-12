@@ -990,6 +990,14 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
         if (context.getIdpConfig().getSyncMode() == IdentityProviderSyncMode.FORCE) {
             setBasicUserAttributes(context, federatedUser);
+
+            if (!Objects.equals(context.getUsername(), federatedIdentityModel.getUserName())) {
+                federatedIdentityModel = new FederatedIdentityModel(federatedIdentityModel.getIdentityProvider(),
+                        federatedIdentityModel.getUserId(), context.getUsername(),
+                        federatedIdentityModel.getToken());
+
+                this.session.users().updateFederatedIdentity(this.realmModel, federatedUser, federatedIdentityModel);
+            }
         }
 
         // Skip DB write if tokens are null or equal
