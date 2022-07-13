@@ -5,8 +5,7 @@ import axios from "axios";
 import type { AxiosError } from "axios";
 
 import useRequiredContext from "../../utils/useRequiredContext";
-import useSetTimeout from "../../utils/useSetTimeout";
-import { AlertPanel, AlertType } from "./AlertPanel";
+import { AlertPanel } from "./AlertPanel";
 
 export type AddAlertFunction = (
   message: string,
@@ -25,15 +24,19 @@ export const AlertContext = createContext<AlertProps | undefined>(undefined);
 
 export const useAlerts = () => useRequiredContext(AlertContext);
 
+export type AlertType = {
+  id: number;
+  message: string;
+  variant: AlertVariant;
+  description?: string;
+};
+
 export const AlertProvider: FunctionComponent = ({ children }) => {
   const { t } = useTranslation();
   const [alerts, setAlerts] = useState<AlertType[]>([]);
-  const setTimeout = useSetTimeout();
 
-  const createId = () => Math.random().toString(16);
-
-  const hideAlert = (key: string) => {
-    setAlerts((alerts) => [...alerts.filter((el) => el.key !== key)]);
+  const hideAlert = (id: number) => {
+    setAlerts((alerts) => alerts.filter((alert) => alert.id !== id));
   };
 
   const addAlert = (
@@ -41,9 +44,15 @@ export const AlertProvider: FunctionComponent = ({ children }) => {
     variant: AlertVariant = AlertVariant.success,
     description?: string
   ) => {
-    const key = createId();
-    setTimeout(() => hideAlert(key), 8000);
-    setAlerts([{ key, message, variant, description }, ...alerts]);
+    setAlerts([
+      {
+        id: Math.random(),
+        message,
+        variant,
+        description,
+      },
+      ...alerts,
+    ]);
   };
 
   const addError = (message: string, error: Error | AxiosError | string) => {
