@@ -47,7 +47,7 @@
     "chokidar": "^3.5.3",
     "eslint": "^5.15.1",
     "eslint-config-react-app": "^3.0.8",
-    "eslint-plugin-flowtype": "^2.50.3",
+    "eslint-plugin-flowtype": "^3.13.0",
     "eslint-plugin-import": "^2.26.0",
     "eslint-plugin-jsx-a11y": "^6.6.0",
     "eslint-plugin-react": "^7.30.1",
