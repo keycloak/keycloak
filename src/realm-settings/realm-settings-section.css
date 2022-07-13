@@ -26,6 +26,7 @@ article.pf-c-card.pf-m-flat.kc-email-connection
 
 .kc-login-screen > div.pf-c-card__header.kc-form-panel__header,
 .kc-email-settings > div.pf-c-card__header.kc-form-panel__header,
+.kc-email-template > div.pf-c-card__header.kc-form-panel__header,
 .kc-user-info-settings > div.pf-c-card__header.kc-form-panel__header {
   padding-bottom: 0px;
   padding-left: 0px;
@@ -33,13 +34,9 @@ article.pf-c-card.pf-m-flat.kc-email-connection
 }
 
 .kc-email-settings > div.pf-c-card__body.kc-form-panel__body,
+.kc-email-template > div.pf-c-card__body.kc-form-panel__body,
 .kc-login-screen > div.pf-c-card__body.kc-form-panel__body,
 .kc-user-info-settings > div.pf-c-card__body.kc-form-panel__body {
-  padding-left: 0px;
-  padding-bottom: var(--pf-global--spacer--2xl);
-}
-
-.kc-email-template > div.pf-c-card__body.kc-form-panel__body {
   padding-left: 0px;
   padding-bottom: var(--pf-global--spacer--2xl);
 }
@@ -167,6 +164,8 @@ article.pf-c-card.pf-m-flat.kc-offline-session-template
 article.pf-c-card.pf-m-flat.kc-login-settings-template
   > .pf-c-card__header.kc-form-panel__header,
 article.pf-c-card.pf-m-flat.kc-login-settings-template
+  > .pf-c-card__body.kc-form-panel__body,
+article.pf-c-card.pf-m-flat.kc-email-connection
   > .pf-c-card__body.kc-form-panel__body {
   padding: 0px;
 }
