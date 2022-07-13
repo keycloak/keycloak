@@ -50,6 +50,11 @@ public class QuarkusKeycloakApplication extends KeycloakApplication {
     }
 
     @Override
+    protected void loadConfig() {
+        // no need to load config provider because we force quarkus impl
+    }
+
+    @Override
     public Set<Object> getSingletons() {
         Set<Object> singletons = super.getSingletons().stream()
                 .filter(QuarkusKeycloakApplication::filterSingletons)

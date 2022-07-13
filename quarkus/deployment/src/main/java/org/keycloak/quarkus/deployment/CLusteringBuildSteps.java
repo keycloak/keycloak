@@ -42,7 +42,7 @@ public class CLusteringBuildSteps {
 
     @Consume(KeycloakSessionFactoryPreInitBuildItem.class)
     @Record(ExecutionTime.RUNTIME_INIT)
-    @BuildStep
+    @BuildStep(onlyIf = IsLegacyStoreEnabled.class)
     void configureInfinispan(KeycloakRecorder recorder, BuildProducer<SyntheticBeanBuildItem> syntheticBeanBuildItems, ShutdownContextBuildItem shutdownContext) {
         String configFile = getConfigValue("kc.spi-connections-infinispan-quarkus-config-file").getValue();
 

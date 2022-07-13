@@ -2,9 +2,13 @@ package org.keycloak.quarkus.runtime.configuration.mappers;
 
 import org.keycloak.common.Profile;
 import org.keycloak.config.FeatureOptions;
+import org.keycloak.config.StorageOptions;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
+import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 
 import static java.util.Optional.of;
+import static org.keycloak.config.StorageOptions.STORAGE;
+import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
 import java.util.HashSet;
@@ -32,7 +36,7 @@ final class FeaturePropertyMappers {
     }
 
     private static Optional<String> transformFeatures(Optional<String> features, ConfigSourceInterceptorContext context) {
-        if (Boolean.parseBoolean(Configuration.getRawValue("kc.storage-legacy-enabled"))) {
+        if (Configuration.getOptionalValue(NS_KEYCLOAK_PREFIX.concat(STORAGE.getKey())).isEmpty()) {
             return features;
         }
 

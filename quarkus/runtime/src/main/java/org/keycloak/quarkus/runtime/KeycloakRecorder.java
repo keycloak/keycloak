@@ -34,8 +34,11 @@ import org.infinispan.manager.DefaultCacheManager;
 import io.quarkus.smallrye.metrics.runtime.SmallRyeMetricsHandler;
 import io.vertx.core.Handler;
 import io.vertx.ext.web.RoutingContext;
+
+import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
+import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
 import org.keycloak.quarkus.runtime.storage.database.liquibase.FastServiceLocator;
 import org.keycloak.provider.Provider;
@@ -62,6 +65,7 @@ public class KeycloakRecorder {
             Map<Class<? extends Provider>, String> defaultProviders,
             Map<String, ProviderFactory> preConfiguredProviders,
             Boolean reaugmented) {
+        Config.init(new MicroProfileConfigProvider());
         Profile.setInstance(new QuarkusProfile());
         QuarkusKeycloakSessionFactory.setInstance(new QuarkusKeycloakSessionFactory(factories, defaultProviders, preConfiguredProviders, reaugmented));
     }

@@ -112,9 +112,7 @@ public class PropertyMapper<T> {
                     }
                 }
 
-                if (parentValue != null) {
-                    return transformValue(ofNullable(parentValue.getValue()), context);
-                }
+                return transformValue(ofNullable(parentValue == null ? null : parentValue.getValue()), context);
             }
 
             ConfigValue defaultValue = transformValue(this.option.getDefaultValue().map(Objects::toString), context);

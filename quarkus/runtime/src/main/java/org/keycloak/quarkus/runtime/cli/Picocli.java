@@ -19,7 +19,6 @@ package org.keycloak.quarkus.runtime.cli;
 
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.AUTO_BUILD_OPTION_LONG;
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.AUTO_BUILD_OPTION_SHORT;
-import static org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource.hasOptionValue;
 import static org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource.parseConfigArgs;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.OPTION_PART_SEPARATOR;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getBuildTimeProperty;
@@ -41,13 +40,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
-import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.eclipse.microprofile.config.spi.ConfigSource;
-import org.keycloak.config.ConfigSupportLevel;
 import org.keycloak.config.MultiOption;
 import org.keycloak.config.OptionCategory;
 import org.keycloak.quarkus.runtime.cli.command.Build;
@@ -127,10 +124,7 @@ public final class Picocli {
 
     public static boolean requiresReAugmentation(CommandLine cmd) {
         if (hasConfigChanges()) {
-            Predicate<String> profileOptionMatcher = Main.PROFILE_LONG_NAME::equals;
-            profileOptionMatcher = profileOptionMatcher.or(Main.PROFILE_SHORT_NAME::equals);
-
-            if (hasOptionValue(profileOptionMatcher, "dev") && !ConfigArgsConfigSource.getAllCliArgs().contains(StartDev.NAME)) {
+            if (!ConfigArgsConfigSource.getAllCliArgs().contains(StartDev.NAME) && "dev".equals(getConfig().getOptionalValue("kc.profile", String.class).orElse(null))) {
                 return false;
             }
 

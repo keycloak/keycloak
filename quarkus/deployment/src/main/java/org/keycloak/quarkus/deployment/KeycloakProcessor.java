@@ -57,6 +57,7 @@ import io.quarkus.agroal.spi.JdbcDataSourceBuildItem;
 import io.quarkus.datasource.deployment.spi.DevServicesDatasourceResultBuildItem;
 import io.quarkus.deployment.IsDevelopment;
 import io.quarkus.deployment.annotations.Consume;
+import io.quarkus.deployment.builditem.BootstrapConfigSetupCompleteBuildItem;
 import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
 import io.quarkus.deployment.builditem.GeneratedResourceBuildItem;
 import io.quarkus.deployment.builditem.HotDeploymentWatchedFileBuildItem;
@@ -277,8 +278,8 @@ class KeycloakProcessor {
      *
      * @param recorder
      */
-    @Consume(RuntimeConfigSetupCompleteBuildItem.class)
-    @Record(ExecutionTime.RUNTIME_INIT)
+    @Consume(BootstrapConfigSetupCompleteBuildItem.class)
+    @Record(ExecutionTime.STATIC_INIT)
     @BuildStep
     KeycloakSessionFactoryPreInitBuildItem configureProviders(KeycloakRecorder recorder, List<PersistenceXmlDescriptorBuildItem> descriptors) {
         Profile.setInstance(new QuarkusProfile());
@@ -559,7 +560,9 @@ class KeycloakProcessor {
                 }
             }
 
-            factories.put(spi, providers);
+            if (!providers.isEmpty()) {
+                factories.put(spi, providers);
+            }
         }
 
         return factories;

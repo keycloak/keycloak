@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,28 +15,42 @@
  * limitations under the License.
  */
 
-package org.keycloak.quarkus.runtime.storage.legacy.liquibase;
+package org.keycloak.models.map.stickysession;
 
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
-import org.keycloak.connections.jpa.updater.JpaUpdaterProvider;
-import org.keycloak.connections.jpa.updater.JpaUpdaterProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
+import org.keycloak.sessions.StickySessionEncoderProvider;
+import org.keycloak.sessions.StickySessionEncoderProviderFactory;
 
-/**
- * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
- */
-public class QuarkusJpaUpdaterProviderFactory implements JpaUpdaterProviderFactory, EnvironmentDependentProviderFactory {
+public class DisabledStickySessionEncoderProvider implements StickySessionEncoderProviderFactory, StickySessionEncoderProvider,
+        EnvironmentDependentProviderFactory {
 
     @Override
-    public JpaUpdaterProvider create(KeycloakSession session) {
-        return new QuarkusJpaUpdaterProvider(session);
+    public StickySessionEncoderProvider create(KeycloakSession session) {
+        return this;
+    }
+
+    @Override
+    public String encodeSessionId(String sessionId) {
+        return sessionId;
+    }
+
+    @Override
+    public String decodeSessionId(String encodedSessionId) {
+        return encodedSessionId;
+    }
+
+    @Override
+    public boolean shouldAttachRoute() {
+        return false;
     }
 
     @Override
     public void init(Config.Scope config) {
+
     }
 
     @Override
@@ -46,20 +60,17 @@ public class QuarkusJpaUpdaterProviderFactory implements JpaUpdaterProviderFacto
 
     @Override
     public void close() {
+
     }
 
     @Override
     public String getId() {
-        return "quarkus";
-    }
-
-    @Override
-    public int order() {
-        return 100;
+        return "disabled";
     }
 
     @Override
     public boolean isSupported() {
-        return !Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE);
+        return Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE);
     }
+
 }

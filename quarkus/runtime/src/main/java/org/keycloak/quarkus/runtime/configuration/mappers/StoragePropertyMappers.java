@@ -31,19 +31,27 @@ final class StoragePropertyMappers {
 
     public static PropertyMapper[] getMappers() {
         return new PropertyMapper[] {
-                fromOption(StorageOptions.STORAGE_LEGACY_ENABLED)
-                        .to("kc.spi-connections-jpa-legacy-enabled")
-                        .mapFrom("storage")
-                        .paramLabel(Boolean.TRUE + "|" + Boolean.FALSE)
-                        .transformer(StoragePropertyMappers::isDefaultPersistenceUnitEnabled)
-                        .build(),
                 fromOption(StorageOptions.STORAGE)
+                        .to("kc.spi-map-storage-provider")
+                        .transformer(StoragePropertyMappers::resolveMapStorageProvider)
                         .paramLabel("type")
                         .build(),
-                fromOption(StorageOptions.STORAGE_PROVIDER)
+                fromOption(StorageOptions.STORAGE_EVENT_STORE)
                         .mapFrom("storage")
-                        .to("kc.spi-map-storage-provider")
-                        .transformer(StoragePropertyMappers::resolveStorageProvider)
+                        .to("kc.spi-events-store-provider")
+                        .transformer(StoragePropertyMappers::getAreaStorage)
+                        .paramLabel("type")
+                        .build(),
+                fromOption(StorageOptions.STORAGE_EVENT_ADMIN_STORE)
+                        .mapFrom("storage")
+                        .to("kc.spi-events-store-map-storage-admin-events-provider")
+                        .transformer(StoragePropertyMappers::resolveMapStorageProvider)
+                        .paramLabel("type")
+                        .build(),
+                fromOption(StorageOptions.STORAGE_EVENT_AUTH_STORE)
+                        .mapFrom("storage")
+                        .to("kc.spi-events-store-map-storage-auth-events-provider")
+                        .transformer(StoragePropertyMappers::resolveMapStorageProvider)
                         .paramLabel("type")
                         .build(),
                 fromOption(StorageOptions.STORAGE_REALM)
@@ -52,10 +60,22 @@ final class StoragePropertyMappers {
                         .transformer(StoragePropertyMappers::getAreaStorage)
                         .paramLabel("type")
                         .build(),
+                fromOption(StorageOptions.STORAGE_REALM_STORE)
+                        .to("kc.spi-realm-map-storage-provider")
+                        .mapFrom("storage")
+                        .transformer(StoragePropertyMappers::resolveMapStorageProvider)
+                        .paramLabel("type")
+                        .build(),
                 fromOption(StorageOptions.STORAGE_CLIENT)
                         .to("kc.spi-client-provider")
                         .mapFrom("storage")
                         .transformer(StoragePropertyMappers::getAreaStorage)
+                        .paramLabel("type")
+                        .build(),
+                fromOption(StorageOptions.STORAGE_CLIENT_STORE)
+                        .to("kc.spi-client-map-storage-provider")
+                        .mapFrom("storage")
+                        .transformer(StoragePropertyMappers::resolveMapStorageProvider)
                         .paramLabel("type")
                         .build(),
                 fromOption(StorageOptions.STORAGE_CLIENT_SCOPE)
@@ -64,10 +84,22 @@ final class StoragePropertyMappers {
                         .transformer(StoragePropertyMappers::getAreaStorage)
                         .paramLabel("type")
                         .build(),
+                fromOption(StorageOptions.STORAGE_CLIENT_SCOPE_STORE)
+                        .to("kc.spi-client-scope-map-storage-provider")
+                        .mapFrom("storage")
+                        .transformer(StoragePropertyMappers::resolveMapStorageProvider)
+                        .paramLabel("type")
+                        .build(),
                 fromOption(StorageOptions.STORAGE_GROUP)
                         .to("kc.spi-group-provider")
                         .mapFrom("storage")
                         .transformer(StoragePropertyMappers::getAreaStorage)
+                        .paramLabel("type")
+                        .build(),
+                fromOption(StorageOptions.STORAGE_GROUP_STORE)
+                        .to("kc.spi-group-map-storage-provider")
+                        .mapFrom("storage")
+                        .transformer(StoragePropertyMappers::resolveMapStorageProvider)
                         .paramLabel("type")
                         .build(),
                 fromOption(StorageOptions.STORAGE_ROLE)
@@ -76,10 +108,22 @@ final class StoragePropertyMappers {
                         .transformer(StoragePropertyMappers::getAreaStorage)
                         .paramLabel("type")
                         .build(),
+                fromOption(StorageOptions.STORAGE_ROLE_STORE)
+                        .to("kc.spi-role-map-storage-provider")
+                        .mapFrom("storage")
+                        .transformer(StoragePropertyMappers::resolveMapStorageProvider)
+                        .paramLabel("type")
+                        .build(),
                 fromOption(StorageOptions.STORAGE_USER)
                         .to("kc.spi-user-provider")
                         .mapFrom("storage")
                         .transformer(StoragePropertyMappers::getAreaStorage)
+                        .paramLabel("type")
+                        .build(),
+                fromOption(StorageOptions.STORAGE_USER_STORE)
+                        .to("kc.spi-user-map-storage-provider")
+                        .mapFrom("storage")
+                        .transformer(StoragePropertyMappers::resolveMapStorageProvider)
                         .paramLabel("type")
                         .build(),
                 fromOption(StorageOptions.STORAGE_DEPLOYMENT_STATE)
@@ -94,16 +138,34 @@ final class StoragePropertyMappers {
                         .transformer(StoragePropertyMappers::getCacheStorage)
                         .paramLabel("type")
                         .build(),
+                fromOption(StorageOptions.STORAGE_AUTH_SESSION_STORE)
+                        .to("kc.spi-authentication-sessions-map-storage-provider")
+                        .mapFrom("storage")
+                        .transformer(StoragePropertyMappers::resolveMapStorageProvider)
+                        .paramLabel("type")
+                        .build(),
                 fromOption(StorageOptions.STORAGE_USER_SESSION)
                         .to("kc.spi-user-sessions-provider")
                         .mapFrom("storage")
                         .transformer(StoragePropertyMappers::getCacheStorage)
                         .paramLabel("type")
                         .build(),
+                fromOption(StorageOptions.STORAGE_USER_SESSION_STORE)
+                        .to("kc.spi-user-sessions-map-storage-provider")
+                        .mapFrom("storage")
+                        .transformer(StoragePropertyMappers::resolveMapStorageProvider)
+                        .paramLabel("type")
+                        .build(),
                 fromOption(StorageOptions.STORAGE_LOGIN_FAILURE)
                         .to("kc.spi-login-failure-provider")
                         .mapFrom("storage")
                         .transformer(StoragePropertyMappers::getCacheStorage)
+                        .paramLabel("type")
+                        .build(),
+                fromOption(StorageOptions.STORAGE_LOGIN_FAILURE_STORE)
+                        .to("kc.spi-login-failure-map-storage-provider")
+                        .mapFrom("storage")
+                        .transformer(StoragePropertyMappers::resolveMapStorageProvider)
                         .paramLabel("type")
                         .build(),
                 fromOption(StorageOptions.STORAGE_USER_SESSION_PERSISTER)
@@ -122,6 +184,12 @@ final class StoragePropertyMappers {
                         .to("kc.spi-action-token-provider")
                         .mapFrom("storage")
                         .transformer(StoragePropertyMappers::getCacheStorage)
+                        .paramLabel("type")
+                        .build(),
+                fromOption(StorageOptions.STORAGE_ACTION_TOKEN_STORE)
+                        .to("kc.spi-action-token-map-storage-provider")
+                        .mapFrom("storage")
+                        .transformer(StoragePropertyMappers::resolveMapStorageProvider)
                         .paramLabel("type")
                         .build(),
                 fromOption(StorageOptions.STORAGE_DBLOCK)
@@ -154,38 +222,127 @@ final class StoragePropertyMappers {
                         .transformer(StoragePropertyMappers::getCacheStorage)
                         .paramLabel("type")
                         .build(),
+                fromOption(StorageOptions.STORAGE_SINGLE_USE_OBJECT_STORE)
+                        .to("kc.spi-single-use-object-map-storage-provider")
+                        .mapFrom("storage")
+                        .transformer(StoragePropertyMappers::resolveMapStorageProvider)
+                        .paramLabel("type")
+                        .build(),
+                fromOption(StorageOptions.STORAGE_CACHE_COMPONENT_FACTORY)
+                        .to("kc.spi-component-factory-default-caching-forced")
+                        .mapFrom("storage")
+                        .transformer(StoragePropertyMappers::isForceComponentFactoryCache)
+                        .paramLabel("type")
+                        .build(),
+                fromOption(StorageOptions.STORAGE_PUBLIC_KEY_STORE)
+                        .to("kc.spi-public-key-storage-map-storage-provider")
+                        .mapFrom("storage")
+                        .transformer(StoragePropertyMappers::resolveMapStorageProvider)
+                        .paramLabel("type")
+                        .build(),
+                fromOption(StorageOptions.STORAGE_EXCEPTION_CONVERTER)
+                        .to("kc.spi-exception-converter-jpa-enabled")
+                        .mapFrom("storage")
+                        .transformer(StoragePropertyMappers::isLegacyStoreEnabled)
+                        .paramLabel(Boolean.TRUE + "|" + Boolean.FALSE)
+                        .build(),
+                fromOption(StorageOptions.STORAGE_CACHE_ENABLED)
+                        .to("kc.spi-connections-infinispan-default-enabled")
+                        .mapFrom("storage")
+                        .transformer(StoragePropertyMappers::isLegacyStoreEnabled)
+                        .paramLabel(Boolean.TRUE + "|" + Boolean.FALSE)
+                        .build(),
+                fromOption(StorageOptions.STORAGE_CACHE_CLUSTER_ENABLED)
+                        .to("kc.spi-cluster-infinispan-enabled")
+                        .mapFrom("storage")
+                        .transformer(StoragePropertyMappers::isLegacyStoreEnabled)
+                        .paramLabel(Boolean.TRUE + "|" + Boolean.FALSE)
+                        .build(),
+                fromOption(StorageOptions.STORAGE_CACHE_STICK_SESSION_ENABLED)
+                        .to("kc.spi-sticky-session-encoder-infinispan-enabled")
+                        .mapFrom("storage")
+                        .transformer(StoragePropertyMappers::isLegacyStoreEnabled)
+                        .paramLabel(Boolean.TRUE + "|" + Boolean.FALSE)
+                        .build(),
+                fromOption(StorageOptions.STORAGE_CACHE_CLEAR_REALM)
+                        .to("kc.spi-admin-realm-restapi-extension-clear-realm-cache-enabled")
+                        .mapFrom("storage")
+                        .transformer(StoragePropertyMappers::isLegacyStoreEnabled)
+                        .paramLabel(Boolean.TRUE + "|" + Boolean.FALSE)
+                        .build(),
+                fromOption(StorageOptions.STORAGE_CACHE_CLEAR_USER)
+                        .to("kc.spi-admin-realm-restapi-extension-clear-user-cache-enabled")
+                        .mapFrom("storage")
+                        .transformer(StoragePropertyMappers::isLegacyStoreEnabled)
+                        .paramLabel(Boolean.TRUE + "|" + Boolean.FALSE)
+                        .build(),
+                fromOption(StorageOptions.STORAGE_CACHE_CLEAR_KEYS)
+                        .to("kc.spi-admin-realm-restapi-extension-clear-keys-cache-enabled")
+                        .mapFrom("storage")
+                        .transformer(StoragePropertyMappers::isLegacyStoreEnabled)
+                        .paramLabel(Boolean.TRUE + "|" + Boolean.FALSE)
+                        .build(),
+                fromOption(StorageOptions.STORAGE_LEGACY_SESSION_SUPPORT)
+                        .to("kc.spi-legacy-session-support-default-enabled")
+                        .mapFrom("storage")
+                        .transformer(StoragePropertyMappers::isLegacyStoreEnabled)
+                        .paramLabel("type")
+                        .build(),
+                fromOption(StorageOptions.STORAGE_USER_STORAGE)
+                        .to("kc.spi-admin-realm-restapi-extension-user-storage-enabled")
+                        .mapFrom("storage")
+                        .transformer(StoragePropertyMappers::isLegacyStoreEnabled)
+                        .paramLabel("type")
+                        .build()
         };
     }
 
+    private static Optional<String> isForceComponentFactoryCache(Optional<String> storage, ConfigSourceInterceptorContext context) {
+        if (storage.isPresent()) {
+            return Optional.of(Boolean.TRUE.toString());
+        }
+
+        return storage;
+    }
+
     private static Optional<String> getAreaStorage(Optional<String> storage, ConfigSourceInterceptorContext context) {
-        return of("legacy".equals(storage.orElse(null)) ? "jpa" : "map");
+        return of(storage.isEmpty() ? "jpa" : "map");
     }
 
     private static Optional<String> getCacheStorage(Optional<String> storage, ConfigSourceInterceptorContext context) {
-        return of("legacy".equals(storage.orElse(null)) ? "infinispan" : "map");
+        return of(storage.isEmpty() ? "infinispan" : "map");
     }
 
     private static Optional<String> getDbLockProvider(Optional<String> storage, ConfigSourceInterceptorContext context) {
-        return of("legacy".equals(storage.orElse(null)) ? "jpa" : "none");
+        return of(storage.isEmpty() ? "jpa" : "none");
     }
 
     private static Optional<String> getUserSessionPersisterStorage(Optional<String> storage, ConfigSourceInterceptorContext context) {
-        return of("legacy".equals(storage.orElse(null)) ? "jpa" : "disabled");
+        return of(storage.isEmpty() ? "jpa" : "disabled");
     }
 
-    private static Optional<String> isDefaultPersistenceUnitEnabled(Optional<String> value, ConfigSourceInterceptorContext context) {
-        if (value.get().equals(StorageOptions.StorageType.legacy.name())) {
+    private static Optional<String> isLegacyStoreEnabled(Optional<String> value, ConfigSourceInterceptorContext context) {
+        if (value.isEmpty()) {
             return of(Boolean.TRUE.toString());
         }
 
-        return of(Boolean.valueOf(value.get()).toString());
+        return of(Boolean.FALSE.toString());
     }
 
-    private static Optional<String> resolveStorageProvider(Optional<String> value, ConfigSourceInterceptorContext context) {
-        return Optional.ofNullable("legacy".equals(value.orElse(null)) ? null : "concurrenthashmap");
+    private static Optional<String> resolveMapStorageProvider(Optional<String> value, ConfigSourceInterceptorContext context) {
+        try {
+            if (value.isPresent()) {
+                return of(value.map(StorageOptions.StorageType::valueOf).map(StorageOptions.StorageType::getProvider)
+                        .orElse(StorageOptions.StorageType.chm.getProvider()));
+            }
+        } catch (IllegalArgumentException iae) {
+            throw new IllegalArgumentException("Invalid storage provider: " + value.orElse(null), iae);
+        }
+
+        return value;
     }
 
     private static Optional<String> isCacheAreaEnabledForStorage(Optional<String> storage, ConfigSourceInterceptorContext context) {
-        return of("legacy".equals(storage.orElse(null)) ? Boolean.TRUE.toString() : Boolean.FALSE.toString());
+        return of(storage.isEmpty() ? Boolean.TRUE.toString() : Boolean.FALSE.toString());
     }
 }

@@ -37,8 +37,7 @@ Cluster:
 
 Storage (Experimental):
 
---storage <type>     Experimental: Sets a storage mechanism. Possible values are: legacy, chm.
-                       Default: legacy.
+--storage <type>     Experimental: Sets a storage mechanism. Possible values are: chm.
 
 Database:
 

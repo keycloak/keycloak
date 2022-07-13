@@ -59,7 +59,7 @@ public class OptionValidationTest {
     public void failUnknownOptionWhitespaceSeparatorNotShowingValue(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         assertEquals("Unknown option: '--db-pasword'\n" +
-                "Possible solutions: --db-username, --db-url-host, --db-pool-min-size, --db-password, --db-url-properties, --db-url-database, --db-schema, --db-pool-max-size, --db-pool-initial-size, --db-url, --db-url-port\n" +
+                "Possible solutions: --db-username, --db-pool-min-size, --db-password, --db-url-database, --db-schema, --db-pool-initial-size, --db-pool-max-size, --db-url-port, --db-url, --db-url-host, --db-url-properties\n" +
                 "Try '" + KeycloakDistribution.SCRIPT_CMD + " start --help' for more information on the available options.", cliResult.getErrorOutput());
     }
 
@@ -68,7 +68,7 @@ public class OptionValidationTest {
     public void failUnknownOptionEqualsSeparatorNotShowingValue(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         assertEquals("Unknown option: '--db-pasword'\n" +
-                "Possible solutions: --db-username, --db-url-host, --db-pool-min-size, --db-password, --db-url-properties, --db-url-database, --db-schema, --db-pool-max-size, --db-pool-initial-size, --db-url, --db-url-port\n" +
+                "Possible solutions: --db-username, --db-pool-min-size, --db-password, --db-url-database, --db-schema, --db-pool-initial-size, --db-pool-max-size, --db-url-port, --db-url, --db-url-host, --db-url-properties\n" +
                 "Try '" + KeycloakDistribution.SCRIPT_CMD + " start --help' for more information on the available options.", cliResult.getErrorOutput());
     }
 
@@ -77,7 +77,7 @@ public class OptionValidationTest {
     public void failWithFirstOptionOnMultipleUnknownOptions(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         assertEquals("Unknown option: '--db-pasword'\n" +
-                "Possible solutions: --db-username, --db-url-host, --db-pool-min-size, --db-password, --db-url-properties, --db-url-database, --db-schema, --db-pool-max-size, --db-pool-initial-size, --db-url, --db-url-port\n" +
+                "Possible solutions: --db-username, --db-pool-min-size, --db-password, --db-url-database, --db-schema, --db-pool-initial-size, --db-pool-max-size, --db-url-port, --db-url, --db-url-host, --db-url-properties\n" +
                 "Try '" + KeycloakDistribution.SCRIPT_CMD + " start --help' for more information on the available options.", cliResult.getErrorOutput());
     }
 }

@@ -18,12 +18,15 @@
 package org.keycloak.quarkus.runtime.storage.legacy.infinispan;
 
 import org.infinispan.manager.EmbeddedCacheManager;
+import org.keycloak.common.Profile;
 import org.keycloak.connections.infinispan.DefaultInfinispanConnectionProviderFactory;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public class QuarkusInfinispanConnectionFactory extends DefaultInfinispanConnectionProviderFactory {
+public class LegacyInfinispanConnectionFactory extends DefaultInfinispanConnectionProviderFactory
+        implements EnvironmentDependentProviderFactory {
 
     @Override
     protected void initContainerManaged(EmbeddedCacheManager cacheManager) {
@@ -41,5 +44,10 @@ public class QuarkusInfinispanConnectionFactory extends DefaultInfinispanConnect
     @Override
     public String getId() {
         return "quarkus";
+    }
+
+    @Override
+    public boolean isSupported() {
+        return !Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE);
     }
 }
