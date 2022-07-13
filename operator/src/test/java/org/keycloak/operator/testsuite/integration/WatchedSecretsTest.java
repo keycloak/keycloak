@@ -102,7 +102,21 @@ public class WatchedSecretsTest extends BaseOperatorTest {
                         Log.info("Checking pod logs for DB auth failures");
                         var podlogs = getPodNamesForCrs(Set.of(kc)).stream()
                                 .filter(n -> !prevPodNames.contains(n)) // checking just new pods
-                                .map(n -> k8sclient.pods().inNamespace(namespace).withName(n).getLog())
+                                .map(n -> {
+                                        var name = k8sclient
+                                                .pods()
+                                                .inNamespace(namespace)
+                                                .list()
+                                                .getItems()
+                                                .stream()
+                                                .filter(p -> (p.getMetadata().getName() + p.getMetadata().getCreationTimestamp()).equals(n))
+                                                .findAny()
+                                                .get()
+                                                .getMetadata()
+                                                .getName();
+
+                                        return k8sclient.pods().inNamespace(namespace).withName(name).getLog();
+                                })
                                 .collect(Collectors.toList());
                         assertThat(podlogs).anyMatch(l -> l.contains("password authentication failed for user \"" + username + "\""));
                     });
@@ -220,8 +234,13 @@ public class WatchedSecretsTest extends BaseOperatorTest {
     }
 
     private List<String> getPodNamesForCrs(Set<Keycloak> crs) {
-        return k8sclient.pods().inNamespace(namespace).list().getItems().stream()
-                .map(pod -> pod.getMetadata().getName())
+        return k8sclient
+                .pods()
+                .inNamespace(namespace)
+                .list()
+                .getItems()
+                .stream()
+                .map(pod -> pod.getMetadata().getName() + pod.getMetadata().getCreationTimestamp())
                 .filter(pod -> crs.stream().map(c -> c.getMetadata().getName()).anyMatch(pod::startsWith))
                 .collect(Collectors.toList());
     }

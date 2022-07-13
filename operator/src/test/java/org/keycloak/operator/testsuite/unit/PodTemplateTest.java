@@ -21,7 +21,7 @@ import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.api.model.PodTemplateSpecBuilder;
 import io.fabric8.kubernetes.api.model.ProbeBuilder;
-import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
 import org.keycloak.operator.Config;
@@ -36,7 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @QuarkusTest
 public class PodTemplateTest {
 
-    Deployment getDeployment(PodTemplateSpec podTemplate) {
+    StatefulSet getDeployment(PodTemplateSpec podTemplate) {
         var config = new Config(){
             @Override
             public Keycloak keycloak() {
@@ -58,8 +58,8 @@ public class PodTemplateTest {
         spec.setHostname("example.com");
         spec.setTlsSecret("example-tls-secret");
         kc.setSpec(spec);
-        var deployment = new KeycloakDeployment(null, config, kc, new Deployment(), "dummy-admin");
-        return (Deployment) deployment.getReconciledResource().get();
+        var deployment = new KeycloakDeployment(null, config, kc, new StatefulSet(), "dummy-admin");
+        return (StatefulSet) deployment.getReconciledResource().get();
     }
 
     @Test
