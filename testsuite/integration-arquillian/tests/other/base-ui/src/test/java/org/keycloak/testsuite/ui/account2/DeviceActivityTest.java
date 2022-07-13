@@ -207,8 +207,8 @@ public class DeviceActivityTest extends BaseAccountPageTest {
             RealmModel realm = session.realms().getRealmByName(TEST);
             UserSessionModel userSession = session.sessions().getUserSession(realm, sessionId);
 
-            ClientModel client2 = session.clientLocalStorage().getClientByClientId(TEST_CLIENT2_ID, realm);
-            ClientModel client3 = session.clientLocalStorage().getClientByClientId(TEST_CLIENT3_ID, realm);
+            ClientModel client2 = session.clients().getClientByClientId(realm, TEST_CLIENT2_ID);
+            ClientModel client3 = session.clients().getClientByClientId(realm, TEST_CLIENT3_ID);
 
             session.sessions().createClientSession(realm, client2, userSession);
             session.sessions().createClientSession(realm, client3, userSession);
@@ -293,8 +293,8 @@ public class DeviceActivityTest extends BaseAccountPageTest {
         String sessionId = "abcdefg";
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName(TEST);
-            ClientModel client = session.clientLocalStorage().getClientByClientId(TEST_CLIENT_ID, realm);
-            UserModel user = session.users().getUserByUsername("test", realm); // cannot use testUser.getUsername() because it throws NotSerializableException for no apparent reason (or maybe I'm just stupid :D)
+            ClientModel client = session.clients().getClientByClientId(realm, TEST_CLIENT_ID);
+            UserModel user = session.users().getUserByUsername(realm, "test"); // cannot use testUser.getUsername() because it throws NotSerializableException for no apparent reason (or maybe I'm just stupid :D)
 
             UserSessionModel userSession = session.sessions().createUserSession(sessionId, realm, user, "test", ip, "form", false, null, null, null);
             session.sessions().createClientSession(realm, client, userSession);
