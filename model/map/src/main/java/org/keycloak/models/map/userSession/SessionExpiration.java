@@ -144,7 +144,7 @@ public class SessionExpiration {
                     ? TimeAdapter.fromSecondsToMilliseconds(realm.getSsoSessionIdleTimeoutRememberMe())
                     : TimeAdapter.fromSecondsToMilliseconds(realm.getSsoSessionIdleTimeout()));
 
-            long clientSessionIdleTimeout = realm.getClientSessionIdleTimeout();
+            long clientSessionIdleTimeout = TimeAdapter.fromSecondsToMilliseconds(realm.getClientSessionIdleTimeout());
 
             if (clientSessionIdleTimeout > 0) {
                 long clientSessionIdleExpiration = lastSessionRefreshMillis + clientSessionIdleTimeout;
