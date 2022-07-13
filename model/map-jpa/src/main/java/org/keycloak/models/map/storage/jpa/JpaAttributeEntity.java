@@ -89,6 +89,7 @@ public abstract class JpaAttributeEntity<E> implements JpaChildEntity<E> {
         return getClass().hashCode();
     }
 
+    //For running gh actions purposes
     @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;

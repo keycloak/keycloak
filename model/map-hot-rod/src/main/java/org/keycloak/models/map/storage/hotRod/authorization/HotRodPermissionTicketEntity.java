@@ -96,6 +96,7 @@ public class HotRodPermissionTicketEntity extends AbstractHotRodEntity {
     @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
     public String policyId;
 
+    //For running gh actions purposes
     public static abstract class AbstractHotRodPermissionTicketEntity extends UpdatableHotRodEntityDelegateImpl<HotRodPermissionTicketEntity> implements MapPermissionTicketEntity {
 
         @Override
