@@ -236,7 +236,6 @@ public class TokenRevocationEndpoint {
     }
 
     private void revokeClient() {
-        session.users().revokeConsentForClient(realm, user.getId(), client.getId());
         if (TokenUtil.TOKEN_TYPE_OFFLINE.equals(token.getType())) {
             new UserSessionManager(session).revokeOfflineToken(user, client);
         }
