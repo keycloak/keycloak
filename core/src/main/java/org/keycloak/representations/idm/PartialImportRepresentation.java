@@ -36,6 +36,7 @@ public class PartialImportRepresentation {
     protected List<GroupRepresentation> groups;
     protected List<ClientRepresentation> clients;
     protected List<IdentityProviderRepresentation> identityProviders;
+    protected List<IdentityProviderMapperRepresentation> identityProviderMappers;
     protected RolesRepresentation roles;
 
     public boolean hasUsers() {
@@ -105,6 +106,14 @@ public class PartialImportRepresentation {
 
     public void setIdentityProviders(List<IdentityProviderRepresentation> identityProviders) {
         this.identityProviders = identityProviders;
+    }
+
+    public List<IdentityProviderMapperRepresentation> getIdentityProviderMappers() {
+        return identityProviderMappers;
+    }
+
+    public void setIdentityProviderMappers(List<IdentityProviderMapperRepresentation> identityProviderMappers) {
+        this.identityProviderMappers = identityProviderMappers;
     }
 
     public RolesRepresentation getRoles() {
