@@ -35,7 +35,7 @@ export const LogoutPanel = ({
       isHorizontal
       fineGrainedAccess={access?.configure}
       role="manage-clients"
-      className="pf-u-pb-xl"
+      className="pf-u-pb-4xl"
     >
       <FormGroup
         label={t("frontchannelLogout")}
@@ -101,92 +101,98 @@ export const LogoutPanel = ({
           />
         </FormGroup>
       )}
-      <FormGroup
-        label={t("backchannelLogoutUrl")}
-        fieldId="backchannelLogoutUrl"
-        labelIcon={
-          <HelpItem
-            helpText="clients-help:backchannelLogoutUrl"
-            fieldLabelId="clients:backchannelLogoutUrl"
-          />
-        }
-        helperTextInvalid={errors.attributes?.backchannel?.logout?.url?.message}
-        validated={
-          errors.attributes?.backchannel?.logout?.url?.message
-            ? ValidatedOptions.error
-            : ValidatedOptions.default
-        }
-      >
-        <KeycloakTextInput
-          type="text"
-          id="backchannelLogoutUrl"
-          name="attributes.backchannel.logout.url"
-          ref={register({
-            validate: (uri) =>
-              ((uri.startsWith("https://") || uri.startsWith("http://")) &&
-                !uri.includes("*")) ||
-              uri === "" ||
-              t("backchannelUrlInvalid").toString(),
-          })}
-          validated={
-            errors.attributes?.backchannel?.logout?.url?.message
-              ? ValidatedOptions.error
-              : ValidatedOptions.default
-          }
-        />
-      </FormGroup>
-      <FormGroup
-        label={t("backchannelLogoutSessionRequired")}
-        labelIcon={
-          <HelpItem
-            helpText="clients-help:backchannelLogoutSessionRequired"
-            fieldLabelId="clients:backchannelLogoutSessionRequired"
-          />
-        }
-        fieldId="backchannelLogoutSessionRequired"
-        hasNoPaddingTop
-      >
-        <Controller
-          name="attributes.backchannel.logout.session.required"
-          defaultValue="true"
-          control={control}
-          render={({ onChange, value }) => (
-            <Switch
-              id="backchannelLogoutSessionRequired"
-              label={t("common:on")}
-              labelOff={t("common:off")}
-              isChecked={value === "true"}
-              onChange={(value) => onChange(value.toString())}
+      {protocol === "openid-connect" && (
+        <>
+          <FormGroup
+            label={t("backchannelLogoutUrl")}
+            fieldId="backchannelLogoutUrl"
+            labelIcon={
+              <HelpItem
+                helpText="clients-help:backchannelLogoutUrl"
+                fieldLabelId="clients:backchannelLogoutUrl"
+              />
+            }
+            helperTextInvalid={
+              errors.attributes?.backchannel?.logout?.url?.message
+            }
+            validated={
+              errors.attributes?.backchannel?.logout?.url?.message
+                ? ValidatedOptions.error
+                : ValidatedOptions.default
+            }
+          >
+            <KeycloakTextInput
+              type="text"
+              id="backchannelLogoutUrl"
+              name="attributes.backchannel.logout.url"
+              ref={register({
+                validate: (uri) =>
+                  ((uri.startsWith("https://") || uri.startsWith("http://")) &&
+                    !uri.includes("*")) ||
+                  uri === "" ||
+                  t("backchannelUrlInvalid").toString(),
+              })}
+              validated={
+                errors.attributes?.backchannel?.logout?.url?.message
+                  ? ValidatedOptions.error
+                  : ValidatedOptions.default
+              }
             />
-          )}
-        />
-      </FormGroup>
-      <FormGroup
-        label={t("backchannelLogoutRevokeOfflineSessions")}
-        labelIcon={
-          <HelpItem
-            helpText="clients-help:backchannelLogoutRevokeOfflineSessions"
-            fieldLabelId="clients:backchannelLogoutRevokeOfflineSessions"
-          />
-        }
-        fieldId="backchannelLogoutRevokeOfflineSessions"
-        hasNoPaddingTop
-      >
-        <Controller
-          name="attributes.backchannel.logout.revoke.offline.tokens"
-          defaultValue="false"
-          control={control}
-          render={({ onChange, value }) => (
-            <Switch
-              id="backchannelLogoutRevokeOfflineSessions"
-              label={t("common:on")}
-              labelOff={t("common:off")}
-              isChecked={value === "true"}
-              onChange={(value) => onChange(value.toString())}
+          </FormGroup>
+          <FormGroup
+            label={t("backchannelLogoutSessionRequired")}
+            labelIcon={
+              <HelpItem
+                helpText="clients-help:backchannelLogoutSessionRequired"
+                fieldLabelId="clients:backchannelLogoutSessionRequired"
+              />
+            }
+            fieldId="backchannelLogoutSessionRequired"
+            hasNoPaddingTop
+          >
+            <Controller
+              name="attributes.backchannel.logout.session.required"
+              defaultValue="true"
+              control={control}
+              render={({ onChange, value }) => (
+                <Switch
+                  id="backchannelLogoutSessionRequired"
+                  label={t("common:on")}
+                  labelOff={t("common:off")}
+                  isChecked={value === "true"}
+                  onChange={(value) => onChange(value.toString())}
+                />
+              )}
             />
-          )}
-        />
-      </FormGroup>
+          </FormGroup>
+          <FormGroup
+            label={t("backchannelLogoutRevokeOfflineSessions")}
+            labelIcon={
+              <HelpItem
+                helpText="clients-help:backchannelLogoutRevokeOfflineSessions"
+                fieldLabelId="clients:backchannelLogoutRevokeOfflineSessions"
+              />
+            }
+            fieldId="backchannelLogoutRevokeOfflineSessions"
+            hasNoPaddingTop
+          >
+            <Controller
+              name="attributes.backchannel.logout.revoke.offline.tokens"
+              defaultValue="false"
+              control={control}
+              render={({ onChange, value }) => (
+                <Switch
+                  id="backchannelLogoutRevokeOfflineSessions"
+                  label={t("common:on")}
+                  labelOff={t("common:off")}
+                  isChecked={value === "true"}
+                  onChange={(value) => onChange(value.toString())}
+                />
+              )}
+            />
+          </FormGroup>
+        </>
+      )}
       <SaveReset
         className="keycloak__form_actions"
         name="settings"

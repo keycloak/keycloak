@@ -63,7 +63,7 @@ export const ClientSettings = (props: ClientSettingsProps) => {
         },
         {
           title: t("loginSettings"),
-          isHidden: protocol !== "openid-connect" || client.bearerOnly,
+          isHidden: client.bearerOnly,
           panel: <LoginSettingsPanel access={client.access?.configure} />,
         },
         {
