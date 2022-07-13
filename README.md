@@ -18,13 +18,13 @@ If you've found a security vulnerability, please look at the [instructions on ho
 
 ## Reporting an issue
 
-If you believe you have discovered a defect in Keycloak please open [an issue](https://github.com/keycloak/keycloak/issues).
+If you believe you have discovered a defect in Keycloak, please open [an issue](https://github.com/keycloak/keycloak/issues).
 Please remember to provide a good summary, description as well as steps to reproduce the issue.
 
 
 ## Getting started
 
-To run Keycloak download the distribution from our [website](https://www.keycloak.org/downloads.html). Unzip and run:
+To run Keycloak, download the distribution from our [website](https://www.keycloak.org/downloads.html). Unzip and run:
 
     bin/kc.[sh|bat] start-dev
 
@@ -37,22 +37,22 @@ For more details refer to the [Keycloak Documentation](https://www.keycloak.org/
 
 ## Building from Source
 
-To build from source refer to the [building and working with the code base](docs/building.md) guide.
+To build from source, refer to the [building and working with the code base](docs/building.md) guide.
 
 
 ### Testing
 
-To run tests refer to the [running tests](docs/tests.md) guide.
+To run tests, refer to the [running tests](docs/tests.md) guide.
 
 
 ### Writing Tests
 
-To write tests refer to the [writing tests](docs/tests-development.md) guide.
+To write tests, refer to the [writing tests](docs/tests-development.md) guide.
 
 
 ## Contributing
 
-Before contributing to Keycloak please read our [contributing guidelines](CONTRIBUTING.md).
+Before contributing to Keycloak, please read our [contributing guidelines](CONTRIBUTING.md).
 
 
 ## Other Keycloak Projects
