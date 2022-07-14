@@ -34,7 +34,6 @@ import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -351,8 +350,6 @@ public class MapUserSessionProvider implements UserSessionProvider {
     @Override
     public void onRealmRemoved(RealmModel realm) {
         LOG.tracef("onRealmRemoved(%s)%s", realm, getShortStackTrace());
-
-        removeUserSessions(realm);
     }
 
     @Override
@@ -524,6 +521,19 @@ public class MapUserSessionProvider implements UserSessionProvider {
     @Override
     public void close() {
 
+    }
+
+    /**
+     * Removes all online and offline user sessions that belong to the provided {@link RealmModel}.
+     * @param realm
+     */
+    protected void removeAllUserSessions(RealmModel realm) {
+        DefaultModelCriteria<UserSessionModel> mcb = criteria();
+        mcb = mcb.compare(UserSessionModel.SearchableFields.REALM_ID, Operator.EQ, realm.getId());
+
+        LOG.tracef("removeAllUserSessions(%s)%s", realm, getShortStackTrace());
+
+        userSessionTx.delete(withCriteria(mcb));
     }
 
     private Stream<MapUserSessionEntity> getOfflineUserSessionEntityStream(RealmModel realm, String userSessionId) {

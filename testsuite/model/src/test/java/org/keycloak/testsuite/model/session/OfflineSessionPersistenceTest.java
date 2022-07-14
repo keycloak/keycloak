@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.model.session;
 
+import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.commons.CacheException;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
@@ -27,6 +28,10 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
+import org.keycloak.models.map.storage.ModelEntityUtil;
+import org.keycloak.models.map.storage.hotRod.connections.DefaultHotRodConnectionProviderFactory;
+import org.keycloak.models.map.storage.hotRod.connections.HotRodConnectionProvider;
+import org.keycloak.models.map.storage.hotRod.userSession.HotRodUserSessionEntity;
 import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.models.sessions.infinispan.InfinispanUserSessionProvider;
 import org.keycloak.models.sessions.infinispan.InfinispanUserSessionProviderFactory;
@@ -118,6 +123,39 @@ public class OfflineSessionPersistenceTest extends KeycloakModelTest {
             // Simulate server restart
             reinitializeKeycloakSessionFactory();
             assertOfflineSessionsExist(realmId, offlineSessionIds);
+        } finally {
+            withRealm(realmId2, (session, realm) -> realm == null ? false : new RealmManager(session).removeRealm(realm));
+        }
+    }
+
+    @Test
+    @RequireProvider(value = HotRodConnectionProvider.class, only = DefaultHotRodConnectionProviderFactory.PROVIDER_ID)
+    public void testOfflineSessionsRemovedAfterDeleteRealm() {
+        String realmId2 = inComittedTransaction(session -> { return prepareRealm(session, "realm2").getId(); });
+        List<String> userIds2 = withRealm(realmId2, (session, realm) -> IntStream.range(0, USER_COUNT)
+                .mapToObj(i -> session.users().addUser(realm, "user2-" + i))
+                .map(UserModel::getId)
+                .collect(Collectors.toList())
+        );
+
+        try {
+            List<String> offlineSessionIds2 = createOfflineSessions(realmId2, userIds2);
+            assertOfflineSessionsExist(realmId2, offlineSessionIds2);
+
+            // Simulate server restart
+            reinitializeKeycloakSessionFactory();
+
+            assertOfflineSessionsExist(realmId2, offlineSessionIds2);
+
+            inComittedTransaction(session -> {
+                session.realms().removeRealm(realmId2);
+            });
+
+            inComittedTransaction(session -> {
+                HotRodConnectionProvider provider = session.getProvider(HotRodConnectionProvider.class);
+                RemoteCache<String, HotRodUserSessionEntity> remoteCache = provider.getRemoteCache(ModelEntityUtil.getModelName(UserSessionModel.class));
+                assertThat(remoteCache, Matchers.anEmptyMap());
+            });
         } finally {
             withRealm(realmId2, (session, realm) -> realm == null ? false : new RealmManager(session).removeRealm(realm));
         }
