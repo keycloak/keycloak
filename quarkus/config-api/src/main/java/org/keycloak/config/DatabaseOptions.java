@@ -19,9 +19,10 @@ public class DatabaseOptions {
             .defaultValue(Database.getDriver("dev-file", true).get())
             .build();
 
-    public static final Option<Database.Vendor> DB = new OptionBuilder<>("db", Database.Vendor.class)
+    public static final Option<String> DB = new OptionBuilder<>("db", String.class)
             .category(OptionCategory.DATABASE)
-            .description("The database vendor. Possible values are: " + String.join(", ", Database.getAliases()))
+            .description(String.format("The database vendor. Possible values are: %s.", String.join(", ", Database.getAliases())))
+            .defaultValue("dev-file")
             .expectedStringValues(Database.getAliases())
             .buildTime(true)
             .build();

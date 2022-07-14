@@ -38,7 +38,7 @@ import io.quarkus.deployment.annotations.ExecutionTime;
 import io.quarkus.deployment.annotations.Record;
 import io.quarkus.deployment.builditem.ShutdownContextBuildItem;
 
-public class CLusteringBuildSteps {
+public class CacheBuildSteps {
 
     @Consume(KeycloakSessionFactoryPreInitBuildItem.class)
     @Record(ExecutionTime.RUNTIME_INIT)

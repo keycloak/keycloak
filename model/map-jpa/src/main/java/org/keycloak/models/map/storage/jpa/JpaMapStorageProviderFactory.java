@@ -22,7 +22,6 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -35,16 +34,12 @@ import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
 import javax.sql.DataSource;
 
-import org.hibernate.boot.Metadata;
 import org.hibernate.cfg.AvailableSettings;
-import org.hibernate.engine.spi.SessionFactoryImplementor;
-import org.hibernate.event.service.spi.EventListenerRegistry;
-import org.hibernate.event.spi.EventType;
-import org.hibernate.jpa.boot.spi.IntegratorProvider;
-import org.hibernate.service.spi.SessionFactoryServiceRegistry;
+import org.hibernate.jpa.boot.internal.ParsedPersistenceXmlDescriptor;
+import org.hibernate.jpa.boot.internal.PersistenceXmlParser;
+import org.hibernate.jpa.boot.spi.Bootstrap;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.authorization.model.PermissionTicket;
@@ -59,7 +54,6 @@ import org.keycloak.component.AmphibianProviderFactory;
 import org.keycloak.events.Event;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.models.ActionTokenValueModel;
-import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.GroupModel;
@@ -157,6 +151,14 @@ public class JpaMapStorageProviderFactory implements
     private static final Logger logger = Logger.getLogger(JpaMapStorageProviderFactory.class);
 
     public static final String HIBERNATE_DEFAULT_SCHEMA = "hibernate.default_schema";
+
+    public static Map<String, Object> configureHibernateProperties() {
+        Map<String, Object> properties = new HashMap<>();
+
+        properties.put("hibernate.integrator_provider", new KeycloakIntegratorProvider());
+
+        return properties;
+    }
 
     private volatile EntityManagerFactory emf;
     private final Set<Class<?>> validatedModels = ConcurrentHashMap.newKeySet();
@@ -304,76 +306,57 @@ public class JpaMapStorageProviderFactory implements
         if (emf == null) {
             synchronized (this) {
                 if (emf == null) {
-                    logger.debugf("Initializing JPA connections %s", StackUtil.getShortStackTrace());
-
-                    Map<String, Object> properties = new HashMap<>();
-
-                    String unitName = config.get("persistenceUnitName", "keycloak-jpa-default");
-
-                    String dataSource = config.get("dataSource");
-                    if (dataSource != null) {
-                        properties.put(AvailableSettings.JPA_NON_JTA_DATASOURCE, dataSource);
-                    } else {
-                        properties.put(AvailableSettings.JPA_JDBC_URL, config.get("url"));
-                        properties.put(AvailableSettings.JPA_JDBC_DRIVER, config.get("driver"));
-
-                        String user = config.get("user");
-                        if (user != null) {
-                            properties.put(AvailableSettings.JPA_JDBC_USER, user);
-                        }
-                        String password = config.get("password");
-                        if (password != null) {
-                            properties.put(AvailableSettings.JPA_JDBC_PASSWORD, password);
-                        }
-                    }
-
-                    String schema = config.get("schema");
-                    if (schema != null) {
-                        properties.put(HIBERNATE_DEFAULT_SCHEMA, schema);
-                    }
-
-                    properties.put("hibernate.show_sql", config.getBoolean("showSql", false));
-                    properties.put("hibernate.format_sql", config.getBoolean("formatSql", true));
-                    properties.put("hibernate.dialect", config.get("driverDialect"));
-
-                    properties.put(
-                            "hibernate.integrator_provider",
-                            (IntegratorProvider) () -> Collections.singletonList(
-                                    new org.hibernate.integrator.spi.Integrator() {
-
-                                        @Override
-                                        public void integrate(Metadata metadata, SessionFactoryImplementor sessionFactoryImplementor,
-                                                              SessionFactoryServiceRegistry sessionFactoryServiceRegistry) {
-                                            final EventListenerRegistry eventListenerRegistry =
-                                                    sessionFactoryServiceRegistry.getService( EventListenerRegistry.class );
-
-                                            eventListenerRegistry.appendListeners(EventType.PRE_INSERT, JpaOptimisticLockingListener.INSTANCE);
-                                            eventListenerRegistry.appendListeners(EventType.PRE_UPDATE, JpaOptimisticLockingListener.INSTANCE);
-                                            eventListenerRegistry.appendListeners(EventType.PRE_DELETE, JpaOptimisticLockingListener.INSTANCE);
-
-                                            eventListenerRegistry.appendListeners(EventType.PRE_INSERT, JpaEntityVersionListener.INSTANCE);
-                                            eventListenerRegistry.appendListeners(EventType.PRE_UPDATE, JpaEntityVersionListener.INSTANCE);
-                                            eventListenerRegistry.appendListeners(EventType.PRE_DELETE, JpaEntityVersionListener.INSTANCE);
-
-                                            // replace auto-flush listener
-                                            eventListenerRegistry.setListeners(EventType.AUTO_FLUSH, JpaAutoFlushListener.INSTANCE);
-                                        }
-
-                                        @Override
-                                        public void disintegrate(SessionFactoryImplementor sessionFactoryImplementor,
-                                                                 SessionFactoryServiceRegistry sessionFactoryServiceRegistry) {
-
-                                        }
-                                    }
-                            )
-                    );
-
-                    logger.trace("Creating EntityManagerFactory");
-                    this.emf = Persistence.createEntityManagerFactory(unitName, properties);
-                    logger.trace("EntityManagerFactory created");
+                    this.emf = createEntityManagerFactory();
                 }
             }
         }
+    }
+
+    protected EntityManagerFactory createEntityManagerFactory() {
+        logger.debugf("Initializing JPA connections %s", StackUtil.getShortStackTrace());
+
+        Map<String, Object> properties = new HashMap<>();
+        String dataSource = config.get("dataSource");
+
+        if (dataSource != null) {
+            properties.put(AvailableSettings.JPA_NON_JTA_DATASOURCE, dataSource);
+        } else {
+            properties.put(AvailableSettings.JPA_JDBC_URL, config.get("url"));
+            properties.put(AvailableSettings.JPA_JDBC_DRIVER, config.get("driver"));
+
+            String user = config.get("user");
+            if (user != null) {
+                properties.put(AvailableSettings.JPA_JDBC_USER, user);
+            }
+            String password = config.get("password");
+            if (password != null) {
+                properties.put(AvailableSettings.JPA_JDBC_PASSWORD, password);
+            }
+        }
+
+        String schema = config.get("schema");
+        if (schema != null) {
+            properties.put(HIBERNATE_DEFAULT_SCHEMA, schema);
+        }
+
+        properties.put("hibernate.show_sql", config.getBoolean("showSql", false));
+        properties.put("hibernate.format_sql", config.getBoolean("formatSql", true));
+        properties.put("hibernate.dialect", config.get("driverDialect"));
+
+        properties.putAll(configureHibernateProperties());
+
+        logger.trace("Creating EntityManagerFactory");
+        ParsedPersistenceXmlDescriptor descriptor = PersistenceXmlParser.locateIndividualPersistenceUnit(
+                JpaMapStorageProviderFactory.class.getClassLoader()
+                        .getResource("default-map-jpa-persistence.xml"));
+        EntityManagerFactory emf = Bootstrap.getEntityManagerFactoryBuilder(descriptor, properties).build();
+        logger.trace("EntityManagerFactory created");
+
+        return emf;
+    }
+
+    protected EntityManagerFactory getEntityManagerFactory() {
+        return emf;
     }
 
     public void validateAndUpdateSchema(KeycloakSession session, Class<?> modelType) {
@@ -414,7 +397,7 @@ public class JpaMapStorageProviderFactory implements
         }
     }
 
-    private Connection getConnection() {
+    protected Connection getConnection() {
         try {
             String dataSourceLookup = config.get("dataSource");
             if (dataSourceLookup != null) {

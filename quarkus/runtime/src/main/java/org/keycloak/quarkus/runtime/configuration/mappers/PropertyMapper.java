@@ -210,7 +210,7 @@ public class PropertyMapper<T> {
             return null;
         }
 
-        return ConfigValue.builder().withName(to).withValue(mappedValue.get()).build();
+        return ConfigValue.builder().withName(to).withValue(mappedValue.get()).withRawValue(value.orElse(null)).build();
     }
 
     public static class Builder<T> {

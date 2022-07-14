@@ -255,7 +255,14 @@ public class CLITestExtension extends QuarkusMainTestExtension {
 
                 databaseContainer.start();
 
-                dist.setProperty("db", database.alias());
+                if (database.buildOptions().length == 0) {
+                    dist.setProperty("db", database.alias());
+                } else {
+                    for (String option : database.buildOptions()) {
+                        dist.setProperty(option.substring(0, option.indexOf('=')), option.substring(option.indexOf('=') + 1));
+                    }
+                }
+
                 dist.setProperty("db-username", databaseContainer.getUsername());
                 dist.setProperty("db-password", databaseContainer.getPassword());
                 dist.setProperty("db-url", databaseContainer.getJdbcUrl());

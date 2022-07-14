@@ -492,7 +492,7 @@ jobs:
 
       - name: Run Quarkus Storage Tests
         run: |
-          ./mvnw clean install -nsu -B -f quarkus/tests/pom.xml -Ptest-database -Dtest=PostgreSQLDistTest,DatabaseOptionsDistTest | misc/log/trimmer.sh
+          ./mvnw clean install -nsu -B -f quarkus/tests/pom.xml -Ptest-database -Dtest=PostgreSQLDistTest,DatabaseOptionsDistTest,JPAStoreDistTest | misc/log/trimmer.sh
           TEST_RESULT=${PIPESTATUS[0]}
           find . -path '*/target/surefire-reports/*.xml' | zip -q reports-quarkus-tests.zip -@
           exit $TEST_RESULT

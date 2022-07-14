@@ -63,7 +63,6 @@ import io.quarkus.deployment.builditem.GeneratedResourceBuildItem;
 import io.quarkus.deployment.builditem.HotDeploymentWatchedFileBuildItem;
 import io.quarkus.deployment.builditem.IndexDependencyBuildItem;
 import io.quarkus.deployment.builditem.LaunchModeBuildItem;
-import io.quarkus.deployment.builditem.RuntimeConfigSetupCompleteBuildItem;
 import io.quarkus.deployment.builditem.StaticInitConfigSourceProviderBuildItem;
 import io.quarkus.hibernate.orm.deployment.AdditionalJpaModelBuildItem;
 import io.quarkus.hibernate.orm.deployment.HibernateOrmConfig;
@@ -89,8 +88,11 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.plugins.server.servlet.ResteasyContextParameters;
 import org.jboss.resteasy.spi.ResteasyDeployment;
 import org.keycloak.Config;
+import org.keycloak.config.StorageOptions;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.connections.jpa.JpaConnectionSpi;
+import org.keycloak.models.map.storage.MapStorageSpi;
+import org.keycloak.models.map.storage.jpa.JpaMapStorageProviderFactory;
 import org.keycloak.quarkus.runtime.QuarkusProfile;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 import org.keycloak.quarkus.runtime.configuration.QuarkusPropertiesConfigSource;
@@ -129,6 +131,7 @@ import io.quarkus.deployment.builditem.FeatureBuildItem;
 import io.quarkus.vertx.http.deployment.FilterBuildItem;
 
 import org.keycloak.quarkus.runtime.storage.database.jpa.NamedJpaConnectionProviderFactory;
+import org.keycloak.quarkus.runtime.storage.database.jpa.QuarkusJpaMapStorageProviderFactory;
 import org.keycloak.quarkus.runtime.themes.FlatClasspathThemeResourceProviderFactory;
 import org.keycloak.representations.provider.ScriptProviderDescriptor;
 import org.keycloak.representations.provider.ScriptProviderMetadata;
@@ -166,7 +169,8 @@ class KeycloakProcessor {
             RequestHostnameProviderFactory.class,
             FilesPlainTextVaultProviderFactory.class,
             BlacklistPasswordPolicyProviderFactory.class,
-            ClasspathThemeResourceProviderFactory.class);
+            ClasspathThemeResourceProviderFactory.class,
+            JpaMapStorageProviderFactory.class);
 
     static {
         DEPLOYEABLE_SCRIPT_PROVIDERS.put(AUTHENTICATORS, KeycloakProcessor::registerScriptAuthenticator);
@@ -203,7 +207,7 @@ class KeycloakProcessor {
      * @param config
      * @param descriptors
      */
-    @BuildStep(onlyIf = IsLegacyStoreEnabled.class)
+    @BuildStep(onlyIf = {IsJpaStoreEnabled.class})
     @Record(ExecutionTime.RUNTIME_INIT)
     void configurePersistenceUnits(HibernateOrmConfig config,
             List<PersistenceXmlDescriptorBuildItem> descriptors,
@@ -229,10 +233,20 @@ class KeycloakProcessor {
         }
     }
 
-    @BuildStep(onlyIf = IsLegacyStoreEnabled.class)
+    @BuildStep(onlyIf = IsJpaStoreEnabled.class)
     void produceDefaultPersistenceUnit(BuildProducer<PersistenceXmlDescriptorBuildItem> producer) {
-        ParsedPersistenceXmlDescriptor descriptor = PersistenceXmlParser.locateIndividualPersistenceUnit(
-                Thread.currentThread().getContextClassLoader().getResource("default-persistence.xml"));
+        String storage = Configuration.getRawValue(
+                MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX.concat(StorageOptions.STORAGE.getKey()));
+        ParsedPersistenceXmlDescriptor descriptor;
+
+        if (storage == null) {
+            descriptor = PersistenceXmlParser.locateIndividualPersistenceUnit(
+                    Thread.currentThread().getContextClassLoader().getResource("default-persistence.xml"));
+        } else {
+            descriptor = PersistenceXmlParser.locateIndividualPersistenceUnit(
+                    Thread.currentThread().getContextClassLoader().getResource("default-map-jpa-persistence.xml"));
+            descriptor.getProperties().putAll(QuarkusJpaMapStorageProviderFactory.configureHibernateProperties());
+        }
 
         producer.produce(new PersistenceXmlDescriptorBuildItem(descriptor));
     }
@@ -395,26 +409,10 @@ class KeycloakProcessor {
     void persistBuildTimeProperties(BuildProducer<GeneratedResourceBuildItem> resources) {
         Properties properties = new Properties();
 
+        putPersistedProperty(properties, "kc.db");
+
         for (String name : getPropertyNames()) {
-            PropertyMapper mapper = PropertyMappers.getMapper(name);
-            ConfigValue value = null;
-
-            if (mapper == null) {
-                if (name.startsWith(NS_QUARKUS)) {
-                    value = Configuration.getConfigValue(name);
-
-                    if (!QuarkusPropertiesConfigSource.isSameSource(value)) {
-                        continue;
-                    }
-                }
-            } else if (mapper.isBuildTime()) {
-                name = mapper.getFrom();
-                value = Configuration.getConfigValue(name);
-            }
-
-            if (value != null && value.getValue() != null) {
-                properties.put(name, value.getValue());
-            }
+            putPersistedProperty(properties, name);
         }
 
         for (File jar : getProviderFiles().values()) {
@@ -438,6 +436,34 @@ class KeycloakProcessor {
         }
     }
 
+    private void putPersistedProperty(Properties properties, String name) {
+        PropertyMapper mapper = PropertyMappers.getMapper(name);
+        ConfigValue value = null;
+
+        if (mapper == null) {
+            if (name.startsWith(NS_QUARKUS)) {
+                value = Configuration.getConfigValue(name);
+
+                if (!QuarkusPropertiesConfigSource.isSameSource(value)) {
+                    return;
+                }
+            }
+        } else if (mapper.isBuildTime()) {
+            name = mapper.getFrom();
+            value = Configuration.getConfigValue(name);
+        }
+
+        if (value != null && value.getValue() != null) {
+            String rawValue = value.getRawValue();
+
+            if (rawValue == null) {
+                rawValue = value.getValue();
+            }
+
+            properties.put(name, rawValue);
+        }
+    }
+
     /**
      * This will cause quarkus tu include specified modules in the jandex index. For example keycloak-services is needed as it includes
      * most of the JAX-RS resources, which are required to register Resteasy builtin providers. See {@link ResteasyDeployment#isRegisterBuiltin()}.
@@ -449,6 +475,11 @@ class KeycloakProcessor {
     void index(BuildProducer<IndexDependencyBuildItem> indexDependencyBuildItemBuildProducer) {
         indexDependencyBuildItemBuildProducer.produce(new IndexDependencyBuildItem("org.liquibase", "liquibase-core"));
         indexDependencyBuildItemBuildProducer.produce(new IndexDependencyBuildItem("org.keycloak", "keycloak-services"));
+    }
+
+    @BuildStep(onlyIf = IsJpaStoreEnabled.class, onlyIfNot = IsLegacyStoreEnabled.class)
+    void indexJpaStore(BuildProducer<IndexDependencyBuildItem> indexDependencyBuildItemBuildProducer) {
+        indexDependencyBuildItemBuildProducer.produce(new IndexDependencyBuildItem("org.keycloak", "keycloak-model-map-jpa"));
     }
 
     @BuildStep
@@ -523,10 +554,12 @@ class KeycloakProcessor {
 
         for (Spi spi : pm.loadSpis()) {
             Map<Class<? extends Provider>, Map<String, ProviderFactory>> providers = new HashMap<>();
-            String provider = Config.getProvider(spi.getName());
             List<ProviderFactory> loadedFactories = new ArrayList<>();
+            String provider = Config.getProvider(spi.getName());
 
-            if (provider == null) {
+            // TODO: remove the condition for MapStorageSpi once JPA store is ready and we can set a default provider
+            //  while still allowing multiple implementations at runtime
+            if (provider == null || spi instanceof MapStorageSpi) {
                 loadedFactories.addAll(pm.load(spi));
             } else {
                 ProviderFactory factory = pm.load(spi, provider);

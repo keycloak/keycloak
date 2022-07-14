@@ -26,6 +26,7 @@ public class StorageOptions {
 
     public enum StorageType {
 
+        jpa("jpa"),
         chm("concurrenthashmap");
 
         private final String provider;

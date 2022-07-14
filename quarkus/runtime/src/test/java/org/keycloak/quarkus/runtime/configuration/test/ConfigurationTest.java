@@ -484,7 +484,7 @@ public class ConfigurationTest {
 
     @Test
     public void testOptionValueWithEqualSign() {
-        System.setProperty(CLI_ARGS, "--db-password=my_secret=");
+        System.setProperty(CLI_ARGS, "--db=postgres" + ARG_SEPARATOR + "--db-password=my_secret=");
         SmallRyeConfig config = createConfig();
         assertEquals("my_secret=", config.getConfigValue("kc.db-password").getValue());
     }
@@ -505,6 +505,7 @@ public class ConfigurationTest {
 
     private SmallRyeConfig createConfig() {
         KeycloakConfigSourceProvider.reload();
+        ConfigProviderResolver.setInstance(null);
         return ConfigUtils.configBuilder(true, LaunchMode.NORMAL).build();
     }
 }

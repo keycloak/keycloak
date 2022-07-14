@@ -15,19 +15,18 @@
  * limitations under the License.
  */
 
-package org.keycloak.quarkus.deployment;
+package org.keycloak.models.map.storage.jpa;
 
-import static org.keycloak.config.StorageOptions.STORAGE;
-import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalValue;
-import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import org.hibernate.integrator.spi.Integrator;
+import org.hibernate.jpa.boot.spi.IntegratorProvider;
 
-import java.util.function.BooleanSupplier;
-
-public class IsLegacyStoreEnabled implements BooleanSupplier {
+public class KeycloakIntegratorProvider implements IntegratorProvider {
 
     @Override
-    public boolean getAsBoolean() {
-        return getOptionalValue(NS_KEYCLOAK_PREFIX.concat(STORAGE.getKey())).isEmpty();
+    public List<Integrator> getIntegrators() {
+        return new ArrayList<>(Collections.singletonList(new EventListenerIntegrator()));
     }
-
 }
