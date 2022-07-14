@@ -21,13 +21,22 @@ import static org.keycloak.config.StorageOptions.STORAGE;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getOptionalValue;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_KEYCLOAK_PREFIX;
 
+import java.util.Optional;
 import java.util.function.BooleanSupplier;
+import org.keycloak.config.StorageOptions;
 
-public class IsLegacyStoreEnabled implements BooleanSupplier {
+public class IsJpaStoreEnabled implements BooleanSupplier {
 
     @Override
     public boolean getAsBoolean() {
-        return getOptionalValue(NS_KEYCLOAK_PREFIX.concat(STORAGE.getKey())).isEmpty();
+        Optional<String> storage = getOptionalValue(NS_KEYCLOAK_PREFIX.concat(STORAGE.getKey()));
+
+        if (storage.isEmpty()) {
+            // legacy store
+            return true;
+        }
+
+        return StorageOptions.StorageType.jpa.name().equals(storage.orElse(null));
     }
 
 }

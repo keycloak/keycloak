@@ -29,12 +29,12 @@ Cluster:
 
 Storage (Experimental):
 
---storage <type>     Experimental: Sets a storage mechanism. Possible values are: chm.
+--storage <type>     Experimental: Sets a storage mechanism. Possible values are: jpa, chm.
 
 Database:
 
 --db <vendor>        The database vendor. Possible values are: dev-file, dev-mem, mariadb, mssql,
-                       mysql, oracle, postgres
+                       mysql, oracle, postgres. Default: dev-file.
 --db-password <password>
                      The password of the database user.
 --db-pool-initial-size <size>

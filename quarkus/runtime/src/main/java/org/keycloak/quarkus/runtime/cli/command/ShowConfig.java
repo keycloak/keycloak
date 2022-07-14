@@ -21,6 +21,7 @@ import static org.keycloak.quarkus.runtime.Environment.getCurrentOrPersistedProf
 import static org.keycloak.quarkus.runtime.Environment.setProfile;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getConfigValue;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getPropertyNames;
+import static org.keycloak.quarkus.runtime.configuration.Configuration.getRuntimeProperty;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers.formatValue;
 
 import java.util.HashSet;
@@ -34,8 +35,11 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import org.keycloak.quarkus.runtime.Environment;
+import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
+import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
+import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 
 import io.quarkus.runtime.Quarkus;
 import io.smallrye.config.ConfigValue;
@@ -125,11 +129,6 @@ public final class ShowConfig extends AbstractCommand implements Runnable {
         ConfigValue configValue = getConfigValue(property);
 
         if (configValue.getValue() == null) {
-            configValue = getConfigValue(property);
-        }
-
-
-        if (configValue.getValue() == null) {
             return;
         }
 
@@ -137,7 +136,19 @@ public final class ShowConfig extends AbstractCommand implements Runnable {
             return;
         }
 
-        spec.commandLine().getOut().printf("\t%s =  %s (%s)%n", configValue.getName(), formatValue(configValue.getName(), configValue.getValue()), configValue.getConfigSourceName());
+        String value = configValue.getRawValue();
+
+        if (value == null) {
+            value = configValue.getValue();
+        }
+
+        PropertyMapper mapper = PropertyMappers.getMapper(property);
+
+        if (mapper != null && mapper.isRunTime()) {
+            value = getRuntimeProperty(property).orElse(value);
+        }
+
+        spec.commandLine().getOut().printf("\t%s =  %s (%s)%n", configValue.getName(), formatValue(configValue.getName(), value), configValue.getConfigSourceName());
     }
 
     private static String groupProperties(String property) {

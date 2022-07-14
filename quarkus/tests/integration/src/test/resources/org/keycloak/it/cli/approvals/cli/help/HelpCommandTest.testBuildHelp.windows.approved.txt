@@ -37,13 +37,12 @@ Cluster:
 
 Storage (Experimental):
 
---storage <type>     Experimental: Sets a storage mechanism. Possible values are: legacy, chm. Default:
-                       legacy.
+--storage <type>     Experimental: Sets a storage mechanism. Possible values are: jpa, chm.
 
 Database:
 
 --db <vendor>        The database vendor. Possible values are: dev-file, dev-mem, mariadb, mssql,
-                       mysql, oracle, postgres
+                       mysql, oracle, postgres Default: dev-file.
 
 Transaction:
 

@@ -22,6 +22,7 @@ import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.
 
 import java.util.Optional;
 import org.keycloak.config.StorageOptions;
+import org.keycloak.config.StorageOptions.StorageType;
 
 import io.smallrye.config.ConfigSourceInterceptorContext;
 
@@ -153,7 +154,7 @@ final class StoragePropertyMappers {
                 fromOption(StorageOptions.STORAGE_USER_SESSION_STORE)
                         .to("kc.spi-user-sessions-map-storage-provider")
                         .mapFrom("storage")
-                        .transformer(StoragePropertyMappers::resolveMapStorageProvider)
+                        .transformer(StoragePropertyMappers::resolveUserSessionProvider)
                         .paramLabel("type")
                         .build(),
                 fromOption(StorageOptions.STORAGE_LOGIN_FAILURE)
@@ -332,8 +333,8 @@ final class StoragePropertyMappers {
     private static Optional<String> resolveMapStorageProvider(Optional<String> value, ConfigSourceInterceptorContext context) {
         try {
             if (value.isPresent()) {
-                return of(value.map(StorageOptions.StorageType::valueOf).map(StorageOptions.StorageType::getProvider)
-                        .orElse(StorageOptions.StorageType.chm.getProvider()));
+                return of(value.map(StorageType::valueOf).map(StorageType::getProvider)
+                        .orElse(StorageType.chm.getProvider()));
             }
         } catch (IllegalArgumentException iae) {
             throw new IllegalArgumentException("Invalid storage provider: " + value.orElse(null), iae);
@@ -344,5 +345,23 @@ final class StoragePropertyMappers {
 
     private static Optional<String> isCacheAreaEnabledForStorage(Optional<String> storage, ConfigSourceInterceptorContext context) {
         return of(storage.isEmpty() ? Boolean.TRUE.toString() : Boolean.FALSE.toString());
+    }
+
+    private static Optional<String> resolveUserSessionProvider(Optional<String> storage, ConfigSourceInterceptorContext context) {
+        try {
+            if (storage.isPresent()) {
+                Optional<StorageType> type = storage.map(StorageType::valueOf);
+
+                if (StorageType.jpa.equals(type.get())) {
+                    return of(StorageType.chm.getProvider());
+                }
+
+                return of(type.map(StorageType::getProvider).orElse(StorageType.chm.getProvider()));
+            }
+        } catch (IllegalArgumentException iae) {
+            throw new IllegalArgumentException("Invalid storage provider: " + storage.orElse(null), iae);
+        }
+
+        return storage;
     }
 }
