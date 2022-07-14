@@ -31,7 +31,7 @@ export const GroupsModal = ({
   refresh,
 }: GroupsModalProps) => {
   const { t } = useTranslation("groups");
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const {
     register,

@@ -24,7 +24,7 @@ export default function UserFederationKerberosSettings() {
   const { t } = useTranslation("user-federation");
   const form = useForm<ComponentRepresentation>({ mode: "onChange" });
   const history = useHistory();
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { realm } = useRealm();
 
   const { id } = useParams<{ id?: string }>();

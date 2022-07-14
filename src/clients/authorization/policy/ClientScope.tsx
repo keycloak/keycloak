@@ -40,7 +40,7 @@ export const ClientScope = () => {
     ClientScopeRepresentation[]
   >([]);
 
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const localeSort = useLocaleSort();
 
   useFetch(

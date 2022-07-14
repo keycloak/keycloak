@@ -18,7 +18,7 @@ export const UsersInRoleTab = () => {
   const { t } = useTranslation("roles");
   const { id, clientId } = useParams<ClientRoleParams>();
 
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
 
   const loader = async (first?: number, max?: number) => {
     const role = await adminClient.roles.findOneById({ id: id });

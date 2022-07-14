@@ -32,7 +32,7 @@ export const RoleComponent = ({
 }: ComponentProps) => {
   const { t } = useTranslation("dynamic");
 
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { realm } = useRealm();
   const {
     control,

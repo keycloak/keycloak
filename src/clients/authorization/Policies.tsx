@@ -49,7 +49,7 @@ type ExpandablePolicyRepresentation = PolicyRepresentation & {
 
 export const AuthorizationPolicies = ({ clientId }: PoliciesProps) => {
   const { t } = useTranslation("clients");
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
   const history = useHistory();

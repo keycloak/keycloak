@@ -35,7 +35,7 @@ import "./realm-settings-section.css";
 
 export const PoliciesTab = () => {
   const { t } = useTranslation("realm-settings");
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
   const history = useHistory();

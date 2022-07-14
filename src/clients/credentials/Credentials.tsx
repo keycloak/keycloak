@@ -43,7 +43,7 @@ export type CredentialsProps = {
 
 export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
   const { t } = useTranslation("clients");
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const clientId = client.id!;
 

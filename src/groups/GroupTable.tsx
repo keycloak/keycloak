@@ -29,7 +29,7 @@ import { useAccess } from "../context/access/Access";
 export const GroupTable = () => {
   const { t } = useTranslation("groups");
 
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
   const [isKebabOpen, setIsKebabOpen] = useState(false);

@@ -48,7 +48,7 @@ export default function ResourceDetails() {
   const [permissions, setPermission] =
     useState<ResourceServerRepresentation[]>();
 
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const form = useForm<SubmittedResource>({
     shouldUnregister: false,

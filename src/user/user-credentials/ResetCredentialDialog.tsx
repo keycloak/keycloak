@@ -42,7 +42,7 @@ export const ResetCredentialDialog = ({
   });
   const resetIsNotDisabled = !isEmpty(resetActionWatcher);
 
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
   const sendCredentialsResetEmail = async ({

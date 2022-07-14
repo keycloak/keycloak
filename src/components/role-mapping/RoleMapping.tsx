@@ -167,7 +167,7 @@ export const RoleMapping = ({
   onHideRolesToggle,
 }: RoleMappingProps) => {
   const { t } = useTranslation(type);
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
   const [key, setKey] = useState(0);

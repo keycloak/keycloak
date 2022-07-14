@@ -38,7 +38,7 @@ export default function UserFederationSection() {
   const { addAlert, addError } = useAlerts();
   const { t } = useTranslation("user-federation");
   const { realm } = useRealm();
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const [key, setKey] = useState(0);
   const refresh = () => setKey(new Date().getTime());
 

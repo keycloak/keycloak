@@ -69,7 +69,7 @@ export type BundleForm = {
 
 export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
   const { t } = useTranslation("realm-settings");
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const [addMessageBundleModalOpen, setAddMessageBundleModalOpen] =
     useState(false);
 

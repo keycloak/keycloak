@@ -87,7 +87,7 @@ export const AuthorizationEvaluate = ({ client }: Props) => {
     formState: { isValid },
   } = form;
   const { t } = useTranslation("clients");
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const realm = useRealm();
 
   const [scopesDropdownOpen, setScopesDropdownOpen] = useState(false);

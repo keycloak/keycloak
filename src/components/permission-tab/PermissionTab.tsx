@@ -46,7 +46,7 @@ type PermissionsTabProps = {
 export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
   const { t } = useTranslation("common");
   const history = useHistory();
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { realm } = useRealm();
   const [realmId, setRealmId] = useState("");
   const [permission, setPermission] = useState<ManagementPermissionReference>();

@@ -30,7 +30,7 @@ const REQUIRED_FOR = [
 
 export const AttributeGeneralSettings = () => {
   const { t } = useTranslation("realm-settings");
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const form = useFormContext();
   const [clientScopes, setClientScopes] =
     useState<ClientScopeRepresentation[]>();

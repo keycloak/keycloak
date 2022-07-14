@@ -24,30 +24,28 @@ import environment from "./environment";
 
 export const Header = () => {
   const { realm } = useRealm();
-  const adminClient = useAdminClient();
+  const { keycloak } = useAdminClient();
   const { t } = useTranslation();
 
-  const ManageAccountDropdownItem = () =>
-    adminClient.keycloak ? (
-      <DropdownItem
-        key="manage account"
-        id="manage-account"
-        onClick={() => adminClient.keycloak?.accountManagement()}
-      >
-        {t("manageAccount")}
-      </DropdownItem>
-    ) : null;
+  const ManageAccountDropdownItem = () => (
+    <DropdownItem
+      key="manage account"
+      id="manage-account"
+      onClick={() => keycloak.accountManagement()}
+    >
+      {t("manageAccount")}
+    </DropdownItem>
+  );
 
-  const SignOutDropdownItem = () =>
-    adminClient.keycloak ? (
-      <DropdownItem
-        id="sign-out"
-        key="sign out"
-        onClick={() => adminClient.keycloak?.logout({ redirectUri: "" })}
-      >
-        {t("signOut")}
-      </DropdownItem>
-    ) : null;
+  const SignOutDropdownItem = () => (
+    <DropdownItem
+      id="sign-out"
+      key="sign out"
+      onClick={() => keycloak.logout({ redirectUri: "" })}
+    >
+      {t("signOut")}
+    </DropdownItem>
+  );
 
   const ServerInfoDropdownItem = () => {
     const { realm } = useRealm();

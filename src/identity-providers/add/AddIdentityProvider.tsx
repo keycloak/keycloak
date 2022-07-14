@@ -30,7 +30,7 @@ export default function AddIdentityProvider() {
     formState: { isDirty },
   } = form;
 
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const history = useHistory();
   const { realm } = useRealm();

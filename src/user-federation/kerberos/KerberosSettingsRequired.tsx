@@ -32,7 +32,7 @@ export const KerberosSettingsRequired = ({
   const { t } = useTranslation("user-federation");
   const { t: helpText } = useTranslation("user-federation-help");
 
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { realm } = useRealm();
 
   const [isEditModeDropdownOpen, setIsEditModeDropdownOpen] = useState(false);

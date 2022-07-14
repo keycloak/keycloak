@@ -126,7 +126,7 @@ export default function DetailSettings() {
   const [selectedMapper, setSelectedMapper] =
     useState<IdPWithMapperAttributes>();
 
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const history = useHistory();
   const { realm } = useRealm();

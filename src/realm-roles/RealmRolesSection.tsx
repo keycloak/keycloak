@@ -7,7 +7,7 @@ import helpUrls from "../help-urls";
 import { useAccess } from "../context/access/Access";
 
 export default function RealmRolesSection() {
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
 
   const { hasAccess } = useAccess();
   const isManager = hasAccess("manage-realm");

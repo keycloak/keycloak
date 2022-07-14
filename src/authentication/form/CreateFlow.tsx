@@ -29,7 +29,7 @@ export default function CreateFlow() {
   });
   const { handleSubmit, register } = form;
 
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { addAlert } = useAlerts();
 
   const save = async (flow: AuthenticationFlowRepresentation) => {

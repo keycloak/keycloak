@@ -36,7 +36,7 @@ export const KeyProviderForm = ({
 }: KeyProviderFormProps) => {
   const { t } = useTranslation("realm-settings");
   const { id } = useParams<{ id: string }>();
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
   const serverInfo = useServerInfo();

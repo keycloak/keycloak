@@ -26,7 +26,7 @@ type UserAttributesProps = {
 
 export const UserAttributes = ({ user: defaultUser }: UserAttributesProps) => {
   const { t } = useTranslation("users");
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const [user, setUser] = useState<UserRepresentation>(defaultUser);
   const form = useForm<AttributeForm>({ mode: "onChange" });

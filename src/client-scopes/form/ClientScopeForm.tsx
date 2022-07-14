@@ -48,7 +48,7 @@ export default function ClientScopeForm() {
   const { realm } = useRealm();
   const [hide, toggleHide] = useToggle();
 
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { id, type } = useParams<{ id: string; type: AllClientScopes }>();
 
   const { addAlert, addError } = useAlerts();

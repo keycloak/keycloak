@@ -27,7 +27,7 @@ export const ChangeTypeDropdown = ({
   const { t } = useTranslation("client-scopes");
   const [open, setOpen] = useState(false);
 
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
   return (

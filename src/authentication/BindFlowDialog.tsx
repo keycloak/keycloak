@@ -33,7 +33,7 @@ export const BindFlowDialog = ({ flowAlias, onClose }: BindFlowDialogProps) => {
   const { t } = useTranslation("authentication");
   const { control, handleSubmit } = useForm<BindingForm>();
 
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
   const [open, toggle] = useToggle();

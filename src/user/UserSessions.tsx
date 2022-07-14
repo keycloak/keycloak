@@ -9,7 +9,7 @@ import SessionsTable from "../sessions/SessionsTable";
 import type { UserParams } from "./routes/User";
 
 export const UserSessions = () => {
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { id } = useParams<UserParams>();
   const { realm } = useRealm();
   const { t } = useTranslation("sessions");

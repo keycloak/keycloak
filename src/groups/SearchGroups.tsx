@@ -31,7 +31,7 @@ type SearchGroup = GroupRepresentation & {
 
 export default function SearchGroups() {
   const { t } = useTranslation("groups");
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { realm } = useRealm();
 
   const [searchTerm, setSearchTerm] = useState("");

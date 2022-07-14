@@ -89,7 +89,7 @@ const DisplayDialog: FunctionComponent<DisplayDialogProps> = ({
 
 export const AdminEvents = () => {
   const { t } = useTranslation("events");
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { realm } = useRealm();
   const serverInfo = useServerInfo();
   const formatDate = useFormatDate();

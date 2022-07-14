@@ -66,7 +66,7 @@ const INITIAL_RESOURCES: Readonly<ResourceChecked> = {
 
 export const PartialImportDialog = (props: PartialImportProps) => {
   const { t } = useTranslation("realm-settings");
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { realm } = useRealm();
 
   const [importedFile, setImportedFile] = useState<ImportedMultiRealm>();

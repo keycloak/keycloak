@@ -63,7 +63,7 @@ export const ClientScopes = ({
   fineGrainedAccess,
 }: ClientScopesProps) => {
   const { t } = useTranslation("clients");
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
   const localeSort = useLocaleSort();

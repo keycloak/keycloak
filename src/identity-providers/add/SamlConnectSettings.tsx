@@ -10,16 +10,16 @@ import type IdentityProviderRepresentation from "@keycloak/keycloak-admin-client
 import { FileUploadForm } from "../../components/json-file-upload/FileUploadForm";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { DescriptorSettings } from "./DescriptorSettings";
-import { getBaseUrl } from "../../util";
 import { DiscoveryEndpointField } from "../component/DiscoveryEndpointField";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import environment from "../../environment";
+import { addTrailingSlash } from "../../util";
 
 export const SamlConnectSettings = () => {
   const { t } = useTranslation("identity-providers");
   const id = "saml";
 
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { realm } = useRealm();
   const {
     setValue,
@@ -46,8 +46,8 @@ export const SamlConnectSettings = () => {
 
     try {
       const response = await fetch(
-        `${getBaseUrl(
-          adminClient
+        `${addTrailingSlash(
+          adminClient.baseUrl
         )}admin/realms/${realm}/identity-provider/import-config`,
         {
           method: "POST",

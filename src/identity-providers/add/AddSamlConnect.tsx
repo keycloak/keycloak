@@ -37,7 +37,7 @@ export default function AddSamlConnect() {
     formState: { isDirty },
   } = form;
 
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { addAlert } = useAlerts();
   const { realm } = useRealm();
 

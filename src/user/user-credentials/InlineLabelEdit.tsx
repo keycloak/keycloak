@@ -29,7 +29,7 @@ export const InlineLabelEdit = ({
   const { t } = useTranslation("users");
   const { register, handleSubmit } = useForm<UserLabelForm>();
 
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
   const saveUserLabel = async (userLabel: UserLabelForm) => {

@@ -39,7 +39,7 @@ export const AssociatedRolesModal = ({
 }: AssociatedRolesModalProps) => {
   const { t } = useTranslation("roles");
   const [name, setName] = useState("");
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const [selectedRows, setSelectedRows] = useState<RoleRepresentation[]>([]);
   const [compositeRoles, setCompositeRoles] = useState<RoleRepresentation[]>();
 

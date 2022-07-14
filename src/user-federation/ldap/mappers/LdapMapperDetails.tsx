@@ -37,7 +37,7 @@ export default function LdapMapperDetails() {
   const [mapping, setMapping] = useState<ComponentRepresentation>();
   const [components, setComponents] = useState<ComponentTypeRepresentation[]>();
 
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { id, mapperId } = useParams<{ id: string; mapperId: string }>();
   const history = useHistory();
   const { realm } = useRealm();

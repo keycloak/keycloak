@@ -58,7 +58,7 @@ type AddStepModalProps = {
 
 export const AddStepModal = ({ name, type, onSelect }: AddStepModalProps) => {
   const { t } = useTranslation("authentication");
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
 
   const [value, setValue] = useState<AuthenticationProviderRepresentation>();
   const [providers, setProviders] =

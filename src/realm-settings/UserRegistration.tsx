@@ -15,7 +15,7 @@ export const UserRegistration = () => {
   const [activeTab, setActiveTab] = useState(10);
   const [key, setKey] = useState(0);
 
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { realm: realmName } = useRealm();
 
   useFetch(

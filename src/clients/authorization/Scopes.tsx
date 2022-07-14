@@ -47,7 +47,7 @@ export type ExpandableScopeRepresentation = ScopeRepresentation & {
 export const AuthorizationScopes = ({ clientId }: ScopesProps) => {
   const { t } = useTranslation("clients");
   const history = useHistory();
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { realm } = useRealm();
 
   const [deleteDialog, toggleDeleteDialog] = useToggle();

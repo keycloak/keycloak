@@ -18,7 +18,7 @@ export const RealmContext = React.createContext<RealmContextType | undefined>(
 );
 
 export const RealmContextProvider: FunctionComponent = ({ children }) => {
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const recentUsed = useMemo(() => new RecentUsed(), []);
   const routeMatch = useRouteMatch<DashboardParams>(DashboardRoute.path);
   const realmParam = routeMatch?.params.realm;

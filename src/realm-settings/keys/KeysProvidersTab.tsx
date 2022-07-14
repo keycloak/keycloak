@@ -54,7 +54,7 @@ export const KeysProvidersTab = ({
 }: KeysProvidersTabProps) => {
   const { t } = useTranslation("realm-settings");
   const { addAlert, addError } = useAlerts();
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { realm } = useRealm();
   const { url } = useRouteMatch();
 

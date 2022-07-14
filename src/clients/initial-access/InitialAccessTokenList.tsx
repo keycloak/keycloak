@@ -16,7 +16,7 @@ import useFormatDate, { FORMAT_DATE_AND_TIME } from "../../utils/useFormatDate";
 export const InitialAccessTokenList = () => {
   const { t } = useTranslation("clients");
 
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
   const formatDate = useFormatDate();

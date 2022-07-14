@@ -23,7 +23,7 @@ const LoginFlow = ({
   const { t } = useTranslation("identity-providers");
   const { control } = useFormContext();
 
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const [flows, setFlows] = useState<AuthenticationFlowRepresentation[]>();
   const [open, setOpen] = useState(false);
 

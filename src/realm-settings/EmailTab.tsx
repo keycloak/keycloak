@@ -33,7 +33,7 @@ export const RealmSettingsEmailTab = ({
   realm: initialRealm,
 }: RealmSettingsEmailTabProps) => {
   const { t } = useTranslation("realm-settings");
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { realm: realmName } = useRealm();
   const { addAlert, addError } = useAlerts();
   const { whoAmI } = useWhoAmI();

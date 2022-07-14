@@ -30,7 +30,7 @@ export const AuthenticationOverrides = ({
   reset,
   hasConfigureAccess,
 }: AuthenticationOverridesProps) => {
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { t } = useTranslation("clients");
   const [flows, setFlows] = useState<JSX.Element[]>([]);
   const [browserFlowOpen, setBrowserFlowOpen] = useState(false);

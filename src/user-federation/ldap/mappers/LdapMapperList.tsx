@@ -19,7 +19,7 @@ import useLocaleSort, { mapByKey } from "../../../utils/useLocaleSort";
 export const LdapMapperList = () => {
   const history = useHistory();
   const { t } = useTranslation("user-federation");
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const { url } = useRouteMatch();
   const [key, setKey] = useState(0);

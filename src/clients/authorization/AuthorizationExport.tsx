@@ -24,7 +24,7 @@ import "./authorization-details.css";
 
 export const AuthorizationExport = () => {
   const { t } = useTranslation("clients");
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { clientId } = useParams<ClientParams>();
   const { addAlert, addError } = useAlerts();
 

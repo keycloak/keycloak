@@ -99,7 +99,7 @@ const CreateAttributeFormContent = ({
 
 export default function NewAttributeSettings() {
   const { realm, attributeName } = useParams<AttributeParams>();
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const form = useForm<UserProfileConfig>({ shouldUnregister: false });
   const { t } = useTranslation("realm-settings");
   const history = useHistory();

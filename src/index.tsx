@@ -14,13 +14,13 @@ if (import.meta.hot) {
 }
 
 async function initialize() {
-  const adminClient = await initAdminClient();
+  const { keycloak, adminClient } = await initAdminClient();
 
   await initI18n(adminClient);
 
   ReactDOM.render(
     <StrictMode>
-      <App adminClient={adminClient} />
+      <App keycloak={keycloak} adminClient={adminClient} />
     </StrictMode>,
     document.getElementById("app")
   );

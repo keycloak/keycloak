@@ -30,7 +30,7 @@ export const UserIdentityProviderLinks = () => {
   const [federatedId, setFederatedId] = useState("");
   const [isLinkIdPModalOpen, setIsLinkIdPModalOpen] = useState(false);
 
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { id } = useParams<{ id: string }>();
   const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();

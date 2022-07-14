@@ -2,6 +2,8 @@ import React, { FunctionComponent, Suspense } from "react";
 import { Page } from "@patternfly/react-core";
 import { HashRouter as Router, Route, Switch } from "react-router-dom";
 import { ErrorBoundary } from "react-error-boundary";
+import type Keycloak from "keycloak-js";
+import type KeycloakAdminClient from "@keycloak/keycloak-admin-client";
 
 import { Header } from "./PageHeader";
 import { PageNav } from "./PageNav";
@@ -21,20 +23,21 @@ import { RealmContextProvider } from "./context/realm-context/RealmContext";
 import { ErrorRenderer } from "./components/error/ErrorRenderer";
 import { AdminClient } from "./context/auth/AdminClient";
 import { WhoAmIContextProvider } from "./context/whoami/WhoAmI";
-import type KeycloakAdminClient from "@keycloak/keycloak-admin-client";
 
 export const mainPageContentId = "kc-main-content-page-container";
 
 export type AdminClientProps = {
+  keycloak: Keycloak;
   adminClient: KeycloakAdminClient;
 };
 
 const AppContexts: FunctionComponent<AdminClientProps> = ({
   children,
+  keycloak,
   adminClient,
 }) => (
   <Router>
-    <AdminClient.Provider value={adminClient}>
+    <AdminClient.Provider value={{ keycloak, adminClient }}>
       <WhoAmIContextProvider>
         <RealmsProvider>
           <RealmContextProvider>
@@ -72,9 +75,9 @@ const SecuredRoute = ({ route }: SecuredRouteProps) => {
   return <ForbiddenSection permissionNeeded={route.access} />;
 };
 
-export const App = ({ adminClient }: AdminClientProps) => {
+export const App = ({ keycloak, adminClient }: AdminClientProps) => {
   return (
-    <AppContexts adminClient={adminClient}>
+    <AppContexts keycloak={keycloak} adminClient={adminClient}>
       <Page
         header={<Header />}
         isManagedSidebar

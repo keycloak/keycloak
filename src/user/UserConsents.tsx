@@ -27,7 +27,7 @@ export const UserConsents = () => {
   const formatDate = useFormatDate();
   const [key, setKey] = useState(0);
 
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { id } = useParams<{ id: string }>();
   const alphabetize = (consentsList: UserConsentRepresentation[]) => {
     return sortBy(consentsList, (client) => client.clientId?.toUpperCase());

@@ -51,7 +51,7 @@ export default function PermissionDetails() {
     NewPermissionParams & PermissionDetailsParams
   >();
 
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const [permission, setPermission] = useState<PolicyRepresentation>();
   const [applyToResourceTypeFlag, setApplyToResourceTypeFlag] = useState(false);

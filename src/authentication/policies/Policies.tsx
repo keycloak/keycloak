@@ -13,7 +13,7 @@ import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinn
 export const Policies = () => {
   const { t } = useTranslation("authentication");
   const [subTab, setSubTab] = useState(1);
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { realm: realmName } = useRealm();
   const [realm, setRealm] = useState<RealmRepresentation>();
 

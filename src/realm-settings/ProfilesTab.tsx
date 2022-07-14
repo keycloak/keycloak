@@ -34,7 +34,7 @@ type ClientProfile = ClientProfileRepresentation & {
 
 export default function ProfilesTab() {
   const { t } = useTranslation("realm-settings");
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();
   const [tableProfiles, setTableProfiles] = useState<ClientProfile[]>();

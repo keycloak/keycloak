@@ -28,7 +28,7 @@ type AddUserEmailForm = {
 
 export const AddUserEmailModal = ({ callback }: AddUserEmailModalProps) => {
   const { t } = useTranslation("groups");
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { whoAmI } = useWhoAmI();
   const {
     register,

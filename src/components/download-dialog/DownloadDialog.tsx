@@ -34,7 +34,7 @@ export const DownloadDialog = ({
   toggleDialog,
   protocol = "openid-connect",
 }: DownloadDialogProps) => {
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { t } = useTranslation("common");
   const { enabled } = useHelp();
   const serverInfo = useServerInfo();

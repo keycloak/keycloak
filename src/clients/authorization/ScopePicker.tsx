@@ -24,7 +24,7 @@ export const ScopePicker = ({ clientId }: { clientId: string }) => {
   const [scopes, setScopes] = useState<JSX.Element[]>();
   const [search, setSearch] = useState("");
 
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
 
   useFetch(
     () => {

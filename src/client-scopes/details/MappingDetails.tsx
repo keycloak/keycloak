@@ -33,7 +33,7 @@ import "./mapping-details.css";
 
 export default function MappingDetails() {
   const { t } = useTranslation("client-scopes");
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
   const { id, mapperId, type } = useParams<MapperParams>();

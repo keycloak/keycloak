@@ -33,7 +33,7 @@ export const Header = ({
   const { id } = useParams<ProviderRouteParams>();
   const history = useHistory();
 
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
 

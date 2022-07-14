@@ -31,7 +31,7 @@ export const EditFlowModal = ({ flow, toggleDialog }: EditFlowModalProps) => {
     shouldUnregister: false,
   });
   const { reset, handleSubmit } = form;
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
   useEffect(() => {

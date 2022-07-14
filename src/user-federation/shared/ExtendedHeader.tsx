@@ -28,7 +28,7 @@ export const ExtendedHeader = ({
 }: ExtendedHeaderProps) => {
   const { t } = useTranslation("user-federation");
   const { id } = useParams<{ id: string }>();
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
   const { control } = useFormContext();

@@ -183,7 +183,7 @@ export type SaveOptions = {
 
 export default function ClientDetails() {
   const { t } = useTranslation("clients");
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
   const { profileInfo } = useServerInfo();

@@ -30,7 +30,7 @@ export default function ScopeDetails() {
   const { id, scopeId, realm } = useParams<ScopeDetailsParams>();
   const history = useHistory();
 
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
   const [deleteDialog, toggleDeleteDialog] = useToggle();

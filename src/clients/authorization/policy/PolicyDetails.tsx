@@ -66,7 +66,7 @@ export default function PolicyDetails() {
   const form = useForm({ shouldUnregister: false });
   const { reset, handleSubmit } = form;
 
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
   const [policy, setPolicy] = useState<PolicyRepresentation>();

@@ -85,7 +85,7 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
   const [publicKey, setPublicKey] = useState("");
   const [certificate, setCertificate] = useState("");
 
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { realm } = useRealm();
 
   const [keyData, setKeyData] = useState<KeyData[]>();

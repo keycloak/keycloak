@@ -83,7 +83,7 @@ export const PasswordPolicy = ({
   const { t } = useTranslation("authentication");
   const { passwordPolicies } = useServerInfo();
 
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const { realm: realmName } = useRealm();
 

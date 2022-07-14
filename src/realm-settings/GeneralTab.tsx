@@ -16,7 +16,7 @@ import {
 } from "@patternfly/react-core";
 
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
-import { convertToFormValues, getBaseUrl } from "../util";
+import { addTrailingSlash, convertToFormValues } from "../util";
 import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 import { useAdminClient } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
@@ -36,7 +36,7 @@ export const RealmSettingsGeneralTab = ({
   save,
 }: RealmSettingsGeneralTabProps) => {
   const { t } = useTranslation("realm-settings");
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { realm: realmName } = useRealm();
   const form = useForm<RealmRepresentation>({ shouldUnregister: false });
   const {
@@ -48,8 +48,6 @@ export const RealmSettingsGeneralTab = ({
   } = form;
   const isFeatureEnabled = useIsFeatureEnabled();
   const [open, setOpen] = useState(false);
-
-  const baseUrl = getBaseUrl(adminClient);
 
   const requireSslTypes = ["all", "external", "none"];
 
@@ -242,13 +240,17 @@ export const RealmSettingsGeneralTab = ({
           <Stack>
             <StackItem>
               <FormattedLink
-                href={`${baseUrl}realms/${realmName}/.well-known/openid-configuration`}
+                href={`${addTrailingSlash(
+                  adminClient.baseUrl
+                )}realms/${realmName}/.well-known/openid-configuration`}
                 title={t("openIDEndpointConfiguration")}
               />
             </StackItem>
             <StackItem>
               <FormattedLink
-                href={`${baseUrl}realms/${realmName}/protocol/saml/descriptor`}
+                href={`${addTrailingSlash(
+                  adminClient.baseUrl
+                )}realms/${realmName}/protocol/saml/descriptor`}
                 title={t("samlIdentityProviderMetadata")}
               />
             </StackItem>

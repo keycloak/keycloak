@@ -24,7 +24,7 @@ import { useLocation } from "react-router-dom";
 
 export const GroupAttributes = () => {
   const { t } = useTranslation("groups");
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const form = useForm<AttributeForm>({
     mode: "onChange",

@@ -92,7 +92,7 @@ const DetailCell = (event: EventRepresentation) => (
 
 export default function EventsSection() {
   const { t } = useTranslation("events");
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { realm } = useRealm();
   const formatDate = useFormatDate();
   const [key, setKey] = useState(0);

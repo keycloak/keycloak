@@ -45,7 +45,7 @@ export const OtpPolicy = ({ realm, realmUpdated }: OtpPolicyProps) => {
     handleSubmit,
     formState: { isDirty, errors },
   } = useForm({ mode: "onChange" });
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { realm: realmName } = useRealm();
   const { addAlert, addError } = useAlerts();
 

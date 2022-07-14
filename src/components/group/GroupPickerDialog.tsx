@@ -44,7 +44,7 @@ export const GroupPickerDialog = ({
   onConfirm,
 }: GroupPickerDialogProps) => {
   const { t } = useTranslation();
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const [selectedRows, setSelectedRows] = useState<SelectableGroup[]>([]);
 
   const [navigation, setNavigation] = useState<SelectableGroup[]>([]);

@@ -33,7 +33,7 @@ export const UserIdpModal = ({
   refresh,
 }: UserIdpModalProps) => {
   const { t } = useTranslation("users");
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const {
     register,

@@ -36,7 +36,7 @@ export const AuthorizationSettings = ({ clientId }: { clientId: string }) => {
   const form = useForm<ResourceServerRepresentation>({});
   const { control, reset, handleSubmit } = form;
 
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
   useFetch(

@@ -81,7 +81,7 @@ export const SamlKeysDialog = ({
     formState: { isDirty },
   } = form;
 
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
   const submit = (form: SamlKeysDialogForm) => {

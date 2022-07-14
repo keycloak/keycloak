@@ -29,7 +29,7 @@ export const RevocationPanel = ({
   const pushRevocationButtonRef = useRef<HTMLElement>();
 
   const { t } = useTranslation("clients");
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { realm } = useRealm();
   const { addAlert } = useAlerts();
   const formatDate = useFormatDate();

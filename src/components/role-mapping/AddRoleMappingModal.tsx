@@ -56,7 +56,7 @@ export const AddRoleMappingModal = ({
   onClose,
 }: AddRoleMappingModalProps) => {
   const { t } = useTranslation("common");
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
 
   const [clients, setClients] = useState<ClientRole[]>([]);
   const [searchToggle, setSearchToggle] = useState(false);

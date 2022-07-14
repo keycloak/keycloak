@@ -21,7 +21,7 @@ export type AddClientProfileModalProps = {
 
 export const AddClientProfileModal = (props: AddClientProfileModalProps) => {
   const { t } = useTranslation("roles");
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const [selectedRows, setSelectedRows] = useState<RoleRepresentation[]>([]);
 
   const [tableProfiles, setTableProfiles] = useState<ClientProfile[]>();

@@ -1,12 +1,18 @@
 import KeycloakAdminClient from "@keycloak/keycloak-admin-client";
 import axios from "axios";
+import Keycloak from "keycloak-js";
 import { createContext, DependencyList, useEffect } from "react";
 import { useErrorHandler } from "react-error-boundary";
 
 import environment from "../../environment";
 import useRequiredContext from "../../utils/useRequiredContext";
 
-export const AdminClient = createContext<KeycloakAdminClient | undefined>(
+export type AdminClientProps = {
+  keycloak: Keycloak;
+  adminClient: KeycloakAdminClient;
+};
+
+export const AdminClient = createContext<AdminClientProps | undefined>(
   undefined
 );
 
@@ -32,7 +38,7 @@ export function useFetch<T>(
   callback: (param: T) => void,
   deps?: DependencyList
 ) {
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const onError = useErrorHandler();
 
   useEffect(() => {
@@ -65,21 +71,31 @@ export function useFetch<T>(
 }
 
 export async function initAdminClient() {
-  const kcAdminClient = new KeycloakAdminClient();
+  const keycloak = new Keycloak({
+    url: environment.authServerUrl,
+    realm: environment.loginRealm,
+    clientId: environment.isRunningAsTheme
+      ? "security-admin-console"
+      : "security-admin-console-v2",
+  });
 
-  await kcAdminClient.init(
-    { onLoad: "check-sso", pkceMethod: "S256" },
-    {
-      url: environment.authServerUrl,
-      realm: environment.loginRealm,
-      clientId: environment.isRunningAsTheme
-        ? "security-admin-console"
-        : "security-admin-console-v2",
-    }
-  );
+  await keycloak.init({ onLoad: "check-sso", pkceMethod: "S256" });
 
-  kcAdminClient.setConfig({ realmName: environment.loginRealm });
-  kcAdminClient.baseUrl = environment.authServerUrl;
+  const adminClient = new KeycloakAdminClient();
 
-  return kcAdminClient;
+  adminClient.setConfig({ realmName: environment.loginRealm });
+  adminClient.baseUrl = keycloak.authServerUrl ?? environment.authServerUrl;
+  adminClient.registerTokenProvider({
+    async getAccessToken() {
+      try {
+        await keycloak.updateToken(5);
+      } catch (error) {
+        keycloak.login();
+      }
+
+      return keycloak.token;
+    },
+  });
+
+  return { keycloak, adminClient };
 }

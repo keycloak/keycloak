@@ -45,7 +45,7 @@ export const UserGroups = ({ user }: UserGroupsProps) => {
 
   const { enabled } = useHelp();
 
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const alphabetize = (groupsList: GroupRepresentation[]) => {
     return sortBy(groupsList, (group) => group.path?.toUpperCase());
   };

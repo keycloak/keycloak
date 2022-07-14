@@ -41,7 +41,7 @@ export const UserSelect = ({
   const [users, setUsers] = useState<(UserRepresentation | undefined)[]>([]);
   const [search, setSearch] = useState("");
 
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
 
   useFetch(
     () => {

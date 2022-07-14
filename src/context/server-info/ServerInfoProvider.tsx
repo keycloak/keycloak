@@ -15,7 +15,7 @@ export const useLoginProviders = () =>
   sortProviders(useServerInfo().providers!["login-protocol"].providers);
 
 export const ServerInfoProvider: FunctionComponent = ({ children }) => {
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const [serverInfo, setServerInfo] = useState<ServerInfoRepresentation>({});
 
   useFetch(adminClient.serverInfo.find, setServerInfo, []);

@@ -20,7 +20,7 @@ type DetailCellProps = {
 };
 
 export const DetailCell = ({ id, clientId, uris }: DetailCellProps) => {
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { realm } = useRealm();
   const [scope, setScope] = useState<Scope>();
   const [permissions, setPermissions] =

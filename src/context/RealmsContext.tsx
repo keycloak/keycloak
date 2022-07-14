@@ -25,7 +25,7 @@ export const RealmsContext = createContext<RealmsContextProps | undefined>(
 );
 
 export const RealmsProvider: FunctionComponent = ({ children }) => {
-  const adminClient = useAdminClient();
+  const { keycloak, adminClient } = useAdminClient();
   const [realms, setRealms] = useState<RealmRepresentation[]>([]);
   const recentUsed = useMemo(() => new RecentUsed(), []);
 
@@ -57,7 +57,7 @@ export const RealmsProvider: FunctionComponent = ({ children }) => {
   const refresh = useCallback(async () => {
     //this is needed otherwise the realm find function will not return
     //new or renamed realms because of the cached realms in the token (perhaps?)
-    await adminClient.keycloak?.updateToken(Number.MAX_VALUE);
+    await keycloak.updateToken(Number.MAX_VALUE);
     updateRealms(await adminClient.realms.find({ briefRepresentation: true }));
   }, []);
 

@@ -25,7 +25,7 @@ export const SamlImportKeyDialog = ({
   const form = useFormContext();
   const { handleSubmit } = form;
 
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
   const submit = (form: SamlKeysDialogForm) => {

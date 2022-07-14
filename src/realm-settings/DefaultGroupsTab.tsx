@@ -40,7 +40,7 @@ export const DefaultsGroupsTab = () => {
   const [load, setLoad] = useState(0);
   const reload = () => setLoad(load + 1);
 
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();
   const { enabled } = useHelp();

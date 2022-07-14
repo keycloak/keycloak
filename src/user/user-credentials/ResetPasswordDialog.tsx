@@ -62,7 +62,7 @@ export const ResetPasswordDialog = ({
   const [confirm, toggle] = useToggle(true);
   const password = watch("password", "");
 
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
   const [toggleConfirmSaveModal, ConfirmSaveModal] = useConfirmDialog({

@@ -36,7 +36,7 @@ export default function GroupsSection() {
   const { t } = useTranslation("groups");
   const [activeTab, setActiveTab] = useState(0);
 
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { subGroups, setSubGroups, currentGroup } = useSubGroups();
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();

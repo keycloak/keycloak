@@ -37,7 +37,7 @@ export const EventsTab = () => {
   const [type, setType] = useState<EventsType>();
   const [addEventType, setAddEventType] = useState(false);
 
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
 

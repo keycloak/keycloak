@@ -28,7 +28,7 @@ export const UserProfile = createContext<UserProfileProps | undefined>(
 );
 
 export const UserProfileProvider: FunctionComponent = ({ children }) => {
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();
   const { t } = useTranslation();

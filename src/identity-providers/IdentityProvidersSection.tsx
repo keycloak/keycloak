@@ -57,7 +57,7 @@ export default function IdentityProvidersSection() {
   const [selectedProvider, setSelectedProvider] =
     useState<IdentityProviderRepresentation>();
 
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
   useFetch(

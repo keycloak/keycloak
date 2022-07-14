@@ -30,7 +30,7 @@ export const ManagePriorityDialog = ({
   onClose,
 }: ManagePriorityDialogProps) => {
   const { t } = useTranslation("user-federation");
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
   const [id, setId] = useState("");

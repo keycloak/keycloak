@@ -36,7 +36,7 @@ export const RevocationModal = ({
   const { addAlert } = useAlerts();
 
   const { realm: realmName } = useRealm();
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const {
     register,
     handleSubmit,

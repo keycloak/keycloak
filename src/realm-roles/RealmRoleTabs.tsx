@@ -49,7 +49,7 @@ export default function RealmRoleTabs() {
   const { setValue, getValues, trigger, reset } = form;
   const history = useHistory();
 
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const [role, setRole] = useState<AttributeForm>();
 
   const { id, clientId } = useParams<{ id: string; clientId: string }>();

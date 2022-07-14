@@ -56,7 +56,7 @@ export default function AddMapper() {
   const localeSort = useLocaleSort();
 
   const { realm } = useRealm();
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
 
   const { providerId, alias } = useParams<IdentityProviderAddMapperParams>();
   const { id } = useParams<IdentityProviderEditMapperParams>();

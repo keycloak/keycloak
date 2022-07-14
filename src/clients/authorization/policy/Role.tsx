@@ -33,7 +33,7 @@ export const Role = () => {
   const [open, setOpen] = useState(false);
   const [selectedRoles, setSelectedRoles] = useState<Row[]>([]);
 
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
 
   useFetch(
     async () => {

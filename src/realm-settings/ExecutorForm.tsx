@@ -43,7 +43,7 @@ export default function ExecutorForm() {
   const { addAlert, addError } = useAlerts();
   const [selectExecutorTypeOpen, setSelectExecutorTypeOpen] = useState(false);
   const serverInfo = useServerInfo();
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const executorTypes =
     serverInfo.componentTypes?.[
       "org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProvider"

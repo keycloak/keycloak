@@ -21,7 +21,7 @@ export const DiscoveryEndpointField = ({
 }: DiscoveryEndpointFieldProps) => {
   const { t } = useTranslation("identity-providers");
 
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
 
   const {
     setValue,

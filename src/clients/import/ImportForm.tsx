@@ -26,7 +26,7 @@ import { toClients } from "../routes/Clients";
 export default function ImportForm() {
   const { t } = useTranslation("clients");
   const history = useHistory();
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { realm } = useRealm();
   const form = useForm<ClientRepresentation>({ shouldUnregister: false });
   const { register, handleSubmit, setValue } = form;

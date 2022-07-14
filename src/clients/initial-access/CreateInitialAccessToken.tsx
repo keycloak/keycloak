@@ -30,7 +30,7 @@ export default function CreateInitialAccessToken() {
     formState: { isValid, errors },
   } = useForm({ mode: "onChange" });
 
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();
 

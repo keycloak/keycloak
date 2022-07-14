@@ -22,7 +22,7 @@ type Row = {
 
 export const RequiredActions = () => {
   const { t } = useTranslation("authentication");
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
   const [actions, setActions] = useState<Row[]>();

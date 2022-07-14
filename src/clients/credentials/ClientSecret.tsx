@@ -77,7 +77,7 @@ const ExpireDateFormatter = ({ time }: { time: number }) => {
 
 export const ClientSecret = ({ client, secret, toggle }: ClientSecretProps) => {
   const { t } = useTranslation("clients");
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
   const [secretRotated, setSecretRotated] = useState<string | undefined>(

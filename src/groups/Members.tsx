@@ -34,7 +34,7 @@ type MembersOf = UserRepresentation & {
 
 export const Members = () => {
   const { t } = useTranslation("groups");
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();
   const location = useLocation();

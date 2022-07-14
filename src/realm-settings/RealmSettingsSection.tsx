@@ -8,7 +8,7 @@ import { RealmSettingsTabs } from "./RealmSettingsTabs";
 import { useParams } from "react-router-dom";
 
 export default function RealmSettingsSection() {
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { realm: realmName } = useParams<RealmSettingsParams>();
   const [realm, setRealm] = useState<RealmRepresentation>();
   const [key, setKey] = useState(0);

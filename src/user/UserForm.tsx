@@ -59,7 +59,7 @@ export const UserForm = ({
     setRequiredUserActionsDropdownOpen,
   ] = useState(false);
   const history = useHistory();
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
   const {

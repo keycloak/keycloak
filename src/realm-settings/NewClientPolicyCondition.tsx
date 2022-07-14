@@ -70,7 +70,7 @@ export default function NewClientPolicyCondition() {
       "org.keycloak.services.clientpolicy.condition.ClientPolicyConditionProvider"
     ];
 
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
 
   const setupForm = (condition: ClientPolicyConditionRepresentation) => {
     form.reset({ config: condition.configuration || {} });

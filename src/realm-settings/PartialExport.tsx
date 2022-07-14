@@ -32,7 +32,7 @@ export const PartialExportDialog = ({
 }: PartialExportDialogProps) => {
   const { t } = useTranslation("realm-settings");
   const { realm } = useRealm();
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
   const [exportGroupsAndRoles, setExportGroupsAndRoles] = useState(false);

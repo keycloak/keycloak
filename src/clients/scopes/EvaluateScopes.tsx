@@ -112,7 +112,7 @@ export const EvaluateScopes = ({ clientId, protocol }: EvaluateScopesProps) => {
   const prefix = "openid";
   const { t } = useTranslation("clients");
   const { enabled } = useHelp();
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { realm } = useRealm();
   const mapperTypes = useServerInfo().protocolMapperTypes![protocol];
 

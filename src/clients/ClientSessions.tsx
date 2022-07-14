@@ -13,7 +13,7 @@ type ClientSessionsProps = {
 };
 
 export const ClientSessions = ({ client }: ClientSessionsProps) => {
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { t } = useTranslation("sessions");
 
   const loader: LoaderFunction<UserSessionRepresentation> = (first, max) =>

@@ -17,7 +17,7 @@ import "./SessionsSection.css";
 export default function SessionsSection() {
   const { t } = useTranslation("sessions");
 
-  const adminClient = useAdminClient();
+  const { keycloak, adminClient } = useAdminClient();
   const { addError } = useAlerts();
   const { realm } = useRealm();
 
@@ -70,7 +70,7 @@ export default function SessionsSection() {
     onConfirm: async () => {
       try {
         await adminClient.realms.logoutAll({ realm });
-        adminClient.keycloak?.logout({ redirectUri: "" });
+        keycloak.logout({ redirectUri: "" });
       } catch (error) {
         addError("sessions:logoutAllSessionsError", error);
       }

@@ -50,7 +50,7 @@ export const AddSubFlowModal = ({
   const [openProvider, setOpenProvider] = useState(false);
   const [formProviders, setFormProviders] =
     useState<AuthenticationProviderRepresentation[]>();
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
 
   useFetch(
     () => adminClient.authenticationManagement.getFormProviders(),

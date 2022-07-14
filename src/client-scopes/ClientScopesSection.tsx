@@ -53,7 +53,7 @@ export default function ClientScopesSection() {
   const { realm } = useRealm();
   const { t } = useTranslation("client-scopes");
 
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
   const [kebabOpen, setKebabOpen] = useState(false);

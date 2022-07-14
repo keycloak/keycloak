@@ -60,7 +60,7 @@ export const AssociatedRolesTab = ({
   const [count, setCount] = useState(0);
   const [open, setOpen] = useState(false);
 
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const clientRoleRouteMatch = useRouteMatch<ClientRoleParams>(
     ClientRoleRoute.path
   );

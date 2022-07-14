@@ -74,7 +74,7 @@ export default function NewClientPolicyForm() {
   });
   const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const [policies, setPolicies] = useState<ClientPolicyRepresentation[]>();
   const [clientProfiles, setClientProfiles] = useState<
     ClientProfileRepresentation[]

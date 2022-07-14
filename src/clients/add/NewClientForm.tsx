@@ -24,7 +24,7 @@ import { GeneralSettings } from "./GeneralSettings";
 export default function NewClientForm() {
   const { t } = useTranslation("clients");
   const { realm } = useRealm();
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const history = useHistory();
 
   const [showCapabilityConfig, setShowCapabilityConfig] = useState(false);

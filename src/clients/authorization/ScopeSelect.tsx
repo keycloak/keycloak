@@ -18,7 +18,7 @@ export const ScopeSelect = ({
   preSelected,
 }: ScopeSelectProps) => {
   const { t } = useTranslation("clients");
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
 
   const {
     control,

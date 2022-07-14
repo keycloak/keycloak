@@ -47,7 +47,7 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
   const refresh = () => setKey(key + 1);
   const [isOpen, setIsOpen] = useState(false);
   const [openCredentialReset, setOpenCredentialReset] = useState(false);
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const [userCredentials, setUserCredentials] = useState<
     CredentialRepresentation[]
   >([]);

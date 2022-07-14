@@ -61,7 +61,7 @@ export default function ClientProfileForm() {
   });
 
   const { addAlert, addError } = useAlerts();
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const [globalProfiles, setGlobalProfiles] = useState<
     ClientProfileRepresentation[]
   >([]);

@@ -60,7 +60,7 @@ type BruteUser = UserRepresentation & {
 
 export default function UsersSection() {
   const { t } = useTranslation("users");
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const { realm: realmName } = useRealm();
   const history = useHistory();

@@ -32,7 +32,7 @@ export const AddHostDialog = ({
 }: AddHostDialogProps) => {
   const { t } = useTranslation("clients");
   const { register, getValues } = useForm<Host>();
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
   return (

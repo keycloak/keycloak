@@ -26,7 +26,7 @@ export default function NewRealmForm() {
   const history = useHistory();
   const { refresh, whoAmI } = useWhoAmI();
   const { refresh: refreshRealms } = useRealms();
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
   const {

@@ -51,7 +51,7 @@ export const providerConditionFilter = (
 
 export default function FlowDetails() {
   const { t } = useTranslation("authentication");
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();
   const { id, usedBy, builtIn } = useParams<FlowParams>();

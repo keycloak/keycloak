@@ -33,7 +33,7 @@ export const KeysTab = () => {
   const { t } = useTranslation("realm-settings");
   const history = useHistory();
 
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { realm: realmName } = useRealm();
 
   const [realmComponents, setRealmComponents] =

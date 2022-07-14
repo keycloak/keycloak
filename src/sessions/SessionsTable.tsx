@@ -44,7 +44,7 @@ export default function SessionsTable({
   const { realm } = useRealm();
   const { whoAmI } = useWhoAmI();
   const { t } = useTranslation("sessions");
-  const adminClient = useAdminClient();
+  const { keycloak, adminClient } = useAdminClient();
   const { addError } = useAlerts();
   const formatDate = useFormatDate();
   const [key, setKey] = useState(0);
@@ -119,7 +119,7 @@ export default function SessionsTable({
     await adminClient.realms.deleteSession({ realm, session: session.id! });
 
     if (session.userId === whoAmI.getUserId()) {
-      await adminClient.keycloak?.logout({ redirectUri: "" });
+      await keycloak.logout({ redirectUri: "" });
     } else {
       refresh();
     }

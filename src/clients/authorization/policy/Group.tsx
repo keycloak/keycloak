@@ -41,7 +41,7 @@ export const Group = () => {
     []
   );
 
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
 
   useFetch(
     () => {

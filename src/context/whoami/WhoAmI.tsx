@@ -60,7 +60,7 @@ export const WhoAmIContext = React.createContext<WhoAmIProps | undefined>(
 export const useWhoAmI = () => useRequiredContext(WhoAmIContext);
 
 export const WhoAmIContextProvider: FunctionComponent = ({ children }) => {
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const [whoAmI, setWhoAmI] = useState<WhoAmI>(new WhoAmI());
   const [key, setKey] = useState(0);
 

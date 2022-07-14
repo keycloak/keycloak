@@ -18,7 +18,7 @@ type GroupRoleMappingProps = {
 
 export const GroupRoleMapping = ({ id, name }: GroupRoleMappingProps) => {
   const { t } = useTranslation("clients");
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
   const [hide, setHide] = useState(false);

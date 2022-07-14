@@ -46,7 +46,7 @@ export const Keys = ({ clientId, save, hasConfigureAccess }: KeysProps) => {
     getValues,
     formState: { isDirty },
   } = useFormContext<ClientRepresentation>();
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
   const [keyInfo, setKeyInfo] = useState<CertificateRepresentation>();

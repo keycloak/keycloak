@@ -33,7 +33,7 @@ export default function DedicatedScopes() {
   const history = useHistory();
   const { realm, clientId } = useParams<DedicatedScopeDetailsParams>();
 
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
   const [client, setClient] = useState<ClientRepresentation>();

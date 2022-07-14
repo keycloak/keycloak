@@ -30,7 +30,7 @@ export const ClusteringPanel = ({
 }: AdvancedProps) => {
   const { t } = useTranslation("clients");
   const { control } = useFormContext();
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const formatDate = useFormatDate();
 

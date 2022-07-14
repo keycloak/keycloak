@@ -1,10 +1,11 @@
 /**
  * @vitest-environment jsdom
  */
-import React, { FunctionComponent } from "react";
 import type KeycloakAdminClient from "@keycloak/keycloak-admin-client";
 import type { ServerInfoRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/serverInfoRepesentation";
 import { render, waitFor } from "@testing-library/react";
+import type Keycloak from "keycloak-js";
+import React, { FunctionComponent } from "react";
 import { HashRouter } from "react-router-dom";
 import { describe, expect, it } from "vitest";
 import { AccessContextProvider } from "../../context/access/Access";
@@ -16,40 +17,24 @@ import { WhoAmIContextProvider } from "../../context/whoami/WhoAmI";
 import whoamiMock from "../../context/whoami/__tests__/mock-whoami.json";
 import { DataLoader } from "./DataLoader";
 
-/**
- * This component provides some mocked default react context so that other components can work in a storybook.
- * In it's simplest form wrap your component like so:
- * @example
- *  <MockAdminClient>
- *    <SomeComponent />
- *  </MockAdminClient>
- * @example <caption>With an endpoint, roles => findOneById</caption>
- *   <MockAdminClient mock={{ roles: { findOneById: () => mockJson } }}>
- *     <<SomeComponent />
- *   </MockAdminClient>
- * @param props mock endpoints to be mocked
- */
-export const MockAdminClient: FunctionComponent<{ mock?: object }> = (
-  props
-) => {
+const MockAdminClient: FunctionComponent = ({ children }) => {
+  const keycloak = {
+    init: () => Promise.resolve(),
+  } as unknown as Keycloak;
+  const adminClient = {
+    whoAmI: { find: () => Promise.resolve(whoamiMock) },
+    setConfig: () => {},
+  } as unknown as KeycloakAdminClient;
+
   return (
     <HashRouter>
       <ServerInfoContext.Provider
         value={serverInfo as unknown as ServerInfoRepresentation}
       >
-        <AdminClient.Provider
-          value={
-            {
-              ...props.mock,
-              keycloak: {},
-              whoAmI: { find: () => Promise.resolve(whoamiMock) },
-              setConfig: () => {},
-            } as unknown as KeycloakAdminClient
-          }
-        >
+        <AdminClient.Provider value={{ keycloak, adminClient }}>
           <WhoAmIContextProvider>
             <RealmContext.Provider value={{ realm: "master" }}>
-              <AccessContextProvider>{props.children}</AccessContextProvider>
+              <AccessContextProvider>{children}</AccessContextProvider>
             </RealmContext.Provider>
           </WhoAmIContextProvider>
         </AdminClient.Provider>

@@ -23,7 +23,7 @@ export const RealmSettingsLoginTab = ({
   const { t } = useTranslation("realm-settings");
 
   const { addAlert, addError } = useAlerts();
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { realm: realmName } = useRealm();
 
   const updateSwitchValue = async (switches: SwitchType | SwitchType[]) => {

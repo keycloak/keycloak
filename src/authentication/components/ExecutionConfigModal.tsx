@@ -38,7 +38,7 @@ export const ExecutionConfigModal = ({
   execution,
 }: ExecutionConfigModalProps) => {
   const { t } = useTranslation("authentication");
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
   const [show, setShow] = useState(false);

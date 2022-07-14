@@ -39,7 +39,7 @@ const UsersTabs = () => {
   const { realm } = useRealm();
   const { hasAccess } = useAccess();
 
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const userForm = useForm<UserRepresentation>({ mode: "onChange" });
   const { id } = useParams<{ id: string }>();
   const [user, setUser] = useState<UserRepresentation>();

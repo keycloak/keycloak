@@ -71,7 +71,7 @@ const RealmSettingsHeader = ({
   refresh,
 }: RealmSettingsHeaderProps) => {
   const { t } = useTranslation("realm-settings");
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { refresh: refreshRealms } = useRealms();
   const { addAlert, addError } = useAlerts();
   const history = useHistory();
@@ -169,7 +169,7 @@ export const RealmSettingsTabs = ({
   refresh,
 }: RealmSettingsTabsProps) => {
   const { t } = useTranslation("realm-settings");
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const { realm: realmName } = useRealm();
   const { refresh: refreshRealms } = useRealms();

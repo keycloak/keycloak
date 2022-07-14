@@ -150,7 +150,7 @@ export const SamlKeys = ({ clientId, save }: SamlKeysProps) => {
 
   const { setValue } = useFormContext();
 
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
   useFetch(

@@ -29,7 +29,7 @@ export const AddFlowDropdown = ({
   onAddFlow,
 }: AddFlowDropdownProps) => {
   const { t } = useTranslation("authentication");
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
 
   const [open, setOpen] = useState(false);
   const [type, setType] = useState<FlowType>();

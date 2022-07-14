@@ -24,7 +24,7 @@ import {
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useAdminClient } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
-import { emptyFormatter, exportClient, getBaseUrl } from "../util";
+import { addTrailingSlash, emptyFormatter, exportClient } from "../util";
 import { InitialAccessTokenList } from "./initial-access/InitialAccessTokenList";
 import { toAddClient } from "./routes/AddClient";
 import { toClient } from "./routes/Client";
@@ -42,9 +42,8 @@ export default function ClientsSection() {
   const { t } = useTranslation("clients");
   const { addAlert, addError } = useAlerts();
 
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { realm } = useRealm();
-  const baseUrl = getBaseUrl(adminClient);
   const history = useHistory();
 
   const [key, setKey] = useState(0);
@@ -224,8 +223,14 @@ export default function ClientsSection() {
                       ) {
                         return (
                           client.rootUrl
-                            .replace("${authBaseUrl}", baseUrl)
-                            .replace("${authAdminUrl}", baseUrl) +
+                            .replace(
+                              "${authBaseUrl}",
+                              addTrailingSlash(adminClient.baseUrl)
+                            )
+                            .replace(
+                              "${authAdminUrl}",
+                              addTrailingSlash(adminClient.baseUrl)
+                            ) +
                           (client.baseUrl ? client.baseUrl.substring(1) : "")
                         );
                       }

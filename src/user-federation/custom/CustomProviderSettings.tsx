@@ -39,7 +39,7 @@ export default function CustomProviderSettings() {
     formState: { isDirty },
   } = form;
 
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const { realm: realmName } = useRealm();
   const [parentId, setParentId] = useState("");

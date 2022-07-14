@@ -30,7 +30,7 @@ export const DedicatedScope = ({
   client: initialClient,
 }: DedicatedScopeProps) => {
   const { t } = useTranslation("clients");
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
   const [client, setClient] = useState<ClientRepresentation>(initialClient);

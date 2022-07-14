@@ -56,7 +56,7 @@ export const REALM_FLOWS = [
 
 export default function AuthenticationSection() {
   const { t } = useTranslation("authentication");
-  const adminClient = useAdminClient();
+  const { adminClient } = useAdminClient();
   const { realm } = useRealm();
   const history = useHistory();
   const [key, setKey] = useState(0);
