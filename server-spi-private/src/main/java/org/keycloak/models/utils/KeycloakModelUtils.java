@@ -85,7 +85,7 @@ import java.util.function.Function;
 public final class KeycloakModelUtils {
 
     public static final String AUTH_TYPE_CLIENT_SECRET = "client-secret";
-    public static final String AUTH_TYPE_CLIENT_SECRET_JWT = "clientsecretjwt";
+    public static final String AUTH_TYPE_CLIENT_SECRET_JWT = "client-secret-jwt";
 
     private KeycloakModelUtils() {
     }
@@ -791,15 +791,14 @@ public final class KeycloakModelUtils {
      * @return secret size based on authentication type
      */
     public static int getSecretLengthByAuthenticationType(String clientAuthenticatorType, String signingAlg) {
-        String sanitizedClientAuthType = clientAuthenticatorType.replaceAll("[^a-zA-Z0-9]",""); //FIXME some locations are referenced with "_" while others with "-"
-        switch (sanitizedClientAuthType) {
-            case AUTH_TYPE_CLIENT_SECRET_JWT: {
-                if (Algorithm.HS384.equals(signingAlg)) return SecretGenerator.SECRET_LENGTH_384_BITS;
-                if (Algorithm.HS512.equals(signingAlg)) return SecretGenerator.SECRET_LENGTH_512_BITS;
+        if (clientAuthenticatorType != null)
+            switch (clientAuthenticatorType) {
+                case AUTH_TYPE_CLIENT_SECRET_JWT: {
+                    if (Algorithm.HS384.equals(signingAlg)) return SecretGenerator.SECRET_LENGTH_384_BITS;
+                    if (Algorithm.HS512.equals(signingAlg)) return SecretGenerator.SECRET_LENGTH_512_BITS;
+                }
             }
-            default:
-                return SecretGenerator.SECRET_LENGTH_256_BITS;
-        }
+        return SecretGenerator.SECRET_LENGTH_256_BITS;
     }
 
 }
