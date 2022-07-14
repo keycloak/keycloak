@@ -21,6 +21,7 @@ import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.Root;
 import javax.persistence.criteria.Selection;
 import org.keycloak.authorization.model.Scope;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.map.authorization.entity.MapScopeEntity;
 import org.keycloak.models.map.authorization.entity.MapScopeEntityDelegate;
 import org.keycloak.models.map.storage.jpa.Constants;
@@ -33,8 +34,8 @@ import org.keycloak.models.map.storage.jpa.authorization.scope.entity.JpaScopeEn
 public class JpaScopeMapKeycloakTransaction extends JpaMapKeycloakTransaction<JpaScopeEntity, MapScopeEntity, Scope> {
 
     @SuppressWarnings("unchecked")
-    public JpaScopeMapKeycloakTransaction(EntityManager em) {
-        super(JpaScopeEntity.class, Scope.class, em);
+    public JpaScopeMapKeycloakTransaction(KeycloakSession session, EntityManager em) {
+        super(session, JpaScopeEntity.class, Scope.class, em);
     }
 
     @Override

@@ -21,6 +21,7 @@ import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.Root;
 import javax.persistence.criteria.Selection;
 import org.keycloak.models.GroupModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.map.group.MapGroupEntity;
 import org.keycloak.models.map.group.MapGroupEntityDelegate;
 import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_GROUP;
@@ -33,8 +34,8 @@ import org.keycloak.models.map.storage.jpa.JpaRootEntity;
 public class JpaGroupMapKeycloakTransaction extends JpaMapKeycloakTransaction<JpaGroupEntity, MapGroupEntity, GroupModel> {
 
     @SuppressWarnings("unchecked")
-    public JpaGroupMapKeycloakTransaction(EntityManager em) {
-        super(JpaGroupEntity.class, GroupModel.class, em);
+    public JpaGroupMapKeycloakTransaction(KeycloakSession session, EntityManager em) {
+        super(session, JpaGroupEntity.class, GroupModel.class, em);
     }
 
     @Override

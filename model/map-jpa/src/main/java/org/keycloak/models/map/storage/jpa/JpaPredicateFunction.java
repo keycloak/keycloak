@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.models.map.storage.jpa.role;
+package org.keycloak.models.map.storage.jpa;
 
 import org.keycloak.models.map.storage.jpa.JpaSubqueryProvider;
 

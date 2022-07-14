@@ -21,7 +21,6 @@ package org.keycloak.models;
 import java.util.Map;
 
 import org.keycloak.sessions.CommonClientSessionModel;
-import org.keycloak.storage.SearchableModelField;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>

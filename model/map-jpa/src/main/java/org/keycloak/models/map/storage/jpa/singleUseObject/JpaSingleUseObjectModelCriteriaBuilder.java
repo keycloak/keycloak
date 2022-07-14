@@ -18,16 +18,11 @@ package org.keycloak.models.map.storage.jpa.singleUseObject;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.BiFunction;
-
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
 
 import org.keycloak.models.ActionTokenValueModel;
 import org.keycloak.models.map.storage.CriterionNotSupportedException;
 import org.keycloak.models.map.storage.jpa.JpaModelCriteriaBuilder;
-import org.keycloak.models.map.storage.jpa.role.JpaPredicateFunction;
+import org.keycloak.models.map.storage.jpa.JpaPredicateFunction;
 import org.keycloak.models.map.storage.jpa.singleUseObject.entity.JpaSingleUseObjectEntity;
 import org.keycloak.storage.SearchableModelField;
 

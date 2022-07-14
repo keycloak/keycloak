@@ -21,6 +21,7 @@ import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.Root;
 import javax.persistence.criteria.Selection;
 
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.map.storage.jpa.JpaMapKeycloakTransaction;
 import org.keycloak.models.map.storage.jpa.JpaModelCriteriaBuilder;
@@ -39,8 +40,8 @@ import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSI
  */
 public class JpaUserMapKeycloakTransaction extends JpaMapKeycloakTransaction<JpaUserEntity, MapUserEntity, UserModel> {
 
-    public JpaUserMapKeycloakTransaction(final EntityManager em) {
-        super(JpaUserEntity.class, UserModel.class, em);
+    public JpaUserMapKeycloakTransaction(KeycloakSession session,final EntityManager em) {
+        super(session, JpaUserEntity.class, UserModel.class, em);
     }
 
     @Override

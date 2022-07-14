@@ -25,8 +25,8 @@ import org.keycloak.models.GroupModel;
 import org.keycloak.models.map.storage.CriterionNotSupportedException;
 import org.keycloak.models.map.storage.jpa.group.entity.JpaGroupEntity;
 import org.keycloak.models.map.storage.jpa.JpaModelCriteriaBuilder;
+import org.keycloak.models.map.storage.jpa.JpaPredicateFunction;
 import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
-import org.keycloak.models.map.storage.jpa.role.JpaPredicateFunction;
 import org.keycloak.storage.SearchableModelField;
 
 public class JpaGroupModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaGroupEntity, GroupModel, JpaGroupModelCriteriaBuilder> {

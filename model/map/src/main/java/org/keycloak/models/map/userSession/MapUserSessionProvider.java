@@ -181,6 +181,8 @@ public class MapUserSessionProvider implements UserSessionProvider {
 
         LOG.tracef("getUserSession(%s, %s)%s", realm, id, getShortStackTrace());
 
+        if (id == null) return null;
+
         MapUserSessionEntity userSessionEntity = transientUserSessions.get(id);
         if (userSessionEntity != null) {
             return userEntityToAdapterFunc(realm).apply(userSessionEntity);
@@ -565,6 +567,8 @@ public class MapUserSessionProvider implements UserSessionProvider {
     }
 
     private MapUserSessionEntity getUserSessionById(String id) {
+        if (id == null) return null;
+
         MapUserSessionEntity userSessionEntity = transientUserSessions.get(id);
 
         if (userSessionEntity == null) {

@@ -95,6 +95,8 @@ import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.services.util.DefaultClientSessionContext;
 
+import static org.keycloak.utils.LockObjectsForModification.lockObjectsForModification;
+
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
@@ -311,7 +313,7 @@ public class AuthorizationTokenService {
             userSessionModel = sessions.createUserSession(KeycloakModelUtils.generateId(), realm, user, user.getUsername(), request.getClientConnection().getRemoteAddr(),
                     ServiceAccountConstants.CLIENT_AUTH, false, null, null, UserSessionModel.SessionPersistenceState.TRANSIENT);
         } else {
-            userSessionModel = sessions.getUserSession(realm, accessToken.getSessionState());
+            userSessionModel = lockObjectsForModification(keycloakSession, () -> sessions.getUserSession(realm, accessToken.getSessionState()));
 
             if (userSessionModel == null) {
                 userSessionModel = sessions.getOfflineUserSession(realm, accessToken.getSessionState());

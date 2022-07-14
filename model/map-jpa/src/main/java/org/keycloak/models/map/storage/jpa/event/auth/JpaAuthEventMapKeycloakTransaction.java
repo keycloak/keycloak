@@ -22,6 +22,7 @@ import javax.persistence.criteria.Root;
 import javax.persistence.criteria.Selection;
 
 import org.keycloak.events.Event;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.map.events.MapAuthEventEntity;
 import org.keycloak.models.map.storage.jpa.JpaMapKeycloakTransaction;
 import org.keycloak.models.map.storage.jpa.JpaModelCriteriaBuilder;
@@ -37,8 +38,8 @@ import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSI
  */
 public class JpaAuthEventMapKeycloakTransaction extends JpaMapKeycloakTransaction<JpaAuthEventEntity, MapAuthEventEntity, Event>  {
 
-    public JpaAuthEventMapKeycloakTransaction(final EntityManager em) {
-        super(JpaAuthEventEntity.class, Event.class, em);
+    public JpaAuthEventMapKeycloakTransaction(KeycloakSession session, final EntityManager em) {
+        super(session, JpaAuthEventEntity.class, Event.class, em);
     }
 
     @Override

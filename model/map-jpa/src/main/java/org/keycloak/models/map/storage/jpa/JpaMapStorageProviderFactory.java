@@ -29,7 +29,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
@@ -59,6 +59,7 @@ import org.keycloak.component.AmphibianProviderFactory;
 import org.keycloak.events.Event;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.models.ActionTokenValueModel;
+import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.GroupModel;
@@ -68,6 +69,7 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.dblock.DBLockProvider;
 import org.keycloak.models.map.client.MapProtocolMapperEntity;
 import org.keycloak.models.map.client.MapProtocolMapperEntityImpl;
@@ -131,6 +133,9 @@ import org.keycloak.models.map.storage.jpa.role.entity.JpaRoleEntity;
 import org.keycloak.models.map.storage.jpa.singleUseObject.JpaSingleUseObjectMapKeycloakTransaction;
 import org.keycloak.models.map.storage.jpa.singleUseObject.entity.JpaSingleUseObjectEntity;
 import org.keycloak.models.map.storage.jpa.updater.MapJpaUpdaterProvider;
+import org.keycloak.models.map.storage.jpa.userSession.JpaUserSessionMapKeycloakTransaction;
+import org.keycloak.models.map.storage.jpa.userSession.entity.JpaClientSessionEntity;
+import org.keycloak.models.map.storage.jpa.userSession.entity.JpaUserSessionEntity;
 import org.keycloak.models.map.storage.jpa.user.JpaUserMapKeycloakTransaction;
 import org.keycloak.models.map.storage.jpa.user.entity.JpaUserConsentEntity;
 import org.keycloak.models.map.storage.jpa.user.entity.JpaUserEntity;
@@ -203,9 +208,12 @@ public class JpaMapStorageProviderFactory implements
         .constructor(JpaUserConsentEntity.class,                JpaUserConsentEntity::new)
         .constructor(JpaUserFederatedIdentityEntity.class,      JpaUserFederatedIdentityEntity::new)
         .constructor(MapUserCredentialEntity.class,             MapUserCredentialEntityImpl::new)
+        //user/client session
+        .constructor(JpaClientSessionEntity.class,              JpaClientSessionEntity::new)
+        .constructor(JpaUserSessionEntity.class,                JpaUserSessionEntity::new)
         .build();
 
-    private static final Map<Class<?>, Function<EntityManager, MapKeycloakTransaction>> MODEL_TO_TX = new HashMap<>();
+    private static final Map<Class<?>, BiFunction<KeycloakSession, EntityManager, MapKeycloakTransaction>> MODEL_TO_TX = new HashMap<>();
     static {
         //auth-sessions
         MODEL_TO_TX.put(RootAuthenticationSessionModel.class,   JpaRootAuthenticationSessionMapKeycloakTransaction::new);
@@ -234,6 +242,8 @@ public class JpaMapStorageProviderFactory implements
         MODEL_TO_TX.put(UserLoginFailureModel.class,            JpaUserLoginFailureMapKeycloakTransaction::new);
         //users
         MODEL_TO_TX.put(UserModel.class,                        JpaUserMapKeycloakTransaction::new);
+        //sessions
+        MODEL_TO_TX.put(UserSessionModel.class,                 JpaUserSessionMapKeycloakTransaction::new);
     }
 
     public JpaMapStorageProviderFactory() {
@@ -242,8 +252,8 @@ public class JpaMapStorageProviderFactory implements
         this.sessionTxKey = SESSION_TX_PREFIX + index;
     }
 
-    public MapKeycloakTransaction createTransaction(Class<?> modelType, EntityManager em) {
-        return MODEL_TO_TX.get(modelType).apply(em);
+    public MapKeycloakTransaction createTransaction(KeycloakSession session, Class<?> modelType, EntityManager em) {
+        return MODEL_TO_TX.get(modelType).apply(session, em);
     }
 
     @Override
@@ -357,17 +367,6 @@ public class JpaMapStorageProviderFactory implements
                                     }
                             )
                     );
-
-                    Integer isolation = config.getInt("isolation");
-                    if (isolation != null) {
-                        if (isolation < Connection.TRANSACTION_REPEATABLE_READ) {
-                            logger.warn("Concurrent requests may not be reliable with transaction level lower than TRANSACTION_REPEATABLE_READ.");
-                        }
-                        properties.put(AvailableSettings.ISOLATION, String.valueOf(isolation));
-                    } else {
-                        // default value is TRANSACTION_READ_COMMITTED
-                        logger.warn("Concurrent requests may not be reliable with transaction level lower than TRANSACTION_REPEATABLE_READ.");
-                    }
 
                     logger.trace("Creating EntityManagerFactory");
                     this.emf = Persistence.createEntityManagerFactory(unitName, properties);

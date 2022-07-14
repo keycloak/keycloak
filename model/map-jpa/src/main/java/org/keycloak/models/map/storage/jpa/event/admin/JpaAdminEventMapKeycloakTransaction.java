@@ -22,6 +22,7 @@ import javax.persistence.criteria.Root;
 import javax.persistence.criteria.Selection;
 
 import org.keycloak.events.admin.AdminEvent;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.map.events.MapAdminEventEntity;
 import org.keycloak.models.map.storage.jpa.JpaMapKeycloakTransaction;
 import org.keycloak.models.map.storage.jpa.JpaModelCriteriaBuilder;
@@ -37,8 +38,8 @@ import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSI
  */
 public class JpaAdminEventMapKeycloakTransaction extends JpaMapKeycloakTransaction<JpaAdminEventEntity, MapAdminEventEntity, AdminEvent>  {
 
-    public JpaAdminEventMapKeycloakTransaction(final EntityManager em) {
-        super(JpaAdminEventEntity.class, AdminEvent.class, em);
+    public JpaAdminEventMapKeycloakTransaction(KeycloakSession session, final EntityManager em) {
+        super(session, JpaAdminEventEntity.class, AdminEvent.class, em);
     }
 
     @Override

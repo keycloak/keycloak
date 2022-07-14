@@ -23,7 +23,6 @@ import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.events.Event;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.models.ActionTokenValueModel;
-import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.GroupModel;
@@ -49,7 +48,6 @@ import org.keycloak.models.map.loginFailure.MapUserLoginFailureEntity;
 import org.keycloak.models.map.realm.MapRealmEntity;
 import org.keycloak.models.map.role.MapRoleEntity;
 import org.keycloak.models.map.user.MapUserEntity;
-import org.keycloak.models.map.userSession.MapAuthenticatedClientSessionEntity;
 import org.keycloak.models.map.userSession.MapUserSessionEntity;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import java.util.HashMap;
@@ -67,7 +65,6 @@ public class ModelEntityUtil {
     private static final Map<Class<?>, String> MODEL_TO_NAME = new HashMap<>();
     static {
         MODEL_TO_NAME.put(ActionTokenValueModel.class, "single-use-objects");
-        MODEL_TO_NAME.put(AuthenticatedClientSessionModel.class, "client-sessions");
         MODEL_TO_NAME.put(ClientScopeModel.class, "client-scopes");
         MODEL_TO_NAME.put(ClientModel.class, "clients");
         MODEL_TO_NAME.put(GroupModel.class, "groups");
@@ -94,7 +91,6 @@ public class ModelEntityUtil {
     private static final Map<Class<?>, Class<? extends AbstractEntity>> MODEL_TO_ENTITY_TYPE = new HashMap<>();
     static {
         MODEL_TO_ENTITY_TYPE.put(ActionTokenValueModel.class, MapSingleUseObjectEntity.class);
-        MODEL_TO_ENTITY_TYPE.put(AuthenticatedClientSessionModel.class, MapAuthenticatedClientSessionEntity.class);
         MODEL_TO_ENTITY_TYPE.put(ClientScopeModel.class, MapClientScopeEntity.class);
         MODEL_TO_ENTITY_TYPE.put(ClientModel.class, MapClientEntity.class);
         MODEL_TO_ENTITY_TYPE.put(GroupModel.class, MapGroupEntity.class);

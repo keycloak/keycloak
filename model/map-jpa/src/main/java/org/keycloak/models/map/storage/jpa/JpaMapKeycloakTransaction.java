@@ -22,6 +22,8 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
 import javax.persistence.EntityManager;
+import javax.persistence.LockModeType;
+import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaDelete;
 import javax.persistence.criteria.CriteriaQuery;
@@ -32,6 +34,7 @@ import javax.persistence.criteria.Selection;
 
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Time;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.ExpirableEntity;
 import org.keycloak.models.map.common.StringKeyConverter;
@@ -40,7 +43,7 @@ import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.QueryParameters;
 import org.keycloak.models.map.storage.chm.MapFieldPredicates;
 import org.keycloak.models.map.storage.chm.MapModelCriteriaBuilder;
-import org.keycloak.models.map.storage.jpa.role.JpaPredicateFunction;
+import org.keycloak.utils.LockObjectsForModification;
 
 import static org.keycloak.models.map.common.ExpirationUtils.isExpired;
 import static org.keycloak.models.map.storage.jpa.JpaMapStorageProviderFactory.CLONER;
@@ -50,12 +53,14 @@ import static org.keycloak.utils.StreamsUtil.closing;
 public abstract class JpaMapKeycloakTransaction<RE extends JpaRootEntity, E extends AbstractEntity, M> implements MapKeycloakTransaction<E, M> {
 
     private static final Logger logger = Logger.getLogger(JpaMapKeycloakTransaction.class);
+    private final KeycloakSession session;
     private final Class<RE> entityType;
     private final Class<M> modelType;
     private final boolean isExpirableEntity;
     protected EntityManager em;
 
-    public JpaMapKeycloakTransaction(Class<RE> entityType, Class<M> modelType, EntityManager em) {
+    public JpaMapKeycloakTransaction(KeycloakSession session, Class<RE> entityType, Class<M> modelType, EntityManager em) {
+        this.session = session;
         this.em = em;
         this.entityType = entityType;
         this.modelType = modelType;
@@ -66,6 +71,15 @@ public abstract class JpaMapKeycloakTransaction<RE extends JpaRootEntity, E exte
     protected abstract void setEntityVersion(JpaRootEntity entity);
     protected abstract JpaModelCriteriaBuilder createJpaModelCriteriaBuilder();
     protected abstract E mapToEntityDelegate(RE original);
+
+    /**
+     * Indicates of pessimistic locking should be allowed for this entity. This should be enabled only for those entities
+     * where there is no expected contention from different callers. For UserSessions and ClientSessions this should be possible.
+     * The locking on Clients would be problematic as such a lock affects multiple callers.
+     */
+    protected boolean lockingSupportedForEntity() {
+        return false;
+    }
 
     private final HashMap<String, E> cacheWithinSession = new HashMap<>();
 
@@ -101,7 +115,11 @@ public abstract class JpaMapKeycloakTransaction<RE extends JpaRootEntity, E exte
         if (key == null) return null;
         UUID uuid = StringKeyConverter.UUIDKey.INSTANCE.fromStringSafe(key);
         if (uuid == null) return null;
-        E e = mapToEntityDelegateUnique(em.find(entityType, uuid));
+        E e = mapToEntityDelegateUnique(
+                lockingSupportedForEntity() && LockObjectsForModification.isEnabled(session) ?
+                        em.find(entityType, uuid, LockModeType.PESSIMISTIC_WRITE) :
+                        em.find(entityType, uuid)
+        );
         return e != null && isExpirableEntity && isExpired((ExpirableEntity) e, true) ? null : e;
     }
 
@@ -142,7 +160,11 @@ public abstract class JpaMapKeycloakTransaction<RE extends JpaRootEntity, E exte
         }
         if (predicateFunc != null) query.where(predicateFunc.apply(cb, query::subquery, root));
 
-        return closing(paginateQuery(em.createQuery(query), queryParameters.getOffset(), queryParameters.getLimit()).getResultStream())
+        TypedQuery<RE> emQuery = em.createQuery(query);
+        if (lockingSupportedForEntity() && LockObjectsForModification.isEnabled(session)) {
+            emQuery = emQuery.setLockMode(LockModeType.PESSIMISTIC_WRITE);
+        }
+        return closing(paginateQuery(emQuery, queryParameters.getOffset(), queryParameters.getLimit()).getResultStream())
                 .map(this::mapToEntityDelegateUnique);
     }
 

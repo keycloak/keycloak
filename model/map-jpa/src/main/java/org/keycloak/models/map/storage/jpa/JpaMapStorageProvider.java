@@ -59,7 +59,7 @@ public class JpaMapStorageProvider implements MapStorageProvider {
         return new MapStorage<V, M>() {
             @Override
             public MapKeycloakTransaction<V, M> createTransaction(KeycloakSession session) {
-                return factory.createTransaction(modelType, em);
+                return factory.createTransaction(session, modelType, em);
             }
         };
     }

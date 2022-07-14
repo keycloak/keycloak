@@ -27,9 +27,9 @@ import org.keycloak.models.map.common.StringKeyConverter.UUIDKey;
 import org.keycloak.models.map.storage.CriterionNotSupportedException;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.models.map.storage.jpa.JpaModelCriteriaBuilder;
+import org.keycloak.models.map.storage.jpa.JpaPredicateFunction;
 import org.keycloak.models.map.storage.jpa.authorization.permission.entity.JpaPermissionEntity;
 import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
-import org.keycloak.models.map.storage.jpa.role.JpaPredicateFunction;
 import org.keycloak.storage.SearchableModelField;
 
 public class JpaPermissionModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaPermissionEntity, PermissionTicket, JpaPermissionModelCriteriaBuilder> {

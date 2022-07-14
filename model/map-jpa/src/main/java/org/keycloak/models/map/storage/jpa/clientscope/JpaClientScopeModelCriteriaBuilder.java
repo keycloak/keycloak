@@ -20,8 +20,8 @@ import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientScopeModel.SearchableFields;
 import org.keycloak.models.map.storage.CriterionNotSupportedException;
 import org.keycloak.models.map.storage.jpa.JpaModelCriteriaBuilder;
+import org.keycloak.models.map.storage.jpa.JpaPredicateFunction;
 import org.keycloak.models.map.storage.jpa.clientscope.entity.JpaClientScopeEntity;
-import org.keycloak.models.map.storage.jpa.role.JpaPredicateFunction;
 import org.keycloak.storage.SearchableModelField;
 
 public class JpaClientScopeModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaClientScopeEntity, ClientScopeModel, JpaClientScopeModelCriteriaBuilder> {

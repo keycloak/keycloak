@@ -116,6 +116,8 @@ import java.util.Objects;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+import static org.keycloak.utils.LockObjectsForModification.lockObjectsForModification;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
@@ -506,7 +508,7 @@ public class TokenEndpoint {
             res = responseBuilder.build();
 
             if (!responseBuilder.isOfflineToken()) {
-                UserSessionModel userSession = session.sessions().getUserSession(realm, res.getSessionState());
+                UserSessionModel userSession = lockObjectsForModification(session, () -> session.sessions().getUserSession(realm, res.getSessionState()));
                 AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
                 updateClientSession(clientSession);
                 updateUserSessionFromClientAuth(userSession);

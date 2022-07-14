@@ -67,6 +67,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.keycloak.utils.LockObjectsForModification.lockObjectsForModification;
+
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -1066,7 +1068,7 @@ public class AuthenticationProcessor {
 
         if (userSession == null) { // if no authenticator attached a usersession
 
-            userSession = session.sessions().getUserSession(realm, authSession.getParentSession().getId());
+            userSession = lockObjectsForModification(session, () -> session.sessions().getUserSession(realm, authSession.getParentSession().getId()));
             if (userSession == null) {
                 UserSessionModel.SessionPersistenceState persistenceState = UserSessionModel.SessionPersistenceState.fromString(authSession.getClientNote(AuthenticationManager.USER_SESSION_PERSISTENT_STATE));
 

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.connections.jpa;
+package org.keycloak.models.map.storage.jpa;
 
 import org.hibernate.exception.ConstraintViolationException;
 import org.keycloak.models.Constants;

@@ -21,6 +21,7 @@ import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.Root;
 import javax.persistence.criteria.Selection;
 
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.map.loginFailure.MapUserLoginFailureEntity;
 import org.keycloak.models.map.loginFailure.MapUserLoginFailureEntityDelegate;
@@ -40,8 +41,8 @@ import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSI
 public class JpaUserLoginFailureMapKeycloakTransaction extends JpaMapKeycloakTransaction<JpaUserLoginFailureEntity, MapUserLoginFailureEntity, UserLoginFailureModel> {
 
     @SuppressWarnings("unchecked")
-    public JpaUserLoginFailureMapKeycloakTransaction(EntityManager em) {
-        super(JpaUserLoginFailureEntity.class, UserLoginFailureModel.class, em);
+    public JpaUserLoginFailureMapKeycloakTransaction(KeycloakSession session, EntityManager em) {
+        super(session, JpaUserLoginFailureEntity.class, UserLoginFailureModel.class, em);
     }
 
     @Override
