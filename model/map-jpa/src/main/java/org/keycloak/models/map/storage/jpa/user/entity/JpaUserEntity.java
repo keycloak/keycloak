@@ -98,6 +98,10 @@ public class JpaUserEntity extends MapUserEntity.AbstractUserEntity implements J
 
     @Column(insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
+    private String usernameLowerCase;
+
+    @Column(insertable = false, updatable = false)
+    @Basic(fetch = FetchType.LAZY)
     private String firstName;
 
     @Column(insertable = false, updatable = false)
@@ -237,6 +241,7 @@ public class JpaUserEntity extends MapUserEntity.AbstractUserEntity implements J
     @Override
     public void setUsername(String username) {
         this.metadata.setUsername(username);
+        this.metadata.setUsernameLowerCase(username);
     }
 
     @Override
