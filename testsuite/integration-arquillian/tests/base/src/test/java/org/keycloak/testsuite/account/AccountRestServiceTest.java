@@ -87,6 +87,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import org.keycloak.models.UserProvider;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -393,7 +394,8 @@ public class AccountRestServiceTest extends AbstractRestServiceTest {
 
             user.setUsername("updatedUsername");
             user = updateAndGet(user);
-            assertEquals("updatedusername", user.getUsername());
+            String expectedString = keycloakUsingProviderWithId(UserProvider.class, "jpa") ? "updatedusername" : "updatedUsername";
+            assertEquals(expectedString, user.getUsername());
 
 
             realmRep.setEditUsernameAllowed(false);

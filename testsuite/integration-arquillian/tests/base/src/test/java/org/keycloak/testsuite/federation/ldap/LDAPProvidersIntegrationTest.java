@@ -371,7 +371,7 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
     // KEYCLOAK-12340
     @Test
     public void ldapPasswordChangeWithAdminEndpointAndRequiredAction() throws Exception {
-        String username = "adminEndpointReqAct";
+        String username = "admin-endpoint-req-act";
         String email = username + "@email.cz";
 
         // Register new LDAP user with password, logout user
@@ -505,13 +505,13 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
         loginPage.clickRegister();
         registerPage.assertCurrent();
 
-        registerPage.register("firstName", "lastName", "email2@check.cz", "registerUserSuccess2", "Password1", "Password1");
+        registerPage.register("firstName", "lastName", "email2@check.cz", "register-user-success2", "Password1", "Password1");
         Assert.assertEquals(AppPage.RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
-        UserRepresentation user = ApiUtil.findUserByUsername(testRealm(),"registerUserSuccess2");
+        UserRepresentation user = ApiUtil.findUserByUsername(testRealm(),"register-user-success2");
         Assert.assertNotNull(user);
         assertFederatedUserLink(user);
-        Assert.assertEquals("registerusersuccess2", user.getUsername());
+        Assert.assertEquals("register-user-success2", user.getUsername());
         Assert.assertEquals("firstName", user.getFirstName());
         Assert.assertEquals("lastName", user.getLastName());
         Assert.assertTrue(user.isEnabled());
@@ -812,17 +812,17 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
 
     @Test
     public void testRemoveFederatedUser() {
-        UserRepresentation user = ApiUtil.findUserByUsername(testRealm(), "registerusersuccess2");
+        UserRepresentation user = ApiUtil.findUserByUsername(testRealm(), "register-user-success2");
 
         // Case when this test was executed "alone" (User "registerusersuccess2" is registered inside registerUserLdapSuccess)
         if (user == null) {
             registerUserLdapSuccess();
-            user = ApiUtil.findUserByUsername(testRealm(), "registerusersuccess2");
+            user = ApiUtil.findUserByUsername(testRealm(), "register-user-success2");
         }
 
         assertFederatedUserLink(user);
         testRealm().users().get(user.getId()).remove();
-        user = ApiUtil.findUserByUsername(testRealm(), "registerusersuccess2");
+        user = ApiUtil.findUserByUsername(testRealm(), "register-user-success2");
         Assert.assertNull(user);
     }
 

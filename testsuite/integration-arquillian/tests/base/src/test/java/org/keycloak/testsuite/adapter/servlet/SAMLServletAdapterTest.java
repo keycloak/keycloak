@@ -119,6 +119,7 @@ import org.keycloak.dom.saml.v2.protocol.StatusResponseType;
 import org.keycloak.keys.Attributes;
 import org.keycloak.keys.ImportedRsaKeyProviderFactory;
 import org.keycloak.keys.KeyProvider;
+import org.keycloak.models.UserProvider;
 import org.keycloak.protocol.saml.SamlConfigAttributes;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -803,7 +804,8 @@ public class SAMLServletAdapterTest extends AbstractSAMLServletAdapterTest {
         UserRepresentation topGroupUser = createUserRepresentation("topGroupUser", "top@redhat.com", "", "", true);
         setPasswordFor(topGroupUser, PASSWORD);
 
-        assertSuccessfulLogin(salesPostServletPage, topGroupUser, testRealmSAMLPostLoginPage, "principal=topgroupuser");
+        String expectedString = keycloakUsingProviderWithId(UserProvider.class, "jpa") ? "principal=topgroupuser" : "principal=topGroupUser";
+        assertSuccessfulLogin(salesPostServletPage, topGroupUser, testRealmSAMLPostLoginPage, expectedString);
 
         salesPostServletPage.logout();
         checkLoggedOut(salesPostServletPage, testRealmSAMLPostLoginPage);

@@ -32,6 +32,9 @@ limitations under the License.
                 <constraints nullable="false"/>
             </column>
             <column name="metadata" type="json"/>
+            <column name="usernamelowercase" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
         </createTable>
         <ext:addGeneratedColumn tableName="kc_user">
             <ext:column name="entityversion" type="INTEGER" jsonColumn="metadata" jsonProperty="entityVersion"/>
@@ -54,6 +57,10 @@ limitations under the License.
         </createIndex>
         <createIndex tableName="kc_user" indexName="user_username_realmid">
             <column name="username"/>
+            <column name="realmid"/>
+        </createIndex>
+        <createIndex tableName="kc_user" indexName="user_username_lower_case_realmid">
+            <column name="usernamelowercase"/>
             <column name="realmid"/>
         </createIndex>
         <createIndex tableName="kc_user" indexName="user_email_realmid">

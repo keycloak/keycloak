@@ -83,6 +83,7 @@ import java.util.stream.Collectors;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
+import org.keycloak.models.UserProvider;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -455,7 +456,8 @@ public class ClientTest extends AbstractAdminTest {
         getCleanup().addClientUuid(id);
         response.close();
         UserRepresentation userRep = realm.clients().get(id).getServiceAccountUser();
-        assertEquals("service-account-serviceclient", userRep.getUsername());
+        String expectedString = keycloakUsingProviderWithId(UserProvider.class, "jpa") ? "service-account-serviceclient" : "service-account-serviceClient";
+        assertEquals(expectedString, userRep.getUsername());
         // KEYCLOAK-11197 service accounts are no longer created with a placeholder e-mail.
         assertNull(userRep.getEmail());
     }

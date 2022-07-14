@@ -36,6 +36,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.common.Profile;
+import org.keycloak.models.UserProvider;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -222,7 +223,7 @@ public class RegisterWithUserProfileTest extends RegisterTest {
         registerPage.assertCurrent();
         assertEquals("Length must be between 3 and 255.", registerPage.getInputAccountErrors().getLastNameError());
 
-        events.expectRegister("registeruserinvalidlastnamelength", "registerUserInvalidLastNameLength@email")
+        events.expectRegister("registerUserInvalidLastNameLength", "registerUserInvalidLastNameLength@email")
                 .error("invalid_registration").assertEvent();
     }
 
@@ -605,7 +606,8 @@ public class RegisterWithUserProfileTest extends RegisterTest {
 
 
     private void assertUserRegistered(String userId, String username, String email, String firstName, String lastName) {
-        events.expectLogin().detail("username", username.toLowerCase()).user(userId).assertEvent();
+        String expectedUsername = keycloakUsingProviderWithId(UserProvider.class, "jpa") ? username.toLowerCase() : username;
+        events.expectLogin().detail("username", expectedUsername).user(userId).assertEvent();
 
         UserRepresentation user = getUser(userId);
         Assert.assertNotNull(user);
@@ -613,7 +615,7 @@ public class RegisterWithUserProfileTest extends RegisterTest {
         // test that timestamp is current with 10s tollerance
         Assert.assertTrue((System.currentTimeMillis() - user.getCreatedTimestamp()) < 10000);
         // test user info is set from form
-        assertEquals(username.toLowerCase(), user.getUsername());
+        assertEquals(expectedUsername, user.getUsername());
         assertEquals(email.toLowerCase(), user.getEmail());
         assertEquals(firstName, user.getFirstName());
 

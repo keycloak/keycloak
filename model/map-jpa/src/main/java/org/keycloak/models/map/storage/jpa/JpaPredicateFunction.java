@@ -17,8 +17,6 @@
 
 package org.keycloak.models.map.storage.jpa;
 
-import org.keycloak.models.map.storage.jpa.JpaSubqueryProvider;
-
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;

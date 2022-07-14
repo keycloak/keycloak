@@ -51,6 +51,7 @@ import org.keycloak.models.map.user.MapUserConsentEntity;
 import org.keycloak.models.map.user.MapUserCredentialEntity;
 import org.keycloak.models.map.user.MapUserEntity;
 import org.keycloak.models.map.user.MapUserFederatedIdentityEntity;
+import org.keycloak.models.utils.KeycloakModelUtils;
 
 import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_USER;
 import static org.keycloak.models.map.storage.jpa.JpaMapStorageProviderFactory.CLONER;
@@ -95,6 +96,10 @@ public class JpaUserEntity extends MapUserEntity.AbstractUserEntity implements J
     @Column(insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
     private String username;
+
+    @Column
+    @Basic(fetch = FetchType.LAZY)
+    private String usernameLowerCase;
 
     @Column(insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
@@ -237,6 +242,7 @@ public class JpaUserEntity extends MapUserEntity.AbstractUserEntity implements J
     @Override
     public void setUsername(String username) {
         this.metadata.setUsername(username);
+        this.usernameLowerCase = KeycloakModelUtils.toLowerCaseSafe(username);
     }
 
     @Override

@@ -61,6 +61,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.jgroups.util.Util.assertTrue;
 import static org.junit.Assert.assertEquals;
+import org.keycloak.models.UserProvider;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
@@ -113,7 +114,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         assertEquals("", registerPage.getPassword());
         assertEquals("", registerPage.getPasswordConfirm());
 
-        events.expectRegister("rolerichuser", "registerExistingUser@email")
+        events.expectRegister("roleRichUser", "registerExistingUser@email")
                 .removeDetail(Details.EMAIL)
                 .user((String) null).error("username_in_use").assertEvent();
     }
@@ -137,7 +138,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         assertEquals("", registerPage.getPassword());
         assertEquals("", registerPage.getPasswordConfirm());
 
-        events.expectRegister("registerexistinguser", "registerExistingUser@email")
+        events.expectRegister("registerExistingUser", "registerExistingUser@email")
                 .removeDetail(Details.EMAIL)
                 .user((String) null).error("email_in_use").assertEvent();
     }
@@ -154,9 +155,10 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
             assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
             String userId = events.expectRegister("registerExistingEmailUser", "test-user@localhost").assertEvent().getUserId();
-            events.expectLogin().detail("username", "registerexistingemailuser").user(userId).assertEvent();
+            String expectedString = keycloakUsingProviderWithId(UserProvider.class, "jpa") ? "registerexistingemailuser" : "registerExistingEmailUser";
+            events.expectLogin().detail("username", expectedString).user(userId).assertEvent();
 
-            assertUserBasicRegisterAttributes(userId, "registerexistingemailuser", "test-user@localhost", "firstName", "lastName");
+            assertUserBasicRegisterAttributes(userId, expectedString, "test-user@localhost", "firstName", "lastName");
 
             testRealm().users().get(userId).remove();
         }
@@ -269,7 +271,8 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
 
             String userId = events.expectRegister("registerPasswordPolicy", "registerPasswordPolicy@email").assertEvent().getUserId();
 
-            events.expectLogin().user(userId).detail(Details.USERNAME, "registerpasswordpolicy").assertEvent();
+            String expectedString = keycloakUsingProviderWithId(UserProvider.class, "jpa") ? "registerpasswordpolicy" : "registerPasswordPolicy";
+            events.expectLogin().user(userId).detail(Details.USERNAME, expectedString).assertEvent();
         }
     }
 
@@ -331,7 +334,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         registerPage.register("firstName", "lastName", null, "registerUserMissingEmail", "password", "password");
         registerPage.assertCurrent();
         assertEquals("Please specify email.", registerPage.getInputAccountErrors().getEmailError());
-        events.expectRegister("registerusermissingemail", null)
+        events.expectRegister("registerUserMissingEmail", null)
                 .removeDetail("email")
                 .error("invalid_registration").assertEvent();
     }
@@ -346,7 +349,7 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         registerPage.assertCurrent();
         assertEquals("registerUserInvalidEmailemail", registerPage.getEmail());
         assertEquals("Invalid email address.", registerPage.getInputAccountErrors().getEmailError());
-        events.expectRegister("registeruserinvalidemail", "registerUserInvalidEmailemail")
+        events.expectRegister("registerUserInvalidEmail", "registerUserInvalidEmailemail")
                 .error("invalid_registration").assertEvent();
     }
 
@@ -365,11 +368,13 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
 
         String userId = events.expectRegister(username, "registerUserSuccess@email").assertEvent().getUserId();
-        assertUserRegistered(userId, username.toLowerCase(), "registerusersuccess@email");
+        String expectedString = keycloakUsingProviderWithId(UserProvider.class, "jpa") ? username.toLowerCase() : username;
+        assertUserRegistered(userId, expectedString, "registerusersuccess@email");
     }
 
     private void assertUserRegistered(String userId, String username, String email) {
-        events.expectLogin().detail("username", username.toLowerCase()).user(userId).assertEvent();
+        String expectedString = keycloakUsingProviderWithId(UserProvider.class, "jpa") ? username.toLowerCase() : username;
+        events.expectLogin().detail("username", expectedString).user(userId).assertEvent();
 
         UserRepresentation user = getUser(userId);
         Assert.assertNotNull(user);
@@ -680,8 +685,10 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
                 .assertEvent()
                 .getUserId();
 
+        String expectedString = emailAsUsername || keycloakUsingProviderWithId(UserProvider.class, "jpa") ? 
+                EMAIL_OR_USERNAME.toLowerCase() : EMAIL_OR_USERNAME;
         EventRepresentation loginEvent = events.expectLogin()
-                .detail("username", EMAIL_OR_USERNAME.toLowerCase())
+                .detail("username", expectedString)
                 .user(userId)
                 .assertEvent();
         OAuthClient.AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
@@ -696,7 +703,8 @@ public class RegisterTest extends AbstractTestRealmKeycloakTest {
         assertThat(user, notNullValue());
 
         if (username != null) {
-            assertThat(username.toLowerCase(), is(user.getUsername()));
+            String expectedString = keycloakUsingProviderWithId(UserProvider.class, "jpa") ? username.toLowerCase() : username;
+            assertThat(expectedString, is(user.getUsername()));
         }
         assertThat(email.toLowerCase(), is(user.getEmail()));
         assertThat(firstName, is(user.getFirstName()));

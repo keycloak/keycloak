@@ -24,7 +24,6 @@ import org.keycloak.authorization.model.Scope;
 import org.keycloak.events.Event;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.models.ActionTokenValueModel;
-import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.GroupModel;
@@ -51,6 +50,7 @@ import org.keycloak.models.map.role.MapRoleEntity;
 import org.keycloak.models.map.singleUseObject.MapSingleUseObjectEntity;
 import org.keycloak.models.map.storage.QueryParameters;
 import org.keycloak.models.map.user.MapUserConsentEntity;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.storage.SearchableModelField;
 
 import java.util.Comparator;
@@ -59,7 +59,6 @@ import java.util.Map;
 import org.keycloak.models.map.storage.chm.MapModelCriteriaBuilder.UpdatePredicatesFunc;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
 import org.keycloak.models.map.user.MapUserEntity;
-import org.keycloak.models.map.userSession.MapAuthenticatedClientSessionEntity;
 import org.keycloak.models.map.userSession.MapUserSessionEntity;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.storage.StorageId;
@@ -134,6 +133,7 @@ public class MapFieldPredicates {
 
         put(USER_PREDICATES, UserModel.SearchableFields.REALM_ID,                 MapUserEntity::getRealmId);
         put(USER_PREDICATES, UserModel.SearchableFields.USERNAME,                 MapUserEntity::getUsername);
+        put(USER_PREDICATES, UserModel.SearchableFields.USERNAME_CASE_INSENSITIVE, MapFieldPredicates::usernameCaseInsensitive);
         put(USER_PREDICATES, UserModel.SearchableFields.FIRST_NAME,               MapUserEntity::getFirstName);
         put(USER_PREDICATES, UserModel.SearchableFields.LAST_NAME,                MapUserEntity::getLastName);
         put(USER_PREDICATES, UserModel.SearchableFields.EMAIL,                    MapUserEntity::getEmail);
@@ -303,6 +303,33 @@ public class MapFieldPredicates {
         String roleIdS = ensureEqSingleValue(GroupModel.SearchableFields.ASSIGNED_ROLE, "role_id", op, values);
         Function<MapGroupEntity, ?> getter;
         getter = ge -> Optional.ofNullable(ge.getGrantedRoles()).orElse(Collections.emptySet()).contains(roleIdS);
+        return mcb.fieldCompare(Boolean.TRUE::equals, getter);
+    }
+
+    private static MapModelCriteriaBuilder<Object, MapUserEntity, UserModel> usernameCaseInsensitive(MapModelCriteriaBuilder<Object, MapUserEntity, UserModel> mcb, Operator op, Object[] values) {
+        if (values == null || values.length != 1) {
+            throw new CriterionNotSupportedException(UserModel.SearchableFields.USERNAME_CASE_INSENSITIVE, op, "Invalid arguments, expected (username), got: " + Arrays.toString(values));
+        }
+
+        final Object ob = values[0];
+        if (!String.class.isAssignableFrom(ob.getClass())) {
+            throw new CriterionNotSupportedException(UserModel.SearchableFields.USERNAME_CASE_INSENSITIVE, op, "Invalid arguments, expected (String), got: " + Arrays.toString(values));
+        }
+
+        String value = (String) ob;
+        Function<MapUserEntity, ?> getter;
+
+        switch (op) {
+            case EQ:
+                getter = ue -> value.toLowerCase().equals(KeycloakModelUtils.toLowerCaseSafe(ue.getUsername()));
+                break;
+            case ILIKE:
+                Predicate<Object> valueComparator = CriteriaOperator.predicateFor(Operator.ILIKE, new Object[]{value.toLowerCase()});
+                getter = ue -> valueComparator.test(KeycloakModelUtils.toLowerCaseSafe(ue.getUsername()));
+                break;
+            default:
+                throw new CriterionNotSupportedException(UserModel.SearchableFields.USERNAME_CASE_INSENSITIVE, op);
+        }
         return mcb.fieldCompare(Boolean.TRUE::equals, getter);
     }
 

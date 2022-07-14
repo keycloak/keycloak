@@ -70,6 +70,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import static org.hamcrest.Matchers.hasItem;
 import static org.junit.Assert.assertThat;
+import org.keycloak.models.UserProvider;
 
 import static org.keycloak.testsuite.admin.ImpersonationDisabledTest.IMPERSONATION_DISABLED;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
@@ -627,8 +628,9 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
                     TEST, "groupViewer", "password", Constants.ADMIN_CLI_CLIENT_ID, null)) {
                 // Should only return the list of users that belong to "top" group
                 List<UserRepresentation> queryUsers = realmClient.realm(TEST).users().list();
-                Assert.assertEquals(queryUsers.size(), 1);
-                Assert.assertEquals("groupmember", queryUsers.get(0).getUsername());
+                Assert.assertEquals(1, queryUsers.size());
+                String expectedString = keycloakUsingProviderWithId(UserProvider.class, "jpa") ? "groupmember" : "groupMember";
+                Assert.assertEquals(expectedString, queryUsers.get(0).getUsername());
                 for (UserRepresentation user : queryUsers) {
                     System.out.println(user.getUsername());
                 }

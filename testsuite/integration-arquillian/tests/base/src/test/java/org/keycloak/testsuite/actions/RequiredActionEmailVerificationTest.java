@@ -77,6 +77,7 @@ import org.openqa.selenium.WebElement;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertEquals;
+import org.keycloak.models.UserProvider;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
@@ -206,7 +207,8 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
 
         MimeMessage message = greenMail.getReceivedMessages()[0];
 
-        EventRepresentation sendEvent = events.expectRequiredAction(EventType.SEND_VERIFY_EMAIL).user(userId).detail(Details.USERNAME, "verifyemail").detail("email", "email@mail.com").assertEvent();
+        String expectedString = keycloakUsingProviderWithId(UserProvider.class, "jpa") ? "verifyemail" : "verifyEmail";
+        EventRepresentation sendEvent = events.expectRequiredAction(EventType.SEND_VERIFY_EMAIL).user(userId).detail(Details.USERNAME, expectedString).detail("email", "email@mail.com").assertEvent();
         String mailCodeId = sendEvent.getDetails().get(Details.CODE_ID);
 
         String verificationUrl = getPasswordResetEmailLink(message);
@@ -217,12 +219,12 @@ public class RequiredActionEmailVerificationTest extends AbstractTestRealmKeyclo
 
         events.expectRequiredAction(EventType.VERIFY_EMAIL)
           .user(userId)
-          .detail(Details.USERNAME, "verifyemail")
+          .detail(Details.USERNAME, expectedString)
           .detail(Details.EMAIL, "email@mail.com")
           .detail(Details.CODE_ID, mailCodeId)
           .assertEvent();
 
-        events.expectLogin().user(userId).session(mailCodeId).detail(Details.USERNAME, "verifyemail").assertEvent();
+        events.expectLogin().user(userId).session(mailCodeId).detail(Details.USERNAME, expectedString).assertEvent();
     }
 
     @Test

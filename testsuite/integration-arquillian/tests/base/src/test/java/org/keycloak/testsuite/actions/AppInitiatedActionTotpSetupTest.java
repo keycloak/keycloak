@@ -50,6 +50,7 @@ import org.openqa.selenium.By;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import org.keycloak.models.UserProvider;
 
 /**
  * @author Stan Silvert
@@ -116,12 +117,13 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         totpPage.configure(totp.generateTOTP(totpPage.getTotpSecret()));
 
         events.poll(); // skip to totp event
-        String authSessionId = events.expectRequiredAction(EventType.UPDATE_TOTP).user(userId).detail(Details.USERNAME, "setuptotp").assertEvent()
+        String expectedString = keycloakUsingProviderWithId(UserProvider.class, "jpa") ? "setuptotp" : "setupTotp";
+        String authSessionId = events.expectRequiredAction(EventType.UPDATE_TOTP).user(userId).detail(Details.USERNAME, expectedString).assertEvent()
                 .getDetails().get(Details.CODE_ID);
 
         assertKcActionStatus(SUCCESS);
         
-        events.expectLogin().user(userId).session(authSessionId).detail(Details.USERNAME, "setuptotp").assertEvent();
+        events.expectLogin().user(userId).session(authSessionId).detail(Details.USERNAME, expectedString).assertEvent();
     }
     
     @Test
@@ -393,9 +395,10 @@ public class AppInitiatedActionTotpSetupTest extends AbstractAppInitiatedActionT
         assertKcActionStatus(SUCCESS);
 
         events.poll();
-        events.expectRequiredAction(EventType.UPDATE_TOTP).user(userId).detail(Details.USERNAME, "setuptotp2").assertEvent();
+        String expectedString = keycloakUsingProviderWithId(UserProvider.class, "jpa") ? "setuptotp2" : "setupTotp2";
+        events.expectRequiredAction(EventType.UPDATE_TOTP).user(userId).detail(Details.USERNAME, expectedString).assertEvent();
 
-        EventRepresentation loginEvent = events.expectLogin().user(userId).detail(Details.USERNAME, "setuptotp2").assertEvent();
+        EventRepresentation loginEvent = events.expectLogin().user(userId).detail(Details.USERNAME, expectedString).assertEvent();
 
         // Logout
         OAuthClient.AccessTokenResponse tokenResponse = sendTokenRequestAndGetResponse(loginEvent);
