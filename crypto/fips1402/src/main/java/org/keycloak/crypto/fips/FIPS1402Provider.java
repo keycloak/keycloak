@@ -10,8 +10,8 @@ import java.util.function.Supplier;
 import org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider;
 import org.keycloak.common.crypto.CryptoProvider;
 import org.keycloak.common.crypto.CryptoProviderTypes;
-import org.keycloak.common.crypto.CertificateUtils;
-import org.keycloak.common.crypto.PemUtils;
+import org.keycloak.common.crypto.CertificateUtilsProvider;
+import org.keycloak.common.crypto.PemUtilsProvider;
 
 
 /**
@@ -43,12 +43,12 @@ public class FIPS1402Provider implements CryptoProvider {
     }
 
     @Override
-    public CertificateUtils getCertificateUtils() {
-        return new CertificateUtilsBCFIPS();
+    public CertificateUtilsProvider getCertificateUtils() {
+        return new BCFIPSCertificateUtilsProvider();
     }
 
     @Override
-    public PemUtils getPemUtils() {
-        return new PemUtilsBCFIPS();
+    public PemUtilsProvider getPemUtils() {
+        return new BCFIPSPemUtilsProvider();
     }
 }

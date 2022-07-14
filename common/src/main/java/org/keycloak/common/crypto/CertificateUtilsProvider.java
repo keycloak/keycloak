@@ -26,7 +26,7 @@ import java.security.cert.X509Certificate;
  * The Class CertificateUtils provides utility functions for generation of V1 and V3 {@link java.security.cert.X509Certificate}
  *
  */
-public interface CertificateUtils {
+public interface CertificateUtilsProvider {
 
     /**
      * Generates version 3 {@link java.security.cert.X509Certificate}.

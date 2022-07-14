@@ -30,7 +30,7 @@ import java.security.cert.X509Certificate;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface PemUtils {
+public interface PemUtilsProvider {
 
     public static final String BEGIN_CERT = "-----BEGIN CERTIFICATE-----";
     public static final String END_CERT = "-----END CERTIFICATE-----";

@@ -15,14 +15,14 @@
  * limitations under the License.
  */
 
-package org.keycloak.crypto.def;
+package org.keycloak.crypto.fips;
 
 import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.DerUtils;
 import org.keycloak.common.util.PemException;
-import org.keycloak.common.crypto.PemUtils;
+import org.keycloak.common.crypto.PemUtilsProvider;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -35,18 +35,17 @@ import java.security.PublicKey;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 
-
-
 /**
  * Utility classes to extract PublicKey, PrivateKey, and X509Certificate from openssl generated PEM files
  *
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class PemUtilsBC implements PemUtils {
+public final class BCFIPSPemUtilsProvider implements PemUtilsProvider{
 
     // public static final String BEGIN_CERT = "-----BEGIN CERTIFICATE-----";
     // public static final String END_CERT = "-----END CERTIFICATE-----";
+
 
     /**
      * Decode a X509 Certificate from a PEM string
@@ -174,6 +173,7 @@ public class PemUtilsBC implements PemUtils {
         }
     }
 
+    @Override
     public String removeBeginEnd(String pem) {
         pem = pem.replaceAll("-----BEGIN (.*)-----", "");
         pem = pem.replaceAll("-----END (.*)----", "");

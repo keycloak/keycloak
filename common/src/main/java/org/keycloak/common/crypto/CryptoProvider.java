@@ -32,7 +32,7 @@ public interface CryptoProvider {
      * 
      * @return  
      */
-    public CertificateUtils getCertificateUtils();
+    public CertificateUtilsProvider getCertificateUtils();
 
 
     /**
@@ -41,6 +41,6 @@ public interface CryptoProvider {
      * 
      * @return  
      */
-    public PemUtils getPemUtils();
+    public PemUtilsProvider getPemUtils();
 
 }
