@@ -17,12 +17,20 @@
 
 package org.keycloak.common.crypto;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.security.Key;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
+
+import org.keycloak.common.util.Base64;
+import org.keycloak.common.util.Base64Url;
+import org.keycloak.common.util.DerUtils;
+import org.keycloak.common.util.PemException;
 
 /**
  * Utility classes to extract PublicKey, PrivateKey, and X509Certificate from openssl generated PEM files
@@ -30,7 +38,7 @@ import java.security.cert.X509Certificate;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public interface PemUtilsProvider {
+public abstract class PemUtilsProvider {
 
     public static final String BEGIN_CERT = "-----BEGIN CERTIFICATE-----";
     public static final String END_CERT = "-----END CERTIFICATE-----";
@@ -43,7 +51,19 @@ public interface PemUtilsProvider {
      * @return
      * @throws Exception
      */
-    public X509Certificate decodeCertificate(String cert);
+    public X509Certificate decodeCertificate(String cert) {
+        if (cert == null) {
+            return null;
+        }
+
+        try {
+            byte[] der = pemToDer(cert);
+            ByteArrayInputStream bis = new ByteArrayInputStream(der);
+            return DerUtils.decodeCertificate(bis);
+        } catch (Exception e) {
+            throw new PemException(e);
+        }
+    }
 
 
     /**
@@ -53,7 +73,9 @@ public interface PemUtilsProvider {
      * @return
      * @throws Exception
      */
-    public PublicKey decodePublicKey(String pem);
+    public PublicKey decodePublicKey(String pem) {
+        return decodePublicKey(pem, "RSA");
+    }
 
     /**
      * Decode a Public Key from a PEM string
@@ -61,7 +83,18 @@ public interface PemUtilsProvider {
      * @param type The type of the key (RSA, EC,...)
      * @return The public key or null
      */
-    public PublicKey decodePublicKey(String pem, String type);
+    public PublicKey decodePublicKey(String pem, String type) {
+        if (pem == null) {
+            return null;
+        }
+
+        try {
+            byte[] der = pemToDer(pem);
+            return DerUtils.decodePublicKey(der, type);
+        } catch (Exception e) {
+            throw new PemException(e);
+        }
+    }
 
 
     /**
@@ -71,7 +104,18 @@ public interface PemUtilsProvider {
      * @return
      * @throws Exception
      */
-    public PrivateKey decodePrivateKey(String pem);
+    public PrivateKey decodePrivateKey(String pem) {
+        if (pem == null) {
+            return null;
+        }
+
+        try {
+            byte[] der = pemToDer(pem);
+            return DerUtils.decodePrivateKey(der);
+        } catch (Exception e) {
+            throw new PemException(e);
+        }
+    }
 
 
     /**
@@ -81,7 +125,10 @@ public interface PemUtilsProvider {
      * @return
      * @throws Exception
      */
-    public String encodeKey(Key key);
+    public String encodeKey(Key key) {
+        return encode(key);
+    }
+    
 
     /**
      * Encode a X509 Certificate to a PEM string
@@ -89,12 +136,35 @@ public interface PemUtilsProvider {
      * @param certificate
      * @return
      */
-    public String encodeCertificate(Certificate certificate);
+    public String encodeCertificate(Certificate certificate) {
+        return encode(certificate);
+    }
 
-    public byte[] pemToDer(String pem);
+    public byte[] pemToDer(String pem) {
+        try {
+            pem = removeBeginEnd(pem);
+            return Base64.decode(pem);
+        } catch (IOException ioe) {
+            throw new PemException(ioe);
+        }
+    }
 
-    public String removeBeginEnd(String pem);
+    public String removeBeginEnd(String pem) {
+        pem = pem.replaceAll("-----BEGIN (.*)-----", "");
+        pem = pem.replaceAll("-----END (.*)----", "");
+        pem = pem.replaceAll("\r\n", "");
+        pem = pem.replaceAll("\n", "");
+        return pem.trim();
+    }
 
-    public String generateThumbprint(String[] certChain, String encoding) throws NoSuchAlgorithmException;
+    public String generateThumbprint(String[] certChain, String encoding) throws NoSuchAlgorithmException{
+        return Base64Url.encode(generateThumbprintBytes(certChain, encoding));
+    }
+
+    private byte[] generateThumbprintBytes(String[] certChain, String encoding) throws NoSuchAlgorithmException {
+        return MessageDigest.getInstance(encoding).digest(pemToDer(certChain[0]));
+    }
+
+    protected abstract String encode(Object obj);
 
 }

@@ -18,135 +18,28 @@
 package org.keycloak.crypto.def;
 
 import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
-import org.keycloak.common.util.Base64;
-import org.keycloak.common.util.Base64Url;
-import org.keycloak.common.util.DerUtils;
 import org.keycloak.common.util.PemException;
 import org.keycloak.common.crypto.PemUtilsProvider;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.StringWriter;
-import java.security.Key;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.cert.Certificate;
-import java.security.cert.X509Certificate;
-
-
 
 /**
- * Utility classes to extract PublicKey, PrivateKey, and X509Certificate from openssl generated PEM files
+ * Encodes Key or Certificates to PEM format string
  *
- * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
+ * @author <a href="mailto:david.anderson@redhat.com">David Anderson</a>
  * @version $Revision: 1 $
  */
-public class BCPemUtilsProvider implements PemUtilsProvider {
+public class BCPemUtilsProvider extends PemUtilsProvider {
 
-    // public static final String BEGIN_CERT = "-----BEGIN CERTIFICATE-----";
-    // public static final String END_CERT = "-----END CERTIFICATE-----";
 
     /**
-     * Decode a X509 Certificate from a PEM string
-     *
-     * @param cert
-     * @return
-     * @throws Exception
+     * Encode object to JCA PEM String using BC libraries
+     * 
+     * @param obj
+     * @return The encoded PEM string
      */
     @Override
-    public X509Certificate decodeCertificate(String cert) {
-        if (cert == null) {
-            return null;
-        }
-
-        try {
-            byte[] der = pemToDer(cert);
-            ByteArrayInputStream bis = new ByteArrayInputStream(der);
-            return DerUtils.decodeCertificate(bis);
-        } catch (Exception e) {
-            throw new PemException(e);
-        }
-    }
-
-    /**
-     * Decode a Public Key from a PEM string
-     *
-     * @param pem
-     * @return
-     * @throws Exception
-     */
-    @Override
-    public PublicKey decodePublicKey(String pem) {
-        return decodePublicKey(pem, "RSA");
-    }
-
-    /**
-     * Decode a Public Key from a PEM string
-     * @param pem The pem encoded pblic key
-     * @param type The type of the key (RSA, EC,...)
-     * @return The public key or null
-     */
-    @Override
-    public PublicKey decodePublicKey(String pem, String type) {
-        if (pem == null) {
-            return null;
-        }
-
-        try {
-            byte[] der = pemToDer(pem);
-            return DerUtils.decodePublicKey(der, type);
-        } catch (Exception e) {
-            throw new PemException(e);
-        }
-    }
-
-    /**
-     * Decode a Private Key from a PEM string
-     *
-     * @param pem
-     * @return
-     * @throws Exception
-     */
-    @Override
-    public PrivateKey decodePrivateKey(String pem) {
-        if (pem == null) {
-            return null;
-        }
-
-        try {
-            byte[] der = pemToDer(pem);
-            return DerUtils.decodePrivateKey(der);
-        } catch (Exception e) {
-            throw new PemException(e);
-        }
-    }
-
-    /**
-     * Encode a Key to a PEM string
-     *
-     * @param key
-     * @return
-     * @throws Exception
-     */
-    @Override
-    public String encodeKey(Key key) {
-        return encode(key);
-    }
-
-    /**
-     * Encode a X509 Certificate to a PEM string
-     *
-     * @param certificate
-     * @return
-     */
-    @Override
-    public String encodeCertificate(Certificate certificate) {
-        return encode(certificate);
-    }
-
-    private String encode(Object obj) {
+    protected String encode(Object obj) {
         if (obj == null) {
             return null;
         }
@@ -162,33 +55,6 @@ public class BCPemUtilsProvider implements PemUtilsProvider {
         } catch (Exception e) {
             throw new PemException(e);
         }
-    }
-
-    @Override
-    public byte[] pemToDer(String pem) {
-        try {
-            pem = removeBeginEnd(pem);
-            return Base64.decode(pem);
-        } catch (IOException ioe) {
-            throw new PemException(ioe);
-        }
-    }
-
-    public String removeBeginEnd(String pem) {
-        pem = pem.replaceAll("-----BEGIN (.*)-----", "");
-        pem = pem.replaceAll("-----END (.*)----", "");
-        pem = pem.replaceAll("\r\n", "");
-        pem = pem.replaceAll("\n", "");
-        return pem.trim();
-    }
-
-    @Override
-    public String generateThumbprint(String[] certChain, String encoding) throws NoSuchAlgorithmException {
-        return Base64Url.encode(generateThumbprintBytes(certChain, encoding));
-    }
-
-    private byte[] generateThumbprintBytes(String[] certChain, String encoding) throws NoSuchAlgorithmException {
-        return MessageDigest.getInstance(encoding).digest(pemToDer(certChain[0]));
     }
 
 }

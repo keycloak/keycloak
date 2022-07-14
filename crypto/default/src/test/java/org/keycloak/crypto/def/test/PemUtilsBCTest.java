@@ -1,4 +1,4 @@
-package org.keycloak.crypto.def;
+package org.keycloak.crypto.def.test;
 
 import org.junit.Test;
 
