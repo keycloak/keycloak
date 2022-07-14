@@ -293,7 +293,7 @@ public abstract class AbstractX509AuthenticationTest extends AbstractTestRealmKe
 
         UserRepresentation user = UserBuilder.create()
                 .id(KeycloakModelUtils.generateId())
-                .username("Keycloak")
+                .username("keycloak")
                 .email("localhost@localhost")
                 .enabled(true)
                 .password("password")

@@ -361,7 +361,7 @@ public class UserStorageTest extends AbstractAuthTest {
 
             testRealmAccountPage.navigateTo();
             loginPage.clickRegister();
-            registerPage.register("firstName", "lastName", "email@mail.com", "verifyEmail", "password", "password");
+            registerPage.register("firstName", "lastName", "email@mail.com", "verify-email", "password", "password");
 
             verifyEmailPage.assertCurrent();
 

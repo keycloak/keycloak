@@ -35,6 +35,8 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.models.Constants.defaultClients;
 
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
@@ -455,7 +457,7 @@ public class ClientTest extends AbstractAdminTest {
         getCleanup().addClientUuid(id);
         response.close();
         UserRepresentation userRep = realm.clients().get(id).getServiceAccountUser();
-        assertEquals("service-account-serviceclient", userRep.getUsername());
+        MatcherAssert.assertThat("service-account-serviceclient", Matchers.equalToIgnoringCase(userRep.getUsername()));
         // KEYCLOAK-11197 service accounts are no longer created with a placeholder e-mail.
         assertNull(userRep.getEmail());
     }
