@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.testcontainers.shaded.org.hamcrest.MatcherAssert.assertThat;
-import static org.testcontainers.shaded.org.hamcrest.Matchers.containsString;
+import static org.testcontainers.shaded.org.hamcrest.Matchers.*;
 
 import java.util.List;
 
@@ -92,6 +92,15 @@ public interface CLIResult extends LaunchResult {
         assertThat(getOutput(), containsString(message));
     }
 
+    default void assertNoMessage(String message) {
+        assertThat(getOutput(), not(containsString(message)));
+    }
+
+    default void assertMessageWasShownExactlyNumberOfTimes(String message, long numberOfShownTimes) {
+        long msgCount = getOutput().lines().filter(oneMessage -> oneMessage.contains(message)).count();
+        assertThat(msgCount, equalTo(numberOfShownTimes));
+    }
+
     default void assertBuild() {
         assertMessage("Server configuration updated and persisted");
     }
@@ -140,4 +149,5 @@ public interface CLIResult extends LaunchResult {
             fail("No JSON found in output.");
         }
     }
+
 }

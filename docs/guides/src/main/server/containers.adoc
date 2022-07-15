@@ -74,7 +74,7 @@ To start the image, run:
 podman|docker run --name optimized_keycloak -p 8443:8443 \
         -e KEYCLOAK_ADMIN=admin -e KEYCLOAK_ADMIN_PASSWORD=change_me \
         prebuilt_keycloak \
-        start
+        start --optimised
 ----
 Keycloak starts in production mode, using only secured HTTPS communication, and is available on `https://localhost:8443`.
 Notice that the startup log contains the following line:
@@ -105,10 +105,10 @@ Invoking this command starts the Keycloak server in development mode.
 This mode should be strictly avoided in production environments because it has insecure defaults.
 For more information about running Keycloak in production, take a look at the <@links.server id="configuration-production"/> guide.
 
-== Use auto-build to run a standard keycloak container
+== Running a standard keycloak container
 In keeping with concepts such as immutable infrastructure, containers need to be re-provisioned routinely.
 In these environments, you need containers that start fast, therefore you need to create an optimized image as described in the preceding section.
-However, if your environment has different requirements, you can run a standard Keycloak image using the `--auto-build` flag.
+However, if your environment has different requirements, you can run a standard Keycloak image by just running the `start` command.
 For example:
 
 [source, bash]
@@ -117,7 +117,6 @@ podman|docker run --name keycloak_auto_build -p 8080:8080 \
         -e KEYCLOAK_ADMIN=admin -e KEYCLOAK_ADMIN_PASSWORD=change_me \
         quay.io/keycloak/keycloak:latest \
         start \
-        --auto-build \
         --db=postgres --features=token-exchange \
         --db-url=<JDBC-URL> --db-username=<DB-USER> --db-password=<DB-PASSWORD> \
         --https-key-store-file=<file> --https-key-store-password=<password>

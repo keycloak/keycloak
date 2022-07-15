@@ -8,14 +8,16 @@ Use this command to run the server in production.
 
 Options:
 
--b, --auto-build     Automatically detects whether the server configuration changed and a new
-                       server image must be built prior to starting the server. This option
-                       provides an alternative to manually running the 'build' prior to starting
-                       the server. Use this configuration carefully in production as it might
-                       impact the startup time.
+-b, --auto-build     (Deprecated) Automatically detects whether the server configuration changed
+                       and a new server image must be built prior to starting the server. This
+                       option provides an alternative to manually running the 'build' prior to
+                       starting the server. Use this configuration carefully in production as it
+                       might impact the startup time.
 -h, --help           This help message.
 --import-realm       Import realms during startup by reading any realm configuration file from the
                        'data/import' directory.
+--optimised          Use this option to achieve an optional startup time if you have previously
+                       built a server image using the 'build' command.
 
 Database:
 
@@ -156,10 +158,11 @@ Logging:
                        categories and their levels. For the root category, you don't need to
                        specify a category. Default: info.
 
-You may use the "--auto-build" option when starting the server to avoid running
-the "build" command everytime you need to change a static property:
+By default, this command tries to update the server configuration by running a
+'build' before starting the server. You can disable this behavior by using the
+'--optimised' option:
 
-      $ kc.bat start --auto-build <OPTIONS>
+      $ kc.bat start '--optimised'
 
-By doing that you have an additional overhead when the server is starting. Run
-"kc.bat build -h" for more details.
+By doing that, the server should start faster based on any previous
+configuration you have set when manually running the 'build' command.

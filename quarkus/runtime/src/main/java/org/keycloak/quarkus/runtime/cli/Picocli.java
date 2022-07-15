@@ -17,6 +17,9 @@
 
 package org.keycloak.quarkus.runtime.cli;
 
+import static org.keycloak.quarkus.runtime.Environment.isRebuildCheck;
+import static org.keycloak.quarkus.runtime.Environment.isRebuilt;
+import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.*;
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.AUTO_BUILD_OPTION_LONG;
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.AUTO_BUILD_OPTION_SHORT;
 import static org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource.parseConfigArgs;
@@ -40,6 +43,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -47,6 +51,7 @@ import java.util.stream.Collectors;
 import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.keycloak.config.MultiOption;
 import org.keycloak.config.OptionCategory;
+import org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand;
 import org.keycloak.quarkus.runtime.cli.command.Build;
 import org.keycloak.quarkus.runtime.cli.command.ImportRealmMixin;
 import org.keycloak.quarkus.runtime.cli.command.Main;
@@ -98,7 +103,7 @@ public final class Picocli {
     private static int runReAugmentationIfNeeded(List<String> cliArgs, CommandLine cmd) {
         int exitCode = 0;
 
-        if (hasAutoBuildOption(cliArgs) && !isHelpCommand(cliArgs)) {
+        if (!isHelpCommand(cliArgs)) {
             if (cliArgs.contains(StartDev.NAME)) {
                 String profile = Environment.getProfile();
 
@@ -116,10 +121,6 @@ public final class Picocli {
 
     private static boolean isHelpCommand(List<String> cliArgs) {
         return cliArgs.contains("--help") || cliArgs.contains("-h") || cliArgs.contains("--help-all");
-    }
-
-    public static boolean hasAutoBuildOption(List<String> cliArgs) {
-        return cliArgs.contains(AUTO_BUILD_OPTION_LONG) || cliArgs.contains(AUTO_BUILD_OPTION_SHORT);
     }
 
     public static boolean requiresReAugmentation(CommandLine cmd) {
@@ -169,24 +170,18 @@ public final class Picocli {
 
         List<String> configArgsList = new ArrayList<>(cliArgs);
 
+        // remove this once auto-build option is removed
         configArgsList.remove(AUTO_BUILD_OPTION_LONG);
         configArgsList.remove(AUTO_BUILD_OPTION_SHORT);
+
         configArgsList.remove(ImportRealmMixin.IMPORT_REALM);
 
-        configArgsList.replaceAll(new UnaryOperator<String>() {
-            @Override
-            public String apply(String arg) {
-                if (arg.equals(Start.NAME) || arg.equals(StartDev.NAME)) {
-                    return Build.NAME;
-                }
-                return arg;
-            }
-        });
+        configArgsList.replaceAll(Picocli::replaceStartWithBuild);
 
         exitCode = cmd.execute(configArgsList.toArray(new String[0]));
 
         if(!isDevMode() && exitCode == cmd.getCommandSpec().exitCodeOnSuccess()) {
-            cmd.getOut().printf("Next time you run the server, just run:%n%n\t%s %s %s%n%n", Environment.getCommand(), Start.NAME, String.join(" ", getSanitizedRuntimeCliOptions()));
+            cmd.getOut().printf("Next time you run the server, just run:%n%n\t%s %s %s %s%n%n", Environment.getCommand(), Start.NAME, OPTIMISED_BUILD_OPTION_LONG, String.join(" ", getSanitizedRuntimeCliOptions()));
         }
 
         return exitCode;
@@ -346,9 +341,9 @@ public final class Picocli {
                     .build());
         }
 
-        addOption(spec, Start.NAME, hasAutoBuildOption(cliArgs), true);
+        addOption(spec, Start.NAME, isRebuilt(), true);
         addOption(spec, StartDev.NAME, true, true);
-        addOption(spec, Build.NAME, true, hasAutoBuildOption(cliArgs));
+        addOption(spec, Build.NAME, true, isRebuildCheck());
 
         CommandLine cmd = new CommandLine(spec);
 
@@ -467,8 +462,19 @@ public final class Picocli {
                     }
                 }
             }
+
+            if (!isRebuildCheck() && (arg.startsWith(AbstractStartCommand.AUTO_BUILD_OPTION_SHORT) || arg.startsWith(AUTO_BUILD_OPTION_LONG))) {
+                System.out.println(DEFAULT_WARN_MESSAGE_REPEATED_AUTO_BUILD_OPTION);
+            }
         }
 
         return args;
+    }
+
+    private static String replaceStartWithBuild(String arg) {
+        if (arg.equals(Start.NAME) || arg.equals(StartDev.NAME)) {
+            return Build.NAME;
+        }
+        return arg;
     }
 }
