@@ -14,7 +14,7 @@ Options:
 --import-realm       Import realms during startup by reading any realm configuration file from the
                        'data/import' directory.
 
-Cluster:
+Cache:
 
 --cache <type>       Defines the cache mechanism for high-availability. By default, a 'ispn' cache
                        is used to create a cluster between multiple server nodes. A 'local' cache

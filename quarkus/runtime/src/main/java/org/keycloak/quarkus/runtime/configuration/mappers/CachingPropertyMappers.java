@@ -1,6 +1,6 @@
 package org.keycloak.quarkus.runtime.configuration.mappers;
 
-import org.keycloak.config.ClusteringOptions;
+import org.keycloak.config.CachingOptions;
 import org.keycloak.quarkus.runtime.Environment;
 
 import io.smallrye.config.ConfigSourceInterceptorContext;
@@ -10,24 +10,24 @@ import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.
 
 import java.util.Optional;
 
-final class ClusteringPropertyMappers {
+final class CachingPropertyMappers {
 
-    private ClusteringPropertyMappers() {
+    private CachingPropertyMappers() {
     }
 
     public static PropertyMapper[] getClusteringPropertyMappers() {
         return new PropertyMapper[] {
-                fromOption(ClusteringOptions.CACHE)
+                fromOption(CachingOptions.CACHE)
                         .paramLabel("type")
                         .build(),
-                fromOption(ClusteringOptions.CACHE_STACK)
+                fromOption(CachingOptions.CACHE_STACK)
                         .to("kc.spi-connections-infinispan-quarkus-stack")
                         .paramLabel("stack")
                         .build(),
-                fromOption(ClusteringOptions.CACHE_CONFIG_FILE)
+                fromOption(CachingOptions.CACHE_CONFIG_FILE)
                         .mapFrom("cache")
                         .to("kc.spi-connections-infinispan-quarkus-config-file")
-                        .transformer(ClusteringPropertyMappers::resolveConfigFile)
+                        .transformer(CachingPropertyMappers::resolveConfigFile)
                         .paramLabel("file")
                         .build()
         };

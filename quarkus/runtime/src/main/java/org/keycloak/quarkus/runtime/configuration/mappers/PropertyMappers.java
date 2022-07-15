@@ -21,7 +21,7 @@ public final class PropertyMappers {
     private PropertyMappers(){}
 
     static {
-        MAPPERS.addAll(ClusteringPropertyMappers.getClusteringPropertyMappers());
+        MAPPERS.addAll(CachingPropertyMappers.getClusteringPropertyMappers());
         MAPPERS.addAll(DatabasePropertyMappers.getDatabasePropertyMappers());
         MAPPERS.addAll(HostnamePropertyMappers.getHostnamePropertyMappers());
         MAPPERS.addAll(HttpPropertyMappers.getHttpPropertyMappers());
