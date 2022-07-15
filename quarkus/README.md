@@ -105,3 +105,7 @@ These tests are disabled by default. They using Quarkus development mode predefi
     mvn clean install -Dkc.test.storage.database=true -Dtest=MariaDBStartDatabaseTest
 
 to spin up a MariaDB container and start Keycloak with it.
+
+To use a specific database container image, use the option -Dkc.db.postgresql.container.image to specify the image tag of the postgres image to use or -Dkc.db.mariadb.container.image=<name:tag> for mariadb.
+Example:
+mvn clean install -Dkc.test.storage.database=true -Dtest=PostgreSQLDistTest -Dkc.db.postgresql.container.image=postgres:

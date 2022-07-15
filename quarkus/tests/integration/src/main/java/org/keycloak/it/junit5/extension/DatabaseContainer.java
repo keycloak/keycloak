@@ -22,6 +22,7 @@ import org.jetbrains.annotations.NotNull;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 import org.testcontainers.containers.MariaDBContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.utility.DockerImageName;
 
 public class DatabaseContainer {
 
@@ -66,11 +67,18 @@ public class DatabaseContainer {
     }
 
     private JdbcDatabaseContainer createContainer() {
+
+        String POSTGRES_IMAGE = System.getProperty("kc.db.postgresql.container.image");
+        String MARIADB_IMAGE = System.getProperty("kc.db.mariadb.container.image");
+
+        DockerImageName POSTGRES = DockerImageName.parse(POSTGRES_IMAGE).asCompatibleSubstituteFor("postgres");
+        DockerImageName MARIADB = DockerImageName.parse(MARIADB_IMAGE).asCompatibleSubstituteFor("mariadb");
+
         switch (alias) {
             case "postgres":
-                return new PostgreSQLContainer("postgres:alpine");
+                return new PostgreSQLContainer(POSTGRES);
             case "mariadb":
-                return new MariaDBContainer("mariadb:10.5.9");
+                return new MariaDBContainer(MARIADB);
             default:
                 throw new RuntimeException("Unsupported database: " + alias);
         }
