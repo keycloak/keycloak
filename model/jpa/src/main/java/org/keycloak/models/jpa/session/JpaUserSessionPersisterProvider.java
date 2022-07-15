@@ -366,37 +366,30 @@ public class JpaUserSessionPersisterProvider implements UserSessionPersisterProv
 
     private Stream<UserSessionModel> loadUserSessionsWithClientSessions(TypedQuery<PersistentUserSessionEntity> query, String offlineStr) {
 
+        Set<String> removedClientUUIDs = new HashSet<>();
+
         List<PersistentUserSessionAdapter> userSessionAdapters = closing(query.getResultStream()
                 .map(this::toAdapter)
                 .filter(Objects::nonNull))
                 .collect(Collectors.toList());
 
-        Map<String, PersistentUserSessionAdapter> sessionsById = userSessionAdapters.stream()
-                .collect(Collectors.toMap(UserSessionModel::getId, Function.identity()));
+        userSessionAdapters.stream().forEach(userSession -> {
+            TypedQuery<PersistentClientSessionEntity> queryClient = paginateQuery(
+                    em.createNamedQuery("findClientSessionsByUserSession", PersistentClientSessionEntity.class),
+                    null, null)
+                    .setParameter("offline", offlineStr)
+                    .setParameter("userSessionId", userSession.getId());
 
-        Set<String> removedClientUUIDs = new HashSet<>();
-
-        if (!sessionsById.isEmpty()) {
-            String fromUserSessionId = userSessionAdapters.get(0).getId();
-            String toUserSessionId = userSessionAdapters.get(userSessionAdapters.size() - 1).getId();
-
-            TypedQuery<PersistentClientSessionEntity> queryClientSessions = em.createNamedQuery("findClientSessionsOrderedById", PersistentClientSessionEntity.class);
-            queryClientSessions.setParameter("offline", offlineStr);
-            queryClientSessions.setParameter("fromSessionId", fromUserSessionId);
-            queryClientSessions.setParameter("toSessionId", toUserSessionId);
-
-            closing(queryClientSessions.getResultStream()).forEach(clientSession -> {
-                PersistentUserSessionAdapter userSession = sessionsById.get(clientSession.getUserSessionId());
-                // check if we have a user session for the client session
-                if (userSession != null) {
-                    boolean added = addClientSessionToAuthenticatedClientSessionsIfPresent(userSession, clientSession);
-                    if (!added) {
-                        // client was removed in the meantime
-                        removedClientUUIDs.add(clientSession.getClientId());
-                    }
-                }
-            });
-        }
+            closing(queryClient.getResultStream())
+                    .filter(Objects::nonNull)
+                    .forEach(clientSession -> {
+                        boolean added = addClientSessionToAuthenticatedClientSessionsIfPresent(userSession, clientSession);
+                        if (!added) {
+                            // client was removed in the meantime
+                            removedClientUUIDs.add(clientSession.getClientId());
+                        }
+                    });
+        });
 
         for (String clientUUID : removedClientUUIDs) {
             onClientRemoved(clientUUID);
