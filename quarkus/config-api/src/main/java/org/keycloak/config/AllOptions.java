@@ -8,7 +8,7 @@ public class AllOptions {
     public static final List<Option<?>> ALL_OPTIONS = new ArrayList<>();
 
     static {
-        ALL_OPTIONS.addAll(ClusteringOptions.ALL_OPTIONS);
+        ALL_OPTIONS.addAll(CachingOptions.ALL_OPTIONS);
         ALL_OPTIONS.addAll(DatabaseOptions.ALL_OPTIONS);
         ALL_OPTIONS.addAll(FeatureOptions.ALL_OPTIONS);
         ALL_OPTIONS.addAll(HealthOptions.ALL_OPTIONS);

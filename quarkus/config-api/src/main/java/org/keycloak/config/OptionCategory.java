@@ -2,7 +2,7 @@ package org.keycloak.config;
 
 public enum OptionCategory {
     // ordered by name asc
-    CLUSTERING("Cluster", 10, ConfigSupportLevel.SUPPORTED),
+    CACHE("Cache", 10, ConfigSupportLevel.SUPPORTED),
     STORAGE("Storage", 15, ConfigSupportLevel.EXPERIMENTAL),
     DATABASE("Database", 20, ConfigSupportLevel.SUPPORTED),
     TRANSACTION("Transaction",30, ConfigSupportLevel.SUPPORTED),
