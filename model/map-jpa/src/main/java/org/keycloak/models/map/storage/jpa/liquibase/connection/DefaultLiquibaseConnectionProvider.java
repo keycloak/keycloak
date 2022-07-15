@@ -18,14 +18,17 @@
 package org.keycloak.models.map.storage.jpa.liquibase.connection;
 
 import java.sql.Connection;
+import java.util.HashMap;
+import java.util.Map;
 
 import liquibase.Liquibase;
+import liquibase.Scope;
 import liquibase.database.Database;
 import liquibase.database.DatabaseFactory;
-import liquibase.database.jvm.JdbcConnection;
 import liquibase.exception.LiquibaseException;
 import liquibase.resource.ClassLoaderResourceAccessor;
 import liquibase.resource.ResourceAccessor;
+import liquibase.ui.LoggerUIService;
 import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
 
@@ -56,14 +59,50 @@ public class DefaultLiquibaseConnectionProvider implements MapLiquibaseConnectio
     public Liquibase getLiquibaseForCustomUpdate(final Connection connection, final String defaultSchema, final String changelogLocation,
                                                  final ClassLoader classloader, final String changelogTableName) throws LiquibaseException {
 
-        Database database = DatabaseFactory.getInstance().findCorrectDatabaseImplementation(new JdbcConnection(connection));
-        if (defaultSchema != null) {
-            database.setDefaultSchemaName(defaultSchema);
-        }
-        ResourceAccessor resourceAccessor = new ClassLoaderResourceAccessor(classloader);
-        database.setDatabaseChangeLogTableName(changelogTableName);
+        String scopeId = enterLiquibaseScope();
+        try {
+            Database database = DatabaseFactory.getInstance().findCorrectDatabaseImplementation(new JdbcConnectionFromPool(connection));
+            if (defaultSchema != null) {
+                database.setDefaultSchemaName(defaultSchema);
+            }
+            ResourceAccessor resourceAccessor = new ClassLoaderResourceAccessor(classloader);
+            database.setDatabaseChangeLogTableName(changelogTableName);
 
-        logger.debugf("Using changelog file %s and changelogTableName %s", changelogLocation, database.getDatabaseChangeLogTableName());
-        return new Liquibase(changelogLocation, resourceAccessor, database);
+            logger.debugf("Using changelog file %s and changelogTableName %s", changelogLocation, database.getDatabaseChangeLogTableName());
+
+            return new Liquibase(changelogLocation, resourceAccessor, database) {
+                @Override
+                public void close() throws LiquibaseException {
+                    super.close();
+                    exitLiquibaseScope(scopeId);
+                }
+            };
+        } catch (LiquibaseException | RuntimeException ex) {
+            // When this trows an exception, close the scope here.
+            // If it returns the Liquibase object, the scope will be closed once the Liquibase object is being closed.
+            exitLiquibaseScope(scopeId);
+            throw ex;
+        }
+    }
+
+    private void exitLiquibaseScope(String scopeId) {
+        try {
+            Scope.exit(scopeId);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to exist scope: " + e.getMessage(), e);
+        }
+    }
+
+    private String enterLiquibaseScope() {
+        String scopeId;
+        final Map<String, Object> scopeValues = new HashMap<>();
+        // Setting the LoggerUIService here prevents Liquibase from logging each change set to the console using java.util.Logging in the Quarkus setup
+        scopeValues.put(Scope.Attr.ui.name(), new LoggerUIService());
+        try {
+            scopeId = Scope.enter(scopeValues);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to initialize Liquibase: " + e.getMessage(), e);
+        }
+        return scopeId;
     }
 }
