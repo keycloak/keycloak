@@ -28,7 +28,6 @@ import org.keycloak.common.crypto.CryptoIntegration;
  * The Class CertificateUtils provides utility functions for generation of V1 and V3 {@link java.security.cert.X509Certificate}
  *
  */
-@Deprecated
 public class CertificateUtils {
 
     static {

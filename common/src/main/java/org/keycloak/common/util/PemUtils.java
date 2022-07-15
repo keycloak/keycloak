@@ -32,7 +32,6 @@ import org.keycloak.common.crypto.CryptoIntegration;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-@Deprecated
 public class PemUtils {
 
     public static final String BEGIN_CERT = "-----BEGIN CERTIFICATE-----";
