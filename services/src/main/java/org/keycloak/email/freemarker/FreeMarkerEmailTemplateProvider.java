@@ -149,7 +149,7 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
         String idpDisplayName = brokerContext.getIdpConfig().getDisplayName();
         idpAlias = ObjectUtil.capitalize(idpAlias);
 
-        if (idpDisplayName != null) {
+        if (idpDisplayName != null && idpDisplayName.length() > 0) {
             idpAlias = ObjectUtil.capitalize(idpDisplayName);
         }
 
