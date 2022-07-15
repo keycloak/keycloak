@@ -103,10 +103,3 @@ Examples:
   Change the relative path:
 
       $ kc.sh build --http-relative-path=/auth
-
-You can also use the "--auto-build" option when starting the server to avoid
-running this command every time you change a configuration:
-
-    $ kc.sh start --auto-build <OPTIONS>
-
-By doing that you have an additional overhead when the server is starting.

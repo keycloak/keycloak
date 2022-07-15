@@ -53,6 +53,19 @@ db-url-host=mykeycloakdb
 The configuration source and the corresponding format you should use is use-case specific. That decision depends on the platform where the server is deployed and the runtime optimizations you are seeking. For instance, if you deploy the server into Kubernetes, you would probably rely
 on environment variables to configure the server. However, you are not limited to a single configuration source or format.
 
+== Starting the server
+
+You start the server by entering the following command:
+
+.Starting the server
+<@kc.start parameters="--db postgres --db-url-host keycloak-postgres --db-username keycloak --db-password change_me --hostname mykeycloak.acme.com"/>
+
+Under certain circumstances, you might prefer to allow a longer startup time in favor of updating the values of build options when starting the server, hence performing the two configuration stages
+when starting the server.
+
+By default, running the `start` command is going to automatically run the `build` command prior to starting the server. While this is a handy way to start the server with any available option,
+including **build options** that otherwise are only available to the `build` command, it introduces an additional overhead in the server startup time. For most environments, this approach is not optimal.
+
 == Configuration commands and stages
 
 The server options are narrowed to a specific command or configuration stage. The goal is to perform a series of optimizations in a specific order to achieve optimal startup and runtime performance. This configuration occurs in two stages:
@@ -84,18 +97,20 @@ The following are some optimizations performed by the `build` command:
 
 Once you run the `build` command, you do not need to set the same **build options** when you start the server.
 
-=== Second stage: Starting Keycloak
+=== Second stage: Starting an optimized server instance
 
-The second stage involves starting the server by using the `start` command and including **configuration options** with the appropriate values.
+In order to achieve an optimal startup time when the server was previously built with any **build option**, you should run the `start` command together with the `--optimise` option and including any **configuration option** you want to set.
 
 .Run the `start` command to start the server while setting various database options
-<@kc.start parameters="--db-url-host=keycloak-postgres --db-username=keycloak --db-password=change_me --hostname mykeycloak.acme.com"/>
+<@kc.start parameters="--optimise --db-url-host=keycloak-postgres --db-username=keycloak --db-password=change_me --hostname mykeycloak.acme.com"/>
+
+The `--optimise` indicates that the server was previously configured with any build option so that it no longer need to run the `build` command prior to start the server.
 
 Note that if you invoke commands containing special shell characters such as `;` using the CLI, you need to escape those characters. In that situation, you might choose to use the `keycloak.conf` file to set configuration options instead.
 
 == Optimization by using a configuration file
 
-Most optimizations to startup and memory footprint can be achieved by using the `build` command. Additionally, you can use the `conf/keycloak.conf` file to set configuration options. Using this file avoids some necessary parsing steps when providing configuration options using the CLI or environment variables.
+Most optimizations to startup and memory footprint can be achieved by using the `build` command. Additionally, you can use the `conf/keycloak.conf` file to set configuration options. Using this file avoids some necessary parsing steps when providing configuration options using the CLI.
 
 .Set any build option
 <@kc.build parameters="--db=postgres"/>
@@ -109,20 +124,9 @@ hostname=mykeycloak.acme.com
 ```
 
 .Start the server
-<@kc.start/>
+<@kc.start parameters="--optimise"/>
 
 By using the `keycloak.conf` file, the server can omit some steps at startup. As a result, the server starts faster.
-
-== The auto-build option: automatic detection when the server needs a build
-
-Under certain circumstances, you might prefer to allow a longer startup time in favor of updating the values of build options when starting the server. Using the `auto-build` option, you can perform the two configuration stages by using a single command. Note that using `auto-build` is very likely to double the startup time for Keycloak. For most environments, this approach is not optimal.
-
-You start the server by entering the following command:
-
-.Using the `auto-build` option
-<@kc.start parameters="--auto-build --db postgres --db-url-host keycloak-postgres --db-username keycloak --db-password change_me --hostname mykeycloak.acme.com"/>
-
-By including the `auto-build` option, the server calculates the build options that have changed and runs the `build` command, if necessary, before starting the server.
 
 == Configuring the server by using configuration files
 

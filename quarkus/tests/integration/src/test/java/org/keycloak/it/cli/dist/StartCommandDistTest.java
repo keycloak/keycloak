@@ -22,6 +22,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMISED_BUILD_OPTION_LONG;
 
 import org.junit.jupiter.api.Test;
 import org.keycloak.it.cli.StartCommandTest;
@@ -36,7 +37,7 @@ import org.keycloak.it.utils.KeycloakDistribution;
 public class StartCommandDistTest extends StartCommandTest {
 
     @Test
-    @Launch({ "--profile=dev", "start", "--auto-build", "--http-enabled=true", "--hostname-strict=false" })
+    @Launch({ "--profile=dev", "start", "--http-enabled=true", "--hostname-strict=false" })
     void failIfAutoBuildUsingDevProfile(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         assertThat(cliResult.getErrorOutput(), containsString("You can not 'start' the server in development mode. Please re-build the server first, using 'kc.sh build' for the default production mode."));
@@ -51,7 +52,7 @@ public class StartCommandDistTest extends StartCommandTest {
     }
 
     @Test
-    @Launch({ "start", "--auto-build", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
+    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
     void testStartUsingAutoBuild(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertMessage("Changes detected in configuration. Updating the server image.");
@@ -59,7 +60,7 @@ public class StartCommandDistTest extends StartCommandTest {
         cliResult.assertMessage("Server configuration updated and persisted. Run the following command to review the configuration:");
         cliResult.assertMessage(KeycloakDistribution.SCRIPT_CMD + " show-config");
         cliResult.assertMessage("Next time you run the server, just run:");
-        cliResult.assertMessage(KeycloakDistribution.SCRIPT_CMD + " start --http-enabled=true --hostname-strict=false");
+        cliResult.assertMessage(KeycloakDistribution.SCRIPT_CMD + " start " + OPTIMISED_BUILD_OPTION_LONG + " --http-enabled=true --hostname-strict=false");
         assertFalse(cliResult.getOutput().contains("--cache"));
         cliResult.assertStarted();
     }

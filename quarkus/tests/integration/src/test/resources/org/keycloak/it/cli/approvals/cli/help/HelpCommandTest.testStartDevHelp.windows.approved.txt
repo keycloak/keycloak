@@ -1,3 +1,4 @@
+WARNING: The '--auto-build' option for 'start' command is DEPRECATED and no longer needed. When executing the 'start' command, a new server image is automatically built based on the configuration. If you want to disable this behavior and achieve an optimal startup time, use the '--optimised' option instead.
 Start the server in development mode.
 
 Usage:

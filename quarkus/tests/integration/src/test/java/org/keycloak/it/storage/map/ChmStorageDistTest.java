@@ -32,7 +32,7 @@ import io.quarkus.test.junit.main.LaunchResult;
 public class ChmStorageDistTest {
 
     @Test
-    @Launch({ "start", "--auto-build", "--http-enabled=true", "--hostname-strict=false", "--storage=chm" })
+    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--storage=chm" })
     void testStartUsingChmsStorage(LaunchResult result, RawDistRootPath distPath) {
         CLIResult cliResult = (CLIResult) result;
         assertExpectedMessages(cliResult, distPath);

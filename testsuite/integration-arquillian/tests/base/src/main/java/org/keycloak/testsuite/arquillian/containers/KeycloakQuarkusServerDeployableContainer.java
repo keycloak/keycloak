@@ -177,6 +177,7 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
         commands.add(getCommand());
         commands.add("-v");
         commands.add("start");
+        commands.add("--optimised");
         commands.add("--http-enabled=true");
 
         if (Boolean.parseBoolean(System.getProperty("auth.server.debug", "false"))) {
@@ -195,9 +196,9 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
             commands.add("-Djboss.node.name=" + configuration.getRoute());
         }
 
-        // only run auto-build during restarts or when running cluster tests
+        // only run build during restarts or when running cluster tests
         if (restart.get() || "ha".equals(System.getProperty("auth.server.quarkus.cluster.config"))) {
-            commands.add("--auto-build");
+            commands.removeIf("--optimised"::equals);
             commands.add("--http-relative-path=/auth");
 
             String cacheMode = System.getProperty("auth.server.quarkus.cluster.config", "local");

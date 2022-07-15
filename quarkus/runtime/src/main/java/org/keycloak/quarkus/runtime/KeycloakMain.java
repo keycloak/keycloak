@@ -23,6 +23,7 @@ import static org.keycloak.quarkus.runtime.Environment.getProfileOrDefault;
 import static org.keycloak.quarkus.runtime.Environment.isImportExportMode;
 import static org.keycloak.quarkus.runtime.Environment.isTestLaunchMode;
 import static org.keycloak.quarkus.runtime.cli.Picocli.parseAndRun;
+import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.*;
 import static org.keycloak.quarkus.runtime.cli.command.Start.isDevProfileNotAllowed;
 
 import java.io.PrintWriter;
@@ -69,7 +70,7 @@ public class KeycloakMain implements QuarkusApplication {
             cliArgs = new ArrayList<>(cliArgs);
             // default to show help message
             cliArgs.add("-h");
-        } else if (cliArgs.contains(Start.NAME) && cliArgs.size() == 1) {
+        } else if (isFastStart(cliArgs)) {
             // fast path for starting the server without bootstrapping CLI
             ExecutionExceptionHandler errorHandler = new ExecutionExceptionHandler();
             PrintWriter errStream = new PrintWriter(System.err, true);
@@ -86,6 +87,11 @@ public class KeycloakMain implements QuarkusApplication {
 
         // parse arguments and execute any of the configured commands
         parseAndRun(cliArgs);
+    }
+
+    private static boolean isFastStart(List<String> cliArgs) {
+        // 'start --optimised' should start the server without parsing CLI
+        return cliArgs.size() == 2 && cliArgs.get(0).equals(Start.NAME) && cliArgs.stream().anyMatch(OPTIMISED_BUILD_OPTION_LONG::equals);
     }
 
     public static void start(ExecutionExceptionHandler errorHandler, PrintWriter errStream) {

@@ -24,6 +24,7 @@ set "SERVER_OPTS=-Djava.util.logging.manager=org.jboss.logmanager.LogManager -Dq
 set DEBUG_MODE=false
 set DEBUG_PORT_VAR=8787
 set DEBUG_SUSPEND_VAR=n
+set CONFIG_ARGS=
 
 rem Read command-line args, the ~ removes the quotes from the parameter
 :READ-ARGS
@@ -128,10 +129,12 @@ set "JAVA_RUN_OPTS=%JAVA_OPTS% -Dkc.home.dir="%DIRNAME%.." -Djboss.server.config
 
 SetLocal EnableDelayedExpansion
 
-set "AUTO_BUILD_OPTION=auto-build"
+set "ONLY_BUILD_OPTION= build"
+set "NO_AUTO_BUILD_OPTION=optimised"
 
-if not "!CONFIG_ARGS:%AUTO_BUILD_OPTION%=!"=="!CONFIG_ARGS!" (
-  "%JAVA%" -Dkc.config.rebuild-and-exit=true %JAVA_RUN_OPTS%
+if "!CONFIG_ARGS:%NO_AUTO_BUILD_OPTION%=!"=="!CONFIG_ARGS!" if "!CONFIG_ARGS:%ONLY_BUILD_OPTION%=!"=="!CONFIG_ARGS!" (
+    "%JAVA%" -Dkc.config.build-and-exit=true %JAVA_RUN_OPTS%
+    set "JAVA_RUN_OPTS=-Dkc.config.built=true %JAVA_RUN_OPTS%"
 )
 
 "%JAVA%" %JAVA_RUN_OPTS%
