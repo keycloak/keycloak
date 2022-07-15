@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.keycloak.models.map.stickysession;
+package org.keycloak.sessions;
 
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
