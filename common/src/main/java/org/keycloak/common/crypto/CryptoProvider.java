@@ -25,4 +25,22 @@ public interface CryptoProvider {
      * @return 
      */
     <T> T getAlgorithmProvider(Class<T> clazz, String algorithm);
+
+    /**
+     * Get CertificateUtils implementation. Returned implementation can be dependent according to if we have
+     * non-fips bouncycastle or fips bouncycastle on the classpath.
+     * 
+     * @return  
+     */
+    public CertificateUtilsProvider getCertificateUtils();
+
+
+    /**
+     * Get PEMUtils implementation. Returned implementation can be dependent according to if we have
+     * non-fips bouncycastle or fips bouncycastle on the classpath.
+     * 
+     * @return  
+     */
+    public PemUtilsProvider getPemUtils();
+
 }

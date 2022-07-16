@@ -15,25 +15,18 @@
  * limitations under the License.
  */
 
-package org.keycloak.common.util;
+package org.keycloak.common.crypto;
 
 import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 
-import org.keycloak.common.crypto.CryptoIntegration;
-
 /**
  * The Class CertificateUtils provides utility functions for generation of V1 and V3 {@link java.security.cert.X509Certificate}
  *
  */
-public class CertificateUtils {
-
-    static {
-        CryptoIntegration.init(ClassLoader.getSystemClassLoader());
-    }
-
+public interface CertificateUtilsProvider {
 
     /**
      * Generates version 3 {@link java.security.cert.X509Certificate}.
@@ -47,11 +40,8 @@ public class CertificateUtils {
      * 
      * @throws Exception the exception
      */
-    public static X509Certificate generateV3Certificate(KeyPair keyPair, PrivateKey caPrivateKey,
-            X509Certificate caCert, String subject) throws Exception {
-        return CryptoIntegration.getProvider().getCertificateUtils().generateV3Certificate(keyPair, caPrivateKey,
-                caCert, subject);
-    }
+    public X509Certificate generateV3Certificate(KeyPair keyPair, PrivateKey caPrivateKey, X509Certificate caCert,
+            String subject) throws Exception;
 
     /**
      * Generate version 1 self signed {@link java.security.cert.X509Certificate}..
@@ -63,12 +53,8 @@ public class CertificateUtils {
      * 
      * @throws Exception the exception
      */
-    public static X509Certificate generateV1SelfSignedCertificate(KeyPair caKeyPair, String subject) {
-        return CryptoIntegration.getProvider().getCertificateUtils().generateV1SelfSignedCertificate(caKeyPair, subject);
-    } 
+    public X509Certificate generateV1SelfSignedCertificate(KeyPair caKeyPair, String subject); 
 
-    public static X509Certificate generateV1SelfSignedCertificate(KeyPair caKeyPair, String subject, BigInteger serialNumber) {
-        return CryptoIntegration.getProvider().getCertificateUtils().generateV1SelfSignedCertificate(caKeyPair, subject, serialNumber);
-    }
+    public X509Certificate generateV1SelfSignedCertificate(KeyPair caKeyPair, String subject, BigInteger serialNumber);
         
 }
