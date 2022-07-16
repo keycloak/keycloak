@@ -166,6 +166,10 @@ public class JpaMapStorageProviderFactory implements
     private final String sessionProviderKey;
     private final String sessionTxKey;
 
+    // Object instances for each single JpaMapStorageProviderFactory instance per model type.
+    // Used to synchronize on when validating the model type area.
+    private final ConcurrentHashMap<Class<?>, Object> SYNC_MODELS = new ConcurrentHashMap<>();
+
     public final static DeepCloner CLONER = new DeepCloner.Builder()
         //auth-sessions
         .constructor(JpaRootAuthenticationSessionEntity.class,  JpaRootAuthenticationSessionEntity::new)
@@ -374,24 +378,29 @@ public class JpaMapStorageProviderFactory implements
 
         if (this.validatedModelNames.add(modelName)) {
         */
-        if (this.validatedModels.add(modelType)) {
-            Connection connection = getConnection();
-            try {
-                if (logger.isDebugEnabled()) printOperationalInfo(connection);
-
-                MapJpaUpdaterProvider updater = session.getProvider(MapJpaUpdaterProvider.class);
-                MapJpaUpdaterProvider.Status status = updater.validate(modelType, connection, config.get("schema"));
-
-                if (!status.equals(VALID)) {
-                    update(modelType, connection, session);
-                }
-            } finally {
-                if (connection != null) {
+        if (!this.validatedModels.contains(modelType)) {
+            synchronized (SYNC_MODELS.computeIfAbsent(modelType, mc -> new Object())) {
+                if (!this.validatedModels.contains(modelType)) {
+                    Connection connection = getConnection();
                     try {
-                        connection.close();
-                    } catch (SQLException e) {
-                        logger.warn("Can't close connection", e);
+                        if (logger.isDebugEnabled()) printOperationalInfo(connection);
+
+                        MapJpaUpdaterProvider updater = session.getProvider(MapJpaUpdaterProvider.class);
+                        MapJpaUpdaterProvider.Status status = updater.validate(modelType, connection, config.get("schema"));
+
+                        if (!status.equals(VALID)) {
+                            update(modelType, connection, session);
+                        }
+                    } finally {
+                        if (connection != null) {
+                            try {
+                                connection.close();
+                            } catch (SQLException e) {
+                                logger.warn("Can't close connection", e);
+                            }
+                        }
                     }
+                    validatedModels.add(modelType);
                 }
             }
         }
