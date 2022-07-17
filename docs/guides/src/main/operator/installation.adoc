@@ -43,7 +43,7 @@ kubectl apply -f https://raw.githubusercontent.com/keycloak/keycloak-k8s-resourc
 kubectl apply -f https://raw.githubusercontent.com/keycloak/keycloak-k8s-resources/{version}/kubernetes/keycloakrealmimports.k8s.keycloak.org-v1.yml
 ----
 
-After successfull CRD installation, install the Keycloak Operator deployment by running the following command:
+After successful CRD installation, install the Keycloak Operator deployment by running the following command:
 
 [source,bash,subs="attributes+"]
 ----
