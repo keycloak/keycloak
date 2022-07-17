@@ -8,7 +8,7 @@ users are authenticated with Google using Keycloak Identity Broker capabilities 
 
 From this example, you'll learn how to:
 
-* Setup a social identity provider for a specific realm
+* Set up a social identity provider for a specific realm
 * Store tokens from a social identity provider and use these tokens to invoke the social provider API
 
 Basically, once you try to access the application for the first time, you'll be redirected to Keycloak's login page.
@@ -25,7 +25,7 @@ Basically, what the application does is obtain some basic information for the au
 load their profile from Google. For that, this application demonstrates how to retrieve the token issued by a social provider
 for the authenticated user and use this token to invoke Google's API.
 
-Make sure you've set up a application in Google
+Make sure you've set up an application in Google
 --------------------------------------
 
 This example application requires you to create a Google Application. How to create it is beyond the scope of this

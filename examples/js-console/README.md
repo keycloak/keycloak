@@ -8,7 +8,7 @@ Start Keycloak:
 
     bin/standalone.sh
 
-Open the Keycloak admin console, click on Add Realm, click on 'Choose a JSON file', selct example-realm.json and click Upload.
+Open the Keycloak admin console, click on Add Realm, click on 'Choose a JSON file', select example-realm.json and click Upload.
 
 Deploy the JS Console to Keycloak by running:
 

@@ -10,10 +10,10 @@ applications in another realm.
 There are two main realms in this example:
 
 * **saml-broker-realm.json**: the realm where the user belongs and that provides a SAML v2 Identity Provider.
-* **saml-broker-authentication-realm.json**: the realm with all the necessary configuration to setup the application and the
+* **saml-broker-authentication-realm.json**: the realm with all the necessary configuration to set up the application and the
 identity provider responsible for brokering.
 
-From this example you'll understand how to setup an identity provider in order to broker an external
+From this example you'll understand how to set up an identity provider in order to broker an external
 SAML identity provider and allow users from different domains/realms to authenticate and access applications in a realm.
 
 The *saml-broker-realm* realm provides two important configuration. The first one is the user that we are going to use to
@@ -51,7 +51,7 @@ The second one is an application to configure a SAML Identity Provider to authen
     }
 
 The *saml-broker-authentication-realm.json* realm provides the configuration for the application and also the necessary
-configuration to setup an identity provider to broker the SAML Identity Provider from the other realm.
+configuration to set up an identity provider to broker the SAML Identity Provider from the other realm.
 
     {
       "id" : "saml-identity-provider",
