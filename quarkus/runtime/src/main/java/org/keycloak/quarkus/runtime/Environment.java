@@ -220,6 +220,9 @@ public final class Environment {
     }
 
     public static boolean isDistribution() {
+        if (isQuarkusDevMode()) {
+            return false;
+        }
         return getHomeDir() != null;
     }
 
