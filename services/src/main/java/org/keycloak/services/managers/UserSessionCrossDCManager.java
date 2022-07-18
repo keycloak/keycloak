@@ -17,7 +17,6 @@
 
 package org.keycloak.services.managers;
 
-import java.util.AbstractMap.SimpleEntry;
 import java.util.List;
 import java.util.Objects;
 
@@ -27,7 +26,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
 
-import static org.keycloak.utils.LockObjectsForModification.lockObjectsForModification;
+import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForModification;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -71,9 +70,9 @@ public class UserSessionCrossDCManager {
             String sessionId = authSessionId.getDecodedId();
 
             // This will remove userSession "locally" if it doesn't exist on remoteCache
-            lockObjectsForModification(kcSession, () -> kcSession.sessions().getUserSessionWithPredicate(realm, sessionId, false, (UserSessionModel userSession2) -> userSession2 == null));
+            lockUserSessionsForModification(kcSession, () -> kcSession.sessions().getUserSessionWithPredicate(realm, sessionId, false, (UserSessionModel userSession2) -> userSession2 == null));
 
-            UserSessionModel userSession = lockObjectsForModification(kcSession, () -> kcSession.sessions().getUserSession(realm, sessionId));
+            UserSessionModel userSession = lockUserSessionsForModification(kcSession, () -> kcSession.sessions().getUserSession(realm, sessionId));
 
             if (userSession != null) {
                 asm.reencodeAuthSessionCookie(oldEncodedId, authSessionId, realm);

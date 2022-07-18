@@ -18,6 +18,10 @@
 package org.keycloak.utils;
 
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.UserSessionModel;
+
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * This flags the session that all information loaded from the stores should be locked as the service layer
@@ -38,21 +42,36 @@ public class LockObjectsForModification {
 
     private static final String ATTRIBUTE = LockObjectsForModification.class.getCanonicalName();
 
-    public static LockObjectsForModification.Enabled enable(KeycloakSession session) {
-        return new Enabled(session);
+    public static boolean isEnabled(KeycloakSession session, Class<?> model) {
+        Set<Class<?>> lockedModels = getAttribute(session);
+        return lockedModels != null && lockedModels.contains(model);
     }
 
-    public static boolean isEnabled(KeycloakSession session) {
-        return session.getAttribute(ATTRIBUTE) != null;
+    private static Set<Class<?>> getAttribute(KeycloakSession session) {
+        //noinspection unchecked
+        return (Set<Class<?>>) session.getAttribute(ATTRIBUTE);
     }
 
-    public static <V> V lockObjectsForModification(KeycloakSession session, CallableWithoutThrowingAnException<V> callable) {
-        if (LockObjectsForModification.isEnabled(session)) {
+    private static Set<Class<?>> getOrCreateAttribute(KeycloakSession session) {
+        Set<Class<?>> attribute = getAttribute(session);
+        if (attribute == null) {
+            attribute = new HashSet<>();
+            session.setAttribute(ATTRIBUTE, attribute);
+        }
+        return attribute;
+    }
+
+    public static <V> V lockUserSessionsForModification(KeycloakSession session, CallableWithoutThrowingAnException<V> callable) {
+        return lockObjectsForModification(session, UserSessionModel.class, callable);
+    }
+
+    private static <V> V lockObjectsForModification(KeycloakSession session, Class<?> model, CallableWithoutThrowingAnException<V> callable) {
+        if (LockObjectsForModification.isEnabled(session, model)) {
             // If someone nests the call, and it would already be locked, don't try to lock it a second time.
             // Otherwise, the inner unlocking might also unlock the outer lock.
             return callable.call();
         }
-        try (LockObjectsForModification.Enabled ignored = LockObjectsForModification.enable(session)) {
+        try (LockObjectsForModification.Enabled ignored = new Enabled(session, model)) {
             return callable.call();
         }
     }
@@ -70,15 +89,17 @@ public class LockObjectsForModification {
     public static class Enabled implements AutoCloseable {
 
         private final KeycloakSession session;
+        private final Class<?> model;
 
-        public Enabled(KeycloakSession session) {
+        public Enabled(KeycloakSession session, Class<?> model) {
             this.session = session;
-            session.setAttribute(ATTRIBUTE, Boolean.TRUE);
+            this.model = model;
+            getOrCreateAttribute(session).add(model);
         }
 
         @Override
         public void close() {
-            session.removeAttribute(ATTRIBUTE);
+            getOrCreateAttribute(session).remove(model);
         }
     }
 }

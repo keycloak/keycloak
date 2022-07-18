@@ -72,7 +72,7 @@ import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
-import static org.keycloak.utils.LockObjectsForModification.lockObjectsForModification;
+import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForModification;
 
 /**
  * @author Pedro Igor
@@ -338,7 +338,7 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
                 return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.IDENTITY_PROVIDER_UNEXPECTED_ERROR);
 
             }
-            UserSessionModel userSession = lockObjectsForModification(session, () -> session.sessions().getUserSession(realm, state));
+            UserSessionModel userSession = lockUserSessionsForModification(session, () -> session.sessions().getUserSession(realm, state));
             if (userSession == null) {
                 logger.error("no valid user session");
                 EventBuilder event = new EventBuilder(realm, session, clientConnection);
