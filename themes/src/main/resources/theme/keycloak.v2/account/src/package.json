@@ -45,7 +45,7 @@
     "@typescript-eslint/parser": "^1.4.2",
     "babel-eslint": "^9.0.0",
     "chokidar": "^3.5.3",
-    "eslint": "^5.15.1",
+    "eslint": "^8.20.0",
     "eslint-config-react-app": "^3.0.8",
     "eslint-plugin-flowtype": "^2.50.3",
     "eslint-plugin-import": "^2.26.0",
