@@ -31,7 +31,6 @@ import org.keycloak.utils.SearchQueryUtils;
 
 public class BruteForceUsersResource {
     private static final Logger logger = Logger.getLogger(BruteForceUsersResource.class);
-    private static final String SEARCH_ID_PARAMETER = "id:";
     private final KeycloakSession session;
     private final RealmModel realm;
     private final AdminPermissionEvaluator auth;
@@ -82,9 +81,15 @@ public class BruteForceUsersResource {
 
         Stream<UserModel> userModels = Stream.empty();
         if (search != null) {
-            if (search.startsWith(SEARCH_ID_PARAMETER)) {
+            if (search.startsWith(SearchQueryUtils.SEARCH_ID_PREFIX)) {
                 UserModel userModel =
-                        session.users().getUserById(realm, search.substring(SEARCH_ID_PARAMETER.length()).trim());
+                        session.users().getUserById(realm, search.substring(SearchQueryUtils.SEARCH_ID_PREFIX.length()).trim());
+                if (userModel != null) {
+                    userModels = Stream.of(userModel);
+                }
+            } else if (search.startsWith(SearchQueryUtils.SEARCH_USERNAME_PREFIX)) {
+                UserModel userModel =
+                        session.users().getUserByUsername(realm, search.substring(SearchQueryUtils.SEARCH_USERNAME_PREFIX.length()).trim());
                 if (userModel != null) {
                     userModels = Stream.of(userModel);
                 }

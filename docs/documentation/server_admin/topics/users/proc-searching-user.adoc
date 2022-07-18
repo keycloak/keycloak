@@ -22,5 +22,13 @@ The criteria used to match users depends on the syntax used on the search box:
 +
 NOTE: Searches performed in the *Users* page encompasses searching both {project_name}'s database and configured user federated backends, such as LDAP. Users found in federated backends will be imported into {project_name}'s database if they don't already exist there.
 +
+
+.Search by fields
+Keycloak supports direct user lookups for selected fields.
+
+* `id:myUUID` -> performs an exact user lookup by user with id `myUUID`;
+* `username:myuser` -> performs an exact user lookup by username for `"myuser"`;
+
 .Additional resources
 * For more information on user federation, see <<_user-storage-federation,User Federation>>.
+

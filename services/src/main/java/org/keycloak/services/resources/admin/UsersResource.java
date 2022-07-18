@@ -84,7 +84,6 @@ import static org.keycloak.userprofile.UserProfileContext.USER_API;
 public class UsersResource {
 
     private static final Logger logger = Logger.getLogger(UsersResource.class);
-    private static final String SEARCH_ID_PARAMETER = "id:";
 
     protected final RealmModel realm;
 
@@ -300,9 +299,15 @@ public class UsersResource {
 
         Stream<UserModel> userModels = Stream.empty();
         if (search != null) {
-            if (search.startsWith(SEARCH_ID_PARAMETER)) {
+            if (search.startsWith(SearchQueryUtils.SEARCH_ID_PREFIX)) {
                 UserModel userModel =
-                        session.users().getUserById(realm, search.substring(SEARCH_ID_PARAMETER.length()).trim());
+                        session.users().getUserById(realm, search.substring(SearchQueryUtils.SEARCH_ID_PREFIX.length()).trim());
+                if (userModel != null) {
+                    userModels = Stream.of(userModel);
+                }
+            } else if (search.startsWith(SearchQueryUtils.SEARCH_USERNAME_PREFIX)) {
+                UserModel userModel =
+                        session.users().getUserByUsername(realm, search.substring(SearchQueryUtils.SEARCH_USERNAME_PREFIX.length()).trim());
                 if (userModel != null) {
                     userModels = Stream.of(userModel);
                 }
@@ -409,8 +414,11 @@ public class UsersResource {
                 : SearchQueryUtils.getFields(searchQuery);
 
         if (search != null) {
-            if (search.startsWith(SEARCH_ID_PARAMETER)) {
-                UserModel userModel = session.users().getUserById(realm, search.substring(SEARCH_ID_PARAMETER.length()).trim());
+            if (search.startsWith(SearchQueryUtils.SEARCH_ID_PREFIX)) {
+                UserModel userModel = session.users().getUserById(realm, search.substring(SearchQueryUtils.SEARCH_ID_PREFIX.length()).trim());
+                return userModel != null && userPermissionEvaluator.canView(userModel) ? 1 : 0;
+            } else if (search.startsWith(SearchQueryUtils.SEARCH_USERNAME_PREFIX)) {
+                UserModel userModel = session.users().getUserByUsername(realm, search.substring(SearchQueryUtils.SEARCH_USERNAME_PREFIX.length()).trim());
                 return userModel != null && userPermissionEvaluator.canView(userModel) ? 1 : 0;
             } else if (userPermissionEvaluator.canView()) {
                 return session.users().getUsersCount(realm, search.trim());
@@ -454,7 +462,6 @@ public class UsersResource {
     /**
      * Get representation of the user
      *
-     * @param id User id
      * @return
      */
     @Path("profile")

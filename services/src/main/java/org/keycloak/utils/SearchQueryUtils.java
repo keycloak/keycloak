@@ -29,6 +29,10 @@ public class SearchQueryUtils {
     public static final Pattern queryPattern = Pattern.compile("\\s*(?:(?<name>[^\"][^: ]+|.)|\"(?<nameEsc>(?:\\\\.|[^\\\\\"])+)\"):(?:(?<value>[^\"][^ ]*)|\"(?<valueEsc>(?:\\\\.|[^\\\\\"])+)\")\\s*");
     public static final Pattern escapedCharsPattern = Pattern.compile("\\\\(.)");
 
+    public static final String SEARCH_ID_PREFIX = "id:";
+
+    public static final String SEARCH_USERNAME_PREFIX = "username:";
+
     public static Map<String, String> getFields(final String query) {
         Matcher matcher = queryPattern.matcher(query);
         Map<String, String> ret = new HashMap<>();
