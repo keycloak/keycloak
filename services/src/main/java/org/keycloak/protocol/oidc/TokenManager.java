@@ -650,9 +650,6 @@ public class TokenManager {
         if (scopes == null) {
             return true;
         }
-        if (authorizationRequestContext.getAuthorizationDetailEntries() == null || authorizationRequestContext.getAuthorizationDetailEntries().isEmpty()) {
-            return false;
-        }
         Collection<String> requestedScopes = TokenManager.parseScopeParameter(scopes).collect(Collectors.toSet());
         Set<String> rarScopes = authorizationRequestContext.getAuthorizationDetailEntries()
                 .stream()
@@ -662,6 +659,10 @@ public class TokenManager {
 
         if (TokenUtil.isOIDCRequest(scopes)) {
             requestedScopes.remove(OAuth2Constants.SCOPE_OPENID);
+        }
+
+        if ((authorizationRequestContext.getAuthorizationDetailEntries() == null || authorizationRequestContext.getAuthorizationDetailEntries().isEmpty()) && requestedScopes.size()>0) {
+            return false;
         }
 
         if (logger.isTraceEnabled()) {
