@@ -195,6 +195,13 @@ export interface KeycloakInitOptions {
 	 * @default 10000
 	 */
 	messageReceiveTimeout?: number
+
+	/**
+	 * Configures a timeout for the update token request as the number of milliseconds the request can take
+	 * before automatically being terminated.
+	 * If not configured there is no timeout.
+	 */
+	updateTokenTimeout?: number;
 }
 
 export interface KeycloakLoginOptions {
