@@ -16,6 +16,7 @@
  */
 package org.keycloak.testsuite.model.session;
 
+import org.infinispan.commons.CacheException;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -214,23 +215,23 @@ public class OfflineSessionPersistenceTest extends KeycloakModelTest {
                 int oid = index % offlineSessionIds.size();
                 String offlineSessionId = offlineSessionIds.get(oid);
                 int cid = index % clientIds.size();
-                String clientSessionId;
-                while (true) {
-                    try {
-                        clientSessionId = createOfflineClientSession(offlineSessionId, clientIds.get(cid));
-                        break;
-                    } catch (RuntimeException ex) {
-                        // invocation can fail when remote cache is stopping, this is actually part of this test:
-                        // "ISPN000217: Received exception from node-8, see cause for remote stack trace
-                        // IllegalLifecycleStateException: ISPN000324: Cache 'clientSessions' is in 'STOPPING' state and this is an invocation not belonging to an
-                        // on-going transaction, so it does not accept new invocations."
-                        if (ex.getCause() != null && ex.getCause().getMessage().contains("ISPN000324")) {
-                            log.warn("invocation failed, retrying", ex);
-                            sleep(1000);
-                        }
+                try {
+                    clientSessionIds.computeIfAbsent(offlineSessionId, a -> Collections.synchronizedList(new LinkedList<>())).add(createOfflineClientSession(offlineSessionId, clientIds.get(cid)));
+                } catch (RuntimeException ex) {
+                    // invocation can fail when remote cache is stopping, this is actually part of this test:
+                    // "ISPN000217: Received exception from node-8, see cause for remote stack trace
+                    // IllegalLifecycleStateException: ISPN000324: Cache 'clientSessions' is in 'STOPPING' state and this is an invocation not belonging to an
+                    // on-going transaction, so it does not accept new invocations."
+                    // also: org.infinispan.commons.CacheException: java.lang.IllegalStateException: Read commands must ignore leavers
+                    if ((ex.getCause() != null && ex.getCause().getMessage().contains("ISPN000324") ||
+                            (ex instanceof CacheException && ex.getMessage().contains("Read commands must ignore leavers")))) {
+                        log.warn("invocation failed, skipping. Retrying might lead to a 'Unique index or primary key violation' when the offline session has already been stored in the DB in the current session", ex);
+                    } else {
+                        throw ex;
                     }
                 }
-                clientSessionIds.computeIfAbsent(offlineSessionId, a -> new LinkedList<>()).add(clientSessionId);
+
+                // re-initialize the session factory N times in this test
                 if (index % 100 == 0) {
                     // don't re-initialize all caches at the same time to avoid an unstable cluster with no leader
                     // otherwise seen CacheInitializer#loadSessions to loop sleeping
