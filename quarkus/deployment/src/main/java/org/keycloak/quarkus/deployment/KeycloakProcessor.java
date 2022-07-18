@@ -557,9 +557,7 @@ class KeycloakProcessor {
             List<ProviderFactory> loadedFactories = new ArrayList<>();
             String provider = Config.getProvider(spi.getName());
 
-            // TODO: remove the condition for MapStorageSpi once JPA store is ready and we can set a default provider
-            //  while still allowing multiple implementations at runtime
-            if (provider == null || spi instanceof MapStorageSpi) {
+            if (provider == null) {
                 loadedFactories.addAll(pm.load(spi));
             } else {
                 ProviderFactory factory = pm.load(spi, provider);

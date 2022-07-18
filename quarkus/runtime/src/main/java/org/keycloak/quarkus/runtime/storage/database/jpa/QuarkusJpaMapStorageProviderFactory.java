@@ -63,7 +63,7 @@ public class QuarkusJpaMapStorageProviderFactory extends JpaMapStorageProviderFa
         }
     }
 
-    protected Optional<EntityManagerFactory> getEntityManagerFactory(String unitName) {
+    private Optional<EntityManagerFactory> getEntityManagerFactory(String unitName) {
         Instance<EntityManagerFactory> instance = Arc.container().select(EntityManagerFactory.class, new PersistenceUnit() {
 
             @Override
@@ -84,12 +84,4 @@ public class QuarkusJpaMapStorageProviderFactory extends JpaMapStorageProviderFa
         return Optional.empty();
     }
 
-    @Override
-    public boolean isSupported() {
-        // allow running multiple storages at runtime if jpa is enabled, otherwise disables it
-        // only enable jpa store if explicitly said so
-        // this is because jpa store is missing some provider implementations that require the usage of another storage at runtime like chm
-        // once we have jpa-based provider impls for all areas we can remove this and be able to run jpa store as the single store
-        return StorageOptions.StorageType.jpa.name().equals(getOptionalValue(NS_KEYCLOAK_PREFIX.concat(STORAGE.getKey())).orElse(null));
-    }
 }
