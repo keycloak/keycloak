@@ -44,7 +44,7 @@
     "react-error-boundary": "^3.1.4",
     "react-flow-renderer": "^9.7.4",
     "react-hook-form": "^6.15.8",
-    "react-i18next": "^11.18.0",
+    "react-i18next": "^11.18.1",
     "react-router-dom": "^5.3.3",
     "use-react-router-breadcrumbs": "^2.0.2"
   },
