@@ -154,7 +154,7 @@ final class StoragePropertyMappers {
                 fromOption(StorageOptions.STORAGE_USER_SESSION_STORE)
                         .to("kc.spi-user-sessions-map-storage-provider")
                         .mapFrom("storage")
-                        .transformer(StoragePropertyMappers::resolveUserSessionProvider)
+                        .transformer(StoragePropertyMappers::resolveMapStorageProvider)
                         .paramLabel("type")
                         .build(),
                 fromOption(StorageOptions.STORAGE_LOGIN_FAILURE)
@@ -347,21 +347,4 @@ final class StoragePropertyMappers {
         return of(storage.isEmpty() ? Boolean.TRUE.toString() : Boolean.FALSE.toString());
     }
 
-    private static Optional<String> resolveUserSessionProvider(Optional<String> storage, ConfigSourceInterceptorContext context) {
-        try {
-            if (storage.isPresent()) {
-                Optional<StorageType> type = storage.map(StorageType::valueOf);
-
-                if (StorageType.jpa.equals(type.get())) {
-                    return of(StorageType.chm.getProvider());
-                }
-
-                return of(type.map(StorageType::getProvider).orElse(StorageType.chm.getProvider()));
-            }
-        } catch (IllegalArgumentException iae) {
-            throw new IllegalArgumentException("Invalid storage provider: " + storage.orElse(null), iae);
-        }
-
-        return storage;
-    }
 }
