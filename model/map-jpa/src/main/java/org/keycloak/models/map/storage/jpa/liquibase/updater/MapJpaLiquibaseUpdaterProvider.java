@@ -42,23 +42,6 @@ import org.keycloak.models.map.storage.jpa.updater.MapJpaUpdaterProvider;
 
 public class MapJpaLiquibaseUpdaterProvider implements MapJpaUpdaterProvider {
 
-    public static class ThreadLocalSessionContext {
-
-        private static final ThreadLocal<KeycloakSession> currentSession = new ThreadLocal<KeycloakSession>();
-    
-        public static KeycloakSession getCurrentSession() {
-            return currentSession.get();
-        }
-    
-        public static void setCurrentSession(KeycloakSession session) {
-            currentSession.set(session);
-        }
-    
-        public static void removeCurrentSession() {
-            currentSession.remove();
-        }
-    }
-    
     private static final Logger logger = Logger.getLogger(MapJpaLiquibaseUpdaterProvider.class);
 
     private final KeycloakSession session;
@@ -69,6 +52,8 @@ public class MapJpaLiquibaseUpdaterProvider implements MapJpaUpdaterProvider {
 
     @Override
     public void update(Class<?> modelType, Connection connection, String defaultSchema) {
+        // Liquibase has a global Scopes / a global ScopeManager by default, and SqlGeneratorFactory is always global
+        // therefore, ensure that only one migration runs at a time
         synchronized (MapJpaLiquibaseUpdaterProvider.class) {
             this.updateSynch(modelType, connection, null, defaultSchema);
         }
@@ -76,6 +61,8 @@ public class MapJpaLiquibaseUpdaterProvider implements MapJpaUpdaterProvider {
 
     @Override
     public void export(Class<?> modelType, Connection connection, String defaultSchema, File file) {
+        // Liquibase has a global Scopes / a global ScopeManager by default, and SqlGeneratorFactory is always global
+        // therefore, ensure that only one migration runs at a time
         synchronized (MapJpaLiquibaseUpdaterProvider.class) {
             this.updateSynch(modelType, connection, file, defaultSchema);
         }
@@ -83,9 +70,6 @@ public class MapJpaLiquibaseUpdaterProvider implements MapJpaUpdaterProvider {
 
     protected void updateSynch(Class<?> modelType, Connection connection, File file, String defaultSchema) {
         logger.debug("Starting database update");
-
-        // Need ThreadLocal as liquibase doesn't seem to have API to inject custom objects into tasks
-        ThreadLocalSessionContext.setCurrentSession(session);
 
         Writer exportWriter = null;
         try (Liquibase liquibase = getLiquibase(modelType, connection, defaultSchema)) {
@@ -100,7 +84,6 @@ public class MapJpaLiquibaseUpdaterProvider implements MapJpaUpdaterProvider {
             logger.error("Error has occurred while updating the database", e);
             throw new RuntimeException("Failed to update database", e);
         } finally {
-            ThreadLocalSessionContext.removeCurrentSession();
             if (exportWriter != null) {
                 try {
                     exportWriter.close();
@@ -136,15 +119,16 @@ public class MapJpaLiquibaseUpdaterProvider implements MapJpaUpdaterProvider {
     }
 
     @Override
-    public Status validate(Class modelType, Connection connection, String defaultSchema) {
+    public Status validate(Class<?> modelType, Connection connection, String defaultSchema) {
+        // Liquibase has a global Scopes / a global ScopeManager by default
+        // therefore, ensure that only one Scope of liquibase runs at a time
         synchronized (MapJpaLiquibaseUpdaterProvider.class) {
             return this.validateSynch(modelType, connection, defaultSchema);
         }
     }
 
-    protected Status validateSynch(final Class modelType, final Connection connection, final String defaultSchema) {
+    protected Status validateSynch(final Class<?> modelType, final Connection connection, final String defaultSchema) {
         logger.debug("Validating if database is updated");
-        ThreadLocalSessionContext.setCurrentSession(session);
 
         try (Liquibase liquibase = getLiquibase(modelType, connection, defaultSchema)) {
 
@@ -183,7 +167,7 @@ public class MapJpaLiquibaseUpdaterProvider implements MapJpaUpdaterProvider {
         return liquibase.listUnrunChangeSets(null, new LabelExpression(), false);
     }
 
-    private Liquibase getLiquibase(Class modelType, Connection connection, String defaultSchema) throws LiquibaseException {
+    private Liquibase getLiquibase(Class<?> modelType, Connection connection, String defaultSchema) throws LiquibaseException {
         MapLiquibaseConnectionProvider liquibaseProvider = session.getProvider(MapLiquibaseConnectionProvider.class);
         String modelName = ModelEntityUtil.getModelName(modelType);
         if (modelName == null) {
@@ -209,10 +193,6 @@ public class MapJpaLiquibaseUpdaterProvider implements MapJpaUpdaterProvider {
 
     @Override
     public void close() {
-    }
-
-    public static String getTable(String table, String defaultSchema) {
-        return defaultSchema != null ? defaultSchema + "." + table : table;
     }
 
 }
