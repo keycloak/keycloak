@@ -6,6 +6,7 @@ updates:
     rebase-strategy: disabled
     schedule:
       interval: weekly
+      day: saturday
     labels:
       - area/dependencies
       - area/ci
@@ -13,6 +14,7 @@ updates:
     directory: /themes/src/main/resources/theme/keycloak/common/resources
     schedule:
       interval: weekly
+      day: saturday
     open-pull-requests-limit: 999
     rebase-strategy: disabled
     labels:
@@ -25,6 +27,7 @@ updates:
     directory: /themes/src/main/resources/theme/keycloak.v2/account/src
     schedule:
       interval: weekly
+      day: saturday
     open-pull-requests-limit: 999
     rebase-strategy: disabled
     labels:
@@ -34,6 +37,7 @@ updates:
     directory: /adapters/oidc/js
     schedule:
       interval: weekly
+      day: saturday
     open-pull-requests-limit: 999
     rebase-strategy: disabled
     labels:
