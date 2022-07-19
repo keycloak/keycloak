@@ -22,6 +22,7 @@ import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.api.model.PodTemplateSpecBuilder;
 import io.fabric8.kubernetes.api.model.ProbeBuilder;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
+import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
 import org.keycloak.operator.Config;
@@ -30,13 +31,14 @@ import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpec;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakSpecUnsupported;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @QuarkusTest
 public class PodTemplateTest {
 
-    StatefulSet getDeployment(PodTemplateSpec podTemplate) {
+    private StatefulSet getDeployment(PodTemplateSpec podTemplate, StatefulSet existingDeployment) {
         var config = new Config(){
             @Override
             public Keycloak keycloak() {
@@ -58,8 +60,12 @@ public class PodTemplateTest {
         spec.setHostname("example.com");
         spec.setTlsSecret("example-tls-secret");
         kc.setSpec(spec);
-        var deployment = new KeycloakDeployment(null, config, kc, new StatefulSet(), "dummy-admin");
+        var deployment = new KeycloakDeployment(null, config, kc, existingDeployment, "dummy-admin");
         return (StatefulSet) deployment.getReconciledResource().get();
+    }
+
+    private StatefulSet getDeployment(PodTemplateSpec podTemplate) {
+        return getDeployment(podTemplate, new StatefulSet());
     }
 
     @Test
@@ -234,5 +240,32 @@ public class PodTemplateTest {
         var envVar = podTemplate.getSpec().getContainers().get(0).getEnv().stream().filter(e -> e.getName().equals(env)).findFirst().get();
         assertEquals(env, envVar.getName());
         assertEquals(value, envVar.getValue());
+    }
+
+    @Test
+    public void testAnnotationsAreMerged() {
+        // Arrange
+        var existingDeployment = new StatefulSetBuilder()
+                .withNewSpec()
+                .withNewTemplate()
+                .withNewMetadata()
+                .addToAnnotations("one", "1")
+                .addToAnnotations("two", "3")
+                .endMetadata()
+                .endTemplate()
+                .endSpec()
+                .build();
+        var additionalPodTemplate = new PodTemplateSpecBuilder()
+                .withNewMetadata()
+                .addToAnnotations("two", "2")
+                .endMetadata()
+                .build();
+
+        // Act
+        var podTemplate = getDeployment(additionalPodTemplate, existingDeployment).getSpec().getTemplate();
+
+        // Assert
+        assertThat(podTemplate.getMetadata().getAnnotations()).containsEntry("one", "1");
+        assertThat(podTemplate.getMetadata().getAnnotations()).containsEntry("two", "2");
     }
 }
