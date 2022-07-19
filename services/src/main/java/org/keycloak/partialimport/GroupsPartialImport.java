@@ -79,4 +79,8 @@ public class GroupsPartialImport extends AbstractPartialImport<GroupRepresentati
         RepresentationToModel.importGroup(realm, null, groupRep);
     }
 
+    @Override
+    public void skip(RealmModel realm, KeycloakSession session, GroupRepresentation resourceRep) {
+
+    }
 }

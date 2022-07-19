@@ -104,4 +104,9 @@ public class RealmRolesPartialImport extends AbstractPartialImport<RoleRepresent
             super.deleteRole(role);
         }
     }
+
+    @Override
+    public void skip(RealmModel realm, KeycloakSession session, RoleRepresentation resourceRep) {
+
+    }
 }

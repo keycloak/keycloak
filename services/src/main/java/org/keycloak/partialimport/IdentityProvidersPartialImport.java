@@ -76,4 +76,8 @@ public class IdentityProvidersPartialImport extends AbstractPartialImport<Identi
         realm.addIdentityProvider(identityProvider);
     }
 
+    @Override
+    public void skip(RealmModel realm, KeycloakSession session, IdentityProviderRepresentation resourceRep) {
+
+    }
 }

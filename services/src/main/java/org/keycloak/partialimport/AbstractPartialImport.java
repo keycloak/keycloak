@@ -42,6 +42,14 @@ public abstract class AbstractPartialImport<T> implements PartialImport<T> {
     public abstract String getName(T resourceRep);
     public abstract String getModelId(RealmModel realm, KeycloakSession session, T resourceRep);
     public abstract boolean exists(RealmModel realm, KeycloakSession session, T resourceRep);
+
+    /**
+     * 跳过处理
+     * @param realm
+     * @param session
+     * @param resourceRep
+     */
+    public abstract void skip(RealmModel realm, KeycloakSession session, T resourceRep);
     public abstract String existsMessage(RealmModel realm, T resourceRep);
     public abstract ResourceType getResourceType();
     public abstract void remove(RealmModel realm, KeycloakSession session, T resourceRep);
@@ -108,6 +116,7 @@ public abstract class AbstractPartialImport<T> implements PartialImport<T> {
         }
 
         for (T resourceRep : toSkip) {
+            skip(realm, session,resourceRep);
             String modelId = getModelId(realm, session, resourceRep);
             results.addResult(skipped(modelId, resourceRep));
         }

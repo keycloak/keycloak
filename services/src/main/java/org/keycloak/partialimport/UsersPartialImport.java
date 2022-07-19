@@ -48,14 +48,18 @@ public class UsersPartialImport extends AbstractPartialImport<UserRepresentation
 
     @Override
     public String getName(UserRepresentation user) {
-        if (user.getUsername() != null) return user.getUsername();
+        if (user.getUsername() != null) {
+            return user.getUsername();
+        }
 
         return user.getEmail();
     }
 
     @Override
     public String getModelId(RealmModel realm, KeycloakSession session, UserRepresentation user) {
-        if (createdIds.containsKey(getName(user))) return createdIds.get(getName(user));
+        if (createdIds.containsKey(getName(user))) {
+            return createdIds.get(getName(user));
+        }
 
         String userName = user.getUsername();
         if (userName != null) {
@@ -64,7 +68,7 @@ public class UsersPartialImport extends AbstractPartialImport<UserRepresentation
             String email = user.getEmail();
             return session.users().getUserByEmail(email, realm).getId();
         }
-        
+
         return null;
     }
 
@@ -79,7 +83,7 @@ public class UsersPartialImport extends AbstractPartialImport<UserRepresentation
 
     private boolean userEmailExists(RealmModel realm, KeycloakSession session, UserRepresentation user) {
         return (user.getEmail() != null) && !realm.isDuplicateEmailsAllowed() &&
-               (session.users().getUserByEmail(user.getEmail(), realm) != null);
+            (session.users().getUserByEmail(user.getEmail(), realm) != null);
     }
 
     @Override
@@ -87,7 +91,6 @@ public class UsersPartialImport extends AbstractPartialImport<UserRepresentation
         if (user.getEmail() == null || !realm.isDuplicateEmailsAllowed()) {
             return "User with user name " + getName(user) + " already exists.";
         }
-
         return "User with user name " + getName(user) + " or with email " + user.getEmail() + " already exists.";
     }
 
@@ -104,7 +107,9 @@ public class UsersPartialImport extends AbstractPartialImport<UserRepresentation
         }
         if (userModel != null) {
             boolean success = new UserManager(session).removeUser(realm, userModel);
-            if (!success) throw new RuntimeException("Unable to overwrite user " + getName(user));
+            if (!success) {
+                throw new RuntimeException("Unable to overwrite user " + getName(user));
+            }
         }
     }
 
@@ -112,8 +117,11 @@ public class UsersPartialImport extends AbstractPartialImport<UserRepresentation
     public void create(RealmModel realm, KeycloakSession session, UserRepresentation user) {
         user.setId(KeycloakModelUtils.generateId());
         UserModel userModel = RepresentationToModel.createUser(session, realm, user);
-        if (userModel == null) throw new RuntimeException("Unable to create user " + getName(user));
         createdIds.put(getName(user), userModel.getId());
     }
 
+    @Override
+    public void skip(RealmModel realm, KeycloakSession session, UserRepresentation resourceRep) {
+        RepresentationToModel.createRoleMappings(resourceRep, session.users().getUserByUsername(resourceRep.getUsername(), realm), realm);
+    }
 }

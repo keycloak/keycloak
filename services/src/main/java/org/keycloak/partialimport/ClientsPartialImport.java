@@ -127,4 +127,9 @@ public class ClientsPartialImport extends AbstractPartialImport<ClientRepresenta
         }
         return INTERNAL_CLIENTS.contains(clientId);
     }
+
+    @Override
+    public void skip(RealmModel realm, KeycloakSession session, ClientRepresentation resourceRep) {
+
+    }
 }
