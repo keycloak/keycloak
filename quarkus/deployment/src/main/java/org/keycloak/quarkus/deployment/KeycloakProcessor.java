@@ -245,7 +245,6 @@ class KeycloakProcessor {
         } else {
             descriptor = PersistenceXmlParser.locateIndividualPersistenceUnit(
                     Thread.currentThread().getContextClassLoader().getResource("default-map-jpa-persistence.xml"));
-            descriptor.getProperties().putAll(QuarkusJpaMapStorageProviderFactory.configureHibernateProperties());
         }
 
         producer.produce(new PersistenceXmlDescriptorBuildItem(descriptor));

@@ -152,14 +152,6 @@ public class JpaMapStorageProviderFactory implements
 
     public static final String HIBERNATE_DEFAULT_SCHEMA = "hibernate.default_schema";
 
-    public static Map<String, Object> configureHibernateProperties() {
-        Map<String, Object> properties = new HashMap<>();
-
-        properties.put("hibernate.integrator_provider", new KeycloakIntegratorProvider());
-
-        return properties;
-    }
-
     private volatile EntityManagerFactory emf;
     private final Set<Class<?>> validatedModels = ConcurrentHashMap.newKeySet();
     private Config.Scope config;
@@ -268,10 +260,14 @@ public class JpaMapStorageProviderFactory implements
         // check the session for a cached provider before creating a new one.
         JpaMapStorageProvider provider = session.getAttribute(this.sessionProviderKey, JpaMapStorageProvider.class);
         if (provider == null) {
-            provider = new JpaMapStorageProvider(this, session, emf.createEntityManager(), this.sessionTxKey);
+            provider = new JpaMapStorageProvider(this, session, getEntityManager(), this.sessionTxKey);
             session.setAttribute(this.sessionProviderKey, provider);
         }
         return provider;
+    }
+
+    protected EntityManager getEntityManager() {
+        return emf.createEntityManager();
     }
 
     @Override
@@ -346,8 +342,6 @@ public class JpaMapStorageProviderFactory implements
         properties.put("hibernate.show_sql", config.getBoolean("showSql", false));
         properties.put("hibernate.format_sql", config.getBoolean("formatSql", true));
         properties.put("hibernate.dialect", config.get("driverDialect"));
-
-        properties.putAll(configureHibernateProperties());
 
         logger.trace("Creating EntityManagerFactory");
         ParsedPersistenceXmlDescriptor descriptor = PersistenceXmlParser.locateIndividualPersistenceUnit(
