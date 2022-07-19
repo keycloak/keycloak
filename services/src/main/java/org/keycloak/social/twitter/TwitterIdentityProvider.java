@@ -218,8 +218,15 @@ public class TwitterIdentityProvider extends AbstractIdentityProvider<OAuth2Iden
 
                 identity.setUsername(twitterUser.getScreenName());
                 identity.setEmail(twitterUser.getEmail());
-                identity.setFirstName(twitterUser.getName());
-                identity.setLastName("");
+
+                if (twitterUser.getName().contains(" ")) {
+                    identity.setName(twitterUser.getName());
+                } else {
+                    identity.setFirstName(twitterUser.getName());
+                    //this does not pass the validation test, and triggers the review profile form
+                    //after redirecting back from login
+                    identity.setLastName("");
+                }
 
                 StringBuilder tokenBuilder = new StringBuilder();
 
