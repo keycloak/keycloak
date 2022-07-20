@@ -54,8 +54,6 @@ public class MapRootAuthenticationSessionProvider implements AuthenticationSessi
     private final KeycloakSession session;
     protected final MapKeycloakTransaction<MapRootAuthenticationSessionEntity, RootAuthenticationSessionModel> tx;
 
-    private static final String AUTHENTICATION_SESSION_EVENTS = "AUTHENTICATION_SESSION_EVENTS";
-
     public MapRootAuthenticationSessionProvider(KeycloakSession session, MapStorage<MapRootAuthenticationSessionEntity, RootAuthenticationSessionModel> sessionStore) {
         this.session = session;
         this.tx = sessionStore.createTransaction(session);
@@ -165,15 +163,6 @@ public class MapRootAuthenticationSessionProvider implements AuthenticationSessi
             return;
         }
         Objects.requireNonNull(authNotesFragment, "The provided authentication's notes map can't be null!");
-
-        ClusterProvider cluster = session.getProvider(ClusterProvider.class);
-        cluster.notify(
-                AUTHENTICATION_SESSION_EVENTS,
-                MapAuthenticationSessionAuthNoteUpdateEvent.create(compoundId.getRootSessionId(), compoundId.getTabId(),
-                        compoundId.getClientUUID(), authNotesFragment),
-                true,
-                ClusterProvider.DCNotify.ALL_BUT_LOCAL_DC
-        );
     }
 
     @Override

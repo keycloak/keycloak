@@ -30,6 +30,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.cluster.ClusterProviderFactory;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.Retry;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.DefaultInfinispanConnectionProviderFactory;
@@ -38,6 +39,7 @@ import org.keycloak.connections.infinispan.TopologyInfo;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.connections.infinispan.InfinispanUtil;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
 import java.io.Serializable;
 import java.util.Collection;
@@ -54,7 +56,7 @@ import java.util.stream.Collectors;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class InfinispanClusterProviderFactory implements ClusterProviderFactory {
+public class InfinispanClusterProviderFactory implements ClusterProviderFactory, EnvironmentDependentProviderFactory {
 
     public static final String PROVIDER_ID = "infinispan";
 
@@ -190,6 +192,10 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory 
         return PROVIDER_ID;
     }
 
+    @Override
+    public boolean isSupported() {
+        return !Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE);
+    }
 
     @Listener
     public class ViewChangeListener {

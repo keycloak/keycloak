@@ -523,6 +523,11 @@ public class MapUserSessionProvider implements UserSessionProvider {
 
     }
 
+    @Override
+    public int getStartupTime(RealmModel realm) {
+        return realm.getNotBefore();
+    }
+
     /**
      * Removes all online and offline user sessions that belong to the provided {@link RealmModel}.
      * @param realm
