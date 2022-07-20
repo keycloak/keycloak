@@ -2,10 +2,14 @@ package org.keycloak.crypto.def;
 
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.security.spec.ECParameterSpec;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 
+import org.bouncycastle.jce.ECNamedCurveTable;
+import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
+import org.bouncycastle.jce.spec.ECNamedCurveSpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.keycloak.common.crypto.CryptoProvider;
 import org.keycloak.common.crypto.CryptoProviderTypes;
@@ -46,6 +50,12 @@ public class DefaultCryptoProvider implements CryptoProvider {
     @Override
     public PemUtilsProvider getPemUtils() {
         return new BCPemUtilsProvider();
+    }
+
+    @Override
+    public ECParameterSpec createECParams(String curveName) {
+        ECNamedCurveParameterSpec spec = ECNamedCurveTable.getParameterSpec(curveName);
+        return new ECNamedCurveSpec("prime256v1", spec.getCurve(), spec.getG(), spec.getN());
     }
 
 }

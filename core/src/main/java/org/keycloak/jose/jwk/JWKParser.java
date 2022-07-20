@@ -17,16 +17,17 @@
 
 package org.keycloak.jose.jwk;
 
-import org.bouncycastle.jce.ECNamedCurveTable;
-import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
-import org.bouncycastle.jce.spec.ECNamedCurveSpec;
+
+import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.util.Base64Url;
+import org.keycloak.common.util.BouncyIntegration;
 import org.keycloak.crypto.KeyType;
 import org.keycloak.util.JsonSerialization;
 
 import java.math.BigInteger;
 import java.security.KeyFactory;
 import java.security.PublicKey;
+import java.security.spec.ECParameterSpec;
 import java.security.spec.ECPoint;
 import java.security.spec.ECPublicKeySpec;
 import java.security.spec.RSAPublicKeySpec;
@@ -99,12 +100,12 @@ public class JWKParser {
         }
 
         try {
-            ECNamedCurveParameterSpec spec = ECNamedCurveTable.getParameterSpec(name);
-            ECNamedCurveSpec params = new ECNamedCurveSpec("prime256v1", spec.getCurve(), spec.getG(), spec.getN());
+            
             ECPoint point = new ECPoint(x, y);
+            ECParameterSpec params = CryptoIntegration.getProvider().createECParams(name);
             ECPublicKeySpec pubKeySpec = new ECPublicKeySpec(point, params);
 
-            KeyFactory kf = KeyFactory.getInstance("ECDSA");
+            KeyFactory kf = KeyFactory.getInstance("ECDSA", BouncyIntegration.PROVIDER);
             return kf.generatePublic(pubKeySpec);
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -116,7 +117,7 @@ public class JWKParser {
         BigInteger publicExponent = new BigInteger(1, Base64Url.decode(jwk.getOtherClaims().get(RSAPublicJWK.PUBLIC_EXPONENT).toString()));
 
         try {
-            KeyFactory kf = KeyFactory.getInstance("RSA");
+            KeyFactory kf = KeyFactory.getInstance("RSA", BouncyIntegration.PROVIDER);
             return kf.generatePublic(new RSAPublicKeySpec(modulus, publicExponent));
         } catch (Exception e) {
             throw new RuntimeException(e);

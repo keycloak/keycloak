@@ -3,6 +3,7 @@ package org.keycloak.common.crypto;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.SecureRandom;
+import java.security.spec.ECParameterSpec;
 
 /**
  * Abstraction to handle differences between the APIs for non-fips and fips mode
@@ -42,5 +43,14 @@ public interface CryptoProvider {
      * @return  
      */
     public PemUtilsProvider getPemUtils();
+
+
+    /**
+     * Create the param spec for the EC curve
+     * 
+     * @param curveName
+     * @return
+     */
+    public ECParameterSpec createECParams(String curveName);
 
 }

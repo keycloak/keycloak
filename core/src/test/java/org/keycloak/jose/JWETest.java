@@ -27,7 +27,6 @@ import javax.crypto.spec.SecretKeySpec;
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Ignore;
-import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.Base64Url;
