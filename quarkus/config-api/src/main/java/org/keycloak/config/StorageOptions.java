@@ -218,24 +218,6 @@ public class StorageOptions {
             .buildTime(true)
             .build();
 
-    public static final Option<Boolean> STORAGE_CACHE_ENABLED = new OptionBuilder<>("cache-enabled", Boolean.class)
-            .category(OptionCategory.STORAGE)
-            .hidden()
-            .buildTime(true)
-            .build();
-
-    public static final Option<Boolean> STORAGE_CACHE_CLUSTER_ENABLED = new OptionBuilder<>("cache-cluster-enabled", Boolean.class)
-            .category(OptionCategory.STORAGE)
-            .hidden()
-            .buildTime(true)
-            .build();
-
-    public static final Option<String> STORAGE_CACHE_STICK_SESSION_ENABLED = new OptionBuilder<>("cache-stick-session-enabled", String.class)
-            .category(OptionCategory.STORAGE)
-            .hidden()
-            .buildTime(true)
-            .build();
-
     public static final Option<String> STORAGE_CACHE_REALM_ENABLED = new OptionBuilder<>("cache-realm-enabled", String.class)
             .category(OptionCategory.STORAGE)
             .hidden()
@@ -285,12 +267,6 @@ public class StorageOptions {
             .build();
 
     public static final Option<String> STORAGE_CACHE_AUTHORIZATION_ENABLED = new OptionBuilder<>("cache-authorization-enabled", String.class)
-            .category(OptionCategory.STORAGE)
-            .hidden()
-            .buildTime(true)
-            .build();
-
-    public static final Option<String> STORAGE_CACHE_COMPONENT_FACTORY = new OptionBuilder<>("cache-component-factory-cache", String.class)
             .category(OptionCategory.STORAGE)
             .hidden()
             .buildTime(true)

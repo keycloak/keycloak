@@ -27,7 +27,6 @@ import org.keycloak.TokenVerifier;
 import org.keycloak.authentication.authenticators.util.AcrStore;
 import org.keycloak.broker.oidc.OIDCIdentityProvider;
 import org.keycloak.broker.provider.IdentityBrokerException;
-import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Profile;
 import org.keycloak.common.VerificationException;
@@ -53,6 +52,7 @@ import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RoleUtils;
 import org.keycloak.protocol.ProtocolMapperUtils;
@@ -436,12 +436,12 @@ public class TokenManager {
     // Will throw OAuthErrorException if validation fails
     private void validateTokenReuse(KeycloakSession session, RealmModel realm, AccessToken refreshToken,
         AuthenticatedClientSessionModel clientSession, boolean refreshFlag) throws OAuthErrorException {
-        int clusterStartupTime = session.getProvider(ClusterProvider.class).getClusterStartupTime();
+        int startupTime = session.getProvider(UserSessionProvider.class).getStartupTime(realm);
 
         if (clientSession.getCurrentRefreshToken() != null
             && !refreshToken.getId().equals(clientSession.getCurrentRefreshToken())
             && refreshToken.getIssuedAt() < clientSession.getTimestamp()
-            && clusterStartupTime <= clientSession.getTimestamp()) {
+            && startupTime <= clientSession.getTimestamp()) {
             throw new OAuthErrorException(OAuthErrorException.INVALID_GRANT, "Stale token");
         }
 

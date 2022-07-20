@@ -229,12 +229,6 @@ final class StoragePropertyMappers {
                         .transformer(StoragePropertyMappers::resolveMapStorageProvider)
                         .paramLabel("type")
                         .build(),
-                fromOption(StorageOptions.STORAGE_CACHE_COMPONENT_FACTORY)
-                        .to("kc.spi-component-factory-default-caching-forced")
-                        .mapFrom("storage")
-                        .transformer(StoragePropertyMappers::isForceComponentFactoryCache)
-                        .paramLabel("type")
-                        .build(),
                 fromOption(StorageOptions.STORAGE_PUBLIC_KEY_STORE)
                         .to("kc.spi-public-key-storage-map-storage-provider")
                         .mapFrom("storage")
@@ -243,24 +237,6 @@ final class StoragePropertyMappers {
                         .build(),
                 fromOption(StorageOptions.STORAGE_EXCEPTION_CONVERTER)
                         .to("kc.spi-exception-converter-jpa-enabled")
-                        .mapFrom("storage")
-                        .transformer(StoragePropertyMappers::isLegacyStoreEnabled)
-                        .paramLabel(Boolean.TRUE + "|" + Boolean.FALSE)
-                        .build(),
-                fromOption(StorageOptions.STORAGE_CACHE_ENABLED)
-                        .to("kc.spi-connections-infinispan-default-enabled")
-                        .mapFrom("storage")
-                        .transformer(StoragePropertyMappers::isLegacyStoreEnabled)
-                        .paramLabel(Boolean.TRUE + "|" + Boolean.FALSE)
-                        .build(),
-                fromOption(StorageOptions.STORAGE_CACHE_CLUSTER_ENABLED)
-                        .to("kc.spi-cluster-infinispan-enabled")
-                        .mapFrom("storage")
-                        .transformer(StoragePropertyMappers::isLegacyStoreEnabled)
-                        .paramLabel(Boolean.TRUE + "|" + Boolean.FALSE)
-                        .build(),
-                fromOption(StorageOptions.STORAGE_CACHE_STICK_SESSION_ENABLED)
-                        .to("kc.spi-sticky-session-encoder-infinispan-enabled")
                         .mapFrom("storage")
                         .transformer(StoragePropertyMappers::isLegacyStoreEnabled)
                         .paramLabel(Boolean.TRUE + "|" + Boolean.FALSE)
