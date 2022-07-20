@@ -17,7 +17,12 @@ on:
       - '.github/workflows/codeql-js-adapter-analysis.yml'
   schedule:
     - cron: '0 9 * * 2'
-    
+
+concurrency:
+  # Only run once for latest commit per ref and cancel other (previous) runs.
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   analyze:
     name: CodeQL analyze
