@@ -22,6 +22,7 @@ import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
+import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientScopeResource;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -59,6 +60,7 @@ import java.util.Map;
 import javax.ws.rs.core.Response;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.admin.ApiUtil.findClientByClientId;
 
@@ -144,6 +146,43 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
                 .client("account").detail(Details.REVOKED_CLIENT, THIRD_PARTY_APP).assertEvent();
 
         assertEquals(0, driver.findElements(By.id("revoke-third-party")).size());
+    }
+
+    @Test
+    public void oauthGrantTestWithResourceParameter() {
+        try {
+            oauth.resource("https://www.keycloak.org/documentation");
+            oauth.clientId(THIRD_PARTY_APP);
+            oauth.doLoginGrant("test-user@localhost", "password");
+
+            grantPage.assertCurrent();
+            grantPage.assertGrants(OAuthGrantPage.PROFILE_CONSENT_TEXT, OAuthGrantPage.EMAIL_CONSENT_TEXT, OAuthGrantPage.ROLES_CONSENT_TEXT);
+
+            grantPage.accept();
+
+            Assert.assertTrue(oauth.getCurrentQuery().containsKey(OAuth2Constants.CODE));
+
+            EventRepresentation loginEvent = events.expectLogin()
+                    .client(THIRD_PARTY_APP)
+                    .detail(Details.CONSENT, Details.CONSENT_VALUE_CONSENT_GRANTED)
+                    .assertEvent();
+            String codeId = loginEvent.getDetails().get(Details.CODE_ID);
+            String sessionId = loginEvent.getSessionId();
+
+            OAuthClient.AccessTokenResponse accessTokenResponse = oauth.doAccessTokenRequest(oauth.getCurrentQuery().get(OAuth2Constants.CODE), "password");
+
+            Assert.assertNotNull(accessTokenResponse.getAccessToken());
+            AccessToken accessToken = oauth.verifyToken(accessTokenResponse.getAccessToken());
+            Assert.assertTrue(accessToken.hasAudience("https://www.keycloak.org/documentation"));
+
+            accountAppsPage.open();
+
+            assertEquals(1, driver.findElements(By.id("revoke-third-party")).size());
+
+            accountAppsPage.revokeGrant(THIRD_PARTY_APP);
+        } finally {
+            oauth.resource(null);
+        }
     }
 
     @Test

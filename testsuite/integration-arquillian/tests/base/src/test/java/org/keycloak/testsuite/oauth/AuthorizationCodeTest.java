@@ -27,6 +27,7 @@ import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.models.Constants;
 import org.keycloak.protocol.oidc.utils.OIDCResponseMode;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
@@ -38,6 +39,7 @@ import org.openqa.selenium.By;
 
 import javax.ws.rs.core.UriBuilder;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
@@ -130,6 +132,21 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
         assertTrue(errorPage.isCurrent());
         assertEquals("Invalid parameter: redirect_uri", errorPage.getError());
     }
+
+//    @Test
+//    public void testInvalidResourceParameter() throws MalformedURLException {
+//        oauth.resource("data://www.keycloak.org/guides");
+//
+//        UriBuilder b = UriBuilder.fromUri(oauth.getLoginFormUrl());
+//        driver.navigate().to(b.build().toURL());
+//
+//        String error = driver.findElement(By.id("error")).getText();
+//        String errorDescription = driver.findElement(By.id("error_description")).getText();
+//        assertEquals(OAuthErrorException.INVALID_TARGET, error);
+//        assertEquals("The requested resource is invalid or malformed.", errorDescription);
+//
+//        oauth.resource(null);
+//    }
 
     @Test
     public void authorizationRequestNoState() throws IOException {

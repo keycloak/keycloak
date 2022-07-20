@@ -23,6 +23,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 
 import org.jboss.logging.Logger;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.common.Profile;
@@ -60,6 +61,7 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.utils.ProfileHelper;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -140,6 +142,9 @@ public class CibaGrantType {
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Missing parameter: " + AUTH_REQ_ID, Response.Status.BAD_REQUEST);
         }
 
+        List<String> resourceList = formParams.get(OAuth2Constants.RESOURCE);
+        TokenEndpoint.checkResourceList(resourceList, event, cors);
+
         logger.tracev("CIBA Grant :: authReqId = {0}", jwe);
 
         CIBAAuthenticationRequest request;
@@ -216,7 +221,7 @@ public class CibaGrantType {
         int authTime = Time.currentTime();
         userSession.setNote(AuthenticationManager.AUTH_TIME, String.valueOf(authTime));
 
-        return tokenEndpoint.createTokenResponse(user, userSession, clientSessionCtx, scopeParam, true);
+        return tokenEndpoint.createTokenResponse(user, userSession, clientSessionCtx, scopeParam, true, resourceList);
 
     }
 

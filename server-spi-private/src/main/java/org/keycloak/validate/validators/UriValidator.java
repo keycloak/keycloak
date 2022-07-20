@@ -137,6 +137,27 @@ public class UriValidator implements SimpleValidator, ConfiguredProvider {
         return valid;
     }
 
+    public static void validateUri(String url, Set<String> blockedSchemes, boolean allowFragment, boolean requireValidUrl)
+            throws MalformedURLException, URISyntaxException {
+        URI uri = new URI(url);
+
+        ValidationContext context = new ValidationContext();
+        if (uri.getScheme() != null && blockedSchemes.contains(uri.getScheme())) {
+            throw new MalformedURLException("Not valid URI scheme");
+        }
+
+        if (!allowFragment && uri.getFragment() != null) {
+            throw new MalformedURLException("URI consists fragment");
+        }
+
+        // Don't check if URL is valid if there are other problems with it; otherwise it could lead to duplicate errors.
+        // This cannot be moved higher because it acts on differently based on environment (e.g. sometimes it checks
+        // scheme, sometimes it doesn't).
+        if (requireValidUrl) {
+            URL ignored = uri.toURL(); // throws an exception
+        }
+    }
+
     @Override
     public String getHelpText() {
         return "Uri Validator";

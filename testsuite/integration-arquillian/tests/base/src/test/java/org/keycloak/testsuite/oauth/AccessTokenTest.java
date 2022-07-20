@@ -246,6 +246,9 @@ public class AccessTokenTest extends AbstractKeycloakTest {
         assertEquals(oauth.parseRefreshToken(response.getRefreshToken()).getId(), event.getDetails().get(Details.REFRESH_TOKEN_ID));
         assertEquals(sessionId, token.getSessionState());
 
+        //by default audience without resource parameter, defaultAudValueForAccessToken be set and scope with audience audience must be null
+        Assert.assertNull(token.getAudience());
+
     }
 
     @Test
@@ -1420,6 +1423,48 @@ public class AccessTokenTest extends AbstractKeycloakTest {
             assertEquals(400, response.getStatusCode());
             assertEquals("invalid_request", response.getError());
             assertEquals("duplicated parameter", response.getErrorDescription());
+        }
+    }
+
+    @Test
+    public void tokenRequestWithResource() throws IOException {
+        oauth.resource("https://www.keycloak.org/documentation");
+
+        try {
+            oauth.doLogin("test-user@localhost", "password");
+
+            EventRepresentation loginEvent = events.expectLogin().assertEvent();
+
+            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+            Assert.assertEquals(200, response.getStatusCode());
+            Assert.assertNotNull(response.getAccessToken());
+            AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
+            Assert.assertTrue(accessToken.hasAudience("https://www.keycloak.org/documentation"));
+
+        } finally {
+            oauth.resource(null);
+        }
+    }
+
+    @Test
+    public void tokenRequestWithDefaultAudienceValue() throws IOException {
+        RealmManager.realm(adminClient.realm("test")).defaultAudValueForAccessToken("https://www.keycloak.org/");
+
+        try {
+            oauth.doLogin("test-user@localhost", "password");
+
+            EventRepresentation loginEvent = events.expectLogin().assertEvent();
+
+            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+            OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, "password");
+            Assert.assertEquals(200, response.getStatusCode());
+            Assert.assertNotNull(response.getAccessToken());
+            AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
+            Assert.assertTrue(accessToken.hasAudience("https://www.keycloak.org/"));
+
+        } finally {
+            RealmManager.realm(adminClient.realm("test")).defaultAudValueForAccessToken(null);
         }
     }
 

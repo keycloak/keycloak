@@ -642,6 +642,18 @@ public class RealmAdapter implements CachedRealmModel {
     }
 
     @Override
+    public String getDefaultAudValueForAccessToken() {
+        if (isUpdated()) return updated.getDefaultAudValueForAccessToken();
+        return cached.getDefaultAudValueForAccessToken();
+    }
+
+    @Override
+    public void setDefaultAudValueForAccessToken(String defaultAudValueForAccessToken) {
+        getDelegateForUpdate();
+        updated.setDefaultAudValueForAccessToken(defaultAudValueForAccessToken);
+    }
+
+    @Override
     public Stream<RequiredCredentialModel> getRequiredCredentialsStream() {
         if (isUpdated()) return updated.getRequiredCredentialsStream();
         return cached.getRequiredCredentials().stream();

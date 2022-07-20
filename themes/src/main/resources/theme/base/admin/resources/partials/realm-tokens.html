@@ -287,6 +287,16 @@
         </div>
 
         <div class="form-group">
+            <label class="col-md-2 control-label" for="defaultAudValueForAccessToken">< {{:: 'default-aud-value-access-token' | translate}}</label>
+            <div class="col-md-6">
+                <input class="form-control" id="defaultAudValueForAccessToken" type="text" ng-model="realm.defaultAudValueForAccessToken">
+            </div>
+            <kc-tooltip>
+                {{:: 'default-aud-value-access-token.tooltip' | translate}}
+            </kc-tooltip>
+        </div>
+
+        <div class="form-group">
             <label class="col-md-2 control-label" for="actionTokenGeneratedByUserLifespan" class="two-lines">{{:: 'action-token-generated-by-user-lifespan' | translate}}</label>
 
             <div class="col-md-6 time-selector">

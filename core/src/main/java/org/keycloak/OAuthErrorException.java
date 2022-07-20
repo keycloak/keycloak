@@ -32,6 +32,7 @@ public class OAuthErrorException extends Exception {
     public static final String TEMPORARILY_UNAVAILABLE = "temporarily_unavailable";
     public static final String INVALID_REQUEST_URI = "invalid_request_uri";
     public static final String INVALID_REQUEST_OBJECT = "invalid_request_object";
+    public static final String INVALID_TARGET ="invalid_target";
 
     // OpenID Connect 1
     public static final String INTERACTION_REQUIRED = "interaction_required";

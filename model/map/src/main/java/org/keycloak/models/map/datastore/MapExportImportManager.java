@@ -212,6 +212,9 @@ public class MapExportImportManager implements ExportImportManager {
             newRealm.setActionTokenGeneratedByUserLifespan(rep.getActionTokenGeneratedByUserLifespan());
         else newRealm.setActionTokenGeneratedByUserLifespan(newRealm.getAccessCodeLifespanUserAction());
 
+        if (rep.getDefaultAudValueForAccessToken() != null)
+            newRealm.setDefaultAudValueForAccessToken(rep.getDefaultAudValueForAccessToken());
+
         // OAuth 2.0 Device Authorization Grant
         OAuth2DeviceConfig deviceConfig = newRealm.getOAuth2DeviceConfig();
 
@@ -680,6 +683,8 @@ public class MapExportImportManager implements ExportImportManager {
             realm.setActionTokenGeneratedByAdminLifespan(rep.getActionTokenGeneratedByAdminLifespan());
         if (rep.getActionTokenGeneratedByUserLifespan() != null)
             realm.setActionTokenGeneratedByUserLifespan(rep.getActionTokenGeneratedByUserLifespan());
+        if (rep.getDefaultAudValueForAccessToken() != null)
+            realm.setDefaultAudValueForAccessToken(rep.getDefaultAudValueForAccessToken());
 
         OAuth2DeviceConfig deviceConfig = realm.getOAuth2DeviceConfig();
 

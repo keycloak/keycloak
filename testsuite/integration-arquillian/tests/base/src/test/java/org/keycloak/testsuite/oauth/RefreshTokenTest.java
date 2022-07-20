@@ -199,6 +199,40 @@ public class RefreshTokenTest extends AbstractKeycloakTest {
     }
 
     @Test
+    public void refreshTokenFlowWithResourceParameter() {
+
+        try {
+            oauth.doLogin("test-user@localhost", "password");
+
+            EventRepresentation loginEvent = events.expectLogin().assertEvent();
+
+            String sessionId = loginEvent.getSessionId();
+            String codeId = loginEvent.getDetails().get(Details.CODE_ID);
+
+            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+
+            OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "password");
+            AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
+            Assert.assertFalse(token.hasAudience("https://www.keycloak.org/documentation"));
+
+            String refreshTokenString = tokenResponse.getRefreshToken();
+            events.expectCodeToToken(codeId, sessionId).assertEvent();
+
+            assertNotNull(refreshTokenString);
+
+            oauth.resource("https://www.keycloak.org/documentation");
+            OAuthClient.AccessTokenResponse response = oauth.doRefreshTokenRequest(refreshTokenString, "password");
+            assertEquals(200, response.getStatusCode());
+            assertNotNull(response.getRefreshToken());
+            AccessToken refreshedAccessToken = oauth.verifyToken(response.getAccessToken());
+            Assert.assertTrue(refreshedAccessToken.hasAudience("https://www.keycloak.org/documentation"));
+
+        } finally {
+            oauth.resource(null);
+        }
+    }
+
+    @Test
     public void refreshTokenRequest() throws Exception {
         oauth.nonce("123456");
         oauth.doLogin("test-user@localhost", "password");

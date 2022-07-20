@@ -92,6 +92,7 @@ import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.util.TokenUtil;
 import org.keycloak.utils.ProfileHelper;
+import org.keycloak.validate.validators.UriValidator;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -110,10 +111,14 @@ import javax.ws.rs.core.Response.Status;
 import javax.xml.namespace.QName;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForModification;
@@ -297,7 +302,7 @@ public class TokenEndpoint {
 
     private void checkParameterDuplicated() {
         for (String key : formParams.keySet()) {
-            if (formParams.get(key).size() != 1) {
+            if (formParams.get(key).size() != 1 && !OAuth2Constants.RESOURCE.equals(key)) {
                 throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "duplicated parameter",
                     Response.Status.BAD_REQUEST);
             }
@@ -310,6 +315,9 @@ public class TokenEndpoint {
             event.error(Errors.INVALID_CODE);
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "Missing parameter: " + OAuth2Constants.CODE, Response.Status.BAD_REQUEST);
         }
+
+        List<String> resourceList = formParams.get(OAuth2Constants.RESOURCE);
+        checkResourceList(resourceList, event, cors);
 
         OAuth2CodeParser.ParseResult parseResult = OAuth2CodeParser.parseCode(session, code, realm, event);
         if (parseResult.isIllegalCode()) {
@@ -431,12 +439,12 @@ public class TokenEndpoint {
         // Set nonce as an attribute in the ClientSessionContext. Will be used for the token generation
         clientSessionCtx.setAttribute(OIDCLoginProtocol.NONCE_PARAM, codeData.getNonce());
 
-        return createTokenResponse(user, userSession, clientSessionCtx, scopeParam, true);
+        return createTokenResponse(user, userSession, clientSessionCtx, scopeParam, true, resourceList);
     }
 
     public Response createTokenResponse(UserModel user, UserSessionModel userSession, ClientSessionContext clientSessionCtx,
-        String scopeParam, boolean code) {
-        AccessToken token = tokenManager.createClientAccessToken(session, realm, client, user, userSession, clientSessionCtx);
+        String scopeParam, boolean code, List<String> resourceList) {
+        AccessToken token = tokenManager.createClientAccessToken(session, realm, client, user, userSession, clientSessionCtx, resourceList);
 
         TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager
             .responseBuilder(realm, client, event, session, userSession, clientSessionCtx).accessToken(token);
@@ -501,10 +509,13 @@ public class TokenEndpoint {
             throw new CorsErrorResponseException(cors, cpe.getError(), cpe.getErrorDetail(), cpe.getErrorStatus());
         }
 
+        List<String> resourceList = formParams.get(OAuth2Constants.RESOURCE);
+        checkResourceList(resourceList, event, cors);
+
         AccessTokenResponse res;
         try {
             // KEYCLOAK-6771 Certificate Bound Token
-            TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.refreshAccessToken(session, session.getContext().getUri(), clientConnection, realm, client, refreshToken, event, headers, request);
+            TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.refreshAccessToken(session, session.getContext().getUri(), clientConnection, realm, client, refreshToken, event, headers, request, resourceList);
             res = responseBuilder.build();
 
             if (!responseBuilder.isOfflineToken()) {
@@ -581,6 +592,9 @@ public class TokenEndpoint {
             throw new CorsErrorResponseException(cors, cpe.getError(), cpe.getErrorDetail(), cpe.getErrorStatus());
         }
 
+        List<String> resourceList = formParams.get(OAuth2Constants.RESOURCE);
+        checkResourceList(resourceList, event, cors);
+
         String scope = getRequestedScopes();
 
         RootAuthenticationSessionModel rootAuthSession = new AuthenticationSessionManager(session).createAuthenticationSession(realm, false);
@@ -626,7 +640,7 @@ public class TokenEndpoint {
         updateUserSessionFromClientAuth(userSession);
 
         TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager
-            .responseBuilder(realm, client, event, session, userSession, clientSessionCtx).generateAccessToken();
+            .responseBuilder(realm, client, event, session, userSession, clientSessionCtx).generateAccessToken(resourceList);
         if (OIDCAdvancedConfigWrapper.fromClientModel(client).isUseRefreshToken()) {
             responseBuilder.generateRefreshToken();
         }
@@ -659,6 +673,9 @@ public class TokenEndpoint {
             event.error(Errors.INVALID_CLIENT);
             throw new CorsErrorResponseException(cors, OAuthErrorException.UNAUTHORIZED_CLIENT, "Client not enabled to retrieve service account", Response.Status.UNAUTHORIZED);
         }
+
+        List<String> resourceList = formParams.get(OAuth2Constants.RESOURCE);
+        checkResourceList(resourceList, event, cors);
 
         UserModel clientUser = session.users().getServiceAccount(client);
 
@@ -719,7 +736,7 @@ public class TokenEndpoint {
         updateUserSessionFromClientAuth(userSession);
 
         TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.responseBuilder(realm, client, event, session, userSession, clientSessionCtx)
-                .generateAccessToken();
+                .generateAccessToken(resourceList);
 
         // Make refresh token generation optional, see KEYCLOAK-9551
         if (useRefreshToken) {
@@ -950,6 +967,18 @@ public class TokenEndpoint {
     public Response cibaGrant() {
         CibaGrantType grantType = new CibaGrantType(formParams, client, session, this, realm, event, cors);
         return grantType.cibaGrant();
+    }
+
+    public static void checkResourceList(List<String> resourceList, EventBuilder event, Cors cors ) {
+        try {
+            if (resourceList != null)
+                for (String resource : resourceList) {
+                    UriValidator.validateUri(resource, Stream.of("data","javascript").collect(Collectors.toSet()), true, false);
+                }
+        } catch (MalformedURLException | URISyntaxException e) {
+            event.error(Errors.INVALID_TARGET);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_TARGET, "The requested resource is invalid or malformed.", Response.Status.BAD_REQUEST);
+        }
     }
 
     public static class TokenExchangeSamlProtocol extends SamlProtocol {

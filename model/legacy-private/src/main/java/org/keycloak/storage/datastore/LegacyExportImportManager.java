@@ -218,6 +218,8 @@ public class LegacyExportImportManager implements ExportImportManager {
         if (rep.getActionTokenGeneratedByUserLifespan() != null)
             newRealm.setActionTokenGeneratedByUserLifespan(rep.getActionTokenGeneratedByUserLifespan());
         else newRealm.setActionTokenGeneratedByUserLifespan(newRealm.getAccessCodeLifespanUserAction());
+        if (rep.getDefaultAudValueForAccessToken() != null)
+            newRealm.setDefaultAudValueForAccessToken(rep.getDefaultAudValueForAccessToken());
 
         // OAuth 2.0 Device Authorization Grant
         OAuth2DeviceConfig deviceConfig = newRealm.getOAuth2DeviceConfig();
@@ -726,6 +728,9 @@ public class LegacyExportImportManager implements ExportImportManager {
             realm.setClientOfflineSessionIdleTimeout(rep.getClientOfflineSessionIdleTimeout());
         if (rep.getClientOfflineSessionMaxLifespan() != null)
             realm.setClientOfflineSessionMaxLifespan(rep.getClientOfflineSessionMaxLifespan());
+        if (rep.getDefaultAudValueForAccessToken() != null)
+            realm.setDefaultAudValueForAccessToken(rep.getDefaultAudValueForAccessToken
+                ());
         if (rep.getRequiredCredentials() != null) {
             realm.updateRequiredCredentials(rep.getRequiredCredentials());
         }

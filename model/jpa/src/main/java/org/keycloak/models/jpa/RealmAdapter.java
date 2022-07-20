@@ -309,6 +309,16 @@ public class RealmAdapter implements LegacyRealmModel, JpaModel<RealmEntity> {
     }
 
     @Override
+    public String getDefaultAudValueForAccessToken() {
+        return getAttribute(RealmAttributes.DEFAULT_AUD_VALUE_FOR_ACCESS_TOKEN);
+    }
+
+    @Override
+    public void setDefaultAudValueForAccessToken(String defaultAudValueForAccessToken) {
+        setAttribute(RealmAttributes.DEFAULT_AUD_VALUE_FOR_ACCESS_TOKEN, defaultAudValueForAccessToken);
+    }
+
+    @Override
     public boolean isVerifyEmail() {
         return realm.isVerifyEmail();
     }

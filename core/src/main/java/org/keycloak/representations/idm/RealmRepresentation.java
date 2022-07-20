@@ -72,6 +72,7 @@ public class RealmRepresentation {
     protected Integer oauth2DevicePollingInterval;
     protected Boolean enabled;
     protected String sslRequired;
+    protected String defaultAudValueForAccessToken;
     @Deprecated
     protected Boolean passwordCredentialGrantAllowed;
     protected Boolean registrationAllowed;
@@ -517,6 +518,14 @@ public class RealmRepresentation {
 
     public void setActionTokenGeneratedByUserLifespan(Integer actionTokenGeneratedByUserLifespan) {
         this.actionTokenGeneratedByUserLifespan = actionTokenGeneratedByUserLifespan;
+    }
+
+    public String getDefaultAudValueForAccessToken() {
+        return defaultAudValueForAccessToken;
+    }
+
+    public void setDefaultAudValueForAccessToken(String defaultAudValueForAccessToken) {
+        this.defaultAudValueForAccessToken = defaultAudValueForAccessToken;
     }
 
     @Deprecated

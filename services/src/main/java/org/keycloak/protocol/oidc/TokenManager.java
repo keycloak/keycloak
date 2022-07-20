@@ -126,7 +126,7 @@ public class TokenManager {
     }
 
     public TokenValidation validateToken(KeycloakSession session, UriInfo uriInfo, ClientConnection connection, RealmModel realm,
-                                         RefreshToken oldToken, HttpHeaders headers) throws OAuthErrorException {
+                                         RefreshToken oldToken, HttpHeaders headers, List<String> resourceList) throws OAuthErrorException {
         UserSessionModel userSession = null;
         boolean offline = TokenUtil.TOKEN_TYPE_OFFLINE.equals(oldToken.getType());
 
@@ -219,7 +219,7 @@ public class TokenManager {
         clientSessionCtx.setAttribute(OIDCLoginProtocol.NONCE_PARAM, oldToken.getNonce());
 
         // recreate token.
-        AccessToken newToken = createClientAccessToken(session, realm, client, user, userSession, clientSessionCtx);
+        AccessToken newToken = createClientAccessToken(session, realm, client, user, userSession, clientSessionCtx, resourceList);
 
         return new TokenValidation(user, userSession, clientSessionCtx, newToken);
     }
@@ -359,14 +359,14 @@ public class TokenManager {
 
 
     public AccessTokenResponseBuilder refreshAccessToken(KeycloakSession session, UriInfo uriInfo, ClientConnection connection, RealmModel realm, ClientModel authorizedClient,
-                                            String encodedRefreshToken, EventBuilder event, HttpHeaders headers, HttpRequest request) throws OAuthErrorException {
+                                            String encodedRefreshToken, EventBuilder event, HttpHeaders headers, HttpRequest request, List<String> resourceList) throws OAuthErrorException {
         RefreshToken refreshToken = verifyRefreshToken(session, realm, authorizedClient, request, encodedRefreshToken, true);
 
         event.user(refreshToken.getSubject()).session(refreshToken.getSessionState())
                 .detail(Details.REFRESH_TOKEN_ID, refreshToken.getId())
                 .detail(Details.REFRESH_TOKEN_TYPE, refreshToken.getType());
 
-        TokenValidation validation = validateToken(session, uriInfo, connection, realm, refreshToken, headers);
+        TokenValidation validation = validateToken(session, uriInfo, connection, realm, refreshToken, headers, resourceList);
         AuthenticatedClientSessionModel clientSession = validation.clientSessionCtx.getClientSession();
 
         // validate authorizedClient is same as validated client
@@ -528,6 +528,18 @@ public class TokenManager {
     public AccessToken createClientAccessToken(KeycloakSession session, RealmModel realm, ClientModel client, UserModel user, UserSessionModel userSession,
                                                ClientSessionContext clientSessionCtx) {
         AccessToken token = initToken(realm, client, user, userSession, clientSessionCtx, session.getContext().getUri());
+        token = transformAccessToken(session, token, userSession, clientSessionCtx);
+        return token;
+    }
+
+    public AccessToken createClientAccessToken(KeycloakSession session, RealmModel realm, ClientModel client, UserModel user, UserSessionModel userSession,
+                                               ClientSessionContext clientSessionCtx, List<String> resourceList) {
+        AccessToken token = initToken(realm, client, user, userSession, clientSessionCtx, session.getContext().getUri());
+        if (resourceList !=null) {
+            token.audience(resourceList.toArray(new String[resourceList.size()]));
+        } else if (realm.getDefaultAudValueForAccessToken() != null && !realm.getDefaultAudValueForAccessToken().isEmpty()) {
+            token.audience(realm.getDefaultAudValueForAccessToken());
+        }
         token = transformAccessToken(session, token, userSession, clientSessionCtx);
         return token;
     }
@@ -1033,6 +1045,12 @@ public class TokenManager {
         public AccessTokenResponseBuilder generateAccessToken() {
             UserModel user = userSession.getUser();
             accessToken = createClientAccessToken(session, realm, client, user, userSession, clientSessionCtx);
+            return this;
+        }
+
+        public AccessTokenResponseBuilder generateAccessToken(List<String> resourceList) {
+            UserModel user = userSession.getUser();
+            accessToken = createClientAccessToken(session, realm, client, user, userSession, clientSessionCtx, resourceList);
             return this;
         }
 

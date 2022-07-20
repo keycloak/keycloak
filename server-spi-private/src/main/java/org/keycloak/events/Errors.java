@@ -49,6 +49,7 @@ public interface Errors {
     String INVALID_CODE = "invalid_code";
     String INVALID_TOKEN = "invalid_token";
     String INVALID_TOKEN_TYPE = "invalid_token_type";
+    String INVALID_TARGET ="invalid_target";
     String INVALID_SAML_RESPONSE = "invalid_saml_response";
     String INVALID_SAML_AUTHN_REQUEST = "invalid_authn_request";
     String INVALID_SAML_LOGOUT_REQUEST = "invalid_logout_request";
