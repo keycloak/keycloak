@@ -22,7 +22,7 @@ Options:
 
 -h, --help           This help message.
 
-Cluster:
+Cache:
 
 --cache <type>       Defines the cache mechanism for high-availability. By default, a 'ispn' cache
                        is used to create a cluster between multiple server nodes. A 'local' cache

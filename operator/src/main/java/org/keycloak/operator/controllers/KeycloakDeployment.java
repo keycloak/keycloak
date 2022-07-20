@@ -93,11 +93,12 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
             // don't overwrite metadata, just specs
             reconciledDeployment.setSpec(baseDeployment.getSpec());
 
-            // don't overwrite annotations in pod templates to support rolling restarts
+            // don't fully overwrite annotations in pod templates to support rolling restarts (K8s sets some extra annotation to track restart)
+            // instead, merge it
             if (existingDeployment.getSpec() != null && existingDeployment.getSpec().getTemplate() != null) {
                 mergeMaps(
-                        Optional.ofNullable(reconciledDeployment.getSpec().getTemplate().getMetadata()).map(m -> m.getAnnotations()).orElse(null),
                         Optional.ofNullable(existingDeployment.getSpec().getTemplate().getMetadata()).map(m -> m.getAnnotations()).orElse(null),
+                        Optional.ofNullable(reconciledDeployment.getSpec().getTemplate().getMetadata()).map(m -> m.getAnnotations()).orElse(null),
                         annotations -> reconciledDeployment.getSpec().getTemplate().getMetadata().setAnnotations(annotations));
             }
         }

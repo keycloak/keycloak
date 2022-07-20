@@ -152,19 +152,15 @@ public class JpaMapStorageProviderFactory implements
 
     public static final String HIBERNATE_DEFAULT_SCHEMA = "hibernate.default_schema";
 
-    public static Map<String, Object> configureHibernateProperties() {
-        Map<String, Object> properties = new HashMap<>();
-
-        properties.put("hibernate.integrator_provider", new KeycloakIntegratorProvider());
-
-        return properties;
-    }
-
     private volatile EntityManagerFactory emf;
     private final Set<Class<?>> validatedModels = ConcurrentHashMap.newKeySet();
     private Config.Scope config;
     private final String sessionProviderKey;
     private final String sessionTxKey;
+
+    // Object instances for each single JpaMapStorageProviderFactory instance per model type.
+    // Used to synchronize on when validating the model type area.
+    private final ConcurrentHashMap<Class<?>, Object> SYNC_MODELS = new ConcurrentHashMap<>();
 
     public final static DeepCloner CLONER = new DeepCloner.Builder()
         //auth-sessions
@@ -264,10 +260,14 @@ public class JpaMapStorageProviderFactory implements
         // check the session for a cached provider before creating a new one.
         JpaMapStorageProvider provider = session.getAttribute(this.sessionProviderKey, JpaMapStorageProvider.class);
         if (provider == null) {
-            provider = new JpaMapStorageProvider(this, session, emf.createEntityManager(), this.sessionTxKey);
+            provider = new JpaMapStorageProvider(this, session, getEntityManager(), this.sessionTxKey);
             session.setAttribute(this.sessionProviderKey, provider);
         }
         return provider;
+    }
+
+    protected EntityManager getEntityManager() {
+        return emf.createEntityManager();
     }
 
     @Override
@@ -343,8 +343,6 @@ public class JpaMapStorageProviderFactory implements
         properties.put("hibernate.format_sql", config.getBoolean("formatSql", true));
         properties.put("hibernate.dialect", config.get("driverDialect"));
 
-        properties.putAll(configureHibernateProperties());
-
         logger.trace("Creating EntityManagerFactory");
         ParsedPersistenceXmlDescriptor descriptor = PersistenceXmlParser.locateIndividualPersistenceUnit(
                 JpaMapStorageProviderFactory.class.getClassLoader()
@@ -374,24 +372,29 @@ public class JpaMapStorageProviderFactory implements
 
         if (this.validatedModelNames.add(modelName)) {
         */
-        if (this.validatedModels.add(modelType)) {
-            Connection connection = getConnection();
-            try {
-                if (logger.isDebugEnabled()) printOperationalInfo(connection);
-
-                MapJpaUpdaterProvider updater = session.getProvider(MapJpaUpdaterProvider.class);
-                MapJpaUpdaterProvider.Status status = updater.validate(modelType, connection, config.get("schema"));
-
-                if (!status.equals(VALID)) {
-                    update(modelType, connection, session);
-                }
-            } finally {
-                if (connection != null) {
+        if (!this.validatedModels.contains(modelType)) {
+            synchronized (SYNC_MODELS.computeIfAbsent(modelType, mc -> new Object())) {
+                if (!this.validatedModels.contains(modelType)) {
+                    Connection connection = getConnection();
                     try {
-                        connection.close();
-                    } catch (SQLException e) {
-                        logger.warn("Can't close connection", e);
+                        if (logger.isDebugEnabled()) printOperationalInfo(connection);
+
+                        MapJpaUpdaterProvider updater = session.getProvider(MapJpaUpdaterProvider.class);
+                        MapJpaUpdaterProvider.Status status = updater.validate(modelType, connection, config.get("schema"));
+
+                        if (!status.equals(VALID)) {
+                            update(modelType, connection, session);
+                        }
+                    } finally {
+                        if (connection != null) {
+                            try {
+                                connection.close();
+                            } catch (SQLException e) {
+                                logger.warn("Can't close connection", e);
+                            }
+                        }
                     }
+                    validatedModels.add(modelType);
                 }
             }
         }

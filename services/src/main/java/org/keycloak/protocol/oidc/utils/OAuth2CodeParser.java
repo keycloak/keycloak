@@ -31,7 +31,7 @@ import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.services.managers.UserSessionCrossDCManager;
 
-import static org.keycloak.utils.LockObjectsForModification.lockObjectsForModification;
+import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForModification;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -101,10 +101,10 @@ public class OAuth2CodeParser {
         }
 
         // Retrieve UserSession
-        UserSessionModel userSession = lockObjectsForModification(session, () -> new UserSessionCrossDCManager(session).getUserSessionWithClient(realm, userSessionId, clientUUID));
+        UserSessionModel userSession = lockUserSessionsForModification(session, () -> new UserSessionCrossDCManager(session).getUserSessionWithClient(realm, userSessionId, clientUUID));
         if (userSession == null) {
             // Needed to track if code is invalid or was already used.
-            userSession = lockObjectsForModification(session, () -> session.sessions().getUserSession(realm, userSessionId));
+            userSession = lockUserSessionsForModification(session, () -> session.sessions().getUserSession(realm, userSessionId));
             if (userSession == null) {
                 return result.illegalCode();
             }

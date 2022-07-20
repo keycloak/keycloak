@@ -114,7 +114,7 @@ import static org.keycloak.common.util.ServerCookie.SameSiteAttributeValue;
 import static org.keycloak.models.UserSessionModel.CORRESPONDING_SESSION_ID;
 import static org.keycloak.protocol.oidc.grants.device.DeviceGrantType.isOAuth2DeviceVerificationFlow;
 import static org.keycloak.services.util.CookieHelper.getCookie;
-import static org.keycloak.utils.LockObjectsForModification.lockObjectsForModification;
+import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForModification;
 
 /**
  * Stateless object that manages authentication
@@ -224,7 +224,7 @@ public class AuthenticationManager {
             verifier.verifierContext(signatureVerifier);
 
             AccessToken token = verifier.verify().getToken();
-            UserSessionModel cookieSession = lockObjectsForModification(session, () -> session.sessions().getUserSession(realm, token.getSessionState()));
+            UserSessionModel cookieSession = lockUserSessionsForModification(session, () -> session.sessions().getUserSession(realm, token.getSessionState()));
             if (cookieSession == null || !cookieSession.getId().equals(userSession.getId())) return true;
             expireIdentityCookie(realm, uriInfo, connection);
             return true;
@@ -310,7 +310,7 @@ public class AuthenticationManager {
 
             // Check if "online" session still exists and remove it too
             String onlineUserSessionId = userSession.getNote(CORRESPONDING_SESSION_ID);
-            UserSessionModel onlineUserSession = lockObjectsForModification(session, () -> (onlineUserSessionId != null) ?
+            UserSessionModel onlineUserSession = lockUserSessionsForModification(session, () -> (onlineUserSessionId != null) ?
                     session.sessions().getUserSession(realm, onlineUserSessionId) :
                     session.sessions().getUserSession(realm, userSession.getId()));
 
@@ -929,7 +929,7 @@ public class AuthenticationManager {
             if (split.length >= 3) {
                 String oldSessionId = split[2];
                 if (!oldSessionId.equals(userSession.getId())) {
-                    UserSessionModel oldSession = lockObjectsForModification(session, () -> session.sessions().getUserSession(realm, oldSessionId));
+                    UserSessionModel oldSession = lockUserSessionsForModification(session, () -> session.sessions().getUserSession(realm, oldSessionId));
                     if (oldSession != null) {
                         logger.debugv("Removing old user session: session: {0}", oldSessionId);
                         session.sessions().removeUserSession(realm, oldSession);

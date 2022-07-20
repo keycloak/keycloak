@@ -16,6 +16,8 @@
  */
 package org.keycloak.testsuite.model.session;
 
+import org.infinispan.client.hotrod.RemoteCache;
+import org.infinispan.commons.CacheException;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -26,6 +28,10 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
+import org.keycloak.models.map.storage.ModelEntityUtil;
+import org.keycloak.models.map.storage.hotRod.connections.DefaultHotRodConnectionProviderFactory;
+import org.keycloak.models.map.storage.hotRod.connections.HotRodConnectionProvider;
+import org.keycloak.models.map.storage.hotRod.userSession.HotRodUserSessionEntity;
 import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.models.sessions.infinispan.InfinispanUserSessionProvider;
 import org.keycloak.models.sessions.infinispan.InfinispanUserSessionProviderFactory;
@@ -123,6 +129,39 @@ public class OfflineSessionPersistenceTest extends KeycloakModelTest {
     }
 
     @Test
+    @RequireProvider(value = HotRodConnectionProvider.class, only = DefaultHotRodConnectionProviderFactory.PROVIDER_ID)
+    public void testOfflineSessionsRemovedAfterDeleteRealm() {
+        String realmId2 = inComittedTransaction(session -> { return prepareRealm(session, "realm2").getId(); });
+        List<String> userIds2 = withRealm(realmId2, (session, realm) -> IntStream.range(0, USER_COUNT)
+                .mapToObj(i -> session.users().addUser(realm, "user2-" + i))
+                .map(UserModel::getId)
+                .collect(Collectors.toList())
+        );
+
+        try {
+            List<String> offlineSessionIds2 = createOfflineSessions(realmId2, userIds2);
+            assertOfflineSessionsExist(realmId2, offlineSessionIds2);
+
+            // Simulate server restart
+            reinitializeKeycloakSessionFactory();
+
+            assertOfflineSessionsExist(realmId2, offlineSessionIds2);
+
+            inComittedTransaction(session -> {
+                session.realms().removeRealm(realmId2);
+            });
+
+            inComittedTransaction(session -> {
+                HotRodConnectionProvider provider = session.getProvider(HotRodConnectionProvider.class);
+                RemoteCache<String, HotRodUserSessionEntity> remoteCache = provider.getRemoteCache(ModelEntityUtil.getModelName(UserSessionModel.class));
+                assertThat(remoteCache, Matchers.anEmptyMap());
+            });
+        } finally {
+            withRealm(realmId2, (session, realm) -> realm == null ? false : new RealmManager(session).removeRealm(realm));
+        }
+    }
+
+    @Test
     public void testPersistenceSingleNode() {
         List<String> offlineSessionIds = createOfflineSessions(realmId, userIds);
         assertOfflineSessionsExist(realmId, offlineSessionIds);
@@ -214,23 +253,23 @@ public class OfflineSessionPersistenceTest extends KeycloakModelTest {
                 int oid = index % offlineSessionIds.size();
                 String offlineSessionId = offlineSessionIds.get(oid);
                 int cid = index % clientIds.size();
-                String clientSessionId;
-                while (true) {
-                    try {
-                        clientSessionId = createOfflineClientSession(offlineSessionId, clientIds.get(cid));
-                        break;
-                    } catch (RuntimeException ex) {
-                        // invocation can fail when remote cache is stopping, this is actually part of this test:
-                        // "ISPN000217: Received exception from node-8, see cause for remote stack trace
-                        // IllegalLifecycleStateException: ISPN000324: Cache 'clientSessions' is in 'STOPPING' state and this is an invocation not belonging to an
-                        // on-going transaction, so it does not accept new invocations."
-                        if (ex.getCause() != null && ex.getCause().getMessage().contains("ISPN000324")) {
-                            log.warn("invocation failed, retrying", ex);
-                            sleep(1000);
-                        }
+                try {
+                    clientSessionIds.computeIfAbsent(offlineSessionId, a -> Collections.synchronizedList(new LinkedList<>())).add(createOfflineClientSession(offlineSessionId, clientIds.get(cid)));
+                } catch (RuntimeException ex) {
+                    // invocation can fail when remote cache is stopping, this is actually part of this test:
+                    // "ISPN000217: Received exception from node-8, see cause for remote stack trace
+                    // IllegalLifecycleStateException: ISPN000324: Cache 'clientSessions' is in 'STOPPING' state and this is an invocation not belonging to an
+                    // on-going transaction, so it does not accept new invocations."
+                    // also: org.infinispan.commons.CacheException: java.lang.IllegalStateException: Read commands must ignore leavers
+                    if ((ex.getCause() != null && ex.getCause().getMessage().contains("ISPN000324") ||
+                            (ex instanceof CacheException && ex.getMessage().contains("Read commands must ignore leavers")))) {
+                        log.warn("invocation failed, skipping. Retrying might lead to a 'Unique index or primary key violation' when the offline session has already been stored in the DB in the current session", ex);
+                    } else {
+                        throw ex;
                     }
                 }
-                clientSessionIds.computeIfAbsent(offlineSessionId, a -> new LinkedList<>()).add(clientSessionId);
+
+                // re-initialize the session factory N times in this test
                 if (index % 100 == 0) {
                     // don't re-initialize all caches at the same time to avoid an unstable cluster with no leader
                     // otherwise seen CacheInitializer#loadSessions to loop sleeping
