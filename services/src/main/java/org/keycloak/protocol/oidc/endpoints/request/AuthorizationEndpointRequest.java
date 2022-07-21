@@ -36,7 +36,6 @@ public class AuthorizationEndpointRequest {
     String state;
     String scope;
     String loginHint;
-    String display;
     String prompt;
     String nonce;
     Integer maxAge;
@@ -122,10 +121,6 @@ public class AuthorizationEndpointRequest {
     // https://tools.ietf.org/html/rfc7636#section-6.1
     public String getCodeChallengeMethod() {
         return codeChallengeMethod;
-    }
-
-    public String getDisplay() {
-        return display;
     }
 
     public String getInvalidRequestMessage() {

@@ -103,7 +103,6 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
     protected String accessCode;
     protected Response.Status status;
-    protected javax.ws.rs.core.MediaType contentType;
     protected List<AuthorizationDetails> clientScopesRequested;
     protected Map<String, String> httpResponseHeaders = new HashMap<>();
     protected URI actionUri;
@@ -435,25 +434,6 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
         return formatMessage(msg, messagesBundle, locale);
     }
 
-    @Override
-    public String getMessage(String message, String... parameters) {
-        Theme theme;
-        try {
-            theme = getTheme();
-        } catch (IOException e) {
-            logger.error("Failed to create theme", e);
-            throw new RuntimeException("Failed to create theme");
-        }
-
-        Locale locale = session.getContext().resolveLocale(user);
-        Properties messagesBundle = handleThemeResources(theme, locale);
-        Map<String, String> localizationTexts = realm.getRealmLocalizationTextsByLocale(locale.getCountry());
-        messagesBundle.putAll(localizationTexts);
-        FormMessage msg = new FormMessage(message, (Object[]) parameters);
-        return formatMessage(msg, messagesBundle, locale);
-    }
-
-
     /**
      * Create common attributes used in all templates.
      * 
@@ -542,8 +522,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     protected Response processTemplate(Theme theme, String templateName, Locale locale) {
         try {
             String result = freeMarker.processTemplate(attributes, templateName, theme);
-            javax.ws.rs.core.MediaType mediaType = contentType == null ? MediaType.TEXT_HTML_UTF_8_TYPE : contentType;
-            Response.ResponseBuilder builder = Response.status(status == null ? Response.Status.OK : status).type(mediaType).language(locale).entity(result);
+            Response.ResponseBuilder builder = Response.status(status == null ? Response.Status.OK : status).type(MediaType.TEXT_HTML_UTF_8_TYPE).language(locale).entity(result);
             for (Map.Entry<String, String> entry : httpResponseHeaders.entrySet()) {
                 builder.header(entry.getKey(), entry.getValue());
             }
@@ -823,12 +802,6 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     @Override
     public LoginFormsProvider setStatus(Response.Status status) {
         this.status = status;
-        return this;
-    }
-
-    @Override
-    public LoginFormsProvider setMediaType(javax.ws.rs.core.MediaType type) {
-        this.contentType = type;
         return this;
     }
 

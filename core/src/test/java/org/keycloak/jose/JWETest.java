@@ -17,28 +17,30 @@
 
 package org.keycloak.jose;
 
-import java.nio.charset.StandardCharsets;
-import java.security.Key;
-import java.security.KeyPair;
-
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
-
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Ignore;
-import org.junit.Rule;
 import org.junit.Test;
-import org.keycloak.common.util.Base64;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.KeyUtils;
-import org.keycloak.jose.jwe.*;
+import org.keycloak.jose.jwe.JWE;
+import org.keycloak.jose.jwe.JWEConstants;
+import org.keycloak.jose.jwe.JWEException;
+import org.keycloak.jose.jwe.JWEHeader;
+import org.keycloak.jose.jwe.JWEKeyStorage;
+import org.keycloak.jose.jwe.JWEUtils;
 import org.keycloak.jose.jwe.alg.JWEAlgorithmProvider;
 import org.keycloak.jose.jwe.alg.RsaKeyEncryptionJWEAlgorithmProvider;
 import org.keycloak.jose.jwe.enc.AesCbcHmacShaJWEEncryptionProvider;
 import org.keycloak.jose.jwe.enc.AesGcmJWEEncryptionProvider;
 import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
 import org.keycloak.rule.CryptoInitRule;
+
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+import java.nio.charset.StandardCharsets;
+import java.security.Key;
+import java.security.KeyPair;
 
 /**
  * This is not tested in keycloak-core. The subclasses should be created in the crypto modules to make sure it is tested with corresponding modules (bouncycastle VS bouncycastle-fips)
@@ -131,17 +133,6 @@ public abstract class JWETest {
         long took = System.currentTimeMillis() - start;
         System.out.println("Iterations: " + iterations + ", took: " + took);
     }
-
-    @Test
-    public void testPassword() {
-        byte[] salt = JWEUtils.generateSecret(8);
-        String encodedSalt = Base64.encodeBytes(salt);
-        String jwe = JWE.encryptUTF8("geheim", encodedSalt, PAYLOAD);
-        String decodedContent = JWE.decryptUTF8("geheim", encodedSalt, jwe);
-        Assert.assertEquals(PAYLOAD, decodedContent);
-    }
-
-
 
     @Test
     public void testAesKW_Aes128CbcHmacSha256() throws Exception {

@@ -588,21 +588,6 @@ public class AuthenticationProcessor {
         }
 
         @Override
-        public URI getActionUrl(String code, boolean authSessionIdParam) {
-            UriBuilder uriBuilder = LoginActionsService.loginActionsBaseUrl(getUriInfo())
-                    .path(AuthenticationProcessor.this.flowPath)
-                    .queryParam(LoginActionsService.SESSION_CODE, code)
-                    .queryParam(Constants.EXECUTION, getExecution().getId())
-                    .queryParam(Constants.CLIENT_ID, getAuthenticationSession().getClient().getClientId())
-                    .queryParam(Constants.TAB_ID, getAuthenticationSession().getTabId());
-            if (authSessionIdParam) {
-                uriBuilder.queryParam(LoginActionsService.AUTH_SESSION_ID, getAuthenticationSession().getParentSession().getId());
-            }
-            return uriBuilder
-                    .build(getRealm().getName());
-        }
-
-        @Override
         public URI getRefreshExecutionUrl() {
             UriBuilder uriBuilder = LoginActionsService.loginActionsBaseUrl(getUriInfo())
                     .path(AuthenticationProcessor.this.flowPath)

@@ -22,12 +22,9 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.TokenVerifier;
 import org.keycloak.TokenVerifier.Predicate;
 import org.keycloak.TokenVerifier.TokenTypeCheck;
-import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.AuthenticationFlowException;
 import org.keycloak.authentication.AuthenticationProcessor;
 import org.keycloak.authentication.AuthenticatorUtil;
-import org.keycloak.authentication.ConsoleDisplayMode;
-import org.keycloak.authentication.DisplayTypeRequiredActionFactory;
 import org.keycloak.authentication.InitiatedActionSupport;
 import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionContextResult;
@@ -1249,22 +1246,7 @@ public class AuthenticationManager {
     }
 
     public static RequiredActionProvider createRequiredAction(RequiredActionContextResult context) {
-        String display = context.getAuthenticationSession().getAuthNote(OAuth2Constants.DISPLAY);
-        if (display == null) return context.getFactory().create(context.getSession());
-
-
-        if (context.getFactory() instanceof DisplayTypeRequiredActionFactory) {
-            RequiredActionProvider provider = ((DisplayTypeRequiredActionFactory)context.getFactory()).createDisplay(context.getSession(), display);
-            if (provider != null) return provider;
-        }
-        // todo create a provider for handling lack of display support
-        if (OAuth2Constants.DISPLAY_CONSOLE.equalsIgnoreCase(display)) {
-            context.getAuthenticationSession().removeAuthNote(OAuth2Constants.DISPLAY);
-            throw new AuthenticationFlowException(AuthenticationFlowError.DISPLAY_NOT_SUPPORTED, ConsoleDisplayMode.browserContinue(context.getSession(), context.getUriInfo().getRequestUri().toString()));
-
-        } else {
-            return context.getFactory().create(context.getSession());
-        }
+        return context.getFactory().create(context.getSession());
     }
 
 

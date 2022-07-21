@@ -56,8 +56,6 @@ public interface LoginFormsProvider extends Provider {
 
     String getMessage(String message);
 
-    String getMessage(String message, String... parameters);
-
     Response createLoginUsernamePassword();
 
     Response createLoginUsername();
@@ -148,8 +146,6 @@ public interface LoginFormsProvider extends Provider {
     LoginFormsProvider setAttribute(String name, Object value);
 
     LoginFormsProvider setStatus(Response.Status status);
-
-    LoginFormsProvider setMediaType(javax.ws.rs.core.MediaType type);
 
     LoginFormsProvider setActionUri(URI requestUri);
 
