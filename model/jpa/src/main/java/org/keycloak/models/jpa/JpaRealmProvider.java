@@ -444,6 +444,7 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         if (group.getParentId() != null) {
             group.getParent().removeChild(group);
         }
+        GroupModel previousParent = group.getParent();
         group.setParent(toParent);
         if (toParent != null) toParent.addChild(group);
         else session.groups().addTopLevelGroup(realm, group);
@@ -452,6 +453,33 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
         //  DuplicateModelException {@link PersistenceExceptionConverter} is not called if the
         //  ConstraintViolationException is not thrown in method called directly from EntityManager
         em.flush();
+
+        String newPath = KeycloakModelUtils.buildGroupPath(group);
+        String previousPath = KeycloakModelUtils.buildGroupPath(group, previousParent);
+
+        GroupModel.GroupPathChangeEvent event =
+                new GroupModel.GroupPathChangeEvent() {
+                    @Override
+                    public RealmModel getRealm() {
+                        return realm;
+                    }
+
+                    @Override
+                    public String getNewPath() {
+                        return newPath;
+                    }
+
+                    @Override
+                    public String getPreviousPath() {
+                        return previousPath;
+                    }
+
+                    @Override
+                    public KeycloakSession getKeycloakSession() {
+                        return session;
+                    }
+                };
+        session.getKeycloakSessionFactory().publish(event);
     }
 
     @Override

@@ -59,11 +59,31 @@ public class BrokerTestTools {
         return identityProviderRepresentation;
     }
 
-    public static void waitForPage(WebDriver driver, final String title, final boolean isHtmlTitle) {
+    public static void waitForPage(final WebDriver driver, final String title, final boolean isHtmlTitle) {
         waitForPageToLoad();
 
         WebDriverWait wait = new WebDriverWait(driver, 5);
-        ExpectedCondition<Boolean> condition = (WebDriver input) -> isHtmlTitle ? input.getTitle().toLowerCase().contains(title) : PageUtils.getPageTitle(input).toLowerCase().contains(title);
+        ExpectedCondition<Boolean> condition = new ExpectedCondition<Boolean>() {
+            private String actualTitle = null;
+
+            public Boolean apply(final WebDriver input) {
+                if (input == null) {
+                    return false;
+                }
+
+                actualTitle = isHtmlTitle ? input.getTitle() : PageUtils.getPageTitle(input);
+                if (actualTitle == null) {
+                    return false;
+                }
+
+                return actualTitle.toLowerCase().contains(title.toLowerCase());
+            }
+
+            public String toString() {
+                return String.format("value to contain (ignoring case) \"%s\". Current value: \"%s\"", title,
+                        this.actualTitle);
+            }
+        };
 
         wait.until(condition);
     }

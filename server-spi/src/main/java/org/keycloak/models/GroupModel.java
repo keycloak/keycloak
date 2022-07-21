@@ -57,7 +57,14 @@ public interface GroupModel extends RoleMapperModel {
         GroupModel getGroup();
         KeycloakSession getKeycloakSession();
     }
-    
+
+    interface GroupPathChangeEvent extends ProviderEvent {
+        RealmModel getRealm();
+        String getNewPath();
+        String getPreviousPath();
+        KeycloakSession getKeycloakSession();
+    }
+
     Comparator<GroupModel> COMPARE_BY_NAME = Comparator.comparing(GroupModel::getName);
 
     String getId();

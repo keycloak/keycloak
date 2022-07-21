@@ -20,6 +20,7 @@ package org.keycloak.services.resources.admin;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.ClientModel;
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.utils.ModelToRepresentation;
@@ -57,8 +58,45 @@ public abstract class RoleResource {
         }
     }
 
-    protected void updateRole(RoleRepresentation rep, RoleModel role) {
-        role.setName(rep.getName());
+    protected void updateRole(RoleRepresentation rep, RoleModel role, RealmModel realm,
+            KeycloakSession session) {
+        String newName = rep.getName();
+        String previousName = role.getName();
+        if (!Objects.equals(previousName, newName)) {
+            role.setName(newName);
+
+            session.getKeycloakSessionFactory().publish(new RoleModel.RoleNameChangeEvent() {
+                @Override
+                public RealmModel getRealm() {
+                    return realm;
+                }
+
+                @Override
+                public String getNewName() {
+                    return newName;
+                }
+
+                @Override
+                public String getPreviousName() {
+                    return previousName;
+                }
+
+                @Override
+                public String getClientId() {
+                    if (!role.isClientRole()) {
+                        return null;
+                    }
+
+                    return ((ClientModel) role.getContainer()).getClientId();
+                }
+
+                @Override
+                public KeycloakSession getKeycloakSession() {
+                    return session;
+                }
+            });
+        }
+
         role.setDescription(rep.getDescription());
 
         if (rep.getAttributes() != null) {
