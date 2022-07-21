@@ -23,6 +23,7 @@ import static org.keycloak.urls.UrlType.FRONTEND;
 import static org.keycloak.utils.StringUtil.isNotBlank;
 
 import java.net.URI;
+import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import javax.ws.rs.core.UriInfo;
@@ -114,7 +115,12 @@ public final class DefaultHostnameProvider implements HostnameProvider, Hostname
         }
 
         if (hostnameEnabled && !noProxy) {
-            // if proxy is enabled and hostname is set, assume the server is exposed using default ports
+            // if we are behind a proxy, we must use X-Forwarded-Port when provided
+            KeycloakSession session = Resteasy.getContextData(KeycloakSession.class);
+            List<String> forwardedPort = session.getContext().getContextObject(HttpRequest.class).getHttpHeaders().getRequestHeader("X-Forwarded-Port");
+            if (!forwardedPort.isEmpty()) {
+                return Integer.parseInt(forwardedPort.get(0));
+            }
             return hostnamePort;
         }
 
