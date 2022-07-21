@@ -114,19 +114,9 @@ public class ModelToRepresentation {
 
     private static final Logger LOG = Logger.getLogger(ModelToRepresentation.class);
 
-    public static void buildGroupPath(StringBuilder sb, GroupModel group) {
-        if (group.getParent() != null) {
-            buildGroupPath(sb, group.getParent());
-        }
-        sb.append('/').append(group.getName());
-    }
-
     public static String buildGroupPath(GroupModel group) {
-        StringBuilder sb = new StringBuilder();
-        buildGroupPath(sb, group);
-        return sb.toString();
+        return KeycloakModelUtils.buildGroupPath(group);
     }
-
 
     public static GroupRepresentation groupToBriefRepresentation(GroupModel g) {
         return toRepresentation(g, false);

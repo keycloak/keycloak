@@ -139,7 +139,7 @@ public class RoleByIdResource extends RoleResource {
     public void updateRole(final @PathParam("role-id") String id, final RoleRepresentation rep) {
         RoleModel role = getRoleModel(id);
         auth.roles().requireManage(role);
-        updateRole(rep, role);
+        updateRole(rep, role, realm, session);
 
         if (role.isClientRole()) {
             adminEvent.resource(ResourceType.CLIENT_ROLE);
