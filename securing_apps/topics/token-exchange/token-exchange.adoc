@@ -210,7 +210,7 @@ an example JSON response you get back from this call.
 
 === Internal token to external token exchange
 
-You can exchange a realm token for an externl token minted by an external identity provider.  This external identity provider
+You can exchange a realm token for an external token minted by an external identity provider.  This external identity provider
 must be configured within the `Identity Provider` section of the Admin Console.  Currently only OAuth/OpenID Connect based external
 identity providers are supported, this includes all social providers.  {project_name} does not perform a backchannel exchange to the external provider.  So if the account
 is not linked, you will not be able to get the external token.  To be able to obtain an external token one of
