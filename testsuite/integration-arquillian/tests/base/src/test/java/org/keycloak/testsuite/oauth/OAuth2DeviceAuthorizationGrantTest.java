@@ -33,6 +33,7 @@ import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.OAuth2DeviceConfig;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.UserInfo;
 import org.keycloak.representations.idm.ClientRepresentation;
@@ -74,6 +75,7 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
     public static final String REALM_NAME = "test";
     public static final String DEVICE_APP = "test-device";
     public static final String DEVICE_APP_PUBLIC = "test-device-public";
+    public static final String DEVICE_APP_PKCE_PUBLIC = "test-device-pkce-public";
     public static final String DEVICE_APP_PUBLIC_CUSTOM_CONSENT = "test-device-public-custom-consent";
 
     @Rule
@@ -108,6 +110,11 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
             .clientId(DEVICE_APP_PUBLIC).attribute(OAuth2DeviceConfig.OAUTH2_DEVICE_AUTHORIZATION_GRANT_ENABLED, "true")
             .build();
         realm.client(appPublic);
+
+        ClientRepresentation appPKCEPublic = ClientBuilder.create().id(KeycloakModelUtils.generateId()).publicClient()
+                .clientId(DEVICE_APP_PKCE_PUBLIC).attribute(OAuth2DeviceConfig.OAUTH2_DEVICE_AUTHORIZATION_GRANT_ENABLED, "true").attribute(OIDCConfigAttributes.PKCE_CODE_CHALLENGE_METHOD, OIDCLoginProtocol.PKCE_METHOD_S256)
+                .build();
+        realm.client(appPKCEPublic);
 
         ClientRepresentation appPublicCustomConsent = ClientBuilder.create().id(KeycloakModelUtils.generateId()).publicClient()
                 .clientId(DEVICE_APP_PUBLIC_CUSTOM_CONSENT).attribute(OAuth2DeviceConfig.OAUTH2_DEVICE_AUTHORIZATION_GRANT_ENABLED, "true")
@@ -296,6 +303,41 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
 
         // Token request from device
         OAuthClient.AccessTokenResponse tokenResponse = oauth.doDeviceTokenRequest(DEVICE_APP_PUBLIC, null, response.getDeviceCode());
+
+        Assert.assertEquals(200, tokenResponse.getStatusCode());
+
+        String tokenString = tokenResponse.getAccessToken();
+        assertNotNull(tokenString);
+        AccessToken token = oauth.verifyToken(tokenString);
+
+        assertNotNull(token);
+    }
+
+    @Test
+    public void testPKCEPublicClientWithoutSendingPKCE() throws Exception {
+        // Successful Device Authorization Request with PKCE from device
+        oauth.realm(REALM_NAME);
+        oauth.clientId(DEVICE_APP_PUBLIC);
+        OAuthClient.DeviceAuthorizationResponse response = oauth.doDeviceAuthorizationRequest(DEVICE_APP_PKCE_PUBLIC, null);
+
+        Assert.assertEquals(200, response.getStatusCode());
+        assertNotNull(response.getDeviceCode());
+        assertNotNull(response.getUserCode());
+        assertNotNull(response.getVerificationUri());
+        assertNotNull(response.getVerificationUriComplete());
+        Assert.assertEquals(60, response.getExpiresIn());
+        Assert.assertEquals(5, response.getInterval());
+
+        openVerificationPage(response.getVerificationUriComplete());
+
+        // Do Login
+        oauth.fillLoginForm("device-login", "password");
+
+        // Consent
+        grantPage.accept();
+
+        // Token request from device
+        OAuthClient.AccessTokenResponse tokenResponse = oauth.doDeviceTokenRequest(DEVICE_APP_PKCE_PUBLIC, null, response.getDeviceCode());
 
         Assert.assertEquals(200, tokenResponse.getStatusCode());
 

@@ -140,7 +140,7 @@ public class DeviceEndpoint extends AuthorizationEndpointBase implements RealmRe
                 .request(request);
 
         try {
-            checker.checkPKCEParams();
+            checker.checkPKCEParams(false);
         } catch (AuthorizationEndpointChecker.AuthorizationCheckException ex) {
             throw new ErrorResponseException(ex.getError(), ex.getErrorDescription(), Response.Status.BAD_REQUEST);
         }
