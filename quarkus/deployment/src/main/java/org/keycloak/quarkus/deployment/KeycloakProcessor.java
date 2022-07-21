@@ -17,6 +17,8 @@
 
 package org.keycloak.quarkus.deployment;
 
+import static org.keycloak.quarkus.runtime.KeycloakRecorder.DEFAULT_HEALTH_ENDPOINT;
+import static org.keycloak.quarkus.runtime.KeycloakRecorder.DEFAULT_METRICS_ENDPOINT;
 import static org.keycloak.quarkus.runtime.Providers.getProviderManager;
 import static org.keycloak.quarkus.runtime.configuration.Configuration.getPropertyNames;
 import static org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider.NS_QUARKUS;
@@ -54,6 +56,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 import io.quarkus.agroal.spi.JdbcDataSourceBuildItem;
+import io.quarkus.arc.deployment.BuildTimeConditionBuildItem;
 import io.quarkus.datasource.deployment.spi.DevServicesDatasourceResultBuildItem;
 import io.quarkus.deployment.IsDevelopment;
 import io.quarkus.deployment.annotations.Consume;
@@ -62,26 +65,21 @@ import io.quarkus.deployment.builditem.CombinedIndexBuildItem;
 import io.quarkus.deployment.builditem.GeneratedResourceBuildItem;
 import io.quarkus.deployment.builditem.HotDeploymentWatchedFileBuildItem;
 import io.quarkus.deployment.builditem.IndexDependencyBuildItem;
-import io.quarkus.deployment.builditem.LaunchModeBuildItem;
 import io.quarkus.deployment.builditem.StaticInitConfigSourceProviderBuildItem;
 import io.quarkus.hibernate.orm.deployment.AdditionalJpaModelBuildItem;
 import io.quarkus.hibernate.orm.deployment.HibernateOrmConfig;
 import io.quarkus.hibernate.orm.deployment.PersistenceXmlDescriptorBuildItem;
 import io.quarkus.hibernate.orm.deployment.integration.HibernateOrmIntegrationRuntimeConfiguredBuildItem;
 import io.quarkus.resteasy.server.common.deployment.ResteasyDeploymentCustomizerBuildItem;
-import io.quarkus.runtime.LaunchMode;
 import io.quarkus.runtime.configuration.ProfileManager;
-import io.quarkus.smallrye.health.runtime.SmallRyeHealthHandler;
-import io.quarkus.vertx.http.deployment.NonApplicationRootPathBuildItem;
 import io.quarkus.vertx.http.deployment.RouteBuildItem;
 import io.smallrye.config.ConfigValue;
-import io.vertx.core.Handler;
-import io.vertx.ext.web.RoutingContext;
 import org.hibernate.cfg.AvailableSettings;
 import org.hibernate.jpa.boot.internal.ParsedPersistenceXmlDescriptor;
 import org.hibernate.jpa.boot.internal.PersistenceXmlParser;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.AnnotationTarget;
+import org.jboss.jandex.ClassInfo;
 import org.jboss.jandex.DotName;
 import org.jboss.jandex.IndexView;
 import org.jboss.logging.Logger;
@@ -91,7 +89,6 @@ import org.keycloak.Config;
 import org.keycloak.config.StorageOptions;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.connections.jpa.JpaConnectionSpi;
-import org.keycloak.models.map.storage.MapStorageSpi;
 import org.keycloak.models.map.storage.jpa.JpaMapStorageProviderFactory;
 import org.keycloak.quarkus.runtime.QuarkusProfile;
 import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
@@ -119,8 +116,6 @@ import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.ProviderManager;
 import org.keycloak.provider.Spi;
-import org.keycloak.quarkus.runtime.integration.web.QuarkusRequestFilter;
-import org.keycloak.quarkus.runtime.dev.QuarkusDevRequestFilter;
 import org.keycloak.quarkus.runtime.KeycloakRecorder;
 
 import io.quarkus.deployment.annotations.BuildProducer;
@@ -130,6 +125,7 @@ import io.quarkus.deployment.annotations.Record;
 import io.quarkus.deployment.builditem.FeatureBuildItem;
 import io.quarkus.vertx.http.deployment.FilterBuildItem;
 
+import org.keycloak.quarkus.runtime.services.health.KeycloakReadyHealthCheck;
 import org.keycloak.quarkus.runtime.storage.database.jpa.NamedJpaConnectionProviderFactory;
 import org.keycloak.quarkus.runtime.storage.database.jpa.QuarkusJpaMapStorageProviderFactory;
 import org.keycloak.quarkus.runtime.themes.FlatClasspathThemeResourceProviderFactory;
@@ -153,8 +149,6 @@ class KeycloakProcessor {
     private static final Logger logger = Logger.getLogger(KeycloakProcessor.class);
 
     private static final String JAR_FILE_SEPARATOR = "!/";
-    private static final String DEFAULT_HEALTH_ENDPOINT = "/health";
-    private static final String DEFAULT_METRICS_ENDPOINT = "/metrics";
     private static final Map<String, Function<ScriptProviderMetadata, ProviderFactory>> DEPLOYEABLE_SCRIPT_PROVIDERS = new HashMap<>();
     private static final String KEYCLOAK_SCRIPTS_JSON_PATH = "META-INF/keycloak-scripts.json";
 
@@ -481,48 +475,36 @@ class KeycloakProcessor {
         indexDependencyBuildItemBuildProducer.produce(new IndexDependencyBuildItem("org.keycloak", "keycloak-model-map-jpa"));
     }
 
-    @BuildStep
-    void initializeFilter(BuildProducer<FilterBuildItem> filters, LaunchModeBuildItem launchModeBuildItem) {
-        QuarkusRequestFilter filter = new QuarkusRequestFilter();
-        LaunchMode launchMode = launchModeBuildItem.getLaunchMode();
-
-        if (launchMode.isDevOrTest()) {
-            filter = new QuarkusDevRequestFilter();
-        }
-
-        filters.produce(new FilterBuildItem(filter,FilterBuildItem.AUTHORIZATION - 10));
-    }
-
-    /**
-     * <p>Initialize metrics and health endpoints.
-     *
-     * <p>The only reason for manually registering these endpoints is that by default they run as blocking hence
-     * running in a different thread than the worker thread started by {@link QuarkusRequestFilter}.
-     * See https://github.com/quarkusio/quarkus/issues/12990.
-     *
-     * <p>By doing this, custom health checks such as {@link org.keycloak.quarkus.runtime.services.health.KeycloakReadyHealthCheck} is
-     * executed within an active {@link org.keycloak.models.KeycloakSession}, making possible to use it when calculating the
-     * status.
-     *
-     * @param routes
-     */
     @Record(ExecutionTime.STATIC_INIT)
     @BuildStep
-    void initializeMetrics(KeycloakRecorder recorder, BuildProducer<RouteBuildItem> routes, NonApplicationRootPathBuildItem nonAppRootPath) {
-        final Handler<RoutingContext> healthHandler = (isHealthEnabled()) ? new SmallRyeHealthHandler() : new NotFoundHandler();
-        Handler<RoutingContext> metricsHandler;
+    void initializeFilter(BuildProducer<FilterBuildItem> filters, KeycloakRecorder recorder) {
+        filters.produce(new FilterBuildItem(recorder.createRequestFilter(isHealthEnabled() || isMetricsEnabled()),FilterBuildItem.AUTHORIZATION - 10));
+    }
 
-        if (isMetricsEnabled()) {
-            String rootPath = nonAppRootPath.getNormalizedHttpRootPath();
-            metricsHandler = recorder.createMetricsHandler(rootPath.concat(DEFAULT_METRICS_ENDPOINT).replace("//", "/"));
-        } else {
-            metricsHandler = new NotFoundHandler();
+    @BuildStep
+    void disableMetricsEndpoint(BuildProducer<RouteBuildItem> routes) {
+        if (!isMetricsEnabled()) {
+            routes.produce(RouteBuildItem.builder().route(DEFAULT_METRICS_ENDPOINT.concat("/*")).handler(new NotFoundHandler()).build());
+        }
+    }
+
+    @BuildStep
+    void disableHealthEndpoint(BuildProducer<RouteBuildItem> routes, BuildProducer<BuildTimeConditionBuildItem> removeBeans,
+            CombinedIndexBuildItem index) {
+        boolean healthDisabled = !isHealthEnabled();
+
+        if (healthDisabled) {
+            routes.produce(RouteBuildItem.builder().route(DEFAULT_HEALTH_ENDPOINT.concat("/*")).handler(new NotFoundHandler()).build());
         }
 
-        routes.produce(RouteBuildItem.builder().route(DEFAULT_HEALTH_ENDPOINT).handler(healthHandler).build());
-        routes.produce(RouteBuildItem.builder().route(DEFAULT_HEALTH_ENDPOINT.concat("/live")).handler(healthHandler).build());
-        routes.produce(RouteBuildItem.builder().route(DEFAULT_HEALTH_ENDPOINT.concat("/ready")).handler(healthHandler).build());
-        routes.produce(RouteBuildItem.builder().route(DEFAULT_METRICS_ENDPOINT).handler(metricsHandler).build());
+        boolean metricsDisabled = !isMetricsEnabled();
+
+        if (healthDisabled || metricsDisabled) {
+            // disables the single check we provide which depends on metrics enabled
+            ClassInfo disabledBean = index.getIndex()
+                    .getClassByName(DotName.createSimple(KeycloakReadyHealthCheck.class.getName()));
+            removeBeans.produce(new BuildTimeConditionBuildItem(disabledBean.asClass(), false));
+        }
     }
 
     @BuildStep

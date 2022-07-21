@@ -33,6 +33,8 @@ public class MetricsDistTest {
     void testMetricsEndpointNotEnabled() {
         when().get("/metrics").then()
                 .statusCode(404);
+        when().get("/q/metrics").then()
+                .statusCode(404);
     }
 
     @Test
