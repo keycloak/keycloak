@@ -19,6 +19,7 @@ package org.keycloak.quarkus.runtime.integration.web;
 
 import static org.keycloak.services.resources.KeycloakApplication.getSessionFactory;
 
+import java.util.function.Predicate;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.Resteasy;
 import org.keycloak.models.KeycloakSession;
@@ -49,11 +50,29 @@ public class QuarkusRequestFilter implements Handler<RoutingContext> {
         // we don't really care about the result because any exception thrown should be handled by the parent class
     };
 
+    private Predicate<RoutingContext> contextFilter;
+
+    public QuarkusRequestFilter() {
+        this(null);
+    }
+
+    public QuarkusRequestFilter(Predicate<RoutingContext> contextFilter) {
+        this.contextFilter = contextFilter;
+    }
+
     @Override
     public void handle(RoutingContext context) {
+        if (ignoreContext(context)) {
+            context.next();
+            return;
+        }
         // our code should always be run as blocking until we don't provide a better support for running non-blocking code
         // in the event loop
         context.vertx().executeBlocking(createBlockingHandler(context), false, EMPTY_RESULT);
+    }
+
+    private boolean ignoreContext(RoutingContext context) {
+        return contextFilter != null && contextFilter.test(context);
     }
 
     private Handler<Promise<Object>> createBlockingHandler(RoutingContext context) {

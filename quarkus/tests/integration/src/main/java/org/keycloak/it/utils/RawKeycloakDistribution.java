@@ -320,8 +320,8 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
         outputStream.clear();
         errorStream.clear();
         exitCode = -1;
-        keycloak = null;
         shutdownOutputExecutor();
+        keycloak = null;
     }
 
     private Path prepareDistribution() {

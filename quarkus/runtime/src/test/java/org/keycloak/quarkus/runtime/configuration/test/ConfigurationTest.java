@@ -445,7 +445,10 @@ public class ConfigurationTest {
     public void testResolveHealthOption() {
         System.setProperty(CLI_ARGS, "--health-enabled=true");
         SmallRyeConfig config = createConfig();
-        assertEquals("true", config.getConfigValue("quarkus.datasource.health.enabled").getValue());
+        assertEquals("true", config.getConfigValue("quarkus.health.extensions.enabled").getValue());
+        System.setProperty(CLI_ARGS, "");
+        config = createConfig();
+        assertEquals("false", config.getConfigValue("quarkus.health.extensions.enabled").getValue());
     }
 
     @Test
