@@ -113,7 +113,7 @@ public class HostnameDistTest {
     @Test
     @Launch({ "start-dev", "--hostname=mykeycloak.127.0.0.1.nip.io", "--hostname-admin=mykeycloakadmin.127.0.0.1.nip.io" })
     public void testHostnameAdminSet() {
-        Assert.assertTrue(when().get("https://mykeycloak.127.0.0.1.nip.io:8443/admin/master/console").asString().contains("var authUrl = 'https://mykeycloakadmin.127.0.0.1.nip.io:8443'"));
+        Assert.assertTrue(when().get("https://mykeycloak.127.0.0.1.nip.io:8443/admin/master/console").asString().contains("\"authUrl\": \"https://mykeycloakadmin.127.0.0.1.nip.io:8443\""));
         Assert.assertTrue(when().get("https://mykeycloak.127.0.0.1.nip.io:8443/realms/master/protocol/openid-connect/auth?client_id=security-admin-console&redirect_uri=https://mykeycloakadmin.127.0.0.1.nip.io:8443/admin/master/console&state=02234324-d91e-4bf2-8396-57498e96b12a&response_mode=fragment&response_type=code&scope=openid&nonce=f8f3812e-e349-4bbf-8d15-cbba4927f5e5&code_challenge=7qjD_v11WGkt1ig-ZFHxJdrEvuTlzjFRgRGQ_5ADcko&code_challenge_method=S256").asString().contains("Sign in to your account"));
     }
 

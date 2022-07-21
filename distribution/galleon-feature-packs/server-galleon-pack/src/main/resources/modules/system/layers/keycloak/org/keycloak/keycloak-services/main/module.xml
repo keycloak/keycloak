@@ -25,6 +25,14 @@
     </resources>
 
     <dependencies>
+        <module name="org.keycloak.keycloak-admin-ui" services="import" export="true">
+            <imports>
+                <include path="META-INF*"/>
+            </imports>
+            <exports>
+                <include path="META-INF*"/>
+            </exports>
+        </module>
         <module name="org.keycloak.keycloak-common" services="import"/>
         <module name="org.keycloak.keycloak-core" services="import"/>
         <module name="org.keycloak.keycloak-crypto-default" services="import"/>

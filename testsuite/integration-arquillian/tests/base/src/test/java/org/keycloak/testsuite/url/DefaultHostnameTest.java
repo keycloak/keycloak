@@ -278,10 +278,10 @@ public class DefaultHostnameTest extends AbstractHostnameTest {
             SimpleHttp.Response response = get.asResponse();
             String indexPage = response.asString();
 
-            assertTrue(indexPage.contains("authServerUrl = '" + expectedFrontendUrl +"'"));
-            assertTrue(indexPage.contains("authUrl = '" + expectedAdminUrl +"'"));
-            assertTrue(indexPage.contains("consoleBaseUrl = '" + new URI(expectedAdminUrl).getPath() +"/admin/" + realm + "/console/'"));
-            assertTrue(indexPage.contains("resourceUrl = '" + new URI(expectedAdminUrl).getPath() +"/resources/"));
+            assertTrue(indexPage.contains("\"authServerUrl\": \"" + expectedFrontendUrl +"\""));
+            assertTrue(indexPage.contains("\"authUrl\": \"" + expectedAdminUrl +"\""));
+            assertTrue(indexPage.contains("\"consoleBaseUrl\": \"" + new URI(expectedAdminUrl).getPath() +"/admin/" + realm + "/console/\""));
+            assertTrue(indexPage.contains("\"resourceUrl\": \"" + new URI(expectedAdminUrl).getPath() +"/resources/"));
 
             String cspHeader = response.getFirstHeader(BrowserSecurityHeaders.CONTENT_SECURITY_POLICY.getHeaderName());
 
