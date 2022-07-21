@@ -184,7 +184,7 @@ allow-any-hostname::
   If the {project_name} server requires HTTPS and this config option is set to `true` the {project_name} server's certificate is validated via the truststore,
   but host name validation is not done.
   This setting should only be used during development and *never* in production as it will disable verification of SSL certificates.
-  This seting may be useful in test environments This is _OPTIONAL_.
+  This setting may be useful in test environments This is _OPTIONAL_.
   The default value is `false`.
 
 proxy-url::
