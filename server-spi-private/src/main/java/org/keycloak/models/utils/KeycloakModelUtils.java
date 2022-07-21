@@ -79,12 +79,16 @@ import java.util.function.Function;
 /**
  * Set of helper methods, which are useful in various model implementations.
  *
- * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
+ * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>,
+ * <a href="mailto:daniel.fesenmeyer@bosch.io">Daniel Fesenmeyer</a>
  */
 public final class KeycloakModelUtils {
 
     public static final String AUTH_TYPE_CLIENT_SECRET = "client-secret";
     public static final String AUTH_TYPE_CLIENT_SECRET_JWT = "client-secret-jwt";
+
+    public static final String GROUP_PATH_SEPARATOR = "/";
+    private static final char CLIENT_ROLE_SEPARATOR = '.';
 
     private KeycloakModelUtils() {
     }
@@ -541,7 +545,7 @@ public final class KeycloakModelUtils {
     }
 
     /**
-     * Given the {@code pathParts} of a group with the given {@code groupName}, format the {@pathParts} in order to ignore
+     * Given the {@code pathParts} of a group with the given {@code groupName}, format the {@code segments} in order to ignore
      * group names containing a {@code /} character.
      *
      * @param segments  the path segments
@@ -550,7 +554,7 @@ public final class KeycloakModelUtils {
      * @return a new array of strings with the correct segments in case the group has a name containing slashes
      */
     private static String[] formatPathSegments(String[] segments, int index, String groupName) {
-        String[] nameSegments = groupName.split("/");
+        String[] nameSegments = groupName.split(GROUP_PATH_SEPARATOR);
 
         if (nameSegments.length > 1 && segments.length >= nameSegments.length) {
             for (int i = 0; i < nameSegments.length; i++) {
@@ -582,13 +586,13 @@ public final class KeycloakModelUtils {
         if (path == null) {
             return null;
         }
-        if (path.startsWith("/")) {
+        if (path.startsWith(GROUP_PATH_SEPARATOR)) {
             path = path.substring(1);
         }
-        if (path.endsWith("/")) {
+        if (path.endsWith(GROUP_PATH_SEPARATOR)) {
             path = path.substring(0, path.length() - 1);
         }
-        String[] split = path.split("/");
+        String[] split = path.split(GROUP_PATH_SEPARATOR);
         if (split.length == 0) return null;
 
         return realm.getTopLevelGroupsStream().map(group -> {
@@ -610,6 +614,42 @@ public final class KeycloakModelUtils {
         }).filter(Objects::nonNull).findFirst().orElse(null);
     }
 
+    private static void buildGroupPath(StringBuilder sb, String groupName, GroupModel parent) {
+        if (parent != null) {
+            buildGroupPath(sb, parent.getName(), parent.getParent());
+        }
+        sb.append(GROUP_PATH_SEPARATOR).append(groupName);
+    }
+
+    public static String buildGroupPath(GroupModel group) {
+        StringBuilder sb = new StringBuilder();
+        buildGroupPath(sb, group.getName(), group.getParent());
+        return sb.toString();
+    }
+
+    public static String buildGroupPath(GroupModel group, GroupModel otherParentGroup) {
+        StringBuilder sb = new StringBuilder();
+        buildGroupPath(sb, group.getName(), otherParentGroup);
+        return sb.toString();
+    }
+
+    public static String normalizeGroupPath(final String groupPath) {
+        if (groupPath == null) {
+            return null;
+        }
+
+        String normalized = groupPath;
+
+        if (!normalized.startsWith(GROUP_PATH_SEPARATOR)) {
+            normalized = GROUP_PATH_SEPARATOR +  normalized;
+        }
+        if (normalized.endsWith(GROUP_PATH_SEPARATOR)) {
+            normalized = normalized.substring(0, normalized.length() - 1);
+        }
+
+        return normalized;
+    }
+
     /**
      * @param client    {@link ClientModel}
      * @param container {@link ScopeContainerModel}
@@ -629,8 +669,12 @@ public final class KeycloakModelUtils {
 
     // Used in various role mappers
     public static RoleModel getRoleFromString(RealmModel realm, String roleName) {
+        if (roleName == null) {
+            return null;
+        }
+
         // Check client roles for all possible splits by dot
-        int scopeIndex = roleName.lastIndexOf('.');
+        int scopeIndex = roleName.lastIndexOf(CLIENT_ROLE_SEPARATOR);
         while (scopeIndex >= 0) {
             String appName = roleName.substring(0, scopeIndex);
             ClientModel client = realm.getClientByClientId(appName);
@@ -639,7 +683,7 @@ public final class KeycloakModelUtils {
                 return client.getRole(role);
             }
 
-            scopeIndex = roleName.lastIndexOf('.', scopeIndex - 1);
+            scopeIndex = roleName.lastIndexOf(CLIENT_ROLE_SEPARATOR, scopeIndex - 1);
         }
 
         // determine if roleName is a realm role
@@ -648,7 +692,7 @@ public final class KeycloakModelUtils {
 
     // Used for hardcoded role mappers
     public static String[] parseRole(String role) {
-        int scopeIndex = role.lastIndexOf('.');
+        int scopeIndex = role.lastIndexOf(CLIENT_ROLE_SEPARATOR);
         if (scopeIndex > -1) {
             String appName = role.substring(0, scopeIndex);
             role = role.substring(scopeIndex + 1);
@@ -659,6 +703,14 @@ public final class KeycloakModelUtils {
             return rtn;
 
         }
+    }
+
+    public static String buildRoleQualifier(String clientId, String roleName) {
+        if (clientId == null) {
+            return roleName;
+        }
+
+        return clientId + CLIENT_ROLE_SEPARATOR + roleName;
     }
 
     /**

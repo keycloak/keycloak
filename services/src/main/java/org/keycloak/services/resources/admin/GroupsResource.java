@@ -163,7 +163,7 @@ public class GroupsResource {
                 adminEvent.operation(OperationType.UPDATE).resourcePath(session.getContext().getUri());
             } else {
                 child = realm.createGroup(groupName);
-                GroupResource.updateGroup(rep, child);
+                GroupResource.updateGroup(rep, child, realm, session);
                 URI uri = session.getContext().getUri().getAbsolutePathBuilder()
                         .path(child.getId()).build();
                 builder.status(201).location(uri);
