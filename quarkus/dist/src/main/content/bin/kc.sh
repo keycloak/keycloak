@@ -96,7 +96,7 @@ CLASSPATH_OPTS="'$DIRNAME'/../lib/quarkus-run.jar"
 
 JAVA_RUN_OPTS="$JAVA_OPTS $SERVER_OPTS -cp $CLASSPATH_OPTS io.quarkus.bootstrap.runner.QuarkusEntryPoint ${CONFIG_ARGS#?}"
 
-if [[ (! $CONFIG_ARGS = *"--optimised"*) ]] && [[ ! "$CONFIG_ARGS" == " build"* ]]; then
+if [[ (! $CONFIG_ARGS = *"--optimized"*) ]] && [[ ! "$CONFIG_ARGS" == " build"* ]]; then
     eval "$JAVA" -Dkc.config.build-and-exit=true $JAVA_RUN_OPTS
     JAVA_RUN_OPTS="-Dkc.config.built=true $JAVA_RUN_OPTS"
     EXIT_CODE=$?

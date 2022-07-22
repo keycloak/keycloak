@@ -32,7 +32,7 @@ import org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.DEFAULT_WARN_MESSAGE_REPEATED_AUTO_BUILD_OPTION;
-import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMISED_BUILD_OPTION_LONG;
+import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
 
 @DistributionTest(reInstall = DistributionTest.ReInstall.NEVER)
 @RawDistOnly(reason = "Containers are immutable")
@@ -49,7 +49,7 @@ public class StartAutoBuildDistTest {
         cliResult.assertMessage("Server configuration updated and persisted. Run the following command to review the configuration:");
         cliResult.assertMessage(KeycloakDistribution.SCRIPT_CMD + " show-config");
         cliResult.assertMessage("Next time you run the server, just run:");
-        cliResult.assertMessage(KeycloakDistribution.SCRIPT_CMD + " start " + OPTIMISED_BUILD_OPTION_LONG + " --http-enabled=true --hostname-strict=false");
+        cliResult.assertMessage(KeycloakDistribution.SCRIPT_CMD + " start " + OPTIMIZED_BUILD_OPTION_LONG + " --http-enabled=true --hostname-strict=false");
         cliResult.assertMessage(DEFAULT_WARN_MESSAGE_REPEATED_AUTO_BUILD_OPTION);
         assertFalse(cliResult.getOutput().contains("--cache"));
         cliResult.assertStarted();
@@ -109,7 +109,7 @@ public class StartAutoBuildDistTest {
     }
 
     @Test
-    @Launch({ "start", "--db=dev-file", "--http-enabled=true", "--hostname-strict=false", "--cache=local", OPTIMISED_BUILD_OPTION_LONG})
+    @Launch({ "start", "--db=dev-file", "--http-enabled=true", "--hostname-strict=false", "--cache=local", OPTIMIZED_BUILD_OPTION_LONG})
     @Order(8)
     void testShouldReAugAndNeedsAutoBuildOptionBecauseHasNoAutoBuildOption(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;

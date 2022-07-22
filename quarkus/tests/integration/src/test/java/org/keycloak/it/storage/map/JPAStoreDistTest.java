@@ -30,7 +30,7 @@ import io.quarkus.test.junit.main.LaunchResult;
 public class JPAStoreDistTest {
 
     @Test
-    @Launch({ "start", "--optimised", "--http-enabled=true", "--hostname-strict=false" })
+    @Launch({ "start", "--optimized", "--http-enabled=true", "--hostname-strict=false" })
     void testSuccessful(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertMessage("Experimental feature enabled: map_storage");

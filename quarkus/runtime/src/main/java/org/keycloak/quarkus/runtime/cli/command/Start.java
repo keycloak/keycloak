@@ -35,8 +35,8 @@ import java.util.Optional;
         description = {
                 "%nUse this command to run the server in production."
         },
-        footer = "%nBy default, this command tries to update the server configuration by running a '" + Build.NAME + "' before starting the server. You can disable this behavior by using the '" + Start.OPTIMISED_BUILD_OPTION_LONG + "' option:%n%n"
-                + "      $ ${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} ${COMMAND-NAME} '" + Start.OPTIMISED_BUILD_OPTION_LONG + "'%n%n"
+        footer = "%nBy default, this command tries to update the server configuration by running a '" + Build.NAME + "' before starting the server. You can disable this behavior by using the '" + Start.OPTIMIZED_BUILD_OPTION_LONG + "' option:%n%n"
+                + "      $ ${PARENT-COMMAND-FULL-NAME:-$PARENTCOMMAND} ${COMMAND-NAME} '" + Start.OPTIMIZED_BUILD_OPTION_LONG + "'%n%n"
                 + "By doing that, the server should start faster based on any previous configuration you have set when manually running the '" + Build.NAME + "' command.")
 public final class Start extends AbstractStartCommand implements Runnable {
 
@@ -50,7 +50,7 @@ public final class Start extends AbstractStartCommand implements Runnable {
             order = 1)
     Boolean autoConfig;
 
-    @CommandLine.Option(names = {OPTIMISED_BUILD_OPTION_LONG},
+    @CommandLine.Option(names = {OPTIMIZED_BUILD_OPTION_LONG},
             description = "Use this option to achieve an optional startup time if you have previously built a server image using the 'build' command.",
             paramLabel = NO_PARAM_LABEL,
             order = 1)

@@ -46,7 +46,7 @@ if "%KEY%" == "--debug" (
   goto READ-ARGS
 )
 if "%KEY%" == "start-dev" (
-  set "CONFIG_ARGS=%CONFIG_ARGS% --profile=dev %KEY% --auto-build"
+  set "CONFIG_ARGS=%CONFIG_ARGS% --profile=dev %KEY% "
   shift
   goto READ-ARGS
 )
@@ -130,7 +130,7 @@ set "JAVA_RUN_OPTS=%JAVA_OPTS% -Dkc.home.dir="%DIRNAME%.." -Djboss.server.config
 SetLocal EnableDelayedExpansion
 
 set "ONLY_BUILD_OPTION= build"
-set "NO_AUTO_BUILD_OPTION=optimised"
+set "NO_AUTO_BUILD_OPTION=optimized"
 
 if "!CONFIG_ARGS:%NO_AUTO_BUILD_OPTION%=!"=="!CONFIG_ARGS!" if "!CONFIG_ARGS:%ONLY_BUILD_OPTION%=!"=="!CONFIG_ARGS!" (
     "%JAVA%" -Dkc.config.build-and-exit=true %JAVA_RUN_OPTS%
