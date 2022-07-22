@@ -96,6 +96,7 @@ public abstract class AuthzEndpointRequestParser {
         request.maxAge = replaceIfNotNull(request.maxAge, getIntParameter(OIDCLoginProtocol.MAX_AGE_PARAM));
         request.claims = replaceIfNotNull(request.claims, getParameter(OIDCLoginProtocol.CLAIMS_PARAM));
         request.acr = replaceIfNotNull(request.acr, getParameter(OIDCLoginProtocol.ACR_PARAM));
+        request.display = replaceIfNotNull(request.display, getParameter(OAuth2Constants.DISPLAY));
         request.uiLocales = replaceIfNotNull(request.uiLocales, getParameter(OAuth2Constants.UI_LOCALES_PARAM));
 
         // https://tools.ietf.org/html/rfc7636#section-6.1

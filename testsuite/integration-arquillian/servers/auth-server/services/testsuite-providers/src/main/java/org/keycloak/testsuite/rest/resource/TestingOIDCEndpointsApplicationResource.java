@@ -428,6 +428,9 @@ public class TestingOIDCEndpointsApplicationResource {
         @JsonProperty(OIDCLoginProtocol.ACR_PARAM)
         String acr;
 
+        @JsonProperty(OAuth2Constants.DISPLAY)
+        String display;
+
         @JsonProperty(OIDCLoginProtocol.CODE_CHALLENGE_PARAM)
         String codeChallenge;
 
@@ -569,6 +572,14 @@ public class TestingOIDCEndpointsApplicationResource {
 
         public void setCodeChallengeMethod(String codeChallengeMethod) {
             this.codeChallengeMethod = codeChallengeMethod;
+        }
+
+        public String getDisplay() {
+            return display;
+        }
+
+        public void setDisplay(String display) {
+            this.display = display;
         }
 
         public String getIdpHint() {

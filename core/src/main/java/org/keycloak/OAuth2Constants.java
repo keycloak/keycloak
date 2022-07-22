@@ -40,6 +40,8 @@ public interface OAuth2Constants {
 
     String ID_TOKEN_HINT = "id_token_hint";
 
+    String DISPLAY = "display";
+
     String SCOPE = "scope";
 
     String STATE = "state";
