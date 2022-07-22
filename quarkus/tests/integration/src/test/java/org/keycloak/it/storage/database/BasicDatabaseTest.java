@@ -31,14 +31,14 @@ import io.quarkus.test.junit.main.LaunchResult;
 public abstract class BasicDatabaseTest {
 
     @Test
-    @Launch({ "start", AbstractStartCommand.OPTIMISED_BUILD_OPTION_LONG, "--http-enabled=true", "--hostname-strict=false" })
+    @Launch({ "start", AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG, "--http-enabled=true", "--hostname-strict=false" })
     void testSuccessful(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertStarted();
     }
 
     @Test
-    @Launch({ "start", AbstractStartCommand.OPTIMISED_BUILD_OPTION_LONG,"--http-enabled=true", "--hostname-strict=false", "--db-username=wrong" })
+    @Launch({ "start", AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG,"--http-enabled=true", "--hostname-strict=false", "--db-username=wrong" })
     void testWrongUsername(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertMessage("ERROR: Failed to obtain JDBC connection");
@@ -48,7 +48,7 @@ public abstract class BasicDatabaseTest {
     protected abstract void assertWrongUsername(CLIResult cliResult);
 
     @Test
-    @Launch({ "start", AbstractStartCommand.OPTIMISED_BUILD_OPTION_LONG,"--http-enabled=true", "--hostname-strict=false", "--db-password=wrong" })
+    @Launch({ "start", AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG,"--http-enabled=true", "--hostname-strict=false", "--db-password=wrong" })
     void testWrongPassword(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertMessage("ERROR: Failed to obtain JDBC connection");

@@ -74,7 +74,7 @@ To start the image, run:
 podman|docker run --name optimized_keycloak -p 8443:8443 \
         -e KEYCLOAK_ADMIN=admin -e KEYCLOAK_ADMIN_PASSWORD=change_me \
         prebuilt_keycloak \
-        start --optimised
+        start --optimized
 ----
 Keycloak starts in production mode, using only secured HTTPS communication, and is available on `https://localhost:8443`.
 Notice that the startup log contains the following line:
@@ -113,7 +113,7 @@ For example:
 
 [source, bash]
 ----
-podman|docker run --name keycloak_auto_build -p 8080:8080 \
+podman|docker run --name keycloak_unoptimized -p 8080:8080 \
         -e KEYCLOAK_ADMIN=admin -e KEYCLOAK_ADMIN_PASSWORD=change_me \
         quay.io/keycloak/keycloak:latest \
         start \

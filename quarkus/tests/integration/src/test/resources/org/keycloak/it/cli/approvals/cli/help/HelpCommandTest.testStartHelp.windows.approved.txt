@@ -16,7 +16,7 @@ Options:
 -h, --help           This help message.
 --import-realm       Import realms during startup by reading any realm configuration file from the
                        'data/import' directory.
---optimised          Use this option to achieve an optional startup time if you have previously
+--optimized          Use this option to achieve an optional startup time if you have previously
                        built a server image using the 'build' command.
 
 Database:
@@ -160,9 +160,9 @@ Logging:
 
 By default, this command tries to update the server configuration by running a
 'build' before starting the server. You can disable this behavior by using the
-'--optimised' option:
+'--optimized' option:
 
-      $ kc.bat start '--optimised'
+      $ kc.bat start '--optimized'
 
 By doing that, the server should start faster based on any previous
 configuration you have set when manually running the 'build' command.

@@ -516,7 +516,7 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
         container.setImage(customImage.orElse(config.keycloak().image()));
 
         if (customImage.isPresent()) {
-            container.getArgs().add("--optimised");
+            container.getArgs().add("--optimized");
         }
 
         container.setImagePullPolicy(config.keycloak().imagePullPolicy());

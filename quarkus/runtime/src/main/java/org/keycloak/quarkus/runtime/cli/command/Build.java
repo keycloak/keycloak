@@ -36,12 +36,6 @@ import picocli.CommandLine.Command;
         description = {
             "%nCreates a new and optimized server image based on the configuration options passed to this command. Once created, the configuration will be persisted and read during startup without having to pass them over again.",
             "",
-            "Some configuration options require this command to be executed in order to actually change a configuration. For instance",
-            "",
-            "- Change database vendor%n" +
-            "- Enable/disable features%n" +
-            "- Enable/Disable providers or set a default",
-            "",
             "Consider running this command before running the server in production for an optimal runtime."
         },
         footerHeading = "Examples:",

@@ -90,8 +90,8 @@ public class KeycloakMain implements QuarkusApplication {
     }
 
     private static boolean isFastStart(List<String> cliArgs) {
-        // 'start --optimised' should start the server without parsing CLI
-        return cliArgs.size() == 2 && cliArgs.get(0).equals(Start.NAME) && cliArgs.stream().anyMatch(OPTIMISED_BUILD_OPTION_LONG::equals);
+        // 'start --optimized' should start the server without parsing CLI
+        return cliArgs.size() == 2 && cliArgs.get(0).equals(Start.NAME) && cliArgs.stream().anyMatch(OPTIMIZED_BUILD_OPTION_LONG::equals);
     }
 
     public static void start(ExecutionExceptionHandler errorHandler, PrintWriter errStream) {
