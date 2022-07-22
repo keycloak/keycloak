@@ -55,9 +55,24 @@ public class HelpCommandTest {
 
     @Test
     @Launch({ Start.NAME, "--help", OPTIMIZED_BUILD_OPTION_LONG})
+    void testStartOptimizedHelp(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertHelp();
+    }
+
+    @Test
+    @Launch({ Start.NAME, "--help" })
     void testStartHelp(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertHelp();
+    }
+
+    @Test
+    @Launch({ Start.NAME, "--optimized", "--help-all" })
+    void testStartOptimizedHelpAll(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertHelp();
+        cliResult.assertNoMessage("--storage");
     }
 
     @Test
@@ -72,6 +87,14 @@ public class HelpCommandTest {
     void testStartDevHelpAll(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertHelp();
+    }
+
+    @Test
+    @Launch({ Start.NAME, "--help-all" })
+    void testStartHelpAll(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertHelp();
+        cliResult.assertMessage("--storage");
     }
 
     @Test

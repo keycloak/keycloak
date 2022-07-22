@@ -61,10 +61,10 @@ public class ImportAtStartupDistTest {
 
     @Test
     @BeforeStartDistribution(CreateRealmConfigurationFile.class)
-    @Launch({"start-dev", "--import-realm", "some-file"})
+    @Launch({"start-dev", "--import-realm=some-file"})
     void failSetValueToImportRealmOption(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        cliResult.assertError("Instead of manually specifying the files to import, just copy them to the 'data/import' directory.");
+        cliResult.assertError("option '--import-realm' should be specified without 'some-file' parameter");
     }
 
     public static class CreateRealmConfigurationFile implements Consumer<KeycloakDistribution> {

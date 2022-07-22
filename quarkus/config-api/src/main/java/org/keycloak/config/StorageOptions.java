@@ -46,6 +46,7 @@ public class StorageOptions {
                     String.join(",", String.join(", ", Arrays.stream(StorageType.values()).map(StorageType::name).collect(Collectors.toList())))))
             .expectedValues(StorageType.values())
             .defaultValue(Optional.empty())
+            .hidden()
             .buildTime(true)
             .build();
 
