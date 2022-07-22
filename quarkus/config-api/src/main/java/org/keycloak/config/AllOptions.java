@@ -19,5 +19,6 @@ public class AllOptions {
         ALL_OPTIONS.addAll(ProxyOptions.ALL_OPTIONS);
         ALL_OPTIONS.addAll(TransactionOptions.ALL_OPTIONS);
         ALL_OPTIONS.addAll(VaultOptions.ALL_OPTIONS);
+        ALL_OPTIONS.addAll(StorageOptions.ALL_OPTIONS);
     }
 }

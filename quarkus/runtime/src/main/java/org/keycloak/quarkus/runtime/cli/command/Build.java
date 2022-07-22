@@ -29,6 +29,7 @@ import io.quarkus.bootstrap.runner.QuarkusEntryPoint;
 import io.quarkus.bootstrap.runner.RunnerClassLoader;
 
 import io.quarkus.runtime.configuration.ProfileManager;
+import picocli.CommandLine;
 import picocli.CommandLine.Command;
 
 @Command(name = Build.NAME,
@@ -54,6 +55,9 @@ import picocli.CommandLine.Command;
 public final class Build extends AbstractCommand implements Runnable {
 
     public static final String NAME = "build";
+
+    @CommandLine.Mixin
+    HelpAllMixin helpAllMixin;
 
     @Override
     public void run() {

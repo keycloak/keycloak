@@ -54,10 +54,13 @@ public final class Start extends AbstractStartCommand implements Runnable {
             description = "Use this option to achieve an optional startup time if you have previously built a server image using the 'build' command.",
             paramLabel = NO_PARAM_LABEL,
             order = 1)
-    Boolean noAutoConfig;
+    Boolean optimized;
 
     @CommandLine.Mixin
     ImportRealmMixin importRealmMixin;
+
+    @CommandLine.Mixin
+    HelpAllMixin helpAllMixin;
 
     @Override
     protected void doBeforeRun() {

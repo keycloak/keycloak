@@ -109,8 +109,10 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
             throw new RuntimeException("Failed to start the server", cause);
         } finally {
             if (arguments.contains(Build.NAME) && removeBuildOptionsAfterBuild) {
-                for (PropertyMapper mapper : PropertyMappers.getBuildTimeMappers()) {
-                    removeProperty(mapper.getFrom().substring(3));
+                for (List<PropertyMapper> mappers : PropertyMappers.getBuildTimeMappers().values()) {
+                    for (PropertyMapper mapper : mappers) {
+                        removeProperty(mapper.getFrom().substring(3));
+                    }
                 }
             }
             if (!manualStop) {
@@ -414,6 +416,10 @@ public final class RawKeycloakDistribution implements KeycloakDistribution {
 
         builder.environment().put("KEYCLOAK_ADMIN", "admin");
         builder.environment().put("KEYCLOAK_ADMIN_PASSWORD", "admin");
+
+        if (debug) {
+            builder.environment().put("DEBUG_SUSPEND", "y");
+        }
 
         builder.environment().putAll(envVars);
 
