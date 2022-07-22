@@ -140,7 +140,6 @@ public interface OAuth2Constants {
 
     String CIBA_GRANT_TYPE = "urn:openid:params:grant-type:ciba";
 
-    String DISPLAY_CONSOLE = "console";
     String INTERVAL = "interval";
     String USER_CODE = "user_code";
 
