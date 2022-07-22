@@ -20,7 +20,6 @@ package org.keycloak.jose.jwk;
 
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.util.Base64Url;
-import org.keycloak.common.util.BouncyIntegration;
 import org.keycloak.crypto.KeyType;
 import org.keycloak.util.JsonSerialization;
 
@@ -105,7 +104,7 @@ public class JWKParser {
             ECParameterSpec params = CryptoIntegration.getProvider().createECParams(name);
             ECPublicKeySpec pubKeySpec = new ECPublicKeySpec(point, params);
 
-            KeyFactory kf = KeyFactory.getInstance("ECDSA", BouncyIntegration.PROVIDER);
+            KeyFactory kf = KeyFactory.getInstance("ECDSA");
             return kf.generatePublic(pubKeySpec);
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -117,7 +116,7 @@ public class JWKParser {
         BigInteger publicExponent = new BigInteger(1, Base64Url.decode(jwk.getOtherClaims().get(RSAPublicJWK.PUBLIC_EXPONENT).toString()));
 
         try {
-            KeyFactory kf = KeyFactory.getInstance("RSA", BouncyIntegration.PROVIDER);
+            KeyFactory kf = KeyFactory.getInstance("RSA");
             return kf.generatePublic(new RSAPublicKeySpec(modulus, publicExponent));
         } catch (Exception e) {
             throw new RuntimeException(e);
