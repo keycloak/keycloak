@@ -74,7 +74,7 @@
     "@typescript-eslint/eslint-plugin": "^5.30.7",
     "@typescript-eslint/parser": "^5.30.6",
     "@vitejs/plugin-react": "^1.3.2",
-    "cypress": "^10.3.0",
+    "cypress": "^10.3.1",
     "decompress": "^4.2.1",
     "del": "^6.1.1",
     "eslint": "^8.20.0",
