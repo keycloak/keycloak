@@ -21,7 +21,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.junit.ClassRule;
-import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.BouncyIntegration;
@@ -62,7 +61,7 @@ public abstract class JWKTest {
 
     @Test
     public void publicRs256() throws Exception {
-        KeyPair keyPair = KeyPairGenerator.getInstance("RSA").generateKeyPair();
+        KeyPair keyPair = KeyPairGenerator.getInstance("RSA", BouncyIntegration.PROVIDER ).generateKeyPair();
         PublicKey publicKey = keyPair.getPublic();
         X509Certificate certificate = generateV1SelfSignedCertificate(keyPair, "Test");
 
@@ -97,7 +96,7 @@ public abstract class JWKTest {
 
     @Test
     public void publicRs256Chain() throws Exception {
-        KeyPair keyPair = KeyPairGenerator.getInstance("RSA").generateKeyPair();
+        KeyPair keyPair = KeyPairGenerator.getInstance("RSA", BouncyIntegration.PROVIDER).generateKeyPair();
         PublicKey publicKey = keyPair.getPublic();
         List<X509Certificate> certificates = Arrays.asList(generateV1SelfSignedCertificate(keyPair, "Test"), generateV1SelfSignedCertificate(keyPair, "Intermediate"));
 

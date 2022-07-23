@@ -1,6 +1,7 @@
 package org.keycloak.crypto.fips.test;
 
 import org.junit.Ignore;
+import org.junit.Test;
 import org.keycloak.jose.jwk.JWKTest;
 
 /**
@@ -8,6 +9,12 @@ import org.keycloak.jose.jwk.JWKTest;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@Ignore("Ignored by default as it does not work on non-fips enabled environment") // TODO: Figure how to test in the FIPS environments, but still keep disabled in the non-FIPS environments
 public class FIPS1402JWKTest extends JWKTest {
+
+    @Ignore("Test not supported by BC FIPS")
+    @Test
+    public void publicEs256() throws Exception {
+        // Do nothing
+    }
+
 }
