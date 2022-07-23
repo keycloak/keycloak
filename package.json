@@ -87,7 +87,7 @@
     "http2-proxy": "^5.0.53",
     "husky": "^8.0.1",
     "lint-staged": "^13.0.3",
-    "node-fetch": "^3.2.8",
+    "node-fetch": "^3.2.9",
     "postcss": "^8.4.14",
     "postcss-import": "^14.1.0",
     "postcss-svg": "^3.0.0",
