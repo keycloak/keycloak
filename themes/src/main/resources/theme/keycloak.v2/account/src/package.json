@@ -46,7 +46,7 @@
     "chokidar": "^3.5.3",
     "eslint": "^8.20.0",
     "eslint-config-react-app": "^7.0.1",
-    "eslint-plugin-jsx-a11y": "^6.6.0",
+    "eslint-plugin-jsx-a11y": "^6.6.1",
     "eslint-plugin-react": "^7.30.1",
     "rollup-plugin-postcss": "^2.5.0",
     "shx": "^0.3.4",
