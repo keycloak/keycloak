@@ -2,6 +2,8 @@ package org.keycloak.crypto.fips.test;
 
 import java.security.SecureRandom;
 
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
+import org.bouncycastle.crypto.fips.FipsStatus;
 import org.jboss.logging.Logger;
 import org.junit.Assert;
 import org.junit.Assume;
@@ -31,6 +33,8 @@ public class FIPS1402SecureRandomTest {
     @Test
     public void testSecureRandom() throws Exception {
         logger.info(CryptoIntegration.dumpJavaSecurityProviders());
+
+        logger.infof("BC FIPS approved mode: %b, FIPS Status: %s", CryptoServicesRegistrar.isInApprovedOnlyMode(), FipsStatus.getStatusMessage());
 
         SecureRandom sc1 = new SecureRandom();
         logger.infof(dumpSecureRandom("new SecureRandom()", sc1));

@@ -4,9 +4,12 @@ import java.security.SecureRandom;
 
 import org.jboss.logging.Logger;
 import org.junit.Assert;
+import org.junit.Assume;
+import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.keycloak.common.crypto.CryptoIntegration;
+import org.keycloak.common.util.Environment;
 import org.keycloak.rule.CryptoInitRule;
 
 /**
@@ -16,6 +19,12 @@ public class DefaultSecureRandomTest {
 
     @ClassRule
     public static CryptoInitRule cryptoInitRule = new CryptoInitRule();
+
+    @Before
+    public void before() {
+        // Run this test just if java is not in FIPS mode
+        Assume.assumeFalse("Java is in FIPS mode. Skipping the test.", Environment.isJavaInFipsMode());
+    }
 
     protected static final Logger logger = Logger.getLogger(DefaultSecureRandomTest.class);
 

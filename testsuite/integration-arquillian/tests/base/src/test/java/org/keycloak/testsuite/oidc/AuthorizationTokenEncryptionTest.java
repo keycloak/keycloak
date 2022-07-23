@@ -230,12 +230,7 @@ public class AuthorizationTokenEncryptionTest extends AbstractTestRealmKeycloakT
     }
 
     private JWEAlgorithmProvider getJweAlgorithmProvider(String algAlgorithm) {
-        JWEAlgorithmProvider jweAlgorithmProvider = null;
-        if (JWEConstants.RSA1_5.equals(algAlgorithm) || JWEConstants.RSA_OAEP.equals(algAlgorithm) ||
-                JWEConstants.RSA_OAEP_256.equals(algAlgorithm)) {
-            jweAlgorithmProvider = new RsaCekManagementProvider(null, algAlgorithm).jweAlgorithmProvider();
-        }
-        return jweAlgorithmProvider;
+        return new RsaCekManagementProvider(null, algAlgorithm).jweAlgorithmProvider();
     }
     private JWEEncryptionProvider getJweEncryptionProvider(String encAlgorithm) {
         JWEEncryptionProvider jweEncryptionProvider = null;
