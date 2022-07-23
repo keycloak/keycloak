@@ -38,6 +38,7 @@
         <quarkus.version>2.7.6.Final</quarkus.version>
         <quarkus.container-image.group>keycloak</quarkus.container-image.group>
         <quarkus.jib.base-jvm-image>registry.access.redhat.com/ubi8/openjdk-11-runtime</quarkus.jib.base-jvm-image>
+        <quarkus.jib.platforms>linux/amd64,linux/arm64/v8</quarkus.jib.platforms>
     </properties>
     
     <dependencyManagement>
