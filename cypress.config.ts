@@ -1,5 +1,5 @@
 import { defineConfig } from "cypress";
-import del from "del";
+import { deleteAsync } from "del";
 import path from "node:path";
 import { build, InlineConfig } from "vite";
 
@@ -32,7 +32,7 @@ export default defineConfig({
 
         // Delete the video if the spec passed and no tests were retried.
         if (!failures) {
-          await del(results.video);
+          await deleteAsync(results.video);
         }
       });
     },
