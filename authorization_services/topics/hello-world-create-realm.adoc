@@ -14,13 +14,24 @@ image:{project_images}/getting-started/hello-world/create-realm.png[alt="Realm h
 +
 The user list page displays where you can create a user.
 
+ifeval::[{project_community}==true]
+. Click *Create user*.
+endif::[]
+ifeval::[{project_product}==true]
 . Click *Add User*.
+endif::[]
 
 . Complete the *Username*, *Email*, *First Name*, and *Last Name* fields.
 
-. Toggle *User Enabled* to *ON*
+. Toggle *User Enabled* to *ON*.
 
+ifeval::[{project_community}==true]
+. Click *Create*.
+endif::[]
+ifeval::[{project_product}==true]
 . Click *Save*.
+endif::[]
+
 +
 .Add User
 image:{project_images}/getting-started/hello-world/create-user.png[alt="Add User"]
@@ -30,6 +41,12 @@ image:{project_images}/getting-started/hello-world/create-user.png[alt="Add User
 .Set user password
 image:{project_images}/getting-started/hello-world/reset-user-pwd.png[alt="Set user password"]
 
-. Complete the *New Password* and *Password Confirmation* fields with a password and click the *Temporary* switch to *OFF*.
+. Complete the *New Password* and *Password Confirmation* fields and toggle *Temporary* to *OFF*.
 
+ifeval::[{project_community}==true]
+. Click *Save*.
+. Click *Save password*.
+endif::[]
+ifeval::[{project_product}==true]
 . Click *Set Password* to set the user's password.
+endif::[]

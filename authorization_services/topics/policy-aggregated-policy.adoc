@@ -3,7 +3,12 @@
 
 As mentioned previously, {project_name} allows you to build a policy of policies, a concept referred to as policy aggregation. You can use policy aggregation to reuse existing policies to build more complex ones and keep your permissions even more decoupled from the policies that are evaluated during the processing of authorization requests.
 
+ifeval::[{project_community}==true]
+To create a new aggregated policy, select *Aggregated* from the policy type list.
+endif::[]
+ifeval::[{project_product}==true]
 To create a new aggregated policy, select *Aggregated* in the item list located in the right upper corner of the policy listing.
+endif::[]
 
 .Add an aggregated policy
 image:{project_images}/policy/create-aggregated.png[alt="Add aggregated policy"]

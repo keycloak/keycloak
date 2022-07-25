@@ -19,6 +19,15 @@ can identify them more easily.
 +
 A string containing details about this policy.
 +
+ifeval::[{project_community}==true]
+* *Start time*
++
+Defines the time before which access must *not* be granted. Permission is granted only if the current date/time is later than or equal to this value.
+* *Expire time*
++
+Defines the time after which access must *not* be granted. Permission is granted only if the current date/time is earlier than or equal to this value.
+endif::[]
+ifeval::[{project_product}==true]
 * *Not Before*
 +
 Defines the time before which access must *not* be granted. Permission is granted only if the current date/time is later than or equal to this value.
@@ -27,27 +36,27 @@ Defines the time before which access must *not* be granted. Permission is grante
 * *Not On or After*
 +
 Defines the time after which access must *not* be granted. Permission is granted only if the current date/time is earlier than or equal to this value.
-+
+endif::[]
+
+ifeval::[{project_community}==true]
+Select *Repeat* to repeat access being granted on a specific *Day of Month*, *Month*, *Year*, *Hour* or *Minute*.
+endif::[]
+
 * *Day of Month*
 +
 Defines the day of month that access must be granted. You can also specify a range of dates. In this case, permission is granted only if the current day of the month is between or equal to the two values specified.
-+
 * *Month*
 +
 Defines the month that access must be granted. You can also specify a range of months. In this case, permission is granted only if the current month is between or equal to the two values specified.
-+
 * *Year*
 +
 Defines the year that access must be granted. You can also specify a range of years. In this case, permission is granted only if the current year is between or equal to the two values specified.
-+
 * *Hour*
 +
 Defines the hour that access must be granted. You can also specify a range of hours. In this case, permission is granted only if current hour is between or equal to the two values specified.
-+
 * *Minute*
 +
 Defines the minute that access must be granted. You can also specify a range of minutes. In this case, permission is granted only if the current minute is between or equal to the two values specified.
-+
 * *Logic*
 +
 The logic of this policy to apply after the other conditions have been evaluated.

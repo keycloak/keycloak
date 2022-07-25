@@ -5,20 +5,36 @@ You can enable authorization services in an existing client application configur
 
 .Procedure
 
-. Click *Clients* to start creating a client application.
+. Click *Clients* in the menu.
 
+ifeval::[{project_community}==true]
+. Fill in the *Client type*.
+endif::[]
+ifeval::[{project_product}==true]
 . Fill in the *Client ID*, *Client Protocol*, and *Root URL* fields.
+endif::[]
+
+ifeval::[{project_community}==true]
+. Click *Next*.
+. Toggle *Client authentication* to *ON*.
+. Toggle *Authorization* to *ON*.
+. Click *Save*.
+. Scroll down to the *Capability config* section.
+. Fill in the *Root URL* field.
+. Click *Save*.
+endif::[]
+
 +
 .Create client application
 image:{project_images}/getting-started/hello-world/create-client.png[alt="Create client application"]
 
+ifeval::[{project_product}==true]
 . Click *Save*.
 +
 The Client Settings page is displayed.
-
 . Select *confidential* in the *Access Type* field and toggle *Authorization Enabled* to *ON*
-
 . Click *Save*.
+endif::[]
 +
 A new *Authorization* tab is displayed for the client.
 +

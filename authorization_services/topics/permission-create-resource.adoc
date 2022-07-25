@@ -3,7 +3,12 @@
 
 A resource-based permission defines a set of one or more resources to protect using a set of one or more authorization policies.
 
+ifeval::[{project_community}==true]
+To create a new resource-based permission, select *Create resource-based permission* from the *Create permission* dropdown.
+endif::[]
+ifeval::[{project_product}==true]
 To create a new resource-based permission, select *Resource-based* in the item list in the upper right corner of the permission listing.
+endif::[]
 
 .Add Resource Permission
 image:{project_images}/permission/create-resource.png[alt="Add Resource Permission"]
@@ -32,7 +37,12 @@ Defines the resource type to protect. When defined, this permission is evaluated
 +
 Defines a set of one or more resources to protect.
 
+ifeval::[{project_community}==true]
+* *Policy*
+endif::[]
+ifeval::[{project_product}==true]
 * *Apply Policy*
+endif::[]
 +
 Defines a set of one or more policies to associate with a permission. To associate a policy you can either select an existing policy
 or create a new one by selecting the type of the policy you want to create.

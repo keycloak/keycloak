@@ -48,9 +48,14 @@ You must first obtain the adapter configuration before building and deploying th
 .Client Settings
 image:{project_images}/getting-started/hello-world/enable-authz.png[alt="Client Settings"]
 
+ifeval::[{project_community}==true]
+. From the *Action* list, select *Download adapter config*.
+endif::[]
+ifeval::[{project_product}==true]
 . Click the *Installation* tab.
+endif::[]
 
-. From the Format Option item list, select *Keycloak OIDC JSON*.
+. From the Format Option list, select *Keycloak OIDC JSON*.
 +
 The adapter configuration is displayed in JSON format.
 

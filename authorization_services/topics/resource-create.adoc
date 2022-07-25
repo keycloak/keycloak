@@ -4,7 +4,12 @@
 Creating a resource is straightforward and generic. Your main concern is the granularity of the resources you create. In other words, resources can
 be created to represent a set of one or more resources and the way you define them is crucial to managing permissions.
 
+ifeval::[{project_community}==true]
+To create a new resource, click *Create resource*.
+endif::[]
+ifeval::[{project_product}==true]
 To create a new resource, click *Create* in the right upper corner of the resource listing.
+endif::[]
 
 .Add resource
 image:{project_images}/resource/create.png[alt="Add resource"]

@@ -3,10 +3,15 @@
 
 You can use this type of policy to define conditions for your permissions where a set of one or more clients is permitted to access an object.
 
+ifeval::[{project_community}==true]
+To create a new client-based policy, select *Client* from the policy type list.
+endif::[]
+ifeval::[{project_product}==true]
 To create a new client-based policy, select *Client* in the item list in the upper right corner of the policy listing.
+endif::[]
 
 .Add a Client Policy
-image:images/policy/create-client.png[alt="Add a Client Policy"]
+image:{project_images}/policy/create-client.png[alt="Add a Client Policy"]
 
 == Configuration
 
@@ -21,7 +26,7 @@ A string containing details about this policy.
 +
 * *Clients*
 +
-Specifies which clients are given access by this policy.
+Specifies which clients have givenGroup-based policy access by this policy.
 +
 * *Logic*
 +
