@@ -55,76 +55,72 @@ on the corresponding client. Once the page for the client is opened click on the
 Here is a description of each configuration option:
 
 realm::
+
+  _REQUIRED._
   Name of the realm.
-  This is _REQUIRED._
 
 resource::
-  The client-id of the application. Each application has a client-id that is used to identify the application.
-  This is _REQUIRED._
+ _REQUIRED._ The client-id of the application. Each application has a client-id that is used to identify the application.
 
 realm-public-key::
-  PEM format of the realm public key. You can obtain this from the Admin Console.
-  This is _OPTIONAL_ and it's not recommended to set it. If not set, the adapter will download this from {project_name} and
+  _OPTIONAL_ and it's not recommended to set it. PEM format of the realm public key. You can obtain this from the Admin Console.
+   If not set, the adapter will download this from {project_name} and
   it will always re-download it when needed (eg. {project_name} rotates its keys). However if realm-public-key is set, then adapter
   will never download new keys from {project_name}, so when {project_name} rotate it's keys, adapter will break.
 
 auth-server-url::
-  The base URL of the {project_name} server. All other {project_name} pages and REST service endpoints are derived from this. It is usually of the form `\https://host:port{kc_base_path}`.
-  This is _REQUIRED._
+  _REQUIRED._ The base URL of the {project_name} server. All other {project_name} pages and REST service endpoints are derived from this. It is usually of the form `\https://host:port{kc_base_path}`.
 
 ssl-required::
-  Ensures that all communication to and from the {project_name} server is over HTTPS.
+  _OPTIONAL_. Ensures that all communication to and from the {project_name} server is over HTTPS.
   In production this should be set to `all`.
-  This is _OPTIONAL_.
+
   The default value is _external_ meaning that HTTPS is required by default for external requests.
   Valid values are 'all', 'external' and 'none'.
 
 confidential-port::
-  The confidential port used by the {project_name} server for secure connections over SSL/TLS.
-  This is _OPTIONAL_.
+  _OPTIONAL_. The confidential port used by the {project_name} server for secure connections over SSL/TLS.
   The default value is _8443_.
 
 use-resource-role-mappings::
+  _OPTIONAL_.
   If set to true, the adapter will look inside the token for application level role mappings for the user. If false, it will look at the realm level for user role mappings.
-  This is _OPTIONAL_.
-  The default value is _false_.
+    The default value is _false_.
 
 public-client::
-  If set to true, the adapter will not send credentials for the client to {project_name}.
-  This is _OPTIONAL_.
+  _OPTIONAL_. If set to true, the adapter will not send credentials for the client to {project_name}.
   The default value is _false_.
 
 enable-cors::
-  This enables CORS support. It will handle CORS preflight requests. It will also look into the access token to determine valid origins.
-  This is _OPTIONAL_.
+  _OPTIONAL_. This enables CORS support. It will handle CORS preflight requests. It will also look into the access token to determine valid origins.
   The default value is _false_.
 
 cors-max-age::
+  _OPTIONAL_.
   If CORS is enabled, this sets the value of the `Access-Control-Max-Age` header.
-  This is _OPTIONAL_.
   If not set, this header is not returned in CORS responses.
 
 cors-allowed-methods::
+  _OPTIONAL_.
   If CORS is enabled, this sets the value of the `Access-Control-Allow-Methods` header.
   This should be a comma-separated string.
-  This is _OPTIONAL_.
   If not set, this header is not returned in CORS responses.
 
 cors-allowed-headers::
+  _OPTIONAL_.
   If CORS is enabled, this sets the value of the `Access-Control-Allow-Headers` header.
   This should be a comma-separated string.
-  This is _OPTIONAL_.
   If not set, this header is not returned in CORS responses.
 
 cors-exposed-headers::
+  _OPTIONAL_.
   If CORS is enabled, this sets the value of the `Access-Control-Expose-Headers` header.
   This should be a comma-separated string.
-  This is _OPTIONAL_.
   If not set, this header is not returned in CORS responses.
 
 bearer-only::
+  _OPTIONAL_.
   This should be set to _true_ for services. If enabled the adapter will not attempt to authenticate users, but only verify bearer tokens.
-  This is _OPTIONAL_.
   The default value is _false_.
 
 autodetect-bearer-only::
@@ -135,52 +131,53 @@ autodetect-bearer-only::
   The default value is _false_.
 
 enable-basic-auth::
+  _OPTIONAL_.
   This tells the adapter to also support basic authentication. If this option is enabled, then _secret_ must also be provided.
-  This is _OPTIONAL_.
   The default value is _false_.
 
 expose-token::
+  _OPTIONAL_.
   If `true`, an authenticated browser client (via a JavaScript HTTP invocation) can obtain the signed access token via the URL `root/k_query_bearer_token`.
-  This is _OPTIONAL_.
   The default value is _false_.
 
 credentials::
-  Specify the credentials of the application. This is an object notation where the key is the credential type and the value is the value of the credential type.
-  Currently password and jwt is supported. This is _REQUIRED_ only for clients with 'Confidential' access type.
+  _REQUIRED_ only for clients with 'Confidential' access type. Specify the credentials of the application. This is an object notation where the key is the credential type and the value is the value of the credential type.
+  Currently password and jwt is supported. T
 
 connection-pool-size::
+  _OPTIONAL_.
   This config option defines how many connections to the {project_name} server should be pooled.
-  This is _OPTIONAL_.
   The default value is `20`.
 
 socket-timeout-millis::
+  _OPTIONAL_.
   Timeout for socket waiting for data after establishing the connection in milliseconds.
   Maximum time of inactivity between two data packets.
   A timeout value of zero is interpreted as an infinite timeout.
   A negative value is interpreted as undefined (system default if applicable).
   The default value is `-1`.
-  This is _OPTIONAL_.
-
-connection-timeout-millis::
+  onnection-timeout-millis::
   Timeout for establishing the connection with the remote host in milliseconds.
   A timeout value of zero is interpreted as an infinite timeout.
   A negative value is interpreted as undefined (system default if applicable).
   The default value is `-1`.
-  This is _OPTIONAL_.
+
 
 connection-ttl-millis::
+  _OPTIONAL_.
   Connection time-to-live for client in milliseconds.
   A value less than or equal to zero is interpreted as an infinite value.
   The default value is `-1`.
-  This is _OPTIONAL_.
+
 
 disable-trust-manager::
+  _OPTIONAL_.
   If the {project_name} server requires HTTPS and this config option is set to `true` you do not have to specify a truststore.
   This setting should only be used during development and *never* in production as it will disable verification of SSL certificates.
-  This is _OPTIONAL_.
-  The default value is `false`.
+    The default value is `false`.
 
 allow-any-hostname::
+  _OPTIONAL_.
   If the {project_name} server requires HTTPS and this config option is set to `true` the {project_name} server's certificate is validated via the truststore,
   but host name validation is not done.
   This setting should only be used during development and *never* in production as it will disable verification of SSL certificates.
@@ -198,24 +195,24 @@ truststore::
   This is what the trustore does.
   The keystore contains one or more trusted host certificates or certificate authorities.
   You can create this truststore by extracting the public certificate of the {project_name} server's SSL keystore.
-  This is _REQUIRED_ unless `ssl-required` is `none` or `disable-trust-manager` is `true`.
+  _REQUIRED_ unless `ssl-required` is `none` or `disable-trust-manager` is `true`.
 
 truststore-password::
   Password for the truststore.
-  This is _REQUIRED_ if `truststore` is set and the truststore requires a password.
+  _REQUIRED_ if `truststore` is set and the truststore requires a password.
 
 client-keystore::
+  _OPTIONAL_.
   This is the file path to a keystore file.
   This keystore contains client certificate for two-way SSL when the adapter makes HTTPS requests to the {project_name} server.
-  This is _OPTIONAL_.
 
 client-keystore-password::
+  _REQUIRED_ if `client-keystore` is set.
   Password for the client keystore.
-  This is _REQUIRED_ if `client-keystore` is set.
 
 client-key-password::
+  _REQUIRED_ if `client-keystore` is set.
   Password for the client's key.
-  This is _REQUIRED_ if `client-keystore` is set.
 
 always-refresh-token::
   If _true_, the adapter will refresh token in every request.
@@ -248,14 +245,15 @@ principal-attribute::
   Possible values are `sub`, `preferred_username`, `email`, `name`, `nickname`, `given_name`, `family_name`.
 
 turn-off-change-session-id-on-login::
-  The session id is changed by default on a successful login on some platforms to plug a security attack vector.  Change this to true if you want to turn this off This is _OPTIONAL_.
+  _OPTIONAL_. The session id is changed by default on a successful login on some platforms to plug a security attack vector.  Change this to true if you want to turn this off
   The default value is _false_.
 
 token-minimum-time-to-live::
+  _OPTIONAL_.
   Amount of time, in seconds, to preemptively refresh an active access token with the {project_name} server before it expires.
   This is especially useful when the access token is sent to another REST client where it could expire before being evaluated.
   This value should never exceed the realm's access token lifespan.
-  This is _OPTIONAL_.  The default value is `0` seconds, so adapter will refresh access token just if it's expired.
+  The default value is `0` seconds, so adapter will refresh access token just if it's expired.
 
 min-time-between-jwks-requests::
   Amount of time, in seconds, specifying minimum interval between two requests to {project_name} to retrieve new public keys.
@@ -284,4 +282,4 @@ verify-token-audience::
   If set to `true`, then during authentication with the bearer token, the adapter will verify whether the token contains this
   client name (resource) as an audience. The option is especially useful for services, which primarily serve requests authenticated
   by the bearer token. This is set to `false` by default, however for improved security, it is recommended to enable this.
-  See link:{adminguide_link}#audience-support[Audience Support] for more details about audience support.
+  See link:{adminguide_link}#audience-support[Audience Support] for more details about audience

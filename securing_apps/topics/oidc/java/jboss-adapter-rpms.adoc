@@ -1,5 +1,5 @@
 [id="jboss7_adapter_rpm"]
-==== Installing JBoss EAP 7 adapters from an RPM
+===== Installing JBoss EAP 7 adapters from an RPM
 
 NOTE: With Red Hat Enterprise Linux 7, the term channel was replaced with the term repository. In these instructions only the term repository is used.
 
@@ -55,7 +55,7 @@ $ $EAP_HOME/bin/jboss-cli.sh -c --file=$EAP_HOME/bin/adapter-install.cli
 Your installation is complete.
 
 [id="jboss6_adapter_rpm"]
-==== Installing JBoss EAP 6 adapters from an RPM
+===== Installing JBoss EAP 6 adapters from an RPM
 
 NOTE: With Red Hat Enterprise Linux 7, the term channel was replaced with the term repository. In these instructions only the term repository is used.
 

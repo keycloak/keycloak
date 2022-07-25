@@ -415,14 +415,14 @@ adapter::
     * "default" - the library uses the browser api for redirects (this is the default)
     * "cordova" - the library will try to use the InAppBrowser cordova plugin to load keycloak login/registration pages (this is used automatically when the library is working in a cordova ecosystem)
     * "cordova-native" - the library tries to open the login and registration page using the phone's system browser using the BrowserTabs cordova plugin. This requires extra setup for redirecting back to the app (see <<hybrid-apps-with-cordova>>).
-    * custom - allows you to implement a custom adapter (only for advanced use cases)
+    * "custom" - allows you to implement a custom adapter (only for advanced use cases)
 
 responseType::
     Response type sent to {project_name} with login requests. This is determined based on the flow value used during initialization, but can be overridden by setting this value.
 
 ===== Methods
 
-====== init(options)
+*init(options)*
 
 Called to initialize the adapter.
 
@@ -447,7 +447,7 @@ Options is an Object, where:
 
 Returns a promise that resolves when initialization completes.
 
-====== login(options)
+*login(options)*
 
 Redirects to login form.
 
@@ -472,13 +472,13 @@ and link:{adminguide_link}#_step-up-flow[Step-up authentication documentation] f
 * locale - Sets the 'ui_locales' query param in compliance with https://openid.net/specs/openid-connect-core-1_0.html#AuthRequest[section 3.1.2.1 of the OIDC 1.0 specification].
 * cordovaOptions - Specifies the arguments that are passed to the Cordova in-app-browser (if applicable). Options `hidden` and `location` are not affected by these arguments. All available options are defined at https://cordova.apache.org/docs/en/latest/reference/cordova-plugin-inappbrowser/. Example of use: `{ zoom: "no", hardwareback: "yes" }`;
 
-====== createLoginUrl(options)
+*createLoginUrl(options)*
 
 Returns the URL to login form.
 
 Options is an optional Object, which supports same options as the function `login` .
 
-====== logout(options)
+*logout(options)*
 
 Redirects to logout.
 
@@ -486,7 +486,7 @@ Options is an Object, where:
 
 * redirectUri - Specifies the uri to redirect to after logout.
 
-====== createLogoutUrl(options)
+*createLogoutUrl(options)*
 
 Returns the URL to logout the user.
 
@@ -494,23 +494,23 @@ Options is an Object, where:
 
 * redirectUri - Specifies the uri to redirect to after logout.
 
-====== register(options)
+*register(options)*
 
 Redirects to registration form. Shortcut for login with option action = 'register'
 
 Options are same as for the login method but 'action' is set to 'register'
 
-====== createRegisterUrl(options)
+*createRegisterUrl(options)*
 
 Returns the url to registration page. Shortcut for createLoginUrl with option action = 'register'
 
 Options are same as for the createLoginUrl method but 'action' is set to 'register'
 
-====== accountManagement()
+*accountManagement()*
 
 Redirects to the Account Management Console.
 
-====== createAccountUrl(options)
+*createAccountUrl(options)*
 
 Returns the URL to the Account Management Console.
 
@@ -518,15 +518,15 @@ Options is an Object, where:
 
 * redirectUri - Specifies the uri to redirect to when redirecting back to the application.
 
-====== hasRealmRole(role)
+*hasRealmRole(role)*
 
 Returns true if the token has the given realm role.
 
-====== hasResourceRole(role, resource)
+*hasResourceRole(role, resource)*
 
 Returns true if the token has the given role for the resource (resource is optional, if not specified clientId is used).
 
-====== loadUserProfile()
+*loadUserProfile()*
 
 Loads the users profile.
 
@@ -544,11 +544,11 @@ keycloak.loadUserProfile()
     });
 ----
 
-====== isTokenExpired(minValidity)
+*isTokenExpired(minValidity)*
 
 Returns true if the token has less than minValidity seconds left before it expires (minValidity is optional, if not specified 0 is used).
 
-====== updateToken(minValidity)
+*updateToken(minValidity)*
 
 If the token expires within minValidity seconds (minValidity is optional, if not specified 5 is used) the token is refreshed.
 If the session status iframe is enabled, the session status is also checked.
@@ -571,7 +571,7 @@ keycloak.updateToken(5)
     });
 ----
 
-====== clearToken()
+*clearToken()*
 
 Clear authentication state, including tokens.
 This can be useful if application has detected the session was expired, for example if updating token fails.
@@ -590,10 +590,10 @@ keycloak.onAuthSuccess = function() { alert('authenticated'); }
 
 The available events are:
 
-* onReady(authenticated) - Called when the adapter is initialized.
-* onAuthSuccess - Called when a user is successfully authenticated.
-* onAuthError - Called if there was an error during authentication.
-* onAuthRefreshSuccess - Called when the token is refreshed.
-* onAuthRefreshError - Called if there was an error while trying to refresh the token.
-* onAuthLogout - Called if the user is logged out (will only be called if the session status iframe is enabled, or in Cordova mode).
-* onTokenExpired - Called when the access token is expired. If a refresh token is available the token can be refreshed with updateToken, or in cases where it is not (that is, with implicit flow) you can redirect to login screen to obtain a new access token.
+* *onReady(authenticated)* - Called when the adapter is initialized.
+* *onAuthSuccess* - Called when a user is successfully authenticated.
+* *onAuthError* - Called if there was an error during authentication.
+* *onAuthRefreshSuccess* - Called when the token is refreshed.
+* *onAuthRefreshError* - Called if there was an error while trying to refresh the token.
+* *onAuthLogout* - Called if the user is logged out (will only be called if the session status iframe is enabled, or in Cordova mode).
+* *onTokenExpired* - Called when the access token is expired. If a refresh token is available the token can be refreshed with updateToken, or in cases where it is not (that is, with implicit flow) you can redirect to login screen to obtain a new access token.

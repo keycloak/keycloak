@@ -11,10 +11,11 @@ You can install this adapter from a ZIP file or from an RPM.
 * xref:jboss_adapter_installation[Installing JBOSS EAP adapters from a ZIP file]
 * xref:jboss7_adapter_rpm[Installing JBoss EAP 7 Adapters from an RPM]
 * xref:jboss6_adapter_rpm[Installing JBoss EAP 6 Adapters from an RPM]
-endif::[]
 
 [id="jboss_adapter_installation"]
-==== Installing JBOSS EAP adapters from a ZIP file
+===== Installing JBOSS EAP adapters from a ZIP file
+endif::[]
+
 ifeval::[{project_community}==true]
 To be able to secure WAR apps deployed on JBoss EAP, WildFly or JBoss AS, you must install and configure the
 {project_name} adapter subsystem. You then have two options to secure your WARs.
