@@ -25,9 +25,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
-import org.keycloak.config.ConfigSupportLevel;
-import org.keycloak.quarkus.runtime.cli.command.Start;
-import org.keycloak.quarkus.runtime.cli.command.StartDev;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper;
 import org.keycloak.quarkus.runtime.configuration.mappers.PropertyMappers;
 import org.keycloak.utils.StringUtil;
@@ -58,7 +55,9 @@ public final class Help extends CommandLine.Help {
     private List<OptionSpec> excludeHiddenAndGroupOptions(List<OptionSpec> all) {
         List<OptionSpec> result = new ArrayList<>(all);
 
-        for (ArgGroupSpec group : optionSectionGroups()) { result.removeAll(group.allOptionsNested()); }
+        for (ArgGroupSpec group : optionSectionGroups()) {
+            result.removeAll(group.allOptionsNested());
+        }
 
         for (Iterator<OptionSpec> iter = result.iterator(); iter.hasNext(); ) {
             OptionSpec optionSpec = iter.next();
@@ -159,7 +158,7 @@ public final class Help extends CommandLine.Help {
             return false;
         }
 
-        PropertyMapper mapper = getMapper(option.longestName());
+        PropertyMapper<?> mapper = getMapper(option.longestName());
 
         if (mapper == null) {
             // only filter mapped options, defaults to the hidden marker
@@ -173,18 +172,7 @@ public final class Help extends CommandLine.Help {
             return allOptions;
         }
 
-        if (option.hidden()) {
-            return false;
-        }
-
-        String commandName = commandSpec().name();
-
-        if (StartDev.NAME.equals(commandName) || Start.NAME.equals(commandName)) {
-            // start and start-dev shows only runtime options only except when all options are requested
-            return mapper.isRunTime() || allOptions;
-        }
-
-        return true;
+        return !option.hidden();
     }
 
     public void setAllOptions(boolean allOptions) {

@@ -14,6 +14,7 @@ optimal runtime.
 Options:
 
 -h, --help           This help message.
+--help-all           This same help message but with additional options.
 
 Cache:
 
@@ -28,14 +29,10 @@ Cache:
                      Define the default stack to use for cluster communication and node discovery.
                        This option only takes effect if 'cache' is set to 'ispn'. Default: udp.
 
-Storage (Experimental):
-
---storage <type>     Experimental: Sets a storage mechanism. Possible values are: jpa, chm.
-
 Database:
 
 --db <vendor>        The database vendor. Possible values are: dev-file, dev-mem, mariadb, mssql,
-                       mysql, oracle, postgres Default: dev-file.
+                       mysql, oracle, postgres. Default: dev-file.
 
 Transaction:
 
@@ -96,10 +93,4 @@ Examples:
   Change the relative path:
 
       $ kc.bat build --http-relative-path=/auth
-
-You can also use the "--auto-build" option when starting the server to avoid
-running this command every time you change a configuration:
-
-    $ kc.bat start --auto-build <OPTIONS>
-
-By doing that you have an additional overhead when the server is starting.
+

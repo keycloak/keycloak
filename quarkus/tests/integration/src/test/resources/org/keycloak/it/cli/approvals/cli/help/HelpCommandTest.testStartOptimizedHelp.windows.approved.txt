@@ -129,7 +129,7 @@ Logging:
                      Set the log output to JSON or default (plain) unstructured logging. Default:
                        default.
 --log-file <path>/<file-name>.log
-                     Set the log file path and filename. Default: data/log/keycloak.log.
+                     Set the log file path and filename. Default: data\log\keycloak.log.
 --log-file-format <format>
                      Set a format specific to file log entries. Default: %d{yyyy-MM-dd HH:mm:ss,
                        SSS} %-5p [%c] (%t) %s%e%n.
@@ -166,4 +166,4 @@ By default, this command tries to update the server configuration by running a
       $ kc.bat start '--optimized'
 
 By doing that, the server should start faster based on any previous
-configuration you have set when manually running the 'build' command.
+configuration you have set when manually running the 'build' command.

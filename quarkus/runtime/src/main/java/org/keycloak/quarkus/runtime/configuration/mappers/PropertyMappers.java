@@ -10,11 +10,11 @@ import org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -155,8 +155,8 @@ public final class PropertyMappers {
 
     private static class MappersConfig extends HashMap<String, PropertyMapper> {
 
-        private Map<OptionCategory, List<PropertyMapper>> buildTimeMappers = new HashMap();
-        private Map<OptionCategory, List<PropertyMapper>> runtimeTimeMappers = new HashMap();
+        private Map<OptionCategory, List<PropertyMapper>> buildTimeMappers = new EnumMap<>(OptionCategory.class);
+        private Map<OptionCategory, List<PropertyMapper>> runtimeTimeMappers = new EnumMap<>(OptionCategory.class);
 
         public void addAll(PropertyMapper[] mappers) {
             for (PropertyMapper mapper : mappers) {

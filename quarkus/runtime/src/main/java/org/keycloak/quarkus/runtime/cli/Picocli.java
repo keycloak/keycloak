@@ -36,6 +36,7 @@ import java.io.File;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -159,10 +160,8 @@ public final class Picocli {
     }
 
     private static int runReAugmentation(List<String> cliArgs, CommandLine cmd) {
-        if(!isDevMode()) {
-            if (cmd != null) {
-                cmd.getOut().println("Changes detected in configuration. Updating the server image.");
-            }
+        if(!isDevMode() && cmd != null) {
+            cmd.getOut().println("Changes detected in configuration. Updating the server image.");
         }
 
         int exitCode = 0;
@@ -366,7 +365,7 @@ public final class Picocli {
                 includeRuntime = isRebuildCheck();
             }
 
-            addCommandOptions(command, includeBuildTime, includeRuntime);
+            addOptionsToCli(command, includeBuildTime, includeRuntime);
         }
     }
 
@@ -382,8 +381,8 @@ public final class Picocli {
         return null;
     }
 
-    private static void addCommandOptions(CommandSpec commandSpec, boolean includeBuildTime, boolean includeRuntime) {
-        Map<OptionCategory, List<PropertyMapper>> mappers = new HashMap<>();
+    private static void addOptionsToCli(CommandSpec commandSpec, boolean includeBuildTime, boolean includeRuntime) {
+        Map<OptionCategory, List<PropertyMapper>> mappers = new EnumMap<>(OptionCategory.class);
 
         if (includeRuntime) {
             mappers.putAll(PropertyMappers.getRuntimeMappers());
@@ -513,10 +512,6 @@ public final class Picocli {
             return true;
         }
 
-        if (arg.startsWith(ImportRealmMixin.IMPORT_REALM)) {
-            return true;
-        }
-
-        return false;
+        return arg.startsWith(ImportRealmMixin.IMPORT_REALM);
     }
 }

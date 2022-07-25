@@ -190,7 +190,7 @@ Logging:
 --log-gelf-max-message-size <size>
                      Maximum message size (in bytes). If the message size is exceeded, gelf will
                        submit the message in multiple chunks. Default: 8192.
---log-gelf-port <PortNr>
+--log-gelf-port <port>
                      The port the Logstash or Graylog Host is called on. Default: 12201.
 --log-gelf-timestamp-format <pattern>
                      Set the format for the gelf timestamp field. Uses Java SimpleDateFormat
@@ -203,4 +203,4 @@ Logging:
 Do NOT start the server using this command when deploying to production.
 
 Use 'kc.bat start-dev --help-all' to list all available options, including
-build options.
+build options.
