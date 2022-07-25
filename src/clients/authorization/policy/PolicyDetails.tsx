@@ -203,6 +203,7 @@ export default function PolicyDetails() {
             <div className="pf-u-mt-md">
               <Button
                 variant={ButtonVariant.primary}
+                className="pf-u-mr-md"
                 type="submit"
                 data-testid="save"
               >

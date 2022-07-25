@@ -113,7 +113,7 @@ export const Role = () => {
         )}
       />
       {selectedRoles.length > 0 && (
-        <TableComposable>
+        <TableComposable variant="compact">
           <Thead>
             <Tr>
               <Th>{t("roles")}</Th>

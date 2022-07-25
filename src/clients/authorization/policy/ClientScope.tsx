@@ -114,7 +114,7 @@ export const ClientScope = () => {
         )}
       />
       {selectedScopes.length > 0 && (
-        <TableComposable>
+        <TableComposable variant="compact">
           <Thead>
             <Tr>
               <Th>{t("clientScope")}</Th>

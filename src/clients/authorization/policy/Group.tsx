@@ -135,7 +135,7 @@ export const Group = () => {
           )}
         />
         {selectedGroups.length > 0 && (
-          <TableComposable>
+          <TableComposable variant="compact">
             <Thead>
               <Tr>
                 <Th>{t("groups")}</Th>
