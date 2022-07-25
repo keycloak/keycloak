@@ -20,6 +20,23 @@ Options:
 --optimized          Use this option to achieve an optional startup time if you have previously
                        built a server image using the 'build' command.
 
+Storage (Experimental):
+
+--storage-hotrod-cache-configure <true|false>
+                     Experimental: When set to true, Keycloak will create and configure Infinispan
+                       caches on startup. Default: true.
+--storage-hotrod-cache-reindex <[cache1,cache2,...]|all>
+                     Experimental: List of cache names that should be indexed on Keycloak startup.
+                       Defaulting to `all` which means all caches are reindexed. Default: all.
+--storage-hotrod-host <host>
+                     Experimental: Sets the host of the Infinispan server.
+--storage-hotrod-password <password>
+                     Experimental: Sets the password of the Infinispan user.
+--storage-hotrod-port <port>
+                     Experimental: Sets the port of the Infinispan server.
+--storage-hotrod-username <username>
+                     Experimental: Sets the username of the Infinispan user.
+
 Database:
 
 --db-password <password>
@@ -166,4 +183,4 @@ By default, this command tries to update the server configuration by running a
       $ kc.bat start '--optimized'
 
 By doing that, the server should start faster based on any previous
-configuration you have set when manually running the 'build' command.
+configuration you have set when manually running the 'build' command.

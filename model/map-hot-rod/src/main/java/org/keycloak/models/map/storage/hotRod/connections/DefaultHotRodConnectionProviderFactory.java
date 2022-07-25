@@ -137,6 +137,8 @@ public class DefaultHotRodConnectionProviderFactory implements HotRodConnectionP
                     .peek(cacheName -> LOG.infof("Reindexing %s cache. This can take a long time to complete. While the rebuild operation is in progress, queries might return fewer results.", cacheName))
                     .forEach(administration::reindexCache);
         }
+
+        LOG.infof("HotRod client configuration was successful.");
     }
 
     private void registerSchemata() {
