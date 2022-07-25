@@ -69,7 +69,7 @@
   "unlinkAccountTitle": "Unlink account from {{provider}}?",
   "unlinkAccountConfirm": "Are you sure you want to permanently unlink this account from {{provider}}?",
   "link": "Link",
-  "linkAccountTitle": "Link account to {{provider}}?",
+  "linkAccountTitle": "Link account to {{provider}}",
   "idpLinkSuccess": "Identity provider has been linked",
   "couldNotLinkIdP": "Could not link identity provider {{error}}",
   "verifyEmail": "Verify Email",
