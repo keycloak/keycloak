@@ -3,6 +3,7 @@ package org.keycloak.crypto.def.test;
 import java.security.SecureRandom;
 
 import org.jboss.logging.Logger;
+import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.keycloak.common.crypto.CryptoIntegration;
@@ -27,6 +28,7 @@ public class DefaultSecureRandomTest {
 
         SecureRandom sc3 = SecureRandom.getInstance("SHA1PRNG");
         logger.infof(dumpSecureRandom("SecureRandom.getInstance(\"SHA1PRNG\")", sc3));
+        Assert.assertEquals("SHA1PRNG", sc3.getAlgorithm());
     }
 
 
