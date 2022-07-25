@@ -30,7 +30,6 @@
         <module name="org.keycloak.keycloak-common"/>
         <module name="org.keycloak.keycloak-core"/>
         <module name="org.keycloak.keycloak-server-spi"/>
-        <module name="org.bouncycastle" />
         <module name="javax.api"/>
         <module name="javax.ws.rs.api"/>
         <module name="org.apache.httpcomponents"/>
