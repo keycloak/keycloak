@@ -135,7 +135,7 @@ public final class Database {
                 "org.postgresql.Driver",
                 "io.quarkus.hibernate.orm.runtime.dialect.QuarkusPostgreSQL10Dialect",
                 "jdbc:postgresql://${kc.db-url-host:localhost}:${kc.db-url-port:5432}/${kc.db-url-database:keycloak}${kc.db-url-properties:}",
-                asList("liquibase.database.core.PostgresDatabase",
+                asList("liquibase.database.core.PostgresDatabase", "liquibase.database.core.CockroachDatabase",
                         "org.keycloak.connections.jpa.updater.liquibase.PostgresPlusDatabase"),
                 "postgres"
         ),
