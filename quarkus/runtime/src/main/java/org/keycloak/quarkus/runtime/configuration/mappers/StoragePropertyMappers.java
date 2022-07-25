@@ -270,6 +270,30 @@ final class StoragePropertyMappers {
                         .mapFrom("storage")
                         .transformer(StoragePropertyMappers::isLegacyStoreEnabled)
                         .paramLabel("type")
+                        .build(),
+                fromOption(StorageOptions.STORAGE_HOTROD_HOST)
+                        .to("kc.spi-connections-hot-rod-default-host")
+                        .paramLabel("host")
+                        .build(),
+                fromOption(StorageOptions.STORAGE_HOTROD_PORT)
+                        .to("kc.spi-connections-hot-rod-default-port")
+                        .paramLabel("port")
+                        .build(),
+                fromOption(StorageOptions.STORAGE_HOTROD_USERNAME)
+                        .to("kc.spi-connections-hot-rod-default-username")
+                        .paramLabel("username")
+                        .build(),
+                fromOption(StorageOptions.STORAGE_HOTROD_PASSWORD)
+                        .to("kc.spi-connections-hot-rod-default-password")
+                        .paramLabel("password")
+                        .build(),
+                fromOption(StorageOptions.STORAGE_HOTROD_CACHE_CONFIGURE)
+                        .to("kc.spi-connections-hot-rod-default-configure-remote-caches")
+                        .paramLabel(Boolean.TRUE + "|" + Boolean.FALSE)
+                        .build(),
+                fromOption(StorageOptions.STORAGE_HOTROD_CACHE_REINDEX)
+                        .to("kc.spi-connections-hot-rod-default-reindex-caches")
+                        .paramLabel("[cache1,cache2,...]|all")
                         .build()
         };
     }

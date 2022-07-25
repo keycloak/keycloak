@@ -72,7 +72,7 @@ public class HelpCommandTest {
     void testStartOptimizedHelpAll(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertHelp();
-        cliResult.assertNoMessage("--storage");
+        cliResult.assertNoMessage("--storage ");
     }
 
     @Test
