@@ -167,6 +167,13 @@ public class StorageOptions {
             .buildTime(true)
             .build();
 
+    public static final Option<String> STORAGE_DEPLOYMENT_STATE_RESOURCES_VERSION_SEED = new OptionBuilder<>("storage-deployment-state-version-seed", String.class)
+            .category(OptionCategory.STORAGE)
+            .description("Secret that serves as a seed to mask the version number of Keycloak in URLs. Need to be identical across all servers in the cluster. Will default to a random number generated when starting the server which is secure but will lead to problems when a loadbalancer without sticky sessions is used or nodes are restarted.")
+            .hidden()
+            .buildTime(false)
+            .build();
+
     public static final Option<String> STORAGE_AUTH_SESSION_PROVIDER = new OptionBuilder<>("storage-auth-session-provider", String.class)
             .category(OptionCategory.STORAGE)
             .hidden()
