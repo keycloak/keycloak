@@ -333,8 +333,10 @@ This redirect usually happens when the user clicks the `Log Out` link on the pag
 
 Once the user is redirected to the logout endpoint, {project_name} is going to send logout requests to
 clients to let them to invalidate their local user sessions, and potentially redirect the user to some URL
-once the logout process is finished. The user might be optionally requested to confirm the logout in case that `id_token_hint` parameter was not used
-or the client referenced in the ID Token from `id_token_hint` has `Consent Required` enabled.
+once the logout process is finished. The user might be optionally requested to confirm the logout in case the  `id_token_hint` parameter was not used.
+After logout, the user is automatically redirected to the specified `post_logout_redirect_uri` as long as it is provided as a parameter.
+Note that you need to include either the `client_id` or `id_token_hint` parameter in case the `post_logout_redirect_uri` is included. Also the `post_logout_redirect_uri` parameter
+needs to match one of the `Valid Post Logout Redirect URIs` specified in the client configuration.
 
 Depending on the client configuration, logout requests can be sent to clients through the front-channel or through the back-channel. For the frontend browser clients, which rely on the
 Session Management described in the previous section, {project_name} does not need to send any logout requests to them; these clients automatically detect that SSO session

@@ -44,6 +44,9 @@ If this is on, clients are allowed to use the OIDC xref:con-oidc-auth-flows_{con
 +
 Exclusive redirect URL patterns are typically more secure.  See xref:unspecific-redirect-uris_{context}[Unspecific Redirect URIs] for more information.
 
+*Valid post logout redirect URIs*:: This setting is similar to `Valid Redirect URIs`, but these URIs  are valid redirect URIs to be used for the redirect to this client after logout. Use the value `+` to use same set of URIs
+as specified by `Valid Redirect URIs` option.
+
 *Base URL*:: This URL is used when {project_name} needs to link to the client.
 
 [[_admin-url]]
