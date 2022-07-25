@@ -18,6 +18,7 @@
 package org.keycloak.quarkus.runtime.configuration.test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource.CLI_ARGS;
 
@@ -483,6 +484,30 @@ public class ConfigurationTest {
         assertEquals("true", config4.getConfigValue("quarkus.log.console.enable").getValue());
         assertEquals("false", config4.getConfigValue("quarkus.log.file.enable").getValue());
         assertEquals("true", config4.getConfigValue("quarkus.log.handler.gelf.enabled").getValue());
+    }
+
+    @Test
+    public void testStorageMixedStorageOptions() {
+        System.setProperty(CLI_ARGS, "--storage=jpa" + ARG_SEPARATOR + "--storage-realm=chm");
+        SmallRyeConfig config = createConfig();
+        assertEquals("jpa", config.getConfigValue("kc.storage").getValue());
+        assertNull(config.getConfigValue("kc.spi-map-storage-provider").getValue());
+        assertEquals("map", config.getConfigValue("kc.spi-realm-provider").getValue());
+        assertEquals("concurrenthashmap", config.getConfigValue("kc.spi-realm-map-storage-provider").getValue());
+        assertEquals("map", config.getConfigValue("kc.spi-user-provider").getValue());
+        assertEquals("jpa", config.getConfigValue("kc.spi-user-map-storage-provider").getValue());
+    }
+
+    @Test
+    public void testStoragePureJpa() {
+        System.setProperty(CLI_ARGS, "--storage=jpa");
+        SmallRyeConfig config = createConfig();
+        assertEquals("jpa", config.getConfigValue("kc.storage").getValue());
+        assertNull(config.getConfigValue("kc.spi-map-storage-provider").getValue());
+        assertEquals("map", config.getConfigValue("kc.spi-realm-provider").getValue());
+        assertEquals("jpa", config.getConfigValue("kc.spi-realm-map-storage-provider").getValue());
+        assertEquals("map", config.getConfigValue("kc.spi-user-provider").getValue());
+        assertEquals("jpa", config.getConfigValue("kc.spi-user-map-storage-provider").getValue());
     }
 
     @Test

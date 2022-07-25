@@ -47,8 +47,7 @@ public class StorageOptions {
 
     public static final Option<StorageType> STORAGE = new OptionBuilder<>("storage", StorageType.class)
             .category(OptionCategory.STORAGE)
-            .description(String.format("Sets a storage mechanism. Possible values are: %s.",
-                    String.join(",", String.join(", ", Arrays.stream(StorageType.values()).map(StorageType::name).collect(Collectors.toList())))))
+            .description(String.format("Sets the default storage mechanism for all areas. Possible values are: %s.", storageAreas()))
             .expectedValues(StorageType.values())
             .defaultValue(Optional.empty())
             .hidden()
@@ -60,18 +59,22 @@ public class StorageOptions {
             .buildTime(true)
             .build();
 
-    public static final Option<StorageType> STORAGE_EVENT_STORE = new OptionBuilder<>("storage-event-store", StorageType.class)
+    public static final Option<String> STORAGE_EVENT_STORE_PROVIDER = new OptionBuilder<>("storage-event-store-provider", String.class)
             .category(OptionCategory.STORAGE)
             .buildTime(true)
             .build();
 
     public static final Option<StorageType> STORAGE_EVENT_ADMIN_STORE = new OptionBuilder<>("storage-event-admin", StorageType.class)
             .category(OptionCategory.STORAGE)
+            .description(descriptionForStorageAreas("admin events"))
+            .expectedValues(StorageType.values())
             .buildTime(true)
             .build();
 
     public static final Option<StorageType> STORAGE_EVENT_AUTH_STORE = new OptionBuilder<>("storage-event-auth", StorageType.class)
             .category(OptionCategory.STORAGE)
+            .description(descriptionForStorageAreas("authentication and authorization events"))
+            .expectedValues(StorageType.values())
             .buildTime(true)
             .build();
 
@@ -80,123 +83,139 @@ public class StorageOptions {
             .buildTime(true)
             .build();
 
-    public static final Option<String> STORAGE_REALM = new OptionBuilder<>("storage-realm", String.class)
+    public static final Option<String> STORAGE_REALM_PROVIDER = new OptionBuilder<>("storage-realm-provider", String.class)
             .category(OptionCategory.STORAGE)
             .hidden()
             .buildTime(true)
             .build();
 
-    public static final Option<String> STORAGE_REALM_STORE = new OptionBuilder<>("storage-realm-store", String.class)
+    public static final Option<StorageType> STORAGE_REALM_STORE = new OptionBuilder<>("storage-realm", StorageType.class)
+            .category(OptionCategory.STORAGE)
+            .description(descriptionForStorageAreas("realms"))
+            .expectedValues(StorageType.values())
+            .buildTime(true)
+            .build();
+
+    public static final Option<String> STORAGE_CLIENT_PROVIDER = new OptionBuilder<>("storage-client-provider", String.class)
             .category(OptionCategory.STORAGE)
             .hidden()
             .buildTime(true)
             .build();
 
-    public static final Option<String> STORAGE_CLIENT = new OptionBuilder<>("storage-client", String.class)
+    public static final Option<StorageType> STORAGE_CLIENT_STORE = new OptionBuilder<>("storage-client", StorageType.class)
+            .category(OptionCategory.STORAGE)
+            .description(descriptionForStorageAreas("clients"))
+            .expectedValues(StorageType.values())
+            .buildTime(true)
+            .build();
+
+    public static final Option<String> STORAGE_CLIENT_SCOPE_PROVIDER = new OptionBuilder<>("storage-client-scope-provider", String.class)
             .category(OptionCategory.STORAGE)
             .hidden()
             .buildTime(true)
             .build();
 
-    public static final Option<String> STORAGE_CLIENT_STORE = new OptionBuilder<>("storage-client-store", String.class)
+    public static final Option<StorageType> STORAGE_CLIENT_SCOPE_STORE = new OptionBuilder<>("storage-client-scope", StorageType.class)
+            .category(OptionCategory.STORAGE)
+            .description(descriptionForStorageAreas("client scopes"))
+            .expectedValues(StorageType.values())
+            .buildTime(true)
+            .build();
+
+    public static final Option<String> STORAGE_GROUP_PROVIDER = new OptionBuilder<>("storage-group-provider", String.class)
             .category(OptionCategory.STORAGE)
             .hidden()
             .buildTime(true)
             .build();
 
-    public static final Option<String> STORAGE_CLIENT_SCOPE = new OptionBuilder<>("storage-client-scope", String.class)
+    public static final Option<StorageType> STORAGE_GROUP_STORE = new OptionBuilder<>("storage-group", StorageType.class)
+            .category(OptionCategory.STORAGE)
+            .description(descriptionForStorageAreas("groups"))
+            .expectedValues(StorageType.values())
+            .buildTime(true)
+            .build();
+
+    public static final Option<String> STORAGE_ROLE_PROVIDER = new OptionBuilder<>("storage-role-provider", String.class)
             .category(OptionCategory.STORAGE)
             .hidden()
             .buildTime(true)
             .build();
 
-    public static final Option<String> STORAGE_CLIENT_SCOPE_STORE = new OptionBuilder<>("storage-client-scope-store", String.class)
+    public static final Option<StorageType> STORAGE_ROLE_STORE = new OptionBuilder<>("storage-role", StorageType.class)
+            .category(OptionCategory.STORAGE)
+            .description(descriptionForStorageAreas("roles"))
+            .expectedValues(StorageType.values())
+            .buildTime(true)
+            .build();
+
+    public static final Option<String> STORAGE_USER_PROVIDER = new OptionBuilder<>("storage-user-provider", String.class)
             .category(OptionCategory.STORAGE)
             .hidden()
             .buildTime(true)
             .build();
 
-    public static final Option<String> STORAGE_GROUP = new OptionBuilder<>("storage-group", String.class)
+    public static final Option<StorageType> STORAGE_USER_STORE = new OptionBuilder<>("storage-user", StorageType.class)
+            .category(OptionCategory.STORAGE)
+            .description(descriptionForStorageAreas("users"))
+            .expectedValues(StorageType.values())
+            .buildTime(true)
+            .build();
+
+    public static final Option<String> STORAGE_DEPLOYMENT_STATE_PROVIDER = new OptionBuilder<>("storage-deployment-state-provider", String.class)
             .category(OptionCategory.STORAGE)
             .hidden()
             .buildTime(true)
             .build();
 
-    public static final Option<String> STORAGE_GROUP_STORE = new OptionBuilder<>("storage-group-store", String.class)
+    public static final Option<String> STORAGE_AUTH_SESSION_PROVIDER = new OptionBuilder<>("storage-auth-session-provider", String.class)
             .category(OptionCategory.STORAGE)
             .hidden()
             .buildTime(true)
             .build();
 
-    public static final Option<String> STORAGE_ROLE = new OptionBuilder<>("storage-role", String.class)
+    public static final Option<StorageType> STORAGE_AUTH_SESSION_STORE = new OptionBuilder<>("storage-auth-session", StorageType.class)
+            .category(OptionCategory.STORAGE)
+            .description(descriptionForStorageAreas("authentication sessions"))
+            .expectedValues(StorageType.values())
+            .buildTime(true)
+            .build();
+
+    public static final Option<String> STORAGE_USER_SESSION_PROVIDER = new OptionBuilder<>("storage-user-session-provider", String.class)
             .category(OptionCategory.STORAGE)
             .hidden()
             .buildTime(true)
             .build();
 
-    public static final Option<String> STORAGE_ROLE_STORE = new OptionBuilder<>("storage-role-store", String.class)
+    public static final Option<StorageType> STORAGE_USER_SESSION_STORE = new OptionBuilder<>("storage-user-session", StorageType.class)
+            .category(OptionCategory.STORAGE)
+            .description(descriptionForStorageAreas("user and client sessions"))
+            .expectedValues(StorageType.values())
+            .buildTime(true)
+            .build();
+
+    public static final Option<String> STORAGE_LOGIN_FAILURE_PROVIDER = new OptionBuilder<>("storage-login-failure-provider", String.class)
             .category(OptionCategory.STORAGE)
             .hidden()
             .buildTime(true)
             .build();
 
-    public static final Option<String> STORAGE_USER = new OptionBuilder<>("storage-user", String.class)
+    public static final Option<StorageType> STORAGE_LOGIN_FAILURE_STORE = new OptionBuilder<>("storage-login-failure", StorageType.class)
+            .category(OptionCategory.STORAGE)
+            .description(descriptionForStorageAreas("login failures"))
+            .expectedValues(StorageType.values())
+            .buildTime(true)
+            .build();
+
+    public static final Option<String> STORAGE_AUTHORIZATION_PROVIDER = new OptionBuilder<>("storage-authorization-provider", String.class)
             .category(OptionCategory.STORAGE)
             .hidden()
             .buildTime(true)
             .build();
 
-    public static final Option<String> STORAGE_USER_STORE = new OptionBuilder<>("storage-user-store", String.class)
+    public static final Option<StorageType> STORAGE_AUTHORIZATION_STORE = new OptionBuilder<>("storage-authorization", StorageType.class)
             .category(OptionCategory.STORAGE)
-            .hidden()
-            .buildTime(true)
-            .build();
-
-    public static final Option<String> STORAGE_DEPLOYMENT_STATE = new OptionBuilder<>("storage-deployment-state", String.class)
-            .category(OptionCategory.STORAGE)
-            .hidden()
-            .buildTime(true)
-            .build();
-
-    public static final Option<String> STORAGE_AUTH_SESSION = new OptionBuilder<>("storage-auth-session", String.class)
-            .category(OptionCategory.STORAGE)
-            .hidden()
-            .buildTime(true)
-            .build();
-
-    public static final Option<String> STORAGE_AUTH_SESSION_STORE = new OptionBuilder<>("storage-auth-session-store", String.class)
-            .category(OptionCategory.STORAGE)
-            .hidden()
-            .buildTime(true)
-            .build();
-
-    public static final Option<String> STORAGE_USER_SESSION = new OptionBuilder<>("storage-user-session", String.class)
-            .category(OptionCategory.STORAGE)
-            .hidden()
-            .buildTime(true)
-            .build();
-
-    public static final Option<String> STORAGE_USER_SESSION_STORE = new OptionBuilder<>("storage-user-session-store", String.class)
-            .category(OptionCategory.STORAGE)
-            .hidden()
-            .buildTime(true)
-            .build();
-
-    public static final Option<String> STORAGE_LOGIN_FAILURE = new OptionBuilder<>("storage-login-failure", String.class)
-            .category(OptionCategory.STORAGE)
-            .hidden()
-            .buildTime(true)
-            .build();
-
-    public static final Option<String> STORAGE_LOGIN_FAILURE_STORE = new OptionBuilder<>("storage-login-failure-store", String.class)
-            .category(OptionCategory.STORAGE)
-            .hidden()
-            .buildTime(true)
-            .build();
-
-    public static final Option<String> STORAGE_AUTHORIZATION_PERSISTER = new OptionBuilder<>("storage-authorization-persister", String.class)
-            .category(OptionCategory.STORAGE)
-            .hidden()
+            .description(descriptionForStorageAreas("authorizations"))
+            .expectedValues(StorageType.values())
             .buildTime(true)
             .build();
 
@@ -206,15 +225,16 @@ public class StorageOptions {
             .buildTime(true)
             .build();
 
-    public static final Option<String> STORAGE_ACTION_TOKEN = new OptionBuilder<>("storage-action-token", String.class)
+    public static final Option<String> STORAGE_ACTION_TOKEN_PROVIDER = new OptionBuilder<>("storage-action-token-provider", String.class)
             .category(OptionCategory.STORAGE)
             .hidden()
             .buildTime(true)
             .build();
 
-    public static final Option<String> STORAGE_ACTION_TOKEN_STORE = new OptionBuilder<>("storage-action-token-store", String.class)
+    public static final Option<StorageType> STORAGE_ACTION_TOKEN_STORE = new OptionBuilder<>("storage-action-token", StorageType.class)
             .category(OptionCategory.STORAGE)
-            .hidden()
+            .description(descriptionForStorageAreas("action tokens"))
+            .expectedValues(StorageType.values())
             .buildTime(true)
             .build();
 
@@ -236,37 +256,38 @@ public class StorageOptions {
             .buildTime(true)
             .build();
 
-    public static final Option<String> STORAGE_CACHE_CLEAR_USER = new OptionBuilder<>("cache-clear-user", String.class)
+    public static final Option<String> STORAGE_ADMIN_CACHE_CLEAR_USER = new OptionBuilder<>("cache-clear-user", String.class)
             .category(OptionCategory.STORAGE)
             .hidden()
             .buildTime(true)
             .build();
 
-    public static final Option<String> STORAGE_CACHE_CLEAR_REALM = new OptionBuilder<>("cache-clear-realm", String.class)
+    public static final Option<String> STORAGE_ADMIN_CACHE_CLEAR_REALM = new OptionBuilder<>("cache-clear-realm", String.class)
             .category(OptionCategory.STORAGE)
             .hidden()
             .buildTime(true)
             .build();
 
-    public static final Option<String> STORAGE_CACHE_CLEAR_KEYS = new OptionBuilder<>("cache-clear-keys", String.class)
+    public static final Option<String> STORAGE_ADMIN_CACHE_CLEAR_KEYS = new OptionBuilder<>("cache-clear-keys", String.class)
             .category(OptionCategory.STORAGE)
             .hidden()
             .buildTime(true)
             .build();
 
-    public static final Option<String> STORAGE_SINGLE_USE_OBJECT = new OptionBuilder<>("storage-single-use-object", String.class)
+    public static final Option<String> STORAGE_SINGLE_USE_OBJECT_PROVIDER = new OptionBuilder<>("storage-single-use-object-provider", String.class)
             .category(OptionCategory.STORAGE)
             .hidden()
             .buildTime(true)
             .build();
 
-    public static final Option<String> STORAGE_SINGLE_USE_OBJECT_STORE = new OptionBuilder<>("storage-single-use-object-store", String.class)
+    public static final Option<StorageType> STORAGE_SINGLE_USE_OBJECT_STORE = new OptionBuilder<>("storage-single-use-object", StorageType.class)
             .category(OptionCategory.STORAGE)
-            .hidden()
+            .description(descriptionForStorageAreas("single use objects"))
+            .expectedValues(StorageType.values())
             .buildTime(true)
             .build();
 
-    public static final Option<String> STORAGE_PUBLIC_KEY_STORE = new OptionBuilder<>("storage-public-key-store", String.class)
+    public static final Option<String> STORAGE_PUBLIC_KEY_STORAGE_STORE = new OptionBuilder<>("storage-public-key-storage", String.class)
             .category(OptionCategory.STORAGE)
             .hidden()
             .buildTime(true)
@@ -284,7 +305,7 @@ public class StorageOptions {
             .buildTime(true)
             .build();
 
-    public static final Option<String> STORAGE_USER_STORAGE = new OptionBuilder<>("storage-user-storage", String.class)
+    public static final Option<String> STORAGE_ADMIN_USER_STORAGE = new OptionBuilder<>("storage-admin-user-storage", String.class)
             .category(OptionCategory.STORAGE)
             .hidden()
             .buildTime(true)
@@ -332,6 +353,20 @@ public class StorageOptions {
 
     public static final List<Option<?>> ALL_OPTIONS = List.of(
             STORAGE,
+            STORAGE_EVENT_ADMIN_STORE,
+            STORAGE_EVENT_AUTH_STORE,
+            STORAGE_REALM_STORE,
+            STORAGE_CLIENT_STORE,
+            STORAGE_CLIENT_SCOPE_STORE,
+            STORAGE_GROUP_STORE,
+            STORAGE_ROLE_STORE,
+            STORAGE_USER_STORE,
+            STORAGE_AUTH_SESSION_STORE,
+            STORAGE_USER_SESSION_STORE,
+            STORAGE_LOGIN_FAILURE_STORE,
+            STORAGE_AUTHORIZATION_STORE,
+            STORAGE_ACTION_TOKEN_STORE,
+            STORAGE_SINGLE_USE_OBJECT_STORE,
             STORAGE_HOTROD_HOST,
             STORAGE_HOTROD_PORT,
             STORAGE_HOTROD_USERNAME,
@@ -339,4 +374,12 @@ public class StorageOptions {
             STORAGE_HOTROD_CACHE_CONFIGURE,
             STORAGE_HOTROD_CACHE_REINDEX
     );
+
+    private static String descriptionForStorageAreas(String areaAsText) {
+        return String.format("Sets a storage mechanism for %s. Possible values are: %s.", areaAsText, storageAreas());
+    }
+
+    private static String storageAreas() {
+        return String.join(",", Arrays.stream(StorageType.values()).map(StorageType::name).collect(Collectors.joining(", ")));
+    }
 }
