@@ -52,6 +52,7 @@ import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
@@ -843,5 +844,28 @@ public class OIDCClientRegistrationTest extends AbstractClientRegistrationTest {
         // Revert realm acr-to-loa mappings
         realmRep.getAttributes().remove(Constants.ACR_LOA_MAP);
         adminClient.realm("test").update(realmRep);
+    }
+
+    @Test
+    public void testPostLogoutRedirectUri() throws Exception {
+        OIDCClientRepresentation clientRep = createRep();
+        clientRep.setPostLogoutRedirectUris(Collections.singletonList("http://redirect/logout"));
+        OIDCClientRepresentation response = reg.oidc().create(clientRep);
+        assertEquals("http://redirect/logout", response.getPostLogoutRedirectUris().get(0));
+    }
+
+    @Test
+    public void testPostLogoutRedirectUriPlus() throws Exception {
+        OIDCClientRepresentation clientRep = createRep();
+        clientRep.setPostLogoutRedirectUris(Collections.singletonList("+"));
+        OIDCClientRepresentation response = reg.oidc().create(clientRep);
+        assertEquals("http://redirect", response.getPostLogoutRedirectUris().get(0));
+    }
+
+    @Test
+    public void testPostLogoutRedirectUriNull() throws Exception {
+        OIDCClientRepresentation clientRep = createRep();
+        OIDCClientRepresentation response = reg.oidc().create(clientRep);
+        assertNull(response.getPostLogoutRedirectUris());
     }
 }

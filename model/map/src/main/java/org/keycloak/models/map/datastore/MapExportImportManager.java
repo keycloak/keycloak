@@ -51,6 +51,7 @@ import org.keycloak.models.utils.DefaultKeyProviders;
 import org.keycloak.models.utils.DefaultRequiredActions;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.idm.ApplicationRepresentation;
 import org.keycloak.representations.idm.AuthenticationExecutionExportRepresentation;
 import org.keycloak.representations.idm.AuthenticationFlowRepresentation;
@@ -449,6 +450,10 @@ public class MapExportImportManager implements ExportImportManager {
         Map<String, ClientModel> appMap = new HashMap<>();
         for (ClientRepresentation resourceRep : rep.getClients()) {
             ClientModel app = RepresentationToModel.createClient(session, realm, resourceRep, mappedFlows);
+            String postLogoutRedirectUris = app.getAttribute(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS);
+            if (postLogoutRedirectUris == null) {
+                app.setAttribute(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, "+");
+            }
             appMap.put(app.getClientId(), app);
 
             ValidationUtil.validateClient(session, app, false, r -> {
