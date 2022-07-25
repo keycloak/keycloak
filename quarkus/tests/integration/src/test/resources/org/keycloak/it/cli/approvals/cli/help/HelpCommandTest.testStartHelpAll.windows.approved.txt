@@ -35,7 +35,32 @@ Cache:
 
 Storage (Experimental):
 
---storage <type>     Experimental: Sets a storage mechanism. Possible values are: jpa, chm, hotrod.
+--storage <type>     Experimental: Sets the default storage mechanism for all areas. Possible
+                       values are: jpa, chm, hotrod.
+--storage-action-token <type>
+                     Experimental: Sets a storage mechanism for action tokens. Possible values are:
+                       jpa, chm, hotrod.
+--storage-auth-session <type>
+                     Experimental: Sets a storage mechanism for authentication sessions. Possible
+                       values are: jpa, chm, hotrod.
+--storage-authorization <type>
+                     Experimental: Sets a storage mechanism for authorizations. Possible values
+                       are: jpa, chm, hotrod.
+--storage-client <type>
+                     Experimental: Sets a storage mechanism for clients. Possible values are: jpa,
+                       chm, hotrod.
+--storage-client-scope <type>
+                     Experimental: Sets a storage mechanism for client scopes. Possible values are:
+                       jpa, chm, hotrod.
+--storage-event-admin <type>
+                     Experimental: Sets a storage mechanism for admin events. Possible values are:
+                       jpa, chm, hotrod.
+--storage-event-auth <type>
+                     Experimental: Sets a storage mechanism for authentication and authorization
+                       events. Possible values are: jpa, chm, hotrod.
+--storage-group <type>
+                     Experimental: Sets a storage mechanism for groups. Possible values are: jpa,
+                       chm, hotrod.
 --storage-hotrod-cache-configure <true|false>
                      Experimental: When set to true, Keycloak will create and configure Infinispan
                        caches on startup. Default: true.
@@ -50,6 +75,24 @@ Storage (Experimental):
                      Experimental: Sets the port of the Infinispan server.
 --storage-hotrod-username <username>
                      Experimental: Sets the username of the Infinispan user.
+--storage-login-failure <type>
+                     Experimental: Sets a storage mechanism for login failures. Possible values
+                       are: jpa, chm, hotrod.
+--storage-realm <type>
+                     Experimental: Sets a storage mechanism for realms. Possible values are: jpa,
+                       chm, hotrod.
+--storage-role <type>
+                     Experimental: Sets a storage mechanism for roles. Possible values are: jpa,
+                       chm, hotrod.
+--storage-single-use-object <type>
+                     Experimental: Sets a storage mechanism for single use objects. Possible values
+                       are: jpa, chm, hotrod.
+--storage-user <type>
+                     Experimental: Sets a storage mechanism for users. Possible values are: jpa,
+                       chm, hotrod.
+--storage-user-session <type>
+                     Experimental: Sets a storage mechanism for user and client sessions. Possible
+                       values are: jpa, chm, hotrod.
 
 Database:
 

@@ -33,11 +33,14 @@ final class StoragePropertyMappers {
     public static PropertyMapper[] getMappers() {
         return new PropertyMapper[] {
                 fromOption(StorageOptions.STORAGE)
+                        .paramLabel("type")
+                        .build(),
+                fromOption(StorageOptions.STORAGE_PROVIDER)
                         .to("kc.spi-map-storage-provider")
                         .transformer(StoragePropertyMappers::resolveMapStorageProvider)
                         .paramLabel("type")
                         .build(),
-                fromOption(StorageOptions.STORAGE_EVENT_STORE)
+                fromOption(StorageOptions.STORAGE_EVENT_STORE_PROVIDER)
                         .mapFrom("storage")
                         .to("kc.spi-events-store-provider")
                         .transformer(StoragePropertyMappers::getAreaStorage)
@@ -55,7 +58,7 @@ final class StoragePropertyMappers {
                         .transformer(StoragePropertyMappers::resolveMapStorageProvider)
                         .paramLabel("type")
                         .build(),
-                fromOption(StorageOptions.STORAGE_REALM)
+                fromOption(StorageOptions.STORAGE_REALM_PROVIDER)
                         .to("kc.spi-realm-provider")
                         .mapFrom("storage")
                         .transformer(StoragePropertyMappers::getAreaStorage)
@@ -67,7 +70,7 @@ final class StoragePropertyMappers {
                         .transformer(StoragePropertyMappers::resolveMapStorageProvider)
                         .paramLabel("type")
                         .build(),
-                fromOption(StorageOptions.STORAGE_CLIENT)
+                fromOption(StorageOptions.STORAGE_CLIENT_PROVIDER)
                         .to("kc.spi-client-provider")
                         .mapFrom("storage")
                         .transformer(StoragePropertyMappers::getAreaStorage)
@@ -79,7 +82,7 @@ final class StoragePropertyMappers {
                         .transformer(StoragePropertyMappers::resolveMapStorageProvider)
                         .paramLabel("type")
                         .build(),
-                fromOption(StorageOptions.STORAGE_CLIENT_SCOPE)
+                fromOption(StorageOptions.STORAGE_CLIENT_SCOPE_PROVIDER)
                         .to("kc.spi-client-scope-provider")
                         .mapFrom("storage")
                         .transformer(StoragePropertyMappers::getAreaStorage)
@@ -91,7 +94,7 @@ final class StoragePropertyMappers {
                         .transformer(StoragePropertyMappers::resolveMapStorageProvider)
                         .paramLabel("type")
                         .build(),
-                fromOption(StorageOptions.STORAGE_GROUP)
+                fromOption(StorageOptions.STORAGE_GROUP_PROVIDER)
                         .to("kc.spi-group-provider")
                         .mapFrom("storage")
                         .transformer(StoragePropertyMappers::getAreaStorage)
@@ -103,7 +106,7 @@ final class StoragePropertyMappers {
                         .transformer(StoragePropertyMappers::resolveMapStorageProvider)
                         .paramLabel("type")
                         .build(),
-                fromOption(StorageOptions.STORAGE_ROLE)
+                fromOption(StorageOptions.STORAGE_ROLE_PROVIDER)
                         .to("kc.spi-role-provider")
                         .mapFrom("storage")
                         .transformer(StoragePropertyMappers::getAreaStorage)
@@ -115,7 +118,7 @@ final class StoragePropertyMappers {
                         .transformer(StoragePropertyMappers::resolveMapStorageProvider)
                         .paramLabel("type")
                         .build(),
-                fromOption(StorageOptions.STORAGE_USER)
+                fromOption(StorageOptions.STORAGE_USER_PROVIDER)
                         .to("kc.spi-user-provider")
                         .mapFrom("storage")
                         .transformer(StoragePropertyMappers::getAreaStorage)
@@ -127,13 +130,13 @@ final class StoragePropertyMappers {
                         .transformer(StoragePropertyMappers::resolveMapStorageProvider)
                         .paramLabel("type")
                         .build(),
-                fromOption(StorageOptions.STORAGE_DEPLOYMENT_STATE)
+                fromOption(StorageOptions.STORAGE_DEPLOYMENT_STATE_PROVIDER)
                         .to("kc.spi-deployment-state-provider")
                         .mapFrom("storage")
                         .transformer(StoragePropertyMappers::getAreaStorage)
                         .paramLabel("type")
                         .build(),
-                fromOption(StorageOptions.STORAGE_AUTH_SESSION)
+                fromOption(StorageOptions.STORAGE_AUTH_SESSION_PROVIDER)
                         .to("kc.spi-authentication-sessions-provider")
                         .mapFrom("storage")
                         .transformer(StoragePropertyMappers::getCacheStorage)
@@ -145,7 +148,7 @@ final class StoragePropertyMappers {
                         .transformer(StoragePropertyMappers::resolveMapStorageProvider)
                         .paramLabel("type")
                         .build(),
-                fromOption(StorageOptions.STORAGE_USER_SESSION)
+                fromOption(StorageOptions.STORAGE_USER_SESSION_PROVIDER)
                         .to("kc.spi-user-sessions-provider")
                         .mapFrom("storage")
                         .transformer(StoragePropertyMappers::getCacheStorage)
@@ -157,7 +160,7 @@ final class StoragePropertyMappers {
                         .transformer(StoragePropertyMappers::resolveMapStorageProvider)
                         .paramLabel("type")
                         .build(),
-                fromOption(StorageOptions.STORAGE_LOGIN_FAILURE)
+                fromOption(StorageOptions.STORAGE_LOGIN_FAILURE_PROVIDER)
                         .to("kc.spi-login-failure-provider")
                         .mapFrom("storage")
                         .transformer(StoragePropertyMappers::getCacheStorage)
@@ -175,13 +178,19 @@ final class StoragePropertyMappers {
                         .transformer(StoragePropertyMappers::getUserSessionPersisterStorage)
                         .paramLabel("type")
                         .build(),
-                fromOption(StorageOptions.STORAGE_AUTHORIZATION_PERSISTER)
+                fromOption(StorageOptions.STORAGE_AUTHORIZATION_PROVIDER)
                         .to("kc.spi-authorization-persister-provider")
                         .mapFrom("storage")
                         .transformer(StoragePropertyMappers::getAreaStorage)
                         .paramLabel("type")
                         .build(),
-                fromOption(StorageOptions.STORAGE_ACTION_TOKEN)
+                fromOption(StorageOptions.STORAGE_AUTHORIZATION_STORE)
+                        .to("kc.spi-authorization-persister-map-storage-provider")
+                        .mapFrom("storage")
+                        .transformer(StoragePropertyMappers::resolveMapStorageProvider)
+                        .paramLabel("type")
+                        .build(),
+                fromOption(StorageOptions.STORAGE_ACTION_TOKEN_PROVIDER)
                         .to("kc.spi-action-token-provider")
                         .mapFrom("storage")
                         .transformer(StoragePropertyMappers::getCacheStorage)
@@ -217,7 +226,7 @@ final class StoragePropertyMappers {
                         .transformer(StoragePropertyMappers::isCacheAreaEnabledForStorage)
                         .paramLabel(Boolean.TRUE + "|" + Boolean.FALSE)
                         .build(),
-                fromOption(StorageOptions.STORAGE_SINGLE_USE_OBJECT)
+                fromOption(StorageOptions.STORAGE_SINGLE_USE_OBJECT_PROVIDER)
                         .to("kc.spi-single-use-object-provider")
                         .mapFrom("storage")
                         .transformer(StoragePropertyMappers::getCacheStorage)
@@ -229,10 +238,10 @@ final class StoragePropertyMappers {
                         .transformer(StoragePropertyMappers::resolveMapStorageProvider)
                         .paramLabel("type")
                         .build(),
-                fromOption(StorageOptions.STORAGE_PUBLIC_KEY_STORE)
+                fromOption(StorageOptions.STORAGE_PUBLIC_KEY_STORAGE_STORE)
                         .to("kc.spi-public-key-storage-map-storage-provider")
                         .mapFrom("storage")
-                        .transformer(StoragePropertyMappers::resolveMapStorageProvider)
+                        .transformer(StoragePropertyMappers::resolveMapStorageProviderPublicKeyStorage)
                         .paramLabel("type")
                         .build(),
                 fromOption(StorageOptions.STORAGE_EXCEPTION_CONVERTER)
@@ -241,19 +250,19 @@ final class StoragePropertyMappers {
                         .transformer(StoragePropertyMappers::isLegacyStoreEnabled)
                         .paramLabel(Boolean.TRUE + "|" + Boolean.FALSE)
                         .build(),
-                fromOption(StorageOptions.STORAGE_CACHE_CLEAR_REALM)
+                fromOption(StorageOptions.STORAGE_ADMIN_CACHE_CLEAR_REALM)
                         .to("kc.spi-admin-realm-restapi-extension-clear-realm-cache-enabled")
                         .mapFrom("storage")
                         .transformer(StoragePropertyMappers::isLegacyStoreEnabled)
                         .paramLabel(Boolean.TRUE + "|" + Boolean.FALSE)
                         .build(),
-                fromOption(StorageOptions.STORAGE_CACHE_CLEAR_USER)
+                fromOption(StorageOptions.STORAGE_ADMIN_CACHE_CLEAR_USER)
                         .to("kc.spi-admin-realm-restapi-extension-clear-user-cache-enabled")
                         .mapFrom("storage")
                         .transformer(StoragePropertyMappers::isLegacyStoreEnabled)
                         .paramLabel(Boolean.TRUE + "|" + Boolean.FALSE)
                         .build(),
-                fromOption(StorageOptions.STORAGE_CACHE_CLEAR_KEYS)
+                fromOption(StorageOptions.STORAGE_ADMIN_CACHE_CLEAR_KEYS)
                         .to("kc.spi-admin-realm-restapi-extension-clear-keys-cache-enabled")
                         .mapFrom("storage")
                         .transformer(StoragePropertyMappers::isLegacyStoreEnabled)
@@ -265,7 +274,7 @@ final class StoragePropertyMappers {
                         .transformer(StoragePropertyMappers::isLegacyStoreEnabled)
                         .paramLabel("type")
                         .build(),
-                fromOption(StorageOptions.STORAGE_USER_STORAGE)
+                fromOption(StorageOptions.STORAGE_ADMIN_USER_STORAGE)
                         .to("kc.spi-admin-realm-restapi-extension-user-storage-enabled")
                         .mapFrom("storage")
                         .transformer(StoragePropertyMappers::isLegacyStoreEnabled)
@@ -342,6 +351,20 @@ final class StoragePropertyMappers {
 
         return value;
     }
+
+    private static Optional<String> resolveMapStorageProviderPublicKeyStorage(Optional<String> value, ConfigSourceInterceptorContext context) {
+        try {
+            if (value.isPresent()) {
+                // there is only one public key storage provider available
+                return of(StorageType.chm.getProvider());
+            }
+        } catch (IllegalArgumentException iae) {
+            throw new IllegalArgumentException("Invalid storage provider: " + value.orElse(null), iae);
+        }
+
+        return value;
+    }
+
 
     private static Optional<String> isCacheAreaEnabledForStorage(Optional<String> storage, ConfigSourceInterceptorContext context) {
         return of(storage.isEmpty() ? Boolean.TRUE.toString() : Boolean.FALSE.toString());
