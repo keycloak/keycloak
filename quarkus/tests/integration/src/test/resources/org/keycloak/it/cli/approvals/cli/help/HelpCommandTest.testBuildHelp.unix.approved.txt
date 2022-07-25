@@ -14,6 +14,7 @@ optimal runtime.
 Options:
 
 -h, --help           This help message.
+--help-all           This same help message but with additional options.
 
 Cache:
 
@@ -27,10 +28,6 @@ Cache:
 --cache-stack <stack>
                      Define the default stack to use for cluster communication and node discovery.
                        This option only takes effect if 'cache' is set to 'ispn'. Default: udp.
-
-Storage (Experimental):
-
---storage <type>     Experimental: Sets a storage mechanism. Possible values are: jpa, chm.
 
 Database:
 

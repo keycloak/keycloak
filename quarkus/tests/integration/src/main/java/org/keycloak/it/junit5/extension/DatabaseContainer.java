@@ -68,8 +68,8 @@ public class DatabaseContainer {
 
     private JdbcDatabaseContainer createContainer() {
 
-        String POSTGRES_IMAGE = System.getProperty("kc.db.postgresql.container.image");
-        String MARIADB_IMAGE = System.getProperty("kc.db.mariadb.container.image");
+        String POSTGRES_IMAGE = System.getProperty("kc.db.postgresql.container.image", "postgres:alpine");
+        String MARIADB_IMAGE = System.getProperty("kc.db.mariadb.container.image", "mariadb:10.5.9");
 
         DockerImageName POSTGRES = DockerImageName.parse(POSTGRES_IMAGE).asCompatibleSubstituteFor("postgres");
         DockerImageName MARIADB = DockerImageName.parse(MARIADB_IMAGE).asCompatibleSubstituteFor("mariadb");

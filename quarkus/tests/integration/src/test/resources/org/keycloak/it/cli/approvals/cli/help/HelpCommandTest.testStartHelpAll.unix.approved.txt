@@ -1,18 +1,24 @@
-Start the server in development mode.
+Start the server.
 
 Usage:
 
-kc.sh start-dev [OPTIONS]
+kc.sh start [OPTIONS]
 
-Use this command if you want to run the server locally for development or
-testing purposes.
+Use this command to run the server in production.
 
 Options:
 
+-b, --auto-build     (Deprecated) Automatically detects whether the server configuration changed
+                       and a new server image must be built prior to starting the server. This
+                       option provides an alternative to manually running the 'build' prior to
+                       starting the server. Use this configuration carefully in production as it
+                       might impact the startup time.
 -h, --help           This help message.
 --help-all           This same help message but with additional options.
 --import-realm       Import realms during startup by reading any realm configuration file from the
                        'data/import' directory.
+--optimized          Use this option to achieve an optional startup time if you have previously
+                       built a server image using the 'build' command.
 
 Cache:
 
@@ -26,6 +32,10 @@ Cache:
 --cache-stack <stack>
                      Define the default stack to use for cluster communication and node discovery.
                        This option only takes effect if 'cache' is set to 'ispn'. Default: udp.
+
+Storage (Experimental):
+
+--storage <type>     Experimental: Sets a storage mechanism. Possible values are: jpa, chm.
 
 Database:
 
@@ -196,7 +206,11 @@ Logging:
                        categories and their levels. For the root category, you don't need to
                        specify a category. Default: info.
 
-Do NOT start the server using this command when deploying to production.
+By default, this command tries to update the server configuration by running a
+'build' before starting the server. You can disable this behavior by using the
+'--optimized' option:
 
-Use 'kc.sh start-dev --help-all' to list all available options, including build
-options.
+      $ kc.sh start '--optimized'
+
+By doing that, the server should start faster based on any previous
+configuration you have set when manually running the 'build' command.
