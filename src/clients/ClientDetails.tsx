@@ -254,6 +254,12 @@ export default function ClientDetails() {
         stringToMultiline(client.attributes["default.acr.values"])
       );
     }
+    if (client.attributes?.["post.logout.redirect.uris"]) {
+      form.setValue(
+        "attributes.post.logout.redirect.uris",
+        stringToMultiline(client.attributes["post.logout.redirect.uris"])
+      );
+    }
     Object.entries(client.attributes || {})
       .filter(([key]) => key.startsWith("saml.server.signature"))
       .map(([key, value]) =>
@@ -300,6 +306,12 @@ export default function ClientDetails() {
       if (values.attributes?.default?.acr?.values) {
         values.attributes["default.acr.values"] = toStringValue(
           values.attributes.default.acr.values
+        );
+      }
+
+      if (values.attributes?.post.logout.redirect.uris) {
+        values.attributes["post.logout.redirect.uris"] = toStringValue(
+          values.attributes.post.logout.redirect.uris
         );
       }
 

@@ -89,6 +89,22 @@ export const AccessSettings = ({
               addButtonLabel="clients:addRedirectUri"
             />
           </FormGroup>
+          <FormGroup
+            label={t("validPostLogoutRedirectUri")}
+            fieldId="kc-postLogoutRedirect"
+            labelIcon={
+              <HelpItem
+                helpText="clients-help:validPostLogoutRedirectURIs"
+                fieldLabelId="clients:validPostLogoutRedirectUri"
+              />
+            }
+          >
+            <MultiLineInput
+              name="attributes.post.logout.redirect.uris"
+              aria-label={t("validPostLogoutRedirectUri")}
+              addButtonLabel="clients:addPostLogoutRedirectUri"
+            />
+          </FormGroup>
           {protocol === "saml" && (
             <>
               <FormGroup
