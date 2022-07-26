@@ -1,11 +1,8 @@
 package org.keycloak.crypto.def;
 
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.security.spec.ECParameterSpec;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Supplier;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.bouncycastle.jce.ECNamedCurveTable;
 import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
@@ -21,21 +18,16 @@ import org.keycloak.common.crypto.PemUtilsProvider;
  */
 public class DefaultCryptoProvider implements CryptoProvider {
 
-    private Map<String, Supplier<?>> providers = new HashMap<>();
+    private Map<String, Object> providers = new ConcurrentHashMap<>();
 
     public DefaultCryptoProvider() {
-        providers.put(CryptoProviderTypes.BC_SECURITY_PROVIDER, BouncyCastleProvider::new);
-        providers.put(CryptoProviderTypes.AES_KEY_WRAP_ALGORITHM_PROVIDER, AesKeyWrapAlgorithmProvider::new);
-    }
-
-    @Override
-    public SecureRandom getSecureRandom() throws NoSuchAlgorithmException {
-        return SecureRandom.getInstance("SHA1PRNG");
+        providers.put(CryptoProviderTypes.BC_SECURITY_PROVIDER, new BouncyCastleProvider());
+        providers.put(CryptoProviderTypes.AES_KEY_WRAP_ALGORITHM_PROVIDER, new AesKeyWrapAlgorithmProvider());
     }
 
     @Override
     public <T> T getAlgorithmProvider(Class<T> clazz, String algorithm) {
-        Object o = providers.get(algorithm).get();
+        Object o = providers.get(algorithm);
         if (o == null) {
             throw new IllegalArgumentException("Not found provider of algorithm: " + algorithm);
         }

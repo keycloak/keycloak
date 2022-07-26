@@ -1,17 +1,14 @@
 package org.keycloak.crypto.fips;
 
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.SecureRandom;
 import java.security.spec.ECField;
 import java.security.spec.ECFieldF2m;
 import java.security.spec.ECFieldFp;
 import java.security.spec.ECParameterSpec;
 import java.security.spec.ECPoint;
 import java.security.spec.EllipticCurve;
-import java.util.HashMap;
+import java.security.Security;
 import java.util.Map;
-import java.util.function.Supplier;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
@@ -30,21 +27,19 @@ import org.keycloak.common.crypto.PemUtilsProvider;
  */
 public class FIPS1402Provider implements CryptoProvider {
 
-    private Map<String, Supplier<?>> providers = new HashMap<>();
+    private final Map<String, Object> providers = new ConcurrentHashMap<>();
 
     public FIPS1402Provider() {
-        providers.put(CryptoProviderTypes.BC_SECURITY_PROVIDER, BouncyCastleFipsProvider::new);
-        providers.put(CryptoProviderTypes.AES_KEY_WRAP_ALGORITHM_PROVIDER, FIPSAesKeyWrapAlgorithmProvider::new);
-    }
+        BouncyCastleFipsProvider bcFipsProvider = new BouncyCastleFipsProvider();
+        providers.put(CryptoProviderTypes.BC_SECURITY_PROVIDER, bcFipsProvider);
+        providers.put(CryptoProviderTypes.AES_KEY_WRAP_ALGORITHM_PROVIDER, new FIPSAesKeyWrapAlgorithmProvider());
 
-    @Override
-    public SecureRandom getSecureRandom() throws NoSuchAlgorithmException, NoSuchProviderException {
-        return SecureRandom.getInstance("DEFAULT","BCFIPS");
+        Security.insertProviderAt(new KeycloakFipsSecurityProvider(bcFipsProvider), 1);
     }
 
     @Override
     public <T> T getAlgorithmProvider(Class<T> clazz, String algorithm) {
-        Object o = providers.get(algorithm).get();
+        Object o = providers.get(algorithm);
         if (o == null) {
             throw new IllegalArgumentException("Not found provider of algorithm: " + algorithm);
         }
@@ -62,7 +57,7 @@ public class FIPS1402Provider implements CryptoProvider {
     }
 
     /* Create EC Params using BC FipS APIs.
-     * 
+     *
      * @see org.keycloak.common.crypto.CryptoProvider#createECParams(java.lang.String)
      */
     @Override
