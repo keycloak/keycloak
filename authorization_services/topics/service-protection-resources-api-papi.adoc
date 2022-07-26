@@ -60,7 +60,7 @@ Where the property `owner` can be set with the username or the identifier of the
 
 == Creating user-managed resources
 
-By default, resources created via Protection API can not be managed by resource owners through the <<_service_authorization_my_resources, User Account Service>>.
+By default, resources created via Protection API can not be managed by resource owners through the <<_service_authorization_my_resources, Account Console>>.
 
 To create resources and allow resource owners to manage these resources, you must set `ownerManagedAccess` property as follows:
 
