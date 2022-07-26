@@ -640,6 +640,16 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
     }
 
     public void migrateDeployment(StatefulSet previousDeployment, StatefulSet reconciledDeployment) {
+        if (previousDeployment == null
+                || previousDeployment.getSpec() == null
+                || previousDeployment.getSpec().getTemplate() == null
+                || previousDeployment.getSpec().getTemplate().getSpec() == null
+                || previousDeployment.getSpec().getTemplate().getSpec().getContainers() == null
+                || previousDeployment.getSpec().getTemplate().getSpec().getContainers().get(0) == null)
+        {
+            return;
+        }
+
         var previousContainer = previousDeployment.getSpec().getTemplate().getSpec().getContainers().get(0);
         var reconciledContainer = reconciledDeployment.getSpec().getTemplate().getSpec().getContainers().get(0);
 

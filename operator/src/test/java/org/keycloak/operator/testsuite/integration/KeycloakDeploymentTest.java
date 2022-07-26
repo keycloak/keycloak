@@ -470,6 +470,7 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
 
             Awaitility.await()
                     .ignoreExceptions()
+                    .pollInterval(Duration.ZERO) // make the test super fast not to miss the moment when Operator changes the STS
                     .untilAsserted(() -> {
                         var sts = stsGetter.get();
                         assertEquals(1, sts.getStatus().getReplicas());
