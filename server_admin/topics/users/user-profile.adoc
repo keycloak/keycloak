@@ -1,5 +1,5 @@
 
-= User Profile
+= Defining a user profile
 
 In {project_name} a user is associated with a set of attributes. These attributes are used to better describe and identify users within {project_name} as well as to pass over additional information about them to applications.
 
@@ -42,7 +42,7 @@ include::../templates/techpreview.adoc[]
 In addition to enabling the `declarative_user_profile` feature, you should enable User Profile for a realm. To do that, click on the `Realm Settings` link on
 the left side menu and turn on the `User Profile Enabled` switch.
 
-image:images/user-profile-enabling.png[]
+image:{project_images}/user-profile-enabling.png[]
 
 Once you enable it and click on the `Save` button, you can access the `User Profile` tab from where you can manage the configuration for user attributes.
 
@@ -60,7 +60,7 @@ The user profile configuration is managed on a per-realm basis. For that, click 
 `Realm Settings` link on the left side menu and then click on the `User Profile` tab.
 
 .User Profile Tab
-image:images/user-profile-tab.png[]
+image:{project_images}/user-profile-tab.png[]
 
 In the `Attributes` sub-tab you have a list of the attributes currently associated with the user profile. By default, the configuration is created based on the user root attributes and each attribute is configured with some defaults in terms of validation and permissioning.
 
@@ -79,10 +79,15 @@ In the next section, you are going to learn how to manage the configuration from
 
 At the `Attributes` sub-tab you can create, edit, and delete the attributes associated with the user profile.
 
+ifeval::[{project_community}==true]
+To define a new attribute and associate it with the user profile, click on the *Create attribute* button at the top the attribute listing.
+endif::[]
+ifeval::[{project_product}==true]
 To define a new attribute and associate it with the user profile, click on the `Create` button in the top-right corner of the attribute listing.
+endif::[]
 
 .Attribute Configuration
-image:images/user-profile-create-attribute.png[]
+image:{project_images}/user-profile-create-attribute.png[]
 
 When configuring the attribute you can define the following settings:
 
@@ -116,7 +121,7 @@ In this section, you can associate annotations to the attribute. Annotations are
 In the `Permission` section, you can define the level of access users and administrators have to read and write to an attribute.
 
 .Attribute Permission
-image:images/user-profile-permission.png[]
+image:{project_images}/user-profile-permission.png[]
 
 For that, you can use the following settings:
 
@@ -152,7 +157,7 @@ Make sure to set the correct permissions whenever you add a new attribute to the
 In the `Validation` section, you can choose from different forms of validation to make sure the attribute value conforms to specific rules.
 
 .Attribute Validation
-image:images/user-profile-validation.png[]
+image:{project_images}/user-profile-validation.png[]
 
 {project_name} provides different validators out of the box:
 
@@ -236,24 +241,29 @@ to render pages dynamically based on the annotations associated with attributes.
 This mechanism is used for example to link:#_configurin_form_input_field_for_attribute[configure Form input filed for attribute].
 
 .Attribute Annotation
-image:images/user-profile-annotation.png[]
+image:{project_images}/user-profile-annotation.png[]
 
 == Managing Attribute Groups
 
 At the `Attribute Groups` sub-tab you can create, edit, and delete attribute groups. An attribute group allows you to define a container for correlated attributes so that they are rendered together when at the user-facing forms.
 
 .Attribute Group List
-image:images/user-profile-attribute-group-list.png[]
+image:{project_images}/user-profile-attribute-group-list.png[]
 
 [NOTE]
 ====
 You can't delete attribute groups that are bound to attributes. For that, you should first update the attributes to remove the binding.
 ====
 
+ifeval::[{project_community}==true]
+To create a new group, click on the *Create attributes group* button on the top of the attribute groups listing.
+endif::[]
+ifeval::[{project_product}==true]
 To create a new group, click on the `Create` button in the top-right corner of the attribute groups listing.
+endif::[]
 
 .Attribute Group Configuration
-image:images/user-profile-create-attribute-group.png[]
+image:{project_images}/user-profile-create-attribute-group.png[]
 
 When configuring the group you can define the following settings:
 
@@ -274,7 +284,7 @@ In this section, you can associate annotations to the attribute. Annotations are
 The user profile configuration is stored using a well-defined JSON schema. You can choose from editing the user profile configuration directly by clicking on the `JSON Editor` sub-tab.
 
 .JSON Configuration
-image:images/user-profile-json-config.png[]
+image:{project_images}/user-profile-json-config.png[]
 
 The JSON schema is defined as follows:
 
@@ -445,10 +455,15 @@ The default rendering mechanism provides the following capabilities:
 
 === Ordering attributes
 
+ifeval::[{project_community}==true]
+The attributes order is set by dragging and dropping the attribute rows on the attribute listing page.
+endif::[]
+ifeval::[{project_product}==true]
 The attributes order is set by clicking on the up and down arrows when at the attribute listing page.
+endif::[]
 
 .Ordering Attributes
-image:images/user-profile-attribute-list-order.png[]
+image:{project_images}/user-profile-attribute-list-order.png[]
 
 The order you set in this page is respected when fields are rendered in dynamic forms.
 
@@ -625,13 +640,13 @@ You can use various ways to provide nice human readable labels for select and mu
 case is when attribute values are same as UI labels. No any extra configuration is necessary in this case.
 
 .Option values same as UI labels 
-image:images/user-profile-select-options-simple.png[]
+image:{project_images}/user-profile-select-options-simple.png[]
 
 When attribute value is kind of ID not suitable for UI, you can use simple internationalization support provided 
 by `inputOptionLabelsI18nPrefix` annotation. It defines prefix for internationalization keys, option value is dot appended to this prefix.
 
 .Simple internationalization for UI labels using i18n key prefix 
-image:images/user-profile-select-options-simple-i18n.png[]
+image:{project_images}/user-profile-select-options-simple-i18n.png[]
 
 Localized UI label texts for option value have to be provided by `userprofile.jobtitle.sweng` and `userprofile.jobtitle.swarch` 
 keys then, using common localization mechanism.
@@ -646,10 +661,10 @@ You have to use User Profile `JSON Editor` to enter map as `inputOptionLabels` a
 
 
 Example of directly entered labels for individual options without internationalization:
-[source:json]
+[source,json]
 ----
 "attributes": [
-...
+<...
 {
   "name": "jobTitle",
   "validations": {
@@ -673,7 +688,7 @@ Example of directly entered labels for individual options without internationali
 ----
 
 Example of the internationalized labels for individual options:
-[source:json]
+[source,json]
 ----
 "attributes": [
 ...
@@ -724,10 +739,16 @@ When enabled, the `VerifyProfile` action is going to perform the following steps
 * If the user profile is compliant with the configuration, no additional step is performed, and the user continues with the authentication process.
 
 By default, the `VerifyProfile` action is disabled. To enabled it, click on the
-`Authentication` link on the left side menu and then click on the `Required Actions` tab. At this tab, click on the `Register` button and select the `VerifyProfile` action.
+`Authentication` link on the left side menu and then click on the `Required Actions` tab.
+ifeval::[{project_community}==true]
+At this tab, select the *Enabled* switch of the `VerifyProfile` action.
+endif::[]
+ifeval::[{project_product}==true]
+At this tab, click on the `Register` button and select the `VerifyProfile` action.
+endif::[]
 
 .Registring the VerifyProfile Required Action
-image:images/user-profile-register-verify-profile-action.png[]
+image:{project_images}/user-profile-register-verify-profile-action.png[]
 
 == Migrating to User Profile
 

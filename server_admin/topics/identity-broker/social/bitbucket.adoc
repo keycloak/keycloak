@@ -17,4 +17,9 @@ image:{project_images}/bitbucket-add-identity-provider.png[Add Identity Provider
 . Note the `Key` and `Secret` values Bitbucket displays when you create your consumer.
 . In {project_name}, paste the value of the `Key` into the *Client ID* field.
 . In {project_name}, paste the value of the `Secret` into the *Client Secret* field.
+ifeval::[{project_community}==true]
+. Click *Add*.
+endif::[]
+ifeval::[{project_product}==true]
 . Click *Save*.
+endif::[]

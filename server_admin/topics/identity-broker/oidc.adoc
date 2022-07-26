@@ -61,7 +61,10 @@ In the case of JWT signed with private key or Client secret as jwt, it is requir
 If the user is unauthenticated in the IDP, the client still receives a `login_required` error. If the user is authentic in the IDP, the client can still receive an `interaction_required` error if {project_name} must display authentication pages that require user interaction. This authentication includes required actions (for example, password change), consent screens, and screens set to display by the `first broker login` flow or `post broker login` flow.
 
 |Validate Signatures
-|Specifies if {project_name} verifies signatures on the external ID Token signed by this IDP. If *ON*, {project_name} must know the public key of the external OIDC IDP. For performance purposes, {project_name} caches the public key of the external OIDC identity provider. If your identity provider's private key is compromised, update your keys and clear the keys cache. See <<_clear-cache, Clearing the cache>> section for more details.
+|Specifies if {project_name} verifies signatures on the external ID Token signed by this IDP. If *ON*, {project_name} must know the public key of the external OIDC IDP. For performance purposes, {project_name} caches the public key of the external OIDC identity provider.
+ifeval::[{project_product}==true]
+If your identity provider's private key is compromised, update your keys and clear the keys cache. See <<_clear-cache, Clearing the cache>> for more details.
+endif::[]
 
 |Use JWKS URL
 |This switch is applicable if `Validate Signatures` is *ON*. If *Use JWKS URL* is *ON*, {project_name} downloads the IDP's public keys from the JWKS URL. New keys download when the identity provider generates a new keypair. If *OFF*, {project_name} uses the public key (or certificate) from its database, so when the IDP keypair changes, import the new key to the {project_name} database as well.
@@ -70,10 +73,10 @@ If the user is unauthenticated in the IDP, the client still receives a `login_re
 |The URL pointing to the location of the IDP JWK keys. For more information, see the https://self-issued.info/docs/draft-ietf-jose-json-web-key.html[JWK specification]. If you use an external {project_name} as an IDP, you can use a URL such as http://broker-keycloak:8180{kc_realms_path}/test/protocol/openid-connect/certs if your brokered {project_name} is running on http://broker-keycloak:8180 and its realm is `test`.
 
 |Validating Public Key
-|The public key in PEM format that {project_name} uses to verify external IDP signatures. This key applies if `Use JWKS URL` is *OFF*. 
+|The public key in PEM format that {project_name} uses to verify external IDP signatures. This key applies if `Use JWKS URL` is *OFF*.
 
 |Validating Public Key Id
-|This setting applies if *Use JWKS URL* is *OFF*. This setting specifies the ID of the public key in PEM format. Because there is no standard way for computing key ID from the key, external identity providers can use different algorithms from what {project_name} uses. If this field's value is not specified, {project_name} uses the validating public key for all requests, regardless of the key ID sent by the external IDP. When *ON*, this field's value is the key ID used by {project_name} for validating signatures from providers and must match the key ID specified by the IDP. 
+|This setting applies if *Use JWKS URL* is *OFF*. This setting specifies the ID of the public key in PEM format. Because there is no standard way for computing key ID from the key, external identity providers can use different algorithms from what {project_name} uses. If this field's value is not specified, {project_name} uses the validating public key for all requests, regardless of the key ID sent by the external IDP. When *ON*, this field's value is the key ID used by {project_name} for validating signatures from providers and must match the key ID specified by the IDP.
 
 |===
 

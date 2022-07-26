@@ -21,4 +21,9 @@ image:{project_images}/twitter-add-identity-provider.png[Add Identity Provider]
 .. When you create your Twitter app, note the value of *Consumer Key* and *Consumer Secret* in the *Keys and Access Tokens* section.
 . In {project_name}, paste the value of the *Consumer Key* into the *Client ID* field.
 . In {project_name}, paste the value of the *Consumer Secret* into the *Client Secret* field.
+ifeval::[{project_community}==true]
+. Click *Add*.
+endif::[]
+ifeval::[{project_product}==true]
 . Click *Save*.
+endif::[]

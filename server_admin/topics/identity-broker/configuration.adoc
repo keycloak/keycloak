@@ -11,7 +11,12 @@ The foundations of the identity broker configuration are identity providers (IDP
 .Identity Providers
 image:{project_images}/identity-providers.png[Identity Providers]
 +
+ifeval::[{project_community}==true]
+. Select an identity provider. {project_name} displays the configuration page for the identity provider you selected.
+endif::[]
+ifeval::[{project_product}==true]
 . From the `Add provider` list, select the identity provider you want to add. {project_name} displays the configuration page for the identity provider you selected.
+endif::[]
 +
 .Add facebook identity Provider
 image:{project_images}/add-identity-provider.png[Add Facebook Identity Provider]

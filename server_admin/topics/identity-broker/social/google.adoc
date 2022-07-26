@@ -19,6 +19,9 @@ image:{project_images}/google-add-identity-provider.png[Add Identity Provider]
 .. Note *Your Client ID* and *Your Client Secret*.
 . In {project_name}, paste the value of the *Your Client ID* into the *Client ID* field.
 . In {project_name}, paste the value of the *Your Client Secret* into the *Client Secret* field.
+ifeval::[{project_community}==true]
+. Click *Add*
+endif::[]
 . Enter the required scopes into the *Default Scopes* field. By default, {project_name} uses the following scopes: `openid` `profile` `email`. See the https://developers.google.com/oauthplayground/[OAuth Playground] for a list of Google scopes.
 . To restrict access to your GSuite organization's members only, enter the G Suite domain into the `Hosted Domain` field.
 . Click *Save*.

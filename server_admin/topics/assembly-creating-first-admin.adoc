@@ -2,11 +2,7 @@
 [id="creating-first-admin_{context}"]
 == Creating the first administrator
 
-After installing {project_name}, you need an administrator account that can act as a _super_ admin with full permissions to manage all parts of {project_name}. With this account, you can log into the {project_name} Admin Console where you create realms and users and register applications that are secured by {project_name}. 
-
-.Prerequisites
-
-* Perform the installation and configuration tasks defined in the link:{installguide_link}[{installguide_name}] to the point that the {project_name} server is running.
+After installing {project_name}, you need an administrator account that can act as a _super_ admin with full permissions to manage {project_name}. With this account, you can log in to the {project_name} Admin Console where you create realms and users and register applications that are secured by {project_name}.
 
 === Creating the account on the local host
 
@@ -19,12 +15,12 @@ If your server is accessible from `localhost`, perform these steps.
 . Supply a username and password that you can recall.
 +
 .Welcome page
-image:{project_images}/initial-welcome-page.png[Welcome Page]
+image:{project_images}/initial-welcome-page.png[Welcome page]
 
 === Creating the account remotely
 
 ifeval::["{kc_dist}" == "quarkus"]
-If you cannot access the server from a `localhost` address, or just want to start {project_name} from the command line, use the `KEYCLOAK_ADMIN` and `KEYCLOAK_ADMIN_PASSWORD` environment variables to create an initial admin account.
+If you cannot access the server from a `localhost` address or just want to start {project_name} from the command line, use the `KEYCLOAK_ADMIN` and `KEYCLOAK_ADMIN_PASSWORD` environment variables to create an initial admin account.
 
 For example:
 [source,bash]
@@ -42,7 +38,7 @@ If you cannot access the server from a `localhost` address, or just want to star
 .Add-user-keycloak script
 image:{project_images}/add-user-script.png[]
 
-The parameters are a little different depending if you are using the standalone operation mode or domain operation mode.  For standalone mode, here is how you use the script.
+The parameters differ based on if you use the standalone operation mode or domain operation mode.  For standalone mode, here is how you use the script.
 
 .Linux/Unix
 [source]
@@ -70,6 +66,3 @@ $ .../bin/add-user-keycloak.sh --sc domain/servers/server-one/configuration -r m
 > ...\bin\add-user-keycloak.bat --sc domain/servers/server-one/configuration -r master -u <username> -p <password>
 ----
 endif::[]
-
-
-

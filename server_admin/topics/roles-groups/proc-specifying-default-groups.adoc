@@ -4,8 +4,15 @@
 [role="_abstract"]
 To automatically assign group membership to any users who is created or who is imported through <<_identity_broker, Identity Brokering>>, you use default groups.
 
+ifeval::[{project_community}==true]
+. Click *Realm settings* in the menu.
+. Click the *User registration* tab.
+. Click the *Default Groups* tab.
+endif::[]
+ifeval::[{project_product}==true]
 . Click *Groups* in the menu.
 . Click the *Default Groups* tab.
+endif::[]
 
 .Default groups
 image:{project_images}/default-groups.png[Default groups]

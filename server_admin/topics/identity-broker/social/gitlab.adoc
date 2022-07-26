@@ -6,7 +6,7 @@
 . From the `Add provider` list, select `GitLab`.
 +
 .Add identity provider
-image:{project_images}/github-add-identity-provider.png[Add identity provider]
+image:{project_images}/gitlab-add-identity-provider.png[Add identity provider]
 +
 . Copy the value of *Redirect URI* to your clipboard.
 . In a separate browser tab, https://docs.gitlab.com/ee/integration/oauth_provider.html[add a new GitLab application].
@@ -14,4 +14,10 @@ image:{project_images}/github-add-identity-provider.png[Add identity provider]
 .. Note the `Client ID` and `Client Secret` when you save the application.
 . In {project_name}, paste the value of the `Client ID` into the *Client ID* field.
 . In {project_name}, paste the value of the `Client Secret` into the *Client Secret* field.
+ifeval::[{project_community}==true]
+. Click *Add*.
+endif::[]
+ifeval::[{project_product}==true]
 . Click *Save*.
+endif::[]
+

@@ -13,7 +13,7 @@ You enable this capability on the *Required Actions* tab.
 . Select *Enabled* on the *Delete Account* row.
 +
 .Delete account on required actions tab
-image:images/enable-delete-account-action.png[]
+image:{project_images}/enable-delete-account-action.png[]
 
 == Giving a user the *delete-account* role
 
@@ -23,12 +23,19 @@ You can give specific users a role that allows account deletion.
 . Click *Users* in the menu.
 . Select a user.
 . Click the *Role Mappings* tab.
+ifeval::[{project_community}==true]
+. Click the *Assign role* button.
+. Click *account delete-account*.
+. Click *Assign*.
+endif::[]
+ifeval::[{project_product}==true]
 . From the *Client Roles* list, select *account*.
 . Under *Available Roles*, select *delete-account*.
 . Click *Add selected*.
+endif::[]
 +
 .Delete-account role
-image:images/delete-account-client-role.png[delete-account role]
+image:{project_images}/delete-account-client-role.png[delete-account role]
 
 == Deleting your account
 
@@ -38,7 +45,7 @@ Once you have the *delete-account* role, you can delete your own account.
 . At the bottom of the *Personal Info* page, click *Delete Account*.
 +
 .Delete account page
-image:images/delete-account-page.png[]
+image:{project_images}/delete-account-page.png[Delete account page]
 
 . Enter your credentials and confirm the deletion.
 +

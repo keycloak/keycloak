@@ -1,4 +1,4 @@
-== Assigning permissions and access using roles and groups
+== Assigning permissions using roles and groups
 
 Roles and groups have a similar purpose, which is to give users access and permissions to use applications. Groups are a collection of users to which you apply roles and attributes. Roles define specific applications permissions and access control.
 

@@ -6,7 +6,7 @@
 . From the `Add provider` list, select `PayPal`.
 +
 .Add identity provider
-image:{project_images}/google-add-identity-provider.png[Add Identity Provider]
+image:{project_images}/paypal-add-identity-provider.png[Add Identity Provider]
 +
 . Copy the value of *Redirect URI* to your clipboard.
 . In a separate browser tab, open the https://developer.paypal.com/developer/applications[PayPal Developer applications area].
@@ -16,4 +16,10 @@ image:{project_images}/google-add-identity-provider.png[Add Identity Provider]
 .. Set the value of the *Return URL* field to the value of *Redirect URI* from {project_name}.
 . In {project_name}, paste the value of the *Client ID* into the *Client ID* field.
 . In {project_name}, paste the value of the *Client Secret* into the *Client Secret* field.
+ifeval::[{project_community}==true]
+. Click *Add*.
+endif::[]
+ifeval::[{project_product}==true]
 . Click *Save*.
+endif::[]
+

@@ -7,8 +7,15 @@ Use default roles to automatically assign user role mappings when a user is crea
 
 .Procedure
 
+ifeval::[{project_community}==true]
+. Click *Realm settings* in the menu.
+. Click the *User registration* tab.
+endif::[]
+ifeval::[{project_product}==true]
 . Click *Roles* in the menu
 . Click the *Default Roles* tab.
+endif::[]
+
 
 .Default roles
 image:{project_images}/default-roles.png[Default roles]

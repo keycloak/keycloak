@@ -8,7 +8,7 @@
 . From the `Add provider` list, select `Stack Overflow`.
 +
 .Add identity provider
-image:{project_images}/google-add-identity-provider.png[Add Identity Provider]
+image:{project_images}/stack-overflow-add-identity-provider.png[Add Identity Provider]
 +
 . In a separate browser tab, log into https://stackapps.com/apps/oauth/register[registering your application on Stack Apps].
 +
@@ -25,4 +25,9 @@ image:images/stack-overflow-app-settings.png[Settings]
 . Note the *Client ID* and *Client Secret*.
 . In {project_name}, paste the value of the *Client ID* into the *Client ID* field.
 . In {project_name}, paste the value of the *Client Secret* into the *Client Secret* field.
+ifeval::[{project_community}==true]
+. Click *Add*.
+endif::[]
+ifeval::[{project_product}==true]
 . Click *Save*.
+endif::[]

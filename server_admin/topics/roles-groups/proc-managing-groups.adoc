@@ -17,10 +17,18 @@ The following example includes a top-level *Sales* group and a child *North Amer
 To add a group:
 
 . Click the group.
+ifeval::[{project_community}==true]
+. Click *Create group*.
+. Enter a group name.
+. Click *Create*.
+. Click the group name.
+endif::[]
+ifeval::[{project_product}==true]
 . Click *New*.
 . Select the *Groups* icon in the tree to make a top-level group.
 . Enter a group name in the *Create Group* screen.
 . Click *Save*.
+endif::[]
 +
 The group management page is displayed.
 +
@@ -38,13 +46,26 @@ To add a user to a group:
 .User groups
 image:{project_images}/user-groups.png[]
 +
+ifeval::[{project_community}==true]
+. Click *Join Group*.
+. Select a group from the dialog.
+endif::[]
+ifeval::[{project_product}==true]
 . Select a group from the *Available Groups* tree.
 . Click *Join*.
+endif::[]
 
 To remove a group from a user:
 
+ifeval::[{project_community}==true]
+. Click *Users* in the menu.
+. Click the user to be removed from the group.
+. Click *Leave* on the group table row.
+endif::[]
+ifeval::[{project_product}==true]
 . Select the group from the *Group Membership* tree.
 . Click *Leave*.
+endif::[]
 
 In this example, the user _jimlincoln_ is in the _North America_ group.  You can see _jimlincoln_ displayed under the *Members* tab for the group.
 

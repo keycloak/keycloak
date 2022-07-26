@@ -1,7 +1,69 @@
 [id="con-advanced-settings_{context}"]
-= Advanced settings
+= Advanced configuration
 [role="_abstract"]
-When you click _Advanced Settings_, additional fields are displayed.
+
+After completing the fields on the *Settings* tab, you can use the other tabs to perform advanced configuration.  For example, you can use the *Permissions* and *Roles* tabs to configure fine-grained authentication for administrators. See <<_fine_grain_permissions, Fine grain admin permissions>>.  Also, see the remaining sections in this chapter for other capabilities.
+
+== Advanced tab
+
+When you click the *Advanced* tab, additional fields are displayed.  For details on a specific field, click the question mark icon for that field.  However, certain fields are described in detail in this section.
+
+== Fine grain OpenID Connect configuration
+
+*Logo URL*
+
+URL that references a logo for the Client application.
+
+*Policy URL*
+
+URL that the Relying Party Client provides to the End-User to read about how the profile data will be used.
+
+*Terms of Service URL*
+
+URL that the Relying Party Client provides to the End-User to read about the Relying Party's terms of service.
+
+[[_jwe-id-token-encryption]]
+*Signed and Encrypted ID Token Support*
+
+{project_name} can encrypt ID tokens according to the https://datatracker.ietf.org/doc/html/rfc7516[Json Web Encryption (JWE)] specification. The administrator determines if ID tokens are encrypted for each client.
+
+The key used for encrypting the ID token is the Content Encryption Key (CEK). {project_name} and a client must negotiate which CEK is used and how it is delivered. The method used to determine the CEK is the Key Management Mode. The Key Management Mode that {project_name} supports is Key Encryption.
+
+In Key Encryption:
+
+. The client generates an asymmetric cryptographic key pair.
+. The public key is used to encrypt the CEK.
+. {project_name} generates a CEK per ID token
+. {project_name} encrypts the ID token using this generated CEK
+. {project_name} encrypts the CEK using the client's public key.
+. The client decrypts this encrypted CEK using their private key
+. The client decrypts the ID token using the decrypted CEK.
+
+No party, other than the client, can decrypt the ID token.
+
+The client must pass its public key for encrypting CEK to {project_name}. {project_name} supports downloading public keys from a URL provided by the client. The client must provide public keys according to the https://datatracker.ietf.org/doc/html/rfc7517[Json Web Keys (JWK)] specification.
+
+The procedure is:
+
+. Open the client's *Keys* tab.
+. Toggle *JWKS URL* to ON.
+. Input the client's public key URL in the *JWKS URL* textbox.
+
+Key Encryption's algorithms are defined in the https://datatracker.ietf.org/doc/html/rfc7518#section-4.1[Json Web Algorithm (JWA)] specification. {project_name} supports:
+
+* RSAES-PKCS1-v1_5(RSA1_5)
+* RSAES OAEP using default parameters (RSA-OAEP)
+* RSAES OAEP 256 using SHA-256 and MFG1 (RSA-OAEP-256)
+
+The procedure to select the algorithm is:
+
+. Open the client's *Advanced* tab.
+. Open *Fine Grain OpenID Connect Configuration*.
+. Select the algorithm from *ID Token Encryption Content Encryption Algorithm* pulldown menu.
+
+== Open ID Connect Compatibility Modes
+
+This section exists for backward compatibility.  Click the question mark icons for details on each field.
 
 [[_mtls-client-certificate-bound-tokens]]
 *OAuth 2.0 Mutual TLS Certificate Bound Access Tokens Enabled*
@@ -52,44 +114,6 @@ An administrator can select one of these options:
 
 See https://datatracker.ietf.org/doc/html/rfc7636[RFC 7636 Proof Key for Code Exchange by OAuth Public Clients] for more details.
 
-[[_jwe-id-token-encryption]]
-*Signed and Encrypted ID Token Support*
-
-{project_name} can encrypt ID tokens according to the https://datatracker.ietf.org/doc/html/rfc7516[Json Web Encryption (JWE)] specification. The administrator determines if ID tokens are encrypted for each client.
-
-The key used for encrypting the ID token is the Content Encryption Key (CEK). {project_name} and a client must negotiate which CEK is used and how it is delivered. The method used to determine the CEK is the Key Management Mode. The Key Management Mode that {project_name} supports is Key Encryption.
-
-In Key Encryption:
-
-. The client generates an asymmetric cryptographic key pair.
-. The public key is used to encrypt the CEK.
-. {project_name} generates a CEK per ID token
-. {project_name} encrypts the ID token using this generated CEK
-. {project_name} encrypts the CEK using the client's public key.
-. The client decrypts this encrypted CEK using their private key
-. The client decrypts the ID token using the decrypted CEK.
-
-No party, other than the client, can decrypt the ID token.
-
-The client must pass its public key for encrypting CEK to {project_name}. {project_name} supports downloading public keys from a URL provided by the client. The client must provide public keys according to the https://datatracker.ietf.org/doc/html/rfc7517[Json Web Keys (JWK)] specification.
-
-The procedure is:
-
-. Open the client's *Keys* tab.
-. Toggle *JWKS URL* to ON.
-. Input the client's public key URL in the *JWKS URL* textbox.
-
-Key Encryption's algorithms are defined in the https://datatracker.ietf.org/doc/html/rfc7518#section-4.1[Json Web Algorithm (JWA)] specification. {project_name} supports:
-
-* RSAES-PKCS1-v1_5(RSA1_5)
-* RSAES OAEP using default parameters (RSA-OAEP)
-* RSAES OAEP 256 using SHA-256 and MFG1 (RSA-OAEP-256)
-
-The procedure to select the algorithm is:
-
-. Open the client's *Settings* tab.
-. Open *Fine Grain OpenID Connect Configuration*.
-. Select the algorithm from *ID Token Encryption Content Encryption Algorithm* pulldown menu.
 
 [[_mapping-acr-to-loa-client]]
 *ACR to Level of Authentication (LoA) Mapping*
@@ -106,6 +130,6 @@ For example, assume that you configure the `Default ACR Values` to level 2. Then
 However when the user explicitly attaches the parameter into login request such as `acr_values=1`, then the level 1 will be used. As a result, if the client
 really requires level 2, the client is encouraged to check the presence of the `acr` claim inside ID Token and doublecheck that it contains the requested level 2.
 
-image:images/client-oidc-map-acr-to-loa.png[alt="ACR to LoA mapping"]
+image:{project_images}/client-oidc-map-acr-to-loa.png[alt="ACR to LoA mapping"]
 
 For further details see  <<_step-up-flow,Step-up Authentication>> and  https://openid.net/specs/openid-connect-core-1_0.html#acrSemantics[the offical OIDC specification].

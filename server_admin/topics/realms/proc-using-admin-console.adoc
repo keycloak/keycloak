@@ -27,4 +27,9 @@ image:{project_images}/admin-console.png[Admin Console]
 +
 * Click the top right list to view your account or log out.
 +
+ifeval::[{project_product}==true]
 * Hover over a question mark *?* icon to show a tooltip text that describes that field. The image above shows the tooltip in action.
+endif::[]
+ifeval::[{project_community}==true]
+* Click a question mark *?* icon to show a tooltip text that describes that field. The image above shows the tooltip in action.
+endif::[]

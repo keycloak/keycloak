@@ -8,9 +8,16 @@ Any realm or client level role can become a _composite role_. A _composite role_
 
 .Procedure
 
+ifeval::[{project_community}==true]
+. Click *Realm Roles* in the menu.
+. Click the role that you want to convert.
+. From the *Action* list, select *Add associated roles*.
+endif::[]
+ifeval::[{project_product}==true]
 . Click *Roles* in the menu.
 . Click the role that you want to convert.
 . Toggle *Composite Roles* to *ON*.
+endif::[]
 
 .Composite role
 image:{project_images}/composite-role.png[Composite role]

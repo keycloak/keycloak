@@ -8,7 +8,12 @@
 .Procedure
 . Click *Authentication* in the menu.
 . Click the *Browser* flow.
-. Select *Identity Provider Redirector* from the drop-down list. 
+ifeval::[{project_community}==true]
+. Click the gear icon  *⚙️* on the *Identity Provider Redirector* row.
+endif::[]
+ifeval::[{project_product}==true]
+. Select *Identity Provider Redirector* from the drop-down list.
+endif::[]
 . Set *Default Identity Provider* to the identity provider you want to redirect users to.
 
 If {project_name} does not find the configured default identity provider, the login form is displayed.

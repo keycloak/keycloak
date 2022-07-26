@@ -5,20 +5,18 @@
 An _authentication flow_ is a container of authentications, screens, and actions, during log in, registration, and other {project_name} workflows.
 To view all the flows, actions, and checks, each flow requires:
 
-.Procedure
-. Click *Authentication* in the menu.
-. Click the *Flows* tab.
-
 ==== Built-in flows
 
 {project_name} has several built-in flows. You cannot modify these flows, but you can alter the flow's requirements to suit your needs.
 
-In the drop-down list, select *browser* to display the Browser Flow screen.
+.Procedure
+. Click *Authentication* in the menu.
+. Click on the _Browser_ item in the list to see the details.
 
 .Browser flow
 image:{project_images}/browser-flow.png[Browser Flow]
 
-Hover over the question-mark tooltip of the drop-down list to view a description of the flow. Two sections exist.
+Two sections exist.
 
 ===== Auth type
 The name of the authentication or the action to execute. If an authentication is indented, it is in a sub-flow. It may or may not be executed, depending on the behavior of its parent. 
@@ -81,11 +79,11 @@ To create a flow, perform the following:
 
 .Procedure
 . Click *Authentication* in the menu.
-. Click *New*.
+. Click *Create flow*.
 
 [NOTE]
 ====
-You can copy and then modify an existing flow. Select a flow, click *Copy*, and enter a name for the new flow.
+You can copy and then modify an existing flow. Click the "Action list" (the three dots at the end of the row), click *Duplicate*, and enter a name for the new flow.
 ====
 
 When creating a new flow, you must create a top-level flow first with the following options:
@@ -100,7 +98,7 @@ Top-Level Flow Type::
 .Create a top-level flow
 image:{project_images}/Create-top-level-flow.png[Top Level Flow]
 
-When {project_name} has created the flow, {project_name} displays the *Delete*, *Add execution*, and *Add flow* buttons.
+When {project_name} has created the flow, {project_name} displays the *Add step*, and *Add flow* buttons.
 
 .An empty new flow
 image:{project_images}/New-flow.png[New Flow]
@@ -111,7 +109,7 @@ Three factors determine the behavior of flows and sub-flows.
 * The executions within the flows
 * The requirements set within the sub-flows and the executions.
 
-Executions have a wide variety of actions, from sending a reset email to validating an OTP. Add executions with the *Add execution* button. Hover over the question mark next to *Provider*, to see a description of the execution.
+Executions have a wide variety of actions, from sending a reset email to validating an OTP. Add executions with the *Add step* button. Hover over the question mark next to *Provider*, to see a description of the execution.
 
 .Adding an authentication execution
 image:{project_images}/Create-authentication-execution.png[Adding an Authentication Execution]
@@ -128,9 +126,9 @@ After adding an execution, check the requirement has the correct value.
 ====
 
 All elements in a flow have a *Delete* option in the *Actions* menu. This action removes the element from the flow.
-Executions have a *Config* menu option to configure the execution. It is also possible to add executions and sub-flows to sub-flows with the *Add execution* and *Add flow* menu options.
+Executions have a *⚙️* menu item (the gear icon) to configure the execution. It is also possible to add executions and sub-flows to sub-flows with the *Add step* and *Add flow* links.
 
-Since the order of execution is important, you can move executions and sub-flows up and down within their flows using the up and down buttons beside their names.
+Since the order of execution is important, you can move executions and sub-flows up and down by dragging their names.
 
 [WARNING]
 ====
@@ -150,70 +148,70 @@ To illustrate the creation of flows, this section describes creating an advanced
 .Procedure
 . Click *Authentication* in the menu.
 . Click the *Flows* tab.
-. Click *New*.
-. Enter `Browser Password-less` as an alias.
-. Click *Save*.
+. Click *Create flow*.
+. Enter `Browser Password-less` as a name.
+. Click *Create*.
 . Click *Add execution*.
-. Select *Cookie* from the drop-down list. 
-. Click *Save*.
-. Click *Alternative* for the *Cookie* authentication type to set its requirement to alternative.
-. Click *Add execution*. 
-. Select *Kerberos* from the drop-down list. 
-. Click *Add execution*.
-. Select *Identity Provider Redirector* from the drop-down list. 
-. Click *Save*.
-. Click *Alternative* for the *Identity Provider Redirector* authentication type to set its requirement to alternative.
-. Click *Add flow*.
-. Enter *Forms* as an alias.
-. Click *Save*.
-. Click *Alternative* for the *Forms* authentication type to set its requirement to alternative.
+. Select *Cookie* from the list.
+. Click *Add*.
+. Select *Alternative* for the *Cookie* authentication type to set its requirement to alternative.
+. Click *Add step*.
+. Select *Kerberos* from the list.
+. Click *Add*.
+. Click *Add step*.
+. Select *Identity Provider Redirector* from the list.
+. Click *Add*.
+. Select *Alternative* for the *Identity Provider Redirector* authentication type to set its requirement to alternative.
+. Click *Add sub-flow*.
+. Enter *Forms* as a name.
+. Click *Add*.
+. Select *Alternative* for the *Forms* authentication type to set its requirement to alternative.
 +
 .The common part with the browser flow
-image:images/Passwordless-browser-login-common.png[]
+image:{project_images}/Passwordless-browser-login-common.png[Passwordless browser login]
 +
-. Click *Actions* for the *Forms* execution.
-. Select *Add execution*.
-. Select *Username Form* from the drop-down list.
-. Click *Save*.
-. Click *Required* for the *Username Form* authentication type to set its requirement to required.
+. Click *+* menu of the *Forms* execution.
+. Select *Add step*.
+. Select *Username Form* from the list.
+. Click *Add*.
 
 At this stage, the form requires a username but no password. We must enable password authentication to avoid security risks.
 
-. Click *Actions* for the *Forms* sub-flow.
-. Click *Add flow*.
-. Enter `Authentication` as an alias.
-. Click *Save*.
-. Click *Required* for the *Authentication* authentication type to set its requirement to required.
-. Click *Actions* for the *Authentication* sub-flow.
-. Click *Add execution*.
-. Select *Webauthn Passwordless Authenticator* from the drop-down list. 
-. Click *Save*.
-. Click *Alternative* for the *Webauthn Passwordless Authenticator* authentication type to set its requirement to alternative.
-. Click *Actions* for the *Authentication* sub-flow.
-. Click *Add flow*.
-. Enter `Password with OTP` as an alias.
-. Click *Save*.
-. Click *Alternative* for the *Password with OTP* authentication type to set its requirement to alternative.
-. Click *Actions* for the *Password with OTP* sub-flow.
-. Click *Add execution*.
-. Select *Password Form* from the drop-down list. 
-. Click *Save*.
-. Click *Required* for the *Password Form* authentication type to set its requirement to required.
-. Click *Actions* for the *Password with OTP* sub-flow.
-. Click *Add execution*.
-. Select *OTP Form* from the drop-down list. 
-. Click *Save*.
+. Click *+* menu of the *Forms* sub-flow.
+. Click *Add sub-flow*.
+. Enter `Authentication` as name.
+. Click *Add*.
+. Select *Required* for the *Authentication* authentication type to set its requirement to required.
+. Click *+* menu of the *Authentication* sub-flow.
+. Click *Add step*.
+. Select *Webauthn Passwordless Authenticator* from the list.
+. Click *Add*.
+. Select *Alternative* for the *Webauthn Passwordless Authenticator* authentication type to set its requirement to alternative.
+. Click *+* menu of the *Authentication* sub-flow.
+. Click *Add sub-flow*.
+. Enter `Password with OTP` as name.
+. Click *Add*.
+. Select *Alternative* for the *Password with OTP* authentication type to set its requirement to alternative.
+. Click *+* menu of the *Password with OTP* sub-flow.
+. Click *Add step*.
+. Select *Password Form* from the list.
+. Click *Add*.
+. Select *Required* for the *Password Form* authentication type to set its requirement to required.
+. Click *+* menu of the *Password with OTP* sub-flow.
+. Click *Add step*.
+. Select *OTP Form* from the list.
+. Click *Add*.
 . Click *Required* for the *OTP Form* authentication type to set its requirement to required.
 
 Finally, change the bindings.
 
-. Click the *Bindings* tab.
+. Click the *Action* menu on the top of the screen.
+. Select *Bind flow* from the menu.
 . Click the *Browser Flow* drop-down list.
-. Select *Browser Password-less* from the drop-down list. 
 . Click *Save*.
 
 .A password-less browser login
-image:images/Passwordless-browser-login.png[]
+image:{project_images}/Passwordless-browser-login.png[Passwordless browser login]
 
 After entering the username, the flow works as follows:
 
@@ -230,9 +228,9 @@ Since the WebAuthn Passwordless execution is set to *Alternative* rather than  *
 
 Creating an advanced flow such as this can have side effects. For example, if you enable the ability to reset the password for users, this would be accessible from the password form. In the default `Reset Credentials` flow, users must enter their username. Since the user has already entered a username earlier in the `Browser Password-less` flow, this action is unnecessary for {project_name} and sub-optimal for user experience. To correct this problem, you can:
 
-* Copy the `Reset Credentials` flow. Set its name to `Reset Credentials for password-less`, for example.
-* Select *Delete* in the *Actions* menu of the *Choose user* execution.
-* In the *Bindings* menu, change the reset credential flow from *Reset Credentials* to *Reset Credentials for password-less*
+* Duplicate the `Reset Credentials` flow. Set its name to `Reset Credentials for password-less`, for example.
+* Click *Delete* (trash icon) of the *Choose user* step.
+* In the *Action* menu, select *Bind flow* and select *Reset credentials flow* from the dropdown and click *Save*
 ====
 
 [[_step-up-flow]]
@@ -243,32 +241,32 @@ This section describes how to create advanced browser login flow using the step-
 .Procedure
 . Click *Authentication* in the menu.
 . Click the *Flows* tab.
-. Click *New*.
-. Enter `Browser Incl Step up Mechanism` as an alias.
+. Click *Create flow*.
+. Enter `Browser Incl Step up Mechanism` as a name.
 . Click *Save*.
 . Click *Add execution*.
-. Select *Cookie* from the item list. 
-. Click *Save*.
-. Click *Alternative* for the *Cookie* authentication type to set its requirement to alternative.
-. Click *Add flow*.
-. Enter *Auth Flow* as an alias.
-. Click *Save*.
+. Select *Cookie* from the list.
+. Click *Add*.
+. Select *Alternative* for the *Cookie* authentication type to set its requirement to alternative.
+. Click *Add sub-flow*.
+. Enter *Auth Flow* as a name.
+. Click *Add*.
 . Click *Alternative* for the *Auth Flow* authentication type to set its requirement to alternative.
 
 Now you configure the flow for the first authentication level.
 
-. Click *Actions* for the *Auth Flow*.
-. Click *Add flow*.
-. Enter `1st Condition Flow` as an alias.
-. Click *Save*.
+. Click *+* menu of the *Auth Flow*.
+. Click *Add sub-flow*.
+. Enter `1st Condition Flow` as a name.
+. Click *Add*.
 . Click *Conditional* for the *1st Condition Flow* authentication type to set its requirement to conditional.
-. Click *Actions* for the *1st Condition Flow*.
-. Click *Add execution*.
-. Select *Conditional - Level Of Authentication* from the item list.
-. Click *Save*.
+. Click *+* menu of the *1st Condition Flow*.
+. Click *Add condition*.
+. Select *Conditional - Level Of Authentication* from the list.
+. Click *Add*.
 . Click *Required* for the *Conditional - Level Of Authentication* authentication type to set its requirement to required.
-. Click *Actions* for the *Conditional - Level Of Authentication*.
-. Click *Config*.
+. Click *+* menu of the *Conditional - Level Of Authentication*.
+. Click *⚙️* (gear icon).
 . Enter `Level 1` as an alias.
 . Enter `1` for the Level of Authentication (LoA).
 . Set Max Age to *36000*. This value is in seconds and it is equivalent to 10 hours, which is the default `SSO Session Max` timeout set in the realm.
@@ -277,28 +275,26 @@ Now you configure the flow for the first authentication level.
 . Click *Save*
 +
 .Configure the condition for the first authentication level
-image:images/authentication-step-up-condition-1.png[]
+image:{project_images}/authentication-step-up-condition-1.png[Authentication step up condition 1]
 
-. Click *Actions* for the *1st Condition Flow*.
-. Click *Add execution*.
-. Select *Username Password Form* from the item list.
-. Click *Save*.
-. Click *Required* for the *Username Password Form* authentication type to set its requirement to required.
+. Click *+* menu of the *1st Condition Flow*.
+. Click *Add step*.
+. Select *Username Password Form* from the list.
+. Click *Add*.
 
 Now you configure the flow for the second authentication level.
 
-. Click *Actions* for the *Auth Flow*.
-. Click *Add flow*.
+. Click *+* menu of the *Auth Flow*.
+. Click *Add sub-flow*.
 . Enter `2nd Condition Flow` as an alias.
-. Click *Save*.
+. Click *Add*.
 . Click *Conditional* for the *2nd Condition Flow* authentication type to set its requirement to conditional.
-. Click *Actions* for the *2nd Condition Flow*.
-. Click *Add execution*.
+. Click *+* menu of the *2nd Condition Flow*.
+. Click *Add condition*.
 . Select *Conditional - Level Of Authentication* from the item list.
-. Click *Save*.
+. Click *Add*.
 . Click *Required* for the *Conditional - Level Of Authentication* authentication type to set its requirement to required.
-. Click *Actions* for the *Conditional - Level Of Authentication*.
-. Click *Config*.
+. Click *⚙️* (gear icon).
 . Enter `Level 2` as an alias.
 . Enter `2` for the Level of Authentication (LoA).
 . Set Max Age to *0*. As a result, when a user authenticates, this level is valid just for the current authentication, but not any
@@ -306,23 +302,23 @@ Now you configure the flow for the second authentication level.
 . Click *Save*
 +
 .Configure the condition for the second authentication level
-image:images/authentication-step-up-condition-2.png[]
+image:{project_images}/authentication-step-up-condition-2.png[Autehtnication step up condition 2]
 
-. Click *Actions* for the *2nd Condition Flow*.
-. Click *Add execution*.
-. Select *OTP Form* from the item list.
-. Click *Save*.
+. Click *+* menu of the *2nd Condition Flow*.
+. Click *Add step*.
+. Select *OTP Form* from the list.
+. Click *Add*.
 . Click *Required* for the *OTP Form* authentication type to set its requirement to required.
 
 Finally, change the bindings.
 
-. Click the *Bindings* tab.
-. Click the *Browser Flow* item list.
-. Select *Browser Incl Step up Mechanism* from the item list. 
+. Click the *Action* menu on the top of the screen.
+. Select *Bind flow* from the list.
+. Select *Browser Flow* in the dropdown.
 . Click *Save*.
 
 .Browser login with step-up mechanism
-image:images/authentication-step-up-flow.png[]
+image:{project_images}/authentication-step-up-flow.png[Authentication step up flow]
 
 .Request a certain authentication level
 To use the step-up mechanism, you specify a requested level of authentication (LoA) in your authentication request. The `claims` parameter is used for this purpose:
@@ -413,12 +409,11 @@ Limits on the number of session that a user can have can be configured. Sessions
 
 To add session limits to a flow, perform the following steps.
 
-. Click *Add execution* for the flow.
-. Select *User Session Count Limiter* from the item list.
-. Click *Save*.
+. Click *Add step* for the flow.
+. Select *User session count limiter* from the item list.
+. Click *Add*.
 . Click *Required* for the *User Session Count Limiter* authentication type to set its requirement to required.
-. Click *Actions* for the *User Session Count Limiter*.
-. Click *Config*.
+. Click *⚙️* (gear icon) for the *User Session Count Limiter*.
 . Enter an alias for this config.
 . Enter the required maximum number of sessions a user can have in this realm. If a value of 0 is used, this check is disabled.
 . Enter the required maximum number of sessions a user can have for the client. If a value of 0 is used, this check is disabled.
@@ -429,7 +424,7 @@ To add session limits to a flow, perform the following steps.
 
 . Optionally, add a custom error message to be displayed when the limit is reached.
 
-Note that the user session limits should be added to your bound *Browser Flow*, *Direct Grant Flow*, *Reset Credentials* and also to any *Post Broker Login Flow*.
+Note that the user session limits should be added to your bound *Browser flow*, *Direct grant flow*, *Reset credentials* and also to any *Post broker login flow*.
 Currently, the administrator is responsible for maintaining consistency between the different configurations.
 
 Note also that the user session limit feature is not available for CIBA.

@@ -17,9 +17,11 @@ image:{project_images}/user-attributes.png[]
 . Click *Users* in the menu.
 . Select a user to manage.
 . Click the *Attributes* tab.
+ifeval::[{project_product}==true]
+. Click *Add an attribute*.
+endif::[]
 . Enter the attribute name in the *Key* field.
 . Enter the attribute value in the *Value* field.
-. Click *Add*.
 . Click *Save*.
 
 

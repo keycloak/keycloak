@@ -2,12 +2,22 @@
 
 = Creating a realm role
 [role="_abstract"]
+ifeval::[{project_community}==true]
+Realm-level roles are a namespace for defining your roles. To see the list of roles, click *Realm Roles* in the menu.
+endif::[]
+ifeval::[{project_product}==true]
 Realm-level roles are a namespace for defining your roles. To see the list of roles, click *Roles* in the menu.
+endif::[]
 
 image:{project_images}/roles.png[]
 
 .Procedure
+ifeval::[{project_community}==true]
+. Click *Create Role*.
+endif::[]
+ifeval::[{project_product}==true]
 . Click *Add Role*.
+endif::[]
 . Enter a *Role Name*.
 . Enter a *Description*.
 . Click *Save*.

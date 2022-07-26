@@ -1,37 +1,51 @@
-
-=== Admin events
+ 
+=== Auditing admin events
 
 You can record all actions that are performed by an administrator in the Admin Console. The Admin Console performs administrative actions by invoking the {project_name} REST interface and {project_name} audits these REST invocations. You can view the resulting events in the Admin Console.
 
-To enable auditing of Admin actions:
+.Procedure
+
+Use this procedure to start auditing admin actions.
+
+. Click *Realm settings* in the menu.
+. Click the *Events* tab.
+. Click the *Admin events settings* tab.
+. Toggle *Save events* to *ON*.
++
+{project_name} displays the *Include representation* switch.
++
+. Toggle *Include representation* to *ON*.
++
+The `Include Representation` switch includes JSON documents sent through the admin REST API so you can view the administrators actions.
++
+.Admin events settings
+image:{project_images}/admin-events-settings.png[Admin events settings]
+
+. Click *Save*.
+
+. To clear the database of stored actions, click *Clear admin events*.
 
 .Procedure
+
+You can now view admin events.
+
 . Click *Events* in the menu.
-. Click the *Config* tab.
+. Click the *Admin events* tab.
 +
-.Event configuration
-image:{project_images}/login-events-config.png[Event Configuration]
-+
-. Toggle *Save Events* to *ON* in the *Admin Events Settings* section. {project_name} displays the *Include Representation* switch.
-+
-.Admin event configuration
-image:{project_images}/admin-events-settings.png[Admin Event Configuration]
-+
-. Toggle *Include Representation* to *ON*.
-
-The `Include Representation` switch includes JSON documents sent through the admin REST API so you can view the administrators actions. To clear the database of stored actions, click *Clear admin events*.
-
-To view the admin events, click the *Admin Events* tab.
-
 .Admin events
-image:{project_images}/admin-events.png[Admin Events]
+image:{project_images}/admin-events.png[Admin events]
 
-If the `Details` column has a *Representation* button, click the *Representation* button to view the JSON {project_name} sent with the operation.
+////
+Not sure if there a new version of this for the new Admin Console.
 
+. If the `Details` column has a *Representation* button, click the *Representation* button to view the JSON {project_name} sent with the operation.
++
 .Admin representation
 image:{project_images}/admin-events-representation.png[Admin Representation]
 
-Click `Filter` to view specific events.
-
+. Click `Filter` to view specific events.
++
 .Admin event filter
 image:{project_images}/admin-events-filter.png[Admin Event Filter]
+////
+

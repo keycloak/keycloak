@@ -18,4 +18,9 @@ image:{project_images}/github-add-identity-provider.png[Add Identity Provider]
 .. Note the Client ID and Client secret on the management page of your OAUTH app.
 . In {project_name}, paste the value of the `Client ID` into the *Client ID* field.
 . In {project_name}, paste the value of the `Client Secret` into the *Client Secret* field.
+ifeval::[{project_community}==true]
+. Click *Add*.
+endif::[]
+ifeval::[{project_product}==true]
 . Click *Save*.
+endif::[]

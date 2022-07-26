@@ -17,6 +17,12 @@ Alternatively, you can send an email to the user that requests the user reset th
 . Click *Users* in the main menu. The *Users* page is displayed.
 . Select a user.
 . Click the *Credentials* tab.
+ifeval::[{project_community}==true]
+. Click *Credential Reset*.
+. Select *Configure OTP*. 
+endif::[]
+ifeval::[{project_product}==true]
 . Navigate to the *Reset Actions* list.
 . Click *Configure OTP*. 
+endif::[]
 . Click *Send Email*. The sent email contains a link that directs the user to the *OTP setup page*. 
