@@ -14,7 +14,7 @@ You can find out which version of Node.js you are using by running the following
 node --version
 ```
 
-In order to run the Keycloak server you will also have to install the Java Development Kit (JDK). We recommend that you use the same version of the JDK as [required by the Keycloak server]((https://github.com/keycloak/keycloak/blob/main/docs/building.md#building-from-source)).
+In order to run the Keycloak server you will also have to install the Java Development Kit (JDK). We recommend that you use the same version of the JDK as [required by the Keycloak server](https://github.com/keycloak/keycloak/blob/main/docs/building.md#building-from-source).
 
 ### Running the Keycloak server
 
@@ -91,7 +91,7 @@ To make it simpler to build the `rh-sso` theme there are some shorthand NPM scri
 npm run build:rh-sso
 
 # Or for development
-npm run start:rh-sso 
+npm run start:rh-sso
 ```
 
 ### Creating your own theme
@@ -106,7 +106,6 @@ This repository contains integration tests developed with the [Cypress framework
 
 Ensure the Keycloak and development server are running as [outlined previously](#running-the-keycloak-server) in this document.
 
-
 ### Running the tests
 
 You can run the tests using the interactive graphical user interface using the following command:
@@ -116,6 +115,7 @@ npm run cy:open
 ```
 
 Alternatively the tests can also run headless as follows:
+
 ```
 npm run cy:run
 ```
@@ -124,9 +124,13 @@ For more information about the Cypress command-line interface consult [the docum
 
 ### Project Structure
 
-You can find information about the project structure in the [official Cypress documentation](https://docs.cypress.io/guides/core-concepts/writing-and-organizing-tests#Folder-structure). 
+You can find information about the project structure in the [official Cypress documentation](https://docs.cypress.io/guides/core-concepts/writing-and-organizing-tests#Folder-structure).
 Read more about [how to write tests](./cypress/WRITING_TESTS.md)
+
+## Data processing
+
+Red Hat may process information including business contact information and code contributions as part of its participation in the project, data is processed in accordance with [Red Hat Privacy Statement](https://www.redhat.com/en/about/privacy-policy).
 
 ## License
 
-* [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0)
+- [Apache License, Version 2.0](https://www.apache.org/licenses/LICENSE-2.0)
