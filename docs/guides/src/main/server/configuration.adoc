@@ -141,7 +141,7 @@ You can also specify a different configuration file by using the `[-cf|--config-
 .Running the `start` command using a custom configuration file
 <@kc.start rootParameters="-cf myconfig.conf"/>
 
-Changes to any *build option* defined in the `keycloak.conf` file that is targeted for the `build` command are ignored
+Changes to any *build option* defined in the `keycloak.conf` file that is targeted for the `start` command are ignored
 if the value differs from the value for the last `build` command. In this case, make sure you run the `build` command again so that
 any build option is updated accordingly.
 
