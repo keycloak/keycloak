@@ -646,8 +646,8 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
         if (!previousContainer.getImage().equals(reconciledContainer.getImage())
                 && previousDeployment.getStatus().getReplicas() > 1) {
             // TODO Check if migration is really needed (e.g. based on actual KC version); https://github.com/keycloak/keycloak/issues/10441
-            Log.info("Detected changed Keycloak image, assuming Keycloak upgrade, scaling down the deployment to perform safe DB migration");
-            Log.infof("Orig image: %s; new image: %s");
+            Log.info("Detected changed Keycloak image, assuming Keycloak upgrade. Scaling down the deployment to one instance to perform a safe database migration");
+            Log.infof("original image: %s; new image: %s");
 
             reconciledContainer.setImage(previousContainer.getImage());
             reconciledDeployment.getSpec().setReplicas(1);
