@@ -60,6 +60,8 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
 
     private Set<String> serverConfigSecretsNames;
 
+    private boolean migrationInProgress;
+
     public KeycloakDeployment(KubernetesClient client, Config config, Keycloak keycloakCR, StatefulSet existingDeployment, String adminSecretName) {
         super(client, keycloakCR);
         this.config = config;
@@ -101,6 +103,8 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
                         Optional.ofNullable(reconciledDeployment.getSpec().getTemplate().getMetadata()).map(m -> m.getAnnotations()).orElse(null),
                         annotations -> reconciledDeployment.getSpec().getTemplate().getMetadata().setAnnotations(annotations));
             }
+
+            migrateDeployment(existingDeployment, reconciledDeployment);
         }
 
         return Optional.of(reconciledDeployment);
@@ -402,7 +406,7 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
         }
 
         var userRelativePath = readConfigurationValue(Constants.KEYCLOAK_HTTP_RELATIVE_PATH_KEY);
-        var kcRelativePath = (userRelativePath == null) ? "/" : userRelativePath;
+        var kcRelativePath = (userRelativePath == null) ? "" : userRelativePath;
         var protocol = (this.keycloakCR.getSpec().isHttp()) ? "http" : "https";
         var kcPort = (this.keycloakCR.getSpec().isHttp()) ? Constants.KEYCLOAK_HTTP_PORT : Constants.KEYCLOAK_HTTPS_PORT;
 
@@ -605,7 +609,9 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
             status.addNotReadyMessage("Waiting for more replicas");
         }
 
-        if (existingDeployment.getStatus() != null
+        if (migrationInProgress) {
+            status.addNotReadyMessage("Performing Keycloak upgrade, scaling down the deployment");
+        } else if (existingDeployment.getStatus() != null
                 && existingDeployment.getStatus().getCurrentRevision() != null
                 && existingDeployment.getStatus().getUpdateRevision() != null
                 && !existingDeployment.getStatus().getCurrentRevision().equals(existingDeployment.getStatus().getUpdateRevision())) {
@@ -631,6 +637,33 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
                 .inNamespace(getNamespace())
                 .withName(getName())
                 .rolling().restart();
+    }
+
+    public void migrateDeployment(StatefulSet previousDeployment, StatefulSet reconciledDeployment) {
+        if (previousDeployment == null
+                || previousDeployment.getSpec() == null
+                || previousDeployment.getSpec().getTemplate() == null
+                || previousDeployment.getSpec().getTemplate().getSpec() == null
+                || previousDeployment.getSpec().getTemplate().getSpec().getContainers() == null
+                || previousDeployment.getSpec().getTemplate().getSpec().getContainers().get(0) == null)
+        {
+            return;
+        }
+
+        var previousContainer = previousDeployment.getSpec().getTemplate().getSpec().getContainers().get(0);
+        var reconciledContainer = reconciledDeployment.getSpec().getTemplate().getSpec().getContainers().get(0);
+
+        if (!previousContainer.getImage().equals(reconciledContainer.getImage())
+                && previousDeployment.getStatus().getReplicas() > 1) {
+            // TODO Check if migration is really needed (e.g. based on actual KC version); https://github.com/keycloak/keycloak/issues/10441
+            Log.info("Detected changed Keycloak image, assuming Keycloak upgrade. Scaling down the deployment to one instance to perform a safe database migration");
+            Log.infof("original image: %s; new image: %s");
+
+            reconciledContainer.setImage(previousContainer.getImage());
+            reconciledDeployment.getSpec().setReplicas(1);
+
+            migrationInProgress = true;
+        }
     }
 
     public static String getEnvVarName(String kcConfigName) {

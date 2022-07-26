@@ -27,6 +27,7 @@ import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.keycloak.operator.Constants;
+import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
 import org.keycloak.operator.testsuite.utils.K8sUtils;
 import org.keycloak.operator.controllers.KeycloakAdminSecret;
 import org.keycloak.operator.controllers.KeycloakDeployment;
@@ -48,6 +49,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.keycloak.operator.testsuite.utils.CRAssert.assertKeycloakStatusCondition;
 import static org.keycloak.operator.testsuite.utils.K8sUtils.deployKeycloak;
 import static org.keycloak.operator.testsuite.utils.K8sUtils.getDefaultKeycloakDeployment;
 import static org.keycloak.operator.testsuite.utils.K8sUtils.waitForKeycloakToBeReady;
@@ -446,6 +448,50 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
                     .getItems();
 
             assertTrue(pods.get(0).getSpec().getContainers().get(0).getReadinessProbe().getExec().getCommand().stream().collect(Collectors.joining()).contains("barfoo"));
+        } catch (Exception e) {
+            savePodLogs();
+            throw e;
+        }
+    }
+
+    @Test
+    public void testUpgradeRecreatesPods() {
+        try {
+            var kc = getDefaultKeycloakDeployment();
+            kc.getSpec().setInstances(3);
+            deployKeycloak(k8sclient, kc, true);
+
+            var stsGetter = k8sclient.apps().statefulSets().inNamespace(namespace).withName(kc.getMetadata().getName());
+            final String origImage = stsGetter.get().getSpec().getTemplate().getSpec().getContainers().get(0).getImage();
+            final String newImage = "quay.io/keycloak/non-existing-keycloak";
+
+            kc.getSpec().setImage(newImage);
+            deployKeycloak(k8sclient, kc, false);
+
+            Awaitility.await()
+                    .ignoreExceptions()
+                    .pollInterval(Duration.ZERO) // make the test super fast not to miss the moment when Operator changes the STS
+                    .untilAsserted(() -> {
+                        var sts = stsGetter.get();
+                        assertEquals(1, sts.getStatus().getReplicas());
+                        assertEquals(origImage, sts.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
+
+                        var currentKc = k8sclient.resources(Keycloak.class)
+                                        .inNamespace(namespace).withName(kc.getMetadata().getName()).get();
+                        assertKeycloakStatusCondition(currentKc, KeycloakStatusCondition.READY, false, "Performing Keycloak upgrade");
+                    });
+
+            Awaitility.await()
+                    .ignoreExceptions()
+                    .untilAsserted(() -> {
+                        var sts = stsGetter.get();
+                        assertEquals(kc.getSpec().getInstances(), sts.getSpec().getReplicas()); // just checking specs as we're using a non-existing image
+                        assertEquals(newImage, sts.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
+
+                        var currentKc = k8sclient.resources(Keycloak.class)
+                                .inNamespace(namespace).withName(kc.getMetadata().getName()).get();
+                        assertKeycloakStatusCondition(currentKc, KeycloakStatusCondition.READY, false, "Waiting for more replicas");
+                    });
         } catch (Exception e) {
             savePodLogs();
             throw e;
