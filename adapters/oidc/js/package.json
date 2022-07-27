@@ -9,7 +9,8 @@
     "dist"
   ],
   "scripts": {
-    "build": "rollup --config --configPlugin typescript"
+    "build": "rollup --config --configPlugin typescript",
+    "prepublishOnly": "npm run build"
   },
   "repository": {
     "type": "git",
