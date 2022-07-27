@@ -680,8 +680,16 @@ describe("Clients test", () => {
     it("Clustering", () => {
       advancedTab.expandClusterNode();
 
+      advancedTab.checkEmptyClusterNode();
+
       advancedTab.registerNodeManually().fillHost("localhost").saveHost();
       advancedTab.checkTestClusterAvailability(true);
+      advancedTab.deleteClusterNode();
+      commonPage.modalUtils().confirmModal();
+      commonPage
+        .masthead()
+        .checkNotificationMessage("Node successfully removed");
+      advancedTab.checkEmptyClusterNode();
     });
 
     it("Fine grain OpenID connect configuration", () => {
