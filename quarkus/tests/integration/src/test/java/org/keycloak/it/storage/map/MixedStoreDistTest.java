@@ -16,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DistributionTest
 @RawDistOnly(reason = "Containers are immutable")
-@WithDatabase(alias = "postgres", buildOptions = {"storage=jpa", "storage-realm=chm"})
+@WithDatabase(alias = "postgres", buildOptions = {"storage=jpa", "storage-area-realm=chm"})
 public class MixedStoreDistTest {
 
     @Test
