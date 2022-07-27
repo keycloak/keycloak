@@ -95,7 +95,7 @@ export const BindFlowDialog = ({ flowAlias, onClose }: BindFlowDialogProps) => {
                   onChange(value.toString());
                   toggle();
                 }}
-                selections={t(`flow.${value}`)}
+                selections={value}
                 variant={SelectVariant.single}
                 aria-label={t("bindingFlow")}
                 isOpen={open}
