@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import {
   AlertVariant,
   Button,
+  ButtonVariant,
   Dropdown,
   DropdownItem,
   KebabToggle,
@@ -37,10 +38,10 @@ import { ChangeTypeDropdown } from "../../client-scopes/ChangeTypeDropdown";
 import { toDedicatedScope } from "../routes/DedicatedScopeDetails";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import useLocaleSort, { mapByKey } from "../../utils/useLocaleSort";
+import { useAccess } from "../../context/access/Access";
+import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 
 import "./client-scopes.css";
-
-import { useAccess } from "../../context/access/Access";
 
 export type ClientScopesProps = {
   clientId: string;
@@ -169,11 +170,36 @@ export const ClientScopes = ({
     />
   );
 
+  const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
+    titleKey: t("client-scopes:deleteClientScope", {
+      count: selectedRows.length,
+      name: selectedRows[0]?.name,
+    }),
+    messageKey: "client-scopes:deleteConfirm",
+    continueButtonLabel: "common:delete",
+    continueButtonVariant: ButtonVariant.danger,
+    onConfirm: async () => {
+      try {
+        await removeClientScope(
+          adminClient,
+          clientId,
+          selectedRows[0],
+          selectedRows[0].type as ClientScope
+        );
+        addAlert(t("clientScopeRemoveSuccess"), AlertVariant.success);
+        refresh();
+      } catch (error) {
+        addError("clients:clientScopeRemoveError", error);
+      }
+    },
+  });
+
   const ManagerToolbarItems = () => {
     if (!isManager) return <span />;
 
     return (
       <>
+        <DeleteConfirm />
         <ToolbarItem>
           <Button onClick={() => setAddDialogOpen(true)}>
             {t("addClientScope")}
@@ -317,21 +343,8 @@ export const ClientScopes = ({
                 {
                   title: t("common:remove"),
                   onRowClick: async (row) => {
-                    try {
-                      await removeClientScope(
-                        adminClient,
-                        clientId,
-                        row,
-                        row.type as ClientScope
-                      );
-                      addAlert(
-                        t("clients:clientScopeRemoveSuccess"),
-                        AlertVariant.success
-                      );
-                      refresh();
-                    } catch (error) {
-                      addError("clients:clientScopeRemoveError", error);
-                    }
+                    setSelectedRows([row]);
+                    toggleDeleteDialog();
                     return true;
                   },
                 },
