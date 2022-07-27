@@ -37,7 +37,6 @@ jobs:
         run: |
            ./mvnw clean install -nsu -B -e -DskipTests -Pdistribution
            ./mvnw clean install -nsu -B -e -f testsuite/integration-arquillian/servers/auth-server -Pauth-server-quarkus
-           ./mvnw clean install -nsu -B -e -f testsuite/integration-arquillian/servers/auth-server -Pauth-server-wildfly
            ./mvnw clean install -nsu -B -e -f testsuite/integration-arquillian/servers/auth-server -Pauth-server-undertow
            ./mvnw clean install -nsu -B -e -f testsuite/integration-arquillian/servers/cache-server -Pcache-server-infinispan
 
@@ -137,7 +136,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        server: ['quarkus', 'undertow-map', 'wildfly', 'undertow-map-hot-rod']
+        server: ['quarkus', 'undertow-map', 'undertow-map-hot-rod']
         tests: ['group1','group2','group3']
       fail-fast: false
     steps:
@@ -185,7 +184,6 @@ jobs:
           PARAMS["quarkus"]="-Pauth-server-quarkus"
           PARAMS["undertow-map"]="-Pauth-server-undertow -Pmap-storage -Dpageload.timeout=90000"
           PARAMS["undertow-map-hot-rod"]="-Pauth-server-undertow -Pmap-storage,map-storage-hot-rod -Dpageload.timeout=90000"
-          PARAMS["wildfly"]="-Pauth-server-wildfly"
           TESTGROUP["group1"]="-Dtest=!**.crossdc.**,!**.cluster.**,%regex[org.keycloak.testsuite.(a[abc]|ad[a-l]|[^a-q]).*]"   # Tests alphabetically before admin tests and those after "r"
           TESTGROUP["group2"]="-Dtest=!**.crossdc.**,!**.cluster.**,%regex[org.keycloak.testsuite.(ad[^a-l]|a[^a-d]|b).*]"      # Admin tests and those starting with "b"
           TESTGROUP["group3"]="-Dtest=!**.crossdc.**,!**.cluster.**,%regex[org.keycloak.testsuite.([c-q]).*]"                   # All the rest

@@ -43,25 +43,10 @@
 
         <quarkus.version>2.7.6.Final</quarkus.version>
 
-        <!--
-        Performing a Wildfly upgrade? Run the:
-
-             "./misc/scripts/upgrade-wildfly/upgrade-keycloak-to-wildfly-tag.py"
-
-        script with the corresponding Wildfly tag, e.g. '20.0.0.Final' to get necessary Keycloak bits
-        updated automatically based on corresponding artifact versions used in Wildfly and Wildfly Core
-
-        IMPORTANT: If you add new dependency name / version property below, be sure to update the
-        "./misc/scripts/upgrade-wildfly/upgrade-keycloak-to-wildfly-tag.py" script too to ensure
-        the script continues to work
-        -->
-
         <product.rhsso.version>7.5.0.GA</product.rhsso.version>
 
         <product.build-time>${timestamp}</product.build-time>
         <wildfly.version>26.1.1.Final</wildfly.version>
-        <wildfly.build-tools.version>1.2.13.Final</wildfly.build-tools.version>
-        <eap.version>7.4.0.GA-redhat-00005</eap.version>
         <wildfly.core.version>18.1.1.Final</wildfly.core.version>
 
         <jboss.as.version>7.2.0.Final</jboss.as.version>
@@ -282,7 +267,6 @@
         <module>themes</module>
         <module>model</module>
         <module>util</module>
-        <module>wildfly</module>
         <module>integration</module>
         <module>adapters</module>
         <module>authz</module>
