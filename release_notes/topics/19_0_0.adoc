@@ -61,6 +61,12 @@ from a previous version due to backwards compatibility.
 
 For more details, see the link:{adminguide_link}#_oidc-logout[{adminguide_name}].
 
+= Update Email Workflow
+
+There is new preview feature `UPDATE_EMAIL`. When it is enabled and corresponding flag enabled in the realm, the users will be required
+to confirm updating their email by clicking the link, which will be sent to their new email address. For more details, see the link:{adminguide_link}#_update-email-workflow[{adminguide_name}].
+Thanks to https://github.com/reda-alaoui[Réda Housni Alaoui] for the contribution.
+
 = Deprecated `podDisruptionBudget` in the legacy {project_operator}
 
 With this release, we have deprecated `podDisruptionBudget` field in the Keycloak CR of the https://github.com/keycloak/keycloak-operator[legacy {project_operator}].
