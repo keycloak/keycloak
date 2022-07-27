@@ -83,6 +83,7 @@ import org.keycloak.services.resources.RealmsResource;
 import org.keycloak.services.util.AuthorizationContextUtil;
 import org.keycloak.services.util.CookieHelper;
 import org.keycloak.services.util.P3PHelper;
+import org.keycloak.services.util.TokenClientAttributeHelper;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.CommonClientSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
@@ -167,17 +168,38 @@ public class AuthenticationManager {
     private static final TokenTypeCheck VALIDATE_IDENTITY_COOKIE = new TokenTypeCheck(TokenUtil.TOKEN_TYPE_KEYCLOAK_ID);
 
     public static boolean isSessionValid(RealmModel realm, UserSessionModel userSession) {
+        return isSessionValid(realm, userSession, null);
+    }
+
+    public static boolean isSessionValid(RealmModel realm, UserSessionModel userSession, String clientId) {
         if (userSession == null) {
             logger.debug("No user session");
             return false;
         }
         int currentTime = Time.currentTime();
 
-        // Additional time window is added for the case when session was updated in different DC and the update to current DC was postponed
-        int maxIdle = userSession.isRememberMe() && realm.getSsoSessionIdleTimeoutRememberMe() > 0 ?
-            realm.getSsoSessionIdleTimeoutRememberMe() : realm.getSsoSessionIdleTimeout();
-        int maxLifespan = userSession.isRememberMe() && realm.getSsoSessionMaxLifespanRememberMe() > 0 ?
-                realm.getSsoSessionMaxLifespanRememberMe() : realm.getSsoSessionMaxLifespan();
+        int maxIdle;
+        int maxLifespan;
+
+        // Check to see if there is a client override for idle.
+        Integer clientSessionIdleTimeout = TokenClientAttributeHelper.getClientSessionIdleTimeout(realm, clientId);
+        if (clientSessionIdleTimeout != null && clientSessionIdleTimeout > 0) {
+            maxIdle = clientSessionIdleTimeout;
+        }
+        else {
+            maxIdle = userSession.isRememberMe() && realm.getSsoSessionIdleTimeoutRememberMe() > 0 ?
+                    realm.getSsoSessionIdleTimeoutRememberMe() : realm.getSsoSessionIdleTimeout();
+        }
+
+        // Check to see if there is a client override for max lifespan.
+        Integer clientSessionMaxLifespan = TokenClientAttributeHelper.getClientSessionMaxLifespan(realm, clientId);
+        if (clientSessionMaxLifespan != null && clientSessionMaxLifespan > 0) {
+            maxLifespan = clientSessionMaxLifespan;
+        }
+        else {
+            maxLifespan = userSession.isRememberMe() && realm.getSsoSessionMaxLifespanRememberMe() > 0 ?
+                    realm.getSsoSessionMaxLifespanRememberMe() : realm.getSsoSessionMaxLifespan();
+        }
 
         boolean sessionIdleOk = maxIdle > currentTime - userSession.getLastSessionRefresh() - SessionTimeoutHelper.IDLE_TIMEOUT_WINDOW_SECONDS;
         boolean sessionMaxOk = maxLifespan > currentTime - userSession.getStarted();
@@ -1453,7 +1475,7 @@ public class AuthenticationManager {
                 }
             }
 
-            if (token.getSessionState() != null && !isSessionValid(realm, userSession)) {
+            if (token.getSessionState() != null && !isSessionValid(realm, userSession, token.getIssuedFor())) {
                 // Check if accessToken was for the offline session.
                 if (!isCookie) {
                     UserSessionModel offlineUserSession = session.sessions().getOfflineUserSession(realm, token.getSessionState());

@@ -21,11 +21,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserManager;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.*;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
@@ -91,5 +87,44 @@ public class SessionTimeoutValidationTest extends AbstractTestRealmKeycloakTest 
         
         realm.setSsoSessionIdleTimeout(ssoSessionIdleTimeoutOrig);
         realm.setSsoSessionMaxLifespan(ssoSessionMaxLifespanOrig);
+    }
+
+    @Test
+    @ModelTest
+    public void testIsSessionValidUseClientNoOverrides(KeycloakSession session) {
+        RealmModel realm = session.realms().getRealmByName("test");
+        ClientModel clientOverrides = realm.addClient("client-no-overrides");
+
+        UserSessionModel userSessionModel =
+                session.sessions().createUserSession(
+                        realm,
+                        session.users().getUserByUsername(realm, "user1"),
+                        "user1", "127.0.0.1", "form", true, null, null
+                );
+
+
+        Assert.assertTrue("The session is still valid, even though client has no overrides provided.",
+                AuthenticationManager.isSessionValid(realm, userSessionModel, clientOverrides.getClientId()));
+    }
+
+    @Test
+    @ModelTest
+    public void testIsSessionValidUseClientOverrides(KeycloakSession session) {
+        RealmModel realm = session.realms().getRealmByName("test");
+
+        ClientModel clientOverrides = realm.addClient("client-overrides");
+        clientOverrides.setAttribute("client.session.idle.timeout", "3");
+        clientOverrides.setAttribute("client.session.max.lifespan", "5");
+
+        UserSessionModel userSessionModel =
+                session.sessions().createUserSession(
+                        realm,
+                        session.users().getUserByUsername(realm, "user1"),
+                        "user1", "127.0.0.1", "form", true, null, null
+                );
+
+
+        Assert.assertTrue("The session is still valid, even though client session idle and client session max lifespan overrides are present.",
+                AuthenticationManager.isSessionValid(realm, userSessionModel, clientOverrides.getClientId()));
     }
 }
