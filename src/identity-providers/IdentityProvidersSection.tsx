@@ -191,6 +191,7 @@ export default function IdentityProvidersSection() {
                   {sortBy(identityProviders[group], "name").map((provider) => (
                     <Card
                       className="keycloak-empty-state-card"
+                      role="button"
                       key={provider.id}
                       isHoverable
                       data-testid={`${provider.id}-card`}

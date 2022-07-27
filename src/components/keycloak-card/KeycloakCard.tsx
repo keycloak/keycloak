@@ -53,7 +53,7 @@ export const KeycloakCard = ({
   };
 
   return (
-    <Card isSelectable onClick={openSettings}>
+    <Card role="button" isSelectable onClick={openSettings}>
       <CardHeader>
         <CardActions>
           {dropdownItems && (

@@ -197,6 +197,7 @@ export default function UserFederationSection() {
                 <Card
                   key={p.id}
                   className="keycloak-empty-state-card"
+                  role="button"
                   isHoverable
                   onClick={() =>
                     history.push(toProvider({ realm, providerId: p.id! }))
