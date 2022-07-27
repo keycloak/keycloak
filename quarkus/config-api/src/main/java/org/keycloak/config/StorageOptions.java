@@ -64,14 +64,14 @@ public class StorageOptions {
             .buildTime(true)
             .build();
 
-    public static final Option<StorageType> STORAGE_EVENT_ADMIN_STORE = new OptionBuilder<>("storage-event-admin", StorageType.class)
+    public static final Option<StorageType> STORAGE_EVENT_ADMIN_STORE = new OptionBuilder<>("storage-area-event-admin", StorageType.class)
             .category(OptionCategory.STORAGE)
             .description(descriptionForStorageAreas("admin events"))
             .expectedValues(StorageType.values())
             .buildTime(true)
             .build();
 
-    public static final Option<StorageType> STORAGE_EVENT_AUTH_STORE = new OptionBuilder<>("storage-event-auth", StorageType.class)
+    public static final Option<StorageType> STORAGE_EVENT_AUTH_STORE = new OptionBuilder<>("storage-area-event-auth", StorageType.class)
             .category(OptionCategory.STORAGE)
             .description(descriptionForStorageAreas("authentication and authorization events"))
             .expectedValues(StorageType.values())
@@ -89,7 +89,7 @@ public class StorageOptions {
             .buildTime(true)
             .build();
 
-    public static final Option<StorageType> STORAGE_REALM_STORE = new OptionBuilder<>("storage-realm", StorageType.class)
+    public static final Option<StorageType> STORAGE_REALM_STORE = new OptionBuilder<>("storage-area-realm", StorageType.class)
             .category(OptionCategory.STORAGE)
             .description(descriptionForStorageAreas("realms"))
             .expectedValues(StorageType.values())
@@ -102,7 +102,7 @@ public class StorageOptions {
             .buildTime(true)
             .build();
 
-    public static final Option<StorageType> STORAGE_CLIENT_STORE = new OptionBuilder<>("storage-client", StorageType.class)
+    public static final Option<StorageType> STORAGE_CLIENT_STORE = new OptionBuilder<>("storage-area-client", StorageType.class)
             .category(OptionCategory.STORAGE)
             .description(descriptionForStorageAreas("clients"))
             .expectedValues(StorageType.values())
@@ -115,7 +115,7 @@ public class StorageOptions {
             .buildTime(true)
             .build();
 
-    public static final Option<StorageType> STORAGE_CLIENT_SCOPE_STORE = new OptionBuilder<>("storage-client-scope", StorageType.class)
+    public static final Option<StorageType> STORAGE_CLIENT_SCOPE_STORE = new OptionBuilder<>("storage-area-client-scope", StorageType.class)
             .category(OptionCategory.STORAGE)
             .description(descriptionForStorageAreas("client scopes"))
             .expectedValues(StorageType.values())
@@ -128,7 +128,7 @@ public class StorageOptions {
             .buildTime(true)
             .build();
 
-    public static final Option<StorageType> STORAGE_GROUP_STORE = new OptionBuilder<>("storage-group", StorageType.class)
+    public static final Option<StorageType> STORAGE_GROUP_STORE = new OptionBuilder<>("storage-area-group", StorageType.class)
             .category(OptionCategory.STORAGE)
             .description(descriptionForStorageAreas("groups"))
             .expectedValues(StorageType.values())
@@ -141,7 +141,7 @@ public class StorageOptions {
             .buildTime(true)
             .build();
 
-    public static final Option<StorageType> STORAGE_ROLE_STORE = new OptionBuilder<>("storage-role", StorageType.class)
+    public static final Option<StorageType> STORAGE_ROLE_STORE = new OptionBuilder<>("storage-area-role", StorageType.class)
             .category(OptionCategory.STORAGE)
             .description(descriptionForStorageAreas("roles"))
             .expectedValues(StorageType.values())
@@ -154,7 +154,7 @@ public class StorageOptions {
             .buildTime(true)
             .build();
 
-    public static final Option<StorageType> STORAGE_USER_STORE = new OptionBuilder<>("storage-user", StorageType.class)
+    public static final Option<StorageType> STORAGE_USER_STORE = new OptionBuilder<>("storage-area-user", StorageType.class)
             .category(OptionCategory.STORAGE)
             .description(descriptionForStorageAreas("users"))
             .expectedValues(StorageType.values())
@@ -173,7 +173,7 @@ public class StorageOptions {
             .buildTime(true)
             .build();
 
-    public static final Option<StorageType> STORAGE_AUTH_SESSION_STORE = new OptionBuilder<>("storage-auth-session", StorageType.class)
+    public static final Option<StorageType> STORAGE_AUTH_SESSION_STORE = new OptionBuilder<>("storage-area-auth-session", StorageType.class)
             .category(OptionCategory.STORAGE)
             .description(descriptionForStorageAreas("authentication sessions"))
             .expectedValues(StorageType.values())
@@ -186,7 +186,7 @@ public class StorageOptions {
             .buildTime(true)
             .build();
 
-    public static final Option<StorageType> STORAGE_USER_SESSION_STORE = new OptionBuilder<>("storage-user-session", StorageType.class)
+    public static final Option<StorageType> STORAGE_USER_SESSION_STORE = new OptionBuilder<>("storage-area-user-session", StorageType.class)
             .category(OptionCategory.STORAGE)
             .description(descriptionForStorageAreas("user and client sessions"))
             .expectedValues(StorageType.values())
@@ -199,7 +199,7 @@ public class StorageOptions {
             .buildTime(true)
             .build();
 
-    public static final Option<StorageType> STORAGE_LOGIN_FAILURE_STORE = new OptionBuilder<>("storage-login-failure", StorageType.class)
+    public static final Option<StorageType> STORAGE_LOGIN_FAILURE_STORE = new OptionBuilder<>("storage-area-login-failure", StorageType.class)
             .category(OptionCategory.STORAGE)
             .description(descriptionForStorageAreas("login failures"))
             .expectedValues(StorageType.values())
@@ -212,7 +212,7 @@ public class StorageOptions {
             .buildTime(true)
             .build();
 
-    public static final Option<StorageType> STORAGE_AUTHORIZATION_STORE = new OptionBuilder<>("storage-authorization", StorageType.class)
+    public static final Option<StorageType> STORAGE_AUTHORIZATION_STORE = new OptionBuilder<>("storage-area-authorization", StorageType.class)
             .category(OptionCategory.STORAGE)
             .description(descriptionForStorageAreas("authorizations"))
             .expectedValues(StorageType.values())
@@ -231,7 +231,7 @@ public class StorageOptions {
             .buildTime(true)
             .build();
 
-    public static final Option<StorageType> STORAGE_ACTION_TOKEN_STORE = new OptionBuilder<>("storage-action-token", StorageType.class)
+    public static final Option<StorageType> STORAGE_ACTION_TOKEN_STORE = new OptionBuilder<>("storage-area-action-token", StorageType.class)
             .category(OptionCategory.STORAGE)
             .description(descriptionForStorageAreas("action tokens"))
             .expectedValues(StorageType.values())
@@ -280,7 +280,7 @@ public class StorageOptions {
             .buildTime(true)
             .build();
 
-    public static final Option<StorageType> STORAGE_SINGLE_USE_OBJECT_STORE = new OptionBuilder<>("storage-single-use-object", StorageType.class)
+    public static final Option<StorageType> STORAGE_SINGLE_USE_OBJECT_STORE = new OptionBuilder<>("storage-area-single-use-object", StorageType.class)
             .category(OptionCategory.STORAGE)
             .description(descriptionForStorageAreas("single use objects"))
             .expectedValues(StorageType.values())

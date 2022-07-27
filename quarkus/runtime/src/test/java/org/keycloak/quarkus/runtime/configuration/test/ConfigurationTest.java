@@ -488,7 +488,7 @@ public class ConfigurationTest {
 
     @Test
     public void testStorageMixedStorageOptions() {
-        System.setProperty(CLI_ARGS, "--storage=jpa" + ARG_SEPARATOR + "--storage-realm=chm");
+        System.setProperty(CLI_ARGS, "--storage=jpa" + ARG_SEPARATOR + "--storage-area-realm=chm");
         SmallRyeConfig config = createConfig();
         assertEquals("jpa", config.getConfigValue("kc.storage").getValue());
         assertNull(config.getConfigValue("kc.spi-map-storage-provider").getValue());
