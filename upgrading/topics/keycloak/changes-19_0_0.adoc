@@ -1,3 +1,19 @@
+= New Admin Console is now the default console
+
+The new admin console is now the default console in Keycloak. If you are not able to start using the new admin console it is possible to continue to use the old admin console by disabling the new console, by for example running:
+
+```
+bin/kc.sh start-dev --features-disabled=admin2
+```
+
+An alternative approach to continue using the old admin console is to set the theme for the master realm or any other realm to `keycloak`.
+
+As the new admin console is signficiantly different to the old admin console, is now based on React and uses a newer version of PatternFly, any custom themes will most likely have to be re-implemented from scratch. To create a custom theme for the new admin console the theme should extend `keycloak.v2` instead of `keycloak`.
+
+If you have explicitly set the admin console theme to `keycloak` for the master realm or any other realm, it will continue to use the old admin console. To update to the new admin console you need to change the theme to `keycloak.v2`.
+
+The old admin console will be removed in Keycloak 21.
+
 = Changes to the server configuration and startup
 
 Before this release, you would use the `--auto-build` when running the `start` command to tell the server to conditionally run

@@ -26,6 +26,10 @@ In WildFly 25 the legacy security layer was removed, going forward only Elytron 
 
 Red Hat customers using Red Hat JBoss Enterprise Application Platform 7.x should use https://access.redhat.com/products/red-hat-single-sign-on[Red Hat Single Sign-On] 7.x adapters. These can be used in combination with the Keycloak server.
 
+= New Admin Console graduation
+
+The new Admin Console is now graduated to the default admin console, with the old console now deprecated. The old console will not be removed in Keycloak 21.
+
 = Changes in Keycloak storage
 
 The Keycloak storage is changing, and the current storage, while still supported, will eventually be replaced with a brand-new implementation.
