@@ -36,6 +36,33 @@ If you are already using a custom image to set build options and run an optimize
 
 For more details, please take a look at the https://www.keycloak.org/server/configuration[Configuration Guide] and the https://www.keycloak.org/server/containers[Containers Guide].
 
+= Potentially breaking changes to the health endpoints
+
+Before {project_name} 19.0.0, the quarkus based {project_name} distribution always enabled the following non-application endpoints unintentionally:
+
+* /q/health
+* /q/health/live
+* /q/health/ready
+* /q/metrics
+
+Starting in {project_name} 19.0.0, these endpoints are **disabled** and a request will result in a 404 HTTP status-code. If you are using the `/q/...` endpoints, make sure to change your probes and monitoring systems to use the intended health endpoints instead when upgrading to {project_name} 19.0.0.
+
+The intended health endpoints are:
+
+* /health
+* /health/live
+* /health/ready
+* /metrics
+
+Apart from disabling the /q/ endpoints, these are the other improvements made to the health endpoints:
+
+* The `health/live` endpoint used for liveness probes is now decoupled from the database connections health, to match current good practices and to not have the same behaviour as the `health/ready` endpoint. As a result, the database check is not shown in the `checks:` array anymore when calling `/health/live`, so when there is a database hiccup, the liveness probe will still return HTTP status-code 200 and a status of UP, so no pod restart may be triggered.
+
+* The `health/ready` endpoint used for readiness probes still checks for a working database connection. Make sure you have not only `health-enabled=true` but also `metrics-enabled=true` set in your configuration, to enable the database check, resulting in an effective readiness probe. It will return HTTP status-code 503 and a status of DOWN when the database connection is not in a healthy state.
+
+Expect more enhancements in this area in the future.
+For more information, see the https://www.keycloak.org/server/health[Health guide]
+
 = Changes affecting developers
 
 {project_name} undergoes large refactoring, which impacts existing code.
