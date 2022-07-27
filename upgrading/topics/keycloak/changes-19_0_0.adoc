@@ -281,3 +281,9 @@ spec:
       component: keycloak
 ```
 See also the https://kubernetes.io/docs/tasks/run-application/configure-pdb/[Kubernetes Documentation].
+
+= Deployment changes in the new {project_operator}
+
+The new {project_operator} now uses `StatefulSet` instead of `Deployment` for Keycloak deployments. There's no automated
+migration in place given the Operator is a tech preview in this release. If you are using the new Operator with 18.0.z,
+please make sure to back up, delete and recreate your Keycloak CR after the upgrade to 19.0.0.
