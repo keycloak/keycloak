@@ -67,6 +67,9 @@ export type BundleForm = {
   messageBundle: KeyValueType;
 };
 
+const localeToDisplayName = (locale: string) =>
+  new Intl.DisplayNames([locale], { type: "language" }).of(locale);
+
 export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
   const { t } = useTranslation("realm-settings");
   const { adminClient } = useAdminClient();
@@ -288,7 +291,7 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
   const options = [
     <SelectGroup label={t("defaultLocale")} key="group1">
       <SelectOption key={DEFAULT_LOCALE} value={DEFAULT_LOCALE}>
-        {t(`allSupportedLocales.${DEFAULT_LOCALE}`)}
+        {localeToDisplayName(DEFAULT_LOCALE)}
       </SelectOption>
     </SelectGroup>,
     <Divider key="divider" />,
@@ -297,7 +300,7 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
         .filter((item) => item !== realm.defaultLocale)
         .map((locale) => (
           <SelectOption key={locale} value={locale}>
-            {t(`allSupportedLocales.${locale}`)}
+            {localeToDisplayName(locale)}
           </SelectOption>
         ))}
     </SelectGroup>,
@@ -418,7 +421,7 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
                           key={locale}
                           value={locale}
                         >
-                          {t(`allSupportedLocales.${locale}`)}
+                          {localeToDisplayName(locale)}
                         </SelectOption>
                       ))}
                     </Select>
@@ -443,12 +446,10 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
                       }}
                       selections={
                         value
-                          ? t(`allSupportedLocales.${value}`)
+                          ? localeToDisplayName(value)
                           : realm.defaultLocale !== ""
-                          ? t(
-                              `allSupportedLocales.${
-                                realm.defaultLocale || DEFAULT_LOCALE
-                              }`
+                          ? localeToDisplayName(
+                              realm.defaultLocale || DEFAULT_LOCALE
                             )
                           : t("placeholderText")
                       }
@@ -464,7 +465,7 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
                             key={`default-locale-${idx}`}
                             value={locale}
                           >
-                            {t(`allSupportedLocales.${locale}`)}
+                            {localeToDisplayName(locale)}
                           </SelectOption>
                         )
                       )}
@@ -537,9 +538,9 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
                     }}
                     selections={
                       selectMenuValueSelected
-                        ? t(`allSupportedLocales.${selectMenuLocale}`)
+                        ? localeToDisplayName(selectMenuLocale)
                         : realm.defaultLocale !== ""
-                        ? t(`allSupportedLocales.${DEFAULT_LOCALE}`)
+                        ? localeToDisplayName(DEFAULT_LOCALE)
                         : t("placeholderText")
                     }
                   >
