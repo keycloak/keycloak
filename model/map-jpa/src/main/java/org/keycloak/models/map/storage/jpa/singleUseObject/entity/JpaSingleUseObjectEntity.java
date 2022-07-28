@@ -39,10 +39,9 @@ import org.hibernate.annotations.TypeDefs;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.UuidValidator;
 import org.keycloak.models.map.singleUseObject.MapSingleUseObjectEntity;
+import org.keycloak.models.map.storage.jpa.Constants;
 import org.keycloak.models.map.storage.jpa.JpaRootVersionedEntity;
 import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
-
-import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_SINGLE_USE_OBJECT;
 
 /**
  * JPA {@link MapSingleUseObjectEntity} implementation. Some fields are annotated with {@code @Column(insertable = false, updatable = false)}
@@ -56,27 +55,27 @@ import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSI
 public class JpaSingleUseObjectEntity extends MapSingleUseObjectEntity.AbstractSingleUseObjectEntity implements JpaRootVersionedEntity {
 
     @Id
-    @Column
+    @Column(name = "id")
     private UUID id;
 
     //used for implicit optimistic locking
     @Version
-    @Column
+    @Column(name = "version")
     private int version;
 
     @Type(type = "jsonb")
-    @Column(columnDefinition = "jsonb")
+    @Column(name = "metadata", columnDefinition = "jsonb")
     private final JpaSingleUseObjectMetadata metadata;
 
-    @Column(insertable = false, updatable = false)
+    @Column(name = "entity_version", insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
     private Integer entityVersion;
 
-    @Column(insertable = false, updatable = false)
+    @Column(name = "object_key", insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
     private String objectKey;
 
-    @Column(insertable = false, updatable = false)
+    @Column(name = "expiration", insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
     private Long expiration;
 
@@ -138,7 +137,7 @@ public class JpaSingleUseObjectEntity extends MapSingleUseObjectEntity.AbstractS
 
     @Override
     public Integer getCurrentSchemaVersion() {
-        return CURRENT_SCHEMA_VERSION_SINGLE_USE_OBJECT;
+        return Constants.CURRENT_SCHEMA_VERSION_SINGLE_USE_OBJECT;
     }
 
     @Override

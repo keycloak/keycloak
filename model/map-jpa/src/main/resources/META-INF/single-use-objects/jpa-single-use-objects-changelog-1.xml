@@ -34,17 +34,17 @@ limitations under the License.
             <column name="metadata" type="json"/>
         </createTable>
         <ext:addGeneratedColumn tableName="kc_single_use_obj">
-            <ext:column name="entityversion" type="INTEGER" jsonColumn="metadata" jsonProperty="entityVersion"/>
-            <ext:column name="objectkey" type="VARCHAR(255)" jsonColumn="metadata" jsonProperty="fObjectKey"/>
+            <ext:column name="entity_version" type="INTEGER" jsonColumn="metadata" jsonProperty="entityVersion"/>
+            <ext:column name="object_key" type="VARCHAR(255)" jsonColumn="metadata" jsonProperty="fObjectKey"/>
             <ext:column name="expiration" type="BIGINT" jsonColumn="metadata" jsonProperty="fExpiration"/>
         </ext:addGeneratedColumn>
-        <createIndex tableName="kc_single_use_obj" indexName="single_use_obj_entityVersion">
-            <column name="entityversion"/>
+        <createIndex tableName="kc_single_use_obj" indexName="kc_single_use_obj_entity_version">
+            <column name="entity_version"/>
         </createIndex>
-        <createIndex tableName="kc_single_use_obj" indexName="single_use_obj_objectKey">
-            <column name="objectkey"/>
+        <createIndex tableName="kc_single_use_obj" indexName="kc_single_use_obj_objectKey">
+            <column name="object_key"/>
         </createIndex>
-        <createIndex tableName="kc_single_use_obj" indexName="single_use_obj_expiration">
+        <createIndex tableName="kc_single_use_obj" indexName="kc_single_use_obj_expiration">
             <column name="expiration"/>
         </createIndex>
         <ext:createJsonIndex tableName="kc_single_use_obj" indexName="kc_single_use_obj_nonce">
@@ -56,12 +56,12 @@ limitations under the License.
                 <constraints primaryKey="true" nullable="false"/>
             </column>
             <column name="fk_root" type="UUID">
-                <constraints foreignKeyName="single_use_obj_note_fk_root_fkey" references="kc_single_use_obj(id)" deleteCascade="true"/>
+                <constraints foreignKeyName="kc_single_use_obj_note_fk_root_fkey" references="kc_single_use_obj(id)" deleteCascade="true"/>
             </column>
             <column name="name" type="VARCHAR(255)"/>
             <column name="value" type="TEXT"/>
         </createTable>
-        <createIndex tableName="kc_single_use_obj_note" indexName="single_use_obj_note_fk_root">
+        <createIndex tableName="kc_single_use_obj_note" indexName="kc_single_use_obj_note_fk_root">
             <column name="fk_root"/>
         </createIndex>
     </changeSet>
