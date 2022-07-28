@@ -51,31 +51,31 @@ import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSI
 public class JpaAdminEventEntity extends MapAdminEventEntity.AbstractAdminEventEntity implements JpaRootVersionedEntity {
 
     @Id
-    @Column
+    @Column(name = "id")
     private UUID id;
 
     //used for implicit optimistic locking
     @Version
-    @Column
+    @Column(name = "version")
     private int version;
 
     @Type(type = "jsonb")
-    @Column(columnDefinition = "jsonb")
+    @Column(name = "metadata", columnDefinition = "jsonb")
     private final JpaAdminEventMetadata metadata;
 
-    @Column(insertable = false, updatable = false)
+    @Column(name = "entity_version", insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
     private Integer entityVersion;
 
-    @Column(insertable = false, updatable = false)
+    @Column(name = "realm_id", insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
     private String realmId;
 
-    @Column(insertable = false, updatable = false)
+    @Column(name = "timestamp", insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
     private Long timestamp;
 
-    @Column(insertable = false, updatable = false)
+    @Column(name = "expiration", insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
     private Long expiration;
 
