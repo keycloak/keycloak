@@ -240,7 +240,7 @@ version: '3.8'
 
 services:
   elasticsearch:
-    image: docker.io/elastic/elasticsearch:7.17.4
+    image: docker.io/elastic/elasticsearch:7.10.2
     ports:
       - "9200:9200"
     environment:
@@ -250,12 +250,12 @@ services:
       - graylog
 
   mongo:
-    image: mongo:4.0
+    image: mongo:4.4
     networks:
       - graylog
 
   graylog:
-    image: graylog/graylog:4.3.2
+    image: graylog/graylog:4.3.3
     ports:
       - "9000:9000"
       - "12201:12201/udp"
