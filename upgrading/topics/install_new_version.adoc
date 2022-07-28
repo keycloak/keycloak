@@ -50,21 +50,20 @@ ifeval::[{project_product}==true]
 
 .Procedure
 
-. Subscribe to the proper repositories containing JBOSS EAP and {project_name}.
+. Subscribe to the proper repository containing {project_name}.
 +
 For Red Hat Enterprise Linux 7:
 +
- subscription-manager repos --enable=rh-sso-7.5-for-rhel-7-x86_64-rpms
+ subscription-manager repos --enable=rh-sso-7.6-for-rhel-7-x86_64-rpms
 +
 For Red Hat Enterprise Linux 8:
 +
- subscription-manager repos --enable=rh-sso-7.5-for-rhel-8-x86_64-rpms
+ subscription-manager repos --enable=rh-sso-7.6-for-rhel-8-x86_64-rpms
 +
 
-. Disable older product repositories for both JBOSS EAP and {project_name}:
+. Disable the older product repository for {project_name}:
 
- subscription-manager repos --disable=jb-eap-7.3-for-rhel-8-x86_64-rpms
- subscription-manager repos --disable=rh-sso-7.4-for-rhel-8-x86_64-rpms
+ subscription-manager repos --disable=rh-sso-7.5-for-rhel-8-x86_64-rpms
 
 . Check the list of repositories:
 
@@ -72,27 +71,17 @@ For Red Hat Enterprise Linux 8:
 
  Updating Subscription Management repositories.
  repo id repo name
- rh-sso-7.5-for-rhel-8-x86_64-rpms Single Sign-On 7.5 for RHEL 8 x86_64 (RPMs)
+ rh-sso-7.6-for-rhel-8-x86_64-rpms Single Sign-On 7.6 for RHEL 8 x86_64 (RPMs)
  rhel-8-for-x86_64-appstream-rpms Red Hat Enterprise Linux 8 for x86_64 - AppStream (RPMs)
  rhel-8-for-x86_64-baseos-rpms Red Hat Enterprise Linux 8 for x86_64 - BaseOS (RPMs)
 
 . Back up any modified configuration files and custom modules.
 
-. Remove packages for RH-SSO 7.4.
+. Use `dnf upgrade` to  upgrade to the new Red Hat Single Sign-On version.
 +
-Normally the old packages are removed by `dnf upgrade`. However, the RH-SSO 7.5 packages use a format that conflicts with files handled by the JBoss EAP 7.3 package. Therefore, the RH-SSO 7.4 and JBoss EAP 7.3 packages must be removed.
-+
- dnf remove --exclude java-1.8.0-openjdk rh-sso7-keycloak
-+
-Removing of java-1.8.0-openjdk is unnecessary, but this step saves the additional download of the same set of related packages later in the procedure.
+The RPM upgrade process does not replace any modified configuration files. Instead, this process creates .rpmnew files for the default configuration of the new Red Hat Single Sign-On version.
 
-. Install the new version of RH-SSO.
-+
- dnf groupinstall rh-sso7
-+
- dnf install rh-sso7-keycloak-15.0.2-3.redhat_00002.1.el8sso rh-sso7-keycloak-server-15.0.2-3.redhat_00002.1.el8sso
-
-. To activate any new features in the new release, such as new subsystems, you must manually merge each backup configuration file into your existing configuration files.
+. To activate any new features in the new release, such as new subsystems, manually merge each .rpmnew file into your existing configuration files.
 
 . Copy any custom modules that have been added to the modules directory.
 
