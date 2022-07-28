@@ -79,12 +79,6 @@ Storage (Experimental):
                        Will default to a random number generated when starting the server which is
                        secure but will lead to problems when a loadbalancer without sticky sessions
                        is used or nodes are restarted.
---storage-hotrod-cache-configure <true|false>
-                     Experimental: When set to true, Keycloak will create and configure Infinispan
-                       caches on startup. Default: true.
---storage-hotrod-cache-reindex <[cache1,cache2,...]|all>
-                     Experimental: List of cache names that should be indexed on Keycloak startup.
-                       Defaulting to `all` which means all caches are reindexed. Default: all.
 --storage-hotrod-host <host>
                      Experimental: Sets the host of the Infinispan server.
 --storage-hotrod-password <password>
