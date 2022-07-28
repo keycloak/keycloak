@@ -34,10 +34,9 @@ import org.hibernate.annotations.TypeDefs;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.UuidValidator;
 import org.keycloak.models.map.loginFailure.MapUserLoginFailureEntity;
+import org.keycloak.models.map.storage.jpa.Constants;
 import org.keycloak.models.map.storage.jpa.JpaRootVersionedEntity;
 import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
-
-import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_USER_LOGIN_FAILURE;
 
 /**
  * JPA {@link MapUserLoginFailureEntity} implementation. Some fields are annotated with {@code @Column(insertable = false, updatable = false)}
@@ -46,37 +45,34 @@ import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSI
  * @author <a href="mailto:sguilhen@redhat.com">Stefan Guilhen</a>
  */
 @Entity
-@Table(name = "kc_user_login_failure",
-        uniqueConstraints = {
-                @UniqueConstraint(
-                        columnNames = {"realmId", "userId"}
-                )
+@Table(name = "kc_user_login_failure", uniqueConstraints = {
+    @UniqueConstraint(columnNames = {"realm_id", "user_id"})
 })
 @TypeDefs({@TypeDef(name = "jsonb", typeClass = JsonbType.class)})
 public class JpaUserLoginFailureEntity extends MapUserLoginFailureEntity.AbstractUserLoginFailureEntity implements JpaRootVersionedEntity {
 
     @Id
-    @Column
+    @Column(name = "id")
     private UUID id;
 
     //used for implicit optimistic locking
     @Version
-    @Column
+    @Column(name = "version")
     private int version;
 
     @Type(type = "jsonb")
-    @Column(columnDefinition = "jsonb")
+    @Column(name = "metadata", columnDefinition = "jsonb")
     private final JpaUserLoginFailureMetadata metadata;
 
-    @Column(insertable = false, updatable = false)
+    @Column(name = "entity_version", insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
     private Integer entityVersion;
 
-    @Column(insertable = false, updatable = false)
+    @Column(name = "realm_id", insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
     private String realmId;
 
-    @Column(insertable = false, updatable = false)
+    @Column(name = "user_id", insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
     private String userId;
 
@@ -121,7 +117,7 @@ public class JpaUserLoginFailureEntity extends MapUserLoginFailureEntity.Abstrac
 
     @Override
     public Integer getCurrentSchemaVersion() {
-        return CURRENT_SCHEMA_VERSION_USER_LOGIN_FAILURE;
+        return Constants.CURRENT_SCHEMA_VERSION_USER_LOGIN_FAILURE;
     }
 
     @Override
