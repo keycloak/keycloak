@@ -32,47 +32,47 @@ limitations under the License.
                 <constraints nullable="false"/>
             </column>
             <column name="metadata" type="json"/>
-            <column name="usernamelowercase" type="VARCHAR(255)">
+            <column name="username_lower_case" type="VARCHAR(255)">
                 <constraints nullable="false"/>
             </column>
         </createTable>
         <ext:addGeneratedColumn tableName="kc_user">
-            <ext:column name="entityversion" type="INTEGER" jsonColumn="metadata" jsonProperty="entityVersion"/>
-            <ext:column name="realmid" type="KC_KEY" jsonColumn="metadata" jsonProperty="fRealmId"/>
+            <ext:column name="entity_version" type="INTEGER" jsonColumn="metadata" jsonProperty="entityVersion"/>
+            <ext:column name="realm_id" type="KC_KEY" jsonColumn="metadata" jsonProperty="fRealmId"/>
             <ext:column name="username" type="VARCHAR(255)" jsonColumn="metadata" jsonProperty="fUsername"/>
-            <ext:column name="firstname" type="VARCHAR(255)" jsonColumn="metadata" jsonProperty="fFirstName"/>
-            <ext:column name="lastname" type="VARCHAR(255)" jsonColumn="metadata" jsonProperty="fLastName"/>
+            <ext:column name="first_name" type="VARCHAR(255)" jsonColumn="metadata" jsonProperty="fFirstName"/>
+            <ext:column name="last_name" type="VARCHAR(255)" jsonColumn="metadata" jsonProperty="fLastName"/>
             <ext:column name="email" type="VARCHAR(255)" jsonColumn="metadata" jsonProperty="fEmail"/>
-            <ext:column name="emailconstraint" type="VARCHAR(255)" jsonColumn="metadata" jsonProperty="fEmailConstraint"/>
-            <ext:column name="federationlink" type="VARCHAR(255)" jsonColumn="metadata" jsonProperty="fFederationLink"/>
+            <ext:column name="email_constraint" type="VARCHAR(255)" jsonColumn="metadata" jsonProperty="fEmailConstraint"/>
+            <ext:column name="federation_link" type="VARCHAR(255)" jsonColumn="metadata" jsonProperty="fFederationLink"/>
             <ext:column name="enabled" type="BOOLEAN" jsonColumn="metadata" jsonProperty="fEnabled"/>
-            <ext:column name="emailverified" type="BOOLEAN" jsonColumn="metadata" jsonProperty="fEmailVerified"/>
+            <ext:column name="email_verified" type="BOOLEAN" jsonColumn="metadata" jsonProperty="fEmailVerified"/>
             <ext:column name="timestamp" type="BIGINT" jsonColumn="metadata" jsonProperty="fCreatedTimestamp"/>
         </ext:addGeneratedColumn>
-        <createIndex tableName="kc_user" indexName="user_entityVersion">
-            <column name="entityversion"/>
+        <createIndex tableName="kc_user" indexName="kc_user_entity_version">
+            <column name="entity_version"/>
         </createIndex>
-        <createIndex tableName="kc_user" indexName="user_realmId">
-            <column name="realmid"/>
+        <createIndex tableName="kc_user" indexName="kc_user_realm_id">
+            <column name="realm_id"/>
         </createIndex>
-        <createIndex tableName="kc_user" indexName="user_username_realmid">
+        <createIndex tableName="kc_user" indexName="kc_user_username_realm_id">
             <column name="username"/>
-            <column name="realmid"/>
+            <column name="realm_id"/>
         </createIndex>
-        <createIndex tableName="kc_user" indexName="user_username_lower_case_realmid">
-            <column name="usernamelowercase"/>
-            <column name="realmid"/>
+        <createIndex tableName="kc_user" indexName="user_username_lower_case_realm_id">
+            <column name="username_lower_case"/>
+            <column name="realm_id"/>
         </createIndex>
-        <createIndex tableName="kc_user" indexName="user_email_realmid">
+        <createIndex tableName="kc_user" indexName="kc_user_email_realm_id">
             <column name="email"/>
-            <column name="realmid"/>
+            <column name="realm_id"/>
         </createIndex>
-        <createIndex tableName="kc_user" indexName="user_email_constraint_realmid">
-            <column name="emailconstraint"/>
-            <column name="realmid"/>
+        <createIndex tableName="kc_user" indexName="kc_user_email_constraint_realm_id">
+            <column name="email_constraint"/>
+            <column name="realm_id"/>
         </createIndex>
         <!-- TODO: create individual indexes for all other searchable columns (firstname, lastname, enabled, etc) ? -->
-        <ext:createJsonIndex tableName="kc_user" indexName="user_serviceAccountClientLink">
+        <ext:createJsonIndex tableName="kc_user" indexName="kc_user_serviceAccountClientLink">
             <ext:column jsonColumn="metadata" jsonProperty="fServiceAccountClientLink"/>
         </ext:createJsonIndex>
 
@@ -84,20 +84,20 @@ limitations under the License.
                 <constraints nullable="false"/>
             </column>
             <column name="fk_root" type="UUID">
-                <constraints foreignKeyName="user_consent_fk_root_fkey" references="kc_user(id)" deleteCascade="true"/>
+                <constraints foreignKeyName="kc_user_consent_fk_root_fkey" references="kc_user(id)" deleteCascade="true"/>
             </column>
             <column name="metadata" type="json"/>
         </createTable>
         <ext:addGeneratedColumn tableName="kc_user_consent">
-            <ext:column name="clientid" type="KC_KEY" jsonColumn="metadata" jsonProperty="fClientId"/>
+            <ext:column name="client_id" type="KC_KEY" jsonColumn="metadata" jsonProperty="fClientId"/>
         </ext:addGeneratedColumn>
-        <createIndex tableName="kc_user_consent" indexName="user_consent_fk_root">
+        <createIndex tableName="kc_user_consent" indexName="kc_user_consent_fk_root">
             <column name="fk_root"/>
         </createIndex>
-        <createIndex tableName="kc_user_consent" indexName="user_consent_clientId">
-            <column name="clientid"/>
+        <createIndex tableName="kc_user_consent" indexName="kc_user_consent_clientId">
+            <column name="client_id"/>
         </createIndex>
-        <ext:createJsonIndex tableName="kc_user_consent" indexName="user_consent_grantedClientScopes">
+        <ext:createJsonIndex tableName="kc_user_consent" indexName="kc_user_consent_granted_client_scopes">
             <ext:column jsonColumn="metadata" jsonProperty="fGrantedClientScopesIds"/>
         </ext:createJsonIndex>
 
@@ -109,47 +109,47 @@ limitations under the License.
                 <constraints nullable="false"/>
             </column>
             <column name="fk_root" type="UUID">
-                <constraints foreignKeyName="user_federated_identity_fk_root_fkey" references="kc_user(id)" deleteCascade="true"/>
+                <constraints foreignKeyName="kc_user_federated_identity_fk_root_fkey" references="kc_user(id)" deleteCascade="true"/>
             </column>
             <column name="metadata" type="json"/>
         </createTable>
         <ext:addGeneratedColumn tableName="kc_user_federated_identity">
-            <ext:column name="identityprovider" type="VARCHAR(255)" jsonColumn="metadata" jsonProperty="fIdentityProvider"/>
-            <ext:column name="userid" type="KC_KEY" jsonColumn="metadata" jsonProperty="fUserId"/>
+            <ext:column name="identity_provider" type="VARCHAR(255)" jsonColumn="metadata" jsonProperty="fIdentityProvider"/>
+            <ext:column name="user_id" type="KC_KEY" jsonColumn="metadata" jsonProperty="fUserId"/>
         </ext:addGeneratedColumn>
-        <createIndex tableName="kc_user_federated_identity" indexName="user_federated_identity_fk_root">
+        <createIndex tableName="kc_user_federated_identity" indexName="kc_user_federated_identity_fk_root">
             <column name="fk_root"/>
         </createIndex>
-        <createIndex tableName="kc_user_federated_identity" indexName="user_federated_identity_idp">
-            <column name="identityprovider"/>
+        <createIndex tableName="kc_user_federated_identity" indexName="kc_user_federated_identity_idp">
+            <column name="identity_provider"/>
         </createIndex>
-        <createIndex tableName="kc_user_federated_identity" indexName="user_federated_identity_userId">
-            <column name="userid"/>
+        <createIndex tableName="kc_user_federated_identity" indexName="kc_user_federated_identity_user_id">
+            <column name="user_id"/>
         </createIndex>
 
         <createTable tableName="kc_user_group">
             <column name="user_id" type="UUID">
-                <constraints nullable="false" foreignKeyName="user_group_userid_fkey" references="kc_user(id)" deleteCascade="true"/>
+                <constraints nullable="false" foreignKeyName="kc_user_group_userid_fkey" references="kc_user(id)" deleteCascade="true"/>
             </column>
             <column name="group_id" type="KC_KEY"/>
         </createTable>
-        <createIndex tableName="kc_user_group" indexName="user_group_userId">
+        <createIndex tableName="kc_user_group" indexName="kc_user_group_userId">
             <column name="user_id"/>
         </createIndex>
-        <createIndex tableName="kc_user_group" indexName="user_group_groupId">
+        <createIndex tableName="kc_user_group" indexName="kc_user_group_groupId">
             <column name="group_id"/>
         </createIndex>
 
         <createTable tableName="kc_user_role">
             <column name="user_id" type="UUID">
-                <constraints nullable="false" foreignKeyName="user_role_userid_fkey" references="kc_user(id)" deleteCascade="true"/>
+                <constraints nullable="false" foreignKeyName="kc_user_role_userid_fkey" references="kc_user(id)" deleteCascade="true"/>
             </column>
             <column name="role_id" type="KC_KEY"/>
         </createTable>
-        <createIndex tableName="kc_user_role" indexName="user_role_userId">
+        <createIndex tableName="kc_user_role" indexName="kc_user_role_userId">
             <column name="user_id"/>
         </createIndex>
-        <createIndex tableName="kc_user_role" indexName="user_role_roleId">
+        <createIndex tableName="kc_user_role" indexName="kc_user_role_roleId">
             <column name="role_id"/>
         </createIndex>
 
@@ -158,15 +158,15 @@ limitations under the License.
                 <constraints primaryKey="true" nullable="false"/>
             </column>
             <column name="fk_root" type="UUID">
-                <constraints foreignKeyName="user_attr_fk_root_fkey" references="kc_user(id)" deleteCascade="true"/>
+                <constraints foreignKeyName="kc_user_attr_fk_root_fkey" references="kc_user(id)" deleteCascade="true"/>
             </column>
             <column name="name" type="VARCHAR(255)"/>
             <column name="value" type="TEXT"/>
         </createTable>
-        <createIndex tableName="kc_user_attribute" indexName="user_attr_fk_root">
+        <createIndex tableName="kc_user_attribute" indexName="kc_user_attr_fk_root">
             <column name="fk_root"/>
         </createIndex>
-        <createIndex tableName="kc_user_attribute" indexName="user_attr_name_value">
+        <createIndex tableName="kc_user_attribute" indexName="kc_user_attr_name_value">
             <column name="name"/>
             <column name="VALUE(255)" valueComputed="VALUE(255)"/>
         </createIndex>

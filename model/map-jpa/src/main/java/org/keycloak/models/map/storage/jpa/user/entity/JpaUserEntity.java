@@ -65,71 +65,71 @@ import static org.keycloak.models.map.storage.jpa.JpaMapStorageProviderFactory.C
 @Entity
 @Table(name = "kc_user",
         uniqueConstraints = {
-                @UniqueConstraint(columnNames = {"realmId", "username"}),
-                @UniqueConstraint(columnNames = {"realmId", "emailConstraint"})
+                @UniqueConstraint(columnNames = {"realm_id", "username"}),
+                @UniqueConstraint(columnNames = {"realm_id", "email_constraint"})
         })
 @TypeDefs({@TypeDef(name = "jsonb", typeClass = JsonbType.class)})
 @SuppressWarnings("ConstantConditions")
 public class JpaUserEntity extends MapUserEntity.AbstractUserEntity implements JpaRootVersionedEntity {
 
     @Id
-    @Column
+    @Column(name = "id")
     private UUID id;
 
     //used for implicit optimistic locking
     @Version
-    @Column
+    @Column(name = "version")
     private int version;
 
     @Type(type = "jsonb")
-    @Column(columnDefinition = "jsonb")
+    @Column(name = "metadata", columnDefinition = "jsonb")
     private final JpaUserMetadata metadata;
 
-    @Column(insertable = false, updatable = false)
+    @Column(name = "entity_version", insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
     private Integer entityVersion;
 
-    @Column(insertable = false, updatable = false)
+    @Column(name = "realm_id", insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
     private String realmId;
 
-    @Column(insertable = false, updatable = false)
+    @Column(name = "username", insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
     private String username;
 
-    @Column
+    @Column(name = "username_lower_case")
     @Basic(fetch = FetchType.LAZY)
     private String usernameLowerCase;
 
-    @Column(insertable = false, updatable = false)
+    @Column(name = "first_name", insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
     private String firstName;
 
-    @Column(insertable = false, updatable = false)
+    @Column(name = "last_name", insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
     private String lastName;
 
-    @Column(insertable = false, updatable = false)
+    @Column(name = "email", insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
     private String email;
 
-    @Column(insertable = false, updatable = false)
+    @Column(name = "email_constraint", insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
     private String emailConstraint;
 
-    @Column(insertable = false, updatable = false)
+    @Column(name = "federation_link", insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
     private String federationLink;
 
-    @Column(insertable = false, updatable = false)
+    @Column(name = "enabled", insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
     private Boolean enabled;
 
-    @Column(insertable = false, updatable = false)
+    @Column(name = "email_verified", insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
     private Boolean emailVerified;
 
-    @Column(insertable = false, updatable = false)
+    @Column(name = "timestamp", insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
     private Long timestamp;
 

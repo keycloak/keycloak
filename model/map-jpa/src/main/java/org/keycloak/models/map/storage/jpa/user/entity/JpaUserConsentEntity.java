@@ -49,22 +49,22 @@ import org.keycloak.models.map.user.MapUserConsentEntity;
 @Entity
 @Table(name = "kc_user_consent",
         uniqueConstraints = {
-                @UniqueConstraint(columnNames = {"clientId"})
+                @UniqueConstraint(columnNames = {"client_id"})
         })
 @TypeDefs({@TypeDef(name = "jsonb", typeClass = JsonbType.class)})
 public class JpaUserConsentEntity extends UpdatableEntity.Impl implements MapUserConsentEntity, JpaChildEntity<JpaUserEntity> {
 
     @Id
-    @Column
+    @Column(name = "id")
     @GeneratedValue
     private UUID id;
 
-    @Column(insertable = false, updatable = false)
+    @Column(name = "client_id", insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
     private String clientId;
 
     @Type(type = "jsonb")
-    @Column(columnDefinition = "jsonb")
+    @Column(name = "metadata", columnDefinition = "jsonb")
     private final JpaUserConsentMetadata metadata;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -77,6 +77,10 @@ public class JpaUserConsentEntity extends UpdatableEntity.Impl implements MapUse
 
     public JpaUserConsentEntity(final DeepCloner cloner) {
         this.metadata = new JpaUserConsentMetadata(cloner);
+    }
+
+    public boolean isMetadataInitialized() {
+        return metadata != null;
     }
 
     public Integer getEntityVersion() {
@@ -98,7 +102,8 @@ public class JpaUserConsentEntity extends UpdatableEntity.Impl implements MapUse
 
     @Override
     public String getClientId() {
-        return this.metadata.getClientId();
+        if (isMetadataInitialized()) return this.metadata.getClientId();
+        return clientId;
     }
 
     @Override

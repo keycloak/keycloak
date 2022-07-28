@@ -50,20 +50,24 @@ import org.keycloak.models.map.user.MapUserFederatedIdentityEntity;
 public class JpaUserFederatedIdentityEntity extends UpdatableEntity.Impl implements MapUserFederatedIdentityEntity, JpaChildEntity<JpaUserEntity> {
 
     @Id
-    @Column
+    @Column(name = "id")
     @GeneratedValue
     private UUID id;
 
-    @Column(insertable = false, updatable = false)
+    @Column(name = "entity_version", insertable = false, updatable = false)
+    @Basic(fetch = FetchType.LAZY)
+    private Integer entityVersion;
+
+    @Column(name = "identity_provider", insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
     private String identityProvider;
 
-    @Column(insertable = false, updatable = false)
+    @Column(name = "user_id", insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
     private String userId;
 
     @Type(type = "jsonb")
-    @Column(columnDefinition = "jsonb")
+    @Column(name = "metadata", columnDefinition = "jsonb")
     private final JpaUserFederatedIdentityMetadata metadata;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -78,8 +82,13 @@ public class JpaUserFederatedIdentityEntity extends UpdatableEntity.Impl impleme
         this.metadata = new JpaUserFederatedIdentityMetadata(cloner);
     }
 
+    public boolean isMetadataInitialized() {
+        return metadata != null;
+    }
+
     public Integer getEntityVersion() {
-        return this.metadata.getEntityVersion();
+        if (isMetadataInitialized()) return this.metadata.getEntityVersion();
+        return entityVersion;
     }
 
     public void setEntityVersion(Integer version) {
@@ -107,7 +116,8 @@ public class JpaUserFederatedIdentityEntity extends UpdatableEntity.Impl impleme
 
     @Override
     public String getUserId() {
-        return this.metadata.getUserId();
+        if (isMetadataInitialized()) return this.metadata.getUserId();
+        return userId;
     }
 
     @Override
@@ -117,7 +127,8 @@ public class JpaUserFederatedIdentityEntity extends UpdatableEntity.Impl impleme
 
     @Override
     public String getIdentityProvider() {
-        return this.metadata.getIdentityProvider();
+        if (isMetadataInitialized()) return this.metadata.getIdentityProvider();
+        return identityProvider;
     }
 
     @Override
