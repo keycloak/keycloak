@@ -2,9 +2,11 @@
 [[_operator]]
 == {project_operator}
 
+ifeval::[{project_community}==true]
 :tech_feature_name: The {project_name} Operator
 :tech_feature_disabled: false
 include::templates/techpreview.adoc[]
+endif::[]
 
 The {project_operator} automates {project_name} administration in
 ifeval::[{project_community}==true]
