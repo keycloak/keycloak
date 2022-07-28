@@ -63,6 +63,12 @@ Apart from disabling the /q/ endpoints, these are the other improvements made to
 Expect more enhancements in this area in the future.
 For more information, see the https://www.keycloak.org/server/health[Health guide]
 
+= Changes using GELF / centralized log management
+
+As stated in the release notes, Keycloak now supports gelf logging for centralized logging systems out of the box.
+
+When you added the gelf related quarkus jars yourself in a prior version, make sure to switch to the supported configuration options in the https://www.keycloak.org/server/logging#_centralized_logging_using_gelf[logging guide] and remove your jars from the `providers` folder.
+
 = Changes affecting developers
 
 {project_name} undergoes large refactoring, which impacts existing code.
