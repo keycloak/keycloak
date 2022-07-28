@@ -43,52 +43,54 @@ import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
  * therefore marked as non-insertable and non-updatable to instruct hibernate.
  */
 @Entity
-@Table(name = "kc_authz_permission", uniqueConstraints = {@UniqueConstraint(columnNames = {"realmId", "resourceServerId", "scopeId", "resourceId", "owner", "requester"})})
+@Table(name = "kc_authz_permission", uniqueConstraints = {
+    @UniqueConstraint(columnNames = {"realm_id", "resource_server_id", "scope_id", "resource_id", "owner", "requester"})
+})
 @TypeDefs({@TypeDef(name = "jsonb", typeClass = JsonbType.class)})
 public class JpaPermissionEntity extends AbstractMapPermissionTicketEntity implements JpaRootVersionedEntity {
 
     @Id
-    @Column
+    @Column(name = "id")
     private UUID id;
 
     //used for implicit optimistic locking
     @Version
-    @Column
+    @Column(name = "version")
     private int version;
 
     @Type(type = "jsonb")
-    @Column(columnDefinition = "jsonb")
+    @Column(name = "metadata", columnDefinition = "jsonb")
     private final JpaPermissionMetadata metadata;
 
-    @Column(insertable = false, updatable = false)
+    @Column(name = "entity_version", insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
     private Integer entityVersion;
 
-    @Column(insertable = false, updatable = false)
+    @Column(name = "realm_id", insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
     private String realmId;
 
-    @Column(insertable = false, updatable = false)
+    @Column(name = "owner", insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
     private String owner;
 
-    @Column(insertable = false, updatable = false)
+    @Column(name = "requester", insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
     private String requester;
 
-    @Column(insertable = false, updatable = false)
+    @Column(name = "resource_server_id", insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
     private UUID resourceServerId;
 
-    @Column(insertable = false, updatable = false)
+    @Column(name = "scope_id", insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
     private UUID scopeId;
 
-    @Column(insertable = false, updatable = false)
+    @Column(name = "policy_id", insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
     private UUID policyId;
 
-    @Column(insertable = false, updatable = false)
+    @Column(name = "resource_id", insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
     private UUID resourceId;
 

@@ -35,17 +35,17 @@ limitations under the License.
             <column name="metadata" type="json"/>
         </createTable>
         <ext:addGeneratedColumn tableName="kc_authz_scope">
-            <ext:column name="entityversion" type="INTEGER" jsonColumn="metadata" jsonProperty="entityVersion"/>
-            <ext:column name="realmid" type="KC_KEY" jsonColumn="metadata" jsonProperty="fRealmId"/>
-            <ext:column name="resourceserverid" type="UUID" jsonColumn="metadata" jsonProperty="fResourceServerId"/>
+            <ext:column name="entity_version" type="INTEGER" jsonColumn="metadata" jsonProperty="entityVersion"/>
+            <ext:column name="realm_id" type="KC_KEY" jsonColumn="metadata" jsonProperty="fRealmId"/>
+            <ext:column name="resource_server_id" type="UUID" jsonColumn="metadata" jsonProperty="fResourceServerId"/>
             <ext:column name="name" type="VARCHAR(255)" jsonColumn="metadata" jsonProperty="fName"/>
         </ext:addGeneratedColumn>
-        <createIndex tableName="kc_authz_scope" indexName="authz_scope_entityVersion">
-            <column name="entityversion"/>
+        <createIndex tableName="kc_authz_scope" indexName="kc_authz_scope_entity_version">
+            <column name="entity_version"/>
         </createIndex>
-        <createIndex tableName="kc_authz_scope" indexName="authz_scope_realm_resource_server_name" unique="true">
-            <column name="realmid"/>
-            <column name="resourceserverid"/>
+        <createIndex tableName="kc_authz_scope" indexName="kc_authz_scope_realm_id_resource_server_id_name" unique="true">
+            <column name="realm_id"/>
+            <column name="resource_server_id"/>
             <column name="name"/>
         </createIndex>
     </changeSet>
@@ -53,9 +53,9 @@ limitations under the License.
     <!-- unimplemented on CockroachDB: computed column "XXX" cannot reference a foreign key
          See: https://go.crdb.dev/issue-v/46672/v21.2 -->
     <changeSet author="keycloak" id="authz-scope-2" dbms="postgresql">
-        <addForeignKeyConstraint constraintName="authz_scope_fk_root_fkey"
+        <addForeignKeyConstraint constraintName="kc_authz_scope_fk_root_fkey"
                                  baseTableName="kc_authz_scope"
-                                 baseColumnNames="resourceserverid"
+                                 baseColumnNames="resource_server_id"
                                  referencedTableName="kc_authz_resource_server"
                                  referencedColumnNames="id"
                                  onDelete="CASCADE"/>
@@ -63,9 +63,9 @@ limitations under the License.
     </changeSet>
 
     <changeSet author="keycloak" id="authz-scope-3" dbms="cockroachdb">
-        <!-- placeholder for foreign key on computed column to allow fast looking by resourceserverid -->
-        <createIndex tableName="kc_authz_scope" indexName="authz_scope_fk_root_fkey">
-            <column name="resourceserverid"/>
+        <!-- placeholder for foreign key on computed column to allow fast looking by resource_server_id -->
+        <createIndex tableName="kc_authz_scope" indexName="kc_authz_scope_fk_root_fkey">
+            <column name="resource_server_id"/>
         </createIndex>
     </changeSet>
 

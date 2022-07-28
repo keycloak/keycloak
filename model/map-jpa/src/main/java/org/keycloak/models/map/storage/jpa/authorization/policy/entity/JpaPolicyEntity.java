@@ -55,44 +55,44 @@ import org.keycloak.representations.idm.authorization.Logic;
  * therefore marked as non-insertable and non-updatable to instruct hibernate.
  */
 @Entity
-@Table(name = "kc_authz_policy", uniqueConstraints = {@UniqueConstraint(columnNames = {"realmId", "resourceServerId", "name"})})
+@Table(name = "kc_authz_policy", uniqueConstraints = {@UniqueConstraint(columnNames = {"realm_id", "resource_server_id", "name"})})
 @TypeDefs({@TypeDef(name = "jsonb", typeClass = JsonbType.class)})
 public class JpaPolicyEntity extends AbstractMapPolicyEntity implements JpaRootVersionedEntity {
 
     @Id
-    @Column
+    @Column(name = "id")
     private UUID id;
 
     //used for implicit optimistic locking
     @Version
-    @Column
+    @Column(name = "version")
     private int version;
 
     @Type(type = "jsonb")
-    @Column(columnDefinition = "jsonb")
+    @Column(name = "metadata", columnDefinition = "jsonb")
     private final JpaPolicyMetadata metadata;
 
-    @Column(insertable = false, updatable = false)
+    @Column(name = "entity_version", insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
     private Integer entityVersion;
 
-    @Column(insertable = false, updatable = false)
+    @Column(name = "realm_id", insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
     private String realmId;
 
-    @Column(insertable = false, updatable = false)
+    @Column(name = "resource_server_id", insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
     private UUID resourceServerId;
 
-    @Column(insertable = false, updatable = false)
+    @Column(name = "name", insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
     private String name;
 
-    @Column(insertable = false, updatable = false)
+    @Column(name = "owner", insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
     private String owner;
 
-    @Column(insertable = false, updatable = false)
+    @Column(name = "type", insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
     private String type;
 

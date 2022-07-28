@@ -34,51 +34,51 @@ limitations under the License.
             <column name="metadata" type="json"/>
         </createTable>
         <ext:addGeneratedColumn tableName="kc_authz_resource">
-            <ext:column name="entityversion" type="INTEGER" jsonColumn="metadata" jsonProperty="entityVersion"/>
-            <ext:column name="realmid" type="KC_KEY" jsonColumn="metadata" jsonProperty="fRealmId"/>
-            <ext:column name="resourceserverid" type="UUID" jsonColumn="metadata" jsonProperty="fResourceServerId"/>
+            <ext:column name="entity_version" type="INTEGER" jsonColumn="metadata" jsonProperty="entityVersion"/>
+            <ext:column name="realm_id" type="KC_KEY" jsonColumn="metadata" jsonProperty="fRealmId"/>
+            <ext:column name="resource_server_id" type="UUID" jsonColumn="metadata" jsonProperty="fResourceServerId"/>
             <ext:column name="name" type="VARCHAR(255)" jsonColumn="metadata" jsonProperty="fName"/>
             <ext:column name="type" type="VARCHAR(255)" jsonColumn="metadata" jsonProperty="fType"/>
             <ext:column name="owner" type="KC_KEY" jsonColumn="metadata" jsonProperty="fOwner"/>
         </ext:addGeneratedColumn>
-        <createIndex tableName="kc_authz_resource" indexName="authz_res_entityVersion">
-            <column name="entityversion"/>
+        <createIndex tableName="kc_authz_resource" indexName="kc_authz_resource_entity_version">
+            <column name="entity_version"/>
         </createIndex>
-        <createIndex tableName="kc_authz_resource" indexName="authz_res_realm_resource_server_owner">
-            <column name="realmid"/>
-            <column name="resourceserverid"/>
+        <createIndex tableName="kc_authz_resource" indexName="kc_authz_resource_realm_id_resource_server_id_owner">
+            <column name="realm_id"/>
+            <column name="resource_server_id"/>
             <column name="owner"/>
         </createIndex>
-        <createIndex tableName="kc_authz_resource" indexName="authz_res_type">
+        <createIndex tableName="kc_authz_resource" indexName="kc_authz_resource_type">
             <column name="type"/>
         </createIndex>
-        <createIndex tableName="kc_authz_resource" indexName="authz_res_name">
+        <createIndex tableName="kc_authz_resource" indexName="kc_authz_resource_name">
             <column name="name"/>
         </createIndex>
-        <addUniqueConstraint tableName="kc_authz_resource" columnNames="realmid, resourceserverid, name, owner"/>
+        <addUniqueConstraint tableName="kc_authz_resource" columnNames="realm_id, resource_server_id, name, owner"/>
 
         <createTable tableName="kc_authz_resource_scope">
             <column name="resource_id" type="UUID">
-                <constraints nullable="false" foreignKeyName="authz_resource_resource_fk" references="kc_authz_resource(id)" deleteCascade="true"/>
+                <constraints nullable="false" foreignKeyName="kc_authz_resource_resource_fk" references="kc_authz_resource(id)" deleteCascade="true"/>
             </column>
             <column name="scope_id" type="UUID">
-                <constraints nullable="false" foreignKeyName="authz_resource_scope_fk" references="kc_authz_scope(id)" deleteCascade="true"/>
+                <constraints nullable="false" foreignKeyName="kc_authz_resource_scope_fk" references="kc_authz_scope(id)" deleteCascade="true"/>
             </column>
         </createTable>
-        <createIndex tableName="kc_authz_resource_scope" indexName="authz_resource_scope_resource_id">
+        <createIndex tableName="kc_authz_resource_scope" indexName="kc_authz_resource_scope_resource_id">
             <column name="resource_id"/>
         </createIndex>
-        <createIndex tableName="kc_authz_resource_scope" indexName="authz_resource_scope_scope_id">
+        <createIndex tableName="kc_authz_resource_scope" indexName="kc_authz_resource_scope_scope_id">
             <column name="scope_id"/>
         </createIndex>
 
         <createTable tableName="kc_authz_resource_uri">
             <column name="resource_id" type="UUID">
-                <constraints nullable="false" foreignKeyName="authz_resource_attr_fk" references="kc_authz_resource(id)" deleteCascade="true"/>
+                <constraints nullable="false" foreignKeyName="kc_authz_resource_attr_fk" references="kc_authz_resource(id)" deleteCascade="true"/>
             </column>
             <column name="uri" type="VARCHAR(255)"/>
         </createTable>
-        <createIndex tableName="kc_authz_resource_uri" indexName="authz_resource_uri">
+        <createIndex tableName="kc_authz_resource_uri" indexName="kc_authz_resource_uri_resource_id">
             <column name="resource_id"/>
         </createIndex>
 
@@ -87,15 +87,15 @@ limitations under the License.
                 <constraints primaryKey="true" nullable="false"/>
             </column>
             <column name="fk_root" type="UUID">
-                <constraints nullable="false" foreignKeyName="authz_resource_attr_fk" references="kc_authz_resource(id)" deleteCascade="true"/>
+                <constraints nullable="false" foreignKeyName="kc_authz_resource_attr_fk" references="kc_authz_resource(id)" deleteCascade="true"/>
             </column>
             <column name="name" type="VARCHAR(255)"/>
             <column name="value" type="text"/>
         </createTable>
-        <createIndex tableName="kc_authz_resource_attribute" indexName="authz_resource_attr_fk_root">
+        <createIndex tableName="kc_authz_resource_attribute" indexName="kc_authz_resource_attr_fk_root">
             <column name="fk_root"/>
         </createIndex>
-        <createIndex tableName="kc_authz_resource_attribute" indexName="authz_resource_attr_name_value">
+        <createIndex tableName="kc_authz_resource_attribute" indexName="kc_authz_resource_attr_name_value">
             <column name="name"/>
             <column name="VALUE(255)" valueComputed="VALUE(255)"/>
         </createIndex>
@@ -114,18 +114,18 @@ limitations under the License.
 
         <!-- unimplemented on CockroachDB: computed column "XXX" cannot reference a foreign key
              See: https://go.crdb.dev/issue-v/46672/v21.2 -->
-        <addForeignKeyConstraint constraintName="authz_resource_fk_root_fkey"
+        <addForeignKeyConstraint constraintName="kc_authz_resource_fk_root_fkey"
                                  baseTableName="kc_authz_resource"
-                                 baseColumnNames="resourceserverid"
+                                 baseColumnNames="resource_server_id"
                                  referencedTableName="kc_authz_resource_server"
                                  referencedColumnNames="id"
                                  onDelete="CASCADE"/>
     </changeSet>
 
     <changeSet author="keycloak" id="authz-resource-3" dbms="cockroachdb">
-        <!-- placeholder for foreign key on computed column to allow fast looking by resourceserverid -->
-        <createIndex tableName="kc_authz_resource" indexName="authz_resource_fk_root_fkey">
-            <column name="resourceserverid"/>
+        <!-- placeholder for foreign key on computed column to allow fast looking by resource_server_id -->
+        <createIndex tableName="kc_authz_resource" indexName="kc_authz_resource_fk_root_fkey">
+            <column name="resource_server_id"/>
         </createIndex>
     </changeSet>
 

@@ -45,32 +45,32 @@ import org.keycloak.representations.idm.authorization.PolicyEnforcementMode;
  * therefore marked as non-insertable and non-updatable to instruct hibernate.
  */
 @Entity
-@Table(name = "kc_authz_resource_server", uniqueConstraints = {@UniqueConstraint(columnNames = {"realmId", "clientId"})})
+@Table(name = "kc_authz_resource_server", uniqueConstraints = {@UniqueConstraint(columnNames = {"realm_id", "client_id"})})
 @TypeDefs({@TypeDef(name = "jsonb", typeClass = JsonbType.class)})
 public class JpaResourceServerEntity extends AbstractMapResourceServerEntity implements JpaRootVersionedEntity {
 
     @Id
-    @Column
+    @Column(name = "id")
     private UUID id;
 
     //used for implicit optimistic locking
     @Version
-    @Column
+    @Column(name = "version")
     private int version;
 
     @Type(type = "jsonb")
-    @Column(columnDefinition = "jsonb")
+    @Column(name = "metadata", columnDefinition = "jsonb")
     private final JpaResourceServerMetadata metadata;
 
-    @Column(insertable = false, updatable = false)
+    @Column(name = "entity_version", insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
     private Integer entityVersion;
 
-    @Column(insertable = false, updatable = false)
+    @Column(name = "realm_id", insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
     private String realmId;
 
-    @Column(insertable = false, updatable = false)
+    @Column(name = "client_id", insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
     private String clientId;
 
