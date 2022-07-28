@@ -79,35 +79,35 @@ import static org.keycloak.models.map.storage.jpa.JpaMapStorageProviderFactory.C
 public class JpaRealmEntity extends MapRealmEntity.AbstractRealmEntity implements JpaRootVersionedEntity {
 
     @Id
-    @Column
+    @Column(name = "id")
     private UUID id;
 
     //used for implicit optimistic locking
     @Version
-    @Column
+    @Column(name = "version")
     private int version;
 
     @Type(type = "jsonb")
-    @Column(columnDefinition = "jsonb")
+    @Column(name = "metadata", columnDefinition = "jsonb")
     private final JpaRealmMetadata metadata;
 
-    @Column(insertable = false, updatable = false)
+    @Column(name = "entity_version", insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
     private Integer entityVersion;
 
-    @Column(insertable = false, updatable = false)
+    @Column(name = "name", insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
     private String name;
 
-    @Column(insertable = false, updatable = false)
+    @Column(name = "display_name", insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
     private String displayName;
 
-    @Column(insertable = false, updatable = false)
+    @Column(name = "display_name_html", insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
     private String displayNameHtml;
 
-    @Column(insertable = false, updatable = false)
+    @Column(name = "enabled", insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
     private Boolean enabled;
 

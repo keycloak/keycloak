@@ -34,19 +34,19 @@ limitations under the License.
             <column name="metadata" type="json"/>
         </createTable>
         <ext:addGeneratedColumn tableName="kc_realm">
-            <ext:column name="entityversion" type="INTEGER" jsonColumn="metadata" jsonProperty="entityVersion"/>
+            <ext:column name="entity_version" type="INTEGER" jsonColumn="metadata" jsonProperty="entityVersion"/>
             <ext:column name="name" type="VARCHAR(255)" jsonColumn="metadata" jsonProperty="fName"/>
-            <ext:column name="displayname" type="TEXT" jsonColumn="metadata" jsonProperty="fDisplayName"/>
-            <ext:column name="displaynamehtml" type="TEXT" jsonColumn="metadata" jsonProperty="fDisplayNameHtml"/>
+            <ext:column name="display_name" type="TEXT" jsonColumn="metadata" jsonProperty="fDisplayName"/>
+            <ext:column name="display_name_html" type="TEXT" jsonColumn="metadata" jsonProperty="fDisplayNameHtml"/>
             <ext:column name="enabled" type="BOOLEAN" jsonColumn="metadata" jsonProperty="fEnabled"/>
         </ext:addGeneratedColumn>
-        <createIndex tableName="kc_realm" indexName="realm_entityVersion">
-            <column name="entityversion"/>
+        <createIndex tableName="kc_realm" indexName="kc_realm_entity_version">
+            <column name="entity_version"/>
         </createIndex>
-        <createIndex tableName="kc_realm" indexName="realm_name" unique="true">
+        <createIndex tableName="kc_realm" indexName="kc_realm_name" unique="true">
             <column name="name"/>
         </createIndex>
-        <ext:createJsonIndex tableName="kc_realm" indexName="realm_clientInitialAccesses">
+        <ext:createJsonIndex tableName="kc_realm" indexName="kc_realm_client_initial_accesses">
             <ext:column jsonColumn="metadata" jsonProperty="fClientInitialAccesses"/>
         </ext:createJsonIndex>
 
@@ -58,18 +58,22 @@ limitations under the License.
                 <constraints nullable="false"/>
             </column>
             <column name="fk_root" type="UUID">
-                <constraints foreignKeyName="component_fk_root_fkey" references="kc_realm(id)" deleteCascade="true"/>
+                <constraints foreignKeyName="kc_component_fk_root_fkey" references="kc_realm(id)" deleteCascade="true"/>
             </column>
             <column name="metadata" type="json"/>
         </createTable>
         <ext:addGeneratedColumn tableName="kc_component">
-            <ext:column name="providertype" type="VARCHAR(255)" jsonColumn="metadata" jsonProperty="fProviderType"/>
+            <ext:column name="entity_version" type="INTEGER" jsonColumn="metadata" jsonProperty="entityVersion"/>
+            <ext:column name="provider_type" type="VARCHAR(255)" jsonColumn="metadata" jsonProperty="fProviderType"/>
         </ext:addGeneratedColumn>
-        <createIndex tableName="kc_component" indexName="component_fk_root">
+        <createIndex tableName="kc_component" indexName="kc_component_entity_version">
+            <column name="entity_version"/>
+        </createIndex>
+        <createIndex tableName="kc_component" indexName="kc_component_fk_root">
             <column name="fk_root"/>
         </createIndex>
-        <createIndex tableName="kc_component" indexName="component_componentType">
-            <column name="providertype"/>
+        <createIndex tableName="kc_component" indexName="kc_component_component_type">
+            <column name="provider_type"/>
         </createIndex>
 
         <createTable tableName="kc_realm_attribute">
@@ -77,15 +81,15 @@ limitations under the License.
                 <constraints primaryKey="true" nullable="false"/>
             </column>
             <column name="fk_root" type="UUID">
-                <constraints foreignKeyName="realm_attr_fk_root_fkey" references="kc_realm(id)" deleteCascade="true"/>
+                <constraints foreignKeyName="kc_realm_attr_fk_root_fkey" references="kc_realm(id)" deleteCascade="true"/>
             </column>
             <column name="name" type="VARCHAR(255)"/>
             <column name="value" type="TEXT"/>
         </createTable>
-        <createIndex tableName="kc_realm_attribute" indexName="realm_attr_fk_root">
+        <createIndex tableName="kc_realm_attribute" indexName="kc_realm_attr_fk_root">
             <column name="fk_root"/>
         </createIndex>
-        <createIndex tableName="kc_realm_attribute" indexName="realm_attr_name_value">
+        <createIndex tableName="kc_realm_attribute" indexName="kc_realm_attr_name_value">
             <column name="name"/>
             <column name="VALUE(255)" valueComputed="VALUE(255)"/>
         </createIndex>

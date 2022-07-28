@@ -65,20 +65,24 @@ import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
 public class JpaComponentEntity extends UpdatableEntity.Impl implements MapComponentEntity, JpaRootVersionedEntity {
 
     @Id
-    @Column
+    @Column(name = "id")
     private UUID id;
 
     //used for implicit optimistic locking
     @Version
-    @Column
+    @Column(name = "version")
     private int version;
 
-    @Column(insertable = false, updatable = false)
+    @Column(name = "entity_version", insertable = false, updatable = false)
+    @Basic(fetch = FetchType.LAZY)
+    private Integer entityVersion;
+
+    @Column(name = "provider_type", insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
     private String providerType;
 
     @Type(type = "jsonb")
-    @Column(columnDefinition = "jsonb")
+    @Column(name = "metadata", columnDefinition = "jsonb")
     private final JpaComponentMetadata metadata;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -117,7 +121,8 @@ public class JpaComponentEntity extends UpdatableEntity.Impl implements MapCompo
 
     @Override
     public Integer getEntityVersion() {
-        return this.metadata.getEntityVersion();
+        if (isMetadataInitialized()) return metadata.getEntityVersion();
+        return entityVersion;
     }
 
     @Override
