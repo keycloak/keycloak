@@ -35,47 +35,41 @@ limitations under the License.
             <column name="metadata" type="json"/>
         </createTable>
         <ext:addGeneratedColumn tableName="kc_role">
-            <ext:column name="entityversion" type="INTEGER" jsonColumn="metadata" jsonProperty="entityVersion"/>
-            <ext:column name="realmid" type="KC_KEY" jsonColumn="metadata" jsonProperty="fRealmId"/>
-            <ext:column name="clientid" type="KC_KEY" jsonColumn="metadata" jsonProperty="fClientId"/>
+            <ext:column name="entity_version" type="INTEGER" jsonColumn="metadata" jsonProperty="entityVersion"/>
+            <ext:column name="realm_id" type="KC_KEY" jsonColumn="metadata" jsonProperty="fRealmId"/>
+            <ext:column name="client_id" type="KC_KEY" jsonColumn="metadata" jsonProperty="fClientId"/>
             <ext:column name="name" type="VARCHAR(255)" jsonColumn="metadata" jsonProperty="fName"/>
             <ext:column name="description" type="VARCHAR(255)" jsonColumn="metadata" jsonProperty="fDescription"/>
         </ext:addGeneratedColumn>
-        <createIndex tableName="kc_role" indexName="role_entityVersion">
-            <column name="entityversion"/>
+        <createIndex tableName="kc_role" indexName="kc_role_entity_version">
+            <column name="entity_version"/>
         </createIndex>
-        <createIndex tableName="kc_role" indexName="role_realmId_clientid_name" unique="true">
-            <column name="realmid"/>
-            <column name="clientid"/>
+        <createIndex tableName="kc_role" indexName="kc_role_realm_id_client_id_name" unique="true">
+            <column name="realm_id"/>
+            <column name="client_id"/>
             <column name="name"/>
         </createIndex>
-        <!--    
-        <ext:createJsonIndex tableName="role" indexName="role_gin">
-            <ext:column jsonColumn="metadata" jsonProperty="fName"/>
-            <ext:column jsonColumn="metadata" jsonProperty="fDescription"/>
-        </ext:createJsonIndex>
-        -->
 
         <createTable tableName="kc_role_attribute">
             <column name="id" type="UUID">
                 <constraints primaryKey="true" nullable="false"/>
             </column>
             <column name="fk_root" type="UUID">
-                <constraints foreignKeyName="role_attr_fk_root_fkey" references="kc_role(id)" deleteCascade="true"/>
+                <constraints foreignKeyName="kc_role_attr_fk_root_fkey" references="kc_role(id)" deleteCascade="true"/>
             </column>
             <column name="name" type="VARCHAR(255)"/>
             <column name="value" type="text"/>
         </createTable>
-        <createIndex tableName="kc_role_attribute" indexName="role_attr_fk_root">
+        <createIndex tableName="kc_role_attribute" indexName="kc_role_attr_fk_root">
             <column name="fk_root"/>
         </createIndex>
-        <createIndex tableName="kc_role_attribute" indexName="role_attr_name_value">
+        <createIndex tableName="kc_role_attribute" indexName="kc_role_attr_name_value">
             <column name="name"/>
             <column name="VALUE(255)" valueComputed="VALUE(255)"/>
         </createIndex>
         <createTable tableName="kc_role_composite">
             <column name="role_id" type="UUID">
-                <constraints foreignKeyName="role_composite_fk_root_fkey" references="kc_role(id)" deleteCascade="true" nullable="false"/>
+                <constraints foreignKeyName="kc_role_composite_fk_root_fkey" references="kc_role(id)" deleteCascade="true" nullable="false"/>
             </column>
             <column name="child_role_id" type="KC_KEY">
                 <constraints nullable="false"/>
@@ -84,7 +78,7 @@ limitations under the License.
         <!-- this primary key will also be used to search by role_id -->
         <addPrimaryKey columnNames="role_id, child_role_id"
                        tableName="kc_role_composite" />
-        <createIndex tableName="kc_role_composite" indexName="role_composite_child_role_id">
+        <createIndex tableName="kc_role_composite" indexName="kc_role_composite_child_role_id">
             <column name="child_role_id"/>
         </createIndex>
         <modifySql dbms="postgresql,cockroachdb">

@@ -41,7 +41,7 @@ import org.hibernate.annotations.TypeDefs;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.UuidValidator;
 import org.keycloak.models.map.role.MapRoleEntity.AbstractRoleEntity;
-import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_ROLE;
+import org.keycloak.models.map.storage.jpa.Constants;
 import org.keycloak.models.map.storage.jpa.JpaRootVersionedEntity;
 import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
 
@@ -51,40 +51,40 @@ import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
  * therefore marked as non-insertable and non-updatable to instruct hibernate.
  */
 @Entity
-@Table(name = "kc_role", uniqueConstraints = {@UniqueConstraint(columnNames = {"realmId", "clientId", "name"})})
+@Table(name = "kc_role", uniqueConstraints = {@UniqueConstraint(columnNames = {"realm_id", "client_id", "name"})})
 @TypeDefs({@TypeDef(name = "jsonb", typeClass = JsonbType.class)})
 public class JpaRoleEntity extends AbstractRoleEntity implements JpaRootVersionedEntity {
 
     @Id
-    @Column
+    @Column(name = "id")
     private UUID id;
 
     //used for implicit optimistic locking
     @Version
-    @Column
+    @Column(name = "version")
     private int version;
 
     @Type(type = "jsonb")
-    @Column(columnDefinition = "jsonb")
+    @Column(name = "metadata", columnDefinition = "jsonb")
     private final JpaRoleMetadata metadata;
 
-    @Column(insertable = false, updatable = false)
+    @Column(name = "entity_version", insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
     private Integer entityVersion;
 
-    @Column(insertable = false, updatable = false)
+    @Column(name = "realm_id", insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
     private String realmId;
 
-    @Column(insertable = false, updatable = false)
+    @Column(name = "client_id", insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
     private String clientId;
 
-    @Column(insertable = false, updatable = false)
+    @Column(name = "name", insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
     private String name;
 
-    @Column(insertable = false, updatable = false)
+    @Column(name = "description", insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
     private String description;
 
@@ -123,7 +123,7 @@ public class JpaRoleEntity extends AbstractRoleEntity implements JpaRootVersione
 
     @Override
     public Integer getCurrentSchemaVersion() {
-        return CURRENT_SCHEMA_VERSION_ROLE;
+        return Constants.CURRENT_SCHEMA_VERSION_ROLE;
     }
 
     @Override
