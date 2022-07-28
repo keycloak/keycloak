@@ -169,7 +169,7 @@ public final class Help extends CommandLine.Help {
 
         if (isUnsupportedOption) {
             // unsupported options removed from help if all options are not requested
-            return allOptions;
+            return !option.hidden() && allOptions;
         }
 
         return !option.hidden();
