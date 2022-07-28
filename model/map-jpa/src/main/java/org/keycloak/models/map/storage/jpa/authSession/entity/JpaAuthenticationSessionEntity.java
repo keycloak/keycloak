@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import javax.persistence.Basic;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -49,17 +50,21 @@ import org.keycloak.sessions.CommonClientSessionModel;
 public class JpaAuthenticationSessionEntity extends UpdatableEntity.Impl implements MapAuthenticationSessionEntity, JpaRootVersionedEntity {
 
     @Id
-    @Column
+    @Column(name = "id")
     @GeneratedValue
     private UUID id;
 
     //used for implicit optimistic locking
     @Version
-    @Column
+    @Column(name = "version")
     private int version;
 
+    @Column(name = "entity_version", insertable = false, updatable = false)
+    @Basic(fetch = FetchType.LAZY)
+    private Integer entityVersion;
+
     @Type(type = "jsonb")
-    @Column(columnDefinition = "jsonb")
+    @Column(name = "metadata", columnDefinition = "jsonb")
     private final JpaAuthenticationSessionMetadata metadata;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -75,6 +80,10 @@ public class JpaAuthenticationSessionEntity extends UpdatableEntity.Impl impleme
 
     public JpaAuthenticationSessionEntity(DeepCloner cloner) {
         this.metadata = new JpaAuthenticationSessionMetadata(cloner);
+    }
+
+    public boolean isMetadataInitialized() {
+        return metadata != null;
     }
 
     public void setParent(JpaRootAuthenticationSessionEntity root) {
@@ -93,7 +102,8 @@ public class JpaAuthenticationSessionEntity extends UpdatableEntity.Impl impleme
 
     @Override
     public Integer getEntityVersion() {
-        return metadata.getEntityVersion();
+        if (isMetadataInitialized()) return metadata.getEntityVersion();
+        return entityVersion;
     }
 
     @Override

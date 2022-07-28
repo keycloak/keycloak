@@ -34,16 +34,16 @@ limitations under the License.
             <column name="metadata" type="json"/>
         </createTable>
         <ext:addGeneratedColumn tableName="kc_auth_root_session">
-            <ext:column name="entityversion" type="INTEGER" jsonColumn="metadata" jsonProperty="entityVersion"/>
-            <ext:column name="realmid" type="KC_KEY" jsonColumn="metadata" jsonProperty="fRealmId"/>
+            <ext:column name="entity_version" type="INTEGER" jsonColumn="metadata" jsonProperty="entityVersion"/>
+            <ext:column name="realm_id" type="KC_KEY" jsonColumn="metadata" jsonProperty="fRealmId"/>
             <ext:column name="timestamp" type="BIGINT" jsonColumn="metadata" jsonProperty="fTimestamp"/>
             <ext:column name="expiration" type="BIGINT" jsonColumn="metadata" jsonProperty="fExpiration"/>
         </ext:addGeneratedColumn>
-        <createIndex tableName="kc_auth_root_session" indexName="auth_root_session_entityVersion">
-            <column name="entityversion"/>
+        <createIndex tableName="kc_auth_root_session" indexName="kc_auth_root_session_entity_version">
+            <column name="entity_version"/>
         </createIndex>
-        <createIndex tableName="kc_auth_root_session" indexName="auth_root_session_realmId_expiration">
-            <column name="realmid"/>
+        <createIndex tableName="kc_auth_root_session" indexName="kc_auth_root_session_realm_id_expiration">
+            <column name="realm_id"/>
             <column name="expiration"/>
         </createIndex>
 
@@ -55,14 +55,20 @@ limitations under the License.
                 <constraints nullable="false"/>
             </column>
             <column name="fk_root" type="UUID">
-                <constraints foreignKeyName="auth_session_fk_root_fkey" references="kc_auth_root_session(id)" deleteCascade="true"/>
+                <constraints foreignKeyName="kc_auth_session_fk_root_fkey" references="kc_auth_root_session(id)" deleteCascade="true"/>
             </column>
             <column name="metadata" type="json"/>
         </createTable>
-        <createIndex tableName="kc_auth_session" indexName="auth_session_fk_root">
+        <ext:addGeneratedColumn tableName="kc_auth_session">
+            <ext:column name="entity_version" type="INTEGER" jsonColumn="metadata" jsonProperty="entityVersion"/>
+        </ext:addGeneratedColumn>
+        <createIndex tableName="kc_auth_session" indexName="kc_auth_session_entity_version">
+            <column name="entity_version"/>
+        </createIndex>
+        <createIndex tableName="kc_auth_session" indexName="kc_auth_session_fk_root">
             <column name="fk_root"/>
         </createIndex>
-        <ext:createJsonIndex tableName="kc_auth_session" indexName="auth_session_tabId">
+        <ext:createJsonIndex tableName="kc_auth_session" indexName="kc_auth_session_tab_id">
             <ext:column jsonColumn="metadata" jsonProperty="fTabId"/>
         </ext:createJsonIndex>
     </changeSet>
