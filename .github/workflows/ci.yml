@@ -3,10 +3,8 @@ name: Keycloak CI
 on:
   push:
     branches-ignore: [main]
-  pull_request:
-    paths-ignore:
-      - '.github/workflows/**'
-      - '!.github/workflows/ci.yml'
+  # as the ci.yml contains actions that are required for PRs to be merged, it will always need to run on all PRs
+  pull_request: {}
   schedule:
     - cron: '0 0 * * *'
 
@@ -15,7 +13,7 @@ env:
 
 concurrency:
   # Only run once for latest commit per ref and cancel other (previous) runs.
-  group: ci-keycloak-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
