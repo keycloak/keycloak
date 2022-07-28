@@ -35,15 +35,15 @@ limitations under the License.
             <column name="metadata" type="json"/>
         </createTable>
         <ext:addGeneratedColumn tableName="kc_client_scope">
-            <ext:column name="entityversion" type="INTEGER" jsonColumn="metadata" jsonProperty="entityVersion"/>
-            <ext:column name="realmid" type="KC_KEY" jsonColumn="metadata" jsonProperty="fRealmId"/>
+            <ext:column name="entity_version" type="INTEGER" jsonColumn="metadata" jsonProperty="entityVersion"/>
+            <ext:column name="realm_id" type="KC_KEY" jsonColumn="metadata" jsonProperty="fRealmId"/>
             <ext:column name="name" type="VARCHAR(255)" jsonColumn="metadata" jsonProperty="fName"/>
         </ext:addGeneratedColumn>
-        <createIndex tableName="kc_client_scope" indexName="client_scope_entityVersion">
-            <column name="entityversion"/>
+        <createIndex tableName="kc_client_scope" indexName="kc_client_scope_entity_version">
+            <column name="entity_version"/>
         </createIndex>
-        <createIndex tableName="kc_client_scope" indexName="client_realmId_name" unique="true">
-            <column name="realmid"/>
+        <createIndex tableName="kc_client_scope" indexName="kc_client_realm_id_name" unique="true">
+            <column name="realm_id"/>
             <column name="name"/>
         </createIndex>
 
@@ -52,15 +52,15 @@ limitations under the License.
                 <constraints primaryKey="true" nullable="false"/>
             </column>
             <column name="fk_root" type="UUID">
-                <constraints foreignKeyName="client_scope_attr_fk_root_fkey" references="kc_client_scope(id)" deleteCascade="true"/>
+                <constraints foreignKeyName="kc_client_scope_attr_fk_root_fkey" references="kc_client_scope(id)" deleteCascade="true"/>
             </column>
             <column name="name" type="VARCHAR(255)"/>
             <column name="value" type="text"/>
         </createTable>
-        <createIndex tableName="kc_client_scope_attribute" indexName="client_scope_attr_fk_root">
+        <createIndex tableName="kc_client_scope_attribute" indexName="kc_client_scope_attr_fk_root">
             <column name="fk_root"/>
         </createIndex>
-        <createIndex tableName="kc_client_scope_attribute" indexName="client_scope_attr_name_value">
+        <createIndex tableName="kc_client_scope_attribute" indexName="kc_client_scope_attr_name_value">
             <column name="name"/>
             <column name="VALUE(255)" valueComputed="VALUE(255)"/>
         </createIndex>

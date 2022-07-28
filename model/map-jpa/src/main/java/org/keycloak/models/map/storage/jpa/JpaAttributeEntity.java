@@ -31,7 +31,7 @@ import org.hibernate.annotations.Nationalized;
 public abstract class JpaAttributeEntity<E> implements JpaChildEntity<E> {
 
     @Id
-    @Column
+    @Column(name = "id")
     @GeneratedValue
     private UUID id;
 
@@ -39,11 +39,11 @@ public abstract class JpaAttributeEntity<E> implements JpaChildEntity<E> {
     @JoinColumn(name="fk_root")
     private E root;
 
-    @Column
+    @Column(name = "name")
     private String name;
 
     @Nationalized
-    @Column
+    @Column(name = "value")
     private String value;
 
     public JpaAttributeEntity() {
