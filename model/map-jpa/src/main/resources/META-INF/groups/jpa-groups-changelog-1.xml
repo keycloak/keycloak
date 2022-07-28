@@ -35,23 +35,23 @@ limitations under the License.
             <column name="metadata" type="json"/>
         </createTable>
         <ext:addGeneratedColumn tableName="kc_group">
-            <ext:column name="entityversion" type="INTEGER" jsonColumn="metadata" jsonProperty="entityVersion"/>
-            <ext:column name="realmid" type="KC_KEY" jsonColumn="metadata" jsonProperty="fRealmId"/>
-            <ext:column name="parentid" type="KC_KEY" jsonColumn="metadata" jsonProperty="fParentId"/>
+            <ext:column name="entity_version" type="INTEGER" jsonColumn="metadata" jsonProperty="entityVersion"/>
+            <ext:column name="realm_id" type="KC_KEY" jsonColumn="metadata" jsonProperty="fRealmId"/>
+            <ext:column name="parent_id" type="KC_KEY" jsonColumn="metadata" jsonProperty="fParentId"/>
             <ext:column name="name" type="VARCHAR(255)" jsonColumn="metadata" jsonProperty="fName"/>
         </ext:addGeneratedColumn>
-        <createIndex tableName="kc_group" indexName="group_entityVersion">
-            <column name="entityversion"/>
+        <createIndex tableName="kc_group" indexName="kc_group_entity_version">
+            <column name="entity_version"/>
         </createIndex>
-        <createIndex tableName="kc_group" indexName="group_realmId_name_parentId" unique="true">
-            <column name="realmid"/>
+        <createIndex tableName="kc_group" indexName="kc_group_realmId_name_parent_id" unique="true">
+            <column name="realm_id"/>
             <column name="name"/>
-            <column name="parentid"/>
+            <column name="parent_id"/>
         </createIndex>
-        <createIndex tableName="kc_group" indexName="group_realmId_parentId">
-            <!-- list column parentId first, as it is more selective than realmId -->
-            <column name="parentid"/>
-            <column name="realmid"/>
+        <createIndex tableName="kc_group" indexName="kc_group_realm_id_parent_id">
+            <!-- list column parent_id first, as it is more selective than realm_id -->
+            <column name="parent_id"/>
+            <column name="realm_id"/>
         </createIndex>
 
         <createTable tableName="kc_group_attribute">
@@ -59,15 +59,15 @@ limitations under the License.
                 <constraints primaryKey="true" nullable="false"/>
             </column>
             <column name="fk_root" type="UUID">
-                <constraints foreignKeyName="group_attr_fk_root_fkey" references="kc_group(id)" deleteCascade="true"/>
+                <constraints foreignKeyName="kc_group_attr_fk_root_fkey" references="kc_group(id)" deleteCascade="true"/>
             </column>
             <column name="name" type="VARCHAR(255)"/>
             <column name="value" type="text"/>
         </createTable>
-        <createIndex tableName="kc_group_attribute" indexName="group_attr_fk_root">
+        <createIndex tableName="kc_group_attribute" indexName="kc_group_attr_fk_root">
             <column name="fk_root"/>
         </createIndex>
-        <createIndex tableName="kc_group_attribute" indexName="group_attr_name_value">
+        <createIndex tableName="kc_group_attribute" indexName="kc_group_attr_name_value">
             <column name="name"/>
             <column name="VALUE(255)" valueComputed="VALUE(255)"/>
         </createIndex>

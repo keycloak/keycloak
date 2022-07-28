@@ -41,7 +41,7 @@ import org.hibernate.annotations.TypeDefs;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.UuidValidator;
 import org.keycloak.models.map.group.MapGroupEntity.AbstractGroupEntity;
-import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_GROUP;
+import org.keycloak.models.map.storage.jpa.Constants;
 import org.keycloak.models.map.storage.jpa.JpaRootVersionedEntity;
 import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
 
@@ -51,36 +51,36 @@ import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
  * therefore marked as non-insertable and non-updatable to instruct hibernate.
  */
 @Entity
-@Table(name = "kc_group", uniqueConstraints = {@UniqueConstraint(columnNames = {"realmId", "name", "parentId"})})
+@Table(name = "kc_group", uniqueConstraints = {@UniqueConstraint(columnNames = {"realm_id", "name", "parent_id"})})
 @TypeDefs({@TypeDef(name = "jsonb", typeClass = JsonbType.class)})
 public class JpaGroupEntity extends AbstractGroupEntity implements JpaRootVersionedEntity {
 
     @Id
-    @Column
+    @Column(name = "id")
     private UUID id;
 
     //used for implicit optimistic locking
     @Version
-    @Column
+    @Column(name = "version")
     private int version;
 
     @Type(type = "jsonb")
-    @Column(columnDefinition = "jsonb")
+    @Column(name = "metadata", columnDefinition = "jsonb")
     private final JpaGroupMetadata metadata;
 
-    @Column(insertable = false, updatable = false)
+    @Column(name = "entity_version", insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
     private Integer entityVersion;
 
-    @Column(insertable = false, updatable = false)
+    @Column(name = "realm_id", insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
     private String realmId;
 
-    @Column(insertable = false, updatable = false)
+    @Column(name = "name", insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
     private String name;
 
-    @Column(insertable = false, updatable = false)
+    @Column(name = "parent_id", insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
     private String parentId;
 
@@ -125,7 +125,7 @@ public class JpaGroupEntity extends AbstractGroupEntity implements JpaRootVersio
 
     @Override
     public Integer getCurrentSchemaVersion() {
-        return CURRENT_SCHEMA_VERSION_GROUP;
+        return Constants.CURRENT_SCHEMA_VERSION_GROUP;
     }
 
     @Override
