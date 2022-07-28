@@ -58,47 +58,47 @@ import static org.keycloak.models.map.storage.jpa.JpaMapStorageProviderFactory.C
 public class JpaUserSessionEntity extends AbstractUserSessionEntity implements JpaRootVersionedEntity {
 
     @Id
-    @Column
+    @Column(name = "id")
     private UUID id;
 
     //used for implicit optimistic locking
     @Version
-    @Column
+    @Column(name = "version")
     private int version;
 
     @Type(type = "jsonb")
-    @Column(columnDefinition = "jsonb")
+    @Column(name = "metadata", columnDefinition = "jsonb")
     private final JpaUserSessionMetadata metadata;
 
-    @Column(insertable = false, updatable = false)
+    @Column(name = "entity_version", insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
     private Integer entityVersion;
 
-    @Column(insertable = false, updatable = false)
+    @Column(name = "realm_id", insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
     private String realmId;
 
-    @Column(insertable = false, updatable = false)
+    @Column(name = "user_id", insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
     private String userId;
 
-    @Column(insertable = false, updatable = false)
+    @Column(name = "broker_session_id", insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
     private String brokerSessionId;
 
-    @Column(insertable = false, updatable = false)
+    @Column(name = "broker_user_id", insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
     private String brokerUserId;
 
-    @Column(insertable = false, updatable = false)
+    @Column(name = "offline", insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
     private Boolean offline;
 
-    @Column(insertable = false, updatable = false)
+    @Column(name = "last_session_refresh", insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
     private Long lastSessionRefresh;
 
-    @Column(insertable = false, updatable = false)
+    @Column(name = "expiration", insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
     private Long expiration;
 

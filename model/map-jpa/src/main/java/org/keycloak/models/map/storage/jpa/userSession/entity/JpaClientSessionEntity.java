@@ -52,23 +52,23 @@ import org.keycloak.models.map.userSession.MapAuthenticatedClientSessionEntity.A
 public class JpaClientSessionEntity extends AbstractAuthenticatedClientSessionEntity implements JpaRootVersionedEntity {
 
     @Id
-    @Column
+    @Column(name = "id")
     private UUID id;
 
     //used for implicit optimistic locking
     @Version
-    @Column
+    @Column(name = "version")
     private int version;
 
     @Type(type = "jsonb")
-    @Column(columnDefinition = "jsonb")
+    @Column(name = "metadata", columnDefinition = "jsonb")
     private final JpaClientSessionMetadata metadata;
 
-    @Column(insertable = false, updatable = false)
+    @Column(name = "entity_version", insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
     private Integer entityVersion;
 
-    @Column(insertable = false, updatable = false)
+    @Column(name = "client_id", insertable = false, updatable = false)
     @Basic(fetch = FetchType.LAZY)
     private String clientId;
 
@@ -90,13 +90,18 @@ public class JpaClientSessionEntity extends AbstractAuthenticatedClientSessionEn
         this.metadata = new JpaClientSessionMetadata(cloner);
     }
 
+    public boolean isMetadataInitialized() {
+        return metadata != null;
+    }
+
     public void setParent(JpaUserSessionEntity root) {
         this.root = root;
     }
 
     @Override
     public Integer getEntityVersion() {
-        return metadata.getEntityVersion();
+        if (isMetadataInitialized()) metadata.getEntityVersion();
+        return entityVersion;
     }
 
     @Override
@@ -137,7 +142,8 @@ public class JpaClientSessionEntity extends AbstractAuthenticatedClientSessionEn
 
     @Override
     public String getClientId() {
-        return metadata.getClientId();
+        if (isMetadataInitialized()) return metadata.getClientId();
+        return clientId;
     }
 
     @Override

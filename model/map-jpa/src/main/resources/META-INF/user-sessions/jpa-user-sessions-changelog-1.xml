@@ -34,22 +34,22 @@ limitations under the License.
             <column name="metadata" type="json"/>
         </createTable>
         <ext:addGeneratedColumn tableName="kc_user_session">
-            <ext:column name="entityversion" type="INTEGER" jsonColumn="metadata" jsonProperty="entityVersion"/>
+            <ext:column name="entity_version" type="INTEGER" jsonColumn="metadata" jsonProperty="entityVersion"/>
             <ext:column name="offline" type="BOOLEAN" jsonColumn="metadata" jsonProperty="fOffline"/>
-            <ext:column name="realmid" type="KC_KEY" jsonColumn="metadata" jsonProperty="fRealmId"/>
-            <ext:column name="userid" type="KC_KEY" jsonColumn="metadata" jsonProperty="fUserId"/>
-            <ext:column name="brokersessionid" type="KC_KEY" jsonColumn="metadata" jsonProperty="fBrokerSessionId"/>
-            <ext:column name="brokeruserid" type="KC_KEY" jsonColumn="metadata" jsonProperty="fBrokerUserId"/>
-            <ext:column name="lastsessionrefresh" type="BIGINT" jsonColumn="metadata" jsonProperty="fLastSessionRefresh"/>
+            <ext:column name="realm_id" type="KC_KEY" jsonColumn="metadata" jsonProperty="fRealmId"/>
+            <ext:column name="user_id" type="KC_KEY" jsonColumn="metadata" jsonProperty="fUserId"/>
+            <ext:column name="broker_session_id" type="KC_KEY" jsonColumn="metadata" jsonProperty="fBrokerSessionId"/>
+            <ext:column name="broker_user_id" type="KC_KEY" jsonColumn="metadata" jsonProperty="fBrokerUserId"/>
+            <ext:column name="last_session_refresh" type="BIGINT" jsonColumn="metadata" jsonProperty="fLastSessionRefresh"/>
             <ext:column name="expiration" type="BIGINT" jsonColumn="metadata" jsonProperty="fExpiration"/>
         </ext:addGeneratedColumn>
-        <createIndex tableName="kc_user_session" indexName="user_session_entityVersion">
-            <column name="entityversion"/>
+        <createIndex tableName="kc_user_session" indexName="kc_user_session_entity_version">
+            <column name="entity_version"/>
         </createIndex>
-        <createIndex tableName="kc_user_session" indexName="user_session_realm_offline_user">
-            <column name="realmid"/>
+        <createIndex tableName="kc_user_session" indexName="kc_user_session_realm_offline_user">
+            <column name="realm_id"/>
             <column name="offline"/>
-            <column name="userid"/>
+            <column name="user_id"/>
         </createIndex>
 
         <createTable tableName="kc_user_session_note">
@@ -57,7 +57,7 @@ limitations under the License.
                 <constraints primaryKey="true" nullable="false"/>
             </column>
             <column name="fk_root" type="UUID">
-                <constraints foreignKeyName="user_session_note_fk_root_fkey" references="kc_user_session(id)" deleteCascade="true"/>
+                <constraints foreignKeyName="kc_user_session_note_fk_root_fkey" references="kc_user_session(id)" deleteCascade="true"/>
             </column>
             <column name="name" type="VARCHAR(255)"/>
             <column name="value" type="TEXT"/>
@@ -86,18 +86,18 @@ limitations under the License.
                 <constraints nullable="false"/>
             </column>
             <column name="fk_root" type="UUID">
-                <constraints foreignKeyName="client_session_fk_root_fkey" references="kc_user_session(id)" deleteCascade="true"/>
+                <constraints foreignKeyName="kc_client_session_fk_root_fkey" references="kc_user_session(id)" deleteCascade="true"/>
             </column>
             <column name="metadata" type="json"/>
         </createTable>
         <ext:addGeneratedColumn tableName="kc_client_session">
-            <ext:column name="entityversion" type="INTEGER" jsonColumn="metadata" jsonProperty="entityVersion"/>
-            <ext:column name="clientid" type="KC_KEY" jsonColumn="metadata" jsonProperty="fClientId"/>
+            <ext:column name="entity_version" type="INTEGER" jsonColumn="metadata" jsonProperty="entityVersion"/>
+            <ext:column name="client_id" type="KC_KEY" jsonColumn="metadata" jsonProperty="fClientId"/>
         </ext:addGeneratedColumn>
-        <createIndex tableName="kc_client_session" indexName="client_session_entityVersion">
-            <column name="entityversion"/>
+        <createIndex tableName="kc_client_session" indexName="kc_client_session_entity_version">
+            <column name="entity_version"/>
         </createIndex>
-        <createIndex tableName="kc_client_session" indexName="client_session_fk_root">
+        <createIndex tableName="kc_client_session" indexName="kc_client_session_fk_root">
             <column name="fk_root"/>
         </createIndex>
 
@@ -106,7 +106,7 @@ limitations under the License.
                 <constraints primaryKey="true" nullable="false"/>
             </column>
             <column name="fk_root" type="UUID">
-                <constraints foreignKeyName="client_session_fk_root_fkey" references="kc_client_session(id)" deleteCascade="true"/>
+                <constraints foreignKeyName="kc_client_session_fk_root_fkey" references="kc_client_session(id)" deleteCascade="true"/>
             </column>
             <column name="name" type="VARCHAR(255)"/>
             <column name="value" type="TEXT"/>
