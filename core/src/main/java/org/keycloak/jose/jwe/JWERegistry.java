@@ -47,7 +47,7 @@ class JWERegistry {
 
     static JWEAlgorithmProvider getAlgProvider(String alg) {
         // https://tools.ietf.org/html/rfc7518#page-12
-        if (JWEConstants.DIR.equals(alg)) {
+        if (JWEConstants.DIRECT.equals(alg)) {
             return new DirectAlgorithmProvider();
         } else {
             return CryptoIntegration.getProvider().getAlgorithmProvider(JWEAlgorithmProvider.class, alg);

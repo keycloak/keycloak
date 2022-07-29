@@ -24,7 +24,7 @@ import org.keycloak.common.crypto.CryptoConstants;
  */
 public class JWEConstants {
 
-    public static final String DIR = "dir";
+    public static final String DIRECT = "dir";
     public static final String A128KW = CryptoConstants.A128KW;
     public static final String RSA1_5 = CryptoConstants.RSA1_5;
     public static final String RSA_OAEP = CryptoConstants.RSA_OAEP;

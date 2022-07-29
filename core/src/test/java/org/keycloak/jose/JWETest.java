@@ -80,7 +80,7 @@ public abstract class JWETest {
 
 
     private void testDirectEncryptAndDecrypt(Key aesKey, Key hmacKey, String encAlgorithm, String payload, boolean sysout) throws Exception {
-        JWEHeader jweHeader = new JWEHeader(JWEConstants.DIR, encAlgorithm, null);
+        JWEHeader jweHeader = new JWEHeader(JWEConstants.DIRECT, encAlgorithm, null);
         JWE jwe = new JWE()
                 .header(jweHeader)
                 .content(payload.getBytes(StandardCharsets.UTF_8));
