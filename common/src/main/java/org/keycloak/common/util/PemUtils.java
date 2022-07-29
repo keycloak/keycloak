@@ -37,10 +37,6 @@ public class PemUtils {
     public static final String BEGIN_CERT = "-----BEGIN CERTIFICATE-----";
     public static final String END_CERT = "-----END CERTIFICATE-----";
 
-    static {
-        CryptoIntegration.init(ClassLoader.getSystemClassLoader());
-    }
-
     /**
      * Decode a X509 Certificate from a PEM string
      *

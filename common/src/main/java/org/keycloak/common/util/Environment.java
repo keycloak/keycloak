@@ -43,6 +43,13 @@ public class Environment {
      * @return true if java is FIPS mode
      */
     public static boolean isJavaInFipsMode() {
+        // Check if FIPS explicitly enabled by system property
+        String property = System.getProperty("com.redhat.fips");
+        if (property != null) {
+            return Boolean.parseBoolean(property);
+        }
+
+        // Otherwise try to auto-detect
         for (Provider provider : Security.getProviders()) {
             if (provider.getName().equals("BCFIPS")) continue; // Ignore BCFIPS provider for the detection as we may register it programatically
             if (provider.getName().toUpperCase().contains("FIPS")) return true;

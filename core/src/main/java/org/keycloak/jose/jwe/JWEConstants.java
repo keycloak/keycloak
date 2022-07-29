@@ -17,16 +17,18 @@
 
 package org.keycloak.jose.jwe;
 
+import org.keycloak.common.crypto.CryptoConstants;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public class JWEConstants {
 
-    public static final String DIR = "dir";
-    public static final String A128KW = "A128KW";
-    public static final String RSA1_5 = "RSA1_5";
-    public static final String RSA_OAEP = "RSA-OAEP";
-    public static final String RSA_OAEP_256 = "RSA-OAEP-256";
+    public static final String DIRECT = "dir";
+    public static final String A128KW = CryptoConstants.A128KW;
+    public static final String RSA1_5 = CryptoConstants.RSA1_5;
+    public static final String RSA_OAEP = CryptoConstants.RSA_OAEP;
+    public static final String RSA_OAEP_256 = CryptoConstants.RSA_OAEP_256;
 
     public static final String A128CBC_HS256 = "A128CBC-HS256";
     public static final String A192CBC_HS384 = "A192CBC-HS384";
