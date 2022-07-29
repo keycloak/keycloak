@@ -19,7 +19,7 @@
     <parent>
         <groupId>org.keycloak</groupId>
         <artifactId>feature-packs-parent</artifactId>
-        <version>999-SNAPSHOT</version>
+        <version>19.0.1</version>
     </parent>
 
     <properties>
