@@ -43,6 +43,11 @@ public interface CryptoProvider {
     PemUtilsProvider getPemUtils();
 
 
+    public UserIdentityExtractorProvider getIdentityExtractorProvider();
+
+    public ECDSACryptoProvider getEcdsaCryptoProvider();
+
+
     /**
      * Create the param spec for the EC curve
      *

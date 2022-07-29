@@ -18,9 +18,9 @@
 
 package org.keycloak.authentication.authenticators.x509;
 
-import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
-
+import org.keycloak.common.crypto.CryptoIntegration;
+import org.keycloak.common.crypto.OCSPUtils;
 import org.keycloak.common.util.BouncyIntegration;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.httpclient.HttpClientProvider;
@@ -49,7 +49,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.GeneralSecurityException;
 import java.security.cert.CertPathBuilder;
-import java.security.cert.CertPathBuilderException;
 import java.security.cert.CertPathValidatorException;
 import java.security.cert.CertStore;
 import java.security.cert.CertificateException;
@@ -76,10 +75,6 @@ import java.util.stream.Collectors;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.util.EntityUtils;
-
-import org.bouncycastle.asn1.x509.Extensions;
-import org.bouncycastle.asn1.x509.CertificatePolicies;
-import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
 
 import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.CERTIFICATE_POLICY_MODE_ANY;
 
@@ -179,12 +174,10 @@ public class CertificateValidator {
 
     public static class BouncyCastleOCSPChecker extends OCSPChecker {
 
-        private final KeycloakSession session;
         private final String responderUri;
         private final X509Certificate responderCert;
 
-        BouncyCastleOCSPChecker(KeycloakSession session, String responderUri, X509Certificate responderCert) {
-            this.session = session;
+        BouncyCastleOCSPChecker(String responderUri, X509Certificate responderCert) {
             this.responderUri = responderUri;
             this.responderCert = responderCert;
         }
@@ -203,7 +196,7 @@ public class CertificateValidator {
                 // 1) signed by the issuer certificate,
                 // 2) Includes the value of OCSPsigning in ExtendedKeyUsage v3 extension
                 // 3) Certificate is valid at the time
-                ocspRevocationStatus = OCSPUtils.check(session, cert, issuerCertificate);
+                ocspRevocationStatus = CryptoIntegration.getProvider().getCertificateUtils().getOCSPUtils().check(cert, issuerCertificate);
             }
             else {
                 URI uri;
@@ -219,7 +212,7 @@ public class CertificateValidator {
                 // OCSP responder's certificate is assumed to be the issuer's certificate
                 // certificate.
                 // responderUri overrides the contents (if any) of the certificate's AIA extension
-                ocspRevocationStatus = OCSPUtils.check(session, cert, issuerCertificate, uri, responderCert, null);
+                ocspRevocationStatus = CryptoIntegration.getProvider().getCertificateUtils().getOCSPUtils().check(cert, issuerCertificate, uri, responderCert, null);
             }
             return ocspRevocationStatus;
         }
@@ -454,7 +447,7 @@ public class CertificateValidator {
         }
 
         boolean isCritical = false;
-        Set critSet = certs[0].getCriticalExtensionOIDs();
+        Set<String> critSet = certs[0].getCriticalExtensionOIDs();
         if (critSet != null) {
             isCritical = critSet.contains("2.5.29.15");
         }
@@ -491,7 +484,7 @@ public class CertificateValidator {
         }
 
         boolean isCritical = false;
-        Set critSet = certs[0].getCriticalExtensionOIDs();
+        Set<String> critSet = certs[0].getCriticalExtensionOIDs();
         if (critSet != null) {
             isCritical = critSet.contains("2.5.29.37");
         }
@@ -510,23 +503,14 @@ public class CertificateValidator {
         }
     }
 
+
     private static void validatePolicy(X509Certificate[] certs, List<String> expectedPolicies, String policyCheckMode) throws GeneralSecurityException {
         if (expectedPolicies == null || expectedPolicies.size() == 0) {
             logger.debug("Certificate Policy validation is not enabled.");
             return;
         }
 
-        Extensions certExtensions = new JcaX509CertificateHolder(certs[0]).getExtensions();
-        if (certExtensions == null)
-            throw new GeneralSecurityException("Certificate Policy validation was expected, but no certificate extensions were found");
-
-        CertificatePolicies policies = CertificatePolicies.fromExtensions(certExtensions);
-
-        if (policies == null)
-            throw new GeneralSecurityException("Certificate Policy validation was expected, but no certificate policy extensions were found");
-
-        List<String> policyList = new LinkedList<>();
-        Arrays.stream(policies.getPolicyInformation()).forEach(p -> policyList.add(p.getPolicyIdentifier().toString().toLowerCase()));
+        List<String> policyList = CryptoIntegration.getProvider().getCertificateUtils().getCertificatePolicyList(certs[0]);
 
         logger.debugf("Certificate policies found: %s", String.join(",", policyList));
 
@@ -755,7 +739,7 @@ public class CertificateValidator {
 
     private static List<String> getCRLDistributionPoints(X509Certificate cert) {
         try {
-            return CRLUtils.getCRLDistributionPoints(cert);
+            return CryptoIntegration.getProvider().getCertificateUtils().getCRLDistributionPoints(cert);
         }
         catch(IOException e) {
             logger.error(e.getMessage());
@@ -1076,7 +1060,7 @@ public class CertificateValidator {
             return new CertificateValidator(certs, _keyUsageBits, _extendedKeyUsage,
                     _certificatePolicy, _certificatePolicyMode,
                     _crlCheckingEnabled, _crldpEnabled, _crlLoader, _ocspEnabled, _ocspFailOpen,
-                    new BouncyCastleOCSPChecker(session, _responderUri, _responderCert), session, _timestampValidationEnabled, _trustValidationEnabled);
+                    new BouncyCastleOCSPChecker(_responderUri, _responderCert), session, _timestampValidationEnabled, _trustValidationEnabled);
         }
     }
 
