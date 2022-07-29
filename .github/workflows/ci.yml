@@ -35,7 +35,6 @@ jobs:
         run: |
            ./mvnw clean install -nsu -B -e -DskipTests -Pdistribution
            ./mvnw clean install -nsu -B -e -f testsuite/integration-arquillian/servers/auth-server -Pauth-server-quarkus
-           ./mvnw clean install -nsu -B -e -f testsuite/integration-arquillian/servers/auth-server -Pauth-server-wildfly
            ./mvnw clean install -nsu -B -e -f testsuite/integration-arquillian/servers/auth-server -Pauth-server-undertow
            ./mvnw clean install -nsu -B -e -f testsuite/integration-arquillian/servers/cache-server -Pcache-server-infinispan
 
@@ -135,7 +134,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        server: ['quarkus', 'quarkus-map', 'wildfly', 'undertow-map-hot-rod']
+        server: ['quarkus', 'quarkus-map', 'undertow-map-hot-rod']
         tests: ['group1','group2','group3']
       fail-fast: false
     steps:
@@ -183,7 +182,6 @@ jobs:
           PARAMS["quarkus"]="-Pauth-server-quarkus"
           PARAMS["quarkus-map"]="-Pauth-server-quarkus -Pmap-storage -Dpageload.timeout=90000"
           PARAMS["undertow-map-hot-rod"]="-Pauth-server-undertow -Pmap-storage,map-storage-hot-rod -Dpageload.timeout=90000"
-          PARAMS["wildfly"]="-Pauth-server-wildfly"
           TESTGROUP["group1"]="-Dtest=!**.crossdc.**,!**.cluster.**,%regex[org.keycloak.testsuite.(a[abc]|ad[a-l]|[^a-q]).*]"   # Tests alphabetically before admin tests and those after "r"
           TESTGROUP["group2"]="-Dtest=!**.crossdc.**,!**.cluster.**,%regex[org.keycloak.testsuite.(ad[^a-l]|a[^a-d]|b).*]"      # Admin tests and those starting with "b"
           TESTGROUP["group3"]="-Dtest=!**.crossdc.**,!**.cluster.**,%regex[org.keycloak.testsuite.([c-q]).*]"                   # All the rest
@@ -288,58 +286,6 @@ jobs:
           name: reports-${{ matrix.server }}-base-tests-${{ matrix.tests }}
           retention-days: 14
           path: reports-${{ matrix.server }}-base-tests-${{ matrix.tests }}.zip
-          if-no-files-found: ignore
-
-  test-cluster:
-    name: Test Clustering
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 2
-
-      - name: Check whether this phase should run
-        run: echo "GIT_DIFF=$[ $( git diff --name-only HEAD^ | egrep -ic 'crossdc|infinispan' ) + $( git diff HEAD^ pom.xml | egrep -ic '\+\s+<wildfly.version>' ) ]" >> $GITHUB_ENV
-
-      - uses: actions/setup-java@v3
-        if: ${{ github.event_name != 'pull_request' || env.GIT_DIFF != 0 }}
-        with:
-          distribution: 'temurin'
-          java-version: ${{ env.DEFAULT_JDK_VERSION }}
-          cache: 'maven'
-
-      - name: Cleanup org.keycloak artifacts
-        if: ${{ github.event_name != 'pull_request' || env.GIT_DIFF != 0 }}
-        run: rm -rf ~/.m2/repository/org/keycloak >/dev/null || true
-
-      - name: Download built keycloak
-        if: ${{ github.event_name != 'pull_request' || env.GIT_DIFF != 0 }}
-        id: download-keycloak
-        uses: actions/download-artifact@v3
-        with:
-          path: ~/.m2/repository/org/keycloak/
-          name: keycloak-artifacts.zip
-
-      - name: Update maven settings
-        if: ${{ github.event_name != 'pull_request' || env.GIT_DIFF != 0 }}
-        run: mkdir -p ~/.m2 ; cp .github/settings.xml ~/.m2/
-
-      - name: Run cluster tests
-        if: ${{ github.event_name != 'pull_request' || env.GIT_DIFF != 0 }}
-        run: |
-          ./mvnw clean install -nsu -B -Pauth-server-wildfly,auth-server-cluster,db-mysql,jpa -Dsession.cache.owners=2 -Dbackends.console.output=true -Dauth.server.log.check=false -Dfrontend.console.output=true -Dtest=org.keycloak.testsuite.cluster.**.*Test -f testsuite/integration-arquillian/pom.xml | misc/log/trimmer.sh
-          TEST_RESULT=${PIPESTATUS[0]}
-          find . -path '*/target/surefire-reports/*.xml' | zip -q reports-cluster-tests.zip -@
-          exit $TEST_RESULT
-
-      - name: Cluster test reports
-        if: failure()
-        uses: actions/upload-artifact@v3
-        with:
-          name: reports-cluster-tests
-          retention-days: 14
-          path: reports-cluster-tests.zip
           if-no-files-found: ignore
 
   test-crossdc:
