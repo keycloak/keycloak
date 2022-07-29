@@ -76,7 +76,7 @@
     "@types/snowpack-env": "^2.3.4",
     "@types/tar-fs": "^2.0.1",
     "@typescript-eslint/eslint-plugin": "^5.31.0",
-    "@typescript-eslint/parser": "^5.30.7",
+    "@typescript-eslint/parser": "^5.31.0",
     "@vitejs/plugin-react": "^2.0.0",
     "babel-loader": "^8.2.5",
     "cypress": "^10.3.1",
