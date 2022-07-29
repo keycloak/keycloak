@@ -47,6 +47,8 @@ import org.keycloak.testsuite.arquillian.SuiteContext;
  */
 public class KeycloakQuarkusServerDeployableContainer implements DeployableContainer<KeycloakQuarkusConfiguration> {
 
+    private static final String AUTH_SERVER_QUARKUS_MAP_STORAGE_PROFILE = "auth.server.quarkus.mapStorage.profile";
+
     private static final Logger log = Logger.getLogger(KeycloakQuarkusServerDeployableContainer.class);
 
     private KeycloakQuarkusConfiguration configuration;
@@ -196,23 +198,52 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
             commands.add("-Djboss.node.name=" + configuration.getRoute());
         }
 
+        String mapStorageProfile = System.getProperty(AUTH_SERVER_QUARKUS_MAP_STORAGE_PROFILE);
         // only run build during restarts or when running cluster tests
+
         if (restart.get() || "ha".equals(System.getProperty("auth.server.quarkus.cluster.config"))) {
             commands.removeIf("--optimized"::equals);
             commands.add("--http-relative-path=/auth");
 
-            String cacheMode = System.getProperty("auth.server.quarkus.cluster.config", "local");
+            if (mapStorageProfile == null) {
+                String cacheMode = System.getProperty("auth.server.quarkus.cluster.config", "local");
 
-            if ("local".equals(cacheMode)) {
-                commands.add("--cache=local");
-            } else {
-                commands.add("--cache-config-file=cluster-" + cacheMode + ".xml");
+                if ("local".equals(cacheMode)) {
+                    commands.add("--cache=local");
+                } else {
+                    commands.add("--cache-config-file=cluster-" + cacheMode + ".xml");
+                }
             }
         }
 
+        addStorageOptions(commands);
+
         commands.addAll(getAdditionalBuildArgs());
 
+        log.debugf("Quarkus parameters: %s", commands);
+
         return commands.toArray(new String[0]);
+    }
+
+    private void addStorageOptions(List<String> commands) {
+        String mapStorageProfile = System.getProperty(AUTH_SERVER_QUARKUS_MAP_STORAGE_PROFILE);
+
+        if (mapStorageProfile != null) {
+            switch (mapStorageProfile) {
+                case "chm":
+                    commands.add("--storage=" + mapStorageProfile);
+                    break;
+                case "jpa":
+                    commands.add("--storage=" + mapStorageProfile);
+                    commands.add("--db-username=" + System.getProperty("keycloak.map.storage.connectionsJpa.url"));
+                    commands.add("--db-password=" + System.getProperty("keycloak.map.storage.connectionsJpa.user"));
+                    commands.add("--db-url=" + System.getProperty("keycloak.map.storage.connectionsJpa.password"));
+                case "hotrod":
+                    commands.add("--storage=" + mapStorageProfile);
+                    // TODO: URL / username / password
+                    break;
+            }
+        }
     }
 
     private void waitForReadiness() throws MalformedURLException, LifecycleException {

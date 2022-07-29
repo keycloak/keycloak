@@ -50,13 +50,13 @@ public class MapDeploymentStateProviderFactory implements DeploymentStateProvide
         String seed = config.get(RESOURCES_VERSION_SEED);
         if (seed == null) {
             Logger.getLogger(DeploymentStateProviderFactory.class)
-                    .warnf("It is recommended to set '%s' property in the %s provider config of %s SPI", RESOURCES_VERSION_SEED, PROVIDER_ID, DeploymentStateSpi.NAME);
+                    .warnf("Version seed for deployment state set with a random number. Caution: This can lead to unstable operations when serving resources from the cluster without a sticky loadbalancer or when restarting nodes. Set the '%s' property in the %s provider config of %s SPI for stable operations", RESOURCES_VERSION_SEED, PROVIDER_ID, DeploymentStateSpi.NAME);
             //generate random string for this installation
             seed = SecretGenerator.getInstance().randomString(10);
         }
         try {
             Version.RESOURCES_VERSION = Base64Url.encode(MessageDigest.getInstance("SHA-256")
-                    .digest((seed + new ModelVersion(Version.VERSION_KEYCLOAK).toString()).getBytes()))
+                    .digest((seed + Version.RESOURCES_VERSION).getBytes()))
                     .substring(0, 5);
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e);

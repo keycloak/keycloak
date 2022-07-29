@@ -192,7 +192,7 @@ Find available build options either by looking at the https://www.keycloak.org/s
 ==== Second step: Start Keycloak using `--optimized`
 After a successful build, you can start Keycloak and turn off the default startup behavior by invoking the following command:
 
-<@kc.build parameters="--optimized <configuration-options>"/>
+<@kc.start parameters="--optimized <configuration-options>"/>
 
 The `--optimized` parameter tells Keycloak to assume a pre-built, already optimized Keycloak image is used. As a result, Keycloak avoids checking for and running a build directly at startup to save the time to walk through this process.
 

@@ -856,6 +856,7 @@
                                 <keycloak.publicKeyCache.enabled>false</keycloak.publicKeyCache.enabled>
                                 <keycloak.userSessionPersister.provider></keycloak.userSessionPersister.provider>
                                 <keycloak.userFederatedStorage.provider></keycloak.userFederatedStorage.provider>
+                                <auth.server.quarkus.mapStorage.profile.config>chm</auth.server.quarkus.mapStorage.profile.config>
                           </systemPropertyVariables>
                       </configuration>
                     </plugin>
@@ -904,6 +905,7 @@
                                 <keycloak.singleUseObject.map.storage.provider>jpa</keycloak.singleUseObject.map.storage.provider>
                                 <keycloak.user.map.storage.provider>jpa</keycloak.user.map.storage.provider>
                                 <keycloak.userSession.map.storage.provider>jpa</keycloak.userSession.map.storage.provider>
+                                <auth.server.quarkus.mapStorage.profile.config>jpa</auth.server.quarkus.mapStorage.profile.config>
                             </systemPropertyVariables>
                         </configuration>
                     </plugin>

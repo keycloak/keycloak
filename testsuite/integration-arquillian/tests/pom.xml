@@ -1437,6 +1437,7 @@
                 <hotrod.store.enabled>true</hotrod.store.enabled>
                 <skip.copy.hotrod.server>false</skip.copy.hotrod.server>
                 <cache.server>infinispan</cache.server>
+                <auth.server.quarkus.mapStorage.profile.config>hotrod</auth.server.quarkus.mapStorage.profile.config>
             </properties>
             <build>
                 <plugins>
