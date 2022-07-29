@@ -18,10 +18,12 @@
 
 package org.keycloak.testsuite.oauth;
 
+import java.io.Closeable;
 import java.util.Collections;
 
 import javax.ws.rs.NotFoundException;
 
+import org.hamcrest.MatcherAssert;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
 import org.junit.Before;
@@ -30,6 +32,7 @@ import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.protocol.LoginProtocol;
@@ -48,6 +51,7 @@ import org.keycloak.testsuite.pages.InfoPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LogoutConfirmPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
+import org.keycloak.testsuite.updaters.ClientAttributeUpdater;
 import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.ServerURLs;
@@ -206,7 +210,35 @@ public class LegacyLogoutTest extends AbstractTestRealmKeycloakTest {
         }
     }
 
+    // Test logout with deprecated "redirect_uri" and without "id_token_hint" and client disabled after login
+    @Test
+    public void logoutWithLegacyRedirectUriAndWithoutIdTokenHintClientDisabled() throws Exception {
+        OAuthClient.AccessTokenResponse tokenResponse = loginUser();
+        String sessionId = tokenResponse.getSessionState();
 
+        try (Closeable testAppClient = ClientAttributeUpdater.forClient(adminClient, "test", oauth.getClientId())
+                .setEnabled(false).update()) {
+
+            ClientsResource clients = adminClient.realm(oauth.getRealm()).clients();
+            ClientRepresentation rep = clients.findByClientId(oauth.getClientId()).get(0);
+            MatcherAssert.assertThat(false, is(rep.isEnabled()));
+
+            String logoutUrl = oauth.getLogoutUrl().redirectUri(APP_REDIRECT_URI).build();
+            driver.navigate().to(logoutUrl);
+
+            // Assert logout confirmation page. Session still exists. Assert default language on logout page (English)
+            logoutConfirmPage.assertCurrent();
+            MatcherAssert.assertThat(true, is(isSessionActive(sessionId)));
+            events.assertEmpty();
+            logoutConfirmPage.confirmLogout();
+
+            // Redirected back to the application with expected state
+            events.expectLogout(sessionId).removeDetail(Details.REDIRECT_URI).assertEvent();
+            MatcherAssert.assertThat(false, is(isSessionActive(sessionId)));
+            assertCurrentUrlEquals(APP_REDIRECT_URI);
+        }
+
+    }
 
     private OAuthClient.AccessTokenResponse loginUser() {
         oauth.doLogin("test-user@localhost", "password");
