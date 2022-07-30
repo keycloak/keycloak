@@ -16,13 +16,13 @@ public class ShowConfigCommandDistTest {
         initialResult.assertMessage("Current Mode: production");
         initialResult.assertMessage("kc.http-enabled =  false");
 
-        distribution.run("start-dev");
+        distribution.run("start-dev", "--storage=chm");
 
         CLIResult devModeResult = distribution.run("show-config");
         devModeResult.assertMessage("Current Mode: development");
         devModeResult.assertMessage("kc.http-enabled =  true");
 
-        distribution.run("build");
+        distribution.run("build", "--storage=chm");
 
         CLIResult resetResult = distribution.run("show-config");
         resetResult.assertMessage("Current Mode: production");
