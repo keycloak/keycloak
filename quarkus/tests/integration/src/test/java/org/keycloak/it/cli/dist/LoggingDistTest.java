@@ -102,6 +102,7 @@ public class LoggingDistTest {
         cliResult.assertStartedDevMode();
     }
 
+    //see if loglvl is still debug, set to info.
     @Test
     @EnabledOnOs(value = { OS.LINUX, OS.MAC }, disabledReason = "different shell escaping behaviour on Windows.")
     @Launch({ "start-dev", "--log-console-format=\"%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c{1.}] %s%e%n\"" })

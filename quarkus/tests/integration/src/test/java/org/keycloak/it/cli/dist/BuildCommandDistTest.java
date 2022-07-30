@@ -35,7 +35,7 @@ class BuildCommandDistTest {
 
     @Test
     @Launch({ "build" })
-    void resetConfig(LaunchResult result) {
+    void resetConfig(LaunchResult result) { //often used in other tests. remove?
         assertTrue(result.getOutput().contains("Updating the configuration and installing your custom providers, if any. Please wait."),
                 () -> "The Output:\n" + result.getOutput() + "doesn't contains the expected string.");
         assertTrue(result.getOutput().contains("Quarkus augmentation completed"),
@@ -48,7 +48,7 @@ class BuildCommandDistTest {
 
     @Test
     @Launch({ "--profile=dev", "build" })
-    void failIfDevProfile(LaunchResult result) {
+    void failIfDevProfile(LaunchResult result) { //not that important. remove?
         assertTrue(result.getErrorOutput().contains("ERROR: Failed to run 'build' command."),
                 () -> "The Error Output:\n" + result.getErrorOutput() + "doesn't contains the expected string.");
         assertTrue(result.getErrorOutput().contains("You can not 'build' the server in development mode. Please re-build the server first, using 'kc.sh build' for the default production mode."),

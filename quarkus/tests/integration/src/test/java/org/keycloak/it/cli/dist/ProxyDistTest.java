@@ -21,7 +21,7 @@ import static io.restassured.RestAssured.given;
 import static io.restassured.RestAssured.when;
 import static org.hamcrest.Matchers.containsString;
 
-import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.keycloak.it.cli.dist.util.CopyTLSKeystore;
@@ -78,7 +78,7 @@ public class ProxyDistTest {
     }
 
     private void assertFrontEndUrl(String requestBaseUrl, String expectedBaseUrl) {
-        Assert.assertEquals(expectedBaseUrl + "realms/master/protocol/openid-connect/auth", getServerMetadata(requestBaseUrl)
+        Assertions.assertEquals(expectedBaseUrl + "realms/master/protocol/openid-connect/auth", getServerMetadata(requestBaseUrl)
                 .getAuthorizationEndpoint());
     }
 }

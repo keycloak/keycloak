@@ -31,7 +31,7 @@ import io.quarkus.test.junit.main.LaunchResult;
 @DistributionTest
 @RawDistOnly(reason = "Containers are immutable")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-public class ImportDistTest {
+public class ImportDistTest { // have only one exportimporttest? remove need for testExport twice.
 
     @Test
     @Order(1)

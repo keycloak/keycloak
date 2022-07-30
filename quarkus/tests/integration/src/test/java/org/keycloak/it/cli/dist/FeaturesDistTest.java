@@ -29,7 +29,7 @@ public class FeaturesDistTest {
     @Test
     @Launch({ Build.NAME, "--features=preview", "--cache=local"})
     @Order(1)
-    public void testEnableOnBuild(LaunchResult result) {
+    public void testEnableOnBuild(LaunchResult result) { // 1 and 2 to one test. remove test 3? same code is executed, only under the hood..
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertBuild();
         assertPreviewFeaturesEnabled(cliResult);
@@ -44,7 +44,7 @@ public class FeaturesDistTest {
 
     @Test
     @Launch({StartDev.NAME, "--features=preview"})
-    public void testEnablePreviewFeatures(LaunchResult result) {
+    public void testEnablePreviewFeatures(LaunchResult result) { // remove? (see above)
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertStartedDevMode();
         assertPreviewFeaturesEnabled((CLIResult) result);

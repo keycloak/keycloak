@@ -39,21 +39,21 @@ public class StartCommandTest {
 
     @Test
     @Launch({ "--profile=dev", "start" })
-    void failUsingDevProfile(LaunchResult result) {
+    void failUsingDevProfile(LaunchResult result) { // remove? actually, why is profile still available?
         assertTrue(result.getErrorOutput().contains("ERROR: You can not 'start' the server in development mode. Please re-build the server first, using 'kc.sh build' for the default production mode."),
                 () -> "The Output:\n" + result.getErrorOutput() + "doesn't contains the expected string.");
     }
 
     @Test
-    @Launch({ "-v", "start", "--http-enabled=true", "--hostname-strict=false" })
+    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false" })
     void testHttpEnabled(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertStarted();
     }
 
     @Test
-    @Launch({ "-v", "start", "--db=dev-mem", OPTIMIZED_BUILD_OPTION_LONG})
-    void failBuildPropertyNotAvailable(LaunchResult result) {
+    @Launch({ "start", "--db=dev-mem", OPTIMIZED_BUILD_OPTION_LONG})
+    void failBuildPropertyNotAvailableOnOptimizedFlag(LaunchResult result) { // perhaps restructure?
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertError("Unknown option: '--db'");
     }
