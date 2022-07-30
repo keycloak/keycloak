@@ -42,7 +42,7 @@
     "@types/react-dom": "^16.9.5",
     "@types/react-router-dom": "^4.3.1",
     "@typescript-eslint/eslint-plugin": "^5.31.0",
-    "@typescript-eslint/parser": "^5.30.7",
+    "@typescript-eslint/parser": "^5.31.0",
     "chokidar": "^3.5.3",
     "eslint": "^8.20.0",
     "eslint-config-react-app": "^7.0.1",
