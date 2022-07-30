@@ -48,7 +48,7 @@
     "eslint-config-react-app": "^7.0.1",
     "eslint-plugin-jsx-a11y": "^6.6.1",
     "eslint-plugin-react": "^7.30.1",
-    "rollup-plugin-postcss": "^2.5.0",
+    "rollup-plugin-postcss": "^4.0.2",
     "shx": "^0.3.4",
     "snowpack": "^1.7.1",
     "typescript": "^4.7.4"
