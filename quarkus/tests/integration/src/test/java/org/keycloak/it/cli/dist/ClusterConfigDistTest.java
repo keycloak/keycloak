@@ -35,7 +35,7 @@ import io.quarkus.test.junit.main.LaunchResult;
 
 @DistributionTest(reInstall = DistributionTest.ReInstall.BEFORE_TEST)
 @RawDistOnly(reason = "Not possible to mount files using docker.")
-public class ClusterConfigDistTest {
+public class ClusterConfigDistTest { // possibility to set default 2000ms discovery time for cache=ispn on startup lower for tests? "no members discovered after 2006 ms: creating cluster as coordinator"
 
     @Test
     @Launch({ "start-dev", "--cache=ispn" })
