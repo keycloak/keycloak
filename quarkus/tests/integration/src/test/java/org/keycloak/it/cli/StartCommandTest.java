@@ -31,7 +31,7 @@ import io.quarkus.test.junit.main.LaunchResult;
 public class StartCommandTest {
 
     @Test
-    @Launch({ "start", "--hostname-strict=false" })
+    @Launch({ "start", "--storage=chm", "--hostname-strict=false" })
     void failNoTls(LaunchResult result) {
         assertTrue(result.getOutput().contains("Key material not provided to setup HTTPS"),
                 () -> "The Output:\n" + result.getOutput() + "doesn't contains the expected string.");
@@ -45,7 +45,7 @@ public class StartCommandTest {
     }
 
     @Test
-    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false" })
+    @Launch({ "start", "--storage=chm", "--http-enabled=true", "--hostname-strict=false" })
     void testHttpEnabled(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertStarted();
