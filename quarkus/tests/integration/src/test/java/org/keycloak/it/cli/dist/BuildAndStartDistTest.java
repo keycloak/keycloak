@@ -39,7 +39,7 @@ import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTI
 public class BuildAndStartDistTest {
 
     @Test
-    @Launch({ "build", "--cache=local" })
+    @Launch({ "build", "--storage=chm", "--cache=local" })
     @Order(1)
     void testBuildWithCliArgs(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
@@ -79,6 +79,7 @@ public class BuildAndStartDistTest {
         public void accept(KeycloakDistribution distribution) {
             distribution.setProperty("http-enabled", "true");
             distribution.setProperty("hostname-strict", "false");
+            distribution.setProperty("storage","chm");
             distribution.setProperty("cache", "local");
         }
     }
