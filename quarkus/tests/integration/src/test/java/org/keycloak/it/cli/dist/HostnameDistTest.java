@@ -34,7 +34,7 @@ import io.restassured.RestAssured;
 @DistributionTest(keepAlive = true, reInstall = DistributionTest.ReInstall.BEFORE_TEST)
 @BeforeStartDistribution(CopyTLSKeystore.class)
 @RawDistOnly(reason = "Containers are immutable")
-public class HostnameDistTest {
+public class HostnameDistTest { // always reaugments?!
 
     @BeforeAll
     public static void onBeforeAll() {
