@@ -29,7 +29,7 @@ import io.quarkus.test.junit.main.Launch;
 public class MetricsDistTest {
 
     @Test
-    @Launch({ "start-dev" })
+    @Launch({ "start-dev", "--storage=chm" })
     void testMetricsEndpointNotEnabled() {
         when().get("/metrics").then()
                 .statusCode(404);
@@ -38,7 +38,7 @@ public class MetricsDistTest {
     }
 
     @Test
-    @Launch({ "start-dev", "--metrics-enabled=true" })
+    @Launch({ "start-dev", "--metrics-enabled=true", "--storage=chm" })
     void testMetricsEndpoint() {
         when().get("/metrics").then()
                 .statusCode(200)
@@ -46,7 +46,7 @@ public class MetricsDistTest {
     }
 
     @Test
-    @Launch({ "start-dev", "--http-relative-path=/auth", "--metrics-enabled=true" })
+    @Launch({ "start-dev", "--http-relative-path=/auth", "--metrics-enabled=true", "--storage=chm" })
     void testMetricsEndpointUsingRelativePath() {
         when().get("/auth/metrics").then()
                 .statusCode(200)
@@ -54,7 +54,7 @@ public class MetricsDistTest {
     }
 
     @Test
-    @Launch({ "start-dev", "--metrics-enabled=true" })
+    @Launch({ "start-dev", "--metrics-enabled=true", "--storage=chm" })
     void testMetricsEndpointDoesNotEnableHealth() {
         when().get("/health").then()
                 .statusCode(404);

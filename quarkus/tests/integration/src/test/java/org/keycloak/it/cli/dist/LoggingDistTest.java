@@ -42,7 +42,7 @@ import java.nio.file.Paths;
 
 @DistributionTest(reInstall = DistributionTest.ReInstall.NEVER)
 @RawDistOnly(reason = "Too verbose for docker and enough to check raw dist")
-public class LoggingDistTest { //1m 29s (including windows tests which are for some reason executed on my machine). +chm:
+public class LoggingDistTest {
 
     @Test
     @Launch({ "start-dev", "--storage=chm", "--log-level=debug" })
