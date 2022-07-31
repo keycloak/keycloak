@@ -32,7 +32,6 @@ import org.keycloak.it.junit5.extension.RawDistOnly;
 import io.quarkus.test.junit.main.Launch;
 import io.quarkus.test.junit.main.LaunchResult;
 import org.keycloak.it.utils.RawDistRootPath;
-import org.keycloak.quarkus.runtime.configuration.mappers.LoggingPropertyMappers;
 import org.testcontainers.shaded.org.apache.commons.io.FileUtils;
 
 import java.io.File;
@@ -43,10 +42,10 @@ import java.nio.file.Paths;
 
 @DistributionTest(reInstall = DistributionTest.ReInstall.NEVER)
 @RawDistOnly(reason = "Too verbose for docker and enough to check raw dist")
-public class LoggingDistTest {
+public class LoggingDistTest { //1m 29s (including windows tests which are for some reason executed on my machine). +chm:
 
     @Test
-    @Launch({ "start-dev", "--log-level=debug" })
+    @Launch({ "start-dev", "--storage=chm", "--log-level=debug" })
     void testSetRootLevel(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         assertTrue(cliResult.getOutput().contains("DEBUG [io.quarkus.resteasy.runtime]"));
@@ -54,7 +53,7 @@ public class LoggingDistTest {
     }
 
     @Test
-    @Launch({ "start-dev", "--log-level=org.keycloak:debug" })
+    @Launch({ "start-dev", "--storage=chm",  "--log-level=org.keycloak:debug" })
     void testSetCategoryLevel(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         assertFalse(cliResult.getOutput().contains("DEBUG [org.hibernate"));
@@ -64,48 +63,50 @@ public class LoggingDistTest {
 
     @Test
     @EnabledOnOs(value = { OS.LINUX, OS.MAC }, disabledReason = "different shell escaping behaviour on Windows.")
-    @Launch({ "start-dev", "--log-level=off,org.keycloak:debug,org.infinispan:info" })
+    @Launch({ "start-dev", "--storage=chm", "--log-level=off,org.keycloak.services:debug,org.keycloak:info" })
     void testRootAndCategoryLevels(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        assertFalse(cliResult.getOutput().contains("INFO  [io.quarkus"));
-        assertTrue(cliResult.getOutput().contains("DEBUG [org.keycloak"));
-        assertTrue(cliResult.getOutput().contains("INFO  [org.infinispan.CONTAINER]"));
+        cliResult.assertNoMessage("INFO  [io.quarkus");
+        cliResult.assertMessage("DEBUG [org.keycloak.services");
+        cliResult.assertNoMessage("DEBUG  [org.keycloak.common");
+        cliResult.assertMessage("INFO  [org.keycloak.common");
     }
 
     @Test
     @EnabledOnOs(value = { OS.WINDOWS }, disabledReason = "different shell escaping behaviour on Windows.")
-    @Launch({ "start-dev", "--log-level=\"off,org.keycloak:debug,org.infinispan:info\"" })
+    @Launch({ "start-dev", "--storage=chm", "--log-level=\"off,org.keycloak.services:debug,org.keycloak:info\"" })
     void testWinRootAndCategoryLevels(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        assertFalse(cliResult.getOutput().contains("INFO  [io.quarkus"));
-        assertTrue(cliResult.getOutput().contains("DEBUG [org.keycloak"));
-        assertTrue(cliResult.getOutput().contains("INFO  [org.infinispan.CONTAINER]"));
+        cliResult.assertNoMessage("INFO  [io.quarkus");
+        cliResult.assertMessage("DEBUG [org.keycloak.services");
+        cliResult.assertNoMessage("DEBUG  [org.keycloak.common");
+        cliResult.assertMessage("INFO  [org.keycloak.common");
     }
 
     @Test
     @EnabledOnOs(value = { OS.LINUX, OS.MAC }, disabledReason = "different shell escaping behaviour on Windows.")
-    @Launch({ "start-dev", "--log-level=off,org.keycloak:warn,debug" })
+    @Launch({ "start-dev", "--storage=chm", "--log-level=off,org.keycloak:warn,debug" })
     void testSetLastRootLevelIfMultipleSet(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        assertTrue(cliResult.getOutput().contains("DEBUG [io.quarkus.resteasy.runtime]"));
-        assertFalse(cliResult.getOutput().contains("INFO  [org.keycloak"));
+        cliResult.assertMessage("DEBUG [io.quarkus.resteasy.runtime]");
+        cliResult.assertNoMessage("INFO  [org.keycloak");
         cliResult.assertStartedDevMode();
     }
 
     @Test
     @EnabledOnOs(value = { OS.WINDOWS }, disabledReason = "different shell escaping behaviour on Windows.")
-    @Launch({ "start-dev", "--log-level=\"off,org.keycloak:warn,debug\"" })
+    @Launch({ "start-dev", "--storage=chm", "--log-level=\"off,org.keycloak:warn,debug\"" })
     void testWinSetLastRootLevelIfMultipleSet(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        assertTrue(cliResult.getOutput().contains("DEBUG [org.hibernate"));
-        assertFalse(cliResult.getOutput().contains("INFO  [org.keycloak"));
+        cliResult.assertMessage("DEBUG [io.quarkus.resteasy.runtime]");
+        cliResult.assertNoMessage("INFO  [org.keycloak");
         cliResult.assertStartedDevMode();
     }
 
     //see if loglvl is still debug, set to info.
     @Test
     @EnabledOnOs(value = { OS.LINUX, OS.MAC }, disabledReason = "different shell escaping behaviour on Windows.")
-    @Launch({ "start-dev", "--log-console-format=\"%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c{1.}] %s%e%n\"" })
+    @Launch({ "start-dev", "--storage=chm", "--log-console-format=\"%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c{1.}] %s%e%n\"" })
     void testSetLogFormat(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         assertFalse(cliResult.getOutput().contains("(keycloak-cache-init)"));
@@ -113,7 +114,7 @@ public class LoggingDistTest {
     }
 
     @Test
-    @Launch({ "start-dev", "--log-console-output=json" })
+    @Launch({ "start-dev", "--storage=chm", "--log-console-output=json" })
     void testJsonFormatApplied(LaunchResult result) throws JsonProcessingException {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertJsonLogDefaultsApplied();
@@ -122,28 +123,29 @@ public class LoggingDistTest {
 
     @Test
     @EnabledOnOs(value = { OS.LINUX, OS.MAC }, disabledReason = "different shell escaping behaviour on Windows.")
-    @Launch({ "start-dev", "--log-level=off,org.keycloak:debug,org.infinispan:info", "--log-console-output=json" })
+    @Launch({ "start-dev", "--storage=chm", "--log-level=off,org.keycloak.services:debug,org.keycloak:info", "--log-console-output=json" })
     void testLogLevelSettingsAppliedWhenJsonEnabled(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        assertFalse(cliResult.getOutput().contains("\"loggerName\":\"io.quarkus\",\"level\":\"INFO\")"));
-        assertTrue(cliResult.getOutput().contains("\"loggerName\":\"org.keycloak.services.resources.KeycloakApplication\",\"level\":\"DEBUG\""));
-        assertTrue(cliResult.getOutput().contains("\"loggerName\":\"org.infinispan.CONTAINER\",\"level\":\"INFO\""));
+        cliResult.assertNoMessage("\"loggerName\":\"io.quarkus\",\"level\":\"INFO\")");
+        cliResult.assertMessage("\"loggerName\":\"org.keycloak.services.resources.KeycloakApplication\",\"level\":\"DEBUG\"");
+        cliResult.assertNoMessage("\"loggerName\":\"org.keycloak.common.crypto.CryptoIntegration\",\"level\":\"Debug\"");
+        cliResult.assertMessage("\"loggerName\":\"org.keycloak.common.crypto.CryptoIntegration\",\"level\":\"INFO\"");
     }
 
     @Test
     @EnabledOnOs(value = { OS.WINDOWS }, disabledReason = "different shell escaping behaviour on Windows.")
-    @Launch({ "start-dev", "--log-level=\"off,org.keycloak:debug,org.infinispan:info\"", "--log-console-output=json" })
+    @Launch({ "start-dev", "--storage=chm", "--log-level=\"off,org.keycloak.services:debug,org.keycloak:info\"", "--log-console-output=json" })
     void testWinLogLevelSettingsAppliedWhenJsonEnabled(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        assertFalse(cliResult.getOutput().contains("\"loggerName\":\"io.quarkus\",\"level\":\"INFO\")"));
-        assertTrue(cliResult.getOutput().contains("\"loggerName\":\"org.keycloak.quarkus.runtime.storage.legacy.database.LegacyJpaConnectionProviderFactory\",\"level\":\"DEBUG\""));
-        assertTrue(cliResult.getOutput().contains("\"loggerName\":\"org.keycloak.services.resources.KeycloakApplication\",\"level\":\"DEBUG\""));
-        assertTrue(cliResult.getOutput().contains("\"loggerName\":\"org.infinispan.CONTAINER\",\"level\":\"INFO\""));
+        cliResult.assertNoMessage("\"loggerName\":\"io.quarkus\",\"level\":\"INFO\")");
+        cliResult.assertMessage("\"loggerName\":\"org.keycloak.services.resources.KeycloakApplication\",\"level\":\"DEBUG\"");
+        cliResult.assertNoMessage("\"loggerName\":\"org.keycloak.common.crypto.CryptoIntegration\",\"level\":\"Debug\"");
+        cliResult.assertMessage("\"loggerName\":\"org.keycloak.common.crypto.CryptoIntegration\",\"level\":\"INFO\"");
     }
 
     @Test
     @EnabledOnOs(value = { OS.LINUX, OS.MAC }, disabledReason = "different shell escaping behaviour on Windows.")
-    @Launch({ "start-dev", "--log=console,file"})
+    @Launch({ "start-dev", "--storage=chm", "--log=console,file"})
     void testKeycloakLogFileCreated(RawDistRootPath path) {
         Path logFilePath = Paths.get(path.getDistRootPath() + File.separator + LoggingOptions.DEFAULT_LOG_PATH);
         File logFile = new File(logFilePath.toString());
@@ -152,7 +154,7 @@ public class LoggingDistTest {
 
     @Test
     @EnabledOnOs(value = { OS.WINDOWS }, disabledReason = "different shell escaping behaviour on Windows.")
-    @Launch({ "start-dev", "--log=\"console,file\""})
+    @Launch({ "start-dev", "--storage=chm", "--log=\"console,file\""})
     void testWinKeycloakLogFileCreated(RawDistRootPath path) {
         Path logFilePath = Paths.get(path.getDistRootPath() + File.separator + LoggingOptions.DEFAULT_LOG_PATH);
         File logFile = new File(logFilePath.toString());
@@ -161,7 +163,7 @@ public class LoggingDistTest {
 
     @Test
     @EnabledOnOs(value = { OS.LINUX, OS.MAC }, disabledReason = "different shell escaping behaviour on Windows.")
-    @Launch({ "start-dev", "--log=console,file", "--log-file-format=\"%d{HH:mm:ss} %-5p [%c{1.}] (%t) %s%e%n\""})
+    @Launch({ "start-dev", "--storage=chm", "--log=console,file", "--log-file-format=\"%d{HH:mm:ss} %-5p [%c{1.}] (%t) %s%e%n\""})
     void testFileLoggingHasDifferentFormat(RawDistRootPath path) throws IOException {
         Path logFilePath = Paths.get(path.getDistRootPath() + File.separator + LoggingOptions.DEFAULT_LOG_PATH);
         File logFile = new File(logFilePath.toString());
@@ -171,7 +173,7 @@ public class LoggingDistTest {
     }
 
     @Test
-    @Launch({ "start-dev", "--log=file"})
+    @Launch({ "start-dev", "--storage=chm", "--log=file"})
     void testFileOnlyLogsNothingToConsole(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         assertFalse(cliResult.getOutput().contains("INFO  [io.quarkus]"));
