@@ -36,7 +36,7 @@ import io.restassured.RestAssured;
 @DistributionTest(keepAlive = true)
 @BeforeStartDistribution(CopyTLSKeystore.class)
 @RawDistOnly(reason = "Containers are immutable")
-public class ProxyDistTest { //before: 47.5s - without before_test: 28s - with chm: 17s
+public class ProxyDistTest {
 
     @BeforeAll
     public static void onBeforeAll() {

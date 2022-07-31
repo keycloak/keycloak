@@ -38,10 +38,10 @@ import io.quarkus.test.junit.main.LaunchResult;
 @DistributionTest(reInstall = DistributionTest.ReInstall.NEVER)
 @RawDistOnly(reason = "Containers are immutable")
 @TestMethodOrder(OrderAnnotation.class)
-public class QuarkusPropertiesAutoBuildDistTest {
+public class QuarkusPropertiesAutoBuildDistTest { //before: 1m 8s. with chm: 47s
 
     @Test
-    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
+    @Launch({ "start", "--storage=chm", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
     @Order(1)
     void reAugOnFirstRun(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
@@ -50,7 +50,7 @@ public class QuarkusPropertiesAutoBuildDistTest {
 
     @Test
     @BeforeStartDistribution(QuarkusPropertiesAutoBuildDistTest.UpdateConsoleLogLevelToWarn.class)
-    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
+    @Launch({ "start", "--storage=chm", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
     @Order(2)
     void testQuarkusRuntimePropDoesNotTriggerReAug(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
@@ -60,7 +60,7 @@ public class QuarkusPropertiesAutoBuildDistTest {
 
     @Test
     @BeforeStartDistribution(UpdateConsoleLogLevelToInfo.class)
-    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
+    @Launch({ "start", "--storage=chm", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
     @Order(3)
     void testNoReAugAfterChangingRuntimeProperty(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
@@ -70,7 +70,7 @@ public class QuarkusPropertiesAutoBuildDistTest {
 
     @Test
     @BeforeStartDistribution(AddAdditionalDatasource.class)
-    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
+    @Launch({ "start", "--storage=chm", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
     @Order(4)
     void testReAugForAdditionalDatasource(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
@@ -79,7 +79,7 @@ public class QuarkusPropertiesAutoBuildDistTest {
 
     @Test
     @BeforeStartDistribution(ChangeAdditionalDatasourceUsername.class)
-    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
+    @Launch({ "start", "--storage=chm", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
     @Order(5)
     void testNoReAugForAdditionalDatasourceRuntimeProperty(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
@@ -88,7 +88,7 @@ public class QuarkusPropertiesAutoBuildDistTest {
 
     @Test
     @BeforeStartDistribution(ChangeAdditionalDatasourceDbKind.class)
-    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
+    @Launch({ "start", "--storage=chm", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
     @Order(6)
     void testNoReAugWhenBuildTimePropertiesAreTheSame(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
@@ -97,7 +97,7 @@ public class QuarkusPropertiesAutoBuildDistTest {
 
     @Test
     @BeforeStartDistribution(AddAdditionalDatasource2.class)
-    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
+    @Launch({ "start", "--storage=chm", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
     @Order(7)
     void testReAugWhenAnotherDatasourceAdded(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
@@ -106,7 +106,7 @@ public class QuarkusPropertiesAutoBuildDistTest {
 
     @Test
     @BeforeStartDistribution(EnableQuarkusMetrics.class)
-    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
+    @Launch({ "start", "--storage=chm", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
     @Order(8)
     void testWrappedBuildPropertyTriggersBuildButGetsIgnoredWhenSetByQuarkus(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
