@@ -31,7 +31,7 @@ import org.keycloak.it.junit5.extension.RawDistOnly;
 import org.keycloak.it.utils.KeycloakDistribution;
 
 @DistributionTest
-class BuildCommandDistTest {
+class BuildCommandDistTest { //24.5s => w/ chm: 22s. but see comment below on long test.
 
     @Test
     @Launch({ "build" })
@@ -67,7 +67,7 @@ class BuildCommandDistTest {
 
     @Test
     @RawDistOnly(reason = "Containers are immutable")
-    void testDoNotRecordRuntimeOptionsDuringBuild(KeycloakDistribution distribution) {
+    void testDoNotRecordRuntimeOptionsDuringBuild(KeycloakDistribution distribution) { // starts re-augmentation twice bc cache=local changes when using "start" without optimized. exchange with storage=chm?
         distribution.setProperty("proxy", "edge");
         distribution.run("build", "--cache=local");
         distribution.removeProperty("proxy");
