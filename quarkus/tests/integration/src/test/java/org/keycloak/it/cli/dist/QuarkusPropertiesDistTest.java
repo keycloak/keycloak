@@ -47,7 +47,7 @@ public class QuarkusPropertiesDistTest {
     private static final String QUARKUS_RUNTIME_CONSOLE_LOGLVL_KEY = "quarkus.log.console.level";
 
     @Test
-    @Launch({ "build", "--cache=local" })
+    @Launch({ "build", "--storage=chm", "--cache=local" })
     @Order(1)
     void testBuildWithPropertyFromQuarkusProperties(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
@@ -56,7 +56,7 @@ public class QuarkusPropertiesDistTest {
 
     @Test
     @BeforeStartDistribution(QuarkusPropertiesDistTest.UpdateConsoleLogLevelToWarnFromQuarkusProps.class)
-    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false" })
+    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", OPTIMIZED_BUILD_OPTION_LONG })
     @Order(2)
     void testPropertyEnabledAtRuntime(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
@@ -64,7 +64,7 @@ public class QuarkusPropertiesDistTest {
     }
 
     @Test
-    @Launch({ "-Dquarkus.log.console.level=info", "start", "--http-enabled=true", "--hostname-strict=false" })
+    @Launch({ "-Dquarkus.log.console.level=info", "start", "--http-enabled=true", "--hostname-strict=false", OPTIMIZED_BUILD_OPTION_LONG })
     @Order(3)
     void testIgnoreQuarkusSystemPropertiesAtStart(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
@@ -82,7 +82,7 @@ public class QuarkusPropertiesDistTest {
 
     @Test
     @BeforeStartDistribution(UpdateConsoleLogLevelToInfoFromKeycloakConf.class)
-    @Launch({ "build" })
+    @Launch({ "build", "--storage=chm" })
     @Order(5)
     void testIgnoreQuarkusPropertyFromKeycloakConf(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
@@ -92,7 +92,7 @@ public class QuarkusPropertiesDistTest {
 
     @Test
     @BeforeStartDistribution(UpdateConsoleLogLevelToInfoFromQuarkusProps.class)
-    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false" })
+    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", OPTIMIZED_BUILD_OPTION_LONG })
     @Order(6)
     void testRuntimePropFromQuarkusPropsIsAppliedWithoutRebuild(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
@@ -102,7 +102,7 @@ public class QuarkusPropertiesDistTest {
 
     @Test
     @BeforeStartDistribution(UpdateHibernateMetricsFromQuarkusProps.class)
-    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false" })
+    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", OPTIMIZED_BUILD_OPTION_LONG })
     @Order(7)
     void testBuildRunTimeMismatchOnQuarkusBuildPropWarning(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
