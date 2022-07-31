@@ -33,10 +33,10 @@ import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentatio
 import io.quarkus.test.junit.main.Launch;
 import io.restassured.RestAssured;
 
-@DistributionTest(keepAlive = true, reInstall = DistributionTest.ReInstall.BEFORE_TEST)
+@DistributionTest(keepAlive = true)
 @BeforeStartDistribution(CopyTLSKeystore.class)
 @RawDistOnly(reason = "Containers are immutable")
-public class ProxyDistTest {
+public class ProxyDistTest { //before: 47.5s - without before_test: 28s - with chm: 17s
 
     @BeforeAll
     public static void onBeforeAll() {
@@ -44,7 +44,7 @@ public class ProxyDistTest {
     }
 
     @Test
-    @Launch({ "start-dev", "--hostname=mykeycloak.127.0.0.1.nip.io" })
+    @Launch({ "start-dev", "--storage=chm", "--hostname=mykeycloak.127.0.0.1.nip.io" })
     public void testSchemeAndPortFromRequestWhenNoProxySet() {
         assertFrontEndUrl("http://mykeycloak.127.0.0.1.nip.io:8080", "http://mykeycloak.127.0.0.1.nip.io:8080/");
         assertFrontEndUrl("http://localhost:8080", "http://mykeycloak.127.0.0.1.nip.io:8080/");
@@ -53,13 +53,13 @@ public class ProxyDistTest {
     }
 
     @Test
-    @Launch({ "start-dev", "--hostname=mykeycloak.127.0.0.1.nip.io", "--proxy=edge" })
+    @Launch({ "start-dev", "--storage=chm", "--hostname=mykeycloak.127.0.0.1.nip.io", "--proxy=edge" })
     public void testXForwardedHeadersWithEdge() {
         assertXForwardedHeaders();
     }
 
     @Test
-    @Launch({ "start-dev", "--hostname=mykeycloak.127.0.0.1.nip.io", "--proxy=reencrypt" })
+    @Launch({ "start-dev", "--storage=chm", "--hostname=mykeycloak.127.0.0.1.nip.io", "--proxy=reencrypt" })
     public void testXForwardedHeadersWithReencrypt() {
         assertXForwardedHeaders();
     }
