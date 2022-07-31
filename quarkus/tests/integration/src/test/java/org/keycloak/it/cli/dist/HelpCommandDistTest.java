@@ -29,7 +29,7 @@ import org.keycloak.it.utils.KeycloakDistribution;
 
 @DistributionTest
 @RawDistOnly(reason = "Verifying the help message output doesn't need long spin-up of docker dist tests.")
-public class HelpCommandDistTest extends HelpCommandTest { // extend can be removed? clitest shows now kc.sh/bat
+public class HelpCommandDistTest {
 
     @Test
     public void testHelpDoesNotStartReAugJvm(KeycloakDistribution dist) {
