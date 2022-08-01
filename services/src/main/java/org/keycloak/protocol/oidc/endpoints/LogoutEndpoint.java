@@ -301,7 +301,7 @@ public class LogoutEndpoint {
         }
 
         // Logout confirmation screen will be displayed to the user in this case
-        if (confirmationNeeded || forcedConfirmation) {
+        if ((confirmationNeeded || forcedConfirmation) && !providerConfig.isLegacyLogoutRedirectUri()) {
             return displayLogoutConfirmationScreen(loginForm, logoutSession);
         } else {
             return doBrowserLogout(logoutSession);

@@ -136,12 +136,6 @@ public class LegacyLogoutTest extends AbstractTestRealmKeycloakTest {
         String logoutUrl = oauth.getLogoutUrl().redirectUri(APP_REDIRECT_URI).build();
         driver.navigate().to(logoutUrl);
 
-        // Assert logout confirmation page. Session still exists. Assert default language on logout page (English)
-        logoutConfirmPage.assertCurrent();
-        Assert.assertThat(true, is(isSessionActive(sessionId)));
-        events.assertEmpty();
-        logoutConfirmPage.confirmLogout();
-
         // Redirected back to the application with expected state
         events.expectLogout(sessionId).removeDetail(Details.REDIRECT_URI).assertEvent();
         Assert.assertThat(false, is(isSessionActive(sessionId)));
@@ -156,12 +150,6 @@ public class LegacyLogoutTest extends AbstractTestRealmKeycloakTest {
 
         String logoutUrl = oauth.getLogoutUrl().postLogoutRedirectUri(APP_REDIRECT_URI).build();
         driver.navigate().to(logoutUrl);
-
-        // Assert logout confirmation page. Session still exists. Assert default language on logout page (English)
-        logoutConfirmPage.assertCurrent();
-        assertThat(true, is(isSessionActive(sessionId)));
-        events.assertEmpty();
-        logoutConfirmPage.confirmLogout();
 
         // Redirected back to the application with expected state
         events.expectLogout(sessionId).removeDetail(Details.REDIRECT_URI).assertEvent();
