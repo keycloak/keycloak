@@ -4,7 +4,6 @@
     keycloak-api-docs-dist:keycloak-api-docs
 
     keycloak-jetty94-adapter-dist:keycloak-oidc-jetty94-adapter
-    keycloak-js-adapter-npm-dist:keycloak-oidc-js-adapter
     keycloak-tomcat-adapter-dist:keycloak-oidc-tomcat-adapter
     keycloak-wildfly-adapter-dist:keycloak-oidc-wildfly-adapter
 

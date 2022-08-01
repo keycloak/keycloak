@@ -1,6 +1,6 @@
 {
   "name": "keycloak-js",
-  "version": "${project.version}",
+  "version": "999.0.0-dev",
   "description": "Keycloak Adapter",
   "main": "dist/keycloak.js",
   "module": "dist/keycloak.mjs",

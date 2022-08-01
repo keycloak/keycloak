@@ -31,7 +31,6 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>js-adapter-zip</module>
         <module>wildfly-adapter</module>
     </modules>
 
@@ -46,7 +45,6 @@
             <modules>
                 <module>tomcat-adapter-zip</module>
                 <module>jetty94-adapter-zip</module>
-                <module>js-adapter-npm-zip</module>
             </modules>
         </profile>
     </profiles>
