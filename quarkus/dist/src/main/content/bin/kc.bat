@@ -57,14 +57,15 @@ if not "%KEY:~0,2%"=="--" if "%KEY:~0,2%"=="-D" (
 if not "%KEY:~0,2%"=="--" if not "%KEY:~0,1%"=="-" (
   set "CONFIG_ARGS=%CONFIG_ARGS% %KEY%"
 )
-if "%KEY:~0,2%"=="--" if not "%KEY:~0,2%"=="-D" if "%KEY:~0,1%"=="-" (
-  if "%~2"=="" (
-    set "CONFIG_ARGS=%CONFIG_ARGS% %KEY%"
-  ) else (
-    set "CONFIG_ARGS=%CONFIG_ARGS% %KEY% %~2%"
+if not "%KEY:~0,2%"=="-D" (
+  if "%KEY:~0,1%"=="-" (
+      if "%~2"=="" (
+        set "CONFIG_ARGS=%CONFIG_ARGS% %KEY%"
+      ) else (
+        set "CONFIG_ARGS=%CONFIG_ARGS% %KEY% %~2%"
+      )
+      shift
   )
-
-  shift
 )
 shift
 goto READ-ARGS
@@ -129,14 +130,33 @@ set "JAVA_RUN_OPTS=%JAVA_OPTS% -Dkc.home.dir="%DIRNAME%.." -Djboss.server.config
 
 SetLocal EnableDelayedExpansion
 
-set "ONLY_BUILD_OPTION= build"
-set "NO_AUTO_BUILD_OPTION=optimized"
+set "OPTIMIZED_OPTION=--optimized"
+set "HELP_LONG_OPTION=--help"
+set "BUILD_OPTION= build"
+set IS_HELP_SHORT=false
 
-if "!CONFIG_ARGS:%NO_AUTO_BUILD_OPTION%=!"=="!CONFIG_ARGS!" if "!CONFIG_ARGS:%ONLY_BUILD_OPTION%=!"=="!CONFIG_ARGS!" (
+echo "%CONFIG_ARGS%" | findstr /r "\<-h\>" > nul
+
+if not errorlevel == 1 (
+    set IS_HELP_SHORT=true
+)
+
+set START_SERVER=true
+
+if "!CONFIG_ARGS:%OPTIMIZED_OPTION%=!"=="!CONFIG_ARGS!" if "!CONFIG_ARGS:%BUILD_OPTION%=!"=="!CONFIG_ARGS!" if "!CONFIG_ARGS:%HELP_LONG_OPTION%=!"=="!CONFIG_ARGS!" if "%IS_HELP_SHORT%" == "false" (
+    setlocal enabledelayedexpansion
+
     "%JAVA%" -Dkc.config.build-and-exit=true %JAVA_RUN_OPTS%
+
+    if not !errorlevel! == 0 (
+        set START_SERVER=false
+    )
+
     set "JAVA_RUN_OPTS=-Dkc.config.built=true %JAVA_RUN_OPTS%"
 )
 
-"%JAVA%" %JAVA_RUN_OPTS%
+if "%START_SERVER%" == "true" (
+    "%JAVA%" %JAVA_RUN_OPTS%
+)
 
 :END
