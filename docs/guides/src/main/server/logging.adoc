@@ -457,7 +457,7 @@ Keep in mind that `--log-level` is setting the leading log level, so for example
 
 <@kc.start parameters="--log=console,gelf, log-level=error, log-gelf-level=info"/>
 
-nothing below the error level will be sent to your logging stack.
+nothing below the error level will be sent to your logging stack. That means that even GELF in this example will receive only error level log messages.
 
 === Configure additional key values
 Currently, the Keycloak configuration does not support partly dynamic configuration keys, as they are used in quarkus properties, e.g. when defining `quarkus.log.handler.gelf.additional-field.<my-name>.value`.
