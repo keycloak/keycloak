@@ -104,6 +104,7 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
     public static final String ROLES_SCOPE_CONSENT_TEXT = "${rolesScopeConsentText}";
 
     public static final String CONFIG_LEGACY_LOGOUT_REDIRECT_URI = "legacy-logout-redirect-uri";
+    public static final String SUPPRESS_LOGOUT_CONFIRMATION_SCREEN = "suppress-logout-confirmation-screen";
 
     private OIDCProviderConfig providerConfig;
 
@@ -112,6 +113,9 @@ public class OIDCLoginProtocolFactory extends AbstractLoginProtocolFactory {
         this.providerConfig = new OIDCProviderConfig(config);
         if (providerConfig.isLegacyLogoutRedirectUri()) {
             logger.warnf("Deprecated switch '%s' is enabled. Please try to disable it and update your clients to use OpenID Connect compliant way for RP-initiated logout.", CONFIG_LEGACY_LOGOUT_REDIRECT_URI);
+        }
+        if (providerConfig.suppressLogoutConfirmationScreen()) {
+            logger.warnf("Deprecated switch '%s' is enabled. Please try to disable it and update your clients to use OpenID Connect compliant way for RP-initiated logout.", SUPPRESS_LOGOUT_CONFIRMATION_SCREEN);
         }
     }
 
