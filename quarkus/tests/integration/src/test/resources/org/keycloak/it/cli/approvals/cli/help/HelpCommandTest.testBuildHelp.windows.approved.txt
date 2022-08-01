@@ -93,4 +93,3 @@ Examples:
   Change the relative path:
 
       $ kc.bat build --http-relative-path=/auth
-
