@@ -53,6 +53,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
@@ -296,20 +297,40 @@ public class UserSessionProviderModelTest extends KeycloakModelTest {
                 (usMapStorageProvider == null || ConcurrentHashMapStorageProviderFactory.PROVIDER_ID.equals(usMapStorageProvider)));
 
         Set<String> userSessionIds = Collections.newSetFromMap(new ConcurrentHashMap<>());
+        CountDownLatch latch = new CountDownLatch(4);
 
-        inIndependentFactories(4, 30, () -> withRealm(realmId, (session, realm) -> {
-            UserModel user = session.users().getUserByUsername(realm, "user1");
-            UserSessionModel userSession = session.sessions().createUserSession(realm, user, "user1", "", "", false, null, null);
-            userSessionIds.add(userSession.getId());
+        inIndependentFactories(4, 30, () -> {
+            withRealm(realmId, (session, realm) -> {
+                UserModel user = session.users().getUserByUsername(realm, "user1");
+                UserSessionModel userSession = session.sessions().createUserSession(realm, user, "user1", "", "", false, null, null);
+                userSessionIds.add(userSession.getId());
 
-            return null;
-        }));
+                latch.countDown();
 
-        assertThat(userSessionIds, Matchers.iterableWithSize(4));
+                return null;
+            });
 
-        withRealm(realmId, (session, realm) -> {
-            userSessionIds.forEach(id -> Assert.assertNotNull(session.sessions().getUserSession(realm, id)));
-            return null;
+            // wait for other nodes to finish
+            try {
+                latch.await();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+
+            assertThat(userSessionIds, Matchers.iterableWithSize(4));
+
+            // wait a bit to allow replication
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+
+            withRealm(realmId, (session, realm) -> {
+                userSessionIds.forEach(id -> Assert.assertNotNull(session.sessions().getUserSession(realm, id)));
+
+                return null;
+            });
         });
     }
 }
