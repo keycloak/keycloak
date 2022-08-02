@@ -16,22 +16,16 @@
  *
  */
 
-package org.keycloak.crypto.def;
+package org.keycloak.crypto.fips;
 
-import org.apache.http.HttpHeaders;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.ByteArrayEntity;
-import org.apache.http.util.EntityUtils;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERIA5String;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.ocsp.OCSPObjectIdentifiers;
+import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.SubjectKeyIdentifier;
@@ -57,11 +51,15 @@ import org.keycloak.common.crypto.OCSPUtils;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.SecureRandom;
 import java.security.cert.*;
+import java.time.Duration;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -73,39 +71,24 @@ import java.util.logging.Logger;
  * @since 10/29/2016
  */
 
-public class BCOCSPUtilsProvider extends OCSPUtils {
+public class BCFIPSOCSPUtilsProvider extends OCSPUtils {
 
-    private final static Logger logger = Logger.getLogger(BCOCSPUtilsProvider.class.getName());
+    private final static Logger logger = Logger.getLogger(BCFIPSOCSPUtilsProvider.class.getName());
 
-   protected OCSPResp getResponse( OCSPReq ocspReq, URI responderUri) throws IOException {
-    
-        CloseableHttpClient httpClient = HttpClients.createDefault();
-        HttpPost post = new HttpPost(responderUri);
-        post.setHeader(HttpHeaders.CONTENT_TYPE, "application/ocsp-request");
-
-        final RequestConfig params = RequestConfig.custom()
-           .setConnectTimeout(OCSP_CONNECT_TIMEOUT)
-           .setSocketTimeout(OCSP_CONNECT_TIMEOUT)
-           .build();
-        post.setConfig(params);
-
-        post.setEntity(new ByteArrayEntity(ocspReq.getEncoded()));
+   protected OCSPResp getResponse( OCSPReq ocspReq, URI responderUri) throws IOException, InterruptedException {
+		HttpRequest post = HttpRequest.newBuilder(responderUri).header("Content-Type", "application/ocsp-request").timeout(Duration.ofMillis(OCSP_CONNECT_TIMEOUT))
+                .POST(HttpRequest.BodyPublishers.ofByteArray(ocspReq.getEncoded())).build();
 
         //Get Response
-        try (CloseableHttpResponse response = httpClient.execute(post)) {
-            try {
-                if (response.getStatusLine().getStatusCode() != 200) {
-                    String errorMessage = String.format("Connection error, unable to obtain certificate revocation status using OCSP responder \"%s\", code \"%d\"",
-                        responderUri.toString(), response.getStatusLine().getStatusCode());
-                    throw new IOException(errorMessage);
-                }
-
-                byte[] data = EntityUtils.toByteArray(response.getEntity());
-                return new OCSPResp(data);
-            } finally {
-                EntityUtils.consumeQuietly(response.getEntity());
-            }
+        HttpResponse<byte[]> response = null;
+        response = HttpClient.newHttpClient().send(post, HttpResponse.BodyHandlers.ofByteArray());
+        if (response.statusCode() != 200) {
+            String errorMessage = String.format("Connection error, unable to obtain certificate revocation status using OCSP responder \"%s\", code \"%d\"",
+                responderUri.toString(), response.statusCode());
+            throw new IOException(errorMessage);
         }
+
+        return new OCSPResp(response.body());
 
     }
 
@@ -128,7 +111,6 @@ public class BCOCSPUtilsProvider extends OCSPUtils {
             DigestCalculatorProvider dcp = new JcaDigestCalculatorProviderBuilder().build();
 
             DigestCalculator digCalc = dcp.get(CertificateID.HASH_SHA1);
-
             JcaCertificateID certificateID = new JcaCertificateID(digCalc, issuerCertificate, cert.getSerialNumber());
 
             // Create a nounce extension to protect against replay attacks
@@ -170,7 +152,7 @@ public class BCOCSPUtilsProvider extends OCSPUtils {
                         throw new CertPathValidatorException("OCSP request is malformed. OCSP response error: " + resp.getStatus(), (Throwable) null, (CertPath) null, -1, CertPathValidatorException.BasicReason.UNSPECIFIED);
                 }
             }
-            catch(IOException e) {
+            catch(IOException | InterruptedException e) {
                 logger.log(Level.FINE, "OCSP Responder \"{0}\" failed to return a valid OCSP response\n{1}",
                         new Object[] {responderURI, e.getMessage()});
                 throw new CertPathValidatorException("OCSP check failed", e);
