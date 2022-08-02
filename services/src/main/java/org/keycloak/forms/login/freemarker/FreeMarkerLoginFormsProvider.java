@@ -228,7 +228,7 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
 
         switch (page) {
             case LOGIN_CONFIG_TOTP:
-                attributes.put("totp", new TotpBean(session, realm, user, uriInfo.getRequestUriBuilder()));
+                attributes.put("totp", new TotpBean(session, realm, user, getTotpUriBuilder()));
                 break;
             case LOGIN_RECOVERY_AUTHN_CODES_CONFIG:
                 attributes.put("recoveryAuthnCodesConfigBean", new RecoveryAuthnCodesBean());
@@ -304,6 +304,18 @@ public class FreeMarkerLoginFormsProvider implements LoginFormsProvider {
     
     private boolean isDynamicUserProfile() {
         return session.getProvider(UserProfileProvider.class).getConfiguration() != null;
+    }
+
+    /**
+     * Get sure that correct hostname and path is used for totp form.
+     * Relevant when running in proxy mode.
+     *
+     * @return UriBuilder with configured hostname and path set
+     */
+    private UriBuilder getTotpUriBuilder() {
+        return uriInfo.getBaseUriBuilder()
+                .path(uriInfo.getRequestUri().getPath())
+                .replaceQuery(uriInfo.getRequestUri().getQuery());
     }
 
     @Override
