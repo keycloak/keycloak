@@ -98,7 +98,6 @@ public class UserSessionConcurrencyTest extends KeycloakModelTest {
                     // This is basically the same as JpaMapKeycloakTransaction#read method is doing after calling lockUserSessionsForModification() method
                     if (isHotRodStore) {
                         SYNC_USESSION.lock();
-                        releaseLockOnTransactionCommit(session, SYNC_USESSION);
                     }
 
                     UserSessionModel uSession = lockUserSessionsForModification(session, () -> session.sessions().getUserSession(realm, uId));
@@ -109,6 +108,10 @@ public class UserSessionConcurrencyTest extends KeycloakModelTest {
                     }
 
                     cSession.setNote(OIDCLoginProtocol.STATE_PARAM, "state-" + n);
+
+                    if (isHotRodStore) {
+                        releaseLockOnTransactionCommit(session, SYNC_USESSION);
+                    }
 
                     return null;
                 }));
