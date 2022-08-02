@@ -178,6 +178,7 @@
              https://issues.redhat.com/browse/KEYCLOAK-17585?focusedCommentId=16002705&page=com.atlassian.jira.plugin.system.issuetabpanels%3Acomment-tabpanel#comment-16002705
         -->
         <microprofile-metrics-api.version>2.3</microprofile-metrics-api.version>
+        <testcontainers.version>1.16.3</testcontainers.version>
 
         <!-- Maven Plugins -->
         <replacer.plugin.version>1.3.5</replacer.plugin.version>

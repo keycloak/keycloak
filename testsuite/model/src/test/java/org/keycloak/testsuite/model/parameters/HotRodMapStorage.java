@@ -17,8 +17,7 @@
 package org.keycloak.testsuite.model.parameters;
 
 import com.google.common.collect.ImmutableSet;
-import org.junit.runner.Description;
-import org.junit.runners.model.Statement;
+import org.jboss.logging.Logger;
 import org.keycloak.authorization.store.StoreFactorySpi;
 import org.keycloak.events.EventStoreSpi;
 import org.keycloak.models.ActionTokenStoreSpi;
@@ -31,7 +30,6 @@ import org.keycloak.models.map.authSession.MapRootAuthenticationSessionProviderF
 import org.keycloak.models.map.authorization.MapAuthorizationStoreFactory;
 import org.keycloak.models.map.client.MapClientProviderFactory;
 import org.keycloak.models.map.clientscope.MapClientScopeProviderFactory;
-import org.keycloak.models.map.events.MapEventStoreProviderFactory;
 import org.keycloak.models.map.keys.MapPublicKeyStorageProviderFactory;
 import org.keycloak.models.map.singleUseObject.MapSingleUseObjectProviderFactory;
 import org.keycloak.models.map.storage.hotRod.connections.DefaultHotRodConnectionProviderFactory;
@@ -51,16 +49,38 @@ import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
 import org.keycloak.sessions.AuthenticationSessionSpi;
 import org.keycloak.testsuite.model.Config;
-import org.keycloak.testsuite.model.HotRodServerRule;
 import org.keycloak.testsuite.model.KeycloakModelParameters;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.wait.strategy.Wait;
 
+import java.time.Duration;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  *
  * @author hmlnarik
  */
 public class HotRodMapStorage extends KeycloakModelParameters {
+
+    private final Logger LOG = Logger.getLogger(getClass());
+    public static final String PORT = System.getProperty("hot-rod.connection.port", "11222");
+    public static String HOST = System.getProperty("hot-rod.connection.host");
+    public static final String USERNAME = System.getProperty("hot-rod.connection.username", "admin");
+    public static final String PASSWORD = System.getProperty("hot-rod.connection.password", "admin");
+    public static final Boolean START_CONTAINER = Boolean.valueOf(System.getProperty("hot-rod.start-container", "true"));
+
+    private static final String ZERO_TO_255
+            = "(\\d{1,2}|(0|1)\\"
+            + "d{2}|2[0-4]\\d|25[0-5])";
+    private static final String IP_ADDRESS_REGEX
+            = ZERO_TO_255 + "\\."
+            + ZERO_TO_255 + "\\."
+            + ZERO_TO_255 + "\\."
+            + ZERO_TO_255;
+
+    private static final Pattern IP_ADDRESS_PATTERN = Pattern.compile("listening on (" + IP_ADDRESS_REGEX + "):" + PORT);
 
     static final Set<Class<? extends Spi>> ALLOWED_SPIS = ImmutableSet.<Class<? extends Spi>>builder()
       .add(HotRodConnectionSpi.class)
@@ -69,10 +89,12 @@ public class HotRodMapStorage extends KeycloakModelParameters {
     static final Set<Class<? extends ProviderFactory>> ALLOWED_FACTORIES = ImmutableSet.<Class<? extends ProviderFactory>>builder()
       .add(HotRodMapStorageProviderFactory.class)
       .add(HotRodConnectionProviderFactory.class)
-      .add(ConcurrentHashMapStorageProviderFactory.class) // TODO: this should be removed when we have a HotRod implementation for each area
       .build();
     
-    private HotRodServerRule hotRodServerRule = new HotRodServerRule();
+    private final GenericContainer<?> hotRodContainer = new GenericContainer("quay.io/infinispan/server:" + System.getProperty("infinispan.version"))
+                                                            .withEnv("USER", USERNAME)
+                                                            .withEnv("PASS", PASSWORD)
+                                                            .withNetworkMode("host");
 
     @Override
     public void updateConfig(Config cf) {
@@ -99,19 +121,38 @@ public class HotRodMapStorage extends KeycloakModelParameters {
                 .config("dir", "${project.build.directory:target}")
                 .config("keyType.single-use-objects", "string");
 
+        if (HOST == null && START_CONTAINER) {
+            Matcher matcher = IP_ADDRESS_PATTERN.matcher(hotRodContainer.getLogs());
+            if (!matcher.find()) {
+                LOG.errorf("Cannot find IP address of the infinispan server in log:\\n%s ", hotRodContainer.getLogs());
+                throw new IllegalStateException("Cannot find IP address of the Infinispan server. See test log for Infinispan container log.");
+            }
+            HOST = matcher.group(1);
+        }
+
         cf.spi(HotRodConnectionSpi.NAME).provider(DefaultHotRodConnectionProviderFactory.PROVIDER_ID)
-                .config("enableSecurity", "false")
-                .config("configureRemoteCaches", "false");
+                .config("host", HOST)
+                .config("port", PORT)
+                .config("username", USERNAME)
+                .config("password", PASSWORD)
+                .config("configureRemoteCaches", "true");
     }
 
     @Override
     public void beforeSuite(Config cf) {
-        hotRodServerRule.createHotRodMapStoreServer();
+        if (START_CONTAINER) {
+            hotRodContainer
+                    .withStartupTimeout(Duration.ofMinutes(5))
+                    .waitingFor(Wait.forLogMessage(".*Infinispan Server.*started in.*", 1))
+                    .start();
+        }
     }
 
     @Override
-    public Statement classRule(Statement base, Description description) {
-        return hotRodServerRule.apply(base, description);
+    public void afterSuite() {
+        if (START_CONTAINER) {
+            hotRodContainer.stop();
+        }
     }
 
     public HotRodMapStorage() {

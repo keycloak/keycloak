@@ -31,18 +31,6 @@
             <artifactId>infinispan-remote-query-client</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.infinispan</groupId>
-            <artifactId>infinispan-server-router</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.infinispan</groupId>
-            <artifactId>infinispan-server-rest</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.infinispan</groupId>
-            <artifactId>infinispan-server-runtime</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.infinispan.protostream</groupId>
             <artifactId>protostream-processor</artifactId>
             <scope>provided</scope>

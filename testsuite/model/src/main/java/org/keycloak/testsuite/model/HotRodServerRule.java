@@ -84,29 +84,6 @@ public class HotRodServerRule extends ExternalResource {
         InfinispanUtil.setTimeServiceToKeycloakTime(hotRodCacheManager2);
     }
 
-    public void createHotRodMapStoreServer() {
-        hotRodCacheManager = configureHotRodCacheManager("hotrod/infinispan.xml");
-        hotRodServer = new HotRodServer();
-
-        HotRodUtils.createHotRodMapStoreServer(hotRodServer, hotRodCacheManager, 11444);
-
-        org.infinispan.client.hotrod.configuration.ConfigurationBuilder remoteBuilder = new org.infinispan.client.hotrod.configuration.ConfigurationBuilder();
-        org.infinispan.client.hotrod.configuration.Configuration cfg = remoteBuilder
-                .addServers(hotRodServer.getHost() + ":" + hotRodServer.getPort()).build();
-        remoteCacheManager = new RemoteCacheManager(cfg);
-    }
-
-    private DefaultCacheManager configureHotRodCacheManager(String configPath) {
-        DefaultCacheManager manager = null;
-        try {
-            manager = new DefaultCacheManager(configPath);
-        } catch (IOException e) {
-            new RuntimeException(e);
-        }
-
-        return manager;
-    }
-
     private void getCaches(String... cache) {
         for (String c: cache) {
             hotRodCacheManager.getCache(c, true);

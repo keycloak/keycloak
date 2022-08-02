@@ -30,7 +30,6 @@ import org.jboss.logging.Logger;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.map.storage.hotRod.common.HotRodEntityDescriptor;
-import org.keycloak.models.map.storage.hotRod.common.HotRodUtils;
 import org.keycloak.models.map.storage.hotRod.common.CommonPrimitivesProtoSchemaInitializer;
 import org.keycloak.models.map.storage.hotRod.common.HotRodVersionUtils;
 
@@ -89,14 +88,10 @@ public class DefaultHotRodConnectionProviderFactory implements HotRodConnectionP
     }
 
     public void lazyInit() {
-        if (config.getBoolean("embedded", false)) {
-            HotRodUtils.createHotRodMapStoreServer(config.getInt("embeddedPort", 11444));
-        }
-
         ConfigurationBuilder remoteBuilder = new ConfigurationBuilder();
         remoteBuilder.addServer()
                 .host(config.get("host", "localhost"))
-                .port(config.getInt("port", 11444))
+                .port(config.getInt("port", 11222))
                 .clientIntelligence(ClientIntelligence.HASH_DISTRIBUTION_AWARE)
                 .marshaller(new ProtoStreamMarshaller());
 
