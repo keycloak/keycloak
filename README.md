@@ -44,12 +44,12 @@ You'll only have to run this command once, unless you remove the server director
 
 ### Running the development server
 
-Now that the Keycloak sever is running it's time to run the development server for the Admin UI. This server is used to build the Admin UI in a manner that it can be iterated on quickly in a browser, using features such as [Hot Module Replacement (HMR) and Fast Refresh](https://www.snowpack.dev/concepts/hot-module-replacement).
+Now that the Keycloak sever is running it's time to run the development server for the Admin UI. This server is used to build the Admin UI in a manner that it can be iterated on quickly in a browser, using features such as [Hot Module Replacement (HMR)](https://vitejs.dev/guide/features.html#hot-module-replacement) and [Fast Refresh](https://www.npmjs.com/package/react-refresh).
 
 To start the development server run the following command:
 
 ```bash
-npm run start
+npm run dev
 ```
 
 Once the process of optimization is done your browser will automatically open your local host on port `8080`. From here you will be redirected to the Keycloak server to authenticate, which you can do with the default username and password (`admin`).
@@ -67,37 +67,6 @@ Every time you create a commit it should be automatically linted and formatted f
 ```bash
 npm run lint
 ```
-
-## Theming
-
-It's possible to theme the Admin UI interface, this is useful if you want to apply your own branding so that the product looks familiar to your users. The Admin UI comes with two built-in themes called `keycloak` and `rh-sso`, by default the `keycloak` theme will be used when building the application.
-
-This behavior can be changed by passing in a `THEME_NAME` environment variable, for example if wanted to build the application using the `rh-sso` theme we can do the following:
-
-```bash
-THEME_NAME=rh-sso npm run build
-```
-
-And likewise if we wanted to start a development server with this theme:
-
-```
-THEME_NAME=rh-sso npm run start
-```
-
-To make it simpler to build the `rh-sso` theme there are some shorthand NPM scripts available that you can run instead:
-
-```bash
-# Run a production build with the 'rh-sso' theme
-npm run build:rh-sso
-
-# Or for development
-npm run start:rh-sso
-```
-
-### Creating your own theme
-
-All themes are located in the `themes/` directory of the project, if you want to create a new theme you can create a new directory here and name it the same as your theme. Copy the files from the default theme here and customize them to your liking.
-
 ## Integration testing with Cypress
 
 This repository contains integration tests developed with the [Cypress framework](https://www.cypress.io/).

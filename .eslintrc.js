@@ -1,7 +1,7 @@
 /** @type {import("eslint").Linter.Config } */
 module.exports = {
   root: true,
-  ignorePatterns: ["node_modules", "build", "keycloak-theme", "server"],
+  ignorePatterns: ["node_modules", "dist", "keycloak-theme", "server"],
   parserOptions: {
     project: "./tsconfig.eslint.json",
     extraFileExtensions: [".mjs"],

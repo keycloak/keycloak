@@ -5,5 +5,6 @@
     "types": ["node", "cypress", "@testing-library/cypress", "@4tw/cypress-drag-drop"],
     "module": "ES2015",
     "target": "ES2015",
+    "useDefineForClassFields": false,
   }
 }

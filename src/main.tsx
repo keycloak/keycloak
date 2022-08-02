@@ -1,3 +1,6 @@
+import "@patternfly/patternfly/patternfly-addons.css";
+import "@patternfly/react-core/dist/styles/base.css";
+
 import React, { StrictMode } from "react";
 import ReactDOM from "react-dom";
 
@@ -6,12 +9,6 @@ import { initAdminClient } from "./context/auth/AdminClient";
 import { initI18n } from "./i18n";
 
 import "./index.css";
-
-// Hot Module Replacement (HMR) - Remove this snippet to remove HMR.
-// Learn more: https://snowpack.dev/concepts/hot-module-replacement
-if (import.meta.hot) {
-  import.meta.hot.accept();
-}
 
 async function initialize() {
   const { keycloak, adminClient } = await initAdminClient();

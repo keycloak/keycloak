@@ -3,7 +3,7 @@
   "include": ["**/*", ".eslintrc.js"],
   "exclude": [
     "node_modules",
-    "build",
+    "dist",
     "keycloak-theme",
     "server"
   ]
