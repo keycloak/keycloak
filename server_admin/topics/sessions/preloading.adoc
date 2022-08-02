@@ -15,7 +15,7 @@ The following example shows how to configure offline sessions preloading.
 ifeval::["{kc_dist}" == "quarkus"]
 [source,bash]
 ----
-bin/kc.[sh|bat] start --spi-user-sessions-infinispan-preload-offline-sessions-from-database=false
+bin/kc.[sh|bat] start --spi-user-sessions-infinispan-preload-offline-sessions-from-database=true
 ----
 endif::[]
 
