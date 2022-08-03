@@ -26,6 +26,7 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.jboss.logging.Logger;
 import org.keycloak.common.util.PemUtils;
 
 /**
@@ -35,6 +36,8 @@ import org.keycloak.common.util.PemUtils;
  */
 
 public abstract class UserIdentityExtractorProvider {
+
+    private static final Logger logger = Logger.getLogger(UserIdentityExtractorProvider.class);
 
     public abstract class  SubjectAltNameExtractor implements UserIdentityExtractor {
 
@@ -83,12 +86,12 @@ public abstract class UserIdentityExtractorProvider {
             Matcher m = r.matcher(value);
 
             if (!m.find()) {
-//FIXME                logger.debugf("[PatternMatcher:extract] No matches were found for input \"%s\", pattern=\"%s\"", value, _pattern);
+                logger.debugf("[PatternMatcher:extract] No matches were found for input \"%s\", pattern=\"%s\"", value, _pattern);
                 return null;
             }
 
             if (m.groupCount() != 1) {
-//FIXME                logger.debugf("[PatternMatcher:extract] Match produced more than a single group for input \"%s\", pattern=\"%s\"", value, _pattern);
+                logger.debugf("[PatternMatcher:extract] Match produced more than a single group for input \"%s\", pattern=\"%s\"", value, _pattern);
                 return null;
             }
 
@@ -121,14 +124,16 @@ public abstract class UserIdentityExtractorProvider {
                 }
                 
                 String pem = PemUtils.encodeCertificate(certs[0]);
-                //FIXME               logger.debugf("Using PEM certificate \"%s\" as user identity.", pem);
+                logger.debugf("Using PEM certificate \"%s\" as user identity.", pem);
                 return pem;
             }
         };
     }
 
-    public abstract UserIdentityExtractor getPatternIdentityExtractor(String pattern,
-                                                                 Function<X509Certificate[],String> func);
+    public UserIdentityExtractor getPatternIdentityExtractor(String pattern,
+                                                                 Function<X509Certificate[],String> valueToMatch) {
+                                                                     return new PatternMatcher(pattern, valueToMatch);
+                                                                 }
 
     public abstract UserIdentityExtractor getX500NameExtractor(String identifier, Function<X509Certificate[],Principal> x500Name);
 

@@ -189,14 +189,7 @@ public class BCFIPSUserIdentityExtractorProvider  extends UserIdentityExtractorP
     }
 
     @Override
-    public UserIdentityExtractor getPatternIdentityExtractor(String pattern, Function<X509Certificate[], String> func) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
     public UserIdentityExtractor getX500NameExtractor(String identifier, Function<X509Certificate[], Principal> x500Name) {
-        // TODO Auto-generated method stub
         return new X500NameRDNExtractorBCProvider(identifier, x500Name);
     }
 
