@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Controller, useFormContext } from "react-hook-form";
 import { Select, SelectOption, SelectVariant } from "@patternfly/react-core";

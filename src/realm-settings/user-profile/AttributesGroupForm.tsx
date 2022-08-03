@@ -7,7 +7,7 @@ import {
   Text,
   TextContent,
 } from "@patternfly/react-core";
-import React, { useEffect, useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { FormProvider, SubmitHandler, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Link, useHistory, useParams } from "react-router-dom";

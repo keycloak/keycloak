@@ -1,5 +1,5 @@
 import { TextInput, TextInputProps } from "@patternfly/react-core";
-import React, { ComponentProps, forwardRef, HTMLProps } from "react";
+import { ComponentProps, forwardRef, HTMLProps } from "react";
 
 // PatternFly changes the signature of the 'onChange' handler for input elements.
 // This causes issues with React Hook Form as it expects the default signature for an input element.

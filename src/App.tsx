@@ -1,4 +1,4 @@
-import React, { FunctionComponent, Suspense } from "react";
+import { FunctionComponent, Suspense } from "react";
 import { Page } from "@patternfly/react-core";
 import { HashRouter as Router, Route, Switch } from "react-router-dom";
 import { ErrorBoundary } from "react-error-boundary";

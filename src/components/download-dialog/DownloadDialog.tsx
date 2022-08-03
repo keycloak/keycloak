@@ -11,7 +11,7 @@ import {
   StackItem,
 } from "@patternfly/react-core";
 import FileSaver from "file-saver";
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";

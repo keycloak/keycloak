@@ -1,7 +1,7 @@
 import { CodeEditor, Language } from "@patternfly/react-code-editor";
 import { ActionGroup, Button, Form, PageSection } from "@patternfly/react-core";
 import type { editor } from "monaco-editor";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAlerts } from "../../components/alert/Alerts";
 import { prettyPrintJSON } from "../../util";

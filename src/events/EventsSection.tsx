@@ -27,7 +27,7 @@ import type EventRepresentation from "@keycloak/keycloak-admin-client/lib/defs/e
 import type EventType from "@keycloak/keycloak-admin-client/lib/defs/eventTypes";
 import type { RealmEventsConfigRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/realmEventsConfigRepresentation";
 import { pickBy } from "lodash-es";
-import React, { useState } from "react";
+import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Trans, useTranslation } from "react-i18next";
 import { Link, useHistory } from "react-router-dom";

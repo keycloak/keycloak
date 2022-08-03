@@ -1,4 +1,4 @@
-import React from "react";
+import { FormEvent, FunctionComponent } from "react";
 import { NavLink, useHistory, useRouteMatch } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
@@ -16,7 +16,7 @@ import { useAccess } from "./context/access/Access";
 import { routes } from "./route-config";
 import { AddRealmRoute } from "./realm/routes/AddRealm";
 
-export const PageNav: React.FunctionComponent = () => {
+export const PageNav: FunctionComponent = () => {
   const { t } = useTranslation("common");
   const { hasAccess, hasSomeAccess } = useAccess();
   const { realm } = useRealm();
@@ -27,7 +27,7 @@ export const PageNav: React.FunctionComponent = () => {
     groupId: number | string;
     itemId: number | string;
     to: string;
-    event: React.FormEvent<HTMLInputElement>;
+    event: FormEvent<HTMLInputElement>;
   };
 
   const onSelect = (item: SelectedItem) => {

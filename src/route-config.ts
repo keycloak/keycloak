@@ -1,6 +1,6 @@
 import type { TFunction } from "i18next";
 import type { AccessType } from "@keycloak/keycloak-admin-client/lib/defs/whoAmIRepresentation";
-import type { ComponentType } from "react";
+import type { ComponentType, LazyExoticComponent } from "react";
 import type { MatchOptions } from "use-react-router-breadcrumbs";
 import authenticationRoutes from "./authentication/routes";
 import clientScopesRoutes from "./client-scopes/routes";
@@ -19,7 +19,7 @@ import userRoutes from "./user/routes";
 
 export type RouteDef = {
   path: string;
-  component: ComponentType | React.LazyExoticComponent<() => JSX.Element>;
+  component: ComponentType | LazyExoticComponent<() => JSX.Element>;
   breadcrumb?: (t: TFunction) => string | ComponentType<any>;
   access: AccessType | AccessType[];
   matchOptions?: MatchOptions;

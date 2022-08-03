@@ -1,7 +1,7 @@
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import type UserSessionRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userSessionRepresentation";
 import { PageSection } from "@patternfly/react-core";
-import React from "react";
+
 import { useTranslation } from "react-i18next";
 
 import type { LoaderFunction } from "../components/table-toolbar/KeycloakDataTable";

@@ -1,6 +1,6 @@
 import type UserProfileConfig from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
 import { AlertVariant } from "@patternfly/react-core";
-import React, { createContext, FunctionComponent, useState } from "react";
+import { createContext, FunctionComponent, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";

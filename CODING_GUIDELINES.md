@@ -40,7 +40,7 @@ A good tutorial on this approach is found in [Kent Dodds’ blog](https://kentcd
 This project uses function components and hooks over class components. When coding function components in typescript, a developer should include any specific props that they need.
 
 ```javascript
-import React, { FunctionComponent } from "react";
+import { FunctionComponent } from "react";
 
 ...
 
@@ -55,7 +55,7 @@ export const ExampleComponent: FunctionComponent<ExampleComponentProps> = ({ mes
 For components that do not have any additional props an empty object should be used instead:
 
 ```javascript
-import React, { FunctionComponent } from "react";
+import { FunctionComponent } from "react";
 
 ...
 

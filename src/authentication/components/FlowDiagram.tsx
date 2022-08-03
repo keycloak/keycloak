@@ -1,4 +1,4 @@
-import React, { useState, MouseEvent } from "react";
+import { useState, MouseEvent as ReactMouseEvent } from "react";
 import {
   Drawer,
   DrawerActions,
@@ -41,7 +41,7 @@ const createEdge = (fromNode: string, toNode: string) => ({
   target: toNode,
   data: {
     onEdgeClick: (
-      evt: React.MouseEvent<HTMLButtonElement, MouseEvent>,
+      evt: ReactMouseEvent<HTMLButtonElement, MouseEvent>,
       id: string
     ) => {
       evt.stopPropagation();
@@ -217,7 +217,7 @@ export const FlowDiagram = ({
   );
   const [expandDrawer, setExpandDrawer] = useState(false);
 
-  const onElementClick = (_event: MouseEvent, element: Node | Edge) => {
+  const onElementClick = (_event: ReactMouseEvent, element: Node | Edge) => {
     if (isNode(element)) setExpandDrawer(!expandDrawer);
   };
 

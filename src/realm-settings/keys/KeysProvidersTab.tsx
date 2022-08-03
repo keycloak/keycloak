@@ -1,4 +1,4 @@
-import React, { useMemo, useState, KeyboardEvent } from "react";
+import { useMemo, useState, KeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
 import {
   AlertVariant,

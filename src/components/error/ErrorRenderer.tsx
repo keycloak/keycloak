@@ -5,7 +5,7 @@ import {
   AlertVariant,
   PageSection,
 } from "@patternfly/react-core";
-import React from "react";
+
 import type { FallbackProps } from "react-error-boundary";
 import { useTranslation } from "react-i18next";
 

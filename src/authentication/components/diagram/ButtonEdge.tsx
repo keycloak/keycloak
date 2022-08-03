@@ -1,4 +1,4 @@
-import React, { CSSProperties } from "react";
+import { CSSProperties, MouseEvent as ReactMouseEvent } from "react";
 import { PlusIcon } from "@patternfly/react-icons";
 import {
   ArrowHeadType,
@@ -22,7 +22,7 @@ type ButtonEdgeProps = {
   selected: boolean;
   data: {
     onEdgeClick: (
-      evt: React.MouseEvent<HTMLButtonElement, MouseEvent>,
+      evt: ReactMouseEvent<HTMLButtonElement, MouseEvent>,
       id: string
     ) => void;
   };

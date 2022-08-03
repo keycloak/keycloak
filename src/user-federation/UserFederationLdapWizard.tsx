@@ -4,7 +4,7 @@ import {
   WizardContextConsumer,
   WizardFooter,
 } from "@patternfly/react-core";
-import React from "react";
+
 import { LdapSettingsGeneral } from "./ldap/LdapSettingsGeneral";
 import { LdapSettingsConnection } from "./ldap/LdapSettingsConnection";
 import { LdapSettingsSearching } from "./ldap/LdapSettingsSearching";

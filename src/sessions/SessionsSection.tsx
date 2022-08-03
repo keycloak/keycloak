@@ -1,6 +1,6 @@
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import { DropdownItem, PageSection } from "@patternfly/react-core";
-import React, { useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { ViewHeader } from "../components/view-header/ViewHeader";

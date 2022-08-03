@@ -1,4 +1,4 @@
-import React, { DependencyList, useState } from "react";
+import { DependencyList, ReactNode, useState } from "react";
 
 import { useFetch } from "../../context/auth/AdminClient";
 import { KeycloakSpinner } from "../keycloak-spinner/KeycloakSpinner";
@@ -6,7 +6,7 @@ import { KeycloakSpinner } from "../keycloak-spinner/KeycloakSpinner";
 type DataLoaderProps<T> = {
   loader: () => Promise<T>;
   deps?: DependencyList;
-  children: ((arg: T) => any) | React.ReactNode;
+  children: ((arg: T) => any) | ReactNode;
 };
 
 export function DataLoader<T>(props: DataLoaderProps<T>) {

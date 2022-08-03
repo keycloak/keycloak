@@ -1,6 +1,6 @@
 import { Popover } from "@patternfly/react-core";
 import { HelpIcon } from "@patternfly/react-icons";
-import React, { isValidElement, ReactNode } from "react";
+import { isValidElement, ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useHelp } from "./HelpHeader";
 

@@ -22,7 +22,7 @@ export default defineConfig({
       include: [],
     },
   },
-  plugins: [react({ jsxRuntime: "classic" }), checker({ typescript: true })],
+  plugins: [react(), checker({ typescript: true })],
   test: {
     setupFiles: "vitest.setup.ts",
     watch: false,

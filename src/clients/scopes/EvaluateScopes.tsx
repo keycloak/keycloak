@@ -23,7 +23,7 @@ import type ProtocolMapperRepresentation from "@keycloak/keycloak-admin-client/l
 import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
 import type { ProtocolMapperTypeRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/serverInfoRepesentation";
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useHelp } from "../../components/help-enabler/HelpHeader";
 import { HelpItem } from "../../components/help-enabler/HelpItem";

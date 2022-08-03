@@ -1,5 +1,5 @@
 import { PageSection } from "@patternfly/react-core";
-import React from "react";
+
 import { useTranslation } from "react-i18next";
 import { useParams } from "react-router-dom";
 

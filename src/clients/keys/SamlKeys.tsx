@@ -1,4 +1,4 @@
-import React, { Fragment, useState } from "react";
+import { Fragment, useState } from "react";
 import FileSaver from "file-saver";
 import { useTranslation } from "react-i18next";
 import { Controller, useFormContext } from "react-hook-form";

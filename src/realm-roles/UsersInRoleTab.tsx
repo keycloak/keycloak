@@ -1,6 +1,6 @@
 import { Button, PageSection, Popover } from "@patternfly/react-core";
 import { QuestionCircleIcon } from "@patternfly/react-icons";
-import React from "react";
+
 import { useTranslation } from "react-i18next";
 import { useHistory, useParams } from "react-router-dom";
 import { useHelp } from "../components/help-enabler/HelpHeader";

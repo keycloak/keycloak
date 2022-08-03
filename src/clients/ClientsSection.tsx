@@ -11,7 +11,7 @@ import {
 import { cellWidth, IRowData, TableText } from "@patternfly/react-table";
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import type { ClientQuery } from "@keycloak/keycloak-admin-client/lib/resources/clients";
-import React, { useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useHistory } from "react-router-dom";
 import { useAlerts } from "../components/alert/Alerts";

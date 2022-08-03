@@ -1,4 +1,3 @@
-import React from "react";
 import { useTranslation } from "react-i18next";
 import { FormProvider, UseFormMethods } from "react-hook-form";
 import { ActionGroup, Button } from "@patternfly/react-core";

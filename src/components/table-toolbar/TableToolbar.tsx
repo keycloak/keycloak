@@ -1,9 +1,4 @@
-import React, {
-  FunctionComponent,
-  ReactNode,
-  useState,
-  KeyboardEvent,
-} from "react";
+import { FunctionComponent, ReactNode, useState, KeyboardEvent } from "react";
 import {
   Toolbar,
   ToolbarContent,

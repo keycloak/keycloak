@@ -1,4 +1,4 @@
-import React, { Fragment } from "react";
+import { Fragment } from "react";
 import { useTranslation } from "react-i18next";
 import { Button, ToolbarItem } from "@patternfly/react-core";
 import type { IFormatterValueType } from "@patternfly/react-table";

@@ -1,4 +1,4 @@
-import React, { KeyboardEvent, useMemo, useState } from "react";
+import { KeyboardEvent, useMemo, useState } from "react";
 import {
   Select,
   SelectVariant,

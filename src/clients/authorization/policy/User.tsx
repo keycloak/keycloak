@@ -1,5 +1,3 @@
-import React from "react";
-
 import { UserSelect } from "../../../components/users/UserSelect";
 
 export const User = () => (

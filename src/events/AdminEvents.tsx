@@ -24,7 +24,7 @@ import {
 } from "@patternfly/react-table";
 import { CodeEditor, Language } from "@patternfly/react-code-editor";
 import type AdminEventRepresentation from "@keycloak/keycloak-admin-client/lib/defs/adminEventRepresentation";
-import React, { FunctionComponent, useMemo, useState } from "react";
+import { FunctionComponent, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { pickBy } from "lodash-es";

@@ -1,4 +1,3 @@
-import React from "react";
 import { useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Controller, FormProvider, useForm } from "react-hook-form";

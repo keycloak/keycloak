@@ -1,4 +1,4 @@
-import React, { AnchorHTMLAttributes } from "react";
+import { AnchorHTMLAttributes } from "react";
 import { ExternalLinkAltIcon } from "@patternfly/react-icons";
 import type { IFormatter, IFormatterValueType } from "@patternfly/react-table";
 

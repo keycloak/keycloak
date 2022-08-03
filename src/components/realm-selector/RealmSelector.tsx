@@ -11,7 +11,7 @@ import {
   SplitItem,
 } from "@patternfly/react-core";
 import { CheckIcon } from "@patternfly/react-icons";
-import React, { ReactElement, useMemo, useState } from "react";
+import { Fragment, ReactElement, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useHistory } from "react-router-dom";
 
@@ -95,7 +95,7 @@ export const RealmSelector = () => {
   ));
 
   const addRealmComponent = (
-    <React.Fragment key="Add Realm">
+    <Fragment key="Add Realm">
       {whoAmI.canCreateRealm() && (
         <>
           <Divider key="divider" />
@@ -104,7 +104,7 @@ export const RealmSelector = () => {
           </DropdownItem>
         </>
       )}
-    </React.Fragment>
+    </Fragment>
   );
 
   return (

@@ -12,7 +12,7 @@ import {
   PageHeaderToolsItem,
 } from "@patternfly/react-core";
 import { HelpIcon } from "@patternfly/react-icons";
-import React, { useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { HelpHeader, useHelp } from "./components/help-enabler/HelpHeader";

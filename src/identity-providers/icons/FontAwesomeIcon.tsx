@@ -1,4 +1,3 @@
-import React from "react";
 import environment from "../../environment";
 
 type FontAwesomeIconProps = {

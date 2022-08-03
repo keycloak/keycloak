@@ -5,7 +5,7 @@ import {
   TabsProps,
 } from "@patternfly/react-core";
 import type { History, LocationDescriptorObject } from "history";
-import React, {
+import {
   Children,
   isValidElement,
   JSXElementConstructor,

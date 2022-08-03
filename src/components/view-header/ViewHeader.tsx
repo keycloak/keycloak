@@ -15,7 +15,7 @@ import {
   ToolbarContent,
   ToolbarItem,
 } from "@patternfly/react-core";
-import React, {
+import {
   ReactElement,
   ReactNode,
   useState,
@@ -168,7 +168,7 @@ export const ViewHeader = ({
         {enabled && (
           <TextContent id="view-header-subkey">
             <Text>
-              {React.isValidElement(subKey)
+              {isValidElement(subKey)
                 ? subKey
                 : subKey
                 ? t(subKey as string)

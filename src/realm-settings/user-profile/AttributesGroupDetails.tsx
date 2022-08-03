@@ -1,4 +1,3 @@
-import React from "react";
 import AttributesGroupForm from "./AttributesGroupForm";
 import { UserProfileProvider } from "./UserProfileContext";
 

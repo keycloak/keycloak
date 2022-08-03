@@ -1,4 +1,4 @@
-import React, { ReactNode, useMemo } from "react";
+import { ReactNode, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Td } from "@patternfly/react-table";
 import {

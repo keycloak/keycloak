@@ -1,7 +1,6 @@
 /**
  * @vitest-environment jsdom
  */
-import React from "react";
 import type WhoAmIRepresentation from "@keycloak/keycloak-admin-client/lib/defs/whoAmIRepresentation";
 import { FormGroup, Switch } from "@patternfly/react-core";
 import { render, screen } from "@testing-library/react";

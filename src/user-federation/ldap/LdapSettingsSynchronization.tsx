@@ -1,6 +1,6 @@
 import { FormGroup, Switch } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
-import React from "react";
+
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { UseFormMethods, Controller } from "react-hook-form";
 import { FormAccess } from "../../components/form-access/FormAccess";

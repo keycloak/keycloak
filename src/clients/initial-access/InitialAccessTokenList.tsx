@@ -1,7 +1,7 @@
 import { AlertVariant, Button, ButtonVariant } from "@patternfly/react-core";
 import { wrappable } from "@patternfly/react-table";
 import type ClientInitialAccessPresentation from "@keycloak/keycloak-admin-client/lib/defs/clientInitialAccessPresentation";
-import React, { useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useHistory } from "react-router-dom";
 import { useAlerts } from "../../components/alert/Alerts";

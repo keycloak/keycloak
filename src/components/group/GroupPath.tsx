@@ -1,4 +1,4 @@
-import React from "react";
+import { useState } from "react";
 import { Tooltip } from "@patternfly/react-core";
 import type { TableTextProps } from "@patternfly/react-table";
 
@@ -27,7 +27,7 @@ export const GroupPath = ({
   onMouseEnter: onMouseEnterProp,
   ...props
 }: GroupPathProps) => {
-  const [tooltip, setTooltip] = React.useState("");
+  const [tooltip, setTooltip] = useState("");
   const onMouseEnter = (event: any) => {
     setTooltip(path!);
     onMouseEnterProp?.(event);

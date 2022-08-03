@@ -1,4 +1,4 @@
-import React, { FunctionComponent, HTMLProps } from "react";
+import { FunctionComponent, HTMLProps } from "react";
 import { Title } from "@patternfly/react-core";
 
 import "./form-panel.css";

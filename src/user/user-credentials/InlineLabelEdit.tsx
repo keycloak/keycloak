@@ -1,4 +1,3 @@
-import React from "react";
 import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
 import { AlertVariant, Button, Form, FormGroup } from "@patternfly/react-core";

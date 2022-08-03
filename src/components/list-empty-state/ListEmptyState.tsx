@@ -1,4 +1,4 @@
-import React, { MouseEventHandler } from "react";
+import { ComponentClass, MouseEventHandler, ReactNode } from "react";
 import {
   EmptyState,
   EmptyStateIcon,
@@ -20,11 +20,11 @@ export type Action = {
 
 export type ListEmptyStateProps = {
   message: string;
-  instructions: React.ReactNode;
+  instructions: ReactNode;
   primaryActionText?: string;
   onPrimaryAction?: MouseEventHandler<HTMLButtonElement>;
   hasIcon?: boolean;
-  icon?: React.ComponentClass<SVGIconProps>;
+  icon?: ComponentClass<SVGIconProps>;
   isSearchVariant?: boolean;
   secondaryActions?: Action[];
 };

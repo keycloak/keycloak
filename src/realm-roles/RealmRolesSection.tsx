@@ -1,4 +1,3 @@
-import React from "react";
 import { PageSection } from "@patternfly/react-core";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useAdminClient } from "../context/auth/AdminClient";

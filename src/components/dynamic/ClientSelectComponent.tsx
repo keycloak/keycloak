@@ -1,5 +1,3 @@
-import React from "react";
-
 import type { ComponentProps } from "./components";
 import { ClientSelect } from "../client/ClientSelect";
 

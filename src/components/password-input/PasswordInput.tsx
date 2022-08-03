@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { forwardRef, MutableRefObject, Ref, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button, InputGroup } from "@patternfly/react-core";
 import { EyeIcon, EyeSlashIcon } from "@patternfly/react-icons";
@@ -39,12 +39,9 @@ const PasswordInputBase = ({
   );
 };
 
-export const PasswordInput = React.forwardRef(
-  (props: PasswordInputProps, ref: React.Ref<HTMLInputElement>) => (
-    <PasswordInputBase
-      {...props}
-      innerRef={ref as React.MutableRefObject<any>}
-    />
+export const PasswordInput = forwardRef(
+  (props: PasswordInputProps, ref: Ref<HTMLInputElement>) => (
+    <PasswordInputBase {...props} innerRef={ref as MutableRefObject<any>} />
   )
 );
 PasswordInput.displayName = "PasswordInput";

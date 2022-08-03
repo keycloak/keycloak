@@ -1,4 +1,4 @@
-import React, { Fragment, useState } from "react";
+import { Fragment, useState } from "react";
 import { Link, useHistory } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { sortBy, groupBy } from "lodash-es";

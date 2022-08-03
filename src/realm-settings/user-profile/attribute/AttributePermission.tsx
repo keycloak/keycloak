@@ -1,4 +1,3 @@
-import React from "react";
 import { Checkbox, FormGroup, Grid, GridItem } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
 import { HelpItem } from "../../../components/help-enabler/HelpItem";

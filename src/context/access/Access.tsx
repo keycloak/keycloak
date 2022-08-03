@@ -1,10 +1,5 @@
 import type { AccessType } from "@keycloak/keycloak-admin-client/lib/defs/whoAmIRepresentation";
-import React, {
-  createContext,
-  FunctionComponent,
-  useEffect,
-  useState,
-} from "react";
+import { createContext, FunctionComponent, useEffect, useState } from "react";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useWhoAmI } from "../../context/whoami/WhoAmI";
 import useRequiredContext from "../../utils/useRequiredContext";

@@ -1,4 +1,10 @@
-import React, { Fragment, useMemo, useRef, useState } from "react";
+import {
+  DragEvent as ReactDragEvent,
+  Fragment,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   AlertVariant,
   Button,
@@ -171,7 +177,7 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
     [groupedUserCredentials]
   );
 
-  const onDragStart = (evt: React.DragEvent) => {
+  const onDragStart = (evt: ReactDragEvent) => {
     evt.dataTransfer.effectAllowed = "move";
     evt.dataTransfer.setData("text/plain", evt.currentTarget.id);
     const draggedItemId = evt.currentTarget.id;
@@ -217,14 +223,14 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
     });
   };
 
-  const onDragLeave = (evt: React.DragEvent) => {
+  const onDragLeave = (evt: ReactDragEvent) => {
     if (!isValidDrop(evt)) {
       move(itemOrder);
       setState({ ...state, draggingToItemIndex: -1 });
     }
   };
 
-  const isValidDrop = (evt: React.DragEvent) => {
+  const isValidDrop = (evt: ReactDragEvent) => {
     if (!bodyRef.current) return false;
     const ulRect = bodyRef.current.getBoundingClientRect();
     return (
@@ -235,7 +241,7 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
     );
   };
 
-  const onDrop = (evt: React.DragEvent) => {
+  const onDrop = (evt: ReactDragEvent) => {
     if (isValidDrop(evt)) {
       onDragFinish(state.draggedItemId, state.tempItemOrder);
     } else {
@@ -243,7 +249,7 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
     }
   };
 
-  const onDragOver = (evt: React.DragEvent) => {
+  const onDragOver = (evt: ReactDragEvent) => {
     evt.preventDefault();
     const td = evt.target as HTMLTableCellElement;
     const curListItem = td.closest("tr");
@@ -275,7 +281,7 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
     }
   };
 
-  const onDragEnd = ({ target }: React.DragEvent) => {
+  const onDragEnd = ({ target }: ReactDragEvent) => {
     if (!(target instanceof HTMLTableRowElement)) {
       return;
     }

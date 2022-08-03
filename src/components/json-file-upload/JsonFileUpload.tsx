@@ -1,4 +1,3 @@
-import React from "react";
 import { Language } from "@patternfly/react-code-editor";
 
 import { FileUploadForm, FileUploadFormProps } from "./FileUploadForm";

@@ -8,7 +8,7 @@ import {
   Switch,
 } from "@patternfly/react-core";
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
-import React, { useState } from "react";
+import { useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useAlerts } from "../components/alert/Alerts";

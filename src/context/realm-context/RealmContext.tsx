@@ -1,4 +1,4 @@
-import React, { FunctionComponent, useEffect, useMemo } from "react";
+import { createContext, FunctionComponent, useEffect, useMemo } from "react";
 import { useRouteMatch } from "react-router-dom";
 import { RecentUsed } from "../../components/realm-selector/recent-used";
 import {
@@ -13,7 +13,7 @@ type RealmContextType = {
   realm: string;
 };
 
-export const RealmContext = React.createContext<RealmContextType | undefined>(
+export const RealmContext = createContext<RealmContextType | undefined>(
   undefined
 );
 

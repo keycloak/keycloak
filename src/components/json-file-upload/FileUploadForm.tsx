@@ -1,4 +1,9 @@
-import React, { useState } from "react";
+import {
+  ChangeEvent,
+  DragEvent as ReactDragEvent,
+  MouseEvent as ReactMouseEvent,
+  useState,
+} from "react";
 import {
   FormGroup,
   FileUpload,
@@ -18,9 +23,9 @@ type FileUploadType = {
 };
 
 export type FileUploadEvent =
-  | React.DragEvent<HTMLElement> // User dragged/dropped a file
-  | React.ChangeEvent<HTMLTextAreaElement> // User typed in the TextArea
-  | React.MouseEvent<HTMLButtonElement, MouseEvent>; // User clicked Clear button
+  | ReactDragEvent<HTMLElement> // User dragged/dropped a file
+  | ChangeEvent<HTMLTextAreaElement> // User typed in the TextArea
+  | ReactMouseEvent<HTMLButtonElement, MouseEvent>; // User clicked Clear button
 
 export type FileUploadFormProps = Omit<FileUploadProps, "onChange"> & {
   id: string;

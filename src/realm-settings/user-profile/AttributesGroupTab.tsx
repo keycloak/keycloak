@@ -5,7 +5,7 @@ import {
   PageSection,
   ToolbarItem,
 } from "@patternfly/react-core";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { Link, useHistory } from "react-router-dom";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";

@@ -1,4 +1,3 @@
-import React from "react";
 import { Link } from "react-router-dom";
 import type { LocationDescriptor } from "history";
 import { useTranslation } from "react-i18next";

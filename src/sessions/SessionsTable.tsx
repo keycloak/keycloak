@@ -7,7 +7,7 @@ import {
   ToolbarItem,
 } from "@patternfly/react-core";
 import { CubesIcon } from "@patternfly/react-icons";
-import React, { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 

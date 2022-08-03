@@ -1,4 +1,3 @@
-import React from "react";
 import { useTranslation } from "react-i18next";
 import { Control, Controller } from "react-hook-form";
 import { ActionGroup, Button, FormGroup, Switch } from "@patternfly/react-core";

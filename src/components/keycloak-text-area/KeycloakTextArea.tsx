@@ -1,5 +1,5 @@
 import { TextArea, TextAreaProps } from "@patternfly/react-core";
-import React, { ComponentProps, forwardRef, HTMLProps } from "react";
+import { ComponentProps, forwardRef, HTMLProps } from "react";
 
 // PatternFly changes the signature of the 'onChange' handler for textarea elements.
 // This causes issues with React Hook Form as it expects the default signature for a textarea element.

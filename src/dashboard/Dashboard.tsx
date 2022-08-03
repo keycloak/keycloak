@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import { useHistory } from "react-router-dom";
 import { Trans, useTranslation } from "react-i18next";
 import { xor } from "lodash-es";

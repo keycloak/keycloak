@@ -15,7 +15,7 @@ import {
 } from "@patternfly/react-core";
 import { DatabaseIcon } from "@patternfly/react-icons";
 import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
-import React, { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useHistory } from "react-router-dom";
 import { useAlerts } from "../components/alert/Alerts";

@@ -1,4 +1,10 @@
-import React, { ReactNode, useMemo, useRef, useState } from "react";
+import {
+  DragEvent as ReactDragEvent,
+  ReactNode,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useTranslation } from "react-i18next";
 import { get } from "lodash-es";
 import {
@@ -53,7 +59,7 @@ export function DraggableTable<T>({
     [data]
   );
 
-  const onDragStart = (evt: React.DragEvent) => {
+  const onDragStart = (evt: ReactDragEvent) => {
     evt.dataTransfer.effectAllowed = "move";
     evt.dataTransfer.setData("text/plain", evt.currentTarget.id);
     const draggedItemId = evt.currentTarget.id;
@@ -103,14 +109,14 @@ export function DraggableTable<T>({
     });
   };
 
-  const onDragLeave = (evt: React.DragEvent) => {
+  const onDragLeave = (evt: ReactDragEvent) => {
     if (!isValidDrop(evt)) {
       move(itemOrder);
       setState({ ...state, draggingToItemIndex: -1 });
     }
   };
 
-  const isValidDrop = (evt: React.DragEvent) => {
+  const isValidDrop = (evt: ReactDragEvent) => {
     const ulRect = bodyRef.current!.getBoundingClientRect();
     return (
       evt.clientX > ulRect.x &&
@@ -120,7 +126,7 @@ export function DraggableTable<T>({
     );
   };
 
-  const onDrop = (evt: React.DragEvent) => {
+  const onDrop = (evt: ReactDragEvent) => {
     if (isValidDrop(evt)) {
       onDragFinish(state.draggedItemId, state.tempItemOrder);
     } else {
@@ -128,7 +134,7 @@ export function DraggableTable<T>({
     }
   };
 
-  const onDragOver = (evt: React.DragEvent) => {
+  const onDragOver = (evt: ReactDragEvent) => {
     evt.preventDefault();
 
     const td = evt.target as HTMLTableCellElement;
@@ -161,7 +167,7 @@ export function DraggableTable<T>({
     }
   };
 
-  const onDragEnd = (evt: React.DragEvent) => {
+  const onDragEnd = (evt: ReactDragEvent) => {
     const tr = evt.target as HTMLTableRowElement;
     tr.classList.remove(styles.modifiers.ghostRow);
     tr.setAttribute("aria-pressed", "false");

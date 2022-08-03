@@ -1,4 +1,4 @@
-import React, { Children, isValidElement, useState } from "react";
+import { Children, isValidElement, useState } from "react";
 import { useHistory, useRouteMatch } from "react-router-dom";
 import { TabProps, Tabs, TabsProps } from "@patternfly/react-core";
 import { useFormContext } from "react-hook-form";
@@ -30,7 +30,9 @@ export const KeycloakTabs = ({
   const match = useRouteMatch();
   const params = match.params as { [index: string]: string };
   const history = useHistory();
-  const form = useFormContext();
+  const form = useFormContext() as
+    | ReturnType<typeof useFormContext>
+    | undefined;
   const [key, setKey] = useState("");
 
   const firstTab = Children.toArray(children)[0];
@@ -47,7 +49,7 @@ export const KeycloakTabs = ({
     messageKey: "common:leaveDirtyConfirm",
     continueButtonLabel: "common:leave",
     onConfirm: () => {
-      form.reset();
+      form?.reset();
       history.push(createUrl(path, { ...params, [paramName]: key as string }));
     },
   });

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import FileSaver from "file-saver";
 import { useTranslation } from "react-i18next";
 import { FormProvider, useForm } from "react-hook-form";

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Button, Label, Modal, ModalVariant } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
 import { useFetch, useAdminClient } from "../context/auth/AdminClient";

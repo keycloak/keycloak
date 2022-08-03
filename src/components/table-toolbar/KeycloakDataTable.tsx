@@ -1,4 +1,5 @@
-import React, {
+import {
+  ComponentClass,
   isValidElement,
   ReactNode,
   useEffect,
@@ -146,7 +147,7 @@ export type DataListProps<T> = Omit<
   toolbarItem?: ReactNode;
   subToolbar?: ReactNode;
   emptyState?: ReactNode;
-  icon?: React.ComponentClass<SVGIconProps>;
+  icon?: ComponentClass<SVGIconProps>;
   isNotCompact?: boolean;
   isRadio?: boolean;
   isSearching?: boolean;

@@ -9,7 +9,7 @@ import {
   ValidatedOptions,
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
-import React, { useState } from "react";
+import { useState } from "react";
 import { get, isEqual } from "lodash-es";
 
 import type TestLdapConnectionRepresentation from "@keycloak/keycloak-admin-client/lib/defs/testLdapConnection";

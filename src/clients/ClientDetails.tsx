@@ -13,7 +13,7 @@ import {
 import { InfoCircleIcon } from "@patternfly/react-icons";
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import { cloneDeep, sortBy } from "lodash-es";
-import React, { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useHistory, useParams } from "react-router-dom";

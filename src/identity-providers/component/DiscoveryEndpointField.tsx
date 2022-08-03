@@ -1,4 +1,4 @@
-import React, { ReactNode, useEffect, useState } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useFormContext } from "react-hook-form";
 import { FormGroup, Switch } from "@patternfly/react-core";

@@ -13,6 +13,7 @@ module.exports = {
   extends: [
     "eslint:recommended",
     "plugin:react/recommended",
+    "plugin:react/jsx-runtime",
     "plugin:@typescript-eslint/base",
     "plugin:@typescript-eslint/eslint-recommended",
     "plugin:prettier/recommended",
@@ -42,6 +43,18 @@ module.exports = {
       "error",
       {
         endOfLine: "auto",
+      },
+    ],
+    // Prevent default imports from React, named imports should be used instead.
+    "no-restricted-imports": [
+      "error",
+      {
+        paths: [
+          {
+            name: "react",
+            importNames: ["default"],
+          },
+        ],
       },
     ],
   },

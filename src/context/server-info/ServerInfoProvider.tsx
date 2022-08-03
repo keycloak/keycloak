@@ -1,4 +1,4 @@
-import React, { createContext, FunctionComponent, useState } from "react";
+import { createContext, FunctionComponent, useState } from "react";
 
 import type { ServerInfoRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/serverInfoRepesentation";
 import { sortProviders } from "../../util";

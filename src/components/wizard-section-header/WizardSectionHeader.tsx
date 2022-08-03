@@ -1,5 +1,5 @@
 import { Text, TextContent, Title } from "@patternfly/react-core";
-import React from "react";
+
 import "./wizard-section-header.css";
 
 export type WizardSectionHeaderProps = {

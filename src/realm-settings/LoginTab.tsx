@@ -1,4 +1,3 @@
-import React from "react";
 import { useTranslation } from "react-i18next";
 import { FormGroup, PageSection, Switch } from "@patternfly/react-core";
 import { FormAccess } from "../components/form-access/FormAccess";

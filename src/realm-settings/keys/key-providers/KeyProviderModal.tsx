@@ -1,4 +1,3 @@
-import React from "react";
 import { Modal, ModalVariant } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
 import { KeyProviderForm } from "./KeyProviderForm";

@@ -12,7 +12,7 @@ import {
   TextContent,
 } from "@patternfly/react-core";
 import FileSaver from "file-saver";
-import React, { useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAlerts } from "../components/alert/Alerts";
 import { useAdminClient } from "../context/auth/AdminClient";

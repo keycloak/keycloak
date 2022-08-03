@@ -5,7 +5,7 @@ import {
   SelectVariant,
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
-import React, { useState } from "react";
+import { useState } from "react";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { UseFormMethods, Controller } from "react-hook-form";
 import { FormAccess } from "../../components/form-access/FormAccess";

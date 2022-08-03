@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useHistory, useParams } from "react-router-dom";
 import { Trans, useTranslation } from "react-i18next";
 import {

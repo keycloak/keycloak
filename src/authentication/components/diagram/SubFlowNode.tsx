@@ -1,4 +1,4 @@
-import React, { memo } from "react";
+import { memo } from "react";
 import { Handle, Position } from "react-flow-renderer";
 
 type NodeProps = {
