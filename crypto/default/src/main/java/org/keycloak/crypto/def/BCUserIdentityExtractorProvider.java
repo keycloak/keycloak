@@ -56,8 +56,9 @@ public class BCUserIdentityExtractorProvider  extends UserIdentityExtractorProvi
         private ASN1ObjectIdentifier x500NameStyle;
         Function<X509Certificate[],Principal> x500Name;
         
-        public X500NameRDNExtractorBCProvider(String attrName, Function<X509Certificate[], Principal> x500Name2) {
+        public X500NameRDNExtractorBCProvider(String attrName, Function<X509Certificate[], Principal> x500Name) {
             this.x500NameStyle = BCStyle.INSTANCE.attrNameToOID(attrName);
+            this.x500Name = x500Name;
         }
 
         @Override
@@ -66,7 +67,7 @@ public class BCUserIdentityExtractorProvider  extends UserIdentityExtractorProvi
             if (certs == null || certs.length == 0)
                 throw new IllegalArgumentException();
 
-            X500Name name = X500Name.getInstance(x500Name.apply(certs));
+            X500Name name = new X500Name(x500Name.apply(certs).getName());
             if (name != null) {
                 RDN[] rnds = name.getRDNs(x500NameStyle);
                 if (rnds != null && rnds.length > 0) {
