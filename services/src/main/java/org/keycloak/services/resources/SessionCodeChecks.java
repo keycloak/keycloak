@@ -224,7 +224,7 @@ public class SessionCodeChecks {
         setClientToEvent(client);
         session.getContext().setClient(client);
 
-        if (!client.isEnabled() && clientCode != null) {
+        if (checkClientDisabled(client)) {
             event.error(Errors.CLIENT_DISABLED);
             response = ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.LOGIN_REQUESTER_NOT_ENABLED);
             clientCode.removeExpiredClientSession();
@@ -450,5 +450,9 @@ public class SessionCodeChecks {
 
     protected EventBuilder getEvent() {
         return event;
+    }
+
+    protected boolean checkClientDisabled(ClientModel client) {
+        return !client.isEnabled();
     }
 }

@@ -1046,6 +1046,28 @@ public class RPInitiatedLogoutTest extends AbstractTestRealmKeycloakTest {
 
     }
 
+    //Login and logout with account client disabled after login
+    @Test
+    public void testLogoutWhenAccountClientIsDisabled() throws IOException {
+
+        OAuthClient.AccessTokenResponse tokenResponse = loginUser();
+        String sessionId = tokenResponse.getSessionState();
+
+        try (Closeable accountClientUpdater = ClientAttributeUpdater.forClient(adminClient, "test", Constants.ACCOUNT_MANAGEMENT_CLIENT_ID)
+                .setEnabled(false)
+                .update()) {
+            String logoutUrl = oauth.getLogoutUrl().build();
+            driver.navigate().to(logoutUrl);
+
+            events.assertEmpty();
+            logoutConfirmPage.assertCurrent();
+            logoutConfirmPage.confirmLogout();
+
+            MatcherAssert.assertThat(false, is(isSessionActive(sessionId)));
+            MatcherAssert.assertThat(false, is(isSessionActive(tokenResponse.getSessionState())));
+        }
+    }
+
     // SUPPORT METHODS
     private OAuthClient.AccessTokenResponse loginUser() {
         return loginUser(false);
