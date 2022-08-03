@@ -9,8 +9,10 @@ import {
   TextContent,
 } from "@patternfly/react-core";
 import { ExternalLinkAltIcon, HelpIcon } from "@patternfly/react-icons";
-import { createContext, FunctionComponent, useState } from "react";
+import { FunctionComponent, useState } from "react";
 import { useTranslation } from "react-i18next";
+
+import { createNamedContext } from "../../utils/createNamedContext";
 import useRequiredContext from "../../utils/useRequiredContext";
 import helpUrls from "../../help-urls";
 
@@ -21,7 +23,8 @@ type HelpContextProps = {
   toggleHelp: () => void;
 };
 
-export const HelpContext = createContext<HelpContextProps | undefined>(
+export const HelpContext = createNamedContext<HelpContextProps | undefined>(
+  "HelpContext",
   undefined
 );
 

@@ -9,7 +9,7 @@ import { FunctionComponent } from "react";
 import { HashRouter } from "react-router-dom";
 import { describe, expect, it } from "vitest";
 import { AccessContextProvider } from "../../context/access/Access";
-import { AdminClient } from "../../context/auth/AdminClient";
+import { AdminClientContext } from "../../context/auth/AdminClient";
 import { RealmContext } from "../../context/realm-context/RealmContext";
 import { ServerInfoContext } from "../../context/server-info/ServerInfoProvider";
 import serverInfo from "../../context/server-info/__tests__/mock.json";
@@ -31,13 +31,13 @@ const MockAdminClient: FunctionComponent = ({ children }) => {
       <ServerInfoContext.Provider
         value={serverInfo as unknown as ServerInfoRepresentation}
       >
-        <AdminClient.Provider value={{ keycloak, adminClient }}>
+        <AdminClientContext.Provider value={{ keycloak, adminClient }}>
           <WhoAmIContextProvider>
             <RealmContext.Provider value={{ realm: "master" }}>
               <AccessContextProvider>{children}</AccessContextProvider>
             </RealmContext.Provider>
           </WhoAmIContextProvider>
-        </AdminClient.Provider>
+        </AdminClientContext.Provider>
       </ServerInfoContext.Provider>
     </HashRouter>
   );

@@ -1,10 +1,11 @@
 import type UserProfileConfig from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
 import { AlertVariant } from "@patternfly/react-core";
-import { createContext, FunctionComponent, useState } from "react";
+import { FunctionComponent, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
+import { createNamedContext } from "../../utils/createNamedContext";
 import useRequiredContext from "../../utils/useRequiredContext";
 
 type UserProfileProps = {
@@ -23,9 +24,9 @@ export type SaveOptions = {
   errorMessageKey?: string;
 };
 
-export const UserProfile = createContext<UserProfileProps | undefined>(
-  undefined
-);
+export const UserProfileContext = createNamedContext<
+  UserProfileProps | undefined
+>("UserProfileContext", undefined);
 
 export const UserProfileProvider: FunctionComponent = ({ children }) => {
   const { adminClient } = useAdminClient();
@@ -71,10 +72,10 @@ export const UserProfileProvider: FunctionComponent = ({ children }) => {
   };
 
   return (
-    <UserProfile.Provider value={{ config, save, isSaving }}>
+    <UserProfileContext.Provider value={{ config, save, isSaving }}>
       {children}
-    </UserProfile.Provider>
+    </UserProfileContext.Provider>
   );
 };
 
-export const useUserProfile = () => useRequiredContext(UserProfile);
+export const useUserProfile = () => useRequiredContext(UserProfileContext);

@@ -21,7 +21,7 @@ import { SubGroups } from "./groups/SubGroupsContext";
 import { RealmsProvider } from "./context/RealmsContext";
 import { RealmContextProvider } from "./context/realm-context/RealmContext";
 import { ErrorRenderer } from "./components/error/ErrorRenderer";
-import { AdminClient } from "./context/auth/AdminClient";
+import { AdminClientContext } from "./context/auth/AdminClient";
 import { WhoAmIContextProvider } from "./context/whoami/WhoAmI";
 
 export const mainPageContentId = "kc-main-content-page-container";
@@ -37,7 +37,7 @@ const AppContexts: FunctionComponent<AdminClientProps> = ({
   adminClient,
 }) => (
   <Router>
-    <AdminClient.Provider value={{ keycloak, adminClient }}>
+    <AdminClientContext.Provider value={{ keycloak, adminClient }}>
       <WhoAmIContextProvider>
         <RealmsProvider>
           <RealmContextProvider>
@@ -51,7 +51,7 @@ const AppContexts: FunctionComponent<AdminClientProps> = ({
           </RealmContextProvider>
         </RealmsProvider>
       </WhoAmIContextProvider>
-    </AdminClient.Provider>
+    </AdminClientContext.Provider>
   </Router>
 );
 

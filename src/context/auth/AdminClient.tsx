@@ -1,10 +1,11 @@
 import KeycloakAdminClient from "@keycloak/keycloak-admin-client";
 import axios from "axios";
 import Keycloak from "keycloak-js";
-import { createContext, DependencyList, useEffect } from "react";
+import { DependencyList, useEffect } from "react";
 import { useErrorHandler } from "react-error-boundary";
 
 import environment from "../../environment";
+import { createNamedContext } from "../../utils/createNamedContext";
 import useRequiredContext from "../../utils/useRequiredContext";
 
 export type AdminClientProps = {
@@ -12,11 +13,11 @@ export type AdminClientProps = {
   adminClient: KeycloakAdminClient;
 };
 
-export const AdminClient = createContext<AdminClientProps | undefined>(
-  undefined
-);
+export const AdminClientContext = createNamedContext<
+  AdminClientProps | undefined
+>("AdminClientContext", undefined);
 
-export const useAdminClient = () => useRequiredContext(AdminClient);
+export const useAdminClient = () => useRequiredContext(AdminClientContext);
 
 /**
  * Util function to only set the state when the component is still mounted.

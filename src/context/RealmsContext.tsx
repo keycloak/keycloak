@@ -1,15 +1,10 @@
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import { sortBy } from "lodash-es";
-import {
-  createContext,
-  FunctionComponent,
-  useCallback,
-  useMemo,
-  useState,
-} from "react";
+import { FunctionComponent, useCallback, useMemo, useState } from "react";
 import axios from "axios";
 
 import { RecentUsed } from "../components/realm-selector/recent-used";
+import { createNamedContext } from "../utils/createNamedContext";
 import useRequiredContext from "../utils/useRequiredContext";
 import { useAdminClient, useFetch } from "./auth/AdminClient";
 
@@ -20,7 +15,8 @@ type RealmsContextProps = {
   refresh: () => Promise<void>;
 };
 
-export const RealmsContext = createContext<RealmsContextProps | undefined>(
+export const RealmsContext = createNamedContext<RealmsContextProps | undefined>(
+  "RealmsContext",
   undefined
 );
 

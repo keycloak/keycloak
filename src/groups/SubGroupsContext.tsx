@@ -1,5 +1,6 @@
 import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
-import { createContext, FunctionComponent, useState } from "react";
+import { FunctionComponent, useState } from "react";
+import { createNamedContext } from "../utils/createNamedContext";
 import useRequiredContext from "../utils/useRequiredContext";
 
 type SubGroupsProps = {
@@ -10,7 +11,10 @@ type SubGroupsProps = {
   currentGroup: () => GroupRepresentation | undefined;
 };
 
-const SubGroupContext = createContext<SubGroupsProps | undefined>(undefined);
+const SubGroupsContext = createNamedContext<SubGroupsProps | undefined>(
+  "SubGroupsContext",
+  undefined
+);
 
 export const SubGroups: FunctionComponent = ({ children }) => {
   const [subGroups, setSubGroups] = useState<GroupRepresentation[]>([]);
@@ -22,12 +26,12 @@ export const SubGroups: FunctionComponent = ({ children }) => {
     );
   const currentGroup = () => subGroups[subGroups.length - 1];
   return (
-    <SubGroupContext.Provider
+    <SubGroupsContext.Provider
       value={{ subGroups, setSubGroups, clear, remove, currentGroup }}
     >
       {children}
-    </SubGroupContext.Provider>
+    </SubGroupsContext.Provider>
   );
 };
 
-export const useSubGroups = () => useRequiredContext(SubGroupContext);
+export const useSubGroups = () => useRequiredContext(SubGroupsContext);

@@ -1,9 +1,10 @@
-import { createContext, FunctionComponent, useState } from "react";
+import { FunctionComponent, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AlertVariant } from "@patternfly/react-core";
 import axios from "axios";
 import type { AxiosError } from "axios";
 
+import { createNamedContext } from "../../utils/createNamedContext";
 import useRequiredContext from "../../utils/useRequiredContext";
 import { AlertPanel } from "./AlertPanel";
 
@@ -20,7 +21,10 @@ type AlertProps = {
   addError: AddErrorFunction;
 };
 
-export const AlertContext = createContext<AlertProps | undefined>(undefined);
+export const AlertContext = createNamedContext<AlertProps | undefined>(
+  "AlertContext",
+  undefined
+);
 
 export const useAlerts = () => useRequiredContext(AlertContext);
 

@@ -1,8 +1,10 @@
 import type WhoAmIRepresentation from "@keycloak/keycloak-admin-client/lib/defs/whoAmIRepresentation";
 import type { AccessType } from "@keycloak/keycloak-admin-client/lib/defs/whoAmIRepresentation";
-import { createContext, FunctionComponent, useState } from "react";
+import { FunctionComponent, useState } from "react";
+
 import environment from "../../environment";
 import i18n, { DEFAULT_LOCALE } from "../../i18n";
+import { createNamedContext } from "../../utils/createNamedContext";
 import useRequiredContext from "../../utils/useRequiredContext";
 import { useAdminClient, useFetch } from "../auth/AdminClient";
 
@@ -53,7 +55,10 @@ type WhoAmIProps = {
   whoAmI: WhoAmI;
 };
 
-export const WhoAmIContext = createContext<WhoAmIProps | undefined>(undefined);
+export const WhoAmIContext = createNamedContext<WhoAmIProps | undefined>(
+  "WhoAmIContext",
+  undefined
+);
 
 export const useWhoAmI = () => useRequiredContext(WhoAmIContext);
 

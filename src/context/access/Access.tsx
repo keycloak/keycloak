@@ -1,7 +1,8 @@
 import type { AccessType } from "@keycloak/keycloak-admin-client/lib/defs/whoAmIRepresentation";
-import { createContext, FunctionComponent, useEffect, useState } from "react";
+import { FunctionComponent, useEffect, useState } from "react";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useWhoAmI } from "../../context/whoami/WhoAmI";
+import { createNamedContext } from "../../utils/createNamedContext";
 import useRequiredContext from "../../utils/useRequiredContext";
 
 type AccessContextProps = {
@@ -9,7 +10,8 @@ type AccessContextProps = {
   hasSomeAccess: (...types: AccessType[]) => boolean;
 };
 
-export const AccessContext = createContext<AccessContextProps | undefined>(
+export const AccessContext = createNamedContext<AccessContextProps | undefined>(
+  "AccessContext",
   undefined
 );
 

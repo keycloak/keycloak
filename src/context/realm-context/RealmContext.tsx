@@ -1,4 +1,4 @@
-import { createContext, FunctionComponent, useEffect, useMemo } from "react";
+import { FunctionComponent, useEffect, useMemo } from "react";
 import { useRouteMatch } from "react-router-dom";
 import { RecentUsed } from "../../components/realm-selector/recent-used";
 import {
@@ -6,6 +6,7 @@ import {
   DashboardRoute,
 } from "../../dashboard/routes/Dashboard";
 import environment from "../../environment";
+import { createNamedContext } from "../../utils/createNamedContext";
 import useRequiredContext from "../../utils/useRequiredContext";
 import { useAdminClient } from "../auth/AdminClient";
 
@@ -13,7 +14,8 @@ type RealmContextType = {
   realm: string;
 };
 
-export const RealmContext = createContext<RealmContextType | undefined>(
+export const RealmContext = createNamedContext<RealmContextType | undefined>(
+  "RealmContext",
   undefined
 );
 
