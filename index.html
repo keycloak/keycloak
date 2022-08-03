@@ -7,21 +7,18 @@
     <meta name="description" content="Web site to manage keycloak" />
     <title>Keycloak Administration Console</title>
     <style>
+      body {
+        margin: 0;
+      }
+
       body, #app {
         height: 100%;
       }
 
-      .container,
-      .container-fluid,
-      #load-container {
+      .container {
         padding: 0;
         margin: 0;
-      }
-
-      .container,
-      .container-fluid,
-      #load-container {
-        width: 100vw;
+        width: 100%;
       }
 
       .keycloak__loading-container {
@@ -45,7 +42,7 @@
   </head>
   <body>
     <div id="app">
-      <div class="container container-fluid" id="load-container">
+      <div class="container">
         <div class="keycloak__loading-container">
           <span class="pf-c-spinner pf-m-xl" role="progressbar" aria-valuetext="Loading...">
             <span class="pf-c-spinner__clipper"></span>
@@ -60,5 +57,6 @@
     </div>
 
     <noscript>You need to enable JavaScript to run this app.</noscript>
-    <script type="module" src="/src/main.tsx"></script>  </body>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>
