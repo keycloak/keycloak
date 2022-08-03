@@ -32,6 +32,8 @@
         <jboss.snapshots.repo.url>https://s01.oss.sonatype.org/content/repositories/snapshots/</jboss.snapshots.repo.url>
 
         <nexus.staging.plugin.version>1.6.13</nexus.staging.plugin.version>
+        <frontend.maven.plugin.version>1.12.1</frontend.maven.plugin.version>
+        <frontend.maven.plugin.nodeVersion>v18.7.0</frontend.maven.plugin.nodeVersion>
     </properties>
 
     <licenses>
@@ -99,6 +101,40 @@
                 </plugins>
             </build>
         </profile>
+        <profile>
+            <id>install-tarball</id>
+            <activation>
+                <property>
+                  <name>installTarball</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.github.eirslett</groupId>
+                        <artifactId>frontend-maven-plugin</artifactId>
+                        <version>${frontend.maven.plugin.version}</version>
+                        <executions>
+                            <execution>
+                                <id>install tarballs</id>
+                                <phase>process-sources</phase>
+                                <goals>
+                                    <goal>npm</goal>
+                                </goals>
+                                <configuration>
+                                    <arguments>install ${project.basedir}/keycloak-nodejs-admin-client.tgz ${project.basedir}/keycloak-js.tgz</arguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <nodeVersion>${frontend.maven.plugin.nodeVersion}</nodeVersion>
+                            <workingDirectory>../</workingDirectory>
+                            <installDirectory>.</installDirectory>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
     </profiles>
 
     <build>
@@ -117,24 +153,27 @@
             <plugin>
                 <groupId>com.github.eirslett</groupId>
                 <artifactId>frontend-maven-plugin</artifactId>
-                <version>1.12.1</version>
+                <version>${frontend.maven.plugin.version}</version>
                 <executions>
                     <execution>
+                        <phase>generate-sources</phase>
                         <goals>
                             <goal>install-node-and-npm</goal>
                         </goals>
                     </execution>
                     <execution>
                         <id>npm install</id>
+                        <phase>generate-sources</phase>
                         <goals>
                             <goal>npm</goal>
                         </goals>
                         <configuration>
-                            <arguments>ci</arguments>
+                            <arguments>install</arguments>
                         </configuration>
                     </execution>
                     <execution>
                         <id>npm run build</id>
+                        <phase>generate-resources</phase>
                         <goals>
                             <goal>npm</goal>
                         </goals>
@@ -144,7 +183,7 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <nodeVersion>v16.13.0</nodeVersion>
+                    <nodeVersion>${frontend.maven.plugin.nodeVersion}</nodeVersion>
                     <workingDirectory>../</workingDirectory>
                     <installDirectory>.</installDirectory>
                 </configuration>
