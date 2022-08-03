@@ -174,7 +174,9 @@ jobs:
       - name: Update maven settings
         if: ${{ github.event_name != 'pull_request' || matrix.server != 'undertow-map-hot-rod' || env.GIT_HOTROD_RELEVANT_DIFF != 0 }}
         run: mkdir -p ~/.m2 ; cp .github/settings.xml ~/.m2/
-
+      - name: Prepare test providers
+        if: ${{ matrix.server == 'quarkus' || matrix.server == 'quarkus-map' }}
+        run: ./mvnw clean install -nsu -B -e -f testsuite/integration-arquillian/servers/auth-server/services/testsuite-providers -Pauth-server-quarkus
       - name: Run base tests
         if: ${{ github.event_name != 'pull_request' || matrix.server != 'undertow-map-hot-rod' || env.GIT_HOTROD_RELEVANT_DIFF != 0 }}
         run: |
