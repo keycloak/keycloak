@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.apache.commons.exec.StreamPumper;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.SystemUtils;
 import org.jboss.arquillian.container.spi.client.container.DeployableContainer;
@@ -54,6 +55,7 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
     private KeycloakQuarkusConfiguration configuration;
     private Process container;
     private static AtomicBoolean restart = new AtomicBoolean();
+    private Thread stdoutForwarderThread;
 
     @Inject
     private Instance<SuiteContext> suiteContext;
@@ -75,6 +77,8 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
         try {
             importRealm();
             container = startContainer();
+            stdoutForwarderThread = new Thread(new StreamPumper(container.getInputStream(), System.out));
+            stdoutForwarderThread.start();
             waitForReadiness();
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -156,7 +160,7 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
     private Process startContainer() throws IOException {
         ProcessBuilder pb = new ProcessBuilder(getProcessCommands());
         File wrkDir = configuration.getProvidersPath().resolve("bin").toFile();
-        ProcessBuilder builder = pb.directory(wrkDir).inheritIO().redirectErrorStream(true);
+        ProcessBuilder builder = pb.directory(wrkDir).redirectErrorStream(true);
 
         String javaOpts = configuration.getJavaOpts();
 
@@ -283,7 +287,7 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
             } catch (Exception ignore) {
             }
         }
-        
+
         log.infof("Keycloak is ready at %s", contextRoot);
     }
 
