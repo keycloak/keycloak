@@ -1,5 +1,6 @@
 package org.keycloak.common.crypto;
 
+import java.security.Provider;
 import java.security.spec.ECParameterSpec;
 
 /**
@@ -8,6 +9,11 @@ import java.security.spec.ECParameterSpec;
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public interface CryptoProvider {
+
+    /**
+     * @return BouncyCastle security provider. Can be either non-FIPS or FIPS based provider
+     */
+    Provider getBouncyCastleProvider();
 
     /**
      * Get some algorithm provider implementation. Returned implementation can be dependent according to if we have
@@ -25,7 +31,7 @@ public interface CryptoProvider {
      *
      * @return
      */
-    public CertificateUtilsProvider getCertificateUtils();
+    CertificateUtilsProvider getCertificateUtils();
 
 
     /**
@@ -34,7 +40,7 @@ public interface CryptoProvider {
      *
      * @return
      */
-    public PemUtilsProvider getPemUtils();
+    PemUtilsProvider getPemUtils();
 
 
     /**
@@ -43,6 +49,6 @@ public interface CryptoProvider {
      * @param curveName
      * @return
      */
-    public ECParameterSpec createECParams(String curveName);
+    ECParameterSpec createECParams(String curveName);
 
 }

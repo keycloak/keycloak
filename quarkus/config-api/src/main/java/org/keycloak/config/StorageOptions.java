@@ -50,7 +50,6 @@ public class StorageOptions {
             .description(String.format("Sets the default storage mechanism for all areas. Possible values are: %s.", storageAreas()))
             .expectedValues(StorageType.values())
             .defaultValue(Optional.empty())
-            .hidden()
             .buildTime(true)
             .build();
 
@@ -170,7 +169,6 @@ public class StorageOptions {
     public static final Option<String> STORAGE_DEPLOYMENT_STATE_RESOURCES_VERSION_SEED = new OptionBuilder<>("storage-deployment-state-version-seed", String.class)
             .category(OptionCategory.STORAGE)
             .description("Secret that serves as a seed to mask the version number of Keycloak in URLs. Need to be identical across all servers in the cluster. Will default to a random number generated when starting the server which is secure but will lead to problems when a loadbalancer without sticky sessions is used or nodes are restarted.")
-            .hidden()
             .buildTime(false)
             .build();
 
@@ -321,25 +319,21 @@ public class StorageOptions {
     public static final Option<String> STORAGE_HOTROD_HOST = new OptionBuilder<>("storage-hotrod-host", String.class)
             .category(OptionCategory.STORAGE)
             .description("Sets the host of the Infinispan server.")
-            .hidden()
             .build();
 
     public static final Option<Integer> STORAGE_HOTROD_PORT = new OptionBuilder<>("storage-hotrod-port", Integer.class)
             .category(OptionCategory.STORAGE)
             .description("Sets the port of the Infinispan server.")
-            .hidden()
             .build();
 
     public static final Option<String> STORAGE_HOTROD_USERNAME = new OptionBuilder<>("storage-hotrod-username", String.class)
             .category(OptionCategory.STORAGE)
             .description("Sets the username of the Infinispan user.")
-            .hidden()
             .build();
 
     public static final Option<String> STORAGE_HOTROD_PASSWORD = new OptionBuilder<>("storage-hotrod-password", String.class)
             .category(OptionCategory.STORAGE)
             .description("Sets the password of the Infinispan user.")
-            .hidden()
             .build();
 
     public static final Option<Boolean> STORAGE_HOTROD_CACHE_CONFIGURE = new OptionBuilder<>("storage-hotrod-cache-configure", Boolean.class)

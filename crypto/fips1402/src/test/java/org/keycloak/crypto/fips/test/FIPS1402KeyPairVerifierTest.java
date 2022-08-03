@@ -60,6 +60,8 @@ public class FIPS1402KeyPairVerifierTest extends KeyPairVerifierTest {
                 "jLsXjc2CPf/lwNFqsVl7dlPNmg==";
 
     }
+
+    @Before
     public void before() {
         // Run this test just if java is in FIPS mode
         Assume.assumeTrue("Java is not in FIPS mode. Skipping the test.", Environment.isJavaInFipsMode());

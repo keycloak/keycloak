@@ -1,5 +1,6 @@
 package org.keycloak.crypto.fips;
 
+import java.security.Provider;
 import java.security.spec.ECField;
 import java.security.spec.ECFieldF2m;
 import java.security.spec.ECFieldFp;
@@ -12,10 +13,12 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
+import org.bouncycastle.crypto.fips.FipsRSA;
+import org.bouncycastle.crypto.fips.FipsSHS;
 import org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider;
 import org.bouncycastle.math.ec.ECCurve;
 import org.keycloak.common.crypto.CryptoProvider;
-import org.keycloak.common.crypto.CryptoProviderTypes;
+import org.keycloak.common.crypto.CryptoConstants;
 import org.keycloak.common.crypto.CertificateUtilsProvider;
 import org.keycloak.common.crypto.PemUtilsProvider;
 
@@ -27,14 +30,26 @@ import org.keycloak.common.crypto.PemUtilsProvider;
  */
 public class FIPS1402Provider implements CryptoProvider {
 
+    private final BouncyCastleFipsProvider bcFipsProvider;
     private final Map<String, Object> providers = new ConcurrentHashMap<>();
 
     public FIPS1402Provider() {
-        BouncyCastleFipsProvider bcFipsProvider = new BouncyCastleFipsProvider();
-        providers.put(CryptoProviderTypes.BC_SECURITY_PROVIDER, bcFipsProvider);
-        providers.put(CryptoProviderTypes.AES_KEY_WRAP_ALGORITHM_PROVIDER, new FIPSAesKeyWrapAlgorithmProvider());
+        // Case when BCFIPS provider already registered in Java security file
+        BouncyCastleFipsProvider existingBcFipsProvider = (BouncyCastleFipsProvider) Security.getProvider(CryptoConstants.BCFIPS_PROVIDER_ID);
+        this.bcFipsProvider = existingBcFipsProvider == null ? new BouncyCastleFipsProvider() : existingBcFipsProvider;
+
+        providers.put(CryptoConstants.A128KW, new FIPSAesKeyWrapAlgorithmProvider());
+        providers.put(CryptoConstants.RSA1_5, new FIPSRsaKeyEncryptionJWEAlgorithmProvider(FipsRSA.WRAP_PKCS1v1_5));
+        providers.put(CryptoConstants.RSA_OAEP, new FIPSRsaKeyEncryptionJWEAlgorithmProvider(FipsRSA.WRAP_OAEP));
+        providers.put(CryptoConstants.RSA_OAEP_256, new FIPSRsaKeyEncryptionJWEAlgorithmProvider(FipsRSA.WRAP_OAEP.withDigest(FipsSHS.Algorithm.SHA256)));
 
         Security.insertProviderAt(new KeycloakFipsSecurityProvider(bcFipsProvider), 1);
+    }
+
+
+    @Override
+    public Provider getBouncyCastleProvider() {
+        return bcFipsProvider;
     }
 
     @Override

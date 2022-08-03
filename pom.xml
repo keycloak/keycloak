@@ -67,6 +67,8 @@
         <jboss.as.version>7.2.0.Final</jboss.as.version>
         <jboss.as.subsystem.test.version>7.5.22.Final-redhat-1</jboss.as.subsystem.test.version>
 
+        <keycloak.admin-ui.version>${project.version}</keycloak.admin-ui.version>
+
         <!-- Versions used mostly for Undertow server, aligned with WildFly -->
         <jboss.aesh.version>0.66.19</jboss.aesh.version>
         <aesh.version>2.4</aesh.version>
@@ -1418,7 +1420,7 @@
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-admin-ui</artifactId>
-                <version>${project.version}</version>
+                <version>${keycloak.admin-ui.version}</version>
             </dependency>
 
             <!-- Openshift -->

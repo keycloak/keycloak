@@ -105,6 +105,12 @@ public class LoggingOptions {
             .hidden()
             .build();
 
+    public static final Option<String> LOG_GELF_LEVEL = new OptionBuilder<>("log-gelf-level", String.class)
+            .category(OptionCategory.LOGGING)
+            .defaultValue("INFO")
+            .description("The log level specifying which message levels will be logged by the GELF logger. Message levels lower than this value will be discarded.")
+            .build();
+
     public static final Option<String> LOG_GELF_HOST = new OptionBuilder<>("log-gelf-host", String.class)
             .category(OptionCategory.LOGGING)
             .description("Hostname of the Logstash or Graylog Host. By default UDP is used, prefix the host with 'tcp:' to switch to TCP. Example: 'tcp:localhost'")
@@ -119,7 +125,7 @@ public class LoggingOptions {
 
     public static final Option<String> LOG_GELF_VERSION = new OptionBuilder<>("log-gelf-version", String.class)
             .category(OptionCategory.LOGGING)
-            .description("The gelf version to be used.")
+            .description("The GELF version to be used.")
             .defaultValue("1.1")
             .hidden()
             .expectedValues("1.0", "1.1")
@@ -127,14 +133,14 @@ public class LoggingOptions {
 
     public static final Option<Boolean> LOG_GELF_INCLUDE_STACK_TRACE = new OptionBuilder<>("log-gelf-include-stack-trace", Boolean.class)
             .category(OptionCategory.LOGGING)
-            .description("If set to true, occuring stack traces are included in the 'StackTrace' field in the gelf output.")
+            .description("If set to true, occuring stack traces are included in the 'StackTrace' field in the GELF output.")
             .defaultValue(Boolean.TRUE)
             .expectedValues(Boolean.TRUE, Boolean.FALSE)
             .build();
 
     public static final Option<String> LOG_GELF_TIMESTAMP_FORMAT = new OptionBuilder<>("log-gelf-timestamp-format", String.class)
             .category(OptionCategory.LOGGING)
-            .description("Set the format for the gelf timestamp field. Uses Java SimpleDateFormat pattern.")
+            .description("Set the format for the GELF timestamp field. Uses Java SimpleDateFormat pattern.")
             .defaultValue("yyyy-MM-dd HH:mm:ss,SSS")
             .build();
 
@@ -146,7 +152,7 @@ public class LoggingOptions {
 
     public static final Option<Integer> LOG_GELF_MAX_MSG_SIZE = new OptionBuilder<>("log-gelf-max-message-size", Integer.class)
             .category(OptionCategory.LOGGING)
-            .description("Maximum message size (in bytes). If the message size is exceeded, gelf will submit the message in multiple chunks.")
+            .description("Maximum message size (in bytes). If the message size is exceeded, GELF will submit the message in multiple chunks.")
             .defaultValue(8192)
             .build();
 
