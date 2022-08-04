@@ -155,6 +155,19 @@ Keycloak only allows to create the initial admin user from a local network conne
 -e KEYCLOAK_ADMIN_PASSWORD=change_me
 ----
 
+== Importing A Realm On Startup
+
+The https://quay.io/keycloak/keycloak[published Keycloak containers] have a directory `/opt/keycloak/data/import`. If you put one or more import files in that directory via a volume mount or other means and add the startup argument `--import-realm`, the Keycloak container will import that data on startup! This may only make sense to do in Dev mode.
+
+[source, bash]
+----
+podman|docker run --name keycloak_unoptimized -p 8080:8080 \
+        -e KEYCLOAK_ADMIN=admin -e KEYCLOAK_ADMIN_PASSWORD=change_me \
+        -v /path/to/realm/data:/opt/keycloak/data/import
+        quay.io/keycloak/keycloak:latest \
+        start-dev --import-realm
+----
+
 Feel free to join the open https://github.com/keycloak/keycloak/discussions/8549[GitHub Discussion] around enhancements of the admin bootstrapping process.
 
 </@tmpl.guide>
