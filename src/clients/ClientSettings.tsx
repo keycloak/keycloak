@@ -28,7 +28,7 @@ export const ClientSettings = (props: ClientSettingsProps) => {
 
   return (
     <ScrollForm
-      className="pf-u-px-lg"
+      className="pf-u-px-lg pf-u-pb-lg"
       sections={[
         {
           title: t("generalSettings"),

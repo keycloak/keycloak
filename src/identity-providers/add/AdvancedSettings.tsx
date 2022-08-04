@@ -141,6 +141,7 @@ export const AdvancedSettings = ({ isOIDC, isSAML }: AdvancedSettingsProps) => {
       />
 
       <FormGroup
+        className="pf-u-pb-3xl"
         label={t("syncMode")}
         labelIcon={
           <HelpItem
