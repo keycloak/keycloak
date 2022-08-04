@@ -9,6 +9,7 @@ import { useRealm } from "../../context/realm-context/RealmContext";
 import { DiscoverySettings } from "./DiscoverySettings";
 import { DiscoveryEndpointField } from "../component/DiscoveryEndpointField";
 import { addTrailingSlash } from "../../util";
+import { getAuthorizationHeaders } from "../../utils/getAuthorizationHeaders";
 
 export const OpenIdConnectSettings = () => {
   const { t } = useTranslation("identity-providers");
@@ -45,9 +46,7 @@ export const OpenIdConnectSettings = () => {
         {
           method: "POST",
           body: formData,
-          headers: {
-            Authorization: `Bearer ${await adminClient.getAccessToken()}`,
-          },
+          headers: getAuthorizationHeaders(await adminClient.getAccessToken()),
         }
       );
       if (response.ok) {

@@ -13,6 +13,7 @@ import { DiscoveryEndpointField } from "../component/DiscoveryEndpointField";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import environment from "../../environment";
 import { addTrailingSlash } from "../../util";
+import { getAuthorizationHeaders } from "../../utils/getAuthorizationHeaders";
 
 export const SamlConnectSettings = () => {
   const { t } = useTranslation("identity-providers");
@@ -51,9 +52,7 @@ export const SamlConnectSettings = () => {
         {
           method: "POST",
           body: formData,
-          headers: {
-            Authorization: `bearer ${await adminClient.getAccessToken()}`,
-          },
+          headers: getAuthorizationHeaders(await adminClient.getAccessToken()),
         }
       );
       if (response.ok) {

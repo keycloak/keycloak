@@ -4,6 +4,7 @@ import { initReactI18next } from "react-i18next";
 import type KeycloakAdminClient from "@keycloak/keycloak-admin-client";
 
 import environment from "./environment";
+import { getAuthorizationHeaders } from "./utils/getAuthorizationHeaders";
 
 export const DEFAULT_LOCALE = "en";
 
@@ -60,9 +61,9 @@ const initOptions = async (
     postProcess: ["overrideProcessor"],
     backend: {
       loadPath: constructLoadPath,
-      customHeaders: {
-        Authorization: `Bearer ${await adminClient.getAccessToken()}`,
-      },
+      customHeaders: getAuthorizationHeaders(
+        await adminClient.getAccessToken()
+      ),
     },
   };
 };

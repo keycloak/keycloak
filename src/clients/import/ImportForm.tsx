@@ -1,3 +1,7 @@
+import { useState } from "react";
+import { Link, useHistory } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { FormProvider, useForm } from "react-hook-form";
 import {
   ActionGroup,
   AlertVariant,
@@ -5,23 +9,29 @@ import {
   FormGroup,
   PageSection,
 } from "@patternfly/react-core";
+import { Language } from "@patternfly/react-code-editor";
+
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
-import { useState } from "react";
-import { FormProvider, useForm } from "react-hook-form";
-import { useTranslation } from "react-i18next";
-import { Link, useHistory } from "react-router-dom";
+
 import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form-access/FormAccess";
-import { JsonFileUpload } from "../../components/json-file-upload/JsonFileUpload";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
 import { useAdminClient } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
-import { convertFormValuesToObject, convertToFormValues } from "../../util";
+import {
+  addTrailingSlash,
+  convertFormValuesToObject,
+  convertToFormValues,
+} from "../../util";
 import { CapabilityConfig } from "../add/CapabilityConfig";
 import { ClientDescription } from "../ClientDescription";
 import { toClient } from "../routes/Client";
 import { toClients } from "../routes/Clients";
+import { FileUploadForm } from "../../components/json-file-upload/FileUploadForm";
+import { getAuthorizationHeaders } from "../../utils/getAuthorizationHeaders";
+
+const isXml = (text: string) => text.startsWith("<");
 
 export default function ImportForm() {
   const { t } = useTranslation("clients");
@@ -34,17 +44,43 @@ export default function ImportForm() {
 
   const { addAlert, addError } = useAlerts();
 
-  const handleFileChange = (obj?: object) => {
-    const defaultClient = {
-      protocol: "",
-      clientId: "",
-      name: "",
-      description: "",
-    };
+  const handleFileChange = async (contents: string) => {
+    try {
+      const parsed = await parseFileContents(contents);
 
-    convertToFormValues(obj || defaultClient, setValue);
-    setImported(obj || defaultClient);
+      convertToFormValues(parsed, setValue);
+      setImported(parsed);
+    } catch (error) {
+      addError("clients:importParseError", error);
+    }
   };
+
+  async function parseFileContents(
+    contents: string
+  ): Promise<ClientRepresentation> {
+    if (!isXml(contents)) {
+      return JSON.parse(contents);
+    }
+
+    const response = await fetch(
+      `${addTrailingSlash(
+        adminClient.baseUrl
+      )}admin/realms/${realm}/client-description-converter`,
+      {
+        method: "POST",
+        body: contents,
+        headers: getAuthorizationHeaders(await adminClient.getAccessToken()),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        `Server responded with invalid status: ${response.statusText}`
+      );
+    }
+
+    return response.json();
+  }
 
   const save = async (client: ClientRepresentation) => {
     try {
@@ -74,7 +110,13 @@ export default function ImportForm() {
           role="manage-clients"
         >
           <FormProvider {...form}>
-            <JsonFileUpload id="realm-file" onChange={handleFileChange} />
+            <FileUploadForm
+              id="realm-file"
+              language={Language.json}
+              extension=".json,.xml"
+              helpText="common-help:helpFileUploadClient"
+              onChange={handleFileChange}
+            />
             <ClientDescription hasConfigureAccess />
             <FormGroup label={t("common:type")} fieldId="kc-type">
               <KeycloakTextInput

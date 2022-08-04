@@ -503,6 +503,7 @@
   "importFile": "Import file",
   "importSuccess": "New certificate imported",
   "importError": "Could not import certificate {{error}}",
+  "importParseError": "Could not parse the file {{error}}",
   "tokenLifespan": {
     "expires": "Expires in",
     "never": "Never expires"
