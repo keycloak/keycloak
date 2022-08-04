@@ -576,9 +576,7 @@ class KeycloakProcessor {
                 }
             }
 
-            if (!providers.isEmpty()) {
-                factories.put(spi, providers);
-            }
+            factories.put(spi, providers);
         }
 
         return factories;

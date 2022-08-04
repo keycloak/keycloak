@@ -756,7 +756,7 @@ public class SAMLParserTest {
     @Test
     public void testInvalidEndElement() throws Exception {
         thrown.expect(ParsingException.class);
-        // see KEYCLOAK-7444 
+        // see KEYCLOAK-7444
         thrown.expectMessage(containsString("NameIDFormat"));
 
         assertParsed("saml20-entity-descriptor-idp-invalid-end-element.xml", EntityDescriptorType.class);
@@ -1003,7 +1003,7 @@ public class SAMLParserTest {
         AssertionType assertion = assertParsed("saml20-assertion-example.xml", AssertionType.class);
 
         AttributeStatementType attributeStatementType = assertion.getAttributeStatements().iterator().next();
-        assertThat(attributeStatementType.getAttributes(), hasSize(9));
+        assertThat(attributeStatementType.getAttributes(), hasSize(12));
 
         for (AttributeStatementType.ASTChoiceType choiceType: attributeStatementType.getAttributes()) {
             AttributeType attr = choiceType.getAttribute();
@@ -1012,7 +1012,7 @@ public class SAMLParserTest {
             // test selected attributes
             switch (attrName) {
                 case "portal_id":
-                    assertEquals(value, "060D00000000SHZ");
+                    assertEquals("060D00000000SHZ", value);
                     break;
                 case "organization_id":
                     assertThat(value, instanceOf(String.class));
@@ -1028,6 +1028,9 @@ public class SAMLParserTest {
                 case "anytype_no_xml_test":
                     assertThat(value, is((Object) "value_no_xml"));
                     break;
+                case "anytype_xml_fragment":
+                    assertThat(value, is((Object) "<elem1>Foo</elem1><elem2>Bar</elem2>"));
+                    break;
                 case "logouturl":
                     assertThat(value, is((Object) "http://www.salesforce.com/security/del_auth/SsoLogoutPage.html"));
                     break;
@@ -1036,6 +1039,12 @@ public class SAMLParserTest {
                     break;
                 case "status":
                     assertThat(value, is((Object) "<status><code><status>XYZ</status></code></status>"));
+                    break;
+                case "userDefined":
+                    assertThat(value, is((Object) "<A><B>Foo</B><C>Bar</C></A>"));
+                    break;
+                case "userDefinedFragmentWithNamespace":
+                    assertThat(value, is((Object) "<myPrefix:B xmlns:myPrefix=\"urn:myNamespace\">Foo</myPrefix:B><myPrefix:C xmlns:myPrefix=\"urn:myNamespace\">Bar</myPrefix:C>"));
                     break;
                 default:
                     break;
@@ -1130,7 +1139,7 @@ public class SAMLParserTest {
                 assertThat(ac.getSequence(), notNullValue());
 
                 assertThat(ac.getSequence().getClassRef().getValue(), is(JBossSAMLURIConstants.AC_UNSPECIFIED.getUri()));
-                
+
                 assertThat(ac.getSequence(), notNullValue());
                 assertThat(ac.getSequence().getAuthnContextDecl(), notNullValue());
                 assertThat(ac.getSequence().getAuthnContextDecl().getValue(), instanceOf(Element.class));

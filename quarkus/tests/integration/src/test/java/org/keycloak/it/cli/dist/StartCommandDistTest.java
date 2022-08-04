@@ -65,4 +65,11 @@ public class StartCommandDistTest extends StartCommandTest {
         cliResult.assertStarted();
     }
 
+    @Test
+    @Launch({ "start", "--optimized", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
+    void testStartUsingOptimizedDoesNotAllowBuildOptions(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertError("Unknown option: '--cache'");
+    }
+
 }
