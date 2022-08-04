@@ -183,7 +183,8 @@ export const Credentials = ({ client, save, refresh }: CredentialsProps) => {
                 )}
               />
             </FormGroup>
-            {clientAuthenticatorType === "client-jwt" && <SignedJWT />}
+            {(clientAuthenticatorType === "client-jwt" ||
+              clientAuthenticatorType === "client-secret-jwt") && <SignedJWT />}
             {clientAuthenticatorType === "client-x509" && <X509 />}
             <ActionGroup>
               <Button variant="primary" type="submit" isDisabled={!isDirty}>
