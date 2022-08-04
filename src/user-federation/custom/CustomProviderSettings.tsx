@@ -21,6 +21,8 @@ import { useRealm } from "../../context/realm-context/RealmContext";
 import { useAlerts } from "../../components/alert/Alerts";
 import { SettingsCache } from "../shared/SettingsCache";
 import { ExtendedHeader } from "../shared/ExtendedHeader";
+import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
+import { DynamicComponents } from "../../components/dynamic/DynamicComponents";
 
 import "./custom-provider-settings.css";
 
@@ -43,6 +45,12 @@ export default function CustomProviderSettings() {
   const { addAlert, addError } = useAlerts();
   const { realm: realmName } = useRealm();
   const [parentId, setParentId] = useState("");
+
+  const provider = (
+    useServerInfo().componentTypes?.[
+      "org.keycloak.storage.UserStorageProvider"
+    ] || []
+  ).find((p) => p.id === providerId);
 
   useFetch(
     async () => {
@@ -126,6 +134,9 @@ export default function CustomProviderSettings() {
               validated={errors.name ? "error" : "default"}
             />
           </FormGroup>
+          <FormProvider {...form}>
+            <DynamicComponents properties={provider?.properties || []} />
+          </FormProvider>
           <SettingsCache form={form} unWrap />
           <ActionGroup>
             <Button

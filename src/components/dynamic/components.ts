@@ -12,6 +12,7 @@ import { MultiValuedStringComponent } from "./MultivaluedStringComponent";
 import { MultiValuedListComponent } from "./MultivaluedListComponent";
 import { GroupComponent } from "./GroupComponent";
 import { FileComponent } from "./FileComponent";
+import { PasswordComponent } from "./PasswordComponent";
 
 export type ComponentProps = Omit<ConfigPropertyRepresentation, "type"> & {
   isDisabled?: boolean;
@@ -29,6 +30,7 @@ const ComponentTypes = [
   "ClientList",
   "MultivaluedString",
   "File",
+  "Password",
 ] as const;
 
 export type Components = typeof ComponentTypes[number];
@@ -47,6 +49,7 @@ export const COMPONENTS: {
   MultivaluedList: MultiValuedListComponent,
   MultivaluedString: MultiValuedStringComponent,
   File: FileComponent,
+  Password: PasswordComponent,
 } as const;
 
 export const isValidComponentType = (value: string): value is Components =>
