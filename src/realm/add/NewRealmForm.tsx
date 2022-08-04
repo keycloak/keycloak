@@ -1,6 +1,9 @@
+import { useState } from "react";
+import { useHistory } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { Controller, useForm } from "react-hook-form";
 import {
   ActionGroup,
-  AlertVariant,
   Button,
   FormGroup,
   PageSection,
@@ -8,9 +11,6 @@ import {
 } from "@patternfly/react-core";
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 
-import { Controller, useForm } from "react-hook-form";
-import { useTranslation } from "react-i18next";
-import { useHistory } from "react-router-dom";
 import { useAlerts } from "../../components/alert/Alerts";
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { JsonFileUpload } from "../../components/json-file-upload/JsonFileUpload";
@@ -20,6 +20,7 @@ import { useAdminClient } from "../../context/auth/AdminClient";
 import { useRealms } from "../../context/RealmsContext";
 import { useWhoAmI } from "../../context/whoami/WhoAmI";
 import { toDashboard } from "../../dashboard/routes/Dashboard";
+import { convertFormValuesToObject, convertToFormValues } from "../../util";
 
 export default function NewRealmForm() {
   const { t } = useTranslation("realm");
@@ -28,6 +29,7 @@ export default function NewRealmForm() {
   const { refresh: refreshRealms } = useRealms();
   const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
+  const [realm, setRealm] = useState<RealmRepresentation>();
 
   const {
     register,
@@ -37,21 +39,23 @@ export default function NewRealmForm() {
     formState: { errors },
   } = useForm<RealmRepresentation>({ mode: "onChange" });
 
-  const handleFileChange = (obj: object) => {
+  const handleFileChange = (obj?: object) => {
     const defaultRealm = { id: "", realm: "", enabled: true };
-    Object.entries(obj || defaultRealm).map((entry) =>
-      setValue(entry[0], entry[1])
-    );
+    convertToFormValues(obj || defaultRealm, setValue);
+    setRealm(obj || defaultRealm);
   };
 
-  const save = async (realm: RealmRepresentation) => {
+  const save = async (fields: RealmRepresentation) => {
     try {
-      await adminClient.realms.create(realm);
-      addAlert(t("saveRealmSuccess"), AlertVariant.success);
+      await adminClient.realms.create({
+        ...realm,
+        ...convertFormValuesToObject(fields),
+      });
+      addAlert(t("saveRealmSuccess"));
 
       refresh();
       await refreshRealms();
-      history.push(toDashboard({ realm: realm.realm }));
+      history.push(toDashboard({ realm: fields.realm }));
     } catch (error) {
       addError("realm:saveRealmError", error);
     }
