@@ -151,7 +151,7 @@ public class ClientAuthSecretSignedJWTTest extends AbstractKeycloakTest {
                 jwt);
 
         assertEquals(400, response.getStatusCode());
-        assertEquals("invalid_client", response.getError());
+        assertEquals("unauthorized_client", response.getError());
     }
 
     @Test

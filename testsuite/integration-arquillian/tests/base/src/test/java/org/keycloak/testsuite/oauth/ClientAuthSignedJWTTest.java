@@ -91,6 +91,8 @@ import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.util.JsonSerialization;
 
+import com.sun.jna.StringArray;
+
 import javax.ws.rs.core.Response;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -762,7 +764,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
         CloseableHttpResponse resp = sendRequest(oauth.getServiceAccountUrl(), parameters);
         OAuthClient.AccessTokenResponse response = new OAuthClient.AccessTokenResponse(resp);
 
-        assertError(response, null, "invalid_client", Errors.INVALID_CLIENT_CREDENTIALS);
+        assertError(response, null, "unauthorized_client", Errors.CLIENT_NOT_FOUND);
     }
 
     @Test
@@ -774,7 +776,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
         CloseableHttpResponse resp = sendRequest(oauth.getServiceAccountUrl(), parameters);
         OAuthClient.AccessTokenResponse response = new OAuthClient.AccessTokenResponse(resp);
 
-        assertError(response, null, "invalid_client", Errors.INVALID_CLIENT_CREDENTIALS);
+        assertError(response, null, "unauthorized_client", Errors.CLIENT_NOT_FOUND);
     }
 
     @Test
@@ -786,7 +788,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
         CloseableHttpResponse resp = sendRequest(oauth.getServiceAccountUrl(), parameters);
         OAuthClient.AccessTokenResponse response = new OAuthClient.AccessTokenResponse(resp);
 
-        assertError(response, null, "invalid_client", Errors.INVALID_CLIENT_CREDENTIALS);
+        assertError(response, null, "unauthorized_client", Errors.CLIENT_NOT_FOUND);
     }
 
     @Test
@@ -801,7 +803,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
         CloseableHttpResponse resp = sendRequest(oauth.getServiceAccountUrl(), parameters);
         OAuthClient.AccessTokenResponse response = new OAuthClient.AccessTokenResponse(resp);
 
-        assertError(response, null, "invalid_client", Errors.INVALID_CLIENT_CREDENTIALS);
+        assertError(response, null, "unauthorized_client", Errors.CLIENT_NOT_FOUND);
     }
 
     @Test
@@ -816,7 +818,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
         CloseableHttpResponse resp = sendRequest(oauth.getServiceAccountUrl(), parameters);
         OAuthClient.AccessTokenResponse response = new OAuthClient.AccessTokenResponse(resp);
 
-        assertError(response, "unknown-client", "invalid_client", Errors.INVALID_CLIENT_CREDENTIALS);
+        assertError(response, "unknown-client", "unauthorized_client", Errors.CLIENT_NOT_FOUND);
     }
 
     @Test
@@ -989,6 +991,8 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
         setTimeOffset(0);
 
         assertError(response, "client1", OAuthErrorException.INVALID_CLIENT, Errors.INVALID_CLIENT_CREDENTIALS);
+        
+        
     }
 
 
@@ -1020,13 +1024,13 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
     @Test
     public void testMissingIssuerClaim() throws Exception {
         OAuthClient.AccessTokenResponse response = testMissingClaim("issuer");
-        assertError(response, null, OAuthErrorException.INVALID_CLIENT, Errors.INVALID_CLIENT_CREDENTIALS);
+        assertError(response, null, OAuthErrorException.UNAUTHORIZED_CLIENT, Errors.CLIENT_NOT_FOUND);
     }
 
     @Test
     public void testMissingSubjectClaim() throws Exception {
         OAuthClient.AccessTokenResponse response = testMissingClaim("subject");
-        assertError(response, null, "invalid_client", Errors.INVALID_CLIENT_CREDENTIALS);
+        assertError(response, null, "unauthorized_client", Errors.CLIENT_NOT_FOUND);
     }
 
     @Test
