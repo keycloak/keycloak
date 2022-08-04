@@ -12,8 +12,8 @@ The current distributed cache implementation is built on top of https://infinisp
 
 == Enable distributed caching
 When you start Keycloak in production mode, by using the `start` command, caching is enabled and all Keycloak nodes in your network are discovered.
-By default, caches are using a `UDP` transport stack so that nodes are discovered using IP multicast transport based on UDP. While not suitable
-for most production deployments, the server allows you to choose other transport stacks as you will see later in this guide.
+
+By default, caches are using a `UDP` transport stack so that nodes are discovered using IP multicast transport based on UDP. For most production environments, there are better discovery alternatives to UDP available. Keycloak allows you to either choose from a set of pre-defined default transport stacks, or to define your own custom stack, as you will see later in this guide.
 
 To explicitly enable distributed infinispan caching, enter this command:
 
