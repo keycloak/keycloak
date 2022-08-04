@@ -47,7 +47,7 @@ public class OTPPolicy implements Serializable {
 
     private static final Map<String, String> algToKeyUriAlg = new HashMap<>();
 
-    private static final OtpApp[] allApplications = new OtpApp[] { new FreeOTP(), new GoogleAuthenticator() };
+    private static final OtpApp[] allApplications = new OtpApp[] { new FreeOTP(), new GoogleAuthenticator(), new MicrosoftAuthenticator() };
 
     static {
         algToKeyUriAlg.put(HmacOTP.HMAC_SHA1, "SHA1");
@@ -209,6 +209,27 @@ public class OTPPolicy implements Serializable {
         @Override
         public boolean supports(OTPPolicy policy) {
             return true;
+        }
+    }
+
+    public static class MicrosoftAuthenticator implements OtpApp {
+
+        @Override
+        public String getName() {
+            return "Microsoft Authenticator";
+        }
+
+        @Override
+        public boolean supports(OTPPolicy policy) {
+            if (policy.digits != 6) {
+                return false;
+            }
+
+            if (!policy.getAlgorithm().equals("HmacSHA1")) {
+                return false;
+            }
+
+            return policy.getType().equals("totp") && policy.getPeriod() == 30;
         }
     }
 
