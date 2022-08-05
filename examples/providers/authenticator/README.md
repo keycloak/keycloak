@@ -13,7 +13,7 @@ Example Custom Authenticator
 4. Login to admin console.  Hit browser refresh if you are already logged in so that the new providers show up.
 
 5. Go to the **Authentication** menu item and go to the **Flows** tab, you will be able to view the currently
-   defined flows.  You cannot modify an built in flows, so, to add the Authenticator you
+   defined flows.  You cannot modify a built-in flows, so, to add the Authenticator you
    have to copy an existing flow or create your own.  Copy the "Browser" flow.
 
 6. In your copy, click the **Actions** menu item in **Forms** subflow and **Add Execution**.  Pick `Secret Question` and change 

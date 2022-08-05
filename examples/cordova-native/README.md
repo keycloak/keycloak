@@ -10,7 +10,7 @@ Start Keycloak bound to an IP address available to the phone or emulator. For ex
 
     bin/standalone.sh -b 192.168.0.10
 
-Open the Keycloak admin console, click on Add Realm, click on 'Choose a JSON file', selct example-realm.json and click Upload.
+Open the Keycloak admin console, click on Add Realm, click on 'Choose a JSON file', select example-realm.json and click Upload.
 
 Navigate to applications, click on 'Cordova', select 'Installation' and in the 'Format option' drop-down select 'keycloak.json'. Download this file to the www folder.
 
@@ -26,7 +26,7 @@ Install to Android phone or emulator
     cordova run android
 
 
-Once the application is opened you can login with username: 'user', and password: 'password'.
+Once the application is opened you can log in with username: 'user', and password: 'password'.
 
 
 Troubleshooting

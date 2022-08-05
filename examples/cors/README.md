@@ -31,7 +31,7 @@ C:\Windows\System32\drivers\etc\hosts) and add the following entries:
 
 Step 2: Make sure you've set up the Keycloak Server and have it running
 --------------------------------------
-You will run this demo on the same server as the keycloak server.  Its best to use the appliance as everything is all set up.
+You will run this demo on the same server as the keycloak server.  It is best to use the appliance as everything is all set up.
 See documentation on how to set this up.
 
 Step 3: Import the Test Realm
