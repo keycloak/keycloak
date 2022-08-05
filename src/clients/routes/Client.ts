@@ -26,7 +26,7 @@ export const ClientRoute: RouteDef = {
   path: "/:realm/clients/:clientId/:tab",
   component: lazy(() => import("../ClientDetails")),
   breadcrumb: (t) => t("clients:clientSettings"),
-  access: "view-clients",
+  access: "query-clients",
 };
 
 export const toClient = (params: ClientParams): LocationDescriptorObject => ({

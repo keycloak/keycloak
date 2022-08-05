@@ -96,14 +96,14 @@ export const ClientScopes = ({
     const clientScopes = await adminClient.clientScopes.find();
 
     const find = (id: string) =>
-      clientScopes.find((clientScope) => id === clientScope.id)!;
+      clientScopes.find((clientScope) => id === clientScope.id);
 
     const optional = optionalClientScopes.map((c) => {
       const scope = find(c.id!);
       const row: Row = {
         ...c,
         type: ClientScope.optional,
-        description: scope.description,
+        description: scope?.description,
       };
       return row;
     });
@@ -113,7 +113,7 @@ export const ClientScopes = ({
       const row: Row = {
         ...c,
         type: ClientScope.default,
-        description: scope.description,
+        description: scope?.description,
       };
       return row;
     });
