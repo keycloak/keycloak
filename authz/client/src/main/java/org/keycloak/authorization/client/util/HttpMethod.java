@@ -92,7 +92,7 @@ public class HttpMethod<R> {
             int statusCode = statusLine.getStatusCode();
 
             if (statusCode < 200 || statusCode >= 300) {
-                throw new HttpResponseException("Unexpected response from server: " + statusCode + " / " + statusLine.getReasonPhrase(), statusCode, statusLine.getReasonPhrase(), bytes);
+                throw new HttpResponseException("Unexpected response from server: " + statusCode + " / " + statusLine.getReasonPhrase()  + " Response : " + new String(bytes), statusCode, statusLine.getReasonPhrase(), bytes);
             }
 
             if (bytes == null) {
