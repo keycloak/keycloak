@@ -64,7 +64,7 @@ export const MultiLineInput = ({
               onClick={() => remove(index)}
               tabIndex={-1}
               aria-label={t("common:remove")}
-              isDisabled={index === fields.length - 1}
+              isDisabled={index === 0}
             >
               <MinusCircleIcon />
             </Button>
