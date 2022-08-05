@@ -230,6 +230,8 @@ public class UserAdapter implements UserModel.Streams, JpaModel<UserEntity> {
             return user.getEmail();
         } else if (UserModel.USERNAME.equals(name)) {
             return user.getUsername();
+        } else if (UserModel.EMAIL_VERIFIED.equals(name)) {
+            return String.valueOf(user.isEmailVerified());
         }
         for (UserAttributeEntity attr : user.getAttributes()) {
             if (attr.getName().equals(name)) {
@@ -249,6 +251,8 @@ public class UserAdapter implements UserModel.Streams, JpaModel<UserEntity> {
             return Stream.of(user.getEmail());
         } else if (UserModel.USERNAME.equals(name)) {
             return Stream.of(user.getUsername());
+        } else if (UserModel.EMAIL_VERIFIED.equals(name)) {
+            return Stream.of(String.valueOf(user.isEmailVerified()));
         }
         return user.getAttributes().stream().filter(attribute -> Objects.equals(attribute.getName(), name)).
                 map(attribute -> attribute.getValue());

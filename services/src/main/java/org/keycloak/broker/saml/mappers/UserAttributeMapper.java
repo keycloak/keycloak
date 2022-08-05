@@ -214,7 +214,10 @@ public class UserAttributeMapper extends AbstractIdentityProviderMapper implemen
             setIfNotEmptyAndDifferent(user::setFirstName, user::getFirstName, attributeValuesInContext);
         } else if (attribute.equalsIgnoreCase(LAST_NAME)) {
             setIfNotEmptyAndDifferent(user::setLastName, user::getLastName, attributeValuesInContext);
-        } else {
+        } else if (EMAIL_VERIFIED.equalsIgnoreCase(attribute)) {
+            if (attributeValuesInContext != null && ! attributeValuesInContext.isEmpty())
+                user.setEmailVerified(Boolean.valueOf(attributeValuesInContext.get(0)));
+        }else {
             List<String> currentAttributeValues = user.getAttributes().get(attribute);
             if (attributeValuesInContext == null) {
                 // attribute no longer sent by brokered idp, remove it

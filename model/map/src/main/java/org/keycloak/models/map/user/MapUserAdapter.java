@@ -95,6 +95,8 @@ public abstract class MapUserAdapter extends AbstractUserModel<MapUserEntity> {
             return Optional.ofNullable(entity.getEmail());
         } else if (UserModel.USERNAME.equals(name)) {
             return Optional.ofNullable(entity.getUsername());
+        } else if (UserModel.EMAIL_VERIFIED.equals(name)) {
+            return Optional.ofNullable(String.valueOf(entity.isEmailVerified()));
         }
 
         return Optional.empty();

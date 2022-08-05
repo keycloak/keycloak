@@ -165,6 +165,9 @@ public class UserAttributeMapper extends AbstractClaimMapper {
             setIfNotEmpty(user::setFirstName, values);
         } else if (LAST_NAME.equalsIgnoreCase(attribute)) {
             setIfNotEmpty(user::setLastName, values);
+        } else if (EMAIL_VERIFIED.equalsIgnoreCase(attribute)) {
+            if (values != null && ! values.isEmpty())
+                user.setEmailVerified(Boolean.valueOf(values.get(0)));
         } else {
             List<String> current = user.getAttributeStream(attribute).collect(Collectors.toList());
             if (!CollectionUtil.collectionEquals(values, current)) {
