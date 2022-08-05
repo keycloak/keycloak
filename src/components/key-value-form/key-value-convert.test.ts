@@ -66,4 +66,17 @@ describe("Tests the convert functions for attribute input", () => {
       { key: "", value: "" },
     ]);
   });
+
+  it("convert duplicates into array values", () => {
+    const given = [
+      { key: "theKey", value: "one" },
+      { key: "theKey", value: "two" },
+    ];
+
+    //when
+    const result = keyValueToArray(given);
+
+    //then
+    expect(result).toEqual({ theKey: ["one", "two"] });
+  });
 });
