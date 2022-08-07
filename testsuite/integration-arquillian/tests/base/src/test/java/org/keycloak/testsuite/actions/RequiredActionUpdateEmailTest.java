@@ -49,5 +49,7 @@ public class RequiredActionUpdateEmailTest extends AbstractRequiredActionUpdateE
         UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
         assertEquals("new-email@localhost", user.getEmail());
         assertFalse(user.getRequiredActions().contains(UserModel.RequiredAction.UPDATE_EMAIL.name()));
+        Assert.assertEquals("Tom", user.getFirstName());
+        Assert.assertEquals("Brady", user.getLastName());
     }
 }

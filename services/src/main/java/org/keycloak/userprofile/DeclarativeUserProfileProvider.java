@@ -84,7 +84,7 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
 
     /**
      * Method used for predicate which returns true if any of the configuredScopes is requested in current auth flow.
-     * 
+     *
      * @param context to get current auth flow from
      * @param configuredScopes to be evaluated
      * @return
@@ -140,16 +140,18 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
 
         if (!isEnabled(session)) {
             if(!context.equals(UserProfileContext.USER_API) && !context.equals(UserProfileContext.REGISTRATION_USER_CREATION)) {
-                decoratedMetadata.addAttribute(UserModel.FIRST_NAME, 1, new AttributeValidatorMetadata(BlankAttributeValidator.ID, BlankAttributeValidator.createConfig(
+                if (!context.equals(UserProfileContext.UPDATE_EMAIL)) {
+                    decoratedMetadata.addAttribute(UserModel.FIRST_NAME, 1, new AttributeValidatorMetadata(BlankAttributeValidator.ID, BlankAttributeValidator.createConfig(
                         Messages.MISSING_FIRST_NAME, metadata.getContext() == UserProfileContext.IDP_REVIEW))).setAttributeDisplayName("${firstName}");
-                decoratedMetadata.addAttribute(UserModel.LAST_NAME, 2, new AttributeValidatorMetadata(BlankAttributeValidator.ID, BlankAttributeValidator.createConfig(Messages.MISSING_LAST_NAME, metadata.getContext() == UserProfileContext.IDP_REVIEW))).setAttributeDisplayName("${lastName}");
-                
+                    decoratedMetadata.addAttribute(UserModel.LAST_NAME, 2, new AttributeValidatorMetadata(BlankAttributeValidator.ID, BlankAttributeValidator.createConfig(Messages.MISSING_LAST_NAME, metadata.getContext() == UserProfileContext.IDP_REVIEW))).setAttributeDisplayName("${lastName}");
+                }
+
                 //add email format validator to legacy profile
                 List<AttributeMetadata> em = decoratedMetadata.getAttribute(UserModel.EMAIL);
                 for(AttributeMetadata e: em) {
                     e.addValidator(new AttributeValidatorMetadata(EmailValidator.ID, ValidatorConfig.builder().config(EmailValidator.IGNORE_EMPTY_VALUE, true).build()));
                 }
-                
+
                 return decoratedMetadata;
             }
             return decoratedMetadata;
@@ -259,6 +261,18 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
     }
 
     /**
+     * skip decorate config for the following context
+     * everything important is covered in its meta
+     *
+     * @param context user profile context
+     * @return true means should skip decorating user profile config
+     */
+    protected boolean skipDecorateUserProfile(UserProfileContext context) {
+        return context == UserProfileContext.UPDATE_EMAIL ||
+            context == UserProfileContext.REGISTRATION_USER_CREATION;
+    }
+
+    /**
      * Decorate basic metadata provided from {@link AbstractUserProfileProvider} based on 'per realm' configuration.
      * This method is called for each {@link UserProfileContext} in each realm, and metadata are cached then and this
      * method is called again only if configuration changes.
@@ -269,16 +283,18 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
      */
     protected UserProfileMetadata decorateUserProfileForCache(UserProfileMetadata decoratedMetadata, ComponentModel model) {
         UserProfileContext context = decoratedMetadata.getContext();
-        UPConfig parsedConfig = getParsedConfig(model);
+        if (skipDecorateUserProfile(context)) {
+            return decoratedMetadata;
+        }
 
-        // do not change config for REGISTRATION_USER_CREATION context, everything important is covered thanks to REGISTRATION_PROFILE
-        if (parsedConfig == null || context == UserProfileContext.REGISTRATION_USER_CREATION) {
+        UPConfig parsedConfig = getParsedConfig(model);
+        if (parsedConfig == null) {
             return decoratedMetadata;
         }
 
         Map<String, UPGroup> groupsByName = asHashMap(parsedConfig.getGroups());
         int guiOrder = 0;
-        
+
         for (UPAttribute attrConfig : parsedConfig.getAttributes()) {
             String attributeName = attrConfig.getName();
             List<AttributeValidatorMetadata> validators = new ArrayList<>();
@@ -380,7 +396,7 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
     private Map<String, UPGroup> asHashMap(List<UPGroup> groups) {
         return groups.stream().collect(Collectors.toMap(g -> g.getName(), g -> g));
     }
-    
+
     private AttributeGroupMetadata toAttributeGroupMeta(UPGroup group) {
         if (group == null) {
             return null;

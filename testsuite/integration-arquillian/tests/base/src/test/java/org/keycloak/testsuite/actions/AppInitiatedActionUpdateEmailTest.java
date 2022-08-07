@@ -22,7 +22,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.events.Details;
 import org.keycloak.events.EventType;
-import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 
 public class AppInitiatedActionUpdateEmailTest extends AbstractAppInitiatedActionUpdateEmailTest {
@@ -45,5 +44,7 @@ public class AppInitiatedActionUpdateEmailTest extends AbstractAppInitiatedActio
 
         UserRepresentation user = ActionUtil.findUserWithAdminClient(adminClient, "test-user@localhost");
         Assert.assertEquals("new@email.com", user.getEmail());
+        Assert.assertEquals("Tom", user.getFirstName());
+        Assert.assertEquals("Brady", user.getLastName());
     }
 }
