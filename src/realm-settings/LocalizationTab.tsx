@@ -296,13 +296,11 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
     </SelectGroup>,
     <Divider key="divider" />,
     <SelectGroup label={t("supportedLocales")} key="group2">
-      {watchSupportedLocales
-        .filter((item) => item !== realm.defaultLocale)
-        .map((locale) => (
-          <SelectOption key={locale} value={locale}>
-            {localeToDisplayName(locale)}
-          </SelectOption>
-        ))}
+      {watchSupportedLocales.map((locale) => (
+        <SelectOption key={locale} value={locale}>
+          {localeToDisplayName(locale)}
+        </SelectOption>
+      ))}
     </SelectGroup>,
   ];
 
@@ -397,17 +395,14 @@ export const LocalizationTab = ({ save, realm }: LocalizationTabProps) => {
                         const option = v as string;
                         if (value.includes(option)) {
                           onChange(
-                            value.filter(
-                              (item: string) =>
-                                item !== option || option === DEFAULT_LOCALE
-                            )
+                            value.filter((item: string) => item !== option)
                           );
                         } else {
                           onChange([...value, option]);
                         }
                       }}
                       onClear={() => {
-                        onChange([DEFAULT_LOCALE]);
+                        onChange([]);
                       }}
                       selections={value}
                       variant={SelectVariant.typeaheadMulti}
