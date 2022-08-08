@@ -83,7 +83,7 @@ class UserPermissions implements UserPermissionEvaluator, UserPermissionManageme
         this.session = session;
         this.authz = authz;
         this.root = root;
-        if (Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION)) {
+        if (Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)) {
             policyStore = authz.getStoreFactory().getPolicyStore();
             resourceStore = authz.getStoreFactory().getResourceStore();
         } else {
