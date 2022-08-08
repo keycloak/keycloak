@@ -282,6 +282,7 @@ export default function ClientProfileForm() {
             {!editMode && !globalProfile && (
               <Button
                 id={"cancelCreateProfile"}
+                variant="link"
                 component={(props) => (
                   <Link
                     {...props}
