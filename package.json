@@ -68,7 +68,7 @@
     "@types/react-dom": "^17.0.16",
     "@types/react-router-dom": "^5.3.3",
     "@types/tar-fs": "^2.0.1",
-    "@typescript-eslint/eslint-plugin": "^5.31.0",
+    "@typescript-eslint/eslint-plugin": "^5.32.0",
     "@typescript-eslint/parser": "^5.31.0",
     "@vitejs/plugin-react": "^2.0.0",
     "babel-loader": "^8.2.5",
