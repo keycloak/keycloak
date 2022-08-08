@@ -19,10 +19,18 @@
 package org.keycloak.common.crypto;
 
 import java.net.URI;
-import java.security.cert.*;
-import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.security.cert.CRLReason;
+import java.security.cert.CertPathValidatorException;
+import java.security.cert.CertificateEncodingException;
+import java.security.cert.X509Certificate;
+import java.util.Collections;
+import java.util.Date;
+import java.util.LinkedList;
+import java.util.List;
+
+import org.jboss.logging.Logger;
+import org.jboss.logging.Logger.Level;
+
 
 
 /**
@@ -33,7 +41,7 @@ import java.util.logging.Logger;
 
 public abstract class OCSPUtils {
 
-    private final static Logger logger = Logger.getLogger(""+OCSPUtils.class);
+    private final static Logger logger = Logger.getLogger(OCSPUtils.class);
 
     protected static int OCSP_CONNECT_TIMEOUT = 10000; // 10 sec
     protected static final int TIME_SKEW = 900000;
@@ -82,7 +90,7 @@ public abstract class OCSPUtils {
         try {
             responderURIs = getResponderURIs(cert);
         } catch (CertificateEncodingException e) {
-            logger.log(Level.FINE, "CertificateEncodingException: {0}", e.getMessage());
+            logger.log(Level.DEBUG, "CertificateEncodingException: {0}", e);
             throw new CertPathValidatorException(e.getMessage(), e);
         }
         if (responderURIs.size() == 0) {
@@ -96,7 +104,7 @@ public abstract class OCSPUtils {
                 URI responderURI = URI.create(value);
                 uris.add(responderURI);
             } catch (IllegalArgumentException ex) {
-                logger.log(Level.FINE, "Malformed responder URI {0}", value);
+                logger.log(Level.DEBUG, "Malformed responder URI {0}", value, ex);
             }
         }
         return check( cert, issuerCertificate, Collections.unmodifiableList(uris), responderCert, date);
