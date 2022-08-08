@@ -55,7 +55,7 @@
     "@cypress/webpack-preprocessor": "^5.12.0",
     "@octokit/rest": "^19.0.1",
     "@testing-library/cypress": "^8.0.3",
-    "@testing-library/jest-dom": "^5.16.4",
+    "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^12.1.5",
     "@testing-library/react-hooks": "^8.0.1",
     "@types/dagre": "^0.7.47",
