@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import org.apache.commons.exec.StreamPumper;
@@ -47,6 +48,7 @@ import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.descriptor.api.Descriptor;
 import org.keycloak.testsuite.arquillian.SuiteContext;
+import org.keycloak.testsuite.model.StoreProvider;
 
 /**
  * @author mhajas
@@ -54,7 +56,6 @@ import org.keycloak.testsuite.arquillian.SuiteContext;
 public class KeycloakQuarkusServerDeployableContainer implements DeployableContainer<KeycloakQuarkusConfiguration> {
 
     private static final int DEFAULT_SHUTDOWN_TIMEOUT_SECONDS = 10;
-    private static final String AUTH_SERVER_QUARKUS_MAP_STORAGE_PROFILE = "auth.server.quarkus.mapStorage.profile.config";
 
     private static final Logger log = Logger.getLogger(KeycloakQuarkusServerDeployableContainer.class);
 
@@ -182,9 +183,6 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
             builder.environment().put("JAVA_OPTS", javaOpts);
         }
 
-        builder.environment().put("KEYCLOAK_ADMIN", "admin");
-        builder.environment().put("KEYCLOAK_ADMIN_PASSWORD", "admin");
-
         if (restart.compareAndSet(false, true)) {
             deleteDirectory(configuration.getProvidersPath().resolve("data"));
         }
@@ -216,15 +214,18 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
             commands.add("-Djboss.node.name=" + configuration.getRoute());
         }
 
-        String mapStorageProfile = System.getProperty(AUTH_SERVER_QUARKUS_MAP_STORAGE_PROFILE);
-        // only run build during restarts or when running cluster tests
+        final StoreProvider storeProvider = StoreProvider.getCurrentProvider();
 
-        if (restart.get() || "ha".equals(System.getProperty("auth.server.quarkus.cluster.config"))) {
+        final Supplier<Boolean> shouldSetUpDb = () -> !restart.get() && !storeProvider.equals(StoreProvider.DEFAULT);
+        final Supplier<String> getClusterConfig = () -> System.getProperty("auth.server.quarkus.cluster.config", "local");
+
+        // only run build during first execution of the server (if the DB is specified), restarts or when running cluster tests
+        if (restart.get() || shouldSetUpDb.get() || "ha".equals(getClusterConfig.get())) {
             commands.removeIf("--optimized"::equals);
             commands.add("--http-relative-path=/auth");
 
-            if (mapStorageProfile == null) {
-                String cacheMode = System.getProperty("auth.server.quarkus.cluster.config", "local");
+            if (!storeProvider.isMapStore()) {
+                String cacheMode = getClusterConfig.get();
 
                 if ("local".equals(cacheMode)) {
                     commands.add("--cache=local");
@@ -234,7 +235,7 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
             }
         }
 
-        addStorageOptions(commands);
+        addStorageOptions(storeProvider, commands);
 
         commands.addAll(getAdditionalBuildArgs());
 
@@ -243,34 +244,9 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
         return commands.toArray(new String[0]);
     }
 
-    private void addStorageOptions(List<String> commands) {
-        String mapStorageProfile = System.getProperty(AUTH_SERVER_QUARKUS_MAP_STORAGE_PROFILE);
-
-        if (mapStorageProfile != null) {
-            // We need to drop optimized flag because --storage is build option therefore startup requires re-augmentation
-            commands.removeIf("--optimized"::equals);
-
-            // As config is re-augmented on startup we need to also add --http-relative-path as ant build from
-            // integration-arquillian/servers/auth-server/quarkus/ant/configure.xml is replaced by build invoked on
-            // startup when we add new build option below
-            commands.add("--http-relative-path=/auth");
-
-            switch (mapStorageProfile) {
-                case "chm":
-                    commands.add("--storage=" + mapStorageProfile);
-                    break;
-                case "jpa":
-                    commands.add("--storage=" + mapStorageProfile);
-                    commands.add("--db-username=" + System.getProperty("keycloak.map.storage.connectionsJpa.url"));
-                    commands.add("--db-password=" + System.getProperty("keycloak.map.storage.connectionsJpa.user"));
-                    commands.add("--db-url=" + System.getProperty("keycloak.map.storage.connectionsJpa.password"));
-                    break;
-                case "hotrod":
-                    commands.add("--storage=" + mapStorageProfile);
-                    // TODO: URL / username / password
-                    break;
-            }
-        }
+    private void addStorageOptions(StoreProvider storeProvider, List<String> commands) {
+        log.debugf("Store '%s' is used.", storeProvider.name());
+        storeProvider.addStoreOptions(commands);
     }
 
     private void waitForReadiness() throws MalformedURLException, LifecycleException {

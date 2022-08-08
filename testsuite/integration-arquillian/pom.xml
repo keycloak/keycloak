@@ -442,11 +442,17 @@
         <profile>
             <id>db-mysql</id>
             <properties>
+                <keycloak.storage.connections.vendor>mysql</keycloak.storage.connections.vendor>
                 <keycloak.connectionsJpa.driver>com.mysql.jdbc.Driver</keycloak.connectionsJpa.driver>
                 <keycloak.connectionsJpa.database>keycloak</keycloak.connectionsJpa.database>
                 <keycloak.connectionsJpa.user>keycloak</keycloak.connectionsJpa.user>
                 <keycloak.connectionsJpa.password>keycloak</keycloak.connectionsJpa.password>
                 <keycloak.connectionsJpa.url>jdbc:mysql://${auth.server.db.host}/${keycloak.connectionsJpa.database}?allowPublicKeyRetrieval=true</keycloak.connectionsJpa.url>
+                <!-- Map Store JPA -->
+                <keycloak.map.storage.connectionsJpa.url>${keycloak.connectionsJpa.url}</keycloak.map.storage.connectionsJpa.url>
+                <keycloak.map.storage.connectionsJpa.user>${keycloak.connectionsJpa.user}</keycloak.map.storage.connectionsJpa.user>
+                <keycloak.map.storage.connectionsJpa.password>${keycloak.connectionsJpa.password}</keycloak.map.storage.connectionsJpa.password>
+
                 <!-- JDBC properties point to "default" JDBC driver for the particular DB -->
                 <!-- For EAP testing, it is recommended to override those with system properties pointing to GAV of more appropriate JDBC driver -->
                 <!-- for the particular EAP version -->
@@ -470,11 +476,16 @@
         <profile>
             <id>db-postgres</id>
             <properties>
+                <keycloak.storage.connections.vendor>postgres</keycloak.storage.connections.vendor>
                 <keycloak.connectionsJpa.driver>org.postgresql.Driver</keycloak.connectionsJpa.driver>
                 <keycloak.connectionsJpa.database>keycloak</keycloak.connectionsJpa.database>
                 <keycloak.connectionsJpa.user>keycloak</keycloak.connectionsJpa.user>
                 <keycloak.connectionsJpa.password>keycloak</keycloak.connectionsJpa.password>
                 <keycloak.connectionsJpa.url>jdbc:postgresql://${auth.server.db.host}/${keycloak.connectionsJpa.database}</keycloak.connectionsJpa.url>
+                <!-- Map Store JPA -->
+                <keycloak.map.storage.connectionsJpa.url>${keycloak.connectionsJpa.url}</keycloak.map.storage.connectionsJpa.url>
+                <keycloak.map.storage.connectionsJpa.user>${keycloak.connectionsJpa.user}</keycloak.map.storage.connectionsJpa.user>
+                <keycloak.map.storage.connectionsJpa.password>${keycloak.connectionsJpa.password}</keycloak.map.storage.connectionsJpa.password>
                 <!-- JDBC properties point to "default" JDBC driver for the particular DB -->
                 <!-- For EAP testing, it is recommended to override those with system properties pointing to GAV of more appropriate JDBC driver -->
                 <!-- for the particular EAP version -->
@@ -505,11 +516,16 @@
         <profile>
             <id>db-mariadb</id>
             <properties>
+                <keycloak.storage.connections.vendor>mariadb</keycloak.storage.connections.vendor>
                 <keycloak.connectionsJpa.driver>org.mariadb.jdbc.Driver</keycloak.connectionsJpa.driver>
                 <keycloak.connectionsJpa.database>keycloak</keycloak.connectionsJpa.database>
                 <keycloak.connectionsJpa.user>keycloak</keycloak.connectionsJpa.user>
                 <keycloak.connectionsJpa.password>keycloak</keycloak.connectionsJpa.password>
                 <keycloak.connectionsJpa.url>jdbc:mariadb://${auth.server.db.host}/${keycloak.connectionsJpa.database}</keycloak.connectionsJpa.url>
+                <!-- Map Store JPA -->
+                <keycloak.map.storage.connectionsJpa.url>${keycloak.connectionsJpa.url}</keycloak.map.storage.connectionsJpa.url>
+                <keycloak.map.storage.connectionsJpa.user>${keycloak.connectionsJpa.user}</keycloak.map.storage.connectionsJpa.user>
+                <keycloak.map.storage.connectionsJpa.password>${keycloak.connectionsJpa.password}</keycloak.map.storage.connectionsJpa.password>
                 <!-- JDBC properties point to "default" JDBC driver for the particular DB -->
                 <!-- For EAP testing, it is recommended to override those with system properties pointing to GAV of more appropriate JDBC driver -->
                 <!-- for the particular EAP version -->
@@ -540,11 +556,16 @@
                 <docker.database.postStart>/opt/mssql-tools/bin/sqlcmd -e -U sa -P vEry5tron9Pwd -d master -Q CREATE\ DATABASE\ ${keycloak.connectionsJpa.database}</docker.database.postStart>
                 <docker.database.cmd>/bin/sh -c /opt/mssql/bin/sqlservr</docker.database.cmd>
                 <docker.database.wait-for-log-regex>(?si)SQL Server is now ready for client connections.*Service Broker manager has started</docker.database.wait-for-log-regex>
+                <keycloak.storage.connections.vendor>mssql</keycloak.storage.connections.vendor>
                 <keycloak.connectionsJpa.driver>com.microsoft.sqlserver.jdbc.SQLServerDriver</keycloak.connectionsJpa.driver>
                 <keycloak.connectionsJpa.database>keycloak</keycloak.connectionsJpa.database>
                 <keycloak.connectionsJpa.user>sa</keycloak.connectionsJpa.user>
                 <keycloak.connectionsJpa.password>vEry5tron9Pwd</keycloak.connectionsJpa.password>
                 <keycloak.connectionsJpa.url>jdbc:sqlserver://${auth.server.db.host}:${docker.database.port};databaseName=${keycloak.connectionsJpa.database}</keycloak.connectionsJpa.url>
+                <!-- Map Store JPA -->
+                <keycloak.map.storage.connectionsJpa.url>${keycloak.connectionsJpa.url}</keycloak.map.storage.connectionsJpa.url>
+                <keycloak.map.storage.connectionsJpa.user>${keycloak.connectionsJpa.user}</keycloak.map.storage.connectionsJpa.user>
+                <keycloak.map.storage.connectionsJpa.password>${keycloak.connectionsJpa.password}</keycloak.map.storage.connectionsJpa.password>
                 <!-- JDBC properties point to "default" JDBC driver for the particular DB -->
                 <!-- For EAP testing, it is recommended to override those with system properties pointing to GAV of more appropriate JDBC driver -->
                 <!-- for the particular EAP version -->
@@ -569,11 +590,17 @@
                 <docker.database.skip>false</docker.database.skip>
                 <docker.database.cmd>/bin/sh -c exec\ $ORACLE_BASE/$RUN_FILE</docker.database.cmd>
                 <docker.database.wait-for-log-regex>(?si)DATABASE IS READY TO USE</docker.database.wait-for-log-regex>
+                <keycloak.storage.connections.vendor>oracle</keycloak.storage.connections.vendor>
                 <keycloak.connectionsJpa.driver>oracle.jdbc.OracleDriver</keycloak.connectionsJpa.driver>
                 <keycloak.connectionsJpa.database>XE</keycloak.connectionsJpa.database>
                 <keycloak.connectionsJpa.user>keycloak</keycloak.connectionsJpa.user>
                 <keycloak.connectionsJpa.password>keycloak</keycloak.connectionsJpa.password>
                 <keycloak.connectionsJpa.url>jdbc:oracle:thin:@${auth.server.db.host}:${docker.database.port}:${keycloak.connectionsJpa.database}</keycloak.connectionsJpa.url>
+                <!-- Map Store JPA -->
+                <keycloak.map.storage.connectionsJpa.url>${keycloak.connectionsJpa.url}</keycloak.map.storage.connectionsJpa.url>
+                <keycloak.map.storage.connectionsJpa.user>${keycloak.connectionsJpa.user}</keycloak.map.storage.connectionsJpa.user>
+                <keycloak.map.storage.connectionsJpa.password>${keycloak.connectionsJpa.password}</keycloak.map.storage.connectionsJpa.password>
+
                 <docker.database.postStart>bash -c while\ !\ sqlplus\ -L\ SYS/sa@localhost/XE\ AS\ SYSDBA\ &lt;&lt;&lt;\ $'CREATE\ USER\ ${keycloak.connectionsJpa.user}\ IDENTIFIED\ BY\ ${keycloak.connectionsJpa.password};\n\ GRANT\ CONNECT,\ RESOURCE,\ DBA,\ GRANT\ ANY\ PRIVILEGE,\ UNLIMITED\ TABLESPACE\ TO\ ${keycloak.connectionsJpa.user};\n';\ do\ sleep\ 5;\ done</docker.database.postStart>
                 <!-- JDBC properties point to "default" JDBC driver for the particular DB -->
                 <!-- For EAP testing, it is recommended to override those with system properties pointing to GAV of more appropriate JDBC driver -->
