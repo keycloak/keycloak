@@ -104,7 +104,7 @@ public class InfinispanAuthenticationSessionProviderFactory implements Authentic
                 .property()
                 .name("authSessionsLimit")
                 .type("int")
-                .helpText("The maximum number of concurrent authentication sessions.")
+                .helpText("The maximum number of concurrent authentication sessions per RootAuthenticationSession.")
                 .defaultValue(DEFAULT_AUTH_SESSIONS_LIMIT)
                 .add()
                 .build();
