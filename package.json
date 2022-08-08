@@ -93,7 +93,7 @@
     "typescript": "^4.7.4",
     "vite": "^3.0.4",
     "vite-plugin-checker": "^0.4.8",
-    "vitest": "^0.20.2",
+    "vitest": "^0.21.0",
     "webpack": "^5.74.0"
   },
   "lint-staged": {
