@@ -73,7 +73,7 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
         this.session = session;
         this.realm = realm;
         KeycloakSessionFactory keycloakSessionFactory = session.getKeycloakSessionFactory();
-        if (Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION)) {
+        if (Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)) {
             AuthorizationProviderFactory factory = (AuthorizationProviderFactory) keycloakSessionFactory.getProviderFactory(AuthorizationProvider.class);
             this.authz = factory.create(session, realm);
         }
@@ -251,7 +251,7 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
 
     @Override
     public ResourceServer realmResourceServer() {
-        if (!Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION)) return null;
+        if (!Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)) return null;
         if (realmResourceServer != null) return realmResourceServer;
         ClientModel client = getRealmManagementClient();
         if (client == null) return null;
@@ -262,7 +262,7 @@ class MgmtPermissions implements AdminPermissionEvaluator, AdminPermissionManage
     }
 
     public ResourceServer initializeRealmResourceServer() {
-        if (!Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION)) return null;
+        if (!Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)) return null;
         if (realmResourceServer != null) return realmResourceServer;
         ClientModel client = getRealmManagementClient();
         realmResourceServer = authz.getStoreFactory().getResourceServerStore().findByClient(client);

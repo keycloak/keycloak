@@ -61,7 +61,7 @@ class GroupPermissions implements GroupPermissionEvaluator, GroupPermissionManag
     GroupPermissions(AuthorizationProvider authz, MgmtPermissions root) {
         this.authz = authz;
         this.root = root;
-        if (Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION)) {
+        if (Profile.isFeatureEnabled(Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ)) {
             resourceStore = authz.getStoreFactory().getResourceStore();
             policyStore = authz.getStoreFactory().getPolicyStore();
         } else {

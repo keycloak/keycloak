@@ -17,7 +17,6 @@
 
 package org.keycloak.testsuite.oauth;
 
-import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
@@ -49,7 +48,6 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
-import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
@@ -71,7 +69,6 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.keycloak.common.Profile.Feature.AUTHORIZATION;
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_ID;
 import static org.keycloak.models.ImpersonationSessionNote.IMPERSONATOR_USERNAME;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
@@ -83,15 +80,11 @@ import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
  */
 @AuthServerContainerExclude(AuthServer.REMOTE)
 @EnableFeature(value = Profile.Feature.TOKEN_EXCHANGE, skipRestart = true)
+@EnableFeature(value = Profile.Feature.ADMIN_FINE_GRAINED_AUTHZ, skipRestart = true)
 public class ClientTokenExchangeTest extends AbstractKeycloakTest {
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
-
-    @BeforeClass
-    public static void enabled() {
-        ProfileAssume.assumeFeatureEnabled(AUTHORIZATION);
-    }
 
     @Test
     @UncaughtServerErrorExpected
