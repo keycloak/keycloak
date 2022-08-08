@@ -120,6 +120,8 @@
   "validateSignature": "Validate Signatures",
   "useJwksUrl": "Use JWKS URL",
   "jwksUrl": "JWKS URL",
+  "pkceEnabled": "Use PKCE",
+  "pkceMethod": "PKCE Method",
   "allowedClockSkew": "Allowed clock skew",
   "attributeConsumingServiceIndex": "Attribute Consuming Service Index",
   "attributeConsumingServiceName": "Attribute Consuming Service Name",

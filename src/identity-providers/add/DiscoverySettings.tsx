@@ -1,17 +1,23 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useFormContext, useWatch } from "react-hook-form";
+import { Controller, useFormContext, useWatch } from "react-hook-form";
 import {
   ExpandableSection,
   FormGroup,
   ValidatedOptions,
+  Select,
+  SelectOption,
+  SelectVariant,
 } from "@patternfly/react-core";
 
 import { SwitchField } from "../component/SwitchField";
 import { TextField } from "../component/TextField";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
+import { HelpItem } from "../../components/help-enabler/HelpItem";
 
 import "./discovery-settings.css";
+
+const PKCE_METHODS = ["plain", "S256"] as const;
 
 type DiscoverySettingsProps = {
   readOnly: boolean;
@@ -19,6 +25,7 @@ type DiscoverySettingsProps = {
 
 const Fields = ({ readOnly }: DiscoverySettingsProps) => {
   const { t } = useTranslation("identity-providers");
+  const [pkceMethodOpen, setPkceMethodOpen] = useState(false);
   const {
     register,
     control,
@@ -26,12 +33,16 @@ const Fields = ({ readOnly }: DiscoverySettingsProps) => {
   } = useFormContext();
 
   const validateSignature = useWatch({
-    control: control,
+    control,
     name: "config.validateSignature",
   });
   const useJwks = useWatch({
-    control: control,
+    control,
     name: "config.useJwksUrl",
+  });
+  const isPkceEnabled = useWatch({
+    control,
+    name: "config.pkceEnabled",
   });
 
   return (
@@ -117,6 +128,56 @@ const Fields = ({ readOnly }: DiscoverySettingsProps) => {
             />
           )}
         </>
+      )}
+      <SwitchField
+        field="config.pkceEnabled"
+        label="pkceEnabled"
+        isReadOnly={readOnly}
+      />
+      {isPkceEnabled === "true" && (
+        <FormGroup
+          className="pf-u-pb-3xl"
+          label={t("pkceMethod")}
+          labelIcon={
+            <HelpItem
+              helpText="identity-providers-help:pkceMethod"
+              fieldLabelId="identity-providers:pkceMethod"
+            />
+          }
+          fieldId="pkceMethod"
+        >
+          <Controller
+            name="config.pkceMethod"
+            defaultValue={PKCE_METHODS[0]}
+            control={control}
+            render={({ onChange, value }) => (
+              <Select
+                toggleId="pkceMethod"
+                required
+                direction="down"
+                onToggle={() => setPkceMethodOpen(!pkceMethodOpen)}
+                onSelect={(_, value) => {
+                  onChange(value as string);
+                  setPkceMethodOpen(false);
+                }}
+                selections={t(`${value}`)}
+                variant={SelectVariant.single}
+                aria-label={t("pkceMethod")}
+                isOpen={pkceMethodOpen}
+              >
+                {PKCE_METHODS.map((option) => (
+                  <SelectOption
+                    selected={option === value}
+                    key={option}
+                    value={option}
+                  >
+                    {t(`${option}`)}
+                  </SelectOption>
+                ))}
+              </Select>
+            )}
+          />
+        </FormGroup>
       )}
     </div>
   );

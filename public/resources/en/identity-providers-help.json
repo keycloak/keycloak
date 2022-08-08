@@ -22,6 +22,8 @@
   "validateSignature": "Enable/disable signature validation of external IDP signatures.",
   "useJwksUrl": "If the switch is on, identity provider public keys will be downloaded from given JWKS URL. This allows great flexibility because new keys will be always re-downloaded again when identity provider generates new keypair. If the switch is off, public key (or certificate) from the Keycloak DB is used, so when the identity provider keypair changes, you always need to import the new key to the Keycloak DB as well.",
   "jwksUrl": "URL where identity provider keys in JWK format are stored. See JWK specification for more details. If you use external Keycloak identity provider, you can use URL like 'http://broker-keycloak:8180/realms/test/protocol/openid-connect/certs' assuming your brokered Keycloak is running on 'http://broker-keycloak:8180' and its realm is 'test' .",
+  "pkceEnabled": "Use PKCE (Proof of Key-code exchange) for IdP Brokering",
+  "pkceMethod": "PKCE Method to use",
   "allowedClockSkew": "Clock skew in seconds that is tolerated when validating identity provider tokens. Default value is zero.",
   "attributeConsumingServiceIndex": "Index of the Attribute Consuming Service profile to request during authentication.",
   "attributeConsumingServiceName": "Name of the Attribute Consuming Service profile to advertise in the SP metadata.",
