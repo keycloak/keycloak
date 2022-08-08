@@ -76,7 +76,6 @@ export const ClientScopes = ({
   );
 
   const [addDialogOpen, setAddDialogOpen] = useState(false);
-  const [kebabOpen, setKebabOpen] = useState(false);
 
   const [rest, setRest] = useState<ClientScopeRepresentation[]>();
   const [selectedRows, setSelectedRows] = useState<Row[]>([]);
@@ -195,6 +194,8 @@ export const ClientScopes = ({
   });
 
   const ManagerToolbarItems = () => {
+    const [kebabOpen, setKebabOpen] = useState(false);
+
     if (!isManager) return <span />;
 
     return (
@@ -235,6 +236,7 @@ export const ClientScopes = ({
                     );
 
                     setKebabOpen(false);
+                    setSelectedRows([]);
                     addAlert(
                       t("clients:clientScopeRemoveSuccess"),
                       AlertVariant.success
