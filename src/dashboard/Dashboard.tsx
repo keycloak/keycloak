@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useHistory } from "react-router-dom";
 import { Trans, useTranslation } from "react-i18next";
-import { xor } from "lodash-es";
+import { union, filter } from "lodash-es";
 import {
   Brand,
   Card,
@@ -73,18 +73,17 @@ const Dashboard = () => {
   const history = useHistory();
   const localeSort = useLocaleSort();
 
-  const enabledFeatures = useMemo(
-    () =>
-      localeSort(
-        xor(
-          serverInfo.profileInfo?.disabledFeatures,
-          serverInfo.profileInfo?.experimentalFeatures,
-          serverInfo.profileInfo?.previewFeatures
-        ),
-        (item) => item
-      ),
-    [serverInfo.profileInfo]
-  );
+  const isDeprecatedFeature = (feature: string) =>
+    disabledFeatures.includes(feature);
+
+  const isExperimentalFeature = (feature: string) =>
+    serverInfo.profileInfo?.experimentalFeatures?.includes(feature);
+
+  const isPreviewFeature = (feature: string) =>
+    serverInfo.profileInfo?.previewFeatures?.includes(feature);
+
+  const isSupportedFeature = (feature: string) =>
+    !isExperimentalFeature(feature) && !isPreviewFeature(feature);
 
   const disabledFeatures = useMemo(
     () =>
@@ -95,11 +94,22 @@ const Dashboard = () => {
     [serverInfo.profileInfo]
   );
 
-  const isExperimentalFeature = (feature: string) =>
-    serverInfo.profileInfo?.experimentalFeatures?.includes(feature);
-
-  const isPreviewFeature = (feature: string) =>
-    serverInfo.profileInfo?.previewFeatures?.includes(feature);
+  const enabledFeatures = useMemo(
+    () =>
+      localeSort(
+        filter(
+          union(
+            serverInfo.profileInfo?.experimentalFeatures,
+            serverInfo.profileInfo?.previewFeatures
+          ),
+          (feature) => {
+            return !isDeprecatedFeature(feature);
+          }
+        ),
+        (item) => item
+      ),
+    [serverInfo.profileInfo]
+  );
 
   if (Object.keys(serverInfo).length === 0) {
     return <KeycloakSpinner />;
@@ -186,7 +196,7 @@ const Dashboard = () => {
                           <DescriptionListDescription>
                             <List variant={ListVariant.inline}>
                               {enabledFeatures.map((feature) => (
-                                <ListItem key={feature}>
+                                <ListItem key={feature} className="pf-u-mb-sm">
                                   {feature}{" "}
                                   {isExperimentalFeature(feature) ? (
                                     <Label color="orange">
@@ -212,7 +222,22 @@ const Dashboard = () => {
                           <DescriptionListDescription>
                             <List variant={ListVariant.inline}>
                               {disabledFeatures.map((feature) => (
-                                <ListItem key={feature}>{feature}</ListItem>
+                                <ListItem key={feature} className="pf-u-mb-sm">
+                                  {feature}{" "}
+                                  {isExperimentalFeature(feature) ? (
+                                    <Label color="orange">
+                                      {t("experimental")}
+                                    </Label>
+                                  ) : null}
+                                  {isPreviewFeature(feature) ? (
+                                    <Label color="blue">{t("preview")}</Label>
+                                  ) : null}
+                                  {isSupportedFeature(feature) ? (
+                                    <Label color="green">
+                                      {t("supported")}
+                                    </Label>
+                                  ) : null}
+                                </ListItem>
                               ))}
                             </List>
                           </DescriptionListDescription>
