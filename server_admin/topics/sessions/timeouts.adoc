@@ -134,6 +134,7 @@ image:{project_images}/sessions-tab.png[Sessions Tab]
 
 |Login action timeout
 |The Maximum time users can spend on any one page during the authentication process.
+|===
 
 .Tokens tab
 image:{project_images}/tokens-tab.png[Tokens Tab]
@@ -174,6 +175,7 @@ image:{project_images}/tokens-tab.png[Tokens Tab]
 
 |Execute actions
 | Specifies independent timeout for execute actions.
+|===
 endif::[]
 
 [[_idle_timeouts_note]]
