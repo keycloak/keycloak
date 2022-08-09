@@ -17,6 +17,7 @@ import { TimeSelector } from "../../components/time-selector/TimeSelector";
 import { TokenLifespan } from "./TokenLifespan";
 import { KeyValueInput } from "../../components/key-value-form/KeyValueInput";
 import { MultiLineInput } from "../../components/multi-line-input/MultiLineInput";
+import { convertAttributeNameToForm } from "../../util";
 
 type AdvancedSettingsProps = {
   control: Control<Record<string, any>>;
@@ -53,7 +54,9 @@ export const AdvancedSettings = ({
           }
         >
           <Controller
-            name="attributes.saml.assertion.lifespan"
+            name={convertAttributeNameToForm(
+              "attributes.saml.assertion.lifespan"
+            )}
             defaultValue=""
             control={control}
             render={({ onChange, value }) => (
@@ -70,7 +73,9 @@ export const AdvancedSettings = ({
         <>
           <TokenLifespan
             id="accessTokenLifespan"
-            name="attributes.access.token.lifespan"
+            name={convertAttributeNameToForm(
+              "attributes.access.token.lifespan"
+            )}
             defaultValue=""
             units={["minute", "day", "hour"]}
             control={control}
@@ -114,7 +119,9 @@ export const AdvancedSettings = ({
             }
           >
             <Controller
-              name="attributes.pkce.code.challenge.method"
+              name={convertAttributeNameToForm(
+                "attributes.pkce.code.challenge.method"
+              )}
               defaultValue=""
               control={control}
               render={({ onChange, value }) => (
@@ -149,7 +156,9 @@ export const AdvancedSettings = ({
             }
           >
             <Controller
-              name="attributes.require.pushed.authorization.requests"
+              name={convertAttributeNameToForm(
+                "attributes.require.pushed.authorization.requests"
+              )}
               defaultValue="false"
               control={control}
               render={({ onChange, value }) => (
@@ -173,7 +182,9 @@ export const AdvancedSettings = ({
               />
             }
           >
-            <KeyValueInput name="attributes.acr.loa.map" />
+            <KeyValueInput
+              name={convertAttributeNameToForm("attributes.acr.loa.map")}
+            />
           </FormGroup>
           <FormGroup
             label={t("defaultACRValues")}
@@ -185,7 +196,9 @@ export const AdvancedSettings = ({
               />
             }
           >
-            <MultiLineInput name="attributes.default.acr.values" />
+            <MultiLineInput
+              name={convertAttributeNameToForm("attributes.default.acr.values")}
+            />
           </FormGroup>
         </>
       )}

@@ -12,6 +12,7 @@ import {
 import type { ComponentProps } from "./components";
 import { HelpItem } from "../help-enabler/HelpItem";
 import { GroupPickerDialog } from "../group/GroupPickerDialog";
+import { convertToName } from "./DynamicComponents";
 
 export const GroupComponent = ({ name, label, helpText }: ComponentProps) => {
   const { t } = useTranslation("dynamic");
@@ -20,7 +21,7 @@ export const GroupComponent = ({ name, label, helpText }: ComponentProps) => {
 
   return (
     <Controller
-      name={`config.${name}`}
+      name={convertToName(name!)}
       defaultValue=""
       typeAheadAriaLabel={t("selectGroup")}
       control={control}

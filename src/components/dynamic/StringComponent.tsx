@@ -5,6 +5,7 @@ import { FormGroup } from "@patternfly/react-core";
 import { HelpItem } from "../help-enabler/HelpItem";
 import { KeycloakTextInput } from "../keycloak-text-input/KeycloakTextInput";
 import type { ComponentProps } from "./components";
+import { convertToName } from "./DynamicComponents";
 
 export const StringComponent = ({
   name,
@@ -30,7 +31,7 @@ export const StringComponent = ({
         isDisabled={isDisabled}
         ref={register()}
         type="text"
-        name={`config.${name}`}
+        name={convertToName(name!)}
         defaultValue={defaultValue?.toString()}
       />
     </FormGroup>

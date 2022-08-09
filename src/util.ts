@@ -1,7 +1,7 @@
 import { cloneDeep } from "lodash-es";
 import FileSaver from "file-saver";
 import type { IFormatter, IFormatterValueType } from "@patternfly/react-table";
-import { unflatten, flatten } from "flat";
+import { flatten } from "flat";
 
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import type { ProviderRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/serverInfoRepesentation";
@@ -85,6 +85,16 @@ const isAttributeArray = (value: any) => {
 
 const isEmpty = (obj: any) => Object.keys(obj).length === 0;
 
+export const convertAttributeNameToForm = (name: string) => {
+  const index = name.indexOf(".");
+  return `${name.substring(0, index)}.${convertAttribute(
+    name.substring(index + 1)
+  )}`;
+};
+
+const convertAttribute = (name: string) => name.replace(/\./g, "🍺");
+const convertFormNameToAttribute = (name: string) => name.replace(/🍺/g, ".");
+
 export const convertToFormValues = (
   obj: any,
   setValue: (name: string, value: any) => void
@@ -98,7 +108,10 @@ export const convertToFormValues = (
         const convertedValues = Object.entries(flattened).map(([key, value]) =>
           Array.isArray(value) ? [key, value[0]] : [key, value]
         );
-        setValue(key, unflatten(Object.fromEntries(convertedValues)));
+
+        convertedValues.forEach(([k, v]) =>
+          setValue(`${key}.${convertAttribute(k)}`, v)
+        );
       } else {
         setValue(key, undefined);
       }
@@ -114,7 +127,12 @@ export function convertFormValuesToObject<T, G = T>(obj: T): G {
     if (isAttributeArray(value)) {
       result[key] = keyValueToArray(value as KeyValueType[]);
     } else if (key === "config" || key === "attributes") {
-      result[key] = flatten(value as Record<string, any>, { safe: true });
+      result[key] = Object.fromEntries(
+        Object.entries(value).map(([k, v]) => [
+          convertFormNameToAttribute(k),
+          v,
+        ])
+      );
     } else {
       result[key] = value;
     }

@@ -18,6 +18,7 @@ import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { HelpItem } from "../help-enabler/HelpItem";
 import type { ComponentProps } from "./components";
+import { convertToName } from "./DynamicComponents";
 
 const RealmClient = (realm: string): ClientRepresentation => ({
   name: "realmRoles",
@@ -47,7 +48,7 @@ export const RoleComponent = ({
   const [clientRoles, setClientRoles] = useState<RoleRepresentation[]>([]);
   const [selectedRole, setSelectedRole] = useState<RoleRepresentation>();
 
-  const fieldName = `config.${name}`;
+  const fieldName = convertToName(name!);
 
   useFetch(
     async () => {

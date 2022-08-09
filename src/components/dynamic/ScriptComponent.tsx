@@ -5,6 +5,7 @@ import { CodeEditor, Language } from "@patternfly/react-code-editor";
 
 import { HelpItem } from "../help-enabler/HelpItem";
 import type { ComponentProps } from "./components";
+import { convertToName } from "./DynamicComponents";
 
 export const ScriptComponent = ({
   name,
@@ -28,7 +29,7 @@ export const ScriptComponent = ({
       fieldId={name!}
     >
       <Controller
-        name={`config.${name}`}
+        name={convertToName(name!)}
         defaultValue={defaultValue}
         control={control}
         render={({ onChange, value }) => (

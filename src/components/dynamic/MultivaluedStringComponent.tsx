@@ -4,6 +4,7 @@ import { FormGroup } from "@patternfly/react-core";
 import type { ComponentProps } from "./components";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { MultiLineInput } from "../multi-line-input/MultiLineInput";
+import { convertToName } from "./DynamicComponents";
 
 export const MultiValuedStringComponent = ({
   name,
@@ -13,7 +14,7 @@ export const MultiValuedStringComponent = ({
   isDisabled = false,
 }: ComponentProps) => {
   const { t } = useTranslation("dynamic");
-  const fieldName = `config.${name}`;
+  const fieldName = convertToName(name!);
 
   return (
     <FormGroup

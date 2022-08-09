@@ -10,6 +10,7 @@ import {
 
 import { HelpItem } from "../help-enabler/HelpItem";
 import type { ComponentProps } from "./components";
+import { convertToName } from "./DynamicComponents";
 
 export const MultiValuedListComponent = ({
   name,
@@ -32,7 +33,7 @@ export const MultiValuedListComponent = ({
       fieldId={name!}
     >
       <Controller
-        name={`config.${name}`}
+        name={convertToName(name!)}
         control={control}
         defaultValue={defaultValue ? [defaultValue] : []}
         render={({ onChange, value }) => (

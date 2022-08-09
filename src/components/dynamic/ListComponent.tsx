@@ -10,6 +10,7 @@ import {
 
 import type { ComponentProps } from "./components";
 import { HelpItem } from "../help-enabler/HelpItem";
+import { convertToName } from "./DynamicComponents";
 
 export const ListComponent = ({
   name,
@@ -32,7 +33,7 @@ export const ListComponent = ({
       fieldId={name!}
     >
       <Controller
-        name={`config.${name}`}
+        name={convertToName(name!)}
         data-testid={name}
         defaultValue={defaultValue || ""}
         control={control}

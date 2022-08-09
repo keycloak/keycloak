@@ -12,6 +12,7 @@ import { SaveReset } from "../advanced/SaveReset";
 import environment from "../../environment";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useAccess } from "../../context/access/Access";
+import { convertAttributeNameToForm } from "../../util";
 
 export const AccessSettings = ({
   client,
@@ -99,7 +100,9 @@ export const AccessSettings = ({
             }
           >
             <MultiLineInput
-              name="attributes.post.logout.redirect.uris"
+              name={convertAttributeNameToForm(
+                "attributes.post.logout.redirect.uris"
+              )}
               aria-label={t("validPostLogoutRedirectUri")}
               addButtonLabel="clients:addPostLogoutRedirectUri"
             />

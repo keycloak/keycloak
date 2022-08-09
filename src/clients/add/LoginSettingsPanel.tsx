@@ -14,6 +14,7 @@ import { FormAccess } from "../../components/form-access/FormAccess";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { KeycloakTextArea } from "../../components/keycloak-text-area/KeycloakTextArea";
+import { convertAttributeNameToForm } from "../../util";
 
 export const LoginSettingsPanel = ({ access }: { access?: boolean }) => {
   const { t } = useTranslation("clients");
@@ -109,7 +110,9 @@ export const LoginSettingsPanel = ({ access }: { access?: boolean }) => {
         hasNoPaddingTop
       >
         <Controller
-          name="attributes.display.on.consent.screen"
+          name={convertAttributeNameToForm(
+            "attributes.display.on.consent.screen"
+          )}
           defaultValue={false}
           control={control}
           render={({ onChange, value }) => (
@@ -136,7 +139,7 @@ export const LoginSettingsPanel = ({ access }: { access?: boolean }) => {
       >
         <KeycloakTextArea
           id="kc-consent-screen-text"
-          name="attributes.consent.screen.text"
+          name={convertAttributeNameToForm("attributes.consent.screen.text")}
           ref={register}
           isDisabled={!(consentRequired && displayOnConsentScreen === "true")}
         />

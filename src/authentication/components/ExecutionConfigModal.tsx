@@ -17,13 +17,13 @@ import { CogIcon, TrashIcon } from "@patternfly/react-icons";
 
 import type AuthenticatorConfigRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigRepresentation";
 import type AuthenticatorConfigInfoRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigInfoRepresentation";
-import type { ConfigPropertyRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigInfoRepresentation";
 import type { ExpandableExecution } from "../execution-model";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { useAlerts } from "../../components/alert/Alerts";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { DynamicComponents } from "../../components/dynamic/DynamicComponents";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
+import { convertToFormValues } from "../../util";
 
 type ExecutionConfigModalForm = {
   alias: string;
@@ -54,22 +54,8 @@ export const ExecutionConfigModal = ({
     formState: { errors },
   } = form;
 
-  const setupForm = (
-    configDescription: AuthenticatorConfigInfoRepresentation,
-    config?: AuthenticatorConfigRepresentation
-  ) => {
-    configDescription.properties!.map(
-      (property: ConfigPropertyRepresentation) => {
-        setValue(
-          `config.${property.name}`,
-          config?.config?.[property.name!] || property.defaultValue || ""
-        );
-      }
-    );
-    if (config) {
-      setValue("alias", config.alias);
-      setValue("id", config.id);
-    }
+  const setupForm = (config?: AuthenticatorConfigRepresentation) => {
+    convertToFormValues(config, setValue);
   };
 
   useFetch(
@@ -94,7 +80,7 @@ export const ExecutionConfigModal = ({
   );
 
   useEffect(() => {
-    if (configDescription) setupForm(configDescription, config);
+    if (configDescription) setupForm(config);
   }, [show]);
 
   const save = async (changedConfig: ExecutionConfigModalForm) => {

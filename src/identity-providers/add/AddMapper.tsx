@@ -166,8 +166,10 @@ export default function AddMapper() {
 
   const setupForm = (mapper: IdentityProviderMapperRepresentation) => {
     convertToFormValues(mapper, form.setValue);
-    form.setValue("config.attributes", JSON.parse(mapper.config.attributes));
-    form.setValue("config.claims", JSON.parse(mapper.config.claims));
+    form.setValue(
+      "config.attributes",
+      JSON.parse(mapper.config.attributes || "{}")
+    );
   };
 
   if (!mapperTypes || !currentMapper) {
@@ -241,7 +243,7 @@ export default function AddMapper() {
             />
             <FormProvider {...form}>
               <DynamicComponents properties={currentMapper.properties!} />
-            </FormProvider>{" "}
+            </FormProvider>
           </>
         )}
 

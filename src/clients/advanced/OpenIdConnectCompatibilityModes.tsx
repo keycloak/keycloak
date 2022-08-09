@@ -4,6 +4,7 @@ import { ActionGroup, Button, FormGroup, Switch } from "@patternfly/react-core";
 
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { convertAttributeNameToForm } from "../../util";
 
 type OpenIdConnectCompatibilityModesProps = {
   control: Control<Record<string, any>>;
@@ -37,7 +38,9 @@ export const OpenIdConnectCompatibilityModes = ({
         }
       >
         <Controller
-          name="attributes.exclude.session.state.from.auth.response"
+          name={convertAttributeNameToForm(
+            "attributes.exclude.session.state.from.auth.response"
+          )}
           defaultValue=""
           control={control}
           render={({ onChange, value }) => (
@@ -63,7 +66,7 @@ export const OpenIdConnectCompatibilityModes = ({
         }
       >
         <Controller
-          name="attributes.use.refresh.tokens"
+          name={convertAttributeNameToForm("attributes.use.refresh.tokens")}
           defaultValue="true"
           control={control}
           render={({ onChange, value }) => (
@@ -115,7 +118,9 @@ export const OpenIdConnectCompatibilityModes = ({
         }
       >
         <Controller
-          name="attributes.token.response.type.bearer.lower-case"
+          name={convertAttributeNameToForm(
+            "attributes.token.response.type.bearer.lower-case"
+          )}
           defaultValue="false"
           control={control}
           render={({ onChange, value }) => (

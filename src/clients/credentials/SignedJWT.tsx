@@ -10,7 +10,7 @@ import {
 
 import { useServerInfo } from "../../context/server-info/ServerInfoProvider";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
-import { sortProviders } from "../../util";
+import { convertAttributeNameToForm, sortProviders } from "../../util";
 
 export const SignedJWT = () => {
   const { control } = useFormContext();
@@ -32,7 +32,9 @@ export const SignedJWT = () => {
       }
     >
       <Controller
-        name="attributes.token.endpoint.auth.signing.alg"
+        name={convertAttributeNameToForm(
+          "attributes.token.endpoint.auth.signing.alg"
+        )}
         defaultValue=""
         control={control}
         render={({ onChange, value }) => (

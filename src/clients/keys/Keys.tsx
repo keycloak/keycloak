@@ -27,6 +27,7 @@ import { GenerateKeyDialog } from "./GenerateKeyDialog";
 import { useFetch, useAdminClient } from "../../context/auth/AdminClient";
 import { useAlerts } from "../../components/alert/Alerts";
 import useToggle from "../../utils/useToggle";
+import { convertAttributeNameToForm } from "../../util";
 import { ImportKeyDialog, ImportFile } from "./ImportKeyDialog";
 import { Certificate } from "./Certificate";
 
@@ -143,7 +144,7 @@ export const Keys = ({ clientId, save, hasConfigureAccess }: KeysProps) => {
               }
             >
               <Controller
-                name="attributes.use.jwks.url"
+                name={convertAttributeNameToForm("attributes.use.jwks.url")}
                 defaultValue="false"
                 control={control}
                 render={({ onChange, value }) => (
@@ -178,7 +179,7 @@ export const Keys = ({ clientId, save, hasConfigureAccess }: KeysProps) => {
                 <KeycloakTextInput
                   type="text"
                   id="jwksUrl"
-                  name="attributes.jwks.url"
+                  name={convertAttributeNameToForm("attributes.jwks.url")}
                   ref={register}
                 />
               </FormGroup>

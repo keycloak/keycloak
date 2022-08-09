@@ -9,6 +9,7 @@ import {
 } from "@patternfly/react-core";
 
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
+import { convertAttributeNameToForm } from "../../util";
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { Toggle } from "./SamlConfig";
@@ -48,7 +49,7 @@ export const SamlSignature = () => {
 
   const { control, watch } = useFormContext<ClientRepresentation>();
 
-  const signDocs = watch("attributes.saml$server$signature");
+  const signDocs = watch("attributes.saml.server.signature");
   const signAssertion = watch("attributes.saml.assertion.signature");
 
   return (
@@ -57,9 +58,12 @@ export const SamlSignature = () => {
       role="manage-clients"
       className="keycloak__capability-config__form"
     >
-      <Toggle name="attributes.saml$server$signature" label="signDocuments" />
       <Toggle
-        name="attributes.saml.assertion.signature"
+        name={convertAttributeNameToForm("attributes.saml.server.signature")}
+        label="signDocuments"
+      />
+      <Toggle
+        name={convertAttributeNameToForm("attributes.saml.assertion.signature")}
         label="signAssertions"
       />
       {(signDocs === "true" || signAssertion === "true") && (
@@ -75,7 +79,9 @@ export const SamlSignature = () => {
             }
           >
             <Controller
-              name="attributes.saml.signature.algorithm"
+              name={convertAttributeNameToForm(
+                "attributes.saml.signature.algorithm"
+              )}
               defaultValue={SIGNATURE_ALGORITHMS[0]}
               Key
               control={control}
@@ -114,7 +120,9 @@ export const SamlSignature = () => {
             }
           >
             <Controller
-              name="attributes.saml$server$signature$keyinfo$xmlSigKeyInfoKeyNameTransformer"
+              name={convertAttributeNameToForm(
+                "attributes.saml.server.signature.keyinfo$xmlSigKeyInfoKeyNameTransformer"
+              )}
               defaultValue={KEYNAME_TRANSFORMER[0]}
               control={control}
               render={({ onChange, value }) => (

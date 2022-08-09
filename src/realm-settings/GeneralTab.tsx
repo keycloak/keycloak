@@ -16,7 +16,11 @@ import {
 } from "@patternfly/react-core";
 
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
-import { addTrailingSlash, convertToFormValues } from "../util";
+import {
+  addTrailingSlash,
+  convertAttributeNameToForm,
+  convertToFormValues,
+} from "../util";
 import useIsFeatureEnabled, { Feature } from "../utils/useIsFeatureEnabled";
 import { useAdminClient } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
@@ -58,7 +62,7 @@ export const RealmSettingsGeneralTab = ({
         JSON.parse(realm.attributes["acr.loa.map"])
       ).flatMap(([key, value]) => ({ key, value }));
       result.concat({ key: "", value: "" });
-      setValue("attributes.acr.loa.map", result);
+      setValue(convertAttributeNameToForm("attributes.acr.loa.map"), result);
     }
   };
 
@@ -113,7 +117,7 @@ export const RealmSettingsGeneralTab = ({
           <KeycloakTextInput
             type="text"
             id="kc-frontend-url"
-            name="attributes.frontendUrl"
+            name={convertAttributeNameToForm("attributes.frontendUrl")}
             ref={register}
           />
         </FormGroup>
@@ -168,7 +172,9 @@ export const RealmSettingsGeneralTab = ({
           }
         >
           <FormProvider {...form}>
-            <KeyValueInput name="attributes.acr.loa.map" />
+            <KeyValueInput
+              name={convertAttributeNameToForm("attributes.acr.loa.map")}
+            />
           </FormProvider>
         </FormGroup>
         <FormGroup
@@ -211,7 +217,7 @@ export const RealmSettingsGeneralTab = ({
             fieldId="kc-user-profile-enabled"
           >
             <Controller
-              name="attributes.userProfileEnabled"
+              name={convertAttributeNameToForm("attributes.userProfileEnabled")}
               control={control}
               defaultValue={false}
               render={({ onChange, value }) => (

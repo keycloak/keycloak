@@ -12,6 +12,7 @@ import {
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
+import { convertAttributeNameToForm } from "../../util";
 
 export const Toggle = ({ name, label }: { name: string; label: string }) => {
   const { t } = useTranslation("clients");
@@ -98,27 +99,33 @@ export const SamlConfig = () => {
         />
       </FormGroup>
       <Toggle
-        name="attributes.saml.force.name.id.format"
+        name={convertAttributeNameToForm(
+          "attributes.saml.force.name.id.format"
+        )}
         label="forceNameIdFormat"
       />
       <Toggle
-        name="attributes.saml.force.post.binding"
+        name={convertAttributeNameToForm("attributes.saml.force.post.binding")}
         label="forcePostBinding"
       />
       <Toggle
-        name="attributes.saml.artifact.binding"
+        name={convertAttributeNameToForm("attributes.saml.artifact.binding")}
         label="forceArtifactBinding"
       />
       <Toggle
-        name="attributes.saml.authnstatement"
+        name={convertAttributeNameToForm("attributes.saml.authnstatement")}
         label="includeAuthnStatement"
       />
       <Toggle
-        name="attributes.saml.onetimeuse.condition"
+        name={convertAttributeNameToForm(
+          "attributes.saml.onetimeuse.condition"
+        )}
         label="includeOneTimeUseCondition"
       />
       <Toggle
-        name="attributes.saml.server.signature.keyinfo.ext"
+        name={convertAttributeNameToForm(
+          "attributes.saml.server.signature.keyinfo.ext"
+        )}
         label="optimizeLookup"
       />
     </FormAccess>

@@ -5,6 +5,7 @@ import { FileUpload, FormGroup } from "@patternfly/react-core";
 
 import { HelpItem } from "../help-enabler/HelpItem";
 import type { ComponentProps } from "./components";
+import { convertToName } from "./DynamicComponents";
 
 export const FileComponent = ({
   name,
@@ -26,7 +27,7 @@ export const FileComponent = ({
       fieldId={name!}
     >
       <Controller
-        name={`config.${name}`}
+        name={convertToName(name!)}
         control={control}
         defaultValue={defaultValue || ""}
         render={({ onChange, value }) => (

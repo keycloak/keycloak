@@ -21,7 +21,7 @@ import {
 } from "../../components/client-scope/ClientScopeTypes";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { useLoginProviders } from "../../context/server-info/ServerInfoProvider";
-import { convertToFormValues } from "../../util";
+import { convertAttributeNameToForm, convertToFormValues } from "../../util";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { getProtocolName } from "../../clients/utils";
 import { toClientScopes } from "../routes/ClientScopes";
@@ -211,7 +211,9 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
         fieldId="kc-display.on.consent.screen"
       >
         <Controller
-          name="attributes.display.on.consent.screen"
+          name={convertAttributeNameToForm(
+            "attributes.display.on.consent.screen"
+          )}
           control={control}
           defaultValue={displayOnConsentScreen}
           render={({ onChange, value }) => (
@@ -240,7 +242,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
             ref={register}
             type="text"
             id="kc-consent-screen-text"
-            name="attributes.consent.screen.text"
+            name={convertAttributeNameToForm("attributes.consent.screen.text")}
           />
         </FormGroup>
       )}
@@ -256,7 +258,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
         fieldId="includeInTokenScope"
       >
         <Controller
-          name="attributes.include.in.token.scope"
+          name={convertAttributeNameToForm("attributes.include.in.token.scope")}
           control={control}
           defaultValue="true"
           render={({ onChange, value }) => (
@@ -281,7 +283,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
         fieldId="kc-gui-order"
       >
         <Controller
-          name="attributes.gui.order"
+          name={convertAttributeNameToForm("attributes.gui.order")}
           defaultValue=""
           control={control}
           render={({ onChange, value }) => (

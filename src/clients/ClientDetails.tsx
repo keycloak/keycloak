@@ -36,6 +36,7 @@ import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { RolesList } from "../realm-roles/RolesList";
 import {
+  convertAttributeNameToForm,
   convertFormValuesToObject,
   convertToFormValues,
   exportClient,
@@ -237,12 +238,12 @@ export default function ClientDetails() {
     form.reset({ ...client });
     convertToFormValues(client, form.setValue);
     form.setValue(
-      "attributes.request.uris",
+      convertAttributeNameToForm("attributes.request.uris"),
       stringToMultiline(client.attributes?.["request.uris"])
     );
     if (client.attributes?.["acr.loa.map"]) {
       form.setValue(
-        "attributes.acr.loa.map",
+        convertAttributeNameToForm("attributes.acr.loa.map"),
         Object.entries(JSON.parse(client.attributes["acr.loa.map"])).flatMap(
           ([key, value]) => ({ key, value })
         )
@@ -250,21 +251,16 @@ export default function ClientDetails() {
     }
     if (client.attributes?.["default.acr.values"]) {
       form.setValue(
-        "attributes.default.acr.values",
+        convertAttributeNameToForm("attributes.default.acr.values"),
         stringToMultiline(client.attributes["default.acr.values"])
       );
     }
     if (client.attributes?.["post.logout.redirect.uris"]) {
       form.setValue(
-        "attributes.post.logout.redirect.uris",
+        convertAttributeNameToForm("attributes.post.logout.redirect.uris"),
         stringToMultiline(client.attributes["post.logout.redirect.uris"])
       );
     }
-    Object.entries(client.attributes || {})
-      .filter(([key]) => key.startsWith("saml.server.signature"))
-      .map(([key, value]) =>
-        form.setValue("attributes." + key.replaceAll(".", "$"), value)
-      );
   };
 
   useFetch(
@@ -295,35 +291,28 @@ export default function ClientDetails() {
         return;
       }
 
-      const values = form.getValues();
+      const values = convertFormValuesToObject(form.getValues());
 
-      if (values.attributes?.request.uris) {
+      if (values.attributes?.["request.uris"]) {
         values.attributes["request.uris"] = toStringValue(
-          values.attributes.request.uris
+          values.attributes["request.uris"]
         );
       }
 
-      if (values.attributes?.default?.acr?.values) {
+      if (values.attributes?.["default.acr.values"]) {
         values.attributes["default.acr.values"] = toStringValue(
-          values.attributes.default.acr.values
+          values.attributes["default.acr.values"]
         );
       }
 
-      if (values.attributes?.post.logout.redirect.uris) {
+      if (values.attributes?.["post.logout.redirect.uris"]) {
         values.attributes["post.logout.redirect.uris"] = toStringValue(
-          values.attributes.post.logout.redirect.uris
+          values.attributes["post.logout.redirect.uris"]
         );
       }
 
       const submittedClient =
         convertFormValuesToObject<ClientRepresentation>(values);
-
-      Object.entries(values.attributes || {})
-        .filter(([key]) => key.includes("$"))
-        .map(
-          ([key, value]) =>
-            (submittedClient.attributes![key.replaceAll("$", ".")] = value)
-        );
 
       if (submittedClient.attributes?.["acr.loa.map"]) {
         submittedClient.attributes["acr.loa.map"] = JSON.stringify(
