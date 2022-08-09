@@ -36,7 +36,6 @@ jobs:
            ./mvnw clean install -nsu -B -e -DskipTests -Pdistribution
            ./mvnw clean install -nsu -B -e -f testsuite/integration-arquillian/servers/auth-server -Pauth-server-quarkus
            ./mvnw clean install -nsu -B -e -f testsuite/integration-arquillian/servers/auth-server -Pauth-server-undertow
-           ./mvnw clean install -nsu -B -e -f testsuite/integration-arquillian/servers/cache-server -Pcache-server-infinispan
 
       - name: Store Keycloak artifacts
         id: store-keycloak

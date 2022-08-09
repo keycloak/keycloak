@@ -641,19 +641,6 @@
         </container>
     </group>
 
-    <container qualifier="hot-rod-store" mode="manual" >
-        <configuration>
-            <property name="enabled">${hotrod.store.enabled}</property>
-            <property name="adapterImplClass">org.keycloak.testsuite.arquillian.containers.InfinispanServerDeployableContainer</property>
-            <property name="infinispanHome">${cache.server.home}-hot-rod-store</property>
-<!--            <property name="serverConfig">infinisan-xsite.xml</property>-->
-            <property name="portOffset">${hotrod.store.port.offset}</property>
-            <property name="managementPort">${hotrod.store.management.port}</property>
-            <property name="javaHome">${cache.server.java.home}</property>
-        </configuration>
-    </container>
-
-
     <container qualifier="auth-server-remote" mode="manual" >
         <configuration>
             <property name="enabled">${auth.server.remote}</property>
