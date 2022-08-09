@@ -5,6 +5,7 @@ import type KeycloakAdminClient from "@keycloak/keycloak-admin-client";
 
 import environment from "./environment";
 import { getAuthorizationHeaders } from "./utils/getAuthorizationHeaders";
+import { addTrailingSlash } from "./util";
 
 export const DEFAULT_LOCALE = "en";
 
@@ -18,7 +19,9 @@ const initOptions = async (
 ): Promise<InitOptions> => {
   const constructLoadPath: LoadPathOption = (_, namespaces) => {
     if (namespaces[0] === "overrides") {
-      return `/admin/realms/${adminClient.realmName}/localization/{{lng}}?useRealmDefaultLocaleFallback=true`;
+      return `${addTrailingSlash(adminClient.baseUrl)}admin/realms/${
+        adminClient.realmName
+      }/localization/{{lng}}?useRealmDefaultLocaleFallback=true`;
     } else {
       return `${environment.resourceUrl}/resources/{{lng}}/{{ns}}.json`;
     }
