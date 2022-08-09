@@ -98,9 +98,9 @@ connect to an external instance of Infinispan. To do so, execute tests with
 the following command:
 ```shell
 mvn test -Phot-rod \
-  -Dhot-rod.start-container=false \
-  -Dhot-rod.connection.host=<host> \
-  -Dhot-rod.connection.port=<port> \
-  -Dhot-rod.connection.username=<username> \
-  -Dhot-rod.connection.password=<password>
+  -Dkeycloak.testsuite.start-hotrod-container=false \
+  -Dkeycloak.connectionsHotRod.host=<host> \
+  -Dkeycloak.connectionsHotRod.port=<port> \
+  -Dkeycloak.connectionsHotRod.username=<username> \
+  -Dkeycloak.connectionsHotRod.password=<password>
 ```

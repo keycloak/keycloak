@@ -50,6 +50,7 @@ import org.keycloak.provider.Spi;
 import org.keycloak.sessions.AuthenticationSessionSpi;
 import org.keycloak.testsuite.model.Config;
 import org.keycloak.testsuite.model.KeycloakModelParameters;
+import org.keycloak.testsuite.util.InfinispanContainer;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 
@@ -65,23 +66,7 @@ import java.util.regex.Pattern;
 public class HotRodMapStorage extends KeycloakModelParameters {
 
     private final Logger LOG = Logger.getLogger(getClass());
-    public static final String PORT = System.getProperty("hot-rod.connection.port", "11222");
-    public static String HOST = System.getProperty("hot-rod.connection.host");
-    public static final String USERNAME = System.getProperty("hot-rod.connection.username", "admin");
-    public static final String PASSWORD = System.getProperty("hot-rod.connection.password", "admin");
-    public static final Boolean START_CONTAINER = Boolean.valueOf(System.getProperty("hot-rod.start-container", "true"));
-
-    private static final String ZERO_TO_255
-            = "(\\d{1,2}|(0|1)\\"
-            + "d{2}|2[0-4]\\d|25[0-5])";
-    private static final String IP_ADDRESS_REGEX
-            = ZERO_TO_255 + "\\."
-            + ZERO_TO_255 + "\\."
-            + ZERO_TO_255 + "\\."
-            + ZERO_TO_255;
-
-    private static final Pattern IP_ADDRESS_PATTERN = Pattern.compile("listening on (" + IP_ADDRESS_REGEX + "):" + PORT);
-
+    public static final Boolean START_CONTAINER = Boolean.valueOf(System.getProperty("keycloak.testsuite.start-hotrod-container", "true"));
     static final Set<Class<? extends Spi>> ALLOWED_SPIS = ImmutableSet.<Class<? extends Spi>>builder()
       .add(HotRodConnectionSpi.class)
       .build();
@@ -91,10 +76,7 @@ public class HotRodMapStorage extends KeycloakModelParameters {
       .add(HotRodConnectionProviderFactory.class)
       .build();
     
-    private final GenericContainer<?> hotRodContainer = new GenericContainer("quay.io/infinispan/server:" + System.getProperty("infinispan.version"))
-                                                            .withEnv("USER", USERNAME)
-                                                            .withEnv("PASS", PASSWORD)
-                                                            .withNetworkMode("host");
+    private final InfinispanContainer hotRodContainer = new InfinispanContainer();
 
     @Override
     public void updateConfig(Config cf) {
@@ -121,30 +103,18 @@ public class HotRodMapStorage extends KeycloakModelParameters {
                 .config("dir", "${project.build.directory:target}")
                 .config("keyType.single-use-objects", "string");
 
-        if (HOST == null && START_CONTAINER) {
-            Matcher matcher = IP_ADDRESS_PATTERN.matcher(hotRodContainer.getLogs());
-            if (!matcher.find()) {
-                LOG.errorf("Cannot find IP address of the infinispan server in log:\\n%s ", hotRodContainer.getLogs());
-                throw new IllegalStateException("Cannot find IP address of the Infinispan server. See test log for Infinispan container log.");
-            }
-            HOST = matcher.group(1);
-        }
-
         cf.spi(HotRodConnectionSpi.NAME).provider(DefaultHotRodConnectionProviderFactory.PROVIDER_ID)
-                .config("host", HOST)
-                .config("port", PORT)
-                .config("username", USERNAME)
-                .config("password", PASSWORD)
+                .config("host", hotRodContainer.getHost())
+                .config("port", hotRodContainer.getPort())
+                .config("username", hotRodContainer.getUsername())
+                .config("password", hotRodContainer.getPassword())
                 .config("configureRemoteCaches", "true");
     }
 
     @Override
     public void beforeSuite(Config cf) {
         if (START_CONTAINER) {
-            hotRodContainer
-                    .withStartupTimeout(Duration.ofMinutes(5))
-                    .waitingFor(Wait.forLogMessage(".*Infinispan Server.*started in.*", 1))
-                    .start();
+            hotRodContainer.start();
         }
     }
 

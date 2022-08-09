@@ -49,7 +49,6 @@
         <auth.server.quarkus.cluster>false</auth.server.quarkus.cluster>
 
         <auth.server.crossdc>false</auth.server.crossdc>
-        <hotrod.store.enabled>false</hotrod.store.enabled>
         <auth.server.undertow.crossdc>false</auth.server.undertow.crossdc>
         <auth.server.jboss.crossdc>false</auth.server.jboss.crossdc>
         <cache.server.lifecycle.skip>false</cache.server.lifecycle.skip>
@@ -140,9 +139,6 @@
         <cache.server.2.management.port>12000</cache.server.2.management.port>
         <cache.server.console.output>true</cache.server.console.output>
         <cache.server.auth>false</cache.server.auth>
-
-        <hotrod.store.port.offset>3010</hotrod.store.port.offset>
-        <hotrod.store.management.port>13000</hotrod.store.management.port>
 
         <!--
         ~ Definition of default JVM parameters for all modular JDKs. See:
@@ -669,11 +665,6 @@
                             <auth.server.undertow.crossdc>${auth.server.undertow.crossdc}</auth.server.undertow.crossdc>
                             <auth.server.jboss.crossdc>${auth.server.jboss.crossdc}</auth.server.jboss.crossdc>
                             <cache.server.lifecycle.skip>${cache.server.lifecycle.skip}</cache.server.lifecycle.skip>
-
-                            <!--hot-rod-store properties-->
-                            <hotrod.store.enabled>${hotrod.store.enabled}</hotrod.store.enabled>
-                            <hotrod.store.port.offset>${hotrod.store.port.offset}</hotrod.store.port.offset>
-                            <hotrod.store.management.port>${hotrod.store.management.port}</hotrod.store.management.port>
 
                             <cache.server>${cache.server}</cache.server>
                             <cache.server.legacy>${cache.server.legacy}</cache.server.legacy>
@@ -1434,9 +1425,7 @@
         <profile>
             <id>map-storage-hot-rod</id>
             <properties>
-                <hotrod.store.enabled>true</hotrod.store.enabled>
-                <skip.copy.hotrod.server>false</skip.copy.hotrod.server>
-                <cache.server>infinispan</cache.server>
+                <keycloak.testsuite.start-hotrod-container>true</keycloak.testsuite.start-hotrod-container>
                 <auth.server.quarkus.mapStorage.profile.config>hotrod</auth.server.quarkus.mapStorage.profile.config>
             </properties>
             <build>
@@ -1444,54 +1433,6 @@
                 </plugins>
                 <pluginManagement>
                     <plugins>
-                        <plugin>
-                            <artifactId>maven-dependency-plugin</artifactId>
-                            <executions>
-                                <execution>
-                                    <id>unpack-cache-server-standalone-infinispan</id>
-                                    <phase>generate-resources</phase>
-                                    <goals>
-                                        <goal>unpack</goal>
-                                    </goals>
-                                    <configuration>
-                                        <artifactItems>
-                                            <artifactItem>
-                                                <groupId>org.keycloak.testsuite</groupId>
-                                                <artifactId>integration-arquillian-servers-cache-server-infinispan-infinispan</artifactId>
-                                                <version>${project.version}</version>
-                                                <type>zip</type>
-                                                <outputDirectory>${containers.home}</outputDirectory>
-                                            </artifactItem>
-                                        </artifactItems>
-                                        <overWriteIfNewer>true</overWriteIfNewer>
-                                    </configuration>
-                                </execution>
-                            </executions>
-                        </plugin>
-
-                        <plugin>
-                            <artifactId>maven-antrun-plugin</artifactId>
-                            <executions>
-                                <execution>
-                                    <id>copy-cache-server-to-hot-rod-directory</id>
-                                    <phase>process-resources</phase>
-                                    <goals>
-                                        <goal>run</goal>
-                                    </goals>
-                                    <configuration>
-                                        <skip>${skip.copy.hotrod.server}</skip>
-                                        <target>
-                                            <move todir="${cache.server.home}-hot-rod-store">
-                                                <fileset dir="${cache.server.home}"/>
-                                            </move>
-
-                                            <chmod dir="${cache.server.home}-hot-rod-store/bin" perm="ugo+rx" includes="**/*.sh"/>
-                                        </target>
-                                    </configuration>
-                                </execution>
-                            </executions>
-                        </plugin>
-
                         <plugin>
                             <groupId>org.apache.maven.plugins</groupId>
                             <artifactId>maven-surefire-plugin</artifactId>
@@ -1510,6 +1451,8 @@
                                     <keycloak.eventStore.map.storage.provider>hotrod</keycloak.eventStore.map.storage.provider>
                                     <keycloak.actionToken.map.storage.provider>hotrod</keycloak.actionToken.map.storage.provider>
                                     <keycloak.singleUseObject.map.storage.provider>hotrod</keycloak.singleUseObject.map.storage.provider>
+                                    <infinispan.version>${infinispan.version}</infinispan.version>
+                                    <keycloak.testsuite.start-hotrod-container>${keycloak.testsuite.start-hotrod-container}</keycloak.testsuite.start-hotrod-container>
                                 </systemPropertyVariables>
                             </configuration>
                         </plugin>
