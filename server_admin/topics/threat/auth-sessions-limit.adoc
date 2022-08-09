@@ -31,6 +31,14 @@ ifeval::["{kc_dist}" == "quarkus"]
 ----
 bin/kc.[sh|bat] start --spi-authentication-sessions-infinispan-auth-sessions-limit=100
 ----
+
+The equivalent command for the new map storage:
+
+[source,bash]
+----
+bin/kc.[sh|bat] start --spi-authentication-sessions-map-auth-sessions-limit=100
+----
+
 endif::[]
 
 ifeval::["{kc_dist}" == "wildfly"]
