@@ -46,7 +46,7 @@
         <shrinkwrap-resolver.version>3.1.4</shrinkwrap-resolver.version>
         <selenium.version>3.14.0</selenium.version>
         <arquillian-drone.version>2.5.5</arquillian-drone.version>
-        <arquillian-graphene.version>2.5.4</arquillian-graphene.version>
+        <arquillian-graphene.version>3.0.0-alpha.3</arquillian-graphene.version>
         <arquillian-wildfly-container.version>3.0.1.Final</arquillian-wildfly-container.version>
         <arquillian-wls-container.version>1.0.1.Final</arquillian-wls-container.version>
         <arquillian-jetty9-container.version>1.0.0.CR3</arquillian-jetty9-container.version>
