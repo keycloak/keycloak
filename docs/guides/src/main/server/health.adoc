@@ -52,4 +52,12 @@ use the `metrics-enabled` option as follows:
 
 <@kc.build parameters="--health-enabled=true --metrics-enabled=true"/>
 
+== Using http-relative-path and the health endpoints
+When you use Keycloak exposed under a different path than the root path `/`, make sure you set the `http-relative-path` variable with a leading Slash (`/`) for the endpoints to work correctly.
+
+.Working example
+<@kc.start parameters="--http-relative-path=/auth --health-enabled=true --metrics-enabled=true"/>
+
+Without the leading slash, the endpoints won't work correctly.
+
 </@tmpl.guide>

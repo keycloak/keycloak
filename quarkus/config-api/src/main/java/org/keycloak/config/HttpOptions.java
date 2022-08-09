@@ -19,7 +19,7 @@ public class HttpOptions {
             .defaultValue("0.0.0.0")
             .build();
 
-    public static final Option HTTP_RELATIVE_PATH = new OptionBuilder<>("http-relative-path", String.class)
+    public static final Option<String> HTTP_RELATIVE_PATH = new OptionBuilder<>("http-relative-path", String.class)
             .category(OptionCategory.HTTP)
             .description("Set the path relative to '/' for serving resources.")
             .defaultValue("/")
