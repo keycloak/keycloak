@@ -26,8 +26,8 @@ import org.infinispan.commons.marshall.SerializeWith;
  *
  * @author hmlnarik
  */
-@SerializeWith(value = ActionTokenReducedKey.ExternalizerImpl.class)
-public class ActionTokenReducedKey implements Serializable {
+@SerializeWith(value = SingleUseObjectReducedKey.ExternalizerImpl.class)
+public class SingleUseObjectReducedKey implements Serializable {
 
     private final String userId;
     private final String actionId;
@@ -37,7 +37,7 @@ public class ActionTokenReducedKey implements Serializable {
      */
     private final UUID actionVerificationNonce;
 
-    public ActionTokenReducedKey(String userId, String actionId, UUID actionVerificationNonce) {
+    public SingleUseObjectReducedKey(String userId, String actionId, UUID actionVerificationNonce) {
         this.userId = userId;
         this.actionId = actionId;
         this.actionVerificationNonce = actionVerificationNonce;
@@ -75,7 +75,7 @@ public class ActionTokenReducedKey implements Serializable {
         if (getClass() != obj.getClass()) {
             return false;
         }
-        final ActionTokenReducedKey other = (ActionTokenReducedKey) obj;
+        final SingleUseObjectReducedKey other = (SingleUseObjectReducedKey) obj;
         return Objects.equals(this.userId, other.getUserId())
           && Objects.equals(this.actionId, other.getActionId())
           && Objects.equals(this.actionVerificationNonce, other.getActionVerificationNonce());
@@ -86,10 +86,10 @@ public class ActionTokenReducedKey implements Serializable {
         return "userId=" + userId + ", actionId=" + actionId + ", actionVerificationNonce=" + actionVerificationNonce;
     }
 
-    public static class ExternalizerImpl implements Externalizer<ActionTokenReducedKey> {
+    public static class ExternalizerImpl implements Externalizer<SingleUseObjectReducedKey> {
 
         @Override
-        public void writeObject(ObjectOutput output, ActionTokenReducedKey t) throws IOException {
+        public void writeObject(ObjectOutput output, SingleUseObjectReducedKey t) throws IOException {
             output.writeUTF(t.userId);
             output.writeUTF(t.actionId);
             output.writeLong(t.actionVerificationNonce.getMostSignificantBits());
@@ -97,8 +97,8 @@ public class ActionTokenReducedKey implements Serializable {
         }
 
         @Override
-        public ActionTokenReducedKey readObject(ObjectInput input) throws IOException, ClassNotFoundException {
-            return new ActionTokenReducedKey(
+        public SingleUseObjectReducedKey readObject(ObjectInput input) throws IOException, ClassNotFoundException {
+            return new SingleUseObjectReducedKey(
               input.readUTF(),
               input.readUTF(),
               new UUID(input.readLong(), input.readLong())

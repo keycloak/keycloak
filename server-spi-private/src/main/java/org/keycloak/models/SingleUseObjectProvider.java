@@ -22,7 +22,7 @@ import org.keycloak.provider.Provider;
 import java.util.Map;
 
 /**
- * Provides a cache to store data for single-use use case. Data are represented by a {@code String} key.
+ * Provides a cache to store data for single-use use case or the details about used action tokens.
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */

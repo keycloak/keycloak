@@ -16,10 +16,7 @@
  */
 package org.keycloak.models.map.storage.jpa.singleUseObject;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import org.keycloak.models.ActionTokenValueModel;
+import org.keycloak.models.SingleUseObjectValueModel;
 import org.keycloak.models.map.storage.CriterionNotSupportedException;
 import org.keycloak.models.map.storage.jpa.JpaModelCriteriaBuilder;
 import org.keycloak.models.map.storage.jpa.JpaPredicateFunction;
@@ -31,14 +28,7 @@ import org.keycloak.storage.SearchableModelField;
  *
  * @author <a href="mailto:sguilhen@redhat.com">Stefan Guilhen</a>
  */
-public class JpaSingleUseObjectModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaSingleUseObjectEntity, ActionTokenValueModel, JpaSingleUseObjectModelCriteriaBuilder> {
-
-    private static final Map<String, String> FIELD_TO_JSON_PROP = new HashMap<>();
-    static {
-        FIELD_TO_JSON_PROP.put(ActionTokenValueModel.SearchableFields.USER_ID.getName(), "fUserId");
-        FIELD_TO_JSON_PROP.put(ActionTokenValueModel.SearchableFields.ACTION_ID.getName(), "fActionId");
-        FIELD_TO_JSON_PROP.put(ActionTokenValueModel.SearchableFields.ACTION_VERIFICATION_NONCE.getName(), "fActionVerificationNonce");
-    }
+public class JpaSingleUseObjectModelCriteriaBuilder extends JpaModelCriteriaBuilder<JpaSingleUseObjectEntity, SingleUseObjectValueModel, JpaSingleUseObjectModelCriteriaBuilder> {
 
     public JpaSingleUseObjectModelCriteriaBuilder() {
         super(JpaSingleUseObjectModelCriteriaBuilder::new);
@@ -49,20 +39,10 @@ public class JpaSingleUseObjectModelCriteriaBuilder extends JpaModelCriteriaBuil
     }
 
     @Override
-    public JpaSingleUseObjectModelCriteriaBuilder compare(SearchableModelField<? super ActionTokenValueModel> modelField, Operator op, Object... value) {
+    public JpaSingleUseObjectModelCriteriaBuilder compare(SearchableModelField<? super SingleUseObjectValueModel> modelField, Operator op, Object... value) {
         switch (op) {
             case EQ:
-                if (modelField == ActionTokenValueModel.SearchableFields.USER_ID ||
-                        modelField == ActionTokenValueModel.SearchableFields.ACTION_ID ||
-                        modelField == ActionTokenValueModel.SearchableFields.ACTION_VERIFICATION_NONCE) {
-
-                    validateValue(value, modelField, op, String.class);
-
-                    return new JpaSingleUseObjectModelCriteriaBuilder((cb, query, root) ->
-                            cb.equal(cb.function("->>", String.class, root.get("metadata"),
-                                    cb.literal(FIELD_TO_JSON_PROP.get(modelField.getName()))), value[0])
-                    );
-                } else if(modelField == ActionTokenValueModel.SearchableFields.OBJECT_KEY) {
+                if(modelField == SingleUseObjectValueModel.SearchableFields.OBJECT_KEY) {
                     validateValue(value, modelField, op, String.class);
                     return new JpaSingleUseObjectModelCriteriaBuilder((cb, query, root) ->
                             cb.equal(root.get(modelField.getName()), value[0])

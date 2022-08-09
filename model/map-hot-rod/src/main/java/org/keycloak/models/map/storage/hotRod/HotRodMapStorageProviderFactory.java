@@ -17,11 +17,10 @@
 
 package org.keycloak.models.map.storage.hotRod;
 
-import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.common.Profile;
 import org.keycloak.component.AmphibianProviderFactory;
-import org.keycloak.models.ActionTokenValueModel;
+import org.keycloak.models.SingleUseObjectValueModel;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
@@ -192,7 +191,7 @@ public class HotRodMapStorageProviderFactory implements AmphibianProviderFactory
         HotRodConnectionProvider connectionProvider = session.getProvider(HotRodConnectionProvider.class);
         HotRodEntityDescriptor<E, V> entityDescriptor = (HotRodEntityDescriptor<E, V>) getEntityDescriptor(modelType);
 
-        if (modelType == ActionTokenValueModel.class) {
+        if (modelType == SingleUseObjectValueModel.class) {
             return new SingleUseObjectHotRodMapStorage(connectionProvider.getRemoteCache(entityDescriptor.getCacheName()), StringKeyConverter.StringKey.INSTANCE, entityDescriptor, CLONER);
         } if (modelType == AuthenticatedClientSessionModel.class) {
             return new HotRodMapStorage(connectionProvider.getRemoteCache(entityDescriptor.getCacheName()),

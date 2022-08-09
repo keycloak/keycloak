@@ -18,11 +18,11 @@
 
 package org.keycloak.models.sessions.infinispan.entities.wildfly;
 
-import org.keycloak.models.sessions.infinispan.entities.ActionTokenReducedKey;
+import org.keycloak.models.sessions.infinispan.entities.SingleUseObjectReducedKey;
 
-public class ActionTokenReducedKeyWFExternalizer extends InfinispanExternalizerAdapter<ActionTokenReducedKey> {
+public class ActionTokenReducedKeyWFExternalizer extends InfinispanExternalizerAdapter<SingleUseObjectReducedKey> {
 
     public ActionTokenReducedKeyWFExternalizer() {
-        super(ActionTokenReducedKey.class, new ActionTokenReducedKey.ExternalizerImpl());
+        super(SingleUseObjectReducedKey.class, new SingleUseObjectReducedKey.ExternalizerImpl());
     }
 }

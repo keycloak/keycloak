@@ -17,20 +17,14 @@
 
 package org.keycloak.models.sessions.infinispan;
 
-import java.util.function.Supplier;
 
 import org.infinispan.Cache;
-import org.infinispan.client.hotrod.Flag;
-import org.infinispan.client.hotrod.RemoteCache;
-import org.infinispan.commons.api.BasicCache;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.SingleUseObjectProviderFactory;
-import org.keycloak.models.sessions.infinispan.entities.ActionTokenValueEntity;
-import org.keycloak.connections.infinispan.InfinispanUtil;
 import static org.keycloak.models.sessions.infinispan.InfinispanAuthenticationSessionProviderFactory.PROVIDER_PRIORITY;
 
 /**
@@ -40,43 +34,16 @@ public class InfinispanSingleUseObjectProviderFactory implements SingleUseObject
 
     private static final Logger LOG = Logger.getLogger(InfinispanSingleUseObjectProviderFactory.class);
 
-    // Reuse "actionTokens" infinispan cache for now
-    private volatile Supplier<BasicCache<String, ActionTokenValueEntity>> tokenCache;
+    private volatile Cache singleUseObjectCache;
 
     @Override
     public InfinispanSingleUseObjectProvider create(KeycloakSession session) {
-        lazyInit(session);
-        return new InfinispanSingleUseObjectProvider(session, tokenCache);
+        return new InfinispanSingleUseObjectProvider(session, singleUseObjectCache);
     }
 
-    private void lazyInit(KeycloakSession session) {
-        if (tokenCache == null) {
-            synchronized (this) {
-                if (tokenCache == null) {
-                    this.tokenCache = getActionTokenCache(session);
-                }
-            }
-        }
-    }
-
-    static Supplier getActionTokenCache(KeycloakSession session) {
+    static Cache getSingleUseObjectCache(KeycloakSession session) {
         InfinispanConnectionProvider connections = session.getProvider(InfinispanConnectionProvider.class);
-        Cache cache = connections.getCache(InfinispanConnectionProvider.ACTION_TOKEN_CACHE);
-
-        RemoteCache remoteCache = InfinispanUtil.getRemoteCache(cache);
-
-        if (remoteCache != null) {
-            LOG.debugf("Having remote stores. Using remote cache '%s' for single-use cache of token", remoteCache.getName());
-            return () -> {
-                // Doing this way as flag is per invocation
-                return remoteCache.withFlags(Flag.FORCE_RETURN_VALUE);
-            };
-        } else {
-            LOG.debugf("Not having remote stores. Using normal cache '%s' for single-use cache of token", cache.getName());
-            return () -> {
-                return cache;
-            };
-        }
+        return connections.getCache(InfinispanConnectionProvider.ACTION_TOKEN_CACHE);
     }
 
     @Override
@@ -86,7 +53,15 @@ public class InfinispanSingleUseObjectProviderFactory implements SingleUseObject
 
     @Override
     public void postInit(KeycloakSessionFactory factory) {
-
+        // It is necessary to put the cache initialization here, otherwise the cache would be initialized lazily, that
+        // means also listeners will start only after first cache initialization - that would be too late
+        if (singleUseObjectCache == null) {
+            synchronized (this) {
+                if (singleUseObjectCache == null) {
+                    this.singleUseObjectCache = getSingleUseObjectCache(factory.create());
+                }
+            }
+        }
     }
 
     @Override

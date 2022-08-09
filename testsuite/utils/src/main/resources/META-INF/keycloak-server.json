@@ -111,15 +111,6 @@
         }
     },
 
-    "actionToken": {
-        "provider": "${keycloak.actionToken.provider:infinispan}",
-        "map": {
-            "storage": {
-                "provider": "${keycloak.actionToken.map.storage.provider:concurrenthashmap}"
-            }
-        }
-    },
-
     "singleUseObject": {
         "provider": "${keycloak.singleUseObject.provider:infinispan}",
         "map": {
