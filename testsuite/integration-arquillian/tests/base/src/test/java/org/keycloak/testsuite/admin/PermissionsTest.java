@@ -366,17 +366,21 @@ public class PermissionsTest extends AbstractKeycloakTest {
                 response.set(realm.partialImport(new PartialImportRepresentation()));
             }
         }, Resource.REALM, true);
-        invoke(new Invocation() {
-            public void invoke(RealmResource realm) {
-                realm.clearRealmCache();
-            }
-        }, Resource.REALM, true);
-        invoke(new Invocation() {
-            public void invoke(RealmResource realm) {
-                realm.clearUserCache();
-            }
-        }, Resource.REALM, true);
 
+        if (isJpaRealmProvider()) {
+            // Caching is disabled with the new store, we need to skip these invocations
+            invoke(new Invocation() {
+                public void invoke(RealmResource realm) {
+                    realm.clearRealmCache();
+                }
+            }, Resource.REALM, true);
+            invoke(new Invocation() {
+                public void invoke(RealmResource realm) {
+                    realm.clearUserCache();
+                }
+            }, Resource.REALM, true);
+
+        }
         // Delete realm
         invoke(new Invocation() {
             public void invoke(RealmResource realm) {
