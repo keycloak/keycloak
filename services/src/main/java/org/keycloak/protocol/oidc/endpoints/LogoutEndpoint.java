@@ -313,7 +313,7 @@ public class LogoutEndpoint {
         }
 
         // Logout confirmation screen will be displayed to the user in this case
-        if (confirmationNeeded || forcedConfirmation) {
+        if ((confirmationNeeded || forcedConfirmation) && !providerConfig.suppressLogoutConfirmationScreen()) {
             return displayLogoutConfirmationScreen(loginForm, logoutSession);
         } else {
             return doBrowserLogout(logoutSession);
