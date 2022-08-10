@@ -206,8 +206,24 @@ public class LegacyLogoutTest extends AbstractTestRealmKeycloakTest {
         }
     }
 
+    // Test with "post_logout_redirect_uri" without "id_token_hint" and "suppress-logout-confirmation-screen":  User should logout non interactive.
+    @Test
+    public void logoutWithPostLogoutUriWithoutIdTokenHintAndSuppressedConfirmation() {
+        getTestingClient().testing().setSystemPropertyOnServer("oidc." + OIDCLoginProtocolFactory.SUPPRESS_LOGOUT_CONFIRMATION_SCREEN, "true");
+        getTestingClient().testing().reinitializeProviderFactoryWithSystemPropertiesScope(LoginProtocol.class.getName(), OIDCLoginProtocol.LOGIN_PROTOCOL, "oidc.");
 
+        OAuthClient.AccessTokenResponse tokenResponse = loginUser();
+        String sessionId = tokenResponse.getSessionState();
 
+        String logoutUrl = oauth.getLogoutUrl().postLogoutRedirectUri(APP_REDIRECT_URI).build();
+        driver.navigate().to(logoutUrl);
+
+        events.expectLogout(sessionId).detail(Details.REDIRECT_URI, APP_REDIRECT_URI).assertEvent();
+        Assert.assertThat(false, is(isSessionActive(sessionId)));
+        assertCurrentUrlEquals(APP_REDIRECT_URI);
+    }
+
+        
     private OAuthClient.AccessTokenResponse loginUser() {
         oauth.doLogin("test-user@localhost", "password");
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
