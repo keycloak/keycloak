@@ -67,8 +67,6 @@ public interface CertificateUtilsProvider {
 
     public List<String> getCRLDistributionPoints(X509Certificate cert) throws IOException;
 
-    public OCSPUtils getOCSPUtils();
-
     public X509Certificate createServicesTestCertificate(String dn,
                                              Date startDate,
                                              Date expiryDate,

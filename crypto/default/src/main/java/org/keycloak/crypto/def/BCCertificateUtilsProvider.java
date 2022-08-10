@@ -49,7 +49,6 @@ import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.keycloak.common.util.BouncyIntegration;
 import org.keycloak.common.crypto.CertificateUtilsProvider;
-import org.keycloak.common.crypto.OCSPUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -207,11 +206,6 @@ public class BCCertificateUtilsProvider implements CertificateUtilsProvider {
         Arrays.stream(policies.getPolicyInformation()).forEach(p -> policyList.add(p.getPolicyIdentifier().toString().toLowerCase()));
 
         return policyList;
-    }
-
-    @Override
-    public OCSPUtils getOCSPUtils() {
-        return new BCOCSPUtilsProvider();
     }
 
 

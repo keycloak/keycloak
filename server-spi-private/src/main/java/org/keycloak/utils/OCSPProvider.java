@@ -16,8 +16,9 @@
  *
  */
 
-package org.keycloak.common.crypto;
+package org.keycloak.utils;
 
+import java.io.IOException;
 import java.net.URI;
 import java.security.cert.CRLReason;
 import java.security.cert.CertPathValidatorException;
@@ -28,9 +29,17 @@ import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.apache.http.HttpHeaders;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ByteArrayEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.util.EntityUtils;
 import org.jboss.logging.Logger;
 import org.jboss.logging.Logger.Level;
-
+import org.keycloak.connections.httpclient.HttpClientProvider;
+import org.keycloak.models.KeycloakSession;
 
 
 /**
@@ -39,9 +48,9 @@ import org.jboss.logging.Logger.Level;
  * @since 10/29/2016
  */
 
-public abstract class OCSPUtils {
+public abstract class OCSPProvider {
 
-    private final static Logger logger = Logger.getLogger(OCSPUtils.class);
+    private final static Logger logger = Logger.getLogger(OCSPProvider.class);
 
     protected static int OCSP_CONNECT_TIMEOUT = 10000; // 10 sec
     protected static final int TIME_SKEW = 900000;
@@ -60,6 +69,7 @@ public abstract class OCSPUtils {
 
     /**
      * Requests certificate revocation status using OCSP.
+     * @param session Keycloak session
      * @param cert the certificate to be checked
      * @param issuerCertificate The issuer certificate
      * @param responderURI an address of OCSP responder. Overrides any OCSP responder URIs stored in certificate's AIA extension
@@ -67,7 +77,7 @@ public abstract class OCSPUtils {
      * @param responderCert a certificate that OCSP responder uses to sign OCSP responses
      * @return revocation status
      */
-    public OCSPRevocationStatus check( X509Certificate cert, X509Certificate issuerCertificate, URI responderURI, X509Certificate responderCert, Date date) throws CertPathValidatorException {
+    public OCSPRevocationStatus check(KeycloakSession session, X509Certificate cert, X509Certificate issuerCertificate, URI responderURI, X509Certificate responderCert, Date date) throws CertPathValidatorException {
         if (cert == null)
             throw new IllegalArgumentException("cert cannot be null");
         if (issuerCertificate == null)
@@ -75,17 +85,18 @@ public abstract class OCSPUtils {
         if (responderURI == null)
             throw new IllegalArgumentException("responderURI cannot be null");
 
-        return check( cert, issuerCertificate, Collections.singletonList(responderURI), responderCert, date);
+        return check(session, cert, issuerCertificate, Collections.singletonList(responderURI), responderCert, date);
     }
     /**
      * Requests certificate revocation status using OCSP. The OCSP responder URI
      * is obtained from the certificate's AIA extension.
+     * @param session Keycloak session
      * @param cert the certificate to be checked
      * @param issuerCertificate The issuer certificate
      * @param date
      * @return revocation status
      */
-    public OCSPRevocationStatus check( X509Certificate cert, X509Certificate issuerCertificate, Date date, X509Certificate responderCert) throws CertPathValidatorException {
+    public OCSPRevocationStatus check(KeycloakSession session, X509Certificate cert, X509Certificate issuerCertificate, Date date, X509Certificate responderCert) throws CertPathValidatorException {
         List<String> responderURIs = null;
         try {
             responderURIs = getResponderURIs(cert);
@@ -107,21 +118,56 @@ public abstract class OCSPUtils {
                 logger.log(Level.DEBUG, "Malformed responder URI {0}", value, ex);
             }
         }
-        return check( cert, issuerCertificate, Collections.unmodifiableList(uris), responderCert, date);
+        return check(session, cert, issuerCertificate, Collections.unmodifiableList(uris), responderCert, date);
     }
+
+    protected byte[] getEncodedOCSPResponse(KeycloakSession session, byte[] encodedOCSPReq, URI responderUri) throws IOException {
+
+        CloseableHttpClient httpClient = session.getProvider(HttpClientProvider.class).getHttpClient();
+        HttpPost post = new HttpPost(responderUri);
+        post.setHeader(HttpHeaders.CONTENT_TYPE, "application/ocsp-request");
+
+        final RequestConfig params = RequestConfig.custom()
+                .setConnectTimeout(OCSP_CONNECT_TIMEOUT)
+                .setSocketTimeout(OCSP_CONNECT_TIMEOUT)
+                .build();
+        post.setConfig(params);
+
+        post.setEntity(new ByteArrayEntity(encodedOCSPReq));
+
+        //Get Response
+        try (CloseableHttpResponse response = httpClient.execute(post)) {
+            try {
+                if (response.getStatusLine().getStatusCode() != 200) {
+                    String errorMessage = String.format("Connection error, unable to obtain certificate revocation status using OCSP responder \"%s\", code \"%d\"",
+                            responderUri.toString(), response.getStatusLine().getStatusCode());
+                    throw new IOException(errorMessage);
+                }
+
+                byte[] data = EntityUtils.toByteArray(response.getEntity());
+                return data;
+            } finally {
+                EntityUtils.consumeQuietly(response.getEntity());
+            }
+        }
+
+    }
+
     /**
      * Requests certificate revocation status using OCSP. The OCSP responder URI
      * is obtained from the certificate's AIA extension.
+     * @param session Keycloak session
      * @param cert the certificate to be checked
      * @param issuerCertificate The issuer certificate
      * @return revocation status
      */
-    public OCSPRevocationStatus check( X509Certificate cert, X509Certificate issuerCertificate) throws CertPathValidatorException {
-        return check( cert, issuerCertificate, null, null);
+    public OCSPRevocationStatus check(KeycloakSession session, X509Certificate cert, X509Certificate issuerCertificate) throws CertPathValidatorException {
+        return check(session, cert, issuerCertificate, null, null);
     }
 
     /**
      * Requests certificate revocation status using OCSP.
+     * @param session Keycloak session
      * @param cert the certificate to be checked
      * @param issuerCertificate the issuer certificate
      * @param responderURIs the OCSP responder URIs
@@ -130,7 +176,7 @@ public abstract class OCSPUtils {
      * @return a revocation status
      * @throws CertPathValidatorException
      */
-    protected abstract OCSPRevocationStatus check( X509Certificate cert,
+    protected abstract OCSPRevocationStatus check(KeycloakSession session, X509Certificate cert,
             X509Certificate issuerCertificate, List<URI> responderURIs, X509Certificate responderCert, Date date)
             throws CertPathValidatorException;
 

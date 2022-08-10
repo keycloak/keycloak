@@ -18,14 +18,6 @@
 
 package org.keycloak.crypto.def;
 
-import org.apache.http.HttpHeaders;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.ByteArrayEntity;
-import org.apache.http.util.EntityUtils;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERIA5String;
@@ -43,7 +35,16 @@ import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
-import org.bouncycastle.cert.ocsp.*;
+import org.bouncycastle.cert.ocsp.BasicOCSPResp;
+import org.bouncycastle.cert.ocsp.CertificateID;
+import org.bouncycastle.cert.ocsp.CertificateStatus;
+import org.bouncycastle.cert.ocsp.OCSPException;
+import org.bouncycastle.cert.ocsp.OCSPReq;
+import org.bouncycastle.cert.ocsp.OCSPReqBuilder;
+import org.bouncycastle.cert.ocsp.OCSPResp;
+import org.bouncycastle.cert.ocsp.RevokedStatus;
+import org.bouncycastle.cert.ocsp.SingleResp;
+import org.bouncycastle.cert.ocsp.UnknownStatus;
 import org.bouncycastle.cert.ocsp.jcajce.JcaCertificateID;
 import org.bouncycastle.operator.ContentVerifierProvider;
 import org.bouncycastle.operator.DigestCalculator;
@@ -52,7 +53,8 @@ import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaContentVerifierProviderBuilder;
 import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
 import org.keycloak.common.util.BouncyIntegration;
-import org.keycloak.common.crypto.OCSPUtils;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.utils.OCSPProvider;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -61,8 +63,21 @@ import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.SecureRandom;
-import java.security.cert.*;
-import java.util.*;
+import java.security.cert.CRLReason;
+import java.security.cert.CertPath;
+import java.security.cert.CertPathValidatorException;
+import java.security.cert.CertificateEncodingException;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateExpiredException;
+import java.security.cert.CertificateNotYetValidException;
+import java.security.cert.CertificateParsingException;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -73,40 +88,13 @@ import java.util.logging.Logger;
  * @since 10/29/2016
  */
 
-public class BCOCSPUtilsProvider extends OCSPUtils {
+public class BCOCSPProvider extends OCSPProvider {
 
-    private final static Logger logger = Logger.getLogger(BCOCSPUtilsProvider.class.getName());
+    private final static Logger logger = Logger.getLogger(BCOCSPProvider.class.getName());
 
-   protected OCSPResp getResponse( OCSPReq ocspReq, URI responderUri) throws IOException {
-    
-        CloseableHttpClient httpClient = HttpClients.createDefault();
-        HttpPost post = new HttpPost(responderUri);
-        post.setHeader(HttpHeaders.CONTENT_TYPE, "application/ocsp-request");
-
-        final RequestConfig params = RequestConfig.custom()
-           .setConnectTimeout(OCSP_CONNECT_TIMEOUT)
-           .setSocketTimeout(OCSP_CONNECT_TIMEOUT)
-           .build();
-        post.setConfig(params);
-
-        post.setEntity(new ByteArrayEntity(ocspReq.getEncoded()));
-
-        //Get Response
-        try (CloseableHttpResponse response = httpClient.execute(post)) {
-            try {
-                if (response.getStatusLine().getStatusCode() != 200) {
-                    String errorMessage = String.format("Connection error, unable to obtain certificate revocation status using OCSP responder \"%s\", code \"%d\"",
-                        responderUri.toString(), response.getStatusLine().getStatusCode());
-                    throw new IOException(errorMessage);
-                }
-
-                byte[] data = EntityUtils.toByteArray(response.getEntity());
-                return new OCSPResp(data);
-            } finally {
-                EntityUtils.consumeQuietly(response.getEntity());
-            }
-        }
-
+    protected OCSPResp getResponse(KeycloakSession session, OCSPReq ocspReq, URI responderUri) throws IOException {
+        byte[] data = getEncodedOCSPResponse(session, ocspReq.getEncoded(), responderUri);
+        return new OCSPResp(data);
     }
 
     /**
@@ -120,7 +108,7 @@ public class BCOCSPUtilsProvider extends OCSPUtils {
      * @throws CertPathValidatorException
      */
     @Override
-    protected OCSPRevocationStatus check( X509Certificate cert, X509Certificate issuerCertificate, List<URI> responderURIs, X509Certificate responderCert, Date date) throws CertPathValidatorException {
+    protected OCSPRevocationStatus check(KeycloakSession session, X509Certificate cert, X509Certificate issuerCertificate, List<URI> responderURIs, X509Certificate responderCert, Date date) throws CertPathValidatorException {
         if (responderURIs == null || responderURIs.size() == 0)
             throw new IllegalArgumentException("Need at least one responder");
         try {
@@ -145,7 +133,7 @@ public class BCOCSPUtilsProvider extends OCSPUtils {
             logger.log(Level.INFO, "OCSP Responder {0}", responderURI);
 
             try {
-                OCSPResp resp = getResponse(ocspReq, responderURI);
+                OCSPResp resp = getResponse(session, ocspReq, responderURI);
                 logger.log(Level.FINE, "Received a response from OCSP responder {0}, the response status is {1}", new Object[]{responderURI, resp.getStatus()});
                 switch (resp.getStatus()) {
                     case OCSPResp.SUCCESSFUL:
@@ -176,7 +164,8 @@ public class BCOCSPUtilsProvider extends OCSPUtils {
                 throw new CertPathValidatorException("OCSP check failed", e);
             }
         }
-        catch(CertificateNotYetValidException | CertificateExpiredException | OperatorCreationException | OCSPException | CertificateEncodingException | NoSuchAlgorithmException | NoSuchProviderException e) {
+        catch(CertificateNotYetValidException | CertificateExpiredException | OperatorCreationException | OCSPException |
+              CertificateEncodingException | NoSuchAlgorithmException | NoSuchProviderException e) {
             logger.log(Level.FINE, e.getMessage());
             throw new CertPathValidatorException(e.getMessage(), e);
         }
