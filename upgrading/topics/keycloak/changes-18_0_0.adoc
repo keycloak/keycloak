@@ -68,7 +68,7 @@ endif::[]
 
 With this configuration, you can still use the format with the `redirect_uri` parameter. Note the confirmation screen will be needed if the `id_token_hint` is omitted.
 
-WARNING: The backwards compatibility switch will be removed in some future version - probably Keycloak 21. You are encouraged to update your clients as soon as possible
+WARNING: The backwards compatibility switch will be removed in some future version - probably Keycloak 23. You are encouraged to update your clients as soon as possible
 as described above rather than rely on this switch.
 
 = Removal of the `upload-scripts` feature
