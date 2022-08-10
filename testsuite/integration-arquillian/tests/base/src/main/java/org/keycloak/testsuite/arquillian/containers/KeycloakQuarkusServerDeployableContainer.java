@@ -54,7 +54,7 @@ import org.keycloak.testsuite.arquillian.SuiteContext;
 public class KeycloakQuarkusServerDeployableContainer implements DeployableContainer<KeycloakQuarkusConfiguration> {
 
     private static final int DEFAULT_SHUTDOWN_TIMEOUT_SECONDS = 10;
-    private static final String AUTH_SERVER_QUARKUS_MAP_STORAGE_PROFILE = "auth.server.quarkus.mapStorage.profile";
+    private static final String AUTH_SERVER_QUARKUS_MAP_STORAGE_PROFILE = "auth.server.quarkus.mapStorage.profile.config";
 
     private static final Logger log = Logger.getLogger(KeycloakQuarkusServerDeployableContainer.class);
 
@@ -247,6 +247,14 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
         String mapStorageProfile = System.getProperty(AUTH_SERVER_QUARKUS_MAP_STORAGE_PROFILE);
 
         if (mapStorageProfile != null) {
+            // We need to drop optimized flag because --storage is build option therefore startup requires re-augmentation
+            commands.removeIf("--optimized"::equals);
+
+            // As config is re-augmented on startup we need to also add --http-relative-path as ant build from
+            // integration-arquillian/servers/auth-server/quarkus/ant/configure.xml is replaced by build invoked on
+            // startup when we add new build option below
+            commands.add("--http-relative-path=/auth");
+
             switch (mapStorageProfile) {
                 case "chm":
                     commands.add("--storage=" + mapStorageProfile);
@@ -256,6 +264,7 @@ public class KeycloakQuarkusServerDeployableContainer implements DeployableConta
                     commands.add("--db-username=" + System.getProperty("keycloak.map.storage.connectionsJpa.url"));
                     commands.add("--db-password=" + System.getProperty("keycloak.map.storage.connectionsJpa.user"));
                     commands.add("--db-url=" + System.getProperty("keycloak.map.storage.connectionsJpa.password"));
+                    break;
                 case "hotrod":
                     commands.add("--storage=" + mapStorageProfile);
                     // TODO: URL / username / password
