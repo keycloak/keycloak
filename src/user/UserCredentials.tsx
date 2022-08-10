@@ -7,6 +7,8 @@ import {
 } from "react";
 import {
   AlertVariant,
+  PageSection,
+  PageSectionVariants,
   Button,
   ButtonVariant,
   Divider,
@@ -371,118 +373,122 @@ export const UserCredentials = ({ user }: UserCredentialsProps) => {
               {t("credentialResetBtn")}
             </Button>
           )}
-          <TableComposable
-            aria-label="userCredentials-table"
-            variant={"compact"}
-          >
-            <Thead>
-              <Tr className="kc-table-header">
-                <Th>
-                  <HelpItem
-                    helpText="users:userCredentialsHelpText"
-                    fieldLabelId="users:userCredentialsHelpTextLabel"
-                  />
-                </Th>
-                <Th />
-                <Th>{t("type")}</Th>
-                <Th>{t("userLabel")}</Th>
-                <Th>{t("data")}</Th>
-                <Th />
-                <Th />
-              </Tr>
-            </Thead>
-            <Tbody
-              ref={bodyRef}
-              onDragOver={onDragOver}
-              onDrop={onDragOver}
-              onDragLeave={onDragLeave}
+          <PageSection variant={PageSectionVariants.light}>
+            <TableComposable
+              aria-label="userCredentials-table"
+              variant={"compact"}
             >
-              {groupedUserCredentials.map((groupedCredential, rowIndex) => (
-                <Fragment key={groupedCredential.key}>
-                  <Tr
-                    id={groupedCredential.value.map(({ id }) => id).toString()}
-                    draggable={groupedUserCredentials.length > 1}
-                    onDrop={onDrop}
-                    onDragEnd={onDragEnd}
-                    onDragStart={onDragStart}
-                  >
-                    <Td
-                      className={
-                        groupedUserCredentials.length === 1 ? "one-row" : ""
-                      }
-                      draggableRow={{
-                        id: `draggable-row-${groupedCredential.value.map(
-                          ({ id }) => id
-                        )}`,
-                      }}
+              <Thead>
+                <Tr className="kc-table-header">
+                  <Th>
+                    <HelpItem
+                      helpText="users:userCredentialsHelpText"
+                      fieldLabelId="users:userCredentialsHelpTextLabel"
                     />
-                    {groupedCredential.value.length > 1 ? (
+                  </Th>
+                  <Th />
+                  <Th>{t("type")}</Th>
+                  <Th>{t("userLabel")}</Th>
+                  <Th>{t("data")}</Th>
+                  <Th />
+                  <Th />
+                </Tr>
+              </Thead>
+              <Tbody
+                ref={bodyRef}
+                onDragOver={onDragOver}
+                onDrop={onDragOver}
+                onDragLeave={onDragLeave}
+              >
+                {groupedUserCredentials.map((groupedCredential, rowIndex) => (
+                  <Fragment key={groupedCredential.key}>
+                    <Tr
+                      id={groupedCredential.value
+                        .map(({ id }) => id)
+                        .toString()}
+                      draggable={groupedUserCredentials.length > 1}
+                      onDrop={onDrop}
+                      onDragEnd={onDragEnd}
+                      onDragStart={onDragStart}
+                    >
                       <Td
-                        className="kc-expandRow-btn"
-                        expand={{
-                          rowIndex,
-                          isExpanded: groupedCredential.isExpanded,
-                          onToggle: (_, rowIndex) => {
-                            const rows = groupedUserCredentials.map(
-                              (credential, index) =>
-                                index === rowIndex
-                                  ? {
-                                      ...credential,
-                                      isExpanded: !credential.isExpanded,
-                                    }
-                                  : credential
-                            );
-                            setGroupedUserCredentials(rows);
-                          },
+                        className={
+                          groupedUserCredentials.length === 1 ? "one-row" : ""
+                        }
+                        draggableRow={{
+                          id: `draggable-row-${groupedCredential.value.map(
+                            ({ id }) => id
+                          )}`,
                         }}
                       />
-                    ) : (
-                      <Td />
-                    )}
-                    <Td
-                      dataLabel={`columns-${groupedCredential.key}`}
-                      className="kc-notExpandableRow-credentialType"
-                      data-testid="credentialType"
-                    >
-                      {toUpperCase(groupedCredential.key)}
-                    </Td>
-                    {groupedCredential.value.length <= 1 &&
-                      groupedCredential.value.map((credential) => (
-                        <Row key={credential.id} credential={credential} />
-                      ))}
-                  </Tr>
-                  {groupedCredential.isExpanded &&
-                    groupedCredential.value.map((credential) => (
-                      <Tr
-                        key={credential.id}
-                        id={credential.id}
-                        draggable
-                        onDrop={onDrop}
-                        onDragEnd={onDragEnd}
-                        onDragStart={onDragStart}
-                      >
-                        <Td />
+                      {groupedCredential.value.length > 1 ? (
                         <Td
-                          className="kc-draggable-dropdown-type-icon"
-                          draggableRow={{
-                            id: `draggable-row-${groupedCredential.value.map(
-                              ({ id }) => id
-                            )}`,
+                          className="kc-expandRow-btn"
+                          expand={{
+                            rowIndex,
+                            isExpanded: groupedCredential.isExpanded,
+                            onToggle: (_, rowIndex) => {
+                              const rows = groupedUserCredentials.map(
+                                (credential, index) =>
+                                  index === rowIndex
+                                    ? {
+                                        ...credential,
+                                        isExpanded: !credential.isExpanded,
+                                      }
+                                    : credential
+                              );
+                              setGroupedUserCredentials(rows);
+                            },
                           }}
                         />
-                        <Td
-                          dataLabel={`child-columns-${credential.id}`}
-                          className="kc-expandableRow-credentialType"
+                      ) : (
+                        <Td />
+                      )}
+                      <Td
+                        dataLabel={`columns-${groupedCredential.key}`}
+                        className="kc-notExpandableRow-credentialType"
+                        data-testid="credentialType"
+                      >
+                        {toUpperCase(groupedCredential.key)}
+                      </Td>
+                      {groupedCredential.value.length <= 1 &&
+                        groupedCredential.value.map((credential) => (
+                          <Row key={credential.id} credential={credential} />
+                        ))}
+                    </Tr>
+                    {groupedCredential.isExpanded &&
+                      groupedCredential.value.map((credential) => (
+                        <Tr
+                          key={credential.id}
+                          id={credential.id}
+                          draggable
+                          onDrop={onDrop}
+                          onDragEnd={onDragEnd}
+                          onDragStart={onDragStart}
                         >
-                          {toUpperCase(credential.type!)}
-                        </Td>
-                        <Row credential={credential} />
-                      </Tr>
-                    ))}
-                </Fragment>
-              ))}
-            </Tbody>
-          </TableComposable>
+                          <Td />
+                          <Td
+                            className="kc-draggable-dropdown-type-icon"
+                            draggableRow={{
+                              id: `draggable-row-${groupedCredential.value.map(
+                                ({ id }) => id
+                              )}`,
+                            }}
+                          />
+                          <Td
+                            dataLabel={`child-columns-${credential.id}`}
+                            className="kc-expandableRow-credentialType"
+                          >
+                            {toUpperCase(credential.type!)}
+                          </Td>
+                          <Row credential={credential} />
+                        </Tr>
+                      ))}
+                  </Fragment>
+                ))}
+              </Tbody>
+            </TableComposable>
+          </PageSection>
         </>
       ) : (
         <ListEmptyState
