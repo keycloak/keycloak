@@ -20,7 +20,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 import static org.keycloak.common.Profile.Feature.AUTHORIZATION;
 
 import javax.security.cert.X509Certificate;
@@ -85,13 +84,13 @@ import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.RolesBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testsuite.util.WaitUtils;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -338,6 +337,76 @@ public class PolicyEnforcerTest extends AbstractKeycloakTest {
         httpFacade = createHttpFacade("/api/resource/public", token);
         context = policyEnforcer.enforce(httpFacade);
         assertTrue(context.isGranted());
+    }
+
+    @Test
+    public void testDisabledPathNoCache() {
+        KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(getAdapterConfiguration("enforcer-disabled-path-nocache.json"));
+        PolicyEnforcer policyEnforcer = deployment.getPolicyEnforcer();
+
+        OIDCHttpFacade httpFacade = createHttpFacade("/api/resource/public");
+        AuthorizationContext context = policyEnforcer.enforce(httpFacade);
+        assertTrue(context.isGranted());
+
+        ClientResource clientResource = getClientResource(RESOURCE_SERVER_CLIENT_ID);
+        ResourceRepresentation resource = clientResource.authorization().resources()
+                .findByName("Root").get(0);
+
+        clientResource.authorization().resources().resource(resource.getId()).remove();
+
+        // first request caches the path and the entry is invalidated due to the lifespan
+        httpFacade = createHttpFacade("/api/resource/all-public");
+        context = policyEnforcer.enforce(httpFacade);
+        assertTrue(context.isGranted());
+
+        WaitUtils.pause(1000);
+
+        // second request can not fail because entry should not be invalidated
+        httpFacade = createHttpFacade("/api/resource/all-public");
+        context = policyEnforcer.enforce(httpFacade);
+        assertTrue(context.isGranted());
+    }
+
+    @Test
+    public void testLazyLoadedPathIsCached() {
+        ClientResource clientResource = getClientResource(RESOURCE_SERVER_CLIENT_ID);
+        createResource(clientResource, "Static Test Resource", "/api/any-resource/*");
+
+        ResourcePermissionRepresentation permission = new ResourcePermissionRepresentation();
+
+        permission.setName("Any Resource Permission");
+        permission.addResource("Static Test Resource");
+        permission.addPolicy("Always Grant Policy");
+
+        clientResource.authorization().permissions().resource().create(permission);
+
+        KeycloakDeployment deployment = KeycloakDeploymentBuilder.build(getAdapterConfiguration("enforcer-disabled-path-nocache.json"));
+        PolicyEnforcer policyEnforcer = deployment.getPolicyEnforcer();
+
+        oauth.realm(REALM_NAME);
+        oauth.clientId("public-client-test");
+        oauth.doLogin("marta", "password");
+
+        String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+        OAuthClient.AccessTokenResponse response = oauth.doAccessTokenRequest(code, null);
+        String token = response.getAccessToken();
+
+        OIDCHttpFacade httpFacade = createHttpFacade("/api/any-resource/test", token);
+        AuthorizationContext context = policyEnforcer.enforce(httpFacade);
+        assertTrue(context.isGranted());
+
+        httpFacade = createHttpFacade("/api/any-resource/test", token);
+        context = policyEnforcer.enforce(httpFacade);
+        assertTrue(context.isGranted());
+
+        ResourceRepresentation resource = clientResource.authorization().resources()
+                .findByName("Static Test Resource").get(0);
+
+        clientResource.authorization().resources().resource(resource.getId()).remove();
+
+        httpFacade = createHttpFacade("/api/any-resource/test", token);
+        context = policyEnforcer.enforce(httpFacade);
+        assertFalse(context.isGranted());
     }
 
     @Test
