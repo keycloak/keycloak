@@ -42,6 +42,10 @@ metadata:
           }
         }
       ]
+  labels:
+    operatorframework.io/arch.amd64: supported
+    operatorframework.io/arch.arm64: supported
+    operatorframework.io/arch.ppc64le: supported
   name: keycloak-operator.vREPLACE_ME_VERSION
   namespace: placeholder
 spec:
