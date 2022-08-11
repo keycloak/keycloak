@@ -55,3 +55,4 @@ org.keycloak.authentication.authenticators.directgrant.ValidateAesUsername
 org.keycloak.authentication.authenticators.directgrant.ValidatePhone
 org.keycloak.authentication.authenticators.directgrant.ValidateAesIdcard
 org.keycloak.authentication.authenticators.directgrant.ValidateUsernameOrIdcard
+org.keycloak.authentication.authenticators.directgrant.ValidateAesPhone
