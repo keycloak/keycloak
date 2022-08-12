@@ -17,6 +17,14 @@
 
 package org.keycloak.broker.provider.util;
 
+import org.keycloak.authorization.policy.evaluation.Realm;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.RealmModel;
+
+import java.nio.BufferUnderflowException;
+import java.nio.ByteBuffer;
+import java.util.Base64;
+import java.util.UUID;
 import java.util.regex.Pattern;
 
 /**
@@ -30,19 +38,47 @@ public class IdentityBrokerState {
     private static final Pattern DOT = Pattern.compile("\\.");
 
 
-    public static IdentityBrokerState decoded(String state, String clientId, String tabId) {
-        String encodedState = state + "." + tabId + "." + clientId;
+    public static IdentityBrokerState decoded(String state, String clientId, String clientClientId, String tabId) {
 
-        return new IdentityBrokerState(state, clientId, tabId, encodedState);
+        String clientIdEncoded = clientClientId; // Default use the client.clientId
+        try {
+            UUID clientDbUuid = UUID.fromString(clientId);
+            ByteBuffer bb = ByteBuffer.wrap(new byte[16]);
+            bb.putLong(clientDbUuid.getMostSignificantBits());
+            bb.putLong(clientDbUuid.getLeastSignificantBits());
+            byte[] clientUuidBytes = bb.array();
+            clientIdEncoded = Base64.getEncoder().encodeToString(clientUuidBytes).replace("=", "");
+        } catch (IllegalArgumentException e) {
+            // Ignore...the clientid in the database was not in UUID format. Just use as is.
+        }
+        String encodedState = state + "." + tabId + "." + clientIdEncoded;
+
+        return new IdentityBrokerState(state, clientClientId, tabId, encodedState);
     }
 
 
-    public static IdentityBrokerState encoded(String encodedState) {
+    public static IdentityBrokerState encoded(String encodedState, RealmModel realmModel) {
         String[] decoded = DOT.split(encodedState, 3);
 
         String state =(decoded.length > 0) ? decoded[0] : null;
         String tabId = (decoded.length > 1) ? decoded[1] : null;
         String clientId = (decoded.length > 2) ? decoded[2] : null;
+
+        try {
+            byte[] decodedClientId = Base64.getDecoder().decode(clientId);
+            ByteBuffer bb = ByteBuffer.wrap(decodedClientId);
+            long first = bb.getLong();
+            long second = bb.getLong();
+            UUID clientDbUuid = new UUID(first, second);
+            String clientIdInDb = clientDbUuid.toString();
+            ClientModel clientModel = realmModel.getClientById(clientIdInDb);
+            if (clientModel != null) {
+                clientId = clientModel.getClientId();
+            }
+        } catch (IllegalArgumentException | BufferUnderflowException e) {
+            // Ignore...the clientid was not in encoded uuid format. Just use as it is.
+        }
+
 
         return new IdentityBrokerState(state, clientId, tabId, encodedState);
     }

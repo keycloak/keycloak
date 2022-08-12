@@ -1022,7 +1022,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
 
     @Override
     public AuthenticationSessionModel getAndVerifyAuthenticationSession(String encodedCode) {
-        IdentityBrokerState state = IdentityBrokerState.encoded(encodedCode);
+        IdentityBrokerState state = IdentityBrokerState.encoded(encodedCode, realmModel);
         String code = state.getDecodedState();
         String clientId = state.getClientId();
         String tabId = state.getTabId();
@@ -1113,7 +1113,7 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
         if (clientSessionCode != null) {
             authSession = clientSessionCode.getClientSession();
             String relayState = clientSessionCode.getOrGenerateCode();
-            encodedState = IdentityBrokerState.decoded(relayState, authSession.getClient().getClientId(), authSession.getTabId());
+            encodedState = IdentityBrokerState.decoded(relayState, authSession.getClient().getId(), authSession.getClient().getClientId(), authSession.getTabId());
         }
 
         return new AuthenticationRequest(this.session, this.realmModel, authSession, this.request, this.session.getContext().getUri(), encodedState, getRedirectUri(providerId));
