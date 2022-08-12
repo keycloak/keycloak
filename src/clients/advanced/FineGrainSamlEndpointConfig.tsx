@@ -5,6 +5,7 @@ import { ActionGroup, Button, FormGroup } from "@patternfly/react-core";
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { KeycloakTextInput } from "../../components/keycloak-text-input/KeycloakTextInput";
+import { ApplicationUrls } from "./ApplicationUrls";
 
 type FineGrainSamlEndpointConfigProps = {
   control: Control<Record<string, any>>;
@@ -20,6 +21,7 @@ export const FineGrainSamlEndpointConfig = ({
   const { t } = useTranslation("clients");
   return (
     <FormAccess role="manage-realm" isHorizontal>
+      <ApplicationUrls />
       <FormGroup
         label={t("assertionConsumerServicePostBindingURL")}
         fieldId="assertionConsumerServicePostBindingURL"
