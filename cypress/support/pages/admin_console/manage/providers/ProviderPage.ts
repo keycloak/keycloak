@@ -361,7 +361,12 @@ export default class ProviderPage {
 
       case this.roleLdapMapper:
         cy.findByTestId(this.ldapRolesDnInput).clear().type(ldapDnValue);
-        cy.get(this.clientIdSelect).click();
+        cy.get(".pf-c-form__group")
+          .contains("Client ID")
+          .parent()
+          .parent()
+          .find("input")
+          .click();
         cy.get("button").contains(this.clientName).click({ force: true });
         break;
 

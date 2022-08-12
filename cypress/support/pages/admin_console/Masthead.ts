@@ -64,7 +64,9 @@ export default class Masthead extends CommonElements {
   }
 
   closeAllAlertMessages() {
-    cy.get(this.closeAlertMessageBtn).click({ force: true, multiple: true });
+    cy.get(this.closeAlertMessageBtn).each(() => {
+      cy.get(this.closeAlertMessageBtn).click({ force: true, multiple: true });
+    });
     return this;
   }
 

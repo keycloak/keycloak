@@ -76,9 +76,16 @@ describe("Clients SAML tests", () => {
       cy.findByTestId("keysTab").click();
     });
 
-    it("doesn't disable when no", () => {
+    it("should doesn't disable signature when cancel", () => {
       cy.findByTestId("clientSignature").click({ force: true });
 
+      cy.findByTestId("generate").click();
+      masthead.checkNotificationMessage(
+        "New key pair and certificate generated successfully"
+      );
+      modalUtils.confirmModal();
+
+      cy.findByTestId("clientSignature").click({ force: true });
       modalUtils
         .checkModalTitle('Disable "Client signature required"')
         .cancelModal();
@@ -86,7 +93,8 @@ describe("Clients SAML tests", () => {
       cy.findAllByTestId("certificate").should("have.length", 1);
     });
 
-    it("disable client signature", () => {
+    // https://github.com/keycloak/keycloak-admin-ui/issues/3092
+    it.skip("should disable client signature", () => {
       cy.intercept(
         "admin/realms/master/clients/*/certificates/saml.signing"
       ).as("load");

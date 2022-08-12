@@ -141,6 +141,7 @@ describe("User Federation LDAP tests", () => {
     providersPage.save(provider);
     masthead.checkNotificationMessage(createdSuccessMessage);
     sidebarPage.goToUserFederation();
+    masthead.closeAllAlertMessages();
   });
 
   it("Should fail updating advanced settings", () => {
@@ -151,6 +152,7 @@ describe("User Federation LDAP tests", () => {
     providersPage.save(provider);
     masthead.checkNotificationMessage(nonWritableFailMessage);
     sidebarPage.goToUserFederation();
+    masthead.closeAllAlertMessages();
   });
 
   it("Should update advanced settings", () => {
@@ -173,6 +175,7 @@ describe("User Federation LDAP tests", () => {
     providersPage.verifyToggle(providersPage.ldapv3PwSwitch, "on");
     providersPage.verifyToggle(providersPage.validatePwPolicySwitch, "on");
     providersPage.verifyToggle(providersPage.trustEmailSwitch, "on");
+    masthead.closeAllAlertMessages();
   });
 
   it("Should set cache policy to evict_daily", () => {
@@ -188,6 +191,7 @@ describe("User Federation LDAP tests", () => {
 
     expect(cy.contains(dailyPolicy).should("exist"));
     expect(cy.contains(defaultPolicy).should("not.exist"));
+    masthead.closeAllAlertMessages();
   });
 
   it("Should set cache policy to default", () => {
@@ -201,6 +205,7 @@ describe("User Federation LDAP tests", () => {
 
     expect(cy.contains(defaultPolicy).should("exist"));
     expect(cy.contains(dailyPolicy).should("not.exist"));
+    masthead.closeAllAlertMessages();
   });
 
   it("Should set cache policy to evict_weekly", () => {
@@ -217,6 +222,7 @@ describe("User Federation LDAP tests", () => {
 
     expect(cy.contains(weeklyPolicy).should("exist"));
     expect(cy.contains(defaultPolicy).should("not.exist"));
+    masthead.closeAllAlertMessages();
   });
 
   it("Update connection and authentication settings and save", () => {
@@ -253,6 +259,7 @@ describe("User Federation LDAP tests", () => {
     providersPage.verifyToggle(providersPage.enableStartTls, "on");
     providersPage.verifyToggle(providersPage.connectionPooling, "on");
     sidebarPage.goToUserFederation();
+    masthead.closeAllAlertMessages();
   });
 
   it("Should fail connection and authentication tests", () => {
@@ -265,6 +272,7 @@ describe("User Federation LDAP tests", () => {
     masthead.checkNotificationMessage(ldapTestFailMsg);
 
     sidebarPage.goToUserFederation();
+    masthead.closeAllAlertMessages();
   });
 
   it("Should make changes and pass connection and authentication tests", () => {
@@ -290,6 +298,7 @@ describe("User Federation LDAP tests", () => {
     masthead.checkNotificationMessage(ldapTestSuccessMsg);
 
     sidebarPage.goToUserFederation();
+    masthead.closeAllAlertMessages();
   });
 
   it("Should update Kerberos integration settings and save", () => {
@@ -329,6 +338,7 @@ describe("User Federation LDAP tests", () => {
     providersPage.verifyToggle(providersPage.useKerberosForPwAuth, "on");
 
     sidebarPage.goToUserFederation();
+    masthead.closeAllAlertMessages();
   });
 
   it("Should update Synchronization settings and save", () => {
@@ -367,6 +377,7 @@ describe("User Federation LDAP tests", () => {
     providersPage.verifyToggle(providersPage.periodicUsersSync, "on");
     providersPage.verifyToggle(providersPage.importUsers, "on");
     sidebarPage.goToUserFederation();
+    masthead.closeAllAlertMessages();
   });
 
   it("Should update LDAP searching and updating settings and save", () => {
@@ -459,6 +470,7 @@ describe("User Federation LDAP tests", () => {
       providersPage.ldapEditModeInput,
       editModeUnsynced
     );
+    masthead.closeAllAlertMessages();
   });
 
   it("Should update display name", () => {
@@ -472,6 +484,7 @@ describe("User Federation LDAP tests", () => {
     providersPage.clickExistingCard(updatedLdapName);
 
     sidebarPage.goToUserFederation();
+    masthead.closeAllAlertMessages();
   });
 
   it("Should update existing LDAP provider and cancel", () => {
@@ -504,6 +517,7 @@ describe("User Federation LDAP tests", () => {
 
     expect(cy.contains(lifespanPolicy).should("exist"));
     expect(cy.contains(weeklyPolicy).should("not.exist"));
+    masthead.closeAllAlertMessages();
   });
 
   it("Should set cache policy to no_cache", () => {
@@ -527,6 +541,7 @@ describe("User Federation LDAP tests", () => {
     masthead.checkNotificationMessage(savedSuccessMessage);
     sidebarPage.goToUserFederation();
     expect(cy.contains("Disabled").should("exist"));
+    masthead.closeAllAlertMessages();
   });
 
   it("Should enable a previously-disabled LDAP provider", () => {
@@ -536,6 +551,7 @@ describe("User Federation LDAP tests", () => {
     masthead.checkNotificationMessage(savedSuccessMessage);
     sidebarPage.goToUserFederation();
     expect(cy.contains("Enabled").should("exist"));
+    masthead.closeAllAlertMessages();
   });
 
   it("Should create new LDAP provider using New Provider dropdown", () => {
@@ -560,6 +576,7 @@ describe("User Federation LDAP tests", () => {
     providersPage.save(provider);
     masthead.checkNotificationMessage(createdSuccessMessage);
     sidebarPage.goToUserFederation();
+    masthead.closeAllAlertMessages();
   });
 
   it("Should delete LDAP provider from card view using card menu", () => {

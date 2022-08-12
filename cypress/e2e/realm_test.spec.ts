@@ -62,6 +62,7 @@ describe("Realm tests", () => {
     createRealmPage.fillRealmName(testRealmName).createRealm();
 
     masthead.checkNotificationMessage("Realm created");
+    masthead.closeAllAlertMessages();
   });
 
   it("should create Test Disabled realm", () => {
@@ -74,6 +75,7 @@ describe("Realm tests", () => {
   });
 
   it("Should cancel deleting Test Disabled realm", () => {
+    masthead.closeAllAlertMessages();
     sidebarPage.goToRealm("Test Disabled").goToRealmSettings();
     realmSettings.clickActionMenu();
     cy.findByText("Delete").click();

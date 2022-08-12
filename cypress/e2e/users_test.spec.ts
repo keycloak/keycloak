@@ -171,6 +171,7 @@ describe("User creation", () => {
   });
 
   it("Add user to groups test", () => {
+    masthead.closeAllAlertMessages();
     // Go to user groups
     listingPage.searchItem(itemId).itemExist(itemId);
     listingPage.goToItemDetails(itemId);
@@ -250,10 +251,13 @@ describe("User creation", () => {
       .clickCloseDataDialogBtn();
   });
 
-  it.skip("Delete credential", () => {
+  it("Delete credential", () => {
     listingPage.goToItemDetails(itemIdWithCred);
     credentialsPage.goToCredentialsTab();
+    masthead.closeAllAlertMessages();
+    cy.wait(2000);
     listingPage.deleteItem(itemCredential);
+
     modalUtils.checkModalTitle("Delete credentials?").confirmModal();
 
     masthead.checkNotificationMessage(
