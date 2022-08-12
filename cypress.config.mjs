@@ -16,9 +16,11 @@ export default defineConfig({
   videoCompression: false,
   numTestsKeptInMemory: 30,
   videoUploadOnPasses: false,
+
   retries: {
     runMode: 3,
   },
+
   e2e: {
     setupNodeEvents(on) {
       on(
@@ -47,5 +49,12 @@ export default defineConfig({
     baseUrl: "http://localhost:8080",
     slowTestThreshold: 30000,
     specPattern: "cypress/e2e/**/*.{js,jsx,ts,tsx}",
+  },
+
+  component: {
+    devServer: {
+      framework: "react",
+      bundler: "vite",
+    },
   },
 });
