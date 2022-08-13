@@ -41,15 +41,20 @@ public class IdentityBrokerState {
     public static IdentityBrokerState decoded(String state, String clientId, String clientClientId, String tabId) {
 
         String clientIdEncoded = clientClientId; // Default use the client.clientId
-        try {
-            UUID clientDbUuid = UUID.fromString(clientId);
-            ByteBuffer bb = ByteBuffer.wrap(new byte[16]);
-            bb.putLong(clientDbUuid.getMostSignificantBits());
-            bb.putLong(clientDbUuid.getLeastSignificantBits());
-            byte[] clientUuidBytes = bb.array();
-            clientIdEncoded = Base64.getEncoder().encodeToString(clientUuidBytes).replace("=", "");
-        } catch (IllegalArgumentException e) {
-            // Ignore...the clientid in the database was not in UUID format. Just use as is.
+        if (clientId != null) {
+            // According to (http://docs.oasis-open.org/security/saml/v2.0/saml-bindings-2.0-os.pdf) there is a limit on the relaystate of 80 bytes.
+            // in order to try to adher to the SAML specification we use an encoded value of the client.id (probably UUID) instead of the with
+            // probability bigger client.clientId. If the client.id is not in UUID format we just use the client.clientid as is
+            try {
+                UUID clientDbUuid = UUID.fromString(clientId);
+                ByteBuffer bb = ByteBuffer.wrap(new byte[16]);
+                bb.putLong(clientDbUuid.getMostSignificantBits());
+                bb.putLong(clientDbUuid.getLeastSignificantBits());
+                byte[] clientUuidBytes = bb.array();
+                clientIdEncoded = Base64.getEncoder().encodeToString(clientUuidBytes).replace("=", "");
+            } catch (IllegalArgumentException e) {
+                // Ignore...the clientid in the database was not in UUID format. Just use as is.
+            }
         }
         String encodedState = state + "." + tabId + "." + clientIdEncoded;
 
@@ -64,21 +69,24 @@ public class IdentityBrokerState {
         String tabId = (decoded.length > 1) ? decoded[1] : null;
         String clientId = (decoded.length > 2) ? decoded[2] : null;
 
-        try {
-            byte[] decodedClientId = Base64.getDecoder().decode(clientId);
-            ByteBuffer bb = ByteBuffer.wrap(decodedClientId);
-            long first = bb.getLong();
-            long second = bb.getLong();
-            UUID clientDbUuid = new UUID(first, second);
-            String clientIdInDb = clientDbUuid.toString();
-            ClientModel clientModel = realmModel.getClientById(clientIdInDb);
-            if (clientModel != null) {
-                clientId = clientModel.getClientId();
+        if (clientId != null) {
+            try {
+                // If this decoding succeeds it was the result of the encoding of a UUID client.id - if it fails we interpret it as client.clientId
+                // in accordance to the method decoded above
+                byte[] decodedClientId = Base64.getDecoder().decode(clientId);
+                ByteBuffer bb = ByteBuffer.wrap(decodedClientId);
+                long first = bb.getLong();
+                long second = bb.getLong();
+                UUID clientDbUuid = new UUID(first, second);
+                String clientIdInDb = clientDbUuid.toString();
+                ClientModel clientModel = realmModel.getClientById(clientIdInDb);
+                if (clientModel != null) {
+                    clientId = clientModel.getClientId();
+                }
+            } catch (IllegalArgumentException | BufferUnderflowException e) {
+                // Ignore...the clientid was not in encoded uuid format. Just use as it is.
             }
-        } catch (IllegalArgumentException | BufferUnderflowException e) {
-            // Ignore...the clientid was not in encoded uuid format. Just use as it is.
         }
-
 
         return new IdentityBrokerState(state, clientId, tabId, encodedState);
     }

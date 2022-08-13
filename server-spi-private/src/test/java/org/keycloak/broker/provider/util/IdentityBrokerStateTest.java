@@ -49,7 +49,6 @@ public class IdentityBrokerStateTest {
     }
 
     @Test
-    @Ignore
     public void testEncodedWithClientIdUUid() {
         // Given
         String encoded = "gNrGamIDGKpKSI9yOrcFzYTKoFGH779_WNCacAelkhk.vpISZLVDAc0.7UlEjBTPRx6oOgY9DcO8jA";
@@ -68,7 +67,6 @@ public class IdentityBrokerStateTest {
     }
 
     @Test
-    @Ignore
     public void testEncodedWithClientIdNotUUid() {
         // Given
         String encoded = "gNrGamIDGKpKSI9yOrcFzYTKoFGH779_WNCacAelkhk.vpISZLVDAc0.http://i.am.an.url";
