@@ -99,11 +99,12 @@ export const App = ({ keycloak, adminClient }: AdminClientProps) => {
             <Switch>
               {routes.map((route, i) => (
                 <Route
-                  exact={route.matchOptions?.exact ?? true}
                   key={i}
                   path={route.path}
-                  component={() => <SecuredRoute route={route} />}
-                />
+                  exact={route.matchOptions?.exact ?? true}
+                >
+                  <SecuredRoute route={route} />
+                </Route>
               ))}
             </Switch>
           </ServerInfoProvider>
