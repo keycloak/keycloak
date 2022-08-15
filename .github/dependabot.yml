@@ -24,16 +24,6 @@ updates:
       - dependency-name: bootstrap
         update-types: ["version-update:semver-major"]
   - package-ecosystem: npm
-    directory: /themes/src/main/resources/theme/keycloak.v2/account/src
-    schedule:
-      interval: weekly
-      day: saturday
-    open-pull-requests-limit: 999
-    rebase-strategy: disabled
-    labels:
-      - area/dependencies
-      - area/account/ui
-  - package-ecosystem: npm
     directory: /adapters/oidc/js
     schedule:
       interval: weekly
