@@ -29,6 +29,8 @@ import { GroupRoleMapping } from "./GroupRoleMapping";
 import helpUrls from "../help-urls";
 import { PermissionsTab } from "../components/permission-tab/PermissionTab";
 import { useAccess } from "../context/access/Access";
+import { GroupTree } from "./components/GroupTree";
+import { ViewType } from "./components/GroupToolbar";
 
 import "./GroupsSection.css";
 
@@ -42,6 +44,7 @@ export default function GroupsSection() {
   const { realm } = useRealm();
 
   const [rename, setRename] = useState<string>();
+  const [viewType, setViewType] = useState<ViewType>(ViewType.Table);
 
   const history = useHistory();
   const location = useLocation();
@@ -204,7 +207,16 @@ export default function GroupsSection() {
             )}
           </Tabs>
         )}
-        {subGroups.length === 0 && <GroupTable />}
+        {subGroups.length === 0 && (
+          <>
+            {viewType === ViewType.Table && (
+              <GroupTable toggleView={setViewType} />
+            )}
+            {viewType === ViewType.Tree && (
+              <GroupTree toggleView={setViewType} />
+            )}
+          </>
+        )}
       </PageSection>
     </>
   );

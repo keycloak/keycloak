@@ -1,40 +1,35 @@
 import { useState } from "react";
 import { Link, useHistory, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import {
-  AlertVariant,
-  Button,
-  ButtonVariant,
-  Dropdown,
-  DropdownItem,
-  KebabToggle,
-  ToolbarItem,
-} from "@patternfly/react-core";
 import { cellWidth } from "@patternfly/react-table";
 
 import type GroupRepresentation from "@keycloak/keycloak-admin-client/lib/defs/groupRepresentation";
 import { useAdminClient } from "../context/auth/AdminClient";
-import { useAlerts } from "../components/alert/Alerts";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { GroupsModal } from "./GroupsModal";
 import { getLastId } from "./groupIdUtils";
-import { GroupPickerDialog } from "../components/group/GroupPickerDialog";
 import { useSubGroups } from "./SubGroupsContext";
-import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { toGroups } from "./routes/Groups";
 import { useAccess } from "../context/access/Access";
+import useToggle from "../utils/useToggle";
+import { DeleteGroup } from "./components/DeleteGroup";
+import { GroupToolbar, ViewType } from "./components/GroupToolbar";
+import { MoveDialog } from "./components/MoveDialog";
 
-export const GroupTable = () => {
+type GroupTableProps = {
+  toggleView?: (viewType: ViewType) => void;
+};
+
+export const GroupTable = ({ toggleView }: GroupTableProps) => {
   const { t } = useTranslation("groups");
 
   const { adminClient } = useAdminClient();
-  const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
-  const [isKebabOpen, setIsKebabOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedRows, setSelectedRows] = useState<GroupRepresentation[]>([]);
+  const [showDelete, toggleShowDelete] = useToggle();
   const [move, setMove] = useState<GroupRepresentation>();
 
   const { subGroups, currentGroup, setSubGroups } = useSubGroups();
@@ -74,24 +69,6 @@ export const GroupTable = () => {
     return groupsData || [];
   };
 
-  const multiDelete = async () => {
-    try {
-      for (const group of selectedRows) {
-        await adminClient.groups.del({
-          id: group.id!,
-        });
-      }
-      addAlert(
-        t("groupDeleted", { count: selectedRows.length }),
-        AlertVariant.success
-      );
-      setSelectedRows([]);
-    } catch (error) {
-      addError("groups:groupDeleteError", error);
-    }
-    refresh();
-  };
-
   const GroupNameCell = (group: GroupRepresentation) => {
     if (!canView) return <span>{group.name}</span>;
 
@@ -115,17 +92,17 @@ export const GroupTable = () => {
     setIsCreateModalOpen(!isCreateModalOpen);
   };
 
-  const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
-    titleKey: t("deleteConfirmTitle", { count: selectedRows.length }),
-    messageKey: t("deleteConfirm", { count: selectedRows.length }),
-    continueButtonLabel: "common:delete",
-    continueButtonVariant: ButtonVariant.danger,
-    onConfirm: multiDelete,
-  });
-
   return (
     <>
-      <DeleteConfirm />
+      <DeleteGroup
+        show={showDelete}
+        toggleDialog={toggleShowDelete}
+        selectedRows={selectedRows}
+        refresh={() => {
+          refresh();
+          setSelectedRows([]);
+        }}
+      />
       <KeycloakDataTable
         key={`${id}${key}`}
         onSelect={(rows) => setSelectedRows([...rows])}
@@ -134,43 +111,13 @@ export const GroupTable = () => {
         ariaLabelKey="groups:groups"
         searchPlaceholderKey="groups:searchForGroups"
         toolbarItem={
-          isManager && (
-            <>
-              <ToolbarItem>
-                <Button
-                  data-testid="openCreateGroupModal"
-                  variant="primary"
-                  onClick={handleModalToggle}
-                >
-                  {t("createGroup")}
-                </Button>
-              </ToolbarItem>
-              <ToolbarItem>
-                <Dropdown
-                  toggle={
-                    <KebabToggle
-                      onToggle={() => setIsKebabOpen(!isKebabOpen)}
-                      isDisabled={selectedRows!.length === 0}
-                    />
-                  }
-                  isOpen={isKebabOpen}
-                  isPlain
-                  dropdownItems={[
-                    <DropdownItem
-                      key="action"
-                      component="button"
-                      onClick={() => {
-                        toggleDeleteDialog();
-                        setIsKebabOpen(false);
-                      }}
-                    >
-                      {t("common:delete")}
-                    </DropdownItem>,
-                  ]}
-                />
-              </ToolbarItem>
-            </>
-          )
+          <GroupToolbar
+            currentView={ViewType.Table}
+            toggleView={toggleView}
+            toggleCreate={handleModalToggle}
+            toggleDelete={toggleShowDelete}
+            kebabDisabled={selectedRows!.length === 0}
+          />
         }
         actions={
           !isManager
@@ -187,7 +134,7 @@ export const GroupTable = () => {
                   title: t("common:delete"),
                   onRowClick: async (group: GroupRepresentation) => {
                     setSelectedRows([group]);
-                    toggleDeleteDialog();
+                    toggleShowDelete();
                     return true;
                   },
                 },
@@ -221,54 +168,13 @@ export const GroupTable = () => {
         />
       )}
       {move && (
-        <GroupPickerDialog
-          type="selectOne"
-          filterGroups={[move.name!]}
-          text={{
-            title: "groups:moveToGroup",
-            ok: "groups:moveHere",
+        <MoveDialog
+          source={move}
+          refresh={() => {
+            setMove(undefined);
+            refresh();
           }}
           onClose={() => setMove(undefined)}
-          onConfirm={async (group) => {
-            try {
-              if (group !== undefined) {
-                try {
-                  await adminClient.groups.setOrCreateChild(
-                    { id: group[0].id! },
-                    move
-                  );
-                } catch (error: any) {
-                  if (error.response) {
-                    throw error;
-                  }
-                }
-              } else {
-                await adminClient.groups.del({ id: move.id! });
-                const { id } = await adminClient.groups.create({
-                  ...move,
-                  id: undefined,
-                });
-                if (move.subGroups) {
-                  await Promise.all(
-                    move.subGroups.map((s) =>
-                      adminClient.groups.setOrCreateChild(
-                        { id: id! },
-                        {
-                          ...s,
-                          id: undefined,
-                        }
-                      )
-                    )
-                  );
-                }
-              }
-              setMove(undefined);
-              refresh();
-              addAlert(t("moveGroupSuccess"), AlertVariant.success);
-            } catch (error) {
-              addError("groups:moveGroupError", error);
-            }
-          }}
         />
       )}
     </>

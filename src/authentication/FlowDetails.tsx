@@ -15,7 +15,11 @@ import {
   ButtonVariant,
   DropdownItem,
 } from "@patternfly/react-core";
-import { CheckCircleIcon, TableIcon } from "@patternfly/react-icons";
+import {
+  CheckCircleIcon,
+  TableIcon,
+  DomainIcon,
+} from "@patternfly/react-icons";
 
 import type AuthenticationExecutionInfoRepresentation from "@keycloak/keycloak-admin-client/lib/defs/authenticationExecutionInfoRepresentation";
 import type { AuthenticationProviderRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigRepresentation";
@@ -331,7 +335,7 @@ export default function FlowDetails() {
                       onChange={() => setTableView(true)}
                     />
                     <ToggleGroupItem
-                      icon={<i className="fas fa-project-diagram"></i>}
+                      icon={<DomainIcon />}
                       aria-label={t("diagramView")}
                       buttonId="diagramView"
                       isSelected={!tableView}
