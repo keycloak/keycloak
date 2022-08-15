@@ -1,6 +1,7 @@
 import { FunctionComponent, Suspense } from "react";
 import { Page } from "@patternfly/react-core";
 import { HashRouter as Router, Route, Switch } from "react-router-dom";
+import { CompatRouter } from "react-router-dom-v5-compat";
 import { ErrorBoundary } from "react-error-boundary";
 import type Keycloak from "keycloak-js";
 import type KeycloakAdminClient from "@keycloak/keycloak-admin-client";
@@ -37,21 +38,23 @@ const AppContexts: FunctionComponent<AdminClientProps> = ({
   adminClient,
 }) => (
   <Router>
-    <AdminClientContext.Provider value={{ keycloak, adminClient }}>
-      <WhoAmIContextProvider>
-        <RealmsProvider>
-          <RealmContextProvider>
-            <AccessContextProvider>
-              <Help>
-                <AlertProvider>
-                  <SubGroups>{children}</SubGroups>
-                </AlertProvider>
-              </Help>
-            </AccessContextProvider>
-          </RealmContextProvider>
-        </RealmsProvider>
-      </WhoAmIContextProvider>
-    </AdminClientContext.Provider>
+    <CompatRouter>
+      <AdminClientContext.Provider value={{ keycloak, adminClient }}>
+        <WhoAmIContextProvider>
+          <RealmsProvider>
+            <RealmContextProvider>
+              <AccessContextProvider>
+                <Help>
+                  <AlertProvider>
+                    <SubGroups>{children}</SubGroups>
+                  </AlertProvider>
+                </Help>
+              </AccessContextProvider>
+            </RealmContextProvider>
+          </RealmsProvider>
+        </WhoAmIContextProvider>
+      </AdminClientContext.Provider>
+    </CompatRouter>
   </Router>
 );
 
