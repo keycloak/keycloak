@@ -18,11 +18,7 @@ import { convertFormValuesToObject } from "../../util";
 import { MapperList } from "../details/MapperList";
 import { ScopeForm } from "../details/ScopeForm";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
-import {
-  mapRoles,
-  RoleMapping,
-  Row,
-} from "../../components/role-mapping/RoleMapping";
+import { RoleMapping, Row } from "../../components/role-mapping/RoleMapping";
 import type { RoleMappingPayload } from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
 import type { ProtocolMapperTypeRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/serverInfoRepesentation";
 import type ProtocolMapperRepresentation from "@keycloak/keycloak-admin-client/lib/defs/protocolMapperRepresentation";
@@ -32,7 +28,6 @@ import {
   ClientScopeDefaultOptionalType,
 } from "../../components/client-scope/ClientScopeTypes";
 import { useRealm } from "../../context/realm-context/RealmContext";
-import useToggle from "../../utils/useToggle";
 import { toMapper } from "../routes/Mapper";
 import { ClientScopeTab, toClientScope } from "../routes/ClientScope";
 import {
@@ -46,7 +41,6 @@ export default function ClientScopeForm() {
     useState<ClientScopeDefaultOptionalType>();
   const history = useHistory();
   const { realm } = useRealm();
-  const [hide, toggleHide] = useToggle();
 
   const { adminClient } = useAdminClient();
   const { id, type } = useParams<{ id: string; type: AllClientScopes }>();
@@ -74,38 +68,6 @@ export default function ClientScopeForm() {
     },
     [key, id]
   );
-
-  const loader = async () => {
-    const assignedRoles = (
-      await adminClient.clientScopes.listRealmScopeMappings({ id })
-    ).map((role) => ({ role }));
-    const effectiveRoles = (
-      await adminClient.clientScopes.listCompositeRealmScopeMappings({ id })
-    ).map((role) => ({ role }));
-    const clients = await adminClient.clients.find();
-
-    const clientRoles = (
-      await Promise.all(
-        clients.map(async (client) => {
-          const clientAssignedRoles = (
-            await adminClient.clientScopes.listClientScopeMappings({
-              id,
-              client: client.id!,
-            })
-          ).map((role) => ({ role, client }));
-          const clientEffectiveRoles = (
-            await adminClient.clientScopes.listCompositeClientScopeMappings({
-              id,
-              client: client.id!,
-            })
-          ).map((role) => ({ role, client }));
-          return mapRoles(clientAssignedRoles, clientEffectiveRoles, hide);
-        })
-      )
-    ).flat();
-
-    return [...mapRoles(assignedRoles, effectiveRoles, hide), ...clientRoles];
-  };
 
   const save = async (clientScopes: ClientScopeDefaultOptionalType) => {
     try {
@@ -318,9 +280,7 @@ export default function ClientScopeForm() {
                 id={id}
                 name={clientScope.name!}
                 type="clientScopes"
-                loader={loader}
                 save={assignRoles}
-                onHideRolesToggle={toggleHide}
               />
             </Tab>
           </RoutableTabs>

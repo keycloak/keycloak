@@ -1,32 +1,21 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  Badge,
   Button,
-  Chip,
-  ChipGroup,
-  Divider,
+  Dropdown,
+  DropdownItem,
+  DropdownToggle,
   Modal,
   ModalVariant,
-  Select,
-  SelectGroup,
-  SelectOption,
-  SelectVariant,
   ToolbarItem,
 } from "@patternfly/react-core";
 import { FilterIcon } from "@patternfly/react-icons";
 
-import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import { KeycloakDataTable } from "../table-toolbar/KeycloakDataTable";
-import { useFetch, useAdminClient } from "../../context/auth/AdminClient";
-import {
-  castAdminClient,
-  mapping,
-  ResourcesKey,
-  Row,
-  ServiceRole,
-} from "./RoleMapping";
-import { KeycloakSpinner } from "../keycloak-spinner/KeycloakSpinner";
+import { useAdminClient } from "../../context/auth/AdminClient";
+import useLocaleSort from "../../utils/useLocaleSort";
+import { ResourcesKey, Row, ServiceRole } from "./RoleMapping";
+import { getAvailableClientRoles, getAvailableRoles } from "./queries";
 
 type AddRoleMappingModalProps = {
   id: string;
@@ -38,13 +27,7 @@ type AddRoleMappingModalProps = {
   isLDAPmapper?: boolean;
 };
 
-type ClientRole = ClientRepresentation & {
-  numberOfRoles: number;
-};
-
-const realmRole = {
-  name: "realmRoles",
-} as ClientRepresentation;
+type FilterType = "roles" | "clients";
 
 export const AddRoleMappingModal = ({
   id,
@@ -58,135 +41,48 @@ export const AddRoleMappingModal = ({
   const { t } = useTranslation("common");
   const { adminClient } = useAdminClient();
 
-  const [clients, setClients] = useState<ClientRole[]>([]);
   const [searchToggle, setSearchToggle] = useState(false);
 
-  const [selectedClients, setSelectedClients] = useState<ClientRole[]>([]);
+  const [filterType, setFilterType] = useState<FilterType>("roles");
   const [selectedRows, setSelectedRows] = useState<Row[]>([]);
+  const [key, setKey] = useState(0);
+  const refresh = () => setKey(key + 1);
 
-  const [data, setData] = useState<Row[]>();
+  const localeSort = useLocaleSort();
+  const compareRow = ({ role: { name } }: Row) => name?.toUpperCase();
 
-  const mapType = mapping.find((m) => m.resource === type)!;
+  const loader = async (
+    first?: number,
+    max?: number,
+    search?: string
+  ): Promise<Row[]> => {
+    const params: Record<string, string | number> = {
+      first: first!,
+      max: max!,
+    };
 
-  useFetch(
-    async () => {
-      const clients = await adminClient.clients.find();
-      return (
-        await Promise.all(
-          clients.map(async (client) => {
-            const roles = await castAdminClient(
-              adminClient,
-              mapType.resource === "roles" ? "clients" : mapType.resource
-            )[mapType.functions.list[0]]({
-              id: mapType.resource === "roles" ? client.id : id,
-              clientUniqueId: client.id,
-              client: client.id,
-            });
+    if (search) {
+      params.search = search;
+    }
 
-            return {
-              roles,
-              client,
-            };
-          })
-        )
-      )
-        .flat()
-        .filter((row) => row.roles.length !== 0)
-        .map((row) => ({ ...row.client, numberOfRoles: row.roles.length }));
-    },
-    (clients) => {
-      setClients(clients);
-    },
-    []
-  );
-
-  useFetch(
-    async () => {
-      const realmRolesSelected = selectedClients.some(
-        (client) => client.name === "realmRoles"
-      );
-      let selected = selectedClients;
-      if (realmRolesSelected) {
-        selected = selectedClients.filter(
-          (client) => client.name !== "realmRoles"
-        );
-      }
-
-      const availableRoles = await castAdminClient(
-        adminClient,
-        mapType.resource
-      )[mapType.functions.list[1]]({
-        id,
-      });
-
-      const realmRoles = availableRoles.map((role) => {
-        return {
-          id: role.id,
-          role,
-          client: undefined,
-        };
-      });
-
-      const allClients =
-        selectedClients.length !== 0
-          ? selected
-          : await adminClient.clients.find();
-
-      const roles = (
-        await Promise.all(
-          allClients.map(async (client) => {
-            const clientAvailableRoles = await castAdminClient(
-              adminClient,
-              mapType.resource === "roles" ? "clients" : mapType.resource
-            )[mapType.functions.list[0]]({
-              id: mapType.resource === "roles" ? client.id : id,
-              client: client.id,
-              clientUniqueId: client.id,
-            });
-
-            return clientAvailableRoles.map((role) => {
-              return {
-                id: role.id,
-                role,
-                client,
-              };
-            });
-          })
-        )
-      ).flat();
-
-      return [
-        ...(realmRolesSelected || selected.length === 0 ? realmRoles : []),
-        ...roles,
-      ];
-    },
-    setData,
-    [selectedClients]
-  );
-
-  const removeClient = (client: ClientRole) => {
-    setSelectedClients(selectedClients.filter((item) => item.id !== client.id));
+    const roles = await getAvailableRoles(adminClient, type, { ...params, id });
+    return localeSort(roles, compareRow);
   };
 
-  if (!data) {
-    return <KeycloakSpinner />;
-  }
+  /* this is still pretty expensive querying all client and then all roles */
+  const clientRolesLoader = async (): Promise<Row[]> => {
+    const allClients = await adminClient.clients.find();
 
-  const createSelectGroup = (clients: ClientRepresentation[]) => [
-    <SelectGroup key="role" label={t("realmRoles")}>
-      <SelectOption key="realmRoles" value={realmRole}>
-        {t("realmRoles")}
-      </SelectOption>
-    </SelectGroup>,
-    <Divider key="divider" />,
-    <SelectGroup key="group" label={t("clients")}>
-      {clients.map((client) => (
-        <SelectOption key={client.id} value={client}>
-          {client.clientId}
-        </SelectOption>
-      ))}
-    </SelectGroup>,
-  ];
+    const roles = (
+      await Promise.all(
+        allClients.map((client) =>
+          getAvailableClientRoles(adminClient, type, id, client)
+        )
+      )
+    ).flat();
+
+    return localeSort(roles, compareRow);
+  };
 
   return (
     <Modal
@@ -220,62 +116,42 @@ export const AddRoleMappingModal = ({
       ]}
     >
       <KeycloakDataTable
+        key={key}
         onSelect={(rows) => setSelectedRows([...rows])}
         searchPlaceholderKey="clients:searchByRoleName"
         searchTypeComponent={
           <ToolbarItem>
-            <Select
-              toggleId="role"
-              onToggle={setSearchToggle}
-              isOpen={searchToggle}
-              variant={isRadio ? SelectVariant.single : SelectVariant.checkbox}
-              hasInlineFilter
-              placeholderText={
-                <>
-                  <FilterIcon /> {t("clients:filterByOrigin")}
-                </>
-              }
-              isGrouped
-              isCheckboxSelectionBadgeHidden
-              onFilter={(evt) => {
-                const value = evt?.target.value || "";
-                return createSelectGroup(
-                  clients.filter((client) => client.clientId?.includes(value))
-                );
+            <Dropdown
+              onSelect={() => {
+                setFilterType(filterType === "roles" ? "clients" : "roles");
+                setSearchToggle(false);
+                refresh();
               }}
-              selections={selectedClients}
-              onClear={() => setSelectedClients([])}
-              onSelect={(_, selection) => {
-                const client = selection as ClientRole;
-                if (selectedClients.includes(client)) {
-                  removeClient(client);
-                } else {
-                  setSelectedClients([...selectedClients, client]);
-                }
-              }}
-            >
-              {createSelectGroup(clients)}
-            </Select>
-          </ToolbarItem>
-        }
-        subToolbar={
-          <ToolbarItem widths={{ default: "100%" }}>
-            <ChipGroup>
-              {selectedClients.map((client) => (
-                <Chip
-                  key={`chip-${client.id}`}
-                  onClick={() => removeClient(client)}
+              data-testid="filter-type-dropdown"
+              toggle={
+                <DropdownToggle
+                  onToggle={setSearchToggle}
+                  icon={<FilterIcon />}
                 >
-                  {client.clientId || t("realmRoles")}
-                  <Badge isRead={true}>{client.numberOfRoles}</Badge>
-                </Chip>
-              ))}
-            </ChipGroup>
+                  {filterType === "roles"
+                    ? t("common:filterByRoles")
+                    : t("common:filterByClients")}
+                </DropdownToggle>
+              }
+              isOpen={searchToggle}
+              dropdownItems={[
+                <DropdownItem key="filter-type" data-testid={filterType}>
+                  {filterType === "roles"
+                    ? t("common:filterByClients")
+                    : t("common:filterByRoles")}
+                </DropdownItem>,
+              ]}
+            />
           </ToolbarItem>
         }
         canSelectAll
         isRadio={isRadio}
-        loader={data}
+        loader={filterType === "roles" ? loader : clientRolesLoader}
         ariaLabelKey="clients:roles"
         columns={[
           {

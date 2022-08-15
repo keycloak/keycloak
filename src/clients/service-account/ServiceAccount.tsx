@@ -9,11 +9,7 @@ import type { RoleMappingPayload } from "@keycloak/keycloak-admin-client/lib/def
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import { useAdminClient, useFetch } from "../../context/auth/AdminClient";
 import { useAlerts } from "../../components/alert/Alerts";
-import {
-  mapRoles,
-  RoleMapping,
-  Row,
-} from "../../components/role-mapping/RoleMapping";
+import { RoleMapping, Row } from "../../components/role-mapping/RoleMapping";
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
 import { toUser } from "../../user/routes/User";
 import { useRealm } from "../../context/realm-context/RealmContext";
@@ -31,7 +27,6 @@ export const ServiceAccount = ({ client }: ServiceAccountProps) => {
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
 
-  const [hide, setHide] = useState(false);
   const [serviceAccount, setServiceAccount] = useState<UserRepresentation>();
 
   const { hasAccess } = useAccess();
@@ -45,43 +40,6 @@ export const ServiceAccount = ({ client }: ServiceAccountProps) => {
     (serviceAccount) => setServiceAccount(serviceAccount),
     []
   );
-
-  const loader = async () => {
-    const serviceAccount = await adminClient.clients.getServiceAccountUser({
-      id: client.id!,
-    });
-    const id = serviceAccount.id!;
-
-    const assignedRoles = (
-      await adminClient.users.listRealmRoleMappings({ id })
-    ).map((role) => ({ role }));
-    const effectiveRoles = (
-      await adminClient.users.listCompositeRealmRoleMappings({ id })
-    ).map((role) => ({ role }));
-
-    const clients = await adminClient.clients.find();
-    const clientRoles = (
-      await Promise.all(
-        clients.map(async (client) => {
-          const clientAssignedRoles = (
-            await adminClient.users.listClientRoleMappings({
-              id,
-              clientUniqueId: client.id!,
-            })
-          ).map((role) => ({ role, client }));
-          const clientEffectiveRoles = (
-            await adminClient.users.listCompositeClientRoleMappings({
-              id,
-              clientUniqueId: client.id!,
-            })
-          ).map((role) => ({ role, client }));
-          return mapRoles(clientAssignedRoles, clientEffectiveRoles, hide);
-        })
-      )
-    ).flat();
-
-    return [...mapRoles(assignedRoles, effectiveRoles, hide), ...clientRoles];
-  };
 
   const assignRoles = async (rows: Row[]) => {
     try {
@@ -129,9 +87,7 @@ export const ServiceAccount = ({ client }: ServiceAccountProps) => {
         id={serviceAccount.id!}
         type="users"
         isManager={hasManageClients || client.access?.configure}
-        loader={loader}
         save={assignRoles}
-        onHideRolesToggle={() => setHide(!hide)}
       />
     </>
   ) : (

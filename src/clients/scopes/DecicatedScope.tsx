@@ -13,13 +13,8 @@ import { FormAccess } from "../../components/form-access/FormAccess";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { useAdminClient } from "../../context/auth/AdminClient";
 import { useAlerts } from "../../components/alert/Alerts";
-import {
-  mapRoles,
-  RoleMapping,
-  Row,
-} from "../../components/role-mapping/RoleMapping";
+import { RoleMapping, Row } from "../../components/role-mapping/RoleMapping";
 import type { RoleMappingPayload } from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
-import useToggle from "../../utils/useToggle";
 import { useAccess } from "../../context/access/Access";
 
 type DedicatedScopeProps = {
@@ -34,48 +29,9 @@ export const DedicatedScope = ({
   const { addAlert, addError } = useAlerts();
 
   const [client, setClient] = useState<ClientRepresentation>(initialClient);
-  const [hide, toggle] = useToggle();
 
   const { hasAccess } = useAccess();
   const isManager = hasAccess("manage-clients") || client.access?.manage;
-
-  const loader = async () => {
-    const [clients, assignedRoles, effectiveRoles] = await Promise.all([
-      adminClient.clients.find(),
-      adminClient.clients
-        .listRealmScopeMappings({ id: client.id! })
-        .then((roles) => roles.map((role) => ({ role }))),
-      adminClient.clients
-        .listCompositeRealmScopeMappings({ id: client.id! })
-        .then((roles) => roles.map((role) => ({ role }))),
-    ]);
-
-    const clientRoles = (
-      await Promise.all(
-        clients.map(async ({ id }) => {
-          const [clientAssignedRoles, clientEffectiveRoles] = await Promise.all(
-            [
-              adminClient.clients
-                .listClientScopeMappings({
-                  id: client.id!,
-                  client: id!,
-                })
-                .then((roles) => roles.map((role) => ({ role, client }))),
-              adminClient.clients
-                .listCompositeClientScopeMappings({
-                  id: client.id!,
-                  client: id!,
-                })
-                .then((roles) => roles.map((role) => ({ role, client }))),
-            ]
-          );
-          return mapRoles(clientAssignedRoles, clientEffectiveRoles, hide);
-        })
-      )
-    ).flat();
-
-    return [...mapRoles(assignedRoles, effectiveRoles, hide), ...clientRoles];
-  };
 
   const assignRoles = async (rows: Row[]) => {
     try {
@@ -154,9 +110,7 @@ export const DedicatedScope = ({
             name={client.clientId!}
             id={client.id!}
             type="clients"
-            loader={loader}
             save={assignRoles}
-            onHideRolesToggle={toggle}
             isManager={isManager}
           />
         </>

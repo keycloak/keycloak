@@ -27,7 +27,7 @@ import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { emptyFormatter } from "../util";
-import { AssociatedRolesModal } from "./AssociatedRolesModal";
+import { AddRoleMappingModal } from "../components/role-mapping/AddRoleMappingModal";
 import { useAdminClient } from "../context/auth/AdminClient";
 import type { AttributeForm } from "../components/key-value-form/AttributeForm";
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
@@ -222,10 +222,12 @@ export const AssociatedRolesTab = ({
       <DeleteConfirm />
       <DeleteAssociatedRolesConfirm />
       {open && (
-        <AssociatedRolesModal
+        <AddRoleMappingModal
           id={parentRole.id!}
-          toggleDialog={toggleModal}
-          onConfirm={addComposites}
+          type="roles"
+          name={parentRole.name}
+          onAssign={(rows) => addComposites(rows.map((r) => r.role))}
+          onClose={() => setOpen(false)}
         />
       )}
       <KeycloakDataTable

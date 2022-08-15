@@ -2,25 +2,26 @@ export default class AssociatedRolesPage {
   private actionDropdown = "action-dropdown";
   private addRolesDropdownItem = "add-roles";
   private addRoleToolbarButton = "add-role-button";
-  private addAssociatedRolesModalButton = "add-associated-roles-button";
+  private addAssociatedRolesModalButton = "assign";
   private compositeRoleBadge = "composite-role-badge";
   private filterTypeDropdown = "filter-type-dropdown";
-  private filterTypeDropdownItem = "filter-type-dropdown-item";
+  private filterTypeDropdownItem = "roles";
   private usersPage = "users-page";
   private removeRolesButton = "removeRoles";
+  private addRoleTable = 'td[data-label="Name"]';
 
   addAssociatedRealmRole(roleName: string) {
     cy.findByTestId(this.actionDropdown).last().click();
 
     cy.findByTestId(this.addRolesDropdownItem).click();
 
-    cy.get('[data-testid="addAssociatedRole"] td[data-label="Role name"]')
+    cy.get(this.addRoleTable)
       .contains(roleName)
       .parent()
       .within(() => {
         cy.get("input").click();
       });
-    cy.findByTestId(this.addAssociatedRolesModalButton).contains("Add").click();
+    cy.findByTestId(this.addAssociatedRolesModalButton).click();
 
     cy.url().should("include", "/associated-roles");
 
@@ -42,14 +43,14 @@ export default class AssociatedRolesPage {
 
     cy.findByTestId(".pf-c-spinner__tail-ball").should("not.exist");
 
-    cy.get('[data-testid="addAssociatedRole"] td[data-label="Role name"]')
+    cy.get(this.addRoleTable)
       .contains(roleName)
       .parent()
       .within(() => {
         cy.get("input").click();
       });
 
-    cy.findByTestId(this.addAssociatedRolesModalButton).contains("Add").click();
+    cy.findByTestId(this.addAssociatedRolesModalButton).click();
 
     cy.contains("Users in role").click();
     cy.findByTestId(this.usersPage).should("exist");
@@ -64,14 +65,14 @@ export default class AssociatedRolesPage {
 
     cy.findByTestId(".pf-c-spinner__tail-ball").should("not.exist");
 
-    cy.get('[data-testid="addAssociatedRole"] td[data-label="Role name"]')
+    cy.get(this.addRoleTable)
       .contains(roleName)
       .parent()
       .within(() => {
         cy.get("input").click();
       });
 
-    cy.findByTestId(this.addAssociatedRolesModalButton).contains("Add").click();
+    cy.findByTestId(this.addAssociatedRolesModalButton).click();
 
     cy.contains("Users in role").click();
     cy.findByTestId(this.usersPage).should("exist");

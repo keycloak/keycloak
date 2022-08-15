@@ -320,7 +320,6 @@
   "oidcCibaGrant": "OIDC CIBA Grant",
   "enableServiceAccount": "Enable service account roles",
   "searchByRoleName": "Search by role name",
-  "filterByOrigin": "Filter by Origin",
   "realmRoles": "Realm roles",
   "clients": "Clients",
   "assign": "Assign",

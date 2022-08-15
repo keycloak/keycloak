@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   AlertVariant,
@@ -12,10 +12,6 @@ import { cellWidth } from "@patternfly/react-table";
 
 import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
-import type { ClientScopes } from "@keycloak/keycloak-admin-client/lib/resources/clientScopes";
-import type { Groups } from "@keycloak/keycloak-admin-client/lib/resources/groups";
-import type { Roles } from "@keycloak/keycloak-admin-client/lib/resources/roles";
-import type { Clients } from "@keycloak/keycloak-admin-client/lib/resources/clients";
 import type KeycloakAdminClient from "@keycloak/keycloak-admin-client";
 import { AddRoleMappingModal } from "./AddRoleMappingModal";
 import { KeycloakDataTable } from "../table-toolbar/KeycloakDataTable";
@@ -24,8 +20,12 @@ import { useAlerts } from "../alert/Alerts";
 import { useConfirmDialog } from "../confirm-dialog/ConfirmDialog";
 import { useAdminClient } from "../../context/auth/AdminClient";
 import { ListEmptyState } from "../list-empty-state/ListEmptyState";
-import useSetTimeout from "../../utils/useSetTimeout";
-import useToggle from "../../utils/useToggle";
+import {
+  deleteMapping,
+  getEffectiveClientRoles,
+  getEffectiveRoles,
+  getMapping,
+} from "./queries";
 
 import "./role-mapping.css";
 
@@ -80,91 +80,15 @@ type RoleMappingProps = {
   id: string;
   type: ResourcesKey;
   isManager?: boolean;
-  loader: () => Promise<Row[]>;
   save: (rows: Row[]) => Promise<void>;
-  onHideRolesToggle: () => void;
 };
-
-type DeleteFunctions =
-  | keyof Pick<Groups, "delClientRoleMappings" | "delRealmRoleMappings">
-  | keyof Pick<
-      ClientScopes,
-      "delClientScopeMappings" | "delRealmScopeMappings"
-    >;
-
-type ListFunction =
-  | keyof Pick<
-      Groups,
-      "listAvailableClientRoleMappings" | "listAvailableRealmRoleMappings"
-    >
-  | keyof Pick<
-      ClientScopes,
-      "listAvailableClientScopeMappings" | "listAvailableRealmScopeMappings"
-    >
-  | keyof Pick<Roles, "find">
-  | keyof Pick<Clients, "listRoles">;
-
-type FunctionMapping = { delete: DeleteFunctions[]; list: ListFunction[] };
-
-type ResourceMapping = {
-  resource: ResourcesKey;
-  functions: FunctionMapping;
-};
-
-const groupFunctions: FunctionMapping = {
-  delete: ["delClientRoleMappings", "delRealmRoleMappings"],
-  list: ["listAvailableClientRoleMappings", "listAvailableRealmRoleMappings"],
-};
-
-const clientFunctions: FunctionMapping = {
-  delete: ["delClientScopeMappings", "delRealmScopeMappings"],
-  list: ["listAvailableClientScopeMappings", "listAvailableRealmScopeMappings"],
-};
-
-export const mapping: ResourceMapping[] = [
-  {
-    resource: "groups",
-    functions: groupFunctions,
-  },
-  {
-    resource: "users",
-    functions: groupFunctions,
-  },
-  {
-    resource: "clientScopes",
-    functions: clientFunctions,
-  },
-  {
-    resource: "clients",
-    functions: clientFunctions,
-  },
-  {
-    resource: "roles",
-    functions: {
-      delete: [],
-      list: ["listRoles", "find"],
-    },
-  },
-];
-
-export const castAdminClient = (
-  adminClient: KeycloakAdminClient,
-  resource: ResourcesKey
-) =>
-  adminClient[resource] as unknown as {
-    [index in DeleteFunctions | ListFunction]: (
-      ...params: any
-    ) => Promise<RoleRepresentation[]>;
-  };
 
 export const RoleMapping = ({
   name,
   id,
   type,
   isManager = true,
-  loader,
   save,
-  onHideRolesToggle,
 }: RoleMappingProps) => {
   const { t } = useTranslation(type);
   const { adminClient } = useAdminClient();
@@ -173,18 +97,46 @@ export const RoleMapping = ({
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
 
-  const [hide, setHide] = useState(false);
+  const [hide, setHide] = useState(true);
   const [showAssign, setShowAssign] = useState(false);
   const [selected, setSelected] = useState<Row[]>([]);
-  const [wait, toggleWait] = useToggle();
-  const setTimeout = useSetTimeout();
 
   const assignRoles = async (rows: Row[]) => {
     await save(rows);
     refresh();
   };
 
-  useEffect(() => setTimeout(refresh, 200), [wait]);
+  const loader = async () => {
+    const effectiveRoles = await getEffectiveRoles(adminClient, type, id);
+
+    let effectiveClientRoles: Row[] = [];
+    if (!hide) {
+      const clients = await adminClient.clients.find();
+      effectiveClientRoles = (
+        await Promise.all(
+          clients.map(async (client) =>
+            getEffectiveClientRoles(adminClient, type, id, client)
+          )
+        )
+      ).flat();
+    }
+
+    const roles = await getMapping(adminClient, type, id);
+    const realmRoles = roles.realmMappings?.map((role) => ({ role }));
+    const client = Object.values(roles.clientMappings || {})
+      .map((client) =>
+        client.mappings.map((role: RoleRepresentation) => ({
+          client: { clientId: client.client, ...client },
+          role,
+        }))
+      )
+      .flat();
+
+    return [
+      ...mapRoles(realmRoles || [], effectiveRoles, hide),
+      ...[...client, ...effectiveClientRoles],
+    ];
+  };
 
   const [toggleDeleteDialog, DeleteConfirm] = useConfirmDialog({
     titleKey: "clients:removeMappingTitle",
@@ -193,25 +145,9 @@ export const RoleMapping = ({
     continueButtonVariant: ButtonVariant.danger,
     onConfirm: async () => {
       try {
-        const mapType = mapping.find((m) => m.resource === type)!;
-        await Promise.all(
-          selected.map((row) => {
-            const role = { id: row.role.id!, name: row.role.name! };
-            castAdminClient(adminClient, mapType.resource)[
-              mapType.functions.delete[row.client ? 0 : 1]
-            ](
-              {
-                id,
-                clientUniqueId: row.client?.id,
-                client: row.client?.id,
-                roles: [role],
-              },
-              [role]
-            );
-          })
-        );
+        await Promise.all(deleteMapping(adminClient, type, id, selected));
         addAlert(t("clients:clientScopeRemoveSuccess"), AlertVariant.success);
-        toggleWait();
+        refresh();
       } catch (error) {
         addError("clients:clientScopeRemoveError", error);
       }
@@ -274,7 +210,6 @@ export const RoleMapping = ({
                 isChecked={hide}
                 onChange={(check) => {
                   setHide(check);
-                  onHideRolesToggle();
                   refresh();
                 }}
               />

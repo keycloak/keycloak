@@ -28,7 +28,7 @@ import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { RealmRoleForm } from "./RealmRoleForm";
 import { useRealm } from "../context/realm-context/RealmContext";
-import { AssociatedRolesModal } from "./AssociatedRolesModal";
+import { AddRoleMappingModal } from "../components/role-mapping/AddRoleMappingModal";
 import { KeycloakTabs } from "../components/keycloak-tabs/KeycloakTabs";
 import { AssociatedRolesTab } from "./AssociatedRolesTab";
 import { UsersInRoleTab } from "./UsersInRoleTab";
@@ -329,10 +329,12 @@ export default function RealmRoleTabs() {
       <DeleteConfirm />
       <DeleteAllAssociatedRolesConfirm />
       {open && (
-        <AssociatedRolesModal
+        <AddRoleMappingModal
           id={id}
-          toggleDialog={toggleModal}
-          onConfirm={addComposites}
+          type="roles"
+          name={role.name}
+          onAssign={(rows) => addComposites(rows.map((r) => r.role))}
+          onClose={() => setOpen(false)}
         />
       )}
       <ViewHeader

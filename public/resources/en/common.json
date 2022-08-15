@@ -152,6 +152,8 @@
   "Thursday": "Thursday",
   "Friday": "Friday",
   "Saturday": "Saturday",
+  "filterByRoles": "Filter by roles",
+  "filterByClients": "Filter by clients",
   "assignRole": "Assign role",
   "assign": "Assign",
   "unAssignRole": "Unassign",

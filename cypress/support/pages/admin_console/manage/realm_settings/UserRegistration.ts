@@ -3,8 +3,8 @@ export default class UserRegistration {
   private defaultGroupTab = "#pf-tab-20-groups";
   private addRoleBtn = "add-role-button";
   private addDefaultGroupBtn = "no-default-groups-empty-action";
-  private namesColumn = 'tbody td[data-label="Role name"]:visible';
-  private addBtn = "add-associated-roles-button";
+  private namesColumn = 'tbody td[data-label="Name"]:visible';
+  private addBtn = "assign";
 
   goToTab() {
     cy.findByTestId(this.userRegistrationTab).click({ force: true });
