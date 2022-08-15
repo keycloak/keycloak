@@ -44,7 +44,7 @@ export const AccessSettings = ({
             fieldId="kc-root-url"
             labelIcon={
               <HelpItem
-                helpText="clients-help:rootUrl"
+                helpText="clients-help:rootURL"
                 fieldLabelId="clients:rootUrl"
               />
             }
