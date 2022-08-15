@@ -45,6 +45,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.ClientSessionContext;
 import org.keycloak.models.Constants;
+import org.keycloak.models.ImpersonationSessionNote;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
@@ -258,6 +259,13 @@ public class TokenManager {
         } else {
 
             UserSessionModel userSession = new UserSessionCrossDCManager(session).getUserSessionWithClient(realm, token.getSessionState(), false, client.getId());
+
+            if (userSession == null) {
+                // also try to resolve sessions created during token exchange when the user is impersonated
+                userSession = session.sessions().getUserSessionWithPredicate(realm,
+                        token.getSessionState(), false,
+                        model -> client.getId().equals(model.getNote(ImpersonationSessionNote.IMPERSONATOR_CLIENT.toString())));
+            }
 
             if (AuthenticationManager.isSessionValid(realm, userSession)) {
                 valid = isUserValid(session, realm, token, userSession.getUser());
