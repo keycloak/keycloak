@@ -103,6 +103,40 @@ export default function ClientsSection() {
     </TableText>
   );
 
+  const ClientHomePage = (client: ClientRepresentation) => {
+    const rootUrl = client.rootUrl;
+    const baseUrl = client.baseUrl;
+
+    // absolute base url configured, use base url is
+    if (baseUrl?.startsWith("http")) {
+      return baseUrl;
+    }
+
+    if (rootUrl === "${authBaseUrl}" && baseUrl) {
+      // eslint-disable-next-line prettier/prettier
+      return rootUrl.replace("${authBaseUrl}", addTrailingSlash(adminClient.baseUrl)) + baseUrl.substring(1);
+    }
+
+    if (rootUrl === "${authAdminUrl}" && baseUrl) {
+      // eslint-disable-next-line prettier/prettier
+      return rootUrl.replace("${authAdminUrl}", addTrailingSlash(adminClient.baseUrl)) + baseUrl.substring(1);
+    }
+
+    if (!rootUrl) {
+      return baseUrl;
+    }
+
+    if (rootUrl.startsWith("http")) {
+      let targetUrl = rootUrl;
+      if (baseUrl) {
+        targetUrl = addTrailingSlash(targetUrl) + baseUrl.substring(1);
+      }
+      return targetUrl;
+    }
+
+    return baseUrl;
+  };
+
   const ToolbarItems = () => {
     if (!isManager) return <span />;
 
@@ -215,28 +249,7 @@ export default function ClientsSection() {
                   name: "baseUrl",
                   displayKey: "clients:homeURL",
                   cellFormatters: [formattedLinkTableCell(), emptyFormatter()],
-                  cellRenderer: (client) => {
-                    if (client.rootUrl) {
-                      if (
-                        !client.rootUrl.startsWith("http") ||
-                        client.rootUrl.includes("$")
-                      ) {
-                        return (
-                          client.rootUrl
-                            .replace(
-                              "${authBaseUrl}",
-                              addTrailingSlash(adminClient.baseUrl)
-                            )
-                            .replace(
-                              "${authAdminUrl}",
-                              addTrailingSlash(adminClient.baseUrl)
-                            ) +
-                          (client.baseUrl ? client.baseUrl.substring(1) : "")
-                        );
-                      }
-                    }
-                    return client.baseUrl;
-                  },
+                  cellRenderer: ClientHomePage,
                 },
               ]}
             />
