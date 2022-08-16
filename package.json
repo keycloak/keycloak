@@ -53,7 +53,7 @@
     "@babel/core": "^7.18.10",
     "@babel/preset-env": "^7.18.10",
     "@cypress/webpack-batteries-included-preprocessor": "^2.2.3",
-    "@cypress/webpack-preprocessor": "^5.12.1",
+    "@cypress/webpack-preprocessor": "^5.12.2",
     "@octokit/rest": "^19.0.1",
     "@testing-library/cypress": "^8.0.3",
     "@testing-library/jest-dom": "^5.16.5",
