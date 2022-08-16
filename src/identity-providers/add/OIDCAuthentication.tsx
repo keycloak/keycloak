@@ -11,7 +11,7 @@ import {
 import { ClientIdSecret } from "../component/ClientIdSecret";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 
-const clientAuthenticationTypes = [
+const clientAuthentications = [
   "client_secret_post",
   "client_secret_basic",
   "client_secret_jwt",
@@ -42,12 +42,12 @@ export const OIDCAuthentication = ({ create = true }: { create?: boolean }) => {
         fieldId="clientAuthentication"
       >
         <Controller
-          name="config.clientAuthMethod"
-          defaultValue={clientAuthenticationTypes[0]}
+          name="config.clientAuthentications"
+          defaultValue={clientAuthentications[0]}
           control={control}
           render={({ onChange, value }) => (
             <Select
-              toggleId="clientAuthMethod"
+              toggleId="clientAuthentication"
               required
               onToggle={() => setOpenClientAuth(!openClientAuth)}
               onSelect={(_, value) => {
@@ -56,10 +56,10 @@ export const OIDCAuthentication = ({ create = true }: { create?: boolean }) => {
               }}
               selections={value}
               variant={SelectVariant.single}
-              aria-label={t("prompt")}
+              aria-label={t("clientAuthentication")}
               isOpen={openClientAuth}
             >
-              {clientAuthenticationTypes.map((option) => (
+              {clientAuthentications.map((option) => (
                 <SelectOption
                   selected={option === value}
                   key={option}

@@ -111,10 +111,10 @@
   },
   "clientAuthentication": "Client authentication",
   "clientAuthentications": {
-    "clientAuth_post": "Client secret sent as post",
-    "clientAuth_basic": "Client secret sent as basic auth",
-    "clientAuth_secret_jwt": "Client secret as jwt",
-    "clientAuth_privatekey_jwt": "JWT signed with private key"
+    "client_secret_post": "Client secret sent as post",
+    "client_secret_basic": "Client secret sent as basic auth",
+    "client_secret_jwt": "Client secret as jwt",
+    "private_key_jwt": "JWT signed with private key"
   },
   "acceptsPromptNone": "Accepts prompt=none forward from client",
   "validateSignature": "Validate Signatures",
