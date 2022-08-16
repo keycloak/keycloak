@@ -20,7 +20,7 @@ export const UserRoute: RouteDef = {
   path: "/:realm/users/:id/:tab",
   component: lazy(() => import("../UsersTabs")),
   breadcrumb: (t) => t("users:userDetails"),
-  access: "view-users",
+  access: "query-users",
 };
 
 export const toUser = (params: UserParams): LocationDescriptorObject => ({
