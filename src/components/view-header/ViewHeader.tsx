@@ -71,7 +71,7 @@ export const ViewHeader = ({
   helpTextKey,
   isReadOnly = false,
 }: ViewHeaderProps) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { enabled } = useHelp();
   const [isDropdownOpen, setDropdownOpen] = useState(false);
   const [isLowerDropdownOpen, setIsLowerDropdownOpen] = useState(false);
@@ -95,7 +95,7 @@ export const ViewHeader = ({
               <LevelItem>
                 <TextContent className="pf-u-mr-sm">
                   <Text className={className} component="h1">
-                    {t(titleKey)}
+                    {i18n.exists(titleKey) ? t(titleKey) : titleKey}
                   </Text>
                 </TextContent>
               </LevelItem>
