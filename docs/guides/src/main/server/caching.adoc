@@ -160,7 +160,7 @@ The following table shows transport stacks that are available without any furthe
 |===
 |Stack name|Transport protocol|Discovery
 |tcp|TCP|MPING (uses UDP multicast).
-|udp|UDP|UDP multicast
+|udp|UDP|UDP multicast (the default multicast address is 230.0.0.4 and can be changed in Jboss with -Djboss.default.multicast.address=x.x.x.x)
 |===
 
 The following table shows transport stacks that are available using the `--cache-stack` build option and a minimum configuration:
