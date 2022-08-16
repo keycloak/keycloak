@@ -17,6 +17,7 @@ export const NewPermissionRoute: RouteDef = {
   component: lazy(() => import("../authorization/PermissionDetails")),
   breadcrumb: (t) => t("clients:createPermission"),
   access: "view-clients",
+  legacy: true,
 };
 
 export const toNewPermission = (

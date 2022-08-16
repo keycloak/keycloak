@@ -14,6 +14,7 @@ export const ResourceDetailsRoute: RouteDef = {
   component: lazy(() => import("../authorization/ResourceDetails")),
   breadcrumb: (t) => t("clients:createResource"),
   access: "view-clients",
+  legacy: true,
 };
 
 export const toResourceDetails = (

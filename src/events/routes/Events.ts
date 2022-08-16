@@ -15,6 +15,7 @@ export const EventsRoute: RouteDef = {
   component: lazy(() => import("../EventsSection")),
   breadcrumb: (t) => t("events:title"),
   access: "view-events",
+  legacy: true,
 };
 
 export const toEvents = (params: EventsParams): LocationDescriptorObject => ({

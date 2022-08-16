@@ -12,6 +12,7 @@ export const GroupsRoute: RouteDef = {
   matchOptions: {
     exact: false,
   },
+  legacy: true,
 };
 
 export const toGroups = (params: GroupsParams): LocationDescriptorObject => ({

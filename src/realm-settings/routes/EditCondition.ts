@@ -14,6 +14,7 @@ export const EditClientPolicyConditionRoute: RouteDef = {
   component: lazy(() => import("../NewClientPolicyCondition")),
   breadcrumb: (t) => t("realm-settings:editCondition"),
   access: "manage-clients",
+  legacy: true,
 };
 
 export const toEditClientPolicyCondition = (

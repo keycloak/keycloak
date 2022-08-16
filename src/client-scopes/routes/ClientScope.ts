@@ -17,6 +17,7 @@ export const ClientScopeRoute: RouteDef = {
   component: lazy(() => import("../form/ClientScopeForm")),
   breadcrumb: (t) => t("client-scopes:clientScopeDetails"),
   access: "view-clients",
+  legacy: true,
 };
 
 export const toClientScope = (

@@ -16,6 +16,7 @@ export const UserFederationLdapRoute: RouteDef = {
   component: lazy(() => import("../UserFederationLdapSettings")),
   breadcrumb: (t) => t("common:settings"),
   access: "view-realm",
+  legacy: true,
 };
 
 export const toUserFederationLdap = (

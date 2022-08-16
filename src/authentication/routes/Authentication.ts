@@ -12,6 +12,7 @@ export const AuthenticationRoute: RouteDef = {
   component: lazy(() => import("../AuthenticationSection")),
   breadcrumb: (t) => t("authentication"),
   access: ["view-realm", "view-identity-providers", "view-clients"],
+  legacy: true,
 };
 
 export const toAuthentication = (

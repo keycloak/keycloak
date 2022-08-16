@@ -23,6 +23,7 @@ export type RouteDef = {
   breadcrumb?: (t: TFunction) => string | ComponentType<any>;
   access: AccessType | AccessType[];
   matchOptions?: MatchOptions;
+  legacy?: boolean;
 };
 
 const NotFoundRoute: RouteDef = {

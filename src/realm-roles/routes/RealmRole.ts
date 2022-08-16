@@ -20,6 +20,7 @@ export const RealmRoleRoute: RouteDef = {
   component: lazy(() => import("../RealmRoleTabs")),
   breadcrumb: (t) => t("roles:roleDetails"),
   access: ["view-realm", "view-users"],
+  legacy: true,
 };
 
 export const toRealmRole = (

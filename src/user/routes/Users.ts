@@ -12,6 +12,7 @@ export const UsersRoute: RouteDef = {
   component: lazy(() => import("../UsersSection")),
   breadcrumb: (t) => t("users:title"),
   access: "query-users",
+  legacy: true,
 };
 
 export const toUsers = (params: UsersParams): LocationDescriptorObject => ({

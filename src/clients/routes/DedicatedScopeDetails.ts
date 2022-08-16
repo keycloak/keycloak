@@ -16,6 +16,7 @@ export const DedicatedScopeDetailsRoute: RouteDef = {
   component: lazy(() => import("../scopes/DedicatedScopes")),
   breadcrumb: (t) => t("clients:dedicatedScopes"),
   access: "view-clients",
+  legacy: true,
 };
 
 export const toDedicatedScope = (

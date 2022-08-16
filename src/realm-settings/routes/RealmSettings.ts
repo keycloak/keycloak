@@ -28,6 +28,7 @@ export const RealmSettingsRoute: RouteDef = {
   component: lazy(() => import("../RealmSettingsSection")),
   breadcrumb: (t) => t("realmSettings"),
   access: "view-realm",
+  legacy: true,
 };
 
 export const toRealmSettings = (

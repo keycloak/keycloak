@@ -12,6 +12,7 @@ export const DashboardRoute: RouteDef = {
   component: lazy(() => import("../Dashboard")),
   breadcrumb: (t) => t("common:home"),
   access: "anyone",
+  legacy: true,
 };
 
 export const toDashboard = (

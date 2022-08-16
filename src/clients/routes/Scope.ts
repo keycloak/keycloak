@@ -14,6 +14,7 @@ export const ScopeDetailsRoute: RouteDef = {
   component: lazy(() => import("../authorization/ScopeDetails")),
   breadcrumb: (t) => t("clients:createAuthorizationScope"),
   access: "manage-clients",
+  legacy: true,
 };
 
 export const toScopeDetails = (

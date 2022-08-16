@@ -15,6 +15,7 @@ export const FlowRoute: RouteDef = {
   component: lazy(() => import("../FlowDetails")),
   breadcrumb: (t) => t("authentication:flowDetails"),
   access: "view-authorization",
+  legacy: true,
 };
 
 export const toFlow = (params: FlowParams): LocationDescriptorObject => ({

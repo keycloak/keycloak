@@ -15,6 +15,7 @@ export const ClientsRoute: RouteDef = {
   component: lazy(() => import("../ClientsSection")),
   breadcrumb: (t) => t("clients:clientList"),
   access: "query-clients",
+  legacy: true,
 };
 
 export const toClients = (params: ClientsParams): LocationDescriptorObject => ({
