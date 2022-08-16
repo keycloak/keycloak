@@ -1,4 +1,5 @@
-import { Link, useHistory, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom-v5-compat";
 import { useTranslation } from "react-i18next";
 import { FormProvider, useForm } from "react-hook-form";
 import {
@@ -31,7 +32,7 @@ export default function AddIdentityProvider() {
 
   const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
-  const history = useHistory();
+  const navigate = useNavigate();
   const { realm } = useRealm();
 
   const save = async (provider: IdentityProviderRepresentation) => {
@@ -42,7 +43,7 @@ export default function AddIdentityProvider() {
         alias: providerId,
       });
       addAlert(t("createSuccess"), AlertVariant.success);
-      history.push(
+      navigate(
         toIdentityProvider({
           realm,
           providerId: providerId!,

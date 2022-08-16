@@ -13,7 +13,7 @@ import {
 } from "@patternfly/react-core";
 import { useTranslation } from "react-i18next";
 import { Controller, useFormContext } from "react-hook-form";
-import { useHistory } from "react-router-dom";
+import { useNavigate } from "react-router-dom-v5-compat";
 
 import { FormAccess } from "../components/form-access/FormAccess";
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
@@ -58,7 +58,7 @@ export const UserForm = ({
     isRequiredUserActionsDropdownOpen,
     setRequiredUserActionsDropdownOpen,
   ] = useState(false);
-  const history = useHistory();
+  const navigate = useNavigate();
   const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
 
@@ -432,7 +432,7 @@ export const UserForm = ({
         <Button
           data-testid="cancel-create-user"
           onClick={() =>
-            user?.id ? reset(user) : history.push(`/${realmName}/users`)
+            user?.id ? reset(user) : navigate(`/${realmName}/users`)
           }
           variant="link"
         >

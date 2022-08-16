@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useHistory } from "react-router-dom";
+import { useNavigate } from "react-router-dom-v5-compat";
 import { useTranslation } from "react-i18next";
 import {
   Button,
@@ -80,7 +80,7 @@ const SelectFilter = ({ onFilter }: SelectFilterProps) => {
 
 export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
   const { t } = useTranslation("realm-settings");
-  const history = useHistory();
+  const navigate = useNavigate();
 
   const [publicKey, setPublicKey] = useState("");
   const [certificate, setCertificate] = useState("");
@@ -235,7 +235,7 @@ export const KeysListTab = ({ realmComponents }: KeysListTabProps) => {
             instructions={t("noKeysDescription")}
             primaryActionText={t("addProvider")}
             onPrimaryAction={() =>
-              history.push(toKeysTab({ realm, tab: "providers" }))
+              navigate(toKeysTab({ realm, tab: "providers" }))
             }
           />
         }

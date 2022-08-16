@@ -15,14 +15,15 @@ import { FormProvider, useForm } from "react-hook-form";
 import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useAlerts } from "../components/alert/Alerts";
 import { useTranslation } from "react-i18next";
-import { useHistory, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom-v5-compat";
 import { Header } from "./shared/Header";
 import { toUserFederation } from "./routes/UserFederation";
 
 export default function UserFederationKerberosSettings() {
   const { t } = useTranslation("user-federation");
   const form = useForm<ComponentRepresentation>({ mode: "onChange" });
-  const history = useHistory();
+  const navigate = useNavigate();
   const { adminClient } = useAdminClient();
   const { realm } = useRealm();
 
@@ -54,7 +55,7 @@ export default function UserFederationKerberosSettings() {
     try {
       if (!id) {
         await adminClient.components.create(component);
-        history.push(`/${realm}/user-federation`);
+        navigate(`/${realm}/user-federation`);
       } else {
         await adminClient.components.update({ id }, component);
       }
@@ -87,7 +88,7 @@ export default function UserFederationKerberosSettings() {
             </Button>
             <Button
               variant="link"
-              onClick={() => history.push(toUserFederation({ realm }))}
+              onClick={() => navigate(toUserFederation({ realm }))}
               data-testid="kerberos-cancel"
             >
               {t("common:cancel")}

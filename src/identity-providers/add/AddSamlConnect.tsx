@@ -1,4 +1,5 @@
-import { Link, useHistory } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom-v5-compat";
 import { useTranslation } from "react-i18next";
 import { FormProvider, useForm } from "react-hook-form";
 import {
@@ -25,7 +26,7 @@ type DiscoveryIdentityProvider = IdentityProviderRepresentation & {
 
 export default function AddSamlConnect() {
   const { t } = useTranslation("identity-providers");
-  const history = useHistory();
+  const navigate = useNavigate();
   const id = "saml";
 
   const form = useForm<DiscoveryIdentityProvider>({
@@ -48,7 +49,7 @@ export default function AddSamlConnect() {
         providerId: id,
       });
       addAlert(t("createSuccess"), AlertVariant.success);
-      history.push(
+      navigate(
         toIdentityProvider({
           realm,
           providerId: id,

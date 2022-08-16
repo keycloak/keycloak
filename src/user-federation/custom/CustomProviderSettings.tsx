@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Link, useHistory, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom-v5-compat";
 import { useTranslation } from "react-i18next";
 import { FormProvider, useForm } from "react-hook-form";
 import {
@@ -29,7 +30,7 @@ import "./custom-provider-settings.css";
 export default function CustomProviderSettings() {
   const { t } = useTranslation("user-federation");
   const { id, providerId } = useParams<ProviderRouteParams>();
-  const history = useHistory();
+  const navigate = useNavigate();
   const form = useForm<ComponentRepresentation>({
     mode: "onChange",
   });
@@ -88,7 +89,7 @@ export default function CustomProviderSettings() {
     try {
       if (!id) {
         await adminClient.components.create(saveComponent);
-        history.push(toUserFederation({ realm: realmName }));
+        navigate(toUserFederation({ realm: realmName }));
       } else {
         await adminClient.components.update({ id }, saveComponent);
       }

@@ -32,6 +32,7 @@ import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/us
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useHistory } from "react-router-dom";
+import { useNavigate } from "react-router-dom-v5-compat";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
@@ -64,6 +65,7 @@ export default function UsersSection() {
   const { addAlert, addError } = useAlerts();
   const { realm: realmName } = useRealm();
   const history = useHistory();
+  const navigate = useNavigate();
   const [userStorage, setUserStorage] = useState<ComponentRepresentation[]>();
   const [searchUser, setSearchUser] = useState<string>();
   const [realm, setRealm] = useState<RealmRepresentation | undefined>();
@@ -222,7 +224,7 @@ export default function UsersSection() {
     );
   };
 
-  const goToCreate = () => history.push(toAddUser({ realm: realmName }));
+  const goToCreate = () => navigate(toAddUser({ realm: realmName }));
 
   if (!userStorage) {
     return <KeycloakSpinner />;

@@ -1,5 +1,6 @@
 import { Children, isValidElement, useState } from "react";
-import { useHistory, useRouteMatch } from "react-router-dom";
+import { useRouteMatch } from "react-router-dom";
+import { useNavigate } from "react-router-dom-v5-compat";
 import { TabProps, Tabs, TabsProps } from "@patternfly/react-core";
 import { useFormContext } from "react-hook-form";
 import { useConfirmDialog } from "../confirm-dialog/ConfirmDialog";
@@ -29,7 +30,7 @@ export const KeycloakTabs = ({
 }: KeycloakTabsProps) => {
   const match = useRouteMatch();
   const params = match.params as { [index: string]: string };
-  const history = useHistory();
+  const navigate = useNavigate();
   const form = useFormContext() as
     | ReturnType<typeof useFormContext>
     | undefined;
@@ -50,7 +51,7 @@ export const KeycloakTabs = ({
     continueButtonLabel: "common:leave",
     onConfirm: () => {
       form?.reset();
-      history.push(createUrl(path, { ...params, [paramName]: key as string }));
+      navigate(createUrl(path, { ...params, [paramName]: key as string }));
     },
   });
 
@@ -70,7 +71,7 @@ export const KeycloakTabs = ({
             setKey(key as string);
             toggleChangeTabDialog();
           } else {
-            history.push(
+            navigate(
               createUrl(path, { ...params, [paramName]: key as string })
             );
           }

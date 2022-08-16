@@ -1,5 +1,6 @@
 import { ReactElement } from "react";
-import { useHistory, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom-v5-compat";
 import { useTranslation } from "react-i18next";
 import {
   AlertVariant,
@@ -31,7 +32,7 @@ export const Header = ({
 }: HeaderProps) => {
   const { t } = useTranslation("user-federation");
   const { id } = useParams<ProviderRouteParams>();
-  const history = useHistory();
+  const navigate = useNavigate();
 
   const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
@@ -58,7 +59,7 @@ export const Header = ({
       try {
         await adminClient.components.del({ id: id! });
         addAlert(t("userFedDeletedSuccess"), AlertVariant.success);
-        history.replace(toUserFederation({ realm }));
+        navigate(toUserFederation({ realm }), { replace: true });
       } catch (error) {
         addError("user-federation:userFedDeleteError", error);
       }

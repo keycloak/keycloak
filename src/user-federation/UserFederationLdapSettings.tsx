@@ -24,7 +24,8 @@ import { FormProvider, useForm, useFormContext } from "react-hook-form";
 import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useAlerts } from "../components/alert/Alerts";
 import { useTranslation } from "react-i18next";
-import { useHistory, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom-v5-compat";
 import { ScrollForm } from "../components/scroll-form/ScrollForm";
 
 import { KeycloakTabs } from "../components/keycloak-tabs/KeycloakTabs";
@@ -47,7 +48,7 @@ const AddLdapFormContent = ({
   const { t } = useTranslation("user-federation");
   const form = useFormContext();
   const { id } = useParams<{ id: string }>();
-  const history = useHistory();
+  const navigate = useNavigate();
 
   const { realm } = useRealm();
 
@@ -94,7 +95,7 @@ const AddLdapFormContent = ({
           </Button>
           <Button
             variant="link"
-            onClick={() => history.push(toUserFederation({ realm }))}
+            onClick={() => navigate(toUserFederation({ realm }))}
             data-testid="ldap-cancel"
           >
             {t("common:cancel")}
@@ -108,7 +109,7 @@ const AddLdapFormContent = ({
 export default function UserFederationLdapSettings() {
   const { t } = useTranslation("user-federation");
   const form = useForm<ComponentRepresentation>({ mode: "onChange" });
-  const history = useHistory();
+  const navigate = useNavigate();
   const { adminClient } = useAdminClient();
   const { realm } = useRealm();
 
@@ -167,7 +168,7 @@ export default function UserFederationLdapSettings() {
     try {
       if (!id) {
         await adminClient.components.create(component);
-        history.push(toUserFederation({ realm }));
+        navigate(toUserFederation({ realm }));
       } else {
         await adminClient.components.update({ id }, component);
       }

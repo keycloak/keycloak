@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useHistory, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom-v5-compat";
 import { useTranslation } from "react-i18next";
 import {
   AlertVariant,
@@ -40,6 +41,7 @@ export default function ClientScopeForm() {
   const [clientScope, setClientScope] =
     useState<ClientScopeDefaultOptionalType>();
   const history = useHistory();
+  const navigate = useNavigate();
   const { realm } = useRealm();
 
   const { adminClient } = useAdminClient();
@@ -97,7 +99,7 @@ export default function ClientScopeForm() {
           { ...clientScopes, id: scope.id },
           clientScopes.type
         );
-        history.push(
+        navigate(
           toClientScope({
             realm,
             id: scope.id!,
@@ -166,7 +168,7 @@ export default function ClientScopeForm() {
   ): Promise<void> => {
     if (!Array.isArray(mappers)) {
       const mapper = mappers as ProtocolMapperTypeRepresentation;
-      history.push(
+      navigate(
         toMapper({
           realm,
           id: clientScope!.id!,

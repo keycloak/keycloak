@@ -7,7 +7,8 @@ import {
 } from "@patternfly/react-core";
 import { useEffect, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
-import { Link, useHistory } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom-v5-compat";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
 import { KeycloakDataTable } from "../../components/table-toolbar/KeycloakDataTable";
@@ -19,7 +20,7 @@ import { useUserProfile } from "./UserProfileContext";
 export const AttributesGroupTab = () => {
   const { config, save } = useUserProfile();
   const { t } = useTranslation("attributes-group");
-  const history = useHistory();
+  const navigate = useNavigate();
   const { realm } = useRealm();
   const [key, setKey] = useState(0);
   const [groupToDelete, setGroupToDelete] = useState<UserProfileGroup>();
@@ -109,9 +110,7 @@ export const AttributesGroupTab = () => {
             message={t("emptyStateMessage")}
             instructions={t("emptyStateInstructions")}
             primaryActionText={t("createGroupText")}
-            onPrimaryAction={() =>
-              history.push(toNewAttributesGroup({ realm }))
-            }
+            onPrimaryAction={() => navigate(toNewAttributesGroup({ realm }))}
           />
         }
       />

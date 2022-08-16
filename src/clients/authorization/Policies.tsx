@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Link, useHistory } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom-v5-compat";
 import { useTranslation } from "react-i18next";
 import {
   Alert,
@@ -52,7 +53,7 @@ export const AuthorizationPolicies = ({ clientId }: PoliciesProps) => {
   const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
-  const history = useHistory();
+  const navigate = useNavigate();
 
   const [policies, setPolicies] = useState<ExpandablePolicyRepresentation[]>();
   const [selectedPolicy, setSelectedPolicy] =
@@ -172,7 +173,7 @@ export const AuthorizationPolicies = ({ clientId }: PoliciesProps) => {
             <NewPolicyDialog
               policyProviders={policyProviders}
               onSelect={(p) =>
-                history.push(
+                navigate(
                   toCreatePolicy({ id: clientId, realm, policyType: p.type! })
                 )
               }
@@ -319,7 +320,7 @@ export const AuthorizationPolicies = ({ clientId }: PoliciesProps) => {
                 (p) => p.type !== "aggregate"
               )}
               onSelect={(p) =>
-                history.push(
+                navigate(
                   toCreatePolicy({ id: clientId, realm, policyType: p.type! })
                 )
               }

@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Link, useHistory } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom-v5-compat";
 import { Trans, useTranslation } from "react-i18next";
 import {
   Card,
@@ -45,7 +46,7 @@ type PermissionsTabProps = {
 
 export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
   const { t } = useTranslation("common");
-  const history = useHistory();
+  const navigate = useNavigate();
   const { adminClient } = useAdminClient();
   const { realm } = useRealm();
   const [realmId, setRealmId] = useState("");
@@ -219,7 +220,7 @@ export const PermissionsTab = ({ id, type }: PermissionsTabProps) => {
                             {
                               title: t("common:edit"),
                               onClick() {
-                                history.push(
+                                navigate(
                                   toPermissionDetails({
                                     realm,
                                     id: realmId,

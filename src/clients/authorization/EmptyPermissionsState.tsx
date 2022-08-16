@@ -1,4 +1,4 @@
-import { useHistory } from "react-router-dom";
+import { useNavigate } from "react-router-dom-v5-compat";
 import { useTranslation } from "react-i18next";
 import {
   EmptyState,
@@ -27,7 +27,7 @@ const EmptyButton = ({
 }: EmptyButtonProps) => {
   const { t } = useTranslation("clients");
   const { realm } = useRealm();
-  const history = useHistory();
+  const navigate = useNavigate();
   return (
     <Button
       data-testid={`create-${permissionType}`}
@@ -37,7 +37,7 @@ const EmptyButton = ({
       variant="secondary"
       onClick={() =>
         !disabled &&
-        history.push(toNewPermission({ realm, id: clientId, permissionType }))
+        navigate(toNewPermission({ realm, id: clientId, permissionType }))
       }
     >
       {t(`create${toUpperCase(permissionType)}BasedPermission`)}

@@ -1,5 +1,6 @@
 import { useEffect } from "react";
-import { Link, useHistory, useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { useLocation } from "react-router-dom-v5-compat";
 import { useTranslation } from "react-i18next";
 import { Breadcrumb, BreadcrumbItem } from "@patternfly/react-core";
 
@@ -10,17 +11,15 @@ export const GroupBreadCrumbs = () => {
   const { t } = useTranslation();
   const { clear, remove, subGroups } = useSubGroups();
   const { realm } = useRealm();
-
-  const history = useHistory();
   const location = useLocation();
 
   useEffect(() => {
-    return history.listen(({ pathname }) => {
-      if (!pathname.includes("/groups") || pathname.endsWith("/groups")) {
-        clear();
-      }
-    });
-  }, [history]);
+    const { pathname } = location;
+
+    if (!pathname.includes("/groups") || pathname.endsWith("/groups")) {
+      clear();
+    }
+  }, [location]);
 
   return subGroups.length !== 0 ? (
     <Breadcrumb>

@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { useHistory, useParams, useRouteMatch } from "react-router-dom";
+import { useParams, useRouteMatch } from "react-router-dom";
+import { useNavigate } from "react-router-dom-v5-compat";
 import {
   AlertVariant,
   ButtonVariant,
@@ -47,7 +48,7 @@ export default function RealmRoleTabs() {
     mode: "onChange",
   });
   const { setValue, getValues, trigger, reset } = form;
-  const history = useHistory();
+  const navigate = useNavigate();
 
   const { adminClient } = useAdminClient();
   const [role, setRole] = useState<AttributeForm>();
@@ -170,7 +171,7 @@ export default function RealmRoleTabs() {
         }
 
         setRole(convert(createdRole));
-        history.push(
+        navigate(
           url.substr(0, url.lastIndexOf("/") + 1) + createdRole.id + "/details"
         );
       }
@@ -198,7 +199,7 @@ export default function RealmRoleTabs() {
           });
         }
         addAlert(t("roleDeletedSuccess"), AlertVariant.success);
-        history.push(url.substr(0, url.indexOf("/roles") + "/roles".length));
+        navigate(url.substr(0, url.indexOf("/roles") + "/roles".length));
       } catch (error) {
         addError("roles:roleDeleteError", error);
       }
@@ -264,7 +265,7 @@ export default function RealmRoleTabs() {
           t("compositesRemovedAlertDescription")
         );
         const loc = url.replace(/\/AssociatedRoles/g, "/details");
-        history.push(loc);
+        navigate(loc);
         refresh();
       } catch (error) {
         addError("roles:roleDeleteError", error);
@@ -291,7 +292,7 @@ export default function RealmRoleTabs() {
           id,
           tab: "associated-roles",
         });
-    history.push(to);
+    navigate(to);
   };
 
   const addComposites = async (composites: RoleRepresentation[]) => {

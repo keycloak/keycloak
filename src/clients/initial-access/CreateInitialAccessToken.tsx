@@ -15,7 +15,8 @@ import { FormAccess } from "../../components/form-access/FormAccess";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { HelpItem } from "../../components/help-enabler/HelpItem";
 import { TimeSelector } from "../../components/time-selector/TimeSelector";
-import { Link, useHistory } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom-v5-compat";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useAdminClient } from "../../context/auth/AdminClient";
 import { useAlerts } from "../../components/alert/Alerts";
@@ -34,7 +35,7 @@ export default function CreateInitialAccessToken() {
   const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();
 
-  const history = useHistory();
+  const navigate = useNavigate();
   const [token, setToken] = useState("");
 
   const save = async (clientToken: ClientInitialAccessPresentation) => {
@@ -57,7 +58,7 @@ export default function CreateInitialAccessToken() {
           toggleDialog={() => {
             setToken("");
             addAlert(t("tokenSaveSuccess"), AlertVariant.success);
-            history.push(toClients({ realm, tab: "initial-access-token" }));
+            navigate(toClients({ realm, tab: "initial-access-token" }));
           }}
         />
       )}

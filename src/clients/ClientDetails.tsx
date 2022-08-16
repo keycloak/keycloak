@@ -17,6 +17,7 @@ import { useMemo, useState } from "react";
 import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useHistory, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom-v5-compat";
 import { useAlerts } from "../components/alert/Alerts";
 import {
   ConfirmDialogModal,
@@ -197,6 +198,7 @@ export default function ClientDetails() {
   const hasViewUsers = hasAccess("view-users");
 
   const history = useHistory();
+  const navigate = useNavigate();
 
   const [downloadDialogOpen, toggleDownloadDialogOpen] = useToggle();
   const [changeAuthenticatorOpen, toggleChangeAuthenticatorOpen] = useToggle();
@@ -227,7 +229,7 @@ export default function ClientDetails() {
       try {
         await adminClient.clients.del({ id: clientId });
         addAlert(t("clientDeletedSuccess"), AlertVariant.success);
-        history.push(toClients({ realm }));
+        navigate(toClients({ realm }));
       } catch (error) {
         addError("clients:clientDeleteError", error);
       }

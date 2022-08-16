@@ -23,7 +23,8 @@ import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
 import { FormAccess } from "../components/form-access/FormAccess";
 import { ViewHeader } from "../components/view-header/ViewHeader";
-import { Link, useHistory, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom-v5-compat";
 import { useAlerts } from "../components/alert/Alerts";
 import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import type ClientProfileRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientProfileRepresentation";
@@ -49,7 +50,7 @@ const defaultValues: ClientProfileForm = {
 
 export default function ClientProfileForm() {
   const { t } = useTranslation("realm-settings");
-  const history = useHistory();
+  const navigate = useNavigate();
   const {
     handleSubmit,
     setValue,
@@ -109,7 +110,7 @@ export default function ClientProfileForm() {
         AlertVariant.success
       );
 
-      history.push(toClientProfile({ realm, profileName: form.name }));
+      navigate(toClientProfile({ realm, profileName: form.name }));
     } catch (error) {
       addError(
         editMode
@@ -162,7 +163,7 @@ export default function ClientProfileForm() {
             globalProfiles,
           });
           addAlert(t("deleteExecutorSuccess"), AlertVariant.success);
-          history.push(toClientProfile({ realm, profileName }));
+          navigate(toClientProfile({ realm, profileName }));
         } catch (error) {
           addError(t("deleteExecutorError"), error);
         }
@@ -177,7 +178,7 @@ export default function ClientProfileForm() {
             globalProfiles,
           });
           addAlert(t("deleteClientSuccess"), AlertVariant.success);
-          history.push(toClientPolicies({ realm, tab: "profiles" }));
+          navigate(toClientPolicies({ realm, tab: "profiles" }));
         } catch (error) {
           addError(t("deleteClientError"), error);
         }

@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Link, useHistory, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom-v5-compat";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import {
@@ -28,7 +29,7 @@ import { DeleteScopeDialog } from "./DeleteScopeDialog";
 export default function ScopeDetails() {
   const { t } = useTranslation("clients");
   const { id, scopeId, realm } = useParams<ScopeDetailsParams>();
-  const history = useHistory();
+  const navigate = useNavigate();
 
   const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
@@ -81,9 +82,7 @@ export default function ScopeDetails() {
             iconUri: scope.iconUri,
           }
         );
-        history.push(
-          toAuthorizationTab({ realm, clientId: id, tab: "scopes" })
-        );
+        navigate(toAuthorizationTab({ realm, clientId: id, tab: "scopes" }));
       }
       addAlert(
         t((scopeId ? "update" : "create") + "ScopeSuccess"),
@@ -102,9 +101,7 @@ export default function ScopeDetails() {
         toggleDialog={toggleDeleteDialog}
         selectedScope={scope}
         refresh={() =>
-          history.push(
-            toAuthorizationTab({ realm, clientId: id, tab: "scopes" })
-          )
+          navigate(toAuthorizationTab({ realm, clientId: id, tab: "scopes" }))
         }
       />
       <ViewHeader

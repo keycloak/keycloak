@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Link, useHistory, useParams, useRouteMatch } from "react-router-dom";
+import { Link, useParams, useRouteMatch } from "react-router-dom";
+import { useNavigate } from "react-router-dom-v5-compat";
 import { useTranslation } from "react-i18next";
 import {
   AlertVariant,
@@ -17,7 +18,7 @@ import { useConfirmDialog } from "../../../components/confirm-dialog/ConfirmDial
 import useLocaleSort, { mapByKey } from "../../../utils/useLocaleSort";
 
 export const LdapMapperList = () => {
-  const history = useHistory();
+  const navigate = useNavigate();
   const { t } = useTranslation("user-federation");
   const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
@@ -97,7 +98,7 @@ export const LdapMapperList = () => {
             <Button
               data-testid="add-mapper-btn"
               variant="primary"
-              onClick={() => history.push(`${url}/new`)}
+              onClick={() => navigate(`${url}/new`)}
             >
               {t("common:addMapper")}
             </Button>
@@ -126,7 +127,7 @@ export const LdapMapperList = () => {
             message={t("common:emptyMappers")}
             instructions={t("common:emptyMappersInstructions")}
             primaryActionText={t("common:emptyPrimaryAction")}
-            onPrimaryAction={() => history.push(`${url}/new`)}
+            onPrimaryAction={() => navigate(`${url}/new`)}
           />
         }
       />

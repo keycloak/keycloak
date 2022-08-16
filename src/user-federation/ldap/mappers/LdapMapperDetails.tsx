@@ -17,7 +17,8 @@ import { convertFormValuesToObject, convertToFormValues } from "../../../util";
 import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
 import { useAdminClient, useFetch } from "../../../context/auth/AdminClient";
 import { ViewHeader } from "../../../components/view-header/ViewHeader";
-import { useHistory, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom-v5-compat";
 import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
 import { useAlerts } from "../../../components/alert/Alerts";
 import { useTranslation } from "react-i18next";
@@ -39,7 +40,7 @@ export default function LdapMapperDetails() {
 
   const { adminClient } = useAdminClient();
   const { id, mapperId } = useParams<{ id: string; mapperId: string }>();
-  const history = useHistory();
+  const navigate = useNavigate();
   const { realm } = useRealm();
   const { t } = useTranslation("user-federation");
   const { addAlert, addError } = useAlerts();
@@ -92,7 +93,7 @@ export default function LdapMapperDetails() {
     try {
       if (mapperId === "new") {
         await adminClient.components.create(map);
-        history.push(
+        navigate(
           toUserFederationLdap({ realm, id: mapper.parentId!, tab: "mappers" })
         );
       } else {
@@ -128,7 +129,7 @@ export default function LdapMapperDetails() {
           id: mapping!.id!,
         });
         addAlert(t("common:mappingDeletedSuccess"), AlertVariant.success);
-        history.push(toUserFederationLdap({ id, realm, tab: "mappers" }));
+        navigate(toUserFederationLdap({ id, realm, tab: "mappers" }));
       } catch (error) {
         addError("common:mappingDeletedError", error);
       }
@@ -306,8 +307,8 @@ export default function LdapMapperDetails() {
               variant="link"
               onClick={() =>
                 isNew
-                  ? history.goBack()
-                  : history.push(
+                  ? navigate(-1)
+                  : navigate(
                       `/${realm}/user-federation/ldap/${
                         mapping!.parentId
                       }/mappers`

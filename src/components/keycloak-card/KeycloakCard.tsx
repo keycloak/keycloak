@@ -13,7 +13,8 @@ import {
   FlexItem,
 } from "@patternfly/react-core";
 import "./keycloak-card.css";
-import { useHistory, useRouteMatch } from "react-router-dom";
+import { useRouteMatch } from "react-router-dom";
+import { useNavigate } from "react-router-dom-v5-compat";
 
 export type KeycloakCardProps = {
   id: string;
@@ -37,7 +38,7 @@ export const KeycloakCard = ({
 }: KeycloakCardProps) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  const history = useHistory();
+  const navigate = useNavigate();
   const { url } = useRouteMatch();
 
   const onDropdownToggle = () => {
@@ -49,7 +50,7 @@ export const KeycloakCard = ({
   };
 
   const openSettings = () => {
-    history.push(`${url}/${providerId}/${id}`);
+    navigate(`${url}/${providerId}/${id}`);
   };
 
   return (

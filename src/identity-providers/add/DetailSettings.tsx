@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Link, useHistory, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom-v5-compat";
 import { useTranslation } from "react-i18next";
 import {
   Controller,
@@ -128,7 +129,7 @@ export default function DetailSettings() {
 
   const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
-  const history = useHistory();
+  const navigate = useNavigate();
   const { realm } = useRealm();
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
@@ -203,7 +204,7 @@ export default function DetailSettings() {
       try {
         await adminClient.identityProviders.del({ alias: alias });
         addAlert(t("deletedSuccess"), AlertVariant.success);
-        history.push(toIdentityProviders({ realm }));
+        navigate(toIdentityProviders({ realm }));
       } catch (error) {
         addError("identity-providers:deleteErrorError", error);
       }
@@ -225,7 +226,7 @@ export default function DetailSettings() {
         });
         addAlert(t("deleteMapperSuccess"), AlertVariant.success);
         refresh();
-        history.push(
+        navigate(
           toIdentityProvider({ providerId, alias, tab: "mappers", realm })
         );
       } catch (error) {
@@ -382,7 +383,7 @@ export default function DetailSettings() {
                   instructions={t("identity-providers:noMappersInstructions")}
                   primaryActionText={t("identity-providers:addMapper")}
                   onPrimaryAction={() =>
-                    history.push(
+                    navigate(
                       toIdentityProviderAddMapper({
                         realm,
                         alias: alias!,

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useHistory, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom-v5-compat";
 import { useTranslation } from "react-i18next";
 import {
   AlertVariant,
@@ -31,6 +32,7 @@ import { DedicatedScope } from "./DecicatedScope";
 export default function DedicatedScopes() {
   const { t } = useTranslation("clients");
   const history = useHistory();
+  const navigate = useNavigate();
   const { realm, clientId } = useParams<DedicatedScopeDetailsParams>();
 
   const { adminClient } = useAdminClient();
@@ -55,7 +57,7 @@ export default function DedicatedScopes() {
   ): Promise<void> => {
     if (!Array.isArray(mappers)) {
       const mapper = mappers as ProtocolMapperTypeRepresentation;
-      history.push(
+      navigate(
         toMapper({
           realm,
           id: client.id!,

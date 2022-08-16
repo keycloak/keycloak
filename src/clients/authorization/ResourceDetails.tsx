@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Link, useHistory, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom-v5-compat";
 import { Controller, FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import {
@@ -57,7 +58,7 @@ export default function ResourceDetails() {
   const { register, errors, control, setValue, handleSubmit } = form;
 
   const { id, resourceId, realm } = useParams<ResourceDetailsParams>();
-  const history = useHistory();
+  const navigate = useNavigate();
 
   const setupForm = (resource: ResourceRepresentation = {}) => {
     convertToFormValues(resource, setValue);
@@ -100,7 +101,7 @@ export default function ResourceDetails() {
           { id },
           resource
         );
-        history.push(toResourceDetails({ realm, id, resourceId: result._id! }));
+        navigate(toResourceDetails({ realm, id, resourceId: result._id! }));
       }
       addAlert(
         t((resourceId ? "update" : "create") + "ResourceSuccess"),
@@ -143,9 +144,7 @@ export default function ResourceDetails() {
           resourceId: resourceId!,
         });
         addAlert(t("resourceDeletedSuccess"), AlertVariant.success);
-        history.push(
-          toAuthorizationTab({ realm, clientId: id, tab: "resources" })
-        );
+        navigate(toAuthorizationTab({ realm, clientId: id, tab: "resources" }));
       } catch (error) {
         addError("clients:resourceDeletedError", error);
       }

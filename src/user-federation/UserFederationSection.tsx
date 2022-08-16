@@ -17,7 +17,7 @@ import { DatabaseIcon } from "@patternfly/react-icons";
 import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentRepresentation";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useHistory } from "react-router-dom";
+import { useNavigate } from "react-router-dom-v5-compat";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { ManagePriorityDialog } from "./ManagePriorityDialog";
@@ -42,7 +42,7 @@ export default function UserFederationSection() {
   const [key, setKey] = useState(0);
   const refresh = () => setKey(new Date().getTime());
 
-  const history = useHistory();
+  const navigate = useNavigate();
 
   const [manageDisplayDialog, setManageDisplayDialog] = useState(false);
 
@@ -72,7 +72,7 @@ export default function UserFederationSection() {
         <DropdownItem
           key={p.id}
           onClick={() =>
-            history.push(toProvider({ realm, providerId: p.id!, id: "new" }))
+            navigate(toProvider({ realm, providerId: p.id!, id: "new" }))
           }
         >
           {p.id.toUpperCase() == "LDAP"
@@ -200,7 +200,7 @@ export default function UserFederationSection() {
                   role="button"
                   isHoverable
                   onClick={() =>
-                    history.push(toProvider({ realm, providerId: p.id! }))
+                    navigate(toProvider({ realm, providerId: p.id! }))
                   }
                   data-testid={`${p.id}-card`}
                 >

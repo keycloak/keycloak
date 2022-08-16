@@ -1,5 +1,6 @@
 import { FunctionComponent, useState } from "react";
-import { Link, useHistory, useRouteMatch } from "react-router-dom";
+import { Link, useRouteMatch } from "react-router-dom";
+import { useNavigate } from "react-router-dom-v5-compat";
 import { useTranslation } from "react-i18next";
 import { AlertVariant, Button, ButtonVariant } from "@patternfly/react-core";
 
@@ -55,7 +56,7 @@ export const RolesList = ({
   isReadOnly,
 }: RolesListProps) => {
   const { t } = useTranslation(messageBundle);
-  const history = useHistory();
+  const navigate = useNavigate();
   const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const { url } = useRouteMatch();
@@ -115,7 +116,7 @@ export const RolesList = ({
     },
   });
 
-  const goToCreate = () => history.push(`${url}/add-role`);
+  const goToCreate = () => navigate(`${url}/add-role`);
 
   if (!realm) {
     return <KeycloakSpinner />;

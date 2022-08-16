@@ -8,7 +8,8 @@ import {
 } from "@patternfly/react-core";
 import { FormProvider, useForm, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { Link, useHistory, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom-v5-compat";
 import { ScrollForm } from "../components/scroll-form/ScrollForm";
 import type UserProfileConfig from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
 import { AttributeGeneralSettings } from "./user-profile/attribute/AttributeGeneralSettings";
@@ -102,7 +103,7 @@ export default function NewAttributeSettings() {
   const { adminClient } = useAdminClient();
   const form = useForm<UserProfileConfig>({ shouldUnregister: false });
   const { t } = useTranslation("realm-settings");
-  const history = useHistory();
+  const navigate = useNavigate();
   const { addAlert, addError } = useAlerts();
   const [config, setConfig] = useState<UserProfileConfig | null>(null);
   const editMode = attributeName ? true : false;
@@ -208,7 +209,7 @@ export default function NewAttributeSettings() {
         realm,
       });
 
-      history.push(toUserProfile({ realm, tab: "attributes" }));
+      navigate(toUserProfile({ realm, tab: "attributes" }));
 
       addAlert(
         t("realm-settings:createAttributeSuccess"),

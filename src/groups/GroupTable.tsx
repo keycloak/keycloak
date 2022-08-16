@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Link, useHistory, useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom-v5-compat";
 import { useTranslation } from "react-i18next";
 import { cellWidth } from "@patternfly/react-table";
 
@@ -37,7 +38,7 @@ export const GroupTable = ({ toggleView }: GroupTableProps) => {
   const [key, setKey] = useState(0);
   const refresh = () => setKey(new Date().getTime());
 
-  const history = useHistory();
+  const navigate = useNavigate();
   const location = useLocation();
   const id = getLastId(location.pathname);
 
@@ -63,7 +64,7 @@ export const GroupTable = ({ toggleView }: GroupTableProps) => {
     }
 
     if (!groupsData) {
-      history.push(toGroups({ realm }));
+      navigate(toGroups({ realm }));
     }
 
     return groupsData || [];

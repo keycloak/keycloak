@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Link, useHistory } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom-v5-compat";
 import { useTranslation } from "react-i18next";
 import {
   AlertVariant,
@@ -52,7 +53,7 @@ type ExpandablePolicyRepresentation = PolicyRepresentation & {
 
 export const AuthorizationPermissions = ({ clientId }: PermissionsProps) => {
   const { t } = useTranslation("clients");
-  const history = useHistory();
+  const navigate = useNavigate();
   const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
@@ -216,7 +217,7 @@ export const AuthorizationPermissions = ({ clientId }: PermissionsProps) => {
                       isDisabled={disabledCreate?.resources}
                       component="button"
                       onClick={() =>
-                        history.push(
+                        navigate(
                           toNewPermission({
                             realm,
                             id: clientId,
@@ -233,7 +234,7 @@ export const AuthorizationPermissions = ({ clientId }: PermissionsProps) => {
                       isDisabled={disabledCreate?.scopes}
                       component="button"
                       onClick={() =>
-                        history.push(
+                        navigate(
                           toNewPermission({
                             realm,
                             id: clientId,

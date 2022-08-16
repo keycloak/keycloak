@@ -15,7 +15,8 @@ import { FilterIcon } from "@patternfly/react-icons";
 
 import { KeycloakSpinner } from "../../components/keycloak-spinner/KeycloakSpinner";
 import { DraggableTable } from "../../authentication/components/DraggableTable";
-import { Link, useHistory } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom-v5-compat";
 import { toAddAttribute } from "../routes/AddAttribute";
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useUserProfile } from "./UserProfileContext";
@@ -32,7 +33,7 @@ export const AttributesTab = () => {
   const { config, save } = useUserProfile();
   const { realm: realmName } = useRealm();
   const { t } = useTranslation("realm-settings");
-  const history = useHistory();
+  const navigate = useNavigate();
   const [filter, setFilter] = useState("allGroups");
   const [isFilterTypeDropdownOpen, toggleIsFilterTypeDropdownOpen] =
     useToggle();
@@ -174,7 +175,7 @@ export const AttributesTab = () => {
           {
             title: t("common:edit"),
             onClick: (_key, _idx, component) => {
-              history.push(
+              navigate(
                 toAttribute({
                   realm: realmName,
                   attributeName: component.name,

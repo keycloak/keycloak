@@ -10,7 +10,7 @@ import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/
 import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { useHistory } from "react-router-dom";
+import { useNavigate } from "react-router-dom-v5-compat";
 import { useAlerts } from "../../components/alert/Alerts";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { useAdminClient } from "../../context/auth/AdminClient";
@@ -25,7 +25,7 @@ export default function NewClientForm() {
   const { t } = useTranslation("clients");
   const { realm } = useRealm();
   const { adminClient } = useAdminClient();
-  const history = useHistory();
+  const navigate = useNavigate();
 
   const [showCapabilityConfig, setShowCapabilityConfig] = useState(false);
   const [client, setClient] = useState<ClientRepresentation>({
@@ -52,9 +52,7 @@ export default function NewClientForm() {
         clientId: client.clientId?.trim(),
       });
       addAlert(t("createSuccess"), AlertVariant.success);
-      history.push(
-        toClient({ realm, clientId: newClient.id, tab: "settings" })
-      );
+      navigate(toClient({ realm, clientId: newClient.id, tab: "settings" }));
     } catch (error) {
       addError("clients:createError", error);
     }
@@ -138,7 +136,7 @@ export default function NewClientForm() {
       <PageSection variant="light">
         <FormProvider {...methods}>
           <Wizard
-            onClose={() => history.push(toClients({ realm }))}
+            onClose={() => navigate(toClients({ realm }))}
             navAriaLabel={`${title} steps`}
             mainAriaLabel={`${title} content`}
             steps={[

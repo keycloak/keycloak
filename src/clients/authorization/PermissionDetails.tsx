@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Link, useHistory, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom-v5-compat";
 import { useTranslation } from "react-i18next";
 import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
 import {
@@ -46,7 +47,7 @@ export default function PermissionDetails() {
   });
   const { register, control, reset, errors, handleSubmit } = form;
 
-  const history = useHistory();
+  const navigate = useNavigate();
   const { id, realm, permissionType, permissionId, selectedId } = useParams<
     NewPermissionParams & PermissionDetailsParams
   >();
@@ -116,7 +117,7 @@ export default function PermissionDetails() {
           { id, type: permissionType },
           permission
         );
-        history.push(
+        navigate(
           toPermissionDetails({
             realm,
             id,
@@ -149,7 +150,7 @@ export default function PermissionDetails() {
           permissionId: permissionId,
         });
         addAlert(t("permissionDeletedSuccess"), AlertVariant.success);
-        history.push(
+        navigate(
           toAuthorizationTab({ realm, clientId: id, tab: "permissions" })
         );
       } catch (error) {

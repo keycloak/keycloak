@@ -1,5 +1,6 @@
 import { FunctionComponent, useState } from "react";
-import { Link, useHistory, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom-v5-compat";
 import { useTranslation } from "react-i18next";
 import { FormProvider, useForm } from "react-hook-form";
 import {
@@ -62,7 +63,7 @@ export const isValidComponentType = (value: string) => value in COMPONENTS;
 export default function PolicyDetails() {
   const { t } = useTranslation("clients");
   const { id, realm, policyId, policyType } = useParams<PolicyDetailsParams>();
-  const history = useHistory();
+  const navigate = useNavigate();
   const form = useForm({ shouldUnregister: false });
   const { reset, handleSubmit } = form;
 
@@ -123,7 +124,7 @@ export default function PolicyDetails() {
           { id, type: policyType },
           policy
         );
-        history.push(
+        navigate(
           toPolicyDetails({
             realm,
             id,
@@ -152,9 +153,7 @@ export default function PolicyDetails() {
           policyId,
         });
         addAlert(t("policyDeletedSuccess"), AlertVariant.success);
-        history.push(
-          toAuthorizationTab({ realm, clientId: id, tab: "policies" })
-        );
+        navigate(toAuthorizationTab({ realm, clientId: id, tab: "policies" }));
       } catch (error) {
         addError("clients:policyDeletedError", error);
       }

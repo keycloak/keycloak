@@ -20,7 +20,8 @@ import type ClientPolicyRepresentation from "@keycloak/keycloak-admin-client/lib
 import { camelCase } from "lodash-es";
 import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useAlerts } from "../components/alert/Alerts";
-import { useHistory, useParams } from "react-router";
+import { useParams } from "react-router";
+import { useNavigate } from "react-router-dom-v5-compat";
 import type ComponentTypeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentTypeRepresentation";
 import { useRealm } from "../context/realm-context/RealmContext";
 import type { ConfigPropertyRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigInfoRepresentation";
@@ -41,7 +42,7 @@ type ConfigProperty = ConfigPropertyRepresentation & {
 export default function NewClientPolicyCondition() {
   const { t } = useTranslation("realm-settings");
   const { addAlert, addError } = useAlerts();
-  const history = useHistory();
+  const navigate = useNavigate();
   const { realm } = useRealm();
 
   const [openConditionType, setOpenConditionType] = useState(false);
@@ -162,7 +163,7 @@ export default function NewClientPolicyCondition() {
         policies: updatedPolicies,
       });
       setPolicies(updatedPolicies);
-      history.push(toEditClientPolicy({ realm, policyName }));
+      navigate(toEditClientPolicy({ realm, policyName }));
       addAlert(
         conditionName
           ? t("realm-settings:updateClientConditionSuccess")
@@ -267,7 +268,7 @@ export default function NewClientPolicyCondition() {
               variant="link"
               data-testid="addCondition-cancelBtn"
               onClick={() =>
-                history.push(toEditClientPolicy({ realm, policyName }))
+                navigate(toEditClientPolicy({ realm, policyName }))
               }
             >
               {t("common:cancel")}

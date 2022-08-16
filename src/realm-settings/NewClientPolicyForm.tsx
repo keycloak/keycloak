@@ -23,7 +23,8 @@ import { useTranslation } from "react-i18next";
 import { Controller, useForm } from "react-hook-form";
 import { FormAccess } from "../components/form-access/FormAccess";
 import { ViewHeader } from "../components/view-header/ViewHeader";
-import { Link, useHistory, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom-v5-compat";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useAlerts } from "../components/alert/Alerts";
 import { useAdminClient, useFetch } from "../context/auth/AdminClient";
@@ -97,7 +98,7 @@ export default function NewClientPolicyForm() {
 
   const { policyName } = useParams<EditClientPolicyParams>();
 
-  const history = useHistory();
+  const navigate = useNavigate();
   const form = useForm<ClientPolicyRepresentation>({ mode: "onChange" });
   const { handleSubmit } = form;
 
@@ -259,9 +260,7 @@ export default function NewClientPolicyForm() {
           : t("realm-settings:createClientPolicySuccess"),
         AlertVariant.success
       );
-      history.push(
-        toEditClientPolicy({ realm, policyName: createdForm.name! })
-      );
+      navigate(toEditClientPolicy({ realm, policyName: createdForm.name! }));
       setShowAddConditionsAndProfilesForm(true);
     } catch (error) {
       addError("realm-settings:createClientPolicyError", error);
@@ -285,7 +284,7 @@ export default function NewClientPolicyForm() {
           policies: updatedPolicies,
         });
         addAlert(t("deleteClientPolicySuccess"), AlertVariant.success);
-        history.push(
+        navigate(
           toClientPolicies({
             realm,
             tab: "policies",
@@ -313,7 +312,7 @@ export default function NewClientPolicyForm() {
               policies: policies,
             });
             addAlert(t("deleteConditionSuccess"), AlertVariant.success);
-            history.push(
+            navigate(
               toEditClientPolicy({ realm, policyName: formValues.name! })
             );
           } catch (error) {
@@ -329,7 +328,7 @@ export default function NewClientPolicyForm() {
               policies: updatedPolicies,
             });
             addAlert(t("deleteClientSuccess"), AlertVariant.success);
-            history.push(
+            navigate(
               toClientPolicies({
                 realm,
                 tab: "policies",
@@ -358,9 +357,7 @@ export default function NewClientPolicyForm() {
             policies: policies,
           });
           addAlert(t("deleteClientPolicyProfileSuccess"), AlertVariant.success);
-          history.push(
-            toEditClientPolicy({ realm, policyName: formValues.name! })
-          );
+          navigate(toEditClientPolicy({ realm, policyName: formValues.name! }));
         } catch (error) {
           addError(t("deleteClientPolicyProfileError"), error);
         }
@@ -374,7 +371,7 @@ export default function NewClientPolicyForm() {
             policies: updatedPolicies,
           });
           addAlert(t("deleteClientSuccess"), AlertVariant.success);
-          history.push(
+          navigate(
             toClientPolicies({
               realm,
               tab: "policies",
@@ -422,7 +419,7 @@ export default function NewClientPolicyForm() {
         policies: newPolicies,
       });
       setPolicies(newPolicies);
-      history.push(toEditClientPolicy({ realm, policyName: formValues.name! }));
+      navigate(toEditClientPolicy({ realm, policyName: formValues.name! }));
       addAlert(
         t("realm-settings:addClientProfileSuccess"),
         AlertVariant.success
@@ -506,7 +503,7 @@ export default function NewClientPolicyForm() {
               onClick={() =>
                 showAddConditionsAndProfilesForm || policyName
                   ? reset()
-                  : history.push(
+                  : navigate(
                       toClientPolicies({
                         realm,
                         tab: "policies",

@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Link, useHistory } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom-v5-compat";
 import { useTranslation } from "react-i18next";
 import { FormProvider, useForm } from "react-hook-form";
 import {
@@ -35,7 +36,7 @@ const isXml = (text: string) => text.startsWith("<");
 
 export default function ImportForm() {
   const { t } = useTranslation("clients");
-  const history = useHistory();
+  const navigate = useNavigate();
   const { adminClient } = useAdminClient();
   const { realm } = useRealm();
   const form = useForm<ClientRepresentation>({ shouldUnregister: false });
@@ -89,9 +90,7 @@ export default function ImportForm() {
         ...convertFormValuesToObject(client),
       });
       addAlert(t("clientImportSuccess"), AlertVariant.success);
-      history.push(
-        toClient({ realm, clientId: newClient.id, tab: "settings" })
-      );
+      navigate(toClient({ realm, clientId: newClient.id, tab: "settings" }));
     } catch (error) {
       addError("clients:clientImportError", error);
     }

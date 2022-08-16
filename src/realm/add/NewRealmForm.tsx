@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useHistory } from "react-router-dom";
+import { useNavigate } from "react-router-dom-v5-compat";
 import { useTranslation } from "react-i18next";
 import { Controller, useForm } from "react-hook-form";
 import {
@@ -24,7 +24,7 @@ import { convertFormValuesToObject, convertToFormValues } from "../../util";
 
 export default function NewRealmForm() {
   const { t } = useTranslation("realm");
-  const history = useHistory();
+  const navigate = useNavigate();
   const { refresh, whoAmI } = useWhoAmI();
   const { refresh: refreshRealms } = useRealms();
   const { adminClient } = useAdminClient();
@@ -55,7 +55,7 @@ export default function NewRealmForm() {
 
       refresh();
       await refreshRealms();
-      history.push(toDashboard({ realm: fields.realm }));
+      navigate(toDashboard({ realm: fields.realm }));
     } catch (error) {
       addError("realm:saveRealmError", error);
     }
@@ -113,7 +113,7 @@ export default function NewRealmForm() {
             <Button variant="primary" type="submit">
               {t("common:create")}
             </Button>
-            <Button variant="link" onClick={() => history.goBack()}>
+            <Button variant="link" onClick={() => navigate(-1)}>
               {t("common:cancel")}
             </Button>
           </ActionGroup>

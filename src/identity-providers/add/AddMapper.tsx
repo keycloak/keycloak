@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Link, useHistory, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom-v5-compat";
 import { useTranslation } from "react-i18next";
 import { FormProvider, useForm } from "react-hook-form";
 import {
@@ -52,7 +53,7 @@ export default function AddMapper() {
   });
   const { handleSubmit, register, errors } = form;
   const { addAlert, addError } = useAlerts();
-  const history = useHistory();
+  const navigate = useNavigate();
   const localeSort = useLocaleSort();
 
   const { realm } = useRealm();
@@ -105,7 +106,7 @@ export default function AddMapper() {
         });
 
         addAlert(t("mapperCreateSuccess"), AlertVariant.success);
-        history.push(
+        navigate(
           toIdentityProviderEditMapper({
             realm,
             alias,
@@ -133,7 +134,7 @@ export default function AddMapper() {
           id: id!,
         });
         addAlert(t("deleteMapperSuccess"), AlertVariant.success);
-        history.push(
+        navigate(
           toIdentityProvider({ providerId, alias, tab: "mappers", realm })
         );
       } catch (error) {

@@ -13,7 +13,7 @@ import {
 import { CheckIcon } from "@patternfly/react-icons";
 import { Fragment, ReactElement, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useHistory } from "react-router-dom";
+import { useNavigate } from "react-router-dom-v5-compat";
 
 import { useRealm } from "../../context/realm-context/RealmContext";
 import { useRealms } from "../../context/RealmsContext";
@@ -31,7 +31,7 @@ export const RealmSelector = () => {
   const { whoAmI } = useWhoAmI();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
-  const history = useHistory();
+  const navigate = useNavigate();
   const { t } = useTranslation("common");
   const recentUsed = new RecentUsed();
   const all = recentUsed.used
@@ -70,7 +70,7 @@ export const RealmSelector = () => {
       component="div"
       isBlock
       onClick={() => {
-        history.push(toAddRealm({ realm }));
+        navigate(toAddRealm({ realm }));
         setOpen(!open);
       }}
     >
@@ -80,7 +80,7 @@ export const RealmSelector = () => {
 
   const selectRealm = (realm: string) => {
     setOpen(!open);
-    history.push(toDashboard({ realm }));
+    navigate(toDashboard({ realm }));
   };
 
   const dropdownItems = realms.map((r) => (

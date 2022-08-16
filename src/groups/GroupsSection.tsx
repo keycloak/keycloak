@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Link, useHistory, useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom-v5-compat";
 import { useTranslation } from "react-i18next";
 import {
   DropdownItem,
@@ -46,7 +47,7 @@ export default function GroupsSection() {
   const [rename, setRename] = useState<string>();
   const [viewType, setViewType] = useState<ViewType>(ViewType.Table);
 
-  const history = useHistory();
+  const navigate = useNavigate();
   const location = useLocation();
   const id = getLastId(location.pathname);
 
@@ -144,7 +145,7 @@ export default function GroupsSection() {
                   key="deleteGroup"
                   onClick={async () => {
                     await deleteGroup({ id });
-                    history.push(toGroups({ realm }));
+                    navigate(toGroups({ realm }));
                   }}
                 >
                   {t("deleteGroup")}

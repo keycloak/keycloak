@@ -19,7 +19,8 @@ import { useTranslation } from "react-i18next";
 import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { prettyPrintJSON } from "../util";
 import { CodeEditor, Language } from "@patternfly/react-code-editor";
-import { Link, useHistory } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom-v5-compat";
 import type ClientPolicyRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientPolicyRepresentation";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { useAlerts } from "../components/alert/Alerts";
@@ -38,7 +39,7 @@ export const PoliciesTab = () => {
   const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
   const { realm } = useRealm();
-  const history = useHistory();
+  const navigate = useNavigate();
   const [show, setShow] = useState(false);
   const [policies, setPolicies] = useState<ClientPolicyRepresentation[]>();
   const [selectedPolicy, setSelectedPolicy] =
@@ -81,7 +82,7 @@ export const PoliciesTab = () => {
       await adminClient.clientPolicies.updatePolicy({
         policies: updatedPolicies,
       });
-      history.push(toClientPolicies({ realm, tab: "policies" }));
+      navigate(toClientPolicies({ realm, tab: "policies" }));
       addAlert(
         t("realm-settings:updateClientPolicySuccess"),
         AlertVariant.success
@@ -234,7 +235,7 @@ export const PoliciesTab = () => {
               message={t("realm-settings:noClientPolicies")}
               instructions={t("realm-settings:noClientPoliciesInstructions")}
               primaryActionText={t("realm-settings:createClientPolicy")}
-              onPrimaryAction={() => history.push(toAddClientPolicy({ realm }))}
+              onPrimaryAction={() => navigate(toAddClientPolicy({ realm }))}
             />
           }
           ariaLabelKey="realm-settings:clientPolicies"

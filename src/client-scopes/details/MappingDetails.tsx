@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Link, useHistory, useParams, useRouteMatch } from "react-router-dom";
+import { Link, useParams, useRouteMatch } from "react-router-dom";
+import { useNavigate } from "react-router-dom-v5-compat";
 import { useTranslation } from "react-i18next";
 import { FormProvider, useForm } from "react-hook-form";
 import {
@@ -45,7 +46,7 @@ export default function MappingDetails() {
     protocolMapper?: string;
   }>();
 
-  const history = useHistory();
+  const navigate = useNavigate();
   const { realm } = useRealm();
   const serverInfo = useServerInfo();
   const isGuid = /^[{]?[0-9a-fA-F]{8}-([0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}[}]?$/;
@@ -142,7 +143,7 @@ export default function MappingDetails() {
           });
         }
         addAlert(t("common:mappingDeletedSuccess"), AlertVariant.success);
-        history.push(toDetails());
+        navigate(toDetails());
       } catch (error) {
         addError("common:mappingDeletedError", error);
       }

@@ -1,5 +1,6 @@
 import { FormEvent, FunctionComponent } from "react";
-import { NavLink, useHistory, useRouteMatch } from "react-router-dom";
+import { NavLink, useRouteMatch } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom-v5-compat";
 import { useTranslation } from "react-i18next";
 import {
   Nav,
@@ -20,8 +21,8 @@ export const PageNav: FunctionComponent = () => {
   const { t } = useTranslation("common");
   const { hasAccess, hasSomeAccess } = useAccess();
   const { realm } = useRealm();
-
-  const history = useHistory();
+  const location = useLocation();
+  const navigate = useNavigate();
 
   type SelectedItem = {
     groupId: number | string;
@@ -31,7 +32,7 @@ export const PageNav: FunctionComponent = () => {
   };
 
   const onSelect = (item: SelectedItem) => {
-    history.push(item.to);
+    navigate(item.to);
     item.event.preventDefault();
   };
 
@@ -52,7 +53,7 @@ export const PageNav: FunctionComponent = () => {
     }
 
     //remove "/realm-name" from the start of the path
-    const activeItem = history.location.pathname.substring(realm.length + 1);
+    const activeItem = location.pathname.substring(realm.length + 1);
     return (
       <li>
         <NavLink

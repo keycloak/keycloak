@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useHistory } from "react-router-dom";
+import { useNavigate } from "react-router-dom-v5-compat";
 import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import {
@@ -74,7 +75,7 @@ const RealmSettingsHeader = ({
   const { adminClient } = useAdminClient();
   const { refresh: refreshRealms } = useRealms();
   const { addAlert, addError } = useAlerts();
-  const history = useHistory();
+  const navigate = useNavigate();
   const [partialImportOpen, setPartialImportOpen] = useState(false);
   const [partialExportOpen, setPartialExportOpen] = useState(false);
 
@@ -98,7 +99,7 @@ const RealmSettingsHeader = ({
         await adminClient.realms.del({ realm: realmName });
         addAlert(t("deletedSuccess"), AlertVariant.success);
         await refreshRealms();
-        history.push(toDashboard({ realm: environment.masterRealm }));
+        navigate(toDashboard({ realm: environment.masterRealm }));
         refresh();
       } catch (error) {
         addError("realm-settings:deleteError", error);
@@ -174,6 +175,7 @@ export const RealmSettingsTabs = ({
   const { realm: realmName } = useRealm();
   const { refresh: refreshRealms } = useRealms();
   const history = useHistory();
+  const navigate = useNavigate();
   const isFeatureEnabled = useIsFeatureEnabled();
 
   const { control, setValue, getValues } = useForm({
@@ -225,7 +227,7 @@ export const RealmSettingsTabs = ({
     const isRealmRenamed = realmName !== (r.realm || realm.realm);
     if (isRealmRenamed) {
       await refreshRealms();
-      history.push(toRealmSettings({ realm: r.realm!, tab: "general" }));
+      navigate(toRealmSettings({ realm: r.realm!, tab: "general" }));
     }
     refresh();
   };

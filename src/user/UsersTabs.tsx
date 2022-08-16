@@ -16,7 +16,8 @@ import { ViewHeader } from "../components/view-header/ViewHeader";
 import { BruteForced, UserForm } from "./UserForm";
 import { useAlerts } from "../components/alert/Alerts";
 import { useAdminClient, useFetch } from "../context/auth/AdminClient";
-import { useHistory, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom-v5-compat";
 import { KeycloakTabs } from "../components/keycloak-tabs/KeycloakTabs";
 import { UserGroups } from "./UserGroups";
 import { UserConsents } from "./UserConsents";
@@ -35,7 +36,7 @@ import { KeycloakSpinner } from "../components/keycloak-spinner/KeycloakSpinner"
 const UsersTabs = () => {
   const { t } = useTranslation("users");
   const { addAlert, addError } = useAlerts();
-  const history = useHistory();
+  const navigate = useNavigate();
   const { realm } = useRealm();
   const { hasAccess } = useAccess();
 
@@ -100,7 +101,7 @@ const UsersTabs = () => {
         });
 
         addAlert(t("userCreated"), AlertVariant.success);
-        history.push(toUser({ id: createdUser.id, realm, tab: "settings" }));
+        navigate(toUser({ id: createdUser.id, realm, tab: "settings" }));
       }
     } catch (error) {
       addError("users:userCreateError", error);
@@ -116,7 +117,7 @@ const UsersTabs = () => {
       try {
         await adminClient.users.del({ id });
         addAlert(t("userDeletedSuccess"), AlertVariant.success);
-        history.push(toUsers({ realm }));
+        navigate(toUsers({ realm }));
       } catch (error) {
         addError("users:userDeletedError", error);
       }

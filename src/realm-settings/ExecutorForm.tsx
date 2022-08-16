@@ -16,7 +16,8 @@ import { useAlerts } from "../components/alert/Alerts";
 import { useServerInfo } from "../context/server-info/ServerInfoProvider";
 import { Controller, FormProvider, useForm } from "react-hook-form";
 import { HelpItem } from "../components/help-enabler/HelpItem";
-import { Link, useHistory, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom-v5-compat";
 import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import type ComponentTypeRepresentation from "@keycloak/keycloak-admin-client/lib/defs/componentTypeRepresentation";
 import type { ConfigPropertyRepresentation } from "@keycloak/keycloak-admin-client/lib/defs/authenticatorConfigInfoRepresentation";
@@ -37,7 +38,7 @@ const defaultValues: ExecutorForm = {
 
 export default function ExecutorForm() {
   const { t } = useTranslation("realm-settings");
-  const history = useHistory();
+  const navigate = useNavigate();
   const { realm, profileName } = useParams<ClientProfileParams>();
   const { executorName } = useParams<ExecutorParams>();
   const { addAlert, addError } = useAlerts();
@@ -124,7 +125,7 @@ export default function ExecutorForm() {
         AlertVariant.success
       );
 
-      history.push(toClientProfile({ realm, profileName }));
+      navigate(toClientProfile({ realm, profileName }));
     } catch (error) {
       addError(
         editMode

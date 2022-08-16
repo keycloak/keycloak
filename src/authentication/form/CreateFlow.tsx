@@ -1,4 +1,5 @@
-import { Link, useHistory } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom-v5-compat";
 import { useTranslation } from "react-i18next";
 import { FormProvider, useForm } from "react-hook-form";
 import {
@@ -21,7 +22,7 @@ import { toAuthentication } from "../routes/Authentication";
 
 export default function CreateFlow() {
   const { t } = useTranslation("authentication");
-  const history = useHistory();
+  const navigate = useNavigate();
   const { realm } = useRealm();
   const form = useForm<AuthenticationFlowRepresentation>({
     defaultValues: { builtIn: false, topLevel: true },
@@ -37,7 +38,7 @@ export default function CreateFlow() {
         flow
       );
       addAlert(t("flowCreatedSuccess"), AlertVariant.success);
-      history.push(
+      navigate(
         toFlow({
           realm,
           id: id!,

@@ -2,7 +2,8 @@ import { Button, PageSection, Popover } from "@patternfly/react-core";
 import { QuestionCircleIcon } from "@patternfly/react-icons";
 
 import { useTranslation } from "react-i18next";
-import { useHistory, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom-v5-compat";
 import { useHelp } from "../components/help-enabler/HelpHeader";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
@@ -12,7 +13,7 @@ import { emptyFormatter, upperCaseFormatter } from "../util";
 import type { ClientRoleParams } from "./routes/ClientRole";
 
 export const UsersInRoleTab = () => {
-  const history = useHistory();
+  const navigate = useNavigate();
   const { realm } = useRealm();
 
   const { t } = useTranslation("roles");
@@ -62,7 +63,7 @@ export const UsersInRoleTab = () => {
                   <Button
                     className="kc-groups-link"
                     variant="link"
-                    onClick={() => history.push(`/${realm}/groups`)}
+                    onClick={() => navigate(`/${realm}/groups`)}
                   >
                     {t("common:groups")}
                   </Button>
@@ -70,7 +71,7 @@ export const UsersInRoleTab = () => {
                   <Button
                     className="kc-users-link"
                     variant="link"
-                    onClick={() => history.push(`/${realm}/users`)}
+                    onClick={() => navigate(`/${realm}/users`)}
                   >
                     {t("users")}.
                   </Button>
@@ -99,7 +100,7 @@ export const UsersInRoleTab = () => {
                 <Button
                   className="kc-groups-link-empty-state"
                   variant="link"
-                  onClick={() => history.push(`/${realm}/groups`)}
+                  onClick={() => navigate(`/${realm}/groups`)}
                 >
                   {t("common:groups")}
                 </Button>
@@ -107,7 +108,7 @@ export const UsersInRoleTab = () => {
                 <Button
                   className="kc-users-link-empty-state"
                   variant="link"
-                  onClick={() => history.push(`/${realm}/users`)}
+                  onClick={() => navigate(`/${realm}/users`)}
                 >
                   {t("users")}
                 </Button>

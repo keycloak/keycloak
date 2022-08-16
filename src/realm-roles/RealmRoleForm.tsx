@@ -13,7 +13,7 @@ import type { AttributeForm } from "../components/key-value-form/AttributeForm";
 import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 import { KeycloakTextArea } from "../components/keycloak-text-area/KeycloakTextArea";
 import { useRealm } from "../context/realm-context/RealmContext";
-import { useHistory } from "react-router-dom";
+import { useNavigate } from "react-router-dom-v5-compat";
 
 export type RealmRoleFormProps = {
   form: UseFormMethods<AttributeForm>;
@@ -29,7 +29,7 @@ export const RealmRoleForm = ({
   reset,
 }: RealmRoleFormProps) => {
   const { t } = useTranslation("roles");
-  const history = useHistory();
+  const navigate = useNavigate();
   const { realm: realmName } = useRealm();
 
   return (
@@ -101,7 +101,7 @@ export const RealmRoleForm = ({
             <Button
               data-testid="cancel"
               onClick={() =>
-                editMode ? reset() : history.push(`/${realmName}/roles`)
+                editMode ? reset() : navigate(`/${realmName}/roles`)
               }
               variant="link"
             >

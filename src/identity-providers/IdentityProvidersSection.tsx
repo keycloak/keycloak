@@ -1,5 +1,6 @@
 import { Fragment, useState } from "react";
-import { Link, useHistory } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom-v5-compat";
 import { useTranslation } from "react-i18next";
 import { sortBy, groupBy } from "lodash-es";
 import {
@@ -46,7 +47,7 @@ export default function IdentityProvidersSection() {
     "groupName"
   );
   const { realm } = useRealm();
-  const history = useHistory();
+  const navigate = useNavigate();
   const [key, setKey] = useState(0);
   const refresh = () => setKey(key + 1);
 
@@ -98,7 +99,7 @@ export default function IdentityProvidersSection() {
   );
 
   const navigateToCreate = (providerId: string) =>
-    history.push(
+    navigate(
       toIdentityProviderCreate({
         realm,
         providerId,

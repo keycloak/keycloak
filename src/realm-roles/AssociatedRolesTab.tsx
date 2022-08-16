@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { useHistory, useParams, useRouteMatch } from "react-router-dom";
+import { useParams, useRouteMatch } from "react-router-dom";
+import { useNavigate } from "react-router-dom-v5-compat";
 import { useTranslation } from "react-i18next";
 import {
   AlertVariant,
@@ -48,7 +49,7 @@ export const AssociatedRolesTab = ({
 }: AssociatedRolesTabProps) => {
   const { t } = useTranslation("roles");
 
-  const history = useHistory();
+  const navigate = useNavigate();
   const { addAlert, addError } = useAlerts();
   const { id, realm } = useParams<RealmRoleParams>();
 
@@ -126,7 +127,7 @@ export const AssociatedRolesTab = ({
           tab,
         })
       : undefined;
-    if (to) history.push(to);
+    if (to) navigate(to);
   };
 
   const AliasRenderer = ({ id, name, clientRole, containerId }: Role) => {

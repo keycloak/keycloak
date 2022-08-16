@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { useHistory, useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom-v5-compat";
 import { useTranslation } from "react-i18next";
 import {
   Dropdown,
@@ -32,7 +33,7 @@ const GroupTreeContextMenu = ({
   const { t } = useTranslation("groups");
 
   const location = useLocation();
-  const history = useHistory();
+  const navigate = useNavigate();
 
   const [isOpen, toggleOpen] = useToggle();
   const [createOpen, toggleCreateOpen] = useToggle();
@@ -71,7 +72,7 @@ const GroupTreeContextMenu = ({
           </DropdownItem>,
           <DropdownItem
             key="edit"
-            onClick={() => history.push(`${location.pathname}/${group.id}`)}
+            onClick={() => navigate(`${location.pathname}/${group.id}`)}
           >
             {t("common:edit")}
           </DropdownItem>,

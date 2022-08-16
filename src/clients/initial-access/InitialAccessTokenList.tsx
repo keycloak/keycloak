@@ -3,7 +3,8 @@ import { wrappable } from "@patternfly/react-table";
 import type ClientInitialAccessPresentation from "@keycloak/keycloak-admin-client/lib/defs/clientInitialAccessPresentation";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useHistory } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom-v5-compat";
 import { useAlerts } from "../../components/alert/Alerts";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { ListEmptyState } from "../../components/list-empty-state/ListEmptyState";
@@ -21,7 +22,7 @@ export const InitialAccessTokenList = () => {
   const { realm } = useRealm();
   const formatDate = useFormatDate();
 
-  const history = useHistory();
+  const navigate = useNavigate();
 
   const [token, setToken] = useState<ClientInitialAccessPresentation>();
 
@@ -114,7 +115,7 @@ export const InitialAccessTokenList = () => {
             instructions={t("noTokensInstructions")}
             primaryActionText={t("common:create")}
             onPrimaryAction={() =>
-              history.push(toCreateInitialAccessToken({ realm }))
+              navigate(toCreateInitialAccessToken({ realm }))
             }
           />
         }

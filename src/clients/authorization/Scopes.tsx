@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Link, useHistory } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom-v5-compat";
 import { useTranslation } from "react-i18next";
 import {
   Button,
@@ -46,7 +47,7 @@ export type ExpandableScopeRepresentation = ScopeRepresentation & {
 
 export const AuthorizationScopes = ({ clientId }: ScopesProps) => {
   const { t } = useTranslation("clients");
-  const history = useHistory();
+  const navigate = useNavigate();
   const { adminClient } = useAdminClient();
   const { realm } = useRealm();
 
@@ -291,9 +292,7 @@ export const AuthorizationScopes = ({ clientId }: ScopesProps) => {
         <ListEmptyState
           message={t("emptyAuthorizationScopes")}
           instructions={t("emptyAuthorizationInstructions")}
-          onPrimaryAction={() =>
-            history.push(toNewScope({ id: clientId, realm }))
-          }
+          onPrimaryAction={() => navigate(toNewScope({ id: clientId, realm }))}
           primaryActionText={t("createAuthorizationScope")}
         />
       )}

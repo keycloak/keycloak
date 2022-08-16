@@ -10,7 +10,8 @@ import {
 } from "@patternfly/react-core";
 import { SearchIcon } from "@patternfly/react-icons";
 import { useForm } from "react-hook-form";
-import { useHistory, useRouteMatch } from "react-router-dom";
+import { useRouteMatch } from "react-router-dom";
+import { useNavigate } from "react-router-dom-v5-compat";
 
 import { KeycloakTextInput } from "../components/keycloak-text-input/KeycloakTextInput";
 
@@ -22,9 +23,9 @@ export const SearchUser = ({ onSearch }: SearchUserProps) => {
   const { t } = useTranslation("users");
   const { register, handleSubmit } = useForm<{ search: string }>();
   const { url } = useRouteMatch();
-  const history = useHistory();
+  const navigate = useNavigate();
 
-  const goToCreate = () => history.push(`${url}/add-user`);
+  const goToCreate = () => navigate(`${url}/add-user`);
 
   return (
     <EmptyState>

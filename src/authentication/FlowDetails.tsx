@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { useHistory, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom-v5-compat";
 import { Trans, useTranslation } from "react-i18next";
 import {
   DataList,
@@ -59,7 +60,7 @@ export default function FlowDetails() {
   const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();
   const { id, usedBy, builtIn } = useParams<FlowParams>();
-  const history = useHistory();
+  const navigate = useNavigate();
   const [key, setKey] = useState(0);
   const refresh = () => setKey(new Date().getTime());
 
@@ -222,7 +223,7 @@ export default function FlowDetails() {
         await adminClient.authenticationManagement.deleteFlow({
           flowId: flow!.id!,
         });
-        history.push(toAuthentication({ realm }));
+        navigate(toAuthentication({ realm }));
         addAlert(t("deleteFlowSuccess"), AlertVariant.success);
       } catch (error) {
         addError("authentication:deleteFlowError", error);
