@@ -96,7 +96,7 @@ export const UserIdentityProviderLinks = () => {
           id,
           federatedIdentityId: federatedId,
         });
-        addAlert(t("common:mappingDeletedSuccess"), AlertVariant.success);
+        addAlert(t("users:idpUnlinkSuccess"), AlertVariant.success);
         refresh();
       } catch (error) {
         addError("common:mappingDeletedError", error);
@@ -125,7 +125,9 @@ export const UserIdentityProviderLinks = () => {
     )?.groupName!;
     return (
       <Label color={groupName === "Social" ? "blue" : "orange"}>
-        {groupName === "Social" ? "Social" : "Custom"}
+        {groupName === "Social"
+          ? t("users:idpType.social")
+          : t("users:idpType.custom")}
       </Label>
     );
   };
@@ -136,7 +138,11 @@ export const UserIdentityProviderLinks = () => {
     )?.groupName!;
     return (
       <Label color={groupName === "User-defined" ? "orange" : "blue"}>
-        {groupName === "User-defined" ? "Custom" : groupName!}
+        {groupName === "User-defined"
+          ? "Custom"
+          : groupName! === "Social"
+          ? t("users:idpType.social")
+          : groupName!}
       </Label>
     );
   };
@@ -179,7 +185,7 @@ export const UserIdentityProviderLinks = () => {
         />
       )}
       <UnlinkConfirm />
-      <PageSection variant="light">
+      <PageSection variant="light" className="pf-u-p-0">
         <FormPanel title={t("linkedIdPs")} className="kc-linked-idps">
           <TextContent>
             <Text className="kc-available-idps-text">

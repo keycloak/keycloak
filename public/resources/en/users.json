@@ -71,6 +71,11 @@
   "link": "Link",
   "linkAccountTitle": "Link account to {{provider}}",
   "idpLinkSuccess": "Identity provider has been linked",
+  "idpUnlinkSuccess" : "The provider link has been removed",
+  "idpType": {
+    "social": "Social login",
+    "custom": "Custom"
+  },
   "couldNotLinkIdP": "Could not link identity provider {{error}}",
   "verifyEmail": "Verify Email",
   "updateUserLocale": "Update User Locale",

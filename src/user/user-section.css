@@ -109,6 +109,7 @@ article.pf-c-card.pf-m-flat.kc-available-idps > div > div > h1 {
 
 .kc-available-idps-text {
   color: var(--pf-global--Color--200);
+  margin-top: var(--pf-global--spacer--sm);
 }
 
 .kc-linked-idps-text {
@@ -122,3 +123,20 @@ article.pf-c-card.pf-m-flat.kc-available-idps > div > div > h1 {
 .keycloak__user-credentials__reset-form {
   --pf-c-form--m-horizontal__group-label--md--GridColumnWidth: 13rem;
 }
+
+.pf-c-card__header.kc-form-panel__header{
+  padding-bottom: 0;
+}
+
+.pf-c-card__body.kc-form-panel__body{
+  padding-bottom: 0;
+}
+
+.pf-c-content.kc-no-providers-text{
+  margin-top: calc(
+    var(--pf-global--spacer--2xl) - var(--pf-global--spacer--sm)
+  );
+  margin-right: var(--pf-global--spacer--md);
+  margin-bottom: var(--pf-global--spacer--2xl);
+}
+
