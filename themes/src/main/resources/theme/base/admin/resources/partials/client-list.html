@@ -28,6 +28,7 @@
             </tr>
             <tr data-ng-hide="clients.length == 0">
                 <th>{{:: 'client-id' | translate}}</th>
+                <th>{{:: 'name' | translate}}</th>
                 <th>{{:: 'enabled' | translate}}</th>
                 <th>{{:: 'base-url' | translate}}</th>
                 <th colspan="3">{{:: 'actions' | translate}}</th>
@@ -47,6 +48,7 @@
         <tbody>
             <tr ng-repeat="client in clients">
                 <td><a href="#/realms/{{realm.realm}}/clients/{{client.id}}">{{client.clientId}}</a></td>
+                <td>{{client.name}}</td>
                 <td translate="{{client.enabled}}"></td>
                 <td ng-class="{'text-muted': !client.baseUrl}">
                     <a href="{{client.rootUrl | resolveClientRootUrl}}{{client.baseUrl}}" rel="noopener noreferrer" target="_blank" data-ng-show="client.baseUrl">{{client.rootUrl | resolveClientRootUrl}}{{client.baseUrl}}</a>
