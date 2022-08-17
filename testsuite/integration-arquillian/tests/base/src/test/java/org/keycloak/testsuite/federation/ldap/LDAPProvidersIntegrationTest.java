@@ -43,6 +43,7 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.CredentialRepresentation;
+import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -81,6 +82,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
 
 import static org.junit.Assert.assertEquals;
 
@@ -156,6 +159,142 @@ public class LDAPProvidersIntegrationTest extends AbstractLDAPTest {
         });
     }
 
+    @Test
+    public void testSyncRegistrationForceDefault() {
+        // test force default is true by default and works as before
+        UserRepresentation newUser1 = AbstractAuthTest.createUserRepresentation("newuser1", null, null, null, true);
+        String userId;
+        try (Response resp = testRealm().users().create(newUser1)) {
+            userId = ApiUtil.getCreatedId(resp);
+        }
+        newUser1 = testRealm().users().get(userId).toRepresentation();
+        assertFederatedUserLink(newUser1);
+        Assert.assertNotNull(newUser1.getAttributes().get(LDAPConstants.LDAP_ID));
+        MatcherAssert.assertThat(newUser1.firstAttribute(LDAPConstants.LDAP_ENTRY_DN), Matchers.containsString("=newuser1,"));
+
+        String cnValue = testingClient.server().fetch(session -> {
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(ctx.getRealm());
+            ComponentModel cnMapper = LDAPTestUtils.getSubcomponentByName(ctx.getRealm(), ldapModel, "last name");
+            LDAPObject userLdap = ctx.getLdapProvider().loadLDAPUserByUsername(ctx.getRealm(), "newuser1");
+            return userLdap.getAttributeAsString(cnMapper.get(UserAttributeLDAPStorageMapper.LDAP_ATTRIBUTE));
+        }, String.class);
+        Assert.assertEquals("Attribute CN was not set with the forced default value", "", cnValue);
+
+        // remove the created user
+        try (Response resp = testRealm().users().delete(userId)) {
+            Assert.assertEquals(Response.Status.NO_CONTENT.getStatusCode(), resp.getStatus());
+        }
+        Assert.assertTrue(testRealm().users().search("newuser1").isEmpty());
+    }
+
+    @Test
+    public void testSyncRegistrationEmailRDNNoDefault() {
+        testingClient.server().run(session -> {
+            // configure mail as mandatory but not forcing default
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(ctx.getRealm());
+            ComponentModel emailMapper = LDAPTestUtils.getSubcomponentByName(ctx.getRealm(), ldapModel, "email");
+            emailMapper.getConfig().putSingle(UserAttributeLDAPStorageMapper.IS_MANDATORY_IN_LDAP, "true");
+            emailMapper.getConfig().putSingle(UserAttributeLDAPStorageMapper.FORCE_DEFAULT_VALUE, "false");
+            ctx.getRealm().updateComponent(emailMapper);
+        });
+        try {
+            // test the user cannot be created without email
+            UserRepresentation newUser1 = AbstractAuthTest.createUserRepresentation("newuser1", null, "newuser1", "newuser1", true);
+            try (Response resp = testRealm().users().create(newUser1)) {
+                Assert.assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), resp.getStatus());
+                ErrorRepresentation error = resp.readEntity(ErrorRepresentation.class);
+                Assert.assertEquals("Could not create user", error.getErrorMessage());
+            }
+            Assert.assertTrue(testRealm().users().search("newuser1").isEmpty());
+
+            // test the user is correctly created with email
+            newUser1 = AbstractAuthTest.createUserRepresentation("newuser1", "newuser1@keycloak.org", "newuser1", "newuser1", true);
+            String userId;
+            try (Response resp = testRealm().users().create(newUser1)) {
+                userId = ApiUtil.getCreatedId(resp);
+            }
+            newUser1 = testRealm().users().get(userId).toRepresentation();
+            assertFederatedUserLink(newUser1);
+            Assert.assertNotNull(newUser1.getAttributes().get(LDAPConstants.LDAP_ID));
+            MatcherAssert.assertThat(newUser1.firstAttribute(LDAPConstants.LDAP_ENTRY_DN), Matchers.containsString("=newuser1,"));
+            Assert.assertEquals("newuser1@keycloak.org", newUser1.getEmail());
+            String emailValueInLdap = testingClient.server().fetch(session -> {
+                LDAPTestContext ctx = LDAPTestContext.init(session);
+                ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(ctx.getRealm());
+                ComponentModel emailMapper = LDAPTestUtils.getSubcomponentByName(ctx.getRealm(), ldapModel, "email");
+                LDAPObject userLdap = ctx.getLdapProvider().loadLDAPUserByUsername(ctx.getRealm(), "newuser1");
+                return userLdap.getAttributeAsString(emailMapper.get(UserAttributeLDAPStorageMapper.LDAP_ATTRIBUTE));
+            }, String.class);
+            Assert.assertEquals("newuser1@keycloak.org", emailValueInLdap);
+
+            // remove the created user
+            try (Response resp = testRealm().users().delete(userId)) {
+                Assert.assertEquals(Response.Status.NO_CONTENT.getStatusCode(), resp.getStatus());
+            }
+            Assert.assertTrue(testRealm().users().search("newuser1").isEmpty());
+        } finally {
+            testingClient.server().run(session -> {
+                // revert
+                LDAPTestContext ctx = LDAPTestContext.init(session);
+                ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(ctx.getRealm());
+                ComponentModel emailMapper = LDAPTestUtils.getSubcomponentByName(ctx.getRealm(), ldapModel, "email");
+                emailMapper.getConfig().putSingle(UserAttributeLDAPStorageMapper.IS_MANDATORY_IN_LDAP, "false");
+                emailMapper.getConfig().remove(UserAttributeLDAPStorageMapper.FORCE_DEFAULT_VALUE);
+                ctx.getRealm().updateComponent(emailMapper);
+            });
+        }
+    }
+
+    @Test
+    public void testSyncRegistrationEmailRDNDefaultValue() {
+        testingClient.server().run(session -> {
+            // configure mail as mandatory but with a default value
+            LDAPTestContext ctx = LDAPTestContext.init(session);
+            ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(ctx.getRealm());
+            ComponentModel emailMapper = LDAPTestUtils.getSubcomponentByName(ctx.getRealm(), ldapModel, "email");
+            emailMapper.getConfig().putSingle(UserAttributeLDAPStorageMapper.IS_MANDATORY_IN_LDAP, "true");
+            emailMapper.getConfig().putSingle(UserAttributeLDAPStorageMapper.ATTRIBUTE_DEFAULT_VALUE, "empty@keycloak.org");
+            ctx.getRealm().updateComponent(emailMapper);
+        });
+        try {
+            // the user should be created with the default value
+            UserRepresentation newUser1 = AbstractAuthTest.createUserRepresentation("newuser1", null, "newuser1", "newuser1", true);
+            String userId;
+            try (Response resp = testRealm().users().create(newUser1)) {
+                userId = ApiUtil.getCreatedId(resp);
+            }
+            newUser1 = testRealm().users().get(userId).toRepresentation();
+            assertFederatedUserLink(newUser1);
+            Assert.assertNotNull(newUser1.getAttributes().get(LDAPConstants.LDAP_ID));
+            MatcherAssert.assertThat(newUser1.firstAttribute(LDAPConstants.LDAP_ENTRY_DN), Matchers.containsString("=newuser1,"));
+            String emailValueInLdap = testingClient.server().fetch(session -> {
+                LDAPTestContext ctx = LDAPTestContext.init(session);
+                ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(ctx.getRealm());
+                ComponentModel emailMapper = LDAPTestUtils.getSubcomponentByName(ctx.getRealm(), ldapModel, "email");
+                LDAPObject userLdap = ctx.getLdapProvider().loadLDAPUserByUsername(ctx.getRealm(), "newuser1");
+                return userLdap.getAttributeAsString(emailMapper.get(UserAttributeLDAPStorageMapper.LDAP_ATTRIBUTE));
+            }, String.class);
+            Assert.assertEquals("empty@keycloak.org", emailValueInLdap);
+
+            // remove the created user
+            try (Response resp = testRealm().users().delete(userId)) {
+                Assert.assertEquals(Response.Status.NO_CONTENT.getStatusCode(), resp.getStatus());
+            }
+            Assert.assertTrue(testRealm().users().search("newuser1").isEmpty());
+        } finally {
+            testingClient.server().run(session -> {
+                // revert
+                LDAPTestContext ctx = LDAPTestContext.init(session);
+                ComponentModel ldapModel = LDAPTestUtils.getLdapProviderModel(ctx.getRealm());
+                ComponentModel emailMapper = LDAPTestUtils.getSubcomponentByName(ctx.getRealm(), ldapModel, "email");
+                emailMapper.getConfig().putSingle(UserAttributeLDAPStorageMapper.IS_MANDATORY_IN_LDAP, "false");
+                emailMapper.getConfig().remove(UserAttributeLDAPStorageMapper.ATTRIBUTE_DEFAULT_VALUE);
+                ctx.getRealm().updateComponent(emailMapper);
+            });
+        }
+    }
 
     @Test
     public void testRemoveImportedUsers() {
