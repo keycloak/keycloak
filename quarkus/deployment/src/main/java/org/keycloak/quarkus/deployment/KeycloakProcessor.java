@@ -29,6 +29,7 @@ import static org.keycloak.representations.provider.ScriptProviderDescriptor.AUT
 import static org.keycloak.representations.provider.ScriptProviderDescriptor.MAPPERS;
 import static org.keycloak.representations.provider.ScriptProviderDescriptor.POLICIES;
 import static org.keycloak.quarkus.runtime.Environment.getProviderFiles;
+import static org.keycloak.theme.ClasspathThemeProviderFactory.KEYCLOAK_THEMES_JSON;
 
 import javax.persistence.Entity;
 import javax.persistence.spi.PersistenceUnitTransactionType;
@@ -132,8 +133,10 @@ import org.keycloak.representations.provider.ScriptProviderDescriptor;
 import org.keycloak.representations.provider.ScriptProviderMetadata;
 import org.keycloak.quarkus.runtime.integration.web.NotFoundHandler;
 import org.keycloak.services.ServicesLogger;
+import org.keycloak.theme.ClasspathThemeProviderFactory;
 import org.keycloak.theme.ClasspathThemeResourceProviderFactory;
 import org.keycloak.theme.FolderThemeProviderFactory;
+import org.keycloak.theme.JarThemeProviderFactory;
 import org.keycloak.theme.ThemeResourceSpi;
 import org.keycloak.transaction.JBossJtaTransactionManagerLookup;
 import org.keycloak.quarkus.runtime.Environment;
@@ -163,6 +166,7 @@ class KeycloakProcessor {
             FilesPlainTextVaultProviderFactory.class,
             BlacklistPasswordPolicyProviderFactory.class,
             ClasspathThemeResourceProviderFactory.class,
+            JarThemeProviderFactory.class,
             JpaMapStorageProviderFactory.class);
 
     static {
@@ -316,9 +320,24 @@ class KeycloakProcessor {
             }
         }
 
-        recorder.configSessionFactory(factories, defaultProviders, preConfiguredProviders, Environment.isRebuild());
+        recorder.configSessionFactory(factories, defaultProviders, preConfiguredProviders, loadThemesFromClassPath(), Environment.isRebuild());
 
         return new KeycloakSessionFactoryPreInitBuildItem();
+    }
+
+    private List<ClasspathThemeProviderFactory.ThemesRepresentation> loadThemesFromClassPath() {
+        try {
+            List<ClasspathThemeProviderFactory.ThemesRepresentation> themes = new ArrayList<>();
+            Enumeration<URL> resources = Thread.currentThread().getContextClassLoader().getResources(KEYCLOAK_THEMES_JSON);
+
+            while (resources.hasMoreElements()) {
+                themes.add(JsonSerialization.readValue(resources.nextElement().openStream(), ClasspathThemeProviderFactory.ThemesRepresentation.class));
+            }
+
+            return themes;
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to load themes", e);
+        }
     }
 
     private void configureThemeResourceProviders(Map<Spi, Map<Class<? extends Provider>, Map<String, Class<? extends ProviderFactory>>>> factories, Spi spi) {
