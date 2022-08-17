@@ -27,23 +27,43 @@
     <modelVersion>4.0.0</modelVersion>
     <artifactId>keycloak-dependencies-ui-wrapper</artifactId>
     <packaging>jar</packaging>
-    <name>Keycloak UI BOM wrapper</name>
+    <name>Keycloak UI wrapper</name>
     <description>
-        BOM wrapper for Admin UI to limit Sonatype snapshot repository to admin-ui
+        BOM wrapper for UI to limit Sonatype snapshot repository to UI artifacts
     </description>
+
+    <properties>
+        <keycloak.admin-ui.version>${project.version}</keycloak.admin-ui.version>
+        <keycloak.js-adapter.version>${project.version}</keycloak.js-adapter.version>
+    </properties>
 
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-admin-ui</artifactId>
-            <type>jar</type>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
             <artifactId>keycloak-js-adapter</artifactId>
             <type>jar</type>
+            <version>${keycloak.js-adapter.version}</version>
         </dependency>
     </dependencies>
+
+    <profiles>
+        <profile>
+            <id>skip-admin2</id>
+            <activation>
+                <property>
+                    <name>!skipAdmin2</name>
+                </property>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>org.keycloak</groupId>
+                    <artifactId>keycloak-admin-ui</artifactId>
+                    <type>jar</type>
+                    <version>${keycloak.admin-ui.version}</version>
+                </dependency>
+            </dependencies>
+        </profile>
+    </profiles>
 
     <repositories>
         <repository>

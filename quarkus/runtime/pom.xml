@@ -118,16 +118,6 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-js-adapter</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak</groupId>
             <artifactId>keycloak-common</artifactId>
             <exclusions>
                 <exclusion>
@@ -609,6 +599,11 @@
             <artifactId>twitter4j-core</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-dependencies-ui-wrapper</artifactId>
+        </dependency>
+
         <!-- Openshift -->
         <dependency>
             <groupId>com.openshift</groupId>
@@ -626,35 +621,6 @@
             </exclusions>
         </dependency>
     </dependencies>
-
-    <profiles>
-        <profile>
-            <id>skip-admin2</id>
-            <activation>
-                <property>
-                    <name>!skipAdmin2</name>
-                </property>
-            </activation>
-            <dependencies>
-                <dependency>
-                    <groupId>org.keycloak</groupId>
-                    <artifactId>keycloak-dependencies-ui-wrapper</artifactId>
-                    <type>pom</type>
-                    <scope>import</scope>
-                </dependency>
-                <dependency>
-                    <groupId>org.keycloak</groupId>
-                    <artifactId>keycloak-admin-ui</artifactId>
-                    <exclusions>
-                        <exclusion>
-                            <groupId>*</groupId>
-                            <artifactId>*</artifactId>
-                        </exclusion>
-                    </exclusions>
-                </dependency>
-            </dependencies>
-        </profile>
-    </profiles>
 
     <build>
         <plugins>

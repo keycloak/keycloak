@@ -65,7 +65,7 @@
         </dependency>
          <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-js-adapter</artifactId>
+            <artifactId>keycloak-dependencies-ui-wrapper</artifactId>
         </dependency>
 
         <!-- forms -->
