@@ -440,7 +440,7 @@ public class TokenEndpoint {
 
         TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager
             .responseBuilder(realm, client, event, session, userSession, clientSessionCtx).accessToken(token);
-        if (OIDCAdvancedConfigWrapper.fromClientModel(client).isUseRefreshToken()) {
+        if (OIDCAdvancedConfigWrapper.fromClientModel(client).isUseRefreshToken() || TokenUtil.isOfflineTokenRequested(scopeParam)) {
             responseBuilder.generateRefreshToken();
         }
 
@@ -627,7 +627,7 @@ public class TokenEndpoint {
 
         TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager
             .responseBuilder(realm, client, event, session, userSession, clientSessionCtx).generateAccessToken();
-        if (OIDCAdvancedConfigWrapper.fromClientModel(client).isUseRefreshToken()) {
+        if (OIDCAdvancedConfigWrapper.fromClientModel(client).isUseRefreshToken() || TokenUtil.isOfflineTokenRequested(scope)) {
             responseBuilder.generateRefreshToken();
         }
 

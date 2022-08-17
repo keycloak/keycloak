@@ -270,6 +270,60 @@ public class OfflineTokenTest extends AbstractKeycloakTest {
         setTimeOffset(0);
     }
 
+    @Test
+    public void offlineTokenBrowserFlowWithDisableClientRefreshToken() throws Exception {
+        //refresh token for offline access scope is always returned - even if client do not generate refresh tokens
+        ClientRepresentation clientRep = ApiUtil.findClientByClientId(adminClient.realm("test"), "offline-client").toRepresentation();
+        clientRep.getAttributes().put("use.refresh.tokens","false");
+        adminClient.realm("test").clients().get(clientRep.getId()).update(clientRep);
+
+        try {
+            oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
+            oauth.clientId("offline-client");
+            oauth.redirectUri(offlineClientAppUri);
+            oauth.doLogin("test-user@localhost", "password");
+
+            EventRepresentation loginEvent = events.expectLogin()
+                    .client("offline-client")
+                    .detail(Details.REDIRECT_URI, offlineClientAppUri)
+                    .assertEvent();
+
+            final String sessionId = loginEvent.getSessionId();
+            String codeId = loginEvent.getDetails().get(Details.CODE_ID);
+
+            String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
+
+            OAuthClient.AccessTokenResponse tokenResponse = oauth.doAccessTokenRequest(code, "secret1");
+            AccessToken token = oauth.verifyToken(tokenResponse.getAccessToken());
+            String offlineTokenString = tokenResponse.getRefreshToken();
+            RefreshToken offlineToken = oauth.parseRefreshToken(offlineTokenString);
+
+            events.expectCodeToToken(codeId, sessionId)
+                    .client("offline-client")
+                    .detail(Details.REFRESH_TOKEN_TYPE, TokenUtil.TOKEN_TYPE_OFFLINE)
+                    .assertEvent();
+
+            assertEquals(TokenUtil.TOKEN_TYPE_OFFLINE, offlineToken.getType());
+            assertEquals(0, offlineToken.getExpiration());
+
+            assertTrue(tokenResponse.getScope().contains(OAuth2Constants.OFFLINE_ACCESS));
+
+            // Change offset to very big value to ensure offline session expires
+            setTimeOffset(3000000);
+
+            OAuthClient.AccessTokenResponse response = oauth.doRefreshTokenRequest(offlineTokenString, "secret1");
+            Assert.assertEquals(400, response.getStatusCode());
+            assertEquals("invalid_grant", response.getError());
+
+
+            setTimeOffset(0);
+        } finally {
+            // Revert changes
+            clientRep.getAttributes().put("use.refresh.tokens", "true");
+            adminClient.realm("test").clients().get(clientRep.getId()).update(clientRep);
+        }
+    }
+
     private String testRefreshWithOfflineToken(AccessToken oldToken, RefreshToken offlineToken, String offlineTokenString,
                                                final String sessionId, String userId) {
         // Change offset to big value to ensure userSession expired
