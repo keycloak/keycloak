@@ -73,7 +73,7 @@
     "@typescript-eslint/parser": "^5.33.1",
     "@vitejs/plugin-react": "^2.0.1",
     "babel-loader": "^8.2.5",
-    "cypress": "^10.5.0",
+    "cypress": "^10.6.0",
     "decompress": "^4.2.1",
     "del": "^7.0.0",
     "eslint": "^8.22.0",
