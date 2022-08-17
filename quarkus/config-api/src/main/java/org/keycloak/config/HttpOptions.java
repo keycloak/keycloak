@@ -10,7 +10,6 @@ public class HttpOptions {
             .category(OptionCategory.HTTP)
             .description("Enables the HTTP listener.")
             .defaultValue(Boolean.FALSE)
-            .expectedValues(Boolean.TRUE, Boolean.FALSE)
             .build();
 
     public static final Option HTTP_HOST = new OptionBuilder<>("http-host", String.class)
@@ -46,9 +45,8 @@ public class HttpOptions {
 
     public static final Option HTTPS_CLIENT_AUTH = new OptionBuilder<>("https-client-auth", ClientAuth.class)
             .category(OptionCategory.HTTP)
-            .description("Configures the server to require/request client authentication. Possible Values: none, request, required.")
+            .description("Configures the server to require/request client authentication.")
             .defaultValue(ClientAuth.none)
-            .expectedValues(ClientAuth.values())
             .build();
 
     public static final Option HTTPS_CIPHER_SUITES = new OptionBuilder<>("https-cipher-suites", String.class)

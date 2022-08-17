@@ -24,6 +24,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 
@@ -93,8 +94,8 @@ public final class Database {
         return Optional.of(vendor.dialect.apply(alias));
     }
 
-    public static String[] getAliases() {
-        return DATABASES.keySet().stream().sorted().toArray(String[]::new);
+    public static List<String> getAliases() {
+        return DATABASES.keySet().stream().sorted().collect(Collectors.toList());
     }
 
     public enum Vendor {
