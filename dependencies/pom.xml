@@ -44,7 +44,7 @@
                 </property>
             </activation>
             <modules>
-                <module>admin-ui</module>
+                <module>ui</module>
             </modules>
         </profile>
     </profiles>

@@ -25,9 +25,9 @@
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
-    <artifactId>keycloak-dependencies-admin-ui-wrapper</artifactId>
+    <artifactId>keycloak-dependencies-ui-wrapper</artifactId>
     <packaging>jar</packaging>
-    <name>Keycloak Admin UI BOM wrapper</name>
+    <name>Keycloak UI BOM wrapper</name>
     <description>
         BOM wrapper for Admin UI to limit Sonatype snapshot repository to admin-ui
     </description>
@@ -36,6 +36,11 @@
         <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-admin-ui</artifactId>
+            <type>jar</type>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-js-adapter</artifactId>
             <type>jar</type>
         </dependency>
     </dependencies>

@@ -35,7 +35,6 @@
         <module>installed</module>
         <module>jaxrs-oauth-client</module>
         <module>jetty</module>
-        <module>js</module>
         <module>servlet-filter</module>
         <module>spring-boot2</module>
         <module>spring-boot-adapter-core</module>

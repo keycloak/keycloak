@@ -638,7 +638,7 @@
             <dependencies>
                 <dependency>
                     <groupId>org.keycloak</groupId>
-                    <artifactId>keycloak-dependencies-admin-ui-wrapper</artifactId>
+                    <artifactId>keycloak-dependencies-ui-wrapper</artifactId>
                     <type>pom</type>
                     <scope>import</scope>
                 </dependency>

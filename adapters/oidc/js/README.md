@@ -1,3 +1,3 @@
 # Keycloak JS
 
-The documentation can be found in the [Keycloak documentation](https://www.keycloak.org/docs/latest/securing_apps/index.html#_javascript_adapter).
+keycloak.js and keycloak-authz.js have been moved to https://github.com/keycloak/keycloak-ui

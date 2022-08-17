@@ -298,7 +298,7 @@
 
             <dependency>
                 <groupId>org.keycloak</groupId>
-                <artifactId>keycloak-dependencies-admin-ui-wrapper</artifactId>
+                <artifactId>keycloak-dependencies-ui-wrapper</artifactId>
                 <version>${project.version}</version>
                 <type>pom</type>
             </dependency>

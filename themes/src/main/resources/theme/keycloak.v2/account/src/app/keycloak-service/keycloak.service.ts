@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import Keycloak, { KeycloakLoginOptions } from "../../../../../../../../../../adapters/oidc/js";
+import Keycloak, { KeycloakLoginOptions } from "keycloak-js";
 
 declare const baseUrl: string;
 export type KeycloakClient = Keycloak;
