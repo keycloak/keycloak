@@ -69,6 +69,10 @@ export const RealmSettingsEmailTab = ({
       }
 
       const savedRealm = { ...realm, ...form };
+
+      // For default value, back end is expecting null instead of empty string
+      if (savedRealm.smtpServer?.port === "") savedRealm.smtpServer.port = null;
+
       await adminClient.realms.update({ realm: realmName }, savedRealm);
       setRealm(savedRealm);
       addAlert(t("saveSuccess"), AlertVariant.success);
@@ -92,6 +96,9 @@ export const RealmSettingsEmailTab = ({
     for (const [key, mapperFn] of valueMapper.entries()) {
       serverSettings[key] = mapperFn(serverSettings[key]);
     }
+
+    // For default value, back end is expecting null instead of 0
+    if (serverSettings.port === 0) serverSettings.port = null;
 
     try {
       const registered = await registerEmailIfNeeded();
