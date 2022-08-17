@@ -56,6 +56,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.oidc.TokenMetadataRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.drone.Different;
@@ -138,6 +139,7 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
         ClientRepresentation serviceAccountApp = KeycloakModelUtils.createClient(testRealm, "service-account-client");
         serviceAccountApp.setSecret("secret1");
         serviceAccountApp.setServiceAccountsEnabled(Boolean.TRUE);
+        serviceAccountApp.setDirectAccessGrantsEnabled(Boolean.TRUE);
 
         ClientRepresentation pubApp = KeycloakModelUtils.createClient(testRealm, "public-cli");
         pubApp.setPublicClient(Boolean.TRUE);
@@ -670,6 +672,35 @@ public class HoKTest extends AbstractTestRealmKeycloakTest {
         }
     }
 
+    @Test
+    public void resourceOwnerPasswordCredentialsGrantWithClientCertificate() throws Exception {
+        oauth.clientId("service-account-client");
+
+        AccessTokenResponse response;
+
+        Supplier<CloseableHttpClient> previous = oauth.getHttpClient();
+
+        try {
+            // Request without HoK should fail
+            oauth.httpClient(MutualTLSUtils::newCloseableHttpClientWithoutKeyStoreAndTrustStore);
+            response = oauth.doGrantAccessTokenRequest("secret1", "test-user@localhost", "password", null);
+            assertEquals(400, response.getStatusCode());
+            assertEquals(OAuthErrorException.INVALID_REQUEST, response.getError());
+            assertEquals("Client Certification missing for MTLS HoK Token Binding", response.getErrorDescription());
+
+            // Request with HoK - success
+            oauth.httpClient(MutualTLSUtils::newCloseableHttpClientWithDefaultKeyStoreAndTrustStore);
+            response = oauth.doGrantAccessTokenRequest("secret1", "test-user@localhost", "password", null);
+            assertEquals(200, response.getStatusCode());
+
+            // Success Pattern
+            verifyHoKTokenCertThumbPrint(response, MutualTLSUtils.getThumbprintFromDefaultClientCert(), false);
+        }  catch (IOException ioe) {
+            throw new RuntimeException(ioe);
+        } finally {
+            oauth.httpClient(previous);
+        }
+    }
 
     private void verifyHoKTokenDefaultCertThumbPrint(AccessTokenResponse response) throws Exception {
         verifyHoKTokenCertThumbPrint(response, MutualTLSUtils.getThumbprintFromDefaultClientCert(), true);
