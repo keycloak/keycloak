@@ -17,7 +17,6 @@
 
 org.keycloak.component.ComponentFactorySpi
 org.keycloak.provider.ExceptionConverterSpi
-org.keycloak.storage.federated.UserFederatedStorageProviderSpi
 org.keycloak.models.ClientSpi
 org.keycloak.models.ClientScopeSpi
 org.keycloak.models.GroupSpi

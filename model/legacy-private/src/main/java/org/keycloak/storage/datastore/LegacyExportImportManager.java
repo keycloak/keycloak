@@ -21,6 +21,9 @@ import org.jboss.logging.Logger;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.exportimport.ExportAdapter;
+import org.keycloak.exportimport.ExportOptions;
+import org.keycloak.exportimport.util.ExportUtils;
 import org.keycloak.keys.KeyProvider;
 import org.keycloak.migration.MigrationProvider;
 import org.keycloak.migration.migrators.MigrateTo8_0_0;
@@ -89,8 +92,10 @@ import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.UserStorageUtil;
 import org.keycloak.storage.federated.UserFederatedStorageProvider;
 import org.keycloak.userprofile.UserProfileProvider;
+import org.keycloak.util.JsonSerialization;
 import org.keycloak.validation.ValidationUtil;
 
+import javax.ws.rs.core.MediaType;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -108,6 +113,7 @@ import static org.keycloak.models.utils.RepresentationToModel.createGroups;
 import static org.keycloak.models.utils.RepresentationToModel.createRoleMappings;
 import static org.keycloak.models.utils.RepresentationToModel.importGroup;
 import static org.keycloak.models.utils.RepresentationToModel.importRoles;
+import static org.keycloak.models.utils.StripSecretsUtils.stripForExport;
 
 /**
  * This wraps the functionality about export/import for legacy storage. This will be handled differently for the new map storage,
@@ -121,6 +127,16 @@ public class LegacyExportImportManager implements ExportImportManager {
 
     public LegacyExportImportManager(KeycloakSession session) {
         this.session = session;
+    }
+
+    public void exportRealm(RealmModel realm, ExportOptions options, ExportAdapter callback) {
+        callback.setType(MediaType.APPLICATION_JSON);
+        callback.writeToOutputStream(outputStream -> {
+            RealmRepresentation rep = ExportUtils.exportRealm(session, realm, options, false);
+            stripForExport(session, rep);
+            JsonSerialization.writeValueToStream(outputStream, rep);
+            outputStream.close();
+        });
     }
 
     @Override
