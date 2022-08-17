@@ -21,6 +21,9 @@ import org.jboss.logging.Logger;
 import org.keycloak.common.enums.SslRequired;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.models.ModelException;
+import org.keycloak.exportimport.ExportAdapter;
+import org.keycloak.exportimport.ExportOptions;
 import org.keycloak.keys.KeyProvider;
 import org.keycloak.migration.MigrationProvider;
 import org.keycloak.migration.migrators.MigrationUtils;
@@ -411,6 +414,10 @@ public class MapExportImportManager implements ExportImportManager {
             role = realm.addRole(name);
         }
         return role;
+    }
+
+    public void exportRealm(RealmModel realm, ExportOptions options, ExportAdapter callback) {
+        throw new ModelException("exporting for map storage is currently not supported");
     }
 
     private static void convertDeprecatedDefaultRoles(RealmRepresentation rep, RealmModel newRealm) {

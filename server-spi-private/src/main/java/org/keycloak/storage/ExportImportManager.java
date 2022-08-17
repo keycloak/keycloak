@@ -17,6 +17,8 @@
 
 package org.keycloak.storage;
 
+import org.keycloak.exportimport.ExportAdapter;
+import org.keycloak.exportimport.ExportOptions;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.RealmRepresentation;
@@ -33,4 +35,6 @@ public interface ExportImportManager {
     void updateRealm(RealmRepresentation rep, RealmModel realm);
 
     UserModel createUser(RealmModel realm, UserRepresentation userRep);
+
+    void exportRealm(RealmModel realm, ExportOptions options, ExportAdapter callback);
 }

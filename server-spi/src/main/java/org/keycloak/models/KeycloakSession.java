@@ -22,7 +22,6 @@ import org.keycloak.provider.InvalidationHandler.InvalidableObjectType;
 import org.keycloak.provider.Provider;
 import org.keycloak.services.clientpolicy.ClientPolicyManager;
 import org.keycloak.sessions.AuthenticationSessionProvider;
-import org.keycloak.storage.federated.UserFederatedStorageProvider;
 import org.keycloak.vault.VaultTranscriber;
 
 import java.util.Set;
@@ -301,15 +300,6 @@ public interface KeycloakSession {
      */
     @Deprecated
     RoleProvider roleLocalStorage();
-
-    /**
-     * Hybrid storage for UserStorageProviders that can't store a specific piece of keycloak data in their external storage.
-     * No cache in front.
-     *
-     * @deprecated Access to the legacy store is no longer possible via this method. Adjust your code according to the Keycloak 19 Upgrading Guide.
-     */
-    @Deprecated
-    UserFederatedStorageProvider userFederatedStorage();
 
     /**
      * Key manager

@@ -36,7 +36,6 @@ import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
-import org.keycloak.exportimport.util.ExportUtils;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.UserModel;
@@ -124,7 +123,7 @@ public class ResourceServerService {
     @Produces("application/json")
     public Response exportSettings() {
         this.auth.realm().requireManageAuthorization();
-        return Response.ok(ExportUtils.exportAuthorizationSettings(session, client)).build();
+        return Response.ok(ModelToRepresentation.toResourceServerRepresentation(session, client)).build();
     }
 
     @Path("/import")
