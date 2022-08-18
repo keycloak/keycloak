@@ -17,9 +17,7 @@
 
 package org.keycloak.operator.testsuite.integration;
 
-import io.fabric8.kubernetes.api.model.EnvVarBuilder;
-import io.fabric8.kubernetes.api.model.SecretBuilder;
-import io.fabric8.kubernetes.api.model.SecretKeySelectorBuilder;
+import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetSpecBuilder;
 import io.quarkus.logging.Log;
 import io.quarkus.test.junit.QuarkusTest;
@@ -38,6 +36,7 @@ import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
@@ -50,9 +49,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.keycloak.operator.testsuite.utils.CRAssert.assertKeycloakStatusCondition;
-import static org.keycloak.operator.testsuite.utils.K8sUtils.deployKeycloak;
-import static org.keycloak.operator.testsuite.utils.K8sUtils.getDefaultKeycloakDeployment;
-import static org.keycloak.operator.testsuite.utils.K8sUtils.waitForKeycloakToBeReady;
+import static org.keycloak.operator.testsuite.utils.K8sUtils.*;
 
 @QuarkusTest
 public class KeycloakDeploymentTest extends BaseOperatorTest {
@@ -398,6 +395,39 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
     }
 
     @Test
+    @EnabledIfSystemProperty(named = OPERATOR_CUSTOM_IMAGE, matches = ".+")
+    public void testCustomImageWithImagePullSecrets() {
+        String imagePullSecretName = "docker-regcred-custom-kc-imagepullsecret-01";
+        String secretDescriptorFilename = "test-docker-registry-secret.yaml";
+
+        try {
+            var kc = getDefaultKeycloakDeployment();
+            kc.getSpec().setImage(customImage);
+
+            handleFakeImagePullSecretCreation(kc, imagePullSecretName, false, secretDescriptorFilename);
+
+            deployKeycloak(k8sclient, kc, true);
+
+            var pods = k8sclient
+                    .pods()
+                    .inNamespace(namespace)
+                    .withLabels(Constants.DEFAULT_LABELS)
+                    .list()
+                    .getItems();
+
+            assertThat(pods.get(0).getSpec().getContainers().get(0).getArgs()).containsExactly("start", "--optimized");
+
+            var job = k8sclient.batch().v1().jobs().inNamespace(namespace).withName("example-count0-kc").get();
+            assertThat(job.getSpec().getTemplate().getSpec().getImagePullSecrets().size()).isEqualTo(1);
+            assertThat(job.getSpec().getTemplate().getSpec().getImagePullSecrets().get(0).getName()).isEqualTo(imagePullSecretName);
+
+        } catch (Exception e) {
+            savePodLogs();
+            throw e;
+        }
+    }
+
+    @Test
     public void testHttpRelativePathWithPlainValue() {
         try {
             var kc = getDefaultKeycloakDeployment();
@@ -496,6 +526,15 @@ public class KeycloakDeploymentTest extends BaseOperatorTest {
             savePodLogs();
             throw e;
         }
+    }
+
+    private void handleFakeImagePullSecretCreation(Keycloak keycloakCR, String imagePullSecretName, boolean shouldMountSecretFromFile, String secretDescriptorFilename) {
+        if (shouldMountSecretFromFile) {
+            Secret imagePullSecret = getResourceFromFile(secretDescriptorFilename, Secret.class);
+            k8sclient.secrets().inNamespace(namespace).createOrReplace(imagePullSecret);
+        }
+        LocalObjectReference localObjRefAsSecretTmp = new LocalObjectReferenceBuilder().withName(imagePullSecretName).build();
+        keycloakCR.getSpec().setImagePullSecrets(Collections.singletonList(localObjRefAsSecretTmp));
     }
 
 }

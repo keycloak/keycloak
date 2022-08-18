@@ -17,11 +17,14 @@
 package org.keycloak.operator.crds.v2alpha1.deployment;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 
+import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import org.keycloak.operator.Constants;
 
 import javax.validation.constraints.NotNull;
+import java.util.ArrayList;
 import java.util.List;
 
 public class KeycloakSpec {
@@ -30,6 +33,9 @@ public class KeycloakSpec {
     private int instances = 1;
     @JsonPropertyDescription("Custom Keycloak image to be used.")
     private String image;
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @JsonPropertyDescription("Secret(s) that might be used when pulling an image from a private container image registry or repository.")
+    private List<LocalObjectReference> imagePullSecrets = new ArrayList();
     @JsonPropertyDescription("Configuration of the Keycloak server.\n" +
             "expressed as a keys (reference: https://www.keycloak.org/server/all-config) and values that can be either direct values or references to secrets.")
     private List<ValueOrSecret> serverConfiguration; // can't use Set due to a bug in Sundrio https://github.com/sundrio/sundrio/issues/316
@@ -108,6 +114,14 @@ public class KeycloakSpec {
 
     public void setImage(String image) {
         this.image = image;
+    }
+
+    public List<LocalObjectReference> getImagePullSecrets() {
+        return this.imagePullSecrets;
+    }
+
+    public void setImagePullSecrets(List<LocalObjectReference> imagePullSecrets) {
+        this.imagePullSecrets = imagePullSecrets;
     }
 
     public List<ValueOrSecret> getServerConfiguration() {

@@ -30,6 +30,7 @@ import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.quarkus.logging.Log;
+import org.keycloak.common.util.CollectionUtil;
 import org.keycloak.operator.Config;
 import org.keycloak.operator.Constants;
 import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
@@ -521,6 +522,9 @@ public class KeycloakDeployment extends OperatorManagedResource implements Statu
 
         if (customImage.isPresent()) {
             container.getArgs().add("--optimized");
+            if (CollectionUtil.isNotEmpty(keycloakCR.getSpec().getImagePullSecrets())) {
+                baseDeployment.getSpec().getTemplate().getSpec().setImagePullSecrets(keycloakCR.getSpec().getImagePullSecrets());
+            }
         }
 
         container.setImagePullPolicy(config.keycloak().imagePullPolicy());
