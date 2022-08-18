@@ -199,7 +199,7 @@ public class CertificateValidator {
                 // 1) signed by the issuer certificate,
                 // 2) Includes the value of OCSPsigning in ExtendedKeyUsage v3 extension
                 // 3) Certificate is valid at the time
-                OCSPProvider ocspProvider = CryptoIntegration.getProvider().getAlgorithmProvider(OCSPProvider.class, CryptoConstants.OCSP);
+                OCSPProvider ocspProvider = CryptoIntegration.getProvider().getOCSPProver(OCSPProvider.class);
                 ocspRevocationStatus = ocspProvider.check(session, cert, issuerCertificate);
             }
             else {
@@ -216,7 +216,7 @@ public class CertificateValidator {
                 // OCSP responder's certificate is assumed to be the issuer's certificate
                 // certificate.
                 // responderUri overrides the contents (if any) of the certificate's AIA extension
-                OCSPProvider ocspProvider = CryptoIntegration.getProvider().getAlgorithmProvider(OCSPProvider.class, CryptoConstants.OCSP);
+                OCSPProvider ocspProvider = CryptoIntegration.getProvider().getOCSPProver(OCSPProvider.class);
                 ocspRevocationStatus = ocspProvider.check(session, cert, issuerCertificate, uri, responderCert, null);
             }
             return ocspRevocationStatus;

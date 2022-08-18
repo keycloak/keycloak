@@ -42,6 +42,8 @@ public interface CryptoProvider {
      */
     PemUtilsProvider getPemUtils();
 
+    <T> T getOCSPProver(Class<T> clazz);
+
 
     public UserIdentityExtractorProvider getIdentityExtractorProvider();
 
