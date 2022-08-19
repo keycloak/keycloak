@@ -43,7 +43,7 @@ jobs:
 
       - name: Build Keycloak Server
         working-directory: ${{ env.KEYCLOAK_SERVER_PATH }}
-        run: mvn clean install --no-snapshot-updates --batch-mode --errors -DskipTests -DskipCommon -DskipAccount2 -Pdistribution,admin-preview
+        run: mvn clean install --no-snapshot-updates --batch-mode --errors -Dmaven.test.skip=true -DskipCommon -DskipAccount2 -Pdistribution
 
       - name: Extract Keycloak server
         id: extract-server
