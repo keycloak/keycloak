@@ -38,6 +38,11 @@ The number of intervals the server attempts to match the hash. This option is pr
 
 The time interval in seconds the server matches a hash. Each time the interval passes, the token generator generates a TOTP.
 
+===== Reusable code
+
+Determine whether OTP tokens can be reused in the authentication process or user needs to wait for the next token.
+Users cannot reuse those tokens by default, and the administrator needs to explicitly specify that those tokens can be reused.
+
 ==== HOTP configuration options
 
 ===== OTP hash algorithm
