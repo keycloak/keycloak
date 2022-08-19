@@ -339,10 +339,10 @@ are correctly migrated from previous version
 For the available versions, take a look at the directory [tests/other/server-config-migration/src/test/resources/standalone](tests/other/server-config-migration/src/test/resources/standalone)
 
 
-## Admin Console UI tests
+## Old Admin Console UI tests
 The UI tests are real-life, UI focused integration tests. Hence they do not support the default HtmlUnit browser. Only the following real-life browsers are supported: Mozilla Firefox and Google Chrome. For details on how to run the tests with these browsers, please refer to [Different Browsers](#different-browsers) chapter.
 
-The UI tests are focused on the Admin Console. They are placed in the `console` module and are disabled by default.
+The UI tests are focused on the Admin Console. They are placed in the `old-admin-console` module and are disabled by default.
 
 The tests also use some constants placed in [test-constants.properties](tests/base/src/test/resources/test-constants.properties). A different file can be specified by `-Dtestsuite.constants=path/to/different-test-constants.properties`
 
@@ -350,7 +350,7 @@ In case a custom `settings.xml` is used for Maven, you need to specify it also i
 
 #### Execution example
 ```
-mvn -f testsuite/integration-arquillian/tests/other/console/pom.xml \
+mvn -f testsuite/integration-arquillian/tests/other/old-admin-console/pom.xml \
     clean test \
     -Dbrowser=firefox \
     -Dfirefox_binary=/opt/firefox-45.1.1esr/firefox

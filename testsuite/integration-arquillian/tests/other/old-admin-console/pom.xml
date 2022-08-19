@@ -29,7 +29,7 @@
 
     <artifactId>integration-arquillian-tests-console</artifactId>
 
-    <name>Admin Console UI Tests</name>
+    <name>Old Admin Console UI Tests</name>
 
     <properties>
         <keycloak.theme.dir>${auth.server.home}/themes</keycloak.theme.dir>
