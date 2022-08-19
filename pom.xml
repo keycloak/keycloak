@@ -36,7 +36,6 @@
         <module>securing_apps</module>
         <module>server_admin</module>
         <module>server_development</module>
-        <module>server_installation</module>
         <module>release_notes</module>
         <module>upgrading</module>
         <module>aggregation</module>
@@ -55,11 +54,6 @@
                 <masterFile>master</masterFile>
                 <imagesDir>rhsso-images</imagesDir>
             </properties>
-            <modules>
-                <module>getting_started</module>
-                <module>openshift</module>
-                <module>openshift-openj9</module>
-            </modules>
         </profile>
         <profile>
             <id>tests</id>

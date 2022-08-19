@@ -31,11 +31,10 @@
 :create_cmd: oc create
 :create_cmd_brief: oc
 
-:kc_dist: wildfly
-:kc_realms_path: /auth/realms
-:kc_admins_path: /auth/admin
-:kc_js_path: /auth/js
-:kc_base_path: /auth
+:kc_realms_path: /realms
+:kc_admins_path: /admin
+:kc_js_path: /js
+:kc_base_path:
 
 :project_dirref: RHSSO_HOME
 
@@ -106,25 +105,6 @@
 :ocpdocs_cluster_local_registry_access_link: {official_ocp_docs_link}/latest/registry/accessing-the-registry.html#registry-accessing-directly_accessing-the-registry
 :ocp311docs_passthrough_route_link: {official_ocp_docs_link}/3.11/architecture/networking/routes.html#passthrough-termination
 :ocp311docs_reencrypt_route_link: {official_ocp_docs_link}/3.11/architecture/networking/routes.html#re-encryption-termination
-
-:installguide_name: Server Installation and Configuration Guide
-:installguide_link: {project_doc_base_url}/server_installation_and_configuration_guide/
-:installguide_clustering_name: Clustering
-:installguide_clustering_link: {installguide_link}#_clustering
-:installguide_database_name: Database
-:installguide_database_link: {installguide_link}#_database
-:installguide_disablingcaching_name: Disabling caching
-:installguide_disablingcaching_link: {installguide_link}#disabling-caching
-:installguide_loadbalancer_name: Setting Up a Load Balancer or Proxy
-:installguide_loadbalancer_link: {installguide_link}#_setting-up-a-load-balancer-or-proxy
-:installguide_truststore_name: Keycloak truststore
-:installguide_truststore_link: {installguide_link}#_truststore
-:installguide_profile_name: Profiles
-:installguide_profile_link: {installguide_link}#profiles
-:installguide_stickysessions_name: Sticky sessions
-:installguide_stickysessions_link: {installguide_link}#sticky-sessions
-:installguide_troubleshooting_name: Troubleshooting
-:installguide_troubleshooting_link: {installguide_link}#troubleshooting
 
 :apidocs_javadocs_name: JavaDocs Documentation
 :apidocs_javadocs_link: https://access.redhat.com/webassets/avalon/d/red-hat-single-sign-on/version-{project_versionDoc}/javadocs/

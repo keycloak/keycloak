@@ -46,12 +46,6 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak.documentation</groupId>
-            <artifactId>server-installation</artifactId>
-            <version>${project.version}</version>
-            <type>pom</type>
-        </dependency>
-        <dependency>
-            <groupId>org.keycloak.documentation</groupId>
             <artifactId>release-notes</artifactId>
             <version>${project.version}</version>
             <type>pom</type>
@@ -156,22 +150,6 @@
                             <resources>
                                 <resource>
                                     <directory>../server_development/target/generated-docs</directory>
-                                    <include>**/**</include>
-                                </resource>
-                            </resources>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>copy-server_installation</id>
-                        <phase>process-resources</phase>
-                        <goals>
-                            <goal>copy-resources</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>${project.build.outputDirectory}/server_installation/</outputDirectory>
-                            <resources>
-                                <resource>
-                                    <directory>../server_installation/target/generated-docs</directory>
                                     <include>**/**</include>
                                 </resource>
                             </resources>

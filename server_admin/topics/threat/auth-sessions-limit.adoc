@@ -18,7 +18,7 @@ under control, using an advanced firewall control to limit ingress network traff
 
 
 Higher memory usage may occur for deployments where there are many active `RootAuthenticationSessionEntity` with a lot of `AuthenticationSessionEntity`.
-If the load balancer does not support or is not configured for link:{installguide_stickysessions_link}[session stickiness], the load over network in a cluster can
+If the load balancer does not support or is not configured for session stickiness, the load over network in a cluster can
 increase significantly. The reason for this load is that each request that lands on a node that does not own the appropriate authentication session needs to retrieve
 and update the authentication session record in the owner node which involves a separate network transmission for both the retrieval and the storage.
 
@@ -26,7 +26,6 @@ The maximum number of `AuthenticationSessionEntity` per `RootAuthenticationSessi
 
 The following example shows how to limit the number of active `AuthenticationSessionEntity` per a `RootAuthenticationSessionEntity` to 100.
 
-ifeval::["{kc_dist}" == "quarkus"]
 [source,bash]
 ----
 bin/kc.[sh|bat] start --spi-authentication-sessions-infinispan-auth-sessions-limit=100
@@ -38,31 +37,3 @@ The equivalent command for the new map storage:
 ----
 bin/kc.[sh|bat] start --spi-authentication-sessions-map-auth-sessions-limit=100
 ----
-
-endif::[]
-
-ifeval::["{kc_dist}" == "wildfly"]
-[source,xml]
-----
-<subsystem xmlns="urn:jboss:domain:keycloak-server:1.1">
-    ...
-    <spi name="authenticationSessions">
-        <default-provider>infinispan</default-provider>
-        <provider name="infinispan" enabled="true">
-            <properties>
-                <property name="authSessionsLimit" value="100"/>
-            </properties>
-        </provider>
-    </spi>
-    ...
-</subsystem>
-----
-
-Equivalent configuration using CLI commands:
-
-[source,bash]
-----
-/subsystem=keycloak-server/spi=authenticationSessions:add(default-provider=infinispan)
-/subsystem=keycloak-server/spi=authenticationSessions/provider=infinispan:add(properties={authSessionsLimit => "100"},enabled=true)
-----
-endif::[]

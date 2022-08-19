@@ -13,7 +13,7 @@ the client scope is not automatically added to all existing clients during migra
 the migration. Consider these possible actions:
 
 - If you do not plan to use step-up authentication feature, but you rely on the `acr` claim in the token, you can disable `step_up_authentication`
-  feature as described in the link:{installguide_link}#profiles[{installguide_name}]. The claim will be added with the value `1` in case of normal authentication and `0` in case of SSO authentication.
+  feature. The claim will be added with the value `1` in case of normal authentication and `0` in case of SSO authentication.
 - Add `acr` client scope to your clients manually by admin REST API or admin console. This is needed especially if you want to use step-up authentication.
   If you have a large number of clients in the realm and want to use `acr` claim for all of them, you can trigger some SQL similar to this against your DB.
   However, remember to clear the cache or restart the server if {project_name} is already started:

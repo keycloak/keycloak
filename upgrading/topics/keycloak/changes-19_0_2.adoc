@@ -3,28 +3,11 @@ At Keycloak 18.0.0, the logout is now compatible with the new OIDC specification
 
 While the url parameters can now be configured to be compatible, there was still one incompatibility with keycloak 17 and earlier releases. If the user does not provide an valid `idTokenHint`, a logout prompt appears instead of a successful logout redirect. Therefore, a new compatibility flag `suppress-logout-confirmation-screen` is introduced to suppress the logout screen.
 
-ifeval::["{kc_dist}" == "quarkus"]
 You can enable this parameter when you start the server by entering the following command:
 
 ```
 bin/kc.[sh|bat] --spi-login-protocol-openid-connect-suppress-logout-confirmation-screen=true start
 ```
-endif::[]
-
-ifeval::["{kc_dist}" == "wildfly"]
-You can enable this parameter by including the following configuration in the `standalone-*.xml` file
-
-[source,bash,subs=+attributes]
-----
-<spi name="login-protocol">
-    <provider name="openid-connect" enabled="true">
-        <properties>
-            <property name="suppress-logout-confirmation-screen" value="true"/>
-        </properties>
-    </provider>
-</spi>
-----
-endif::[]
 
 With this configuration, you can still use the logout endpoint without a user prompt.
 

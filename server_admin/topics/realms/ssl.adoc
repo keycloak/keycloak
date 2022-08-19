@@ -5,7 +5,6 @@
 Each realm has an associated SSL Mode, which defines the SSL/HTTPS requirements for interacting with the realm.
 Browsers and applications that interact with the realm honor the SSL/HTTPS requirements defined by the SSL Mode or they cannot interact with the server.
 
-WARNING:  {project_name} generates a self-signed certificate the first time it runs.  Please note that self-signed certificates are not secure, and should only be used for testing purposes.  It is highly recommended that you install a CA-signed certificate on the {project_name} server itself or on a reverse proxy in front of the {project_name} server.  See the link:{installguide_link}[{installguide_name}].
 
 .Procedure 
 

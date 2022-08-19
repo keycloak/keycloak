@@ -32,7 +32,6 @@ NOTE: To set the theme for the `master` Admin Console you need to set the Admin 
 +
 . To see the changes to the Admin Console refresh the page.
 
-ifeval::["{kc_dist}" == "quarkus"]
 . Change the welcome theme by using the `spi-theme-welcome-theme` option.
 
 . For example:
@@ -41,23 +40,6 @@ ifeval::["{kc_dist}" == "quarkus"]
 ----
 bin/kc.[sh|bat] start --spi-theme-welcome-theme=custom-theme
 ----
-endif::[]
-
-ifeval::["{kc_dist}" == "wildfly"]
-. Change the welcome theme by editing `standalone.xml`, `standalone-ha.xml`, or `domain.xml`.
-
-. Add `welcomeTheme` to the theme element, for example:
-+
-[source,xml]
-----
-<theme>
-    ...
-    <welcomeTheme>custom-theme</welcomeTheme>
-    ...
-</theme>
-----
-. Restart the server for the changes to the welcome theme to take effect.
-endif::[]
 
 === Default themes
 
@@ -87,31 +69,12 @@ restarting {project_name}.
 
 .Procedure
 
-ifeval::["{kc_dist}" == "quarkus"]
 . Run Keycloak with the following options:
 +
 [source,bash]
 ----
 bin/kc.[sh|bat] start --spi-theme-static-max-age=-1 --spi-theme-cache-themes=false --spi-theme-cache-templates=false
 ----
-endif::[]
-
-ifeval::["{kc_dist}" == "wildfly"]
-. Edit `standalone.xml`.
-
-. For `theme` set `staticMaxAge` to `-1` and both
-`cacheTemplates` and `cacheThemes` to `false`:
-+
-[source,xml]
-----
-<theme>
-    <staticMaxAge>-1</staticMaxAge>
-    <cacheThemes>false</cacheThemes>
-    <cacheTemplates>false</cacheTemplates>
-    ...
-</theme>
-----
-endif::[]
 
 . Create a directory in the `themes` directory.
 +
@@ -442,12 +405,5 @@ The contents of `META-INF/keycloak-themes.json` in this case would be:
 +
 A single archive can contain multiple themes and each theme can support one or more types.
 
-ifeval::["{kc_dist}" == "quarkus"]
 To deploy the archive to {project_name}, add it to the `providers/` directory of
 {project_name} and restart the server if it is already running.
-endif::[]
-
-ifeval::["{kc_dist}" == "wildfly"]
-To deploy the archive to {project_name}, add it to the `standalone/deployments/` directory of
-{project_name} and it will be automatically loaded.
-endif::[]

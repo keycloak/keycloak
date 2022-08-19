@@ -45,5 +45,5 @@ the cipher suites and TLS protocol versions used. To match these requirements, y
 key-manager="kcKeyManager" trust-manager="kcTrustManager" \
 cipher-suite-filter="TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_DHE_RSA_WITH_AES_128_GCM_SHA256,TLS_DHE_RSA_WITH_AES_256_GCM_SHA384" protocols="TLSv1.2" />
 
-The references to `kcKeyManager` and `kcTrustManager` refers to the corresponding Keystore and Truststore. See the documentation of Wildfly Elytron subsystem for more details and also
-other parts of {project_name} documentation such as link:{installguide_link}#_network[Network Setup Section] or link:{adminguide_link}#_x509[X.509 Authentication Section].
+As confidential information is being exchanged, all interactions shall be encrypted with TLS (HTTPS). Moreover, there are some requirements in the FAPI specification for
+the cipher suites and TLS protocol versions used. To match these requirements, you can consider configuring allowed ciphers. This configuration can be done by setting the `https-protocols` and `https-cipher-suites` options. For more details, see https://www.keycloak.org/server/enabletls[Configuring TLS] guide.

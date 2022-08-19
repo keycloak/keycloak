@@ -4,17 +4,9 @@
 [role="_abstract"]
 xref:con-oidc_{context}[OpenID Connect] is the recommended protocol to secure applications.  It was designed from the ground up to be web friendly and it works best with HTML5/JavaScript applications.
 
-ifeval::[{project_community}==true]
 include::oidc/proc-creating-oidc-client.adoc[leveloffset=+1]
 include::oidc/con-basic-settings.adoc[leveloffset=+1]
 include::oidc/con-advanced-settings.adoc[leveloffset=+1]
-endif::[]
-
-ifeval::[{project_product}==true]
-include::oidc/proc-creating-oidc-client-prod.adoc[leveloffset=+1]
-include::oidc/con-basic-settings-prod.adoc[leveloffset=+1]
-include::oidc/con-advanced-settings-prod.adoc[leveloffset=+1]
-endif::[]
 
 include::oidc/con-confidential-client-credentials.adoc[leveloffset=+1]
 

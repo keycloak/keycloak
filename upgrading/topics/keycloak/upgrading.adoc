@@ -4,26 +4,12 @@
 
 include::../prep_migration.adoc[leveloffset=1]
 
-ifeval::["{kc_dist}" == "quarkus"]
-include::../install_new_version-quarkus.adoc[leveloffset=1]
-endif::[]
-
-ifeval::["{kc_dist}" == "wildfly"]
 include::../install_new_version.adoc[leveloffset=1]
-endif::[]
 
-ifeval::["{kc_dist}" == "quarkus"]
-include::../migrate_db-quarkus.adoc[leveloffset=1]
-endif::[]
-
-ifeval::["{kc_dist}" == "wildfly"]
 include::../migrate_db.adoc[leveloffset=1]
-endif::[]
 
 include::../migrate_themes.adoc[leveloffset=1]
 
-
 include::../upgrade_adapters.adoc[leveloffset=1]
-
 
 include::../upgrade_admin_client.adoc[leveloffset=1]

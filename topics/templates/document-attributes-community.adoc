@@ -31,7 +31,6 @@ endif::[]
 :create_cmd: kubectl apply
 :create_cmd_brief: kubectl
 
-:kc_dist: quarkus
 :kc_realms_path: /realms
 :kc_admins_path: /admin
 :kc_js_path: /js
@@ -84,27 +83,6 @@ endif::[]
 :releasenotes_name_short: {releasenotes_name}
 :releasenotes_link: {project_doc_base_url}/release_notes/
 :releasenotes_link_latest: {project_doc_base_url_latest}/release_notes/
-
-:installguide_name: Server Installation and Configuration Guide
-:installguide_name_short: Server Installation
-:installguide_link: {project_doc_base_url}/server_installation/
-:installguide_link_latest: {project_doc_base_url_latest}/server_installation/
-:installguide_clustering_name: Clustering
-:installguide_clustering_link: {installguide_link}#_clustering
-:installguide_database_name: Database
-:installguide_database_link: {installguide_link}#_database
-:installguide_disablingcaching_name: Disabling caching
-:installguide_disablingcaching_link: {installguide_link}#disabling-caching
-:installguide_loadbalancer_name: Setting Up a Load Balancer or Proxy
-:installguide_loadbalancer_link: {installguide_link}#_setting-up-a-load-balancer-or-proxy
-:installguide_truststore_name: Keycloak truststore
-:installguide_truststore_link: {installguide_link}#_truststore
-:installguide_profile_name: Profiles
-:installguide_profile_link: {installguide_link}#profiles
-:installguide_stickysessions_name: Sticky sessions
-:installguide_stickysessions_link: {installguide_link}#sticky-sessions
-:installguide_troubleshooting_name: Troubleshooting
-:installguide_troubleshooting_link: {installguide_link}#troubleshooting
 
 :apidocs_javadocs_name: JavaDocs Documentation
 :apidocs_javadocs_link: https://www.keycloak.org/docs-api/{project_versionDoc}/javadocs/

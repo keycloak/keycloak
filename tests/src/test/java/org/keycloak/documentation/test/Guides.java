@@ -15,13 +15,7 @@ public class Guides {
         g.add("securing_apps");
         g.add("server_admin");
         g.add("server_development");
-        g.add("server_installation");
         g.add("upgrading");
-
-        if (product) {
-            g.add("getting_started");
-            g.add("openshift");
-        }
 
         guides = g.toArray(new String[g.size()]);
     }

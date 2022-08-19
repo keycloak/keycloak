@@ -80,12 +80,6 @@
             <version>${project.version}</version>
             <type>pom</type>
         </dependency>
-        <dependency>
-            <groupId>org.keycloak.documentation</groupId>
-            <artifactId>server-installation</artifactId>
-            <version>${project.version}</version>
-            <type>pom</type>
-        </dependency>
 
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -124,24 +118,5 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-
-    <profiles>
-        <profile>
-            <id>product</id>
-            <activation>
-                <property>
-                    <name>product</name>
-                </property>
-            </activation>
-            <dependencies>
-                <dependency>
-                    <groupId>org.keycloak.documentation</groupId>
-                    <artifactId>getting-started</artifactId>
-                    <version>${project.version}</version>
-                    <type>pom</type>
-                </dependency>
-            </dependencies>
-        </profile>
-    </profiles>
 
 </project>

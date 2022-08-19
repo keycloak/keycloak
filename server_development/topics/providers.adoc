@@ -82,33 +82,14 @@ Example service configuration file (`META-INF/services/org.keycloak.theme.ThemeS
 org.acme.provider.MyThemeSelectorProviderFactory
 ----
 
-ifeval::["{kc_dist}" == "quarkus"]
-You can configure your provider through server configuring.
+To configure your provider, see the (https://www.keycloak.org/server/configuration-provider)[Configuring Providers] guide.
 
-For example by adding starting the server with the following arguments:
+For example, to configure a provider you can set options as follows:
 
 [source,bash]
 ----
 bin/kc.[sh|bat] --spi-theme-selector-my-theme-selector-enabled=true --spi-theme-selector-my-theme-selector-theme=my-theme
 ----
-endif::[]
-
-ifeval::["{kc_dist}" == "wildfly"]
-You can configure your provider through `standalone.xml`, `standalone-ha.xml`, or `domain.xml`.
-
-For example by adding the following to `standalone.xml`:
-
-[source,xml]
-----
-<spi name="themeSelector">
-    <provider name="myThemeSelector" enabled="true">
-        <properties>
-            <property name="theme" value="my-theme"/>
-        </properties>
-    </provider>
-</spi>
-----
-endif::[]
 
 Then you can retrieve the config in the `ProviderFactory` init method:
 
@@ -181,24 +162,11 @@ For example `HostnameProvider` specifies the hostname to be used by {project_nam
 Hence there can be only single implementation of this provider active for the {project_name} server. If there are multiple provider implementations available to the server runtime,
 one of them needs to be specified as the default one.
 
-ifeval::["{kc_dist}" == "quarkus"]
 For example such as:
 [source,bash]
 ----
 bin/kc.[sh|bat] build --spi-hostname-provider=default
 ----
-endif::[]
-
-ifeval::["{kc_dist}" == "wildfly"]
-For example such as:
-[source,xml]
-----
-<spi name="hostname">
-    <default-provider>default</default-provider>
-    ...
-</spi>
-----
-endif::[]
 
 The value `default` used as the value of `default-provider` must match the ID returned by the `ProviderFactory.getId()` of the particular provider factory implementation.
 In the code, you can obtain the provider such as `keycloakSession.getProvider(HostnameProvider.class)`
@@ -215,7 +183,6 @@ The provider ID must match the ID returned by the `ProviderFactory.getId()` of t
 particular provider factory implementation. Some provider types can be retrieved with the usage of `ComponentModel` as the second argument and some (for example `Authenticator`) even
 need to be retrieved with the usage of `KeycloakSessionFactory`. It is not recommended to implement your own providers this way as it may be deprecated in the future.
 
-ifeval::["{kc_dist}" == "quarkus"]
 === Registering provider implementations
 
 Providers are registered with the server by simply copying them to the `providers` directory.
@@ -233,161 +200,6 @@ For example to disable the Infinispan user cache provider use:
 ----
 bin/kc.[sh|bat] build --spi-user-cache-infinispan-enabled=false
 ----
-endif::[]
-
-ifeval::["{kc_dist}" == "wildfly"]
-=== Registering provider implementations
-
-There are two ways to register provider implementations. In most cases the simplest way is to use the {project_name} deployer
-approach as this handles a number of dependencies automatically for you. It also supports hot deployment as well as re-deployment.
-
-The alternative approach is to deploy as a module.
-
-If you are creating a custom SPI you will need to deploy it as a module, otherwise we recommend using the {project_name} deployer approach.
-
-==== Using the {project_name} deployer
-
-If you copy your provider jar to the {project_name} `standalone/deployments/` directory, your provider will automatically be deployed.
-Hot deployment works too.  Additionally, your provider jar works similarly to other components deployed in a {appserver_name}
-environment in that they can use facilities like the `jboss-deployment-structure.xml` file.  This file allows you to
-set up dependencies on other components and load third-party jars and modules.
-
-Provider jars can also be contained within other deployable units like EARs and WARs.  Deploying with a EAR actually makes
-it really easy to use third party jars as you can just put these libraries in the EAR's `lib/` directory.
-
-==== Register a provider using Modules
-
-.Procedure
-
-. Create a module using the jboss-cli script or manually create a folder.
-+
-.. For example,  to add the event listener sysout example provider using the `jboss-cli` script, execute:
-+
-[source]
-----
-KEYCLOAK_HOME/bin/jboss-cli.sh --command="module add --name=org.acme.provider --resources=target/provider.jar --dependencies=org.keycloak.keycloak-core,org.keycloak.keycloak-server-spi"
-----
-
-.. Alternatively, you can manually create the module inside `KEYCLOAK_HOME/modules` and add your jar and a `module.xml`.
-+
-For example, create the folder `KEYCLOAK_HOME/modules/org/acme/provider/main`. Then copy `provider.jar` to this folder and create `module.xml` with the following content:
-+
-[source,xml]
-----
-<?xml version="1.0" encoding="UTF-8"?>
-<module xmlns="urn:jboss:module:1.3" name="org.acme.provider">
-    <resources>
-        <resource-root path="provider.jar"/>
-    </resources>
-    <dependencies>
-        <module name="org.keycloak.keycloak-core"/>
-        <module name="org.keycloak.keycloak-server-spi"/>
-    </dependencies>
-</module>
-----
-
-. Register this module with {project_name} by editing the keycloak-server subsystem section of
-`standalone.xml`, `standalone-ha.xml`, or `domain.xml`, and adding it to the providers:
-+
-[source,xml]
-----
-<subsystem xmlns="urn:jboss:domain:keycloak-server:1.1">
-    <web-context>auth</web-context>
-    <providers>
-        <provider>module:org.keycloak.examples.event-sysout</provider>
-    </providers>
-    ...
-----
-
-==== Disabling a provider
-
-You can disable a provider by setting the enabled attribute for the provider to false
-in `standalone.xml`, `standalone-ha.xml`, or `domain.xml`.
-For example to disable the Infinispan user cache provider add:
-
-[source,xml]
-----
-<spi name="userCache">
-    <provider name="infinispan" enabled="false"/>
-</spi>
-----
-
-=== Leveraging Jakarta EE
-
-The service providers can be packaged within any Jakarta EE component so long as you set up the `META-INF/services`
-file correctly to point to your providers.  For example, if your provider needs to use third party libraries, you
-can package up your provider within an ear and store these third party libraries in the ear's `lib/` directory.
-Also note that provider jars can make use of the `jboss-deployment-structure.xml` file that EJBs, WARS, and EARs
-can use in a {appserver_name} environment.  See the {appserver_name} documentation for more details on this file.  It
-allows you to pull in external dependencies among other fine grain actions.
-
-`ProviderFactory` implementations are required to be plain java objects.  But, we also currently support
-implementing provider classes as Stateful EJBs.  This is how you would do it:
-
-[source,java]
-----
-@Stateful
-@Local(EjbExampleUserStorageProvider.class)
-public class EjbExampleUserStorageProvider implements UserStorageProvider,
-        UserLookupProvider,
-        UserRegistrationProvider,
-        UserQueryProvider,
-        CredentialInputUpdater,
-        CredentialInputValidator,
-        OnUserCache
-{
-    @PersistenceContext
-    protected EntityManager em;
-
-    protected ComponentModel model;
-    protected KeycloakSession session;
-
-    public void setModel(ComponentModel model) {
-        this.model = model;
-    }
-
-    public void setSession(KeycloakSession session) {
-        this.session = session;
-    }
-
-
-    @Remove
-    @Override
-    public void close() {
-    }
-...
-}
-----
-
-You define the `@Local` annotation and specify your provider class there.  If you don't do this, EJB will
-not proxy the provider instance correctly and your provider won't work.
-
-You put the `@Remove` annotation on the `close()` method of your provider.  If you don't, the stateful bean
-will never be cleaned up and you may eventually see error messages.
-
-Ixmplementations of `ProviderFactory` are required to be plain java objects.  Your factory class would
-perform a JNDI lookup of the Stateful EJB in its `create()` method.
-
-[source,java]
-----
-public class EjbExampleUserStorageProviderFactory
-        implements UserStorageProviderFactory<EjbExampleUserStorageProvider> {
-
-    @Override
-    public EjbExampleUserStorageProvider create(KeycloakSession session, ComponentModel model) {
-        try {
-            InitialContext ctx = new InitialContext();
-            EjbExampleUserStorageProvider provider = (EjbExampleUserStorageProvider)ctx.lookup(
-                     "java:global/user-storage-jpa-example/" + EjbExampleUserStorageProvider.class.getSimpleName());
-            provider.setModel(model);
-            provider.setSession(session);
-            return provider;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-----
-endif::[]
 
 [[_script_providers]]
 === JavaScript providers
@@ -519,13 +331,7 @@ The name of the script file. This property is *mandatory* and should map to a fi
 
 ==== Deploy the script JAR
 
-ifeval::["{kc_dist}" == "quarkus"]
 Once you have a JAR file with a descriptor and the scripts you want to deploy, you just need to copy the JAR to the {project_name} `providers/` directory, then run `bin/kc.[sh|bat] build`.
-endif::[]
-
-ifeval::["{kc_dist}" == "wildfly"]
-Once you have a JAR file with a descriptor and the scripts you want to deploy, you just need to copy the JAR to the {project_name} `standalone/deployments/` directory.
-endif::[]
 
 ===== Deploy the script engine on Java 15 and later
 
@@ -536,7 +342,6 @@ providers - adding the script engine of your choice to your distribution.
 
 You can use any script engine. However, we only test with the Nashorn JavaScript Engine. The following steps assume that this engine is used:
 
-ifeval::["{kc_dist}" == "quarkus"]
 Install the script engine by copying the nashorn script engine JAR and its dependencies directly to the `KEYCLOAK_HOME/providers` directory. In the `pom.xml` file
 of your script project, you can declare the dependency such as this in the `dependencies` section:
 
@@ -574,30 +379,6 @@ Once the project is built, copy the script engine and its dependencies to the `K
 cp target/keycloak-server-copy/providers/*.jar KEYCLOAK_HOME/providers/
 ```
 After re-augment the distribution with `kc.sh build`, the script engine should be deployed and your script providers should work.
-endif::[]
-
-ifeval::["{kc_dist}" == "wildfly"]
-You can install the script engine by adding the new module nashorn-core to your {project_name}. After the server starts, you can run commands similar to these in the `KEYCLOAK_HOME/bin` directory:
-```bash
-export NASHORN_VERSION=15.3
-wget https://repo1.maven.org/maven2/org/openjdk/nashorn/nashorn-core/$NASHORN_VERSION/nashorn-core-$NASHORN_VERSION.jar
-./jboss-cli.sh -c --command="module add --module-root-dir=../modules/system/layers/keycloak/ --name=org.openjdk.nashorn.nashorn-core --resources=./nashorn-core-$NASHORN_VERSION.jar --dependencies=asm.asm,jdk.dynalink"
-rm nashorn-core-$NASHORN_VERSION.jar
-```
-
-In case you want to install your provider into the different module, you can use configuration property `script-engine-module` of the default scripting provider.
-For example, you can use something such as this in your `KEYCLOAK_HOME/standalone/configuration/standalone-*.xml` file:
-```xml
-<spi name="scripting">
-    <provider name="default" enabled="true">
-        <properties>
-            <property name="script-engine-module" value="org.graalvm.js.js-scriptengine"/>
-        </properties>
-    </provider>
-</spi>
-```
-
-endif::[]
 
 ==== Using the {project_name} Admin Console to upload scripts
 
@@ -610,7 +391,7 @@ JAR file to prevent attacks when you run scripts at runtime.
 Ability to upload scripts can be explicitly enabled. This should be used with great care and plans should be created to
 deploy all scripts directly to the server as soon as possible.
 
-For more details about how to enable the `upload_scripts` feature, see link:{installguide_profile_link}[{installguide_profile_name}].
+For more details about how to enable the `upload_scripts` feature, see the https://www.keycloak.org/server/features[Enabling and disabling features] guide.
 
 === Available SPIs
 

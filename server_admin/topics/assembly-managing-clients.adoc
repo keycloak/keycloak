@@ -10,12 +10,7 @@ of client is one that is requesting an access token so that it can invoke other 
 This section discusses various aspects around configuring clients and various ways to do it.
 
 include::clients/assembly-client-oidc.adoc[leveloffset=+2]
-ifeval::[{project_community}==true]
 include::clients/saml/proc-creating-saml-client.adoc[leveloffset=+2]
-endif::[]
-ifeval::[{project_product}==true]
-include::clients/saml/proc-creating-saml-client-prod.adoc[leveloffset=+2]
-endif::[]
 include::clients/saml/idp-initiated-login.adoc[leveloffset=+3]
 include::clients/saml/proc-using-an-entity-descriptor.adoc[leveloffset=+3]
 include::clients/con-client-links.adoc[leveloffset=+2]

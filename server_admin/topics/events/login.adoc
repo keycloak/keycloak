@@ -13,14 +13,14 @@ Use this procedure to start auditing user events.
 . Toggle *Save events* to *ON*.
 +
 .User events settings
-image:{project_images}/user-events-settings.png[User events settings]
+image:images/user-events-settings.png[User events settings]
 
 . Specify the length of time to store events in the *Expiration* field.
 
 . Click *Add saved types* to see other events you can save.
 +
 .Add types
-image:{project_images}/add-event-types.png[Add types]
+image:images/add-event-types.png[Add types]
 
 . Click *Add*.
 
@@ -33,12 +33,12 @@ You can now view events.
 . Click the *Events* tab in the menu.
 +
 .User events
-image:{project_images}/user-events.png[Login Events]
+image:images/user-events.png[Login Events]
 
 . To filter events, click *Search user event*.
 +
 .Search user event
-image:{project_images}/search-user-event.png[Search user event]
+image:images/search-user-event.png[Search user event]
 
 ==== Event types
 
@@ -162,7 +162,7 @@ To enable the Email Listener:
 . Select `email`.
 +
 .Event listeners
-image:{project_images}/event-listeners.png[Event listeners]
+image:images/event-listeners.png[Event listeners]
 
 You can exclude events by using the `--spi-events-listener-email-exclude-events` argument. For example:
 

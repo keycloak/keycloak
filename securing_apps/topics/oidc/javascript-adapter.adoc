@@ -336,7 +336,7 @@ the browser is restrictive regarding cookies. The adapter tries to detect this s
 
 ===== Browsers with "SameSite=Lax by Default" Policy
 All features are supported if SSL / TLS connection is configured on the {project_name} side as well as on the application
-side. See link:{installguide_link}#_setting_up_ssl[configuring the SSL / TLS]. Affected is for example Chrome starting with
+side. Affected is for example Chrome starting with
 version 84.
 
 ===== Browsers with Blocked Third-Party Cookies

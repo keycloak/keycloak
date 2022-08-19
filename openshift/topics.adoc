@@ -1,9 +1,0 @@
-include::topics/introduction.adoc[leveloffset=+0]
-
-include::topics/get_started.adoc[leveloffset=+0]
-
-include::topics/advanced_concepts.adoc[leveloffset=+0]
-
-include::topics/tutorials.adoc[leveloffset=+0]
-
-include::topics/reference.adoc[leveloffset=+0]

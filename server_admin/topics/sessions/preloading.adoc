@@ -12,35 +12,7 @@ It can be achieved by setting `preloadOfflineSessionsFromDatabase` property in t
 
 The following example shows how to configure offline sessions preloading.
 
-ifeval::["{kc_dist}" == "quarkus"]
 [source,bash]
 ----
 bin/kc.[sh|bat] start --spi-user-sessions-infinispan-preload-offline-sessions-from-database=true
 ----
-endif::[]
-
-ifeval::["{kc_dist}" == "wildfly"]
-[source,xml]
-----
-<subsystem xmlns="urn:jboss:domain:keycloak-server:1.1">
-    ...
-    <spi name="userSessions">
-        <default-provider>infinispan</default-provider>
-        <provider name="infinispan" enabled="true">
-            <properties>
-                <property name="preloadOfflineSessionsFromDatabase" value="true"/>
-            </properties>
-        </provider>
-    </spi>
-    ...
-</subsystem>
-----
-
-Equivalent configuration using CLI commands:
-
-[source,bash]
-----
-/subsystem=keycloak-server/spi=userSessions:add(default-provider=infinispan)
-/subsystem=keycloak-server/spi=userSessions/provider=infinispan:add(properties={preloadOfflineSessionsFromDatabase => "true"},enabled=true)
-----
-endif::[]

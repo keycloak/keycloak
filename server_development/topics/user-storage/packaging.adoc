@@ -8,10 +8,4 @@ org.keycloak.examples.federation.properties.ClasspathPropertiesStorageFactory
 org.keycloak.examples.federation.properties.FilePropertiesStorageFactory
 ----
 
-ifeval::["{kc_dist}" == "quarkus"]
 To deploy this jar, copy it to the `providers/` directory, then run `bin/kc.[sh|bat] build`.
-endif::[]
-
-ifeval::["{kc_dist}" == "wildfly"]
-To deploy this jar, just copy it to the `standalone/deployments/` directory.
-endif::[]

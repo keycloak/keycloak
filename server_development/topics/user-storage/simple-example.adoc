@@ -209,29 +209,12 @@ In our `init()` method implementation, we find the property file containing our 
 
 The `Config.Scope` parameter is factory configuration that configured through server configuration.
 
-ifeval::["{kc_dist}" == "quarkus"]
 For example, by running the server with the following argument:
 
 [source,bash]
 ----
 kc.[sh|bat] start --spi-storage-readonly-property-file-path=/other-users.properties
 ----
-endif::[]
-
-ifeval::["{kc_dist}" == "wildfly"]
-For example, by adding the following to `standalone.xml`:
-
-[source,xml]
-----
-<spi name="storage">
-    <provider name="readonly-property-file" enabled="true">
-        <properties>
-            <property name="path" value="/other-users.properties"/>
-        </properties>
-    </provider>
-</spi>
-----
-endif::[]
 
 We can specify the classpath of the user property file instead of hardcoding it. Then you can retrieve the configuration in the `PropertyFileUserStorageProviderFactory.init()`:
 
@@ -267,13 +250,7 @@ The class files for our provider implementation should be placed in a jar.  You 
 org.keycloak.examples.federation.properties.FilePropertiesStorageFactory
 ----
 
-ifeval::["{kc_dist}" == "quarkus"]
 To deploy this jar, copy it to the `providers/` directory, then run `bin/kc.[sh|bat] build`.
-endif::[]
-
-ifeval::["{kc_dist}" == "wildfly"]
-To deploy this jar, just copy it to the `standalone/deployments/` directory.
-endif::[]
 
 ==== Enabling the provider in the Admin Console
 

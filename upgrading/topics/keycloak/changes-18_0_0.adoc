@@ -9,7 +9,7 @@ the client scope is not automatically added to all existing clients during migra
 the migration. Consider these possible actions:
 
 - If you do not plan to use step-up authentication feature, but you rely on the `acr` claim in the token, you can disable `step_up_authentication`
-  feature as described in the link:{installguide_link}#profiles[{installguide_name}]. The claim will be added with the value `1` in case of normal authentication and `0` in case of SSO authentication.
+  feature. The claim will be added with the value `1` in case of normal authentication and `0` in case of SSO authentication.
 - Add `acr` client scope to your clients manually by admin REST API or admin console. This is needed especially if you want to use step-up authentication.
   If you have a large number of clients in the realm and want to use `acr` claim for all of them, you can trigger some SQL similar to this against your DB.
   However, remember to clear the cache or restart the server if {project_name} is already started:
@@ -43,28 +43,11 @@ The existing deployments are affected in the following ways:
 
 There is a backwards compatibility option, which allows your application to still use the old format of the `redirect_uri` parameter.
 
-ifeval::["{kc_dist}" == "quarkus"]
 You can enable this parameter when you start the server by entering the following command:
 
 ```
 bin/kc.[sh|bat] --spi-login-protocol-openid-connect-legacy-logout-redirect-uri=true start
 ```
-endif::[]
-
-ifeval::["{kc_dist}" == "wildfly"]
-You can enable this parameter by including the following configuration in the `standalone-*.xml` file
-
-[source,bash,subs=+attributes]
-----
-<spi name="login-protocol">
-    <provider name="openid-connect" enabled="true">
-        <properties>
-            <property name="legacy-logout-redirect-uri" value="true"/>
-        </properties>
-    </provider>
-</spi>
-----
-endif::[]
 
 With this configuration, you can still use the format with the `redirect_uri` parameter. Note the confirmation screen will be needed if the `id_token_hint` is omitted.
 
