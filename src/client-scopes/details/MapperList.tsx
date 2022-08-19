@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { LocationDescriptorObject } from "history";
+import type { Path } from "react-router-dom-v5-compat";
 import { Link } from "react-router-dom";
 import { Dropdown, DropdownItem, DropdownToggle } from "@patternfly/react-core";
 import { CaretDownIcon } from "@patternfly/react-icons";
@@ -21,7 +21,7 @@ type MapperListProps = {
     mappers: ProtocolMapperTypeRepresentation | ProtocolMapperRepresentation[]
   ) => void;
   onDelete: (mapper: ProtocolMapperRepresentation) => void;
-  detailLink: (id: string) => LocationDescriptorObject;
+  detailLink: (id: string) => Partial<Path>;
 };
 
 type Row = ProtocolMapperRepresentation & {

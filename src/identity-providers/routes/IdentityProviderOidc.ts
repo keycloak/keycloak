@@ -1,6 +1,6 @@
-import type { LocationDescriptorObject } from "history";
 import { lazy } from "react";
-import { generatePath } from "react-router-dom";
+import type { Path } from "react-router-dom-v5-compat";
+import { generatePath } from "react-router-dom-v5-compat";
 import type { RouteDef } from "../../route-config";
 
 export type IdentityProviderOidcParams = { realm: string };
@@ -14,6 +14,6 @@ export const IdentityProviderOidcRoute: RouteDef = {
 
 export const toIdentityProviderOidc = (
   params: IdentityProviderOidcParams
-): LocationDescriptorObject => ({
+): Partial<Path> => ({
   pathname: generatePath(IdentityProviderOidcRoute.path, params),
 });

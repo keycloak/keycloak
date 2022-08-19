@@ -1,6 +1,6 @@
-import type { LocationDescriptorObject } from "history";
 import { lazy } from "react";
-import { generatePath } from "react-router-dom";
+import type { Path } from "react-router-dom-v5-compat";
+import { generatePath } from "react-router-dom-v5-compat";
 import type { RouteDef } from "../../route-config";
 
 export type ImportClientParams = { realm: string };
@@ -12,8 +12,6 @@ export const ImportClientRoute: RouteDef = {
   access: "manage-clients",
 };
 
-export const toImportClient = (
-  params: ImportClientParams
-): LocationDescriptorObject => ({
+export const toImportClient = (params: ImportClientParams): Partial<Path> => ({
   pathname: generatePath(ImportClientRoute.path, params),
 });

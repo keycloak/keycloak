@@ -1,6 +1,6 @@
-import type { LocationDescriptorObject } from "history";
 import { lazy } from "react";
 import { generatePath } from "react-router-dom";
+import type { Path } from "react-router-dom-v5-compat";
 import type { RouteDef } from "../../route-config";
 
 export type ClientScopeTab = "settings" | "mappers" | "scope";
@@ -20,8 +20,6 @@ export const ClientScopeRoute: RouteDef = {
   legacy: true,
 };
 
-export const toClientScope = (
-  params: ClientScopeParams
-): LocationDescriptorObject => ({
+export const toClientScope = (params: ClientScopeParams): Partial<Path> => ({
   pathname: generatePath(ClientScopeRoute.path, params),
 });

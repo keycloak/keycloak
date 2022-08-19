@@ -1,6 +1,6 @@
-import type { LocationDescriptorObject } from "history";
 import { lazy } from "react";
-import { generatePath } from "react-router-dom";
+import type { Path } from "react-router-dom-v5-compat";
+import { generatePath } from "react-router-dom-v5-compat";
 import type { RouteDef } from "../../route-config";
 
 export type IdentityProviderAddMapperParams = {
@@ -19,6 +19,6 @@ export const IdentityProviderAddMapperRoute: RouteDef = {
 
 export const toIdentityProviderAddMapper = (
   params: IdentityProviderAddMapperParams
-): LocationDescriptorObject => ({
+): Partial<Path> => ({
   pathname: generatePath(IdentityProviderAddMapperRoute.path, params),
 });

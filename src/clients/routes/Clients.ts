@@ -1,6 +1,6 @@
-import type { LocationDescriptorObject } from "history";
 import { lazy } from "react";
 import { generatePath } from "react-router-dom";
+import type { Path } from "react-router-dom-v5-compat";
 import type { RouteDef } from "../../route-config";
 
 export type ClientsTab = "list" | "initial-access-token";
@@ -18,6 +18,6 @@ export const ClientsRoute: RouteDef = {
   legacy: true,
 };
 
-export const toClients = (params: ClientsParams): LocationDescriptorObject => ({
+export const toClients = (params: ClientsParams): Partial<Path> => ({
   pathname: generatePath(ClientsRoute.path, params),
 });

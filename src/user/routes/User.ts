@@ -1,6 +1,6 @@
-import type { LocationDescriptorObject } from "history";
 import { lazy } from "react";
-import { generatePath } from "react-router-dom";
+import type { Path } from "react-router-dom-v5-compat";
+import { generatePath } from "react-router-dom-v5-compat";
 import type { RouteDef } from "../../route-config";
 
 export type UserTab =
@@ -23,6 +23,6 @@ export const UserRoute: RouteDef = {
   access: "query-users",
 };
 
-export const toUser = (params: UserParams): LocationDescriptorObject => ({
+export const toUser = (params: UserParams): Partial<Path> => ({
   pathname: generatePath(UserRoute.path, params),
 });

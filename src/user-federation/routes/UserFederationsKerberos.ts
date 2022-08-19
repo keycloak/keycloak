@@ -1,6 +1,6 @@
-import type { LocationDescriptorObject } from "history";
 import { lazy } from "react";
-import { generatePath } from "react-router-dom";
+import type { Path } from "react-router-dom-v5-compat";
+import { generatePath } from "react-router-dom-v5-compat";
 import type { RouteDef } from "../../route-config";
 
 export type UserFederationsKerberosParams = { realm: string };
@@ -13,6 +13,6 @@ export const UserFederationsKerberosRoute: RouteDef = {
 
 export const toUserFederationsKerberos = (
   params: UserFederationsKerberosParams
-): LocationDescriptorObject => ({
+): Partial<Path> => ({
   pathname: generatePath(UserFederationsKerberosRoute.path, params),
 });

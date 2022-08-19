@@ -1,6 +1,6 @@
-import type { LocationDescriptorObject } from "history";
 import { lazy } from "react";
 import { generatePath } from "react-router-dom";
+import type { Path } from "react-router-dom-v5-compat";
 import type { RouteDef } from "../../route-config";
 
 type UserFederationLdapTab = "settings" | "mappers";
@@ -21,6 +21,6 @@ export const UserFederationLdapRoute: RouteDef = {
 
 export const toUserFederationLdap = (
   params: UserFederationLdapParams
-): LocationDescriptorObject => ({
+): Partial<Path> => ({
   pathname: generatePath(UserFederationLdapRoute.path, params),
 });

@@ -1,11 +1,11 @@
-import { Link } from "react-router-dom";
-import type { LocationDescriptor } from "history";
-import { useTranslation } from "react-i18next";
 import {
+  DescriptionListDescription,
   DescriptionListGroup,
   DescriptionListTerm,
-  DescriptionListDescription,
 } from "@patternfly/react-core";
+import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
+import { Path } from "react-router-dom-v5-compat";
 
 type DetailDescriptionProps<T> = {
   name: string;
@@ -18,7 +18,7 @@ export function DetailDescription<T>(props: DetailDescriptionProps<T>) {
 }
 
 type DetailDescriptionLinkProps<T> = DetailDescriptionProps<T> & {
-  link?: (element: T) => LocationDescriptor;
+  link?: (element: T) => Partial<Path>;
 };
 
 export function DetailDescriptionLink<T>({

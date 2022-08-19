@@ -1,7 +1,7 @@
-import type { LocationDescriptorObject } from "history";
-import { generatePath } from "react-router-dom";
-import type { RouteDef } from "../../route-config";
 import { lazy } from "react";
+import type { Path } from "react-router-dom-v5-compat";
+import { generatePath } from "react-router-dom-v5-compat";
+import type { RouteDef } from "../../route-config";
 
 export type MapperParams = {
   realm: string;
@@ -16,6 +16,6 @@ export const MapperRoute: RouteDef = {
   access: "view-clients",
 };
 
-export const toMapper = (params: MapperParams): LocationDescriptorObject => ({
+export const toMapper = (params: MapperParams): Partial<Path> => ({
   pathname: generatePath(MapperRoute.path, params),
 });

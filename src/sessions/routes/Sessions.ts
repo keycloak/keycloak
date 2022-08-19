@@ -1,6 +1,6 @@
-import type { LocationDescriptorObject } from "history";
 import { lazy } from "react";
-import { generatePath } from "react-router-dom";
+import type { Path } from "react-router-dom-v5-compat";
+import { generatePath } from "react-router-dom-v5-compat";
 import type { RouteDef } from "../../route-config";
 
 export type SessionsParams = { realm: string };
@@ -12,8 +12,6 @@ export const SessionsRoute: RouteDef = {
   access: ["view-realm", "view-clients", "view-users"],
 };
 
-export const toSessions = (
-  params: SessionsParams
-): LocationDescriptorObject => ({
+export const toSessions = (params: SessionsParams): Partial<Path> => ({
   pathname: generatePath(SessionsRoute.path, params),
 });

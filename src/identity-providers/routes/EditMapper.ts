@@ -1,6 +1,6 @@
-import type { LocationDescriptorObject } from "history";
 import { lazy } from "react";
-import { generatePath } from "react-router-dom";
+import type { Path } from "react-router-dom-v5-compat";
+import { generatePath } from "react-router-dom-v5-compat";
 import type { RouteDef } from "../../route-config";
 
 export type IdentityProviderEditMapperParams = {
@@ -19,6 +19,6 @@ export const IdentityProviderEditMapperRoute: RouteDef = {
 
 export const toIdentityProviderEditMapper = (
   params: IdentityProviderEditMapperParams
-): LocationDescriptorObject => ({
+): Partial<Path> => ({
   pathname: generatePath(IdentityProviderEditMapperRoute.path, params),
 });

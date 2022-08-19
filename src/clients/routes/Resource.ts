@@ -1,7 +1,7 @@
-import type { LocationDescriptorObject } from "history";
-import type { RouteDef } from "../../route-config";
-import { generatePath } from "react-router-dom";
 import { lazy } from "react";
+import { generatePath } from "react-router-dom";
+import type { Path } from "react-router-dom-v5-compat";
+import type { RouteDef } from "../../route-config";
 
 export type ResourceDetailsParams = {
   realm: string;
@@ -19,6 +19,6 @@ export const ResourceDetailsRoute: RouteDef = {
 
 export const toResourceDetails = (
   params: ResourceDetailsParams
-): LocationDescriptorObject => ({
+): Partial<Path> => ({
   pathname: generatePath(ResourceDetailsRoute.path, params),
 });

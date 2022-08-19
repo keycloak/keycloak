@@ -1,6 +1,6 @@
-import type { LocationDescriptorObject } from "history";
 import { lazy } from "react";
-import { generatePath } from "react-router-dom";
+import type { Path } from "react-router-dom-v5-compat";
+import { generatePath } from "react-router-dom-v5-compat";
 import type { RouteDef } from "../../route-config";
 
 export type ExecutorParams = {
@@ -16,8 +16,6 @@ export const ExecutorRoute: RouteDef = {
   access: ["manage-realm"],
 };
 
-export const toExecutor = (
-  params: ExecutorParams
-): LocationDescriptorObject => ({
+export const toExecutor = (params: ExecutorParams): Partial<Path> => ({
   pathname: generatePath(ExecutorRoute.path, params),
 });

@@ -4,13 +4,14 @@ import {
   TabsComponent,
   TabsProps,
 } from "@patternfly/react-core";
-import type { History, LocationDescriptorObject } from "history";
+import type { History } from "history";
 import {
   Children,
   isValidElement,
   JSXElementConstructor,
   ReactElement,
 } from "react";
+import type { Path } from "react-router-dom-v5-compat";
 import { useLocation } from "react-router-dom-v5-compat";
 
 // TODO: Remove the custom 'children' props and type once the following issue has been resolved:
@@ -21,7 +22,7 @@ type Child = ChildElement | boolean | null | undefined;
 // TODO: Figure out why we need to omit 'ref' from the props.
 type RoutableTabsProps = {
   children: Child | Child[];
-  defaultLocation?: LocationDescriptorObject;
+  defaultLocation?: Partial<Path>;
 } & Omit<
   TabsProps,
   "ref" | "activeKey" | "defaultActiveKey" | "component" | "children"
@@ -67,7 +68,7 @@ export const RoutableTabs = ({
 };
 
 type RoutableTabParams = {
-  to: LocationDescriptorObject;
+  to: Partial<Path>;
   history: History<unknown>;
 };
 

@@ -1,6 +1,6 @@
 import { lazy } from "react";
-import type { LocationDescriptorObject } from "history";
 import { generatePath } from "react-router-dom";
+import type { Path } from "react-router-dom-v5-compat";
 import type { RouteDef } from "../../route-config";
 
 export type ClientRoleTab =
@@ -24,8 +24,6 @@ export const ClientRoleRoute: RouteDef = {
   legacy: true,
 };
 
-export const toClientRole = (
-  params: ClientRoleParams
-): LocationDescriptorObject => ({
+export const toClientRole = (params: ClientRoleParams): Partial<Path> => ({
   pathname: generatePath(ClientRoleRoute.path, params),
 });

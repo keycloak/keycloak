@@ -1,7 +1,7 @@
-import type { LocationDescriptorObject } from "history";
-import type { RouteDef } from "../../route-config";
-import { generatePath } from "react-router-dom";
 import { lazy } from "react";
+import type { Path } from "react-router-dom-v5-compat";
+import { generatePath } from "react-router-dom-v5-compat";
+import type { RouteDef } from "../../route-config";
 
 export type NewPolicyParams = { realm: string; id: string; policyType: string };
 
@@ -12,8 +12,6 @@ export const NewPolicyRoute: RouteDef = {
   access: "view-clients",
 };
 
-export const toCreatePolicy = (
-  params: NewPolicyParams
-): LocationDescriptorObject => ({
+export const toCreatePolicy = (params: NewPolicyParams): Partial<Path> => ({
   pathname: generatePath(NewPolicyRoute.path, params),
 });

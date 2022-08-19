@@ -1,6 +1,6 @@
 import { lazy } from "react";
-import type { LocationDescriptorObject } from "history";
-import { generatePath } from "react-router-dom";
+import type { Path } from "react-router-dom-v5-compat";
+import { generatePath } from "react-router-dom-v5-compat";
 import type { RouteDef } from "../../route-config";
 
 export type AddRoleParams = { realm: string };
@@ -12,6 +12,6 @@ export const AddRoleRoute: RouteDef = {
   access: "manage-realm",
 };
 
-export const toAddRole = (params: AddRoleParams): LocationDescriptorObject => ({
+export const toAddRole = (params: AddRoleParams): Partial<Path> => ({
   pathname: generatePath(AddRoleRoute.path, params),
 });

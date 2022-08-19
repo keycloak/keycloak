@@ -1,6 +1,6 @@
-import type { LocationDescriptorObject } from "history";
 import { lazy } from "react";
 import { generatePath } from "react-router-dom";
+import type { Path } from "react-router-dom-v5-compat";
 import type { RouteDef } from "../../route-config";
 
 export type AuthenticationTab = "flows" | "required-actions" | "policies";
@@ -17,6 +17,6 @@ export const AuthenticationRoute: RouteDef = {
 
 export const toAuthentication = (
   params: AuthenticationParams
-): LocationDescriptorObject => ({
+): Partial<Path> => ({
   pathname: generatePath(AuthenticationRoute.path, params),
 });

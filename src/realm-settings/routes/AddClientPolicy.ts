@@ -1,6 +1,6 @@
-import type { LocationDescriptorObject } from "history";
 import { lazy } from "react";
-import { generatePath } from "react-router-dom";
+import type { Path } from "react-router-dom-v5-compat";
+import { generatePath } from "react-router-dom-v5-compat";
 import type { RouteDef } from "../../route-config";
 
 export type AddClientPolicyParams = { realm: string };
@@ -14,6 +14,6 @@ export const AddClientPolicyRoute: RouteDef = {
 
 export const toAddClientPolicy = (
   params: AddClientPolicyParams
-): LocationDescriptorObject => ({
+): Partial<Path> => ({
   pathname: generatePath(AddClientPolicyRoute.path, params),
 });

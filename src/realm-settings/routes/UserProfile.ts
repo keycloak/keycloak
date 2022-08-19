@@ -1,6 +1,6 @@
-import type { LocationDescriptorObject } from "history";
 import { lazy } from "react";
-import { generatePath } from "react-router-dom";
+import type { Path } from "react-router-dom-v5-compat";
+import { generatePath } from "react-router-dom-v5-compat";
 import type { RouteDef } from "../../route-config";
 
 export type UserProfileTab = "attributes" | "attributes-group" | "json-editor";
@@ -17,8 +17,6 @@ export const UserProfileRoute: RouteDef = {
   access: "view-realm",
 };
 
-export const toUserProfile = (
-  params: UserProfileParams
-): LocationDescriptorObject => ({
+export const toUserProfile = (params: UserProfileParams): Partial<Path> => ({
   pathname: generatePath(UserProfileRoute.path, params),
 });

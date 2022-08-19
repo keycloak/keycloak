@@ -1,6 +1,6 @@
-import type { LocationDescriptorObject } from "history";
 import { lazy } from "react";
-import { generatePath } from "react-router-dom";
+import type { Path } from "react-router-dom-v5-compat";
+import { generatePath } from "react-router-dom-v5-compat";
 import type { RouteDef } from "../../route-config";
 
 export type CreateFlowParams = { realm: string };
@@ -12,8 +12,6 @@ export const CreateFlowRoute: RouteDef = {
   access: "manage-authorization",
 };
 
-export const toCreateFlow = (
-  params: CreateFlowParams
-): LocationDescriptorObject => ({
+export const toCreateFlow = (params: CreateFlowParams): Partial<Path> => ({
   pathname: generatePath(CreateFlowRoute.path, params),
 });

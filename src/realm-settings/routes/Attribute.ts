@@ -1,6 +1,6 @@
-import type { LocationDescriptorObject } from "history";
 import { lazy } from "react";
-import { generatePath } from "react-router-dom";
+import type { Path } from "react-router-dom-v5-compat";
+import { generatePath } from "react-router-dom-v5-compat";
 import type { RouteDef } from "../../route-config";
 
 export type AttributeParams = {
@@ -15,8 +15,6 @@ export const AttributeRoute: RouteDef = {
   access: "manage-realm",
 };
 
-export const toAttribute = (
-  params: AttributeParams
-): LocationDescriptorObject => ({
+export const toAttribute = (params: AttributeParams): Partial<Path> => ({
   pathname: generatePath(AttributeRoute.path, params),
 });

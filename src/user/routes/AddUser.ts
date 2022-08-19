@@ -1,6 +1,6 @@
-import type { LocationDescriptorObject } from "history";
 import { lazy } from "react";
-import { generatePath } from "react-router-dom";
+import type { Path } from "react-router-dom-v5-compat";
+import { generatePath } from "react-router-dom-v5-compat";
 
 import type { RouteDef } from "../../route-config";
 
@@ -13,6 +13,6 @@ export const AddUserRoute: RouteDef = {
   access: "manage-users",
 };
 
-export const toAddUser = (params: AddUserParams): LocationDescriptorObject => ({
+export const toAddUser = (params: AddUserParams): Partial<Path> => ({
   pathname: generatePath(AddUserRoute.path, params),
 });

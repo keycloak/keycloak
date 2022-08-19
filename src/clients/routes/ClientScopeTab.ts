@@ -1,6 +1,6 @@
-import type { LocationDescriptorObject } from "history";
 import { lazy } from "react";
-import { generatePath } from "react-router-dom";
+import type { Path } from "react-router-dom-v5-compat";
+import { generatePath } from "react-router-dom-v5-compat";
 import type { RouteDef } from "../../route-config";
 
 export type ClientScopesTab = "setup" | "evaluate";
@@ -10,6 +10,7 @@ export type ClientScopesParams = {
   clientId: string;
   tab: ClientScopesTab;
 };
+
 export const ClientScopesRoute: RouteDef = {
   path: "/:realm/clients/:clientId/clientScopes/:tab",
   component: lazy(() => import("../ClientDetails")),
@@ -19,6 +20,6 @@ export const ClientScopesRoute: RouteDef = {
 
 export const toClientScopesTab = (
   params: ClientScopesParams
-): LocationDescriptorObject => ({
+): Partial<Path> => ({
   pathname: generatePath(ClientScopesRoute.path, params),
 });

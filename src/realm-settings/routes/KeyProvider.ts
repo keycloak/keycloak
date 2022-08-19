@@ -1,6 +1,6 @@
-import type { LocationDescriptorObject } from "history";
 import { lazy } from "react";
-import { generatePath } from "react-router-dom";
+import type { Path } from "react-router-dom-v5-compat";
+import { generatePath } from "react-router-dom-v5-compat";
 import type { RouteDef } from "../../route-config";
 
 export type ProviderType =
@@ -26,8 +26,6 @@ export const KeyProviderFormRoute: RouteDef = {
   access: "view-realm",
 };
 
-export const toKeyProvider = (
-  params: KeyProviderParams
-): LocationDescriptorObject => ({
+export const toKeyProvider = (params: KeyProviderParams): Partial<Path> => ({
   pathname: generatePath(KeyProviderFormRoute.path, params),
 });

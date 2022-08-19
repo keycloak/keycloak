@@ -1,6 +1,6 @@
-import type { LocationDescriptorObject } from "history";
 import { lazy } from "react";
 import { generatePath } from "react-router-dom";
+import type { Path } from "react-router-dom-v5-compat";
 import type { RouteDef } from "../../route-config";
 
 export type GroupsParams = { realm: string; id?: string };
@@ -15,6 +15,6 @@ export const GroupsRoute: RouteDef = {
   legacy: true,
 };
 
-export const toGroups = (params: GroupsParams): LocationDescriptorObject => ({
+export const toGroups = (params: GroupsParams): Partial<Path> => ({
   pathname: generatePath(GroupsRoute.path, params),
 });

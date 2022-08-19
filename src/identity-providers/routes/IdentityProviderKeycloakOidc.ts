@@ -1,6 +1,6 @@
-import type { LocationDescriptorObject } from "history";
 import { lazy } from "react";
-import { generatePath } from "react-router-dom";
+import type { Path } from "react-router-dom-v5-compat";
+import { generatePath } from "react-router-dom-v5-compat";
 import type { RouteDef } from "../../route-config";
 
 export type IdentityProviderKeycloakOidcParams = { realm: string };
@@ -14,6 +14,6 @@ export const IdentityProviderKeycloakOidcRoute: RouteDef = {
 
 export const toIdentityProviderKeycloakOidc = (
   params: IdentityProviderKeycloakOidcParams
-): LocationDescriptorObject => ({
+): Partial<Path> => ({
   pathname: generatePath(IdentityProviderKeycloakOidcRoute.path, params),
 });

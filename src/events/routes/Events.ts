@@ -1,6 +1,6 @@
-import type { LocationDescriptorObject } from "history";
 import { lazy } from "react";
 import { generatePath } from "react-router-dom";
+import type { Path } from "react-router-dom-v5-compat";
 import type { RouteDef } from "../../route-config";
 
 export type EventsTab = "user-events" | "admin-events";
@@ -18,6 +18,6 @@ export const EventsRoute: RouteDef = {
   legacy: true,
 };
 
-export const toEvents = (params: EventsParams): LocationDescriptorObject => ({
+export const toEvents = (params: EventsParams): Partial<Path> => ({
   pathname: generatePath(EventsRoute.path, params),
 });

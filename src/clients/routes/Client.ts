@@ -1,6 +1,6 @@
-import type { LocationDescriptorObject } from "history";
 import { lazy } from "react";
-import { generatePath } from "react-router-dom";
+import type { Path } from "react-router-dom-v5-compat";
+import { generatePath } from "react-router-dom-v5-compat";
 import type { RouteDef } from "../../route-config";
 
 export type ClientTab =
@@ -29,6 +29,6 @@ export const ClientRoute: RouteDef = {
   access: "query-clients",
 };
 
-export const toClient = (params: ClientParams): LocationDescriptorObject => ({
+export const toClient = (params: ClientParams): Partial<Path> => ({
   pathname: generatePath(ClientRoute.path, params),
 });

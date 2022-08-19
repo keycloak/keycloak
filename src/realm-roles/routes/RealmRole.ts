@@ -1,6 +1,6 @@
 import { lazy } from "react";
 import { generatePath } from "react-router";
-import type { LocationDescriptorObject } from "history";
+import type { Path } from "react-router-dom-v5-compat";
 import type { RouteDef } from "../../route-config";
 
 export type RealmRoleTab =
@@ -23,8 +23,6 @@ export const RealmRoleRoute: RouteDef = {
   legacy: true,
 };
 
-export const toRealmRole = (
-  params: RealmRoleParams
-): LocationDescriptorObject => ({
+export const toRealmRole = (params: RealmRoleParams): Partial<Path> => ({
   pathname: generatePath(RealmRoleRoute.path, params),
 });

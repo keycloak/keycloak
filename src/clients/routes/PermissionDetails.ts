@@ -1,7 +1,7 @@
-import type { LocationDescriptorObject } from "history";
-import type { RouteDef } from "../../route-config";
-import { generatePath } from "react-router-dom";
 import { lazy } from "react";
+import type { Path } from "react-router-dom-v5-compat";
+import { generatePath } from "react-router-dom-v5-compat";
+import type { RouteDef } from "../../route-config";
 import type { PermissionType } from "./NewPermission";
 
 export type PermissionDetailsParams = {
@@ -20,6 +20,6 @@ export const PermissionDetailsRoute: RouteDef = {
 
 export const toPermissionDetails = (
   params: PermissionDetailsParams
-): LocationDescriptorObject => ({
+): Partial<Path> => ({
   pathname: generatePath(PermissionDetailsRoute.path, params),
 });

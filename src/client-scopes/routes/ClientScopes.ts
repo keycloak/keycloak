@@ -1,6 +1,6 @@
-import type { LocationDescriptorObject } from "history";
 import { lazy } from "react";
-import { generatePath } from "react-router-dom";
+import type { Path } from "react-router-dom-v5-compat";
+import { generatePath } from "react-router-dom-v5-compat";
 import type { RouteDef } from "../../route-config";
 
 export type ClientScopesParams = { realm: string };
@@ -12,8 +12,6 @@ export const ClientScopesRoute: RouteDef = {
   access: "view-clients",
 };
 
-export const toClientScopes = (
-  params: ClientScopesParams
-): LocationDescriptorObject => ({
+export const toClientScopes = (params: ClientScopesParams): Partial<Path> => ({
   pathname: generatePath(ClientScopesRoute.path, params),
 });

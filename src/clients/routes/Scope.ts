@@ -1,7 +1,7 @@
-import type { LocationDescriptorObject } from "history";
-import type { RouteDef } from "../../route-config";
-import { generatePath } from "react-router-dom";
 import { lazy } from "react";
+import { generatePath } from "react-router-dom";
+import type { Path } from "react-router-dom-v5-compat";
+import type { RouteDef } from "../../route-config";
 
 export type ScopeDetailsParams = {
   realm: string;
@@ -17,8 +17,6 @@ export const ScopeDetailsRoute: RouteDef = {
   legacy: true,
 };
 
-export const toScopeDetails = (
-  params: ScopeDetailsParams
-): LocationDescriptorObject => ({
+export const toScopeDetails = (params: ScopeDetailsParams): Partial<Path> => ({
   pathname: generatePath(ScopeDetailsRoute.path, params),
 });
