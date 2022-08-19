@@ -510,61 +510,63 @@ jobs:
             test-logs
             keycloak.log
 
-  webauthn-test:
-    name: WebAuthn Tests
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 2
-
-      - name: Check whether this phase should run
-        run: echo "GIT_DIFF=$[ $( git diff --name-only HEAD^ | egrep -ic 'webauthn|passwordless' ) ]" >> $GITHUB_ENV
-
-      - uses: actions/setup-java@v1
-        if: ${{ github.event_name != 'pull_request' || env.GIT_DIFF != 0 }}
-        with:
-          java-version: ${{ env.DEFAULT_JDK_VERSION }}
-
-      - name: Update maven settings
-        if: ${{ github.event_name != 'pull_request' || env.GIT_DIFF != 0 }}
-        run: mkdir -p ~/.m2 ; cp .github/settings.xml ~/.m2/
-
-      - name: Cache Maven packages
-        if: ${{ github.event_name != 'pull_request' || env.GIT_DIFF != 0 }}
-        uses: actions/cache@v2
-        with:
-          path: ~/.m2/repository
-          key: cache-1-${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: cache-1-${{ runner.os }}-m2
-
-      - name: Cleanup org.keycloak artifacts
-        if: ${{ github.event_name != 'pull_request' || env.GIT_DIFF != 0 }}
-        run: rm -rf ~/.m2/repository/org/keycloak >/dev/null || true
-
-      - name: Download built keycloak
-        if: ${{ github.event_name != 'pull_request' || env.GIT_DIFF != 0 }}
-        id: download-keycloak
-        uses: actions/download-artifact@v2
-        with:
-          path: ~/.m2/repository/org/keycloak/
-          name: keycloak-artifacts.zip
-
-      - name: Run WebAuthn tests
-        if: ${{ github.event_name != 'pull_request' || env.GIT_DIFF != 0 }}
-        run: |
-          mvn clean install -nsu -B -Dbrowser=chrome -Pwebauthn -f testsuite/integration-arquillian/tests/other/pom.xml -Dtest=org.keycloak.testsuite.webauthn.**.*Test | misc/log/trimmer.sh
-          
-          TEST_RESULT=${PIPESTATUS[0]}
-          find . -path '*/target/surefire-reports/*.xml' | zip -q reports-webauthn-tests.zip -@
-          exit $TEST_RESULT
-
-      - name: WebAuthn test reports
-        uses: actions/upload-artifact@v2
-        if: failure()
-        with:
-          name: reports-webauthn-tests
-          retention-days: 14
-          path: reports-webauthn-tests.zip
-          if-no-files-found: ignore
+# NOTE: WebAuthn tests can be enabled once the issue #12621 is resolved
+#
+#  webauthn-test:
+#    name: WebAuthn Tests
+#    needs: build
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@v2
+#        with:
+#          fetch-depth: 2
+#
+#      - name: Check whether this phase should run
+#        run: echo "GIT_DIFF=$[ $( git diff --name-only HEAD^ | egrep -ic 'webauthn|passwordless' ) ]" >> $GITHUB_ENV
+#
+#      - uses: actions/setup-java@v1
+#        if: ${{ github.event_name != 'pull_request' || env.GIT_DIFF != 0 }}
+#        with:
+#          java-version: ${{ env.DEFAULT_JDK_VERSION }}
+#
+#      - name: Update maven settings
+#        if: ${{ github.event_name != 'pull_request' || env.GIT_DIFF != 0 }}
+#        run: mkdir -p ~/.m2 ; cp .github/settings.xml ~/.m2/
+#
+#      - name: Cache Maven packages
+#        if: ${{ github.event_name != 'pull_request' || env.GIT_DIFF != 0 }}
+#        uses: actions/cache@v2
+#        with:
+#          path: ~/.m2/repository
+#          key: cache-1-${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+#          restore-keys: cache-1-${{ runner.os }}-m2
+#
+#      - name: Cleanup org.keycloak artifacts
+#        if: ${{ github.event_name != 'pull_request' || env.GIT_DIFF != 0 }}
+#        run: rm -rf ~/.m2/repository/org/keycloak >/dev/null || true
+#
+#      - name: Download built keycloak
+#        if: ${{ github.event_name != 'pull_request' || env.GIT_DIFF != 0 }}
+#        id: download-keycloak
+#        uses: actions/download-artifact@v2
+#        with:
+#          path: ~/.m2/repository/org/keycloak/
+#          name: keycloak-artifacts.zip
+#
+#      - name: Run WebAuthn tests
+#        if: ${{ github.event_name != 'pull_request' || env.GIT_DIFF != 0 }}
+#        run: |
+#          mvn clean install -nsu -B -Dbrowser=chrome -Pwebauthn -f testsuite/integration-arquillian/tests/other/pom.xml -Dtest=org.keycloak.testsuite.webauthn.**.*Test | misc/log/trimmer.sh
+#
+#          TEST_RESULT=${PIPESTATUS[0]}
+#          find . -path '*/target/surefire-reports/*.xml' | zip -q reports-webauthn-tests.zip -@
+#          exit $TEST_RESULT
+#
+#      - name: WebAuthn test reports
+#        uses: actions/upload-artifact@v2
+#        if: failure()
+#        with:
+#          name: reports-webauthn-tests
+#          retention-days: 14
+#          path: reports-webauthn-tests.zip
+#          if-no-files-found: ignore
