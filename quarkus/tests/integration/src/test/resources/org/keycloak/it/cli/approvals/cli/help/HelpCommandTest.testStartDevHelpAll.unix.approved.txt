@@ -19,13 +19,14 @@ Cache:
 --cache <type>       Defines the cache mechanism for high-availability. By default, a 'ispn' cache
                        is used to create a cluster between multiple server nodes. A 'local' cache
                        disables clustering and is intended for development and testing purposes.
-                       Default: ispn.
+                       Possible values are: ispn, local. Default: ispn.
 --cache-config-file <file>
                      Defines the file from which cache configuration should be loaded from. The
                        configuration file is relative to the 'conf/' directory.
 --cache-stack <stack>
                      Define the default stack to use for cluster communication and node discovery.
                        This option only takes effect if 'cache' is set to 'ispn'. Default: udp.
+                       Possible values are: tcp, udp, kubernetes, ec2, azure, google.
 
 Storage (Experimental):
 
@@ -126,9 +127,19 @@ Transaction:
 
 Feature:
 
---features <feature> Enables a set of one or more features.
+--features <feature> Enables a set of one or more features. Possible values are: authorization,
+                       account2, account-api, admin-fine-grained-authz, admin2, docker,
+                       impersonation, openshift-integration, scripts, token-exchange, web-authn,
+                       client-policies, ciba, map-storage, par, declarative-user-profile,
+                       dynamic-scopes, client-secret-rotation, step-up-authentication,
+                       recovery-codes, update-email, preview.
 --features-disabled <feature>
-                     Disables a set of one or more features.
+                     Disables a set of one or more features. Possible values are: authorization,
+                       account2, account-api, admin-fine-grained-authz, admin2, docker,
+                       impersonation, openshift-integration, scripts, token-exchange, web-authn,
+                       client-policies, ciba, map-storage, par, declarative-user-profile,
+                       dynamic-scopes, client-secret-rotation, step-up-authentication,
+                       recovery-codes, update-email, preview.
 
 Hostname:
 
@@ -168,7 +179,7 @@ HTTP/TLS:
                      The cipher suites to use. If none is given, a reasonable default is selected.
 --https-client-auth <auth>
                      Configures the server to require/request client authentication. Possible
-                       Values: none, request, required. Default: none.
+                       values are: none, request, required. Default: none.
 --https-key-store-file <file>
                      The key store which holds the certificate information instead of specifying
                        separate files.
@@ -205,18 +216,18 @@ Metrics:
 Proxy:
 
 --proxy <mode>       The proxy address forwarding mode if the server is behind a reverse proxy.
-                       Possible values are: edge,reencrypt,passthrough Default: none.
+                       Possible values are: none, edge, reencrypt, passthrough. Default: none.
 
 Vault:
 
---vault <provider>   Enables a vault provider.
+--vault <provider>   Enables a vault provider. Possible values are: file, hashicorp.
 --vault-dir <dir>    If set, secrets can be obtained by reading the content of files within the
                        given directory.
 
 Logging:
 
---log <handler>      Enable one or more log handlers in a comma-separated list. Available log
-                       handlers are: console,file,gelf Default: console.
+--log <handler>      Enable one or more log handlers in a comma-separated list. Possible values
+                       are: console, file, gelf. Default: console.
 --log-console-color <true|false>
                      Enable or disable colors when logging to console. Default: false.
 --log-console-format <format>
@@ -224,8 +235,8 @@ Logging:
                        it, escape the value using "<format>". Default: %d{yyyy-MM-dd HH:mm:ss,SSS} %
                        -5p [%c] (%t) %s%e%n.
 --log-console-output <default|json>
-                     Set the log output to JSON or default (plain) unstructured logging. Default:
-                       default.
+                     Set the log output to JSON or default (plain) unstructured logging. Possible
+                       values are: default, json. Default: default.
 --log-file <path>/<file-name>.log
                      Set the log file path and filename. Default: data/log/keycloak.log.
 --log-file-format <format>

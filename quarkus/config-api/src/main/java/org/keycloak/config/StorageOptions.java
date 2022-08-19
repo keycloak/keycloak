@@ -47,8 +47,7 @@ public class StorageOptions {
 
     public static final Option<StorageType> STORAGE = new OptionBuilder<>("storage", StorageType.class)
             .category(OptionCategory.STORAGE)
-            .description(String.format("Sets the default storage mechanism for all areas. Possible values are: %s.", storageAreas()))
-            .expectedValues(StorageType.values())
+            .description("Sets the default storage mechanism for all areas.")
             .defaultValue(Optional.empty())
             .buildTime(true)
             .build();
@@ -66,14 +65,12 @@ public class StorageOptions {
     public static final Option<StorageType> STORAGE_EVENT_ADMIN_STORE = new OptionBuilder<>("storage-area-event-admin", StorageType.class)
             .category(OptionCategory.STORAGE)
             .description(descriptionForStorageAreas("admin events"))
-            .expectedValues(StorageType.values())
             .buildTime(true)
             .build();
 
     public static final Option<StorageType> STORAGE_EVENT_AUTH_STORE = new OptionBuilder<>("storage-area-event-auth", StorageType.class)
             .category(OptionCategory.STORAGE)
             .description(descriptionForStorageAreas("authentication and authorization events"))
-            .expectedValues(StorageType.values())
             .buildTime(true)
             .build();
 
@@ -91,7 +88,6 @@ public class StorageOptions {
     public static final Option<StorageType> STORAGE_REALM_STORE = new OptionBuilder<>("storage-area-realm", StorageType.class)
             .category(OptionCategory.STORAGE)
             .description(descriptionForStorageAreas("realms"))
-            .expectedValues(StorageType.values())
             .buildTime(true)
             .build();
 
@@ -104,7 +100,6 @@ public class StorageOptions {
     public static final Option<StorageType> STORAGE_CLIENT_STORE = new OptionBuilder<>("storage-area-client", StorageType.class)
             .category(OptionCategory.STORAGE)
             .description(descriptionForStorageAreas("clients"))
-            .expectedValues(StorageType.values())
             .buildTime(true)
             .build();
 
@@ -117,7 +112,6 @@ public class StorageOptions {
     public static final Option<StorageType> STORAGE_CLIENT_SCOPE_STORE = new OptionBuilder<>("storage-area-client-scope", StorageType.class)
             .category(OptionCategory.STORAGE)
             .description(descriptionForStorageAreas("client scopes"))
-            .expectedValues(StorageType.values())
             .buildTime(true)
             .build();
 
@@ -130,7 +124,6 @@ public class StorageOptions {
     public static final Option<StorageType> STORAGE_GROUP_STORE = new OptionBuilder<>("storage-area-group", StorageType.class)
             .category(OptionCategory.STORAGE)
             .description(descriptionForStorageAreas("groups"))
-            .expectedValues(StorageType.values())
             .buildTime(true)
             .build();
 
@@ -143,7 +136,6 @@ public class StorageOptions {
     public static final Option<StorageType> STORAGE_ROLE_STORE = new OptionBuilder<>("storage-area-role", StorageType.class)
             .category(OptionCategory.STORAGE)
             .description(descriptionForStorageAreas("roles"))
-            .expectedValues(StorageType.values())
             .buildTime(true)
             .build();
 
@@ -156,7 +148,6 @@ public class StorageOptions {
     public static final Option<StorageType> STORAGE_USER_STORE = new OptionBuilder<>("storage-area-user", StorageType.class)
             .category(OptionCategory.STORAGE)
             .description(descriptionForStorageAreas("users"))
-            .expectedValues(StorageType.values())
             .buildTime(true)
             .build();
 
@@ -181,7 +172,6 @@ public class StorageOptions {
     public static final Option<StorageType> STORAGE_AUTH_SESSION_STORE = new OptionBuilder<>("storage-area-auth-session", StorageType.class)
             .category(OptionCategory.STORAGE)
             .description(descriptionForStorageAreas("authentication sessions"))
-            .expectedValues(StorageType.values())
             .buildTime(true)
             .build();
 
@@ -194,7 +184,6 @@ public class StorageOptions {
     public static final Option<StorageType> STORAGE_USER_SESSION_STORE = new OptionBuilder<>("storage-area-user-session", StorageType.class)
             .category(OptionCategory.STORAGE)
             .description(descriptionForStorageAreas("user and client sessions"))
-            .expectedValues(StorageType.values())
             .buildTime(true)
             .build();
 
@@ -207,7 +196,6 @@ public class StorageOptions {
     public static final Option<StorageType> STORAGE_LOGIN_FAILURE_STORE = new OptionBuilder<>("storage-area-login-failure", StorageType.class)
             .category(OptionCategory.STORAGE)
             .description(descriptionForStorageAreas("login failures"))
-            .expectedValues(StorageType.values())
             .buildTime(true)
             .build();
 
@@ -220,7 +208,6 @@ public class StorageOptions {
     public static final Option<StorageType> STORAGE_AUTHORIZATION_STORE = new OptionBuilder<>("storage-area-authorization", StorageType.class)
             .category(OptionCategory.STORAGE)
             .description(descriptionForStorageAreas("authorizations"))
-            .expectedValues(StorageType.values())
             .buildTime(true)
             .build();
 
@@ -239,7 +226,6 @@ public class StorageOptions {
     public static final Option<StorageType> STORAGE_ACTION_TOKEN_STORE = new OptionBuilder<>("storage-area-action-token", StorageType.class)
             .category(OptionCategory.STORAGE)
             .description(descriptionForStorageAreas("action tokens"))
-            .expectedValues(StorageType.values())
             .buildTime(true)
             .build();
 
@@ -288,7 +274,6 @@ public class StorageOptions {
     public static final Option<StorageType> STORAGE_SINGLE_USE_OBJECT_STORE = new OptionBuilder<>("storage-area-single-use-object", StorageType.class)
             .category(OptionCategory.STORAGE)
             .description(descriptionForStorageAreas("single use objects"))
-            .expectedValues(StorageType.values())
             .buildTime(true)
             .build();
 
@@ -346,11 +331,10 @@ public class StorageOptions {
     public static final Option<String> STORAGE_HOTROD_CACHE_REINDEX = new OptionBuilder<>("storage-hotrod-cache-reindex", String.class)
             .category(OptionCategory.STORAGE)
             .defaultValue("all")
-            .expectedValues(Stream.concat(Stream.of("all"), AutogeneratedHotRodDescriptors.ENTITY_DESCRIPTOR_MAP.values().stream().map(HotRodEntityDescriptor::getCacheName).distinct()).collect(Collectors.toList()))
+            .expectedValues(StorageOptions::getExpectedCacheNames)
             .description("List of cache names that should be indexed on Keycloak startup. Defaulting to `all` which means all caches are reindexed.")
             .hidden()
             .build();
-
 
     public static final List<Option<?>> ALL_OPTIONS = List.of(
             STORAGE,
@@ -377,10 +361,14 @@ public class StorageOptions {
     );
 
     private static String descriptionForStorageAreas(String areaAsText) {
-        return String.format("Sets a storage mechanism for %s. Possible values are: %s.", areaAsText, storageAreas());
+        return "Sets a storage mechanism for " + areaAsText + ".";
     }
 
     private static String storageAreas() {
         return String.join(",", Arrays.stream(StorageType.values()).map(StorageType::name).collect(Collectors.joining(", ")));
+    }
+
+    private static List<String> getExpectedCacheNames() {
+        return Stream.concat(Stream.of("all"), AutogeneratedHotRodDescriptors.ENTITY_DESCRIPTOR_MAP.values().stream().map(HotRodEntityDescriptor::getCacheName).distinct()).collect(Collectors.toList());
     }
 }

@@ -10,7 +10,6 @@ public class TransactionOptions {
             .description("If set to false, Keycloak uses a non-XA datasource in case the database does not support XA transactions.")
             .buildTime(true)
             .defaultValue(Boolean.TRUE)
-            .expectedValues(Boolean.TRUE, Boolean.FALSE)
             .build();
 
     public static final Option<Boolean> TRANSACTION_JTA_ENABLED = new OptionBuilder<>("transaction-jta-enabled", Boolean.class)
@@ -18,7 +17,6 @@ public class TransactionOptions {
             .description("Set if distributed transactions are supported. If set to false, transactions are managed by the server and can not be joined if multiple data sources are used. By default, distributed transactions are enabled and only XA data sources can be used.")
             .buildTime(true)
             .hidden()
-            .expectedValues(Boolean.TRUE, Boolean.FALSE)
             .build();
 
     public static final List<Option<?>> ALL_OPTIONS = new ArrayList<>();
