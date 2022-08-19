@@ -27,6 +27,7 @@ import { Certificate } from "./Certificate";
 import { useConfirmDialog } from "../../components/confirm-dialog/ConfirmDialog";
 import { useAlerts } from "../../components/alert/Alerts";
 import { SamlImportKeyDialog } from "./SamlImportKeyDialog";
+import { convertAttributeNameToForm } from "../../util";
 
 type SamlKeysProps = {
   clientId: string;
@@ -38,12 +39,12 @@ export type KeyTypes = typeof KEYS[number];
 
 const KEYS_MAPPING: { [key in KeyTypes]: { [index: string]: string } } = {
   "saml.signing": {
-    name: "attributes.saml.client.signature",
+    name: convertAttributeNameToForm("attributes.saml.client.signature"),
     title: "signingKeysConfig",
     key: "clientSignature",
   },
   "saml.encryption": {
-    name: "attributes.saml.encrypt",
+    name: convertAttributeNameToForm("attributes.saml.encrypt"),
     title: "encryptionKeysConfig",
     key: "encryptAssertions",
   },
