@@ -29,7 +29,6 @@ import type { FlowParams } from "./routes/Flow";
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { EmptyExecutionState } from "./EmptyExecutionState";
-import { toUpperCase } from "../util";
 import { FlowHeader } from "./components/FlowHeader";
 import { FlowRow } from "./components/FlowRow";
 import {
@@ -302,7 +301,7 @@ export default function FlowDetails() {
       <DeleteFlowConfirm />
 
       <ViewHeader
-        titleKey={toUpperCase(flow?.alias || "")}
+        titleKey={flow?.alias || ""}
         badges={[
           { text: <Label>{t(usedBy)}</Label> },
           builtIn

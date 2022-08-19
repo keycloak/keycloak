@@ -21,7 +21,6 @@ import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { useAlerts } from "../components/alert/Alerts";
-import { toUpperCase } from "../util";
 import useToggle from "../utils/useToggle";
 import { DuplicateFlowModal } from "./DuplicateFlowModal";
 import { toCreateFlow } from "./routes/CreateFlow";
@@ -161,7 +160,7 @@ export default function AuthenticationSection() {
         })}
         key={`link-${id}`}
       >
-        {toUpperCase(alias!)}
+        {alias}
       </Link>{" "}
       {builtIn && <Label key={`label-${id}`}>{t("buildIn")}</Label>}
     </>
