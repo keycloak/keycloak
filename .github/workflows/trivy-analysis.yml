@@ -10,7 +10,7 @@ jobs:
     runs-on: "ubuntu-18.04"
     steps:
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@cb606dfdb0d2b3698ace62192088ef4f5360b24f
+        uses: aquasecurity/trivy-action@d63413b0a4a4482237085319f7f4a1ce99a8f2ac
         with:
           image-ref: 'quay.io/keycloak/keycloak:nightly'
           format: 'template'
@@ -29,7 +29,7 @@ jobs:
     runs-on: "ubuntu-18.04"
     steps:
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@cb606dfdb0d2b3698ace62192088ef4f5360b24f
+        uses: aquasecurity/trivy-action@d63413b0a4a4482237085319f7f4a1ce99a8f2ac
         with:
           image-ref: 'quay.io/keycloak/keycloak:legacy'
           format: 'template'
@@ -48,7 +48,7 @@ jobs:
     runs-on: "ubuntu-18.04"
     steps:
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@cb606dfdb0d2b3698ace62192088ef4f5360b24f
+        uses: aquasecurity/trivy-action@d63413b0a4a4482237085319f7f4a1ce99a8f2ac
         with:
           image-ref: 'quay.io/keycloak/keycloak-operator:nightly'
           format: 'template'
