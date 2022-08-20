@@ -122,7 +122,10 @@ describe("Realm roles test", () => {
     rolesTab.goToAssociatedRolesTab();
 
     // Add associated client role
-    associatedRolesPage.addAssociatedRoleFromSearchBar("manage-clients", true);
+    associatedRolesPage.addAssociatedRoleFromSearchBar(
+      "manage-account-links",
+      true
+    );
     masthead.checkNotificationMessage("Associated roles have been added", true);
   });
 

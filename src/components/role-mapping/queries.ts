@@ -181,19 +181,3 @@ export const getAvailableRoles = async (
     role,
   }));
 };
-
-export const getAvailableClientRoles = async (
-  adminClient: KeycloakAdminClient,
-  type: ResourcesKey,
-  id: string,
-  client: ClientRepresentation
-) => {
-  const query = mapping[type]!.listAvailable[0];
-  return (
-    await applyQuery(adminClient, type === "roles" ? "clients" : type, query, {
-      id: type === "roles" ? client.id : id,
-      client: client.id,
-      clientUniqueId: client.id,
-    })
-  ).map((role) => ({ role, client: { clientId: client.id, ...client } }));
-};

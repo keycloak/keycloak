@@ -555,7 +555,10 @@ describe("Clients test", () => {
         .checkNotificationMessage("Associated roles have been added", true);
 
       // Add associated client role
-      associatedRolesPage.addAssociatedRoleFromSearchBar("create-client", true);
+      associatedRolesPage.addAssociatedRoleFromSearchBar(
+        "manage-account",
+        true
+      );
       commonPage
         .masthead()
         .checkNotificationMessage("Associated roles have been added", true);
@@ -609,7 +612,7 @@ describe("Clients test", () => {
       rolesTab.goToAssociatedRolesTab();
 
       cy.get('td[data-label="Role name"]')
-        .contains("create-client")
+        .contains("manage-account")
         .parent()
         .within(() => {
           cy.get("input").click();

@@ -15,7 +15,9 @@ import { KeycloakDataTable } from "../table-toolbar/KeycloakDataTable";
 import { useAdminClient } from "../../context/auth/AdminClient";
 import useLocaleSort from "../../utils/useLocaleSort";
 import { ResourcesKey, Row, ServiceRole } from "./RoleMapping";
-import { getAvailableClientRoles, getAvailableRoles } from "./queries";
+import { getAvailableRoles } from "./queries";
+import { getAvailableClientRoles } from "./resource";
+import { useRealm } from "../../context/realm-context/RealmContext";
 
 type AddRoleMappingModalProps = {
   id: string;
@@ -40,6 +42,7 @@ export const AddRoleMappingModal = ({
 }: AddRoleMappingModalProps) => {
   const { t } = useTranslation("common");
   const { adminClient } = useAdminClient();
+  const { realm } = useRealm();
 
   const [searchToggle, setSearchToggle] = useState(false);
 
@@ -69,19 +72,28 @@ export const AddRoleMappingModal = ({
     return localeSort(roles, compareRow);
   };
 
-  /* this is still pretty expensive querying all client and then all roles */
-  const clientRolesLoader = async (): Promise<Row[]> => {
-    const allClients = await adminClient.clients.find();
+  const clientRolesLoader = async (
+    first?: number,
+    max?: number,
+    search?: string
+  ): Promise<Row[]> => {
+    const roles = await getAvailableClientRoles({
+      adminClient,
+      id,
+      realm,
+      type,
+      first: first || 0,
+      max: max || 10,
+      search,
+    });
 
-    const roles = (
-      await Promise.all(
-        allClients.map((client) =>
-          getAvailableClientRoles(adminClient, type, id, client)
-        )
-      )
-    ).flat();
-
-    return localeSort(roles, compareRow);
+    return localeSort(
+      roles.map((e) => ({
+        client: { clientId: e.client },
+        role: { id: e.id, name: e.role, description: e.description },
+      })),
+      compareRow
+    );
   };
 
   return (
@@ -119,6 +131,7 @@ export const AddRoleMappingModal = ({
         key={key}
         onSelect={(rows) => setSelectedRows([...rows])}
         searchPlaceholderKey="clients:searchByRoleName"
+        isPaginated={filterType === "clients"}
         searchTypeComponent={
           <ToolbarItem>
             <Dropdown
