@@ -24,7 +24,8 @@ import {
 import { ViewHeader } from "../components/view-header/ViewHeader";
 import { useAdminClient } from "../context/auth/AdminClient";
 import { useRealm } from "../context/realm-context/RealmContext";
-import { addTrailingSlash, emptyFormatter, exportClient } from "../util";
+import { emptyFormatter, exportClient } from "../util";
+import { convertClientToUrl } from "../utils/client-url";
 import { InitialAccessTokenList } from "./initial-access/InitialAccessTokenList";
 import { toAddClient } from "./routes/AddClient";
 import { toClient } from "./routes/Client";
@@ -102,40 +103,6 @@ export default function ClientsSection() {
       {emptyFormatter()(client.description)}
     </TableText>
   );
-
-  const ClientHomePage = (client: ClientRepresentation) => {
-    const rootUrl = client.rootUrl;
-    const baseUrl = client.baseUrl;
-
-    // absolute base url configured, use base url is
-    if (baseUrl?.startsWith("http")) {
-      return baseUrl;
-    }
-
-    if (rootUrl === "${authBaseUrl}" && baseUrl) {
-      // eslint-disable-next-line prettier/prettier
-      return rootUrl.replace("${authBaseUrl}", addTrailingSlash(adminClient.baseUrl)) + baseUrl.substring(1);
-    }
-
-    if (rootUrl === "${authAdminUrl}" && baseUrl) {
-      // eslint-disable-next-line prettier/prettier
-      return rootUrl.replace("${authAdminUrl}", addTrailingSlash(adminClient.baseUrl)) + baseUrl.substring(1);
-    }
-
-    if (!rootUrl) {
-      return baseUrl;
-    }
-
-    if (rootUrl.startsWith("http")) {
-      let targetUrl = rootUrl;
-      if (baseUrl) {
-        targetUrl = addTrailingSlash(targetUrl) + baseUrl.substring(1);
-      }
-      return targetUrl;
-    }
-
-    return baseUrl;
-  };
 
   const ToolbarItems = () => {
     if (!isManager) return <span />;
@@ -249,7 +216,8 @@ export default function ClientsSection() {
                   name: "baseUrl",
                   displayKey: "clients:homeURL",
                   cellFormatters: [formattedLinkTableCell(), emptyFormatter()],
-                  cellRenderer: ClientHomePage,
+                  cellRenderer: (c) =>
+                    convertClientToUrl(c, adminClient.baseUrl),
                 },
               ]}
             />
