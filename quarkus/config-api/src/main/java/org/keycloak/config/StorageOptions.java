@@ -336,30 +336,6 @@ public class StorageOptions {
             .hidden()
             .build();
 
-    public static final List<Option<?>> ALL_OPTIONS = List.of(
-            STORAGE,
-            STORAGE_EVENT_ADMIN_STORE,
-            STORAGE_EVENT_AUTH_STORE,
-            STORAGE_REALM_STORE,
-            STORAGE_CLIENT_STORE,
-            STORAGE_CLIENT_SCOPE_STORE,
-            STORAGE_GROUP_STORE,
-            STORAGE_ROLE_STORE,
-            STORAGE_USER_STORE,
-            STORAGE_AUTH_SESSION_STORE,
-            STORAGE_USER_SESSION_STORE,
-            STORAGE_LOGIN_FAILURE_STORE,
-            STORAGE_AUTHORIZATION_STORE,
-            STORAGE_ACTION_TOKEN_STORE,
-            STORAGE_SINGLE_USE_OBJECT_STORE,
-            STORAGE_HOTROD_HOST,
-            STORAGE_HOTROD_PORT,
-            STORAGE_HOTROD_USERNAME,
-            STORAGE_HOTROD_PASSWORD,
-            STORAGE_HOTROD_CACHE_CONFIGURE,
-            STORAGE_HOTROD_CACHE_REINDEX
-    );
-
     private static String descriptionForStorageAreas(String areaAsText) {
         return "Sets a storage mechanism for " + areaAsText + ".";
     }

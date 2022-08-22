@@ -34,11 +34,4 @@ public class FeatureOptions {
 
         return features;
     }
-
-    public static final List<Option<?>> ALL_OPTIONS = new ArrayList<>();
-
-    static {
-        ALL_OPTIONS.add(FEATURES);
-        ALL_OPTIONS.add(FEATURES_DISABLED);
-    }
 }

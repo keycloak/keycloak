@@ -1,8 +1,5 @@
 package org.keycloak.config;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class TransactionOptions {
 
     public static final Option<Boolean> TRANSACTION_XA_ENABLED = new OptionBuilder<>("transaction-xa-enabled", Boolean.class)
@@ -18,11 +15,4 @@ public class TransactionOptions {
             .buildTime(true)
             .hidden()
             .build();
-
-    public static final List<Option<?>> ALL_OPTIONS = new ArrayList<>();
-
-    static {
-        ALL_OPTIONS.add(TRANSACTION_XA_ENABLED);
-        ALL_OPTIONS.add(TRANSACTION_JTA_ENABLED);
-    }
 }
