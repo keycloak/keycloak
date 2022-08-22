@@ -93,9 +93,9 @@ public class WatchedSecretsTest extends BaseOperatorTest {
             var prevPodNames = getPodNamesForCrs(Set.of(kc));
 
             var dbSecret = getDbSecret();
-            String b64uname = Base64.getEncoder().encodeToString(username.getBytes());
-            System.out.println("Base64 Username: " + b64uname);
-            dbSecret.getData().put("username", b64uname );
+
+            dbSecret.getData().put("username",
+                    Base64.getEncoder().encodeToString(username.getBytes()));
             k8sclient.secrets().createOrReplace(dbSecret);
 
             Awaitility.await()
