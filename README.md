@@ -1,3 +1,9 @@
+<div align="center">
+  <img src="themes/src/main/resources/theme/guinsoolab/welcome/resources/logo.png" width="120" alt="logo" />
+  <br/>
+  <small>An Open Source Identity and Access Management solution for modern Applications and Services</small>
+</div>
+
 # Keycloak
 
 Keycloak is an Open Source Identity and Access Management solution for modern Applications and Services.
