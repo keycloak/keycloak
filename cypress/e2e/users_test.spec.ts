@@ -3,13 +3,15 @@ import LoginPage from "../support/pages/LoginPage";
 import CreateUserPage from "../support/pages/admin_console/manage/users/CreateUserPage";
 import Masthead from "../support/pages/admin_console/Masthead";
 import ListingPage from "../support/pages/admin_console/ListingPage";
-import UserDetailsPage from "../support/pages/admin_console/manage/users/UserDetailsPage";
+import UserDetailsPage from "../support/pages/admin_console/manage/users/user_details/UserDetailsPage";
 import AttributesTab from "../support/pages/admin_console/manage/AttributesTab";
 import ModalUtils from "../support/util/ModalUtils";
 import { keycloakBefore } from "../support/util/keycloak_hooks";
 import UserGroupsPage from "../support/pages/admin_console/manage/users/UserGroupsPage";
 import adminClient from "../support/util/AdminClient";
 import CredentialsPage from "../support/pages/admin_console/manage/users/CredentialsPage";
+import UsersPage from "cypress/support/pages/admin_console/manage/users/UsersPage";
+import IdentityProviderLinksTab from "cypress/support/pages/admin_console/manage/users/user_details/tabs/IdentityProviderLinksTab";
 
 let groupName = "group";
 let groupsList: string[] = [];
@@ -25,6 +27,8 @@ describe("User creation", () => {
   const userDetailsPage = new UserDetailsPage();
   const credentialsPage = new CredentialsPage();
   const attributesTab = new AttributesTab();
+  const usersPage = new UsersPage();
+  const identityProviderLinksTab = new IdentityProviderLinksTab();
 
   let itemId = "user_crud";
   let itemIdWithGroups = "user_with_groups_crud";
@@ -37,7 +41,6 @@ describe("User creation", () => {
       adminClient.createGroup(groupName);
       groupsList = [...groupsList, groupName];
     }
-
     keycloakBefore();
     loginPage.logIn();
   });
@@ -205,6 +208,129 @@ describe("User creation", () => {
 
     cy.findByTestId("user-consents-tab").click();
     cy.findByTestId("empty-state").contains("No consents");
+  });
+
+  describe("Identity provider links", () => {
+    const usernameIdpLinksTest = "user_idp_link_test";
+    const identityProviders = [
+      { testName: "Bitbucket", displayName: "BitBucket", alias: "bitbucket" },
+      { testName: "Facebook", displayName: "Facebook", alias: "facebook" },
+      {
+        testName: "Keycloak-oidc",
+        displayName: "Keycloak OpenID Connect",
+        alias: "keycloak-oidc",
+      },
+    ];
+
+    before(async () => {
+      await Promise.all([
+        adminClient.createUser({
+          username: usernameIdpLinksTest,
+          enabled: true,
+        }),
+        identityProviders.forEach((idp) =>
+          adminClient.createIdentityProvider(idp.displayName, idp.alias)
+        ),
+      ]);
+    });
+
+    after(() => adminClient.deleteUser(usernameIdpLinksTest));
+
+    beforeEach(() => {
+      usersPage.goToUserListTab().goToUserDetailsPage(usernameIdpLinksTest);
+      userDetailsPage.goToIdentityProviderLinksTab();
+    });
+
+    identityProviders.forEach(($idp, linkedIdpsCount) => {
+      it(`Link account to IdP:  ${$idp.testName}`, () => {
+        const availableIdpsCount = identityProviders.length - linkedIdpsCount;
+
+        if (linkedIdpsCount == 0) {
+          identityProviderLinksTab.assertNoIdentityProvidersLinkedMessageExist(
+            true
+          );
+        }
+        identityProviderLinksTab
+          .assertAvailableIdentityProvidersItemsEqual(availableIdpsCount)
+          .clickLinkAccount($idp.testName)
+          .assertLinkAccountModalTitleEqual($idp.testName)
+          .assertLinkAccountModalIdentityProviderInputEqual($idp.testName)
+          .typeLinkAccountModalUserId("testUserId")
+          .typeLinkAccountModalUsername("testUsername")
+          .clickLinkAccountModalLinkBtn()
+          .assertNotificationIdentityProviderLinked()
+          .assertLinkedIdentityProvidersItemsEqual(linkedIdpsCount + 1)
+          .assertAvailableIdentityProvidersItemsEqual(availableIdpsCount - 1)
+          .assertLinkedIdentityProviderExist($idp.testName, true)
+          .assertAvailableIdentityProviderExist($idp.testName, false);
+        if (availableIdpsCount - 1 == 0) {
+          identityProviderLinksTab.assertNoAvailableIdentityProvidersMessageExist(
+            true
+          );
+        }
+        masthead.closeAllAlertMessages();
+      });
+    });
+
+    it("Link account to already added IdP fail", () => {
+      cy.wrap(null).then(() =>
+        adminClient.unlinkAccountIdentityProvider(
+          usernameIdpLinksTest,
+          identityProviders[0].displayName
+        )
+      );
+
+      sidebarPage.goToUsers();
+      usersPage.goToUserListTab().goToUserDetailsPage(usernameIdpLinksTest);
+      userDetailsPage.goToIdentityProviderLinksTab();
+
+      cy.wrap(null).then(() =>
+        adminClient.linkAccountIdentityProvider(
+          usernameIdpLinksTest,
+          identityProviders[0].displayName
+        )
+      );
+
+      identityProviderLinksTab
+        .clickLinkAccount(identityProviders[0].testName)
+        .assertLinkAccountModalTitleEqual(identityProviders[0].testName)
+        .assertLinkAccountModalIdentityProviderInputEqual(
+          identityProviders[0].testName
+        )
+        .typeLinkAccountModalUserId("testUserId")
+        .typeLinkAccountModalUsername("testUsername")
+        .clickLinkAccountModalLinkBtn()
+        .assertNotificationAlreadyLinkedError();
+      modalUtils.cancelModal();
+    });
+
+    identityProviders.forEach(($idp, availableIdpsCount) => {
+      it(`Unlink account from IdP:  ${$idp.testName}`, () => {
+        const linkedIdpsCount = identityProviders.length - availableIdpsCount;
+
+        if (availableIdpsCount == 0) {
+          identityProviderLinksTab.assertNoAvailableIdentityProvidersMessageExist(
+            true
+          );
+        }
+        identityProviderLinksTab
+          .assertAvailableIdentityProvidersItemsEqual(availableIdpsCount)
+          .clickUnlinkAccount($idp.testName)
+          .assertUnLinkAccountModalTitleEqual($idp.testName)
+          .clickUnlinkAccountModalUnlinkBtn()
+          .assertNotificationPoviderLinkRemoved()
+          .assertLinkedIdentityProvidersItemsEqual(linkedIdpsCount - 1)
+          .assertAvailableIdentityProvidersItemsEqual(availableIdpsCount + 1)
+          .assertLinkedIdentityProviderExist($idp.testName, false)
+          .assertAvailableIdentityProviderExist($idp.testName, true);
+        if (linkedIdpsCount - 1 == 0) {
+          identityProviderLinksTab.assertNoIdentityProvidersLinkedMessageExist(
+            true
+          );
+        }
+        masthead.closeAllAlertMessages();
+      });
+    });
   });
 
   it("Reset credential of User with empty state", () => {

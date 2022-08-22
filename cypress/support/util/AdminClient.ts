@@ -184,6 +184,51 @@ class AdminClient {
     await this.login();
     return await this.client.roles.delByName({ name });
   }
+
+  async createIdentityProvider(idpDisplayName: string, alias: string) {
+    await this.login();
+    const identityProviders =
+      (await this.client.serverInfo.find()).identityProviders || [];
+    const idp = identityProviders.find(({ name }) => name === idpDisplayName);
+    await this.client.identityProviders.create({
+      providerId: idp?.id!,
+      displayName: idpDisplayName,
+      alias: alias,
+    });
+  }
+
+  async unlinkAccountIdentityProvider(
+    username: string,
+    idpDisplayName: string
+  ) {
+    await this.login();
+    const user = await this.client.users.find({ username });
+    const identityProviders =
+      (await this.client.serverInfo.find()).identityProviders || [];
+    const idp = identityProviders.find(({ name }) => name === idpDisplayName);
+    await this.client.users.delFromFederatedIdentity({
+      id: user[0].id!,
+      federatedIdentityId: idp?.id!,
+    });
+  }
+
+  async linkAccountIdentityProvider(username: string, idpDisplayName: string) {
+    await this.login();
+    const user = await this.client.users.find({ username });
+    const identityProviders =
+      (await this.client.serverInfo.find()).identityProviders || [];
+    const idp = identityProviders.find(({ name }) => name === idpDisplayName);
+    const fedIdentity = {
+      identityProvider: idp?.id,
+      userId: "testUserIdApi",
+      userName: "testUserNameApi",
+    };
+    await this.client.users.addToFederatedIdentity({
+      id: user[0].id!,
+      federatedIdentityId: idp?.id!,
+      federatedIdentity: fedIdentity,
+    });
+  }
 }
 
 const adminClient = new AdminClient();
