@@ -92,7 +92,9 @@ export const OpenIdConnectCompatibilityModes = ({
         }
       >
         <Controller
-          name="attributes.client_credentials.use_refresh_token"
+          name={convertAttributeNameToForm(
+            "attributes.client_credentials.use_refresh_token"
+          )}
           defaultValue="false"
           control={control}
           render={({ onChange, value }) => (
