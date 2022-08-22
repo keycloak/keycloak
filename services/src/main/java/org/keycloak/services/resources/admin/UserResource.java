@@ -173,7 +173,17 @@ public class UserResource {
                 wasPermanentlyLockedOut = session.getProvider(BruteForceProtector.class).isPermanentlyLockedOut(session, realm, user);
             }
 
-            UserProfile profile = session.getProvider(UserProfileProvider.class).create(USER_API, rep.toAttributes(), user);
+            Map<String, List<String>> attributes = new HashMap<>(rep.toAttributes());
+
+            if (rep.getAttributes() == null) {
+                // include existing attributes in case no attributes are set so that validation takes into account the existing
+                // attributes associated with the user
+                for (Map.Entry<String, List<String>> entry : user.getAttributes().entrySet()) {
+                    attributes.putIfAbsent(entry.getKey(), entry.getValue());
+                }
+            }
+
+            UserProfile profile = session.getProvider(UserProfileProvider.class).create(USER_API, attributes, user);
 
             Response response = validateUserProfile(profile, user, session);
             if (response != null) {

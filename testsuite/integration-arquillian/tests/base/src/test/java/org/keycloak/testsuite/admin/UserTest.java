@@ -1321,6 +1321,23 @@ public class UserTest extends AbstractAdminTest {
 
         user1 = realm.users().get(user1Id).toRepresentation();
         assertNull(user1.getAttributes());
+
+        Map<String, List<String>> attributes = new HashMap<>();
+
+        attributes.put("foo", Collections.singletonList("foo"));
+        attributes.put("bar", Collections.singletonList("bar"));
+
+        user1.setAttributes(attributes);
+
+        realm.users().get(user1Id).update(user1);
+        user1 = realm.users().get(user1Id).toRepresentation();
+        assertEquals(2, user1.getAttributes().size());
+
+        user1.getAttributes().remove("foo");
+
+        realm.users().get(user1Id).update(user1);
+        user1 = realm.users().get(user1Id).toRepresentation();
+        assertEquals(1, user1.getAttributes().size());
     }
 
     @Test
