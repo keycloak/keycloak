@@ -1,6 +1,6 @@
 import { lazy } from "react";
-import { generatePath } from "react-router-dom";
 import type { Path } from "react-router-dom-v5-compat";
+import { generatePath } from "react-router-dom-v5-compat";
 import type { RouteDef } from "../../route-config";
 
 export type DedicatedScopeTab = "mappers" | "scope";
@@ -12,15 +12,25 @@ export type DedicatedScopeDetailsParams = {
 };
 
 export const DedicatedScopeDetailsRoute: RouteDef = {
-  path: "/:realm/clients/:clientId/clientScopes/dedicated/:tab?",
+  path: "/:realm/clients/:clientId/clientScopes/dedicated",
   component: lazy(() => import("../scopes/DedicatedScopes")),
   breadcrumb: (t) => t("clients:dedicatedScopes"),
   access: "view-clients",
-  legacy: true,
+};
+
+export const DedicatedScopeDetailsWithTabRoute: RouteDef = {
+  ...DedicatedScopeDetailsRoute,
+  path: "/:realm/clients/:clientId/clientScopes/dedicated/:tab",
 };
 
 export const toDedicatedScope = (
   params: DedicatedScopeDetailsParams
-): Partial<Path> => ({
-  pathname: generatePath(DedicatedScopeDetailsRoute.path, params),
-});
+): Partial<Path> => {
+  const path = params.tab
+    ? DedicatedScopeDetailsWithTabRoute.path
+    : DedicatedScopeDetailsRoute.path;
+
+  return {
+    pathname: generatePath(path, params),
+  };
+};

@@ -3,7 +3,7 @@ import { useRouteMatch } from "react-router-dom";
 import { RecentUsed } from "../../components/realm-selector/recent-used";
 import {
   DashboardParams,
-  DashboardRoute,
+  DashboardRouteWithRealm,
 } from "../../dashboard/routes/Dashboard";
 import environment from "../../environment";
 import { createNamedContext } from "../../utils/createNamedContext";
@@ -22,7 +22,9 @@ export const RealmContext = createNamedContext<RealmContextType | undefined>(
 export const RealmContextProvider: FunctionComponent = ({ children }) => {
   const { adminClient } = useAdminClient();
   const recentUsed = useMemo(() => new RecentUsed(), []);
-  const routeMatch = useRouteMatch<DashboardParams>(DashboardRoute.path);
+  const routeMatch = useRouteMatch<DashboardParams>(
+    DashboardRouteWithRealm.path
+  );
   const realmParam = routeMatch?.params.realm;
   const realm = useMemo(
     () => realmParam ?? environment.loginRealm,

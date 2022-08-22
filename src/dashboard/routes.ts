@@ -1,6 +1,14 @@
 import type { RouteDef } from "../route-config";
-import { DashboardRoute } from "./routes/Dashboard";
+import {
+  DashboardRoute,
+  DashboardRouteWithRealm,
+  DashboardRouteWithTab,
+} from "./routes/Dashboard";
 
-const routes: RouteDef[] = [DashboardRoute];
+const routes: RouteDef[] = [
+  DashboardRoute,
+  DashboardRouteWithRealm,
+  DashboardRouteWithTab,
+];
 
 export default routes;

@@ -1,10 +1,6 @@
 import { FunctionComponent, Suspense } from "react";
 import { Page } from "@patternfly/react-core";
-import {
-  HashRouter as Router,
-  Route as LegacyRoute,
-  Switch,
-} from "react-router-dom";
+import { HashRouter as Router, Switch } from "react-router-dom";
 import { CompatRouter, CompatRoute } from "react-router-dom-v5-compat";
 import { ErrorBoundary } from "react-error-boundary";
 import type Keycloak from "keycloak-js";
@@ -101,19 +97,15 @@ export const App = ({ keycloak, adminClient }: AdminClientProps) => {
         >
           <ServerInfoProvider>
             <Switch>
-              {routes.map((route, i) => {
-                const Route = route.legacy ? LegacyRoute : CompatRoute;
-
-                return (
-                  <Route
-                    key={i}
-                    path={route.path}
-                    exact={route.matchOptions?.exact ?? true}
-                  >
-                    <SecuredRoute route={route} />
-                  </Route>
-                );
-              })}
+              {routes.map((route, i) => (
+                <CompatRoute
+                  key={i}
+                  path={route.path}
+                  exact={route.matchOptions?.exact ?? true}
+                >
+                  <SecuredRoute route={route} />
+                </CompatRoute>
+              ))}
             </Switch>
           </ServerInfoProvider>
         </ErrorBoundary>

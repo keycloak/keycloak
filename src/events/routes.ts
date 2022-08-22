@@ -1,6 +1,6 @@
 import type { RouteDef } from "../route-config";
-import { EventsRoute } from "./routes/Events";
+import { EventsRoute, EventsRouteWithTab } from "./routes/Events";
 
-const routes: RouteDef[] = [EventsRoute];
+const routes: RouteDef[] = [EventsRoute, EventsRouteWithTab];
 
 export default routes;

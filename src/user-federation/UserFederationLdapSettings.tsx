@@ -24,14 +24,18 @@ import { FormProvider, useForm, useFormContext } from "react-hook-form";
 import { useAdminClient, useFetch } from "../context/auth/AdminClient";
 import { useAlerts } from "../components/alert/Alerts";
 import { useTranslation } from "react-i18next";
-import { useParams } from "react-router-dom";
+import { useHistory, useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom-v5-compat";
 import { ScrollForm } from "../components/scroll-form/ScrollForm";
 
-import { KeycloakTabs } from "../components/keycloak-tabs/KeycloakTabs";
 import { LdapMapperList } from "./ldap/mappers/LdapMapperList";
 import { toUserFederation } from "./routes/UserFederation";
 import { ExtendedHeader } from "./shared/ExtendedHeader";
+import {
+  routableTab,
+  RoutableTabs,
+} from "../components/routable-tabs/RoutableTabs";
+import { toUserFederationLdap } from "./routes/UserFederationLdap";
 
 type ldapComponentRepresentation = ComponentRepresentation & {
   config?: {
@@ -110,6 +114,7 @@ export default function UserFederationLdapSettings() {
   const { t } = useTranslation("user-federation");
   const form = useForm<ComponentRepresentation>({ mode: "onChange" });
   const navigate = useNavigate();
+  const history = useHistory();
   const { adminClient } = useAdminClient();
   const { realm } = useRealm();
 
@@ -189,11 +194,21 @@ export default function UserFederationLdapSettings() {
       />
       <PageSection variant="light" className="pf-u-p-0">
         {id ? (
-          <KeycloakTabs isBox>
+          <RoutableTabs
+            defaultLocation={toUserFederationLdap({
+              realm,
+              id,
+              tab: "settings",
+            })}
+            isBox
+          >
             <Tab
               id="settings"
-              eventKey="settings"
               title={<TabTitleText>{t("common:settings")}</TabTitleText>}
+              {...routableTab({
+                to: toUserFederationLdap({ realm, id, tab: "settings" }),
+                history,
+              })}
             >
               <PageSection variant="light">
                 <AddLdapFormContent save={save} />
@@ -201,13 +216,16 @@ export default function UserFederationLdapSettings() {
             </Tab>
             <Tab
               id="mappers"
-              eventKey="mappers"
               title={<TabTitleText>{t("common:mappers")}</TabTitleText>}
               data-testid="ldap-mappers-tab"
+              {...routableTab({
+                to: toUserFederationLdap({ realm, id, tab: "mappers" }),
+                history,
+              })}
             >
               <LdapMapperList />
             </Tab>
-          </KeycloakTabs>
+          </RoutableTabs>
         ) : (
           <PageSection variant="light">
             <AddLdapFormContent save={save} />

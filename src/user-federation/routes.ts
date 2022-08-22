@@ -7,7 +7,10 @@ import {
 } from "./routes/NewProvider";
 import { UserFederationRoute } from "./routes/UserFederation";
 import { UserFederationKerberosRoute } from "./routes/UserFederationKerberos";
-import { UserFederationLdapRoute } from "./routes/UserFederationLdap";
+import {
+  UserFederationLdapRoute,
+  UserFederationLdapWithTabRoute,
+} from "./routes/UserFederationLdap";
 import { UserFederationLdapMapperRoute } from "./routes/UserFederationLdapMapper";
 import { UserFederationsKerberosRoute } from "./routes/UserFederationsKerberos";
 import { UserFederationsLdapRoute } from "./routes/UserFederationsLdap";
@@ -20,6 +23,7 @@ const routes: RouteDef[] = [
   UserFederationsLdapRoute,
   NewLdapUserFederationRoute,
   UserFederationLdapRoute,
+  UserFederationLdapWithTabRoute,
   UserFederationLdapMapperRoute,
   CustomProviderRoute,
   CustomEditProviderRoute,
