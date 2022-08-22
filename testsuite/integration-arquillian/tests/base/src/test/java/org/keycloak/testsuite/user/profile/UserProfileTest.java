@@ -1418,4 +1418,77 @@ public class UserProfileTest extends AbstractUserProfileTest {
 
         assertEquals("test@keycloak.com", user.getEmail());
     }
+
+    @Test
+    public void testDoNotRemoveAttributes() {
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testDoNotRemoveAttributes);
+    }
+
+    private static void testDoNotRemoveAttributes(KeycloakSession session) {
+        Map<String, Object> attributes = new HashMap<>();
+
+        attributes.put(UserModel.USERNAME, org.keycloak.models.utils.KeycloakModelUtils.generateId());
+        attributes.put(UserModel.EMAIL, Arrays.asList("test@test.com"));
+        attributes.put("test-attribute", Arrays.asList("Test Value"));
+        attributes.put("foo", Arrays.asList("foo"));
+
+        UserProfileProvider provider = getDynamicUserProfileProvider(session);
+
+        provider.setConfiguration("{\"attributes\": ["
+                + "{\"name\": \"test-attribute\", \"permissions\": {\"edit\": [\"admin\", \"user\"]}},"
+                + "{\"name\": \"foo\", \"permissions\": {\"edit\": [\"admin\", \"user\"]}},"
+                + "{\"name\": \"email\", \"permissions\": {\"edit\": [\"admin\", \"user\"]}}]}");
+
+        UserProfile profile = provider.create(UserProfileContext.USER_API, attributes);
+        UserModel user = profile.create();
+
+        attributes.clear();
+        attributes.put(UserModel.EMAIL, Arrays.asList("new-email@test.com"));
+        attributes.put("foo", "changed");
+        profile = provider.create(UserProfileContext.USER_API, attributes, user);
+        profile.update(false);
+        profile = provider.create(UserProfileContext.USER_API, user);
+        Attributes userAttributes = profile.getAttributes();
+
+        assertEquals("new-email@test.com", userAttributes.getFirstValue(UserModel.EMAIL));
+        assertEquals("Test Value", userAttributes.getFirstValue("test-attribute"));
+        assertEquals("changed", userAttributes.getFirstValue("foo"));
+
+        attributes.remove("foo");
+        attributes.put("test-attribute", userAttributes.getFirstValue("test-attribute"));
+        profile = provider.create(UserProfileContext.USER_API, attributes, user);
+        profile.update(true);
+        profile = provider.create(UserProfileContext.USER_API, user);
+        userAttributes = profile.getAttributes();
+        // remove attribute if not set
+        assertEquals("new-email@test.com", userAttributes.getFirstValue(UserModel.EMAIL));
+        assertEquals("Test Value", userAttributes.getFirstValue("test-attribute"));
+        assertNull(userAttributes.getFirstValue("foo"));
+
+        provider.setConfiguration("{\"attributes\": ["
+                + "{\"name\": \"test-attribute\", \"permissions\": {\"edit\": [\"user\"]}},"
+                + "{\"name\": \"foo\", \"permissions\": {\"edit\": [\"admin\", \"user\"]}},"
+                + "{\"name\": \"email\", \"permissions\": {\"edit\": [\"admin\", \"user\"]}}]}");
+        attributes.remove("test-attribute");
+        profile = provider.create(UserProfileContext.USER_API, attributes, user);
+        profile.update(true);
+        profile = provider.create(UserProfileContext.USER_API, user);
+        userAttributes = profile.getAttributes();
+        // do not remove test-attribute because admin does not have write permissions
+        assertEquals("new-email@test.com", userAttributes.getFirstValue(UserModel.EMAIL));
+        assertEquals("Test Value", userAttributes.getFirstValue("test-attribute"));
+
+        provider.setConfiguration("{\"attributes\": ["
+                + "{\"name\": \"test-attribute\", \"permissions\": {\"edit\": [\"admin\", \"user\"]}},"
+                + "{\"name\": \"foo\", \"permissions\": {\"edit\": [\"admin\", \"user\"]}},"
+                + "{\"name\": \"email\", \"permissions\": {\"edit\": [\"admin\", \"user\"]}}]}");
+        attributes.remove("test-attribute");
+        profile = provider.create(UserProfileContext.USER_API, attributes, user);
+        profile.update(true);
+        profile = provider.create(UserProfileContext.USER_API, user);
+        userAttributes = profile.getAttributes();
+        // removes the test-attribute attribute because now admin has write permission
+        assertEquals("new-email@test.com", userAttributes.getFirstValue(UserModel.EMAIL));
+        assertNull(userAttributes.getFirstValue("test-attribute"));
+    }
 }
