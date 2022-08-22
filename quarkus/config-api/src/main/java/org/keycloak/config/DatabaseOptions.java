@@ -2,9 +2,6 @@ package org.keycloak.config;
 
 import org.keycloak.config.database.Database;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class DatabaseOptions {
 
     public static final Option<String> DB_DIALECT = new OptionBuilder<>("db-dialect", String.class)
@@ -83,23 +80,4 @@ public class DatabaseOptions {
             .defaultValue(100)
             .description("The maximum size of the connection pool.")
             .build();
-
-    public static final List<Option<?>> ALL_OPTIONS = new ArrayList<>();
-
-    static {
-        ALL_OPTIONS.add(DB_DIALECT);
-        ALL_OPTIONS.add(DB_DRIVER);
-        ALL_OPTIONS.add(DB);
-        ALL_OPTIONS.add(DB_URL);
-        ALL_OPTIONS.add(DB_URL_HOST);
-        ALL_OPTIONS.add(DB_URL_DATABASE);
-        ALL_OPTIONS.add(DB_URL_PORT);
-        ALL_OPTIONS.add(DB_URL_PROPERTIES);
-        ALL_OPTIONS.add(DB_USERNAME);
-        ALL_OPTIONS.add(DB_PASSWORD);
-        ALL_OPTIONS.add(DB_SCHEMA);
-        ALL_OPTIONS.add(DB_POOL_INITIAL_SIZE);
-        ALL_OPTIONS.add(DB_POOL_MIN_SIZE);
-        ALL_OPTIONS.add(DB_POOL_MAX_SIZE);
-    }
 }

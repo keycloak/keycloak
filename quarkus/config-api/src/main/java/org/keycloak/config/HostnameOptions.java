@@ -1,8 +1,5 @@
 package org.keycloak.config;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class HostnameOptions {
 
     public static final Option HOSTNAME = new OptionBuilder<>("hostname", String.class)
@@ -43,15 +40,4 @@ public class HostnameOptions {
             .description("The port used by the proxy when exposing the hostname. Set this option if the proxy uses a port other than the default HTTP and HTTPS ports.")
             .defaultValue(-1)
             .build();
-
-    public static final List<Option<?>> ALL_OPTIONS = new ArrayList<>();
-
-    static {
-        ALL_OPTIONS.add(HOSTNAME);
-        ALL_OPTIONS.add(HOSTNAME_STRICT);
-        ALL_OPTIONS.add(HOSTNAME_STRICT_HTTPS);
-        ALL_OPTIONS.add(HOSTNAME_STRICT_BACKCHANNEL);
-        ALL_OPTIONS.add(HOSTNAME_PATH);
-        ALL_OPTIONS.add(HOSTNAME_PORT);
-    }
 }

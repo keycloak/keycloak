@@ -1,10 +1,5 @@
 package org.keycloak.config;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
-
 public class ProxyOptions {
 
     public enum Mode {
@@ -24,11 +19,4 @@ public class ProxyOptions {
             .category(OptionCategory.PROXY)
             .defaultValue(Boolean.FALSE)
             .build();
-
-    public static final List<Option<?>> ALL_OPTIONS = new ArrayList<>();
-
-    static {
-        ALL_OPTIONS.add(PROXY);
-        ALL_OPTIONS.add(PROXY_FORWARDED_HOST);
-    }
 }
