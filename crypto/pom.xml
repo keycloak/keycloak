@@ -31,7 +31,7 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>fips1402</module>
         <module>default</module>
+        <module>fips1402</module>
     </modules>
 </project>

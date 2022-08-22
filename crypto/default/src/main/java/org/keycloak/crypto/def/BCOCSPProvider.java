@@ -16,23 +16,14 @@
  *
  */
 
-package org.keycloak.authentication.authenticators.x509;
-
-import org.apache.http.HttpHeaders;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.ByteArrayEntity;
-import org.apache.http.util.EntityUtils;
+package org.keycloak.crypto.def;
 
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERIA5String;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.ocsp.OCSPObjectIdentifiers;
-import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.x500.X500Name;
-import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.asn1.x509.CRLReason;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.SubjectKeyIdentifier;
@@ -44,17 +35,26 @@ import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
-import org.bouncycastle.cert.ocsp.*;
+import org.bouncycastle.cert.ocsp.BasicOCSPResp;
+import org.bouncycastle.cert.ocsp.CertificateID;
+import org.bouncycastle.cert.ocsp.CertificateStatus;
+import org.bouncycastle.cert.ocsp.OCSPException;
+import org.bouncycastle.cert.ocsp.OCSPReq;
+import org.bouncycastle.cert.ocsp.OCSPReqBuilder;
+import org.bouncycastle.cert.ocsp.OCSPResp;
+import org.bouncycastle.cert.ocsp.RevokedStatus;
+import org.bouncycastle.cert.ocsp.SingleResp;
+import org.bouncycastle.cert.ocsp.UnknownStatus;
 import org.bouncycastle.cert.ocsp.jcajce.JcaCertificateID;
 import org.bouncycastle.operator.ContentVerifierProvider;
 import org.bouncycastle.operator.DigestCalculator;
+import org.bouncycastle.operator.DigestCalculatorProvider;
 import org.bouncycastle.operator.OperatorCreationException;
-import org.bouncycastle.operator.bc.BcDigestCalculatorProvider;
 import org.bouncycastle.operator.jcajce.JcaContentVerifierProviderBuilder;
-
+import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
 import org.keycloak.common.util.BouncyIntegration;
-import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.utils.OCSPProvider;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -63,12 +63,24 @@ import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.SecureRandom;
-import java.security.cert.*;
-import java.util.*;
+import java.security.cert.CRLReason;
+import java.security.cert.CertPath;
+import java.security.cert.CertPathValidatorException;
+import java.security.cert.CertificateEncodingException;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateExpiredException;
+import java.security.cert.CertificateNotYetValidException;
+import java.security.cert.CertificateParsingException;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.impl.client.CloseableHttpClient;
+
 
 /**
  * @author <a href="mailto:brat000012001@gmail.com">Peter Nalyvayko</a>
@@ -76,115 +88,13 @@ import org.apache.http.impl.client.CloseableHttpClient;
  * @since 10/29/2016
  */
 
-public final class OCSPUtils {
+public class BCOCSPProvider extends OCSPProvider {
 
-    private final static Logger logger = Logger.getLogger(""+OCSPUtils.class);
+    private final static Logger logger = Logger.getLogger(BCOCSPProvider.class.getName());
 
-    private static int OCSP_CONNECT_TIMEOUT = 10000; // 10 sec
-    private static final int TIME_SKEW = 900000;
-
-    public enum RevocationStatus {
-        GOOD,
-        REVOKED,
-        UNKNOWN
-    }
-
-    public interface OCSPRevocationStatus {
-        RevocationStatus getRevocationStatus();
-        Date getRevocationTime();
-        CRLReason getRevocationReason();
-    }
-
-    /**
-     * Requests certificate revocation status using OCSP.
-     * @param cert the certificate to be checked
-     * @param issuerCertificate The issuer certificate
-     * @param responderURI an address of OCSP responder. Overrides any OCSP responder URIs stored in certificate's AIA extension
-     * @param date
-     * @param responderCert a certificate that OCSP responder uses to sign OCSP responses
-     * @return revocation status
-     */
-    public static OCSPRevocationStatus check(KeycloakSession session, X509Certificate cert, X509Certificate issuerCertificate, URI responderURI, X509Certificate responderCert, Date date) throws CertPathValidatorException {
-        if (cert == null)
-            throw new IllegalArgumentException("cert cannot be null");
-        if (issuerCertificate == null)
-            throw new IllegalArgumentException("issuerCertificate cannot be null");
-        if (responderURI == null)
-            throw new IllegalArgumentException("responderURI cannot be null");
-
-        return check(session, cert, issuerCertificate, Collections.singletonList(responderURI), responderCert, date);
-    }
-    /**
-     * Requests certificate revocation status using OCSP. The OCSP responder URI
-     * is obtained from the certificate's AIA extension.
-     * @param cert the certificate to be checked
-     * @param issuerCertificate The issuer certificate
-     * @param date
-     * @return revocation status
-     */
-    public static OCSPRevocationStatus check(KeycloakSession session, X509Certificate cert, X509Certificate issuerCertificate, Date date, X509Certificate responderCert) throws CertPathValidatorException {
-        List<String> responderURIs = null;
-        try {
-            responderURIs = getResponderURIs(cert);
-        } catch (CertificateEncodingException e) {
-            logger.log(Level.FINE, "CertificateEncodingException: {0}", e.getMessage());
-            throw new CertPathValidatorException(e.getMessage(), e);
-        }
-        if (responderURIs.size() == 0) {
-            logger.log(Level.INFO, "No OCSP responders in the specified certificate");
-            throw new CertPathValidatorException("No OCSP Responder URI in certificate");
-        }
-
-        List<URI> uris = new LinkedList<>();
-        for (String value : responderURIs) {
-            try {
-                URI responderURI = URI.create(value);
-                uris.add(responderURI);
-            } catch (IllegalArgumentException ex) {
-                logger.log(Level.FINE, "Malformed responder URI {0}", value);
-            }
-        }
-        return check(session, cert, issuerCertificate, Collections.unmodifiableList(uris), responderCert, date);
-    }
-    /**
-     * Requests certificate revocation status using OCSP. The OCSP responder URI
-     * is obtained from the certificate's AIA extension.
-     * @param cert the certificate to be checked
-     * @param issuerCertificate The issuer certificate
-     * @return revocation status
-     */
-    public static OCSPRevocationStatus check(KeycloakSession session, X509Certificate cert, X509Certificate issuerCertificate) throws CertPathValidatorException {
-        return check(session, cert, issuerCertificate, null, null);
-    }
-
-    private static OCSPResp getResponse(KeycloakSession session, OCSPReq ocspReq, URI responderUri) throws IOException {
-        CloseableHttpClient httpClient = session.getProvider(HttpClientProvider.class).getHttpClient();
-        HttpPost post = new HttpPost(responderUri);
-        post.setHeader(HttpHeaders.CONTENT_TYPE, "application/ocsp-request");
-
-        final RequestConfig params = RequestConfig.custom()
-           .setConnectTimeout(OCSP_CONNECT_TIMEOUT)
-           .setSocketTimeout(OCSP_CONNECT_TIMEOUT)
-           .build();
-        post.setConfig(params);
-
-        post.setEntity(new ByteArrayEntity(ocspReq.getEncoded()));
-
-        //Get Response
-        try (CloseableHttpResponse response = httpClient.execute(post)) {
-            try {
-                if (response.getStatusLine().getStatusCode() / 100 != 2) {
-                    String errorMessage = String.format("Connection error, unable to obtain certificate revocation status using OCSP responder \"%s\", code \"%d\"",
-                        responderUri.toString(), response.getStatusLine().getStatusCode());
-                    throw new IOException(errorMessage);
-                }
-
-                byte[] data = EntityUtils.toByteArray(response.getEntity());
-                return new OCSPResp(data);
-            } finally {
-                EntityUtils.consumeQuietly(response.getEntity());
-            }
-        }
+    protected OCSPResp getResponse(KeycloakSession session, OCSPReq ocspReq, URI responderUri) throws IOException {
+        byte[] data = getEncodedOCSPResponse(session, ocspReq.getEncoded(), responderUri);
+        return new OCSPResp(data);
     }
 
     /**
@@ -197,12 +107,15 @@ public final class OCSPUtils {
      * @return a revocation status
      * @throws CertPathValidatorException
      */
-    private static OCSPRevocationStatus check(KeycloakSession session, X509Certificate cert, X509Certificate issuerCertificate, List<URI> responderURIs, X509Certificate responderCert, Date date) throws CertPathValidatorException {
+    @Override
+    protected OCSPRevocationStatus check(KeycloakSession session, X509Certificate cert, X509Certificate issuerCertificate, List<URI> responderURIs, X509Certificate responderCert, Date date) throws CertPathValidatorException {
         if (responderURIs == null || responderURIs.size() == 0)
             throw new IllegalArgumentException("Need at least one responder");
         try {
-            DigestCalculator digCalc = new BcDigestCalculatorProvider()
-                    .get(new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1));
+
+            DigestCalculatorProvider dcp = new JcaDigestCalculatorProviderBuilder().build();
+
+            DigestCalculator digCalc = dcp.get(CertificateID.HASH_SHA1);
 
             JcaCertificateID certificateID = new JcaCertificateID(digCalc, issuerCertificate, cert.getSerialNumber());
 
@@ -251,13 +164,14 @@ public final class OCSPUtils {
                 throw new CertPathValidatorException("OCSP check failed", e);
             }
         }
-        catch(CertificateNotYetValidException | CertificateExpiredException | OperatorCreationException | OCSPException | CertificateEncodingException | NoSuchAlgorithmException | NoSuchProviderException e) {
+        catch(CertificateNotYetValidException | CertificateExpiredException | OperatorCreationException | OCSPException |
+              CertificateEncodingException | NoSuchAlgorithmException | NoSuchProviderException e) {
             logger.log(Level.FINE, e.getMessage());
             throw new CertPathValidatorException(e.getMessage(), e);
         }
     }
 
-    private static OCSPRevocationStatus processBasicOCSPResponse(X509Certificate issuerCertificate, X509Certificate responderCertificate, Date date, JcaCertificateID certificateID, BigInteger nounce, BasicOCSPResp basicOcspResponse)
+    private OCSPRevocationStatus processBasicOCSPResponse(X509Certificate issuerCertificate, X509Certificate responderCertificate, Date date, JcaCertificateID certificateID, BigInteger nounce, BasicOCSPResp basicOcspResponse)
             throws OCSPException, NoSuchProviderException, NoSuchAlgorithmException, CertificateNotYetValidException, CertificateExpiredException, CertPathValidatorException {
         SingleResp expectedResponse = null;
         for (SingleResp singleResponse : basicOcspResponse.getResponses()) {
@@ -275,7 +189,7 @@ public final class OCSPUtils {
         }
     }
 
-    private static boolean compareCertIDs(JcaCertificateID idLeft, CertificateID idRight) {
+    private boolean compareCertIDs(JcaCertificateID idLeft, CertificateID idRight) {
         if (idLeft == idRight)
             return true;
         if (idLeft == null || idRight == null)
@@ -286,7 +200,7 @@ public final class OCSPUtils {
                 idLeft.getSerialNumber().equals(idRight.getSerialNumber());
     }
 
-    private static void verifyResponse(BasicOCSPResp basicOcspResponse, X509Certificate issuerCertificate, X509Certificate responderCertificate, byte[] requestNonce, Date date) throws NoSuchProviderException, NoSuchAlgorithmException, CertificateNotYetValidException, CertificateExpiredException, CertPathValidatorException {
+    private void verifyResponse(BasicOCSPResp basicOcspResponse, X509Certificate issuerCertificate, X509Certificate responderCertificate, byte[] requestNonce, Date date) throws NoSuchProviderException, NoSuchAlgorithmException, CertificateNotYetValidException, CertificateExpiredException, CertPathValidatorException {
 
         List<X509CertificateHolder> certs = new ArrayList<>(Arrays.asList(basicOcspResponse.getCerts()));
         X509Certificate signingCert = null;
@@ -444,7 +358,7 @@ public final class OCSPUtils {
         }
     }
 
-    private static boolean verifySignature(BasicOCSPResp basicOcspResponse, X509Certificate cert) {
+    private boolean verifySignature(BasicOCSPResp basicOcspResponse, X509Certificate cert) {
         try {
             ContentVerifierProvider contentVerifier = new JcaContentVerifierProviderBuilder()
                     .setProvider(BouncyIntegration.PROVIDER).build(cert.getPublicKey());
@@ -457,29 +371,10 @@ public final class OCSPUtils {
         return false;
     }
 
-    private static OCSPRevocationStatus unknownStatus() {
-        return new OCSPRevocationStatus() {
-            @Override
-            public RevocationStatus getRevocationStatus() {
-                return RevocationStatus.UNKNOWN;
-            }
-
-            @Override
-            public Date getRevocationTime() {
-                return new Date(System.currentTimeMillis());
-            }
-
-            @Override
-            public CRLReason getRevocationReason() {
-                return CRLReason.lookup(CRLReason.unspecified);
-            }
-        };
-    }
-
-    private static OCSPRevocationStatus singleResponseToRevocationStatus(final SingleResp singleResponse) throws CertPathValidatorException {
+    private OCSPRevocationStatus singleResponseToRevocationStatus(final SingleResp singleResponse) throws CertPathValidatorException {
         final CertificateStatus certStatus = singleResponse.getCertStatus();
 
-        int revocationReason = CRLReason.unspecified;
+        CRLReason revocationReason = CRLReason.UNSPECIFIED;
         Date revocationTime = null;
         RevocationStatus status = RevocationStatus.UNKNOWN;
         if (certStatus == CertificateStatus.GOOD) {
@@ -489,7 +384,7 @@ public final class OCSPUtils {
             revocationTime = revoked.getRevocationTime();
             status = RevocationStatus.REVOKED;
             if (revoked.hasRevocationReason()) {
-                revocationReason = revoked.getRevocationReason();
+                revocationReason = CRLReason.values()[revoked.getRevocationReason()];
             }
         } else if (certStatus instanceof UnknownStatus) {
             status = RevocationStatus.UNKNOWN;
@@ -499,7 +394,7 @@ public final class OCSPUtils {
 
         final RevocationStatus finalStatus = status;
         final Date finalRevocationTime = revocationTime;
-        final int finalRevocationReason = revocationReason;
+        final CRLReason finalRevocationReason = revocationReason;
         return new OCSPRevocationStatus() {
             @Override
             public RevocationStatus getRevocationStatus() {
@@ -513,7 +408,7 @@ public final class OCSPUtils {
 
             @Override
             public CRLReason getRevocationReason() {
-                return CRLReason.lookup(finalRevocationReason);
+                return finalRevocationReason;
             }
         };
     }
@@ -526,7 +421,8 @@ public final class OCSPUtils {
      * @return a list of available responder URIs.
      * @throws CertificateEncodingException
      */
-    private static List<String> getResponderURIs(X509Certificate cert) throws CertificateEncodingException {
+    @Override
+    protected List<String> getResponderURIs(X509Certificate cert) throws CertificateEncodingException {
 
         LinkedList<String> responderURIs = new LinkedList<>();
         JcaX509CertificateHolder holder = new JcaX509CertificateHolder(cert);

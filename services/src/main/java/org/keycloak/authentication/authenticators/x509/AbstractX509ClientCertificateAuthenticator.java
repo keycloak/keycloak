@@ -19,6 +19,7 @@
 package org.keycloak.authentication.authenticators.x509;
 
 import java.security.GeneralSecurityException;
+import java.security.Principal;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.function.Function;
@@ -26,12 +27,13 @@ import java.util.function.Function;
 import javax.security.auth.x500.X500Principal;
 import javax.ws.rs.core.Response;
 
-import org.bouncycastle.asn1.x500.X500Name;
-import org.bouncycastle.asn1.x500.style.BCStyle;
-import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
-import org.bouncycastle.util.encoders.Hex;
+import org.apache.commons.codec.binary.Hex;
+
 import org.keycloak.authentication.AuthenticationFlowContext;
 import org.keycloak.authentication.Authenticator;
+import org.keycloak.common.crypto.CryptoIntegration;
+import org.keycloak.common.crypto.UserIdentityExtractor;
+import org.keycloak.common.crypto.UserIdentityExtractorProvider;
 import org.keycloak.events.Details;
 import org.keycloak.forms.login.LoginFormsProvider;
 import org.keycloak.jose.jws.crypto.HashUtils;
@@ -134,27 +136,13 @@ public abstract class AbstractX509ClientCertificateAuthenticator implements Auth
 
     protected static class UserIdentityExtractorBuilder {
 
-        private static final Function<X509Certificate[],X500Name> subject = certs -> {
-            try {
-                return new JcaX509CertificateHolder(certs[0]).getSubject();
-            } catch (CertificateEncodingException e) {
-                logger.warn("Unable to get certificate Subject", e);
-            }
-            return null;
-        };
-
-        private static final Function<X509Certificate[],X500Name> issuer = certs -> {
-            try {
-                return new JcaX509CertificateHolder(certs[0]).getIssuer();
-            } catch (CertificateEncodingException e) {
-                logger.warn("Unable to get certificate Issuer", e);
-            }
-            return null;
+        private static final Function<X509Certificate[],Principal> subject = certs -> {
+            return certs[0].getSubjectX500Principal();
         };
         
         private static Function<X509Certificate[], String> getSerialnumberFunc(X509AuthenticatorConfigModel config) {
             return config.isSerialnumberHex() ? 
-                    certs -> Hex.toHexString(certs[0].getSerialNumber().toByteArray()) : 
+                    certs -> Hex.encodeHexString(certs[0].getSerialNumber().toByteArray()) : 
                     certs -> certs[0].getSerialNumber().toString();
         }
         
@@ -171,24 +159,28 @@ public abstract class AbstractX509ClientCertificateAuthenticator implements Auth
 
             UserIdentityExtractor extractor = null;
             Function<X509Certificate[], String> func = null;
+
+            UserIdentityExtractorProvider userIdExtractor = CryptoIntegration.getProvider().getIdentityExtractorProvider();
+            logger.debug("UID Source: " + userIdentitySource);
+            logger.debug("UID Extractor: " + userIdExtractor.getClass().getName());
             switch(userIdentitySource) {
 
                 case SUBJECTDN:
                     func = config.isCanonicalDnEnabled() ?
                         certs -> certs[0].getSubjectX500Principal().getName(X500Principal.CANONICAL) :
                         certs -> certs[0].getSubjectDN().getName();
-                    extractor = UserIdentityExtractor.getPatternIdentityExtractor(pattern, func);
+                    extractor = userIdExtractor.getPatternIdentityExtractor(pattern, func);
                     break;
                 case ISSUERDN:
-                    extractor = UserIdentityExtractor.getPatternIdentityExtractor(pattern, getIssuerDNFunc(config));
+                    extractor = userIdExtractor.getPatternIdentityExtractor(pattern, getIssuerDNFunc(config));
                     break;
                 case SERIALNUMBER:
-                    extractor = UserIdentityExtractor.getPatternIdentityExtractor(DEFAULT_MATCH_ALL_EXPRESSION, getSerialnumberFunc(config));
+                    extractor = userIdExtractor.getPatternIdentityExtractor(DEFAULT_MATCH_ALL_EXPRESSION, getSerialnumberFunc(config));
                     break;
                 case SHA256_THUMBPRINT:
-                    extractor = UserIdentityExtractor.getPatternIdentityExtractor(DEFAULT_MATCH_ALL_EXPRESSION, certs -> {
+                    extractor = userIdExtractor.getPatternIdentityExtractor(DEFAULT_MATCH_ALL_EXPRESSION, certs -> {
                         try {
-                            return Hex.toHexString(HashUtils.hash(JavaAlgorithm.SHA256, certs[0].getEncoded()));
+                            return Hex.encodeHexString(HashUtils.hash(JavaAlgorithm.SHA256, certs[0].getEncoded()));
                         } catch (CertificateEncodingException | HashException e) {
                             logger.warn("Unable to get certificate's thumbprint", e);
                         }
@@ -197,24 +189,24 @@ public abstract class AbstractX509ClientCertificateAuthenticator implements Auth
                     break;
                 case SERIALNUMBER_ISSUERDN:
                     func = certs -> getSerialnumberFunc(config).apply(certs) + Constants.CFG_DELIMITER + getIssuerDNFunc(config).apply(certs);
-                    extractor = UserIdentityExtractor.getPatternIdentityExtractor(DEFAULT_MATCH_ALL_EXPRESSION, func);
+                    extractor = userIdExtractor.getPatternIdentityExtractor(DEFAULT_MATCH_ALL_EXPRESSION, func);
                     break;
                 case SUBJECTDN_CN:
-                    extractor = UserIdentityExtractor.getX500NameExtractor(BCStyle.CN, subject);
+                    extractor = userIdExtractor.getX500NameExtractor("CN", subject);
                     break;
                 case SUBJECTDN_EMAIL:
-                    extractor = UserIdentityExtractor
-                            .either(UserIdentityExtractor.getX500NameExtractor(BCStyle.EmailAddress, subject))
-                            .or(UserIdentityExtractor.getX500NameExtractor(BCStyle.E, subject));
+                    extractor = userIdExtractor
+                            .either(userIdExtractor.getX500NameExtractor("EmailAddress", subject))
+                            .or(userIdExtractor.getX500NameExtractor("E", subject));
                     break;
                 case SUBJECTALTNAME_EMAIL:
-                    extractor = UserIdentityExtractor.getSubjectAltNameExtractor(1);
+                    extractor = userIdExtractor.getSubjectAltNameExtractor(1);
                     break;
                 case SUBJECTALTNAME_OTHERNAME:
-                    extractor = UserIdentityExtractor.getSubjectAltNameExtractor(0);
+                    extractor = userIdExtractor.getSubjectAltNameExtractor(0);
                     break;
                 case CERTIFICATE_PEM:
-                    extractor = UserIdentityExtractor.getCertificatePemIdentityExtractor(config);
+                    extractor = userIdExtractor.getCertificatePemIdentityExtractor();
                     break;
                 default:
                     logger.warnf("[UserIdentityExtractorBuilder:fromConfig] Unknown or unsupported user identity source: \"%s\"", userIdentitySource.getName());
