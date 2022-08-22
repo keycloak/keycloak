@@ -1,6 +1,5 @@
 body {
-	background: #fff url(../bg.png) no-repeat center bottom fixed;
-	background-size: cover;
+	background: #ffffff;
 }
 .welcome-header {
 	margin-top: 10px;
@@ -8,8 +7,8 @@ body {
 	margin-left: -10px;
 }
 .welcome-header img {
-	width: 150px;
-	margin-bottom: 40px;
+	width: 50px;
+	margin-bottom: 80px;
 }
 .welcome-message {
 	margin-top: 20px;
@@ -63,8 +62,10 @@ h3 a:hover .link {
 }
 
 .card-pf {
-	border-top: 1px solid rgba(3, 3, 3, 0.1);
-	box-shadow: 0 1px 1px rgba(3, 3, 3, 0.275);
+	border: 1px solid rgba(3, 3, 3, 0.1);
+	border-bottom: none;
+	border-radius: 4px;
+	/*box-shadow: 0 1px 1px rgba(3, 3, 3, 0.275);*/
 }
 
 .welcome-form label,

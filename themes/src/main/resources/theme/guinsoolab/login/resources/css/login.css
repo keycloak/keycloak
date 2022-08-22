@@ -6,9 +6,7 @@
 }
 
 .login-pf body {
-    background: url("../img/keycloak-bg.png") no-repeat center center fixed;
-    background-size: cover;
-    height: 10%;
+    background: #ffffff;
 }
 
 textarea.pf-c-form-control {
@@ -72,11 +70,9 @@ a#kc-current-locale-link::after {
 }
 
 div.kc-logo-text {
-    background-image: url(../img/keycloak-logo-text.png);
+    background-image: url(../img/KeyCloak-GuinsooLab.svg);
     background-repeat: no-repeat;
-    height: 63px;
-    width: 300px;
-    margin: 0 auto;
+    height: 50px;
 }
 
 div.kc-logo-text span {
@@ -94,8 +90,9 @@ div.kc-logo-text span {
     text-transform: uppercase;
     letter-spacing: 3px;
     line-height: 1.2em;
-    padding: 62px 10px 20px;
+    padding: 4px 10px 20px;
     white-space: normal;
+    margin-bottom: 90px;
 }
 
 #kc-content {
@@ -431,8 +428,12 @@ ul#kc-totp-supported-apps {
     margin-top: 20px;
 }
 
+.login-pf-page {
+    padding-top: 4px;
+}
+
 .login-pf-page .login-pf-brand {
-    margin-top: 20px;
+    margin-top: 4px;
     max-width: 360px;
     width: 40%;
 }

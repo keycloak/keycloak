@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="50px" height="50px" viewBox="0 0 50 50" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>KeyCloak-GuinsooLab</title>
+    <defs>
+        <linearGradient x1="84.4214041%" y1="16.140511%" x2="58.132643%" y2="63.5167606%" id="linearGradient-1">
+            <stop stop-color="#32C5FF" offset="0%"></stop>
+            <stop stop-color="#0091FF" offset="100%"></stop>
+        </linearGradient>
+    </defs>
+    <g id="KeyCloak-GuinsooLab" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Group" transform="translate(6.333333, 7.583333)">
+            <rect id="Rectangle" fill="#0091FF" x="7.66666667" y="0" width="5.08333333" height="5.08333333"></rect>
+            <rect id="Rectangle" fill="#0091FF" x="2.83333333" y="7.58333333" width="3.91666667" height="3.91666667"></rect>
+            <rect id="Rectangle" fill="#0091FF" x="10.25" y="8.5" width="3" height="3"></rect>
+            <rect id="Rectangle" fill="#0091FF" x="0" y="27.8333333" width="2.25" height="2.25"></rect>
+            <polygon id="Path-22" fill="url(#linearGradient-1)" points="14.5090603 0 14.5090603 11.5 25.9630897 11.5 25.9630897 23.276048 6.75 23.276048 6.75 25.672118 11.75 25.672118 11.75 27.8198183 3.46274794 27.8198183 3.46274794 30.1603539 10.2083333 30.1603539 10.25 32.3926115 5.22896352 32.3926115 5.22896352 34.8601227 25.9630897 34.8601227 37.3880962 23.276048 37.3880962 11.5 25.9630897 0"></polygon>
+        </g>
+    </g>
+</svg>
