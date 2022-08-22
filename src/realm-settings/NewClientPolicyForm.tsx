@@ -139,7 +139,7 @@ export default function NewClientPolicyForm() {
         <ViewHeader
           titleKey={
             showAddConditionsAndProfilesForm || policyName
-              ? formValues.name!
+              ? policyName
               : "realm-settings:createPolicy"
           }
           divider
@@ -537,7 +537,7 @@ export default function NewClientPolicyForm() {
                         {...props}
                         to={toNewClientPolicyCondition({
                           realm,
-                          policyName: formValues.name!,
+                          policyName: policyName!,
                         })}
                       ></Link>
                     )}
