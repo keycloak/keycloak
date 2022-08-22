@@ -10,8 +10,8 @@ import {
 import { useEffect, useMemo } from "react";
 import { FormProvider, SubmitHandler, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { Link, useParams } from "react-router-dom";
-import { useNavigate } from "react-router-dom-v5-compat";
+import { useParams } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom-v5-compat";
 import { KeyValueInput } from "../../components/key-value-form/KeyValueInput";
 import { FormAccess } from "../../components/form-access/FormAccess";
 import { HelpItem } from "../../components/help-enabler/HelpItem";

@@ -8,8 +8,8 @@ import {
 } from "@patternfly/react-core";
 import { FormProvider, useForm, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { Link, useParams } from "react-router-dom";
-import { useNavigate } from "react-router-dom-v5-compat";
+import { useParams } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom-v5-compat";
 import { ScrollForm } from "../components/scroll-form/ScrollForm";
 import type UserProfileConfig from "@keycloak/keycloak-admin-client/lib/defs/userProfileConfig";
 import { AttributeGeneralSettings } from "./user-profile/attribute/AttributeGeneralSettings";

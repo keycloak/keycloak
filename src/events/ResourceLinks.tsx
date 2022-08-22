@@ -1,5 +1,5 @@
 import { ReactElement } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router-dom-v5-compat";
 import { Tooltip } from "@patternfly/react-core";
 
 import type AdminEventRepresentation from "@keycloak/keycloak-admin-client/lib/defs/adminEventRepresentation";

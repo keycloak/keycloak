@@ -12,7 +12,8 @@ import {
 import { FormPanel } from "../components/scroll-form/FormPanel";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { cellWidth } from "@patternfly/react-table";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
+import { Link } from "react-router-dom-v5-compat";
 import { useAdminClient } from "../context/auth/AdminClient";
 import { emptyFormatter, upperCaseFormatter } from "../util";
 import type IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";

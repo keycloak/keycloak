@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Link, useParams, useRouteMatch } from "react-router-dom";
+import { useParams, useRouteMatch } from "react-router-dom";
+import { Link } from "react-router-dom-v5-compat";
 import { useNavigate } from "react-router-dom-v5-compat";
 import { useTranslation } from "react-i18next";
 import { FormProvider, useForm } from "react-hook-form";

@@ -13,7 +13,8 @@ import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/
 import type { ClientQuery } from "@keycloak/keycloak-admin-client/lib/resources/clients";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useHistory } from "react-router-dom";
+import { useHistory } from "react-router-dom";
+import { Link } from "react-router-dom-v5-compat";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { formattedLinkTableCell } from "../components/external-link/FormattedLink";

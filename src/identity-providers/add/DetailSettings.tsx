@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Link, useParams } from "react-router-dom";
-import { useNavigate } from "react-router-dom-v5-compat";
+import { useParams } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom-v5-compat";
 import { useTranslation } from "react-i18next";
 import {
   Controller,

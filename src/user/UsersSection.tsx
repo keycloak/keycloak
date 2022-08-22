@@ -31,8 +31,8 @@ import type ComponentRepresentation from "@keycloak/keycloak-admin-client/lib/de
 import type UserRepresentation from "@keycloak/keycloak-admin-client/lib/defs/userRepresentation";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useHistory } from "react-router-dom";
-import { useNavigate } from "react-router-dom-v5-compat";
+import { useHistory } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom-v5-compat";
 import { useAlerts } from "../components/alert/Alerts";
 import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";

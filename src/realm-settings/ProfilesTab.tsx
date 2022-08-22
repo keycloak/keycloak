@@ -20,7 +20,7 @@ import { useConfirmDialog } from "../components/confirm-dialog/ConfirmDialog";
 import { useRealm } from "../context/realm-context/RealmContext";
 import { useAlerts } from "../components/alert/Alerts";
 import { prettyPrintJSON } from "../util";
-import { Link } from "react-router-dom";
+import { Link } from "react-router-dom-v5-compat";
 import { toAddClientProfile } from "./routes/AddClientProfile";
 import type ClientProfileRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientProfileRepresentation";
 import { toClientProfile } from "./routes/ClientProfile";
