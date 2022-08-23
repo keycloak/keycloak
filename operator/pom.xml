@@ -114,16 +114,6 @@
             <artifactId>keycloak-common</artifactId>
         </dependency>
 
-        <!-- FIXME: Adding BC since removed from common, this will need to be removed -->
-        <dependency>
-            <groupId>org.bouncycastle</groupId>
-            <artifactId>bcprov-jdk15on</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.bouncycastle</groupId>
-            <artifactId>bcpkix-jdk15on</artifactId>
-        </dependency>
-
         <!-- Test -->
         <dependency>
             <groupId>io.quarkus</groupId>
