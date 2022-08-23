@@ -55,6 +55,7 @@ import {
   toIdentityProvider,
 } from "../routes/IdentityProvider";
 import { PermissionsTab } from "../../components/permission-tab/PermissionTab";
+import { ExtendedFieldsForm } from "../component/ExtendedFieldsForm";
 
 type HeaderProps = {
   onChange: (value: boolean) => void;
@@ -276,7 +277,12 @@ export default function DetailSettings() {
           isHorizontal
           onSubmit={handleSubmit(save)}
         >
-          {!isOIDC && !isSAML && <GeneralSettings create={false} id={alias} />}
+          {!isOIDC && !isSAML && (
+            <>
+              <GeneralSettings create={false} id={alias} />
+              <ExtendedFieldsForm providerId={alias} />
+            </>
+          )}
           {isOIDC && <OIDCGeneralSettings id={alias} />}
           {isSAML && <SamlGeneralSettings id={alias} />}
         </FormAccess>

@@ -10,6 +10,7 @@ import {
 } from "@patternfly/react-core";
 
 import type IdentityProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/identityProviderRepresentation";
+import { ExtendedFieldsForm } from "../component/ExtendedFieldsForm";
 import { ViewHeader } from "../../components/view-header/ViewHeader";
 import { toUpperCase } from "../../util";
 import { FormAccess } from "../../components/form-access/FormAccess";
@@ -46,8 +47,8 @@ export default function AddIdentityProvider() {
       navigate(
         toIdentityProvider({
           realm,
-          providerId: providerId!,
-          alias: providerId!,
+          providerId,
+          alias: providerId,
           tab: "settings",
         })
       );
@@ -60,7 +61,7 @@ export default function AddIdentityProvider() {
     <>
       <ViewHeader
         titleKey={t("addIdentityProvider", {
-          provider: toUpperCase(providerId!),
+          provider: toUpperCase(providerId),
         })}
       />
       <PageSection variant="light">
@@ -70,7 +71,8 @@ export default function AddIdentityProvider() {
           onSubmit={handleSubmit(save)}
         >
           <FormProvider {...form}>
-            <GeneralSettings id={providerId!} />
+            <GeneralSettings id={providerId} />
+            <ExtendedFieldsForm providerId={providerId} />
           </FormProvider>
           <ActionGroup>
             <Button
