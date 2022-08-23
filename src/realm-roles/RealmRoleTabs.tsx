@@ -264,8 +264,7 @@ export default function RealmRoleTabs() {
           AlertVariant.success,
           t("compositesRemovedAlertDescription")
         );
-        const loc = url.replace(/\/AssociatedRoles/g, "/details");
-        navigate(loc);
+        toDetail();
         refresh();
       } catch (error) {
         addError("roles:roleDeleteError", error);
@@ -280,6 +279,20 @@ export default function RealmRoleTabs() {
   const clientRoleRouteMatch = useRouteMatch<ClientRoleParams>(
     ClientRoleRoute.path
   );
+
+  const toDetail = () => {
+    const to = clientRoleRouteMatch
+      ? toClientRole({
+          ...clientRoleRouteMatch.params,
+          tab: "details",
+        })
+      : toRealmRole({
+          realm: realm?.realm!,
+          id,
+          tab: "details",
+        });
+    navigate(to);
+  };
 
   const toAssociatedRoles = () => {
     const to = clientRoleRouteMatch
