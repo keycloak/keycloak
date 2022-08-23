@@ -285,6 +285,25 @@ describe("Client Scopes test", () => {
       );
     });
 
+    it("hides 'consent text' field when 'display consent' switch is disabled", () => {
+      sidebarPage.waitForPageLoad();
+      listingPage.goToCreateItem();
+
+      createClientScopePage
+        .getSwitchDisplayOnConsentScreenInput()
+        .should("be.checked");
+
+      createClientScopePage.getConsentScreenTextInput().should("exist");
+
+      createClientScopePage.switchDisplayOnConsentScreen();
+
+      createClientScopePage
+        .getSwitchDisplayOnConsentScreenInput()
+        .should("not.be.checked");
+
+      createClientScopePage.getConsentScreenTextInput().should("not.exist");
+    });
+
     it("Client scope CRUD test", () => {
       itemId += "_" + (Math.random() + 1).toString(36).substring(7);
 

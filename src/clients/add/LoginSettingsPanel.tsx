@@ -24,7 +24,7 @@ export const LoginSettingsPanel = ({ access }: { access?: boolean }) => {
   const loginThemes = useServerInfo().themes!["login"];
   const consentRequired = watch("consentRequired");
   const displayOnConsentScreen: string = watch(
-    "attributes.display.on.consent.screen"
+    convertAttributeNameToForm("attributes.display.on.consent.screen")
   );
 
   return (

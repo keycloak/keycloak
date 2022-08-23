@@ -44,9 +44,7 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
     handleSubmit,
     setValue,
     formState: { errors },
-  } = useForm<ClientScopeRepresentation>({
-    defaultValues: { attributes: { "display.on.consent.screen": "true" } },
-  });
+  } = useForm<ClientScopeRepresentation>();
   const { realm } = useRealm();
 
   const providers = useLoginProviders();
@@ -54,11 +52,12 @@ export const ScopeForm = ({ clientScope, save }: ScopeFormProps) => {
   const [openType, setOpenType] = useState(false);
   const { id } = useParams<{ id: string }>();
 
-  const displayOnConsentScreen = useWatch({
+  const displayOnConsentScreen = useWatch<string>({
     control,
-    name: "attributes.display.on.consent.screen",
+    name: convertAttributeNameToForm("attributes.display.on.consent.screen"),
     defaultValue:
-      clientScope.attributes?.["display.on.consent.screen"] ?? "true",
+      clientScope.attributes?.["display.on.consent.screen"] ??
+      (id ? "false" : "true"),
   });
 
   useEffect(() => {

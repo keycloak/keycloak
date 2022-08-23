@@ -8,6 +8,7 @@ export default class CreateClientScopePage extends CommonPage {
   clientScopeDescriptionInput: string;
   clientScopeTypeDrpDwn: string;
   clientScopeTypeList: string;
+  displayOnConsentInput: string;
   displayOnConsentSwitch: string;
   consentScreenTextInput: string;
   includeInTokenSwitch: string;
@@ -25,8 +26,9 @@ export default class CreateClientScopePage extends CommonPage {
     this.clientScopeDescriptionInput = "#kc-description";
     this.clientScopeTypeDrpDwn = "#kc-protocol";
     this.clientScopeTypeList = "#kc-protocol + ul";
+    this.displayOnConsentInput = '[id="kc-display.on.consent.screen-switch"]';
     this.displayOnConsentSwitch =
-      '[id="kc-display.on.consent.screen"] + .pf-c-switch__toggle';
+      this.displayOnConsentInput + " + .pf-c-switch__toggle";
     this.consentScreenTextInput = "#kc-consent-screen-text";
     this.includeInTokenSwitch =
       '[id="includeInTokenScope"] + .pf-c-switch__toggle';
@@ -75,6 +77,14 @@ export default class CreateClientScopePage extends CommonPage {
     cy.get(this.clientScopeNameError).should((!exist ? "not." : "") + "exist");
 
     return this;
+  }
+
+  getSwitchDisplayOnConsentScreenInput() {
+    return cy.get(this.displayOnConsentInput);
+  }
+
+  getConsentScreenTextInput() {
+    return cy.get(this.consentScreenTextInput);
   }
 
   switchDisplayOnConsentScreen() {
