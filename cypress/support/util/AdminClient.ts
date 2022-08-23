@@ -56,7 +56,10 @@ class AdminClient {
     const client = (
       await this.client.clients.find({ clientId: clientName })
     )[0];
-    await this.client.clients.del({ id: client.id! });
+
+    if (client) {
+      await this.client.clients.del({ id: client.id! });
+    }
   }
 
   async createGroup(groupName: string) {

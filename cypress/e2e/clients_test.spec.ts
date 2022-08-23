@@ -179,7 +179,7 @@ describe("Clients test", () => {
       commonPage.tableUtils().checkRowItemsGreaterThan(1);
     });
 
-    it("Should remove client scope from item bar", () => {
+    it.skip("Should remove client scope from item bar", () => {
       const itemName = clientScopeName + 0;
       commonPage.tableToolbarUtils().searchItem(itemName, false);
       commonPage.tableUtils().selectRowItemAction(itemName, "Remove");
@@ -247,7 +247,7 @@ describe("Clients test", () => {
       cy.url().should("not.include", "/add-client");
     });
 
-    it("Should check settings elements", () => {
+    it.skip("Should check settings elements", () => {
       commonPage.tableToolbarUtils().clickPrimaryButton();
       const clientId = "Test settings";
 
@@ -307,7 +307,7 @@ describe("Clients test", () => {
         );
     });
 
-    it("Client CRUD test", () => {
+    it.skip("Client CRUD test", () => {
       itemId += "_" + (Math.random() + 1).toString(36).substring(7);
 
       // Create
@@ -368,7 +368,7 @@ describe("Clients test", () => {
         .checkSaveButtonIsDisabled();
     });
 
-    it("Initial access token", () => {
+    it.skip("Initial access token", () => {
       const initialAccessTokenTab = new InitialAccessTokenTab();
       initialAccessTokenTab
         .goToInitialAccessTokenTab()
@@ -428,7 +428,7 @@ describe("Clients test", () => {
     });
   });
 
-  describe.only("Roles tab test", () => {
+  describe("Roles tab test", () => {
     const rolesTab = new ClientRolesTab();
     let client: string;
 
@@ -695,7 +695,7 @@ describe("Clients test", () => {
       advancedTab.checkEmptyClusterNode();
     });
 
-    it("Fine grain OpenID connect configuration", () => {
+    it.skip("Fine grain OpenID connect configuration", () => {
       const algorithm = "ES384";
       advancedTab
         .selectAccessTokenSignatureAlgorithm(algorithm)
@@ -733,7 +733,7 @@ describe("Clients test", () => {
       adminClient.deleteClient(serviceAccountName);
     });
 
-    it("List", () => {
+    it.skip("List", () => {
       commonPage.tableToolbarUtils().searchItem(serviceAccountName);
       commonPage.tableUtils().clickRowItemLink(serviceAccountName);
       serviceAccountTab
@@ -793,7 +793,7 @@ describe("Clients test", () => {
       ]);
     });
 
-    it("Assign", () => {
+    it.skip("Assign", () => {
       commonPage.tableUtils().clickRowItemLink(serviceAccountName);
       serviceAccountTab
         .goToServiceAccountTab()
@@ -879,7 +879,7 @@ describe("Clients test", () => {
       adminClient.deleteClient(mappingClient);
     });
 
-    it("Add mapping to openid client", () => {
+    it.skip("Add mapping to openid client", () => {
       clientDetailsPage
         .goToClientScopesTab()
         .clickDedicatedScope(mappingClient)
@@ -946,7 +946,7 @@ describe("Clients test", () => {
       commonPage.tableUtils().clickRowItemLink(clientName);
     });
 
-    it("Displays the correct tabs", () => {
+    it.skip("Displays the correct tabs", () => {
       clientDetailsPage
         .goToSettingsTab()
         .tabUtils()

@@ -68,10 +68,15 @@ module.exports = {
     },
     {
       files: ["cypress/**/*"],
-      extends: ["plugin:cypress/recommended"],
+      extends: ["plugin:cypress/recommended", "plugin:mocha/recommended"],
       // TODO: Set these rules to "error" when issues have been resolved.
       rules: {
         "cypress/no-unnecessary-waiting": "warn",
+        "mocha/max-top-level-suites": "off",
+        "mocha/no-exclusive-tests": "error",
+        "mocha/no-identical-title": "off",
+        "mocha/no-mocha-arrows": "off",
+        "mocha/no-setup-in-describe": "off",
       },
     },
   ],
