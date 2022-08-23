@@ -16,7 +16,6 @@ public class VaultOptions {
             .category(OptionCategory.VAULT)
             .description("Enables a vault provider.")
             .buildTime(true)
-            .expectedValues(Provider.values())
             .build();
 
     public static final Option VAULT_DIR = new OptionBuilder<>("vault-dir", File.class)

@@ -425,12 +425,15 @@ public final class Picocli {
                     continue;
                 }
 
-                Iterable<String> expectedValues = mapper.getExpectedValues();
-
                 OptionSpec.Builder optBuilder = OptionSpec.builder(name)
                         .description(description)
                         .paramLabel(mapper.getParamLabel())
-                        .completionCandidates(expectedValues)
+                        .completionCandidates(new Iterable<String>() {
+                            @Override
+                            public Iterator<String> iterator() {
+                                return mapper.getExpectedValues().iterator();
+                            }
+                        })
                         .parameterConsumer(PropertyMapperParameterConsumer.INSTANCE)
                         .hidden(mapper.isHidden());
 

@@ -66,7 +66,6 @@
         <module name="com.google.zxing.core"/>
         <module name="com.google.zxing.javase"/>
         <module name="org.jboss.logging"/>
-        <module name="org.bouncycastle" />
         <module name="javax.api"/>
         <module name="javax.activation.api"/>
         <module name="javax.json.api"/>

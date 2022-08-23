@@ -27,7 +27,6 @@ import org.keycloak.adapters.rotation.HardcodedPublicKeyLocator;
 import org.keycloak.adapters.rotation.JWKPublicKeyLocator;
 import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.common.enums.SslRequired;
-import org.keycloak.common.util.BouncyIntegration;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.enums.TokenStore;
 import org.keycloak.representations.adapters.config.AdapterConfig;
