@@ -17,6 +17,8 @@ import { useAccess } from "./context/access/Access";
 import { routes } from "./route-config";
 import { AddRealmRoute } from "./realm/routes/AddRealm";
 
+import "./page-nav.css";
+
 export const PageNav: FunctionComponent = () => {
   const { t } = useTranslation("common");
   const { hasAccess, hasSomeAccess } = useAccess();
@@ -89,6 +91,7 @@ export const PageNav: FunctionComponent = () => {
 
   return (
     <PageSidebar
+      className="keycloak__page_nav__nav"
       nav={
         <Nav onSelect={onSelect}>
           <NavList>
