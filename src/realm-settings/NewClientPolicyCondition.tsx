@@ -197,7 +197,7 @@ export default function NewClientPolicyCondition() {
                     ? `realm-settings-help:${camelCase(
                         conditionType.replace(/-/g, " ")
                       )}`
-                    : "realm-settings:anyClient"
+                    : "realm-settings-help:conditions"
                 }
                 fieldLabelId="realm-settings:conditionType"
               />

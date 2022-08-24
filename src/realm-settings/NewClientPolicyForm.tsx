@@ -524,7 +524,7 @@ export default function NewClientPolicyForm() {
                   <Text className="kc-conditions" component={TextVariants.h1}>
                     {t("conditions")}
                     <HelpItem
-                      helpText="realm-settings:realm-settings-help:conditions"
+                      helpText="realm-settings-help:conditions"
                       fieldLabelId="realm-settings:conditions"
                     />
                   </Text>
