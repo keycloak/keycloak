@@ -123,6 +123,18 @@ public class HostnameDistTest {
         Assert.assertTrue(when().get("https://mykeycloak.127.0.0.1.nip.io:8443/realms/master/protocol/openid-connect/auth?client_id=security-admin-console&redirect_uri=https://mykeycloakadmin.127.0.0.1.nip.io:8443/admin/master/console&state=02234324-d91e-4bf2-8396-57498e96b12a&response_mode=fragment&response_type=code&scope=openid&nonce=f8f3812e-e349-4bbf-8d15-cbba4927f5e5&code_challenge=7qjD_v11WGkt1ig-ZFHxJdrEvuTlzjFRgRGQ_5ADcko&code_challenge_method=S256").asString().contains("Invalid parameter: redirect_uri"));
     }
 
+    @Test
+    @Launch({ "start", "--proxy=edge", "--hostname-url=http://mykeycloak.127.0.0.1.nip.io:1234" })
+    public void testFrontendUrl() {
+        assertFrontEndUrl("https://mykeycloak.127.0.0.1.nip.io:8443", "http://mykeycloak.127.0.0.1.nip.io:1234/");
+    }
+
+    @Test
+    @Launch({ "start", "--proxy=edge", "--hostname=mykeycloak.127.0.0.1.nip.io", "--hostname-admin-url=http://mykeycloakadmin.127.0.0.1.nip.io:1234" })
+    public void testAdminUrl() {
+        Assert.assertTrue(when().get("https://mykeycloak.127.0.0.1.nip.io:8443").asString().contains("http://mykeycloakadmin.127.0.0.1.nip.io:1234/admin/"));
+    }
+
     private OIDCConfigurationRepresentation getServerMetadata(String baseUrl) {
         return when().get(baseUrl + "/realms/master/.well-known/openid-configuration").as(OIDCConfigurationRepresentation.class);
     }
