@@ -1,0 +1,24 @@
+<?xml version="1.0" ?>
+
+<config xmlns="urn:jboss:galleon:config:1.0" name="domain.xml" model="domain">
+    <!-- domain.server-group features are excluded from every domain group below
+         simply to preserve the order of the profiles specified here.
+         Not excluding the server groups will work but profiles full and full-ha
+         will appear in the resulting config before ha because the server groups that are
+         introduced into the config by the first domain group and overriden to reference
+         full and full-ha below will make those profiles installed before ha.
+    -->
+    <feature-group name="domain-keycloak-standalone">
+        <exclude spec="domain.server-group"/>
+    </feature-group>
+    <feature-group name="domain-keycloak-clustered">
+        <exclude spec="domain.server-group"/>
+    </feature-group>
+    <feature-group name="domain-load-balancer">
+        <exclude spec="domain.server-group"/>
+        <exclude feature-id="domain.interface:interface=unsecure"/>
+    </feature-group>
+
+    <feature-group name="domain-server-groups-keycloak"/>
+
+</config>

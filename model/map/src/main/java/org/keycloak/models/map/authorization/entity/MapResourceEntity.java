@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Red Hat, Inc. and/or its affiliates
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,171 +17,64 @@
 
 package org.keycloak.models.map.authorization.entity;
 
+import org.keycloak.models.map.annotations.GenerateEntityImplementations;
 import org.keycloak.models.map.common.AbstractEntity;
+import org.keycloak.models.map.common.DeepCloner;
+import org.keycloak.models.map.common.EntityWithAttributes;
+import org.keycloak.models.map.common.UpdatableEntity;
 
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 
-public class MapResourceEntity<K> implements AbstractEntity<K> {
-    
-    public static final Comparator<MapResourceEntity<?>> COMPARE_BY_NAME = Comparator.comparing(MapResourceEntity::getName);
+@GenerateEntityImplementations(
+        inherits = "org.keycloak.models.map.authorization.entity.MapResourceEntity.AbstractMapResourceEntity"
+)
+@DeepCloner.Root
+public interface MapResourceEntity extends UpdatableEntity, AbstractEntity, EntityWithAttributes {
 
-    private final K id;
-    private String name;
-    private String displayName;
-    private final Set<String> uris = new HashSet<>();
-    private String type;
-    private String iconUri;
-    private String owner;
-    private boolean ownerManagedAccess;
-    private String resourceServerId;
-    private final Set<String> scopeIds = new HashSet<>();
-    private final Set<String> policyIds = new HashSet<>();
-    private final Map<String, List<String>> attributes = new HashMap<>();
-    private boolean updated = false;
+    public abstract class AbstractMapResourceEntity extends UpdatableEntity.Impl implements MapResourceEntity {
 
-    public MapResourceEntity(K id) {
-        this.id = id;
-    }
+        private String id;
 
-    public MapResourceEntity() {
-        this.id = null;
-    }
+        @Override
+        public String getId() {
+            return this.id;
+        }
 
-    @Override
-    public K getId() {
-        return id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.updated |= !Objects.equals(this.name, name);
-        this.name = name;
-    }
-
-    public String getDisplayName() {
-        return displayName;
-    }
-
-    public void setDisplayName(String displayName) {
-        this.updated |= !Objects.equals(this.displayName, displayName);
-        this.displayName = displayName;
-    }
-
-    public Set<String> getUris() {
-        return uris;
-    }
-
-    public void setUris(Set<String> uris) {
-        if (Objects.equals(this.uris, uris)) return;
-
-        this.updated = true;
-        this.uris.clear();
-
-        if (uris != null) {
-            this.uris.addAll(uris);
+        @Override
+        public void setId(String id) {
+            if (this.id != null) throw new IllegalStateException("Id cannot be changed");
+            this.id = id;
+            this.updated |= id != null;
         }
     }
 
-    public String getType() {
-        return type;
-    }
+    String getRealmId();
+    void setRealmId(String realmId);
 
-    public void setType(String type) {
-        this.updated |= !Objects.equals(this.type, type);
-        this.type = type;
-    }
+    String getName();
+    void setName(String name);
 
-    public String getIconUri() {
-        return iconUri;
-    }
+    String getDisplayName();
+    void setDisplayName(String displayName);
 
-    public void setIconUri(String iconUri) {
-        this.updated |= !Objects.equals(this.iconUri, iconUri);
-        this.iconUri = iconUri;
-    }
+    Set<String> getUris();
+    void setUris(Set<String> uris);
 
-    public String getOwner() {
-        return owner;
-    }
+    String getType();
+    void setType(String type);
 
-    public void setOwner(String owner) {
-        this.updated |= !Objects.equals(this.owner, owner);
-        this.owner = owner;
-    }
+    String getIconUri();
+    void setIconUri(String iconUri);
 
-    public boolean isOwnerManagedAccess() {
-        return ownerManagedAccess;
-    }
+    String getOwner();
+    void setOwner(String owner);
 
-    public void setOwnerManagedAccess(boolean ownerManagedAccess) {
-        this.updated |= this.ownerManagedAccess != ownerManagedAccess;
-        this.ownerManagedAccess = ownerManagedAccess;
-    }
+    Boolean isOwnerManagedAccess();
+    void setOwnerManagedAccess(Boolean ownerManagedAccess);
 
-    public String getResourceServerId() {
-        return resourceServerId;
-    }
+    void setResourceServerId(String resourceServerId);
+    String getResourceServerId();
 
-    public void setResourceServerId(String resourceServerId) {
-        this.updated |= !Objects.equals(this.resourceServerId, resourceServerId);
-        this.resourceServerId = resourceServerId;
-    }
-
-    public Set<String> getScopeIds() {
-        return scopeIds;
-    }
-
-    public void setScopeIds(Set<String> scopeIds) {
-        if (Objects.equals(this.scopeIds, scopeIds)) return;
-
-        this.updated = true;
-        this.scopeIds.clear();
-        if (scopeIds != null) {
-            this.scopeIds.addAll(scopeIds);
-        }
-    }
-
-    public Set<String> getPolicyIds() {
-        return policyIds;
-    }
-
-    public Map<String, List<String>> getAttributes() {
-        return attributes;
-    }
-
-    public List<String> getAttribute(String name) {
-        return attributes.get(name);
-    }
-
-    public String getSingleAttribute(String name) {
-        List<String> attributeValues = attributes.get(name);
-        return  attributeValues == null || attributeValues.isEmpty() ? null : attributeValues.get(0);
-    }
-
-    public void setAttribute(String name, List<String> value) {
-        this.updated |= !Objects.equals(this.attributes.put(name, value), value);
-    }
-
-    public void removeAttribute(String name) {
-        this.updated |= this.attributes.remove(name) != null;
-    }
-
-    @Override
-    public boolean isUpdated() {
-        return updated;
-    }
-
-    @Override
-    public String toString() {
-        return String.format("%s@%08x", getId(), System.identityHashCode(this));
-    }
+    Set<String> getScopeIds();
+    void setScopeIds(Set<String> scopeIds);
 }

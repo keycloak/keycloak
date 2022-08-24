@@ -105,9 +105,13 @@ export class AccountServiceClient {
         }
 
         if (response !== null && response.data != null) {
-            ContentAlert.danger(
-                `${response.statusText}: ${response.data['errorMessage'] ? response.data['errorMessage'] : ''} ${response.data['error'] ? response.data['error'] : ''}`
-            );
+            if (response.data['errors'] != null) {
+                for(let err of response.data['errors'])
+                    ContentAlert.danger(err['errorMessage'], err['params']);
+            } else {
+                ContentAlert.danger(
+                `${response.statusText}: ${response.data['errorMessage'] ? response.data['errorMessage'] : ''} ${response.data['error'] ? response.data['error'] : ''}`);
+            };
         } else {
             ContentAlert.danger(response.statusText);
         }

@@ -19,5 +19,5 @@ package org.keycloak.models;
 
 import org.keycloak.provider.ProviderFactory;
 
-public interface RoleProviderFactory extends ProviderFactory<RoleProvider> {
+public interface RoleProviderFactory<T extends RoleProvider>  extends ProviderFactory<T> {
 }

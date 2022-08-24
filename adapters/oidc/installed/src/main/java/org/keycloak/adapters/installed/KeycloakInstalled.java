@@ -30,7 +30,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.security.SecureRandom;
 import java.util.Deque;
 import java.util.Locale;
 import java.util.Map;
@@ -57,7 +56,7 @@ import org.keycloak.adapters.rotation.AdapterTokenVerifier;
 import org.keycloak.common.VerificationException;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.KeycloakUriBuilder;
-import org.keycloak.common.util.RandomString;
+import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.AccessTokenResponse;
 import org.keycloak.representations.IDToken;
@@ -107,6 +106,8 @@ public class KeycloakInstalled {
     Pattern callbackPattern = Pattern.compile("callback\\s*=\\s*\"([^\"]+)\"");
     Pattern paramPattern = Pattern.compile("param=\"([^\"]+)\"\\s+label=\"([^\"]+)\"\\s+mask=(\\S+)");
     Pattern codePattern = Pattern.compile("code=([^&]+)");
+    private CallbackListener callback;
+    private DesktopProvider desktopProvider = new DesktopProvider();
 
 
     public KeycloakInstalled() {
@@ -194,7 +195,7 @@ public class KeycloakInstalled {
     }
 
     public void loginDesktop() throws IOException, VerificationException, OAuthErrorException, URISyntaxException, ServerRequest.HttpFailure, InterruptedException {
-        CallbackListener callback = new CallbackListener();
+        callback = new CallbackListener();
         callback.start();
 
         String redirectUri = getRedirectUri(callback);
@@ -203,7 +204,7 @@ public class KeycloakInstalled {
 
         String authUrl = createAuthUrl(redirectUri, state, pkce);
 
-        Desktop.getDesktop().browse(new URI(authUrl));
+        desktopProvider.browse(new URI(authUrl));
 
         try {
             callback.await();
@@ -223,6 +224,12 @@ public class KeycloakInstalled {
         processCode(callback.code, redirectUri, pkce);
 
         status = Status.LOGGED_DESKTOP;
+    }
+
+    public void close() {
+        if (callback != null) {
+            callback.stop();
+        }
     }
 
     protected String createAuthUrl(String redirectUri, String state, Pkce pkce) {
@@ -261,11 +268,11 @@ public class KeycloakInstalled {
 
         // pass the id_token_hint so that sessions is invalidated for this particular session
         String logoutUrl = deployment.getLogoutUrl().clone()
-                .queryParam(OAuth2Constants.REDIRECT_URI, redirectUri)
+                .queryParam(OAuth2Constants.POST_LOGOUT_REDIRECT_URI, redirectUri)
                 .queryParam("id_token_hint", idTokenString)
                 .build().toString();
 
-        Desktop.getDesktop().browse(new URI(logoutUrl));
+        desktopProvider.browse(new URI(logoutUrl));
 
         try {
             callback.await();
@@ -301,272 +308,6 @@ public class KeycloakInstalled {
 
         status = Status.LOGGED_MANUAL;
     }
-
-    public static class Console {
-        protected java.io.Console console = System.console();
-        protected PrintWriter writer;
-        protected BufferedReader reader;
-
-        static Console SINGLETON = new Console();
-
-        private Console() {
-        }
-
-
-        public PrintWriter writer() {
-            if (console == null) {
-                if (writer == null) {
-                    writer = new PrintWriter(System.err, true);
-                }
-                return writer;
-            }
-            return console.writer();
-        }
-
-        public Reader reader() {
-            if (console == null) {
-                return getReader();
-            }
-            return console.reader();
-        }
-
-        protected BufferedReader getReader() {
-            if (reader != null) return reader;
-            reader = new BufferedReader(new BufferedReader(new InputStreamReader(System.in)));
-            return reader;
-        }
-
-        public Console format(String fmt, Object... args) {
-            if (console == null) {
-                writer().format(fmt, args);
-                return this;
-            }
-            console.format(fmt, args);
-            return this;
-        }
-
-        public Console printf(String format, Object... args) {
-            if (console == null) {
-                writer().printf(format, args);
-                return this;
-            }
-            console.printf(format, args);
-            return this;
-        }
-
-        public String readLine(String fmt, Object... args) {
-            if (console == null) {
-                format(fmt, args);
-                return readLine();
-            }
-            return console.readLine(fmt, args);
-        }
-
-        public boolean confirm(String fmt, Object... args) {
-            String prompt = "";
-            while (!"y".equals(prompt) && !"n".equals(prompt)) {
-                prompt = readLine(fmt, args);
-            }
-            return "y".equals(prompt);
-
-        }
-
-        public String prompt(String fmt, Object... args) {
-            String prompt = "";
-            while (prompt.equals("")) {
-                prompt = readLine(fmt, args).trim();
-            }
-            return prompt;
-
-        }
-
-        public String passwordPrompt(String fmt, Object... args) {
-            String prompt = "";
-            while (prompt.equals("")) {
-                char[] val = readPassword(fmt, args);
-                prompt = new String(val);
-                prompt = prompt.trim();
-            }
-            return prompt;
-
-        }
-
-        public String readLine() {
-            if (console == null) {
-                try {
-                    return getReader().readLine();
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-            return console.readLine();
-        }
-
-        public char[] readPassword(String fmt, Object... args) {
-            if (console == null) {
-                return readLine(fmt, args).toCharArray();
-
-            }
-            return console.readPassword(fmt, args);
-        }
-
-        public char[] readPassword() {
-            if (console == null) {
-                return readLine().toCharArray();
-            }
-            return console.readPassword();
-        }
-
-        public void flush() {
-            if (console == null) {
-                System.err.flush();
-                return;
-            }
-            console.flush();
-        }
-
-        public void stderrOutput() {
-            //System.err.println("not using System.console()");
-            console = null;
-        }
-    }
-
-    public static Console console() {
-        return Console.SINGLETON;
-    }
-
-    public boolean loginCommandLine() throws IOException, ServerRequest.HttpFailure, VerificationException {
-        String redirectUri = "urn:ietf:wg:oauth:2.0:oob";
-
-        return loginCommandLine(redirectUri);
-    }
-
-
-    /**
-     * Experimental proprietary WWW-Authentication challenge protocol.
-     * WWW-Authentication: X-Text-Form-Challenge callback="{url}" param="{param-name}" label="{param-display-label}"
-     *
-     * @param redirectUri
-     * @return
-     * @throws IOException
-     * @throws ServerRequest.HttpFailure
-     * @throws VerificationException
-     */
-    public boolean loginCommandLine(String redirectUri) throws IOException, ServerRequest.HttpFailure, VerificationException {
-        String authUrl = deployment.getAuthUrl().clone()
-                .queryParam(OAuth2Constants.RESPONSE_TYPE, OAuth2Constants.CODE)
-                .queryParam(OAuth2Constants.CLIENT_ID, deployment.getResourceName())
-                .queryParam(OAuth2Constants.REDIRECT_URI, redirectUri)
-                .queryParam("display", "console")
-                .queryParam(OAuth2Constants.SCOPE, OAuth2Constants.SCOPE_OPENID)
-                .build().toString();
-        ResteasyClient client = createResteasyClient();
-        try {
-            //System.err.println("initial request");
-            Response response = client.target(authUrl).request().get();
-            while (true) {
-                if (response.getStatus() == 403) {
-                    if (response.getMediaType() != null) {
-                        String splash = response.readEntity(String.class);
-                        console().writer().println(splash);
-                    } else {
-                        System.err.println("Forbidden to login");
-                    }
-                    return false;
-                } else if (response.getStatus() == 401) {
-                    String authenticationHeader = response.getHeaderString(HttpHeaders.WWW_AUTHENTICATE);
-                    if (authenticationHeader == null) {
-                        System.err.println("Failure:  Invalid protocol.  No WWW-Authenticate header");
-                        return false;
-                    }
-                    //System.err.println("got header: " + authenticationHeader);
-                    if (!authenticationHeader.contains("X-Text-Form-Challenge")) {
-                        System.err.println("Failure:  Invalid WWW-Authenticate header.");
-                        return false;
-                    }
-                    if (response.getMediaType() != null) {
-                        String splash = response.readEntity(String.class);
-                        console().writer().println(splash);
-                    } else {
-                        response.close();
-                    }
-                    Matcher m = callbackPattern.matcher(authenticationHeader);
-                    if (!m.find()) {
-                        System.err.println("Failure: Invalid WWW-Authenticate header.");
-                        return false;
-                    }
-                    String callback = m.group(1);
-                    //System.err.println("callback: " + callback);
-                    m = paramPattern.matcher(authenticationHeader);
-                    Form form = new Form();
-                    while (m.find()) {
-                        String param = m.group(1);
-                        String label = m.group(2);
-                        String mask = m.group(3).trim();
-                        boolean maskInput = mask.equals("true");
-                        String value = null;
-                        if (maskInput) {
-                            char[] txt = console().readPassword(label);
-                            value = new String(txt);
-                        } else {
-                            value = console().readLine(label);
-                        }
-                        form.param(param, value);
-                    }
-                    response.close();
-                    client.close();
-                    client = createResteasyClient();
-                    response = client.target(callback).request().post(Entity.form(form));
-                } else if (response.getStatus() == 302) {
-                    int redirectCount = 0;
-                    do {
-                        String location = response.getLocation().toString();
-                        Matcher m = codePattern.matcher(location);
-                        if (!m.find()) {
-                            response.close();
-                            client.close();
-                            client = createResteasyClient();
-                            response = client.target(location).request().get();
-                        } else {
-                            response.close();
-                            client.close();
-                            String code = m.group(1);
-                            processCode(code, redirectUri, null);
-                            return true;
-                        }
-                        if (response.getStatus() == 302 && redirectCount++ > 4) {
-                            System.err.println("Too many redirects.  Aborting");
-                            return false;
-                        }
-                    } while (response.getStatus() == 302);
-                } else {
-                    System.err.println("Unknown response from server: " + response.getStatus());
-                    return false;
-                }
-            }
-        } catch (Exception ex) {
-            throw ex;
-        } finally {
-            client.close();
-
-        }
-    }
-
-    protected ResteasyClient getResteasyClient() {
-        if (this.resteasyClient == null) {
-            this.resteasyClient = createResteasyClient();
-        }
-        return this.resteasyClient;
-    }
-
-    protected ResteasyClient createResteasyClient() {
-        return new ResteasyClientBuilder()
-                .connectionCheckoutTimeout(1, TimeUnit.HOURS)
-                .connectionTTL(1, TimeUnit.HOURS)
-                .socketTimeout(1, TimeUnit.HOURS)
-                .disableTrustManager().build();
-    }
-
 
     public String getTokenString() {
         return tokenString;
@@ -623,8 +364,12 @@ public class KeycloakInstalled {
         return tokenResponse;
     }
 
+    public void setDesktopProvider(DesktopProvider desktopProvider) {
+        this.desktopProvider = desktopProvider;
+    }
+
     public boolean isDesktopSupported() {
-        return Desktop.isDesktopSupported();
+        return desktopProvider.isDesktopSupported();
     }
 
     public KeycloakDeployment getDeployment() {
@@ -685,6 +430,7 @@ public class KeycloakInstalled {
             } catch (Exception ignore) {
                 // it is OK to happen if thread is modified while stopping the server, specially when a security manager is enabled
             }
+            shutdownSignal.countDown();
         }
 
         public int getLocalPort() {
@@ -757,7 +503,7 @@ public class KeycloakInstalled {
 
         public static Pkce generatePkce() {
             try {
-                String codeVerifier = new RandomString(PKCE_CODE_VERIFIER_MAX_LENGTH, new SecureRandom()).nextString();
+                String codeVerifier = SecretGenerator.getInstance().randomString(PKCE_CODE_VERIFIER_MAX_LENGTH);
                 String codeChallenge = generateS256CodeChallenge(codeVerifier);
                 return new Pkce(codeVerifier, codeChallenge);
             } catch (Exception ex){
@@ -770,6 +516,16 @@ public class KeycloakInstalled {
             MessageDigest md = MessageDigest.getInstance("SHA-256");
             md.update(codeVerifier.getBytes(StandardCharsets.ISO_8859_1));
             return Base64Url.encode(md.digest());
+        }
+    }
+
+    public static class DesktopProvider {
+        public boolean isDesktopSupported() {
+            return Desktop.isDesktopSupported();
+        }
+
+        public void browse(URI uri) throws IOException {
+            Desktop.getDesktop().browse(uri);
         }
     }
 }

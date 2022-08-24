@@ -41,6 +41,12 @@ public class RedirectUtils {
 
     private static final Logger logger = Logger.getLogger(RedirectUtils.class);
 
+    /**
+     * This method is deprecated for performance and security reasons and it is available just for the
+     * backwards compatibility. It is recommended to use some other methods of this class where the client is given as an argument
+     * to the method, so we know the client, which redirect-uri we are trying to resolve.
+     */
+    @Deprecated
     public static String verifyRealmRedirectUri(KeycloakSession session, String redirectUri) {
         Set<String> validRedirects = getValidateRedirectUris(session);
         return verifyRedirectUri(session, null, redirectUri, validRedirects, true);
@@ -71,12 +77,14 @@ public class RedirectUtils {
         return resolveValidRedirects;
     }
 
+    @Deprecated
     private static Set<String> getValidateRedirectUris(KeycloakSession session) {
-        return session.getContext().getRealm().getClientsStream()
-                .filter(client -> client.isEnabled() && OIDCLoginProtocol.LOGIN_PROTOCOL.equals(client.getProtocol()) && !client.isBearerOnly() && (client.isStandardFlowEnabled() || client.isImplicitFlowEnabled()))
-                .map(c -> resolveValidRedirects(session, c.getRootUrl(), c.getRedirectUris()))
-                .flatMap(Collection::stream)
-                .collect(Collectors.toSet());
+        RealmModel realm = session.getContext().getRealm();
+        return session.clients().getAllRedirectUrisOfEnabledClients(realm).entrySet().stream()
+          .filter(me -> me.getKey().isEnabled() && OIDCLoginProtocol.LOGIN_PROTOCOL.equals(me.getKey().getProtocol()) && !me.getKey().isBearerOnly() && (me.getKey().isStandardFlowEnabled() || me.getKey().isImplicitFlowEnabled()))
+          .map(me -> resolveValidRedirects(session, me.getKey().getRootUrl(), me.getValue()))
+          .flatMap(Collection::stream)
+          .collect(Collectors.toSet());
     }
 
     public static String verifyRedirectUri(KeycloakSession session, String rootUrl, String redirectUri, Set<String> validRedirects, boolean requireRedirectUri) {

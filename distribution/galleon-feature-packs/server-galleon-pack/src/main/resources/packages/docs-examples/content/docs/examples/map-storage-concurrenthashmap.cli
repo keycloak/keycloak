@@ -1,0 +1,38 @@
+##
+## CLI script to set Keycloak to use map storage rather than the standard JPA.
+## The backend database is at this moment a ConcurrentHashMap-based storage
+## which is suitable for dev and testing in standalone node. It does not
+## support clustered deployments.
+##
+## Apply this file using the following command from the Keycloak root directory:
+##
+##   bin/jboss-cli.sh --file=docs/examples/map-storage-concurrenthashmap.cli
+##
+## This will modify standalone/configuration/standalone.xml
+##
+
+embed-server
+
+/system-property=keycloak.profile.feature.map_storage:add(value=enabled)
+
+/subsystem=keycloak-server/spi=authorizationPersister:add(default-provider=map)
+/subsystem=keycloak-server/spi=client:add(default-provider=map)
+/subsystem=keycloak-server/spi=clientScope:add(default-provider=map)
+/subsystem=keycloak-server/spi=group:add(default-provider=map)
+/subsystem=keycloak-server/spi=realm:add(default-provider=map)
+/subsystem=keycloak-server/spi=role:add(default-provider=map)
+/subsystem=keycloak-server/spi=deploymentState:add(default-provider=map)
+/subsystem=keycloak-server/spi=deploymentState/provider=map:add(enabled=true,properties={resourcesVersionSeed=1JZ379bzyOCFA})
+/subsystem=keycloak-server/spi=user:add(default-provider=map)
+/subsystem=keycloak-server/spi=dblock:add(default-provider=none)
+
+## For dev and single-node purposes, these are set to "map".
+## For clustered deployments, these should be "infinispan" as map storage does not support distributed storage yet
+/subsystem=keycloak-server/spi=authenticationSessions:add(default-provider=map)
+/subsystem=keycloak-server/spi=loginFailure:add(default-provider=map)
+/subsystem=keycloak-server/spi=userSessions:add(default-provider=map)
+
+/subsystem=keycloak-server/spi=mapStorage:add(default-provider=concurrenthashmap)
+/subsystem=keycloak-server/spi=mapStorage/provider=concurrenthashmap:add(properties={dir="${jboss.server.data.dir}/map",keyType.realms=string,keyType.authz-resource-servers=string},enabled=true)
+
+quit

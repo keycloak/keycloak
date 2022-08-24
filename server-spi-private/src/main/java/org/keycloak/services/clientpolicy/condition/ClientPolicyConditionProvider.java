@@ -18,6 +18,7 @@
 package org.keycloak.services.clientpolicy.condition;
 
 import org.keycloak.provider.Provider;
+import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
@@ -31,7 +32,7 @@ import org.keycloak.services.clientpolicy.ClientPolicyVote;
  * 
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public interface ClientPolicyConditionProvider<CONFIG extends ClientPolicyConditionConfiguration> extends Provider {
+public interface ClientPolicyConditionProvider<CONFIG extends ClientPolicyConditionConfigurationRepresentation> extends Provider {
 
     @Override
     default void close() {
@@ -42,14 +43,13 @@ public interface ClientPolicyConditionProvider<CONFIG extends ClientPolicyCondit
      *
      * @param config
      */
-    default void setupConfiguration(CONFIG config) {
-    }
+    void setupConfiguration(CONFIG config);
 
     /**
-     * @return Class, which should match the "config" argument of the {@link #setupConfiguration(ClientPolicyConditionConfiguration)}
+     * @return Class, which should match the "config" argument of the {@link #setupConfiguration(ClientPolicyConditionConfigurationRepresentation)}
      */
     default Class<CONFIG> getConditionConfigurationClass() {
-        return (Class<CONFIG>) ClientPolicyConditionConfiguration.class;
+        return (Class<CONFIG>) ClientPolicyConditionConfigurationRepresentation.class;
     }
 
     /**
@@ -73,9 +73,7 @@ public interface ClientPolicyConditionProvider<CONFIG extends ClientPolicyCondit
      *
      * @return true if the result of applyPolicy method is inverted.
      */
-    default boolean isNegativeLogic() {
-        return false;
-    }
+    boolean isNegativeLogic() throws ClientPolicyException;
 
     default String getName() {
         return getClass().toString();

@@ -12,7 +12,9 @@
             data-ng-show="!client.publicClient && client.protocol == 'openid-connect' && !client.origin">
             <a href="#/realms/{{realm.realm}}/clients/{{client.id}}/credentials">{{:: 'credentials' | translate}}</a>
         </li>
-        <li ng-class="{active: path[4] == 'saml'}" data-ng-show="client.protocol == 'saml' && (client.attributes['saml.client.signature'] == 'true' || client.attributes['saml.encrypt'] == 'true')"><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/saml/keys">{{:: 'saml-keys' | translate}}</a></li>
+        <li ng-class="{active: path[4] == 'saml'}" data-ng-show="client.protocol == 'saml' && (client.attributes['saml.client.signature'] == 'true' || client.attributes['saml.encrypt'] == 'true')"><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/saml/keys">{{:: 'keys' | translate}}</a></li>
+        <li ng-class="{active: path[4] == 'oidc'}" data-ng-show="client.protocol == 'openid-connect'"><a
+            href="#/realms/{{realm.realm}}/clients/{{client.id}}/oidc/keys">{{:: 'keys' | translate}}</a></li>
         <li ng-class="{active: path[4] == 'roles'}" data-ng-show="!client.origin"><a href="#/realms/{{realm.realm}}/clients/{{client.id}}/roles">{{:: 'roles' | translate}}</a></li>
         <li ng-class="{active: path[4] == 'client-scopes'}" data-ng-show="!client.bearerOnly">
             <a href="#/realms/{{realm.realm}}/clients/{{client.id}}/client-scopes/setup-scopes">{{:: 'client-scopes' | translate}}</a>

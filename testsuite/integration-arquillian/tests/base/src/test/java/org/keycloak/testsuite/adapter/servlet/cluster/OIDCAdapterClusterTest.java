@@ -18,6 +18,7 @@ package org.keycloak.testsuite.adapter.servlet.cluster;
 
 
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
@@ -42,10 +43,13 @@ import org.keycloak.common.util.Retry;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.adapter.AbstractAdapterClusteredTest;
 import org.keycloak.testsuite.adapter.page.SessionPortalDistributable;
 import org.keycloak.testsuite.adapter.servlet.SessionServlet;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
+import org.keycloak.testsuite.pages.InfoPage;
+import org.keycloak.testsuite.pages.LogoutConfirmPage;
 import org.keycloak.testsuite.util.ServerURLs;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
@@ -58,7 +62,6 @@ import org.openqa.selenium.support.ui.WebDriverWait;
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
 @AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY_CLUSTER)
-@AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY_DEPRECATED_CLUSTER)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP_CLUSTER)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP6_CLUSTER)
 public class OIDCAdapterClusterTest extends AbstractAdapterClusteredTest {
@@ -77,6 +80,12 @@ public class OIDCAdapterClusterTest extends AbstractAdapterClusteredTest {
 
     @Page
     protected OIDCLogin loginPage;
+
+    @Page
+    protected LogoutConfirmPage logoutConfirmPage;
+
+    @Page
+    protected InfoPage infoPage;
 
     @Page
     protected SessionPortalDistributable sessionPortalPage;
@@ -140,8 +149,13 @@ public class OIDCAdapterClusterTest extends AbstractAdapterClusteredTest {
         assertSessionCounter(NODE_2_NAME, NODE_2_URI, NODE_1_URI, proxiedUrl, 4);
 
         String logoutUri = OIDCLoginProtocolService.logoutUrl(authServerPage.createUriBuilder())
-                .queryParam(OAuth2Constants.REDIRECT_URI, proxiedUrl).build(AuthRealm.DEMO).toString();
+                .build(AuthRealm.DEMO).toString();
         driver.navigate().to(logoutUri);
+
+        logoutConfirmPage.assertCurrent();
+        logoutConfirmPage.confirmLogout();
+        infoPage.assertCurrent();
+
         Retry.execute(() -> {
             driver.navigate().to(proxiedUrl);
             assertCurrentUrlStartsWith(loginPage);

@@ -1,9 +1,0 @@
-{
-  "realm": "demo",
-  "resource": "offline-access-portal",
-  "auth-server-url": "/auth",
-  "ssl-required" : "external",
-  "credentials": {
-    "secret": "password"
-  }
-}

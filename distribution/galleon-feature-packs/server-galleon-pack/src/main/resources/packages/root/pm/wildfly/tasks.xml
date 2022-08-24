@@ -1,0 +1,5 @@
+<?xml version="1.0" ?>
+
+<tasks xmlns="urn:wildfly:wildfly-feature-pack-tasks:2.0">
+    <copy-path src="resources/version.txt" relative-to="resources" target="version.txt" replace-props="true"/>
+</tasks>

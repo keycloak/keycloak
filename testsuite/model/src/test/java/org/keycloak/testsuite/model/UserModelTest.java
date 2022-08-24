@@ -20,6 +20,7 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RealmProvider;
 import org.keycloak.models.UserModel;
@@ -27,6 +28,7 @@ import org.keycloak.models.UserProvider;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderFactory;
 import org.keycloak.storage.UserStorageProviderModel;
+import org.keycloak.storage.UserStorageUtil;
 import org.keycloak.storage.user.UserRegistrationProvider;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -38,6 +40,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.hamcrest.Matchers;
 import org.junit.Test;
+
+import javax.naming.NamingException;
 
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
@@ -180,8 +184,8 @@ public class UserModelTest extends KeycloakModelTest {
         });
 
         withRealm(realmId, (session, realm) -> {
-            if (session.userCache() != null) {
-                session.userCache().clear();
+            if (UserStorageUtil.userCache(session) != null) {
+                UserStorageUtil.userCache(session).clear();
             }
             final UserModel user = session.users().getUserByUsername(realm, "user-A");
             assertThat("User should not be found in the main store", user, Matchers.nullValue());
@@ -231,8 +235,8 @@ public class UserModelTest extends KeycloakModelTest {
             // because they are not present in any storage. However, when we get users by id cache may still be hit
             // since it is not alerted in any way when users are removed from external provider. Hence we need to clear
             // the cache manually.
-            if (session.userCache() != null) {
-                session.userCache().clear();
+            if (UserStorageUtil.userCache(session) != null) {
+                UserStorageUtil.userCache(session).clear();
             }
             return null;
         });

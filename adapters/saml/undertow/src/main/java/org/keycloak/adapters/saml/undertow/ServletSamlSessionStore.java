@@ -230,7 +230,7 @@ public class ServletSamlSessionStore implements SamlSessionStore {
         KeycloakUriBuilder uriBuilder = KeycloakUriBuilder.fromUri(exchange.getRequestURI())
                 .replaceQuery(exchange.getQueryString());
         if (!exchange.isHostIncludedInRequestURI()) uriBuilder.scheme(exchange.getRequestScheme()).host(exchange.getHostAndPort());
-        String uri = uriBuilder.build().toString();
+        String uri = uriBuilder.buildAsString();
 
         session.setAttribute(SAML_REDIRECT_URI, uri);
 

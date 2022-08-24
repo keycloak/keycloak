@@ -1,0 +1,6 @@
+<?xml version="1.0" ?>
+<!-- actual content of this package comes from artifact=org.keycloak:keycloak-themes
+     See pom.xml execution/id: unpack-theme.
+-->
+<package-spec xmlns="urn:jboss:galleon:package:2.0" name="themes">
+</package-spec>

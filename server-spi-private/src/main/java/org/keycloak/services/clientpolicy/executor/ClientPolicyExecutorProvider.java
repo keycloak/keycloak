@@ -18,6 +18,7 @@
 package org.keycloak.services.clientpolicy.executor;
 
 import org.keycloak.provider.Provider;
+import org.keycloak.representations.idm.ClientPolicyExecutorConfigurationRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyEvent;
@@ -30,7 +31,7 @@ import org.keycloak.services.clientpolicy.ClientPolicyEvent;
  * 
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public interface ClientPolicyExecutorProvider<CONFIG extends ClientPolicyExecutorConfiguration> extends Provider {
+public interface ClientPolicyExecutorProvider<CONFIG extends ClientPolicyExecutorConfigurationRepresentation> extends Provider {
 
     @Override
     default void close() {
@@ -45,10 +46,10 @@ public interface ClientPolicyExecutorProvider<CONFIG extends ClientPolicyExecuto
     }
 
     /**
-     * @return Class, which should match the "config" argument of the {@link #setupConfiguration(ClientPolicyExecutorConfiguration)}
+     * @return Class, which should match the "config" argument of the {@link #setupConfiguration(ClientPolicyExecutorConfigurationRepresentation)}
      */
     default Class<CONFIG> getExecutorConfigurationClass() {
-        return (Class<CONFIG>) ClientPolicyExecutorConfiguration.class;
+        return (Class<CONFIG>) ClientPolicyExecutorConfigurationRepresentation.class;
     }
 
     /**

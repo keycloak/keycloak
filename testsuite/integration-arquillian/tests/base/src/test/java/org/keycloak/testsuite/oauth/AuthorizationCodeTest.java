@@ -158,10 +158,44 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
         events.expectLogin().error(Errors.INVALID_REQUEST).user((String) null).session((String) null).clearDetails().detail(Details.RESPONSE_TYPE, "tokenn").assertEvent();
     }
 
+    @Test
+    public void authorizationRequestFormPostResponseModeInvalidResponseType() throws IOException {
+        oauth.responseMode(OIDCResponseMode.FORM_POST.value());
+        oauth.responseType("tokenn");
+        oauth.stateParamHardcoded("OpenIdConnect.AuthenticationProperties=2302984sdlk");
+        UriBuilder b = UriBuilder.fromUri(oauth.getLoginFormUrl());
+        driver.navigate().to(b.build().toURL());
+
+        String error = driver.findElement(By.id("error")).getText();
+        String state = driver.findElement(By.id("state")).getText();
+
+        assertEquals(OAuthErrorException.UNSUPPORTED_RESPONSE_TYPE, error);
+        assertEquals("OpenIdConnect.AuthenticationProperties=2302984sdlk", state);
+
+    }
+
+    @Test
+    public void authorizationRequestFormPostResponseModeWithoutResponseType() throws IOException {
+        oauth.responseMode(OIDCResponseMode.FORM_POST.value());
+        oauth.responseType(null);
+        oauth.stateParamHardcoded("OpenIdConnect.AuthenticationProperties=2302984sdlk");
+        UriBuilder b = UriBuilder.fromUri(oauth.getLoginFormUrl());
+        driver.navigate().to(b.build().toURL());
+
+        String error = driver.findElement(By.id("error")).getText();
+        String errorDescription = driver.findElement(By.id("error_description")).getText();
+        String state = driver.findElement(By.id("state")).getText();
+
+        assertEquals(OAuthErrorException.INVALID_REQUEST, error);
+        assertEquals("Missing parameter: response_type", errorDescription);
+        assertEquals("OpenIdConnect.AuthenticationProperties=2302984sdlk", state);
+
+    }
+
     // KEYCLOAK-3281
     @Test
     public void authorizationRequestFormPostResponseMode() throws IOException {
-        oauth.responseMode(OIDCResponseMode.FORM_POST.toString().toLowerCase());
+        oauth.responseMode(OIDCResponseMode.FORM_POST.value());
         oauth.stateParamHardcoded("OpenIdConnect.AuthenticationProperties=2302984sdlk");
         oauth.doLoginGrant("test-user@localhost", "password");
 
@@ -179,7 +213,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
 
     @Test
     public void authorizationRequestFormPostResponseModeWithCustomState() throws IOException {
-        oauth.responseMode(OIDCResponseMode.FORM_POST.toString().toLowerCase());
+        oauth.responseMode(OIDCResponseMode.FORM_POST.value());
         oauth.stateParamHardcoded("\"><foo>bar_baz(2)far</foo>");
         oauth.doLoginGrant("test-user@localhost", "password");
 
@@ -198,7 +232,7 @@ public class AuthorizationCodeTest extends AbstractKeycloakTest {
     @Test
     public void authorizationRequestFragmentResponseModeNotKept() throws Exception {
         // Set response_mode=fragment and login
-        oauth.responseMode(OIDCResponseMode.FRAGMENT.toString().toLowerCase());
+        oauth.responseMode(OIDCResponseMode.FRAGMENT.value());
         OAuthClient.AuthorizationEndpointResponse response = oauth.doLogin("test-user@localhost", "password");
 
         Assert.assertNotNull(response.getCode());

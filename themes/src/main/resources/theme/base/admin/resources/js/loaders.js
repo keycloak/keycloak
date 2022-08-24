@@ -563,8 +563,25 @@ module.factory('ClientRegistrationPolicyProvidersLoader', function(Loader, Clien
     });
 });
 
+module.factory('ClientPoliciesProfilesLoader', function(Loader, ClientPoliciesProfiles, $route , $q) {
+    var clientPoliciesLoader = {};
 
+    clientPoliciesLoader.loadClientProfiles = function(includeGlobalProfiles) {
+        return Loader.get(ClientPoliciesProfiles, function() {
+            return {
+                realm : $route.current.params.realm,
+                includeGlobalProfiles : includeGlobalProfiles
+            }
+        })();
+    };
 
+    return clientPoliciesLoader;
+});
 
-
-
+module.factory('ClientPoliciesLoader', function(Loader, ClientPolicies, $route) {
+    return Loader.get(ClientPolicies, function() {
+        return {
+            realm: $route.current.params.realm
+        }
+    });
+});

@@ -19,20 +19,16 @@ package org.keycloak.representations.idm;
 
 import java.util.List;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-
 /**
  * Client Profile's external representation class
  *
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-@JsonIgnoreProperties(ignoreUnknown = true)
 public class ClientProfileRepresentation {
 
     protected String name;
     protected String description;
-    protected Boolean builtin;
-    protected List<Object> executors;
+    protected List<ClientPolicyExecutorRepresentation> executors;
 
     public String getName() {
         return name;
@@ -50,19 +46,11 @@ public class ClientProfileRepresentation {
         this.description = description;
     }
 
-    public Boolean isBuiltin() {
-        return builtin;
-    }
-
-    public void setBuiltin(Boolean builtin) {
-        this.builtin = builtin;
-    }
-
-    public List<Object> getExecutors() {
+    public List<ClientPolicyExecutorRepresentation> getExecutors() {
         return executors;
     }
 
-    public void setExecutors(List<Object> executors) {
+    public void setExecutors(List<ClientPolicyExecutorRepresentation> executors) {
         this.executors = executors;
     }
 }

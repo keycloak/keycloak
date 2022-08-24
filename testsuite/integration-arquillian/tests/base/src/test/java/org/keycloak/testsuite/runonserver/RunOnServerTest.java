@@ -52,8 +52,8 @@ public class RunOnServerTest extends AbstractKeycloakTest {
         final String realmName = "master";
 
         RealmRepresentation realmRep = testingClient.server().fetch(session -> {
-            RealmModel master = session.realms().getRealm(realmName);
-            return ModelToRepresentation.toRepresentation(master, true);
+            RealmModel master = session.realms().getRealmByName(realmName);
+            return ModelToRepresentation.toRepresentation(session, master, true);
         }, RealmRepresentation.class);
 
         assertEquals(realmName, realmRep.getRealm());

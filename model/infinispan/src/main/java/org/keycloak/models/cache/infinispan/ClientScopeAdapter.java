@@ -181,6 +181,13 @@ public class ClientScopeAdapter implements ClientScopeModel {
     }
 
     @Override
+    public boolean hasDirectScope(RoleModel role) {
+        if (isUpdated()) return updated.hasDirectScope(role);
+
+        return cached.getScope().contains(role.getId());
+    }
+
+    @Override
     public boolean hasScope(RoleModel role) {
         if (isUpdated()) return updated.hasScope(role);
         if (cached.getScope().contains(role.getId())) return true;

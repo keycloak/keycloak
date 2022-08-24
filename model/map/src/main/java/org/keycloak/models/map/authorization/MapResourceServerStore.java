@@ -19,112 +19,117 @@ package org.keycloak.models.map.authorization;
 
 import org.jboss.logging.Logger;
 import org.keycloak.authorization.AuthorizationProvider;
-import org.keycloak.authorization.model.PermissionTicket;
-import org.keycloak.authorization.model.Policy;
-import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
-import org.keycloak.authorization.model.Scope;
-import org.keycloak.authorization.store.PermissionTicketStore;
-import org.keycloak.authorization.store.PolicyStore;
+import org.keycloak.authorization.model.ResourceServer.SearchableFields;
 import org.keycloak.authorization.store.ResourceServerStore;
-import org.keycloak.authorization.store.ResourceStore;
-import org.keycloak.authorization.store.ScopeStore;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ModelDuplicateException;
 import org.keycloak.models.ModelException;
+import org.keycloak.models.RealmModel;
 import org.keycloak.models.map.authorization.adapter.MapResourceServerAdapter;
 import org.keycloak.models.map.authorization.entity.MapResourceServerEntity;
+import org.keycloak.models.map.authorization.entity.MapResourceServerEntityImpl;
 import org.keycloak.models.map.storage.MapKeycloakTransaction;
 import org.keycloak.models.map.storage.MapStorage;
+import org.keycloak.models.map.storage.ModelCriteriaBuilder.Operator;
+import org.keycloak.models.map.storage.criteria.DefaultModelCriteria;
 import org.keycloak.storage.StorageId;
 
-import static org.keycloak.common.util.StackUtil.getShortStackTrace;
-import static org.keycloak.models.map.common.MapStorageUtils.registerEntityForChanges;
+import java.util.Objects;
+import java.util.function.Function;
 
-public class MapResourceServerStore<K> implements ResourceServerStore {
+import static org.keycloak.common.util.StackUtil.getShortStackTrace;
+import static org.keycloak.models.map.common.AbstractMapProviderFactory.MapProviderObjectType.RESOURCE_SERVER_AFTER_REMOVE;
+import static org.keycloak.models.map.common.AbstractMapProviderFactory.MapProviderObjectType.RESOURCE_SERVER_BEFORE_REMOVE;
+import static org.keycloak.models.map.storage.QueryParameters.withCriteria;
+import static org.keycloak.models.map.storage.criteria.DefaultModelCriteria.criteria;
+
+public class MapResourceServerStore implements ResourceServerStore {
 
     private static final Logger LOG = Logger.getLogger(MapResourceServerStore.class);
     private final AuthorizationProvider authorizationProvider;
-    final MapKeycloakTransaction<K, MapResourceServerEntity<K>, ResourceServer> tx;
-    private final MapStorage<K, MapResourceServerEntity<K>, ResourceServer> resourceServerStore;
+    final MapKeycloakTransaction<MapResourceServerEntity, ResourceServer> tx;
 
-    public MapResourceServerStore(KeycloakSession session, MapStorage<K, MapResourceServerEntity<K>, ResourceServer> resourceServerStore, AuthorizationProvider provider) {
-        this.resourceServerStore = resourceServerStore;
+    public MapResourceServerStore(KeycloakSession session, MapStorage<MapResourceServerEntity, ResourceServer> resourceServerStore, AuthorizationProvider provider) {
         this.tx = resourceServerStore.createTransaction(session);
         this.authorizationProvider = provider;
         session.getTransactionManager().enlist(tx);
     }
 
-    private ResourceServer entityToAdapter(MapResourceServerEntity<K> origEntity) {
-        if (origEntity == null) return null;
-        // Clone entity before returning back, to avoid giving away a reference to the live object to the caller
-        return new MapResourceServerAdapter<K>(registerEntityForChanges(tx, origEntity), authorizationProvider.getStoreFactory()) {
-            @Override
-            public String getId() {
-                return resourceServerStore.getKeyConvertor().keyToString(entity.getId());
-            }
-        };
+    private Function<MapResourceServerEntity, ResourceServer> entityToAdapterFunc(RealmModel realmModel) {
+        return origEntity -> new MapResourceServerAdapter(realmModel, origEntity, authorizationProvider.getStoreFactory());
     }
 
     @Override
-    public ResourceServer create(String clientId) {
-        LOG.tracef("create(%s)%s", clientId, getShortStackTrace());
-        
+    public ResourceServer create(ClientModel client) {
+        LOG.tracef("create(%s)%s", client.getClientId(), getShortStackTrace());
+
+        String clientId = client.getId();
         if (clientId == null) return null;
 
         if (!StorageId.isLocalStorage(clientId)) {
             throw new ModelException("Creating resource server from federated ClientModel not supported");
         }
 
-        if (tx.read(resourceServerStore.getKeyConvertor().fromString(clientId)) != null) {
-            throw new ModelDuplicateException("Resource server already exists: " + clientId);
+        if (findByClient(client) != null) {
+            throw new ModelDuplicateException("Resource server assiciated with client : " + client.getClientId() + " already exists.");
         }
 
-        MapResourceServerEntity<K> entity = new MapResourceServerEntity<>(resourceServerStore.getKeyConvertor().fromString(clientId));
+        MapResourceServerEntity entity = new MapResourceServerEntityImpl();
+        entity.setClientId(clientId);
+        entity.setRealmId(client.getRealm().getId());
 
-        tx.create(entity.getId(), entity);
-
-        return entityToAdapter(entity);
+        entity = tx.create(entity);
+        return entity == null ? null : entityToAdapterFunc(client.getRealm()).apply(entity);
     }
 
     @Override
-    public void delete(String id) {
-        LOG.tracef("delete(%s, %s)%s", id, getShortStackTrace());
-        if (id == null) return;
+    public void delete(ClientModel client) {
+        LOG.tracef("delete(%s)%s", client.getClientId(), getShortStackTrace());
 
-        PolicyStore policyStore = authorizationProvider.getStoreFactory().getPolicyStore();
-        policyStore.findByResourceServer(id).stream()
-            .map(Policy::getId)
-            .forEach(policyStore::delete);
+        ResourceServer resourceServer = findByClient(client);
+        if (resourceServer == null) return;
 
-        PermissionTicketStore permissionTicketStore = authorizationProvider.getStoreFactory().getPermissionTicketStore();
-        permissionTicketStore.findByResourceServer(id).stream()
-                .map(PermissionTicket::getId)
-                .forEach(permissionTicketStore::delete);
+        authorizationProvider.getKeycloakSession().invalidate(RESOURCE_SERVER_BEFORE_REMOVE, resourceServer);
 
-        ResourceStore resourceStore = authorizationProvider.getStoreFactory().getResourceStore();
-        resourceStore.findByResourceServer(id).stream()
-                .map(Resource::getId)
-                .forEach(resourceStore::delete);
+        tx.delete(resourceServer.getId());
 
-        ScopeStore scopeStore = authorizationProvider.getStoreFactory().getScopeStore();
-        scopeStore.findByResourceServer(id).stream()
-                .map(Scope::getId)
-                .forEach(scopeStore::delete);
-
-        tx.delete(resourceServerStore.getKeyConvertor().fromString(id));
+        authorizationProvider.getKeycloakSession().invalidate(RESOURCE_SERVER_AFTER_REMOVE, resourceServer);
     }
 
     @Override
-    public ResourceServer findById(String id) {
+    public ResourceServer findById(RealmModel realm, String id) {
         LOG.tracef("findById(%s)%s", id, getShortStackTrace());
 
         if (id == null) {
             return null;
         }
 
+        MapResourceServerEntity entity = tx.read(id);
+        return (entity == null || !Objects.equals(realm.getId(), entity.getRealmId())) ? null : entityToAdapterFunc(realm).apply(entity);
+    }
 
-        MapResourceServerEntity<K> entity = tx.read(resourceServerStore.getKeyConvertor().fromStringSafe(id));
-        return entityToAdapter(entity);
+    @Override
+    public ResourceServer findByClient(ClientModel client) {
+        LOG.tracef("findByClient(%s) in realm(%s)%s", client.getClientId(), client.getRealm().getName(), getShortStackTrace());
+
+        DefaultModelCriteria<ResourceServer> mcb = criteria();
+        mcb = mcb.compare(SearchableFields.CLIENT_ID, Operator.EQ, client.getId());
+        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, client.getRealm().getId());
+
+        return tx.read(withCriteria(mcb))
+                .map(entityToAdapterFunc(client.getRealm()))
+                .findFirst()
+                .orElse(null);
+    }
+
+    public void preRemove(RealmModel realm) {
+        LOG.tracef("preRemove(%s)%s", realm, getShortStackTrace());
+
+        DefaultModelCriteria<ResourceServer> mcb = criteria();
+        mcb = mcb.compare(SearchableFields.REALM_ID, Operator.EQ, realm.getId());
+
+        tx.delete(withCriteria(mcb));
     }
 }

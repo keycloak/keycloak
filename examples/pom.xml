@@ -20,7 +20,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>14.0.0-SNAPSHOT</version>
+        <version>999-SNAPSHOT</version>
     </parent>
 
     <name>Keycloak Examples</name>
@@ -54,13 +54,8 @@
     </build>
     <modules>
         <module>admin-client</module>
-        <module>broker</module>
-        <module>cors</module>
-        <module>demo-template</module>
         <module>providers</module>
         <module>js-console</module>
-        <module>multi-tenant</module>
-        <module>basic-auth</module>
         <module>kerberos</module>
         <module>themes</module>
         <module>saml</module>

@@ -16,8 +16,11 @@
  */
 package org.keycloak.keys.loader;
 
+import org.keycloak.common.util.Base64Url;
+import org.keycloak.common.util.KeyUtils;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.JavaAlgorithm;
 import org.keycloak.crypto.KeyType;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.crypto.KeyWrapper;
@@ -32,29 +35,41 @@ import java.util.Map;
  */
 public class HardcodedPublicKeyLoader implements PublicKeyLoader {
 
-    private final String kid;
-    private final String pem;
+    private final KeyWrapper keyWrapper;
 
     public HardcodedPublicKeyLoader(String kid, String pem) {
-        this.kid = kid;
-        this.pem = pem;
+        this(kid, pem, Algorithm.RS256);
+    }
+
+    public HardcodedPublicKeyLoader(String kid, String encodedKey, String algorithm) {
+        if (encodedKey != null && !encodedKey.trim().isEmpty()) {
+            keyWrapper = new KeyWrapper();
+            keyWrapper.setKid(kid);
+            keyWrapper.setUse(KeyUse.SIG);
+            // depending the algorithm load the correct key from the encoded string
+            if (JavaAlgorithm.isRSAJavaAlgorithm(algorithm)) {
+                keyWrapper.setType(KeyType.RSA);
+                keyWrapper.setPublicKey(PemUtils.decodePublicKey(encodedKey, KeyType.RSA));
+            } else if (JavaAlgorithm.isECJavaAlgorithm(algorithm)) {
+                keyWrapper.setType(KeyType.EC);
+                keyWrapper.setPublicKey(PemUtils.decodePublicKey(encodedKey, KeyType.EC));
+            } else if (JavaAlgorithm.isHMACJavaAlgorithm(algorithm)) {
+                keyWrapper.setType(KeyType.OCT);
+                keyWrapper.setSecretKey(KeyUtils.loadSecretKey(Base64Url.decode(encodedKey), algorithm));
+            }
+        } else {
+            keyWrapper = null;
+        }
     }
 
     @Override
     public Map<String, KeyWrapper> loadKeys() throws Exception {
-        return Collections.unmodifiableMap(Collections.singletonMap(kid, getSavedPublicKey()));
+        return keyWrapper != null
+                ? Collections.unmodifiableMap(Collections.singletonMap(keyWrapper.getKid(), getSavedPublicKey()))
+                : Collections.emptyMap();
     }
 
     protected KeyWrapper getSavedPublicKey() {
-        KeyWrapper keyWrapper = null;
-        if (pem != null && ! pem.trim().equals("")) {
-            keyWrapper = new KeyWrapper();
-            keyWrapper.setKid(kid);
-            keyWrapper.setType(KeyType.RSA);
-            keyWrapper.setAlgorithm(Algorithm.RS256);
-            keyWrapper.setUse(KeyUse.SIG);
-            keyWrapper.setPublicKey(PemUtils.decodePublicKey(pem));
-        }
         return keyWrapper;
     }
 }

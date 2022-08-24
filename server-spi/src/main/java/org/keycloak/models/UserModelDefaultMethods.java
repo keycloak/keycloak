@@ -52,7 +52,7 @@ public abstract class UserModelDefaultMethods implements UserModel {
 
     @Override
     public void setEmail(String email) {
-        email = email == null ? null : email.toLowerCase();
+        email = email == null || email.trim().isEmpty() ? null : email.toLowerCase();
         setSingleAttribute(EMAIL, email);
     }
 

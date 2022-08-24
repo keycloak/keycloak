@@ -39,16 +39,17 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.NotFoundException;
-import javax.ws.rs.PATCH;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.utils.StringUtil;
 
 public class RealmLocalizationResource {
     private final RealmModel realm;
@@ -84,8 +85,8 @@ public class RealmLocalizationResource {
     @POST
     @Path("{locale}")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
-    public void patchRealmLocalizationTextsFromFile(@PathParam("locale") String locale, MultipartFormDataInput input)
-            throws IOException {
+    public void createOrUpdateRealmLocalizationTextsFromFile(@PathParam("locale") String locale,
+            MultipartFormDataInput input) {
         this.auth.realm().requireManageRealm();
 
         Map<String, List<InputPart>> formDataMap = input.getFormDataMap();
@@ -97,18 +98,19 @@ public class RealmLocalizationResource {
             TypeReference<HashMap<String, String>> typeRef = new TypeReference<HashMap<String, String>>() {
             };
             Map<String, String> rep = JsonSerialization.readValue(inputStream, typeRef);
-            realm.patchRealmLocalizationTexts(locale, rep);
+            realm.createOrUpdateRealmLocalizationTexts(locale, rep);
         } catch (IOException e) {
             throw new BadRequestException("Could not read file.");
         }
     }
 
-    @PATCH
+    @POST
     @Path("{locale}")
     @Consumes(MediaType.APPLICATION_JSON)
-    public void patchRealmLocalizationTexts(@PathParam("locale") String locale, Map<String, String> loclizationTexts) {
+    public void createOrUpdateRealmLocalizationTexts(@PathParam("locale") String locale,
+            Map<String, String> localizationTexts) {
         this.auth.realm().requireManageRealm();
-        realm.patchRealmLocalizationTexts(locale, loclizationTexts);
+        realm.createOrUpdateRealmLocalizationTexts(locale, localizationTexts);
     }
 
     @Path("{locale}")
@@ -142,12 +144,20 @@ public class RealmLocalizationResource {
     @Path("{locale}")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public Map<String, String> getRealmLocalizationTexts(@PathParam("locale") String locale) {
+    public Map<String, String> getRealmLocalizationTexts(@PathParam("locale") String locale, @QueryParam("useRealmDefaultLocaleFallback") Boolean useFallback) {
         if (!AdminPermissions.realms(session, auth.adminAuth()).isAdmin()) {
             throw new ForbiddenException();
         }
 
-        return realm.getRealmLocalizationTextsByLocale(locale);
+        Map<String, String> realmLocalizationTexts = new HashMap<>();
+        if(useFallback != null && useFallback && StringUtil.isNotBlank(realm.getDefaultLocale())) {
+            realmLocalizationTexts.putAll(realm.getRealmLocalizationTextsByLocale(realm.getDefaultLocale()));
+        }
+
+        realmLocalizationTexts.putAll(realm.getRealmLocalizationTextsByLocale(locale));
+
+        return realmLocalizationTexts;
+
     }
 
     @Path("{locale}/{key}")

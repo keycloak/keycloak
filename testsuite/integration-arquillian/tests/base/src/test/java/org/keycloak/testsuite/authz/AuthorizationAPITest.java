@@ -118,7 +118,7 @@ public class AuthorizationAPITest extends AbstractAuthzTest {
         JSPolicyRepresentation policy = new JSPolicyRepresentation();
 
         policy.setName("Default Policy");
-        policy.setCode("$evaluation.grant();");
+        policy.setType("script-scripts/default-policy.js");
 
         response = authorization.policies().js().create(policy);
         response.close();

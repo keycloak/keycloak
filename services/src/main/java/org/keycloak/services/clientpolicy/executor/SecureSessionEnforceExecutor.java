@@ -22,6 +22,7 @@ import org.keycloak.OAuthErrorException;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
+import org.keycloak.representations.idm.ClientPolicyExecutorConfigurationRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.context.AuthorizationRequestContext;
@@ -30,7 +31,7 @@ import org.keycloak.util.TokenUtil;
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public class SecureSessionEnforceExecutor implements ClientPolicyExecutorProvider<ClientPolicyExecutorConfiguration> {
+public class SecureSessionEnforceExecutor implements ClientPolicyExecutorProvider<ClientPolicyExecutorConfigurationRepresentation> {
 
     private static final Logger logger = Logger.getLogger(SecureSessionEnforceExecutor.class);
 

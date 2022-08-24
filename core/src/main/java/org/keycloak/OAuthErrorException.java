@@ -30,6 +30,8 @@ public class OAuthErrorException extends Exception {
     public static final String UNSUPPORTED_RESPONSE_TYPE = "unsupported_response_type";
     public static final String SERVER_ERROR = "server_error";
     public static final String TEMPORARILY_UNAVAILABLE = "temporarily_unavailable";
+    public static final String INVALID_REQUEST_URI = "invalid_request_uri";
+    public static final String INVALID_REQUEST_OBJECT = "invalid_request_object";
 
     // OpenID Connect 1
     public static final String INTERACTION_REQUIRED = "interaction_required";
@@ -50,6 +52,9 @@ public class OAuthErrorException extends Exception {
     public static final String AUTHORIZATION_PENDING = "authorization_pending";
     public static final String SLOW_DOWN = "slow_down";
     public static final String EXPIRED_TOKEN = "expired_token";
+
+    // CIBA
+    public static final String INVALID_BINDING_MESSAGE = "invalid_binding_message";
 
     // Others
     public static final String INVALID_CLIENT = "invalid_client";

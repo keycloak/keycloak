@@ -31,11 +31,12 @@ import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.sessions.StickySessionEncoderProvider;
 
 import javax.ws.rs.core.UriInfo;
-import java.util.AbstractMap.SimpleEntry;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForModification;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -44,7 +45,7 @@ public class AuthenticationSessionManager {
 
     public static final String AUTH_SESSION_ID = "AUTH_SESSION_ID";
 
-    public static final int AUTH_SESSION_LIMIT = 3;
+    public static final int AUTH_SESSION_COOKIE_LIMIT = 3;
 
     private static final Logger log = Logger.getLogger(AuthenticationSessionManager.class);
 
@@ -99,7 +100,7 @@ public class AuthenticationSessionManager {
             AuthSessionId authSessionId = decodeAuthSessionId(oldEncodedId);
             String sessionId = authSessionId.getDecodedId();
 
-            UserSessionModel userSession = session.sessions().getUserSession(realm, sessionId);
+            UserSessionModel userSession = lockUserSessionsForModification(session, () -> session.sessions().getUserSession(realm, sessionId));
 
             if (userSession != null) {
                 reencodeAuthSessionCookie(oldEncodedId, authSessionId, realm);
@@ -189,7 +190,7 @@ public class AuthenticationSessionManager {
             AuthenticationManager.expireOldAuthSessionCookie(realm, session.getContext().getUri(), session.getContext().getConnection());
         }
 
-        List<String> authSessionIds = cookiesVal.stream().limit(AUTH_SESSION_LIMIT).collect(Collectors.toList());
+        List<String> authSessionIds = cookiesVal.stream().limit(AUTH_SESSION_COOKIE_LIMIT).collect(Collectors.toList());
 
         if (authSessionIds.isEmpty()) {
             log.debugf("Not found AUTH_SESSION_ID cookie");
@@ -216,7 +217,7 @@ public class AuthenticationSessionManager {
 
     // Check to see if we already have authenticationSession with same ID
     public UserSessionModel getUserSession(AuthenticationSessionModel authSession) {
-        return session.sessions().getUserSession(authSession.getRealm(), authSession.getParentSession().getId());
+        return lockUserSessionsForModification(session, () -> session.sessions().getUserSession(authSession.getRealm(), authSession.getParentSession().getId()));
     }
 
 

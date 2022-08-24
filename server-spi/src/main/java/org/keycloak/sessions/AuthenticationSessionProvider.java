@@ -74,12 +74,19 @@ public interface AuthenticationSessionProvider extends Provider {
 
     /**
      * Remove expired authentication sessions in all the realms
+     *
+     * @deprecated manual removal of expired entities should not be used anymore. It is responsibility of the store
+     *             implementation to handle expirable entities
      */
     void removeAllExpired();
 
     /**
      * Removes all expired root authentication sessions for the given realm.
      * @param realm {@code RealmModel} Can't be {@code null}.
+     *
+     *
+     * @deprecated manual removal of expired entities should not be used anymore. It is responsibility of the store
+     *             implementation to handle expirable entities
      */
     void removeExpired(RealmModel realm);
 

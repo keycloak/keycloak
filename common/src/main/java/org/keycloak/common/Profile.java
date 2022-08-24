@@ -19,14 +19,13 @@ package org.keycloak.common;
 
 import static org.keycloak.common.Profile.Type.DEPRECATED;
 
-import org.jboss.logging.Logger;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
+import org.jboss.logging.Logger;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -34,84 +33,23 @@ import java.util.Set;
  */
 public class Profile {
 
+    public static final String PRODUCT_NAME = ProductValue.RHSSO.getName();
+    public static final String PROJECT_NAME = ProductValue.KEYCLOAK.getName();
     private static final Logger logger = Logger.getLogger(Profile.class);
 
-    public enum Type {
-        DEFAULT,
-        DISABLED_BY_DEFAULT,
-        PREVIEW,
-        EXPERIMENTAL,
-        DEPRECATED;
-    }
-    public enum Feature {
-        ACCOUNT2(Type.DEFAULT),
-        ACCOUNT_API(Type.DEFAULT),
-        ADMIN_FINE_GRAINED_AUTHZ(Type.PREVIEW),
-        DOCKER(Type.DISABLED_BY_DEFAULT),
-        IMPERSONATION(Type.DEFAULT),
-        OPENSHIFT_INTEGRATION(Type.PREVIEW),
-        SCRIPTS(Type.PREVIEW),
-        TOKEN_EXCHANGE(Type.PREVIEW),
-        UPLOAD_SCRIPTS(DEPRECATED),
-        WEB_AUTHN(Type.DEFAULT, Type.PREVIEW),
-        CLIENT_POLICIES(Type.PREVIEW),
-        CIBA(Type.PREVIEW),
-        MAP_STORAGE(Type.EXPERIMENTAL);
-
-        private Type typeProject;
-        private Type typeProduct;
-
-        Feature(Type type) {
-            this(type, type);
-        }
-
-        Feature(Type typeProject, Type typeProduct) {
-            this.typeProject = typeProject;
-            this.typeProduct = typeProduct;
-        }
-
-        public Type getTypeProject() {
-            return typeProject;
-        }
-
-        public Type getTypeProduct() {
-            return typeProduct;
-        }
-
-        public boolean hasDifferentProductType() {
-            return typeProject != typeProduct;
-        }
-    }
-
-    private enum ProductValue {
-        KEYCLOAK,
-        RHSSO
-    }
-
-    private enum ProfileValue {
-        COMMUNITY,
-        PRODUCT,
-        PREVIEW
-    }
-
     private static Profile CURRENT;
-
     private final ProductValue product;
-
     private final ProfileValue profile;
-
     private final Set<Feature> disabledFeatures = new HashSet<>();
     private final Set<Feature> previewFeatures = new HashSet<>();
     private final Set<Feature> experimentalFeatures = new HashSet<>();
     private final Set<Feature> deprecatedFeatures = new HashSet<>();
-
     private final PropertyResolver propertyResolver;
-    
     public Profile(PropertyResolver resolver) {
         this.propertyResolver = resolver;
         Config config = new Config();
 
-        product = "rh-sso".equals(Version.NAME) ? ProductValue.RHSSO : ProductValue.KEYCLOAK;
+        product = PRODUCT_NAME.toLowerCase().equals(Version.NAME) ? ProductValue.RHSSO : ProductValue.KEYCLOAK;
         profile = ProfileValue.valueOf(config.getProfile().toUpperCase());
 
         for (Feature f : Feature.values()) {
@@ -131,11 +69,6 @@ public class Profile {
                         disabledFeatures.add(f);
                     } else if (DEPRECATED.equals(type)) {
                         logger.warnf("Deprecated feature enabled: " + f.name().toLowerCase());
-                        if (Feature.UPLOAD_SCRIPTS.equals(f)) {
-                            previewFeatures.add(Feature.SCRIPTS);
-                            disabledFeatures.remove(Feature.SCRIPTS);
-                            logger.warnf("Preview feature enabled: " + Feature.SCRIPTS.name().toLowerCase());
-                        }
                     }
                     break;
                 case PREVIEW:
@@ -165,12 +98,18 @@ public class Profile {
         return CURRENT;
     }
 
-    public static void init() {
-        CURRENT = new Profile(null);
-    }
-    
     public static void setInstance(Profile instance) {
         CURRENT = instance;
+    }
+
+    public static void init() {
+        PropertyResolver resolver = null;
+
+        if (CURRENT != null) {
+            resolver = CURRENT.propertyResolver;
+        }
+
+        CURRENT = new Profile(resolver);
     }
 
     public static String getName() {
@@ -195,6 +134,98 @@ public class Profile {
 
     public static boolean isFeatureEnabled(Feature feature) {
         return !getInstance().disabledFeatures.contains(feature);
+    }
+
+    public static boolean isProduct() {
+        return getInstance().profile.equals(ProfileValue.PRODUCT);
+    }
+
+    public enum Type {
+        DEFAULT,
+        DISABLED_BY_DEFAULT,
+        PREVIEW,
+        EXPERIMENTAL,
+        DEPRECATED;
+    }
+
+    public enum Feature {
+        AUTHORIZATION("Authorization Service", Type.DEFAULT),
+        ACCOUNT2("New Account Management Console", Type.DEFAULT),
+        ACCOUNT_API("Account Management REST API", Type.DEFAULT),
+        ADMIN_FINE_GRAINED_AUTHZ("Fine-Grained Admin Permissions", Type.PREVIEW),
+        ADMIN2("New Admin Console", Type.DEFAULT),
+        DOCKER("Docker Registry protocol", Type.DISABLED_BY_DEFAULT),
+        IMPERSONATION("Ability for admins to impersonate users", Type.DEFAULT),
+        OPENSHIFT_INTEGRATION("Extension to enable securing OpenShift", Type.PREVIEW),
+        SCRIPTS("Write custom authenticators using JavaScript", Type.PREVIEW),
+        TOKEN_EXCHANGE("Token Exchange Service", Type.PREVIEW),
+        WEB_AUTHN("W3C Web Authentication (WebAuthn)", Type.DEFAULT),
+        CLIENT_POLICIES("Client configuration policies", Type.DEFAULT),
+        CIBA("OpenID Connect Client Initiated Backchannel Authentication (CIBA)", Type.DEFAULT),
+        MAP_STORAGE("New store", Type.EXPERIMENTAL),
+        PAR("OAuth 2.0 Pushed Authorization Requests (PAR)", Type.DEFAULT),
+        DECLARATIVE_USER_PROFILE("Configure user profiles using a declarative style", Type.PREVIEW),
+        DYNAMIC_SCOPES("Dynamic OAuth 2.0 scopes", Type.EXPERIMENTAL),
+        CLIENT_SECRET_ROTATION("Client Secret Rotation", Type.PREVIEW),
+        STEP_UP_AUTHENTICATION("Step-up Authentication", Type.DEFAULT),
+        RECOVERY_CODES("Recovery codes", Type.PREVIEW),
+        UPDATE_EMAIL("Update Email Action", Type.PREVIEW);
+
+
+        private final Type typeProject;
+        private final Type typeProduct;
+        private String label;
+
+        Feature(String label, Type type) {
+            this(label, type, type);
+        }
+
+        Feature(String label, Type typeProject, Type typeProduct) {
+            this.label = label;
+            this.typeProject = typeProject;
+            this.typeProduct = typeProduct;
+        }
+
+        public String getLabel() {
+            return label;
+        }
+
+        public Type getTypeProject() {
+            return typeProject;
+        }
+
+        public Type getTypeProduct() {
+            return typeProduct;
+        }
+
+        public boolean hasDifferentProductType() {
+            return typeProject != typeProduct;
+        }
+    }
+
+    private enum ProductValue {
+        KEYCLOAK("Keycloak"),
+        RHSSO("RH-SSO");
+
+        private final String name;
+
+        ProductValue(String name) {
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
+        }
+    }
+
+    private enum ProfileValue {
+        COMMUNITY,
+        PRODUCT,
+        PREVIEW
+    }
+
+    public interface PropertyResolver {
+        String resolve(String feature);
     }
 
     private class Config {
@@ -257,17 +288,13 @@ public class Profile {
             if (value != null) {
                 return value;
             }
-            
+
             if (propertyResolver != null) {
                 return propertyResolver.resolve(name);
             }
-            
+
             return null;
         }
-    }
-    
-    public interface PropertyResolver {
-        String resolve(String feature);
     }
 
 }

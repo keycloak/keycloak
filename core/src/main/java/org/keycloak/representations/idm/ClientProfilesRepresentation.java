@@ -17,18 +17,25 @@
 
 package org.keycloak.representations.idm;
 
+import java.util.ArrayList;
 import java.util.List;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.JsonNode;
+import org.keycloak.util.JsonSerialization;
 
 /**
  * Client Profiles' (the set of all Client Profile) external representation class
  *
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-@JsonIgnoreProperties(ignoreUnknown = true)
 public class ClientProfilesRepresentation {
-    protected List<ClientProfileRepresentation> profiles;
+
+    private List<ClientProfileRepresentation> profiles = new ArrayList<>();
+
+    // Global profiles, which are builtin in Keycloak.
+    @JsonProperty("globalProfiles")
+    private List<ClientProfileRepresentation> globalProfiles;
 
     public List<ClientProfileRepresentation> getProfiles() {
         return profiles;
@@ -38,4 +45,24 @@ public class ClientProfilesRepresentation {
         this.profiles = profiles;
     }
 
+    public List<ClientProfileRepresentation> getGlobalProfiles() {
+        return globalProfiles;
+    }
+
+    public void setGlobalProfiles(List<ClientProfileRepresentation> globalProfiles) {
+        this.globalProfiles = globalProfiles;
+    }
+
+    @Override
+    public int hashCode() {
+        return JsonSerialization.mapper.convertValue(this, JsonNode.class).hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof ClientProfilesRepresentation)) return false;
+        JsonNode jsonNode = JsonSerialization.mapper.convertValue(this, JsonNode.class);
+        JsonNode jsonNodeThat = JsonSerialization.mapper.convertValue(obj, JsonNode.class);
+        return jsonNode.equals(jsonNodeThat);
+    }
 }

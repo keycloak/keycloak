@@ -21,7 +21,7 @@
     <parent>
         <artifactId>keycloak-client-cli-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>14.0.0-SNAPSHOT</version>
+        <version>999-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -135,7 +135,7 @@
                                     </includes>
                                 </filter>
                                 <filter>
-                                    <artifact>org.jboss.resteasy:resteasy-jaxrs</artifact>
+                                    <artifact>org.jboss.resteasy:resteasy-core</artifact>
                                     <includes>
                                         <include>**/**</include>
                                     </includes>

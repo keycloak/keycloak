@@ -125,7 +125,7 @@
             <div class="form-group" data-ng-show="!importFile && !newIdentityProvider">
                 <label class="col-md-2 control-label">{{:: 'endpoints' | translate}}</label>
                 <div class="col-md-6">
-                    <a class="form-control" ng-href="{{callbackUrl}}{{identityProvider.alias}}/endpoint/descriptor" target="_blank">{{:: 'identity-provider.saml.protocol-endpoints.saml' | translate}}</a>
+                    <a class="form-control" ng-href="{{callbackUrl}}{{identityProvider.alias}}/endpoint/descriptor" rel="noopener noreferrer" target="_blank">{{:: 'identity-provider.saml.protocol-endpoints.saml' | translate}}</a>
                 </div>
                 <kc-tooltip>{{:: 'identity-provider.saml.protocol-endpoints.saml.tooltip' | translate}}</kc-tooltip>
             </div>
@@ -139,6 +139,13 @@
                     <input kc-no-reserved-chars class="form-control" id="entityId" type="text" ng-model="identityProvider.config.entityId" required>
                 </div>
                 <kc-tooltip>{{:: 'identity-provider.saml.entity-id.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix">
+                <label class="col-md-2 control-label" for="idpEntityId">{{:: 'identity-provider.saml.idp-entity-id' | translate}}</label>
+                <div class="col-md-6">
+                    <input kc-no-reserved-chars class="form-control" id="idpEntityId" type="text" ng-model="identityProvider.config.idpEntityId">
+                </div>
+                <kc-tooltip>{{:: 'identity-provider.saml.idp-entity-id.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix">
                 <label class="col-md-2 control-label" for="singleSignOnServiceUrl"><span class="required">*</span> {{:: 'single-signon-service-url' | translate}}</label>
@@ -301,6 +308,20 @@
                     <input class="form-control" string-to-number type="number" min="0" max="2147483" step="1" ng-model="identityProvider.config.allowedClockSkew" id="allowedClockSkew"/>
                 </div>
                 <kc-tooltip>{{:: 'identity-provider.allowed-clock-skew.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="attributeConsumingServiceIndex">{{:: 'identity-provider.saml.attribute-consuming-service-index' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" string-to-number type="number" min="0" max="65535" step="1" ng-model="identityProvider.config.attributeConsumingServiceIndex" id="attributeConsumingServiceIndex"/>
+                </div>
+                <kc-tooltip>{{:: 'identity-provider.saml.attribute-consuming-service-index.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="attributeConsumingServiceName">{{:: 'identity-provider.saml.attribute-consuming-service-name' | translate}}</label>
+                <div class="col-md-6">
+                    <input class="form-control" type="text" ng-model="identityProvider.config.attributeConsumingServiceName" id="attributeConsumingServiceName"/>
+                </div>
+                <kc-tooltip>{{:: 'identity-provider.saml.attribute-consuming-service-name.tooltip' | translate}}</kc-tooltip>
             </div>
         </fieldset>
         <fieldset>

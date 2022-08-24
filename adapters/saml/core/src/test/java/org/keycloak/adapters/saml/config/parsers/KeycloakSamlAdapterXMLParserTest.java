@@ -17,8 +17,9 @@
 
 package org.keycloak.adapters.saml.config.parsers;
 
-import static org.junit.Assert.*;
 import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasSize;
 
 import org.junit.Test;
 import org.keycloak.adapters.saml.config.IDP;
@@ -43,7 +44,7 @@ import org.hamcrest.Matchers;
  */
 public class KeycloakSamlAdapterXMLParserTest {
 
-    private static final String CURRENT_XSD_LOCATION = "/schema/keycloak_saml_adapter_1_12.xsd";
+    private static final String CURRENT_XSD_LOCATION = "/schema/keycloak_saml_adapter_1_13.xsd";
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
@@ -51,8 +52,8 @@ public class KeycloakSamlAdapterXMLParserTest {
     private void testValidationValid(String fileName) throws Exception {
         InputStream schema = getClass().getResourceAsStream(CURRENT_XSD_LOCATION);
         InputStream is = getClass().getResourceAsStream(fileName);
-        assertNotNull(is);
-        assertNotNull(schema);
+        assertThat(is, Matchers.notNullValue());
+        assertThat(schema, Matchers.notNullValue());
         StaxParserUtil.validate(is, schema);
     }
 
@@ -91,18 +92,18 @@ public class KeycloakSamlAdapterXMLParserTest {
         testValidationValid("keycloak-saml-keepdomassertion.xml");
         // check keep dom assertion is TRUE
         KeycloakSamlAdapter config = parseKeycloakSamlAdapterConfig("keycloak-saml-keepdomassertion.xml", KeycloakSamlAdapter.class);
-        assertNotNull(config);
-        assertEquals(1, config.getSps().size());
+        assertThat(config, Matchers.notNullValue());
+        assertThat(config.getSps(), hasSize(1));
         SP sp = config.getSps().get(0);
-        assertTrue(sp.isKeepDOMAssertion());
+        assertThat(sp.isKeepDOMAssertion(), is(true));
     }
 
     @Test
     public void testValidationKeyInvalid() throws Exception {
         InputStream schemaIs = KeycloakSamlAdapterV1Parser.class.getResourceAsStream(CURRENT_XSD_LOCATION);
         InputStream is = getClass().getResourceAsStream("keycloak-saml-invalid.xml");
-        assertNotNull(is);
-        assertNotNull(schemaIs);
+        assertThat(is, Matchers.notNullValue());
+        assertThat(schemaIs, Matchers.notNullValue());
 
         expectedException.expect(ParsingException.class);
         StaxParserUtil.validate(is, schemaIs);
@@ -117,57 +118,59 @@ public class KeycloakSamlAdapterXMLParserTest {
     public void testXmlParserBaseFile() throws Exception {
         KeycloakSamlAdapter config = parseKeycloakSamlAdapterConfig("keycloak-saml.xml", KeycloakSamlAdapter.class);
 
-        assertNotNull(config);
-        assertEquals(1, config.getSps().size());
+        assertThat(config, notNullValue());
+        assertThat(config.getSps(), hasSize(1));
+
         SP sp = config.getSps().get(0);
-        assertEquals("sp", sp.getEntityID());
-        assertEquals("EXTERNAL", sp.getSslPolicy());
-        assertEquals("format", sp.getNameIDPolicyFormat());
-        assertTrue(sp.isForceAuthentication());
-        assertTrue(sp.isIsPassive());
-        assertFalse(sp.isAutodetectBearerOnly());
-        assertFalse(sp.isKeepDOMAssertion());
-        assertEquals(2, sp.getKeys().size());
+        assertThat(sp.getEntityID(), is("sp"));
+        assertThat(sp.getSslPolicy(), is("EXTERNAL"));
+        assertThat(sp.getNameIDPolicyFormat(), is("format"));
+        assertThat(sp.isForceAuthentication(), is(true));
+        assertThat(sp.isIsPassive(), is(true));
+        assertThat(sp.isAutodetectBearerOnly(), is(false));
+        assertThat(sp.isKeepDOMAssertion(), is(false));
+        assertThat(sp.getKeys(), hasSize(2));
+
         Key signing = sp.getKeys().get(0);
-        assertTrue(signing.isSigning());
+        assertThat(signing.isSigning(), is(true));
         Key.KeyStoreConfig keystore = signing.getKeystore();
-        assertNotNull(keystore);
-        assertEquals("file", keystore.getFile());
-        assertEquals("cp", keystore.getResource());
-        assertEquals("pw", keystore.getPassword());
-        assertEquals("private alias", keystore.getPrivateKeyAlias());
-        assertEquals("private pw", keystore.getPrivateKeyPassword());
-        assertEquals("cert alias", keystore.getCertificateAlias());
+        assertThat(keystore, notNullValue());
+        assertThat(keystore.getFile(), is("file"));
+        assertThat(keystore.getResource(), is("cp"));
+        assertThat(keystore.getPassword(), is("pw"));
+        assertThat(keystore.getPrivateKeyAlias(), is("private alias"));
+        assertThat(keystore.getPrivateKeyPassword(), is("private pw"));
+        assertThat(keystore.getCertificateAlias(), is("cert alias"));
         Key encryption = sp.getKeys().get(1);
-        assertTrue(encryption.isEncryption());
-        assertEquals("private pem", encryption.getPrivateKeyPem());
-        assertEquals("public pem", encryption.getPublicKeyPem());
-        assertEquals("FROM_ATTRIBUTE", sp.getPrincipalNameMapping().getPolicy());
-        assertEquals("attribute", sp.getPrincipalNameMapping().getAttributeName());
-        assertTrue(sp.getRoleAttributes().size() == 1);
-        assertTrue(sp.getRoleAttributes().contains("member"));
+        assertThat(encryption.isEncryption(), is(true));
+        assertThat(encryption.getPrivateKeyPem(), is("private pem"));
+        assertThat(encryption.getPublicKeyPem(), is("public pem"));
+        assertThat(sp.getPrincipalNameMapping().getPolicy(), is("FROM_ATTRIBUTE"));
+        assertThat(sp.getPrincipalNameMapping().getAttributeName(), is("attribute"));
+        assertThat(sp.getRoleAttributes(), hasSize(1));
+        assertThat(sp.getRoleAttributes(), Matchers.contains("member"));
 
         IDP idp = sp.getIdp();
-        assertEquals("idp", idp.getEntityID());
-        assertEquals("RSA_SHA256", idp.getSignatureAlgorithm());
-        assertEquals("canon", idp.getSignatureCanonicalizationMethod());
-        assertTrue(idp.getSingleSignOnService().isSignRequest());
-        assertTrue(idp.getSingleSignOnService().isValidateResponseSignature());
-        assertEquals("POST", idp.getSingleSignOnService().getRequestBinding());
-        assertEquals("url", idp.getSingleSignOnService().getBindingUrl());
+        assertThat(idp.getEntityID(), is("idp"));
+        assertThat(idp.getSignatureAlgorithm(), is("RSA_SHA256"));
+        assertThat(idp.getSignatureCanonicalizationMethod(), is("canon"));
+        assertThat(idp.getSingleSignOnService().isSignRequest(), is(true));
+        assertThat(idp.getSingleSignOnService().isValidateResponseSignature(), is(true));
+        assertThat(idp.getSingleSignOnService().getRequestBinding(), is("POST"));
+        assertThat(idp.getSingleSignOnService().getBindingUrl(), is("url"));
 
-        assertFalse(idp.getSingleLogoutService().isSignRequest());
-        assertTrue(idp.getSingleLogoutService().isSignResponse());
-        assertTrue(idp.getSingleLogoutService().isValidateRequestSignature());
-        assertTrue(idp.getSingleLogoutService().isValidateResponseSignature());
-        assertEquals("REDIRECT", idp.getSingleLogoutService().getRequestBinding());
-        assertEquals("POST", idp.getSingleLogoutService().getResponseBinding());
-        assertEquals("posturl", idp.getSingleLogoutService().getPostBindingUrl());
-        assertEquals("redirecturl", idp.getSingleLogoutService().getRedirectBindingUrl());
+        assertThat(idp.getSingleLogoutService().isSignRequest(), is(false));
+        assertThat(idp.getSingleLogoutService().isSignResponse(), is(true));
+        assertThat(idp.getSingleLogoutService().isValidateRequestSignature(), is(true));
+        assertThat(idp.getSingleLogoutService().isValidateResponseSignature(), is(true));
+        assertThat(idp.getSingleLogoutService().getRequestBinding(), is("REDIRECT"));
+        assertThat(idp.getSingleLogoutService().getResponseBinding(), is("POST"));
+        assertThat(idp.getSingleLogoutService().getPostBindingUrl(), is("posturl"));
+        assertThat(idp.getSingleLogoutService().getRedirectBindingUrl(), is("redirecturl"));
 
-        assertTrue(idp.getKeys().size() == 1);
-        assertTrue(idp.getKeys().get(0).isSigning());
-        assertEquals("cert pem", idp.getKeys().get(0).getCertificatePem());
+        assertThat(idp.getKeys(), hasSize(1));
+        assertThat(idp.getKeys().get(0).isSigning(), is(true));
+        assertThat(idp.getKeys().get(0).getCertificatePem(), is("cert pem"));
     }
 
     private <T> T parseKeycloakSamlAdapterConfig(String fileName, Class<T> targetClass) throws ParsingException, IOException {
@@ -181,24 +184,24 @@ public class KeycloakSamlAdapterXMLParserTest {
     @Test
     public void testXmlParserMultipleSigningKeys() throws Exception {
         KeycloakSamlAdapter config = parseKeycloakSamlAdapterConfig("keycloak-saml-multiple-signing-keys.xml", KeycloakSamlAdapter.class);
-        assertNotNull(config);
-        assertEquals(1, config.getSps().size());
+        assertThat(config, notNullValue());
+        assertThat(config.getSps(), hasSize(1));
         SP sp = config.getSps().get(0);
         IDP idp = sp.getIdp();
 
-        assertTrue(idp.getKeys().size() == 4);
-        for (int i = 0; i < 4; i ++) {
+        assertThat(idp.getKeys(), hasSize(4));
+        for (int i = 0; i < 4; i++) {
             Key key = idp.getKeys().get(i);
-            assertTrue(key.isSigning());
-            assertEquals("cert pem " + i, idp.getKeys().get(i).getCertificatePem());
+            assertThat(key.isSigning(), is(true));
+            assertThat(idp.getKeys().get(i).getCertificatePem(), is("cert pem " + i));
         }
     }
 
     @Test
     public void testXmlParserHttpClientSettings() throws Exception {
         KeycloakSamlAdapter config = parseKeycloakSamlAdapterConfig("keycloak-saml-wth-http-client-settings.xml", KeycloakSamlAdapter.class);
-        assertNotNull(config);
-        assertEquals(1, config.getSps().size());
+        assertThat(config, notNullValue());
+        assertThat(config.getSps(), hasSize(1));
         SP sp = config.getSps().get(0);
         IDP idp = sp.getIdp();
 
@@ -211,12 +214,15 @@ public class KeycloakSamlAdapterXMLParserTest {
         assertThat(idp.getHttpClientConfig().getConnectionPoolSize(), is(42));
         assertThat(idp.getHttpClientConfig().isAllowAnyHostname(), is(true));
         assertThat(idp.getHttpClientConfig().isDisableTrustManager(), is(true));
+        assertThat(idp.getHttpClientConfig().getSocketTimeout(), is(6000L));
+        assertThat(idp.getHttpClientConfig().getConnectionTimeout(), is(7000L));
+        assertThat(idp.getHttpClientConfig().getConnectionTTL(), is(200L));
     }
 
     @Test
     public void testXmlParserSystemPropertiesNoPropertiesSet() throws Exception {
         KeycloakSamlAdapter config = parseKeycloakSamlAdapterConfig("keycloak-saml-properties.xml", KeycloakSamlAdapter.class);
-        assertNotNull(config);
+        assertThat(config, notNullValue());
         assertThat(config.getSps(), Matchers.contains(instanceOf(SP.class)));
         SP sp = config.getSps().get(0);
         IDP idp = sp.getIdp();
@@ -247,7 +253,7 @@ public class KeycloakSamlAdapterXMLParserTest {
             System.setProperty("keycloak-saml-properties.signaturesRequired", "true");
 
             KeycloakSamlAdapter config = parseKeycloakSamlAdapterConfig("keycloak-saml-properties.xml", KeycloakSamlAdapter.class);
-            assertNotNull(config);
+            assertThat(config, notNullValue());
             assertThat(config.getSps(), Matchers.contains(instanceOf(SP.class)));
             SP sp = config.getSps().get(0);
             IDP idp = sp.getIdp();
@@ -278,7 +284,7 @@ public class KeycloakSamlAdapterXMLParserTest {
     @Test
     public void testMetadataUrl() throws Exception {
         KeycloakSamlAdapter config = parseKeycloakSamlAdapterConfig("keycloak-saml-with-metadata-url.xml", KeycloakSamlAdapter.class);
-        assertNotNull(config);
+        assertThat(config, notNullValue());
         assertThat(config.getSps(), Matchers.contains(instanceOf(SP.class)));
         SP sp = config.getSps().get(0);
         IDP idp = sp.getIdp();
@@ -288,7 +294,7 @@ public class KeycloakSamlAdapterXMLParserTest {
     @Test
     public void testAllowedClockSkewDefaultUnit() throws Exception {
         KeycloakSamlAdapter config = parseKeycloakSamlAdapterConfig("keycloak-saml-with-allowed-clock-skew-default-unit.xml", KeycloakSamlAdapter.class);
-        assertNotNull(config);
+        assertThat(config, notNullValue());
         assertThat(config.getSps(), Matchers.contains(instanceOf(SP.class)));
         SP sp = config.getSps().get(0);
         IDP idp = sp.getIdp();
@@ -299,7 +305,7 @@ public class KeycloakSamlAdapterXMLParserTest {
     @Test
     public void testAllowedClockSkewWithUnit() throws Exception {
         KeycloakSamlAdapter config = parseKeycloakSamlAdapterConfig("keycloak-saml-with-allowed-clock-skew-with-unit.xml", KeycloakSamlAdapter.class);
-        assertNotNull(config);
+        assertThat(config, notNullValue());
         assertThat(config.getSps(), Matchers.contains(instanceOf(SP.class)));
         SP sp = config.getSps().get(0);
         IDP idp = sp.getIdp();
@@ -310,17 +316,17 @@ public class KeycloakSamlAdapterXMLParserTest {
     @Test
     public void testParseRoleMappingsProvider() throws Exception {
         KeycloakSamlAdapter config = parseKeycloakSamlAdapterConfig("keycloak-saml-with-role-mappings-provider.xml", KeycloakSamlAdapter.class);
-        assertNotNull(config);
+        assertThat(config, notNullValue());
         assertThat(config.getSps(), Matchers.contains(instanceOf(SP.class)));
         SP sp = config.getSps().get(0);
         SP.RoleMappingsProviderConfig roleMapperConfig = sp.getRoleMappingsProviderConfig();
-        assertNotNull(roleMapperConfig);
+        assertThat(roleMapperConfig, notNullValue());
         assertThat(roleMapperConfig.getId(), is("properties-based-role-mapper"));
         Properties providerConfig = roleMapperConfig.getConfiguration();
         assertThat(providerConfig.size(), is(2));
-        assertTrue(providerConfig.containsKey("properties.resource.location"));
-        assertEquals("role-mappings.properties", providerConfig.getProperty("properties.resource.location"));
-        assertTrue(providerConfig.containsKey("another.property"));
-        assertEquals("another.value", providerConfig.getProperty("another.property"));
+        assertThat(providerConfig.containsKey("properties.resource.location"), is(true));
+        assertThat(providerConfig.getProperty("properties.resource.location"), is("role-mappings.properties"));
+        assertThat(providerConfig.containsKey("another.property"), is(true));
+        assertThat(providerConfig.getProperty("another.property"), is("another.value"));
     }
 }

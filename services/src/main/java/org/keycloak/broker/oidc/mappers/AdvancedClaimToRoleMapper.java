@@ -21,14 +21,8 @@ import org.keycloak.broker.oidc.KeycloakOIDCIdentityProviderFactory;
 import org.keycloak.broker.oidc.OIDCIdentityProviderFactory;
 import org.keycloak.broker.provider.BrokeredIdentityContext;
 import org.keycloak.broker.provider.ConfigConstants;
-import org.keycloak.broker.provider.IdentityBrokerException;
 import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderSyncMode;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleModel;
-import org.keycloak.models.UserModel;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.provider.ProviderConfigProperty;
 
 import java.util.ArrayList;
@@ -44,7 +38,7 @@ import static org.keycloak.utils.RegexUtils.valueMatchesRegex;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke, Benjamin Weimer</a>
  * @version $Revision: 1 $
  */
-public class AdvancedClaimToRoleMapper extends AbstractClaimMapper {
+public class AdvancedClaimToRoleMapper extends AbstractClaimToRoleMapper {
 
     public static final String CLAIM_PROPERTY_NAME = "claims";
     public static final String ARE_CLAIM_VALUES_REGEX_PROPERTY_NAME = "are.claim.values.regex";
@@ -108,51 +102,12 @@ public class AdvancedClaimToRoleMapper extends AbstractClaimMapper {
     }
 
     @Override
-    public void importNewUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
-        String roleName = mapperModel.getConfig().get(ConfigConstants.ROLE);
-        RoleModel role = getRoleModel(realm, roleName);
-
-        if (hasAllClaimValues(mapperModel, context)) {
-            user.grantRole(role);
-        }
-    }
-
-    @Override
-    public void updateBrokeredUserLegacy(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
-        String roleName = mapperModel.getConfig().get(ConfigConstants.ROLE);
-        RoleModel role = getRoleModel(realm, roleName);
-
-        if (!hasAllClaimValues(mapperModel, context)) {
-            user.deleteRoleMapping(role);
-        }
-
-    }
-
-    @Override
-    public void updateBrokeredUser(KeycloakSession session, RealmModel realm, UserModel user, IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
-        String roleName = mapperModel.getConfig().get(ConfigConstants.ROLE);
-        RoleModel role = getRoleModel(realm, roleName);
-        if (hasAllClaimValues(mapperModel, context)) {
-            user.grantRole(role);
-        } else {
-            user.deleteRoleMapping(role);
-        }
-    }
-
-    private RoleModel getRoleModel(RealmModel realm, String roleName) {
-        RoleModel role = KeycloakModelUtils.getRoleFromString(realm, roleName);
-        if (role == null) {
-            throw new IdentityBrokerException("Unable to find role: " + roleName);
-        }
-        return role;
-    }
-
-    @Override
     public String getHelpText() {
         return "If all claims exists, grant the user the specified realm or client role.";
     }
 
-    protected boolean hasAllClaimValues(IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
+    @Override
+    protected boolean applies(IdentityProviderMapperModel mapperModel, BrokeredIdentityContext context) {
         Map<String, String> claims = mapperModel.getConfigMap(CLAIM_PROPERTY_NAME);
         boolean areClaimValuesRegex = Boolean.parseBoolean(mapperModel.getConfig().get(ARE_CLAIM_VALUES_REGEX_PROPERTY_NAME));
 

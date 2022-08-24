@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feature-group-spec name="domain-keycloak-standalone" xmlns="urn:jboss:galleon:feature-group:1.0">
+
+    <feature-group name="domain-interfaces">
+        <exclude feature-id="domain.interface:interface=unsecure"/>
+    </feature-group>
+
+    <feature spec="domain.interface">
+        <param name="interface" value="private"/>
+        <param name="inet-address" value="${jboss.bind.address.private:127.0.0.1}"/>
+    </feature>
+    <feature spec="domain.socket-binding-group">
+        <param name="socket-binding-group" value="standard-sockets" />
+        <param name="default-interface" value="public" />
+        <feature-group name="domain-sockets"/>
+        <feature-group name="domain-transactions-sockets"/>
+        <feature-group name="domain-mail-sockets"/>
+    </feature>
+
+    <feature spec="profile">
+        <param name="profile" value="auth-server-standalone"/>
+        <feature-group name="domain-profile">
+            <exclude spec="subsystem.sar"/>
+            <exclude spec="subsystem.jdr"/>
+            <exclude spec="subsystem.jsf"/>
+            <exclude spec="subsystem.pojo"/>
+            <exclude spec="subsystem.webservices"/>
+            <exclude spec="subsystem.batch-jberet"/>
+            <exclude spec="subsystem.distributable-web"/>
+            <exclude spec="subsystem.discovery"/>
+            <exclude spec="subsystem.ee-security"/>
+            <exclude spec="subsystem.resource-adapters"/>
+            <exclude spec="subsystem.weld"/>
+        </feature-group>
+        <feature-group name="keycloak-server-subsystem"/>
+        <feature-group name="datasources">
+            <feature-group name="keycloak-datasource"/>
+        </feature-group>
+        <feature-group name="infinispan-local"/>
+    </feature>
+
+    <feature spec="domain.system-property">
+        <param name="system-property" value="java.net.preferIPv4Stack"/>
+        <param name="value" value="true"/>
+    </feature>
+    <feature-group name="access-control"/>
+
+</feature-group-spec>

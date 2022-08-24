@@ -25,6 +25,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -33,6 +34,7 @@ import java.nio.file.Paths;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Supplier;
 
 /**
  * Creates {@link BlacklistPasswordPolicyProvider} instances.
@@ -74,7 +76,7 @@ public class BlacklistPasswordPolicyProviderFactory implements PasswordPolicyPro
 
     public static final String JBOSS_SERVER_DATA_DIR = "jboss.server.data.dir";
 
-    public static final String PASSWORD_BLACKLISTS_FOLDER = "password-blacklists/";
+    public static final String PASSWORD_BLACKLISTS_FOLDER = "password-blacklists" + File.separator;
 
     private ConcurrentMap<String, FileBasedPasswordBlacklist> blacklistRegistry = new ConcurrentHashMap<>();
 
@@ -87,7 +89,7 @@ public class BlacklistPasswordPolicyProviderFactory implements PasswordPolicyPro
         if (this.blacklistsBasePath == null) {
             synchronized (this) {
                 if (this.blacklistsBasePath == null) {
-                    this.blacklistsBasePath = FileBasedPasswordBlacklist.detectBlacklistsBasePath(config);
+                    this.blacklistsBasePath = FileBasedPasswordBlacklist.detectBlacklistsBasePath(config, this::getDefaultBlacklistsBasePath);
                 }
             }
         }
@@ -132,6 +134,17 @@ public class BlacklistPasswordPolicyProviderFactory implements PasswordPolicyPro
         return ID;
     }
 
+    /**
+     * Method to obtain the default location for the list folder. The method
+     * will return the <em>data</em> directory of the installation concatenated
+     * with <em>/password-blacklists/</em>.
+     *
+     * @return The default path used by the provider to lookup the lists
+     * when no other configuration is in place.
+     */
+    public String getDefaultBlacklistsBasePath() {
+        return System.getProperty(JBOSS_SERVER_DATA_DIR) + File.separator + PASSWORD_BLACKLISTS_FOLDER;
+    }
 
     /**
      * Resolves and potentially registers a {@link PasswordBlacklist} for the given {@code blacklistName}.
@@ -302,10 +315,11 @@ public class BlacklistPasswordPolicyProviderFactory implements PasswordPolicyPro
          * running wildfly instance.
          *
          * @param config
+         * @param defaultPathSupplier default path to use if not specified in a system prop or configuration
          * @return the detected blacklist path
          * @throws IllegalStateException if no blacklist folder could be detected
          */
-        private static Path detectBlacklistsBasePath(Config.Scope config) {
+        private static Path detectBlacklistsBasePath(Config.Scope config, Supplier<String> defaultPathSupplier) {
 
             String pathFromSysProperty = System.getProperty(SYSTEM_PROPERTY);
             if (pathFromSysProperty != null) {
@@ -317,7 +331,11 @@ public class BlacklistPasswordPolicyProviderFactory implements PasswordPolicyPro
                 return ensureExists(Paths.get(pathFromSpiConfig));
             }
 
-            String pathFromJbossDataPath = System.getProperty(JBOSS_SERVER_DATA_DIR) + "/" + PASSWORD_BLACKLISTS_FOLDER;
+            String pathFromJbossDataPath = defaultPathSupplier.get();
+            if (pathFromJbossDataPath == null) {
+                throw new IllegalStateException("Default path for the blacklist folder was null");
+            }
+
             if (!Files.exists(Paths.get(pathFromJbossDataPath))) {
                 if (!Paths.get(pathFromJbossDataPath).toFile().mkdirs()) {
                     LOG.errorf("Could not create folder for password blacklists: %s", pathFromJbossDataPath);

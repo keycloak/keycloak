@@ -18,6 +18,7 @@
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
 
     <changeSet author="keycloak" id="map-remove-ri">
+        <validCheckSum>7:3dace6b144c11f53f1ad2c0361279b86</validCheckSum>
         <dropForeignKeyConstraint baseTableName="REALM" constraintName="FK_TRAF444KK6QRKMS7N56AIWQ5Y"/>
         <dropForeignKeyConstraint baseTableName="KEYCLOAK_ROLE" constraintName="FK_KJHO5LE2C0RAL09FL8CM9WFW9"/>
     </changeSet>

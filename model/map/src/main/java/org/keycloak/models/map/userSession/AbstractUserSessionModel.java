@@ -19,19 +19,18 @@ package org.keycloak.models.map.userSession;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.map.common.AbstractEntity;
 
 import java.util.Objects;
 
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
-public abstract class AbstractUserSessionModel<K> implements UserSessionModel {
+public abstract class AbstractUserSessionModel implements UserSessionModel {
     protected final KeycloakSession session;
     protected final RealmModel realm;
-    protected final MapUserSessionEntity<K> entity;
+    protected final MapUserSessionEntity entity;
 
-    public AbstractUserSessionModel(KeycloakSession session, RealmModel realm, MapUserSessionEntity<K> entity) {
+    public AbstractUserSessionModel(KeycloakSession session, RealmModel realm, MapUserSessionEntity entity) {
         Objects.requireNonNull(entity, "entity");
         Objects.requireNonNull(realm, "realm");
 

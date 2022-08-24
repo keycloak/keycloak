@@ -76,6 +76,7 @@ public class HttpAuthenticationChannelProvider implements AuthenticationChannelP
             channelRequest.setLoginHint(infoUsedByAuthenticator);
             channelRequest.setConsentRequired(client.isConsentRequired());
             channelRequest.setAcrValues(request.getAcrValues());
+            channelRequest.setAdditionalParameters(request.getOtherClaims());
 
             SimpleHttp simpleHttp = SimpleHttp.doPost(httpAuthenticationChannelUri, session)
                     .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON)

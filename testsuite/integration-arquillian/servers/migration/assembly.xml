@@ -17,7 +17,7 @@
 
 <assembly>
     
-    <id>auth-server-migration-${migrated.auth.server.version}</id>
+    <id>${auth.server.output.directory}-${migrated.auth.server.version}</id>
 
     <formats>
         <format>zip</format>
@@ -28,14 +28,14 @@
     <fileSets>
         <fileSet>
             <directory>${auth.server.home}</directory>
-            <outputDirectory>auth-server-migration</outputDirectory>
+            <outputDirectory>${auth.server.output.directory}</outputDirectory>
             <excludes>
                 <exclude>**/*.sh</exclude>
             </excludes>
         </fileSet>
         <fileSet>
             <directory>${auth.server.home}</directory>
-            <outputDirectory>auth-server-migration</outputDirectory>
+            <outputDirectory>${auth.server.output.directory}</outputDirectory>
             <includes>
                 <include>**/*.sh</include>
             </includes>

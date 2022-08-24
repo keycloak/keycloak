@@ -241,6 +241,14 @@ public class SAMLAssertionWriter extends BaseWriter {
                 StaxUtil.writeEndElement(writer);
             }
 
+            AuthnContextDeclType authnContextDecl = sequence.getAuthnContextDecl();
+            if (authnContextDecl != null) {
+                StaxUtil.writeStartElement(writer, ASSERTION_PREFIX, JBossSAMLConstants.AUTHN_CONTEXT_DECL.get(),
+                        ASSERTION_NSURI.get());
+                StaxUtil.writeCharacters(writer, authnContextDecl.getValue().toString());
+                StaxUtil.writeEndElement(writer);
+            }
+
             Set<URIType> uriTypes = sequence.getURIType();
             if (uriTypes != null) {
                 for (URIType uriType : uriTypes) {

@@ -25,6 +25,7 @@ import java.util.concurrent.TimeUnit;
 import org.infinispan.Cache;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.Base64Url;
+import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
@@ -35,8 +36,7 @@ import org.keycloak.models.sessions.infinispan.events.RealmRemovedSessionEvent;
 import org.keycloak.models.sessions.infinispan.events.SessionEventsSenderTransaction;
 import org.keycloak.models.sessions.infinispan.stream.RootAuthenticationSessionPredicate;
 import org.keycloak.models.sessions.infinispan.util.InfinispanKeyGenerator;
-import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.models.utils.RealmInfoUtil;
+import org.keycloak.models.utils.SessionExpiration;
 import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionProvider;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
@@ -51,13 +51,16 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
     private final KeycloakSession session;
     private final Cache<String, RootAuthenticationSessionEntity> cache;
     private final InfinispanKeyGenerator keyGenerator;
+    private final int authSessionsLimit;
     protected final InfinispanKeycloakTransaction tx;
     protected final SessionEventsSenderTransaction clusterEventsSenderTx;
 
-    public InfinispanAuthenticationSessionProvider(KeycloakSession session, InfinispanKeyGenerator keyGenerator, Cache<String, RootAuthenticationSessionEntity> cache) {
+    public InfinispanAuthenticationSessionProvider(KeycloakSession session, InfinispanKeyGenerator keyGenerator,
+                                                   Cache<String, RootAuthenticationSessionEntity> cache, int authSessionsLimit) {
         this.session = session;
         this.cache = cache;
         this.keyGenerator = keyGenerator;
+        this.authSessionsLimit = authSessionsLimit;
 
         this.tx = new InfinispanKeycloakTransaction();
         this.clusterEventsSenderTx = new SessionEventsSenderTransaction(session);
@@ -80,7 +83,7 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
         entity.setRealmId(realm.getId());
         entity.setTimestamp(Time.currentTime());
 
-        int expirationSeconds = RealmInfoUtil.getDettachedClientSessionLifespan(realm);
+        int expirationSeconds = SessionExpiration.getAuthSessionLifespan(realm);
         tx.put(cache, id, entity, expirationSeconds, TimeUnit.SECONDS);
 
         return wrap(realm, entity);
@@ -88,7 +91,7 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
 
 
     private RootAuthenticationSessionAdapter wrap(RealmModel realm, RootAuthenticationSessionEntity entity) {
-        return entity==null ? null : new RootAuthenticationSessionAdapter(session, this, cache, realm, entity);
+        return entity==null ? null : new RootAuthenticationSessionAdapter(session, this, cache, realm, entity, authSessionsLimit);
     }
 
 
@@ -183,6 +186,6 @@ public class InfinispanAuthenticationSessionProvider implements AuthenticationSe
 
 
     protected String generateTabId() {
-        return Base64Url.encode(KeycloakModelUtils.generateSecret(8));
+        return Base64Url.encode(SecretGenerator.getInstance().randomBytes(8));
     }
 }

@@ -86,7 +86,7 @@ public abstract class AbstractRestServiceTest extends AbstractTestRealmKeycloakT
         testRealm.getUsers().add(UserBuilder.create().username("view-account-access").role("account", "view-profile").password("password").build());
         testRealm.getUsers().add(UserBuilder.create().username("view-applications-access").addRoles("user", "offline_access").role("account", "view-applications").role("account", "manage-consent").password("password").build());
         testRealm.getUsers().add(UserBuilder.create().username("view-consent-access").role("account", "view-consent").password("password").build());
-        testRealm.getUsers().add(UserBuilder.create().username("manage-consent-access").role("account", "manage-consent").password("password").build());
+        testRealm.getUsers().add(UserBuilder.create().username("manage-consent-access").role("account", "manage-consent").role("account", "view-profile").password("password").build());
 
         org.keycloak.representations.idm.ClientRepresentation inUseApp = ClientBuilder.create().clientId("in-use-client")
                 .id(KeycloakModelUtils.generateId())
@@ -103,6 +103,13 @@ public abstract class AbstractRestServiceTest extends AbstractTestRealmKeycloakT
                 .directAccessGrants()
                 .secret("secret1").build();
         testRealm.getClients().add(offlineApp);
+
+        org.keycloak.representations.idm.ClientRepresentation offlineApp2 = ClientBuilder.create().clientId("offline-client-without-base-url")
+                .id(KeycloakModelUtils.generateId())
+                .name("Offline Client Without Base URL")
+                .directAccessGrants()
+                .secret("secret1").build();
+        testRealm.getClients().add(offlineApp2);
 
         org.keycloak.representations.idm.ClientRepresentation alwaysDisplayApp = ClientBuilder.create().clientId("always-display-client")
                 .id(KeycloakModelUtils.generateId())

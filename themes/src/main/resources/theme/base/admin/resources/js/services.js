@@ -387,6 +387,14 @@ module.factory('RealmSpecificLocalizationTexts', function($resource) {
     return $resource(authUrl + '/admin/realms/:id/localization/:locale', {
         id : '@realm',
         locale : '@locale'
+    }, {
+        get: {
+            isArray: false,
+                method: 'GET',
+                params: {
+                    useRealmDefaultLocaleFallback: '@useRealmDefaultLocaleFallback'
+                }
+        }
     });
 });
 
@@ -1518,10 +1526,15 @@ module.factory('ClientSecret', function($resource) {
         realm : '@realm',
         client : '@client'
     },  {
-        update : {
-            method : 'POST'
+          update : {
+              method : 'POST'
+          },
+          invalidate: {
+              url:  authUrl + '/admin/realms/:realm/clients/:client/client-secret/rotated',
+              method: 'DELETE'
+          }
         }
-    });
+    );
 });
 
 module.factory('ClientRegistrationAccessToken', function($resource) {
@@ -1561,7 +1574,7 @@ module.factory('Current', function(Realm, $route, $rootScope) {
     };
 
     $rootScope.$on('$routeChangeStart', function() {
-        current.realms = Realm.query(null, function(realms) {
+        current.realms = Realm.query({briefRepresentation: true}, function(realms) {
             var currentRealm = null;
             if ($route.current.params.realm) {
                 for (var i = 0; i < realms.length; i++) {
@@ -1589,15 +1602,15 @@ module.factory('TimeUnit', function() {
         if (time % 60 == 0) {
             unit = 'Minutes';
             time  = time / 60;
+            if (time % 60 == 0) {
+                unit = 'Hours';
+                time = time / 60;
+                if (time % 24 == 0) {
+                    unit = 'Days';
+                }
+            }
         }
-        if (time % 60 == 0) {
-            unit = 'Hours';
-            time = time / 60;
-        }
-        if (time % 24 == 0) {
-            unit = 'Days'
-            time = time / 24;
-        }
+
         return unit;
     }
 
@@ -1642,14 +1655,14 @@ module.factory('TimeUnit2', function() {
                 if (time % 60 == 0) {
                     unit = 'Minutes';
                     time = time / 60;
-                }
-                if (time % 60 == 0) {
-                    unit = 'Hours';
-                    time = time / 60;
-                }
-                if (time % 24 == 0) {
-                    unit = 'Days'
-                    time = time / 24;
+                    if (time % 60 == 0) {
+                        unit = 'Hours';
+                        time = time / 60;
+                        if (time % 24 == 0) {
+                            unit = 'Days';
+                            time = time / 24;
+                        }
+                    }
                 }
             }
         }
@@ -2112,6 +2125,16 @@ module.factory('UserGroupMapping', function($resource) {
     });
 });
 
+module.factory('UserProfile', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/users/profile', {
+        realm : '@realm'
+    }, {
+        update : {
+            method : 'PUT'
+        }
+    });
+});
+
 module.factory('DefaultGroups', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/default-groups/:groupId', {
         realm : '@realm',
@@ -2195,6 +2218,27 @@ module.factory('ClientStorageOperations', function($resource) {
 module.factory('ClientRegistrationPolicyProviders', function($resource) {
     return $resource(authUrl + '/admin/realms/:realm/client-registration-policy/providers', {
         realm : '@realm',
+    });
+});
+
+module.factory('ClientPoliciesProfiles', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/client-policies/profiles?include-global-profiles=:includeGlobalProfiles', {
+        realm : '@realm',
+        includeGlobalProfiles : '@includeGlobalProfiles'
+    }, {
+       update : {
+           method : 'PUT'
+       }
+    });
+});
+
+module.factory('ClientPolicies', function($resource) {
+    return $resource(authUrl + '/admin/realms/:realm/client-policies/policies', {
+        realm : '@realm',
+    }, {
+       update : {
+           method : 'PUT'
+       }
     });
 });
 

@@ -37,7 +37,7 @@ import org.infinispan.persistence.remote.RemoteStore;
 import org.infinispan.persistence.remote.configuration.RemoteStoreConfigurationBuilder;
 import org.junit.Assert;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
-import org.keycloak.models.sessions.infinispan.util.InfinispanUtil;
+import org.keycloak.connections.infinispan.InfinispanUtil;
 
 /**
  * Test that hotrod ClientListeners are correctly executed as expected

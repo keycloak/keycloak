@@ -42,6 +42,8 @@ public class AuthenticationSessionEntity implements Serializable {
 
     private String authUserId;
 
+    private int timestamp;
+
     private String redirectUri;
     private String action;
     private Set<String> clientScopes;
@@ -60,9 +62,20 @@ public class AuthenticationSessionEntity implements Serializable {
     public AuthenticationSessionEntity(
       String clientUUID,
       String authUserId,
+      int timestamp,
       String redirectUri, String action, Set<String> clientScopes,
       Map<String, AuthenticationSessionModel.ExecutionStatus> executionStatus, String protocol,
       Map<String, String> clientNotes, Map<String, String> authNotes, Set<String> requiredActions, Map<String, String> userSessionNotes) {
+        this(clientUUID, authUserId, redirectUri, action, clientScopes, executionStatus, protocol, clientNotes, authNotes, requiredActions, userSessionNotes);
+        this.timestamp = timestamp;
+    }
+
+    public AuthenticationSessionEntity(
+            String clientUUID,
+            String authUserId,
+            String redirectUri, String action, Set<String> clientScopes,
+            Map<String, AuthenticationSessionModel.ExecutionStatus> executionStatus, String protocol,
+            Map<String, String> clientNotes, Map<String, String> authNotes, Set<String> requiredActions, Map<String, String> userSessionNotes) {
         this.clientUUID = clientUUID;
 
         this.authUserId = authUserId;
@@ -94,6 +107,14 @@ public class AuthenticationSessionEntity implements Serializable {
 
     public void setAuthUserId(String authUserId) {
         this.authUserId = authUserId;
+    }
+
+    public int getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(int timestamp) {
+        this.timestamp = timestamp;
     }
 
     public String getRedirectUri() {
@@ -171,6 +192,7 @@ public class AuthenticationSessionEntity implements Serializable {
     public static class ExternalizerImpl implements Externalizer<AuthenticationSessionEntity> {
 
         private static final int VERSION_1 = 1;
+        private static final int VERSION_2 = 2;
 
         public static final ExternalizerImpl INSTANCE = new ExternalizerImpl();
 
@@ -196,11 +218,13 @@ public class AuthenticationSessionEntity implements Serializable {
 
         @Override
         public void writeObject(ObjectOutput output, AuthenticationSessionEntity value) throws IOException {
-            output.writeByte(VERSION_1);
+            output.writeByte(VERSION_2);
 
             MarshallUtil.marshallString(value.clientUUID, output);
 
             MarshallUtil.marshallString(value.authUserId, output);
+
+            output.writeInt(value.timestamp);
 
             MarshallUtil.marshallString(value.redirectUri, output);
             MarshallUtil.marshallString(value.action, output);
@@ -220,6 +244,8 @@ public class AuthenticationSessionEntity implements Serializable {
             switch (input.readByte()) {
                 case VERSION_1:
                     return readObjectVersion1(input);
+                case VERSION_2:
+                    return readObjectVersion2(input);
                 default:
                     throw new IOException("Unknown version");
             }
@@ -242,6 +268,28 @@ public class AuthenticationSessionEntity implements Serializable {
               KeycloakMarshallUtil.readMap(input, KeycloakMarshallUtil.STRING_EXT, KeycloakMarshallUtil.STRING_EXT, size -> new ConcurrentHashMap<>(size)), // authNotes
               KeycloakMarshallUtil.readCollection(input, KeycloakMarshallUtil.STRING_EXT, ConcurrentHashMap::newKeySet),  // requiredActions
               KeycloakMarshallUtil.readMap(input, KeycloakMarshallUtil.STRING_EXT, KeycloakMarshallUtil.STRING_EXT, size -> new ConcurrentHashMap<>(size)) // userSessionNotes
+            );
+        }
+
+        public AuthenticationSessionEntity readObjectVersion2(ObjectInput input) throws IOException, ClassNotFoundException {
+            return new AuthenticationSessionEntity(
+                    MarshallUtil.unmarshallString(input),     // clientUUID
+
+                    MarshallUtil.unmarshallString(input),     // authUserId
+
+                    input.readInt(),                          // timestamp
+
+                    MarshallUtil.unmarshallString(input),     // redirectUri
+                    MarshallUtil.unmarshallString(input),     // action
+                    KeycloakMarshallUtil.readCollection(input, KeycloakMarshallUtil.STRING_EXT, ConcurrentHashMap::newKeySet),  // clientScopes
+
+                    KeycloakMarshallUtil.readMap(input, KeycloakMarshallUtil.STRING_EXT, EXECUTION_STATUS_EXT, size -> new ConcurrentHashMap<>(size)), // executionStatus
+                    MarshallUtil.unmarshallString(input),     // protocol
+
+                    KeycloakMarshallUtil.readMap(input, KeycloakMarshallUtil.STRING_EXT, KeycloakMarshallUtil.STRING_EXT, size -> new ConcurrentHashMap<>(size)), // clientNotes
+                    KeycloakMarshallUtil.readMap(input, KeycloakMarshallUtil.STRING_EXT, KeycloakMarshallUtil.STRING_EXT, size -> new ConcurrentHashMap<>(size)), // authNotes
+                    KeycloakMarshallUtil.readCollection(input, KeycloakMarshallUtil.STRING_EXT, ConcurrentHashMap::newKeySet),  // requiredActions
+                    KeycloakMarshallUtil.readMap(input, KeycloakMarshallUtil.STRING_EXT, KeycloakMarshallUtil.STRING_EXT, size -> new ConcurrentHashMap<>(size)) // userSessionNotes
             );
         }
     }

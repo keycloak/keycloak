@@ -62,4 +62,8 @@ public interface ClientsResource {
     @Produces(MediaType.APPLICATION_JSON)
     List<ClientRepresentation> findByClientId(@QueryParam("clientId") String clientId);
 
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    List<ClientRepresentation> query(@QueryParam("q") String searchQuery);
+
 }

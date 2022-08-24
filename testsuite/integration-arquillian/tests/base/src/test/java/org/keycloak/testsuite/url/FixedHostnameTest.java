@@ -11,7 +11,6 @@ import org.keycloak.client.registration.Auth;
 import org.keycloak.client.registration.ClientRegistration;
 import org.keycloak.client.registration.ClientRegistrationException;
 import org.keycloak.dom.saml.v2.metadata.EndpointType;
-import org.keycloak.dom.saml.v2.metadata.EntitiesDescriptorType;
 import org.keycloak.dom.saml.v2.metadata.EntityDescriptorType;
 import org.keycloak.dom.saml.v2.metadata.IDPSSODescriptorType;
 import org.keycloak.dom.saml.v2.protocol.ResponseType;
@@ -58,13 +57,14 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.QUARKUS;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_PORT;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_SCHEME;
 import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
-import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.QUARKUS;
 import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 
-@AuthServerContainerExclude({REMOTE, QUARKUS})
+@AuthServerContainerExclude(value = {REMOTE, QUARKUS},
+        details = "Quarkus supports its own hostname provider implementation similar to the default hostname provider")
 public class FixedHostnameTest extends AbstractHostnameTest {
 
     public static final String SAML_CLIENT_ID = "http://whatever.hostname:8280/app/";
@@ -230,12 +230,9 @@ public class FixedHostnameTest extends AbstractHostnameTest {
           ) {
             entityDescriptor = EntityUtils.toString(resp.getEntity(), GeneralConstants.SAML_CHARSET);
             Object metadataO = SAMLParser.getInstance().parse(new ByteArrayInputStream(entityDescriptor.getBytes(GeneralConstants.SAML_CHARSET)));
-            assertThat(metadataO, instanceOf(EntitiesDescriptorType.class));
-            EntitiesDescriptorType metadata = (EntitiesDescriptorType) metadataO;
+            assertThat(metadataO, instanceOf(EntityDescriptorType.class));
+            EntityDescriptorType ed = (EntityDescriptorType) metadataO;
 
-            assertThat(metadata.getEntityDescriptor(), hasSize(1));
-            assertThat(metadata.getEntityDescriptor().get(0), instanceOf(EntityDescriptorType.class));
-            EntityDescriptorType ed = (EntityDescriptorType) metadata.getEntityDescriptor().get(0);
             assertThat(ed.getEntityID(), is(realmUrl));
 
             IDPSSODescriptorType idpDescriptor = ed.getChoiceType().get(0).getDescriptors().get(0).getIdpDescriptor();

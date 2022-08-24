@@ -48,11 +48,11 @@
         </tr>
         </thead>
         <tbody>
-        <tr ng-repeat="(key, value) in localizationTexts">
-            <td>{{key}}</td>
-            <td>{{value}}</td>
-            <td class="kc-action-cell"  kc-open="/realms/{{realm.realm}}/localization/{{selectedRealmSpecificLocales}}/{{key}}">{{:: 'edit' | translate}}</td>
-            <td class="kc-action-cell" data-ng-click="removeLocalizationText(key)">{{:: 'delete' | translate}}</td>
+        <tr ng-repeat="pair in localizationTexts">
+            <td>{{pair[0]}}</td>
+            <td>{{pair[1]}}</td>
+            <td class="kc-action-cell"  kc-open="/realms/{{realm.realm}}/localization/{{selectedRealmSpecificLocales}}/{{pair[0]}}">{{:: 'edit' | translate}}</td>
+            <td class="kc-action-cell" data-ng-click="removeLocalizationText(pair[0])">{{:: 'delete' | translate}}</td>
         </tr>
         </tbody>
     </table>

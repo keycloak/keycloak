@@ -73,6 +73,12 @@ public class TokenSettings extends RealmSettings {
         @FindBy(id = "actionTokenAttributeTime")
         private WebElement actionTokenAttributeTime;
 
+        @FindBy(name = "requestUriLifespanUnit")
+        private Select requestUriLifespanUnit;
+
+        @FindBy(id = "requestUriLifespan")
+        private WebElement requestUriLifespanTimeout;
+
         @FindBy(xpath = "//button[@data-ng-click='resetToDefaultToken(actionTokenId)']")
         private WebElement resetButton;
 
@@ -84,13 +90,17 @@ public class TokenSettings extends RealmSettings {
             setTimeout(sessionLifespanTimeoutUnit, sessionLifespanTimeout, time, unit);
         }
 
+        public void setRequestUriLifespanTimeout(int time, TimeUnit unit) {
+            setTimeout(requestUriLifespanUnit, requestUriLifespanTimeout, time, unit);
+        }
+
         public void setOperation(String tokenType, int time, TimeUnit unit) {
             selectOperation(tokenType);
             setTimeout(actionTokenAttributeUnit, actionTokenAttributeTime, time, unit);
         }
 
         private void setTimeout(Select timeoutElement, WebElement unitElement,
-                int timeout, TimeUnit unit) {
+                                int timeout, TimeUnit unit) {
             timeoutElement.selectByValue(capitalize(unit.name().toLowerCase()));
             UIUtils.setTextInputValue(unitElement, valueOf(timeout));
         }
@@ -111,6 +121,14 @@ public class TokenSettings extends RealmSettings {
         public void selectOperation(String tokenType) {
             actionTokenAttributeSelect.selectByValue(tokenType.toLowerCase());
             pause(500); // wait for the form to be updated; there isn't currently a better way
+        }
+
+        public int getRequestUriLifespanTimeout() {
+            return Integer.parseInt(requestUriLifespanTimeout.getAttribute("value"));
+        }
+
+        public TimeUnit getRequestUriLifespanUnits() {
+            return TimeUnit.valueOf(requestUriLifespanUnit.getFirstSelectedOption().getText().toUpperCase());
         }
     }
 }

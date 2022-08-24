@@ -17,9 +17,10 @@
 
 package org.keycloak.services.clientpolicy;
 
+import java.io.IOException;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.function.Supplier;
 
 import org.jboss.logging.Logger;
 import org.keycloak.common.Profile;
@@ -31,6 +32,7 @@ import org.keycloak.representations.idm.ClientProfilesRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.clientpolicy.condition.ClientPolicyConditionProvider;
 import org.keycloak.services.clientpolicy.executor.ClientPolicyExecutorProvider;
+import org.keycloak.util.JsonSerialization;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
@@ -40,9 +42,11 @@ public class DefaultClientPolicyManager implements ClientPolicyManager {
     private static final Logger logger = Logger.getLogger(DefaultClientPolicyManager.class);
 
     private final KeycloakSession session;
+    private final Supplier<List<ClientProfileRepresentation>> globalClientProfilesSupplier;
 
-    public DefaultClientPolicyManager(KeycloakSession session) {
+    public DefaultClientPolicyManager(KeycloakSession session, Supplier<List<ClientProfileRepresentation>> globalClientProfilesSupplier) {
         this.session = session;
+        this.globalClientProfilesSupplier = globalClientProfilesSupplier;
     }
 
     @Override
@@ -62,28 +66,27 @@ public class DefaultClientPolicyManager implements ClientPolicyManager {
     }
 
     private void doPolicyOperation(ClientConditionOperation condition, ClientExecutorOperation executor, RealmModel realm) throws ClientPolicyException {
-        Map<String, ClientProfileModel> map = ClientPoliciesUtil.getClientProfilesModel(session, realm);
-        List<ClientPolicyModel> list = ClientPoliciesUtil.getEnabledClientProfilesModel(session, realm).stream().collect(Collectors.toList());
+        List<ClientPolicy> list = ClientPoliciesUtil.getEnabledClientPolicies(session, realm);
 
         if (list == null || list.isEmpty()) {
             logger.trace("POLICY OPERATION :: No enabled policy.");
             return;
         }
 
-        for (ClientPolicyModel policy: list) {
-            logger.tracev("POLICY OPERATION :: policy name = {0}, isBuiltin = {1}", policy.getName(), policy.isBuiltin());
+        for (ClientPolicy policy: list) {
+            logger.tracev("POLICY OPERATION :: policy name = {0}", policy.getName());
             if (!isSatisfied(policy, condition)) {
-                logger.tracev("POLICY UNSATISFIED :: policy name = {0}, isBuiltin = {1}", policy.getName(), policy.isBuiltin());
+                logger.tracev("POLICY UNSATISFIED :: policy name = {0}", policy.getName());
                 continue;
             }
 
-            logger.tracev("POLICY APPLIED :: policy name = {0}, isBuiltin = {1}", policy.getName(), policy.isBuiltin());
-            execute(policy, executor, map);
+            logger.tracev("POLICY APPLIED :: policy name = {0}", policy.getName());
+            execute(policy, executor, realm);
         }
     }
 
     private boolean isSatisfied(
-            ClientPolicyModel policy,
+            ClientPolicy policy,
             ClientConditionOperation op) throws ClientPolicyException {
 
         if (policy.getConditions() == null || policy.getConditions().isEmpty()) {
@@ -92,8 +95,7 @@ public class DefaultClientPolicyManager implements ClientPolicyManager {
         }
 
         boolean ret = false;
-        for (Object obj : policy.getConditions()) {
-            ClientPolicyConditionProvider condition = (ClientPolicyConditionProvider)obj;
+        for (ClientPolicyConditionProvider condition : policy.getConditions()) {
             logger.tracev("CONDITION OPERATION :: policy name = {0}, condition name = {1}, provider id = {2}", policy.getName(), condition.getName(), condition.getProviderId());
             try {
                 ClientPolicyVote vote = op.run(condition);
@@ -128,16 +130,20 @@ public class DefaultClientPolicyManager implements ClientPolicyManager {
     }
 
     private void execute(
-            ClientPolicyModel policy,
+            ClientPolicy policy,
             ClientExecutorOperation op,
-            Map<String, ClientProfileModel> map) throws ClientPolicyException {
+            RealmModel realm) throws ClientPolicyException {
 
         if (policy.getProfiles() == null || policy.getProfiles().isEmpty()) {
             logger.tracev("NO PROFILE :: policy name = {0}", policy.getName());
+            return;
         }
 
+        // Get profiles from realm
+        ClientProfilesRepresentation clientProfiles =  ClientPoliciesUtil.getClientProfilesRepresentation(session, realm);
+
         for (String profileName : policy.getProfiles()) {
-            ClientProfileModel profile = map.get(profileName);
+            ClientProfile profile = ClientPoliciesUtil.getClientProfileModel(session, realm, clientProfiles, globalClientProfilesSupplier.get(), profileName);
             if (profile == null) {
                 logger.tracev("PROFILE NOT FOUND :: policy name = {0}, profile name = {1}", policy.getName(), profileName);
                 continue;
@@ -148,8 +154,7 @@ public class DefaultClientPolicyManager implements ClientPolicyManager {
                 continue;
             }
 
-            for (Object obj : profile.getExecutors()) {
-                ClientPolicyExecutorProvider executor = (ClientPolicyExecutorProvider)obj;
+            for (ClientPolicyExecutorProvider executor : profile.getExecutors()) {
                 logger.tracev("EXECUTION :: policy name = {0}, profile name = {1}, executor name = {2}, provider id = {3}", policy.getName(), profileName, executor.getName(), executor.getProviderId());
                 try {
                     op.run(executor);
@@ -170,236 +175,122 @@ public class DefaultClientPolicyManager implements ClientPolicyManager {
         void run(ClientPolicyExecutorProvider executor) throws ClientPolicyException;
     }
 
-
-    // Client Polices Realm Attributes Keys
-    public static final String CLIENT_PROFILES = "client-policies.profiles";
-    public static final String CLIENT_POLICIES = "client-policies.policies";
-
-    // builtin profiles and policies are loaded on booting keycloak at once.
-    // therefore, their representations are kept and remain unchanged.
-    // these are shared among all realms.
-
-    // those can be null to show that no profile/policy exist
-    private static String builtinClientProfilesJson;
-    private static String builtinClientPoliciesJson;
-
-    @Override
-    public void setupClientPoliciesOnKeycloakApp(String profilesFilePath, String policiesFilePath) {
-        logger.trace("LOAD BUILTIN PROFILE POLICIES ON KEYCLOAK");
-
-        // client profile can be referred from client policy so that client profile needs to be loaded at first.
-        // load builtin profiles on keycloak app
-        ClientProfilesRepresentation validatedProfilesRep = null;
-        try {
-            validatedProfilesRep = ClientPoliciesUtil.getValidatedBuiltinClientProfilesRepresentation(session, getClass().getResourceAsStream(profilesFilePath));
-        } catch (ClientPolicyException cpe) {
-            logger.warnv("LOAD BUILTIN PROFILES ON KEYCLOAK FAILED :: error = {0}, error detail = {1}", cpe.getError(), cpe.getErrorDetail());
-            return;
-        }
-
-        String validatedJson = null;
-        try {
-            validatedJson = ClientPoliciesUtil.convertClientProfilesRepresentationToJson(validatedProfilesRep);
-        } catch (ClientPolicyException cpe) {
-            logger.warnv("VALIDATE SERIALIZE BUILTIN PROFILES ON KEYCLOAK FAILED :: error = {0}, error detail = {1}", cpe.getError(), cpe.getErrorDetail());
-            return;
-        }
-
-        builtinClientProfilesJson = validatedJson;
-
-        // load builtin policies on keycloak app
-        ClientPoliciesRepresentation validatedPoliciesRep = null;
-        try {
-            validatedPoliciesRep = ClientPoliciesUtil.getValidatedBuiltinClientPoliciesRepresentation(session, getClass().getResourceAsStream(policiesFilePath));
-        } catch (ClientPolicyException cpe) {
-            logger.warnv("LOAD BUILTIN POLICIES ON KEYCLOAK FAILED :: error = {0}, error detail = {1}", cpe.getError(), cpe.getErrorDetail());
-            builtinClientProfilesJson = null;
-            return;
-        }
-
-        validatedJson = null;
-        try {
-            validatedJson = ClientPoliciesUtil.convertClientPoliciesRepresentationToJson(validatedPoliciesRep);
-        } catch (ClientPolicyException cpe) {
-            logger.warnv("VALIDATE SERIALIZE BUILTIN POLICIES ON KEYCLOAK FAILED :: error = {0}, error detail = {1}", cpe.getError(), cpe.getErrorDetail());
-            builtinClientProfilesJson = null;
-            return;
-        }
-
-        builtinClientPoliciesJson = validatedJson;
-    }
-
     @Override
     public void setupClientPoliciesOnCreatedRealm(RealmModel realm) {
-        logger.tracev("LOAD BUILTIN PROFILE POLICIES ON CREATED REALM :: realm = {0}", realm.getName());
-
-        // put already loaded builtin profiles/policies on keycloak app to newly created realm
-        setClientProfilesJsonString(realm, builtinClientProfilesJson);
-        setClientPoliciesJsonString(realm, builtinClientPoliciesJson);
+        // For now, not create any create policies on the new realms. Administrator is supposed to add the policies if needed
     }
 
     @Override
-    public void setupClientPoliciesOnImportedRealm(RealmModel realm, RealmRepresentation rep) {
+    public void updateRealmModelFromRepresentation(RealmModel realm, RealmRepresentation rep) {
         logger.tracev("LOAD PROFILE POLICIES ON IMPORTED REALM :: realm = {0}", realm.getName());
 
-        // put already loaded builtin profiles/policies on keycloak app to newly created realm
-        setClientProfilesJsonString(realm, builtinClientProfilesJson);
-        setClientPoliciesJsonString(realm, builtinClientPoliciesJson);
-
-        // merge imported polices/profiles with builtin policies/profiles
-        String validatedJson = null;
-        try {
-            validatedJson = ClientPoliciesUtil.getValidatedClientProfilesJson(session, realm, rep.getClientProfiles());
-        } catch (ClientPolicyException e) {
-            logger.warnv("VALIDATE SERIALIZE IMPORTED REALM PROFILES FAILED :: error = {0}, error detail = {1}", e.getError(), e.getErrorDetail());
-            // revert to builtin profiles
-            validatedJson = builtinClientProfilesJson;
+        if (rep.getParsedClientProfiles() != null) {
+            try {
+                updateClientProfiles(realm, rep.getParsedClientProfiles());
+            } catch (ClientPolicyException e) {
+                logger.warnv("VALIDATE SERIALIZE IMPORTED REALM PROFILES FAILED :: error = {0}, error detail = {1}", e.getError(), e.getErrorDetail());
+                throw new RuntimeException("Failed to update client profiles", e);
+            }
         }
-        setClientProfilesJsonString(realm, validatedJson);
 
-        try {
-            validatedJson = ClientPoliciesUtil.getValidatedClientPoliciesJson(session, realm, rep.getClientPolicies());
-        } catch (ClientPolicyException e) {
-            logger.warnv("VALIDATE SERIALIZE IMPORTED REALM POLICIES FAILED :: error = {0}, error detail = {1}", e.getError(), e.getErrorDetail());
-            // revert to builtin profiles
-            validatedJson = builtinClientPoliciesJson;
+        ClientPoliciesRepresentation clientPolicies = rep.getParsedClientPolicies();
+        if (clientPolicies != null) {
+            try {
+                updateClientPolicies(realm, clientPolicies);
+            } catch (ClientPolicyException e) {
+                logger.warnv("VALIDATE SERIALIZE IMPORTED REALM POLICIES FAILED :: error = {0}, error detail = {1}", e.getError(), e.getErrorDetail());
+                throw new RuntimeException("Failed to update client policies", e);
+            }
+        } else {
+            setupClientPoliciesOnCreatedRealm(realm);
         }
-        setClientPoliciesJsonString(realm, validatedJson);
     }
 
     @Override
-    public void updateClientProfiles(RealmModel realm, String json) throws ClientPolicyException {
-        logger.tracev("UPDATE PROFILES :: realm = {0}, PUT = {1}", realm.getName(), json);
-        String validatedJsonString = null;
+    public void updateClientProfiles(RealmModel realm, ClientProfilesRepresentation clientProfiles) throws ClientPolicyException {
         try {
-            validatedJsonString = getValidatedClientProfilesJson(realm, json);
+            if (clientProfiles == null) {
+                throw new ClientPolicyException("Passing null clientProfiles not allowed");
+            }
+            ClientProfilesRepresentation validatedProfilesRep = ClientPoliciesUtil.getValidatedClientProfilesForUpdate(session, realm, clientProfiles, globalClientProfilesSupplier.get());
+            String validatedJsonString = ClientPoliciesUtil.convertClientProfilesRepresentationToJson(validatedProfilesRep);
+            ClientPoliciesUtil.setClientProfilesJsonString(realm, validatedJsonString);
+            logger.tracev("UPDATE PROFILES :: realm = {0}, validated and modified PUT = {1}", realm.getName(), validatedJsonString);
         } catch (ClientPolicyException e) {
             logger.warnv("VALIDATE SERIALIZE PROFILES FAILED :: error = {0}, error detail = {1}", e.getError(), e.getErrorDetail());
             throw e;
         }
-        setClientProfilesJsonString(realm, validatedJsonString);
-        logger.tracev("UPDATE PROFILES :: realm = {0}, validated and modified PUT = {1}", realm.getName(), validatedJsonString);
     }
 
     @Override
-    public String getClientProfiles(RealmModel realm) {
-        String json = getClientProfilesJsonString(realm);
-        logger.tracev("GET PROFILES :: realm = {0}, GET = {1}", realm.getName(), json);
-        return json;
+    public ClientProfilesRepresentation getClientProfiles(RealmModel realm, boolean includeGlobalProfiles) throws ClientPolicyException {
+        try {
+            ClientProfilesRepresentation clientProfiles = ClientPoliciesUtil.getClientProfilesRepresentation(session, realm);
+            if (includeGlobalProfiles) {
+                clientProfiles.setGlobalProfiles(new LinkedList<>(globalClientProfilesSupplier.get()));
+            }
+
+            if (logger.isTraceEnabled()) {
+                logger.tracev("GET PROFILES :: realm = {0}, GET = {1}", realm.getName(), JsonSerialization.writeValueAsString(clientProfiles));
+            }
+
+            return clientProfiles;
+        } catch (ClientPolicyException e) {
+            logger.warnv("GET CLIENT PROFILES FAILED :: error = {0}, error detail = {1}", e.getError(), e.getErrorDetail());
+            throw e;
+        } catch (IOException ioe) {
+            throw new RuntimeException("Unexpected exception when converting JSON to String", ioe);
+        }
     }
 
     @Override
-    public void updateClientPolicies(RealmModel realm, String json) throws ClientPolicyException {
-        logger.tracev("UPDATE POLICIES :: realm = {0}, PUT = {1}", realm.getName(), json);
+    public void updateClientPolicies(RealmModel realm, ClientPoliciesRepresentation clientPolicies) throws ClientPolicyException {
         String validatedJsonString = null;
         try {
-            validatedJsonString = getValidatedClientPoliciesJson(realm, json);
+            if (clientPolicies == null) {
+                throw new ClientPolicyException("Passing null clientPolicies not allowed");
+            }
+            ClientPoliciesRepresentation clientPoliciesRep = ClientPoliciesUtil.getValidatedClientPoliciesForUpdate(session, realm, clientPolicies, globalClientProfilesSupplier.get());
+            validatedJsonString = ClientPoliciesUtil.convertClientPoliciesRepresentationToJson(clientPoliciesRep);
         } catch (ClientPolicyException e) {
             logger.warnv("VALIDATE SERIALIZE POLICIES FAILED :: error = {0}, error detail = {1}", e.getError(), e.getErrorDetail());
             throw e;
         }
-        setClientPoliciesJsonString(realm, validatedJsonString);
+        ClientPoliciesUtil.setClientPoliciesJsonString(realm, validatedJsonString);
         logger.tracev("UPDATE POLICIES :: realm = {0}, validated and modified PUT = {1}", realm.getName(), validatedJsonString);
     }
 
     @Override
-    public void setupClientPoliciesOnExportingRealm(RealmModel realm, RealmRepresentation rep) {
-        // client profiles  that filter out builtin profiles..
-        ClientProfilesRepresentation filteredOutProfiles = null;
+    public ClientPoliciesRepresentation getClientPolicies(RealmModel realm) throws ClientPolicyException {
         try {
-            filteredOutProfiles = getClientProfilesForExport(realm);
-        } catch (ClientPolicyException e) {
-            // set as null
-        }
-        rep.setClientProfiles(filteredOutProfiles);
-
-        // client policies that filter out builtin and policies.
-        ClientPoliciesRepresentation filteredOutPolicies = null;
-        try {
-            filteredOutPolicies = getClientPoliciesForExport(realm);
-        } catch (ClientPolicyException e) {
-            // set as null
-        }
-        rep.setClientPolicies(filteredOutPolicies);
-    }
-
-    @Override
-    public String getClientPolicies(RealmModel realm) {
-        String json = getClientPoliciesJsonString(realm);
-        logger.tracev("GET POLICIES :: realm = {0}, GET = {1}", realm.getName(), json);
-        return json;
-    }
-
-    @Override
-    public String getClientProfilesOnKeycloakApp() {
-        return builtinClientProfilesJson;
-    }
-
-    @Override
-    public String getClientPoliciesOnKeycloakApp() {
-        return builtinClientPoliciesJson;
-    }
-
-    @Override
-    public String getClientProfilesJsonString(RealmModel realm) {
-        return realm.getAttribute(CLIENT_PROFILES);
-    }
-
-    @Override
-    public String getClientPoliciesJsonString(RealmModel realm) {
-        return realm.getAttribute(CLIENT_POLICIES);
-    }
-
-    private void setClientProfilesJsonString(RealmModel realm, String json) {
-        realm.setAttribute(CLIENT_PROFILES, json);
-    }
-
-    private void setClientPoliciesJsonString(RealmModel realm, String json) {
-        realm.setAttribute(CLIENT_POLICIES, json);
-    }
-
-    private String getValidatedClientProfilesJson(RealmModel realm, String profilesJson) throws ClientPolicyException {
-        ClientProfilesRepresentation validatedProfilesRep = ClientPoliciesUtil.getValidatedClientProfilesRepresentation(session, realm, profilesJson);
-        return ClientPoliciesUtil.convertClientProfilesRepresentationToJson(validatedProfilesRep);
-    }
-
-    private String getValidatedClientPoliciesJson(RealmModel realm, String policiesJson) throws ClientPolicyException {
-        ClientPoliciesRepresentation validatedPoliciesRep = ClientPoliciesUtil.getValidatedClientPoliciesRepresentation(session, realm, policiesJson);
-        return ClientPoliciesUtil.convertClientPoliciesRepresentationToJson(validatedPoliciesRep);
-    }
-
-    /**
-     * not return null
-     */
-    private ClientProfilesRepresentation getClientProfilesForExport(RealmModel realm) throws ClientPolicyException {
-        ClientProfilesRepresentation profilesRep = ClientPoliciesUtil.getClientProfilesRepresentation(session, realm);
-        if (profilesRep == null || profilesRep.getProfiles() == null) {
-            return new ClientProfilesRepresentation();
-        }
-
-        // not export builtin profiles
-        List<ClientProfileRepresentation> filteredProfileRepList = profilesRep.getProfiles().stream().filter(profileRep->!profileRep.isBuiltin()).collect(Collectors.toList());
-        profilesRep.setProfiles(filteredProfileRepList);
-        return profilesRep;
-    }
-
-    /**
-     * not return null
-     */
-    private ClientPoliciesRepresentation getClientPoliciesForExport(RealmModel realm) throws ClientPolicyException {
-        ClientPoliciesRepresentation policiesRep = ClientPoliciesUtil.getClientPoliciesRepresentation(session, realm);
-        if (policiesRep == null || policiesRep.getPolicies() == null) {
-            return new ClientPoliciesRepresentation();
-        }
-
-        policiesRep.getPolicies().stream().forEach(policyRep->{
-            if (policyRep.isBuiltin()) {
-                // only keeps name, builtin and enabled fields.
-                policyRep.setDescription(null);
-                policyRep.setConditions(null);
-                policyRep.setProfiles(null);
+            ClientPoliciesRepresentation clientPolicies = ClientPoliciesUtil.getClientPoliciesRepresentation(session, realm);
+            if (logger.isTraceEnabled()) {
+                logger.tracev("GET POLICIES :: realm = {0}, GET = {1}", realm.getName(), JsonSerialization.writeValueAsString(clientPolicies));
             }
-        });
-        return policiesRep;
+            return clientPolicies;
+        } catch (ClientPolicyException e) {
+            logger.warnv("GET CLIENT POLICIES FAILED :: error = {0}, error detail = {1}", e.getError(), e.getErrorDetail());
+            throw e;
+        } catch (IOException ioe) {
+            throw new RuntimeException("Unexpected exception when converting JSON to String", ioe);
+        }
+    }
+
+    @Override
+    public void updateRealmRepresentationFromModel(RealmModel realm, RealmRepresentation rep) {
+        try {
+            // client profiles  that filter out global profiles..
+            ClientProfilesRepresentation filteredOutProfiles = getClientProfiles(realm, false);
+            rep.setParsedClientProfiles(filteredOutProfiles);
+
+            ClientPoliciesRepresentation filteredOutPolicies = getClientPolicies(realm);
+            rep.setParsedClientPolicies(filteredOutPolicies);
+        } catch (ClientPolicyException cpe) {
+            throw new IllegalStateException("Exception during export client profiles or client policies", cpe);
+        }
+    }
+
+    @Override
+    public void close() {
     }
 }

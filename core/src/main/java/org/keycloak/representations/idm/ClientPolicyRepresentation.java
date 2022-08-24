@@ -19,21 +19,17 @@ package org.keycloak.representations.idm;
 
 import java.util.List;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-
 /**
  * Client Policy's external representation class
  *
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-@JsonIgnoreProperties(ignoreUnknown = true)
 public class ClientPolicyRepresentation {
 
     protected String name;
     protected String description;
-    protected Boolean builtin;
-    protected Boolean enable;
-    protected List<Object> conditions;
+    protected Boolean enabled;
+    protected List<ClientPolicyConditionRepresentation> conditions;
     protected List<String> profiles;
 
     public String getName() {
@@ -52,27 +48,19 @@ public class ClientPolicyRepresentation {
         this.description = description;
     }
 
-    public Boolean isBuiltin() {
-        return builtin;
+    public Boolean isEnabled() {
+        return enabled;
     }
 
-    public void setBuiltin(Boolean builtin) {
-        this.builtin = builtin;
+    public void setEnabled(Boolean enabled) {
+        this.enabled = enabled;
     }
 
-    public Boolean isEnable() {
-        return enable;
-    }
-
-    public void setEnable(Boolean enable) {
-        this.enable = enable;
-    }
-
-    public List<Object> getConditions() {
+    public List<ClientPolicyConditionRepresentation> getConditions() {
         return conditions;
     }
 
-    public void setConditions(List<Object> conditions) {
+    public void setConditions(List<ClientPolicyConditionRepresentation> conditions) {
         this.conditions = conditions;
     }
 

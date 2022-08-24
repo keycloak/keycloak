@@ -261,8 +261,10 @@ public class ClientAdapter implements ClientModel, JpaModel<ClientEntity> {
 
     @Override
     public void setProtocol(String protocol) {
-        entity.setProtocol(protocol);
-        session.getKeycloakSessionFactory().publish((ClientModel.ClientProtocolUpdatedEvent) () -> ClientAdapter.this);
+        if (!Objects.equals(entity.getProtocol(), protocol)) {
+            entity.setProtocol(protocol);
+            session.getKeycloakSessionFactory().publish((ClientModel.ClientProtocolUpdatedEvent) () -> ClientAdapter.this);
+        }
     }
 
     @Override

@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Copyright 2022 Red Hat, Inc. and/or its affiliates
+and other contributors as indicated by the @author tags.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+
+
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd
+                    http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
+
+    <changeSet author="keycloak" id="authz-resource-1">
+
+        <createTable tableName="kc_authz_resource">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="version" type="INTEGER" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="metadata" type="json"/>
+        </createTable>
+        <ext:addGeneratedColumn tableName="kc_authz_resource">
+            <ext:column name="entityversion" type="INTEGER" jsonColumn="metadata" jsonProperty="entityVersion"/>
+            <ext:column name="realmid" type="KC_KEY" jsonColumn="metadata" jsonProperty="fRealmId"/>
+            <ext:column name="resourceserverid" type="UUID" jsonColumn="metadata" jsonProperty="fResourceServerId"/>
+            <ext:column name="name" type="VARCHAR(255)" jsonColumn="metadata" jsonProperty="fName"/>
+            <ext:column name="type" type="VARCHAR(255)" jsonColumn="metadata" jsonProperty="fType"/>
+            <ext:column name="owner" type="KC_KEY" jsonColumn="metadata" jsonProperty="fOwner"/>
+        </ext:addGeneratedColumn>
+        <createIndex tableName="kc_authz_resource" indexName="authz_res_entityVersion">
+            <column name="entityversion"/>
+        </createIndex>
+        <createIndex tableName="kc_authz_resource" indexName="authz_res_realm_resource_server_owner">
+            <column name="realmid"/>
+            <column name="resourceserverid"/>
+            <column name="owner"/>
+        </createIndex>
+        <createIndex tableName="kc_authz_resource" indexName="authz_res_type">
+            <column name="type"/>
+        </createIndex>
+        <createIndex tableName="kc_authz_resource" indexName="authz_res_name">
+            <column name="name"/>
+        </createIndex>
+        <addUniqueConstraint tableName="kc_authz_resource" columnNames="realmid, resourceserverid, name, owner"/>
+
+        <createTable tableName="kc_authz_resource_scope">
+            <column name="resource_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="authz_resource_resource_fk" references="kc_authz_resource(id)" deleteCascade="true"/>
+            </column>
+            <column name="scope_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="authz_resource_scope_fk" references="kc_authz_scope(id)" deleteCascade="true"/>
+            </column>
+        </createTable>
+        <createIndex tableName="kc_authz_resource_scope" indexName="authz_resource_scope_resource_id">
+            <column name="resource_id"/>
+        </createIndex>
+        <createIndex tableName="kc_authz_resource_scope" indexName="authz_resource_scope_scope_id">
+            <column name="scope_id"/>
+        </createIndex>
+
+        <createTable tableName="kc_authz_resource_uri">
+            <column name="resource_id" type="UUID">
+                <constraints nullable="false" foreignKeyName="authz_resource_attr_fk" references="kc_authz_resource(id)" deleteCascade="true"/>
+            </column>
+            <column name="uri" type="VARCHAR(255)"/>
+        </createTable>
+        <createIndex tableName="kc_authz_resource_uri" indexName="authz_resource_uri">
+            <column name="resource_id"/>
+        </createIndex>
+
+        <createTable tableName="kc_authz_resource_attribute">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="fk_root" type="UUID">
+                <constraints nullable="false" foreignKeyName="authz_resource_attr_fk" references="kc_authz_resource(id)" deleteCascade="true"/>
+            </column>
+            <column name="name" type="VARCHAR(255)"/>
+            <column name="value" type="text"/>
+        </createTable>
+        <createIndex tableName="kc_authz_resource_attribute" indexName="authz_resource_attr_fk_root">
+            <column name="fk_root"/>
+        </createIndex>
+        <createIndex tableName="kc_authz_resource_attribute" indexName="authz_resource_attr_name_value">
+            <column name="name"/>
+            <column name="VALUE(255)" valueComputed="VALUE(255)"/>
+        </createIndex>
+        <modifySql dbms="postgresql,cockroachdb">
+            <replace replace="VALUE(255)" with="(value::varchar(250))"/>
+        </modifySql>
+
+    </changeSet>
+
+    <changeSet author="keycloak" id="authz-resource-2" dbms="postgresql">
+        <!-- this is deferrable and initiallyDeferred as hibernate will first insert new entries and then delete the old by default -->
+        <!-- this will not work on cockroachdb as deferred indexes are not supported in version 22.1 yet, therefore, only run it on postgresql -->
+        <!-- see https://go.crdb.dev/issue-v/31632/v21.2 for the current status of the implementation -->
+        <addUniqueConstraint tableName="kc_authz_resource_scope" columnNames="resource_id, scope_id" deferrable="true" initiallyDeferred="true" />
+        <addUniqueConstraint tableName="kc_authz_resource_attribute" columnNames="fk_root, name, value" deferrable="true" initiallyDeferred="true" />
+
+        <!-- unimplemented on CockroachDB: computed column "XXX" cannot reference a foreign key
+             See: https://go.crdb.dev/issue-v/46672/v21.2 -->
+        <addForeignKeyConstraint constraintName="authz_resource_fk_root_fkey"
+                                 baseTableName="kc_authz_resource"
+                                 baseColumnNames="resourceserverid"
+                                 referencedTableName="kc_authz_resource_server"
+                                 referencedColumnNames="id"
+                                 onDelete="CASCADE"/>
+    </changeSet>
+
+    <changeSet author="keycloak" id="authz-resource-3" dbms="cockroachdb">
+        <!-- placeholder for foreign key on computed column to allow fast looking by resourceserverid -->
+        <createIndex tableName="kc_authz_resource" indexName="authz_resource_fk_root_fkey">
+            <column name="resourceserverid"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

@@ -23,7 +23,7 @@ public class SAMLClientCredentialsForm extends Form {
 
     private static final String PATH_PREFIX = "saml-keys/";
 
-    @FindBy(linkText = "SAML Keys")
+    @FindBy(linkText = "Keys")
     private WebElement samlKeysLink;
 
     @FindBy(xpath = "//button[@data-ng-click='importSigningKey()']")

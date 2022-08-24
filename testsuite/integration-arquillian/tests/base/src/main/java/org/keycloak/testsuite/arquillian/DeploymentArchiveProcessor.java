@@ -250,23 +250,8 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
             }
             
             appendChildInDocument(webXmlDoc, "web-app", filter);
-
-            // Limitation that all deployments of annotated class use same skipPattern. Refactor if something more flexible is needed (would require more tricky web.xml parsing though...)
-            String skipPattern = testClass.getAnnotation(UseServletFilter.class).skipPattern();
-            if (skipPattern != null && !skipPattern.isEmpty()) {
-                Element initParam = webXmlDoc.createElement("init-param");
-
-                Element paramName = webXmlDoc.createElement("param-name");
-                paramName.setTextContent(KeycloakOIDCFilter.SKIP_PATTERN_PARAM);
-
-                Element paramValue = webXmlDoc.createElement("param-value");
-                paramValue.setTextContent(skipPattern);
-
-                initParam.appendChild(paramName);
-                initParam.appendChild(paramValue);
-
-                filter.appendChild(initParam);
-            }
+            addInitParam(webXmlDoc, filter, KeycloakOIDCFilter.SKIP_PATTERN_PARAM, testClass.getAnnotation(UseServletFilter.class).skipPattern());
+            addInitParam(webXmlDoc, filter, KeycloakOIDCFilter.ID_MAPPER_PARAM, testClass.getAnnotation(UseServletFilter.class).idMapper());
 
             appendChildInDocument(webXmlDoc, "web-app", filter);
 
@@ -298,7 +283,25 @@ public class DeploymentArchiveProcessor implements ApplicationArchiveProcessor {
 
         archive.add(new StringAsset((documentToString(webXmlDoc))), WEBXML_PATH);
     }
-    
+
+    private void addInitParam(Document webXmlDoc, Element filter, String initParamName, String initParamValue) {
+        // Limitation that all deployments of annotated class use same skipPattern. Refactor if something more flexible is needed (would require more tricky web.xml parsing though...)
+        if (initParamValue != null && !initParamValue.isEmpty()) {
+            Element initParam = webXmlDoc.createElement("init-param");
+
+            Element paramName = webXmlDoc.createElement("param-name");
+            paramName.setTextContent(initParamName);
+
+            Element paramValue = webXmlDoc.createElement("param-value");
+            paramValue.setTextContent(initParamValue);
+
+            initParam.appendChild(paramName);
+            initParam.appendChild(paramValue);
+
+            filter.appendChild(initParam);
+        }
+    }
+
     private String getKeycloakResolverClass(Document doc) {
         try {
             XPathFactory factory = XPathFactory.newInstance();

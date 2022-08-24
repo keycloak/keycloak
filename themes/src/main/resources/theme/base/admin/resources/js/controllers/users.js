@@ -385,7 +385,7 @@ module.controller('UserDetailCtrl', function($scope, realm, user, BruteForceUser
                                              Components,
                                              UserImpersonation, RequiredActions,
                                              UserStorageOperations,
-                                             $location, $http, Dialog, Notifications, $translate, Groups) {
+                                             $location, $http, Dialog, Notifications, $translate, $route, Groups) {
     $scope.realm = realm;
     $scope.create = !user.id;
     $scope.editUsername = $scope.create || $scope.realm.editUsernameAllowed;
@@ -488,10 +488,8 @@ module.controller('UserDetailCtrl', function($scope, realm, user, BruteForceUser
                 realm: realm.realm,
                 userId: $scope.user.id
             }, $scope.user, function () {
-                $scope.changed = false;
-                convertAttributeValuesToString($scope.user);
-                user = angular.copy($scope.user);
                 Notifications.success($translate.instant('user.edit.success'));
+                $route.reload();
             });
         }
     };

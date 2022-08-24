@@ -31,7 +31,7 @@ import java.util.stream.Stream;
 /**
  *
  * This is an optional capability interface that is intended to be implemented by any
- * {@link org.keycloak.storage.UserStorageProvider UserStorageProvider} that supports complex user querying. You must
+ * <code>UserStorageProvider</code> that supports complex user querying. You must
  * implement this interface if you want to view and manage users from the administration console.
  * <p/>
  * Note that all methods in this interface should limit search only to data available within the storage that is
@@ -388,6 +388,8 @@ public interface UserQueryProvider {
      *     <li>{@link UserModel#IDP_USER_ID} - search for users with federated identity with
      *     the given userId (case sensitive string)</li>
      * </ul>
+     *
+     * Any other parameters will be treated as custom user attributes.
      *
      * This method is used by the REST API when querying users.
      *

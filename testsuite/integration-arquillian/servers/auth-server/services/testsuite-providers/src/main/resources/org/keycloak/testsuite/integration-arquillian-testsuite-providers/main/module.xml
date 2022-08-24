@@ -21,6 +21,10 @@
     </resources>
     <dependencies>
         <module name="com.fasterxml.jackson.core.jackson-core"/>
+        <module name="com.fasterxml.jackson.core.jackson-annotations"/>
+        <module name="com.fasterxml.jackson.core.jackson-databind"/>
+        <module name="com.fasterxml.jackson.datatype.jackson-datatype-jdk8"/>
+        <module name="com.fasterxml.jackson.jaxrs.jackson-jaxrs-json-provider"/>
         <module name="javax.api"/>
         <module name="javax.mail.api"/>
         <module name="javax.ws.rs.api"/>
@@ -34,6 +38,9 @@
         <module name="org.keycloak.keycloak-saml-core-public"/>
         <module name="org.keycloak.keycloak-server-spi"/>
         <module name="org.keycloak.keycloak-server-spi-private"/>
+        <module name="org.keycloak.keycloak-model-legacy"/>
+        <module name="org.keycloak.keycloak-model-legacy-private"/>
+        <module name="org.keycloak.keycloak-model-legacy-services"/>
         <module name="org.keycloak.keycloak-services"/>
         <module name="org.keycloak.keycloak-model-infinispan"/>
         <module name="org.keycloak.keycloak-model-jpa"/>

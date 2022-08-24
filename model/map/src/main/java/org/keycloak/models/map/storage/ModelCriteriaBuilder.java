@@ -51,7 +51,7 @@ import org.keycloak.storage.SearchableModelField;
  *
  * @author hmlnarik
  */
-public interface ModelCriteriaBuilder<M> {
+public interface ModelCriteriaBuilder<M, Self extends ModelCriteriaBuilder<M, Self>> {
 
     /**
      * The operators are very basic ones for this use case. In the real scenario,
@@ -96,12 +96,12 @@ public interface ModelCriteriaBuilder<M> {
         ILIKE,
         /**
          * Operator for belonging into a collection of values. Operand in {@code value}
-         * can be an array (via an implicit conversion of the vararg), a {@link Collection} or a {@link Stream}.
+         * can be an array (via an implicit conversion of the vararg), a {@link java.util.Collection} or a {@link java.util.stream.Stream}.
          */
         IN,
-        /** Is not null */
+        /** Is not null and, in addition, in case of collection not empty */
         EXISTS,
-        /** Is null */
+        /** Is null or, in addition, in case of collection empty */
         NOT_EXISTS,
     }
 
@@ -115,9 +115,9 @@ public interface ModelCriteriaBuilder<M> {
      * @param op Operator
      * @param value Additional operands of the operator.
      * @return
-     * @throws CriterionNotSupported If the operator is not supported for the given field.
+     * @throws CriterionNotSupportedException If the operator is not supported for the given field.
      */
-    ModelCriteriaBuilder<M> compare(SearchableModelField<M> modelField, Operator op, Object... value);
+    Self compare(SearchableModelField<? super M> modelField, Operator op, Object... value);
 
     /**
      * Creates and returns a new instance of {@code ModelCriteriaBuilder} that
@@ -134,9 +134,10 @@ public interface ModelCriteriaBuilder<M> {
      *   );
      * </pre>
      *
-     * @throws CriterionNotSupported If the operator is not supported for the given field.
+     * @throws CriterionNotSupportedException If the operator is not supported for the given field.
      */
-    ModelCriteriaBuilder<M> and(ModelCriteriaBuilder<M>... builders);
+    @SuppressWarnings("unchecked")
+    Self and(Self... builders);
 
     /**
      * Creates and returns a new instance of {@code ModelCriteriaBuilder} that
@@ -153,9 +154,10 @@ public interface ModelCriteriaBuilder<M> {
      *   );
      * </pre>
      *
-     * @throws CriterionNotSupported If the operator is not supported for the given field.
+     * @throws CriterionNotSupportedException If the operator is not supported for the given field.
      */
-    ModelCriteriaBuilder<M> or(ModelCriteriaBuilder<M>... builders);
+    @SuppressWarnings("unchecked")
+    Self or(Self... builders);
 
     /**
      * Creates and returns a new instance of {@code ModelCriteriaBuilder} that
@@ -166,22 +168,8 @@ public interface ModelCriteriaBuilder<M> {
      *
      * @param builder
      * @return
-     * @throws CriterionNotSupported If the operator is not supported for the given field.
+     * @throws CriterionNotSupportedException If the operator is not supported for the given field.
      */
-    ModelCriteriaBuilder<M> not(ModelCriteriaBuilder<M> builder);
-
-    /**
-     * Returns this object cast to the given class, or {@code null} if the class cannot be cast to that {@code clazz}.
-     * @param <T>
-     * @param clazz
-     * @return
-     */
-    default <T extends ModelCriteriaBuilder> T unwrap(Class<T> clazz) {
-        if (clazz.isInstance(this)) {
-            return clazz.cast(this);
-        } else {
-            return null;
-        }
-    }
+    Self not(Self builder);
 
 }

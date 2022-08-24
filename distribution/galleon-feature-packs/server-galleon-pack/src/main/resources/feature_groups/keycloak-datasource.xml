@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feature-group-spec name="keycloak-datasource" xmlns="urn:jboss:galleon:feature-group:1.0">
+    <feature spec="subsystem.datasources">
+        <feature spec="subsystem.datasources.data-source">
+            <param name="data-source" value="KeycloakDS"/>
+            <param name="enabled" value="true"/>
+            <param name="use-java-context" value="true"/>
+            <param name="jndi-name" value="java:jboss/datasources/KeycloakDS"/>
+            <param name="data-source" value="KeycloakDS"/>
+            <param name="connection-url" value="&quot;jdbc:h2:${jboss.server.data.dir}/keycloak;AUTO_SERVER=TRUE&quot;"/>
+            <param name="driver-name" value="h2"/>
+            <param name="user-name" value="sa"/>
+            <param name="password" value="sa"/>
+            <param name="statistics-enabled" value="${wildfly.datasources.statistics-enabled:${wildfly.statistics-enabled:false}}" />
+        </feature>
+    </feature>
+</feature-group-spec>
+
