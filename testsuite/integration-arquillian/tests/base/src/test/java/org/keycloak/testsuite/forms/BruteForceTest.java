@@ -53,6 +53,7 @@ import org.keycloak.testsuite.util.UserBuilder;
 
 import javax.mail.internet.MimeMessage;
 import java.net.MalformedURLException;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Map;
 
@@ -112,6 +113,7 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
         testRealm.setMaxDeltaTimeSeconds(20);
         testRealm.setMaxFailureWaitSeconds(100);
         testRealm.setWaitIncrementSeconds(5);
+        testRealm.setOtpPolicyCodeReusable(true);
         //testRealm.setQuickLoginCheckMilliSeconds(0L);
 
         userId = user.getId();
@@ -130,6 +132,7 @@ public class BruteForceTest extends AbstractTestRealmKeycloakTest {
             realm.setMaxDeltaTimeSeconds(20);
             realm.setMaxFailureWaitSeconds(100);
             realm.setWaitIncrementSeconds(5);
+            realm.setOtpPolicyCodeReusable(true);
             adminClient.realm("test").update(realm);
         } catch (Exception e) {
             throw new RuntimeException(e);

@@ -1280,8 +1280,8 @@ public class MapExportImportManager implements ExportImportManager {
         if (rep.getOtpPolicyAlgorithm() != null) policy.setAlgorithm(rep.getOtpPolicyAlgorithm());
         if (rep.getOtpPolicyDigits() != null) policy.setDigits(rep.getOtpPolicyDigits());
         if (rep.getOtpPolicyPeriod() != null) policy.setPeriod(rep.getOtpPolicyPeriod());
+        if (rep.isOtpPolicyCodeReusable() != null) policy.setCodeReusable(rep.isOtpPolicyCodeReusable());
         return policy;
-
     }
 
 

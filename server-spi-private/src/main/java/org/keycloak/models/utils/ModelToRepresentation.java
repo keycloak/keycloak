@@ -418,6 +418,7 @@ public class ModelToRepresentation {
         rep.setOtpPolicyType(otpPolicy.getType());
         rep.setOtpPolicyLookAheadWindow(otpPolicy.getLookAheadWindow());
         rep.setOtpSupportedApplications(otpPolicy.getSupportedApplications());
+        rep.setOtpPolicyCodeReusable(otpPolicy.isCodeReusable());
 
         WebAuthnPolicy webAuthnPolicy = realm.getWebAuthnPolicy();
         rep.setWebAuthnPolicyRpEntityName(webAuthnPolicy.getRpEntityName());

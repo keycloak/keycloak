@@ -24,6 +24,7 @@ import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.events.Details;
 import org.keycloak.models.Constants;
+import org.keycloak.models.OTPPolicy;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -33,11 +34,13 @@ import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.AppPage.RequestType;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
+import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.AdminClientUtil;
 import org.keycloak.testsuite.util.GreenMailRule;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmRepUtil;
 import org.keycloak.testsuite.util.UserBuilder;
+import org.keycloak.testsuite.util.WaitUtils;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.Entity;
@@ -132,6 +135,8 @@ public class LoginTotpTest extends AbstractTestRealmKeycloakTest {
 
         Assert.assertTrue(loginTotpPage.isCurrent());
 
+        setOtpTimeOffset(TimeBasedOTP.DEFAULT_INTERVAL_SECONDS, totp);
+
         loginTotpPage.login(totp.generateTOTP("totpSecret"));
 
         Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
@@ -199,7 +204,7 @@ public class LoginTotpTest extends AbstractTestRealmKeycloakTest {
     @Test
     public void loginWithTotp_getToken_checkCompatibilityCLI() throws IOException {
         Client httpClient = AdminClientUtil.createResteasyClient();
-        try {
+        try (RealmAttributeUpdater rau = new RealmAttributeUpdater(testRealm()).setOtpPolicyCodeReusable(true).update()) {
             WebTarget exchangeUrl = httpClient.target(OAuthClient.AUTH_SERVER_ROOT)
                     .path("/realms")
                     .path(TEST)
