@@ -1,6 +1,5 @@
 import type RoleRepresentation from "@keycloak/keycloak-admin-client/lib/defs/roleRepresentation";
 import type MappingsRepresentation from "@keycloak/keycloak-admin-client/lib/defs/mappingsRepresentation";
-import type ClientRepresentation from "@keycloak/keycloak-admin-client/lib/defs/clientRepresentation";
 import type { ClientScopes } from "@keycloak/keycloak-admin-client/lib/resources/clientScopes";
 import type { Groups } from "@keycloak/keycloak-admin-client/lib/resources/groups";
 import type { Roles } from "@keycloak/keycloak-admin-client/lib/resources/roles";
@@ -153,22 +152,6 @@ export const getEffectiveRoles = async (
   return (await applyQuery(adminClient, type, query, { id })).map((role) => ({
     role,
   }));
-};
-
-export const getEffectiveClientRoles = async (
-  adminClient: KeycloakAdminClient,
-  type: ResourcesKey,
-  id: string,
-  client: ClientRepresentation
-): Promise<Row[]> => {
-  const query = mapping[type]!.listEffective[2];
-  return (
-    await applyQuery(adminClient, type, query, {
-      id,
-      client: client.id,
-      clientUniqueId: client.id,
-    })
-  ).map((role) => ({ role, client: { clientId: client.id, ...client } }));
 };
 
 export const getAvailableRoles = async (

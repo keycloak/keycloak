@@ -89,7 +89,7 @@ export const AddRoleMappingModal = ({
 
     return localeSort(
       roles.map((e) => ({
-        client: { clientId: e.client },
+        client: { clientId: e.client, id: e.clientId },
         role: { id: e.id, name: e.role, description: e.description },
       })),
       compareRow

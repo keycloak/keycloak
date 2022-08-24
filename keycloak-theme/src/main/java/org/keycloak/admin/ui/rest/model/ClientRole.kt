@@ -6,6 +6,7 @@ data class ClientRole(
     @field:Schema(required = true) var id: String,
     @field:Schema(required = true) var role: String,
     @field:Schema(required = true) var client: String?,
+    @field:Schema(required = true) var clientId: String?,
     var description: String?
 ) {
 }

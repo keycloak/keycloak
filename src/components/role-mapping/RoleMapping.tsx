@@ -20,12 +20,9 @@ import { useAlerts } from "../alert/Alerts";
 import { useConfirmDialog } from "../confirm-dialog/ConfirmDialog";
 import { useAdminClient } from "../../context/auth/AdminClient";
 import { ListEmptyState } from "../list-empty-state/ListEmptyState";
-import {
-  deleteMapping,
-  getEffectiveClientRoles,
-  getEffectiveRoles,
-  getMapping,
-} from "./queries";
+import { deleteMapping, getEffectiveRoles, getMapping } from "./queries";
+import { getEffectiveClientRoles } from "./resource";
+import { useRealm } from "../../context/realm-context/RealmContext";
 
 import "./role-mapping.css";
 
@@ -92,6 +89,7 @@ export const RoleMapping = ({
 }: RoleMappingProps) => {
   const { t } = useTranslation(type);
   const { adminClient } = useAdminClient();
+  const { realm } = useRealm();
   const { addAlert, addError } = useAlerts();
 
   const [key, setKey] = useState(0);
@@ -107,23 +105,28 @@ export const RoleMapping = ({
   };
 
   const loader = async () => {
-    const effectiveRoles = await getEffectiveRoles(adminClient, type, id);
-
+    let effectiveRoles: Row[] = [];
     let effectiveClientRoles: Row[] = [];
     if (!hide) {
-      const clients = await adminClient.clients.find();
+      effectiveRoles = await getEffectiveRoles(adminClient, type, id);
+
       effectiveClientRoles = (
-        await Promise.all(
-          clients.map(async (client) =>
-            getEffectiveClientRoles(adminClient, type, id, client)
-          )
-        )
-      ).flat();
+        await getEffectiveClientRoles({
+          adminClient,
+          realm,
+          type,
+          id,
+        })
+      ).map((e) => ({
+        client: { clientId: e.client, id: e.clientId },
+        role: { id: e.id, name: e.role, description: e.description },
+      }));
     }
 
     const roles = await getMapping(adminClient, type, id);
-    const realmRoles = roles.realmMappings?.map((role) => ({ role }));
-    const client = Object.values(roles.clientMappings || {})
+    const realmRolesMapping =
+      roles.realmMappings?.map((role) => ({ role })) || [];
+    const clientMapping = Object.values(roles.clientMappings || {})
       .map((client) =>
         client.mappings.map((role: RoleRepresentation) => ({
           client: { clientId: client.client, ...client },
@@ -133,8 +136,11 @@ export const RoleMapping = ({
       .flat();
 
     return [
-      ...mapRoles(realmRoles || [], effectiveRoles, hide),
-      ...[...client, ...effectiveClientRoles],
+      ...mapRoles(
+        [...realmRolesMapping, ...clientMapping],
+        [...effectiveClientRoles, ...effectiveRoles],
+        hide
+      ),
     ];
   };
 

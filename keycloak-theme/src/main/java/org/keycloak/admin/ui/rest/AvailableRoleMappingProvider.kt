@@ -9,7 +9,7 @@ import org.keycloak.services.resources.admin.ext.AdminRealmResourceProvider
 import org.keycloak.services.resources.admin.ext.AdminRealmResourceProviderFactory
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator
 
-class AdminUIRestEndpointProvider : AdminRealmResourceProviderFactory, AdminRealmResourceProvider {
+class AvailableRoleMappingProvider : AdminRealmResourceProviderFactory, AdminRealmResourceProvider {
     override fun create(session: KeycloakSession): AdminRealmResourceProvider {
         return this
     }
@@ -18,7 +18,7 @@ class AdminUIRestEndpointProvider : AdminRealmResourceProviderFactory, AdminReal
     override fun postInit(factory: KeycloakSessionFactory) {}
     override fun close() {}
     override fun getId(): String {
-        return "admin-ui"
+        return "admin-ui-available-roles"
     }
 
     override fun getResource(
@@ -27,6 +27,6 @@ class AdminUIRestEndpointProvider : AdminRealmResourceProviderFactory, AdminReal
         auth: AdminPermissionEvaluator,
         adminEvent: AdminEventBuilder
     ): Any {
-        return AdminUIExtendedResource(realm, auth)
+        return AvailableRoleMappingResource(realm, auth)
     }
 }

@@ -14,6 +14,8 @@ abstract class RoleMapper {
 
     @AfterMapping
     fun convert(role: RoleModel, @MappingTarget clientRole: ClientRole, @Context list: Stream<ClientModel>) {
-        clientRole.client = list.filter { c -> role.containerId == c.id }.findFirst().get().clientId
+        val clientModel = list.filter { c -> role.containerId == c.id }.findFirst().get()
+        clientRole.clientId = clientModel.id
+        clientRole.client = clientModel.clientId
     }
 }
