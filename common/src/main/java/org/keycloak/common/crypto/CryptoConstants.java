@@ -11,6 +11,9 @@ public class CryptoConstants {
     public static final String RSA_OAEP = "RSA-OAEP";
     public static final String RSA_OAEP_256 = "RSA-OAEP-256";
 
+    // Constant for the OCSP provider
+    // public static final String OCSP = "OCSP";
+
     /** Name of Java security provider used with non-fips BouncyCastle. Should be used in non-FIPS environment */
     public static final String BC_PROVIDER_ID = "BC";
 

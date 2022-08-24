@@ -12,8 +12,10 @@ import org.bouncycastle.jce.spec.ECNamedCurveSpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.keycloak.common.crypto.CryptoProvider;
 import org.keycloak.common.crypto.CryptoConstants;
+import org.keycloak.common.crypto.ECDSACryptoProvider;
 import org.keycloak.common.crypto.CertificateUtilsProvider;
 import org.keycloak.common.crypto.PemUtilsProvider;
+import org.keycloak.common.crypto.UserIdentityExtractorProvider;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -65,6 +67,22 @@ public class DefaultCryptoProvider implements CryptoProvider {
     public ECParameterSpec createECParams(String curveName) {
         ECNamedCurveParameterSpec spec = ECNamedCurveTable.getParameterSpec(curveName);
         return new ECNamedCurveSpec("prime256v1", spec.getCurve(), spec.getG(), spec.getN());
+    }
+
+    @Override
+    public UserIdentityExtractorProvider getIdentityExtractorProvider() {
+        return new BCUserIdentityExtractorProvider();
+    }
+
+    @Override
+    public ECDSACryptoProvider getEcdsaCryptoProvider() {
+        return new BCECDSACryptoProvider();
+    }
+
+
+    @Override
+    public <T> T getOCSPProver(Class<T> clazz) {
+        return clazz.cast(new BCOCSPProvider());
     }
 
 }

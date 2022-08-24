@@ -21,7 +21,6 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.quarkus.logging.Log;
 import io.quarkus.test.junit.QuarkusTest;
 import org.awaitility.Awaitility;
-import org.bouncycastle.util.encoders.Base64;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.keycloak.operator.Constants;
@@ -30,7 +29,7 @@ import org.keycloak.operator.crds.v2alpha1.deployment.Keycloak;
 import org.keycloak.operator.crds.v2alpha1.deployment.KeycloakStatusCondition;
 import org.keycloak.operator.crds.v2alpha1.deployment.ValueOrSecret;
 
-
+import java.util.Base64;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -94,7 +93,9 @@ public class WatchedSecretsTest extends BaseOperatorTest {
             var prevPodNames = getPodNamesForCrs(Set.of(kc));
 
             var dbSecret = getDbSecret();
-            dbSecret.getData().put("username", Base64.toBase64String(username.getBytes()));
+
+            dbSecret.getData().put("username",
+                    Base64.getEncoder().encodeToString(username.getBytes()));
             k8sclient.secrets().createOrReplace(dbSecret);
 
             Awaitility.await()

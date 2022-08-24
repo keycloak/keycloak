@@ -16,9 +16,8 @@
  *
  */
 
-package org.keycloak.authentication.authenticators.x509;
+package org.keycloak.crypto.fips;
 
-import freemarker.template.utility.NullArgumentException;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
@@ -27,20 +26,20 @@ import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.x500.RDN;
 import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.bouncycastle.asn1.x500.style.IETFUtils;
-import org.keycloak.common.util.PemUtils;
-import org.keycloak.services.ServicesLogger;
+import org.jboss.logging.Logger;
+import org.keycloak.common.crypto.UserIdentityExtractor;
+import org.keycloak.common.crypto.UserIdentityExtractorProvider;
 
 import java.io.ByteArrayInputStream;
+import java.security.Principal;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Function;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * @author <a href="mailto:pnalyvayko@agi.com">Peter Nalyvayko</a>
@@ -48,41 +47,17 @@ import java.util.regex.Pattern;
  * @date 7/30/2016
  */
 
-public abstract class UserIdentityExtractor {
+public class BCFIPSUserIdentityExtractorProvider  extends UserIdentityExtractorProvider {
 
-    private static final ServicesLogger logger = ServicesLogger.LOGGER;
+    private static final Logger logger = Logger.getLogger(BCFIPSUserIdentityExtractorProvider.class.getName());
 
-    public abstract Object extractUserIdentity(X509Certificate[] certs);
-
-    static class OrExtractor extends UserIdentityExtractor {
-
-        UserIdentityExtractor extractor;
-        UserIdentityExtractor other;
-        OrExtractor(UserIdentityExtractor extractor, UserIdentityExtractor other) {
-            this.extractor = extractor;
-            this.other = other;
-
-            if (this.extractor == null)
-                throw new NullArgumentException("extractor");
-            if (this.other == null)
-                throw new NullArgumentException("other");
-        }
-
-        @Override
-        public Object extractUserIdentity(X509Certificate[] certs) {
-            Object result = this.extractor.extractUserIdentity(certs);
-            if (result == null)
-                result = this.other.extractUserIdentity(certs);
-            return result;
-        }
-    }
-
-    static class X500NameRDNExtractor extends UserIdentityExtractor {
+    class X500NameRDNExtractorBCProvider extends X500NameRDNExtractor {
 
         private ASN1ObjectIdentifier x500NameStyle;
-        Function<X509Certificate[],X500Name> x500Name;
-        X500NameRDNExtractor(ASN1ObjectIdentifier x500NameStyle, Function<X509Certificate[],X500Name> x500Name) {
-            this.x500NameStyle = x500NameStyle;
+        Function<X509Certificate[],Principal> x500Name;
+        
+        public X500NameRDNExtractorBCProvider(String attrName, Function<X509Certificate[], Principal> x500Name) {
+            this.x500NameStyle = BCStyle.INSTANCE.attrNameToOID(attrName);
             this.x500Name = x500Name;
         }
 
@@ -92,7 +67,7 @@ public abstract class UserIdentityExtractor {
             if (certs == null || certs.length == 0)
                 throw new IllegalArgumentException();
 
-            X500Name name = x500Name.apply(certs);
+            X500Name name = new X500Name(x500Name.apply(certs).getName());
             if (name != null) {
                 RDN[] rnds = name.getRDNs(x500NameStyle);
                 if (rnds != null && rnds.length > 0) {
@@ -107,7 +82,7 @@ public abstract class UserIdentityExtractor {
     /**
      * Extracts the subject identifier from the subjectAltName extension.
      */
-    static class SubjectAltNameExtractor extends UserIdentityExtractor {
+    class SubjectAltNameExtractorBCProvider extends SubjectAltNameExtractor {
 
         // User Principal Name. Used typically by Microsoft in certificates for Smart Card Login
         private static final String UPN_OID = "1.3.6.1.4.1.311.20.2.3";
@@ -119,7 +94,7 @@ public abstract class UserIdentityExtractor {
          *
          * @param generalName an integer representing the general name. See {@link X509Certificate#getSubjectAlternativeNames()}
          */
-        SubjectAltNameExtractor(int generalName) {
+        SubjectAltNameExtractorBCProvider(int generalName) {
             this.generalName = generalName;
         }
 
@@ -213,83 +188,14 @@ public abstract class UserIdentityExtractor {
         }
     }
 
-    static class PatternMatcher extends UserIdentityExtractor {
-        private final String _pattern;
-        private final Function<X509Certificate[],String> _f;
-        PatternMatcher(String pattern, Function<X509Certificate[],String> valueToMatch) {
-            _pattern = pattern;
-            _f = valueToMatch;
-        }
-
-        @Override
-        public Object extractUserIdentity(X509Certificate[] certs) {
-            String value = Optional.ofNullable(_f.apply(certs)).orElseThrow(IllegalArgumentException::new);
-
-            Pattern r = Pattern.compile(_pattern, Pattern.CASE_INSENSITIVE);
-
-            Matcher m = r.matcher(value);
-
-            if (!m.find()) {
-                logger.debugf("[PatternMatcher:extract] No matches were found for input \"%s\", pattern=\"%s\"", value, _pattern);
-                return null;
-            }
-
-            if (m.groupCount() != 1) {
-                logger.debugf("[PatternMatcher:extract] Match produced more than a single group for input \"%s\", pattern=\"%s\"", value, _pattern);
-                return null;
-            }
-
-            return m.group(1);
-        }
+    @Override
+    public UserIdentityExtractor getX500NameExtractor(String identifier, Function<X509Certificate[], Principal> x500Name) {
+        return new X500NameRDNExtractorBCProvider(identifier, x500Name);
     }
 
-    static class OrBuilder {
-        UserIdentityExtractor extractor;
-        UserIdentityExtractor other;
-        OrBuilder(UserIdentityExtractor extractor) {
-            this.extractor = extractor;
-        }
-
-        public UserIdentityExtractor or(UserIdentityExtractor other) {
-            return new OrExtractor(extractor, other);
-        }
+    @Override
+    public SubjectAltNameExtractor getSubjectAltNameExtractor(int generalName) {
+        return new SubjectAltNameExtractorBCProvider(generalName);
     }
 
-    public static UserIdentityExtractor getPatternIdentityExtractor(String pattern,
-                                                                 Function<X509Certificate[],String> func) {
-        return new PatternMatcher(pattern, func);
-    }
-
-    public static UserIdentityExtractor getX500NameExtractor(ASN1ObjectIdentifier identifier, Function<X509Certificate[],X500Name> x500Name) {
-        return new X500NameRDNExtractor(identifier, x500Name);
-    }
-
-    /**
-     * Obtains the subjectAltName given a <code>generalName</code>.
-     *
-     * @param generalName an integer representing the general name. See {@link X509Certificate#getSubjectAlternativeNames()}
-     * @return the value from the subjectAltName extension
-     */
-    public static SubjectAltNameExtractor getSubjectAltNameExtractor(int generalName) {
-        return new SubjectAltNameExtractor(generalName);
-    }
-
-    public static OrBuilder either(UserIdentityExtractor extractor) {
-        return new OrBuilder(extractor);
-    }
-
-    public static UserIdentityExtractor getCertificatePemIdentityExtractor(X509AuthenticatorConfigModel config) {
-        return new UserIdentityExtractor() {
-              @Override
-              public Object extractUserIdentity(X509Certificate[] certs) {
-                if (certs == null || certs.length == 0) {
-                  throw new IllegalArgumentException();
-                }
-
-                String pem = PemUtils.encodeCertificate(certs[0]);
-                logger.debugf("Using PEM certificate \"%s\" as user identity.", pem);
-                return pem;
-              }
-        };
-    }
 }
