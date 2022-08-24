@@ -21,9 +21,9 @@ public class DatabaseOptions {
 
     public static final Option<String> DB = new OptionBuilder<>("db", String.class)
             .category(OptionCategory.DATABASE)
-            .description(String.format("The database vendor. Possible values are: %s.", String.join(", ", Database.getAliases())))
+            .description("The database vendor.")
             .defaultValue("dev-file")
-            .expectedStringValues(Database.getAliases())
+            .expectedValues(Database::getAliases)
             .buildTime(true)
             .build();
 

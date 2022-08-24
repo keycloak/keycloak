@@ -1,5 +1,4 @@
 ./
-    keycloak-server-dist:keycloak-legacy
     keycloak-quarkus-dist:keycloak
     keycloak-api-docs-dist:keycloak-api-docs
 

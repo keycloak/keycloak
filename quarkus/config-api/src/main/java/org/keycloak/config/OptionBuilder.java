@@ -1,12 +1,22 @@
 package org.keycloak.config;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public class OptionBuilder<T> {
+
+    private  static final Supplier<List<String>> EMPTY_VALUES_SUPPLIER = List::of;
+    private  static final Supplier<List<String>> BOOLEAN_TYPE_VALUES = new Supplier<List<String>>() {
+        List<String> values = List.of(Boolean.TRUE.toString(), Boolean.FALSE.toString());
+
+        @Override 
+        public List<String> get() {
+            return values;
+        }
+    };
+
     private final Class<T> type;
     private final Class<T> auxiliaryType;
     private final String key;
@@ -15,21 +25,10 @@ public class OptionBuilder<T> {
     private boolean build;
     private String description;
     private Optional<T> defaultValue;
-    private List<String> expectedValues;
+    private Supplier<List<String>> expectedValues;
 
     public OptionBuilder(String key, Class<T> type) {
-        this.type = type;
-        this.auxiliaryType = null;
-        this.key = key;
-        category = OptionCategory.GENERAL;
-        hidden = false;
-        build = false;
-        description = null;
-        defaultValue = Boolean.class.equals(type) ? Optional.of((T) Boolean.FALSE) : Optional.empty();
-        expectedValues = new ArrayList<>();
-        if (Boolean.class.equals(type)) {
-            expectedStringValues(Boolean.TRUE.toString(), Boolean.FALSE.toString());
-        }
+        this(key, type, null);
     }
 
     public OptionBuilder(String key, Class<T> type, Class<T> auxiliaryType) {
@@ -41,9 +40,15 @@ public class OptionBuilder<T> {
         build = false;
         description = null;
         defaultValue = Boolean.class.equals(type) ? Optional.of((T) Boolean.FALSE) : Optional.empty();
-        expectedValues = new ArrayList<>();
+        expectedValues = EMPTY_VALUES_SUPPLIER;
         if (Boolean.class.equals(type)) {
-            expectedStringValues(Boolean.TRUE.toString(), Boolean.FALSE.toString());
+            expectedValues(BOOLEAN_TYPE_VALUES);
+        }
+        if (Enum.class.isAssignableFrom(type)) {
+            expectedValues((Class<? extends Enum>) type);
+        }
+        if (auxiliaryType != null && Enum.class.isAssignableFrom(auxiliaryType)) {
+            expectedValues((Class<? extends Enum>) auxiliaryType);
         }
     }
 
@@ -77,27 +82,32 @@ public class OptionBuilder<T> {
         return this;
     }
 
-    public OptionBuilder<T> expectedStringValues(List<String> expected) {
-        this.expectedValues.clear();
-        this.expectedValues.addAll(expected);
+    public OptionBuilder<T> expectedValues(Supplier<List<String>> expected) {
+        this.expectedValues = expected;
         return this;
     }
 
-    public OptionBuilder<T> expectedStringValues(String ... expected) {
-        this.expectedValues.clear();
-        this.expectedValues.addAll(Arrays.asList(expected));
-        return this;
-    }
+    public OptionBuilder<T> expectedValues(Class<? extends Enum> expected) {
+        this.expectedValues = new Supplier<>() {
+            List<String> values = List.of(expected.getEnumConstants()).stream().map(Object::toString).collect(Collectors.toList());
 
-    public OptionBuilder<T> expectedValues(List<T> expected) {
-        this.expectedValues.clear();
-        this.expectedValues.addAll(expected.stream().map(v -> v.toString()).collect(Collectors.toList()));
+            @Override
+            public List<String> get() {
+                return values;
+            }
+        };
         return this;
     }
 
     public OptionBuilder<T> expectedValues(T ... expected) {
-        this.expectedValues.clear();
-        this.expectedValues.addAll(Arrays.asList(expected).stream().map(v -> v.toString()).collect(Collectors.toList()));
+        this.expectedValues = new Supplier<>() {
+            List<String> values = List.of(expected).stream().map(v -> v.toString()).collect(Collectors.toList());
+
+            @Override
+            public List<String> get() {
+                return values;
+            }
+        };
         return this;
     }
 

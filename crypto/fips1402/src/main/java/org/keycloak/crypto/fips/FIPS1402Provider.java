@@ -18,9 +18,11 @@ import org.bouncycastle.crypto.fips.FipsSHS;
 import org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider;
 import org.bouncycastle.math.ec.ECCurve;
 import org.keycloak.common.crypto.CryptoProvider;
+import org.keycloak.common.crypto.ECDSACryptoProvider;
 import org.keycloak.common.crypto.CryptoConstants;
 import org.keycloak.common.crypto.CertificateUtilsProvider;
 import org.keycloak.common.crypto.PemUtilsProvider;
+import org.keycloak.common.crypto.UserIdentityExtractorProvider;
 
 
 /**
@@ -99,5 +101,21 @@ public class FIPS1402Provider implements CryptoProvider {
                 params.getSeed());
         ECPoint point = new ECPoint( params.getG().getXCoord().toBigInteger(), params.getG().getYCoord().toBigInteger());
         return new ECParameterSpec( c,point, params.getN(), params.getH().intValue());
+    }
+
+    @Override
+    public UserIdentityExtractorProvider getIdentityExtractorProvider() {
+        return new BCFIPSUserIdentityExtractorProvider();
+    }
+
+    @Override
+    public ECDSACryptoProvider getEcdsaCryptoProvider() {
+        return new BCFIPSECDSACryptoProvider();
+    }
+
+
+    @Override
+    public <T> T getOCSPProver(Class<T> clazz) {
+        return clazz.cast(new BCFIPSOCSPProvider());
     }
 }

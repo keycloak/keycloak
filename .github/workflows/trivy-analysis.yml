@@ -10,7 +10,7 @@ jobs:
     runs-on: "ubuntu-18.04"
     steps:
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@81b9a6f5abb1047d697af7a3ca18c13f55a97315
+        uses: aquasecurity/trivy-action@cb606dfdb0d2b3698ace62192088ef4f5360b24f
         with:
           image-ref: 'quay.io/keycloak/keycloak:nightly'
           format: 'template'
@@ -20,7 +20,7 @@ jobs:
           ignore-unfixed: true
 
       - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v2.1.17
+        uses: github/codeql-action/upload-sarif@v2.1.18
         with:
           sarif_file: 'trivy-results.sarif'
 
@@ -29,7 +29,7 @@ jobs:
     runs-on: "ubuntu-18.04"
     steps:
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@81b9a6f5abb1047d697af7a3ca18c13f55a97315
+        uses: aquasecurity/trivy-action@cb606dfdb0d2b3698ace62192088ef4f5360b24f
         with:
           image-ref: 'quay.io/keycloak/keycloak:legacy'
           format: 'template'
@@ -39,7 +39,7 @@ jobs:
           ignore-unfixed: true
 
       - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v2.1.17
+        uses: github/codeql-action/upload-sarif@v2.1.18
         with:
           sarif_file: 'legacy-results.sarif'
 
@@ -48,7 +48,7 @@ jobs:
     runs-on: "ubuntu-18.04"
     steps:
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@81b9a6f5abb1047d697af7a3ca18c13f55a97315
+        uses: aquasecurity/trivy-action@cb606dfdb0d2b3698ace62192088ef4f5360b24f
         with:
           image-ref: 'quay.io/keycloak/keycloak-operator:nightly'
           format: 'template'
@@ -58,6 +58,6 @@ jobs:
           ignore-unfixed: true
 
       - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v2.1.17
+        uses: github/codeql-action/upload-sarif@v2.1.18
         with:
           sarif_file: 'operator-results.sarif'

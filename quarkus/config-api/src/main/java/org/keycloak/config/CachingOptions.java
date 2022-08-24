@@ -34,7 +34,6 @@ public class CachingOptions {
             .description("Define the default stack to use for cluster communication and node discovery. This option only takes effect "
                     + "if 'cache' is set to 'ispn'. Default: udp.")
             .buildTime(true)
-            .expectedValues(Stack.values())
             .build();
 
     public static final Option<File> CACHE_CONFIG_FILE = new OptionBuilder<>("cache-config-file", File.class)

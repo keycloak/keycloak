@@ -17,29 +17,16 @@
 
 package org.keycloak.utils;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.cert.X509CRL;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.security.auth.x500.X500Principal;
 
-import org.bouncycastle.asn1.ASN1InputStream;
-import org.bouncycastle.asn1.DERIA5String;
-import org.bouncycastle.asn1.DEROctetString;
-import org.bouncycastle.asn1.x509.CRLDistPoint;
-import org.bouncycastle.asn1.x509.DistributionPoint;
-import org.bouncycastle.asn1.x509.DistributionPointName;
-import org.bouncycastle.asn1.x509.GeneralName;
-import org.bouncycastle.asn1.x509.GeneralNames;
 import org.jboss.logging.Logger;
 import org.keycloak.common.util.BouncyIntegration;
 import org.keycloak.models.KeycloakSession;
@@ -54,49 +41,6 @@ import org.keycloak.truststore.TruststoreProvider;
 public final class CRLUtils {
 
     private static final Logger log = Logger.getLogger(CRLUtils.class);
-
-    private static final String CRL_DISTRIBUTION_POINTS_OID = "2.5.29.31";
-
-    /**
-     * Retrieves a list of CRL distribution points from CRLDP v3 certificate extension
-     * See <a href="www.nakov.com/blog/2009/12/01/x509-certificate-validation-in-java-build-and-verify-cchain-and-verify-clr-with-bouncy-castle/">CRL validation</a>
-     * @param cert
-     * @return
-     * @throws IOException
-     */
-    public static List<String> getCRLDistributionPoints(X509Certificate cert) throws IOException {
-        byte[] data = cert.getExtensionValue(CRL_DISTRIBUTION_POINTS_OID);
-        if (data == null) {
-            return Collections.emptyList();
-        }
-
-        List<String> distributionPointUrls = new LinkedList<>();
-        DEROctetString octetString;
-        try (ASN1InputStream crldpExtensionInputStream = new ASN1InputStream(new ByteArrayInputStream(data))) {
-            octetString = (DEROctetString)crldpExtensionInputStream.readObject();
-        }
-        byte[] octets = octetString.getOctets();
-
-        CRLDistPoint crlDP;
-        try (ASN1InputStream crldpInputStream = new ASN1InputStream(new ByteArrayInputStream(octets))) {
-            crlDP = CRLDistPoint.getInstance(crldpInputStream.readObject());
-        }
-
-        for (DistributionPoint dp : crlDP.getDistributionPoints()) {
-            DistributionPointName dpn = dp.getDistributionPoint();
-            if (dpn != null && dpn.getType() == DistributionPointName.FULL_NAME) {
-                GeneralName[] names = GeneralNames.getInstance(dpn.getName()).getNames();
-                for (GeneralName gn : names) {
-                    if (gn.getTagNo() == GeneralName.uniformResourceIdentifier) {
-                        String url = DERIA5String.getInstance(gn.getName()).getString();
-                        distributionPointUrls.add(url);
-                    }
-                }
-            }
-        }
-
-        return distributionPointUrls;
-    }
 
 
     /**

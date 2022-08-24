@@ -204,7 +204,7 @@ public class UserAdapter implements CachedUserModel.Streams {
     @Override
     public String getFirstAttribute(String name) {
         if (updated != null) return updated.getFirstAttribute(name);
-        return cached.getAttributes(modelSupplier).getFirst(name);
+        return cached.getFirstAttribute(name, modelSupplier);
     }
 
     @Override

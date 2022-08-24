@@ -297,13 +297,12 @@
 
     "connectionsHotRod": {
         "default": {
-            "embedded": "${keycloak.connectionsHotRod.embedded:false}",
-            "port": "${keycloak.connectionsHotRod.port:14232}",
+            "port": "${keycloak.connectionsHotRod.port:11222}",
+            "host": "${keycloak.connectionsHotRod.host:127.0.0.1}",
             "configureRemoteCaches": "${keycloak.connectionsHotRod.configureRemoteCaches:true}",
-            "username": "${keycloak.connectionsHotRod.username:myuser}",
-            "password": "${keycloak.connectionsHotRod.password:qwer1234!}",
-            "enableSecurity": "${keycloak.connectionsHotRod.enableSecurity:true}",
-            "reindexCaches": "${keycloak.connectionsHotRod.reindexCaches:all}"
+            "username": "${keycloak.connectionsHotRod.username:admin}",
+            "password": "${keycloak.connectionsHotRod.password:admin}",
+            "enableSecurity": "${keycloak.connectionsHotRod.enableSecurity:true}"
         }
     },
 

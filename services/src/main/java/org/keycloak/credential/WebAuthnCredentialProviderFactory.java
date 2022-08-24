@@ -32,12 +32,18 @@ public class WebAuthnCredentialProviderFactory implements CredentialProviderFact
 
     @Override
     public CredentialProvider create(KeycloakSession session) {
-        return new WebAuthnCredentialProvider(session, converter);
+        return new WebAuthnCredentialProvider(session, createOrGetObjectConverter());
     }
 
-    @Override
-    public void init(Config.Scope config) {
-        converter = new ObjectConverter();
+    private ObjectConverter createOrGetObjectConverter() {
+        if (converter == null) {
+            synchronized (this) {
+                if (converter == null) {
+                    converter = new ObjectConverter();
+                }
+            }
+        }
+        return converter;
     }
 
     @Override

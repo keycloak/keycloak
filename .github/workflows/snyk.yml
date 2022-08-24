@@ -11,6 +11,7 @@ jobs:
   quarkus:
     name: Quarkus
     runs-on: ubuntu-latest
+    if: ${{ github.repository == 'keycloak/keycloak' }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -20,7 +21,7 @@ jobs:
           java-version: ${{ env.DEFAULT_JDK_VERSION }}
           distribution: temurin
           cache: maven
-      
+
       - name: Build Quarkus
         run: mvn -Psnyk-quarkus -pl quarkus/dist -am -DskipTests clean install
 
@@ -32,13 +33,14 @@ jobs:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
       - name: Upload scanner results to GitHub
-        uses: github/codeql-action/upload-sarif@v2.1.17
+        uses: github/codeql-action/upload-sarif@v2.1.18
         with:
           sarif_file: quarkus-report.sarif
 
   operator:
     name: Operator
     runs-on: ubuntu-latest
+    if: ${{ github.repository == 'keycloak/keycloak' }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -48,11 +50,11 @@ jobs:
           java-version: ${{ env.DEFAULT_JDK_VERSION }}
           distribution: temurin
           cache: maven
-      
+
       - name: Build Keycloak
         run: mvn -Poperator -pl operator -am -DskipTests clean install
 
-      - uses: snyk/actions/setup@master    
+      - uses: snyk/actions/setup@master
       - name: Check for vulnerabilities for the Operator
         run: snyk test --policy-path=${GITHUB_WORKSPACE}/.github/snyk/.snyk --all-projects --prune-repeated-subdependencies --exclude=tests --sarif-file-output=operator-report.sarif operator
         continue-on-error: true
@@ -60,6 +62,6 @@ jobs:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
       - name: Upload scanner results for the Operator to GitHub
-        uses: github/codeql-action/upload-sarif@v2.1.17
+        uses: github/codeql-action/upload-sarif@v2.1.18
         with:
           sarif_file: operator-report.sarif
