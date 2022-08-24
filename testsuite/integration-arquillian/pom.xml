@@ -216,12 +216,6 @@
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-admin-ui</artifactId>
                 <version>${keycloak.admin-ui.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>*</groupId>
-                        <artifactId>*</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
         </dependencies>
     </dependencyManagement>
