@@ -32,7 +32,9 @@ import org.keycloak.testsuite.console.page.authentication.otppolicy.OTPPolicyFor
 import org.keycloak.testsuite.console.page.authentication.otppolicy.OTPPolicyForm.OTPType;
 import org.keycloak.testsuite.util.WaitUtils;
 
-import static org.junit.Assert.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertEquals;
 
 /**
  *
@@ -60,14 +62,17 @@ public class OTPPolicyTest extends AbstractConsoleTest {
         assertEquals(Integer.valueOf(8), realm.getOtpPolicyDigits());
         assertEquals(Integer.valueOf(10), realm.getOtpPolicyLookAheadWindow());
         assertEquals(Integer.valueOf(50), realm.getOtpPolicyInitialCounter());
-        
-        otpPolicyPage.form().setValues(OTPType.TIME_BASED, OTPHashAlg.SHA512, Digits.EIGHT, "10", "40");
+        assertThat(realm.isOtpPolicyCodeReusable(), is(org.keycloak.models.OTPPolicy.DEFAULT_IS_REUSABLE));
+
+        otpPolicyPage.form().setValues(OTPType.TIME_BASED, OTPHashAlg.SHA512, Digits.EIGHT, "10", "40", false);
         assertAlertSuccess();
-        
+
         realm = testRealmResource().toRepresentation();
         assertEquals("totp", realm.getOtpPolicyType());
         assertEquals(Integer.valueOf(40), realm.getOtpPolicyPeriod());
-    }      
+
+        assertThat(realm.isOtpPolicyCodeReusable(), is(false));
+    }
     
     @Test
     public void invalidValuesTest() {

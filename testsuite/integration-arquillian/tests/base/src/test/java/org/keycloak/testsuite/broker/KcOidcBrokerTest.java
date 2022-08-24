@@ -5,6 +5,7 @@ import com.google.common.collect.Lists;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.hamcrest.Matchers;
+import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientsResource;
@@ -21,20 +22,18 @@ import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderMapperSyncMode;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.IdentityProviderSyncMode;
+import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
-import org.keycloak.protocol.oidc.representations.OIDCConfigurationRepresentation;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.ErrorRepresentation;
 import org.keycloak.representations.idm.IdentityProviderMapperRepresentation;
 import org.keycloak.representations.idm.IdentityProviderRepresentation;
 import org.keycloak.representations.idm.OAuth2ErrorRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
-import org.keycloak.services.Urls;
 import org.keycloak.testsuite.Assert;
-import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.WaitUtils;
 
@@ -51,6 +50,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertThat;
+import static org.keycloak.models.utils.TimeBasedOTP.DEFAULT_INTERVAL_SECONDS;
 import static org.keycloak.testsuite.admin.ApiUtil.removeUserByUsername;
 import static org.keycloak.testsuite.broker.BrokerRunOnServerUtil.configurePostBrokerLoginWithOTP;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.REALM_PROV_NAME;
@@ -69,12 +69,17 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
         return KcOidcBrokerConfiguration.INSTANCE;
     }
 
+    @Before
+    public void setUpTotp() {
+        totp = new TimeBasedOTP();
+    }
+
     @Override
     protected Iterable<IdentityProviderMapperRepresentation> createIdentityProviderMappers(IdentityProviderMapperSyncMode syncMode) {
         IdentityProviderMapperRepresentation attrMapper1 = new IdentityProviderMapperRepresentation();
         attrMapper1.setName("manager-role-mapper");
         attrMapper1.setIdentityProviderMapper(ExternalKeycloakRoleToRoleMapper.PROVIDER_ID);
-        attrMapper1.setConfig(ImmutableMap.<String,String>builder()
+        attrMapper1.setConfig(ImmutableMap.<String, String>builder()
                 .put(IdentityProviderMapperModel.SYNC_MODE, syncMode.toString())
                 .put("external.role", ROLE_MANAGER)
                 .put("role", ROLE_MANAGER)
@@ -258,6 +263,8 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
             totpPage.configure(totp.generateTOTP(totpSecret));
             logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
 
+            setOtpTimeOffset(DEFAULT_INTERVAL_SECONDS, totp);
+
             logInWithBroker(bc);
 
             waitForPage(driver, "account already exists", false);
@@ -320,48 +327,54 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
      */
     @Test
     public void testReauthenticationBothBrokersWithOTPRequired() throws Exception {
-        KcSamlBrokerConfiguration samlBrokerConfig = KcSamlBrokerConfiguration.INSTANCE;
-        ClientRepresentation samlClient = samlBrokerConfig.createProviderClients().get(0);
-        IdentityProviderRepresentation samlBroker = samlBrokerConfig.setUpIdentityProvider();
-        RealmResource consumerRealm = adminClient.realm(bc.consumerRealmName());
+        final RealmResource consumerRealm = adminClient.realm(bc.consumerRealmName());
+        final RealmResource providerRealm = adminClient.realm(bc.providerRealmName());
 
-        try {
-            updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
-            adminClient.realm(bc.providerRealmName()).clients().create(samlClient);
-            consumerRealm.identityProviders().create(samlBroker);
+        try (RealmAttributeUpdater rauConsumer = new RealmAttributeUpdater(consumerRealm).setOtpPolicyCodeReusable(true).update();
+             RealmAttributeUpdater rauProvider = new RealmAttributeUpdater(providerRealm).setOtpPolicyCodeReusable(true).update()) {
 
-            driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
-            testingClient.server(bc.consumerRealmName()).run(configurePostBrokerLoginWithOTP(samlBrokerConfig.getIDPAlias()));
-            logInWithBroker(samlBrokerConfig);
-            totpPage.assertCurrent();
-            String totpSecret = totpPage.getTotpSecret();
-            totpPage.configure(totp.generateTOTP(totpSecret));
-            logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
+            KcSamlBrokerConfiguration samlBrokerConfig = KcSamlBrokerConfiguration.INSTANCE;
+            ClientRepresentation samlClient = samlBrokerConfig.createProviderClients().get(0);
+            IdentityProviderRepresentation samlBroker = samlBrokerConfig.setUpIdentityProvider();
 
-            testingClient.server(bc.consumerRealmName()).run(configurePostBrokerLoginWithOTP(bc.getIDPAlias()));
-            logInWithBroker(bc);
+            try {
+                updateExecutions(AbstractBrokerTest::disableUpdateProfileOnFirstLogin);
+                providerRealm.clients().create(samlClient);
+                consumerRealm.identityProviders().create(samlBroker);
 
-            waitForPage(driver, "account already exists", false);
-            idpConfirmLinkPage.assertCurrent();
-            idpConfirmLinkPage.clickLinkAccount();
-            loginPage.clickSocial(samlBrokerConfig.getIDPAlias());
+                driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
+                testingClient.server(bc.consumerRealmName()).run(configurePostBrokerLoginWithOTP(samlBrokerConfig.getIDPAlias()));
+                logInWithBroker(samlBrokerConfig);
+                totpPage.assertCurrent();
+                String totpSecret = totpPage.getTotpSecret();
+                totpPage.configure(totp.generateTOTP(totpSecret));
+                logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
 
-            loginTotpPage.assertCurrent();
-            loginTotpPage.login(totp.generateTOTP(totpSecret));
-            logoutFromRealm(getProviderRoot(), bc.providerRealmName());
-            logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
+                testingClient.server(bc.consumerRealmName()).run(configurePostBrokerLoginWithOTP(bc.getIDPAlias()));
+                logInWithBroker(bc);
 
-            logInWithBroker(bc);
+                waitForPage(driver, "account already exists", false);
+                idpConfirmLinkPage.assertCurrent();
+                idpConfirmLinkPage.clickLinkAccount();
+                loginPage.clickSocial(samlBrokerConfig.getIDPAlias());
 
-            loginTotpPage.assertCurrent();
-            loginTotpPage.login(totp.generateTOTP(totpSecret));
-            waitForAccountManagementTitle();
-            accountUpdateProfilePage.assertCurrent();
+                loginTotpPage.assertCurrent();
+                loginTotpPage.login(totp.generateTOTP(totpSecret));
+                logoutFromRealm(getProviderRoot(), bc.providerRealmName());
+                logoutFromRealm(getConsumerRoot(), bc.consumerRealmName());
 
-            assertNumFederatedIdentities(consumerRealm.users().search(samlBrokerConfig.getUserLogin()).get(0).getId(), 2);
-        } finally {
-            updateExecutions(AbstractBrokerTest::setUpMissingUpdateProfileOnFirstLogin);
-            removeUserByUsername(consumerRealm, "consumer");
+                logInWithBroker(bc);
+
+                loginTotpPage.assertCurrent();
+                loginTotpPage.login(totp.generateTOTP(totpSecret));
+                waitForAccountManagementTitle();
+                accountUpdateProfilePage.assertCurrent();
+
+                assertNumFederatedIdentities(consumerRealm.users().search(samlBrokerConfig.getUserLogin()).get(0).getId(), 2);
+            } finally {
+                updateExecutions(AbstractBrokerTest::setUpMissingUpdateProfileOnFirstLogin);
+                removeUserByUsername(consumerRealm, "consumer");
+            }
         }
     }
 
