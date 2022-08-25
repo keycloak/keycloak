@@ -10,8 +10,8 @@ import { keycloakBefore } from "../support/util/keycloak_hooks";
 import UserGroupsPage from "../support/pages/admin_console/manage/users/UserGroupsPage";
 import adminClient from "../support/util/AdminClient";
 import CredentialsPage from "../support/pages/admin_console/manage/users/CredentialsPage";
-import UsersPage from "cypress/support/pages/admin_console/manage/users/UsersPage";
-import IdentityProviderLinksTab from "cypress/support/pages/admin_console/manage/users/user_details/tabs/IdentityProviderLinksTab";
+import UsersPage from "../support/pages/admin_console/manage/users/UsersPage";
+import IdentityProviderLinksTab from "../support/pages/admin_console/manage/users/user_details/tabs/IdentityProviderLinksTab";
 
 let groupName = "group";
 let groupsList: string[] = [];

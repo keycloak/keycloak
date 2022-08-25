@@ -3,6 +3,7 @@ module.exports = {
   root: true,
   ignorePatterns: ["node_modules", "dist", "keycloak-theme", "server"],
   parserOptions: {
+    tsconfigRootDir: __dirname,
     project: "./tsconfig.eslint.json",
     extraFileExtensions: [".mjs"],
   },

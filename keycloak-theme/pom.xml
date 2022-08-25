@@ -37,6 +37,8 @@
         <frontend.maven.plugin.nodeVersion>v18.7.0</frontend.maven.plugin.nodeVersion>
 
         <keycloak.version>19.0.1</keycloak.version>
+
+        <admin-ui.path>../apps/admin-ui</admin-ui.path>
     </properties>
 
     <licenses>
@@ -162,7 +164,7 @@
                         </executions>
                         <configuration>
                             <nodeVersion>${frontend.maven.plugin.nodeVersion}</nodeVersion>
-                            <workingDirectory>../</workingDirectory>
+                            <workingDirectory>${admin-ui.path}</workingDirectory>
                             <installDirectory>.</installDirectory>
                         </configuration>
                     </plugin>
@@ -235,7 +237,7 @@
                             <goal>npm</goal>
                         </goals>
                         <configuration>
-                            <arguments>run build</arguments>
+                            <arguments>run build --workspace=admin-ui</arguments>
                         </configuration>
                     </execution>
                 </executions>
@@ -258,7 +260,7 @@
                             <outputDirectory>target/classes/theme/keycloak.v2/admin/resources</outputDirectory>
                             <resources>
                                 <resource>
-                                    <directory>../dist</directory>
+                                    <directory>${admin-ui.path}/dist</directory>
                                 </resource>
                             </resources>
                         </configuration>

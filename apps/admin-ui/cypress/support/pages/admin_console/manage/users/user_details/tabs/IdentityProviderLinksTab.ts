@@ -1,5 +1,5 @@
-import Masthead from "cypress/support/pages/admin_console/Masthead";
-import ModalUtils from "cypress/support/util/ModalUtils";
+import ModalUtils from "../../../../../../util/ModalUtils";
+import Masthead from "../../../../Masthead";
 
 const modalUtils = new ModalUtils();
 const masthead = new Masthead();

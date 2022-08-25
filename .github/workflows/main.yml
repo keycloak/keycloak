@@ -20,15 +20,7 @@ jobs:
           check-latest: true
           cache: npm
 
-      - name: Cache Node modules
-        id: cache-node-modules
-        uses: actions/cache@v3
-        with:
-          path: node_modules
-          key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
-
       - name: Install dependencies
-        if: steps.cache-node-modules.outputs.cache-hit != 'true'
         run: npm ci
 
       - name: Cache setup
@@ -56,4 +48,4 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Run ${{ matrix.command }} task
-        run: npm run ${{ matrix.command }}
+        run: npm run ${{ matrix.command }} --workspace=admin-ui

@@ -78,17 +78,7 @@ jobs:
           check-latest: true
           cache: npm
 
-      - name: Cache Node modules
-        id: cache-node-modules
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cache/Cypress
-            node_modules
-          key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
-
       - name: Install dependencies
-        if: steps.cache-node-modules.outputs.cache-hit != 'true'
         run: npm ci
 
       - name: Restore Keycloak server
@@ -99,7 +89,7 @@ jobs:
 
       - name: Start Keycloak Server
         working-directory: ${{ needs.setup.outputs.server-path }}/bin
-        run: ./kc.sh start-dev --features=admin2,admin-fine-grained-authz,declarative-user-profile &> ~/server.log &
+        run: ./kc.sh start-dev --features=admin2,admin-fine-grained-authz,declarative-user-profile &
         env:
           KEYCLOAK_ADMIN: admin
           KEYCLOAK_ADMIN_PASSWORD: admin
@@ -112,28 +102,9 @@ jobs:
           parallel: true
           browser: chrome
           wait-on: http://localhost:8080
+          working-directory: apps/admin-ui
         env:
           CYPRESS_BASE_URL: http://localhost:8080/admin/
           CYPRESS_KEYCLOAK_SERVER: http://localhost:8080
           CYPRESS_RECORD_KEY: b8f1d15e-eab8-4ee7-8e44-c6d7cd8fc0eb
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Add Cypress videos artifacts
-        uses: actions/upload-artifact@v3
-        if: failure()
-        with:
-          name: cypress-videos
-          path: assets/videos
-
-      - name: Add Cypress screenshots artifacts
-        uses: actions/upload-artifact@v3
-        if: failure()
-        with:
-          name: cypress-screenshots
-          path: assets/screenshots
-
-      - name: Upload server logs
-        uses: actions/upload-artifact@v3
-        with:
-          name: server-log
-          path: ~/server.log

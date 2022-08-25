@@ -25,19 +25,11 @@ jobs:
           check-latest: true
           cache: npm
 
-      - name: Cache Node modules
-        id: cache-node-modules
-        uses: actions/cache@v3
-        with:
-          path: node_modules
-          key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
-
       - name: Install dependencies
-        if: steps.cache-node-modules.outputs.cache-hit != 'true'
         run: npm ci
 
       - name: Run build task
-        run: npm run build
+        run: npm run build --workspace=admin-ui
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v2
