@@ -68,7 +68,7 @@ module.exports = {
       },
     },
     {
-      files: ["cypress/**/*"],
+      files: ["**/cypress/**/*"],
       extends: ["plugin:cypress/recommended", "plugin:mocha/recommended"],
       // TODO: Set these rules to "error" when issues have been resolved.
       rules: {
