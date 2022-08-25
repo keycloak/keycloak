@@ -295,7 +295,7 @@ public class LoginSettingsTest extends AbstractRealmTest {
         
         testAccountPage.navigateTo();
         testRealmLoginPage.form().login(testUser);
-        Assert.assertEquals("An email with instructions to verify your email address has been sent to you.", 
+        Assert.assertEquals("An email with instructions to verify your email address has been sent to your address test@email.test.", 
                 testRealmVerifyEmailPage.getInstructionMessage());
         
         log.info("verified verify email is enabled");

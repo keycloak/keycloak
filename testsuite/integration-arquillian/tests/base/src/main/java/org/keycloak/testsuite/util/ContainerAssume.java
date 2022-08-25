@@ -65,4 +65,9 @@ public class ContainerAssume {
         Assume.assumeFalse("Doesn't work on auth-server-quarkus",
                 AuthServerTestEnricher.AUTH_SERVER_CONTAINER.equals("auth-server-quarkus"));
     }
+
+    public static void assumeAuthServerQuarkus() {
+        Assume.assumeTrue("Only works on auth-server-quarkus",
+                AuthServerTestEnricher.AUTH_SERVER_CONTAINER.equals("auth-server-quarkus"));
+    }
 }

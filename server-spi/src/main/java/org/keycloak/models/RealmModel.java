@@ -23,17 +23,9 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderEvent;
 import org.keycloak.storage.SearchableModelField;
-import org.keycloak.storage.UserStorageProvider;
-import org.keycloak.storage.UserStorageProviderModel;
-import org.keycloak.storage.client.ClientStorageProvider;
-import org.keycloak.storage.client.ClientStorageProviderModel;
-import org.keycloak.storage.role.RoleStorageProvider;
-import org.keycloak.storage.role.RoleStorageProviderModel;
-import org.keycloak.utils.StringUtil;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -143,15 +135,15 @@ public interface RealmModel extends RoleContainerModel {
     String getAttribute(String name);
     default Integer getAttribute(String name, Integer defaultValue) {
         String v = getAttribute(name);
-        return v != null ? Integer.parseInt(v) : defaultValue;
+        return v != null ? Integer.valueOf(v) : defaultValue;
     }
     default Long getAttribute(String name, Long defaultValue) {
         String v = getAttribute(name);
-        return v != null ? Long.parseLong(v) : defaultValue;
+        return v != null ? Long.valueOf(v) : defaultValue;
     }
     default Boolean getAttribute(String name, Boolean defaultValue) {
         String v = getAttribute(name);
-        return v != null ? Boolean.parseBoolean(v) : defaultValue;
+        return v != null ? Boolean.valueOf(v) : defaultValue;
     }
     Map<String, String> getAttributes();
 
@@ -252,6 +244,8 @@ public interface RealmModel extends RoleContainerModel {
     OAuth2DeviceConfig getOAuth2DeviceConfig();
 
     CibaConfig getCibaPolicy();
+
+    ParConfig getParPolicy();
 
     /**
      * This method will return a map with all the lifespans available
@@ -663,63 +657,6 @@ public interface RealmModel extends RoleContainerModel {
     ComponentModel getComponent(String id);
 
     /**
-     * @deprecated Use {@link #getUserStorageProvidersStream() getUserStorageProvidersStream} instead.
-     */
-    @Deprecated
-    default List<UserStorageProviderModel> getUserStorageProviders() {
-        return getUserStorageProvidersStream().collect(Collectors.toList());
-    }
-
-    /**
-     * Returns sorted {@link UserStorageProviderModel UserStorageProviderModel} as a stream.
-     * It should be used with forEachOrdered if the ordering is required.
-     * @return Sorted stream of {@link UserStorageProviderModel}. Never returns {@code null}.
-     */
-    default Stream<UserStorageProviderModel> getUserStorageProvidersStream() {
-        return getComponentsStream(getId(), UserStorageProvider.class.getName())
-                .map(UserStorageProviderModel::new)
-                .sorted(UserStorageProviderModel.comparator);
-    }
-
-    /**
-     * @deprecated Use {@link #getClientStorageProvidersStream() getClientStorageProvidersStream} instead.
-     */
-    @Deprecated
-    default List<ClientStorageProviderModel> getClientStorageProviders() {
-        return getClientStorageProvidersStream().collect(Collectors.toList());
-    }
-
-    /**
-     * Returns sorted {@link ClientStorageProviderModel ClientStorageProviderModel} as a stream.
-     * It should be used with forEachOrdered if the ordering is required.
-     * @return Sorted stream of {@link ClientStorageProviderModel}. Never returns {@code null}.
-     */
-    default Stream<ClientStorageProviderModel> getClientStorageProvidersStream() {
-        return getComponentsStream(getId(), ClientStorageProvider.class.getName())
-                .map(ClientStorageProviderModel::new)
-                .sorted(ClientStorageProviderModel.comparator);
-    }
-
-    /**
-     * @deprecated Use {@link #getRoleStorageProvidersStream() getRoleStorageProvidersStream} instead.
-     */
-    @Deprecated
-    default List<RoleStorageProviderModel> getRoleStorageProviders() {
-        return getRoleStorageProvidersStream().collect(Collectors.toList());
-    }
-
-    /**
-     * Returns sorted {@link RoleStorageProviderModel RoleStorageProviderModel} as a stream.
-     * It should be used with forEachOrdered if the ordering is required.
-     * @return Sorted stream of {@link RoleStorageProviderModel}. Never returns {@code null}.
-     */
-    default Stream<RoleStorageProviderModel> getRoleStorageProvidersStream() {
-        return getComponentsStream(getId(), RoleStorageProvider.class.getName())
-                .map(RoleStorageProviderModel::new)
-                .sorted(RoleStorageProviderModel.comparator);
-    }
-
-    /**
      * Returns stream of ComponentModels that represent StorageProviders for class storageProviderClass in this realm.
      * @param storageProviderClass {@code Class<? extends Provider>}
      * @return Stream of {@link ComponentModel}. Never returns {@code null}.
@@ -990,10 +927,11 @@ public interface RealmModel extends RoleContainerModel {
     void removeDefaultClientScope(ClientScopeModel clientScope);
 
     /**
-     * Patches the realm-specific localization texts. This method will not delete any text.
+     * Creates or updates the realm-specific localization texts for the given locale.
+     * This method will not delete any text.
      * It updates texts, which are already stored or create new ones if the key does not exist yet.
      */
-    void patchRealmLocalizationTexts(String locale, Map<String, String> localizationTexts);
+    void createOrUpdateRealmLocalizationTexts(String locale, Map<String, String> localizationTexts);
     boolean removeRealmLocalizationTexts(String locale);
     Map<String, Map<String, String>> getRealmLocalizationTexts();
     Map<String, String> getRealmLocalizationTextsByLocale(String locale);

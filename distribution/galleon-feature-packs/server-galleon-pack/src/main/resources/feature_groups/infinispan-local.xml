@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feature-group-spec name="infinispan-local" xmlns="urn:jboss:galleon:feature-group:1.0">
+
+    <feature-group name="infinispan-local-keycloak"/>
+
+    <feature-group name="infinispan-local-server"/>
+
+    <feature-group name="infinispan-local-web"/>
+
+    <feature-group name="infinispan-local-ejb"/>
+
+    <feature-group name="infinispan-local-hibernate"/>
+
+</feature-group-spec>

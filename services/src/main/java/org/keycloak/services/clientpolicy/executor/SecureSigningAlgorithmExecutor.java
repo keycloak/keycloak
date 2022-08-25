@@ -63,15 +63,6 @@ public class SecureSigningAlgorithmExecutor implements ClientPolicyExecutorProvi
 
     private static final String DEFAULT_ALGORITHM_VALUE = Algorithm.PS256;
 
-    static final Set<String> ALLOWED_ALGORITHMS = new LinkedHashSet<>(Arrays.asList(
-            Algorithm.PS256,
-            Algorithm.PS384,
-            Algorithm.PS512,
-            Algorithm.ES256,
-            Algorithm.ES384,
-            Algorithm.ES512
-    ));
-
     public SecureSigningAlgorithmExecutor(KeycloakSession session) {
         this.session = session;
     }
@@ -175,7 +166,7 @@ public class SecureSigningAlgorithmExecutor implements ClientPolicyExecutorProvi
     }
 
     private static boolean isSecureAlgorithm(String sigAlg) {
-        return ALLOWED_ALGORITHMS.contains(sigAlg);
+        return FapiConstant.ALLOWED_ALGORITHMS.contains(sigAlg);
     }
 
 }

@@ -1,0 +1,5 @@
+<?xml version="1.0" ?>
+
+<config xmlns="urn:jboss:galleon:config:1.0" name="host.xml" model="host">
+    <feature-group name="host"/>
+</config>

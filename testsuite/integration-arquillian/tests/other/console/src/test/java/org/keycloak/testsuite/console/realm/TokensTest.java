@@ -23,6 +23,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.authentication.actiontoken.resetcred.ResetCredentialsActionToken;
 import org.keycloak.authentication.actiontoken.verifyemail.VerifyEmailActionToken;
+import org.keycloak.models.ParConfig;
 import org.keycloak.models.jpa.entities.RealmAttributes;
 import org.keycloak.testsuite.auth.page.account.Account;
 import org.keycloak.testsuite.console.page.realm.TokenSettings;
@@ -34,10 +35,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.util.UIUtils.refreshPageAndWaitForLoad;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
@@ -186,6 +188,28 @@ public class TokensTest extends AbstractRealmTest {
         assertEquals("ResetCredentialsActionToken expected to be propagated",
                 userActionTokens.get(ResetCredentialsActionToken.TOKEN_TYPE).longValue(), TimeUnit.HOURS.toSeconds(TIMEOUT));
 
+    }
+
+    @Test
+    public void testParRequestUriLifespan() {
+        int defaultMinutes = (int) TimeUnit.SECONDS.toMinutes(ParConfig.DEFAULT_PAR_REQUEST_URI_LIFESPAN);
+        assertThat(tokenSettingsPage.form().getRequestUriLifespanTimeout(), is(defaultMinutes));
+
+        tokenSettingsPage.form().setRequestUriLifespanTimeout(30, TimeUnit.MINUTES);
+        tokenSettingsPage.form().save();
+
+        assertAlertSuccess();
+
+        assertThat(tokenSettingsPage.form().getRequestUriLifespanTimeout(), is(30));
+        assertThat(tokenSettingsPage.form().getRequestUriLifespanUnits(), is(TimeUnit.MINUTES));
+
+        tokenSettingsPage.form().setRequestUriLifespanTimeout(20,TimeUnit.HOURS);
+        tokenSettingsPage.form().save();
+
+        assertAlertSuccess();
+
+        assertThat(tokenSettingsPage.form().getRequestUriLifespanTimeout(), is(20));
+        assertThat(tokenSettingsPage.form().getRequestUriLifespanUnits(), is(TimeUnit.HOURS));
     }
 
     private Map<String, Integer> getUserActionTokens() {

@@ -17,25 +17,29 @@
 
 package org.keycloak.services.clientregistration.oidc;
 
+import com.google.common.collect.Streams;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.ClientAuthenticator;
 import org.keycloak.authentication.ClientAuthenticatorFactory;
-import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
 import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
 import org.keycloak.jose.jwk.JSONWebKeySet;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.jose.jwk.JWKParser;
-import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.models.CibaConfig;
+import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ParConfig;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
+import org.keycloak.protocol.oidc.OIDCClientSecretConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.mappers.PairwiseSubMapperHelper;
 import org.keycloak.protocol.oidc.utils.AuthorizeClientUtil;
 import org.keycloak.protocol.oidc.utils.OIDCResponseType;
 import org.keycloak.protocol.oidc.utils.PairwiseSubMapperUtils;
 import org.keycloak.protocol.oidc.utils.SubjectType;
+import org.keycloak.provider.Provider;
+import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.CertificateRepresentation;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
@@ -43,8 +47,10 @@ import org.keycloak.representations.oidc.OIDCClientRepresentation;
 import org.keycloak.services.clientregistration.ClientRegistrationException;
 import org.keycloak.services.util.CertificateInfoHelper;
 import org.keycloak.util.JWKSUtils;
+import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.StringUtil;
 
+import java.io.IOException;
 import java.net.URI;
 import java.security.PublicKey;
 import java.util.ArrayList;
@@ -56,9 +62,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-import static org.keycloak.models.OAuth2DeviceConfig.OAUTH2_DEVICE_AUTHORIZATION_GRANT_ENABLED;
 import static org.keycloak.models.CibaConfig.OIDC_CIBA_GRANT_ENABLED;
+import static org.keycloak.models.OAuth2DeviceConfig.OAUTH2_DEVICE_AUTHORIZATION_GRANT_ENABLED;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -123,13 +130,19 @@ public class DescriptionConverter {
 
         OIDCAdvancedConfigWrapper configWrapper = OIDCAdvancedConfigWrapper.fromClientRepresentation(client);
         if (clientOIDC.getUserinfoSignedResponseAlg() != null) {
-            Algorithm algorithm = Enum.valueOf(Algorithm.class, clientOIDC.getUserinfoSignedResponseAlg());
-            configWrapper.setUserInfoSignedResponseAlg(algorithm);
+            configWrapper.setUserInfoSignedResponseAlg(clientOIDC.getUserinfoSignedResponseAlg());
         }
 
         if (clientOIDC.getRequestObjectSigningAlg() != null) {
-            Algorithm algorithm = Enum.valueOf(Algorithm.class, clientOIDC.getRequestObjectSigningAlg());
-            configWrapper.setRequestObjectSignatureAlg(algorithm);
+            configWrapper.setRequestObjectSignatureAlg(clientOIDC.getRequestObjectSigningAlg());
+        }
+
+        if (clientOIDC.getUserinfoEncryptedResponseAlg() != null) {
+            configWrapper.setUserInfoEncryptedResponseAlg(clientOIDC.getUserinfoEncryptedResponseAlg());
+        }
+
+        if (clientOIDC.getUserinfoEncryptedResponseEnc() != null) {
+            configWrapper.setUserInfoEncryptedResponseEnc(clientOIDC.getUserinfoEncryptedResponseEnc());
         }
 
         // KEYCLOAK-6771 Certificate Bound Token
@@ -142,6 +155,9 @@ public class DescriptionConverter {
 
         if (clientOIDC.getTlsClientAuthSubjectDn() != null) {
             configWrapper.setTlsClientAuthSubjectDn(clientOIDC.getTlsClientAuthSubjectDn());
+
+            // According to specification, attribute tls_client_auth_subject_dn has subject DN in the exact expected format. There is no reason for support regex comparisons
+            configWrapper.setAllowRegexPatternComparison(false);
         }
 
         if (clientOIDC.getIdTokenSignedResponseAlg() != null) {
@@ -155,6 +171,10 @@ public class DescriptionConverter {
         if (clientOIDC.getIdTokenEncryptedResponseEnc() != null) {
             configWrapper.setIdTokenEncryptedResponseEnc(clientOIDC.getIdTokenEncryptedResponseEnc());
         }
+
+        configWrapper.setAuthorizationSignedResponseAlg(clientOIDC.getAuthorizationSignedResponseAlg());
+        configWrapper.setAuthorizationEncryptedResponseAlg(clientOIDC.getAuthorizationEncryptedResponseAlg());
+        configWrapper.setAuthorizationEncryptedResponseEnc(clientOIDC.getAuthorizationEncryptedResponseEnc());
 
         if (clientOIDC.getRequestUris() != null) {
             configWrapper.setRequestUris(clientOIDC.getRequestUris());
@@ -176,15 +196,60 @@ public class DescriptionConverter {
             configWrapper.setBackchannelLogoutRevokeOfflineTokens(clientOIDC.getBackchannelLogoutRevokeOfflineTokens());
         }
 
+        if (clientOIDC.getLogoUri() != null) {
+            configWrapper.setLogoUri(clientOIDC.getLogoUri());
+        }
+
+        if (clientOIDC.getPolicyUri() != null) {
+            configWrapper.setPolicyUri(clientOIDC.getPolicyUri());
+        }
+
+        if (clientOIDC.getTosUri() != null) {
+            configWrapper.setTosUri(clientOIDC.getTosUri());
+        }
+
+        if (clientOIDC.getPostLogoutRedirectUris() != null) {
+            configWrapper.setPostLogoutRedirectUris(clientOIDC.getPostLogoutRedirectUris());
+        }
+
+        // CIBA
         String backchannelTokenDeliveryMode = clientOIDC.getBackchannelTokenDeliveryMode();
         if (backchannelTokenDeliveryMode != null) {
-            if(isSupportedBackchannelTokenDeliveryMode(backchannelTokenDeliveryMode)) {
-                Map<String, String> attr = Optional.ofNullable(client.getAttributes()).orElse(new HashMap<>());
-                attr.put(CibaConfig.CIBA_BACKCHANNEL_TOKEN_DELIVERY_MODE_PER_CLIENT, backchannelTokenDeliveryMode);
-                client.setAttributes(attr);
-            } else {
-                throw new ClientRegistrationException("Unsupported requested backchannel_token_delivery_mode");
-            }
+            Map<String, String> attr = Optional.ofNullable(client.getAttributes()).orElse(new HashMap<>());
+            attr.put(CibaConfig.CIBA_BACKCHANNEL_TOKEN_DELIVERY_MODE_PER_CLIENT, backchannelTokenDeliveryMode);
+            client.setAttributes(attr);
+        }
+        String backchannelClientNotificationEndpoint = clientOIDC.getBackchannelClientNotificationEndpoint();
+        if (backchannelClientNotificationEndpoint != null) {
+            Map<String, String> attr = Optional.ofNullable(client.getAttributes()).orElse(new HashMap<>());
+            attr.put(CibaConfig.CIBA_BACKCHANNEL_CLIENT_NOTIFICATION_ENDPOINT, backchannelClientNotificationEndpoint);
+            client.setAttributes(attr);
+        }
+        String backchannelAuthenticationRequestSigningAlg = clientOIDC.getBackchannelAuthenticationRequestSigningAlg();
+        if (backchannelAuthenticationRequestSigningAlg != null) {
+            Map<String, String> attr = Optional.ofNullable(client.getAttributes()).orElse(new HashMap<>());
+            attr.put(CibaConfig.CIBA_BACKCHANNEL_AUTH_REQUEST_SIGNING_ALG, backchannelAuthenticationRequestSigningAlg);
+            client.setAttributes(attr);
+        }
+
+        // PAR
+        Boolean requirePushedAuthorizationRequests = clientOIDC.getRequirePushedAuthorizationRequests();
+        if (requirePushedAuthorizationRequests != null) {
+            Map<String, String> attr = Optional.ofNullable(client.getAttributes()).orElse(new HashMap<>());
+            attr.put(ParConfig.REQUIRE_PUSHED_AUTHORIZATION_REQUESTS, requirePushedAuthorizationRequests.toString());
+            client.setAttributes(attr);
+        }
+
+        configWrapper.setFrontChannelLogoutUrl(Optional.ofNullable(clientOIDC.getFrontChannelLogoutUri()).orElse(null));
+        if (clientOIDC.getFrontchannelLogoutSessionRequired() == null) {
+            // False by default per OIDC FrontChannel Logout specification
+            configWrapper.setFrontChannelLogoutSessionRequired(false);
+        } else {
+            configWrapper.setFrontChannelLogoutSessionRequired(clientOIDC.getFrontchannelLogoutSessionRequired());
+        }
+
+        if (clientOIDC.getDefaultAcrValues() != null) {
+            configWrapper.setAttributeMultivalued(Constants.DEFAULT_ACR_VALUES, clientOIDC.getDefaultAcrValues());
         }
 
         return client;
@@ -197,46 +262,56 @@ public class DescriptionConverter {
         client.setAttributes(attributes);
     }
 
-    private static boolean isSupportedBackchannelTokenDeliveryMode(String mode) {
-        if (mode.equals(CibaConfig.DEFAULT_CIBA_POLICY_TOKEN_DELIVERY_MODE)) return true;
-        return false;
+    private static List<String> getSupportedAlgorithms(KeycloakSession session, Class<? extends Provider> clazz, boolean includeNone) {
+        Stream<String> supportedAlgorithms = session.getKeycloakSessionFactory().getProviderFactoriesStream(clazz)
+                .map(ProviderFactory::getId);
+
+        if (includeNone) {
+            supportedAlgorithms = Streams.concat(supportedAlgorithms, Stream.of("none"));
+        }
+        return supportedAlgorithms.collect(Collectors.toList());
     }
 
     private static boolean setPublicKey(OIDCClientRepresentation clientOIDC, ClientRepresentation clientRep) {
-        if (clientOIDC.getJwksUri() == null && clientOIDC.getJwks() == null) {
-            return false;
-        }
-
-        if (clientOIDC.getJwksUri() != null && clientOIDC.getJwks() != null) {
-            throw new ClientRegistrationException("Illegal to use both jwks_uri and jwks");
-        }
-
         OIDCAdvancedConfigWrapper configWrapper = OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep);
 
         if (clientOIDC.getJwks() != null) {
+            if (clientOIDC.getJwksUri() != null) {
+                throw new ClientRegistrationException("Illegal to use both jwks_uri and jwks");
+            }
+
             JSONWebKeySet keySet = clientOIDC.getJwks();
             JWK publicKeyJWk = JWKSUtils.getKeyForUse(keySet, JWK.Use.SIG);
+
+            try {
+                configWrapper.setJwksString(JsonSerialization.writeValueAsPrettyString(clientOIDC.getJwks()));
+            } catch (IOException e) {
+                throw new ClientRegistrationException("Illegal jwks format");
+            }
+            configWrapper.setUseJwksString(true);
+            configWrapper.setUseJwksUrl(false);
+
             if (publicKeyJWk == null) {
                 return false;
-            } else {
-                PublicKey publicKey = JWKParser.create(publicKeyJWk).toPublicKey();
-                String publicKeyPem = KeycloakModelUtils.getPemFromKey(publicKey);
-                CertificateRepresentation rep = new CertificateRepresentation();
-                rep.setPublicKey(publicKeyPem);
-                rep.setKid(publicKeyJWk.getKeyId());
-                CertificateInfoHelper.updateClientRepresentationCertificateInfo(clientRep, rep, JWTClientAuthenticator.ATTR_PREFIX);
-
-                configWrapper.setUseJwksUrl(false);
-
-                return true;
             }
-        } else {
+            PublicKey publicKey = JWKParser.create(publicKeyJWk).toPublicKey();
+            String publicKeyPem = KeycloakModelUtils.getPemFromKey(publicKey);
+            CertificateRepresentation rep = new CertificateRepresentation();
+            rep.setPublicKey(publicKeyPem);
+            rep.setKid(publicKeyJWk.getKeyId());
+            CertificateInfoHelper.updateClientRepresentationCertificateInfo(clientRep, rep, JWTClientAuthenticator.ATTR_PREFIX);
+
+            return true;
+        } else if (clientOIDC.getJwksUri() != null) {
             configWrapper.setUseJwksUrl(true);
             configWrapper.setJwksUrl(clientOIDC.getJwksUri());
+            configWrapper.setUseJwksString(false);
             return true;
         }
-    }
 
+        return false;
+
+    }
 
     public static OIDCClientRepresentation toExternalResponse(KeycloakSession session, ClientRepresentation client, URI uri) {
         OIDCClientRepresentation response = new OIDCClientRepresentation();
@@ -250,11 +325,12 @@ public class DescriptionConverter {
             if (oidcClientAuthMethods != null && !oidcClientAuthMethods.isEmpty()) {
                 response.setTokenEndpointAuthMethod(oidcClientAuthMethods.iterator().next());
             }
-        }
 
-        if (client.getClientAuthenticatorType().equals(ClientIdAndSecretAuthenticator.PROVIDER_ID)) {
-            response.setClientSecret(client.getSecret());
-            response.setClientSecretExpiresAt(0);
+            if (clientAuth.supportsSecret()) {
+                response.setClientSecret(client.getSecret());
+                response.setClientSecretExpiresAt(
+                    OIDCClientSecretConfigWrapper.fromClientRepresentation(client).getClientSecretExpirationTime());
+            }
         }
 
         response.setClientName(client.getName());
@@ -270,13 +346,32 @@ public class DescriptionConverter {
 
         OIDCAdvancedConfigWrapper config = OIDCAdvancedConfigWrapper.fromClientRepresentation(client);
         if (config.isUserInfoSignatureRequired()) {
-            response.setUserinfoSignedResponseAlg(config.getUserInfoSignedResponseAlg().toString());
+            response.setUserinfoSignedResponseAlg(config.getUserInfoSignedResponseAlg());
+        }
+        if (config.getUserInfoEncryptedResponseAlg() != null) {
+            response.setUserinfoEncryptedResponseAlg(config.getUserInfoEncryptedResponseAlg());
+        }
+        if (config.getUserInfoEncryptedResponseEnc() != null) {
+            response.setUserinfoEncryptedResponseEnc(config.getUserInfoEncryptedResponseEnc());
         }
         if (config.getRequestObjectSignatureAlg() != null) {
-            response.setRequestObjectSigningAlg(config.getRequestObjectSignatureAlg().toString());
+            response.setRequestObjectSigningAlg(config.getRequestObjectSignatureAlg());
+        }
+        if (config.getRequestObjectEncryptionAlg() != null) {
+            response.setRequestObjectEncryptionAlg(config.getRequestObjectEncryptionAlg());
+        }
+        if (config.getRequestObjectEncryptionEnc() != null) {
+            response.setRequestObjectEncryptionEnc(config.getRequestObjectEncryptionEnc());
         }
         if (config.isUseJwksUrl()) {
             response.setJwksUri(config.getJwksUrl());
+        }
+        if (config.isUseJwksString()) {
+            try {
+                response.setJwks(JsonSerialization.readValue(config.getJwksString(), JSONWebKeySet.class));
+            } catch (IOException e) {
+                throw new ClientRegistrationException("Illegal jwks format");
+            }
         }
         // KEYCLOAK-6771 Certificate Bound Token
         // https://tools.ietf.org/html/draft-ietf-oauth-mtls-08#section-6.5
@@ -297,11 +392,23 @@ public class DescriptionConverter {
         if (config.getIdTokenEncryptedResponseEnc() != null) {
             response.setIdTokenEncryptedResponseEnc(config.getIdTokenEncryptedResponseEnc());
         }
+        if (config.getAuthorizationSignedResponseAlg() != null) {
+            response.setAuthorizationSignedResponseAlg(config.getAuthorizationSignedResponseAlg());
+        }
+        if (config.getAuthorizationEncryptedResponseAlg() != null) {
+            response.setAuthorizationEncryptedResponseAlg(config.getAuthorizationEncryptedResponseAlg());
+        }
+        if (config.getAuthorizationEncryptedResponseEnc() != null) {
+            response.setAuthorizationEncryptedResponseEnc(config.getAuthorizationEncryptedResponseEnc());
+        }
         if (config.getRequestUris() != null) {
             response.setRequestUris(config.getRequestUris());
         }
         if (config.getTokenEndpointAuthSigningAlg() != null) {
             response.setTokenEndpointAuthSigningAlg(config.getTokenEndpointAuthSigningAlg());
+        }
+        if (config.getPostLogoutRedirectUris() != null) {
+            response.setPostLogoutRedirectUris(config.getPostLogoutRedirectUris());
         }
         response.setBackchannelLogoutUri(config.getBackchannelLogoutUrl());
         response.setBackchannelLogoutSessionRequired(config.isBackchannelLogoutSessionRequired());
@@ -312,6 +419,16 @@ public class DescriptionConverter {
             if (StringUtil.isNotBlank(mode)) {
                 response.setBackchannelTokenDeliveryMode(mode);
             }
+            String clientNotificationEndpoint = client.getAttributes().get(CibaConfig.CIBA_BACKCHANNEL_CLIENT_NOTIFICATION_ENDPOINT);
+            if (StringUtil.isNotBlank(clientNotificationEndpoint)) {
+                response.setBackchannelClientNotificationEndpoint(clientNotificationEndpoint);
+            }
+            String alg = client.getAttributes().get(CibaConfig.CIBA_BACKCHANNEL_AUTH_REQUEST_SIGNING_ALG);
+            if (StringUtil.isNotBlank(alg)) {
+                response.setBackchannelAuthenticationRequestSigningAlg(alg);
+            }
+            Boolean requirePushedAuthorizationRequests = Boolean.valueOf(client.getAttributes().get(ParConfig.REQUIRE_PUSHED_AUTHORIZATION_REQUESTS));
+            response.setRequirePushedAuthorizationRequests(requirePushedAuthorizationRequests.booleanValue());
         }
 
         List<ProtocolMapperRepresentation> foundPairwiseMappers = PairwiseSubMapperUtils.getPairwiseSubMappers(client);
@@ -321,6 +438,14 @@ public class DescriptionConverter {
             // Get sectorIdentifier from 1st found
             String sectorIdentifierUri = PairwiseSubMapperHelper.getSectorIdentifierUri(foundPairwiseMappers.get(0));
             response.setSectorIdentifierUri(sectorIdentifierUri);
+        }
+
+        response.setFrontChannelLogoutUri(config.getFrontChannelLogoutUrl());
+        response.setFrontchannelLogoutSessionRequired(config.isFrontChannelLogoutSessionRequired());
+
+        List<String> defaultAcrValues = config.getAttributeMultivalued(Constants.DEFAULT_ACR_VALUES);
+        if (!defaultAcrValues.isEmpty()) {
+            response.setDefaultAcrValues(defaultAcrValues);
         }
 
         return response;

@@ -17,10 +17,13 @@
 
 package org.keycloak.testsuite.domainextension;
 
+import org.junit.BeforeClass;
 import org.junit.Test;
+import org.keycloak.common.Profile;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.client.resources.TestExampleCompanyResource;
 import org.keycloak.testsuite.util.RealmBuilder;
@@ -34,7 +37,7 @@ import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.A
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@AuthServerContainerExclude(value = {AuthServer.REMOTE, AuthServer.QUARKUS}, details = "For quarkus, custom entities not yet supported")
+@AuthServerContainerExclude(value = {AuthServer.REMOTE})
 // This is testing custom SPI which is, in case of remote server, deployed on container as part of testsuite providers.
 // It looks like the problem is, that in the time of loading spis during keycloak deployment, the deployment of Testsuite providers
 // is not processed yet, hence the spi is not present yet, which results in nullpointer exception because service provided by the spi
@@ -45,6 +48,11 @@ public class CustomExtensionTest extends AbstractKeycloakTest {
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         RealmRepresentation foo = RealmBuilder.create().name("foo").build();
         testRealms.add(foo);
+    }
+
+    @BeforeClass
+    public static void checkNotMapStorage() {
+        ProfileAssume.assumeFeatureDisabled(Profile.Feature.MAP_STORAGE);
     }
 
     @Test

@@ -16,15 +16,17 @@
  */
 package org.keycloak.testsuite.user.profile.config;
 
-import static org.keycloak.testsuite.user.profile.config.UPConfigUtils.ROLE_ADMIN;
-import static org.keycloak.testsuite.user.profile.config.UPConfigUtils.ROLE_USER;
+import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_ADMIN;
+import static org.keycloak.userprofile.config.UPConfigUtils.ROLE_USER;
 
-import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.userprofile.UserProfileContext;
+import org.keycloak.userprofile.config.UPConfigUtils;
 
 /**
  * Unit test for {@link UPConfigUtils}
@@ -51,14 +53,14 @@ public class UPConfigUtilsTest {
 
         Assert.assertFalse(UPConfigUtils.isRoleForContext(UserProfileContext.ACCOUNT, null));
 
-        List<String> roles = new ArrayList<>();
+        Set<String> roles = new HashSet<>();
         roles.add(ROLE_ADMIN);
         Assert.assertTrue(UPConfigUtils.isRoleForContext(UserProfileContext.USER_API, roles));
         Assert.assertFalse(UPConfigUtils.isRoleForContext(UserProfileContext.ACCOUNT, roles));
         Assert.assertFalse(UPConfigUtils.isRoleForContext(UserProfileContext.ACCOUNT_OLD, roles));
         Assert.assertFalse(UPConfigUtils.isRoleForContext(UserProfileContext.UPDATE_PROFILE, roles));
 
-        roles = new ArrayList<>();
+        roles = new HashSet<>();
         roles.add(ROLE_USER);
         Assert.assertFalse(UPConfigUtils.isRoleForContext(UserProfileContext.USER_API, roles));
         Assert.assertTrue(UPConfigUtils.isRoleForContext(UserProfileContext.ACCOUNT, roles));

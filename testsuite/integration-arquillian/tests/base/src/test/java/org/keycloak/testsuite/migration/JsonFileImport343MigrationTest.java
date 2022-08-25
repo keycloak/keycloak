@@ -37,7 +37,7 @@ import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.A
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-@AuthServerContainerExclude(value = {AuthServer.REMOTE, AuthServer.QUARKUS}, details = "It works locally for Quarkus, but failing on CI for unknown reason")
+@AuthServerContainerExclude(value = {AuthServer.REMOTE})
 public class JsonFileImport343MigrationTest extends AbstractJsonFileImportMigrationTest {
 
     @Override
@@ -66,6 +66,7 @@ public class JsonFileImport343MigrationTest extends AbstractJsonFileImportMigrat
         testMigrationTo8_x();
         testMigrationTo9_x();
         testMigrationTo12_x(true);
+        testMigrationTo18_x();
     }
 
 }

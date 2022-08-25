@@ -47,6 +47,7 @@ public abstract class AuthzEndpointRequestParser {
     public static final int ADDITIONAL_REQ_PARAMS_MAX_SIZE = 200;
 
     public static final String AUTHZ_REQUEST_OBJECT = "ParsedRequestObject";
+    public static final String AUTHZ_REQUEST_OBJECT_ENCRYPTED = "EncryptedRequestObject";
 
     /** Set of known protocol GET params not to be stored into additionalReqParams} */
     public static final Set<String> KNOWN_REQ_PARAMS = new HashSet<>();

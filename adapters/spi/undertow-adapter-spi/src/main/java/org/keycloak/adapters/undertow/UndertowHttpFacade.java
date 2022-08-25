@@ -96,7 +96,7 @@ public class UndertowHttpFacade implements HttpFacade {
             KeycloakUriBuilder uriBuilder = KeycloakUriBuilder.fromUri(exchange.getRequestURI())
                     .replaceQuery(exchange.getQueryString());
             if (!exchange.isHostIncludedInRequestURI()) uriBuilder.scheme(exchange.getRequestScheme()).host(exchange.getHostAndPort());
-            return uriBuilder.build().toString();
+            return uriBuilder.buildAsString();
         }
 
         @Override

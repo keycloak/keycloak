@@ -19,7 +19,11 @@
 
 package org.keycloak.protocol.oidc.grants.ciba.channel;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -33,6 +37,8 @@ public class AuthenticationChannelResponse {
     }
 
     private Status status;
+
+    private Map<String, String> additionalParams = new HashMap<>();
 
     public AuthenticationChannelResponse() {
         // for reflection
@@ -48,5 +54,15 @@ public class AuthenticationChannelResponse {
 
     public void setStatus(Status status) {
         this.status = status;
+    }
+
+    @JsonAnyGetter
+    public Map<String, String> getAdditionalParams() {
+        return additionalParams;
+    }
+
+    @JsonAnySetter
+    public void setAdditionalParams(String name, String value) {
+        this.additionalParams.put(name, value);
     }
 }

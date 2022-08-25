@@ -19,6 +19,7 @@
 
 package org.keycloak.userprofile;
 
+import javax.ws.rs.core.Response;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -26,13 +27,15 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiFunction;
+import java.util.function.Consumer;
 
 import org.keycloak.validate.ValidationError;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public final class ValidationException extends RuntimeException {
+public final class ValidationException extends RuntimeException implements Consumer<ValidationError> {
 
 	private final Map<String, List<Error>> errors = new HashMap<>();
 
@@ -72,11 +75,16 @@ public final class ValidationException extends RuntimeException {
 		return errors.values().stream().flatMap(Collection::stream).anyMatch(error -> names.contains(error.getAttribute()));
 	}
 
+	@Override
+	public void accept(ValidationError error) {
+		addError(error);
+	}
+
 	void addError(ValidationError error) {
 		List<Error> errors = this.errors.computeIfAbsent(error.getMessage(), (k) -> new ArrayList<>());
 		errors.add(new Error(error));
 	}
-	
+
 	@Override
 	public String toString() {
 		return "ValidationException [errors=" + errors + "]";
@@ -85,6 +93,17 @@ public final class ValidationException extends RuntimeException {
 	@Override
 	public String getMessage() {
 		return toString();
+	}
+
+	public Response.Status getStatusCode() {
+		for (Map.Entry<String, List<Error>> entry : errors.entrySet()) {
+			for (Error error : entry.getValue()) {
+				if (!Response.Status.BAD_REQUEST.equals(error.getStatusCode())) {
+					return error.getStatusCode();
+				}
+			}
+		}
+		return Response.Status.BAD_REQUEST;
 	}
 
 	public static class Error implements Serializable {
@@ -104,13 +123,21 @@ public final class ValidationException extends RuntimeException {
 		}
 		
 		public Object[] getMessageParameters() {
-			return error.getMessageParameters();
+			return error.getInputHintWithMessageParameters();
 		}
 
 		@Override
 		public String toString() {
 			return "Error [error=" + error + "]";
 		}
-		
+
+		public String getFormattedMessage(BiFunction<String, Object[], String>  messageFormatter) {
+			return messageFormatter.apply(getMessage(), getMessageParameters());
+		}
+
+		public Response.Status getStatusCode() {
+			return error.getStatusCode();
+		}
 	}
+
 }

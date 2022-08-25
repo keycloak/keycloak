@@ -56,7 +56,8 @@
             "providerName": "ldap",
             "priority": 1,
             "config": {
-                "connectionUrl": "ldap://foo"
+                "connectionUrl": "ldap://foo",
+                "editMode": "WRITABLE"
             }
         },
         {
@@ -64,7 +65,8 @@
             "providerName": "ldap",
             "priority": 2,
             "config": {
-                "connectionUrl": "ldap://bar"
+                "connectionUrl": "ldap://bar",
+                "editMode": "WRITABLE"
             }
         }
     ],

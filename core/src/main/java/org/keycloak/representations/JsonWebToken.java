@@ -32,6 +32,7 @@ import org.keycloak.json.StringOrArraySerializer;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -148,6 +149,15 @@ public class JsonWebToken implements Serializable, Token {
         return !isExpired() && isNotBefore(allowedTimeSkew);
     }
 
+    /**
+     * @param sessionStarted Time in seconds
+     * @return true if the particular token was issued before the given session start time. Which means that token cannot be issued by the particular session
+     */
+    @JsonIgnore
+    public boolean isIssuedBeforeSessionStart(long sessionStarted) {
+        return getIat() + 1 < sessionStarted;
+    }
+
     public Long getIat() {
         return iat;
     }
@@ -207,6 +217,22 @@ public class JsonWebToken implements Serializable, Token {
                 return true;
             }
         }
+        return false;
+    }
+
+    public boolean hasAnyAudience(List<String> audiences) {
+        String[] auds = getAudience();
+
+        if (auds == null) {
+            return false;
+        }
+
+        for (String aud : auds) {
+            if (audiences.contains(aud)) {
+                return true;
+            }
+        }
+
         return false;
     }
 

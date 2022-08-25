@@ -74,9 +74,11 @@ public class ValidateX509CertificateUsername extends AbstractX509ClientCertifica
             CertificateValidator.CertificateValidatorBuilder builder = certificateValidationParameters(context.getSession(), config);
             CertificateValidator validator = builder.build(certs);
             validator.checkRevocationStatus()
+                    .validateTrust()
                     .validateKeyUsage()
                     .validateExtendedKeyUsage()
-                    .validateTimestamps();
+                    .validateTimestamps()
+                    .validatePolicy();
         } catch(Exception e) {
             logger.error(e.getMessage(), e);
             // TODO use specific locale to load error messages
@@ -122,7 +124,7 @@ public class ValidateX509CertificateUsername extends AbstractX509ClientCertifica
             return;
         }
 
-        String bruteForceError = getDisabledByBruteForceEventError(context.getProtector(), context.getSession(), context.getRealm(), user);
+        String bruteForceError = getDisabledByBruteForceEventError(context, user);
         if (bruteForceError != null) {
             context.getEvent().user(user);
             context.getEvent().error(bruteForceError);

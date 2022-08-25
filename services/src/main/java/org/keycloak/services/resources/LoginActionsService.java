@@ -59,6 +59,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.utils.AuthenticationFlowResolver;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -82,6 +83,7 @@ import org.keycloak.services.resource.RealmResourceProvider;
 import org.keycloak.services.util.AuthenticationFlowURLHelper;
 import org.keycloak.services.util.BrowserHistoryHelper;
 import org.keycloak.services.util.CacheControlUtil;
+import org.keycloak.services.util.LocaleUtil;
 import org.keycloak.sessions.AuthenticationSessionCompoundId;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
@@ -231,6 +233,14 @@ public class LoginActionsService {
             flowPath = AUTHENTICATE_PATH;
         }
 
+        // See if we already have userSession attached to authentication session. This means restart of authentication session during re-authentication
+        // We logout userSession in this case
+        UserSessionModel userSession = new AuthenticationSessionManager(session).getUserSession(authSession);
+        if (userSession != null) {
+            logger.debugf("Logout of user session %s when restarting flow during re-authentication", userSession.getId());
+            AuthenticationManager.backchannelLogout(session, userSession, false);
+        }
+
         AuthenticationProcessor.resetFlow(authSession, flowPath);
 
         URI redirectUri = getLastExecutionUrl(flowPath, null, authSession.getClient().getClientId(), tabId);
@@ -268,15 +278,7 @@ public class LoginActionsService {
     }
 
     protected void processLocaleParam(AuthenticationSessionModel authSession) {
-        if (authSession != null && realm.isInternationalizationEnabled()) {
-            String locale = session.getContext().getUri().getQueryParameters().getFirst(LocaleSelectorProvider.KC_LOCALE_PARAM);
-            if (locale != null) {
-                authSession.setAuthNote(LocaleSelectorProvider.USER_REQUEST_LOCALE, locale);
-
-                LocaleUpdaterProvider localeUpdater = session.getProvider(LocaleUpdaterProvider.class);
-                localeUpdater.updateLocaleCookie(locale);
-            }
-        }
+        LocaleUtil.processLocaleParam(session, realm, authSession);
     }
 
     protected Response processAuthentication(boolean action, String execution, AuthenticationSessionModel authSession, String errorMessage) {
@@ -849,7 +851,6 @@ public class LoginActionsService {
     /**
      * OAuth grant page.  You should not invoked this directly!
      *
-     * @param formData
      * @return
      */
     @Path("consent")

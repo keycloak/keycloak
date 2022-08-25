@@ -18,7 +18,18 @@ import * as React from 'react';
 
 import parse from '../../util/ParseLink';
 
-import { Button, Level, LevelItem, Stack, StackItem, Tab, Tabs, TextInput } from '@patternfly/react-core';
+import {
+    Button,
+    Level,
+    LevelItem,
+    PageSection,
+    PageSectionVariants,
+    Stack,
+    StackItem,
+    Tab,
+    Tabs,
+    TextInput
+} from '@patternfly/react-core';
 
 import {HttpResponse} from '../../account-service/account.service';
 import {AccountServiceContext} from '../../account-service/AccountServiceContext';
@@ -170,12 +181,12 @@ export class MyResourcesPage extends React.Component<MyResourcesPageProps, MyRes
     private makeTab(eventKey: number, title: string, resources: PaginatedResources, sharedResourcesTab: boolean): React.ReactNode {
         return (
             <Tab id={title} eventKey={eventKey} title={Msg.localize(title)}>
-                <Stack gutter="md">
+                <Stack hasGutter>
                     <StackItem isFilled><span/></StackItem>
                     <StackItem isFilled>
-                        <Level gutter='md'>
+                        <Level hasGutter>
                             <LevelItem>
-                                <TextInput value={this.state.nameFilter} onChange={this.handleFilterRequest} id={'filter-' + title} type="text" placeholder={Msg.localize('filterByName')} />
+                                <TextInput value={this.state.nameFilter} onChange={this.handleFilterRequest} id={'filter-' + title} type="text" placeholder={Msg.localize('filterByName')} iconVariant="search"/>
                             </LevelItem>
                         </Level>
                     </StackItem>
@@ -191,24 +202,26 @@ export class MyResourcesPage extends React.Component<MyResourcesPageProps, MyRes
     public render(): React.ReactNode {
         return (
             <ContentPage title="resources" onRefresh={this.fetchInitialResources.bind(this)}>
-                <Tabs isFilled activeKey={this.state.activeTabKey} onSelect={this.handleTabClick}>
-                    {this.makeTab(0, 'myResources', this.state.myResources, false)}
-                    {this.makeTab(1, 'sharedwithMe', this.state.sharedWithMe, true)}
-                </Tabs>
+                <PageSection variant={PageSectionVariants.light}>
+                    <Tabs activeKey={this.state.activeTabKey} onSelect={this.handleTabClick}>
+                        {this.makeTab(0, 'myResources', this.state.myResources, false)}
+                        {this.makeTab(1, 'sharedwithMe', this.state.sharedWithMe, true)}
+                    </Tabs>
 
-                <Level gutter='md'>
-                    <LevelItem>
-                        {this.hasPrevious() && <Button onClick={this.handlePreviousClick}>&lt;<Msg msgKey='previousPage'/></Button>}
-                    </LevelItem>
+                    <Level hasGutter>
+                        <LevelItem>
+                            {this.hasPrevious() && <Button onClick={this.handlePreviousClick}>&lt;<Msg msgKey='previousPage'/></Button>}
+                        </LevelItem>
 
-                    <LevelItem>
-                        {this.hasPrevious() && <Button onClick={this.handleFirstPageClick}><Msg msgKey='firstPage'/></Button>}
-                    </LevelItem>
+                        <LevelItem>
+                            {this.hasPrevious() && <Button onClick={this.handleFirstPageClick}><Msg msgKey='firstPage'/></Button>}
+                        </LevelItem>
 
-                    <LevelItem>
-                        {this.hasNext() && <Button onClick={this.handleNextClick}><Msg msgKey='nextPage'/>&gt;</Button>}
-                    </LevelItem>
-                </Level>
+                        <LevelItem>
+                            {this.hasNext() && <Button onClick={this.handleNextClick}><Msg msgKey='nextPage'/>&gt;</Button>}
+                        </LevelItem>
+                    </Level>
+                </PageSection>
             </ContentPage>
         );
     }

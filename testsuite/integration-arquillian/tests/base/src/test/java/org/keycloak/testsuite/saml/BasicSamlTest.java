@@ -49,7 +49,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.NAMEID_FORMAT_TRANSIENT;
 import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.PROTOCOL_NSURI;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_PORT;
@@ -167,7 +167,7 @@ public class BasicSamlTest extends AbstractSamlTest {
     }
 
     @Test
-    @AuthServerContainerExclude({AuthServer.REMOTE, AuthServer.QUARKUS})
+    @AuthServerContainerExclude({AuthServer.REMOTE})
     public void testNoPortInDestination() throws Exception {
         // note that this test relies on settings of the login-protocol.saml.knownProtocols configuration option
         testWithOverriddenPort(-1, Response.Status.OK, containsString("login"));

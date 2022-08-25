@@ -15,4 +15,4 @@
 # limitations under the License.
 #
 
-org.keycloak.transaction.QuarkusJtaTransactionManagerLookup
+org.keycloak.quarkus.runtime.transaction.QuarkusJtaTransactionManagerLookup

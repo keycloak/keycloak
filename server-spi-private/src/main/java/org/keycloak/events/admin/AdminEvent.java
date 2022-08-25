@@ -17,10 +17,27 @@
 
 package org.keycloak.events.admin;
 
+import org.keycloak.storage.SearchableModelField;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
 public class AdminEvent {
+
+    public static class SearchableFields {
+        public static final SearchableModelField<AdminEvent> ID              = new SearchableModelField<>("id", String.class);
+        public static final SearchableModelField<AdminEvent> REALM_ID        = new SearchableModelField<>("realmId", String.class);
+        public static final SearchableModelField<AdminEvent> TIMESTAMP       = new SearchableModelField<>("timestamp", Long.class);
+        public static final SearchableModelField<AdminEvent> AUTH_REALM_ID   = new SearchableModelField<>("authRealmId", String.class);
+        public static final SearchableModelField<AdminEvent> AUTH_CLIENT_ID  = new SearchableModelField<>("authClientId", String.class);
+        public static final SearchableModelField<AdminEvent> AUTH_USER_ID    = new SearchableModelField<>("authUserId", String.class);
+        public static final SearchableModelField<AdminEvent> AUTH_IP_ADDRESS = new SearchableModelField<>("authIpAddress", String.class);
+        public static final SearchableModelField<AdminEvent> OPERATION_TYPE  = new SearchableModelField<>("operationType", OperationType.class);
+        public static final SearchableModelField<AdminEvent> RESOURCE_TYPE   = new SearchableModelField<>("resourceType", String.class);
+        public static final SearchableModelField<AdminEvent> RESOURCE_PATH   = new SearchableModelField<>("resourcePath", String.class);
+    }
+
+    private String id;
 
     private long time;
     
@@ -43,6 +60,7 @@ public class AdminEvent {
     
     public AdminEvent() {}
     public AdminEvent(AdminEvent toCopy) {
+        this.id = toCopy.getId();
         this.time = toCopy.getTime();
         this.realmId = toCopy.getRealmId();
         this.authDetails = new AuthDetails(toCopy.getAuthDetails());
@@ -53,8 +71,19 @@ public class AdminEvent {
         this.error = toCopy.getError();
     }
 
+    /**
+     * Returns the UUID of the event.
+     *
+     * @return
+     */
+    public String getId() {
+        return id;
+    }
 
-    
+    public void setId(String id) {
+        this.id = id;
+    }
+
     /**
      * Returns the time of the event
      *

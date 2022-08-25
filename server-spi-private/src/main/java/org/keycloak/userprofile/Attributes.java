@@ -24,7 +24,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
+import org.keycloak.models.UserModel;
 import org.keycloak.validate.ValidationError;
 
 /**
@@ -108,4 +110,61 @@ public interface Attributes {
      * @return the attributes
      */
     Set<Map.Entry<String, List<String>>> attributeSet();
+
+    /**
+     * <p>Returns the metadata associated with the attribute with the given {@code name}.
+     *
+     * <p>The {@link AttributeMetadata} is a copy of the original metadata. The original metadata
+     * keeps immutable.
+     *
+     * @param name the attribute name
+     * @return the metadata
+     */
+    AttributeMetadata getMetadata(String name);
+
+    /**
+     * Returns whether the attribute with the given {@code name} is required.
+     *
+     * @param name the attribute name
+     * @return {@code true} if the attribute is required. Otherwise, {@code false}.
+     */
+    boolean isRequired(String name);
+
+    /**
+     * Similar to {{@link #getReadable(boolean)}} but with the possibility to add or remove
+     * the root attributes.
+     *
+     * @param includeBuiltin if the root attributes should be included.
+     * @return the attributes with read/write permission.
+     */
+    default Map<String, List<String>> getReadable(boolean includeBuiltin) {
+        return getReadable().entrySet().stream().filter(entry -> {
+            if (includeBuiltin) {
+                return true;
+            }
+            return !isRootAttribute(entry.getKey());
+        }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+
+    /**
+     * Returns only the attributes that have read/write permissions.
+     *
+     * @return the attributes with read/write permission.
+     */
+    Map<String, List<String>> getReadable();
+
+    /**
+     * Returns whether the attribute with the given {@code name} is a root attribute.
+     *
+     * @param name the attribute name
+     * @return
+     */
+    default boolean isRootAttribute(String name) {
+        return UserModel.USERNAME.equals(name)
+                || UserModel.EMAIL.equals(name)
+                || UserModel.FIRST_NAME.equals(name)
+                || UserModel.LAST_NAME.equals(name);
+    }
+
+    Map<String, List<String>> toMap();
 }

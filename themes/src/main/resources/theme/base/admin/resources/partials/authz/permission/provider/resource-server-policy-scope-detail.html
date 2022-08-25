@@ -28,32 +28,35 @@
                 </div>
                 <kc-tooltip>{{:: 'authz-permission-description.tooltip' | translate}}</kc-tooltip>
             </div>
-            <div class="form-group clearfix">
+            <div class="form-group">
+                <label class="col-md-2 control-label" for="applyToResourceTypeFlag">{{:: 'authz-permission-scope-apply-to-resource-type' | translate}}</label>
+                <div class="col-md-6">
+                    <input ng-model="applyToResourceTypeFlag" id="applyToResourceTypeFlag" onoffswitch data-ng-click="applyToResourceType()"/>
+                </div>
+                <kc-tooltip>{{:: 'authz-permission-scope-apply-to-resource-type.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix" data-ng-hide="applyToResourceTypeFlag">
                 <label class="col-md-2 control-label" for="resources">{{:: 'authz-resource' | translate}}</label>
-
                 <div class="col-md-6">
                     <input type="hidden" ui-select2="resourcesUiSelect" data-ng-change="selectResource()" id="resources" data-ng-model="selectedResource" data-placeholder="{{:: 'authz-any-resource' | translate}}..." />
                 </div>
                 <kc-tooltip>{{:: 'authz-permission-scope-resource.tooltip' | translate}}</kc-tooltip>
             </div>
-            <div class="form-group clearfix" data-ng-show="selectedResource">
+            <div class="form-group clearfix" data-ng-show="applyToResourceTypeFlag">
+                <label class="col-md-2 control-label" for="resourceType">{{:: 'authz-resource-type' | translate}} <span class="required">*</span></label>
+                <div class="col-md-6">
+                    <input class="form-control" type="text" id="resourceType" name="policy.resourceType" data-ng-model="policy.resourceType" data-ng-required="applyToResourceTypeFlag">
+                </div>
+
+                <kc-tooltip>{{:: 'authz-permission-resource-type.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix">
                 <label class="col-md-2 control-label" for="resourceScopes">{{:: 'authz-scopes' | translate}} <span class="required">*</span></label>
                 <div class="col-md-6">
-                    <select ui-select2 id="resourceScopes"
-                            data-ng-model="selectedScopes"
-                            data-placeholder="{{:: 'authz-any-scope' | translate}}..." multiple
-                            data-ng-required="selectedResource != null">
-                        <option ng-repeat="scope in resourceScopes" value="{{scope.id}}">{{scope.name}}</option>
-                    </select>
+                    <input type="hidden" ui-select2="scopesUiSelect" id="scopes" data-ng-model="selectedScopes"
+                    data-placeholder="{{:: 'authz-any-scope' | translate}}..." multiple data-ng-required="true" />
                 </div>
-                <kc-tooltip>{{:: 'authz-permission-scope-scope.tooltip' | translate}}</kc-tooltip>
-            </div>
-            <div class="form-group clearfix" data-ng-show="!selectedResource">
-                <label class="col-md-2 control-label" for="scopes">{{:: 'authz-scopes' | translate}} <span class="required">*</span></label>
-
-                <div class="col-md-6">
-                    <input type="hidden" ui-select2="scopesUiSelect" id="scopes" data-ng-model="selectedScopes" data-placeholder="{{:: 'authz-any-scope' | translate}}..." multiple data-ng-required="selectedResource == null" />
-                </div>
+                <!-- type="hidden"  -->
                 <kc-tooltip>{{:: 'authz-permission-scope-scope.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix">

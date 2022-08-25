@@ -16,6 +16,7 @@
  */
 package org.keycloak.validate.validators;
 
+import org.keycloak.provider.ConfiguredProvider;
 import org.keycloak.validate.ValidatorConfig;
 
 /**
@@ -25,7 +26,7 @@ import org.keycloak.validate.ValidatorConfig;
  * 
  * @author Vlastimil Elias <velias@redhat.com>
  */
-public class IntegerValidator extends AbstractNumberValidator {
+public class IntegerValidator extends AbstractNumberValidator implements ConfiguredProvider {
 
     public static final String ID = "integer";
     public static final IntegerValidator INSTANCE = new IntegerValidator();
@@ -60,4 +61,10 @@ public class IntegerValidator extends AbstractNumberValidator {
     protected boolean isFirstGreaterThanToSecond(Number n1, Number n2) {
         return n1.longValue() > n2.longValue();
     }
+    
+    @Override
+    public String getHelpText() {
+        return "Validator to check Integer number format and optionally min and max values";
+    }
+
 }

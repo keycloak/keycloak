@@ -40,7 +40,9 @@ public interface RealmProvider extends Provider /* TODO: Remove in future versio
 
     /**
      * Created new realm with given ID and name.
-     * @param id Internal ID of the realm or {@code null} if one is to be created by the underlying store
+     * @param id Internal ID of the realm or {@code null} if one is to be created by the underlying store. If the store
+     *           expects the ID to have a certain format (for example {@code UUID}) and the supplied ID doesn't follow
+     *           the expected format, the store may replace the {@code id} with a new one at its own discretion.
      * @param name String name of the realm
      * @return Model of the created realm.
      */

@@ -19,6 +19,7 @@ package org.keycloak.testsuite.authz;
 import static org.junit.Assert.assertEquals;
 
 import java.net.URI;
+import java.util.HashMap;
 import java.util.List;
 
 import javax.ws.rs.client.Client;
@@ -77,6 +78,41 @@ public class UmaDiscoveryDocumentTest extends AbstractKeycloakTest {
 
             assertEquals(registrationUri + "/authz/protection/permission", configuration.getPermissionEndpoint().toString());
             assertEquals(registrationUri + "/authz/protection/resource_set", configuration.getResourceRegistrationEndpoint().toString());
+        }
+    }
+
+    @Test
+    public void testFetchDiscoveryDocumentUsingFrontEndUrl() {
+        RealmRepresentation test = realmsResouce().realm("test").toRepresentation();
+
+        if (test.getAttributes() == null) {
+            test.setAttributes(new HashMap<>());
+        }
+
+        test.getAttributes().put("frontendUrl", "https://mykeycloak/auth");
+
+        realmsResouce().realm("test").update(test);
+
+        Client client = AdminClientUtil.createResteasyClient();
+        UriBuilder builder = UriBuilder.fromUri(OAuthClient.AUTH_SERVER_ROOT);
+        URI oidcDiscoveryUri = RealmsResource.wellKnownProviderUrl(builder).build("test", UmaWellKnownProviderFactory.PROVIDER_ID);
+        WebTarget oidcDiscoveryTarget = client.target(oidcDiscoveryUri);
+
+        try (Response response = oidcDiscoveryTarget.request().get()) {
+            assertEquals("no-cache, must-revalidate, no-transform, no-store", response.getHeaders().getFirst("Cache-Control"));
+
+            UmaConfiguration configuration = response.readEntity(UmaConfiguration.class);
+
+            String baseBackendUri = UriBuilder
+                    .fromUri(OAuthClient.AUTH_SERVER_ROOT)
+                    .path(RealmsResource.class).path(RealmsResource.class, "getRealmResource").build(realmsResouce().realm("test").toRepresentation().getRealm()).toString();
+            String baseFrontendUri = UriBuilder
+                    .fromUri(OAuthClient.AUTH_SERVER_ROOT)
+                    .path(RealmsResource.class).path(RealmsResource.class, "getRealmResource").scheme("https").host("mykeycloak").port(-1).build(realmsResouce().realm("test").toRepresentation().getRealm()).toString();
+
+            assertEquals(baseBackendUri + "/authz/protection/permission", configuration.getPermissionEndpoint());
+            assertEquals(baseBackendUri + "/authz/protection/permission", configuration.getPermissionEndpoint());
+            assertEquals(baseFrontendUri + "/protocol/openid-connect/auth", configuration.getAuthorizationEndpoint());
         }
     }
 }

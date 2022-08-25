@@ -39,7 +39,7 @@ public class ProviderResourceDefinition extends SimpleResourceDefinition {
             new SimpleAttributeDefinitionBuilder("enabled", ModelType.BOOLEAN, true)
                     .setAllowExpression(true)
                     .setDefaultValue(new ModelNode(true))
-                    .setAllowNull(false)
+                    .setRequired(true)
                     .setRestartAllServices()
                     .build();
     
@@ -49,7 +49,7 @@ public class ProviderResourceDefinition extends SimpleResourceDefinition {
             .setAllowExpression(true)
             .build();
     
-    protected static final ReloadRequiredWriteAttributeHandler WRITE_ATTR_HANDLER = new ReloadRequiredWriteAttributeHandler(ENABLED);
+    protected static final ReloadRequiredWriteAttributeHandler WRITE_ATTR_HANDLER = new ReloadRequiredWriteAttributeHandler(ENABLED, PROPERTIES);
     
     protected ProviderResourceDefinition() {
         super(PathElement.pathElement(TAG_NAME),

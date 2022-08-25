@@ -31,6 +31,7 @@ import org.keycloak.models.IdentityProviderMapperModel;
 import org.keycloak.models.IdentityProviderModel;
 import org.keycloak.models.OAuth2DeviceConfig;
 import org.keycloak.models.OTPPolicy;
+import org.keycloak.models.ParConfig;
 import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
@@ -103,6 +104,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
     protected int accessCodeLifespanLogin;
     protected LazyLoader<RealmModel, OAuth2DeviceConfig> deviceConfig;
     protected LazyLoader<RealmModel, CibaConfig> cibaConfig;
+    protected LazyLoader<RealmModel, ParConfig> parConfig;
     protected int actionTokenGeneratedByAdminLifespan;
     protected int actionTokenGeneratedByUserLifespan;
     protected int notBefore;
@@ -220,6 +222,7 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         accessCodeLifespan = model.getAccessCodeLifespan();
         deviceConfig = new DefaultLazyLoader<>(OAuth2DeviceConfig::new, null);
         cibaConfig = new DefaultLazyLoader<>(CibaConfig::new, null);
+        parConfig = new DefaultLazyLoader<>(ParConfig::new, null);
         accessCodeLifespanUserAction = model.getAccessCodeLifespanUserAction();
         accessCodeLifespanLogin = model.getAccessCodeLifespanLogin();
         actionTokenGeneratedByAdminLifespan = model.getActionTokenGeneratedByAdminLifespan();
@@ -504,6 +507,10 @@ public class CachedRealm extends AbstractExtendableRevisioned {
         return cibaConfig.get(modelSupplier);
     }
 
+    public ParConfig getParConfig(Supplier<RealmModel> modelSupplier) {
+        return parConfig.get(modelSupplier);
+    }
+
     public int getActionTokenGeneratedByAdminLifespan() {
         return actionTokenGeneratedByAdminLifespan;
     }
@@ -718,17 +725,17 @@ public class CachedRealm extends AbstractExtendableRevisioned {
 
     public Integer getAttribute(String name, Integer defaultValue) {
         String v = getAttribute(name);
-        return v != null ? Integer.parseInt(v) : defaultValue;
+        return v != null ? Integer.valueOf(v) : defaultValue;
     }
 
     public Long getAttribute(String name, Long defaultValue) {
         String v = getAttribute(name);
-        return v != null ? Long.parseLong(v) : defaultValue;
+        return v != null ? Long.valueOf(v) : defaultValue;
     }
 
     public Boolean getAttribute(String name, Boolean defaultValue) {
         String v = getAttribute(name);
-        return v != null ? Boolean.parseBoolean(v) : defaultValue;
+        return v != null ? Boolean.valueOf(v) : defaultValue;
     }
 
     public Map<String, String> getAttributes() {

@@ -18,6 +18,7 @@
 
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
     <changeSet author="mposolda@redhat.com" id="1.6.1_from15">
+        <validCheckSum>7:7e32c8f05c755e8675764e7d5f514509</validCheckSum>
 
         <preConditions onFail="MARK_RAN" onFailMessage="Upgrading from 1.6.0 version. Skipped 1.6.1_from15 changeSet and marked as ran" onSqlOutput="TEST">
             <not>
@@ -83,6 +84,7 @@
 
     <!-- KEYCLOAK-2404 - just for the update from 1.6.0 BUT not 1.6.1 or newer -->
     <changeSet author="mposolda@redhat.com" id="1.6.1_from16-pre">
+        <validCheckSum>7:980ba23cc0ec39cab731ce903dd01291</validCheckSum>
 
         <preConditions onFail="MARK_RAN" onFailMessage="Skipped 1.6.1_from16-pre changeSet and marked as ran" onSqlOutput="TEST">
             <and>
@@ -100,6 +102,7 @@
 
     <!-- Just for the update from 1.6.0 -->
     <changeSet author="mposolda@redhat.com" id="1.6.1_from16">
+        <validCheckSum>7:2fa220758991285312eb84f3b4ff5336</validCheckSum>
 
         <preConditions onFail="MARK_RAN" onFailMessage="Upgrading from 1.5.0 or older version. Skipped 1.6.1_from16 changeSet and marked as ran" onSqlOutput="TEST">
             <changeSetExecuted id="1.6.0" author="mposolda@redhat.com" changeLogFile="META-INF/jpa-changelog-1.6.0.xml" />
@@ -134,6 +137,7 @@
     </changeSet>
 
     <changeSet author="mposolda@redhat.com" id="1.6.1">
+        <validCheckSum>7:d41d8cd98f00b204e9800998ecf8427e</validCheckSum>
     </changeSet>
 
 </databaseChangeLog>

@@ -3,6 +3,7 @@ org.keycloak.userprofile.validator.AttributeRequiredByMetadataValidator
 org.keycloak.userprofile.validator.ReadOnlyAttributeUnchangedValidator
 org.keycloak.userprofile.validator.DuplicateUsernameValidator
 org.keycloak.userprofile.validator.UsernameHasValueValidator
+org.keycloak.userprofile.validator.UsernameIDNHomographValidator
 org.keycloak.userprofile.validator.UsernameMutationValidator
 org.keycloak.userprofile.validator.DuplicateEmailValidator
 org.keycloak.userprofile.validator.EmailExistsAsUsernameValidator
@@ -10,3 +11,6 @@ org.keycloak.userprofile.validator.RegistrationEmailAsUsernameUsernameValueValid
 org.keycloak.userprofile.validator.RegistrationUsernameExistsValidator
 org.keycloak.userprofile.validator.RegistrationEmailAsUsernameEmailValueValidator
 org.keycloak.userprofile.validator.BrokeringFederatedUsernameHasValueValidator
+org.keycloak.userprofile.validator.ImmutableAttributeValidator
+org.keycloak.userprofile.validator.UsernameProhibitedCharactersValidator
+org.keycloak.userprofile.validator.PersonNameProhibitedCharactersValidator

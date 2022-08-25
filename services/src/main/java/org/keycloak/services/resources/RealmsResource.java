@@ -31,6 +31,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.protocol.LoginProtocol;
 import org.keycloak.protocol.LoginProtocolFactory;
+import org.keycloak.provider.ProviderFactory;
 import org.keycloak.services.CorsErrorResponseException;
 import org.keycloak.services.clientregistration.ClientRegistrationService;
 import org.keycloak.services.managers.RealmManager;
@@ -40,6 +41,7 @@ import org.keycloak.services.util.CacheControlUtil;
 import org.keycloak.services.util.ResolveRelative;
 import org.keycloak.utils.ProfileHelper;
 import org.keycloak.wellknown.WellKnownProvider;
+import org.keycloak.wellknown.WellKnownProviderFactory;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.NotFoundException;
@@ -47,7 +49,6 @@ import javax.ws.rs.OPTIONS;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -55,6 +56,8 @@ import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;
+import java.util.Comparator;
+import java.util.Optional;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -243,14 +246,22 @@ public class RealmsResource {
     }
 
     @GET
-    @Path("{realm}/.well-known/{provider}")
+    @Path("{realm}/.well-known/{alias}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getWellKnown(final @PathParam("realm") String name,
-                                 final @PathParam("provider") String providerName) {
+                                 final @PathParam("alias") String alias) {
         RealmModel realm = init(name);
         checkSsl(realm);
 
-        WellKnownProvider wellKnown = session.getProvider(WellKnownProvider.class, providerName);
+        WellKnownProviderFactory wellKnownProviderFactoryFound = session.getKeycloakSessionFactory().getProviderFactoriesStream(WellKnownProvider.class)
+                .map(providerFactory -> (WellKnownProviderFactory) providerFactory)
+                .filter(wellKnownProviderFactory -> alias.equals(wellKnownProviderFactory.getAlias()))
+                .sorted(Comparator.comparingInt(WellKnownProviderFactory::getPriority))
+                .findFirst().orElseThrow(NotFoundException::new);
+
+        logger.tracef("Use provider with ID '%s' for well-known alias '%s'", wellKnownProviderFactoryFound.getId(), alias);
+
+        WellKnownProvider wellKnown = session.getProvider(WellKnownProvider.class, wellKnownProviderFactoryFound.getId());
 
         if (wellKnown != null) {
             ResponseBuilder responseBuilder = Response.ok(wellKnown.getConfig()).cacheControl(CacheControlUtil.noCache());

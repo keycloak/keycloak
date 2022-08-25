@@ -17,6 +17,7 @@
 package org.keycloak.models.map.storage.chm;
 
 import org.keycloak.models.map.common.AbstractEntity;
+import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.MapStorageProvider;
 import org.keycloak.models.map.storage.MapStorageProviderFactory.Flag;
 
@@ -37,8 +38,9 @@ public class ConcurrentHashMapStorageProvider implements MapStorageProvider {
     }
 
     @Override
-    public <K, V extends AbstractEntity<K>, M> ConcurrentHashMapStorage<K, V, M> getStorage(
-      Class<V> valueType, Class<M> modelType, Flag... flags) {
-        return factory.getStorage(valueType, modelType, flags);
+    @SuppressWarnings("unchecked")
+    public <V extends AbstractEntity, M> MapStorage<V, M> getStorage(Class<M> modelType, Flag... flags) {
+        ConcurrentHashMapStorage storage = factory.getStorage(modelType, flags);
+        return (MapStorage<V, M>) storage;
     }
 }

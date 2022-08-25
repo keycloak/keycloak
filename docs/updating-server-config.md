@@ -2,7 +2,7 @@
 
 If you need to make a change to the default keycloak-subsystem 
 configuration that is packaged with our distributions, you will need to edit this file:
-https://github.com/keycloak/keycloak/blob/master/wildfly/server-subsystem/src/main/config/default-server-subsys-config.properties
+https://github.com/keycloak/keycloak/blob/main/wildfly/server-subsystem/src/main/config/default-server-subsys-config.properties
 
 This file contains a single multi-line property containing the subsystem 
 xml declaration.  Maven filtering is used to read this property and 
@@ -10,7 +10,7 @@ inject it everywhere it needs to go.  Editing this file will also take
 care of propagating it to the distributions like server-dist and demo-dist.
 
 Also, you need to create CLI commands for each change by editing this file:
-https://github.com/keycloak/keycloak/blob/master/wildfly/server-subsystem/src/main/resources/cli/default-keycloak-subsys-config.cli
+https://github.com/keycloak/keycloak/blob/main/wildfly/server-subsystem/src/main/resources/cli/default-keycloak-subsys-config.cli
 
 This CLI snippet is used in the scripts required by the overlay distribution.
 

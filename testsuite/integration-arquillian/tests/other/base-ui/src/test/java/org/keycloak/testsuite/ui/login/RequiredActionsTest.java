@@ -266,7 +266,7 @@ public class RequiredActionsTest extends AbstractLoginTest {
         while (true) {
             assertTrue(verifyEmailPage.feedbackMessage().isWarning());
             assertEquals("[TEST LOCALE] je třeba ověřit emailovou adresu", verifyEmailPage.feedbackMessage().getText());
-            assertEquals("An email with instructions to verify your email address has been sent to you.", verifyEmailPage.getInstructionMessage());
+            assertEquals("An email with instructions to verify your email address has been sent to your address test@email.test.", verifyEmailPage.getInstructionMessage());
 
             if (firstAttempt) {
                 verifyEmailPage.clickResend();

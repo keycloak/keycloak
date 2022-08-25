@@ -30,23 +30,25 @@ import org.keycloak.testsuite.arquillian.annotation.InitialDcState;
 import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 
 import org.keycloak.testsuite.crossdc.ServerSetup;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.isEmptyString;
+import static org.hamcrest.Matchers.not;
 import static org.keycloak.testsuite.adapter.AbstractServletsAdapterTest.samlServletDeployment;
+import org.keycloak.testsuite.arquillian.containers.InfinispanServerDeployableContainer;
 
 /**
  *
  * @author hmlnarik
  */
 @AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY_CLUSTER)
-@AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY_DEPRECATED_CLUSTER)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP_CLUSTER)
 @InitialDcState(authServers = ServerSetup.FIRST_NODE_IN_EVERY_DC, cacheServers = ServerSetup.FIRST_NODE_IN_EVERY_DC)
 public class SAMLAdapterCrossDCTest extends AbstractSAMLAdapterClusteredTest {
 
     @BeforeClass
     public static void checkCrossDcTest() {
-        Assume.assumeThat("Seems not to be running cross-DC tests", System.getProperty("cache.server"), is(notNullValue()));
+        Assume.assumeThat("Seems not to be running cross-DC tests", System.getProperty("cache.server"), not(isEmptyString()));
+        Assume.assumeFalse(String.format("%s not supported with `cache-auth` profile.", SAMLAdapterCrossDCTest.class), 
+                InfinispanServerDeployableContainer.CACHE_SERVER_AUTH);
     }
 
     private static final String SESSION_CACHE_NAME = EmployeeServletDistributable.DEPLOYMENT_NAME + "-cache";

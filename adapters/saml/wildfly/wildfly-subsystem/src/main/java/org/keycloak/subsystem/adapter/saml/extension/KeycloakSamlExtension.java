@@ -39,8 +39,9 @@ public class KeycloakSamlExtension implements Extension {
     private static final String NAMESPACE_1_1 = "urn:jboss:domain:keycloak-saml:1.1";
     private static final String NAMESPACE_1_2 = "urn:jboss:domain:keycloak-saml:1.2";
     private static final String NAMESPACE_1_3 = "urn:jboss:domain:keycloak-saml:1.3";
+    private static final String NAMESPACE_1_4 = "urn:jboss:domain:keycloak-saml:1.4";
 
-    static final String CURRENT_NAMESPACE = NAMESPACE_1_3;
+    static final String CURRENT_NAMESPACE = NAMESPACE_1_4;
     private static final KeycloakSubsystemParser PARSER = new KeycloakSubsystemParser();
     static final PathElement PATH_SUBSYSTEM = PathElement.pathElement(SUBSYSTEM, SUBSYSTEM_NAME);
     private static final String RESOURCE_NAME = KeycloakSamlExtension.class.getPackage().getName() + ".LocalDescriptions";
@@ -63,6 +64,7 @@ public class KeycloakSamlExtension implements Extension {
         context.setSubsystemXmlMapping(SUBSYSTEM_NAME, KeycloakSamlExtension.NAMESPACE_1_1, PARSER);
         context.setSubsystemXmlMapping(SUBSYSTEM_NAME, KeycloakSamlExtension.NAMESPACE_1_2, PARSER);
         context.setSubsystemXmlMapping(SUBSYSTEM_NAME, KeycloakSamlExtension.NAMESPACE_1_3, PARSER);
+        context.setSubsystemXmlMapping(SUBSYSTEM_NAME, KeycloakSamlExtension.NAMESPACE_1_4, PARSER);
     }
 
     /**

@@ -91,6 +91,8 @@ public class BruteForceCrossDCTest extends AbstractAdminCrossDCTest {
                 .bruteForceProtected(true)
                 .build();
 
+        realmRep.setQuickLoginCheckMilliSeconds(0L); // This is necessary so user is not locked out for too fast consecutive login attempts; when user is locked out failure count stops increasing
+
         adminClient.realms().create(realmRep);
     }
 

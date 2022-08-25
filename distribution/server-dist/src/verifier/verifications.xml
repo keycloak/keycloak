@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Copyright 2021 Red Hat, Inc.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+<verifications xmlns="http://maven.apache.org/verifications/1.0.0"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               xsi:schemaLocation="http://maven.apache.org/verifications/1.0.0 http://maven.apache.org/xsd/verifications-1.0.0.xsd">
+<!--
+    1) bin/product.conf exists
+    2) bin/product.conf has a slot property with a value equal to the value of the
+       'full.dist.product.slot' property
+    3) jboss-modules.jar must exist
+    4) standalone/configuration/standalone.xml must exist
+    5) modules/system/layers/base/org/jboss/as/product/${full.dist.product.slot}/dir/META-INF/MANIFEST.MF exists
+    6) JBoss-Product-Release-Name key in manifest.mf above has value equal to the value of the
+       'full.dist.product.release.name' property
+    7) JBoss-Product-Release-Version key in manifest.mf has value starting with the value of the
+       'verifier.product.release.version' property
+    8) JBossEULA.txt exists
+    8) version.txt exists
+    9) copyright.txt does not exist
+    10) README.txt does not exist
+    11) docs/contrib does not exist
+-->
+  <files>
+    <file>
+      <location>target/${server.output.dir.prefix}-${server.output.dir.version}/bin/product.conf</location>
+      <exists>true</exists>
+    </file>
+    <file>
+      <location>target/${server.output.dir.prefix}-${server.output.dir.version}/bin/product.conf</location>
+      <contains>slot=${product.slot}</contains>
+    </file>
+    <file>
+      <location>target/${server.output.dir.prefix}-${server.output.dir.version}/modules/system/layers/keycloak/org/jboss/as/product/${product.slot}/dir/META-INF/MANIFEST.MF</location>
+      <contains>JBoss-Product-Release-Name: ${product.name.full}</contains>
+    </file>
+    <file>
+      <location>target/${server.output.dir.prefix}-${server.output.dir.version}/modules/system/layers/keycloak/org/jboss/as/product/${product.slot}/dir/META-INF/MANIFEST.MF</location>
+      <contains>JBoss-Product-Release-Version: ${product.version}</contains>
+    </file>
+    <file>
+      <location>target/${server.output.dir.prefix}-${server.output.dir.version}/modules/system/layers/keycloak/org/jboss/as/product/${product.slot}/dir/META-INF/MANIFEST.MF</location>
+      <contains>JBoss-Product-Console-Slot: ${product.wildfly.console.slot}</contains>
+    </file>
+    <file>
+      <location>target/${server.output.dir.prefix}-${server.output.dir.version}/modules/system/layers/keycloak/org/jboss/as/product/${product.slot}/dir/META-INF/MANIFEST.MF</location>
+      <exists>true</exists>
+    </file>
+    <file>
+      <location>target/${server.output.dir.prefix}-${server.output.dir.version}/jboss-modules.jar</location>
+      <exists>true</exists>
+    </file>
+    <file>
+      <location>target/${server.output.dir.prefix}-${server.output.dir.version}/standalone/configuration/standalone.xml</location>
+      <exists>true</exists>
+    </file>
+    <file>
+      <location>target/${server.output.dir.prefix}-${server.output.dir.version}/standalone/configuration/standalone-ha.xml</location>
+      <exists>true</exists>
+    </file>
+    <file>
+      <location>target/${server.output.dir.prefix}-${server.output.dir.version}/domain/configuration/domain.xml</location>
+      <exists>true</exists>
+    </file>
+    <file>
+      <location>target/${server.output.dir.prefix}-${server.output.dir.version}/domain/configuration/host.xml</location>
+      <exists>true</exists>
+    </file>
+    <file>
+      <location>target/${server.output.dir.prefix}-${server.output.dir.version}/domain/configuration/host-master.xml</location>
+      <exists>true</exists>
+    </file>
+    <file>
+      <location>target/${server.output.dir.prefix}-${server.output.dir.version}/domain/configuration/host-slave.xml</location>
+      <exists>true</exists>
+    </file>
+  </files>
+</verifications>

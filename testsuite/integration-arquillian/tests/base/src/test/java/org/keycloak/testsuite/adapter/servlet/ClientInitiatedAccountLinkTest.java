@@ -44,6 +44,7 @@ import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 import org.keycloak.testsuite.broker.BrokerTestTools;
 import org.keycloak.testsuite.page.AbstractPageWithInjectedUrl;
@@ -76,7 +77,6 @@ import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
  */
 @AppServerContainer(ContainerConstants.APP_SERVER_UNDERTOW)
 @AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY)
-@AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY_DEPRECATED)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP6)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP71)
@@ -378,6 +378,14 @@ public class ClientInitiatedAccountLinkTest extends AbstractServletsAdapterTest 
         logoutAll();
     }
 
+    // TODO remove this once DYNAMIC_SCOPES feature is enabled by default
+    @Test
+    @EnableFeature(value = Profile.Feature.DYNAMIC_SCOPES, skipRestart = true)
+    public void testErrorConditionsWithDynamicScope() throws Exception {
+        // Just use existing test with DYNAMIC_SCOPES feature enabled as it was failing with DYNAMIC_SCOPES
+        testErrorConditions();
+    }
+
     @Test
     public void testAccountLink() throws Exception {
         RealmResource realm = adminClient.realms().realm(CHILD_IDP);
@@ -432,6 +440,14 @@ public class ClientInitiatedAccountLinkTest extends AbstractServletsAdapterTest 
 
     }
 
+    // TODO remove this once DYNAMIC_SCOPES feature is enabled by default
+    @Test
+    @EnableFeature(value = Profile.Feature.DYNAMIC_SCOPES, skipRestart = true)
+    public void testAccountLinkWithDynamicScope() throws Exception {
+        // Just use existing test with DYNAMIC_SCOPES feature enabled as it was failing with DYNAMIC_SCOPES
+        testAccountLink();
+    }
+
     private String getToken(OAuthClient.AccessTokenResponse response, Client httpClient) throws Exception {
         String idpToken =  httpClient.target(OAuthClient.AUTH_SERVER_ROOT)
                 .path("realms")
@@ -446,10 +462,8 @@ public class ClientInitiatedAccountLinkTest extends AbstractServletsAdapterTest 
     }
 
     public void logoutAll() {
-        String logoutUri = OIDCLoginProtocolService.logoutUrl(authServerPage.createUriBuilder()).build(CHILD_IDP).toString();
-        navigateTo(logoutUri);
-        logoutUri = OIDCLoginProtocolService.logoutUrl(authServerPage.createUriBuilder()).build(PARENT_IDP).toString();
-        navigateTo(logoutUri);
+        adminClient.realm(CHILD_IDP).logoutAll();
+        adminClient.realm(PARENT_IDP).logoutAll();
     }
 
     @Test
@@ -535,52 +549,6 @@ public class ClientInitiatedAccountLinkTest extends AbstractServletsAdapterTest 
         }
 
 
-    }
-
-
-    @Test
-    @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
-    public void testAccountNotLinkedAutomatically() throws Exception {
-        RealmResource realm = adminClient.realms().realm(CHILD_IDP);
-        List<FederatedIdentityRepresentation> links = realm.users().get(childUserId).getFederatedIdentity();
-        Assert.assertTrue(links.isEmpty());
-
-        // Login to account mgmt first
-        profilePage.open(CHILD_IDP);
-        WaitUtils.waitForPageToLoad();
-
-        Assert.assertTrue(loginPage.isCurrent(CHILD_IDP));
-        loginPage.login("child", "password");
-        profilePage.assertCurrent();
-
-        // Now in another tab, open login screen with "prompt=login" . Login screen will be displayed even if I have SSO cookie
-        UriBuilder linkBuilder = UriBuilder.fromUri(appPage.getInjectedUrl().toString())
-                .path("nosuch");
-        String linkUrl = linkBuilder.clone()
-                .queryParam(OIDCLoginProtocol.PROMPT_PARAM, OIDCLoginProtocol.PROMPT_VALUE_LOGIN)
-                .build().toString();
-
-        navigateTo(linkUrl);
-        Assert.assertTrue(loginPage.isCurrent(CHILD_IDP));
-        loginPage.clickSocial(PARENT_IDP);
-        Assert.assertTrue(loginPage.isCurrent(PARENT_IDP));
-        loginPage.login(PARENT_USERNAME, "password");
-
-        // Test I was not automatically linked.
-        links = realm.users().get(childUserId).getFederatedIdentity();
-        Assert.assertTrue(links.isEmpty());
-
-        loginUpdateProfilePage.assertCurrent();
-        loginUpdateProfilePage.update("Joe", "Doe", "joe@parent.com");
-
-        errorPage.assertCurrent();
-        Assert.assertEquals("You are already authenticated as different user 'child' in this session. Please sign out first.", errorPage.getError());
-
-        logoutAll();
-
-        // Remove newly created user
-        String newUserId = ApiUtil.findUserByUsername(realm, "parent").getId();
-        getCleanup("child").addUserId(newUserId);
     }
 
 

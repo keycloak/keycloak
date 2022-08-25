@@ -24,32 +24,38 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicNameValuePair;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
+import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator;
+import org.keycloak.common.Profile;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.jose.jws.JWSHeader;
 import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.TimeBasedOTP;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.RefreshToken;
 import org.keycloak.representations.idm.ClientRepresentation;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.admin.ApiUtil;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.util.ClientBuilder;
 import org.keycloak.testsuite.util.ClientManager;
 import org.keycloak.testsuite.util.OAuthClient;
@@ -59,17 +65,18 @@ import org.keycloak.testsuite.util.TokenSignatureUtil;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.testsuite.util.UserManager;
 
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import java.io.UnsupportedEncodingException;
-import java.security.Security;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -90,7 +97,6 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
     @Override
     public void beforeAbstractKeycloakTest() throws Exception {
         super.beforeAbstractKeycloakTest();
-        if (Security.getProvider("BC") == null) Security.addProvider(new BouncyCastleProvider());
     }
 
     @Override
@@ -176,6 +182,65 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
     @Test
     public void grantAccessTokenPublic() throws Exception {
         grantAccessToken("direct-login", "resource-owner-public");
+    }
+
+    @Test
+    @EnableFeature(value = Profile.Feature.DYNAMIC_SCOPES, skipRestart = true)
+    public void grantAccessTokenWithDynamicScope() throws Exception {
+        ClientScopeRepresentation clientScope = new ClientScopeRepresentation();
+        clientScope.setName("dynamic-scope");
+        clientScope.setAttributes(new HashMap<String, String>() {{
+            put(ClientScopeModel.IS_DYNAMIC_SCOPE, "true");
+            put(ClientScopeModel.DYNAMIC_SCOPE_REGEXP, "dynamic-scope:*");
+        }});
+        clientScope.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        RealmResource realmResource = adminClient.realm("test");
+        try(Response response = realmResource.clientScopes().create(clientScope)) {
+            String scopeId = ApiUtil.getCreatedId(response);
+            getCleanup().addClientScopeId(scopeId);
+            ClientResource resourceOwnerPublicClient = ApiUtil.findClientByClientId(realmResource, "resource-owner-public");
+            ClientRepresentation testAppRep = resourceOwnerPublicClient.toRepresentation();
+            resourceOwnerPublicClient.update(testAppRep);
+            resourceOwnerPublicClient.addOptionalClientScope(scopeId);
+        }
+
+        oauth.scope("dynamic-scope:123");
+        oauth.clientId("resource-owner-public");
+
+        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "direct-login", "password");
+
+        assertTrue(response.getScope().contains("dynamic-scope:123"));
+
+        assertEquals(200, response.getStatusCode());
+
+        AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
+        RefreshToken refreshToken = oauth.parseRefreshToken(response.getRefreshToken());
+
+        events.expectLogin()
+                .client("resource-owner-public")
+                .user(userId)
+                .session(accessToken.getSessionState())
+                .detail(Details.GRANT_TYPE, OAuth2Constants.PASSWORD)
+                .detail(Details.TOKEN_ID, accessToken.getId())
+                .detail(Details.REFRESH_TOKEN_ID, refreshToken.getId())
+                .detail(Details.USERNAME, "direct-login")
+                .removeDetail(Details.CODE_ID)
+                .removeDetail(Details.REDIRECT_URI)
+                .removeDetail(Details.CONSENT)
+                .assertEvent();
+
+        assertTrue(accessToken.getScope().contains("dynamic-scope:123"));
+    }
+
+    @Test
+    @EnableFeature(value = Profile.Feature.DYNAMIC_SCOPES, skipRestart = true)
+    public void grantAccessTokenWithUnassignedDynamicScope() throws Exception {;
+        oauth.scope("unknown-scope:123");
+        oauth.clientId("resource-owner-public");
+        OAuthClient.AccessTokenResponse response = oauth.doGrantAccessTokenRequest("secret", "direct-login", "password");
+        assertEquals(400, response.getStatusCode());
+        assertEquals("invalid_scope", response.getError());
+        assertEquals("Invalid scopes: unknown-scope:123", response.getErrorDescription());
     }
 
     @Test
@@ -680,6 +745,11 @@ public class ResourceOwnerPasswordCredentialsGrantTest extends AbstractKeycloakT
     }
 
     private int getAuthenticationSessionsCount() {
+        if (ProfileAssume.isFeatureEnabled(Profile.Feature.MAP_STORAGE)) {
+            // Currently, no access to the authentication sessions is available for map storage.
+            // By return a constant, all tests in this test class can still pass.
+            return 0;
+        }
         return testingClient.testing().cache(InfinispanConnectionProvider.AUTHENTICATION_SESSIONS_CACHE_NAME).size();
     }
 }

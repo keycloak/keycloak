@@ -37,8 +37,7 @@
 
         <p><a href="http://www.keycloak.org">Keycloak Project</a> |
             <a href="https://groups.google.com/forum/#!forum/keycloak-user">Mailing List</a> |
-            <a href="https://issues.jboss.org/browse/KEYCLOAK">Report an issue</a></p>
-        <p class="logos"><a href="http://www.jboss.org"><img src="welcome-content/jboss_community.png" alt="JBoss and JBoss Community" width="254" height="31" border="0"></a></p>
+            <a href="https://github.com/keycloak/keycloak/issues">Report an issue</a></p>
     </div>
 </div>
 </body>

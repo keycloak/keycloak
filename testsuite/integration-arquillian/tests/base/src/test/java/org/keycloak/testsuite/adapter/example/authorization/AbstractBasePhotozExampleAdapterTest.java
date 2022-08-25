@@ -20,7 +20,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.keycloak.common.Profile.Feature.AUTHORIZATION;
-import static org.keycloak.common.Profile.Feature.UPLOAD_SCRIPTS;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
 import static org.keycloak.testsuite.utils.io.IOUtil.loadJson;
@@ -42,6 +41,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.LaxRedirectStrategy;
+import org.jboss.arquillian.container.spi.client.container.DeploymentException;
 import org.jboss.arquillian.container.test.api.Deployer;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.test.api.ArquillianResource;
@@ -49,24 +49,17 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Test;
 import org.keycloak.admin.client.resource.AuthorizationResource;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.ClientScopesResource;
 import org.keycloak.admin.client.resource.ClientsResource;
-import org.keycloak.admin.client.resource.PoliciesResource;
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.admin.client.resource.ResourcesResource;
-import org.keycloak.admin.client.resource.RoleResource;
-import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.admin.client.resource.UsersResource;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.protocol.oidc.mappers.UserClientRoleMappingMapper;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
-import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.authorization.PolicyRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
@@ -76,13 +69,10 @@ import org.keycloak.testsuite.adapter.page.PhotozClientAuthzTestApp;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.AppServerTestEnricher;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
-import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.auth.page.login.OAuthGrant;
 import org.keycloak.testsuite.util.DroneUtils;
 import org.keycloak.testsuite.util.JavascriptBrowser;
-import org.keycloak.testsuite.util.Matchers;
 import org.keycloak.testsuite.util.javascript.JavascriptTestExecutorWithAuthorization;
-import org.keycloak.util.JsonSerialization;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
@@ -95,7 +85,6 @@ import org.wildfly.extras.creaper.core.online.operations.admin.Administration;
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-@EnableFeature(value = UPLOAD_SCRIPTS, skipRestart = true)
 public abstract class AbstractBasePhotozExampleAdapterTest extends AbstractPhotozJavascriptExecutorTest {
 
     protected static final String RESOURCE_SERVER_ID = "photoz-restful-api";
@@ -137,7 +126,7 @@ public abstract class AbstractBasePhotozExampleAdapterTest extends AbstractPhoto
     @Before
     public void beforePhotozExampleAdapterTest() throws Exception {
         DroneUtils.addWebDriver(jsDriver);
-        this.deployer.deploy(RESOURCE_SERVER_ID);
+        deployIgnoreIfDuplicate(RESOURCE_SERVER_ID);
 
         clientPage.navigateTo();
 //        waitForPageToLoad();
@@ -235,10 +224,10 @@ public abstract class AbstractBasePhotozExampleAdapterTest extends AbstractPhoto
     }
 
     protected void loginToClientPage(UserRepresentation user, String... scopes) throws InterruptedException {
-        log.debugf("--logging in as {0} with password: {1}; scopes: {2}", user.getUsername(), user.getCredentials().get(0).getValue(), Arrays.toString(scopes));
+        log.debugf("--logging in as '%s' with password: '%s'; scopes: %s", user.getUsername(), user.getCredentials().get(0).getValue(), Arrays.toString(scopes));
 
         if (testExecutor.isLoggedIn()) {
-            testExecutor.logout(this::assertOnTestAppUrl);
+            testExecutor.logout(this::assertOnTestAppUrl, logoutConfirmPage);
             jsDriver.manage().deleteAllCookies();
 
             jsDriver.navigate().to(testRealmLoginPage.toString());
@@ -298,5 +287,27 @@ public abstract class AbstractBasePhotozExampleAdapterTest extends AbstractPhoto
         ClientRepresentation clientRep = html5ClientApp.toRepresentation();
         clientRep.setFullScopeAllowed(false);
         html5ClientApp.update(clientRep);
+    }
+
+    /**
+     * Redeploy if duplicate resource is present.
+     * KEYCLOAK-18442
+     *
+     * @param name Name of the deployment
+     */
+    protected void deployIgnoreIfDuplicate(String name) {
+        try {
+            deployer.deploy(name);
+        } catch (Exception e) {
+            //DeploymentException is thrown by an deployer event handler and cannot be explicitly caught
+            //noinspection ConstantConditions
+            if (e instanceof DeploymentException && e.getMessage().contains("Duplicate resource")) {
+                log.warnf("Duplicate resource '%s'. Trying to undeploy and deploy again...", name);
+                deployer.undeploy(name);
+                deployer.deploy(name);
+                return;
+            }
+            throw e;
+        }
     }
 }

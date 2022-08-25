@@ -571,28 +571,33 @@ public class KeycloakUriBuilder {
         return buildFromValues(true, false, values);
     }
 
+    public String buildAsString(Object... values) throws IllegalArgumentException {
+        if (values == null) throw new IllegalArgumentException("values parameter is null");
+        return buildFromValuesAsString(true, false, values);
+    }
+
     protected URI buildFromValues(boolean encodeSlash, boolean encoded, Object... values) {
+        String buf = buildFromValuesAsString(encodeSlash, encoded, values);
+        try {
+            return new URI(buf);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to create URI: " + buf, e);
+        }
+    }
+
+    protected String buildFromValuesAsString(boolean encodeSlash, boolean encoded, Object... values) {
         List<String> params = getPathParamNamesInDeclarationOrder();
         if (values.length < params.size())
             throw new IllegalArgumentException("You did not supply enough values to fill path parameters");
 
         Map<String, Object> pathParams = new HashMap<String, Object>();
-
-
         for (int i = 0; i < params.size(); i++) {
             String pathParam = params.get(i);
             Object val = values[i];
             if (val == null) throw new IllegalArgumentException("A value was null");
             pathParams.put(pathParam, val.toString());
         }
-        String buf = null;
-        try {
-            buf = buildString(pathParams, encoded, false, encodeSlash);
-            return new URI(buf);
-            //return URI.create(buf);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to create URI: " + buf, e);
-        }
+        return buildString(pathParams, encoded, false, encodeSlash);
     }
 
     public KeycloakUriBuilder matrixParam(String name, Object... values) throws IllegalArgumentException {

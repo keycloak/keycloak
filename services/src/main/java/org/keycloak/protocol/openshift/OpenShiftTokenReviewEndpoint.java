@@ -105,7 +105,7 @@ public class OpenShiftTokenReviewEndpoint implements OIDCExtProvider, Environmen
             error(401, Errors.INVALID_TOKEN, "Token verification failure");
         }
 
-        if (!tokenManager.checkTokenValidForIntrospection(session, realm, token)) {
+        if (!tokenManager.checkTokenValidForIntrospection(session, realm, token, true)) {
             error(401, Errors.INVALID_TOKEN, "Token verification failure");
         }
 

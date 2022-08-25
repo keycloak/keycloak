@@ -18,6 +18,7 @@ package org.keycloak.testsuite.saml;
 
 import org.keycloak.admin.client.resource.ClientsResource;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.authentication.authenticators.broker.IdpReviewProfileAuthenticatorFactory;
 import org.keycloak.broker.saml.SAMLIdentityProviderConfig;
 import org.keycloak.broker.saml.SAMLIdentityProviderFactory;
@@ -56,6 +57,7 @@ import java.security.KeyPair;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
 import javax.ws.rs.core.Response.Status;
 import javax.xml.datatype.XMLGregorianCalendar;
 import javax.xml.namespace.QName;
@@ -69,8 +71,9 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.Matchers.is;
 import static org.keycloak.saml.SignatureAlgorithm.RSA_SHA1;
 import static org.keycloak.testsuite.saml.AbstractSamlTest.REALM_NAME;
 import static org.keycloak.testsuite.saml.AbstractSamlTest.SAML_ASSERTION_CONSUMER_URL_SALES_POST;
@@ -177,6 +180,47 @@ public class BrokerTest extends AbstractSamlTest {
             reviewProfileAuthenticator.setRequirement(Requirement.REQUIRED.name());
             realm.flows().updateExecutions(firstBrokerLoginFlowAlias, reviewProfileAuthenticator);
         }
+    }
+
+    @Test
+    public void testInResponseToSetCorrectly() throws IOException {
+        final RealmResource realm = adminClient.realm(REALM_NAME);
+
+        try (IdentityProviderCreator idp = new IdentityProviderCreator(realm, addIdentityProvider("https://saml.idp/saml"))) {
+            AtomicReference<String> serviceProvidersId = new AtomicReference<>();
+            SAMLDocumentHolder samlResponse = new SamlClientBuilder()
+              .authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST, SAML_ASSERTION_CONSUMER_URL_SALES_POST, POST)
+                .transformObject(ar -> {
+                    serviceProvidersId.set(ar.getID());
+                    return ar;
+                })
+                .build()
+
+              .login().idp(SAML_BROKER_ALIAS).build()
+
+              // Virtually perform login at IdP (return artificial SAML response)
+              .processSamlResponse(REDIRECT)
+                .transformObject(this::createAuthnResponse)
+                .targetAttributeSamlResponse()
+                .targetUri(getSamlBrokerUrl(REALM_NAME))
+                .build()
+              .followOneRedirect()  // first-broker-login
+              .updateProfile().username("userInResponseTo").email("f@g.h").firstName("a").lastName("b").build()
+              .followOneRedirect()  // after-first-broker-login
+              .getSamlResponse(POST);
+
+            assertThat(samlResponse.getSamlObject(), isSamlStatusResponse(JBossSAMLURIConstants.STATUS_SUCCESS));
+            assertThat(((ResponseType) samlResponse.getSamlObject()).getInResponseTo(), is(serviceProvidersId.get()));
+        } finally {
+            clearUsers(realm);
+        }
+    }
+
+    private void clearUsers(final RealmResource realm) {
+        realm.users().list().stream()
+          .map(UserRepresentation::getId)
+          .map(realm.users()::get)
+          .forEach(UserResource::remove);
     }
 
     @Test

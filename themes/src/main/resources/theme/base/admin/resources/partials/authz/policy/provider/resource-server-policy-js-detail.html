@@ -1,6 +1,3 @@
-<style>
-    .ace_editor { height: 200px; }
-</style>
 <div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
 
     <ol class="breadcrumb">
@@ -37,7 +34,9 @@
             <div class="form-group">
                 <label class="col-md-2 control-label" for="code">{{:: 'authz-policy-js-code' | translate}} </label>
                 <div class="col-sm-6">
-                    <div ui-ace="{ onLoad : initEditor }" id="code" data-ng-model="policy.code"></div>
+                    <textarea id="code" data-ng-model="policy.code" class="form-control" readonly>
+                       {{policy.code}}
+    		        </textarea>
                 </div>
                 <kc-tooltip>{{:: 'authz-policy-js-code.tooltip' | translate}}</kc-tooltip>
             </div>

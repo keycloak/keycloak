@@ -16,11 +16,23 @@
  */
 package org.keycloak.models;
 
+import java.util.function.BiConsumer;
+
 import org.keycloak.Token;
 import org.keycloak.TokenCategory;
+import org.keycloak.jose.JOSE;
+import org.keycloak.jose.jws.Algorithm;
 import org.keycloak.representations.LogoutToken;
 
 public interface TokenManager {
+
+    BiConsumer<JOSE, ClientModel> DEFAULT_VALIDATOR = (jwt, client) -> {
+        String rawAlgorithm = jwt.getHeader().getRawAlgorithm();
+
+        if (rawAlgorithm.equalsIgnoreCase(Algorithm.none.name())) {
+            throw new RuntimeException("Algorithm none not supported");
+        }
+    };
 
     /**
      * Encodes the supplied token
@@ -42,7 +54,21 @@ public interface TokenManager {
 
     String signatureAlgorithm(TokenCategory category);
 
-    <T> T decodeClientJWT(String token, ClientModel client, Class<T> clazz);
+    /**
+     *
+     *
+     * @param token
+     * @param client
+     * @param clazz
+     * @param <T>
+     * @return
+     */
+    default <T> T decodeClientJWT(String token, ClientModel client, Class<T> clazz) {
+        return decodeClientJWT(token, client, DEFAULT_VALIDATOR, clazz);
+    }
+
+    <T> T decodeClientJWT(String token, ClientModel client, BiConsumer<JOSE, ClientModel> jwtValidator,
+            Class<T> clazz);
 
     String encodeAndEncrypt(Token token);
     String cekManagementAlgorithm(TokenCategory category);

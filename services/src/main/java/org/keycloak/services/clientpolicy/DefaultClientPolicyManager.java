@@ -184,18 +184,19 @@ public class DefaultClientPolicyManager implements ClientPolicyManager {
     public void updateRealmModelFromRepresentation(RealmModel realm, RealmRepresentation rep) {
         logger.tracev("LOAD PROFILE POLICIES ON IMPORTED REALM :: realm = {0}", realm.getName());
 
-        if (rep.getClientProfiles() != null) {
+        if (rep.getParsedClientProfiles() != null) {
             try {
-                updateClientProfiles(realm, rep.getClientProfiles());
+                updateClientProfiles(realm, rep.getParsedClientProfiles());
             } catch (ClientPolicyException e) {
                 logger.warnv("VALIDATE SERIALIZE IMPORTED REALM PROFILES FAILED :: error = {0}, error detail = {1}", e.getError(), e.getErrorDetail());
                 throw new RuntimeException("Failed to update client profiles", e);
             }
         }
 
-        if (rep.getClientPolicies() != null) {
+        ClientPoliciesRepresentation clientPolicies = rep.getParsedClientPolicies();
+        if (clientPolicies != null) {
             try {
-                updateClientPolicies(realm, rep.getClientPolicies());
+                updateClientPolicies(realm, clientPolicies);
             } catch (ClientPolicyException e) {
                 logger.warnv("VALIDATE SERIALIZE IMPORTED REALM POLICIES FAILED :: error = {0}, error detail = {1}", e.getError(), e.getErrorDetail());
                 throw new RuntimeException("Failed to update client policies", e);
@@ -280,10 +281,10 @@ public class DefaultClientPolicyManager implements ClientPolicyManager {
         try {
             // client profiles  that filter out global profiles..
             ClientProfilesRepresentation filteredOutProfiles = getClientProfiles(realm, false);
-            rep.setClientProfiles(filteredOutProfiles);
+            rep.setParsedClientProfiles(filteredOutProfiles);
 
             ClientPoliciesRepresentation filteredOutPolicies = getClientPolicies(realm);
-            rep.setClientPolicies(filteredOutPolicies);
+            rep.setParsedClientPolicies(filteredOutPolicies);
         } catch (ClientPolicyException cpe) {
             throw new IllegalStateException("Exception during export client profiles or client policies", cpe);
         }

@@ -16,34 +16,29 @@
  */
 package org.keycloak.services.resources.admin;
 
-import java.io.IOException;
-
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
 
 import org.keycloak.component.ComponentValidationException;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.services.ErrorResponse;
 import org.keycloak.services.resources.admin.permissions.AdminPermissionEvaluator;
 import org.keycloak.userprofile.UserProfileProvider;
 
 /**
- * 
  * @author Vlastimil Elias <velias@redhat.com>
- *
  */
 public class UserProfileResource {
-    
+
     @Context
     protected KeycloakSession session;
-    
+
     protected RealmModel realm;
     private AdminPermissionEvaluator auth;
 
@@ -52,31 +47,24 @@ public class UserProfileResource {
         this.auth = auth;
     }
 
-    
     @GET
-    @Path("configuration")
     @Produces(MediaType.APPLICATION_JSON)
     public String getConfiguration() {
-        
         auth.realm().requireViewRealm();
-
-        UserProfileProvider t = session.getProvider(UserProfileProvider.class);
-        return t.getConfiguration();
+        return session.getProvider(UserProfileProvider.class).getConfiguration();
     }
 
     @PUT
-    @Path("configuration")
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response updateConfiguration(String text) throws IOException {
-        
+    public Response update(String text) {
         auth.realm().requireManageRealm();
-        
         UserProfileProvider t = session.getProvider(UserProfileProvider.class);
+
         try {
             t.setConfiguration(text);
         } catch (ComponentValidationException e) {
             //show validation result containing details about error
-            return Response.status(Status.BAD_REQUEST).type(MediaType.TEXT_PLAIN).entity(e.getMessage()).build();
+            return ErrorResponse.error(e.getMessage(), Response.Status.BAD_REQUEST);
         }
 
         return Response.ok(t.getConfiguration()).type(MediaType.APPLICATION_JSON).build();

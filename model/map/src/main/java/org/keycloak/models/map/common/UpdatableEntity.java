@@ -16,11 +16,34 @@
  */
 package org.keycloak.models.map.common;
 
+import org.keycloak.models.map.annotations.IgnoreForEntityImplementationGenerator;
+
+@IgnoreForEntityImplementationGenerator
 public interface UpdatableEntity {
+
+    public static class Impl implements UpdatableEntity {
+        protected boolean updated;
+
+        @Override
+        public boolean isUpdated() {
+            return this.updated;
+        }
+
+        @Override
+        public void clearUpdatedFlag() {
+            this.updated = false;
+        }
+    }
 
     /**
      * Flag signalizing that any of the setters has been meaningfully used.
      * @return
      */
     boolean isUpdated();
+
+    /**
+     * An optional operation clearing the updated flag. Right after using this method, the
+     * {@link #isUpdated()} would return {@code false}.
+     */
+    default void clearUpdatedFlag() { }
 }

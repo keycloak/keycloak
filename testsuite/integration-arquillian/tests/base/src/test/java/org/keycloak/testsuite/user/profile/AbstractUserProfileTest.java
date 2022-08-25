@@ -19,27 +19,39 @@
 
 package org.keycloak.testsuite.user.profile;
 
+import static org.keycloak.userprofile.DeclarativeUserProfileProvider.REALM_USER_PROFILE_ENABLED;
+
+import java.io.IOException;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.keycloak.common.Profile;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.sessions.AuthenticationSessionModel;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
-import org.keycloak.testsuite.user.profile.config.DeclarativeUserProfileProvider;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
+import org.keycloak.userprofile.DeclarativeUserProfileProvider;
 import org.keycloak.userprofile.UserProfileProvider;
+import org.keycloak.userprofile.config.UPAttribute;
+import org.keycloak.userprofile.config.UPConfig;
+import org.keycloak.util.JsonSerialization;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
+@EnableFeature(value = Profile.Feature.DECLARATIVE_USER_PROFILE)
+@AuthServerContainerExclude(AuthServerContainerExclude.AuthServer.REMOTE)
 public abstract class AbstractUserProfileTest extends AbstractTestRealmKeycloakTest {
 
     protected static void configureAuthenticationSession(KeycloakSession session) {
-        configureSessionRealm(session);
         Set<String> scopes = new HashSet<>();
 
         scopes.add("customer");
@@ -53,16 +65,32 @@ public abstract class AbstractUserProfileTest extends AbstractTestRealmKeycloakT
         session.getContext().setAuthenticationSession(createAuthenticationSession(realm.getClientByClientId(clientId), requestedScopes));
     }
 
-    protected static RealmModel configureSessionRealm(KeycloakSession session) {
-        RealmModel realm = session.realms().getRealm(TEST_REALM_NAME);
+    protected static DeclarativeUserProfileProvider getDynamicUserProfileProvider(KeycloakSession session) {
+        UserProfileProvider provider = session.getProvider(UserProfileProvider.class);
 
-        session.getContext().setRealm(realm);
+        provider.setConfiguration(null);
 
-        return realm;
+        return (DeclarativeUserProfileProvider) provider;
     }
 
-    protected static DeclarativeUserProfileProvider getDynamicUserProfileProvider(KeycloakSession session) {
-        return (DeclarativeUserProfileProvider) session.getProvider(UserProfileProvider.class, DeclarativeUserProfileProvider.ID);
+    /**
+     * Generate big configuration to test slicing in the persistence/component config
+     * @return a configuration that is expected to be split into 2 slices
+     * @throws IOException
+     */
+    protected static String generateLargeProfileConfig() throws IOException {
+        
+        UPConfig config = new UPConfig();
+        for (int i = 0; i < 80; i++) {
+            UPAttribute attribute = new UPAttribute();
+            attribute.setName(UserModel.USERNAME+i);
+            Map<String, Object> validatorConfig = new HashMap<>();
+            validatorConfig.put("min", 3);
+            attribute.addValidation("length", validatorConfig);
+            config.addAttribute(attribute);
+        }
+        String newConfig = JsonSerialization.writeValueAsString(config);
+        return newConfig;
     }
 
     protected static AuthenticationSessionModel createAuthenticationSession(ClientModel client, Set<String> scopes) {
@@ -237,5 +265,13 @@ public abstract class AbstractUserProfileTest extends AbstractTestRealmKeycloakT
 
             }
         };
+    }
+
+    @Override
+    public void configureTestRealm(RealmRepresentation testRealm) {
+        if (testRealm.getAttributes() == null) {
+            testRealm.setAttributes(new HashMap<>());
+        }
+        testRealm.getAttributes().put(REALM_USER_PROFILE_ENABLED, Boolean.TRUE.toString());
     }
 }

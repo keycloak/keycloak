@@ -21,6 +21,7 @@ package org.keycloak.adapters.elytron;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.server.handlers.CookieImpl;
 import io.undertow.servlet.handlers.ServletRequestContext;
+import org.jboss.logging.Logger;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.AdapterDeploymentContext;
 import org.keycloak.adapters.AdapterTokenStore;
@@ -30,6 +31,8 @@ import org.keycloak.adapters.RefreshableKeycloakSecurityContext;
 import org.keycloak.adapters.spi.AuthChallenge;
 import org.keycloak.adapters.spi.AuthenticationError;
 import org.keycloak.adapters.spi.LogoutError;
+import org.keycloak.common.util.MultivaluedHashMap;
+import org.keycloak.common.util.UriUtils;
 import org.keycloak.enums.TokenStore;
 import org.wildfly.security.auth.server.SecurityIdentity;
 import org.wildfly.security.http.HttpScope;
@@ -55,11 +58,13 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URLDecoder;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.regex.Pattern;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -67,6 +72,8 @@ import java.util.function.Consumer;
 class ElytronHttpFacade implements OIDCHttpFacade {
 
     static final String UNDERTOW_EXCHANGE = ElytronHttpFacade.class.getName() + ".undertow.exchange";
+    private static final boolean elyweb163Workaround;
+    private static final Logger log = Logger.getLogger(ElytronHttpFacade.class);
 
     private final HttpServerRequest request;
     private final CallbackHandler callbackHandler;
@@ -77,6 +84,66 @@ class ElytronHttpFacade implements OIDCHttpFacade {
     private SecurityIdentity securityIdentity;
     private boolean restored;
     private final Map<String, String> headers = new HashMap<>();
+    protected MultivaluedHashMap<String, String> queryParameters;
+
+    static {
+        // Issue #10894: ELYWEB-163 workaround should be applied for previous versions of wildfly/EAP
+        boolean tmpElyweb163Workaround = false;
+        String prop = System.getProperty("org.keycloak.adapters.elytronweb.ELYWEB-163.workaround");
+        if (prop != null) {
+            tmpElyweb163Workaround = Boolean.parseBoolean(prop);
+            log.tracef("Forcing workaround for issue ELYWEB-163 in elytron-web %b", tmpElyweb163Workaround);
+        } else {
+            try {
+                Class clazz = ElytronHttpFacade.class.getClassLoader().loadClass("org.wildfly.elytron.web.undertow.server.ElytronHttpExchange");
+                String version = clazz.getPackage().getImplementationVersion();
+                Integer[] array = parseVersion(version);
+                // bug is fixed in 1.9.2 and 1.10.1
+                tmpElyweb163Workaround = array != null
+                        && (versionIsLessThan(array, new Integer[]{1, 9, 2})
+                        || (versionIsLessThan(array, new Integer[]{1, 10, 1}) && versionIsGreaterOrEqualThan(array, new Integer[]{1, 10, 0})));
+                log.tracef("Version detected for elytron-web %s workaround for ELYWEB-163 %b", version, tmpElyweb163Workaround);
+            } catch (Exception e) {
+                log.tracef(e, "Cannot detect version of elytron-web workaround for ELYWEB-163 %b", tmpElyweb163Workaround);
+            }
+        }
+        elyweb163Workaround = tmpElyweb163Workaround;
+    }
+
+    private static Integer[] parseVersion(String version) {
+        if (version != null)  {
+            String[] versionArray = version.split(Pattern.quote("."));
+            List<Integer> versionList = new ArrayList<>();
+            for (int i = 0; i < versionArray.length; i++) {
+                if (versionArray[i].matches("[0-9]+")) {
+                    versionList.add(Integer.parseInt(versionArray[i]));
+                }
+            }
+            if (!versionList.isEmpty()) {
+                return versionList.toArray(new Integer[0]);
+            }
+        }
+        return null;
+    }
+
+    private static boolean versionIsLessThan(Integer[] array1, Integer[] array2) {
+        if (array1 == null || array2 == null || array1.length == 0 || array2.length == 0) {
+            throw new IllegalArgumentException("Arrays cannot be null or empty");
+        }
+        for (int i = 0; i < array1.length && i < array2.length; i++) {
+            if (array1[i] < array2[i]) {
+                return true;
+            } else if (array1[i] > array2[i]) {
+                return false;
+            }
+        }
+        // all the numbers are equal til now, 1.1 < 1.1.1
+        return array1.length < array2.length;
+    }
+
+    private static boolean versionIsGreaterOrEqualThan(Integer[] array1, Integer[] array2) {
+        return !versionIsLessThan(array1, array2);
+    }
 
     public ElytronHttpFacade(HttpServerRequest request, AdapterDeploymentContext deploymentContext, CallbackHandler handler) {
         this.request = request;
@@ -175,10 +242,14 @@ class ElytronHttpFacade implements OIDCHttpFacade {
 
             @Override
             public String getURI() {
-                try {
-                    return URLDecoder.decode(request.getRequestURI().toString(), "UTF-8");
-                } catch (UnsupportedEncodingException e) {
-                    throw new RuntimeException("Failed to decode request URI", e);
+                if (elyweb163Workaround) {
+                    try {
+                        return URLDecoder.decode(request.getRequestURI().toString(), "UTF-8");
+                    } catch (UnsupportedEncodingException e) {
+                        throw new RuntimeException("Failed to decode request URI", e);
+                    }
+                } else {
+                    return request.getRequestURI().toString();
                 }
             }
 
@@ -199,22 +270,29 @@ class ElytronHttpFacade implements OIDCHttpFacade {
 
             @Override
             public String getQueryParamValue(String param) {
-                URI requestURI = request.getRequestURI();
-                String query = requestURI.getQuery();
-                if (query != null) {
-                    String[] parameters = query.split("&");
-                    for (String parameter : parameters) {
-                        String[] keyValue = parameter.split("=", 2);
-                        if (keyValue[0].equals(param)) {
-                            try {
-                                return URLDecoder.decode(keyValue[1], "UTF-8");
-                            } catch (IOException e) {
-                                throw new RuntimeException("Failed to decode request URI", e);
+                if (elyweb163Workaround) {
+                    URI requestURI = request.getRequestURI();
+                    String query = requestURI.getQuery();
+                    if (query != null) {
+                        String[] parameters = query.split("&");
+                        for (String parameter : parameters) {
+                            String[] keyValue = parameter.split("=", 2);
+                            if (keyValue[0].equals(param)) {
+                                try {
+                                    return URLDecoder.decode(keyValue[1], "UTF-8");
+                                } catch (IOException e) {
+                                    throw new RuntimeException("Failed to decode request URI", e);
+                                }
                             }
                         }
                     }
+                    return null;
+                } else {
+                    if (queryParameters == null) {
+                        queryParameters = UriUtils.decodeQueryString(request.getRequestURI().getRawQuery());
+                    }
+                    return queryParameters.getFirst(param);
                 }
-                return null;
             }
 
             @Override

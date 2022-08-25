@@ -17,10 +17,14 @@
 
 package org.keycloak.protocol.oidc.grants.ciba.channel;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import org.keycloak.OAuth2Constants;
 import org.keycloak.protocol.oidc.grants.ciba.CibaGrantType;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
@@ -38,6 +42,8 @@ public class AuthenticationChannelRequest {
 
     @JsonProperty(OAuth2Constants.ACR_VALUES)
     private String acrValues;
+
+    private Map<String, Object> additionalParameters = new HashMap<>();
 
     private String scope;
 
@@ -79,5 +85,19 @@ public class AuthenticationChannelRequest {
 
     public String getScope() {
         return scope;
+    }
+
+    @JsonAnyGetter
+    public Map<String, Object> getAdditionalParameters() {
+        return additionalParameters;
+    }
+
+    public void setAdditionalParameters(Map<String, Object> additionalParameters) {
+        this.additionalParameters = additionalParameters;
+    }
+
+    @JsonAnySetter
+    public void setAdditionalParameter(String name, String value) {
+        additionalParameters.put(name, value);
     }
 }

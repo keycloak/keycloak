@@ -323,7 +323,7 @@ public class LDAPUtils {
                     @Override
                     public boolean methodMatches(Method m) {
                         if ((m.getName().startsWith("get") || m.getName().startsWith("is"))
-                                && m.getParameterTypes().length > 0) {
+                                && m.getParameterCount() > 0) {
                             return false;
                         }
 

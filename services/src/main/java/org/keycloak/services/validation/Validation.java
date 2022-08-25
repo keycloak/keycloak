@@ -17,8 +17,6 @@
 
 package org.keycloak.services.validation;
 
-import org.keycloak.authentication.requiredactions.util.UpdateProfileContext;
-import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.userprofile.ValidationException;
 
@@ -37,20 +35,10 @@ public class Validation {
 
     // Actually allow same emails like angular. See ValidationTest.testEmailValidation()
     private static final Pattern EMAIL_PATTERN = Pattern.compile("[a-zA-Z0-9!#$%&'*+/=?^_`{|}~.-]+@[a-zA-Z0-9-]+(\\.[a-zA-Z0-9-]+)*");
+    private static final Pattern USERNAME_PATTERN = Pattern.compile("^[\\p{IsLatin}|\\p{IsCommon}]+$");
 
     private static void addError(List<FormMessage> errors, String field, String message, Object... parameters){
         errors.add(new FormMessage(field, message, parameters));
-    }
-
-    /**
-     * Validate if user object contains all mandatory fields.
-     * 
-     * @param realm user is for
-     * @param user to validate
-     * @return true if user object contains all mandatory values, false if some mandatory value is missing
-     */
-    public static boolean validateUserMandatoryFields(RealmModel realm, UpdateProfileContext user){
-        return!(isBlank(user.getFirstName()) || isBlank(user.getLastName()) || isBlank(user.getEmail()));        
     }
 
     /**
@@ -77,6 +65,10 @@ public class Validation {
         return EMAIL_PATTERN.matcher(email).matches();
     }
 
+    public static boolean isUsernameValid(String username) {
+
+        return USERNAME_PATTERN.matcher(username).matches();
+    }
 
     public static List<FormMessage> getFormErrorsFromValidation(List<ValidationException.Error> errors) {
         List<FormMessage> messages = new ArrayList<>();

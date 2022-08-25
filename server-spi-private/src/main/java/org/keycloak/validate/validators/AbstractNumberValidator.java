@@ -16,10 +16,14 @@
  */
 package org.keycloak.validate.validators;
 
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.provider.ConfiguredProvider;
+import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.utils.StringUtil;
 import org.keycloak.validate.AbstractSimpleValidator;
 import org.keycloak.validate.ValidationContext;
@@ -33,15 +37,35 @@ import org.keycloak.validate.ValidatorConfig;
  * 
  * @author Vlastimil Elias <velias@redhat.com>
  */
-public abstract class AbstractNumberValidator extends AbstractSimpleValidator {
+public abstract class AbstractNumberValidator extends AbstractSimpleValidator implements ConfiguredProvider {
 
     public static final String MESSAGE_INVALID_NUMBER = "error-invalid-number";
     public static final String MESSAGE_NUMBER_OUT_OF_RANGE = "error-number-out-of-range";
+    public static final String MESSAGE_NUMBER_OUT_OF_RANGE_TOO_SMALL = "error-number-out-of-range-too-small";
+    public static final String MESSAGE_NUMBER_OUT_OF_RANGE_TOO_BIG = "error-number-out-of-range-too-big";
 
     public static final String KEY_MIN = "min";
     public static final String KEY_MAX = "max";
 
     private final ValidatorConfig defaultConfig;
+    
+    protected static final List<ProviderConfigProperty> configProperties = new ArrayList<>();
+
+    static {
+        ProviderConfigProperty property;
+        property = new ProviderConfigProperty();
+        property.setName(KEY_MIN);
+        property.setLabel("Minimum");
+        property.setHelpText("The minimal allowed value - this config is optional.");
+        property.setType(ProviderConfigProperty.STRING_TYPE);
+        configProperties.add(property);
+        property = new ProviderConfigProperty();
+        property.setName(KEY_MAX);
+        property.setLabel("Maximum");
+        property.setHelpText("The maximal allowed value - this config is optional.");
+        property.setType(ProviderConfigProperty.STRING_TYPE);
+        configProperties.add(property);
+    }
 
     public AbstractNumberValidator() {
         // for reflection
@@ -50,6 +74,10 @@ public abstract class AbstractNumberValidator extends AbstractSimpleValidator {
 
     public AbstractNumberValidator(ValidatorConfig config) {
         this.defaultConfig = config;
+    }
+    
+    public List<ProviderConfigProperty> getConfigProperties() {
+        return configProperties;
     }
 
     @Override
@@ -77,7 +105,7 @@ public abstract class AbstractNumberValidator extends AbstractSimpleValidator {
         }
 
         if (number == null) {
-            context.addError(new ValidationError(getId(), inputHint, MESSAGE_INVALID_NUMBER, value));
+            context.addError(new ValidationError(getId(), inputHint, MESSAGE_INVALID_NUMBER));
             return;
         }
 
@@ -85,16 +113,29 @@ public abstract class AbstractNumberValidator extends AbstractSimpleValidator {
         Number max = getMinMaxConfig(config, KEY_MAX);
 
         if (min != null && isFirstGreaterThanToSecond(min, number)) {
-            context.addError(new ValidationError(getId(), inputHint, MESSAGE_NUMBER_OUT_OF_RANGE, value, min, max));
+            context.addError(new ValidationError(getId(), inputHint, selectRangeErrorMessage(config), min, max));
             return;
         }
 
         if (max != null && isFirstGreaterThanToSecond(number, max)) {
-            context.addError(new ValidationError(getId(), inputHint, MESSAGE_NUMBER_OUT_OF_RANGE, value, min, max));
+            context.addError(new ValidationError(getId(), inputHint, selectRangeErrorMessage(config), min, max));
             return;
         }
 
         return;
+    }
+    
+    /**
+     * Select error message depending on the allowed range interval bound configuration.
+     */
+    protected String selectRangeErrorMessage(ValidatorConfig config) {
+        if (!config.containsKey(KEY_MAX)) {
+            return MESSAGE_NUMBER_OUT_OF_RANGE_TOO_SMALL;
+        } else if (!config.containsKey(KEY_MIN)) {
+            return MESSAGE_NUMBER_OUT_OF_RANGE_TOO_BIG;
+        } else {
+            return MESSAGE_NUMBER_OUT_OF_RANGE;
+        }
     }
 
     @Override

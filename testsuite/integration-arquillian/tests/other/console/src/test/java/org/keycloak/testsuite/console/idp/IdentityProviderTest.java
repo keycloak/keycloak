@@ -20,18 +20,20 @@ package org.keycloak.testsuite.console.idp;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Test;
+import org.keycloak.testsuite.console.page.idp.mappers.MultivaluedStringProperty;
 import org.keycloak.testsuite.console.AbstractConsoleTest;
 import org.keycloak.testsuite.console.page.idp.CreateIdentityProvider;
-import org.keycloak.testsuite.console.page.idp.CreateIdentityProviderMapper;
+import org.keycloak.testsuite.console.page.idp.mappers.CreateIdentityProviderMapper;
 import org.keycloak.testsuite.console.page.idp.IdentityProvider;
 import org.keycloak.testsuite.console.page.idp.IdentityProviders;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.testsuite.util.UIUtils.refreshPageAndWaitForLoad;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlEquals;
-import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
+import static org.hamcrest.Matchers.is;
 
 /**
  *
@@ -51,6 +53,9 @@ public class IdentityProviderTest extends AbstractConsoleTest {
 
     @Page
     private CreateIdentityProviderMapper createIdentityProviderMapperPage;
+
+    @Page
+    private MultivaluedStringProperty multiStringPropertyForm;
 
     @Before
     public void beforeIdentityProviderTest() {
@@ -126,6 +131,57 @@ public class IdentityProviderTest extends AbstractConsoleTest {
         assertAlertSuccess();
         refreshPageAndWaitForLoad();
         assertMapperSyncModeIsSetToImport();
+    }
+
+    @Test
+    public void createIdentityProviderCustomMapper() {
+        createIdentityProviderPage.setProviderId("google");
+        identityProviderPage.setIds("google", "google");
+
+        identityProvidersPage.addProvider("google");
+        assertCurrentUrlEquals(createIdentityProviderPage);
+
+        createIdentityProviderPage.form().setClientId("test-google");
+        createIdentityProviderPage.form().setClientSecret("secret");
+
+        createIdentityProviderPage.form().save();
+        assertAlertSuccess();
+        refreshPageAndWaitForLoad();
+        assertCurrentUrlEquals(identityProviderPage);
+
+        identityProviderPage.form().createMapper();
+        createIdentityProviderMapperPage.setIdp("google");
+        assertCurrentUrlEquals(createIdentityProviderMapperPage);
+        createIdentityProviderMapperPage.form().setName("Multivalued Map");
+        createIdentityProviderMapperPage.form().setSyncMode("import");
+        createIdentityProviderMapperPage.form().setMapperType("Test MultiValued Mapper");
+
+        assertThat(multiStringPropertyForm.isPresent(), is(true));
+        assertThat(multiStringPropertyForm.getItems().size(), is(1));
+
+        multiStringPropertyForm.editItem(0, "firstValue");
+        assertThat(multiStringPropertyForm.getItem(0), is("firstValue"));
+
+        multiStringPropertyForm.addItem("second");
+        assertThat(multiStringPropertyForm.getItems().size(), is(2));
+
+        multiStringPropertyForm.editItem(1, "secondValue");
+        assertThat(multiStringPropertyForm.getItem(1), is("secondValue"));
+
+        multiStringPropertyForm.addItem("third");
+        assertThat(multiStringPropertyForm.getItems().size(), is(3));
+
+        multiStringPropertyForm.removeItem(1);
+        assertThat(multiStringPropertyForm.getItems().size(), is(2));
+        assertThat(multiStringPropertyForm.getItem(1), is("third"));
+
+        createIdentityProviderMapperPage.form().save();
+        assertAlertSuccess();
+
+        // add empty item
+        assertThat(multiStringPropertyForm.getItems().size(), is(3));
+        refreshPageAndWaitForLoad();
+        assertThat(multiStringPropertyForm.getItems().size(), is(3));
     }
 
     private void assertMapperSyncModeIsSetToImport() {
