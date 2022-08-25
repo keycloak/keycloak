@@ -60,10 +60,6 @@
             <artifactId>jakarta.mail</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.glassfish</groupId>
-            <artifactId>jakarta.json</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-common</artifactId>
         </dependency>
