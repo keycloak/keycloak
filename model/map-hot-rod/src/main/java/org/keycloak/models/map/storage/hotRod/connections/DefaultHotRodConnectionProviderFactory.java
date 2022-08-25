@@ -22,7 +22,6 @@ import org.infinispan.client.hotrod.RemoteCacheManagerAdmin;
 import org.infinispan.client.hotrod.configuration.ClientIntelligence;
 import org.infinispan.client.hotrod.configuration.ConfigurationBuilder;
 import org.infinispan.client.hotrod.configuration.NearCacheMode;
-import org.infinispan.client.hotrod.configuration.RemoteCacheConfigurationBuilder;
 import org.infinispan.commons.marshall.ProtoStreamMarshaller;
 import org.infinispan.protostream.GeneratedSchema;
 import org.infinispan.query.remote.client.ProtobufMetadataManagerConstants;
@@ -74,6 +73,7 @@ public class DefaultHotRodConnectionProviderFactory implements HotRodConnectionP
     public void close() {
         if (remoteCacheManager != null) {
             remoteCacheManager.close();
+            remoteCacheManager = null;
         }
     }
 
@@ -88,6 +88,7 @@ public class DefaultHotRodConnectionProviderFactory implements HotRodConnectionP
     }
 
     public void lazyInit() {
+        LOG.debugf("Initializing HotRod client connection to Infinispan server.");
         ConfigurationBuilder remoteBuilder = new ConfigurationBuilder();
         remoteBuilder.addServer()
                 .host(config.get("host", "localhost"))
@@ -104,6 +105,7 @@ public class DefaultHotRodConnectionProviderFactory implements HotRodConnectionP
                     .realm(config.get("realm", "default"));
         }
 
+        LOG.debugf("Configuring remote caches.");
         configureRemoteCaches(remoteBuilder);
 
         remoteBuilder.addContextInitializer(CommonPrimitivesProtoSchemaInitializer.INSTANCE);
@@ -113,9 +115,7 @@ public class DefaultHotRodConnectionProviderFactory implements HotRodConnectionP
         Set<String> remoteCaches = ENTITY_DESCRIPTOR_MAP.values().stream()
                 .map(HotRodEntityDescriptor::getCacheName).collect(Collectors.toSet());
 
-        // access the caches to force their creation
-        remoteCaches.forEach(remoteCacheManager::getCache);
-
+        LOG.debugf("Uploading proto schema to Infinispan server.");
         registerSchemata();
 
 
@@ -123,13 +123,16 @@ public class DefaultHotRodConnectionProviderFactory implements HotRodConnectionP
         RemoteCacheManagerAdmin administration = remoteCacheManager.administration();
         if (reindexCaches != null && reindexCaches.equals("all")) {
             LOG.infof("Reindexing all caches. This can take a long time to complete. While the rebuild operation is in progress, queries might return fewer results.");
-            remoteCaches.forEach(administration::reindexCache);
+            remoteCaches.stream()
+                    .peek(remoteCacheManager::getCache) // access the caches to force their creation, otherwise reindexing fails if cache doesn't exist
+                    .forEach(administration::reindexCache);
         } else if (reindexCaches != null && !reindexCaches.isEmpty()){
             Arrays.stream(reindexCaches.split(","))
                 .map(String::trim)
                     .filter(e -> !e.isEmpty())
                     .filter(remoteCaches::contains)
                     .peek(cacheName -> LOG.infof("Reindexing %s cache. This can take a long time to complete. While the rebuild operation is in progress, queries might return fewer results.", cacheName))
+                    .peek(remoteCacheManager::getCache) // access the caches to force their creation, otherwise reindexing fails if cache doesn't exist
                     .forEach(administration::reindexCache);
         }
 
@@ -197,31 +200,30 @@ public class DefaultHotRodConnectionProviderFactory implements HotRodConnectionP
     }
 
     private void configureRemoteCaches(ConfigurationBuilder builder) {
-        URI uri;
-        try {
-            uri = DefaultHotRodConnectionProviderFactory.class.getClassLoader().getResource("config/cacheConfig.xml").toURI();
-        } catch (URISyntaxException e) {
-            throw new RuntimeException("Cannot read the cache configuration!", e);
-        }
-
-        Consumer<String> configurator = configurationBuilderConsumer(builder, uri);
+        Consumer<String> configurator = configurationBuilderConsumer(builder);
 
         ENTITY_DESCRIPTOR_MAP.values().stream()
                 .map(HotRodEntityDescriptor::getCacheName)
+                .distinct()
                 .forEach(configurator);
     }
 
-    private Consumer<String> configurationBuilderConsumer(ConfigurationBuilder builder, URI uri) {
-        return cacheName -> {
-            RemoteCacheConfigurationBuilder rb = builder.remoteCache(cacheName);
-            boolean configureRemoteCaches = config.getBoolean("configureRemoteCaches", false);
-            if (configureRemoteCaches) {
-                rb.configurationURI(uri);
-            }
-            rb.nearCacheMode(config.scope(cacheName).getBoolean("nearCacheEnabled", config.getBoolean("nearCacheEnabled", true)) ? NearCacheMode.INVALIDATED : NearCacheMode.DISABLED)
-              .nearCacheMaxEntries(config.scope(cacheName).getInt("nearCacheMaxEntries", config.getInt("nearCacheMaxEntries", 10000)))
-              .nearCacheUseBloomFilter(config.scope(cacheName).getBoolean("nearCacheBloomFilter", config.getBoolean("nearCacheBloomFilter", false)));
+    private static URI getCacheConfigUri(String cacheName) {
+        try {
+            return DefaultHotRodConnectionProviderFactory.class.getClassLoader().getResource("config/" + cacheName + "-cache-config.xml").toURI();
+        } catch (URISyntaxException e) {
+            throw new RuntimeException("Cannot read the cache configuration for cache + " + cacheName, e);
+        }
+    }
 
+    private Consumer<String> configurationBuilderConsumer(ConfigurationBuilder builder) {
+        return cacheName -> {
+            LOG.debugf("Configuring cache %s", cacheName);
+            builder.remoteCache(cacheName)
+                    .configurationURI(getCacheConfigUri(cacheName))
+                    .nearCacheMode(config.scope(cacheName).getBoolean("nearCacheEnabled", config.getBoolean("nearCacheEnabled", true)) ? NearCacheMode.INVALIDATED : NearCacheMode.DISABLED)
+                    .nearCacheMaxEntries(config.scope(cacheName).getInt("nearCacheMaxEntries", config.getInt("nearCacheMaxEntries", 10000)))
+                    .nearCacheUseBloomFilter(config.scope(cacheName).getBoolean("nearCacheBloomFilter", config.getBoolean("nearCacheBloomFilter", false)));
         };
     }
 }

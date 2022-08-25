@@ -125,6 +125,7 @@
                                 <!--DB Container -->
                                 <kc.db.postgresql.container.image>postgres:alpine</kc.db.postgresql.container.image>
                                 <kc.db.mariadb.container.image>mariadb:10.5.9</kc.db.mariadb.container.image>
+                                <kc.infinispan.container.image>quay.io/infinispan/server:${infinispan.version}</kc.infinispan.container.image>
                             </systemPropertyVariables>
                         </configuration>
                     </plugin>

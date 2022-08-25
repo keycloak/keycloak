@@ -63,6 +63,10 @@ public class InfinispanContainer extends GenericContainer<InfinispanContainer> {
                 throw new IllegalStateException("Cannot find IP address of the Infinispan server. See test log for Infinispan container log.");
             }
             HOST = matcher.group(1);
+
+            if ("0.0.0.0".equals(HOST)) {
+                HOST = "127.0.0.1";
+            }
         }
 
         return HOST;
