@@ -18,46 +18,40 @@
 package org.keycloak.util;
 
 import org.keycloak.common.util.Base64;
+import org.keycloak.common.util.Base64Url;
 
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class BasicAuthHelper
-{
-    public static String createHeader(String username, String password)
-    {
-        StringBuffer buf = new StringBuffer(username);
-        buf.append(':').append(password);
-        try
-        {
-            return "Basic " + Base64.encodeBytes(buf.toString().getBytes("UTF-8"));
-        }
-        catch (UnsupportedEncodingException e)
-        {
-            throw new RuntimeException(e);
-        }
+public class BasicAuthHelper {
+    public static String createHeader(String username, String password) {
+        return "Basic " + Base64.encodeBytes((username + ':' + password).getBytes(StandardCharsets.UTF_8));
     }
 
-    public static String[] parseHeader(String header)
-    {
-        if (header.length() < 6) return null;
-        String type = header.substring(0, 5);
-        type = type.toLowerCase();
-        if (!type.equalsIgnoreCase("Basic")) return null;
-        String val = header.substring(6);
-        try {
-            val = new String(Base64.decode(val.getBytes()));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+    // https://datatracker.ietf.org/doc/html/rfc6749#section-2.3.1
+    // The client identifier is encoded using the
+    // "application/x-www-form-urlencoded" encoding algorithm per
+    // Appendix B, and the encoded value is used as the username; the client
+    // password is encoded using the same algorithm and used as the password;
+    public static abstract class UrlEncoded {
+        public static String createHeader(String username, String password) {
+            return "Basic " + Base64Url.encode((username + ':' + password).getBytes(StandardCharsets.UTF_8));
         }
-        int seperatorIndex = val.indexOf(":");
-        if(seperatorIndex == -1) return null;
-        String user = val.substring(0, seperatorIndex);
-        String pw = val.substring(seperatorIndex + 1);
-        return new String[]{user,pw};
+
+        public static String[] parseHeader(String header) {
+            if (header.length() < 6) return null;
+            String type = header.substring(0, 5);
+            type = type.toLowerCase();
+            if (!type.equalsIgnoreCase("Basic")) return null;
+            String val = new String(Base64Url.decode(header.substring(6)));
+            int seperatorIndex = val.indexOf(":");
+            if (seperatorIndex == -1) return null;
+            String user = val.substring(0, seperatorIndex);
+            String pw = val.substring(seperatorIndex + 1);
+            return new String[]{ user, pw };
+        }
     }
 }

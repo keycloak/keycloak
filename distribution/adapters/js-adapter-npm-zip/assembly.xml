@@ -25,9 +25,13 @@
 
     <files>
         <file>
-            <source>src/main/resources/package.json</source>
+            <source>../../../adapters/oidc/js/package.json</source>
             <outputDirectory>/</outputDirectory>
             <filtered>true</filtered>
+        </file>
+        <file>
+            <source>../../../adapters/oidc/js/README.md</source>
+            <outputDirectory>/</outputDirectory>
         </file>
     </files>
 
@@ -37,6 +41,7 @@
             <outputDirectory>dist/</outputDirectory>
             <includes>
                 <include>**/*.js</include>
+                <include>**/*.mjs</include>
                 <include>**/*.map</include>
                 <include>**/*.d.ts</include>
             </includes>

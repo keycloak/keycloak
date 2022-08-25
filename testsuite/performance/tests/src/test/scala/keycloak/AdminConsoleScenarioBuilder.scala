@@ -6,12 +6,11 @@ import keycloak.AdminConsoleScenarioBuilder._
 
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
-
 import io.gatling.core.pause.Normal
 import io.gatling.http.request.StringBody
 import org.jboss.perf.util.Util
 import org.jboss.perf.util.Util.randomUUID
-import org.keycloak.gatling.Utils.{urlEncodedRoot, urlencode}
+import org.keycloak.gatling.Utils.{generateCodeChallenge, generateCodeVerifier, urlEncodedRoot, urlencode}
 import org.keycloak.performance.TestConfig
 import org.keycloak.performance.templates.DatasetTemplate
 
@@ -60,6 +59,8 @@ class AdminConsoleScenarioBuilder {
   var chainBuilder = exec(s => {
     val realm = realmsIterator.next
     val serverUrl = TestConfig.serverUrisIterator.next()
+    val codeVerifier = generateCodeVerifier()
+    val codeChallenge = generateCodeChallenge(codeVerifier)
     s.setAll(
       "keycloakServer" -> serverUrl,
       "keycloakServerUrlEncoded" -> urlencode(serverUrl),
@@ -70,7 +71,9 @@ class AdminConsoleScenarioBuilder {
       "realm" -> realm.getRepresentation.getRealm,
       "username" -> TestConfig.authUser,
       "password" -> TestConfig.authPassword,
-      "clientId" -> "security-admin-console"
+      "clientId" -> "security-admin-console",
+      "codeVerifier" -> codeVerifier,
+      "codeChallenge" -> codeChallenge
     )
   }).exitHereIfFailed
 
@@ -135,7 +138,7 @@ class AdminConsoleScenarioBuilder {
   def loginThroughLoginForm() : AdminConsoleScenarioBuilder = {
     chainBuilder = chainBuilder
       .exec(http("JS Adapter Auth - Login Form Redirect")
-        .get("/auth/realms/master/protocol/openid-connect/auth?client_id=security-admin-console&redirect_uri=${keycloakServerUrlEncoded}%2Fadmin%2Fmaster%2Fconsole%2F&state=${state}&nonce=${nonce}&response_mode=fragment&response_type=code&scope=openid")
+        .get("/auth/realms/master/protocol/openid-connect/auth?client_id=security-admin-console&redirect_uri=${keycloakServerUrlEncoded}%2Fadmin%2Fmaster%2Fconsole%2F&state=${state}&nonce=${nonce}&response_mode=fragment&response_type=code&scope=openid&code_challenge=${codeChallenge}&code_challenge_method=S256")
         .headers(UI_HEADERS)
         .check(status.is(200), regex("action=\"([^\"]*)\"").find.transform(_.replaceAll("&amp;", "&")).saveAs("login-form-uri")))
       .exitHereIfFailed
@@ -170,6 +173,7 @@ class AdminConsoleScenarioBuilder {
             .post("/auth/realms/master/protocol/openid-connect/token")
             .headers(ACCEPT_ALL)
             .formParam("code", "${code}")
+            .formParam("code_verifier", "${codeVerifier}")
             .formParam("grant_type", "authorization_code")
             .formParam("client_id", "security-admin-console")
             .formParam("redirect_uri", APP_URL)
@@ -259,22 +263,6 @@ class AdminConsoleScenarioBuilder {
         http("Console - kc-menu.html")
           .get("/auth/resources/${resourceVersion}/admin/keycloak/templates/kc-menu.html")
           //.headers(UI_HEADERS ++ Map("Referer" -> ""))  // TODO fix referer
-          .headers(UI_HEADERS)
-          .check(status.is(200)),
-
-        // request fonts for css also set referer
-        http("OpenSans-Semibold-webfont.woff")
-          .get("/auth/resources/${resourceVersion}/admin/keycloak/lib/patternfly/fonts/OpenSans-Semibold-webfont.woff")
-          .headers(UI_HEADERS)
-          .check(status.is(200)),
-
-        http("OpenSans-Bold-webfont.woff")
-          .get("/auth/resources/${resourceVersion}/admin/keycloak/lib/patternfly/fonts/OpenSans-Bold-webfont.woff")
-          .headers(UI_HEADERS)
-          .check(status.is(200)),
-
-        http("OpenSans-Light-webfont.woff")
-          .get("/auth/resources/${resourceVersion}/admin/keycloak/lib/patternfly/fonts/OpenSans-Light-webfont.woff")
           .headers(UI_HEADERS)
           .check(status.is(200))
       )

@@ -20,7 +20,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>16.0.0-SNAPSHOT</version>
+        <version>999-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
     <name>Keycloak SAML Client Adapter Modules</name>
@@ -50,16 +50,6 @@
             </activation>
             <modules>
                 <module>jetty</module>
-            </modules>
-        </profile>
-
-        <profile>
-            <id>AS7</id>
-            <activation>
-                <jdk>[,9)</jdk>
-            </activation>
-            <modules>
-                <module>as7-eap6</module>
             </modules>
         </profile>
     </profiles>

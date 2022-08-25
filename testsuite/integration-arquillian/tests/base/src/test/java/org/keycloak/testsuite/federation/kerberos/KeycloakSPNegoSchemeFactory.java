@@ -22,6 +22,7 @@ import org.apache.http.auth.Credentials;
 import org.apache.http.impl.auth.SPNegoScheme;
 import org.apache.http.impl.auth.SPNegoSchemeFactory;
 import org.apache.http.params.HttpParams;
+import org.apache.http.protocol.HttpContext;
 import org.ietf.jgss.GSSContext;
 import org.ietf.jgss.GSSException;
 import org.ietf.jgss.GSSManager;
@@ -66,6 +67,10 @@ public class KeycloakSPNegoSchemeFactory extends SPNegoSchemeFactory {
         return new KeycloakSPNegoScheme(isStripPort(), isUseCanonicalHostname());
     }
 
+    @Override
+    public AuthScheme create(HttpContext context) {
+        return new KeycloakSPNegoScheme(isStripPort(), isUseCanonicalHostname());
+    }
 
     public class KeycloakSPNegoScheme extends SPNegoScheme {
 

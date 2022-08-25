@@ -55,12 +55,9 @@
     {
       "name": "Only Owner Policy",
       "description": "Defines that only the resource owner is allowed to do something",
-      "type": "js",
+      "type": "script-scripts/only-owner-policy.js",
       "logic": "POSITIVE",
-      "decisionStrategy": "UNANIMOUS",
-      "config": {
-        "code": "var permission = $evaluation.getPermission();\nvar identity = $evaluation.getContext().getIdentity();\nvar resource = permission.getResource();\nif (resource) {\nif (resource.getOwner().equals(identity.getId())) {\n$evaluation.grant();\n}}"
-      }
+      "decisionStrategy": "UNANIMOUS"
     },
     {
       "name": "Any Admin Policy",
@@ -87,13 +84,16 @@
     {
       "name": "Only From a Specific Client Address",
       "description": "Defines that only clients from a specific address can do something",
-      "type": "js",
+      "type": "script-scripts/only-from-specific-address-policy.js",
       "logic": "POSITIVE",
-      "decisionStrategy": "UNANIMOUS",
-      "config": {
-        "applyPolicies": "[]",
-        "code": "var contextAttributes = $evaluation.getContext().getAttributes();\n\nif (contextAttributes.containsValue('kc.client.network.ip_address', '127.0.0.1') || contextAttributes.containsValue('kc.client.network.ip_address', '0:0:0:0:0:0:0:1')) {\n    $evaluation.grant();\n}"
-      }
+      "decisionStrategy": "UNANIMOUS"
+    },
+    {
+      "name": "Deny From a Specific Client Address",
+      "description": "Defines that only clients from a specific address can do something",
+      "type": "script-scripts/deny-from-specific-address-policy.js",
+      "logic": "POSITIVE",
+      "decisionStrategy": "UNANIMOUS"
     },
     {
       "name": "Administration Policy",
@@ -118,13 +118,9 @@
     {
       "name": "Only From @keycloak.org or Admin",
       "description": "Defines that only users from @keycloak.org",
-      "type": "js",
+      "type": "script-scripts/only-from-specific-domain-or-admin-policy.js",
       "logic": "POSITIVE",
-      "decisionStrategy": "UNANIMOUS",
-      "config": {
-        "applyPolicies": "[]",
-        "code": "var context = $evaluation.getContext();\nvar identity = context.getIdentity();\nvar attributes = identity.getAttributes();\nvar email = attributes.getValue('email').asString(0);\n\nif (identity.hasRealmRole('admin') || email.endsWith('@keycloak.org')) {\n    $evaluation.grant();\n}"
-      }
+      "decisionStrategy": "UNANIMOUS"
     },
     {
       "name": "Album Resource Permission",
@@ -185,12 +181,9 @@
     },
     {
       "name": "Deny Policy",
-      "type": "js",
+      "type": "script-scripts/always-deny-policy.js",
       "logic": "POSITIVE",
-      "decisionStrategy": "UNANIMOUS",
-      "config": {
-        "code": "// by default, grants any permission associated with this policy\n$evaluation.deny();"
-      }
+      "decisionStrategy": "UNANIMOUS"
     },
     {
       "name": "Protected Scope A Permission",

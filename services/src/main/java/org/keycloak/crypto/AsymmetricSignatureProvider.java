@@ -35,8 +35,20 @@ public class AsymmetricSignatureProvider implements SignatureProvider {
     }
 
     @Override
+    public SignatureSignerContext signer(KeyWrapper key) throws SignatureException {
+        SignatureProvider.checkKeyForSignature(key, algorithm, KeyType.RSA);
+        return new ServerAsymmetricSignatureSignerContext(key);
+    }
+
+    @Override
     public SignatureVerifierContext verifier(String kid) throws VerificationException {
         return new ServerAsymmetricSignatureVerifierContext(session, kid, algorithm);
+    }
+
+    @Override
+    public SignatureVerifierContext verifier(KeyWrapper key) throws VerificationException {
+        SignatureProvider.checkKeyForVerification(key, algorithm, KeyType.RSA);
+        return new ServerAsymmetricSignatureVerifierContext(key);
     }
 
     @Override

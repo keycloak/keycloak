@@ -19,7 +19,6 @@ package org.keycloak.protocol.oidc.utils;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
 /**
  * Data associated with the oauth2 code.
@@ -40,7 +39,7 @@ public class OAuth2Code {
     private static final String CODE_CHALLENGE_NOTE = "code_challenge";
     private static final String CODE_CHALLENGE_METHOD_NOTE = "code_challenge_method";
 
-    private final UUID id;
+    private final String id;
 
     private final int expiration;
 
@@ -55,7 +54,7 @@ public class OAuth2Code {
     private final String codeChallengeMethod;
 
 
-    public OAuth2Code(UUID id, int expiration, String nonce, String scope, String redirectUriParam,
+    public OAuth2Code(String id, int expiration, String nonce, String scope, String redirectUriParam,
                       String codeChallenge, String codeChallengeMethod) {
         this.id = id;
         this.expiration = expiration;
@@ -68,7 +67,7 @@ public class OAuth2Code {
 
 
     private OAuth2Code(Map<String, String> data) {
-        id = UUID.fromString(data.get(ID_NOTE));
+        id = data.get(ID_NOTE);
         expiration = Integer.parseInt(data.get(EXPIRATION_NOTE));
         nonce = data.get(NONCE_NOTE);
         scope = data.get(SCOPE_NOTE);
@@ -98,7 +97,7 @@ public class OAuth2Code {
     }
 
 
-    public UUID getId() {
+    public String getId() {
         return id;
     }
 

@@ -17,6 +17,7 @@
 
 package org.keycloak.models;
 
+import org.keycloak.crypto.Algorithm;
 import org.keycloak.policy.PasswordPolicyConfigException;
 import org.keycloak.policy.PasswordPolicyProvider;
 
@@ -42,6 +43,10 @@ public class PasswordPolicy implements Serializable {
     public static final String PASSWORD_HISTORY_ID = "passwordHistory";
 
     public static final String FORCE_EXPIRED_ID = "forceExpiredPasswordChange";
+
+    public static final int RECOVERY_CODES_WARNING_THRESHOLD_DEFAULT = 4;
+
+    public static final String RECOVERY_CODES_WARNING_THRESHOLD_ID = "recoveryCodesWarningThreshold";
 
     private Map<String, Object> policyConfig;
     private Builder builder;
@@ -100,6 +105,14 @@ public class PasswordPolicy implements Serializable {
             return getPolicyConfig(FORCE_EXPIRED_ID);
         } else {
             return -1;
+        }
+    }
+
+    public int getRecoveryCodesWarningThreshold() {
+        if (policyConfig.containsKey(RECOVERY_CODES_WARNING_THRESHOLD_ID)) {
+            return getPolicyConfig(RECOVERY_CODES_WARNING_THRESHOLD_ID);
+        } else {
+            return 4;
         }
     }
 

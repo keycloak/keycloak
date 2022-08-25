@@ -725,17 +725,17 @@ public class CachedRealm extends AbstractExtendableRevisioned {
 
     public Integer getAttribute(String name, Integer defaultValue) {
         String v = getAttribute(name);
-        return v != null ? Integer.parseInt(v) : defaultValue;
+        return v != null ? Integer.valueOf(v) : defaultValue;
     }
 
     public Long getAttribute(String name, Long defaultValue) {
         String v = getAttribute(name);
-        return v != null ? Long.parseLong(v) : defaultValue;
+        return v != null ? Long.valueOf(v) : defaultValue;
     }
 
     public Boolean getAttribute(String name, Boolean defaultValue) {
         String v = getAttribute(name);
-        return v != null ? Boolean.parseBoolean(v) : defaultValue;
+        return v != null ? Boolean.valueOf(v) : defaultValue;
     }
 
     public Map<String, String> getAttributes() {

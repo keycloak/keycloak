@@ -118,6 +118,13 @@
             <saml:AttributeValue>value_no_xml</saml:AttributeValue>
         </saml:Attribute>
 
+        <saml:Attribute Name="anytype_xml_fragment">
+            <saml:AttributeValue xsi:type="xs:anyType">
+                <elem1>Foo</elem1>
+                <elem2>Bar</elem2>
+            </saml:AttributeValue>
+        </saml:Attribute>
+
         <saml:Attribute Name="ssostartpage"
                         NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:unspecified">
 
@@ -138,6 +145,13 @@
             <saml:AttributeValue xsi:nil="true" xsi:type="xs:anyType"/>
         </saml:Attribute>
 
+        <saml:Attribute Name="userDefined">
+            <saml:AttributeValue xsi:type="MyType"><A><B>Foo</B><C>Bar</C></A></saml:AttributeValue>
+        </saml:Attribute>
+
+        <saml:Attribute Name="userDefinedFragmentWithNamespace">
+            <saml:AttributeValue xmlns:myPrefix="urn:myNamespace" xsi:type="myPrefix:MyType"><myPrefix:B>Foo</myPrefix:B><myPrefix:C>Bar</myPrefix:C></saml:AttributeValue>
+        </saml:Attribute>
 
     </saml:AttributeStatement>
 </saml:Assertion>

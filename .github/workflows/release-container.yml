@@ -1,0 +1,55 @@
+  name: Release Keycloak container
+  on:
+    workflow_dispatch:
+    #push:
+    #  tags:
+    #    - '[0-9]+.[0-9]+.[0-9]+'
+  concurrency: keycloak-container-release
+
+  jobs:
+    publish:
+      if: github.repository == 'keycloak/keycloak'
+      runs-on: ubuntu-latest
+      steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+        
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Login to Quay
+        uses: docker/login-action@v2
+        with:
+          registry: quay.io
+          username: ${{ secrets.QUAY_USERNAME }}
+          password: ${{ secrets.QUAY_TOKEN }}
+
+      - name: Login to Docker
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}          
+
+      - name: Container metadata
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: |
+            keycloak/keycloak
+            quay.io/keycloak/keycloak
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+
+      - name: Build and push the image
+        uses: docker/build-push-action@v3
+        with:
+          context: quarkus/container
+          platforms: linux/amd64,linux/arm64
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}

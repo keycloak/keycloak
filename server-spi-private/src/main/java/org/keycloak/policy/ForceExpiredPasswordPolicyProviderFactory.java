@@ -29,7 +29,7 @@ import org.keycloak.models.UserModel;
  */
 public class ForceExpiredPasswordPolicyProviderFactory implements PasswordPolicyProviderFactory, PasswordPolicyProvider {
 
-    public static final int DEFAULT_VALUE = 365;
+    public static final Integer DEFAULT_VALUE = 365;
 
     @Override
     public PasswordPolicyProvider create(KeycloakSession session) {
@@ -85,7 +85,7 @@ public class ForceExpiredPasswordPolicyProviderFactory implements PasswordPolicy
 
     @Override
     public Object parseConfig(String value) {
-        return value != null ? Integer.parseInt(value) : DEFAULT_VALUE;
+        return value != null ? Integer.valueOf(value) : DEFAULT_VALUE;
     }
 
 }

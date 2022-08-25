@@ -18,8 +18,8 @@
 package org.keycloak.models;
 
 import org.keycloak.provider.ProviderEvent;
-
 import org.keycloak.storage.SearchableModelField;
+
 import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -118,7 +118,7 @@ public interface UserModel extends RoleMapperModel {
      * Get timestamp of user creation. May be null for old users created before this feature introduction.
      */
     Long getCreatedTimestamp();
-    
+
     void setCreatedTimestamp(Long timestamp);
 
     boolean isEnabled();
@@ -278,7 +278,7 @@ public interface UserModel extends RoleMapperModel {
     default long getGroupsCount() {
         return getGroupsCountByNameContaining(null);
     }
-    
+
     default long getGroupsCountByNameContaining(String search) {
         if (search == null) {
             return getGroupsStream().count();
@@ -298,9 +298,20 @@ public interface UserModel extends RoleMapperModel {
     String getServiceAccountClientLink();
     void setServiceAccountClientLink(String clientInternalId);
 
+    /**
+     * Instance of a user credential manager to validate and update the credentials of this user.
+     */
+    SubjectCredentialManager credentialManager();
+
     enum RequiredAction {
-        VERIFY_EMAIL, UPDATE_PROFILE, CONFIGURE_TOTP, UPDATE_PASSWORD, TERMS_AND_CONDITIONS,
-        VERIFY_PROFILE
+        VERIFY_EMAIL,
+        UPDATE_PROFILE,
+        CONFIGURE_TOTP,
+        CONFIGURE_RECOVERY_AUTHN_CODES,
+        UPDATE_PASSWORD,
+        TERMS_AND_CONDITIONS,
+        VERIFY_PROFILE,
+        UPDATE_EMAIL
     }
 
     /**

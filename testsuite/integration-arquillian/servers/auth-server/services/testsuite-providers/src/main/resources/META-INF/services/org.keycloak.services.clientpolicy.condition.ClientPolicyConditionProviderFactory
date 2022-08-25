@@ -1,1 +1,1 @@
-org.keycloak.testsuite.services.clientpolicy.condition.TestRaiseExeptionConditionFactory
+org.keycloak.testsuite.services.clientpolicy.condition.TestRaiseExceptionConditionFactory

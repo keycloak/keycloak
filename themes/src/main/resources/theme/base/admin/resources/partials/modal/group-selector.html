@@ -1,0 +1,50 @@
+<div class="modal-header">
+    <button type="button" class="close" ng-click="cancel()">
+        <span class="pficon pficon-close"></span>
+    </button>
+    <h4 class="modal-title">{{:: 'group-selector' | translate}}</h4>
+</div>
+<div style="padding: 0 15px 15px 15px;">
+    <form>
+        <table class="table table-striped table-bordered" style="margin-bottom: 0">
+            <thead>
+            <tr>
+                <th class="kc-table-actions" colspan="5">
+                    <div class="form-inline">
+                        <div class="pull-left">
+                            <div class="input-group">
+                                <input type="text" placeholder="{{:: 'search.placeholder' | translate}}" ng-model="groupSelector.searchCriteria" class="form-control search" onkeydown="if (event.keyCode == 13) document.getElementById('groupSearch').click()">
+                                <div class="input-group-addon">
+                                    <i class="fa fa-search" id="groupSearch" ng-click="searchGroup()"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button id="viewAllGroups" class="btn btn-default" ng-click="clearSearch()">{{:: 'view-all-groups' | translate}}</button>
+                        <div class="pull-right">
+                            <button id="selectGroup" class="btn btn-default" ng-click="selectGroup(tree.currentNode)">{{:: 'selectGroup.label' | translate}}</button>
+                        </div>
+                    </div>
+                </th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>
+                    <div
+                            tree-id="tree"
+                            angular-treeview="true"
+                            tree-model="groupList"
+                            node-id="id"
+                            node-label="name"
+                            node-children="subGroups" >
+                    </div>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+        <div style="margin-bottom: 50px">
+            <kc-paging current-page="groupSelector.currentPage" number-of-pages="groupSelector.numberOfPages" current-page-input="groupSelector.currentPageInput"></kc-paging>
+        </div>
+    </form>
+</div>

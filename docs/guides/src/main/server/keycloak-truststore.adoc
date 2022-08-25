@@ -1,0 +1,47 @@
+<#import "/templates/guide.adoc" as tmpl>
+<#import "/templates/kc.adoc" as kc>
+
+<@tmpl.guide
+title="Configuring a Truststore"
+summary="How to configure the Keycloak Truststore to communicate with external services through TLS."
+includedOptions="">
+
+When Keycloak communicates with external services through TLS, it has to validate the remote server’s certificate in order to ensure it is connecting to a trusted server. This is necessary in order to prevent man-in-the-middle attacks. The certificates of these remote server’s or the CA that signed these certificates must be put in a truststore. This truststore is managed by the Keycloak server.
+
+The truststore is used when connecting securely to identity brokers, LDAP identity providers, when sending emails, and for backchannel communication with client applications. It is also useful
+when you want to change the policy on how host names are verified and trusted by the server.
+
+By default, a truststore provider is not configured, and any TLS/HTTPS connections fall back to standard Java Truststore configuration. If there is no trust established, then these outgoing requests will fail.
+
+== Configuring the Keycloak Truststore
+
+You can add your truststore configuration by entering this command:
+
+<@kc.start parameters="--spi-truststore-file-file=myTrustStore.jks --spi-truststore-file-password=password --spi-truststore-file-hostname-verification-policy=ANY"/>
+
+The following are possible configuration options for this setting:
+
+file::
+The path to a Java keystore file.
+HTTPS requests need a way to verify the host of the server to which they are talking.
+This is what the truststore does.
+The keystore contains one or more trusted host certificates or certificate authorities.
+This truststore file should only contain public certificates of your secured hosts.
+This is _REQUIRED_ if any of these properties are defined.
+
+password::
+Password of the keystore.
+This option is _REQUIRED_ if any of these properties are defined.
+
+hostname-verification-policy::
+For HTTPS requests, this option verifies the hostname of the server's certificate. Default: `WILDCARD`
+* `ANY` means that the hostname is not verified.
+* `WILDCARD` allows wildcards in subdomain names, such as *.foo.com.
+* When using `STRICT`, the Common Name (CN) must match the hostname exactly.
+
+=== Example of a truststore configuration
+The following is an example configuration for a truststore that allows you to create trustful connections to all `mycompany.org` domains and its subdomains:
+
+<@kc.start parameters="--spi-truststore-file-file=path/to/truststore.jks --spi-truststore-file-password=change_me --spi-truststore-file-hostname-verification-policy=WILDCARD"/>
+
+</@tmpl.guide>

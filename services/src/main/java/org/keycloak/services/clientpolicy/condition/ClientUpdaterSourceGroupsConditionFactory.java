@@ -20,15 +20,13 @@ package org.keycloak.services.clientpolicy.condition;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.keycloak.Config.Scope;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.ProviderConfigProperty;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
  */
-public class ClientUpdaterSourceGroupsConditionFactory implements ClientPolicyConditionProviderFactory {
+public class ClientUpdaterSourceGroupsConditionFactory extends AbstractClientPolicyConditionProviderFactory {
 
     public static final String PROVIDER_ID = "client-updater-source-groups";
 
@@ -37,6 +35,8 @@ public class ClientUpdaterSourceGroupsConditionFactory implements ClientPolicyCo
     private static final List<ProviderConfigProperty> configProperties = new ArrayList<ProviderConfigProperty>();
 
     static {
+        addCommonConfigProperties(configProperties);
+
         ProviderConfigProperty property;
         property = new ProviderConfigProperty(GROUPS, PROVIDER_ID + ".label", PROVIDER_ID + ".tooltip", ProviderConfigProperty.MULTIVALUED_STRING_TYPE, "topGroup");
         configProperties.add(property);
@@ -45,18 +45,6 @@ public class ClientUpdaterSourceGroupsConditionFactory implements ClientPolicyCo
     @Override
     public ClientPolicyConditionProvider create(KeycloakSession session) {
         return new ClientUpdaterSourceGroupsCondition(session);
-    }
-
-    @Override
-    public void init(Scope config) {
-    }
-
-    @Override
-    public void postInit(KeycloakSessionFactory factory) {
-    }
-
-    @Override
-    public void close() {
     }
 
     @Override
@@ -73,5 +61,4 @@ public class ClientUpdaterSourceGroupsConditionFactory implements ClientPolicyCo
     public List<ProviderConfigProperty> getConfigProperties() {
         return configProperties;
     }
-
 }

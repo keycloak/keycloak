@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.keycloak.testsuite</groupId>
         <artifactId>integration-arquillian-tests-adapters-jboss</artifactId>
-        <version>16.0.0-SNAPSHOT</version>
+        <version>999-SNAPSHOT</version>
     </parent>
 
     <artifactId>integration-arquillian-tests-adapters-remote</artifactId>
@@ -155,8 +155,8 @@
                                                 <include>client.crt</include>
                                                 <include>client.key</include>
                                                 <include>*.crl</include>
-                                                <!-- KEYCLOAK-6771 Certificate Bound Token -->
                                                 <include>other_client.jks</include>
+                                                <include>test-user-obb.jks</include>
                                             </includes>
                                         </resource>
                                         <resource>
@@ -173,14 +173,6 @@
                     </plugin>
                 </plugins>
             </build>
-        </profile>
-        <profile>
-            <id>app-server-remote-as7-eap6</id>
-            <!--this profile is required if remote app server is AS7 or EAP6-->
-            <properties>
-                <app.server.management.protocol>remote</app.server.management.protocol>
-                <app.server.management.port>${app.server.management.port.jmx}</app.server.management.port>
-            </properties>
         </profile>
         <profile>
             <id>no-offset</id>

@@ -38,7 +38,7 @@ import org.keycloak.util.JsonSerialization;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-@AuthServerContainerExclude(value = {AuthServerContainerExclude.AuthServer.REMOTE, AuthServerContainerExclude.AuthServer.QUARKUS}, details = "It works locally for Quarkus, but failing on CI for unknown reason")
+@AuthServerContainerExclude(value = {AuthServerContainerExclude.AuthServer.REMOTE})
 public class JsonFileImport1301MigrationClientPoliciesTest extends AbstractJsonFileImportMigrationTest {
 
     @Override

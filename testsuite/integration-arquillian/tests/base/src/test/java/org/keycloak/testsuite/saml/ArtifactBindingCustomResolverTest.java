@@ -18,10 +18,11 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 import static org.keycloak.testsuite.util.SamlClient.Binding.POST;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
-@AuthServerContainerExclude({AuthServerContainerExclude.AuthServer.QUARKUS, AuthServerContainerExclude.AuthServer.REMOTE}) // Can't be done on quarkus or remote because currently quarkus or remote doesn't support the SetDefaultProvider annotation
+@AuthServerContainerExclude(value = {REMOTE}, details = "currently remote doesn't support the SetDefaultProvider annotation")
 @SetDefaultProvider(spi = "saml-artifact-resolver", providerId = "0005")
 public class ArtifactBindingCustomResolverTest extends ArtifactBindingTest {
 

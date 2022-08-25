@@ -120,6 +120,14 @@ public class SamlClient extends ClientConfigResolver {
         client.setAttribute(SamlConfigAttributes.SAML_FORCE_NAME_ID_FORMAT_ATTRIBUTE, Boolean.toString(val));
     }
 
+    public boolean allowECPFlow() {
+        return "true".equals(resolveAttribute(SamlConfigAttributes.SAML_ALLOW_ECP_FLOW));
+    }
+
+    public void setAllowECPFlow(boolean val) {
+        client.setAttribute(SamlConfigAttributes.SAML_ALLOW_ECP_FLOW, Boolean.toString(val));
+    }
+
     public boolean forceArtifactBinding(){
         return "true".equals(resolveAttribute(SamlConfigAttributes.SAML_ARTIFACT_BINDING));
     }

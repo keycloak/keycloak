@@ -53,6 +53,7 @@ import java.io.StringWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -313,7 +314,7 @@ public class SimpleHttp {
             }
         }
 
-        return new UrlEncodedFormEntity(urlParameters);
+        return new UrlEncodedFormEntity(urlParameters, StandardCharsets.UTF_8);
     }
 
     public static class Response {
@@ -345,7 +346,7 @@ public class SimpleHttp {
                             }
                         }
 
-                        try (InputStreamReader reader = charset == null ? new InputStreamReader(is) :
+                        try (InputStreamReader reader = charset == null ? new InputStreamReader(is, StandardCharsets.UTF_8) :
                                 new InputStreamReader(is, charset)) {
 
                             StringWriter writer = new StringWriter();

@@ -626,6 +626,15 @@ public class ClientAdapter implements ClientModel, CachedObject {
     }
 
     @Override
+    public boolean hasDirectScope(RoleModel role) {
+        if (isUpdated()) return updated.hasDirectScope(role);
+
+        if (cached.getScope().contains(role.getId())) return true;
+
+        return getRolesStream().anyMatch(r -> Objects.equals(r, role));
+    }
+
+    @Override
     public boolean hasScope(RoleModel role) {
         if (isUpdated()) return updated.hasScope(role);
         if (cached.isFullScopeAllowed() || cached.getScope().contains(role.getId())) return true;
@@ -633,7 +642,7 @@ public class ClientAdapter implements ClientModel, CachedObject {
         if (RoleUtils.hasRole(getScopeMappingsStream(), role))
             return true;
 
-        return getRolesStream().anyMatch(r -> (Objects.equals(r, role) || r.hasRole(role)));
+        return RoleUtils.hasRole(getRolesStream(), role);
     }
 
     @Override

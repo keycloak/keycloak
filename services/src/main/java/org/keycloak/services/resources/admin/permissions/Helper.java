@@ -46,7 +46,7 @@ class Helper {
         representation.addScope(scope.getName());
         representation.addPolicy(policy.getName());
 
-        return authz.getStoreFactory().getPolicyStore().create(representation, resourceServer);
+        return authz.getStoreFactory().getPolicyStore().create(resourceServer, representation);
     }
 
     public static Policy addEmptyScopePermission(AuthorizationProvider authz, ResourceServer resourceServer, String name, Resource resource, Scope scope) {
@@ -58,7 +58,7 @@ class Helper {
         representation.addResource(resource.getName());
         representation.addScope(scope.getName());
 
-        return authz.getStoreFactory().getPolicyStore().create(representation, resourceServer);
+        return authz.getStoreFactory().getPolicyStore().create(resourceServer, representation);
     }
 
     public static Policy createRolePolicy(AuthorizationProvider authz, ResourceServer resourceServer, RoleModel role) {
@@ -78,7 +78,7 @@ class Helper {
         config.put("roles", roleValues);
         representation.setConfig(config);
 
-        return authz.getStoreFactory().getPolicyStore().create(representation, resourceServer);
+        return authz.getStoreFactory().getPolicyStore().create(resourceServer, representation);
     }
 
     public static String getRolePolicyName(RoleModel role) {

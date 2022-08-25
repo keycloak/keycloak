@@ -301,10 +301,7 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
             waitForPage(driver, "account already exists", false);
             idpConfirmLinkPage.assertCurrent();
             idpConfirmLinkPage.clickLinkAccount();
-            logoutFromRealm(getProviderRoot(), bc.providerRealmName());
-
-            driver.navigate().back();
-            logInWithBroker(samlBrokerConfig);
+            loginPage.clickSocial(samlBrokerConfig.getIDPAlias());
 
             totpPage.assertCurrent();
             String totpSecret = totpPage.getTotpSecret();
@@ -347,10 +344,7 @@ public final class KcOidcBrokerTest extends AbstractAdvancedBrokerTest {
             waitForPage(driver, "account already exists", false);
             idpConfirmLinkPage.assertCurrent();
             idpConfirmLinkPage.clickLinkAccount();
-            logoutFromRealm(getProviderRoot(), bc.providerRealmName());
-
-            driver.navigate().back();
-            logInWithBroker(samlBrokerConfig);
+            loginPage.clickSocial(samlBrokerConfig.getIDPAlias());
 
             loginTotpPage.assertCurrent();
             loginTotpPage.login(totp.generateTOTP(totpSecret));

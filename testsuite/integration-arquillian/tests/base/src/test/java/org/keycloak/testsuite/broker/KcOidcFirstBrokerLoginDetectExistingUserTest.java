@@ -107,7 +107,7 @@ public class KcOidcFirstBrokerLoginDetectExistingUserTest extends AbstractInitia
 
         loginPage.assertCurrent(bc.consumerRealmName());
 
-        assertEquals("User " +  username + " authenticated with identity provider " + bc.getIDPAlias() + " does not exists. Please contact your administrator.", loginPage.getInstruction());
+        assertEquals("User " +  username + " authenticated with identity provider " + bc.getIDPAlias() + " does not exist. Please contact your administrator.", loginPage.getInstruction());
     }
 
     @Test

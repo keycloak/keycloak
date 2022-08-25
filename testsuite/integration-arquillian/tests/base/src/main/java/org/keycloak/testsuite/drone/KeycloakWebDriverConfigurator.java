@@ -61,9 +61,6 @@ public class KeycloakWebDriverConfigurator {
     }
 
     private void acceptAllSSLCerts(WebDriverConfiguration webDriverCfg, DesiredCapabilities capabilitiesToAdd) {
-        if (webDriverCfg.getBrowser().equals("internetexplorer")) {
-            return; // IE not supported
-        }
         capabilitiesToAdd.setCapability(CapabilityType.ACCEPT_SSL_CERTS, true);
         capabilitiesToAdd.setCapability(CapabilityType.ACCEPT_INSECURE_CERTS, true);
     }

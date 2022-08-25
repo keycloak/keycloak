@@ -17,7 +17,6 @@
 
 package org.keycloak.testsuite.broker;
 
-import org.apache.commons.lang.StringUtils;
 import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.After;
@@ -49,11 +48,13 @@ import org.keycloak.testsuite.pages.LoginExpiredPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.pages.LoginPasswordResetPage;
 import org.keycloak.testsuite.pages.LoginTotpPage;
+import org.keycloak.testsuite.pages.LogoutConfirmPage;
 import org.keycloak.testsuite.pages.OAuthGrantPage;
 import org.keycloak.testsuite.pages.ProceedPage;
 import org.keycloak.testsuite.pages.UpdateAccountInformationPage;
 import org.keycloak.testsuite.pages.VerifyEmailPage;
 import org.keycloak.testsuite.util.MailServer;
+import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.openqa.selenium.TimeoutException;
 
@@ -63,9 +64,11 @@ import javax.ws.rs.core.UriBuilderException;
 import java.net.URI;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
+import static org.keycloak.models.Constants.ACCOUNT_MANAGEMENT_CLIENT_ID;
 import static org.keycloak.testsuite.admin.ApiUtil.createUserWithAdminClient;
 import static org.keycloak.testsuite.admin.ApiUtil.resetUserPassword;
 import static org.keycloak.testsuite.broker.BrokerTestConstants.USER_EMAIL;
@@ -73,6 +76,8 @@ import static org.keycloak.testsuite.broker.BrokerTestTools.encodeUrl;
 import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 import static org.keycloak.testsuite.broker.BrokerTestTools.getProviderRoot;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
+import static org.keycloak.testsuite.util.ServerURLs.getAuthServerContextRoot;
+import static org.keycloak.testsuite.util.ServerURLs.removeDefaultPorts;
 
 /**
  * No test methods there. Just some useful common functionality
@@ -103,6 +108,9 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
 
     @Page
     protected ProceedPage proceedPage;
+
+    @Page
+    protected LogoutConfirmPage logoutConfirmPage;
 
     @Page
     protected InfoPage infoPage;
@@ -226,6 +234,21 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
         logInWithBroker(bc);
     }
 
+    // We are re-authenticating to the IDP. Hence it is assumed that "username" field is not visible on the login form on the IDP side
+    protected void logInAsUserInIDPWithReAuthenticate() {
+        driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
+
+        waitForPage(driver, "sign in to", true);
+        log.debug("Clicking social " + bc.getIDPAlias());
+        loginPage.clickSocial(bc.getIDPAlias());
+        waitForPage(driver, "sign in to", true);
+
+        // We are re-authenticating. Username field not visible
+        log.debug("Reauthenticating");
+        Assert.assertFalse(loginPage.isUsernameInputPresent());
+        loginPage.login(bc.getUserPassword());
+    }
+
     protected void logInWithBroker(BrokerConfiguration bc) {
         logInWithIdp(bc.getIDPAlias(), bc.getUserLogin(), bc.getUserPassword());
     }
@@ -289,17 +312,76 @@ public abstract class AbstractBaseBrokerTest extends AbstractKeycloakTest {
         logoutFromRealm(contextRoot, realm, null);
     }
 
-    protected void logoutFromRealm(String contextRoot, String realm, String initiatingIdp) { logoutFromRealm(contextRoot, realm, initiatingIdp, null); }
+    protected void logoutFromRealm(String contextRoot, String realm, String initiatingIdp) {
+        logoutFromRealm(contextRoot, realm, initiatingIdp, null);
+    }
 
-    protected void logoutFromRealm(String contextRoot, String realm, String initiatingIdp, String tokenHint) {
-        driver.navigate().to(contextRoot
-                + "/auth/realms/" + realm
-                + "/protocol/" + "openid-connect"
-                + "/logout?redirect_uri=" + encodeUrl(getAccountUrl(contextRoot, realm))
-                + (!StringUtils.isBlank(initiatingIdp) ? "&initiating_idp=" + initiatingIdp : "")
-                + (!StringUtils.isBlank(tokenHint) ? "&id_token_hint=" + tokenHint : "")
-        );
+    protected void logoutFromRealm(String contextRoot, String realm, String initiatingIdp, String idTokenHint) {
+        logoutFromRealm(contextRoot, realm, initiatingIdp, idTokenHint, null);
+    }
 
+    protected void logoutFromRealm(String contextRoot, String realm, String initiatingIdp, String idTokenHint, String clientId) {
+        logoutFromRealm(contextRoot, realm, initiatingIdp, idTokenHint, clientId, null);
+    }
+
+    // Completely logout from realm and confirm logout if present
+    protected void logoutFromRealm(String contextRoot, String realm, String initiatingIdp, String idTokenHint, String clientId, String redirectUri) {
+        final String defaultRedirectUri = redirectUri != null ? redirectUri : getAccountUrl(contextRoot, realm);
+        final String defaultClientId = (idTokenHint == null && clientId == null) ? ACCOUNT_MANAGEMENT_CLIENT_ID : clientId;
+
+        executeLogoutFromRealm(contextRoot, realm, initiatingIdp, idTokenHint, defaultClientId, defaultRedirectUri);
+        checkLogoutConfirmation(realm, idTokenHint, defaultClientId);
+    }
+
+    // Only execute the logout without logout confirmation
+    protected void executeLogoutFromRealm(String contextRoot, String realm, String initiatingIdp, String idTokenHint, String clientId, String redirectUri) {
+        final boolean isDifferentContext = !Objects.equals(OAuthClient.SERVER_ROOT, removeDefaultPorts(contextRoot));
+
+        try {
+            if (isDifferentContext) {
+                OAuthClient.updateURLs(contextRoot);
+                OAuthClient.updateAppRootRealm(realm);
+                oauth.init(driver);
+            }
+
+            final OAuthClient.LogoutUrlBuilder builder = oauth.realm(realm)
+                    .getLogoutUrl()
+                    .idTokenHint(idTokenHint)
+                    .clientId(clientId)
+                    .initiatingIdp(initiatingIdp);
+
+            if (clientId != null || idTokenHint != null) {
+                builder.postLogoutRedirectUri(encodeUrl(redirectUri));
+            }
+
+            String logoutUrl = builder.build();
+            driver.navigate().to(logoutUrl);
+        } finally {
+            if (isDifferentContext) {
+                OAuthClient.updateURLs(getAuthServerContextRoot());
+                oauth.init(driver);
+            }
+        }
+    }
+
+    // Check whether the logout confirmation is present; if yes, confirm the logout and verify the current page
+    private void checkLogoutConfirmation(String realm, String idTokenHint, String clientId) {
+        if (logoutConfirmPage.isCurrent()) {
+            confirmLogout();
+            if (idTokenHint != null || clientId != null) {
+                assertLoginPage(realm);
+            } else {
+                infoPage.assertCurrent();
+            }
+        }
+    }
+
+    protected void confirmLogout() {
+        logoutConfirmPage.assertCurrent();
+        logoutConfirmPage.confirmLogout();
+    }
+
+    protected void assertLoginPage(String realm) {
         try {
             Retry.execute(() -> {
                 try {

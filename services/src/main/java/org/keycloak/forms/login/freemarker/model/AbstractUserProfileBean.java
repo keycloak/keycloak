@@ -4,6 +4,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.ws.rs.core.MultivaluedMap;
 
@@ -52,12 +53,12 @@ public abstract class AbstractUserProfileBean {
     protected abstract UserProfile createUserProfile(UserProfileProvider provider);
 
     /**
-     * Get attribute default value to be pre-filled into the form on first show.
+     * Get attribute default values to be pre-filled into the form on first show.
      * 
      * @param name of the attribute
      * @return attribute default value (can be null)
      */
-    protected abstract String getAttributeDefaultValue(String name);
+    protected abstract Stream<String> getAttributeDefaultValues(String name);
 
     /**
      * Get context the template is used for, so view can be customized for distinct contexts. 
@@ -110,11 +111,24 @@ public abstract class AbstractUserProfileBean {
         }
 
         public String getValue() {
-            List<String> v = formData != null ? formData.get(getName()) : null;
+            List<String> v = getValues();
             if (v == null || v.isEmpty()) {
-                return getAttributeDefaultValue(getName());
+                return null;
             } else {
                 return v.get(0);
+            }
+        }
+        
+        public List<String> getValues() {
+            List<String> v = formData != null ? formData.get(getName()) : null;
+            if (v == null || v.isEmpty()) {
+                Stream<String> vs = getAttributeDefaultValues(getName());
+                if(vs == null)
+                    return Collections.emptyList();
+                else
+                    return vs.collect(Collectors.toList());
+            } else {
+                return v;
             }
         }
 

@@ -21,6 +21,7 @@ import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyUse;
+import org.keycloak.jose.jwe.JWEConstants;
 import org.keycloak.keys.KeyProvider;
 import org.keycloak.models.RealmModel;
 
@@ -33,15 +34,18 @@ public class DefaultKeyProviders {
 
     public static void createProviders(RealmModel realm) {
         if (!hasProvider(realm, "rsa-generated")) {
-            createRsaKeyProvider("rsa-generated", KeyUse.SIG, realm);
-            createRsaKeyProvider("rsa-enc-generated", KeyUse.ENC, realm);
+            createRsaKeyProvider("rsa-generated", realm);
+        }
+
+        if (!hasProvider(realm, "rsa-enc-generated")) {
+            createRsaEncKeyProvider("rsa-enc-generated", realm);
         }
 
         createSecretProvider(realm);
         createAesProvider(realm);
     }
 
-    private static void createRsaKeyProvider(String name, KeyUse keyUse, RealmModel realm) {
+    private static void createRsaKeyProvider(String name, RealmModel realm) {
         ComponentModel generated = new ComponentModel();
         generated.setName(name);
         generated.setParentId(realm.getId());
@@ -50,7 +54,23 @@ public class DefaultKeyProviders {
 
         MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
         config.putSingle("priority", "100");
-        config.putSingle("keyUse", keyUse.getSpecName());
+        config.putSingle("keyUse", KeyUse.SIG.name());
+        generated.setConfig(config);
+
+        realm.addComponentModel(generated);
+    }
+
+    private static void createRsaEncKeyProvider(String name, RealmModel realm) {
+        ComponentModel generated = new ComponentModel();
+        generated.setName(name);
+        generated.setParentId(realm.getId());
+        generated.setProviderId("rsa-enc-generated");
+        generated.setProviderType(KeyProvider.class.getName());
+
+        MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
+        config.putSingle("priority", "100");
+        config.putSingle("keyUse", KeyUse.ENC.name());
+        config.putSingle("algorithm", JWEConstants.RSA_OAEP);
         generated.setConfig(config);
 
         realm.addComponentModel(generated);

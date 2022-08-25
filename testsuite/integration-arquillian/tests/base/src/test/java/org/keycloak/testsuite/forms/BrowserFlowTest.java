@@ -16,6 +16,7 @@ import org.keycloak.authentication.authenticators.browser.UsernamePasswordFormFa
 import org.keycloak.authentication.authenticators.browser.WebAuthnAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.conditional.ConditionalRoleAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.conditional.ConditionalUserConfiguredAuthenticatorFactory;
+import org.keycloak.authentication.authenticators.conditional.ConditionalUserAttributeValueFactory;
 import org.keycloak.authentication.requiredactions.WebAuthnRegisterFactory;
 import org.keycloak.common.Profile;
 import org.keycloak.events.Details;
@@ -50,7 +51,6 @@ import org.keycloak.testsuite.util.FlowUtil;
 import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RoleBuilder;
 import org.keycloak.testsuite.util.URLUtils;
-import org.keycloak.testsuite.authentication.ConditionalUserAttributeValueFactory;
 import org.keycloak.testsuite.authentication.SetUserAttributeAuthenticatorFactory;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
@@ -69,7 +69,6 @@ import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.GITHUB;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.GITLAB;
 import static org.keycloak.testsuite.broker.SocialLoginTest.Provider.GOOGLE;
 
-@EnableFeature(value = Profile.Feature.WEB_AUTHN, skipRestart = true, onlyForProduct = true)
 public class BrowserFlowTest extends AbstractTestRealmKeycloakTest {
     private static final String INVALID_AUTH_CODE = "Invalid authenticator code.";
 
@@ -962,41 +961,14 @@ public class BrowserFlowTest extends AbstractTestRealmKeycloakTest {
 
     /**
      * This test checks that if a REQUIRED authentication execution which has isUserSetupAllowed -> true
-     * has its requiredActionProvider in a not registered state, then it will not try to create the required action,
-     * and will instead raise an credential setup required error.
-     * NOTE: webauthn currently isn't configured by default in the realm. When this changes, this test will need to be adapted
-     */
-    @Test
-    @AuthServerContainerExclude(REMOTE)
-    public void testLoginWithWithNoWebAuthnCredentialAndNoRequiredActionProviderRegistered(){
-        String newFlowAlias = "browser - copy 1";
-        configureBrowserFlowWithRequiredWebAuthn(newFlowAlias);
-        try {
-            provideUsernamePassword("test-user@localhost");
-
-            // Assert that the login evaluates to an error, as all required elements to not validate to successful
-            errorPage.assertCurrent();
-
-        } finally {
-            revertFlows("browser - copy 1");
-        }
-    }
-
-    /**
-     * This test checks that if a REQUIRED authentication execution which has isUserSetupAllowed -> true
      * has its requiredActionProvider disabled, then it will not try to create the required action,
      * and will instead raise an credential setup required error.
-     * NOTE: webauthn currently isn't configured by default in the realm. When this changes, this test will need to be adapted
      */
     @Test
     @AuthServerContainerExclude(REMOTE)
     public void testLoginWithWithNoWebAuthnCredentialAndRequiredActionProviderDisabled(){
         String newFlowAlias = "browser - copy 1";
         configureBrowserFlowWithRequiredWebAuthn(newFlowAlias);
-        RequiredActionProviderSimpleRepresentation requiredActionRepresentation = new RequiredActionProviderSimpleRepresentation();
-        requiredActionRepresentation.setName("WebAuthn Required Action");
-        requiredActionRepresentation.setProviderId(WebAuthnRegisterFactory.PROVIDER_ID);
-        testRealm().flows().registerRequiredAction(requiredActionRepresentation);
         RequiredActionProviderRepresentation rapr = testRealm().flows().getRequiredAction(WebAuthnRegisterFactory.PROVIDER_ID);
         rapr.setEnabled(false);
         testRealm().flows().updateRequiredAction(WebAuthnRegisterFactory.PROVIDER_ID, rapr);
@@ -1008,14 +980,12 @@ public class BrowserFlowTest extends AbstractTestRealmKeycloakTest {
 
         } finally {
             revertFlows("browser - copy 1");
-            testRealm().flows().removeRequiredAction(WebAuthnRegisterFactory.PROVIDER_ID);
         }
     }
 
     /**
      * This test checks that if a REQUIRED authentication execution which has isUserSetupAllowed -> true
-     * has its requiredActionProvider enabled, than it will login and show the otpSetup page.
-     * NOTE: webauthn currently isn't configured by default in the realm. When this changes, this test will need to be adapted
+     * has its requiredActionProvider enabled, then it will login and show the WebAuthn registration page.
      */
     @Test
     @AuthServerContainerExclude(REMOTE)
@@ -1023,20 +993,13 @@ public class BrowserFlowTest extends AbstractTestRealmKeycloakTest {
         String newFlowAlias = "browser - copy 1";
         configureBrowserFlowWithRequiredWebAuthn(newFlowAlias);
 
-        RequiredActionProviderSimpleRepresentation requiredActionRepresentation = new RequiredActionProviderSimpleRepresentation();
-        requiredActionRepresentation.setName("WebAuthn Required Action");
-        requiredActionRepresentation.setProviderId(WebAuthnRegisterFactory.PROVIDER_ID);
-        testRealm().flows().registerRequiredAction(requiredActionRepresentation);
-
         try {
             provideUsernamePassword("test-user@localhost");
 
             // Assert that in this case you arrive to an webauthn setup
             Assert.assertTrue(driver.getCurrentUrl().contains("required-action?execution=" + WebAuthnRegisterFactory.PROVIDER_ID));
-
         } finally {
             revertFlows("browser - copy 1");
-            testRealm().flows().removeRequiredAction(WebAuthnRegisterFactory.PROVIDER_ID);
             UserRepresentation user = testRealm().users().search("test-user@localhost").get(0);
             user.setRequiredActions(Collections.emptyList());
             testRealm().users().get(user.getId()).update(user);
