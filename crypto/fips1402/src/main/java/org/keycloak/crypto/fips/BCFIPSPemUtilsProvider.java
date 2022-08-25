@@ -17,11 +17,23 @@
 
 package org.keycloak.crypto.fips;
 
+import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.openssl.PEMKeyPair;
+import org.bouncycastle.openssl.PEMParser;
+import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
 import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
+import org.keycloak.common.util.BouncyIntegration;
+import org.keycloak.common.util.DerUtils;
 import org.keycloak.common.util.PemException;
 import org.keycloak.common.crypto.PemUtilsProvider;
+import org.keycloak.common.util.PemUtils;
 
+import java.io.IOException;
+import java.io.StringReader;
 import java.io.StringWriter;
+import java.security.KeyFactory;
+import java.security.PrivateKey;
+import java.security.spec.PKCS8EncodedKeySpec;
 
 /**
  * Encodes Key or Certificates to PEM format string
@@ -55,6 +67,54 @@ public class BCFIPSPemUtilsProvider extends PemUtilsProvider {
         } catch (Exception e) {
             throw new PemException(e);
         }
+    }
+
+    @Override
+    public PrivateKey decodePrivateKey(String pem) {
+        if (pem == null) {
+            return null;
+        }
+
+        try {
+            boolean beginEndAvailable = pem.startsWith("-----BEGIN");
+            Object parsedPk;
+            if (beginEndAvailable) { // No fallback needed as BC should know the format of the key (based on the phrase like BEGIN PRIVATE KEY, BEGIN RSA PRIVATE KEY, BEGIN EC PRIVATE KEY etc)
+                parsedPk = readPrivateKeyObject(pem);
+            } else {
+                try {
+                    // Case for the PEM in traditional format
+                    String rsaPem = PemUtils.addRsaPrivateKeyBeginEnd(pem);
+                    parsedPk = readPrivateKeyObject(rsaPem);
+                } catch (IOException ioe) {
+                    // Case for generic PKCS#8 represented keys
+                    pem = PemUtils.addPrivateKeyBeginEnd(pem);
+                    parsedPk = readPrivateKeyObject(pem);
+                }
+            }
+
+            PrivateKeyInfo privateKeyInfo;
+            if (parsedPk instanceof PEMKeyPair) {
+                // Usually for keys of known format (For example when PEM starts with "BEGIN RSA PRIVATE KEY")
+                PEMKeyPair pemKeyPair = (PEMKeyPair)parsedPk;
+                privateKeyInfo = pemKeyPair.getPrivateKeyInfo();
+            } else if (parsedPk instanceof PrivateKeyInfo) {
+                // Usually for PKCS#8 formatted keys of unknown type ("BEGIN PRIVATE KEY")
+                privateKeyInfo = (PrivateKeyInfo) parsedPk;
+            } else {
+                throw new IllegalStateException("Unknown type returned by PEMParser when parsing private key: " + parsedPk.getClass());
+            }
+
+            return new JcaPEMKeyConverter()
+                    .setProvider(BouncyIntegration.PROVIDER)
+                    .getPrivateKey(privateKeyInfo);
+        } catch (Exception e) {
+            throw new PemException(e);
+        }
+    }
+
+    private Object readPrivateKeyObject(String pemWithBeginEnd) throws IOException {
+        PEMParser parser = new PEMParser(new StringReader(pemWithBeginEnd));
+        return parser.readObject();
     }
 
 }
