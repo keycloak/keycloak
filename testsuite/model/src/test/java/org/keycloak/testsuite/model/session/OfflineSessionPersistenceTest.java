@@ -176,12 +176,10 @@ public class OfflineSessionPersistenceTest extends KeycloakModelTest {
     @RequireProvider(value = UserSessionProvider.class, only = InfinispanUserSessionProviderFactory.PROVIDER_ID)
     public void testPersistenceMultipleNodesClientSessionAtSameNode() throws InterruptedException {
         int numClients = 2;
-        List<String> clientIds = withRealm(realmId, (session, realm) -> {
-            return IntStream.range(0, numClients)
+        List<String> clientIds = withRealm(realmId, (session, realm) -> IntStream.range(0, numClients)
               .mapToObj(cid -> session.clients().addClient(realm, "client-" + cid))
               .map(ClientModel::getId)
-              .collect(Collectors.toList());
-        });
+              .collect(Collectors.toList()));
 
         // Shutdown factory -> enforce session persistence
         closeKeycloakSessionFactory();
@@ -234,12 +232,10 @@ public class OfflineSessionPersistenceTest extends KeycloakModelTest {
     @RequireProvider(UserSessionPersisterProvider.class)
     @RequireProvider(value = UserSessionProvider.class, only = InfinispanUserSessionProviderFactory.PROVIDER_ID)
     public void testPersistenceMultipleNodesClientSessionsAtRandomNode() throws InterruptedException {
-        List<String> clientIds = withRealm(realmId, (session, realm) -> {
-            return IntStream.range(0, 5)
+        List<String> clientIds = withRealm(realmId, (session, realm) -> IntStream.range(0, 5)
               .mapToObj(cid -> session.clients().addClient(realm, "client-" + cid))
               .map(ClientModel::getId)
-              .collect(Collectors.toList());
-        });
+              .collect(Collectors.toList()));
         List<String> offlineSessionIds = createOfflineSessions(realmId, userIds);
 
         // Shutdown factory -> enforce session persistence

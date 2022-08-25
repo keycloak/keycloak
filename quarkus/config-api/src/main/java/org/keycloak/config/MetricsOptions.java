@@ -1,8 +1,5 @@
 package org.keycloak.config;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class MetricsOptions {
 
     public static final Option METRICS_ENABLED = new OptionBuilder<>("metrics-enabled", Boolean.class)
@@ -11,10 +8,4 @@ public class MetricsOptions {
             .buildTime(true)
             .defaultValue(Boolean.FALSE)
             .build();
-
-    public static final List<Option<?>> ALL_OPTIONS = new ArrayList<>();
-
-    static {
-         ALL_OPTIONS.add(METRICS_ENABLED);
-    }
 }

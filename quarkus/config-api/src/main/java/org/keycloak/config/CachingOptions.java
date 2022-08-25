@@ -1,8 +1,6 @@
 package org.keycloak.config;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
 
 public class CachingOptions {
 
@@ -42,12 +40,4 @@ public class CachingOptions {
                     + "The configuration file is relative to the 'conf/' directory.")
             .buildTime(true)
             .build();
-
-    public static final List<Option<?>> ALL_OPTIONS = new ArrayList<>();
-
-    static {
-        ALL_OPTIONS.add(CACHE);
-        ALL_OPTIONS.add(CACHE_STACK);
-        ALL_OPTIONS.add(CACHE_CONFIG_FILE);
-    }
 }
