@@ -59,6 +59,7 @@ import org.keycloak.models.RequiredActionProviderModel;
 import org.keycloak.models.UserConsentModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.utils.DefaultRequiredActions;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.SessionTimeoutHelper;
 import org.keycloak.models.utils.SystemClientUtil;
@@ -95,8 +96,8 @@ import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
-import java.net.URLEncoder;
 import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -1353,7 +1354,8 @@ public class AuthenticationManager {
         // see if any required actions need triggering, i.e. an expired password
         realm.getRequiredActionProvidersStream()
                 .filter(RequiredActionProviderModel::isEnabled)
-                .map(model -> toRequiredActionFactory(session, model))
+                .map(model -> toRequiredActionFactory(session, model, realm))
+                .filter(Objects::nonNull)
                 .forEachOrdered(f -> evaluateRequiredAction(session, authSession, request, event, realm, user, f));
     }
 
@@ -1386,12 +1388,17 @@ public class AuthenticationManager {
         provider.evaluateTriggers(result);
     }
 
-    private static RequiredActionFactory toRequiredActionFactory(KeycloakSession session, RequiredActionProviderModel model) {
+    private static RequiredActionFactory toRequiredActionFactory(KeycloakSession session, RequiredActionProviderModel model, RealmModel realm) {
         RequiredActionFactory factory = (RequiredActionFactory) session.getKeycloakSessionFactory()
                 .getProviderFactory(RequiredActionProvider.class, model.getProviderId());
         if (factory == null) {
-            throw new RuntimeException("Unable to find factory for Required Action: "
-                    + model.getProviderId() + " did you forget to declare it in a META-INF/services file?");
+            if (!DefaultRequiredActions.isActionAvailable(model)) {
+                logger.warnf("Required action provider factory '%s' configured in the realm '%s' is not available. " +
+                        "Provider not found or feature is disabled.", model.getProviderId(), realm.getName());
+            } else {
+                throw new RuntimeException(String.format("Unable to find factory for Required Action '%s' configured in the realm '%s'. " +
+                        "Did you forget to declare it in a META-INF/services file?", model.getProviderId(), realm.getName()));
+            }
         }
         return factory;
     }
