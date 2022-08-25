@@ -23,13 +23,3 @@ updates:
     ignore:
       - dependency-name: bootstrap
         update-types: ["version-update:semver-major"]
-  - package-ecosystem: npm
-    directory: /adapters/oidc/js
-    schedule:
-      interval: weekly
-      day: saturday
-    open-pull-requests-limit: 999
-    rebase-strategy: disabled
-    labels:
-      - area/dependencies
-      - area/adapter/javascript
