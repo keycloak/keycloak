@@ -63,7 +63,9 @@ public class TermsAndConditions implements RequiredActionProvider, RequiredActio
 
     @Override
     public void requiredActionChallenge(RequiredActionContext context) {
-        Response challenge = context.form().createForm("terms.ftl");
+        Response challenge = context.form()
+            .setAttribute("user", context.getAuthenticationSession().getAuthenticatedUser())
+            .createForm("terms.ftl");
         context.challenge(challenge);
     }
 
