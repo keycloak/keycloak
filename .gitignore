@@ -26,7 +26,7 @@ dist-ssr
 # Cypress
 assets
 **/cypress.env.json
-cypress/downloads
+**/cypress/downloads
 
 # Optional eslint cache
 .eslintcache
