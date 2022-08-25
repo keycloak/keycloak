@@ -679,6 +679,16 @@ public class UserTest extends AbstractAdminTest {
     }
 
     @Test
+    public void searchByEmailExactMatch() {
+        createUsers();
+        List<UserRepresentation> users = realm.users().searchByEmail("user1@localhost", true);
+        assertEquals(1, users.size());
+
+        users = realm.users().search("@localhost", true);
+        assertEquals(0, users.size());
+    }
+
+    @Test
     public void searchByUsername() {
         createUsers();
 
@@ -750,8 +760,25 @@ public class UserTest extends AbstractAdminTest {
         List<UserRepresentation> users = realm.users().search("username1", true);
         assertEquals(1, users.size());
 
+        users = realm.users().searchByUsername("username1", true);
+        assertEquals(1, users.size());
+
         users = realm.users().search("user", true);
         assertEquals(0, users.size());
+    }
+
+    @Test
+    public void searchByFirstNameExact() {
+        createUsers();
+        List<UserRepresentation> users = realm.users().searchByFirstName("First1", true);
+        assertEquals(1, users.size());
+    }
+
+    @Test
+    public void searchByLastNameExact() {
+        createUsers();
+        List<UserRepresentation> users = realm.users().searchByLastName("Last1", true);
+        assertEquals(1, users.size());
     }
 
     @Test
