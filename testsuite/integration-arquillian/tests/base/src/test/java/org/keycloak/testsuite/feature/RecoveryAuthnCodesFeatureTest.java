@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Red Hat, Inc. and/or its affiliates
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,23 +13,22 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
-package org.keycloak.testsuite.webauthn;
+package org.keycloak.testsuite.feature;
 
 import org.junit.Test;
 import org.keycloak.authentication.AuthenticatorSpi;
-import org.keycloak.authentication.authenticators.browser.WebAuthnAuthenticatorFactory;
+import org.keycloak.authentication.authenticators.browser.RecoveryAuthnCodesFormAuthenticatorFactory;
 import org.keycloak.common.Profile;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
-import org.keycloak.testsuite.feature.AbstractFeatureStateTest;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 
-public class WebAuthnFeatureTest extends AbstractFeatureStateTest {
+public class RecoveryAuthnCodesFeatureTest extends AbstractFeatureStateTest {
 
     @Override
     public String getFeatureProviderId() {
-        return WebAuthnAuthenticatorFactory.PROVIDER_ID;
+        return RecoveryAuthnCodesFormAuthenticatorFactory.PROVIDER_ID;
     }
 
     @Override
@@ -38,7 +37,13 @@ public class WebAuthnFeatureTest extends AbstractFeatureStateTest {
     }
 
     @Test
-    @DisableFeature(value = Profile.Feature.WEB_AUTHN, skipRestart = true)
+    @EnableFeature(value = Profile.Feature.RECOVERY_CODES, skipRestart = true)
+    public void featureEnabled() {
+        testFeatureAvailability(true);
+    }
+
+    @Test
+    @DisableFeature(value = Profile.Feature.RECOVERY_CODES, skipRestart = true)
     public void featureDisabled() {
         testFeatureAvailability(false);
     }
