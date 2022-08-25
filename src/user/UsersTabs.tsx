@@ -46,6 +46,8 @@ const UsersTabs = () => {
   const [user, setUser] = useState<UserRepresentation>();
   const [bruteForced, setBruteForced] = useState<BruteForced>();
   const [addedGroups, setAddedGroups] = useState<GroupRepresentation[]>([]);
+  const [refreshCount, setRefreshCount] = useState(0);
+  const refresh = () => setRefreshCount((count) => count + 1);
 
   useFetch(
     async () => {
@@ -72,7 +74,7 @@ const UsersTabs = () => {
       setBruteForced(bruteForced);
       user && setupForm(user);
     },
-    [user?.username]
+    [user?.username, refreshCount]
   );
 
   const setupForm = (user: UserRepresentation) => {
@@ -90,6 +92,7 @@ const UsersTabs = () => {
       if (id) {
         await adminClient.users.update({ id }, user);
         addAlert(t("userSaved"), AlertVariant.success);
+        refresh();
       } else {
         const createdUser = await adminClient.users.create(user);
 
