@@ -21,6 +21,7 @@ import { ListEmptyState } from "../components/list-empty-state/ListEmptyState";
 import { KeycloakDataTable } from "../components/table-toolbar/KeycloakDataTable";
 import { useAdminClient } from "../context/auth/AdminClient";
 import { emptyFormatter } from "../util";
+import { useAccess } from "../context/access/Access";
 
 type UserGroupsProps = {
   user: UserRepresentation;
@@ -44,6 +45,9 @@ export const UserGroups = ({ user }: UserGroupsProps) => {
   const [open, setOpen] = useState(false);
 
   const { enabled } = useHelp();
+
+  const { hasAccess } = useAccess();
+  const isManager = hasAccess("manage-users");
 
   const { adminClient } = useAdminClient();
   const alphabetize = (groupsList: GroupRepresentation[]) => {
@@ -254,6 +258,7 @@ export const UserGroups = ({ user }: UserGroupsProps) => {
             title: t("joinGroupsFor", { username: user.username }),
             ok: "users:join",
           }}
+          canBrowse={isManager}
           onClose={() => setOpen(false)}
           onConfirm={(groups) => {
             addGroups(groups || []);

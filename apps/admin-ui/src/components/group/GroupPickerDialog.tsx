@@ -27,6 +27,7 @@ export type GroupPickerDialogProps = {
   type: "selectOne" | "selectMany";
   filterGroups?: string[];
   text: { title: string; ok: string };
+  canBrowse?: boolean;
   onConfirm: (groups: GroupRepresentation[] | undefined) => void;
   onClose: () => void;
 };
@@ -40,6 +41,7 @@ export const GroupPickerDialog = ({
   type,
   filterGroups,
   text,
+  canBrowse = true,
   onClose,
   onConfirm,
 }: GroupPickerDialogProps) => {
@@ -282,7 +284,7 @@ export const GroupPickerDialog = ({
                   aria-label={t("groupName")}
                   isPlainButtonAction
                 >
-                  {((hasSubgroups(group) && filter === "") ||
+                  {((hasSubgroups(group) && filter === "" && canBrowse) ||
                     type === "selectOne") && (
                     <Button
                       isDisabled

@@ -94,14 +94,8 @@ const UsersTabs = () => {
         addAlert(t("userSaved"), AlertVariant.success);
         refresh();
       } else {
+        user.groups = addedGroups.map((group) => group.path!);
         const createdUser = await adminClient.users.create(user);
-
-        addedGroups.forEach(async (group) => {
-          await adminClient.users.addToGroup({
-            id: createdUser.id!,
-            groupId: group.id!,
-          });
-        });
 
         addAlert(t("userCreated"), AlertVariant.success);
         navigate(toUser({ id: createdUser.id, realm, tab: "settings" }));

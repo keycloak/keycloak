@@ -28,6 +28,7 @@ import useFormatDate from "../utils/useFormatDate";
 import { GroupPickerDialog } from "../components/group/GroupPickerDialog";
 import type RealmRepresentation from "@keycloak/keycloak-admin-client/lib/defs/realmRepresentation";
 import type RequiredActionProviderRepresentation from "@keycloak/keycloak-admin-client/lib/defs/requiredActionProviderRepresentation";
+import { useAccess } from "../context/access/Access";
 
 export type BruteForced = {
   isBruteForceProtected?: boolean;
@@ -61,6 +62,8 @@ export const UserForm = ({
   const navigate = useNavigate();
   const { adminClient } = useAdminClient();
   const { addAlert, addError } = useAlerts();
+  const { hasAccess } = useAccess();
+  const isManager = hasAccess("manage-users");
 
   const {
     handleSubmit,
@@ -144,7 +147,7 @@ export const UserForm = ({
     <FormAccess
       isHorizontal
       onSubmit={handleSubmit(save)}
-      role="manage-users"
+      role="query-users"
       fineGrainedAccess={user?.access?.manage}
       className="pf-u-mt-lg"
     >
@@ -155,6 +158,7 @@ export const UserForm = ({
             title: "users:selectGroups",
             ok: "users:join",
           }}
+          canBrowse={isManager}
           onConfirm={(groups) => {
             user?.id ? addGroups(groups || []) : addChips(groups || []);
             setOpen(false);
