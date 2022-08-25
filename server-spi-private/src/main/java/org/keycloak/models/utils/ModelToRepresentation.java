@@ -29,6 +29,7 @@ import org.keycloak.common.Profile;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.common.util.Time;
 import org.keycloak.component.ComponentModel;
+import org.keycloak.credential.CredentialMetadata;
 import org.keycloak.credential.CredentialModel;
 import org.keycloak.events.Event;
 import org.keycloak.events.admin.AdminEvent;
@@ -36,11 +37,14 @@ import org.keycloak.events.admin.AuthDetails;
 import org.keycloak.models.*;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.representations.account.CredentialMetadataRepresentation;
 import org.keycloak.representations.idm.*;
 import org.keycloak.representations.idm.authorization.*;
 import org.keycloak.storage.StorageId;
+import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.StringUtil;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -119,6 +123,10 @@ public class ModelToRepresentation {
         return sb.toString();
     }
 
+
+    public static GroupRepresentation groupToBriefRepresentation(GroupModel g) {
+        return toRepresentation(g, false);
+    }
 
     public static GroupRepresentation toRepresentation(GroupModel group, boolean full) {
         GroupRepresentation rep = new GroupRepresentation();
@@ -212,9 +220,9 @@ public class ModelToRepresentation {
         rep.setEmail(user.getEmail());
         rep.setEnabled(user.isEnabled());
         rep.setEmailVerified(user.isEmailVerified());
-        rep.setTotp(session.userCredentialManager().isConfiguredFor(realm, user, OTPCredentialModel.TYPE));
-        rep.setDisableableCredentialTypes(session.userCredentialManager()
-                .getDisableableCredentialTypesStream(realm, user).collect(Collectors.toSet()));
+        rep.setTotp(user.credentialManager().isConfiguredFor(OTPCredentialModel.TYPE));
+        rep.setDisableableCredentialTypes(user.credentialManager()
+                .getDisableableCredentialTypesStream().collect(Collectors.toSet()));
         rep.setFederationLink(user.getFederationLink());
         rep.setNotBefore(session.users().getNotBeforeOfUser(realm, user));
         rep.setRequiredActions(user.getRequiredActionsStream().collect(Collectors.toList()));
@@ -595,6 +603,28 @@ public class ModelToRepresentation {
         return rep;
     }
 
+    public static CredentialMetadataRepresentation toRepresentation(CredentialMetadata credentialMetadata) {
+        CredentialMetadataRepresentation rep = new CredentialMetadataRepresentation();
+
+        rep.setCredential(ModelToRepresentation.toRepresentation(credentialMetadata.getCredentialModel()));
+        try {
+            rep.setInfoMessage(credentialMetadata.getInfoMessage() == null ? null : JsonSerialization.writeValueAsString(credentialMetadata.getInfoMessage()));
+        } catch (IOException e) {
+            LOG.warn("unable to serialize model information, skipping info message", e);
+        }
+        try {
+            rep.setWarningMessageDescription(credentialMetadata.getWarningMessageDescription() == null ? null : JsonSerialization.writeValueAsString(credentialMetadata.getWarningMessageDescription()));
+        } catch (IOException e) {
+            LOG.warn("unable to serialize model information, skipping warning message desc", e);
+        }
+        try {
+            rep.setWarningMessageTitle(credentialMetadata.getWarningMessageTitle() == null ? null : JsonSerialization.writeValueAsString(credentialMetadata.getWarningMessageTitle()));
+        } catch (IOException e) {
+            LOG.warn("unable to serialize model information, skipping warning message title", e);
+        }
+        return rep;
+    }
+
     public static FederatedIdentityRepresentation toRepresentation(FederatedIdentityModel socialLink) {
         FederatedIdentityRepresentation rep = new FederatedIdentityRepresentation();
         rep.setUserName(socialLink.getUserName());
@@ -611,6 +641,7 @@ public class ModelToRepresentation {
         rep.setUsername(session.getUser().getUsername());
         rep.setUserId(session.getUser().getId());
         rep.setIpAddress(session.getIpAddress());
+        rep.setRememberMe(session.isRememberMe());
         for (AuthenticatedClientSessionModel clientSession : session.getAuthenticatedClientSessions().values()) {
             ClientModel client = clientSession.getClient();
             rep.getClients().put(client.getId(), client.getClientId());
@@ -665,6 +696,13 @@ public class ModelToRepresentation {
         rep.setNodeReRegistrationTimeout(clientModel.getNodeReRegistrationTimeout());
         rep.setClientAuthenticatorType(clientModel.getClientAuthenticatorType());
 
+        // adding the secret if non public or bearer only
+        if (clientModel.isBearerOnly() || clientModel.isPublicClient()) {
+            rep.setSecret(null);
+        } else {
+            rep.setSecret(clientModel.getSecret());
+        }
+
         rep.setDefaultClientScopes(new LinkedList<>(clientModel.getClientScopes(true).keySet()));
         rep.setOptionalClientScopes(new LinkedList<>(clientModel.getClientScopes(false).keySet()));
 
@@ -689,7 +727,7 @@ public class ModelToRepresentation {
 
         if (Profile.isFeatureEnabled(Profile.Feature.AUTHORIZATION)) {
             AuthorizationProvider authorization = session.getProvider(AuthorizationProvider.class);
-            ResourceServer resourceServer = authorization.getStoreFactory().getResourceServerStore().findById(clientModel.getId());
+            ResourceServer resourceServer = authorization.getStoreFactory().getResourceServerStore().findByClient(clientModel);
 
             if (resourceServer != null) {
                 rep.setAuthorizationServicesEnabled(true);
@@ -884,7 +922,7 @@ public class ModelToRepresentation {
         ResourceServerRepresentation server = new ResourceServerRepresentation();
 
         server.setId(model.getId());
-        server.setClientId(model.getId());
+        server.setClientId(model.getClientId());
         server.setName(client.getClientId());
         server.setAllowRemoteResourceManagement(model.isAllowRemoteResourceManagement());
         server.setPolicyEnforcementMode(model.getPolicyEnforcementMode());
@@ -900,7 +938,7 @@ public class ModelToRepresentation {
     public static <R extends AbstractPolicyRepresentation> R toRepresentation(Policy policy, AuthorizationProvider authorization, boolean genericRepresentation, boolean export) {
         return toRepresentation(policy, authorization, genericRepresentation, export, false);
     }
-    
+
     public static <R extends AbstractPolicyRepresentation> R toRepresentation(Policy policy, AuthorizationProvider authorization, boolean genericRepresentation, boolean export, boolean allFields) {
         PolicyProviderFactory providerFactory = authorization.getProviderFactory(policy.getType());
         R representation;
@@ -925,10 +963,11 @@ public class ModelToRepresentation {
         representation.setType(policy.getType());
         representation.setDecisionStrategy(policy.getDecisionStrategy());
         representation.setLogic(policy.getLogic());
-        
+
         if (allFields) {
-            representation.setResourcesData(policy.getResources().stream().map(
-                    resource -> toRepresentation(resource, resource.getResourceServer(), authorization, true)).collect(Collectors.toSet()));
+            representation.setResourcesData(policy.getResources().stream()
+                    .map(resource -> toRepresentation(resource, policy.getResourceServer(), authorization, true))
+                    .collect(Collectors.toSet()));
             representation.setScopesData(policy.getScopes().stream().map(
                     resource -> toRepresentation(resource)).collect(Collectors.toSet()));
         }
@@ -936,11 +975,11 @@ public class ModelToRepresentation {
         return representation;
     }
 
-    public static ResourceRepresentation toRepresentation(Resource model, String resourceServer, AuthorizationProvider authorization) {
+    public static ResourceRepresentation toRepresentation(Resource model, ResourceServer resourceServer, AuthorizationProvider authorization) {
         return toRepresentation(model, resourceServer, authorization, true);
     }
 
-    public static ResourceRepresentation toRepresentation(Resource model, String resourceServer, AuthorizationProvider authorization, Boolean deep) {
+    public static ResourceRepresentation toRepresentation(Resource model, ResourceServer resourceServer, AuthorizationProvider authorization, Boolean deep) {
         ResourceRepresentation resource = new ResourceRepresentation();
 
         resource.setId(model.getId());
@@ -958,8 +997,8 @@ public class ModelToRepresentation {
         KeycloakSession keycloakSession = authorization.getKeycloakSession();
         RealmModel realm = authorization.getRealm();
 
-        if (owner.getId().equals(resourceServer)) {
-            ClientModel clientModel = realm.getClientById(resourceServer);
+        if (owner.getId().equals(resourceServer.getClientId())) {
+            ClientModel clientModel = realm.getClientById(resourceServer.getClientId());
             owner.setName(clientModel.getClientId());
         } else {
             UserModel userModel = keycloakSession.users().getUserById(realm, owner.getId());

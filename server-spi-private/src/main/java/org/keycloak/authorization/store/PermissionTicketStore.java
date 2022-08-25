@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Red Hat, Inc. and/or its affiliates
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -23,6 +23,8 @@ import java.util.Map;
 import org.keycloak.authorization.model.PermissionTicket;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
+import org.keycloak.authorization.model.Scope;
+import org.keycloak.models.RealmModel;
 
 /**
  * A {@link PermissionTicketStore} is responsible to manage the persistence of {@link org.keycloak.authorization.model.PermissionTicket} instances.
@@ -34,123 +36,123 @@ public interface PermissionTicketStore {
     /**
      * Returns count of {@link PermissionTicket}, filtered by the given attributes.
      *
+     *
+     * @param resourceServer the resource server. Cannot be {@code null}.
      * @param attributes permission tickets that do not match the attributes are not included with the count; possible filter options are given by {@link PermissionTicket.FilterOption}
-     * @param resourceServerId the resource server id
      * @return an integer indicating the amount of permission tickets
      * @throws IllegalArgumentException when there is an unknown attribute in the {@code attributes} map
      */
-    long count(Map<PermissionTicket.FilterOption, String> attributes, String resourceServerId);
+    long count(ResourceServer resourceServer, Map<PermissionTicket.FilterOption, String> attributes);
 
     /**
      * Creates a new {@link PermissionTicket} instance.
      *
-     * @param permission the policy representation
-     * @param resourceServer the resource server to which this policy belongs
+     * @param resourceServer the resource server to which this permission ticket belongs. Cannot be {@code null}.
+     * @param resource resource. Cannot be {@code null}.
+     * @param scope scope. Cannot be {@code null}
+     * @param requester requester of the permission
      * @return a new instance of {@link PermissionTicket}
      */
-    PermissionTicket create(String resourceId, String scopeId, String requester, ResourceServer resourceServer);
+    PermissionTicket create(ResourceServer resourceServer, Resource resource, Scope scope, String requester);
 
     /**
      * Deletes a permission from the underlying persistence mechanism.
      *
+     * @param realm realm. Cannot be {@code null}.
      * @param id the id of the policy to delete
      */
-    void delete(String id);
+    void delete(RealmModel realm, String id);
 
     /**
      * Returns a {@link PermissionTicket} with the given <code>id</code>
      *
+     *
+     *
+     * @param realm the realm. Cannot be {@code null}.
+     * @param resourceServer the resource server. Ignored if {@code null}.
      * @param id the identifier of the permission
-     * @param resourceServerId the resource server id
      * @return a permission with the given identifier.
      */
-    PermissionTicket findById(String id, String resourceServerId);
+    PermissionTicket findById(RealmModel realm, ResourceServer resourceServer, String id);
 
     /**
-     * Returns a list of {@link PermissionTicket} associated with a {@link ResourceServer} with the given <code>resourceServerId</code>.
+     * Returns a list of {@link PermissionTicket} associated with the {@link org.keycloak.authorization.model.Resource resource}.
      *
-     * @param resourceServerId the identifier of a resource server
-     * @return a list of permissions belonging to the given resource server
-     */
-    List<PermissionTicket> findByResourceServer(String resourceServerId);
-
-    /**
-     * Returns a list of {@link PermissionTicket} associated with the given <code>owner</code>.
-     *
-     * @param owner the identifier of a resource server
-     * @return a list of permissions belonging to the given owner
-     */
-    List<PermissionTicket> findByOwner(String owner, String resourceServerId);
-
-    /**
-     * Returns a list of {@link PermissionTicket} associated with a {@link org.keycloak.authorization.core.model.Resource} with the given <code>resourceId</code>.
-     *
-     * @param resourceId the identifier of a resource
-     * @param resourceServerId the resource server id
+     * @param resourceServer the resource server. Cannot be {@code null}.
+     * @param resource the resource. Cannot be {@code null}
      * @return a list of permissions associated with the given resource
      */
-    List<PermissionTicket> findByResource(String resourceId, String resourceServerId);
+    List<PermissionTicket> findByResource(ResourceServer resourceServer, Resource resource);
 
     /**
-     * Returns a list of {@link PermissionTicket} associated with a {@link org.keycloak.authorization.core.model.Scope} with the given <code>scopeId</code>.
+     * Returns a list of {@link PermissionTicket} associated with the {@link org.keycloak.authorization.model.Scope scope}.
      *
-     * @param scopeId the id of the scopes
-     * @param resourceServerId the resource server id
+     *
+     * @param resourceServer the resource server. Cannot be {@code null}.
+     * @param scope the scope. Cannot be {@code null}.
      * @return a list of permissions associated with the given scopes
      */
-    List<PermissionTicket> findByScope(String scopeId, String resourceServerId);
+    List<PermissionTicket> findByScope(ResourceServer resourceServer, Scope scope);
 
     /**
      * Returns a list of {@link PermissionTicket}, filtered by the given attributes.
      *
+     *
+     * @param realm the realm. Cannot be {@code null}.
+     * @param resourceServer a resource server that resulting tickets should belong to. Ignored if {@code null}.
      * @param attributes a map of keys and values to filter on; possible filter options are given by {@link PermissionTicket.FilterOption}
-     * @param resourceServerId an id of resource server that resulting tickets should belong to. Ignored if {@code null}
-     * @param firstResult first result to return; Ignored if negative or zero
-     * @param maxResult maximum number of results to return; Ignored if negative
+     * @param firstResult first result to return. Ignored if negative or {@code null}.
+     * @param maxResults maximum number of results to return. Ignored if negative or {@code null}.
      * @return a list of filtered and paginated permissions
      *
      * @throws IllegalArgumentException when there is an unknown attribute in the {@code attributes} map
      *
      */
-    List<PermissionTicket> find(Map<PermissionTicket.FilterOption, String> attributes, String resourceServerId, int firstResult, int maxResult);
+    List<PermissionTicket> find(RealmModel realm, ResourceServer resourceServer, Map<PermissionTicket.FilterOption, String> attributes, Integer firstResult, Integer maxResults);
 
     /**
      * Returns a list of {@link PermissionTicket} granted to the given {@code userId}.
      *
+     * @param resourceServer the resource server. Cannot be {@code null}
      * @param userId the user id
-     * @param resourceServerId the resource server id
      * @return a list of permissions granted for a particular user
      */
-    List<PermissionTicket> findGranted(String userId, String resourceServerId);
+    List<PermissionTicket> findGranted(ResourceServer resourceServer, String userId);
 
     /**
      * Returns a list of {@link PermissionTicket} with name equal to {@code resourceName} granted to the given {@code userId}.
      *
+     * @param resourceServer the resource server. Cannot be {@code null}.
      * @param resourceName the name of a resource
      * @param userId the user id
-     * @param resourceServerId the resource server id
      * @return a list of permissions granted for a particular user
+     *
+     * TODO: investigate a way how to replace resourceName with Resource class
      */
-    List<PermissionTicket> findGranted(String resourceName, String userId, String resourceServerId);
+    List<PermissionTicket> findGranted(ResourceServer resourceServer, String resourceName, String userId);
 
     /**
      * Returns a list of {@link Resource} granted to the given {@code requester}
      *
+     *
+     * @param realm realm that is searched. Cannot be {@code null}
      * @param requester the requester
      * @param name the keyword to query resources by name or null if any resource
-     * @param first first  result
-     * @param max max result
+     * @param firstResult first result to return. Ignored if negative or {@code null}.
+     * @param maxResults maximum number of results to return. Ignored if negative or {@code null}.
      * @return a list of {@link Resource} granted to the given {@code requester}
      */
-    List<Resource> findGrantedResources(String requester, String name, int first, int max);
+    List<Resource> findGrantedResources(RealmModel realm, String requester, String name, Integer firstResult, Integer maxResults);
 
     /**
      * Returns a list of {@link Resource} granted by the owner to other users
      *
+     *
+     * @param realm
      * @param owner the owner
-     * @param first first  result
-     * @param max max result
+     * @param firstResult first result to return. Ignored if negative or {@code null}.
+     * @param maxResults maximum number of results to return. Ignored if negative or {@code null}.
      * @return a list of {@link Resource} granted by the owner
      */
-    List<Resource> findGrantedOwnerResources(String owner, int first, int max);
+    List<Resource> findGrantedOwnerResources(RealmModel realm, String owner, Integer firstResult, Integer maxResults);
 }

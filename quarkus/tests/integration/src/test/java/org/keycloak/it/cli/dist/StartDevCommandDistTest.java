@@ -17,9 +17,43 @@
 
 package org.keycloak.it.cli.dist;
 
+import io.quarkus.test.junit.main.Launch;
+import io.quarkus.test.junit.main.LaunchResult;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 import org.keycloak.it.cli.StartDevCommandTest;
+import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
+import org.keycloak.it.junit5.extension.RawDistOnly;
 
-@DistributionTest
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+@DistributionTest(reInstall = DistributionTest.ReInstall.NEVER)
+@RawDistOnly(reason = "Containers are immutable")
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class StartDevCommandDistTest extends StartDevCommandTest {
+
+    @Test
+    @Launch({ "start-dev", "--debug" })
+    @Order(1)
+    void testStartDevShouldStartTwoJVMs(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertMessage("Updating the configuration and installing your custom providers, if any. Please wait.");
+        cliResult.assertMessageWasShownExactlyNumberOfTimes("Listening for transport dt_socket at address:", 2);
+        cliResult.assertStartedDevMode();
+    }
+
+    @Test
+    @Launch({ "build", "--debug" })
+    @Order(2)
+    void testBuildMustNotRunTwoJVMs(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertMessage("Updating the configuration and installing your custom providers, if any. Please wait.");
+        cliResult.assertMessageWasShownExactlyNumberOfTimes("Listening for transport dt_socket at address:", 1);
+        cliResult.assertBuild();
+    }
+
 }

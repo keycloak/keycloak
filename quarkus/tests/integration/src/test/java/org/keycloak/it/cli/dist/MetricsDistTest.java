@@ -29,6 +29,15 @@ import io.quarkus.test.junit.main.Launch;
 public class MetricsDistTest {
 
     @Test
+    @Launch({ "start-dev" })
+    void testMetricsEndpointNotEnabled() {
+        when().get("/metrics").then()
+                .statusCode(404);
+        when().get("/q/metrics").then()
+                .statusCode(404);
+    }
+
+    @Test
     @Launch({ "start-dev", "--metrics-enabled=true" })
     void testMetricsEndpoint() {
         when().get("/metrics").then()
@@ -42,5 +51,12 @@ public class MetricsDistTest {
         when().get("/auth/metrics").then()
                 .statusCode(200)
                 .body(containsString("base_gc_total"));
+    }
+
+    @Test
+    @Launch({ "start-dev", "--metrics-enabled=true" })
+    void testMetricsEndpointDoesNotEnableHealth() {
+        when().get("/health").then()
+                .statusCode(404);
     }
 }

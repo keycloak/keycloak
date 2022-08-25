@@ -68,7 +68,7 @@ public final class PersistedConfigSource extends PropertiesConfigSource {
     }
 
     private static Map<String, String> readProperties() {
-        if (!Environment.isRebuild()) {
+        if (Environment.isRuntimeMode()) {
             InputStream fileStream = loadPersistedConfig();
 
             if (fileStream == null) {

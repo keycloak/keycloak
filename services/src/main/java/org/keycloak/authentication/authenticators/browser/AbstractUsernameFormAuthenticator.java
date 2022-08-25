@@ -226,7 +226,7 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
 
         if (isDisabledByBruteForce(context, user)) return false;
 
-        if (password != null && !password.isEmpty() && context.getSession().userCredentialManager().isValid(context.getRealm(), user, UserCredentialModel.password(password))) {
+        if (password != null && !password.isEmpty() && user.credentialManager().isValid(UserCredentialModel.password(password))) {
             return true;
         } else {
             return badPasswordHandler(context, user, clearUser,false);
@@ -258,7 +258,7 @@ public abstract class AbstractUsernameFormAuthenticator extends AbstractFormAuth
     }
 
     protected boolean isDisabledByBruteForce(AuthenticationFlowContext context, UserModel user) {
-        String bruteForceError = getDisabledByBruteForceEventError(context.getProtector(), context.getSession(), context.getRealm(), user);
+        String bruteForceError = getDisabledByBruteForceEventError(context, user);
         if (bruteForceError != null) {
             context.getEvent().user(user);
             context.getEvent().error(bruteForceError);

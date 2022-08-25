@@ -17,6 +17,8 @@
 
 package org.keycloak.protocol.oidc.mappers;
 
+import static org.keycloak.utils.JsonUtils.splitClaimPath;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import org.jboss.logging.Logger;
 import org.keycloak.models.ProtocolMapperModel;
@@ -31,8 +33,6 @@ import org.keycloak.util.JsonSerialization;
 
 import java.util.*;
 import java.util.function.Function;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -89,6 +89,9 @@ public class OIDCAttributeMapperHelper {
         tmpToken.put("azp", (claim, mapperName, token, value) -> {
             token.issuedFor(value.toString());
         });
+        tmpToken.put(IDToken.ACR, (claim, mapperName, token, value) -> {
+            token.setAcr(value.toString());
+        });
         tmpToken.put("aud", (claim, mapperName, token, value) -> {
             if (value instanceof Collection) {
                 String[] audiences = ((Collection<?>) value).stream().map(Object::toString).toArray(String[]::new);
@@ -108,7 +111,6 @@ public class OIDCAttributeMapperHelper {
         tmpToken.put("iss", notAllowedInToken);
         tmpToken.put("scope", notAllowedInToken);
         tmpToken.put(IDToken.NONCE, notAllowedInToken);
-        tmpToken.put(IDToken.ACR, notAllowedInToken);
         tmpToken.put(IDToken.AUTH_TIME, notAllowedInToken);
         tmpToken.put(IDToken.SESSION_STATE, notAllowedInToken);
         tokenPropertySetters = Collections.unmodifiableMap(tmpToken);
@@ -246,28 +248,6 @@ public class OIDCAttributeMapperHelper {
             }
         }
         return null;
-    }
-
-    // A character in a claim component is either a literal character escaped by a backslash (\., \\, \_, \q, etc.)
-    // or any character other than backslash (escaping) and dot (claim component separator)
-    private static final Pattern CLAIM_COMPONENT = Pattern.compile("^((\\\\.|[^\\\\.])+?)\\.");
-
-    private static final Pattern BACKSLASHED_CHARACTER = Pattern.compile("\\\\(.)");
-
-    public static List<String> splitClaimPath(String claimPath) {
-        final LinkedList<String> claimComponents = new LinkedList<>();
-        Matcher m = CLAIM_COMPONENT.matcher(claimPath);
-        int start = 0;
-        while (m.find()) {
-            claimComponents.add(BACKSLASHED_CHARACTER.matcher(m.group(1)).replaceAll("$1"));
-            start = m.end();
-            // This is necessary to match the start of region as the start of string as determined by ^
-            m.region(start, claimPath.length());
-        }
-        if (claimPath.length() > start) {
-            claimComponents.add(BACKSLASHED_CHARACTER.matcher(claimPath.substring(start)).replaceAll("$1"));
-        }
-        return claimComponents;
     }
 
     public static void mapClaim(IDToken token, ProtocolMapperModel mappingModel, Object attributeValue) {

@@ -17,11 +17,14 @@
 
 package org.keycloak.testsuite.webauthn.registration.passwordless;
 
+import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.webauthn.registration.ResidentKeyRegisterTest;
+import org.openqa.selenium.firefox.FirefoxDriver;
 
 /**
  * @author <a href="mailto:mabartos@redhat.com">Martin Bartos</a>
  */
+@IgnoreBrowserDriver(FirefoxDriver.class)
 public class PwdLessResidentKeyRegTest extends ResidentKeyRegisterTest {
 
     @Override

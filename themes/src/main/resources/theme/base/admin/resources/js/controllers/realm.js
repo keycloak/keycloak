@@ -104,7 +104,7 @@ module.controller('GlobalCtrl', function($scope, $http, Auth, Current, $location
         if(Current.realm !== null && currentRealm !== Current.realm.id) {
             currentRealm = Current.realm.id;
             translateProvider.translations(locale, resourceBundle);
-            RealmSpecificLocalizationTexts.get({id: Current.realm.realm, locale: locale}, function (localizationTexts) {
+            RealmSpecificLocalizationTexts.get({id: Current.realm.realm, locale: locale, useRealmDefaultLocaleFallback:true}, function (localizationTexts) {
                 translateProvider.translations(locale, localizationTexts.toJSON());
             })
         }
@@ -361,7 +361,7 @@ module.controller('RealmDetailCtrl', function($scope, Current, Realm, realm, ser
     };
 });
 
-function genericRealmUpdate($scope, Current, Realm, realm, serverInfo, $http, $route, Dialog, Notifications, url) {
+function genericRealmUpdate($scope, Current, Realm, realm, serverInfo, $http, $route, Dialog, Notifications, url, saveCallback, resetCallback) {
     $scope.realm = angular.copy(realm);
     $scope.serverInfo = serverInfo;
     $scope.registrationAllowed = $scope.realm.registrationAllowed;
@@ -377,6 +377,9 @@ function genericRealmUpdate($scope, Current, Realm, realm, serverInfo, $http, $r
     }, true);
     
     $scope.save = function() {
+        if (saveCallback) {
+            saveCallback();
+        }
         var realmCopy = angular.copy($scope.realm);
         console.log('updating realm...');
         $scope.changed = false;
@@ -390,6 +393,9 @@ function genericRealmUpdate($scope, Current, Realm, realm, serverInfo, $http, $r
 
     $scope.reset = function() {
         $scope.realm = angular.copy(oldCopy);
+        if (resetCallback) {
+            resetCallback();
+        }
         $scope.changed = false;
     };
 
@@ -410,8 +416,54 @@ module.controller('RealmLoginSettingsCtrl', function($scope, Current, Realm, rea
             $scope.realm.duplicateEmailsAllowed = false;
         }
     });
+
+    var resetCallback = function() {
+        try {
+            $scope.acrLoaMap = JSON.parse(realm.attributes["acr.loa.map"] || "{}");
+        } catch (e) {
+            $scope.acrLoaMap = {};
+        }
+    }
+    resetCallback();
+    var previousNewAcr = undefined;
+    var previousNewLoa = undefined;
+
+    $scope.$watch('newAcr', function() {
+            var changed = $scope.newAcr != previousNewAcr;
+            if (changed) {
+                previousNewAcr = $scope.newAcr;
+                $scope.changed = true;
+            }
+        }, true);
+    $scope.$watch('newLoa', function() {
+            var changed = $scope.newLoa != previousNewLoa;
+            if (changed) {
+                previousNewLoa = $scope.newLoa;
+                $scope.changed = true;
+            }
+        }, true);
+    $scope.deleteAcrLoaMapping = function(acr) {
+        delete $scope.acrLoaMap[acr];
+        $scope.changed = true;
+        updateRealmAcrAttribute();
+    }
+    $scope.checkAddAcrLoaMapping = function() {
+        if ($scope.newAcr && $scope.newAcr.length > 0 && $scope.newLoa && $scope.newLoa.length > 0 && $scope.newLoa.match(/^[0-9]+$/)) {
+            console.log("Adding acrLoaMapping: " + $scope.newLoa + " : " + $scope.newAcr);
+            $scope.acrLoaMap[$scope.newAcr] = $scope.newLoa;
+            $scope.newAcr = $scope.newLoa = "";
+            $scope.changed = true;
+            updateRealmAcrAttribute();
+        }
+    }
+
+    function updateRealmAcrAttribute() {
+        var acrLoaMapStr = JSON.stringify($scope.acrLoaMap);
+        console.log("Updating realm acr.loa.map attribute: " + acrLoaMapStr);
+        $scope.realm.attributes["acr.loa.map"] = acrLoaMapStr;
+    }
     
-    genericRealmUpdate($scope, Current, Realm, realm, serverInfo, $http, $route, Dialog, Notifications, "/realms/" + realm.realm + "/login-settings");
+    genericRealmUpdate($scope, Current, Realm, realm, serverInfo, $http, $route, Dialog, Notifications, "/realms/" + realm.realm + "/login-settings", $scope.checkAddAcrLoaMapping, resetCallback);
 });
 
 module.controller('RealmOtpPolicyCtrl', function($scope, Current, Realm, realm, serverInfo, $http, $route, Dialog, Notifications) {
@@ -1663,7 +1715,8 @@ module.controller('RealmUserProfileCtrl', function($scope, Realm, realm, clientS
     }
 
     $scope.editAttribute = function(attribute) {
-        if (attribute.permissions == null) {
+        // it isn't be possible to set permissions to username and email
+        if (attribute.permissions == null && (attribute.name != 'username' && attribute.name != 'email')) {
             attribute.permissions = {
                 view: [],
                 edit: []
@@ -1700,10 +1753,14 @@ module.controller('RealmUserProfileCtrl', function($scope, Realm, realm, clientS
         }
 
         $scope.isRequired = attribute.required != null;
-        $scope.canUserView = attribute.permissions.view.includes('user');
-        $scope.canAdminView = attribute.permissions.view.includes('admin');
-        $scope.canUserEdit = attribute.permissions.edit.includes('user');
-        $scope.canAdminEdit = attribute.permissions.edit.includes('admin');
+
+        if (attribute.permissions != null) {
+            $scope.canUserView = attribute.permissions.view.includes('user');
+            $scope.canAdminView = attribute.permissions.view.includes('admin');
+            $scope.canUserEdit = attribute.permissions.edit.includes('user');
+            $scope.canAdminEdit = attribute.permissions.edit.includes('admin');
+        }
+
         $scope.currentAttribute = attribute;
         $scope.attributeSelected = true;
     };
@@ -3216,8 +3273,8 @@ module.controller('AuthenticationConfigCtrl', function($scope, realm, flow, conf
         }, configCopy, function() {
             $scope.changed = false;
             config = angular.copy($scope.config);
-            $location.url("/realms/" + realm.realm + '/authentication/flows/' + flow.id + '/config/' + configType.providerId + "/" + config.id);
             Notifications.success("Your changes have been saved.");
+            $location.reload();
         });
     };
 
@@ -3804,6 +3861,7 @@ module.controller('ClientPoliciesProfilesEditExecutorCtrl', function($scope, rea
                 executor: $scope.executorType.id,
                 configuration: $scope.executor.config
             };
+            $scope.executors = $scope.editedProfile.executors.map((ex) => ex); //clone current executors
             $scope.editedProfile.executors.push(selectedExecutor);
         } else {
             var currentExecutor = getExecutorByIndex($scope.editedProfile, updatedExecutorIndex);
@@ -3824,6 +3882,8 @@ module.controller('ClientPoliciesProfilesEditExecutorCtrl', function($scope, rea
         }, function(errorResponse) {
             var errDetails = (!errorResponse.data.errorMessage) ? "unknown error, please see the server log" : errorResponse.data.errorMessage
             if ($scope.createNew) {
+                $scope.editedProfile.executors = $scope.executors.map((ex) => ex);
+                $scope.executors = undefined;
                 Notifications.error('Failed to create executor: ' + errDetails);
             } else {
                 Notifications.error('Failed to update executor: ' + errDetails);

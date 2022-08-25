@@ -21,6 +21,8 @@ import org.keycloak.storage.SearchableModelField;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.Objects;
+import org.keycloak.util.EnumWithStableIndex;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -41,7 +43,7 @@ public interface UserSessionModel {
         public static final SearchableModelField<UserSessionModel> BROKER_SESSION_ID  = new SearchableModelField<>("brokerSessionId", String.class);
         public static final SearchableModelField<UserSessionModel> BROKER_USER_ID  = new SearchableModelField<>("brokerUserId", String.class);
         public static final SearchableModelField<UserSessionModel> IS_OFFLINE  = new SearchableModelField<>("isOffline", Boolean.class);
-        public static final SearchableModelField<UserSessionModel> LAST_SESSION_REFRESH  = new SearchableModelField<>("lastSessionRefresh", Integer.class);
+        public static final SearchableModelField<UserSessionModel> LAST_SESSION_REFRESH  = new SearchableModelField<>("lastSessionRefresh", Long.class);
     }
 
     /**
@@ -109,11 +111,28 @@ public interface UserSessionModel {
     // Will completely restart whole state of user session. It will just keep same ID.
     void restartSession(RealmModel realm, UserModel user, String loginUsername, String ipAddress, String authMethod, boolean rememberMe, String brokerSessionId, String brokerUserId);
 
-    enum State {
-        LOGGED_IN,
-        LOGGING_OUT,
-        LOGGED_OUT,
-        LOGGED_OUT_UNCONFIRMED;
+    enum State implements EnumWithStableIndex {
+        LOGGED_IN(0),
+        LOGGING_OUT(1),
+        LOGGED_OUT(2),
+        LOGGED_OUT_UNCONFIRMED(3);
+
+        private final int stableIndex;
+        private static final Map<Integer, State> BY_ID = EnumWithStableIndex.getReverseIndex(values());
+
+        private State(int stableIndex) {
+            Objects.requireNonNull(stableIndex);
+            this.stableIndex = stableIndex;
+        }
+
+        @Override
+        public int getStableIndex() {
+            return stableIndex;
+        }
+
+        public static State valueOfInteger(Integer id) {
+            return id == null ? null : BY_ID.get(id);
+        }
     }
 
     /**

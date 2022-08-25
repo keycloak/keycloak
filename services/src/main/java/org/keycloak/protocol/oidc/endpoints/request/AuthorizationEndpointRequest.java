@@ -132,11 +132,19 @@ public class AuthorizationEndpointRequest {
         return invalidRequestMessage;
     }
 
+    public void setInvalidRequestMessage(String invalidRequestMessage) {
+        this.invalidRequestMessage = invalidRequestMessage;
+    }
+
     public String getUiLocales() {
         return uiLocales;
     }
 
     public AuthorizationRequestContext getAuthorizationRequestContext() {
         return authorizationRequestContext;
+    }
+
+    public void setAuthorizationRequestContext(AuthorizationRequestContext authorizationRequestContext) {
+        this.authorizationRequestContext = authorizationRequestContext;
     }
 }

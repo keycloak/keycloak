@@ -32,7 +32,6 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.keycloak.OAuth2Constants;
@@ -80,6 +79,7 @@ import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
+import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.auth.page.AuthRealm;
 import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
@@ -91,6 +91,7 @@ import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.UserBuilder;
 import org.keycloak.util.JsonSerialization;
 
+import javax.ws.rs.core.Response;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -115,14 +116,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.ws.rs.core.Response;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -138,11 +135,6 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
     private static RealmRepresentation testRealm;
     private static ClientRepresentation app1, app2, app3;
     private static UserRepresentation defaultUser, serviceAccountUser;
-
-    @BeforeClass
-    public static void beforeClientAuthSignedJWTTest() {
-        BouncyIntegration.init();
-    }
 
     @Override
     public void beforeAbstractKeycloakTest() throws Exception {
@@ -278,8 +270,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
 
     }
 
-    @Test
-    public void testCodeToTokenRequestSuccess() throws Exception {
+    public void testCodeToTokenRequestSuccess(String algorithm) throws Exception {
         oauth.clientId("client2");
         oauth.doLogin("test-user@localhost", "password");
         EventRepresentation loginEvent = events.expectLogin()
@@ -287,7 +278,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
                 .assertEvent();
 
         String code = oauth.getCurrentQuery().get(OAuth2Constants.CODE);
-        OAuthClient.AccessTokenResponse response = doAccessTokenRequest(code, getClient2SignedJWT());
+        OAuthClient.AccessTokenResponse response = doAccessTokenRequest(code, getClient2SignedJWT(algorithm));
 
         assertEquals(200, response.getStatusCode());
         oauth.verifyToken(response.getAccessToken());
@@ -296,6 +287,37 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
                 .client("client2")
                 .detail(Details.CLIENT_AUTH_METHOD, JWTClientAuthenticator.PROVIDER_ID)
                 .assertEvent();
+    }
+
+    public void testCodeToTokenRequestSuccessForceAlgInClient(String algorithm) throws Exception {
+        ClientManager.realm(adminClient.realm("test")).clientId("client2")
+                .updateAttribute(OIDCConfigAttributes.TOKEN_ENDPOINT_AUTH_SIGNING_ALG, algorithm);
+        try {
+            testCodeToTokenRequestSuccess(algorithm);
+        } finally {
+            ClientManager.realm(adminClient.realm("test")).clientId("client2")
+                    .updateAttribute(OIDCConfigAttributes.TOKEN_ENDPOINT_AUTH_SIGNING_ALG, null);
+        }
+    }
+
+    @Test
+    public void testCodeToTokenRequestSuccess() throws Exception {
+        testCodeToTokenRequestSuccess(Algorithm.RS256);
+    }
+
+    @Test
+    public void testCodeToTokenRequestSuccess512() throws Exception {
+        testCodeToTokenRequestSuccess(Algorithm.RS512);
+    }
+
+    @Test
+    public void testCodeToTokenRequestSuccessPS384() throws Exception {
+        testCodeToTokenRequestSuccessForceAlgInClient(Algorithm.PS384);
+    }
+
+    @Test
+    public void testCodeToTokenRequestSuccessPS512() throws Exception {
+        testCodeToTokenRequestSuccessForceAlgInClient(Algorithm.PS512);
     }
 
     @Test
@@ -383,7 +405,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
 
             assertEquals(200, response.getStatusCode());
             oauth.verifyToken(response.getAccessToken());
-            oauth.openLogout();
+            oauth.idTokenHint(response.getIdToken()).openLogout();
             return clientSignedToken;
         } finally {
             // Revert jwks_url settings
@@ -494,14 +516,14 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
             OAuthClient.AccessTokenResponse response = doGrantAccessTokenRequest("test-user@localhost", "password", createSignedRequestToken("client2", getRealmInfoUrl(), privateKey, publicKey, signingAlgorithm));
             assertEquals(200, response.getStatusCode());
 
-            // send a JWS using a algorithm other than the default (RS256)
+            // sending a JWS using another RSA based alg (PS256) should work as alg is not specified
             publicKey = keyPair.getPublic();
             privateKey = keyPair.getPrivate();
             oauth.clientId("client2");
             response = doGrantAccessTokenRequest("test-user@localhost", "password", createSignedRequestToken("client2", getRealmInfoUrl(), privateKey, publicKey, Algorithm.PS256));
-            assertEquals(400, response.getStatusCode());
-            assertEquals("Client authentication with signed JWT failed: Signature on JWT token failed validation", response.getErrorDescription());
+            assertEquals(200, response.getStatusCode());
 
+            // sending an invalid EC (ES256) one should not work
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRepresentation).setTokenEndpointAuthSigningAlg(Algorithm.ES256);
             clientResource.update(clientRepresentation);
             response = doGrantAccessTokenRequest("test-user@localhost", "password", createSignedRequestToken("client2", getRealmInfoUrl(), privateKey, publicKey, Algorithm.PS256));
@@ -1055,8 +1077,12 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
         }
 
         Time.setOffset(tokenTimeOffset);
-        String jwt = jwtProvider.createSignedRequestToken(app1.getClientId(), getRealmInfoUrl());
-        Time.setOffset(0);
+        String jwt;
+        try {
+            jwt = jwtProvider.createSignedRequestToken(app1.getClientId(), getRealmInfoUrl());
+        } finally {
+            Time.setOffset(0);
+        }
         return doClientCredentialsGrantRequest(jwt);
     }
 
@@ -1261,12 +1287,16 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
         }
     }
 
+    private String getClient2SignedJWT(String algorithm) {
+        return getClientSignedJWT(getClient2KeyPair(), "client2", algorithm);
+    }
+
     private String getClient1SignedJWT() {
-        return getClientSignedJWT(getClient1KeyPair(), "client1");
+        return getClientSignedJWT(getClient1KeyPair(), "client1", Algorithm.RS256);
     }
 
     private String getClient2SignedJWT() {
-        return getClientSignedJWT(getClient2KeyPair(), "client2");
+        return getClientSignedJWT(getClient2KeyPair(), "client2", Algorithm.RS256);
     }
 
     private KeyPair getClient1KeyPair() {
@@ -1280,8 +1310,12 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
     }
 
     private String getClientSignedJWT(KeyPair keyPair, String clientId) {
+        return getClientSignedJWT(keyPair, clientId, Algorithm.RS256);
+    }
+
+    private String getClientSignedJWT(KeyPair keyPair, String clientId, String algorithm) {
         JWTClientCredentialsProvider jwtProvider = new JWTClientCredentialsProvider();
-        jwtProvider.setupKeyPair(keyPair);
+        jwtProvider.setupKeyPair(keyPair, algorithm);
         jwtProvider.setTokenTimeout(10);
         return jwtProvider.createSignedRequestToken(clientId, getRealmInfoUrl());
     }
@@ -1351,7 +1385,7 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
     }
 
     private static KeyStore getKeystore(InputStream is, String storePassword, String format) throws Exception {
-        KeyStore keyStore = format.equals("JKS") ? KeyStore.getInstance(format) : KeyStore.getInstance(format, "BC");
+        KeyStore keyStore = format.equals("JKS") ? KeyStore.getInstance(format) : KeyStore.getInstance(format, BouncyIntegration.PROVIDER);
         keyStore.load(is, storePassword.toCharArray());
         return keyStore;
     }
@@ -1424,14 +1458,14 @@ public class ClientAuthSignedJWTTest extends AbstractKeycloakTest {
     private static PrivateKey decodePrivateKey(byte[] der, String algorithm) throws NoSuchAlgorithmException, InvalidKeySpecException, NoSuchProviderException {
         PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(der);
         String keyAlg = getKeyAlgorithmFromJwaAlgorithm(algorithm);
-        KeyFactory kf = KeyFactory.getInstance(keyAlg, "BC");
+        KeyFactory kf = KeyFactory.getInstance(keyAlg, BouncyIntegration.PROVIDER);
         return kf.generatePrivate(spec);
     }
 
     private static PublicKey decodePublicKey(byte[] der, String algorithm) throws NoSuchAlgorithmException, InvalidKeySpecException, NoSuchProviderException {
         X509EncodedKeySpec spec = new X509EncodedKeySpec(der);
         String keyAlg = getKeyAlgorithmFromJwaAlgorithm(algorithm);
-        KeyFactory kf = KeyFactory.getInstance(keyAlg, "BC");
+        KeyFactory kf = KeyFactory.getInstance(keyAlg, BouncyIntegration.PROVIDER);
         return kf.generatePublic(spec);
     }
 

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 import base64 from 'base64-js';
-import { sha256 } from 'js-sha256';
+import sha256 from 'js-sha256';
 
 if (typeof Promise === 'undefined') {
     throw Error('Keycloak requires an environment that supports Promises. Make sure that you include the appropriate polyfill.');
@@ -378,6 +378,15 @@ function Keycloak (config) {
         }
     }
 
+    function buildClaimsParameter(requestedAcr){
+        var claims = {
+            id_token: {
+                acr: requestedAcr
+            }
+        }
+        return JSON.stringify(claims);
+    }
+
     kc.createLoginUrl = function(options) {
         var state = createUUID();
         var nonce = createUUID();
@@ -445,6 +454,11 @@ function Keycloak (config) {
             url += '&ui_locales=' + encodeURIComponent(options.locale);
         }
 
+        if (options && options.acr) {
+            var claimsParameter = buildClaimsParameter(options.acr);
+            url += '&claims=' + encodeURIComponent(claimsParameter);
+        }
+
         if (kc.pkceMethod) {
             var codeVerifier = generateCodeVerifier(96);
             callbackState.pkceCodeVerifier = codeVerifier;
@@ -464,7 +478,12 @@ function Keycloak (config) {
 
     kc.createLogoutUrl = function(options) {
         var url = kc.endpoints.logout()
-            + '?redirect_uri=' + encodeURIComponent(adapter.redirectUri(options, false));
+            + '?client_id=' + encodeURIComponent(kc.clientId)
+            + '&post_logout_redirect_uri=' + encodeURIComponent(adapter.redirectUri(options, false));
+
+        if (kc.idToken) {
+            url += '&id_token_hint=' + encodeURIComponent(kc.idToken);
+        }
 
         return url;
     }

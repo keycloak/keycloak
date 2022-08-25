@@ -16,6 +16,28 @@
  */
 package org.keycloak.authentication.authenticators.client;
 
+import org.jboss.logging.Logger;
+import org.keycloak.OAuth2Constants;
+import org.keycloak.authentication.AuthenticationFlowError;
+import org.keycloak.authentication.ClientAuthenticationFlowContext;
+import org.keycloak.common.util.Time;
+import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.models.AuthenticationExecutionModel.Requirement;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.SingleUseObjectProvider;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
+import org.keycloak.protocol.oidc.OIDCClientSecretConfigWrapper;
+import org.keycloak.protocol.oidc.OIDCConfigAttributes;
+import org.keycloak.protocol.oidc.OIDCLoginProtocol;
+import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
+import org.keycloak.provider.ProviderConfigProperty;
+import org.keycloak.representations.JsonWebToken;
+import org.keycloak.services.ServicesLogger;
+import org.keycloak.services.Urls;
+
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -25,37 +47,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-
-import org.jboss.logging.Logger;
-import org.keycloak.OAuth2Constants;
-import org.keycloak.authentication.AuthenticationFlowError;
-import org.keycloak.authentication.ClientAuthenticationFlowContext;
-import org.keycloak.common.util.Time;
-import org.keycloak.jose.jws.JWSInput;
-import org.keycloak.models.AuthenticationExecutionModel.Requirement;
-import org.keycloak.models.SingleUseTokenStoreProvider;
-import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
-import org.keycloak.protocol.oidc.OIDCLoginProtocol;
-import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.RealmModel;
-import org.keycloak.provider.ProviderConfigProperty;
-import org.keycloak.representations.JsonWebToken;
-import org.keycloak.services.ServicesLogger;
-import org.keycloak.services.Urls;
-
 /**
  * Client authentication based on JWT signed by client secret instead of private key .
  * See <a href="http://openid.net/specs/openid-connect-core-1_0.html#ClientAuthentication">specs</a> for more details.
- *
+ * <p>
  * This is server side, which verifies JWT from client_assertion parameter, where the assertion was created on adapter side by
  * org.keycloak.adapters.authentication.JWTClientSecretCredentialsProvider
- *
+ * <p>
  * TODO: Try to create abstract superclass to be shared with {@link JWTClientAuthenticator}. Most of the code can be reused
- *
  */
 public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
 
@@ -67,7 +66,7 @@ public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
     public void authenticateClient(ClientAuthenticationFlowContext context) {
 
         //KEYCLOAK-19461: Needed for quarkus resteasy implementation throws exception when called with mediaType authentication/json in OpenShiftTokenReviewEndpoint
-        if(!isFormDataRequest(context.getHttpRequest())) {
+        if (!isFormDataRequest(context.getHttpRequest())) {
             Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "invalid_client", "Parameter client_assertion_type is missing");
             context.challenge(challengeResponse);
             return;
@@ -145,10 +144,23 @@ public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
                 return;
             }
 
+            //
+            OIDCClientSecretConfigWrapper wrapper = OIDCClientSecretConfigWrapper.fromClientModel(client);
+            if (wrapper.isClientSecretExpired()) {
+                context.failure(AuthenticationFlowError.INVALID_CLIENT_CREDENTIALS, null);
+                return;
+            }
+            //
+
             boolean signatureValid;
             try {
                 JsonWebToken jwt = context.getSession().tokens().decodeClientJWT(clientAssertion, client, JsonWebToken.class);
                 signatureValid = jwt != null;
+                //try authenticate with client rotated secret
+                if (!signatureValid && wrapper.hasRotatedSecret() && !wrapper.isClientRotatedSecretExpired()) {
+                    jwt = context.getSession().tokens().decodeClientJWT(clientAssertion, wrapper.toRotatedClientModel(), JsonWebToken.class);
+                    signatureValid = jwt != null;
+                }
             } catch (RuntimeException e) {
                 Throwable cause = e.getCause() != null ? e.getCause() : e;
                 throw new RuntimeException("Signature on JWT token by client secret failed validation", cause);
@@ -180,7 +192,7 @@ public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
                 throw new RuntimeException("Missing ID on the token");
             }
 
-            SingleUseTokenStoreProvider singleUseCache = context.getSession().getProvider(SingleUseTokenStoreProvider.class);
+            SingleUseObjectProvider singleUseCache = context.getSession().getProvider(SingleUseObjectProvider.class);
             int lifespanInSecs = Math.max(token.getExpiration() - currentTime, 10);
             if (singleUseCache.putIfAbsent(token.getId(), lifespanInSecs)) {
 
@@ -220,7 +232,10 @@ public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
         // }
         Map<String, Object> props = new HashMap<>();
         props.put("secret", client.getSecret());
-        // "algorithm" field is not saved because keycloak does not manage client's property of which algorithm is used for client secret signed JWT.
+        String algorithm = client.getAttribute(OIDCConfigAttributes.TOKEN_ENDPOINT_AUTH_SIGNING_ALG);
+        if (algorithm != null) {
+            props.put("algorithm", algorithm);
+        }
 
         Map<String, Object> config = new HashMap<>();
         config.put("secret-jwt", props);
@@ -236,6 +251,11 @@ public class JWTClientSecretAuthenticator extends AbstractClientAuthenticator {
         } else {
             return Collections.emptySet();
         }
+    }
+
+    @Override
+    public boolean supportsSecret() {
+        return true;
     }
 
     @Override

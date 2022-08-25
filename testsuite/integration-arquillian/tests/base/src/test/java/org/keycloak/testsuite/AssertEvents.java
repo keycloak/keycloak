@@ -36,6 +36,7 @@ import org.keycloak.representations.idm.UserRepresentation;
 import org.keycloak.representations.idm.UserSessionRepresentation;
 import org.keycloak.util.TokenUtil;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -200,6 +201,16 @@ public class AssertEvents implements TestRule {
                 .detail(Details.REDIRECT_URI, Matchers.equalTo(DEFAULT_REDIRECT_URI));
     }
 
+    public ExpectedEvent expectRegisterError(String username, String email) {
+        UserRepresentation user = username != null ? getUser(username) : null;
+        return expect(EventType.REGISTER_ERROR)
+                .user(user != null ? user.getId() : null)
+                .detail(Details.USERNAME, username)
+                .detail(Details.EMAIL, email)
+                .detail(Details.REGISTER_METHOD, "form")
+                .detail(Details.REDIRECT_URI, Matchers.equalTo(DEFAULT_REDIRECT_URI));
+    }
+
     public ExpectedEvent expectAccount(EventType event) {
         return expect(event).client("account");
     }
@@ -300,7 +311,23 @@ public class AssertEvents implements TestRule {
         }
 
         public ExpectedEvent detail(String key, String value) {
-            return detail(key, CoreMatchers.equalTo(value));
+            if (key.equals(Details.SCOPE)) {
+                // the scopes can be given in any order,
+                // therefore, use a matcher that takes a string and ignores the order of the scopes
+                return detail(key, new TypeSafeMatcher<String>() {
+                    @Override
+                    protected boolean matchesSafely(String actualValue) {
+                        return Matchers.containsInAnyOrder(value.split(" ")).matches(Arrays.asList(actualValue.split(" ")));
+                    }
+
+                    @Override
+                    public void describeTo(Description description) {
+                        description.appendText("contains scope in any order");
+                    }
+                });
+            } else {
+                return detail(key, CoreMatchers.equalTo(value));
+            }
         }
 
         public ExpectedEvent detail(String key, Matcher<? super String> matcher) {

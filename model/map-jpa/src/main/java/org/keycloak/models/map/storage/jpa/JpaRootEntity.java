@@ -27,11 +27,6 @@ import org.keycloak.models.map.common.AbstractEntity;
 public interface JpaRootEntity extends AbstractEntity, Serializable {
 
     /**
-     * Version of the JPA entity used for optimistic locking
-     */
-    int getVersion();
-
-    /**
      * @return current supported version of the JPA entity used for schema versioning.
      */
     Integer getEntityVersion();

@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Copyright 2022 Red Hat, Inc. and/or its affiliates
+and other contributors as indicated by the @author tags.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+-->
+
+
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd
+                    http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
+
+    <changeSet author="keycloak" id="auth-sessions-1">
+
+        <createTable tableName="kc_auth_root_session">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="version" type="INTEGER" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="metadata" type="json"/>
+        </createTable>
+        <ext:addGeneratedColumn tableName="kc_auth_root_session">
+            <ext:column name="entityversion" type="INTEGER" jsonColumn="metadata" jsonProperty="entityVersion"/>
+            <ext:column name="realmid" type="KC_KEY" jsonColumn="metadata" jsonProperty="fRealmId"/>
+            <ext:column name="timestamp" type="BIGINT" jsonColumn="metadata" jsonProperty="fTimestamp"/>
+            <ext:column name="expiration" type="BIGINT" jsonColumn="metadata" jsonProperty="fExpiration"/>
+        </ext:addGeneratedColumn>
+        <createIndex tableName="kc_auth_root_session" indexName="auth_root_session_entityVersion">
+            <column name="entityversion"/>
+        </createIndex>
+        <createIndex tableName="kc_auth_root_session" indexName="auth_root_session_realmId_expiration">
+            <column name="realmid"/>
+            <column name="expiration"/>
+        </createIndex>
+
+        <createTable tableName="kc_auth_session">
+            <column name="id" type="UUID">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="version" type="INTEGER" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="fk_root" type="UUID">
+                <constraints foreignKeyName="auth_session_fk_root_fkey" references="kc_auth_root_session(id)" deleteCascade="true"/>
+            </column>
+            <column name="metadata" type="json"/>
+        </createTable>
+        <createIndex tableName="kc_auth_session" indexName="auth_session_fk_root">
+            <column name="fk_root"/>
+        </createIndex>
+        <ext:createJsonIndex tableName="kc_auth_session" indexName="auth_session_tabId">
+            <ext:column jsonColumn="metadata" jsonProperty="fTabId"/>
+        </ext:createJsonIndex>
+    </changeSet>
+
+</databaseChangeLog>

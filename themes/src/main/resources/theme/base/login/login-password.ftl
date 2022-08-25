@@ -11,7 +11,7 @@
                         <hr/>
                         <label for="password" class="${properties.kcLabelClass!}">${msg("password")}</label>
                         <input tabindex="2" id="password" class="${properties.kcInputClass!}" name="password"
-                               type="password" autocomplete="on"
+                               type="password" autocomplete="on" autofocus
                                aria-invalid="<#if messagesPerField.existsError('password')>true</#if>"
                         />
                         <#if messagesPerField.existsError('password')>

@@ -11,14 +11,22 @@ mvn -version
 
 EXIT_CODE=0
 mvn clean
-for I in `perl -ne 'print "$1\n" if (m,<id>([^<]+)</id>,)' pom.xml`; do
+for I in `perl -ne 'print "$1\n" if (m,<id>([^.<]+)</id>,)' pom.xml`; do
+
+    ## skip map-jpa for GHA
+    if [[ $I == 'map-jpa' ]]; then 
+        continue
+    fi
     echo "========"
-    echo "======== Profile $I"
+    echo "======== Start of Profile $I"
     echo "========"
-    mvn -B -Dsurefire.timeout=600 test "-P$I" "$@" 2>&1 | tee /tmp/surefire.out
+    mvn -B -Dsurefire.timeout=900 test "-P$I" "$@" 2>&1 | tee /tmp/surefire.out
     EXIT_CODE=$[$EXIT_CODE + ${PIPESTATUS[0]}]
     mv target/surefire-reports "target/surefire-reports-$I"
     perl -ne "print '::error::| $I | Timed out.' . \"\n\" if (/There was a timeout in the fork/)" /tmp/surefire.out
+    echo "========"
+    echo "======== End of Profile $I"
+    echo "========"
 done
 
 ## If the jacoco file is present, generate reports in each of the model projects

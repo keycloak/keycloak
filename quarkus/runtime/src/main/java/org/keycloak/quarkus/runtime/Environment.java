@@ -31,29 +31,29 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import io.quarkus.bootstrap.runner.RunnerClassLoader;
 import io.quarkus.runtime.LaunchMode;
 import io.quarkus.runtime.configuration.ProfileManager;
 import org.apache.commons.lang3.SystemUtils;
+import org.keycloak.quarkus.runtime.configuration.PersistedConfigSource;
 
 public final class Environment {
 
     public static final String IMPORT_EXPORT_MODE = "import_export";
     public static final String PROFILE ="kc.profile";
     public static final String ENV_PROFILE ="KC_PROFILE";
-    public static final String DATA_PATH = "/data";
-    public static final String DEFAULT_THEMES_PATH = "/themes";
+    public static final String DATA_PATH = File.separator + "data";
+    public static final String DEFAULT_THEMES_PATH = File.separator +  "themes";
     public static final String DEV_PROFILE_VALUE = "dev";
+    public static final String PROD_PROFILE_VALUE = "prod";
     public static final String LAUNCH_MODE = "kc.launch.mode";
-
     private Environment() {}
 
     public static Boolean isRebuild() {
-        return !isRuntimeMode();
+        return Boolean.getBoolean("quarkus.launch.rebuild");
     }
 
     public static Boolean isRuntimeMode() {
-        return Thread.currentThread().getContextClassLoader() instanceof RunnerClassLoader;
+        return !isRebuild();
     }
 
     public static String getHomeDir() {
@@ -117,7 +117,7 @@ public final class Environment {
     public static String getCurrentOrPersistedProfile() {
         String profile = getProfile();
         if(profile == null) {
-            profile = getConfig().getRawValue(PROFILE);
+            profile = PersistedConfigSource.getInstance().getValue(PROFILE);
         }
         return profile;
     }
@@ -220,10 +220,17 @@ public final class Environment {
     }
 
     public static boolean isDistribution() {
+        if (isQuarkusDevMode()) {
+            return false;
+        }
         return getHomeDir() != null;
     }
 
     public static boolean isRebuildCheck() {
-        return Boolean.getBoolean("kc.config.rebuild-and-exit");
+        return Boolean.getBoolean("kc.config.build-and-exit");
+    }
+
+    public static boolean isRebuilt() {
+        return Boolean.getBoolean("kc.config.built");
     }
 }

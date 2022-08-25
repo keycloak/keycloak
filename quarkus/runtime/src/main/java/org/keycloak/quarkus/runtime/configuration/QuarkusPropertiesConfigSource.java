@@ -45,9 +45,12 @@ import io.smallrye.config.common.utils.ConfigSourceUtil;
  */
 public final class QuarkusPropertiesConfigSource extends AbstractLocationConfigSourceLoader implements ConfigSourceProvider {
 
-    private static final String NAME = "QuarkusProperties";
     private static final String FILE_NAME = "quarkus.properties";
     public static final String QUARKUS_PROPERTY_ENABLED = "kc.quarkus-properties-enabled";
+    public static final String NAME = "QuarkusProperties";
+
+    //for auto-build working with multiple datasources
+    public static final String QUARKUS_DATASOURCE_BUILDTIME_REGEX = "^quarkus\\.datasource\\.[A-Za-z0-9\\-_]+\\.(db-kind|jdbc\\.driver|jdbc\\.transactions|jdbc\\.enable-metrics)$";
 
     public static boolean isSameSource(ConfigValue value) {
         if (value == null) {
@@ -55,10 +58,6 @@ public final class QuarkusPropertiesConfigSource extends AbstractLocationConfigS
         }
 
         return NAME.equals(value.getConfigSourceName());
-    }
-
-    public static boolean isQuarkusPropertiesEnabled() {
-        return parseBoolean(getRawPersistedProperty(QUARKUS_PROPERTY_ENABLED).orElse(Boolean.FALSE.toString()));
     }
 
     public static Path getConfigurationFile() {
@@ -91,13 +90,7 @@ public final class QuarkusPropertiesConfigSource extends AbstractLocationConfigS
             @Override
             public String getValue(String propertyName) {
                 if (propertyName.startsWith(NS_QUARKUS)) {
-                    String value = super.getValue(propertyName);
-
-                    if (value == null) {
-                        return PersistedConfigSource.getInstance().getValue(propertyName);
-                    }
-
-                    return value;
+                    return super.getValue(propertyName);
                 }
 
                 return null;
@@ -111,12 +104,10 @@ public final class QuarkusPropertiesConfigSource extends AbstractLocationConfigS
 
         configSources.addAll(loadConfigSources("META-INF/services/" + FILE_NAME, 450, classLoader));
 
-        if (Environment.isRebuild() || Environment.isRebuildCheck()) {
-            Path configFile = getConfigurationFile();
+        Path configFile = getConfigurationFile();
 
-            if (configFile != null) {
-                configSources.addAll(loadConfigSources(configFile.toUri().toString(), 500, classLoader));
-            }
+        if (configFile != null) {
+            configSources.addAll(loadConfigSources(configFile.toUri().toString(), 500, classLoader));
         }
 
         return configSources;

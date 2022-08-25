@@ -20,16 +20,14 @@ package org.keycloak.protocol.oidc.par.endpoints.request;
 
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 
 import org.jboss.logging.Logger;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.PushedAuthzRequestStoreProvider;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.endpoints.request.AuthorizationEndpointRequest;
-import org.keycloak.protocol.oidc.endpoints.request.AuthzEndpointRequestObjectParser;
 import org.keycloak.protocol.oidc.endpoints.request.AuthzEndpointRequestParser;
 import org.keycloak.protocol.oidc.par.endpoints.ParEndpoint;
 
@@ -51,15 +49,15 @@ public class AuthzEndpointParParser extends AuthzEndpointRequestParser {
     public AuthzEndpointParParser(KeycloakSession session, ClientModel client, String requestUri) {
         this.session = session;
         this.client = client;
-        PushedAuthzRequestStoreProvider parStore = session.getProvider(PushedAuthzRequestStoreProvider.class);
-        UUID key;
+        SingleUseObjectProvider singleUseStore = session.getProvider(SingleUseObjectProvider.class);
+        String key;
         try {
-            key = UUID.fromString(requestUri.substring(ParEndpoint.REQUEST_URI_PREFIX_LENGTH));
+            key = requestUri.substring(ParEndpoint.REQUEST_URI_PREFIX_LENGTH);
         } catch (RuntimeException re) {
             logger.warnf(re,"Unable to parse request_uri: %s", requestUri);
             throw new RuntimeException("Unable to parse request_uri");
         }
-        Map<String, String> retrievedRequest = parStore.remove(key);
+        Map<String, String> retrievedRequest = singleUseStore.remove(key);
         if (retrievedRequest == null) {
             throw new RuntimeException("PAR not found. not issued or used multiple times.");
         }
@@ -81,7 +79,7 @@ public class AuthzEndpointParParser extends AuthzEndpointRequestParser {
         if (requestParam != null) {
             // parses the request object if PAR was registered using JAR
             // parameters from requets object have precedence over those sent directly in the request
-            new AuthzEndpointRequestObjectParser(session, requestParam, client).parseRequest(request);
+            new ParEndpointRequestObjectParser(session, requestParam, client).parseRequest(request);
         } else {
             super.parseRequest(request);
         }

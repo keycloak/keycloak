@@ -572,7 +572,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
         create(createRep("saml", "saml"));
         provider = realm.identityProviders().get("saml");
         mapperTypes = provider.getMapperTypes();
-        assertMapperTypes(mapperTypes, "saml-user-attribute-idp-mapper", "saml-role-idp-mapper", "saml-username-idp-mapper", "saml-advanced-role-idp-mapper");
+        assertMapperTypes(mapperTypes, "saml-user-attribute-idp-mapper", "saml-role-idp-mapper", "saml-username-idp-mapper", "saml-advanced-role-idp-mapper", "saml-xpath-attribute-idp-mapper");
     }
 
     private void assertMapperTypes(Map<String, IdentityProviderMapperTypeRepresentation> mapperTypes, String ... mapperIds) {
@@ -924,7 +924,8 @@ public class IdentityProviderTest extends AbstractAdminTest {
           "signingCertificate",
           "addExtensionsElementWithKeyInfo",
           "loginHint",
-          "hideOnLoginPage"
+          "hideOnLoginPage",
+          "idpEntityId"
         ));
         assertThat(config, hasEntry("validateSignature", "true"));
         assertThat(config, hasEntry("singleLogoutServiceUrl", "http://localhost:8080/auth/realms/master/protocol/saml"));
@@ -935,6 +936,7 @@ public class IdentityProviderTest extends AbstractAdminTest {
         assertThat(config, hasEntry("addExtensionsElementWithKeyInfo", "false"));
         assertThat(config, hasEntry("nameIDPolicyFormat", "urn:oasis:names:tc:SAML:2.0:nameid-format:persistent"));
         assertThat(config, hasEntry("hideOnLoginPage", "true"));
+        assertThat(config, hasEntry("idpEntityId", "http://localhost:8080/auth/realms/master"));
         assertThat(config, hasEntry(is("signingCertificate"), notNullValue()));
     }
 

@@ -15,4 +15,4 @@
 # limitations under the License.
 #
 
-org.keycloak.quarkus.runtime.storage.database.jpa.QuarkusJpaConnectionProviderFactory
+org.keycloak.quarkus.runtime.storage.legacy.database.LegacyJpaConnectionProviderFactory

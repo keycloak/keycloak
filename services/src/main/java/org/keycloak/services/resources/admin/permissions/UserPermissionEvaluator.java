@@ -16,6 +16,7 @@
  */
 package org.keycloak.services.resources.admin.permissions;
 
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.UserModel;
 
 import java.util.Map;
@@ -40,8 +41,8 @@ public interface UserPermissionEvaluator {
 
     void requireImpersonate(UserModel user);
     boolean canImpersonate();
-    boolean canImpersonate(UserModel user);
-    boolean isImpersonatable(UserModel user);
+    boolean canImpersonate(UserModel user, ClientModel requester);
+    boolean isImpersonatable(UserModel user, ClientModel requester);
 
     Map<String, Boolean> getAccess(UserModel user);
 

@@ -19,10 +19,20 @@ package org.keycloak.testsuite.model.parameters;
 import org.keycloak.cluster.infinispan.InfinispanClusterProviderFactory;
 import org.keycloak.connections.infinispan.InfinispanConnectionProviderFactory;
 import org.keycloak.connections.infinispan.InfinispanConnectionSpi;
+import org.keycloak.keys.PublicKeyStorageSpi;
+import org.keycloak.keys.infinispan.InfinispanCachePublicKeyProviderFactory;
+import org.keycloak.keys.infinispan.InfinispanPublicKeyStorageProviderFactory;
+import org.keycloak.models.ActionTokenStoreSpi;
+import org.keycloak.models.SingleUseObjectSpi;
+import org.keycloak.models.cache.CachePublicKeyProviderSpi;
 import org.keycloak.models.session.UserSessionPersisterSpi;
+import org.keycloak.models.sessions.infinispan.InfinispanActionTokenStoreProviderFactory;
 import org.keycloak.models.sessions.infinispan.InfinispanAuthenticationSessionProviderFactory;
+import org.keycloak.models.sessions.infinispan.InfinispanSingleUseObjectProviderFactory;
 import org.keycloak.models.sessions.infinispan.InfinispanUserLoginFailureProviderFactory;
 import org.keycloak.models.sessions.infinispan.InfinispanUserSessionProviderFactory;
+import org.keycloak.services.legacysessionsupport.LegacySessionSupportProviderFactory;
+import org.keycloak.services.legacysessionsupport.LegacySessionSupportSpi;
 import org.keycloak.sessions.AuthenticationSessionSpi;
 import org.keycloak.sessions.StickySessionEncoderProviderFactory;
 import org.keycloak.sessions.StickySessionEncoderSpi;
@@ -55,6 +65,12 @@ public class Infinispan extends KeycloakModelParameters {
       .add(InfinispanConnectionSpi.class)
       .add(StickySessionEncoderSpi.class)
       .add(UserSessionPersisterSpi.class)
+      .add(ActionTokenStoreSpi.class)
+      .add(SingleUseObjectSpi.class)
+      .add(PublicKeyStorageSpi.class)
+      .add(CachePublicKeyProviderSpi.class)
+
+      .add(LegacySessionSupportSpi.class) // necessary as it will call session.userCredentialManager().onCache()
 
       .build();
 
@@ -66,8 +82,13 @@ public class Infinispan extends KeycloakModelParameters {
       .add(InfinispanUserCacheProviderFactory.class)
       .add(InfinispanUserSessionProviderFactory.class)
       .add(InfinispanUserLoginFailureProviderFactory.class)
+      .add(InfinispanActionTokenStoreProviderFactory.class)
+      .add(InfinispanSingleUseObjectProviderFactory.class)
       .add(StickySessionEncoderProviderFactory.class)
       .add(TimerProviderFactory.class)
+      .add(InfinispanPublicKeyStorageProviderFactory.class)
+      .add(InfinispanCachePublicKeyProviderFactory.class)
+      .add(LegacySessionSupportProviderFactory.class)
       .build();
 
     @Override

@@ -80,6 +80,13 @@
             </includes>
         </fileSet>
         <fileSet>
+            <directory>src/main/content/data</directory>
+            <outputDirectory>data</outputDirectory>
+            <includes>
+                <include>**/**</include>
+            </includes>
+        </fileSet>
+        <fileSet>
             <directory>../../</directory>
             <outputDirectory></outputDirectory>
             <includes>

@@ -21,12 +21,14 @@ import org.hamcrest.Matchers;
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.updaters.RealmAttributeUpdater;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.webauthn.pages.WebAuthnAuthenticatorsList;
 import org.keycloak.testsuite.webauthn.pages.WebAuthnErrorPage;
 import org.keycloak.testsuite.webauthn.pages.WebAuthnLoginPage;
 import org.keycloak.testsuite.webauthn.updaters.WebAuthnRealmAttributeUpdater;
+import org.openqa.selenium.firefox.FirefoxDriver;
 
 import java.io.IOException;
 
@@ -43,6 +45,7 @@ public class WebAuthnErrorTest extends AbstractWebAuthnAccountTest {
     protected WebAuthnErrorPage webAuthnErrorPage;
 
     @Test
+    @IgnoreBrowserDriver(FirefoxDriver.class)
     public void errorPageWithTimeout() throws IOException {
         final int timeoutSec = 3;
         final String authenticatorLabel = "authenticator";

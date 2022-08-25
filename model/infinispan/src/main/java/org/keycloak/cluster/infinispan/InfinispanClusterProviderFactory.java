@@ -30,6 +30,7 @@ import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.cluster.ClusterProviderFactory;
+import org.keycloak.common.Profile;
 import org.keycloak.common.util.Retry;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.DefaultInfinispanConnectionProviderFactory;
@@ -38,6 +39,7 @@ import org.keycloak.connections.infinispan.TopologyInfo;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.connections.infinispan.InfinispanUtil;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 
 import java.io.Serializable;
 import java.util.Collection;
@@ -54,7 +56,7 @@ import java.util.stream.Collectors;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class InfinispanClusterProviderFactory implements ClusterProviderFactory {
+public class InfinispanClusterProviderFactory implements ClusterProviderFactory, EnvironmentDependentProviderFactory {
 
     public static final String PROVIDER_ID = "infinispan";
 
@@ -190,6 +192,10 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory 
         return PROVIDER_ID;
     }
 
+    @Override
+    public boolean isSupported() {
+        return !Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE);
+    }
 
     @Listener
     public class ViewChangeListener {
@@ -201,28 +207,32 @@ public class InfinispanClusterProviderFactory implements ClusterProviderFactory 
 
             // Use separate thread to avoid potential deadlock
             localExecutor.execute(() -> {
-                EmbeddedCacheManager cacheManager = workCache.getCacheManager();
-                Transport transport = cacheManager.getTransport();
+                try {
+                    EmbeddedCacheManager cacheManager = workCache.getCacheManager();
+                    Transport transport = cacheManager.getTransport();
 
-                // Coordinator makes sure that entries for outdated nodes are cleaned up
-                if (transport != null && transport.isCoordinator()) {
+                    // Coordinator makes sure that entries for outdated nodes are cleaned up
+                    if (transport != null && transport.isCoordinator()) {
 
-                    removedNodesAddresses.removeAll(newAddresses);
+                        removedNodesAddresses.removeAll(newAddresses);
 
-                    if (removedNodesAddresses.isEmpty()) {
-                        return;
-                    }
+                        if (removedNodesAddresses.isEmpty()) {
+                            return;
+                        }
 
-                    logger.debugf("Nodes %s removed from cluster. Removing tasks locked by this nodes", removedNodesAddresses.toString());
+                        logger.debugf("Nodes %s removed from cluster. Removing tasks locked by this nodes", removedNodesAddresses.toString());
                     /*
                         workaround for Infinispan 12.1.7.Final to prevent a deadlock while
                         DefaultInfinispanConnectionProviderFactory is shutting down PersistenceManagerImpl
                         that acquires a writeLock and this removal that acquires a readLock.
                         https://issues.redhat.com/browse/ISPN-13664
                     */
-                    synchronized (DefaultInfinispanConnectionProviderFactory.class) {
-                        workCache.entrySet().removeIf(new LockEntryPredicate(removedNodesAddresses));
+                        synchronized (DefaultInfinispanConnectionProviderFactory.class) {
+                            workCache.entrySet().removeIf(new LockEntryPredicate(removedNodesAddresses));
+                        }
                     }
+                } catch (Throwable t) {
+                    logger.error("caught exception in ViewChangeListener", t);
                 }
             });
         }

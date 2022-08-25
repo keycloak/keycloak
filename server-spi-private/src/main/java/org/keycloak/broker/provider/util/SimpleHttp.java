@@ -346,7 +346,7 @@ public class SimpleHttp {
                             }
                         }
 
-                        try (InputStreamReader reader = charset == null ? new InputStreamReader(is) :
+                        try (InputStreamReader reader = charset == null ? new InputStreamReader(is, StandardCharsets.UTF_8) :
                                 new InputStreamReader(is, charset)) {
 
                             StringWriter writer = new StringWriter();

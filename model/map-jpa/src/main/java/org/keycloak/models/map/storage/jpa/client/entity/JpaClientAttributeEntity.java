@@ -18,10 +18,14 @@ package org.keycloak.models.map.storage.jpa.client.entity;
 
 import javax.persistence.Entity;
 import javax.persistence.Table;
+import javax.persistence.UniqueConstraint;
+
 import org.keycloak.models.map.storage.jpa.JpaAttributeEntity;
 
 @Entity
-@Table(name = "kc_client_attribute")
+@Table(name = "kc_client_attribute", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"fk_root", "name", "value"})
+})
 public class JpaClientAttributeEntity extends JpaAttributeEntity<JpaClientEntity> {
 
     public JpaClientAttributeEntity() {

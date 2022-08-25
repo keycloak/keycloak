@@ -20,11 +20,13 @@ import org.hamcrest.Matchers;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.util.SecondBrowser;
 import org.keycloak.testsuite.webauthn.authenticators.DefaultVirtualAuthOptions;
 import org.keycloak.testsuite.webauthn.authenticators.KcVirtualAuthenticator;
 import org.keycloak.testsuite.webauthn.authenticators.VirtualAuthenticatorManager;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.virtualauthenticator.VirtualAuthenticatorOptions;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -37,6 +39,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
  *
  * @author <a href="mailto:mabartos@redhat.com">Martin Bartos</a>
  */
+@IgnoreBrowserDriver(FirefoxDriver.class)
 public class VirtualAuthenticatorsManagerTest extends AbstractWebAuthnVirtualTest {
 
     @Drone

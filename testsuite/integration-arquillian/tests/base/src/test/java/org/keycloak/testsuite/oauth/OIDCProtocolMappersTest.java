@@ -30,6 +30,7 @@ import org.keycloak.common.Profile;
 import org.keycloak.common.util.UriUtils;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.AccountRoles;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolFactory;
 import org.keycloak.protocol.oidc.mappers.AddressMapper;
@@ -65,6 +66,7 @@ import javax.ws.rs.core.Response;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -138,16 +140,17 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
     }
 
     @Test
-    @EnableFeature(value = Profile.Feature.UPLOAD_SCRIPTS, skipRestart = true) // This requires also SCRIPTS feature, therefore we need to restart container
-    public void testTokenScriptMapping() {
+    @EnableFeature(value = Profile.Feature.SCRIPTS) // This requires also SCRIPTS feature, therefore we need to restart container
+    public void testTokenScriptMapping() throws Exception {
         {
+            reconnectAdminClient();
             ClientResource app = findClientResourceByClientId(adminClient.realm("test"), "test-app");
 
-            app.getProtocolMappers().createMapper(createScriptMapper("test-script-mapper1","computed-via-script", "computed-via-script", "String", true, true, "'hello_' + user.username", false)).close();
-            app.getProtocolMappers().createMapper(createScriptMapper("test-script-mapper2","multiValued-via-script", "multiValued-via-script", "String", true, true, "new java.util.ArrayList(['A','B'])", true)).close();
-            app.getProtocolMappers().createMapper(createScriptMapper("test-script-mapper3","computed-json-via-script", "computed-json-via-script", "JSON", true, true, "var x = {'int':42, 'bool': true, 'string': 'test'}; x", false)).close();
+            app.getProtocolMappers().createMapper(createScriptMapper("test-script-mapper1","computed-via-script", "computed-via-script", "String", true, true, "script-scripts/test-script-mapper1.js", false)).close();
+            app.getProtocolMappers().createMapper(createScriptMapper("test-script-mapper2","multiValued-via-script", "multiValued-via-script", "String", true, true, "script-scripts/test-script-mapper2.js", true)).close();
+            app.getProtocolMappers().createMapper(createScriptMapper("test-script-mapper3","computed-json-via-script", "computed-json-via-script", "JSON", true, true, "script-scripts/test-script-mapper3.js", false)).close();
 
-            Response response = app.getProtocolMappers().createMapper(createScriptMapper("test-script-mapper3", "syntax-error-script", "syntax-error-script", "String", true, true, "func_tion foo(){ return 'fail';} foo()", false));
+            Response response = app.getProtocolMappers().createMapper(createScriptMapper("test-script-mapper3", "syntax-error-script", "syntax-error-script", "String", true, true, "script-scripts/test-bad-script-mapper3.js", false));
             assertThat(response.getStatusInfo().getFamily(), is(Response.Status.Family.CLIENT_ERROR));
             response.close();
         }
@@ -181,7 +184,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             user.singleAttribute("formatted", "6 Foo Street");
             user.singleAttribute("phone", "617-777-6666");
             user.singleAttribute("json-attribute", "{\"a\": 1, \"b\": 2, \"c\": [{\"a\": 1, \"b\": 2}], \"d\": {\"a\": 1, \"b\": 2}}");
-            user.getAttributes().put("json-attribute-multi", Arrays.asList("{\"a\": 1, \"b\": 2, \"c\": [{\"a\": 1, \"b\": 2}], \"d\": {\"a\": 1, \"b\": 2}}", "{\"a\": 1, \"b\": 2, \"c\": [{\"a\": 1, \"b\": 2}], \"d\": {\"a\": 1, \"b\": 2}}"));
+            user.getAttributes().put("json-attribute-multi", Arrays.asList("{\"a\": 1, \"b\": 2, \"c\": [{\"a\": 1, \"b\": 2}], \"d\": {\"a\": 1, \"b\": 2}}", "{\"a\": 3, \"b\": 4, \"c\": [{\"a\": 1, \"b\": 2}], \"d\": {\"a\": 1, \"b\": 2}}"));
 
             List<String> departments = Arrays.asList("finance", "development");
             user.getAttributes().put("departments", departments);
@@ -293,7 +296,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             assertThat(jsonClaim.get("c"), instanceOf(Collection.class));
             assertThat(jsonClaim.get("d"), instanceOf(Map.class));
 
-            oauth.openLogout();
+            oauth.idTokenHint(response.getIdToken()).openLogout();
         }
 
         // undo mappers
@@ -332,7 +335,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             assertNull(idToken.getOtherClaims().get("nested"));
             assertNull(idToken.getOtherClaims().get("department"));
 
-            oauth.openLogout();
+            oauth.idTokenHint(response.getIdToken()).openLogout();
         }
 
 
@@ -430,7 +433,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             assertNull(nulll);
 
             oauth.verifyToken(response.getAccessToken());
-            oauth.openLogout();
+            oauth.idTokenHint(response.getIdToken()).openLogout();
         }
 
         // undo mappers
@@ -455,7 +458,7 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             assertNull(idToken.getOtherClaims().get("empty"));
             assertNull(idToken.getOtherClaims().get("null"));
 
-            oauth.openLogout();
+            oauth.idTokenHint(response.getIdToken()).openLogout();
         }
         events.clear();
     }
@@ -1266,6 +1269,44 @@ public class OIDCProtocolMappersTest extends AbstractKeycloakTest {
             adminClient.realm("test").groups().group(group2.getId()).remove();
             deleteMappers(protocolMappers);
         }
+    }
+
+    @Test
+    @EnableFeature(value = Profile.Feature.DYNAMIC_SCOPES, skipRestart = true)
+    public void executeTokenMappersOnDynamicScopes() {
+        ClientResource clientResource = findClientResourceByClientId(adminClient.realm("test"), "test-app");
+        ClientScopeRepresentation scopeRep = new ClientScopeRepresentation();
+        scopeRep.setName("dyn-scope-with-mapper");
+        scopeRep.setProtocol("openid-connect");
+        scopeRep.setAttributes(new HashMap<String, String>() {{
+            put(ClientScopeModel.IS_DYNAMIC_SCOPE, "true");
+            put(ClientScopeModel.DYNAMIC_SCOPE_REGEXP, "dyn-scope-with-mapper:*");
+        }});
+        // create the attribute mapper
+        ProtocolMapperRepresentation protocolMapperRepresentation = createHardcodedClaim("dynamic-scope-hardcoded-mapper", "hardcoded-foo", "hardcoded-bar", "String", true, true);
+        scopeRep.setProtocolMappers(Collections.singletonList(protocolMapperRepresentation));
+
+        try (Response resp = adminClient.realm("test").clientScopes().create(scopeRep)) {
+            assertEquals(201, resp.getStatus());
+            String clientScopeId = ApiUtil.getCreatedId(resp);
+            getCleanup().addClientScopeId(clientScopeId);
+            clientResource.addOptionalClientScope(clientScopeId);
+        }
+
+        oauth.scope("openid dyn-scope-with-mapper:value");
+        OAuthClient.AccessTokenResponse response = browserLogin("password", "test-user@localhost", "password");
+        IDToken idToken = oauth.verifyIDToken(response.getIdToken());
+        AccessToken accessToken = oauth.verifyToken(response.getAccessToken());
+
+        assertNotNull(idToken.getOtherClaims());
+        assertNotNull(idToken.getOtherClaims().get("hardcoded-foo"));
+        assertTrue(idToken.getOtherClaims().get("hardcoded-foo") instanceof String);
+        assertEquals("hardcoded-bar", idToken.getOtherClaims().get("hardcoded-foo"));
+
+        assertNotNull(accessToken.getOtherClaims());
+        assertNotNull(accessToken.getOtherClaims().get("hardcoded-foo"));
+        assertTrue(accessToken.getOtherClaims().get("hardcoded-foo") instanceof String);
+        assertEquals("hardcoded-bar", accessToken.getOtherClaims().get("hardcoded-foo"));
     }
 
     private void assertRoles(List<String> actualRoleList, String ...expectedRoles){

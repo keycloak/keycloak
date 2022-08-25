@@ -37,9 +37,11 @@ import org.keycloak.models.AuthenticatorConfigModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RequiredActionProviderModel;
+import org.keycloak.models.utils.Base32;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.ModelToRepresentation;
 import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.provider.ConfiguredProvider;
 import org.keycloak.provider.ProviderConfigProperty;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation;
@@ -497,6 +499,19 @@ public class AuthenticationManagementResource {
 
         execution = realm.addAuthenticatorExecution(execution);
 
+        if (f instanceof ConfiguredProvider) {
+            ConfiguredProvider internalProviderFactory = (ConfiguredProvider) f;
+            AuthenticatorConfigModel config = internalProviderFactory.getConfig();
+
+            if (config != null) {
+                // creates a default configuration if the factory defines one
+                // useful for internal providers that already provide a built-in configuration
+                AuthenticatorConfigRepresentation configRepresentation = ModelToRepresentation.toRepresentation(
+                        config);
+                newExecutionConfig(execution.getId(), configRepresentation).close();
+            }
+        }
+
         data.put("id", execution.getId());
         adminEvent.operation(OperationType.CREATE).resource(ResourceType.AUTH_EXECUTION).resourcePath(session.getContext().getUri()).representation(data).success();
 
@@ -566,6 +581,10 @@ public class AuthenticationManagementResource {
             } else {
                 String providerId = execution.getAuthenticator();
                 ConfigurableAuthenticatorFactory factory = CredentialHelper.getConfigurableAuthenticatorFactory(session, providerId);
+                if (factory == null) {
+                    logger.warnf("Cannot find authentication provider implementation with provider ID '%s'", providerId);
+                    throw new NotFoundException("Could not find authenticator provider");
+                }
                 rep.setDisplayName(factory.getDisplayType());
                 rep.setConfigurable(factory.isConfigurable());
                 for (AuthenticationExecutionModel.Requirement choice : factory.getRequirementChoices()) {
@@ -585,7 +604,15 @@ public class AuthenticationManagementResource {
                 }
 
                 rep.setRequirement(execution.getRequirement().name());
-                rep.setProviderId(execution.getAuthenticator());
+
+                providerId = execution.getAuthenticator();
+
+                // encode the provider id in case the provider is a script deployed to the server to make sure it can be used as path parameters without break the URL syntax
+                if (providerId.startsWith("script-")) {
+                    providerId = Base32.encode(providerId.getBytes());
+                }
+
+                rep.setProviderId(providerId);
                 rep.setAuthenticationConfig(execution.getAuthenticatorConfig());
                 result.add(rep);
             }
@@ -1113,9 +1140,16 @@ public class AuthenticationManagementResource {
         auth.realm().requireViewRealm();
 
         ConfigurableAuthenticatorFactory factory = CredentialHelper.getConfigurableAuthenticatorFactory(session, providerId);
+
+        if (factory == null) {
+            providerId = new String(Base32.decode(providerId));
+            factory = CredentialHelper.getConfigurableAuthenticatorFactory(session, providerId);
+        }
+
         if (factory == null) {
             throw new NotFoundException("Could not find authenticator provider");
         }
+
         AuthenticatorConfigInfoRepresentation rep = new AuthenticatorConfigInfoRepresentation();
         rep.setProviderId(providerId);
         rep.setName(factory.getDisplayType());

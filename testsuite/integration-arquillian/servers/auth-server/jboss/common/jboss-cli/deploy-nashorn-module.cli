@@ -1,0 +1,5 @@
+echo *** Installing nashorn-core module ***
+module add --module-root-dir=../modules/system/layers/keycloak/ \
+           --name=org.openjdk.nashorn.nashorn-core \
+           --resources=@NASHORN_JAR@ \
+           --dependencies=asm.asm,jdk.dynalink

@@ -20,7 +20,9 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.annotation.JsonValue;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -56,7 +58,29 @@ import org.keycloak.models.map.common.EntityWithAttributes;
 import org.keycloak.models.map.common.Serialization.IgnoreUpdatedMixIn;
 import org.keycloak.models.map.common.Serialization.IgnoredTypeMixIn;
 import org.keycloak.models.map.common.UpdatableEntity;
-import static org.keycloak.models.map.storage.jpa.hibernate.jsonb.JpaEntityMigration.MIGRATIONS;
+import org.keycloak.models.map.realm.entity.MapAuthenticationExecutionEntity;
+import org.keycloak.models.map.realm.entity.MapAuthenticationExecutionEntityImpl;
+import org.keycloak.models.map.realm.entity.MapAuthenticationFlowEntity;
+import org.keycloak.models.map.realm.entity.MapAuthenticationFlowEntityImpl;
+import org.keycloak.models.map.realm.entity.MapAuthenticatorConfigEntity;
+import org.keycloak.models.map.realm.entity.MapAuthenticatorConfigEntityImpl;
+import org.keycloak.models.map.realm.entity.MapClientInitialAccessEntity;
+import org.keycloak.models.map.realm.entity.MapClientInitialAccessEntityImpl;
+import org.keycloak.models.map.realm.entity.MapIdentityProviderEntity;
+import org.keycloak.models.map.realm.entity.MapIdentityProviderEntityImpl;
+import org.keycloak.models.map.realm.entity.MapIdentityProviderMapperEntity;
+import org.keycloak.models.map.realm.entity.MapIdentityProviderMapperEntityImpl;
+import org.keycloak.models.map.realm.entity.MapOTPPolicyEntity;
+import org.keycloak.models.map.realm.entity.MapOTPPolicyEntityImpl;
+import org.keycloak.models.map.realm.entity.MapRequiredActionProviderEntity;
+import org.keycloak.models.map.realm.entity.MapRequiredActionProviderEntityImpl;
+import org.keycloak.models.map.realm.entity.MapRequiredCredentialEntity;
+import org.keycloak.models.map.realm.entity.MapRequiredCredentialEntityImpl;
+import org.keycloak.models.map.realm.entity.MapWebAuthnPolicyEntity;
+import org.keycloak.models.map.realm.entity.MapWebAuthnPolicyEntityImpl;
+import org.keycloak.models.map.user.MapUserCredentialEntity;
+import org.keycloak.models.map.user.MapUserCredentialEntityImpl;
+import org.keycloak.util.EnumWithStableIndex;
 
 public class JsonbType extends AbstractSingleColumnStandardBasicType<Object> implements DynamicParameterizedType {
 
@@ -64,14 +88,30 @@ public class JsonbType extends AbstractSingleColumnStandardBasicType<Object> imp
     public static final ObjectMapper MAPPER = new ObjectMapper()
             .configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
             .enable(SerializationFeature.INDENT_OUTPUT)
+            .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
             .setSerializationInclusion(JsonInclude.Include.NON_NULL)
             .setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.NONE)
             .setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY)
             .activateDefaultTyping(new LaissezFaireSubTypeValidator(), ObjectMapper.DefaultTyping.JAVA_LANG_OBJECT, JsonTypeInfo.As.PROPERTY)
-            .registerModule(new SimpleModule().addAbstractTypeMapping(MapProtocolMapperEntity.class, MapProtocolMapperEntityImpl.class))
+            .registerModule(new SimpleModule().addAbstractTypeMapping(MapProtocolMapperEntity.class, MapProtocolMapperEntityImpl.class)
+                    // realm abstract type mappings
+                    .addAbstractTypeMapping(MapAuthenticationExecutionEntity.class, MapAuthenticationExecutionEntityImpl.class)
+                    .addAbstractTypeMapping(MapAuthenticationFlowEntity.class, MapAuthenticationFlowEntityImpl.class)
+                    .addAbstractTypeMapping(MapAuthenticatorConfigEntity.class, MapAuthenticatorConfigEntityImpl.class)
+                    .addAbstractTypeMapping(MapClientInitialAccessEntity.class, MapClientInitialAccessEntityImpl.class)
+                    .addAbstractTypeMapping(MapIdentityProviderEntity.class, MapIdentityProviderEntityImpl.class)
+                    .addAbstractTypeMapping(MapIdentityProviderMapperEntity.class, MapIdentityProviderMapperEntityImpl.class)
+                    .addAbstractTypeMapping(MapOTPPolicyEntity.class, MapOTPPolicyEntityImpl.class)
+                    .addAbstractTypeMapping(MapRequiredActionProviderEntity.class, MapRequiredActionProviderEntityImpl.class)
+                    .addAbstractTypeMapping(MapRequiredCredentialEntity.class, MapRequiredCredentialEntityImpl.class)
+                    .addAbstractTypeMapping(MapWebAuthnPolicyEntity.class, MapWebAuthnPolicyEntityImpl.class)
+                    // user abstract type mappings
+                    .addAbstractTypeMapping(MapUserCredentialEntity.class, MapUserCredentialEntityImpl.class))
             .addMixIn(UpdatableEntity.class, IgnoreUpdatedMixIn.class)
             .addMixIn(DeepCloner.class, IgnoredTypeMixIn.class)
-            .addMixIn(EntityWithAttributes.class, IgnoredMetadataFieldsMixIn.class);
+            .addMixIn(EntityWithAttributes.class, IgnoredMetadataFieldsMixIn.class)
+            .addMixIn(EnumWithStableIndex.class, EnumsMixIn.class)
+            ;
 
     abstract class IgnoredMetadataFieldsMixIn {
         @JsonIgnore public abstract String getId();
@@ -79,6 +119,13 @@ public class JsonbType extends AbstractSingleColumnStandardBasicType<Object> imp
 
         // roles: assumed it's true when getClient() != null, see AbstractRoleEntity.isClientRole()
         @JsonIgnore public abstract Boolean isClientRole();
+    }
+
+    abstract static class EnumsMixIn implements EnumWithStableIndex {
+
+        // we convert enums to its index and vice versa
+        @Override
+        @JsonValue public abstract int getStableIndex();
     }
 
     public JsonbType() {
@@ -198,7 +245,7 @@ public class JsonbType extends AbstractSingleColumnStandardBasicType<Object> imp
         }
 
         private ObjectNode migrate(ObjectNode tree, Integer entityVersion) {
-            return MIGRATIONS.getOrDefault(valueType, (node, version) -> node).apply(tree, entityVersion);
+            return JpaEntityMigration.MIGRATIONS.getOrDefault(valueType, (node, version) -> node).apply(tree, entityVersion);
         }
 
         @Override
@@ -226,20 +273,14 @@ public class JsonbType extends AbstractSingleColumnStandardBasicType<Object> imp
             try {
                 return MAPPER.writeValueAsString(value);
             } catch (IOException e) {
-                throw new HibernateException("unable to tranform value: " + value + " as String.", e);
+                throw new HibernateException("unable to transform value: " + value + " as String.", e);
             }
         }
 
         @Override
         public boolean areEqual(Object one, Object another) {
             if (one == another) return true;
-            if (one == null || another == null) return Objects.equals(one, another);
-            try {
-                return MAPPER.readTree(toString(one)).equals(
-                       MAPPER.readTree(toString(another)));
-            } catch (IOException e) {
-                throw new HibernateException("unable to perform areEqual", e);
-            }
+            return Objects.equals(one, another);
         }
     }
 }

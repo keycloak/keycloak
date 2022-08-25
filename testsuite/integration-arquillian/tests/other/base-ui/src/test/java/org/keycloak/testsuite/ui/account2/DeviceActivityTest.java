@@ -41,17 +41,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.either;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.keycloak.representations.idm.CredentialRepresentation.PASSWORD;
@@ -118,13 +119,15 @@ public class DeviceActivityTest extends BaseAccountPageTest {
     public void browsersTest() {
         Map<Browsers, String> browserSessions = new HashMap<>();
         Arrays.stream(Browsers.values()).forEach(b -> {
-            browserSessions.put(b, createSession(b));
+            browserSessions.put(b, DeviceActivityPage.getTrimmedSessionId(createSession(b)));
         });
 
         deviceActivityPage.clickRefreshPage();
 
         browserSessions.forEach((browser, sessionId) -> {
-            assertSession(browser, deviceActivityPage.getSession(sessionId));
+            final Optional<DeviceActivityPage.Session> session = deviceActivityPage.getSession(sessionId);
+            assertThat(session.isPresent(), is(true));
+            assertSession(browser, session.get());
         });
 
         assertEquals(Browsers.values().length + 1, deviceActivityPage.getSessionsCount()); // + 1 for the current session
@@ -139,33 +142,53 @@ public class DeviceActivityTest extends BaseAccountPageTest {
 
         assertEquals(3, deviceActivityPage.getSessionsCount());
 
-        DeviceActivityPage.Session currentSession = deviceActivityPage.getSessionByIndex(0); // current session should be first
-        assertSessionRowsAreNotEmpty(currentSession, false);
-        assertTrue("Browser identification should be present", currentSession.isBrowserDisplayed());
-        assertTrue("Current session badge should be present", currentSession.hasCurrentBadge());
-        assertFalse("Icon should be present", currentSession.getBrowserIconName().isEmpty());
+        Optional<DeviceActivityPage.Session> currentSession = deviceActivityPage.getSessionByIndex(0); // current session should be first
+        assertThat(currentSession.isPresent(), is(true));
+        assertSessionRowsAreNotEmpty(currentSession.get(), false);
+        assertTrue("Browser identification should be present", currentSession.get().isBrowserDisplayed());
+        assertTrue("Current session badge should be present", currentSession.get().hasCurrentBadge());
+        assertFalse("Icon should be present", currentSession.get().getIcon().isEmpty());
     }
 
     @Test
     public void signOutTest() {
         assertFalse("Sign out all shouldn't be displayed", deviceActivityPage.isSignOutAllDisplayed());
-        DeviceActivityPage.Session chromeSession = deviceActivityPage.getSession(createSession(Browsers.CHROME));
+        final String chromeSessionId = createSession(Browsers.CHROME);
+        deviceActivityPage.clickRefreshPage();
+
+        Optional<DeviceActivityPage.Session> chromeSessionOptional = deviceActivityPage.getSession(chromeSessionId);
+        assertThat(chromeSessionOptional.isPresent(), is(true));
+        DeviceActivityPage.Session chromeSession = chromeSessionOptional.get();
+
         createSession(Browsers.SAFARI);
         deviceActivityPage.clickRefreshPage();
+
         assertTrue("Sign out all should be displayed", deviceActivityPage.isSignOutAllDisplayed());
         assertEquals(3, testUserResource().getUserSessions().size());
-        assertThat(testUserResource().getUserSessions(),
-                hasItem(hasProperty("id", is(chromeSession.getFullSessionId()))));
+
+        assertThat(testUserResource()
+                        .getUserSessions()
+                        .stream()
+                        .map(f -> f.getId())
+                        .map(DeviceActivityPage::getTrimmedSessionId)
+                        .collect(Collectors.toList()),
+                hasItem(chromeSession.getSessionId()));
 
         // sign out one session
+        assertThat(chromeSession.isSignOutDisplayed(), is(true));
         testModalDialog(chromeSession::clickSignOut, () -> {
             assertEquals(3, testUserResource().getUserSessions().size()); // no change, all sessions still present
         });
         deviceActivityPage.alert().assertSuccess();
         assertFalse("Chrome session should be gone", chromeSession.isPresent());
         assertEquals(2, testUserResource().getUserSessions().size());
-        assertThat(testUserResource().getUserSessions(),
-                not(hasItem(hasProperty("id", is(chromeSession.getFullSessionId())))));
+        assertThat(testUserResource()
+                        .getUserSessions()
+                        .stream()
+                        .map(f -> f.getId())
+                        .map(DeviceActivityPage::getTrimmedSessionId)
+                        .collect(Collectors.toList()),
+                not(hasItem(chromeSession.getSessionId())));
 
         // sign out all sessions
         testModalDialog(deviceActivityPage::clickSignOutAll, () -> {
@@ -184,8 +207,8 @@ public class DeviceActivityTest extends BaseAccountPageTest {
             RealmModel realm = session.realms().getRealmByName(TEST);
             UserSessionModel userSession = session.sessions().getUserSession(realm, sessionId);
 
-            ClientModel client2 = session.clientLocalStorage().getClientByClientId(TEST_CLIENT2_ID, realm);
-            ClientModel client3 = session.clientLocalStorage().getClientByClientId(TEST_CLIENT3_ID, realm);
+            ClientModel client2 = session.clients().getClientByClientId(realm, TEST_CLIENT2_ID);
+            ClientModel client3 = session.clients().getClientByClientId(realm, TEST_CLIENT3_ID);
 
             session.sessions().createClientSession(realm, client2, userSession);
             session.sessions().createClientSession(realm, client3, userSession);
@@ -194,10 +217,15 @@ public class DeviceActivityTest extends BaseAccountPageTest {
         deviceActivityPage.clickRefreshPage();
 
         List<String> expectedClients = Arrays.asList(TEST_CLIENT_ID, LOCALE_CLIENT_NAME_LOCALIZED, TEST_CLIENT3_NAME);
-        String[] actualClients = deviceActivityPage.getSession(sessionId).getClients().split(", ");
+
+        final Optional<DeviceActivityPage.Session> sessionById = deviceActivityPage.getSession(sessionId);
+        assertThat(sessionById.isPresent(), is(true));
+        String[] actualClients = sessionById.get().getClients().split(", ");
         assertThat(expectedClients, containsInAnyOrder(actualClients));
 
-        assertEquals("Account Console", deviceActivityPage.getSessionByIndex(0).getClients());
+        final Optional<DeviceActivityPage.Session> session = deviceActivityPage.getSessionByIndex(0);
+        assertThat(session.isPresent(), is(true));
+        assertEquals("Account Console", session.get().getClients());
     }
 
     @Test
@@ -219,12 +247,13 @@ public class DeviceActivityTest extends BaseAccountPageTest {
 
         deviceActivityPage.clickRefreshPage();
 
-        DeviceActivityPage.Session session = deviceActivityPage.getSession(sessionId);
+        final Optional<DeviceActivityPage.Session> session = deviceActivityPage.getSession(sessionId);
+        assertThat(session.isPresent(), is(true));
 
-        String startedAtStr = session.getStarted();
+        String startedAtStr = session.get().getStarted();
         LocalDateTime startedAt = LocalDateTime.parse(startedAtStr, formatter);
-        LocalDateTime lastAccessed = LocalDateTime.parse(session.getLastAccess(), formatter);
-        LocalDateTime expiresAt = LocalDateTime.parse(session.getExpires(), formatter);
+        LocalDateTime lastAccessed = LocalDateTime.parse(session.get().getLastAccess(), formatter);
+        LocalDateTime expiresAt = LocalDateTime.parse(session.get().getExpires(), formatter);
 
         assertTrue("Last access should be after started at", lastAccessed.isAfter(startedAt));
         assertTrue("Expires at should be after last access", expiresAt.isAfter(lastAccessed));
@@ -248,9 +277,10 @@ public class DeviceActivityTest extends BaseAccountPageTest {
         refreshPageAndWaitForLoad();
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("d. MMMM yyyy, H:mm", locale);
-        DeviceActivityPage.Session session = deviceActivityPage.getSession(sessionId);
+        Optional<DeviceActivityPage.Session> session = deviceActivityPage.getSession(sessionId);
+        assertThat(session.isPresent(), is(true));
         try {
-            LocalDateTime.parse(session.getLastAccess(), formatter);
+            LocalDateTime.parse(session.get().getLastAccess(), formatter);
         } catch (DateTimeParseException e) {
             fail("Time was not formatted with the locale");
         }
@@ -263,8 +293,8 @@ public class DeviceActivityTest extends BaseAccountPageTest {
         String sessionId = "abcdefg";
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName(TEST);
-            ClientModel client = session.clientLocalStorage().getClientByClientId(TEST_CLIENT_ID, realm);
-            UserModel user = session.users().getUserByUsername("test", realm); // cannot use testUser.getUsername() because it throws NotSerializableException for no apparent reason (or maybe I'm just stupid :D)
+            ClientModel client = session.clients().getClientByClientId(realm, TEST_CLIENT_ID);
+            UserModel user = session.users().getUserByUsername(realm, "test"); // cannot use testUser.getUsername() because it throws NotSerializableException for no apparent reason (or maybe I'm just stupid :D)
 
             UserSessionModel userSession = session.sessions().createUserSession(sessionId, realm, user, "test", ip, "form", false, null, null, null);
             session.sessions().createClientSession(realm, client, userSession);
@@ -272,7 +302,9 @@ public class DeviceActivityTest extends BaseAccountPageTest {
 
         deviceActivityPage.clickRefreshPage();
 
-        assertEquals(ip, deviceActivityPage.getSession(sessionId).getIp());
+        final Optional<DeviceActivityPage.Session> session = deviceActivityPage.getSession(sessionId);
+        assertThat(session.isPresent(), is(true));
+        assertEquals(ip, session.get().getIp());
     }
 
     private String createSession(Browsers browser) {
@@ -291,12 +323,15 @@ public class DeviceActivityTest extends BaseAccountPageTest {
     private void assertSession(Browsers browser, DeviceActivityPage.Session session) {
         log.infof("Asserting %s (session %s)", browser, session.getSessionId());
         assertTrue("Session should be present", session.isPresent());
+        assertTrue("Browser name should be present", session.isBrowserDisplayed());
+
         if (browser.sessionBrowser != null) {
             assertEquals(browser.sessionBrowser, session.getBrowser());
         } else {
-            assertFalse("Browser identification shouldn't be present", session.isBrowserDisplayed());
+            assertEquals("Other/Unknown", session.getBrowser());
         }
-        assertEquals(browser.iconName, session.getBrowserIconName());
+
+        assertEquals(browser.iconName, session.getIcon());
         assertFalse("Session shouldn't have current badge", session.hasCurrentBadge()); // we don't test current session
         assertSessionRowsAreNotEmpty(session, true);
     }
@@ -313,23 +348,23 @@ public class DeviceActivityTest extends BaseAccountPageTest {
     public enum Browsers {
         CHROME(
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36",
-                "Chrome/78.0.3904 / Windows 10",
-                "chrome"
+                "Chrome/78.0.3904",
+                DeviceType.DESKTOP
         ),
         CHROMIUM(
                 "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/534.30 (KHTML, like Gecko) Ubuntu/11.04 Chromium/12.0.742.112 Chrome/12.0.742.112 Safari/534.30",
-                "Chromium/12.0.742 / Ubuntu 11.04",
-                "chrome"
+                "Chromium/12.0.742",
+                DeviceType.DESKTOP
         ),
         FIREFOX(
                 "Mozilla/5.0 (X11; Fedora;Linux x86; rv:60.0) Gecko/20100101 Firefox/60.0",
-                "Firefox/60.0 / Fedora",
-                "firefox"
+                "Firefox/60.0",
+                DeviceType.DESKTOP
         ),
         EDGE(
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.140 Safari/537.36 Edge/18.17763",
-                "Edge/18.17763 / Windows 10",
-                "edge"
+                "Edge/18.17763",
+                DeviceType.DESKTOP
         ),
         // TODO uncomment this once KEYCLOAK-12445 is resolved
 //        CHREDGE( // Edge based on Chromium
@@ -339,59 +374,61 @@ public class DeviceActivityTest extends BaseAccountPageTest {
 //        ),
         IE(
                 "Mozilla/5.0 (Windows NT 6.1; WOW64; Trident/7.0; rv:11.0) like Gecko",
-                "IE/11.0 / Windows 7",
-                "ie"
+                "IE/11.0",
+                DeviceType.DESKTOP
         ),
         SAFARI(
                 "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_1) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Safari/605.1.15",
-                "Safari/13.0.3 / Mac OS X 10.15.1",
-                "safari"
+                "Safari/13.0.3",
+                DeviceType.DESKTOP
         ),
         OPERA(
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36 OPR/56.0.3051.52",
-                "Opera/56.0.3051 / Windows 10",
-                "opera"
+                "Opera/56.0.3051",
+                DeviceType.DESKTOP
         ),
         YANDEX(
                 "Mozilla/5.0 (Windows NT 6.3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 YaBrowser/17.6.1.749 Yowser/2.5 Safari/537.36",
-                "Yandex Browser/17.6.1 / Windows 8.1",
-                "yandex"
+                "Yandex Browser/17.6.1",
+                DeviceType.DESKTOP
         ),
         CHROME_ANDROID(
                 "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/68.0.3440.106 Mobile Safari/537.36",
-                "Chrome Mobile/68.0.3440 / Android 6.0",
-                "chrome"
+                "Chrome Mobile/68.0.3440",
+                DeviceType.MOBILE
         ),
         SAFARI_IOS(
                 "Mozilla/5.0 (iPhone; CPU iPhone OS 13_1_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.1 Mobile/15E148 Safari/604.1",
-                "Mobile Safari/13.0.1 / iOS 13.1.3",
-                "safari"
+                "Mobile Safari/13.0.1",
+                DeviceType.MOBILE
         ),
         UNKNOWN_BROWSER(
                 "Top-secret government browser running on top-secret OS",
                 null,
-                "default"
+                DeviceType.UNKNOWN
         ),
         UNKNOWN_OS(
                 "Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36",
-                "Chrome/78.0.3904 / Other", // "Unknown Operating System" is actually never displayed (even though it's implemented)
-                "chrome"
+                "Chrome/78.0.3904",
+                DeviceType.UNKNOWN
         ),
         UNKNOWN_OS_VERSION(
                 "Mozilla/5.0 (Windows 256.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36",
-                "Chrome/78.0.3904 / Windows",
-                "chrome"
+                "Chrome/78.0.3904",
+                DeviceType.UNKNOWN
         );
         // not sure what "Amazon" browser is supposed to be (it's specified in DeviceActivityPage.tsx)
 
-        private String userAgent;
-        private String sessionBrowser; // how the browser is interpreted by the sessions endpoint
-        private String iconName;
+        private final String userAgent;
+        private final String sessionBrowser; // how the browser is interpreted by the sessions endpoint
+        private final DeviceType deviceType;
+        private final String iconName;
 
-        Browsers(String userAgent, String sessionBrowser, String iconName) {
+        Browsers(String userAgent, String sessionBrowser, DeviceType deviceType) {
             this.userAgent = userAgent;
             this.sessionBrowser = sessionBrowser;
-            this.iconName = iconName;
+            this.deviceType = deviceType;
+            this.iconName = deviceType.getIconName();
         }
 
         public String userAgent() {
@@ -404,6 +441,22 @@ public class DeviceActivityTest extends BaseAccountPageTest {
 
         public String iconName() {
             return iconName;
+        }
+
+        private enum DeviceType {
+            DESKTOP("desktop"),
+            MOBILE("mobile"),
+            UNKNOWN("desktop"); // Default icon
+
+            private final String iconName;
+
+            DeviceType(String iconName) {
+                this.iconName = iconName;
+            }
+
+            public String getIconName() {
+                return iconName;
+            }
         }
     }
 }

@@ -18,7 +18,6 @@ package org.keycloak.testsuite.admin;
 
 import org.hamcrest.Matchers;
 import org.junit.Assert;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.authorization.AuthorizationProvider;
@@ -40,7 +39,6 @@ import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RepresentationToModel;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
-import org.keycloak.representations.idm.GroupRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
@@ -54,7 +52,6 @@ import org.keycloak.services.resources.admin.permissions.AdminPermissions;
 import org.keycloak.services.resources.admin.permissions.ClientPermissionManagement;
 import org.keycloak.services.resources.admin.permissions.GroupPermissionManagement;
 import org.keycloak.testsuite.AbstractKeycloakTest;
-import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.arquillian.annotation.UncaughtServerErrorExpected;
 import org.keycloak.testsuite.auth.page.AuthRealm;
@@ -89,11 +86,6 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
 
     public static final String CLIENT_NAME = "application";
 
-    @BeforeClass
-    public static void enabled() {
-        ProfileAssume.assumeFeatureEnabled(Profile.Feature.AUTHORIZATION);
-    }
-
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         RealmRepresentation testRealmRep = new RealmRepresentation();
@@ -116,11 +108,11 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
 
         UserModel admin = session.users().addUser(realm, "salesManager");
         admin.setEnabled(true);
-        session.userCredentialManager().updateCredential(realm, admin, UserCredentialModel.password("password"));
+        admin.credentialManager().updateCredential(UserCredentialModel.password("password"));
 
         admin = session.users().addUser(realm, "sales-admin");
         admin.setEnabled(true);
-        session.userCredentialManager().updateCredential(realm, admin, UserCredentialModel.password("password"));
+        admin.credentialManager().updateCredential(UserCredentialModel.password("password"));
 
         UserModel user = session.users().addUser(realm, "salesman");
         user.setEnabled(true);
@@ -218,32 +210,32 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
 
         UserModel nomapAdmin = session.users().addUser(realm, "nomap-admin");
         nomapAdmin.setEnabled(true);
-        session.userCredentialManager().updateCredential(realm, nomapAdmin, UserCredentialModel.password("password"));
+        nomapAdmin.credentialManager().updateCredential(UserCredentialModel.password("password"));
         nomapAdmin.grantRole(adminRole);
 
         UserModel anotherAdmin = session.users().addUser(realm, "anotherAdmin");
         anotherAdmin.setEnabled(true);
-        session.userCredentialManager().updateCredential(realm, anotherAdmin, UserCredentialModel.password("password"));
+        anotherAdmin.credentialManager().updateCredential(UserCredentialModel.password("password"));
         anotherAdmin.grantRole(adminRole);
 
         UserModel authorizedUser = session.users().addUser(realm, "authorized");
         authorizedUser.setEnabled(true);
-        session.userCredentialManager().updateCredential(realm, authorizedUser, UserCredentialModel.password("password"));
+        authorizedUser.credentialManager().updateCredential(UserCredentialModel.password("password"));
         authorizedUser.grantRole(mapperRole);
         authorizedUser.grantRole(managerRole);
 
         UserModel authorizedComposite = session.users().addUser(realm, "authorizedComposite");
         authorizedComposite.setEnabled(true);
-        session.userCredentialManager().updateCredential(realm, authorizedComposite, UserCredentialModel.password("password"));
+        authorizedComposite.credentialManager().updateCredential(UserCredentialModel.password("password"));
         authorizedComposite.grantRole(compositeRole);
 
         UserModel unauthorizedUser = session.users().addUser(realm, "unauthorized");
         unauthorizedUser.setEnabled(true);
-        session.userCredentialManager().updateCredential(realm, unauthorizedUser, UserCredentialModel.password("password"));
+        unauthorizedUser.credentialManager().updateCredential(UserCredentialModel.password("password"));
 
         UserModel unauthorizedMapper = session.users().addUser(realm, "unauthorizedMapper");
         unauthorizedMapper.setEnabled(true);
-        session.userCredentialManager().updateCredential(realm, unauthorizedMapper, UserCredentialModel.password("password"));
+        unauthorizedMapper.credentialManager().updateCredential(UserCredentialModel.password("password"));
         unauthorizedMapper.grantRole(managerRole);
 
         UserModel user1 = session.users().addUser(realm, "user1");
@@ -261,11 +253,11 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         groupManager.grantRole(queryUsersRole);
         groupManager.setEnabled(true);
         groupManager.grantRole(mapperRole);
-        session.userCredentialManager().updateCredential(realm, groupManager, UserCredentialModel.password("password"));
+        groupManager.credentialManager().updateCredential(UserCredentialModel.password("password"));
 
         UserModel groupManagerNoMapper = session.users().addUser(realm, "noMapperGroupManager");
         groupManagerNoMapper.setEnabled(true);
-        session.userCredentialManager().updateCredential(realm, groupManagerNoMapper, UserCredentialModel.password("password"));
+        groupManagerNoMapper.credentialManager().updateCredential(UserCredentialModel.password("password"));
         groupManagerNoMapper.grantRole(queryGroupsRole);
         groupManagerNoMapper.grantRole(queryUsersRole);
 
@@ -274,7 +266,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         groupManagerRep.addUser("groupManager");
         groupManagerRep.addUser("noMapperGroupManager");
         ResourceServer server = permissions.realmResourceServer();
-        Policy groupManagerPolicy = permissions.authz().getStoreFactory().getPolicyStore().create(groupManagerRep, server);
+        Policy groupManagerPolicy = permissions.authz().getStoreFactory().getPolicyStore().create(server, groupManagerRep);
         permissions.groups().manageMembersPermission(group).addAssociatedPolicy(groupManagerPolicy);
         permissions.groups().manageMembershipPermission(group).addAssociatedPolicy(groupManagerPolicy);
         permissions.groups().viewPermission(group).addAssociatedPolicy(groupManagerPolicy);
@@ -283,37 +275,37 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         clientMapper.setEnabled(true);
         clientMapper.grantRole(managerRole);
         clientMapper.grantRole(queryUsersRole);
-        session.userCredentialManager().updateCredential(realm, clientMapper, UserCredentialModel.password("password"));
+        clientMapper.credentialManager().updateCredential(UserCredentialModel.password("password"));
         Policy clientMapperPolicy = permissions.clients().mapRolesPermission(client);
         UserPolicyRepresentation userRep = new UserPolicyRepresentation();
         userRep.setName("userClientMapper");
         userRep.addUser("clientMapper");
-        Policy userPolicy = permissions.authz().getStoreFactory().getPolicyStore().create(userRep, permissions.clients().resourceServer(client));
+        Policy userPolicy = permissions.authz().getStoreFactory().getPolicyStore().create(permissions.clients().resourceServer(client), userRep);
         clientMapperPolicy.addAssociatedPolicy(userPolicy);
 
         UserModel clientManager = session.users().addUser(realm, "clientManager");
         clientManager.setEnabled(true);
         clientManager.grantRole(queryClientsRole);
-        session.userCredentialManager().updateCredential(realm, clientManager, UserCredentialModel.password("password"));
+        clientManager.credentialManager().updateCredential(UserCredentialModel.password("password"));
 
         Policy clientManagerPolicy = permissions.clients().managePermission(client);
         userRep = new UserPolicyRepresentation();
         userRep.setName("clientManager");
         userRep.addUser("clientManager");
-        userPolicy = permissions.authz().getStoreFactory().getPolicyStore().create(userRep, permissions.clients().resourceServer(client));
+        userPolicy = permissions.authz().getStoreFactory().getPolicyStore().create(permissions.clients().resourceServer(client), userRep);
         clientManagerPolicy.addAssociatedPolicy(userPolicy);
 
 
         UserModel clientConfigurer = session.users().addUser(realm, "clientConfigurer");
         clientConfigurer.setEnabled(true);
         clientConfigurer.grantRole(queryClientsRole);
-        session.userCredentialManager().updateCredential(realm, clientConfigurer, UserCredentialModel.password("password"));
+        clientConfigurer.credentialManager().updateCredential(UserCredentialModel.password("password"));
 
         Policy clientConfigurePolicy = permissions.clients().configurePermission(client);
         userRep = new UserPolicyRepresentation();
         userRep.setName("clientConfigure");
         userRep.addUser("clientConfigurer");
-        userPolicy = permissions.authz().getStoreFactory().getPolicyStore().create(userRep, permissions.clients().resourceServer(client));
+        userPolicy = permissions.authz().getStoreFactory().getPolicyStore().create(permissions.clients().resourceServer(client), userRep);
         clientConfigurePolicy.addAssociatedPolicy(userPolicy);
 
 
@@ -321,12 +313,12 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         groupViewer.grantRole(queryGroupsRole);
         groupViewer.grantRole(queryUsersRole);
         groupViewer.setEnabled(true);
-        session.userCredentialManager().updateCredential(realm, groupViewer, UserCredentialModel.password("password"));
+        groupViewer.credentialManager().updateCredential(UserCredentialModel.password("password"));
 
         UserPolicyRepresentation groupViewMembersRep = new UserPolicyRepresentation();
         groupViewMembersRep.setName("groupMemberViewers");
         groupViewMembersRep.addUser("groupViewer");
-        Policy groupViewMembersPolicy = permissions.authz().getStoreFactory().getPolicyStore().create(groupViewMembersRep, server);
+        Policy groupViewMembersPolicy = permissions.authz().getStoreFactory().getPolicyStore().create(server, groupViewMembersRep);
         Policy groupViewMembersPermission = permissions.groups().viewMembersPermission(group);
         groupViewMembersPermission.addAssociatedPolicy(groupViewMembersPolicy);
 
@@ -779,7 +771,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         UserModel realmUser = session.users().addUser(realm, "realm-admin");
         realmUser.grantRole(realmAdminRole);
         realmUser.setEnabled(true);
-        session.userCredentialManager().updateCredential(realm, realmUser, UserCredentialModel.password("password"));
+        realmUser.credentialManager().updateCredential(UserCredentialModel.password("password"));
     }
 
     // KEYCLOAK-5152
@@ -825,7 +817,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
     public static void invokeDelete(KeycloakSession session)  {
         RealmModel realm = session.realms().getRealmByName(TEST);
         AdminPermissionManagement management = AdminPermissions.management(session, realm);
-        List<Resource> byResourceServer = management.authz().getStoreFactory().getResourceStore().findByResourceServer(management.realmResourceServer().getId());
+        List<Resource> byResourceServer = management.authz().getStoreFactory().getResourceStore().findByResourceServer(management.realmResourceServer());
         Assert.assertEquals(5, byResourceServer.size());
         RoleModel removedRole = realm.getRole("removedRole");
         realm.removeRole(removedRole);
@@ -834,15 +826,15 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         client.removeRole(removedClientRole);
         GroupModel group = KeycloakModelUtils.findGroupByPath(realm, "removedGroup");
         realm.removeGroup(group);
-        byResourceServer = management.authz().getStoreFactory().getResourceStore().findByResourceServer(management.realmResourceServer().getId());
+        byResourceServer = management.authz().getStoreFactory().getResourceStore().findByResourceServer(management.realmResourceServer());
         Assert.assertEquals(2, byResourceServer.size());
         realm.removeClient(client.getId());
-        byResourceServer = management.authz().getStoreFactory().getResourceStore().findByResourceServer(management.realmResourceServer().getId());
+        byResourceServer = management.authz().getStoreFactory().getResourceStore().findByResourceServer(management.realmResourceServer());
         Assert.assertEquals(1, byResourceServer.size());
         management.users().setPermissionsEnabled(false);
-        Resource userResource = management.authz().getStoreFactory().getResourceStore().findByName("Users", management.realmResourceServer().getId());
+        Resource userResource = management.authz().getStoreFactory().getResourceStore().findByName(management.realmResourceServer(), "Users");
         Assert.assertNull(userResource);
-        byResourceServer = management.authz().getStoreFactory().getResourceStore().findByResourceServer(management.realmResourceServer().getId());
+        byResourceServer = management.authz().getStoreFactory().getResourceStore().findByResourceServer(management.realmResourceServer());
         Assert.assertEquals(0, byResourceServer.size());
     }
 
@@ -978,12 +970,12 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
 
             GroupModel customerAGroup = session.groups().createGroup(realm, "Customer A");
             UserModel customerAManager = session.users().addUser(realm, "customer-a-manager");
-            session.userCredentialManager().updateCredential(realm, customerAManager, UserCredentialModel.password("password"));
+            customerAManager.credentialManager().updateCredential(UserCredentialModel.password("password"));
             ClientModel realmAdminClient = realm.getClientByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID);
             customerAManager.grantRole(realmAdminClient.getRole(AdminRoles.QUERY_USERS));
             customerAManager.setEnabled(true);
             UserModel regularAdminUser = session.users().addUser(realm, "regular-admin-user");
-            session.userCredentialManager().updateCredential(realm, regularAdminUser, UserCredentialModel.password("password"));
+            regularAdminUser.credentialManager().updateCredential(UserCredentialModel.password("password"));
             regularAdminUser.grantRole(realmAdminClient.getRole(AdminRoles.VIEW_USERS));
             regularAdminUser.setEnabled(true);
 
@@ -1002,7 +994,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
 
             AuthorizationProvider provider = session.getProvider(AuthorizationProvider.class);
 
-            Policy userPolicy = provider.getStoreFactory().getPolicyStore().create(userPolicyRepresentation, management.realmResourceServer());
+            Policy userPolicy = provider.getStoreFactory().getPolicyStore().create(management.realmResourceServer(), userPolicyRepresentation);
 
             policy.addAssociatedPolicy(RepresentationToModel.toModel(userPolicyRepresentation, provider, userPolicy));
 
@@ -1074,7 +1066,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
 
             ClientModel realmAdminClient = realm.getClientByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID);
             UserModel regularAdminUser = session.users().addUser(realm, "regular-admin-user");
-            session.userCredentialManager().updateCredential(realm, regularAdminUser, UserCredentialModel.password("password"));
+            regularAdminUser.credentialManager().updateCredential(UserCredentialModel.password("password"));
             regularAdminUser.grantRole(realmAdminClient.getRole(AdminRoles.QUERY_CLIENTS));
             regularAdminUser.setEnabled(true);
 
@@ -1096,7 +1088,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
             Policy policy = clientPermission.viewPermission(clientModel);
             AuthorizationProvider provider = session.getProvider(AuthorizationProvider.class);
             Policy userPolicy = provider.getStoreFactory().getPolicyStore()
-                    .create(userPolicyRepresentation, management.realmResourceServer());
+                    .create(management.realmResourceServer(), userPolicyRepresentation);
 
             policy.addAssociatedPolicy(RepresentationToModel.toModel(userPolicyRepresentation, provider, userPolicy));
         });
@@ -1127,8 +1119,9 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
 
             AuthorizationProvider provider = session.getProvider(AuthorizationProvider.class);
             ClientModel realmAdminClient = realm.getClientByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID);
+            ResourceServer resourceServer = provider.getStoreFactory().getResourceServerStore().findByClient(realmAdminClient);
 
-            policy.addAssociatedPolicy(provider.getStoreFactory().getPolicyStore().findByName("Only regular-admin-user", realmAdminClient.getId()));
+            policy.addAssociatedPolicy(provider.getStoreFactory().getPolicyStore().findByName(resourceServer, "Only regular-admin-user"));
         });
 
         try (Keycloak client = Keycloak.getInstance(getAuthServerContextRoot() + "/auth",
@@ -1194,9 +1187,10 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
 
                 AuthorizationProvider provider = session.getProvider(AuthorizationProvider.class);
                 ClientModel realmAdminClient = realm.getClientByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID);
+                ResourceServer resourceServer = provider.getStoreFactory().getResourceServerStore().findByClient(realmAdminClient);
 
                 policy.addAssociatedPolicy(provider.getStoreFactory().getPolicyStore()
-                        .findByName("Only regular-admin-user", realmAdminClient.getId()));
+                        .findByName(resourceServer, "Only regular-admin-user"));
             }
         });
 
@@ -1252,7 +1246,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
 
             ClientModel realmAdminClient = realm.getClientByClientId(Constants.REALM_MANAGEMENT_CLIENT_ID);
             UserModel regularAdminUser = session.users().addUser(realm, "regular-admin-user");
-            session.userCredentialManager().updateCredential(realm, regularAdminUser, UserCredentialModel.password("password"));
+            regularAdminUser.credentialManager().updateCredential(UserCredentialModel.password("password"));
             regularAdminUser.grantRole(realmAdminClient.getRole(AdminRoles.QUERY_CLIENTS));
             regularAdminUser.setEnabled(true);
 
@@ -1275,11 +1269,11 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
 
                 if (i == 15) {
                     provider.getStoreFactory().getPolicyStore()
-                            .create(userPolicyRepresentation, management.realmResourceServer());
+                            .create(management.realmResourceServer(), userPolicyRepresentation);
                 }
 
                 policy.addAssociatedPolicy(provider.getStoreFactory().getPolicyStore()
-                        .findByName("Only regular-admin-user", realmAdminClient.getId()));
+                        .findByName(management.realmResourceServer(), "Only regular-admin-user"));
 
             }
         });
@@ -1362,7 +1356,7 @@ public class FineGrainAdminUnitTest extends AbstractKeycloakTest {
         clientRep.setName("to");
         clientRep.addClient(tokenexclient.getId());
         ResourceServer server = management.realmResourceServer();
-        Policy clientPolicy = management.authz().getStoreFactory().getPolicyStore().create(clientRep, server);
+        Policy clientPolicy = management.authz().getStoreFactory().getPolicyStore().create(server, clientRep);
         management.clients().exchangeToPermission(adminCli).addAssociatedPolicy(clientPolicy);
     }
 }

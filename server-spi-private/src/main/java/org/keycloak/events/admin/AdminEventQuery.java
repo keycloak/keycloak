@@ -38,7 +38,7 @@ public interface AdminEventQuery {
     /**
      * Search by authentication realm
      *
-     * @param realmId realm name
+     * @param realmId realm id
      * @return Associated <code>AdminEventQuery</code> for method chaining
      */
     AdminEventQuery authRealm(String realmId);

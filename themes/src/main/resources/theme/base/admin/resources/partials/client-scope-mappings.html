@@ -15,7 +15,7 @@
                     <label class="col-md-2 control-label" for="fullScopeAllowed">{{:: 'full-scope-allowed' | translate}}</label>
                     <kc-tooltip>{{:: 'full-scope-allowed.tooltip' | translate}}</kc-tooltip>
                     <div class="col-md-6">
-                        <input kc-read-only="!client.access.manage" ng-model="client.fullScopeAllowed" ng-click="changeFlag()" name="fullScopeAllowed" id="fullScopeAllowed" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
+                        <input kc-read-only="!client.access.manage" ng-model="client.fullScopeAllowed" ng-click="changeFlag($event)" name="fullScopeAllowed" id="fullScopeAllowed" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}" />
                     </div>
                 </div>
             </fieldset>

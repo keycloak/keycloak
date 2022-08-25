@@ -22,6 +22,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.map.common.TimeAdapter;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import java.security.MessageDigest;
 import java.util.Collection;
@@ -418,13 +419,13 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
 
     @Override
     public int getNotBefore() {
-        final Integer notBefore = entity.getNotBefore();
-        return notBefore == null ? 0 : notBefore;
+        final Long notBefore = entity.getNotBefore();
+        return notBefore == null ? 0 : TimeAdapter.fromLongWithTimeInSecondsToIntegerWithTimeInSeconds(notBefore);
     }
 
     @Override
     public void setNotBefore(int notBefore) {
-        entity.setNotBefore(notBefore);
+        entity.setNotBefore(TimeAdapter.fromIntegerWithTimeInSecondsToLongWithTimeAsInSeconds(notBefore));
     }
 
     /*************** Scopes mappings ****************/
@@ -456,7 +457,8 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
     @Override
     public boolean hasDirectScope(RoleModel role) {
         final String id = role == null ? null : role.getId();
-        if (id != null && this.entity.getScopeMappings().contains(id)) {
+        final Collection<String> scopeMappings = this.entity.getScopeMappings();
+        if (id != null && scopeMappings != null && scopeMappings.contains(id)) {
             return true;
         }
 
@@ -522,9 +524,8 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
 
     @Override
     public Stream<ProtocolMapperModel> getProtocolMappersStream() {
-        final Map<String, MapProtocolMapperEntity> protocolMappers = entity.getProtocolMappers();
-        return protocolMappers == null ? Stream.empty() : protocolMappers.values().stream().distinct()
-          .map(pmUtils::toModel);
+        final Set<MapProtocolMapperEntity> protocolMappers = entity.getProtocolMappers();
+        return protocolMappers == null ? Stream.empty() : protocolMappers.stream().distinct().map(pmUtils::toModel);
     }
 
     @Override
@@ -542,7 +543,7 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
             pm.setConfig(new HashMap<>());
         }
 
-        entity.setProtocolMapper(pm.getId(), pm);
+        entity.addProtocolMapper(pm);
         return pmUtils.toModel(pm);
     }
 
@@ -558,23 +559,25 @@ public abstract class MapClientAdapter extends AbstractClientModel<MapClientEnti
     public void updateProtocolMapper(ProtocolMapperModel mapping) {
         final String id = mapping == null ? null : mapping.getId();
         if (id != null) {
-            entity.setProtocolMapper(id, MapProtocolMapperUtils.fromModel(mapping));
+            entity.getProtocolMapper(id).ifPresent((pmEntity) -> {
+                entity.removeProtocolMapper(id);
+                addProtocolMapper(mapping);
+            });
         }
     }
 
     @Override
     public ProtocolMapperModel getProtocolMapperById(String id) {
-        MapProtocolMapperEntity protocolMapper = entity.getProtocolMapper(id);
-        return protocolMapper == null ? null : pmUtils.toModel(protocolMapper);
+        return entity.getProtocolMapper(id).map(pmUtils::toModel).orElse(null);
     }
 
     @Override
     public ProtocolMapperModel getProtocolMapperByName(String protocol, String name) {
-        final Map<String, MapProtocolMapperEntity> protocolMappers = entity.getProtocolMappers();
+        final Set<MapProtocolMapperEntity> protocolMappers = entity.getProtocolMappers();
         if (! Objects.equals(protocol, safeGetProtocol())) {
             return null;
         }
-        return protocolMappers == null ? null : protocolMappers.values().stream()
+        return protocolMappers == null ? null : protocolMappers.stream()
           .filter(pm -> Objects.equals(pm.getName(), name))
           .map(pmUtils::toModel)
           .findAny()

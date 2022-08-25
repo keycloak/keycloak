@@ -45,6 +45,9 @@ public interface MapPermissionTicketEntity extends UpdatableEntity, AbstractEnti
         }
     }
 
+    String getRealmId();
+    void setRealmId(String realmId);
+
     String getOwner();
     void setOwner(String owner);
 

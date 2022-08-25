@@ -9,7 +9,7 @@ echo "--------------------------------------------------------------------------
 echo "Building:"
 echo ""
 
-mvn -Padmin-preview,jboss-release,distribution-downloads,nexus-staging -DskipTests -DskipTestsuite -DretryFailedDeploymentCount=10 -DautoReleaseAfterClose=true clean deploy
+mvn -Pgpg,jboss-release,distribution-downloads,nexus-staging -DskipTests -DskipTestsuite -DretryFailedDeploymentCount=10 -DautoReleaseAfterClose=true clean deploy
 
 
 echo "------------------------------------------------------------------------------------------------------------"

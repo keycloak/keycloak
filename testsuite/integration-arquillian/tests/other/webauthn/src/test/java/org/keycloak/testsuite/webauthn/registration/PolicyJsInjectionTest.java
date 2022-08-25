@@ -68,24 +68,37 @@ public class PolicyJsInjectionTest extends AbstractWebAuthnVirtualTest {
             registerDefaultUser(false);
 
             webAuthnErrorPage.assertCurrent();
-            assertThat(webAuthnErrorPage.getError(), containsString("The relying party ID is not a registrable domain suffix of, nor equal to the current domain."));
+
+            final String expectedMessage = getExpectedMessageByDriver(
+                    "SecurityError: The operation is insecure.",
+                    "The relying party ID is not a registrable domain suffix of, nor equal to the current domain.");
+
+            assertThat(webAuthnErrorPage.getError(), containsString(expectedMessage));
         }
     }
 
     @Test
     public void attestationConveyancePreference() {
+        final String expectedMessage = getExpectedMessageByDriver(
+                "(value of 'attestation' member of PublicKeyCredentialCreationOptions) is not a valid value for enumeration AttestationConveyancePreference.",
+                "The provided value 'required\"; window.location.href = \"http://www.keycloak.org\";\"' is not a valid enum value of type AttestationConveyancePreference.");
+
         verifyInjection((updater) -> updater.setWebAuthnPolicyAttestationConveyancePreference(REDIRECT_SCRIPT),
                 WebAuthnRealmData::getAttestationConveyancePreference,
                 REDIRECT_SCRIPT,
-                "Failed to read the 'attestation' property from 'PublicKeyCredentialCreationOptions': The provided value 'required\"; window.location.href = \"http://www.keycloak.org\";\"' is not a valid enum value of type AttestationConveyancePreference.");
+                expectedMessage);
     }
 
     @Test
     public void authenticatorAttachment() {
+        final String expectedMessage = getExpectedMessageByDriver(
+                "(value of 'authenticatorAttachment' member of AuthenticatorSelectionCriteria) is not a valid value for enumeration AuthenticatorAttachment.",
+                "The provided value 'required\"; window.location.href = \"http://www.keycloak.org\";\"' is not a valid enum value of type AuthenticatorAttachment.");
+
         verifyInjection((updater) -> updater.setWebAuthnPolicyAuthenticatorAttachment(REDIRECT_SCRIPT),
                 WebAuthnRealmData::getAuthenticatorAttachment,
                 REDIRECT_SCRIPT,
-                "Failed to read the 'authenticatorAttachment' property from 'AuthenticatorSelectionCriteria': The provided value 'required\"; window.location.href = \"http://www.keycloak.org\";\"' is not a valid enum value of type AuthenticatorAttachment.");
+                expectedMessage);
     }
 
     @Test
@@ -98,10 +111,14 @@ public class PolicyJsInjectionTest extends AbstractWebAuthnVirtualTest {
 
     @Test
     public void userVerificationRequirement() {
+        String expectedMessage = getExpectedMessageByDriver(
+                "(value of 'userVerification' member of AuthenticatorSelectionCriteria) is not a valid value for enumeration UserVerificationRequirement.",
+                "The provided value 'required\"; window.prompt('Injection'); \"<img id=\"image-inject\" src='none'/> ' is not a valid enum value of type UserVerificationRequirement.");
+
         verifyInjection((updater) -> updater.setWebAuthnPolicyUserVerificationRequirement(PROMPT_SCRIPT),
                 WebAuthnRealmData::getUserVerificationRequirement,
                 PROMPT_SCRIPT,
-                "Failed to read the 'userVerification' property from 'AuthenticatorSelectionCriteria': The provided value 'required\"; window.prompt('Injection'); \"<img id=\"image-inject\" src='none'/> ' is not a valid enum value of type UserVerificationRequirement.");
+                expectedMessage);
     }
 
     @Test

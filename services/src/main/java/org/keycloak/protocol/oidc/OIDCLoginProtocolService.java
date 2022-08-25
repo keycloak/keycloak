@@ -25,6 +25,7 @@ import org.jboss.logging.Logger;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.ResteasyProviderFactory;
+import org.keycloak.Config;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.crypto.KeyType;
@@ -78,9 +79,10 @@ public class OIDCLoginProtocolService {
 
     private static final Logger logger = Logger.getLogger(OIDCLoginProtocolService.class);
 
-    private RealmModel realm;
-    private TokenManager tokenManager;
-    private EventBuilder event;
+    private final RealmModel realm;
+    private final TokenManager tokenManager;
+    private final EventBuilder event;
+    private final OIDCProviderConfig providerConfig;
 
     @Context
     private KeycloakSession session;
@@ -94,10 +96,11 @@ public class OIDCLoginProtocolService {
     @Context
     private ClientConnection clientConnection;
 
-    public OIDCLoginProtocolService(RealmModel realm, EventBuilder event) {
+    public OIDCLoginProtocolService(RealmModel realm, EventBuilder event, OIDCProviderConfig providerConfig) {
         this.realm = realm;
         this.tokenManager = new TokenManager();
         this.event = event;
+        this.providerConfig = providerConfig;
     }
 
     public static UriBuilder tokenServiceBaseUrl(UriInfo uriInfo) {
@@ -261,7 +264,7 @@ public class OIDCLoginProtocolService {
     * https://issues.redhat.com/browse/KEYCLOAK-2940 */
     @Path("logout")
     public Object logout() {
-        LogoutEndpoint endpoint = new LogoutEndpoint(tokenManager, realm, event);
+        LogoutEndpoint endpoint = new LogoutEndpoint(tokenManager, realm, event, providerConfig);
         ResteasyProviderFactory.getInstance().injectProperties(endpoint);
         return endpoint;
     }

@@ -30,6 +30,7 @@ public interface Errors {
     String CLIENT_DISABLED = "client_disabled";
     String INVALID_CLIENT_CREDENTIALS = "invalid_client_credentials";
     String INVALID_CLIENT = "invalid_client";
+    String UNAUTHORIZED_CLIENT ="unauthorized_client";
     String CONSENT_DENIED = "consent_denied";
     String RESOLVE_REQUIRED_ACTIONS = "resolve_required_actions";
 

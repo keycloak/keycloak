@@ -116,6 +116,8 @@ import java.util.Objects;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForModification;
+
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
@@ -424,7 +426,7 @@ public class TokenEndpoint {
             throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_SCOPE, "Client no longer has requested consent from user", Response.Status.BAD_REQUEST);
         }
 
-        ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionAndClientScopes(clientSession, clientScopesSupplier.get(), session);
+        ClientSessionContext clientSessionCtx = DefaultClientSessionContext.fromClientSessionAndScopeParameter(clientSession, scopeParam, session);
 
         // Set nonce as an attribute in the ClientSessionContext. Will be used for the token generation
         clientSessionCtx.setAttribute(OIDCLoginProtocol.NONCE_PARAM, codeData.getNonce());
@@ -438,11 +440,12 @@ public class TokenEndpoint {
 
         TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager
             .responseBuilder(realm, client, event, session, userSession, clientSessionCtx).accessToken(token);
-        if (OIDCAdvancedConfigWrapper.fromClientModel(client).isUseRefreshToken()) {
+        boolean useRefreshToken = OIDCAdvancedConfigWrapper.fromClientModel(client).isUseRefreshToken();
+        if (useRefreshToken) {
             responseBuilder.generateRefreshToken();
         }
 
-        checkMtlsHoKToken(responseBuilder, OIDCAdvancedConfigWrapper.fromClientModel(client).isUseRefreshToken());
+        checkMtlsHoKToken(responseBuilder, useRefreshToken);
 
         if (TokenUtil.isOIDCRequest(scopeParam)) {
             responseBuilder.generateIDToken().generateAccessTokenHash();
@@ -502,11 +505,11 @@ public class TokenEndpoint {
         AccessTokenResponse res;
         try {
             // KEYCLOAK-6771 Certificate Bound Token
-            TokenManager.RefreshResult result = tokenManager.refreshAccessToken(session, session.getContext().getUri(), clientConnection, realm, client, refreshToken, event, headers, request);
-            res = result.getResponse();
+            TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager.refreshAccessToken(session, session.getContext().getUri(), clientConnection, realm, client, refreshToken, event, headers, request);
+            res = responseBuilder.build();
 
-            if (!result.isOfflineToken()) {
-                UserSessionModel userSession = session.sessions().getUserSession(realm, res.getSessionState());
+            if (!responseBuilder.isOfflineToken()) {
+                UserSessionModel userSession = lockUserSessionsForModification(session, () -> session.sessions().getUserSession(realm, res.getSessionState()));
                 AuthenticatedClientSessionModel clientSession = userSession.getAuthenticatedClientSessionByClient(client.getId());
                 updateClientSession(clientSession);
                 updateUserSessionFromClientAuth(userSession);
@@ -625,7 +628,8 @@ public class TokenEndpoint {
 
         TokenManager.AccessTokenResponseBuilder responseBuilder = tokenManager
             .responseBuilder(realm, client, event, session, userSession, clientSessionCtx).generateAccessToken();
-        if (OIDCAdvancedConfigWrapper.fromClientModel(client).isUseRefreshToken()) {
+        boolean useRefreshToken = OIDCAdvancedConfigWrapper.fromClientModel(client).isUseRefreshToken();
+        if (useRefreshToken) {
             responseBuilder.generateRefreshToken();
         }
 
@@ -633,6 +637,8 @@ public class TokenEndpoint {
         if (TokenUtil.isOIDCRequest(scopeParam)) {
             responseBuilder.generateIDToken().generateAccessTokenHash();
         }
+
+        checkMtlsHoKToken(responseBuilder, useRefreshToken);
 
         // TODO : do the same as codeToToken()
         AccessTokenResponse res = responseBuilder.build();
@@ -734,8 +740,17 @@ public class TokenEndpoint {
         }
 
         // TODO : do the same as codeToToken()
-        AccessTokenResponse res = responseBuilder.build();
-
+        AccessTokenResponse res = null;
+        try {
+            res = responseBuilder.build();
+        } catch (RuntimeException re) {
+            if ("can not get encryption KEK".equals(re.getMessage())) {
+                throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST,
+                        "can not get encryption KEK", Response.Status.BAD_REQUEST);
+            } else {
+                throw re;
+            }
+        }
         event.success();
 
         return cors.builder(Response.ok(res, MediaType.APPLICATION_JSON_TYPE)).build();

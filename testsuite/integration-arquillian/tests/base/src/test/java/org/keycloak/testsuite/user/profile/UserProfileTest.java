@@ -1306,4 +1306,37 @@ public class UserProfileTest extends AbstractUserProfileTest {
             //ignore
         }
     }
+
+    @Test
+    public void testUsernameAndEmailPermissionNotSetIfEmpty() {
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testUsernameAndEmailPermissionNotSetIfEmpty);
+    }
+
+    private static void testUsernameAndEmailPermissionNotSetIfEmpty(KeycloakSession session) throws IOException {
+        DeclarativeUserProfileProvider provider = getDynamicUserProfileProvider(session);
+        UPConfig config = JsonSerialization.readValue(provider.getConfiguration(), UPConfig.class);
+
+        for (UPAttribute attribute : config.getAttributes()) {
+            if (attribute.getName().equals(UserModel.USERNAME) || attribute.getName().equals(UserModel.EMAIL)) {
+                attribute.setPermissions(new UPAttributePermissions());
+            }
+        }
+
+        provider.setConfiguration(JsonSerialization.writeValueAsString(config));
+
+        RealmModel realm = session.getContext().getRealm();
+        String username = "profiled-user-profile";
+        UserModel user = session.users().addUser(realm, username);
+        Map<String, Object> attributes = new HashMap<>();
+
+        attributes.put(UserModel.EMAIL, "test@keycloak.com");
+
+        UserProfile profile = provider.create(UserProfileContext.USER_API, attributes, user);
+
+        profile.update();
+
+        user = session.users().getUserById(realm, user.getId());
+
+        assertEquals("test@keycloak.com", user.getEmail());
+    }
 }

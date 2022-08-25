@@ -19,6 +19,7 @@ package org.keycloak.quarkus.runtime.cli.command;
 
 import org.keycloak.quarkus.runtime.Environment;
 
+import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
@@ -39,6 +40,9 @@ public final class StartDev extends AbstractStartCommand implements Runnable {
 
     @Mixin
     HelpAllMixin helpAllMixin;
+
+    @CommandLine.Mixin
+    ImportRealmMixin importRealmMixin;
 
     @Override
     protected void doBeforeRun() {

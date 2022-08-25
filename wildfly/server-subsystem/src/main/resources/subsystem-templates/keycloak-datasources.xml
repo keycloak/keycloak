@@ -19,7 +19,7 @@
 <!--  See src/resources/configuration/ReadMe.txt for how the configuration assembly works -->
 <config>
     <extension-module>org.jboss.as.connector</extension-module>
-    <subsystem xmlns="urn:jboss:domain:datasources:6.0">
+    <subsystem xmlns="urn:jboss:domain:datasources:7.0">
         <datasources>
             <datasource jndi-name="java:jboss/datasources/ExampleDS" pool-name="ExampleDS" enabled="true" use-java-context="true" statistics-enabled="${wildfly.datasources.statistics-enabled:${wildfly.statistics-enabled:false}}">
                 <connection-url>jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE</connection-url>

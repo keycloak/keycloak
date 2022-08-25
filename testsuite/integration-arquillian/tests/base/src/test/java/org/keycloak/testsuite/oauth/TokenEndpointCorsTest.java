@@ -62,6 +62,7 @@ public class TokenEndpointCorsTest extends AbstractKeycloakTest {
         oauth.realm("test");
         oauth.clientId("test-app2");
         oauth.redirectUri(VALID_CORS_URL + "/realms/master/app");
+        oauth.postLogoutRedirectUri(VALID_CORS_URL + "/realms/master/app");
 
         oauth.doLogin("test-user@localhost", "password");
 
@@ -87,7 +88,7 @@ public class TokenEndpointCorsTest extends AbstractKeycloakTest {
         oauth.origin(VALID_CORS_URL);
 
         // No session
-        oauth.openLogout();
+        oauth.idTokenHint(response.getIdToken()).openLogout();
         response = oauth.doRefreshTokenRequest(response.getRefreshToken(), null);
         assertEquals(400, response.getStatusCode());
         assertCors(response);

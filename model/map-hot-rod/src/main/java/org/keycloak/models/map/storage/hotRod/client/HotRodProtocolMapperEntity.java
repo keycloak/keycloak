@@ -22,7 +22,6 @@ import org.keycloak.models.map.annotations.GenerateHotRodEntityImplementation;
 import org.keycloak.models.map.storage.hotRod.common.AbstractHotRodEntity;
 import org.keycloak.models.map.storage.hotRod.common.HotRodPair;
 
-import java.util.Objects;
 import java.util.Set;
 
 @GenerateHotRodEntityImplementation(implementInterface = "org.keycloak.models.map.client.MapProtocolMapperEntity")

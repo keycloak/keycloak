@@ -16,6 +16,8 @@
  */
 package org.keycloak.validation;
 
+import org.keycloak.authentication.AuthenticatorUtil;
+import org.keycloak.authentication.authenticators.util.LoAUtil;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.protocol.ProtocolMapperConfigException;
@@ -23,6 +25,7 @@ import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.protocol.oidc.grants.ciba.CibaClientValidation;
 import org.keycloak.protocol.oidc.mappers.PairwiseSubMapperHelper;
+import org.keycloak.protocol.oidc.utils.AcrUtils;
 import org.keycloak.protocol.oidc.utils.PairwiseSubMapperUtils;
 import org.keycloak.protocol.oidc.utils.PairwiseSubMapperValidator;
 import org.keycloak.protocol.oidc.utils.SubjectType;
@@ -35,6 +38,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static org.keycloak.models.utils.ModelToRepresentation.toRepresentation;
@@ -133,6 +137,7 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
         validatePairwiseInClientModel(context);
         new CibaClientValidation(context).validate();
         validateJwks(context);
+        validateDefaultAcrValues(context);
 
         return context.toResult();
     }
@@ -142,6 +147,7 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
         validateUrls(context);
         validatePairwiseInOIDCClient(context);
         new CibaClientValidation(context).validate();
+        validateDefaultAcrValues(context);
 
         return context.toResult();
     }
@@ -262,6 +268,22 @@ public class DefaultClientValidationProvider implements ClientValidationProvider
         if (Boolean.parseBoolean(client.getAttribute(OIDCConfigAttributes.USE_JWKS_URL))
             && Boolean.parseBoolean(client.getAttribute(OIDCConfigAttributes.USE_JWKS_STRING))) {
             context.addError("jwksUrl", "Illegal to use both jwks_uri and jwks_string", "duplicatedJwksSettings");
+        }
+    }
+
+    private void validateDefaultAcrValues(ValidationContext<ClientModel> context) {
+        ClientModel client = context.getObjectToValidate();
+        List<String> defaultAcrValues = AcrUtils.getDefaultAcrValues(client);
+        Map<String, Integer> acrToLoaMap = AcrUtils.getAcrLoaMap(client);
+        if (acrToLoaMap.isEmpty()) {
+            acrToLoaMap = AcrUtils.getAcrLoaMap(client.getRealm());
+        }
+        for (String configuredAcr : defaultAcrValues) {
+            if (acrToLoaMap.containsKey(configuredAcr)) continue;
+            if (!LoAUtil.getLoAConfiguredInRealmBrowserFlow(client.getRealm())
+                    .anyMatch(level -> configuredAcr.equals(String.valueOf(level)))) {
+                context.addError("defaultAcrValues", "Default ACR values need to contain values specified in the ACR-To-Loa mapping or number levels from set realm browser flow");
+            }
         }
     }
 }

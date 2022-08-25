@@ -18,6 +18,8 @@
 package org.keycloak.testsuite.forms;
 
 import org.jboss.arquillian.graphene.page.Page;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.authentication.authenticators.access.AllowAccessAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.browser.UsernamePasswordFormFactory;
@@ -43,6 +45,8 @@ import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerEx
 @AuthServerContainerExclude(REMOTE)
 public class AuthenticationFlowCallbackProviderTest extends AbstractTestRealmKeycloakTest {
 
+    protected static final String DEFAULT_FLOW = "newCallbackFlow";
+
     @Page
     protected LoginPage loginPage;
 
@@ -53,9 +57,18 @@ public class AuthenticationFlowCallbackProviderTest extends AbstractTestRealmKey
     public void configureTestRealm(RealmRepresentation testRealm) {
     }
 
+    @Before
+    public void setUpFlow() {
+        setBrowserFlow();
+    }
+
+    @After
+    public void revertFlow() {
+        BrowserFlowTest.revertFlows(testRealm(), DEFAULT_FLOW);
+    }
+
     @Test
     public void loaEssentialNonExisting() {
-        setBrowserFlow();
         LevelOfAssuranceFlowTest.openLoginFormWithAcrClaim(oauth, true, "4");
 
         loginPage.assertCurrent();
@@ -67,7 +80,6 @@ public class AuthenticationFlowCallbackProviderTest extends AbstractTestRealmKey
 
     @Test
     public void errorWithCustomProvider() {
-        setBrowserFlow();
         LevelOfAssuranceFlowTest.openLoginFormWithAcrClaim(oauth, true, "1");
 
         loginPage.assertCurrent();
@@ -78,9 +90,9 @@ public class AuthenticationFlowCallbackProviderTest extends AbstractTestRealmKey
     }
 
     protected void setBrowserFlow() {
-        testingClient.server("test").run(session -> FlowUtil.inCurrentRealm(session).copyBrowserFlow("newFlow"));
-        testingClient.server("test").run(session -> FlowUtil.inCurrentRealm(session)
-                .selectFlow("newFlow")
+        testingClient.server(TEST_REALM_NAME).run(session -> FlowUtil.inCurrentRealm(session).copyBrowserFlow(DEFAULT_FLOW));
+        testingClient.server(TEST_REALM_NAME).run(session -> FlowUtil.inCurrentRealm(session)
+                .selectFlow(DEFAULT_FLOW)
                 .inForms(forms -> forms
                         .clear()
                         .addSubFlowExecution(AuthenticationExecutionModel.Requirement.CONDITIONAL, subflow -> subflow
@@ -88,7 +100,7 @@ public class AuthenticationFlowCallbackProviderTest extends AbstractTestRealmKey
                                 .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.REQUIRED, ConditionalLoaAuthenticatorFactory.PROVIDER_ID,
                                         config -> {
                                             config.getConfig().put(ConditionalLoaAuthenticator.LEVEL, "1");
-                                            config.getConfig().put(ConditionalLoaAuthenticator.STORE_IN_USER_SESSION, "true");
+                                            config.getConfig().put(ConditionalLoaAuthenticator.MAX_AGE, String.valueOf(ConditionalLoaAuthenticator.DEFAULT_MAX_AGE));
                                         })
                                 .addAuthenticatorExecution(AuthenticationExecutionModel.Requirement.REQUIRED, AllowAccessAuthenticatorFactory.PROVIDER_ID)
                         )

@@ -92,6 +92,8 @@ public class Messages {
 
     public static final String CONFIGURE_TOTP = "configureTotpMessage";
 
+    public static final String CONFIGURE_BACKUP_CODES = "configureBackupCodesMessage";
+
     public static final String UPDATE_PROFILE = "updateProfileMessage";
 
     public static final String RESET_PASSWORD = "resetPasswordMessage";
@@ -99,6 +101,8 @@ public class Messages {
     public static final String UPDATE_PASSWORD = "updatePasswordMessage";
 
     public static final String VERIFY_EMAIL = "verifyEmailMessage";
+
+    public static final String UPDATE_EMAIL = "updateEmailMessage";
 
     public static final String LINK_IDP = "linkIdpMessage";
 
@@ -232,6 +236,8 @@ public class Messages {
     public static final String IDENTITY_PROVIDER_LOGIN_FAILURE = "identityProviderLoginFailure";
 
     public static final String INSUFFICIENT_LEVEL_OF_AUTHENTICATION = "insufficientLevelOfAuthentication";
+
+    public static final String SUCCESS_LOGOUT = "successLogout";
 
     public static final String FAILED_LOGOUT = "failedLogout";
 

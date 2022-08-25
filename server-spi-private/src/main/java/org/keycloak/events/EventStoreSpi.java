@@ -26,6 +26,8 @@ import org.keycloak.provider.Spi;
  */
 public class EventStoreSpi implements Spi {
 
+    public static final String NAME = "eventsStore";
+
     @Override
     public boolean isInternal() {
         return true;
@@ -33,7 +35,7 @@ public class EventStoreSpi implements Spi {
 
     @Override
     public String getName() {
-        return "eventsStore";
+        return NAME;
     }
 
     @Override

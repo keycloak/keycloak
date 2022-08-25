@@ -19,16 +19,22 @@ package org.keycloak.quarkus.runtime.integration.web;
 
 import static org.keycloak.services.resources.KeycloakApplication.getSessionFactory;
 
+import java.util.function.Predicate;
 import org.keycloak.common.ClientConnection;
 import org.keycloak.common.util.Resteasy;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.KeycloakTransactionManager;
 
+import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http.HttpHeaderValues;
+import io.netty.handler.codec.http.HttpResponseStatus;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.http.HttpServerResponse;
 import io.vertx.ext.web.RoutingContext;
 
 /**
@@ -44,11 +50,29 @@ public class QuarkusRequestFilter implements Handler<RoutingContext> {
         // we don't really care about the result because any exception thrown should be handled by the parent class
     };
 
+    private Predicate<RoutingContext> contextFilter;
+
+    public QuarkusRequestFilter() {
+        this(null);
+    }
+
+    public QuarkusRequestFilter(Predicate<RoutingContext> contextFilter) {
+        this.contextFilter = contextFilter;
+    }
+
     @Override
     public void handle(RoutingContext context) {
+        if (ignoreContext(context)) {
+            context.next();
+            return;
+        }
         // our code should always be run as blocking until we don't provide a better support for running non-blocking code
         // in the event loop
         context.vertx().executeBlocking(createBlockingHandler(context), false, EMPTY_RESULT);
+    }
+
+    private boolean ignoreContext(RoutingContext context) {
+        return contextFilter != null && contextFilter.test(context);
     }
 
     private Handler<Promise<Object>> createBlockingHandler(RoutingContext context) {
@@ -57,14 +81,14 @@ public class QuarkusRequestFilter implements Handler<RoutingContext> {
             KeycloakSession session = sessionFactory.create();
 
             configureContextualData(context, createClientConnection(context.request()), session);
-            configureEndHandler(context, promise, session);
+            configureEndHandler(context, session);
 
             KeycloakTransactionManager tx = session.getTransactionManager();
 
             try {
                 tx.begin();
                 context.next();
-                promise.complete();
+                promise.tryComplete();
             } catch (Throwable cause) {
                 promise.fail(cause);
                 // re-throw so that the any exception is handled from parent
@@ -84,14 +108,24 @@ public class QuarkusRequestFilter implements Handler<RoutingContext> {
      * Creates a handler to close the {@link KeycloakSession} before the response is written to response but after Resteasy
      * is done with processing its output.
      */
-    private void configureEndHandler(RoutingContext context, Promise<Object> promise, KeycloakSession session) {
+    private void configureEndHandler(RoutingContext context, KeycloakSession session) {
         context.addHeadersEndHandler(event -> {
             try {
                 close(session);
             } catch (Throwable cause) {
-                promise.fail(cause);
+                unexpectedErrorResponse(context.response());
             }
         });
+    }
+
+    private void unexpectedErrorResponse(HttpServerResponse response) {
+        response.headers().clear();
+        response.putHeader(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.TEXT_PLAIN);
+        response.putHeader(HttpHeaderNames.CONTENT_LENGTH, "0");
+        response.setStatusCode(HttpResponseStatus.INTERNAL_SERVER_ERROR.code());
+        response.putHeader(HttpHeaderNames.CONNECTION, HttpHeaderValues.CLOSE);
+        // writes an empty buffer to replace any data previously written
+        response.write(Buffer.buffer(""));
     }
 
     private void configureContextualData(RoutingContext context, ClientConnection connection, KeycloakSession session) {
@@ -105,14 +139,18 @@ public class QuarkusRequestFilter implements Handler<RoutingContext> {
 
     protected void close(KeycloakSession session) {
         KeycloakTransactionManager tx = session.getTransactionManager();
-        if (tx.isActive()) {
-            if (tx.getRollbackOnly()) {
-                tx.rollback();
-            } else {
-                tx.commit();
+
+        try {
+            if (tx.isActive()) {
+                if (tx.getRollbackOnly()) {
+                    tx.rollback();
+                } else {
+                    tx.commit();
+                }
             }
+        } finally {
+            session.close();
         }
-        session.close();
     }
 
     private ClientConnection createClientConnection(HttpServerRequest request) {

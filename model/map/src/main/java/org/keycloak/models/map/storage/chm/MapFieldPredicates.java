@@ -21,6 +21,9 @@ import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.model.Resource;
 import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.authorization.model.Scope;
+import org.keycloak.events.Event;
+import org.keycloak.events.admin.AdminEvent;
+import org.keycloak.models.ActionTokenValueModel;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
@@ -39,10 +42,13 @@ import org.keycloak.models.map.authorization.entity.MapScopeEntity;
 import org.keycloak.models.map.client.MapClientEntity;
 import org.keycloak.models.map.clientscope.MapClientScopeEntity;
 import org.keycloak.models.map.common.AbstractEntity;
+import org.keycloak.models.map.events.MapAdminEventEntity;
+import org.keycloak.models.map.events.MapAuthEventEntity;
 import org.keycloak.models.map.group.MapGroupEntity;
 import org.keycloak.models.map.loginFailure.MapUserLoginFailureEntity;
 import org.keycloak.models.map.realm.MapRealmEntity;
 import org.keycloak.models.map.role.MapRoleEntity;
+import org.keycloak.models.map.singleUseObject.MapSingleUseObjectEntity;
 import org.keycloak.models.map.storage.QueryParameters;
 import org.keycloak.models.map.user.MapUserConsentEntity;
 import org.keycloak.storage.SearchableModelField;
@@ -77,7 +83,6 @@ import static org.keycloak.models.UserSessionModel.CORRESPONDING_SESSION_ID;
  */
 public class MapFieldPredicates {
 
-    public static final Map<SearchableModelField<AuthenticatedClientSessionModel>, UpdatePredicatesFunc<Object, MapAuthenticatedClientSessionEntity, AuthenticatedClientSessionModel>> CLIENT_SESSION_PREDICATES = basePredicates(AuthenticatedClientSessionModel.SearchableFields.ID);
     public static final Map<SearchableModelField<ClientModel>, UpdatePredicatesFunc<Object, MapClientEntity, ClientModel>> CLIENT_PREDICATES = basePredicates(ClientModel.SearchableFields.ID);
     public static final Map<SearchableModelField<ClientScopeModel>, UpdatePredicatesFunc<Object, MapClientScopeEntity, ClientScopeModel>> CLIENT_SCOPE_PREDICATES = basePredicates(ClientScopeModel.SearchableFields.ID);
     public static final Map<SearchableModelField<GroupModel>, UpdatePredicatesFunc<Object, MapGroupEntity, GroupModel>> GROUP_PREDICATES = basePredicates(GroupModel.SearchableFields.ID);
@@ -92,6 +97,9 @@ public class MapFieldPredicates {
     public static final Map<SearchableModelField<UserLoginFailureModel>, UpdatePredicatesFunc<Object, MapUserLoginFailureEntity, UserLoginFailureModel>> USER_LOGIN_FAILURE_PREDICATES = basePredicates(UserLoginFailureModel.SearchableFields.ID);
     public static final Map<SearchableModelField<UserModel>, UpdatePredicatesFunc<Object, MapUserEntity, UserModel>> USER_PREDICATES = basePredicates(UserModel.SearchableFields.ID);
     public static final Map<SearchableModelField<UserSessionModel>, UpdatePredicatesFunc<Object, MapUserSessionEntity, UserSessionModel>> USER_SESSION_PREDICATES = basePredicates(UserSessionModel.SearchableFields.ID);
+    public static final Map<SearchableModelField<Event>, UpdatePredicatesFunc<Object, MapAuthEventEntity, Event>> AUTH_EVENTS_PREDICATES = basePredicates(Event.SearchableFields.ID);
+    public static final Map<SearchableModelField<AdminEvent>, UpdatePredicatesFunc<Object, MapAdminEventEntity, AdminEvent>> ADMIN_EVENTS_PREDICATES = basePredicates(AdminEvent.SearchableFields.ID);
+    public static final Map<SearchableModelField<ActionTokenValueModel>, UpdatePredicatesFunc<Object, MapSingleUseObjectEntity, ActionTokenValueModel>> ACTION_TOKEN_PREDICATES = basePredicates(ActionTokenValueModel.SearchableFields.ID);
 
     @SuppressWarnings("unchecked")
     private static final Map<Class<?>, Map> PREDICATES = new HashMap<>();
@@ -122,6 +130,7 @@ public class MapFieldPredicates {
         put(ROLE_PREDICATES, RoleModel.SearchableFields.DESCRIPTION,              MapRoleEntity::getDescription);
         put(ROLE_PREDICATES, RoleModel.SearchableFields.NAME,                     MapRoleEntity::getName);
         put(ROLE_PREDICATES, RoleModel.SearchableFields.IS_CLIENT_ROLE,           MapRoleEntity::isClientRole);
+        put(ROLE_PREDICATES, RoleModel.SearchableFields.COMPOSITE_ROLE,           MapFieldPredicates::checkCompositeRoles);
 
         put(USER_PREDICATES, UserModel.SearchableFields.REALM_ID,                 MapUserEntity::getRealmId);
         put(USER_PREDICATES, UserModel.SearchableFields.USERNAME,                 MapUserEntity::getUsername);
@@ -141,9 +150,10 @@ public class MapFieldPredicates {
         put(USER_PREDICATES, UserModel.SearchableFields.SERVICE_ACCOUNT_CLIENT,   MapUserEntity::getServiceAccountClientLink);
 
         put(AUTHENTICATION_SESSION_PREDICATES, RootAuthenticationSessionModel.SearchableFields.REALM_ID,    MapRootAuthenticationSessionEntity::getRealmId);
-        put(AUTHENTICATION_SESSION_PREDICATES, RootAuthenticationSessionModel.SearchableFields.TIMESTAMP,   MapRootAuthenticationSessionEntity::getTimestamp);
 
         put(AUTHZ_RESOURCE_SERVER_PREDICATES, ResourceServer.SearchableFields.ID, predicateForKeyField(MapResourceServerEntity::getId));
+        put(AUTHZ_RESOURCE_SERVER_PREDICATES, ResourceServer.SearchableFields.CLIENT_ID, MapResourceServerEntity::getClientId);
+        put(AUTHZ_RESOURCE_SERVER_PREDICATES, ResourceServer.SearchableFields.REALM_ID, MapResourceServerEntity::getRealmId);
 
         put(AUTHZ_RESOURCE_PREDICATES, Resource.SearchableFields.ID, predicateForKeyField(MapResourceEntity::getId));
         put(AUTHZ_RESOURCE_PREDICATES, Resource.SearchableFields.NAME, MapResourceEntity::getName);
@@ -153,10 +163,12 @@ public class MapFieldPredicates {
         put(AUTHZ_RESOURCE_PREDICATES, Resource.SearchableFields.URI, MapFieldPredicates::checkResourceUri);
         put(AUTHZ_RESOURCE_PREDICATES, Resource.SearchableFields.SCOPE_ID, MapFieldPredicates::checkResourceScopes);
         put(AUTHZ_RESOURCE_PREDICATES, Resource.SearchableFields.OWNER_MANAGED_ACCESS, MapResourceEntity::isOwnerManagedAccess);
+        put(AUTHZ_RESOURCE_PREDICATES, Resource.SearchableFields.REALM_ID, MapResourceEntity::getRealmId);
 
         put(AUTHZ_SCOPE_PREDICATES, Scope.SearchableFields.ID, predicateForKeyField(MapScopeEntity::getId));
         put(AUTHZ_SCOPE_PREDICATES, Scope.SearchableFields.RESOURCE_SERVER_ID, MapScopeEntity::getResourceServerId);
         put(AUTHZ_SCOPE_PREDICATES, Scope.SearchableFields.NAME, MapScopeEntity::getName);
+        put(AUTHZ_SCOPE_PREDICATES, Scope.SearchableFields.REALM_ID, MapScopeEntity::getRealmId);
 
         put(AUTHZ_PERMISSION_TICKET_PREDICATES, PermissionTicket.SearchableFields.ID, predicateForKeyField(MapPermissionTicketEntity::getId));
         put(AUTHZ_PERMISSION_TICKET_PREDICATES, PermissionTicket.SearchableFields.OWNER, MapPermissionTicketEntity::getOwner);
@@ -166,12 +178,14 @@ public class MapFieldPredicates {
         put(AUTHZ_PERMISSION_TICKET_PREDICATES, PermissionTicket.SearchableFields.SCOPE_ID, predicateForKeyField(MapPermissionTicketEntity::getScopeId));
         put(AUTHZ_PERMISSION_TICKET_PREDICATES, PermissionTicket.SearchableFields.POLICY_ID, predicateForKeyField(MapPermissionTicketEntity::getPolicyId));
         put(AUTHZ_PERMISSION_TICKET_PREDICATES, PermissionTicket.SearchableFields.GRANTED_TIMESTAMP, MapPermissionTicketEntity::getGrantedTimestamp);
+        put(AUTHZ_PERMISSION_TICKET_PREDICATES, PermissionTicket.SearchableFields.REALM_ID, MapPermissionTicketEntity::getRealmId);
 
         put(AUTHZ_POLICY_PREDICATES, Policy.SearchableFields.ID, predicateForKeyField(MapPolicyEntity::getId));
         put(AUTHZ_POLICY_PREDICATES, Policy.SearchableFields.NAME, MapPolicyEntity::getName);
         put(AUTHZ_POLICY_PREDICATES, Policy.SearchableFields.OWNER, MapPolicyEntity::getOwner);
         put(AUTHZ_POLICY_PREDICATES, Policy.SearchableFields.TYPE, MapPolicyEntity::getType);
         put(AUTHZ_POLICY_PREDICATES, Policy.SearchableFields.RESOURCE_SERVER_ID, MapPolicyEntity::getResourceServerId);
+        put(AUTHZ_POLICY_PREDICATES, Policy.SearchableFields.REALM_ID, MapPolicyEntity::getRealmId);
         put(AUTHZ_POLICY_PREDICATES, Policy.SearchableFields.RESOURCE_ID, MapFieldPredicates::checkPolicyResources);
         put(AUTHZ_POLICY_PREDICATES, Policy.SearchableFields.SCOPE_ID, MapFieldPredicates::checkPolicyScopes);
         put(AUTHZ_POLICY_PREDICATES, Policy.SearchableFields.CONFIG, MapFieldPredicates::checkPolicyConfig);
@@ -186,14 +200,30 @@ public class MapFieldPredicates {
         put(USER_SESSION_PREDICATES, UserSessionModel.SearchableFields.IS_OFFLINE,                MapUserSessionEntity::isOffline);
         put(USER_SESSION_PREDICATES, UserSessionModel.SearchableFields.LAST_SESSION_REFRESH,      MapUserSessionEntity::getLastSessionRefresh);
 
-        put(CLIENT_SESSION_PREDICATES, AuthenticatedClientSessionModel.SearchableFields.REALM_ID,         MapAuthenticatedClientSessionEntity::getRealmId);
-        put(CLIENT_SESSION_PREDICATES, AuthenticatedClientSessionModel.SearchableFields.CLIENT_ID,        MapAuthenticatedClientSessionEntity::getClientId);
-        put(CLIENT_SESSION_PREDICATES, AuthenticatedClientSessionModel.SearchableFields.USER_SESSION_ID,  MapAuthenticatedClientSessionEntity::getUserSessionId);
-        put(CLIENT_SESSION_PREDICATES, AuthenticatedClientSessionModel.SearchableFields.IS_OFFLINE,       MapAuthenticatedClientSessionEntity::isOffline);
-        put(CLIENT_SESSION_PREDICATES, AuthenticatedClientSessionModel.SearchableFields.TIMESTAMP,        MapAuthenticatedClientSessionEntity::getTimestamp);
-
         put(USER_LOGIN_FAILURE_PREDICATES, UserLoginFailureModel.SearchableFields.REALM_ID,  MapUserLoginFailureEntity::getRealmId);
         put(USER_LOGIN_FAILURE_PREDICATES, UserLoginFailureModel.SearchableFields.USER_ID,   MapUserLoginFailureEntity::getUserId);
+
+        put(AUTH_EVENTS_PREDICATES, Event.SearchableFields.REALM_ID, MapAuthEventEntity::getRealmId);
+        put(AUTH_EVENTS_PREDICATES, Event.SearchableFields.CLIENT_ID, MapAuthEventEntity::getClientId);
+        put(AUTH_EVENTS_PREDICATES, Event.SearchableFields.USER_ID, MapAuthEventEntity::getUserId);
+        put(AUTH_EVENTS_PREDICATES, Event.SearchableFields.TIMESTAMP, MapAuthEventEntity::getTimestamp);
+        put(AUTH_EVENTS_PREDICATES, Event.SearchableFields.IP_ADDRESS, MapAuthEventEntity::getIpAddress);
+        put(AUTH_EVENTS_PREDICATES, Event.SearchableFields.EVENT_TYPE, MapAuthEventEntity::getType);
+
+        put(ADMIN_EVENTS_PREDICATES, AdminEvent.SearchableFields.REALM_ID, MapAdminEventEntity::getRealmId);
+        put(ADMIN_EVENTS_PREDICATES, AdminEvent.SearchableFields.TIMESTAMP, MapAdminEventEntity::getTimestamp);
+        put(ADMIN_EVENTS_PREDICATES, AdminEvent.SearchableFields.AUTH_REALM_ID, MapAdminEventEntity::getAuthRealmId);
+        put(ADMIN_EVENTS_PREDICATES, AdminEvent.SearchableFields.AUTH_CLIENT_ID, MapAdminEventEntity::getAuthClientId);
+        put(ADMIN_EVENTS_PREDICATES, AdminEvent.SearchableFields.AUTH_USER_ID, MapAdminEventEntity::getAuthUserId);
+        put(ADMIN_EVENTS_PREDICATES, AdminEvent.SearchableFields.AUTH_IP_ADDRESS, MapAdminEventEntity::getAuthIpAddress);
+        put(ADMIN_EVENTS_PREDICATES, AdminEvent.SearchableFields.OPERATION_TYPE, MapAdminEventEntity::getOperationType);
+        put(ADMIN_EVENTS_PREDICATES, AdminEvent.SearchableFields.RESOURCE_TYPE, MapAdminEventEntity::getResourceType);
+        put(ADMIN_EVENTS_PREDICATES, AdminEvent.SearchableFields.RESOURCE_PATH, MapAdminEventEntity::getResourcePath);
+
+        put(ACTION_TOKEN_PREDICATES, ActionTokenValueModel.SearchableFields.USER_ID,                    MapSingleUseObjectEntity::getUserId);
+        put(ACTION_TOKEN_PREDICATES, ActionTokenValueModel.SearchableFields.ACTION_ID,                  MapSingleUseObjectEntity::getActionId);
+        put(ACTION_TOKEN_PREDICATES, ActionTokenValueModel.SearchableFields.ACTION_VERIFICATION_NONCE,  MapSingleUseObjectEntity::getActionVerificationNonce);
+        put(ACTION_TOKEN_PREDICATES, ActionTokenValueModel.SearchableFields.OBJECT_KEY,                 MapSingleUseObjectEntity::getObjectKey);
     }
 
     static {
@@ -210,8 +240,10 @@ public class MapFieldPredicates {
         PREDICATES.put(PermissionTicket.class,                  AUTHZ_PERMISSION_TICKET_PREDICATES);
         PREDICATES.put(Policy.class,                            AUTHZ_POLICY_PREDICATES);
         PREDICATES.put(UserSessionModel.class,                  USER_SESSION_PREDICATES);
-        PREDICATES.put(AuthenticatedClientSessionModel.class,   CLIENT_SESSION_PREDICATES);
         PREDICATES.put(UserLoginFailureModel.class,             USER_LOGIN_FAILURE_PREDICATES);
+        PREDICATES.put(Event.class,                             AUTH_EVENTS_PREDICATES);
+        PREDICATES.put(AdminEvent.class,                        ADMIN_EVENTS_PREDICATES);
+        PREDICATES.put(ActionTokenValueModel.class,             ACTION_TOKEN_PREDICATES);
     }
 
     private static <K, V extends AbstractEntity, M, L extends Comparable<L>> void put(
@@ -322,6 +354,14 @@ public class MapFieldPredicates {
             final List<String> attrs = ue.getAttribute(attrNameS);
             return attrs != null && attrs.stream().anyMatch(valueComparator);
         };
+
+        return mcb.fieldCompare(Boolean.TRUE::equals, getter);
+    }
+
+    private static MapModelCriteriaBuilder<Object, MapRoleEntity, RoleModel> checkCompositeRoles(MapModelCriteriaBuilder<Object, MapRoleEntity, RoleModel> mcb, Operator op, Object[] values) {
+        String roleIdS = ensureEqSingleValue(RoleModel.SearchableFields.COMPOSITE_ROLE, "composite_role_id", op, values);
+        Function<MapRoleEntity, ?> getter;
+        getter = re -> Optional.ofNullable(re.getCompositeRoles()).orElseGet(Collections::emptySet).contains(roleIdS);
 
         return mcb.fieldCompare(Boolean.TRUE::equals, getter);
     }
@@ -485,17 +525,17 @@ public class MapFieldPredicates {
 
     private static MapModelCriteriaBuilder<Object, MapRealmEntity, RealmModel> checkRealmsWithComponentType(MapModelCriteriaBuilder<Object, MapRealmEntity, RealmModel> mcb, Operator op, Object[] values) {
         String providerType = ensureEqSingleValue(RealmModel.SearchableFields.COMPONENT_PROVIDER_TYPE, "component_provider_type", op, values);
-        Function<MapRealmEntity, ?> getter = realmEntity -> realmEntity.getComponents().anyMatch(component -> component.getProviderType().equals(providerType));
+        Function<MapRealmEntity, ?> getter = realmEntity -> Optional.ofNullable(realmEntity.getComponents()).orElseGet(Collections::emptySet).stream().anyMatch(component -> component.getProviderType().equals(providerType));
         return mcb.fieldCompare(Boolean.TRUE::equals, getter);
     }
 
     private static MapModelCriteriaBuilder<Object, MapUserSessionEntity, UserSessionModel> checkUserSessionContainsAuthenticatedClientSession(MapModelCriteriaBuilder<Object, MapUserSessionEntity, UserSessionModel> mcb, Operator op, Object[] values) {
         String clientId = ensureEqSingleValue(UserSessionModel.SearchableFields.CLIENT_ID, "client_id", op, values);
-        Function<MapUserSessionEntity, ?> getter = use -> (use.getAuthenticatedClientSessions().containsKey(clientId));
+        Function<MapUserSessionEntity, ?> getter = use -> (use.getAuthenticatedClientSession(clientId).isPresent());
         return mcb.fieldCompare(Boolean.TRUE::equals, getter);
     }
 
-    protected static <K, V extends AbstractEntity, M> Map<SearchableModelField<M>, UpdatePredicatesFunc<K, V, M>> basePredicates(SearchableModelField<M> idField) {
+    public static <K, V extends AbstractEntity, M> Map<SearchableModelField<M>, UpdatePredicatesFunc<K, V, M>> basePredicates(SearchableModelField<M> idField) {
         Map<SearchableModelField<M>, UpdatePredicatesFunc<K, V, M>> fieldPredicates = new HashMap<>();
         fieldPredicates.put(idField, MapModelCriteriaBuilder::idCompare);
         return fieldPredicates;

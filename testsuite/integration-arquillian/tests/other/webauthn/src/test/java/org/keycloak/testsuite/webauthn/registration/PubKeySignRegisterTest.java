@@ -90,7 +90,10 @@ public class PubKeySignRegisterTest extends AbstractWebAuthnVirtualTest {
 
             assertThat(webAuthnErrorPage.isCurrent(), is(!shouldSuccess));
             if (!shouldSuccess) {
-                assertThat(webAuthnErrorPage.getError(), containsString("The operation either timed out or was not allowed"));
+                final String expectedMessage = getExpectedMessageByDriver(
+                        "NotSupportedError: Operation is not supported",
+                        "The operation either timed out or was not allowed");
+                assertThat(webAuthnErrorPage.getError(), containsString(expectedMessage));
                 return;
             }
 

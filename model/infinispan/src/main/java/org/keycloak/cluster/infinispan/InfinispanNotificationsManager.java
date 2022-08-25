@@ -254,7 +254,8 @@ public class InfinispanNotificationsManager {
 
                 });
             } catch (RejectedExecutionException ree) {
-                logger.errorf("Rejected submitting of the event for key: %s. Value: %s, Server going to shutdown or pool exhausted. Pool: %s", key, workCache.get(key), listenersExecutor.toString());
+                // avoid touching the cache when creating a log message to avoid a deadlock in Infinispan 12.1.7.Final
+                logger.errorf("Rejected submitting of the event for key: %s. Server going to shutdown or pool exhausted. Pool: %s", key, listenersExecutor.toString());
                 throw ree;
             }
         }

@@ -56,38 +56,35 @@ public class RegexPolicyTest extends AbstractAuthzTest {
 
     @Override
     public void addTestRealms(List<RealmRepresentation> testRealms) {
-        ProtocolMapperRepresentation userAttrFooProtocolMapper = new ProtocolMapperRepresentation();
-        userAttrFooProtocolMapper.setName("userAttrFoo");
-        userAttrFooProtocolMapper.setProtocolMapper(UserAttributeMapper.PROVIDER_ID);
-        userAttrFooProtocolMapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        Map<String, String> configFoo = new HashMap<>();
-        configFoo.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
-        configFoo.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true");
-        configFoo.put(OIDCAttributeMapperHelper.JSON_TYPE, "String");
-        configFoo.put("user.attribute", "foo");
-        configFoo.put("claim.name", "foo");
-        userAttrFooProtocolMapper.setConfig(configFoo);
+        Map<String, String> claims = new HashMap<>();
 
-        ProtocolMapperRepresentation userAttrBarProtocolMapper = new ProtocolMapperRepresentation();
-        userAttrBarProtocolMapper.setName("userAttrBar");
-        userAttrBarProtocolMapper.setProtocolMapper(UserAttributeMapper.PROVIDER_ID);
-        userAttrBarProtocolMapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
-        Map<String, String> configBar = new HashMap<>();
-        configBar.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
-        configBar.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true");
-        configBar.put(OIDCAttributeMapperHelper.JSON_TYPE, "String");
-        configBar.put("user.attribute", "bar");
-        configBar.put("claim.name", "bar");
-        userAttrBarProtocolMapper.setConfig(configBar);
+        claims.put("user.attribute", "foo");
+        claims.put("claim.name", "foo");
+        ProtocolMapperRepresentation userAttrFooProtocolMapper = addClaimMapper("userAttrFoo", claims);
+
+        claims.put("user.attribute", "bar");
+        claims.put("claim.name", "bar");
+        ProtocolMapperRepresentation userAttrBarProtocolMapper = addClaimMapper("userAttrBar", claims);
+
+        claims.put("user.attribute", "json-simple");
+        claims.put("claim.name", "userinfo");
+        ProtocolMapperRepresentation userAttrJsonProtocolMapper = addClaimMapper("userAttrJsonSimple", claims);
+
+        claims.put("user.attribute", "json-complex");
+        claims.put("claim.name", "json-complex");
+        ProtocolMapperRepresentation userAttrJsonComplexProtocolMapper = addClaimMapper("userAttrJsonComplex", claims);
+
+        //        For JSON-based claims, you can use dot notation for nesting and square brackets to access array fields by index. For example, contact.address[0].country.
 
         testRealms.add(RealmBuilder.create().name("authz-test")
             .user(UserBuilder.create().username("marta").password("password").addAttribute("foo", "foo").addAttribute("bar",
-                "barbar"))
+                "barbar").addAttribute("json-simple", "{\"tenant\": \"abc\"}")
+                    .addAttribute("json-complex", "{\"userinfo\": {\"tenant\": \"abc\"}, \"some-array\": [\"foo\",\"bar\"]}"))
             .user(UserBuilder.create().username("taro").password("password").addAttribute("foo", "faa").addAttribute("bar",
                 "bbarbar"))
             .client(ClientBuilder.create().clientId("resource-server-test").secret("secret").authorizationServicesEnabled(true)
                 .redirectUris("http://localhost/resource-server-test").directAccessGrants()
-                .protocolMapper(userAttrFooProtocolMapper, userAttrBarProtocolMapper))
+                .protocolMapper(userAttrFooProtocolMapper, userAttrBarProtocolMapper, userAttrJsonProtocolMapper, userAttrJsonComplexProtocolMapper))
             .build());
     }
 
@@ -95,12 +92,21 @@ public class RegexPolicyTest extends AbstractAuthzTest {
     public void configureAuthorization() throws Exception {
         createResource("Resource A");
         createResource("Resource B");
+        createResource("Resource C");
+        createResource("Resource D");
+        createResource("Resource E");
 
         createRegexPolicy("Regex foo Policy", "foo", "foo");
         createRegexPolicy("Regex bar Policy", "bar", "^bar.+$");
+        createRegexPolicy("Regex json-simple Policy", "userinfo.tenant", "^abc$");
+        createRegexPolicy("Regex json-complex Policy", "json-complex.userinfo.tenant", "^abc$");
+        createRegexPolicy("Regex json-array Policy", "json-complex.some-array[1]", "bar");
 
         createResourcePermission("Resource A Permission", "Resource A", "Regex foo Policy");
         createResourcePermission("Resource B Permission", "Resource B", "Regex bar Policy");
+        createResourcePermission("Resource C Permission", "Resource C", "Regex json-simple Policy");
+        createResourcePermission("Resource D Permission", "Resource D", "Regex json-complex Policy");
+        createResourcePermission("Resource E Permission", "Resource E", "Regex json-array Policy");
     }
 
     private void createResource(String name) {
@@ -164,6 +170,21 @@ public class RegexPolicyTest extends AbstractAuthzTest {
         ticket = authzClient.protection().permission().create(request).getTicket();
         response = authzClient.authorization("marta", "password").authorize(new AuthorizationRequest(ticket));
         assertNotNull(response.getToken());
+
+        request = new PermissionRequest("Resource C");
+        ticket = authzClient.protection().permission().create(request).getTicket();
+        response = authzClient.authorization("marta", "password").authorize(new AuthorizationRequest(ticket));
+        assertNotNull(response.getToken());
+
+        request = new PermissionRequest("Resource D");
+        ticket = authzClient.protection().permission().create(request).getTicket();
+        response = authzClient.authorization("marta", "password").authorize(new AuthorizationRequest(ticket));
+        assertNotNull(response.getToken());
+
+        request = new PermissionRequest("Resource E");
+        ticket = authzClient.protection().permission().create(request).getTicket();
+        response = authzClient.authorization("marta", "password").authorize(new AuthorizationRequest(ticket));
+        assertNotNull(response.getToken());
     }
 
     @Test
@@ -188,9 +209,42 @@ public class RegexPolicyTest extends AbstractAuthzTest {
         } catch (AuthorizationDeniedException ignore) {
 
         }
+
+        // Access Resource C with taro.
+        request = new PermissionRequest("Resource C");
+        ticket = authzClient.protection().permission().create(request).getTicket();
+        try {
+            authzClient.authorization("taro", "password").authorize(new AuthorizationRequest(ticket));
+            fail("Should fail.");
+        } catch (AuthorizationDeniedException ignore) {
+
+        }
+
+        // Access Resource D with taro.
+        request = new PermissionRequest("Resource D");
+        ticket = authzClient.protection().permission().create(request).getTicket();
+        try {
+            authzClient.authorization("taro", "password").authorize(new AuthorizationRequest(ticket));
+            fail("Should fail.");
+        } catch (AuthorizationDeniedException ignore) {
+
+        }
     }
 
     private AuthzClient getAuthzClient() {
         return AuthzClient.create(getClass().getResourceAsStream("/authorization-test/default-keycloak.json"));
+    }
+
+    private ProtocolMapperRepresentation addClaimMapper(String name, Map<String, String> claims) {
+        ProtocolMapperRepresentation userAttrBarProtocolMapper = new ProtocolMapperRepresentation();
+        userAttrBarProtocolMapper.setName(name);
+        userAttrBarProtocolMapper.setProtocolMapper(UserAttributeMapper.PROVIDER_ID);
+        userAttrBarProtocolMapper.setProtocol(OIDCLoginProtocol.LOGIN_PROTOCOL);
+        Map<String, String> configBar = new HashMap<>(claims);
+        configBar.put(OIDCAttributeMapperHelper.INCLUDE_IN_ACCESS_TOKEN, "true");
+        configBar.put(OIDCAttributeMapperHelper.INCLUDE_IN_ID_TOKEN, "true");
+        configBar.put(OIDCAttributeMapperHelper.JSON_TYPE, "String");
+        userAttrBarProtocolMapper.setConfig(configBar);
+        return userAttrBarProtocolMapper;
     }
 }

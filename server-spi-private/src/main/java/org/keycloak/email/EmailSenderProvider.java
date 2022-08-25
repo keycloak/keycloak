@@ -27,5 +27,9 @@ import java.util.Map;
  */
 public interface EmailSenderProvider extends Provider {
 
-    void send(Map<String, String> config, UserModel user, String subject, String textBody, String htmlBody) throws EmailException;
+    default void send(Map<String, String> config, UserModel user, String subject, String textBody, String htmlBody) throws EmailException {
+        send(config, user.getEmail(), subject, textBody, htmlBody);
+    }
+
+    void send(Map<String, String> config, String address, String subject, String textBody, String htmlBody) throws EmailException;
 }

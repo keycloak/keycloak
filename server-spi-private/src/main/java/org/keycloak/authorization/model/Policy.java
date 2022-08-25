@@ -42,6 +42,7 @@ public interface Policy {
         public static final SearchableModelField<Policy> OWNER = new SearchableModelField<>("owner", String.class);
         public static final SearchableModelField<Policy> CONFIG = new SearchableModelField<>("config", String.class);
         public static final SearchableModelField<Policy> ASSOCIATED_POLICY_ID = new SearchableModelField<>("associatedPolicyId", String.class);
+        public static final SearchableModelField<Policy> REALM_ID = new SearchableModelField<>("realmId", String.class);
     }
 
     public static enum FilterOption {
@@ -100,7 +101,7 @@ public interface Policy {
     /**
      * Sets the {DecisionStrategy} for this policy.
      *
-     * @return the decision strategy for this policy
+     * @param decisionStrategy for this policy
      */
     void setDecisionStrategy(DecisionStrategy decisionStrategy);
 
@@ -114,7 +115,7 @@ public interface Policy {
     /**
      * Sets the {Logic} for this policy.
      *
-     * @return the decision strategy for this policy
+     * @param logic for this policy
      */
     void setLogic(Logic logic);
 
@@ -129,7 +130,7 @@ public interface Policy {
     /**
      * Sets a {@link Map} with string-based key/value pairs representing any additional configuration for this policy.
      *
-     * @return a map with any additional configuration for this policy.
+     * @param config a map with any additional configuration for this policy.
      */
     void setConfig(Map<String, String> config);
 

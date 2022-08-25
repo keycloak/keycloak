@@ -38,6 +38,7 @@ import org.keycloak.cluster.ClusterEvent;
 import org.keycloak.cluster.ClusterProvider;
 import org.keycloak.cluster.ManagedCacheManagerProvider;
 import org.keycloak.cluster.infinispan.KeycloakHotRodMarshallerFactory;
+import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.cache.infinispan.ClearCacheEvent;
@@ -45,6 +46,7 @@ import org.keycloak.models.cache.infinispan.events.RealmRemovedEvent;
 import org.keycloak.models.cache.infinispan.events.RealmUpdatedEvent;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.PostMigrationEvent;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.InvalidationHandler.ObjectType;
 import org.keycloak.provider.ProviderEvent;
 
@@ -62,7 +64,7 @@ import static org.keycloak.models.cache.infinispan.InfinispanCacheRealmProviderF
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class DefaultInfinispanConnectionProviderFactory implements InfinispanConnectionProviderFactory {
+public class DefaultInfinispanConnectionProviderFactory implements InfinispanConnectionProviderFactory, EnvironmentDependentProviderFactory {
 
     protected static final Logger logger = Logger.getLogger(DefaultInfinispanConnectionProviderFactory.class);
 
@@ -477,17 +479,22 @@ public class DefaultInfinispanConnectionProviderFactory implements InfinispanCon
         ClusterProvider cluster = session.getProvider(ClusterProvider.class);
         cluster.registerListener(REALM_CLEAR_CACHE_EVENTS, (ClusterEvent event) -> {
             if (event instanceof ClearCacheEvent) {
-                sessionFactory.invalidate(ObjectType._ALL_);
+                sessionFactory.invalidate(null, ObjectType._ALL_);
             }
         });
         cluster.registerListener(REALM_INVALIDATION_EVENTS, (ClusterEvent event) -> {
             if (event instanceof RealmUpdatedEvent) {
                 RealmUpdatedEvent rr = (RealmUpdatedEvent) event;
-                sessionFactory.invalidate(ObjectType.REALM, rr.getId());
+                sessionFactory.invalidate(null, ObjectType.REALM, rr.getId());
             } else if (event instanceof RealmRemovedEvent) {
                 RealmRemovedEvent rr = (RealmRemovedEvent) event;
-                sessionFactory.invalidate(ObjectType.REALM, rr.getId());
+                sessionFactory.invalidate(null, ObjectType.REALM, rr.getId());
             }
         });
+    }
+
+    @Override
+    public boolean isSupported() {
+        return !Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE);
     }
 }

@@ -22,8 +22,10 @@ import org.keycloak.WebAuthnConstants;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
 import org.keycloak.representations.idm.CredentialRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
+import org.keycloak.testsuite.arquillian.annotation.IgnoreBrowserDriver;
 import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.testsuite.webauthn.utils.WebAuthnRealmData;
+import org.openqa.selenium.firefox.FirefoxDriver;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -44,6 +46,7 @@ import static org.keycloak.testsuite.webauthn.utils.PropertyRequirement.YES;
 public class WebAuthnPropertyTest extends AbstractWebAuthnVirtualTest {
 
     @Test
+    @IgnoreBrowserDriver(FirefoxDriver.class)
     public void residentKey() throws IOException {
         getVirtualAuthManager().useAuthenticator(DEFAULT_RESIDENT_KEY.getOptions());
 
@@ -79,6 +82,7 @@ public class WebAuthnPropertyTest extends AbstractWebAuthnVirtualTest {
     }
 
     @Test
+    @IgnoreBrowserDriver(FirefoxDriver.class)
     public void timeout() throws IOException {
         final Integer TIMEOUT = 3; //seconds
 
@@ -102,6 +106,7 @@ public class WebAuthnPropertyTest extends AbstractWebAuthnVirtualTest {
     }
 
     @Test
+    @IgnoreBrowserDriver(FirefoxDriver.class)
     public void changeAuthenticatorProperties() throws IOException {
         getVirtualAuthManager().useAuthenticator(DEFAULT_RESIDENT_KEY.getOptions());
 

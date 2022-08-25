@@ -22,3 +22,4 @@ org.keycloak.keys.JavaKeystoreKeyProviderFactory
 org.keycloak.keys.ImportedRsaKeyProviderFactory
 org.keycloak.keys.GeneratedEcdsaKeyProviderFactory
 org.keycloak.keys.GeneratedRsaEncKeyProviderFactory
+org.keycloak.keys.ImportedRsaEncKeyProviderFactory

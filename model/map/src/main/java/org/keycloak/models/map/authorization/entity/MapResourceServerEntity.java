@@ -47,6 +47,12 @@ public interface MapResourceServerEntity extends UpdatableEntity, AbstractEntity
         }
     }
 
+    String getRealmId();
+    void setRealmId(String realmId);
+
+    String getClientId();
+    void setClientId(String clientId);
+
     Boolean isAllowRemoteResourceManagement();
     void setAllowRemoteResourceManagement(Boolean allowRemoteResourceManagement);
 

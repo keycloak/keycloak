@@ -21,7 +21,7 @@ public class RealmLocalizationTest extends AbstractI18NTest {
         RealmLocalizationResource localizationResource = testRealm().localization();
         localizationResource.saveRealmLocalizationText(locale, key, text);
 
-        Map<String, String> localizationTexts = localizationResource.getRealmLocalizationTexts(locale);
+        Map<String, String> localizationTexts = localizationResource.getRealmLocalizationTexts(locale, false);
 
         assertThat(localizationTexts, hasEntry(key, text));
     }

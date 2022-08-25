@@ -17,6 +17,8 @@
 package org.keycloak.testsuite.model;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
@@ -25,6 +27,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import org.junit.Test;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientProvider;
+import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.Constants;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -32,8 +35,11 @@ import org.keycloak.models.RealmProvider;
 import org.keycloak.models.RoleModel;
 import org.keycloak.models.RoleProvider;
 
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -116,10 +122,8 @@ public class ClientModelTest extends KeycloakModelTest {
             });
 
             withRealm(realmId, (session, realm) -> {
-                ClientModel client = session.clients().searchClientsByClientIdStream(realm, "%", 0, 10).findFirst().orElse(null);
-                assertThat(client, notNullValue());
-                assertThat(client.getId(), is(equalTo(searchClient.getId())));
-                assertThat(client.getClientId(), is(equalTo(searchClientId)));
+                // when searching by "%" all entries are expected
+                assertThat(session.clients().searchClientsByClientIdStream(realm, "%", 0, 10).count(), is(equalTo(2L)));
                 return null;
             });
         }
@@ -210,6 +214,44 @@ public class ClientModelTest extends KeycloakModelTest {
             final ClientModel client2 = session.clients().getClientByClientId(realm, "client2");
             session.clients().removeClient(realm, client1.getId());
             session.clients().removeClient(realm, client2.getId());
+            return null;
+        });
+    }
+
+    @Test
+    public void testClientScopes() {
+        List<String> clientScopes = new LinkedList<>();
+        withRealm(realmId, (session, realm) -> {
+            ClientModel client = session.clients().addClient(realm, "myClientId");
+
+            ClientScopeModel clientScope1 = session.clientScopes().addClientScope(realm, "myClientScope1");
+            clientScopes.add(clientScope1.getId());
+            ClientScopeModel clientScope2 = session.clientScopes().addClientScope(realm, "myClientScope2");
+            clientScopes.add(clientScope2.getId());
+
+
+            client.addClientScope(clientScope1, true);
+            client.addClientScope(clientScope2, false);
+
+            return null;
+        });
+
+        withRealm(realmId, (session, realm) -> {
+            List<String> actualClientScopes = session.clientScopes().getClientScopesStream(realm).map(ClientScopeModel::getId).collect(Collectors.toList());
+            assertThat(actualClientScopes, containsInAnyOrder(clientScopes.toArray()));
+
+            ClientScopeModel clientScopeById = session.clientScopes().getClientScopeById(realm, clientScopes.get(0));
+            assertThat(clientScopeById.getId(), is(clientScopes.get(0)));
+
+            session.clientScopes().removeClientScopes(realm);
+
+            return null;
+        });
+
+        withRealm(realmId, (session, realm) -> {
+            List<ClientScopeModel> actualClientScopes = session.clientScopes().getClientScopesStream(realm).collect(Collectors.toList());
+            assertThat(actualClientScopes, empty());
+
             return null;
         });
     }

@@ -195,7 +195,7 @@ public class ClientsResource {
                 ResourceServerRepresentation authorizationSettings = rep.getAuthorizationSettings();
 
                 if (authorizationSettings != null) {
-                    authorizationService.resourceServer().importSettings(authorizationSettings);
+                    authorizationService.getResourceServerService().importSettings(authorizationSettings);
                 }
             }
 
@@ -207,6 +207,7 @@ public class ClientsResource {
                         Response.Status.BAD_REQUEST);
             });
 
+            session.getContext().setClient(clientModel);
             session.clientPolicy().triggerOnEvent(new AdminClientRegisteredContext(clientModel, auth.adminAuth()));
 
             return Response.created(session.getContext().getUri().getAbsolutePathBuilder().path(clientModel.getId()).build()).build();

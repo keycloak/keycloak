@@ -28,7 +28,7 @@ import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
  * is only enabled when running tests using the {@link DistributionType#RAW}
  * or running tests in whitebox mode in the same jvm using {@link CLITest}
  */
-@Target(ElementType.TYPE)
+@Target({ElementType.TYPE, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
 @EnabledIfSystemProperty(named = "kc.quarkus.tests.dist", matches = "^$|raw")
 public @interface RawDistOnly {

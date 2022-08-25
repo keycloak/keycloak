@@ -285,12 +285,26 @@
                 </div>
                 <kc-tooltip>{{:: 'front-channel-logout-url.tooltip' | translate}}</kc-tooltip>
             </div>
+            <div class="form-group clearfix block" data-ng-show="protocol == 'openid-connect' && clientEdit.frontchannelLogout">
+                <label class="col-md-2 control-label" for="frontchannelLogoutSessionRequired">{{:: 'front-channel-logout-session-required' | translate}}</label>
+                <div class="col-sm-6">
+                    <input ng-model="frontchannelLogoutSessionRequired" name="frontchannelLogoutSessionRequired" id="frontchannelLogoutSessionRequired" onoffswitch ng-click="switchChange()" on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
+                </div>
+                <kc-tooltip>{{:: 'front-channel-logout-session-required.tooltip' | translate}}</kc-tooltip>
+            </div>
             <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
                 <label class="col-md-2 control-label" for="samlForceNameIdFormat">{{:: 'force-name-id-format' | translate}}</label>
                 <div class="col-sm-6">
                     <input ng-model="samlForceNameIdFormat" ng-click="switchChange()" name="samlForceNameIdFormat" id="samlForceNameIdFormat" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
                 </div>
                 <kc-tooltip>{{:: 'force-name-id-format.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix block" data-ng-show="protocol == 'saml'">
+                <label class="col-md-2 control-label" for="samlAllowECPFlow">{{:: 'allow-ecp-flow' | translate}}</label>
+                <div class="col-sm-6">
+                    <input ng-model="samlAllowECPFlow" ng-click="switchChange()" name="samlAllowECPFlow" id="samlAllowECPFlow" onoffswitch on-text="{{:: 'onText' | translate}}" off-text="{{:: 'offText' | translate}}"/>
+                </div>
+                <kc-tooltip>{{:: 'allow-ecp-flow.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group" data-ng-show="protocol == 'saml'">
                 <label class="col-md-2 control-label" for="samlNameIdFormat">{{:: 'name-id-format' | translate}}</label>
@@ -571,6 +585,35 @@
                     </div>
                 </div>
                 <kc-tooltip>{{:: 'user-info-signed-response-alg.tooltip' | translate}}</kc-tooltip>
+            </div>
+            <div class="form-group clearfix block">
+                <label class="col-md-2 control-label" for="userInfoEncryptedResponseAlg">{{:: 'user-info-encrypted-response-alg' | translate}}</label>
+                <div class="col-sm-6">
+                    <div>
+                        <select class="form-control" id="userInfoEncryptedResponseAlg"
+                                ng-change="changeUserInfoEncryptedResponseAlg()"
+                                ng-model="userInfoEncryptedResponseAlg">
+                            <option value=""></option>
+                            <option ng-repeat="provider in serverInfo.listProviderIds('cekmanagement')" value="{{provider}}">{{provider}}</option>
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>{{:: 'user-info-encrypted-response-alg.tooltip' | translate}}</kc-tooltip>
+            </div>
+
+            <div class="form-group clearfix block">
+                <label class="col-md-2 control-label" for="userInfoEncryptedResponseEnc">{{:: 'user-info-encrypted-response-enc' | translate}}</label>
+                <div class="col-sm-6">
+                    <div>
+                        <select class="form-control" id="userInfoEncryptedResponseEnc"
+                                ng-change="changeUserInfoEncryptedResponseEnc()"
+                                ng-model="userInfoEncryptedResponseEnc">
+                            <option value=""></option>
+                            <option ng-repeat="provider in serverInfo.listProviderIds('contentencryption')" value="{{provider}}">{{provider}}</option>
+                        </select>
+                    </div>
+                </div>
+                <kc-tooltip>{{:: 'user-info-encrypted-response-enc.tooltip' | translate}}</kc-tooltip>
             </div>
             <div class="form-group clearfix block" data-ng-show="protocol == 'openid-connect'">
                 <label class="col-md-2 control-label" for="requestObjectSignatureAlg">{{:: 'request-object-signature-alg' | translate}}</label>
@@ -932,7 +975,7 @@
                 <kc-tooltip>{{:: 'require-pushed-authorization-requests.tooltip' | translate}}</kc-tooltip>
             </div>
 
-            <div class="form-group clearfix block" data-ng-show="(!clientEdit.bearerOnly && protocol == 'openid-connect') && (clientEdit.standardFlowEnabled || clientEdit.directAccessGrantsEnabled || clientEdit.implicitFlowEnabled)">
+            <div class="form-group clearfix block" data-ng-show="!clientEdit.bearerOnly && protocol == 'openid-connect' && serverInfo.featureEnabled('STEP_UP_AUTHENTICATION')">
                 <label class="col-md-2 control-label" for="newAcr">{{:: 'acr-loa-map' | translate}}</label>
                 <div class="col-sm-6">
                     <div class="input-group input-map" ng-repeat="(acr, loa) in acrLoaMap">
@@ -950,8 +993,31 @@
                         </div>
                     </div>
                 </div>
-                <kc-tooltip>{{:: 'acr-loa-map.tooltip' | translate}}</kc-tooltip>
+                <kc-tooltip>{{:: 'acr-loa-map-client.tooltip' | translate}}</kc-tooltip>
             </div>
+
+            <div class="form-group" data-ng-show="!clientEdit.bearerOnly && protocol == 'openid-connect' && serverInfo.featureEnabled('STEP_UP_AUTHENTICATION')">
+                <label class="col-md-2 control-label" for="newDefaultAcrValue">{{:: 'default-acr-values' | translate}}</label>
+
+                <div class="col-sm-6">
+                    <div class="input-group" ng-repeat="(i, defaultAcrValue) in defaultAcrValues track by $index">
+                        <input class="form-control" ng-model="defaultAcrValues[i]">
+                        <div class="input-group-btn">
+                            <button class="btn btn-default" type="button" data-ng-click="deleteDefaultAcrValue($index)"><span class="fa fa-minus"></span></button>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <input class="form-control" ng-model="newDefaultAcrValue" id="newDefaultAcrValue">
+                        <div class="input-group-btn">
+                            <button class="btn btn-default" type="button" data-ng-click="newDefaultAcrValue.length > 0 && addDefaultAcrValue()"><span class="fa fa-plus"></span></button>
+                        </div>
+                    </div>
+                </div>
+
+                <kc-tooltip>{{:: 'default-acr-values.tooltip' | translate}}</kc-tooltip>
+            </div>
+
         </fieldset>
 
         <fieldset>

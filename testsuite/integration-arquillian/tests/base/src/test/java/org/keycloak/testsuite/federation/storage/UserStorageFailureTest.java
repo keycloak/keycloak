@@ -20,6 +20,7 @@ import org.jboss.arquillian.container.test.api.ContainerController;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -41,8 +42,10 @@ import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.EventRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.managers.RealmManager;
+import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
+import org.keycloak.storage.UserStorageUtil;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
 import org.keycloak.testsuite.AssertEvents;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
@@ -56,7 +59,10 @@ import org.keycloak.testsuite.util.OAuthClient;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Stream;
+import org.junit.Assume;
+import org.keycloak.models.RealmProvider;
 
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
 import org.keycloak.testsuite.util.ContainerAssume;
@@ -94,6 +100,8 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
 
     @Before
     public void addProvidersBeforeTest() {
+        Assume.assumeTrue("RealmProvider is not 'jpa'", isJpaRealmProvider());
+
         ComponentRepresentation memProvider = new ComponentRepresentation();
         memProvider.setName("failure");
         memProvider.setProviderId(FailableHardcodedStorageProviderFactory.PROVIDER_ID);
@@ -128,7 +136,7 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
             serviceAccount.grantRole(role);
             serviceAccount.setServiceAccountClientLink(offlineClient.getClientId());
 
-            UserModel localUser = manager.getSession().userLocalStorage().addUser(appRealm, LOCAL_USER);
+            UserModel localUser = UserStoragePrivateUtil.userLocalStorage(manager.getSession()).addUser(appRealm, LOCAL_USER);
             localUser.setEnabled(true);
         });
 
@@ -154,6 +162,8 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
     public void testKeycloak5350() throws Exception {
 
         ContainerAssume.assumeNotAuthServerRemote();
+
+        Assume.assumeTrue("User cache disabled.", isUserCacheEnabled());
 
         oauth.scope(OAuth2Constants.OFFLINE_ACCESS);
         oauth.clientId("offline-client");
@@ -215,7 +225,7 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName(AuthRealm.TEST);
             UserModel user = session.users().getUserByUsername(realm, username);
-            session.userCache().evict(realm, user);
+            UserStorageUtil.userCache(session).evict(realm, user);
         });
     }
 
@@ -255,6 +265,8 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
 
     @Test
     public void testKeycloak5926() {
+        Assume.assumeTrue("User cache disabled.", isUserCacheEnabled());
+
         oauth.clientId("test-app");
         oauth.redirectUri(OAuthClient.APP_AUTH_ROOT);
 
@@ -262,9 +274,9 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
         testingClient.server().run(session -> {
             RealmModel realm = session.realms().getRealmByName(AuthRealm.TEST);
 
-            UserModel user = session.userLocalStorage().getUserByUsername(realm, FailableHardcodedStorageProvider.username);
+            UserModel user = UserStoragePrivateUtil.userLocalStorage(session).getUserByUsername(realm, FailableHardcodedStorageProvider.username);
             if (user != null) {
-                session.userLocalStorage().removeUser(realm, user);
+                UserStoragePrivateUtil.userLocalStorage(session).removeUser(realm, user);
             }
         });
 
