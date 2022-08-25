@@ -6,19 +6,17 @@ import org.junit.Test;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.util.ContainerAssume;
 import org.keycloak.theme.Theme;
 
 import java.io.IOException;
 import java.util.List;
 
-import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.QUARKUS;
 import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 
 /**
  * @author <a href="mailto:vincent.letarouilly@gmail.com">Vincent Letarouilly</a>
  */
-@AuthServerContainerExclude({REMOTE, QUARKUS})
+@AuthServerContainerExclude({REMOTE})
 public class DefaultThemeManagerTest extends AbstractKeycloakTest {
 
     private static final String THEME_NAME = "environment-agnostic";
@@ -38,11 +36,10 @@ public class DefaultThemeManagerTest extends AbstractKeycloakTest {
     // KEYCLOAK-6698
     @Test
     public void systemPropertiesSubstitutionInThemeProperties() {
-        // TODO fix this test on auth-server-wildfly. There is an issue with setup of System properties (other JVM).
-        ContainerAssume.assumeAuthServerUndertow();
         testingClient.server().run(session -> {
             try {
                 Theme theme = session.theme().getTheme(THEME_NAME, Theme.Type.LOGIN);
+                Assert.assertEquals("getTheme(...) returns default theme when no matching theme found, but we need " + THEME_NAME + " theme deployed.",THEME_NAME, theme.getName());
                 Assert.assertEquals("Keycloak is awesome", theme.getProperties().getProperty("system.property.found"));
                 Assert.assertEquals("${missing_system_property}", theme.getProperties().getProperty("system.property.missing"));
                 Assert.assertEquals("defaultValue", theme.getProperties().getProperty("system.property.missing.with.default"));
@@ -58,6 +55,7 @@ public class DefaultThemeManagerTest extends AbstractKeycloakTest {
         testingClient.server().run(session -> {
             try {
                 Theme theme = session.theme().getTheme(THEME_NAME, Theme.Type.LOGIN);
+                Assert.assertEquals("getTheme(...) returns default theme when no matching theme found, but we need " + THEME_NAME + " theme deployed.",THEME_NAME, theme.getName());
                 Assert.assertEquals("${env.MISSING_ENVIRONMENT_VARIABLE}", theme.getProperties().getProperty("env.missing"));
                 Assert.assertEquals("defaultValue", theme.getProperties().getProperty("env.missingWithDefault"));
                 if (System.getenv().containsKey("HOMEPATH")) {

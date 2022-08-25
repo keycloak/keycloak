@@ -20,7 +20,7 @@
     <parent>
         <artifactId>keycloak-parent</artifactId>
         <groupId>org.keycloak</groupId>
-        <version>16.0.0-SNAPSHOT</version>
+        <version>999-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -43,22 +43,30 @@
         <module>licenses-common</module>
         <module>maven-plugins</module>
         <module>server-dist</module>
-        <module>server-overlay</module>
+        <!--<module>server-overlay</module>-->
     </modules>
 
     <repositories>
-        <!-- Needed for org.picketlink:picketlink-api -->
         <repository>
-            <id>jboss-enterprise-maven-repository</id>
-            <name>JBoss Enterprise Maven Repository</name>
-            <url>https://maven.repository.redhat.com/ga/</url>
+            <id>central</id>
+            <name>Maven Central</name>
+            <url>https://repo.maven.apache.org/maven2</url>
             <snapshots>
                 <enabled>false</enabled>
             </snapshots>
         </repository>
         <repository>
-            <id>jboss</id>
+            <id>jboss-public-repository</id>
+            <name>Jboss Public</name>
             <url>https://repository.jboss.org/nexus/content/groups/public/</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+        <repository>
+            <id>redhat-enterprise-maven-repository</id>
+            <name>Red Hat Enterprise Maven Repository</name>
+            <url>https://maven.repository.redhat.com/ga/</url>
             <snapshots>
                 <enabled>false</enabled>
             </snapshots>
@@ -78,21 +86,9 @@
             </modules>
         </profile>
         <profile>
-            <id>community</id>
-            <activation>
-                <property>
-                    <name>!product</name>
-                </property>
-            </activation>
-            <modules>
-                <module>server-x-dist</module>
-            </modules>
-        </profile>
-        <profile>
             <id>distribution-downloads</id>
             <modules>
                 <module>api-docs-dist</module>
-                <module>examples-dist</module>
                 <module>downloads</module>
             </modules>
         </profile>

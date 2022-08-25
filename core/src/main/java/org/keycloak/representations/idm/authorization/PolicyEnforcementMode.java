@@ -16,25 +16,46 @@
  */
 package org.keycloak.representations.idm.authorization;
 
+import java.util.Map;
+import java.util.Objects;
+import org.keycloak.util.EnumWithStableIndex;
+
 /**
  * The policy enforcement mode dictates how authorization requests are handled by the server.
  *
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
-public enum PolicyEnforcementMode {
+public enum PolicyEnforcementMode implements EnumWithStableIndex {
 
     /**
      * Requests are denied by default even when there is no policy associated with a given resource.
      */
-    ENFORCING,
+    ENFORCING(0),
 
     /**
      * Requests are allowed even when there is no policy associated with a given resource.
      */
-    PERMISSIVE,
+    PERMISSIVE(1),
 
     /**
      * Completely disables the evaluation of policies and allow access to any resource.
      */
-    DISABLED
+    DISABLED(2);
+
+    private final int stableIndex;
+    private static final Map<Integer, PolicyEnforcementMode> BY_ID = EnumWithStableIndex.getReverseIndex(values());
+
+    private PolicyEnforcementMode(int stableIndex) {
+        Objects.requireNonNull(stableIndex);
+        this.stableIndex = stableIndex;
+    }
+
+    @Override
+    public int getStableIndex() {
+        return stableIndex;
+    }
+
+    public static PolicyEnforcementMode valueOfInteger(Integer id) {
+        return id == null ? null : BY_ID.get(id);
+    }
 }

@@ -21,11 +21,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.migration.ModelVersion;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.nullValue;
-import static org.keycloak.migration.MigrationModelManager.*;
-
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
@@ -100,35 +95,4 @@ public class MigrationVersionTest {
         Assert.assertNull(versionProduct.getQualifier());
     }
 
-    @Test
-    public void testRHSSOVersionToKeycloakVersionConversion() {
-        Assert.assertThat(convertRHSSOVersionToKeycloakVersion("7.0.0.GA"), is(equalTo(RHSSO_VERSION_7_0_KEYCLOAK_VERSION)));
-        Assert.assertThat(convertRHSSOVersionToKeycloakVersion("7.0.1.GA"), is(equalTo(RHSSO_VERSION_7_0_KEYCLOAK_VERSION)));
-        Assert.assertThat(convertRHSSOVersionToKeycloakVersion("7.0.2.GA"), is(equalTo(RHSSO_VERSION_7_0_KEYCLOAK_VERSION)));
-        
-        Assert.assertThat(convertRHSSOVersionToKeycloakVersion("7.1.0.GA"), is(equalTo(RHSSO_VERSION_7_1_KEYCLOAK_VERSION)));
-        Assert.assertThat(convertRHSSOVersionToKeycloakVersion("7.1.1.GA"), is(equalTo(RHSSO_VERSION_7_1_KEYCLOAK_VERSION)));
-        Assert.assertThat(convertRHSSOVersionToKeycloakVersion("7.1.2.GA"), is(equalTo(RHSSO_VERSION_7_1_KEYCLOAK_VERSION)));
-
-        Assert.assertThat(convertRHSSOVersionToKeycloakVersion("7.2.0.GA"), is(equalTo(RHSSO_VERSION_7_2_KEYCLOAK_VERSION)));
-        Assert.assertThat(convertRHSSOVersionToKeycloakVersion("7.2.1.GA"), is(equalTo(RHSSO_VERSION_7_2_KEYCLOAK_VERSION)));
-        Assert.assertThat(convertRHSSOVersionToKeycloakVersion("7.2.2.GA"), is(equalTo(RHSSO_VERSION_7_2_KEYCLOAK_VERSION)));
-
-        Assert.assertThat(convertRHSSOVersionToKeycloakVersion("7.3.0.GA"), is(equalTo(RHSSO_VERSION_7_3_KEYCLOAK_VERSION)));
-        Assert.assertThat(convertRHSSOVersionToKeycloakVersion("7.3.1.GA"), is(equalTo(RHSSO_VERSION_7_3_KEYCLOAK_VERSION)));
-        Assert.assertThat(convertRHSSOVersionToKeycloakVersion("7.3.2.GA"), is(equalTo(RHSSO_VERSION_7_3_KEYCLOAK_VERSION)));
-        Assert.assertThat(convertRHSSOVersionToKeycloakVersion("7.3.10.GA"), is(equalTo(RHSSO_VERSION_7_3_KEYCLOAK_VERSION)));
-
-        Assert.assertThat(convertRHSSOVersionToKeycloakVersion("7.4.0.GA"), is(equalTo(RHSSO_VERSION_7_4_KEYCLOAK_VERSION)));
-        Assert.assertThat(convertRHSSOVersionToKeycloakVersion("7.4.15.GA"), is(equalTo(RHSSO_VERSION_7_4_KEYCLOAK_VERSION)));
-
-        // check the conversion doesn't change version for keycloak
-        Assert.assertThat(convertRHSSOVersionToKeycloakVersion("7.0.0"), is(nullValue()));
-        Assert.assertThat(convertRHSSOVersionToKeycloakVersion("8.0.0"), is(nullValue()));
-
-        // check for CD releases
-        Assert.assertThat(convertRHSSOVersionToKeycloakVersion("6"), is(equalTo(new ModelVersion("6.0.0"))));
-        Assert.assertThat(convertRHSSOVersionToKeycloakVersion("7"), is(equalTo(new ModelVersion("7.0.0"))));
-        Assert.assertThat(convertRHSSOVersionToKeycloakVersion("10"), is(equalTo(new ModelVersion("10.0.0"))));
-    }
 }

@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import com.fasterxml.jackson.core.type.TypeReference;
 
 /**
  * This class adapts the functionality from the old testsuite to make tests
@@ -93,6 +94,14 @@ public abstract class AbstractAdminTest extends AbstractTestRealmKeycloakTest {
     // Taken from Keycloak class in old testsuite.
     // So, code in old testsuite calling this looks like Keycloak.loadJson(.....)
     public static <T> T loadJson(InputStream is, Class<T> type) {
+        try {
+            return JsonSerialization.readValue(is, type);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to parse json", e);
+        }
+    }
+
+    public static <T> T loadJson(InputStream is, TypeReference<T> type) {
         try {
             return JsonSerialization.readValue(is, type);
         } catch (IOException e) {

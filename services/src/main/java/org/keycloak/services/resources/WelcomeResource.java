@@ -21,8 +21,8 @@ import org.keycloak.common.ClientConnection;
 import org.keycloak.common.Version;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.MimeTypeUtil;
+import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.services.ForbiddenException;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.managers.ApplianceBootstrap;
@@ -181,7 +181,6 @@ public class WelcomeResource {
 
             map.put("properties", theme.getProperties());
             map.put("adminUrl", session.getContext().getUri(UrlType.ADMIN).getBaseUriBuilder().path("/admin/").build());
-
             map.put("resourcesPath", "resources/" + Version.RESOURCES_VERSION + "/" + theme.getType().toString().toLowerCase() +"/" + theme.getName());
             map.put("resourcesCommonPath", "resources/" + Version.RESOURCES_VERSION + "/common/keycloak");
 
@@ -190,6 +189,8 @@ public class WelcomeResource {
             if (bootstrap) {
                 boolean isLocal = isLocal();
                 map.put("localUser", isLocal);
+                map.put("localAdminUrl", "http://localhost:8080/auth");
+                map.put("adminUserCreationMessage","or use the add-user-keycloak script");
 
                 if (isLocal) {
                     String stateChecker = setCsrfCookie();
@@ -256,7 +257,7 @@ public class WelcomeResource {
     }
 
     private String setCsrfCookie() {
-        String stateChecker = Base64Url.encode(KeycloakModelUtils.generateSecret());
+        String stateChecker = Base64Url.encode(SecretGenerator.getInstance().randomBytes());
         String cookiePath = session.getContext().getUri().getPath();
         boolean secureOnly = session.getContext().getUri().getRequestUri().getScheme().equalsIgnoreCase("https");
         CookieHelper.addCookie(KEYCLOAK_STATE_CHECKER, stateChecker, cookiePath, null, null, 300, secureOnly, true);

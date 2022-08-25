@@ -17,43 +17,28 @@
 package org.keycloak.models.map.loginFailure;
 
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserLoginFailureProvider;
 import org.keycloak.models.UserLoginFailureProviderFactory;
 import org.keycloak.models.UserLoginFailureModel;
 import org.keycloak.models.UserModel;
-import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.AbstractMapProviderFactory;
-import org.keycloak.provider.ProviderEvent;
-import org.keycloak.provider.ProviderEventListener;
+import org.keycloak.provider.InvalidationHandler;
+
+import static org.keycloak.models.map.common.AbstractMapProviderFactory.MapProviderObjectType.REALM_BEFORE_REMOVE;
+import static org.keycloak.models.map.common.AbstractMapProviderFactory.MapProviderObjectType.USER_BEFORE_REMOVE;
 
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
-public class MapUserLoginFailureProviderFactory extends AbstractMapProviderFactory<UserLoginFailureProvider, MapUserLoginFailureEntity, UserLoginFailureModel>
-        implements UserLoginFailureProviderFactory, ProviderEventListener {
-
-    private Runnable onClose;
+public class MapUserLoginFailureProviderFactory extends AbstractMapProviderFactory<MapUserLoginFailureProvider, MapUserLoginFailureEntity, UserLoginFailureModel>
+        implements UserLoginFailureProviderFactory<MapUserLoginFailureProvider>, InvalidationHandler {
 
     public MapUserLoginFailureProviderFactory() {
-        super(UserLoginFailureModel.class);
+        super(UserLoginFailureModel.class, MapUserLoginFailureProvider.class);
     }
 
     @Override
-    public void postInit(KeycloakSessionFactory factory) {
-        factory.register(this);
-        onClose = () -> factory.unregister(this);
-    }
-
-    @Override
-    public void close() {
-        super.close();
-        onClose.run();
-    }
-
-    @Override
-    public MapUserLoginFailureProvider create(KeycloakSession session) {
+    public MapUserLoginFailureProvider createNew(KeycloakSession session) {
         return new MapUserLoginFailureProvider(session, getStorage(session));
     }
 
@@ -63,17 +48,11 @@ public class MapUserLoginFailureProviderFactory extends AbstractMapProviderFacto
     }
 
     @Override
-    public void onEvent(ProviderEvent event) {
-        if (event instanceof UserModel.UserRemovedEvent) {
-            UserModel.UserRemovedEvent userRemovedEvent = (UserModel.UserRemovedEvent) event;
-
-            MapUserLoginFailureProvider provider = MapUserLoginFailureProviderFactory.this.create(userRemovedEvent.getKeycloakSession());
-            provider.removeUserLoginFailure(userRemovedEvent.getRealm(), userRemovedEvent.getUser().getId());
-        } else if (event instanceof RealmModel.RealmRemovedEvent) {
-            RealmModel.RealmRemovedEvent realmRemovedEvent = (RealmModel.RealmRemovedEvent) event;
-
-            MapUserLoginFailureProvider provider = MapUserLoginFailureProviderFactory.this.create(realmRemovedEvent.getKeycloakSession());
-            provider.removeAllUserLoginFailures(realmRemovedEvent.getRealm());
+    public void invalidate(KeycloakSession session, InvalidableObjectType type, Object... params) {
+        if (type == REALM_BEFORE_REMOVE) {
+            create(session).removeAllUserLoginFailures((RealmModel) params[0]);
+        } else if (type == USER_BEFORE_REMOVE) {
+            create(session).removeUserLoginFailure((RealmModel) params[0], ((UserModel) params[1]).getId());
         }
     }
 

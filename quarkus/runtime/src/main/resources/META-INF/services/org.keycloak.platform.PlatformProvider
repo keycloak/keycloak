@@ -15,4 +15,4 @@
 # limitations under the License.
 #
 
-org.keycloak.provider.quarkus.QuarkusPlatform
+org.keycloak.quarkus.runtime.integration.QuarkusPlatform

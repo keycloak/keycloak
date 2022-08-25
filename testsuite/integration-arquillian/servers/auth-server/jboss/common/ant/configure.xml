@@ -231,6 +231,7 @@
             </resources>
             <filterset>
                 <filter token="HOTROD_SASL_MECHANISM" value="${hotrod.sasl.mechanism}"/>
+                <filter token="PRELOADING_ENABLED" value="${keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase}"/>
             </filterset>
         </copy>
         <copy todir="${auth.server.home}/standalone/configuration">
@@ -256,4 +257,18 @@
             </filterset>
         </copy>
     </target>
+
+    <!-- Needed on Java 15 and later -->
+    <target name="deploy-nashorn-module">
+        <copy todir="${cli.tmp.dir}">
+            <resources>
+                <file file="${common.resources}/jboss-cli/deploy-nashorn-module.cli"/>
+            </resources>
+            <filterset>
+                <filter token="NASHORN_JAR" value="${project.build.directory}/nashorn/nashorn-core-${nashorn.version}.jar"/>
+            </filterset>
+        </copy>
+        <echo>Nashorn module deployed</echo>
+    </target>
+
 </project>

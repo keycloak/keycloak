@@ -1,12 +1,15 @@
 = ${product.name.full} Admin REST API
 
 == Overview
-This is a REST API reference for the ${product.name.full} Admin
+This is a REST API reference for the ${product.name.full} Admin REST API.
 
 === Version information
 Version: 1
 
 === URI scheme
-Host: localhost:8080
-BasePath: /auth
-Schemes: HTTP
+
+```
+{base url}/admin/realms
+```
+
+For example `http://localhost:8080/admin/realms`

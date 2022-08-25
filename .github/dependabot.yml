@@ -1,0 +1,25 @@
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    open-pull-requests-limit: 999
+    rebase-strategy: disabled
+    schedule:
+      interval: weekly
+      day: saturday
+    labels:
+      - area/dependencies
+      - area/ci
+  - package-ecosystem: npm
+    directory: /themes/src/main/resources/theme/keycloak/common/resources
+    schedule:
+      interval: weekly
+      day: saturday
+    open-pull-requests-limit: 999
+    rebase-strategy: disabled
+    labels:
+      - area/dependencies
+      - area/admin/ui
+    ignore:
+      - dependency-name: bootstrap
+        update-types: ["version-update:semver-major"]

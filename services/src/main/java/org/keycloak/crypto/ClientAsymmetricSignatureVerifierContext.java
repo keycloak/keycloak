@@ -33,11 +33,17 @@ public class ClientAsymmetricSignatureVerifierContext extends AsymmetricSignatur
         if (key == null) {
             throw new VerificationException("Key not found");
         }
+        if (!KeyType.RSA.equals(key.getType())) {
+            throw new VerificationException("Key Type is not RSA: " + key.getType());
+        }
         if (key.getAlgorithm() == null) {
             // defaults to the algorithm set to the JWS
             // validations should be performed prior to verifying signature in case there are restrictions on the algorithms
             // that can used for signing
             key.setAlgorithm(input.getHeader().getRawAlgorithm());
+        } else if (!key.getAlgorithm().equals(input.getHeader().getRawAlgorithm())) {
+            throw new VerificationException("Key Algorithms are different, key-algorithm=" + key.getAlgorithm()
+                    + " jwt-algorithm=" + input.getHeader().getRawAlgorithm());
         }
         return key;
     }

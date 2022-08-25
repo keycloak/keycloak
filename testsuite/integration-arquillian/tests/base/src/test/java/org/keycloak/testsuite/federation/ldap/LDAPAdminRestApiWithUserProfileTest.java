@@ -119,7 +119,7 @@ public class LDAPAdminRestApiWithUserProfileTest extends LDAPAdminRestApiTest {
 
     private void enableSyncRegistration(RealmRepresentation realmRep, Boolean aFalse) {
         ComponentRepresentation ldapStorage = testRealm().components()
-                .query(realmRep.getRealm(), UserStorageProvider.class.getName()).get(0);
+                .query(realmRep.getId(), UserStorageProvider.class.getName()).get(0);
         ldapStorage.getConfig().put(LDAPConstants.SYNC_REGISTRATIONS, Collections.singletonList(aFalse.toString()));
         testRealm().components().component(ldapStorage.getId()).update(ldapStorage);
     }

@@ -26,7 +26,7 @@ import java.util.Set;
  *
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-class AuthzEndpointQueryStringParser extends AuthzEndpointRequestParser {
+public class AuthzEndpointQueryStringParser extends AuthzEndpointRequestParser {
 
     private final MultivaluedMap<String, String> requestParams;
 
@@ -46,7 +46,7 @@ class AuthzEndpointQueryStringParser extends AuthzEndpointRequestParser {
     protected Integer getIntParameter(String paramName) {
         checkDuplicated(requestParams, paramName);
         String paramVal = requestParams.getFirst(paramName);
-        return paramVal==null ? null : Integer.parseInt(paramVal);
+        return paramVal==null ? null : Integer.valueOf(paramVal);
     }
 
     public String getInvalidRequestMessage() {

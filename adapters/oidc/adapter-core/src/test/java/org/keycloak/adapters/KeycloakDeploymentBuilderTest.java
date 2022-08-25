@@ -18,6 +18,8 @@
 package org.keycloak.adapters;
 
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.Configurable;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
 import org.apache.http.params.CoreConnectionPNames;
 import org.hamcrest.CoreMatchers;
@@ -36,6 +38,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+
+import java.lang.reflect.Field;
+import java.util.Optional;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -69,7 +74,22 @@ public class KeycloakDeploymentBuilderTest {
         assertFalse(deployment.isOAuthQueryParameterEnabled());
         assertEquals("234234-234234-234234", deployment.getResourceCredentials().get("secret"));
         assertEquals(ClientIdAndSecretCredentialsProvider.PROVIDER_ID, deployment.getClientAuthenticator().getId());
-        assertEquals(20, ((ThreadSafeClientConnManager) deployment.getClient().getConnectionManager()).getMaxTotal());
+        HttpClient client = deployment.getClient();
+        int maxPoolConnections = -1;
+        Field connManager = null;
+
+        try {
+            connManager = client.getClass().getDeclaredField("connManager");
+            connManager.setAccessible(true);
+            maxPoolConnections = ((PoolingHttpClientConnectionManager) connManager.get(client)).getMaxTotal();
+        } catch (Exception cause) {
+            throw new RuntimeException("Failed to get max pool connections", cause);
+        } finally {
+            connManager.setAccessible(false);
+        }
+
+
+        assertEquals(20, maxPoolConnections);
         assertEquals(RelativeUrlsUsed.NEVER, deployment.getRelativeUrls());
         assertTrue(deployment.isAlwaysRefreshToken());
         assertTrue(deployment.isRegisterNodeAtStartup());
@@ -113,8 +133,8 @@ public class KeycloakDeploymentBuilderTest {
         HttpClient client = deployment.getClient();
         assertThat(client, CoreMatchers.notNullValue());
 
-        long socketTimeout = client.getParams().getIntParameter(CoreConnectionPNames.SO_TIMEOUT, -2);
-        long connectionTimeout = client.getParams().getIntParameter(CoreConnectionPNames.CONNECTION_TIMEOUT, -2);
+        long socketTimeout = ((Configurable) client).getConfig().getSocketTimeout();
+        long connectionTimeout = ((Configurable) client).getConfig().getConnectTimeout();
 
         assertThat(socketTimeout, CoreMatchers.is(2000L));
         assertThat(connectionTimeout, CoreMatchers.is(6000L));

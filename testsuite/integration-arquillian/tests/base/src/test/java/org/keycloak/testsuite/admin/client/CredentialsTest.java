@@ -22,6 +22,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.admin.client.resource.ClientAttributeCertificateResource;
 import org.keycloak.admin.client.resource.ClientResource;
+import org.keycloak.common.util.PemUtils;
 import org.keycloak.events.admin.OperationType;
 import org.keycloak.events.admin.ResourceType;
 import org.keycloak.models.utils.KeycloakModelUtils;
@@ -170,7 +171,7 @@ public class CredentialsTest extends AbstractClientTest {
         form = new MultipartFormDataOutput();
         form.addFormData("keystoreFormat", "Certificate PEM", MediaType.TEXT_PLAIN_TYPE);
 
-        String certificate2WithHeaders = "-----BEGIN CERTIFICATE-----\n" + certificate2 + "\n-----END CERTIFICATE-----";
+        String certificate2WithHeaders = PemUtils.BEGIN_CERT + "\n" + certificate2 + "\n" + PemUtils.END_CERT;
 
         form.addFormData("file", certificate2WithHeaders.getBytes(Charset.forName("ASCII")), MediaType.APPLICATION_OCTET_STREAM_TYPE);
         cert = certRsc.uploadJks(form);

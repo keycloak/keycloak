@@ -38,6 +38,7 @@ public class ProviderConfigProperty {
     public static final String SCRIPT_TYPE="Script";
     public static final String FILE_TYPE="File";
     public static final String ROLE_TYPE="Role";
+    public static final String GROUP_TYPE="Group";
 
     /**
      * Possibility to configure single String value, which needs to be chosen from the list of predefined values (HTML select)
@@ -69,6 +70,7 @@ public class ProviderConfigProperty {
     protected Object defaultValue;
     protected List<String> options;
     protected boolean secret;
+    private boolean readOnly;
 
     public ProviderConfigProperty() {
     }
@@ -188,4 +190,11 @@ public class ProviderConfigProperty {
         this.secret = secret;
     }
 
+    public void setReadOnly(boolean readOnly) {
+        this.readOnly = readOnly;
+    }
+
+    public boolean isReadOnly() {
+        return readOnly;
+    }
 }

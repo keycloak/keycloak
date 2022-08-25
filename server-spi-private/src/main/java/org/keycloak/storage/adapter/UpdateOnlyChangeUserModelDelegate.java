@@ -135,14 +135,14 @@ public class UpdateOnlyChangeUserModelDelegate extends UserModelDelegate {
 
     @Override
     public void grantRole(RoleModel role) {
-        if (!hasRole(role)) {
+        if (!hasDirectRole(role)) {
             delegate.grantRole(role);
         }
     }
 
     @Override
     public void deleteRoleMapping(RoleModel role) {
-        if (hasRole(role)) {
+        if (hasDirectRole(role)) {
             delegate.deleteRoleMapping(role);
         }
     }

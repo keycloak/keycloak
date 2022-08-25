@@ -23,10 +23,10 @@ import static org.keycloak.testsuite.auth.page.login.OIDCLogin.OIDC;
 import static org.keycloak.testsuite.auth.page.login.OIDCLogin.SAML;
 import static org.keycloak.testsuite.console.page.clients.settings.ClientSettingsForm.SAMLClientSettingsForm.SAML_AUTHNSTATEMENT;
 import static org.keycloak.testsuite.console.page.clients.settings.ClientSettingsForm.SAMLClientSettingsForm.SAML_CLIENT_SIGNATURE;
+import static org.keycloak.testsuite.console.page.clients.settings.ClientSettingsForm.SAMLClientSettingsForm.SAML_ALLOW_ECP_FLOW;
 import static org.keycloak.testsuite.console.page.clients.settings.ClientSettingsForm.SAMLClientSettingsForm.SAML_FORCE_NAME_ID_FORMAT;
 import static org.keycloak.testsuite.console.page.clients.settings.ClientSettingsForm.SAMLClientSettingsForm.SAML_FORCE_POST_BINDING;
 import static org.keycloak.testsuite.console.page.clients.settings.ClientSettingsForm.SAMLClientSettingsForm.SAML_NAME_ID_FORMAT;
-import static org.keycloak.testsuite.console.page.clients.settings.ClientSettingsForm.SAMLClientSettingsForm.SAML_ONETIMEUSE_CONDITION;
 import static org.keycloak.testsuite.console.page.clients.settings.ClientSettingsForm.SAMLClientSettingsForm.SAML_SERVER_SIGNATURE;
 import static org.keycloak.testsuite.console.page.clients.settings.ClientSettingsForm.SAMLClientSettingsForm.SAML_SIGNATURE_ALGORITHM;
 import static org.keycloak.testsuite.util.AttributesAssert.assertEqualsBooleanAttributes;
@@ -89,6 +89,7 @@ public abstract class AbstractClientTest extends AbstractConsoleTest {
         attributes.put(SAML_SIGNATURE_ALGORITHM, "RSA_SHA256");
         attributes.put(SAML_FORCE_NAME_ID_FORMAT, "false");
         attributes.put(SAML_NAME_ID_FORMAT, "username");
+        attributes.put(SAML_ALLOW_ECP_FLOW, "false");
         attributes.put(SamlConfigAttributes.SAML_ARTIFACT_BINDING_IDENTIFIER, ArtifactBindingUtils.computeArtifactBindingIdentifierString("saml"));
         return attributes;
     }

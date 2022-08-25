@@ -17,6 +17,9 @@
 
 package org.keycloak.common.util;
 
+import java.security.Provider;
+import java.security.Security;
+
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
@@ -33,6 +36,25 @@ public class Environment {
         } else {
             return DEFAULT_JBOSS_AS_STARTUP_TIMEOUT;
         }
+    }
+
+    /**
+     * Tries to detect if Java platform is in the FIPS mode
+     * @return true if java is FIPS mode
+     */
+    public static boolean isJavaInFipsMode() {
+        // Check if FIPS explicitly enabled by system property
+        String property = System.getProperty("com.redhat.fips");
+        if (property != null) {
+            return Boolean.parseBoolean(property);
+        }
+
+        // Otherwise try to auto-detect
+        for (Provider provider : Security.getProviders()) {
+            if (provider.getName().equals("BCFIPS")) continue; // Ignore BCFIPS provider for the detection as we may register it programatically
+            if (provider.getName().toUpperCase().contains("FIPS")) return true;
+        }
+        return false;
     }
 
 }

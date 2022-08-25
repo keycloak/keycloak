@@ -30,6 +30,7 @@ import org.keycloak.validate.validators.IntegerValidator;
 import org.keycloak.validate.validators.LengthValidator;
 import org.keycloak.validate.validators.NotBlankValidator;
 import org.keycloak.validate.validators.NotEmptyValidator;
+import org.keycloak.validate.validators.OptionsValidator;
 import org.keycloak.validate.validators.DoubleValidator;
 import org.keycloak.validate.validators.PatternValidator;
 import org.keycloak.validate.validators.UriValidator;
@@ -55,7 +56,8 @@ public class Validators {
                 PatternValidator.INSTANCE,
                 DoubleValidator.INSTANCE,
                 IntegerValidator.INSTANCE,
-                ValidatorConfigValidator.INSTANCE
+                ValidatorConfigValidator.INSTANCE,
+                OptionsValidator.INSTANCE
         );
 
         INTERNAL_VALIDATORS = list.stream().collect(Collectors.toMap(SimpleValidator::getId, v -> v));
@@ -159,10 +161,14 @@ public class Validators {
         return LocalDateValidator.INSTANCE;
     }
 
+    public static OptionsValidator optionsValidator() {
+        return OptionsValidator.INSTANCE;
+    }
+
     public static ValidatorConfigValidator validatorConfigValidator() {
         return ValidatorConfigValidator.INSTANCE;
     }
-
+    
     /**
      * Look-up up for a built-in or registered {@link Validator} with the given validatorId.
      *

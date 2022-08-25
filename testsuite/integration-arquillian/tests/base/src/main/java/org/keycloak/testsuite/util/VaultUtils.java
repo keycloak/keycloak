@@ -19,6 +19,7 @@ package org.keycloak.testsuite.util;
 
 
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
+import org.keycloak.testsuite.arquillian.ContainerInfo;
 import org.keycloak.testsuite.arquillian.SuiteContext;
 import org.keycloak.testsuite.arquillian.annotation.EnableVault;
 import org.wildfly.extras.creaper.core.online.CliException;
@@ -34,9 +35,11 @@ import java.util.concurrent.TimeoutException;
 public class VaultUtils {
 
     public static void enableVault(SuiteContext suiteContext, EnableVault.PROVIDER_ID provider) throws IOException, CliException, TimeoutException, InterruptedException {
-        if (suiteContext.getAuthServerInfo().isUndertow()) {
+        ContainerInfo serverInfo = suiteContext.getAuthServerInfo();
+
+        if (serverInfo.isUndertow()) {
             System.setProperty("keycloak.vault." + provider.getName() + ".provider.enabled", "true");
-        } else {
+        } else if (serverInfo.isJBossBased()) {
             OnlineManagementClient client = AuthServerTestEnricher.getManagementClient();
             // configure the selected provider and set it as the default vault provider.
             client.execute("/subsystem=keycloak-server/spi=vault/:add(default-provider=" + provider.getName() + ")");
@@ -48,9 +51,11 @@ public class VaultUtils {
     }
 
     public static void disableVault(SuiteContext suiteContext, EnableVault.PROVIDER_ID provider) throws IOException, CliException, TimeoutException, InterruptedException {
-        if (suiteContext.getAuthServerInfo().isUndertow() || suiteContext.getAuthServerInfo().isQuarkus()) {
+        ContainerInfo serverInfo = suiteContext.getAuthServerInfo();
+
+        if (serverInfo.isUndertow()) {
             System.setProperty("keycloak.vault." + provider.getName() + ".provider.enabled", "false");
-        } else {
+        } else if (serverInfo.isJBossBased()) {
             OnlineManagementClient client = AuthServerTestEnricher.getManagementClient();
             for (String command : provider.getCliRemovalCommands()) {
                 client.execute(command);

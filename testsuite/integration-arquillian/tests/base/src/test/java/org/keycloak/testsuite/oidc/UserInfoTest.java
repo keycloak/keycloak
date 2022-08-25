@@ -18,6 +18,7 @@ package org.keycloak.testsuite.oidc;
 
 import org.hamcrest.CoreMatchers;
 import org.hamcrest.Matchers;
+import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -28,19 +29,34 @@ import org.keycloak.admin.client.resource.ClientScopesResource;
 import org.keycloak.admin.client.resource.ProtocolMappersResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.common.util.Time;
+import org.keycloak.crypto.AesCbcHmacShaContentEncryptionProvider;
+import org.keycloak.crypto.AesGcmContentEncryptionProvider;
+import org.keycloak.crypto.Algorithm;
+import org.keycloak.crypto.RsaCekManagementProvider;
 import org.keycloak.events.Details;
 import org.keycloak.events.Errors;
 import org.keycloak.events.EventType;
-import org.keycloak.jose.jws.Algorithm;
+import org.keycloak.jose.JOSEHeader;
+import org.keycloak.jose.jwe.JWEConstants;
+import org.keycloak.jose.jwe.JWEException;
+import org.keycloak.jose.jwe.JWEHeader;
+import org.keycloak.jose.jwe.alg.JWEAlgorithmProvider;
+import org.keycloak.jose.jwe.enc.JWEEncryptionProvider;
 import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.jose.jws.crypto.RSAProvider;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.representations.JsonWebToken;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
+import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
+import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
+import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCLoginProtocolService;
@@ -59,8 +75,10 @@ import org.keycloak.testsuite.util.OAuthClient;
 import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
 import org.keycloak.testsuite.util.UserInfoClientUtil;
+import org.keycloak.testsuite.util.WaitUtils;
 import org.keycloak.util.BasicAuthHelper;
 import org.keycloak.util.JsonSerialization;
+import org.keycloak.util.TokenUtil;
 import org.keycloak.utils.MediaType;
 
 import javax.ws.rs.client.Client;
@@ -71,7 +89,9 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import javax.ws.rs.core.UriBuilder;
+import java.io.IOException;
 import java.net.URI;
+import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.Collection;
 import java.util.Collections;
@@ -94,6 +114,9 @@ public class UserInfoTest extends AbstractKeycloakTest {
 
     @Rule
     public AssertEvents events = new AssertEvents(this);
+
+    @Page
+    protected LoginPage loginPage;
 
     @Override
     public void beforeAbstractKeycloakTest() throws Exception {
@@ -241,6 +264,157 @@ public class UserInfoTest extends AbstractKeycloakTest {
     }
 
     @Test
+    public void testSuccessEncryptedResponseSigAlgPS384AlgRSA_OAEPEncA256GCM() throws Exception {
+        testUserInfoSignatureAndEncryption(Algorithm.PS384, JWEConstants.RSA_OAEP, JWEConstants.A256GCM);
+    }
+
+    @Test
+    public void testSuccessEncryptedResponseSigAlgRS256AlgRSA_OAEP256EncA192CBC_HS384() throws Exception {
+        testUserInfoSignatureAndEncryption(Algorithm.RS256, JWEConstants.RSA_OAEP_256, JWEConstants.A192CBC_HS384);
+    }
+
+    @Test
+    public void testSuccessEncryptedResponseSigAlgES512AlgRSA1_5EncDefault() throws Exception {
+        testUserInfoSignatureAndEncryption(Algorithm.ES512, JWEConstants.RSA1_5, null);
+    }
+
+    @Test
+    public void testSuccessEncryptedResponseSigAlgES384AlgRSA_OAEPEncA128GCM() throws Exception {
+        testUserInfoSignatureAndEncryption(Algorithm.ES384, JWEConstants.RSA_OAEP, JWEConstants.A128GCM);
+    }
+
+    @Test
+    public void testSuccessEncryptedResponseSigAlgPS256AlgRSA_OAEP256EncA256CBC_HS512() throws Exception {
+        testUserInfoSignatureAndEncryption(Algorithm.PS256, JWEConstants.RSA_OAEP_256, JWEConstants.A256CBC_HS512);
+    }
+
+    @Test
+    public void testSuccessEncryptedResponseSigAlgNoneAlgRSA1_5EncDefault() throws Exception {
+        testUserInfoSignatureAndEncryption(null, JWEConstants.RSA1_5, null);
+    }
+
+    private void testUserInfoSignatureAndEncryption(String sigAlgorithm, String algAlgorithm, String encAlgorithm) {
+        ClientResource clientResource = null;
+        ClientRepresentation clientRep = null;
+        try {
+            // generate and register encryption key onto client
+            TestOIDCEndpointsApplicationResource oidcClientEndpointsResource = testingClient.testApp().oidcClientEndpoints();
+            oidcClientEndpointsResource.generateKeys(algAlgorithm);
+
+            clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
+            clientRep = clientResource.toRepresentation();
+            // set UserInfo response signature algorithm and encryption algorithms
+            if(sigAlgorithm != null) {
+                OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUserInfoSignedResponseAlg(sigAlgorithm);
+            }
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUserInfoEncryptedResponseAlg(algAlgorithm);
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUserInfoEncryptedResponseEnc(encAlgorithm);
+            // use and set jwks_url
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUseJwksUrl(true);
+            String jwksUrl = TestApplicationResourceUrls.clientJwksUri();
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setJwksUrl(jwksUrl);
+            clientResource.update(clientRep);
+
+            // get User Info response
+            Client client = AdminClientUtil.createResteasyClient();
+            AccessTokenResponse accessTokenResponse = executeGrantAccessTokenRequest(client);
+            Response response = UserInfoClientUtil.executeUserInfoRequest_getMethod(client, accessTokenResponse.getToken());
+
+            Assert.assertEquals(200, response.getStatus());
+            Assert.assertEquals(response.getHeaderString(HttpHeaders.CONTENT_TYPE), MediaType.APPLICATION_JWT);
+            String encryptedResponse = response.readEntity(String.class);
+            response.close();
+
+            // parse JWE and JOSE Header
+            String[] parts = encryptedResponse.split("\\.");
+            Assert.assertEquals(parts.length, 5);
+
+            // get decryption key
+            // not publickey , use privateKey
+            Map<String, String> keyPair = oidcClientEndpointsResource.getKeysAsPem();
+            PrivateKey decryptionKEK = PemUtils.decodePrivateKey(keyPair.get("privateKey"));
+
+            // a nested JWT (signed and encrypted JWT) needs to set "JWT" to its JOSE Header's "cty" field
+            JWEHeader jweHeader = (JWEHeader) getHeader(parts[0]);
+            Assert.assertEquals(algAlgorithm, jweHeader.getAlgorithm());
+            if(encAlgorithm != null) {
+                Assert.assertEquals(encAlgorithm, jweHeader.getEncryptionAlgorithm());
+            } else {
+                // if enc algorithm is not specified the default for this value is A128CBC-HS256
+                Assert.assertEquals(JWEConstants.A128CBC_HS256, jweHeader.getEncryptionAlgorithm());
+            }
+            if(sigAlgorithm != null) {
+                Assert.assertEquals("JWT", jweHeader.getContentType());
+            }
+
+            // verify and decrypt JWE
+            JWEAlgorithmProvider algorithmProvider = getJweAlgorithmProvider(algAlgorithm);
+            // if enc algorithm is not specified the default for this value is A128CBC-HS256
+            JWEEncryptionProvider encryptionProvider = encAlgorithm != null ? getJweEncryptionProvider(encAlgorithm) :
+                    getJweEncryptionProvider(JWEConstants.A128CBC_HS256);
+            byte[] decodedString = TokenUtil.jweKeyEncryptionVerifyAndDecode(decryptionKEK, encryptedResponse, algorithmProvider, encryptionProvider);
+            String jwePayload = new String(decodedString, "UTF-8");
+
+            UserInfo userInfo = null;
+            // verify JWS
+            if (sigAlgorithm != null) {
+                // verify signature
+                JsonWebToken jsonWebToken = oauth.verifyToken(jwePayload, JsonWebToken.class);
+                JWSInput jwsInput = new JWSInput(jwePayload);
+                userInfo = JsonSerialization.readValue(jwsInput.getContent(), UserInfo.class);
+            } else {
+                userInfo = JsonSerialization.readValue(jwePayload, UserInfo.class);
+            }
+            Assert.assertNotNull(userInfo);
+            Assert.assertNotNull(userInfo.getSubject());
+            Assert.assertEquals("test-user@localhost", userInfo.getEmail());
+            Assert.assertEquals("test-user@localhost", userInfo.getPreferredUsername());
+        } catch (JWSInputException | JWEException | IOException e) {
+            Assert.fail();
+        } finally {
+            clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
+            clientRep = clientResource.toRepresentation();
+            // revert User Info response signature algorithm and encryption algorithms
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUserInfoSignedResponseAlg(null);
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUserInfoEncryptedResponseAlg(null);
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUserInfoEncryptedResponseEnc(null);
+            // revert jwks_url settings
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUseJwksUrl(false);
+            OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setJwksUrl(null);
+            clientResource.update(clientRep);
+        }
+    }
+
+    private JWEAlgorithmProvider getJweAlgorithmProvider(String algAlgorithm) {
+        return new RsaCekManagementProvider(null, algAlgorithm).jweAlgorithmProvider();
+    }
+    private JWEEncryptionProvider getJweEncryptionProvider(String encAlgorithm) {
+        JWEEncryptionProvider jweEncryptionProvider = null;
+        switch(encAlgorithm) {
+            case JWEConstants.A128GCM:
+            case JWEConstants.A192GCM:
+            case JWEConstants.A256GCM:
+                jweEncryptionProvider = new AesGcmContentEncryptionProvider(null, encAlgorithm).jweEncryptionProvider();
+                break;
+            case JWEConstants.A128CBC_HS256:
+            case JWEConstants.A192CBC_HS384:
+            case JWEConstants.A256CBC_HS512:
+                jweEncryptionProvider = new AesCbcHmacShaContentEncryptionProvider(null, encAlgorithm).jweEncryptionProvider();
+                break;
+        }
+        return jweEncryptionProvider;
+    }
+
+    private JOSEHeader getHeader(String base64Header) {
+        try {
+            byte[] decodedHeader = Base64Url.decode(base64Header);
+            return JsonSerialization.readValue(decodedHeader, JWEHeader.class);
+        } catch (IOException ioe) {
+            throw new RuntimeException(ioe);
+        }
+    }
+
+    @Test
     public void testSuccessSignedResponse() throws Exception {
         // Require signed userInfo request
         ClientResource clientResource = ApiUtil.findClientByClientId(adminClient.realm("test"), "test-app");
@@ -261,7 +435,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
                     .detail(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN)
                     .detail(Details.USERNAME, "test-user@localhost")
                     .detail(Details.SIGNATURE_REQUIRED, "true")
-                    .detail(Details.SIGNATURE_ALGORITHM, Algorithm.RS256.toString())
+                    .detail(Details.SIGNATURE_ALGORITHM, Algorithm.RS256)
                     .assertEvent();
 
             // Check signature and content
@@ -380,7 +554,8 @@ public class UserInfoTest extends AbstractKeycloakTest {
 
         setTimeOffset(2);
 
-        oauth.fillLoginForm("test-user@localhost", "password");
+        WaitUtils.waitForPageToLoad();
+        loginPage.login("password");
         events.expectLogin().assertEvent();
 
         Assert.assertFalse(loginPage.isCurrent());
@@ -628,7 +803,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
         return UserInfoClientUtil.testSuccessfulUserInfoResponse(response, "test-user@localhost", "test-user@localhost");
     }
 
-    private void testSuccessSignedResponse(Algorithm sigAlg) throws Exception {
+    private void testSuccessSignedResponse(String sigAlg) throws Exception {
 
         try {
             // Require signed userInfo request
@@ -650,7 +825,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
                         .detail(Details.AUTH_METHOD, Details.VALIDATE_ACCESS_TOKEN)
                         .detail(Details.USERNAME, "test-user@localhost")
                         .detail(Details.SIGNATURE_REQUIRED, "true")
-                        .detail(Details.SIGNATURE_ALGORITHM, sigAlg.toString())
+                        .detail(Details.SIGNATURE_ALGORITHM, sigAlg)
                         .assertEvent();
 
                 Assert.assertEquals(200, response.getStatus());
@@ -660,7 +835,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
 
                 JWSInput jwsInput = new JWSInput(signedResponse);
 
-                assertEquals(sigAlg.toString(), jwsInput.getHeader().getAlgorithm().name());
+                assertEquals(sigAlg, jwsInput.getHeader().getAlgorithm().name());
 
                 UserInfo userInfo = JsonSerialization.readValue(jwsInput.getContent(), UserInfo.class);
 
@@ -681,7 +856,7 @@ public class UserInfoTest extends AbstractKeycloakTest {
             OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setUserInfoSignedResponseAlg(null);
             clientResource.update(clientRep);
         } finally {
-            TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, org.keycloak.crypto.Algorithm.RS256);
+            TokenSignatureUtil.changeRealmTokenSignatureProvider(adminClient, Algorithm.RS256);
         }
     }
 

@@ -28,6 +28,7 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.impl.client.CloseableHttpClient;
 
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -42,6 +43,7 @@ import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientRolesCo
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientScopesConditionConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createClientUpdateContextConditionConfig;
 import static org.keycloak.testsuite.util.ClientPoliciesUtil.createSecureCibaAuthenticationRequestSigningAlgorithmExecutorConfig;
+import static org.keycloak.testsuite.util.ClientPoliciesUtil.createTestRaiseExeptionExecutorConfig;
 
 import java.io.IOException;
 import java.net.URI;
@@ -108,7 +110,7 @@ import org.keycloak.testsuite.client.resources.TestApplicationResourceUrls;
 import org.keycloak.testsuite.client.resources.TestOIDCEndpointsApplicationResource;
 import org.keycloak.testsuite.rest.representation.TestAuthenticationChannelRequest;
 import org.keycloak.testsuite.rest.resource.TestingOIDCEndpointsApplicationResource.AuthorizationEndpointRequestObject;
-import org.keycloak.testsuite.services.clientpolicy.executor.TestRaiseExeptionExecutorFactory;
+import org.keycloak.testsuite.services.clientpolicy.executor.TestRaiseExceptionExecutorFactory;
 import org.keycloak.testsuite.util.InfinispanTestTimeServiceRule;
 import org.keycloak.testsuite.util.KeycloakModelUtils;
 import org.keycloak.testsuite.util.Matchers;
@@ -394,6 +396,45 @@ public class CIBATest extends AbstractClientPoliciesTest {
         } finally {
             revertCIBASettings(clientResource, clientRep);
             restoreCIBAPolicy();
+        }
+    }
+
+    // Corresponds to the test fapi-ciba-id1-ensure-authorization-request-with-potentially-bad-binding-message from the FAPI CIBA conformance testsuite
+    @Test
+    public void testBadBindingMessage() throws Exception {
+        ClientResource clientResource = null;
+        ClientRepresentation clientRep = null;
+        try {
+            final String username = "nutzername-schwarz";
+            clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
+            clientRep = clientResource.toRepresentation();
+            prepareCIBASettings(clientResource, clientRep);
+
+            // Binding message with non plain-text characters
+            String bindingMessage = "1234 \uD83D\uDC4D\uD83C\uDFFF 品川 Lor";
+            AuthenticationRequestAcknowledgement response = oauth.doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, bindingMessage, null);
+            assertThat(response.getStatusCode(), is(equalTo(400)));
+            assertThat(response.getError(), is(OAuthErrorException.INVALID_BINDING_MESSAGE));
+
+            // Long binding message
+            bindingMessage = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud.";
+            response = oauth.doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, bindingMessage, null);
+            assertThat(response.getStatusCode(), is(equalTo(400)));
+            assertThat(response.getError(), is(OAuthErrorException.INVALID_BINDING_MESSAGE));
+
+            // Empty binding message
+            bindingMessage = "";
+            response = oauth.doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, bindingMessage, null);
+            assertThat(response.getStatusCode(), is(equalTo(400)));
+            assertThat(response.getError(), is(OAuthErrorException.INVALID_BINDING_MESSAGE));
+
+            // Valid binding message
+            bindingMessage = "Lorem_ipsum";
+            response = oauth.doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, bindingMessage, null);
+            assertThat(response.getStatusCode(), is(equalTo(200)));
+            assertThat(response.getError(), is(nullValue()));
+        } finally {
+            revertCIBASettings(clientResource, clientRep);
         }
     }
 
@@ -704,6 +745,16 @@ public class CIBATest extends AbstractClientPoliciesTest {
     @Test
     public void testBackchannelAuthenticationFlowOfflineAccessWithoutBindingMessage() throws Exception {
         testBackchannelAuthenticationFlow(true, null);
+    }
+
+    @Test
+    public void testBackchannelAuthenticationFlowWithClientIdAndSecretInBody() throws Exception {
+        Map<String, String> additionalParameters = new HashMap<>();
+        // these parameters are not included in Authentication Channel Request
+        // if these are included in Backchannel Authentication Request's body part.
+        additionalParameters.put(OAuth2Constants.CLIENT_ID, TEST_CLIENT_NAME);
+        additionalParameters.put(OAuth2Constants.CLIENT_SECRET, TEST_CLIENT_PASSWORD);
+        testBackchannelAuthenticationFlow(true, "ABCDE", additionalParameters);
     }
 
     @Test
@@ -1739,7 +1790,8 @@ public class CIBATest extends AbstractClientPoliciesTest {
         // register profiles
         String json = (new ClientProfilesBuilder()).addProfile(
                 (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Den Forste Profilen")
-                    .addExecutor(TestRaiseExeptionExecutorFactory.PROVIDER_ID, null)
+                    .addExecutor(TestRaiseExceptionExecutorFactory.PROVIDER_ID,
+                            createTestRaiseExeptionExecutorConfig(Arrays.asList(ClientPolicyEvent.BACKCHANNEL_AUTHENTICATION_REQUEST)))
                     .toRepresentation()
                 ).toString();
         updateProfiles(json);
@@ -1798,7 +1850,8 @@ public class CIBATest extends AbstractClientPoliciesTest {
         // register profiles
         String json = (new ClientProfilesBuilder()).addProfile(
                 (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Den Forste Profilen")
-                    .addExecutor(TestRaiseExeptionExecutorFactory.PROVIDER_ID, null)
+                    .addExecutor(TestRaiseExceptionExecutorFactory.PROVIDER_ID,
+                            createTestRaiseExeptionExecutorConfig(Arrays.asList(ClientPolicyEvent.BACKCHANNEL_TOKEN_REQUEST)))
                     .toRepresentation()
                 ).toString();
         updateProfiles(json);
@@ -2166,7 +2219,8 @@ public class CIBATest extends AbstractClientPoliciesTest {
         // register profiles
         String json = (new ClientProfilesBuilder()).addProfile(
                 (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Het Eerste Profiel")
-                    .addExecutor(TestRaiseExeptionExecutorFactory.PROVIDER_ID, null)
+                    .addExecutor(TestRaiseExceptionExecutorFactory.PROVIDER_ID,
+                            createTestRaiseExeptionExecutorConfig(Arrays.asList(ClientPolicyEvent.BACKCHANNEL_AUTHENTICATION_REQUEST)))
                     .toRepresentation()
                 ).toString();
         updateProfiles(json);
@@ -2192,6 +2246,14 @@ public class CIBATest extends AbstractClientPoliciesTest {
         response = oauth.doBackchannelAuthenticationRequest(clientConfidentialId, clientConfidentialSecret, username, bindingMessage, null, null, additionalParameters);
         assertThat(response.getStatusCode(), is(equalTo(200)));
         Assert.assertNotNull(response.getAuthReqId());
+
+        json = (new ClientProfilesBuilder()).addProfile(
+                (new ClientProfileBuilder()).createProfile(PROFILE_NAME, "Het Eerste Profiel")
+                    .addExecutor(TestRaiseExceptionExecutorFactory.PROVIDER_ID,
+                            createTestRaiseExeptionExecutorConfig(Arrays.asList(ClientPolicyEvent.BACKCHANNEL_TOKEN_REQUEST)))
+                    .toRepresentation()
+                ).toString();
+        updateProfiles(json);
 
         json = (new ClientPoliciesBuilder()).addPolicy(
                 (new ClientPolicyBuilder()).createPolicy(POLICY_NAME, "Het Eerste Beleid", Boolean.TRUE)
@@ -2233,6 +2295,34 @@ public class CIBATest extends AbstractClientPoliciesTest {
         assertThat(idToken.getIssuedFor(), is(equalTo(clientConfidentialId)));
         assertThat(idToken.getAudience()[0], is(equalTo(idToken.getIssuedFor())));
 
+    }
+
+    @Test
+    public void testBackchannelAuthenticationFlowWithInvalidScope() throws Exception {
+        ClientResource clientResource = null;
+        ClientRepresentation clientRep = null;
+        try {
+            final String username = "nutzername-rot";
+            final String bindingMessage = "valid_binding_message";
+            final String invalidScope = "not_exist_scope";
+
+            // prepare CIBA settings
+            clientResource = ApiUtil.findClientByClientId(adminClient.realm(TEST_REALM_NAME), TEST_CLIENT_NAME);
+            assertThat(clientResource, notNullValue());
+
+            clientRep = clientResource.toRepresentation();
+            prepareCIBASettings(clientResource, clientRep);
+            oauth.scope(invalidScope);
+
+            // user Backchannel Authentication Request
+            AuthenticationRequestAcknowledgement response = oauth.doBackchannelAuthenticationRequest(TEST_CLIENT_NAME, TEST_CLIENT_PASSWORD, username, bindingMessage, null, null, null);
+            assertThat(response.getStatusCode(), is(equalTo(400)));
+            assertThat(response.getError(), is(OAuthErrorException.INVALID_REQUEST));
+            assertThat(response.getErrorDescription(), is("Invalid scopes: " + OAuth2Constants.SCOPE_OPENID + " " + invalidScope));
+
+        } finally {
+            revertCIBASettings(clientResource, clientRep);
+        }
     }
 
     private void testBackchannelAuthenticationFlowNotRegisterSigAlgInAdvanceWithSignedAuthentication(String clientName, boolean useRequestUri, String requestedSigAlg, String sigAlg, int statusCode, String errorDescription) throws Exception {
@@ -2688,11 +2778,17 @@ public class CIBATest extends AbstractClientPoliciesTest {
     }
 
     private void testBackchannelAuthenticationFlow(boolean isOfflineAccess, String bindingMessage) throws Exception {
+        testBackchannelAuthenticationFlow(isOfflineAccess, bindingMessage, null);
+    }
+
+    private void testBackchannelAuthenticationFlow(boolean isOfflineAccess, String bindingMessage, Map<String, String> additionalParameters) throws Exception {
         ClientResource clientResource = null;
         ClientRepresentation clientRep = null;
+        if (additionalParameters == null) {
+            additionalParameters = new HashMap<>();
+        }
         try {
             final String username = "nutzername-rot";
-            Map<String, String> additionalParameters = new HashMap<>();
             additionalParameters.put("user_device", "mobile");
 
             // prepare CIBA settings
@@ -2715,6 +2811,8 @@ public class CIBATest extends AbstractClientPoliciesTest {
             if (isOfflineAccess) assertThat(authenticationChannelReq.getScope(), is(containsString(OAuth2Constants.OFFLINE_ACCESS)));
             assertThat(authenticationChannelReq.getScope(), is(containsString(OAuth2Constants.SCOPE_OPENID)));
             assertThat(authenticationChannelReq.getAdditionalParameters().get("user_device"), is(equalTo("mobile")));
+            assertThat(authenticationChannelReq.getAdditionalParameters().get(OAuth2Constants.CLIENT_ID), nullValue());
+            assertThat(authenticationChannelReq.getAdditionalParameters().get(OAuth2Constants.CLIENT_SECRET), nullValue());
 
             // user Authentication Channel completed
             EventRepresentation loginEvent = doAuthenticationChannelCallback(testRequest);
@@ -2746,4 +2844,5 @@ public class CIBATest extends AbstractClientPoliciesTest {
             revertCIBASettings(clientResource, clientRep);
         }
     }
+
 }

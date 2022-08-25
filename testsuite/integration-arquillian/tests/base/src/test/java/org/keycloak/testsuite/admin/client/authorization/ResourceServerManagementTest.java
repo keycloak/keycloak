@@ -31,8 +31,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
-
+import javax.ws.rs.NotFoundException;
 
 /**
  *
@@ -68,5 +69,31 @@ public class ResourceServerManagementTest extends AbstractAuthorizationTest {
         clients = clientsResource.findByClientId("authz-client");
 
         assertTrue(clients.isEmpty());
+    }
+
+    @Test
+    public void testInvalidRequestWhenCallingAuthzEndpoints() throws Exception {
+        ClientsResource clientsResource = testRealmResource().clients();
+        ClientRepresentation clientRepresentation = JsonSerialization.readValue(
+                getClass().getResourceAsStream("/authorization-test/client-with-authz-settings.json"),
+                ClientRepresentation.class);
+
+        clientRepresentation.setAuthorizationServicesEnabled(false);
+        clientRepresentation.setAuthorizationSettings(null);
+
+        clientsResource.create(clientRepresentation).close();
+
+        List<ClientRepresentation> clients = clientsResource.findByClientId("authz-client");
+
+        assertFalse(clients.isEmpty());
+
+        String clientId = clients.get(0).getId();
+
+        try {
+            clientsResource.get(clientId).authorization().getSettings();
+            fail("Should fail, authorization not enabled");
+        } catch (NotFoundException nfe) {
+            // expected
+        }
     }
 }

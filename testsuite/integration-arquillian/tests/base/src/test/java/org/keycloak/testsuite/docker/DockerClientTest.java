@@ -4,6 +4,7 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.keycloak.common.Profile;
+import org.keycloak.common.util.PemUtils;
 import org.keycloak.representations.idm.KeysMetadataRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
@@ -13,7 +14,6 @@ import org.testcontainers.containers.BindMode;
 import org.testcontainers.containers.Container;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
-import sun.security.provider.X509Factory;
 
 import java.io.File;
 import java.io.PrintWriter;
@@ -28,6 +28,7 @@ import static org.junit.Assume.assumeTrue;
 import static org.keycloak.testsuite.util.ServerURLs.AUTH_SERVER_PORT;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
+
 import static org.keycloak.testsuite.util.WaitUtils.pause;
 
 @AuthServerContainerExclude(AuthServer.REMOTE)
@@ -97,9 +98,9 @@ public class DockerClientTest extends AbstractKeycloakTest {
         File tmpCertFile = File.createTempFile("keycloak-docker-realm-cert-", ".pem");
         tmpCertFile.deleteOnExit();
         PrintWriter tmpCertWriter = new PrintWriter(tmpCertFile);
-        tmpCertWriter.println(X509Factory.BEGIN_CERT);
+        tmpCertWriter.println(PemUtils.BEGIN_CERT);
         tmpCertWriter.println(realmCert);
-        tmpCertWriter.println(X509Factory.END_CERT);
+        tmpCertWriter.println(PemUtils.END_CERT);
         tmpCertWriter.close();
 
         final Map<String, String> environment = new HashMap<>();

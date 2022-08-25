@@ -17,9 +17,7 @@
 
 package org.keycloak.models;
 
-import org.keycloak.common.util.RandomString;
-
-import java.security.SecureRandom;
+import org.keycloak.common.util.SecretGenerator;
 
 /**
  * The default implementation for generating/formatting user code of OAuth 2.0 Device Authorization Grant.
@@ -36,7 +34,7 @@ public class DefaultOAuth2DeviceUserCodeProvider implements OAuth2DeviceUserCode
     @Override
     public String generate() {
         // For case-insensitive, use uppercase
-        return new RandomString(LENGTH, new SecureRandom(), RandomString.upper).nextString();
+        return SecretGenerator.getInstance().randomString(LENGTH, SecretGenerator.UPPER);
     }
 
     @Override

@@ -38,7 +38,7 @@ import org.infinispan.manager.EmbeddedCacheManager;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
 import org.keycloak.common.util.reflections.Reflections;
-import org.keycloak.models.sessions.infinispan.util.InfinispanUtil;
+
 import java.util.stream.Collectors;
 import org.infinispan.client.hotrod.exceptions.HotRodClientException;
 

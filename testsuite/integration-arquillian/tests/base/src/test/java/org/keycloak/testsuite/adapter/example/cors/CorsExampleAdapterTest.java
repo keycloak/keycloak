@@ -54,7 +54,6 @@ import static junit.framework.TestCase.assertNotNull;
 import org.junit.Assume;
 import org.keycloak.testsuite.util.DroneUtils;
 
-import static org.keycloak.common.Profile.Feature.UPLOAD_SCRIPTS;
 import static org.keycloak.testsuite.utils.io.IOUtil.loadRealm;
 import static org.keycloak.testsuite.util.URLAssert.assertCurrentUrlStartsWith;
 import static org.keycloak.testsuite.util.WaitUtils.waitForPageToLoad;
@@ -71,11 +70,9 @@ import static org.keycloak.testsuite.util.WaitUtils.waitUntilElement;
  * @author fkiss
  */
 @AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY)
-@AppServerContainer(ContainerConstants.APP_SERVER_WILDFLY_DEPRECATED)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP6)
 @AppServerContainer(ContainerConstants.APP_SERVER_EAP71)
-@EnableFeature(value = UPLOAD_SCRIPTS, skipRestart = true)
 @DisableFeature(value = Profile.Feature.ACCOUNT2, skipRestart = true) // TODO remove this (KEYCLOAK-16228)
 public class CorsExampleAdapterTest extends AbstractExampleAdapterTest {
 

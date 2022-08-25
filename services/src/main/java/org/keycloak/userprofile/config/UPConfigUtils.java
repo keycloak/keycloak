@@ -166,6 +166,19 @@ public class UPConfigUtils {
                 errors.add("Attribute '" + attributeName + "' references unknown group '" + attributeConfig.getGroup() + "'");                
             }
         }
+        
+        if (attributeConfig.getAnnotations()!=null) {
+            validateAnnotations(attributeConfig.getAnnotations(), errors, attributeName);
+        }
+    }
+
+    private static void validateAnnotations(Map<String, Object> annotations, List<String> errors, String attributeName) {
+        if (annotations.containsKey("inputOptions") && !(annotations.get("inputOptions") instanceof List)) {
+            errors.add(new StringBuilder("Annotation 'inputOptions' configured for attribute '").append(attributeName).append("' must be an array of values!'").toString());
+        }
+        if (annotations.containsKey("inputOptionLabels") && !(annotations.get("inputOptionLabels") instanceof Map)) {
+            errors.add(new StringBuilder("Annotation 'inputOptionLabels' configured for attribute '").append(attributeName).append("' must be an object!'").toString());
+        }
     }
 
     private static void validateScopes(Set<String> scopes, String propertyName, String attributeName, List<String> errors, KeycloakSession session) {
