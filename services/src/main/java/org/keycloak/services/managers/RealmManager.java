@@ -507,100 +507,108 @@ public class RealmManager {
         } else {
             ReservedCharValidator.validate(id);
         }
+
         RealmModel realm = model.createRealm(id, rep.getRealm());
-        ReservedCharValidator.validate(rep.getRealm());
-        realm.setName(rep.getRealm());
+        RealmModel currentRealm = session.getContext().getRealm();
 
-        // setup defaults
+        try {
+            session.getContext().setRealm(realm);
+            ReservedCharValidator.validate(rep.getRealm());
+            realm.setName(rep.getRealm());
 
-        setupRealmDefaults(realm);
+            // setup defaults
 
-        if (rep.getDefaultRole() == null) {
-            KeycloakModelUtils.setupDefaultRole(realm, determineDefaultRoleName(rep));
-        } else {
-            realm.setDefaultRole(RepresentationToModel.createRole(realm, rep.getDefaultRole()));
-        }
+            setupRealmDefaults(realm);
 
-        boolean postponeMasterClientSetup = postponeMasterClientSetup(rep);
-        if (!postponeMasterClientSetup) {
-            setupMasterAdminManagement(realm);
-        }
+            if (rep.getDefaultRole() == null) {
+                KeycloakModelUtils.setupDefaultRole(realm, determineDefaultRoleName(rep));
+            } else {
+                realm.setDefaultRole(RepresentationToModel.createRole(realm, rep.getDefaultRole()));
+            }
 
-        if (!hasRealmAdminManagementClient(rep)) setupRealmAdminManagement(realm);
-        if (!hasAccountManagementClient(rep)) setupAccountManagement(realm);
+            boolean postponeMasterClientSetup = postponeMasterClientSetup(rep);
+            if (!postponeMasterClientSetup) {
+                setupMasterAdminManagement(realm);
+            }
 
-        boolean postponeImpersonationSetup = hasRealmAdminManagementClient(rep);
-        if (!postponeImpersonationSetup) {
-            setupImpersonationService(realm);
-        }
+            if (!hasRealmAdminManagementClient(rep)) setupRealmAdminManagement(realm);
+            if (!hasAccountManagementClient(rep)) setupAccountManagement(realm);
 
-        if (!hasBrokerClient(rep)) setupBrokerService(realm);
-        if (!hasAdminConsoleClient(rep)) setupAdminConsole(realm);
+            boolean postponeImpersonationSetup = hasRealmAdminManagementClient(rep);
+            if (!postponeImpersonationSetup) {
+                setupImpersonationService(realm);
+            }
 
-        boolean postponeAdminCliSetup = false;
-        if (!hasAdminCliClient(rep)) {
-            postponeAdminCliSetup = hasRealmAdminManagementClient(rep);
-            
-            if(!postponeAdminCliSetup) {
+            if (!hasBrokerClient(rep)) setupBrokerService(realm);
+            if (!hasAdminConsoleClient(rep)) setupAdminConsole(realm);
+
+            boolean postponeAdminCliSetup = false;
+            if (!hasAdminCliClient(rep)) {
+                postponeAdminCliSetup = hasRealmAdminManagementClient(rep);
+
+                if(!postponeAdminCliSetup) {
+                    setupAdminCli(realm);
+                }
+            }
+
+            if (!hasRealmRole(rep, Constants.OFFLINE_ACCESS_ROLE) || !hasClientScope(rep, Constants.OFFLINE_ACCESS_ROLE)) {
+                setupOfflineTokens(realm, rep);
+            }
+
+
+            if (rep.getClientScopes() == null) {
+                createDefaultClientScopes(realm);
+            }
+
+            RepresentationToModel.importRealm(session, rep, realm, skipUserDependent);
+
+            setupClientServiceAccountsAndAuthorizationOnImport(rep, skipUserDependent);
+
+            setupAdminConsoleLocaleMapper(realm);
+
+            if (postponeMasterClientSetup) {
+                setupMasterAdminManagement(realm);
+            }
+
+            if (rep.getRoles() != null || hasRealmAdminManagementClient(rep)) {
+                // Assert all admin roles are available once import took place. This is needed due to import from previous version where JSON file may not contain all admin roles
+                checkMasterAdminManagementRoles(realm);
+                checkRealmAdminManagementRoles(realm);
+            }
+
+            // Could happen when migrating from older version and I have exported JSON file, which contains "realm-management" client but not "impersonation" client
+            // I need to postpone impersonation because it needs "realm-management" client and its roles set
+            if (postponeImpersonationSetup) {
+                setupImpersonationService(realm);
+            }
+
+            if (postponeAdminCliSetup) {
                 setupAdminCli(realm);
             }
+
+            setupAuthenticationFlows(realm);
+            setupRequiredActions(realm);
+
+            if (!hasRealmRole(rep, AccountRoles.DELETE_ACCOUNT)) {
+                KeycloakModelUtils.setupDeleteAccount(realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID));
+            }
+
+            // Refresh periodic sync tasks for configured storageProviders
+            LegacyStoreSyncEvent.fire(session, realm, false);
+
+            setupAuthorizationServices(realm);
+            setupClientRegistrations(realm);
+
+            if (rep.getKeycloakVersion() != null) {
+                LegacyStoreMigrateRepresentationEvent.fire(session, realm, rep, skipUserDependent);
+            }
+
+            session.clientPolicy().updateRealmModelFromRepresentation(realm, rep);
+
+            fireRealmPostCreate(realm);
+        } finally {
+            session.getContext().setRealm(currentRealm);
         }
-
-        if (!hasRealmRole(rep, Constants.OFFLINE_ACCESS_ROLE) || !hasClientScope(rep, Constants.OFFLINE_ACCESS_ROLE)) {
-            setupOfflineTokens(realm, rep);
-        }
-
-
-        if (rep.getClientScopes() == null) {
-            createDefaultClientScopes(realm);
-        }
-
-        RepresentationToModel.importRealm(session, rep, realm, skipUserDependent);
-
-        setupClientServiceAccountsAndAuthorizationOnImport(rep, skipUserDependent);
-
-        setupAdminConsoleLocaleMapper(realm);
-
-        if (postponeMasterClientSetup) {
-            setupMasterAdminManagement(realm);
-        }
-
-        if (rep.getRoles() != null || hasRealmAdminManagementClient(rep)) {
-        	// Assert all admin roles are available once import took place. This is needed due to import from previous version where JSON file may not contain all admin roles
-        	checkMasterAdminManagementRoles(realm);
-        	checkRealmAdminManagementRoles(realm);
-        }
-
-        // Could happen when migrating from older version and I have exported JSON file, which contains "realm-management" client but not "impersonation" client
-        // I need to postpone impersonation because it needs "realm-management" client and its roles set
-        if (postponeImpersonationSetup) {
-            setupImpersonationService(realm);
-        }
-
-        if (postponeAdminCliSetup) {
-            setupAdminCli(realm);
-        }
-
-        setupAuthenticationFlows(realm);
-        setupRequiredActions(realm);
-
-        if (!hasRealmRole(rep, AccountRoles.DELETE_ACCOUNT)) {
-            KeycloakModelUtils.setupDeleteAccount(realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID));
-        }
-
-        // Refresh periodic sync tasks for configured storageProviders
-        LegacyStoreSyncEvent.fire(session, realm, false);
-
-        setupAuthorizationServices(realm);
-        setupClientRegistrations(realm);
-
-        if (rep.getKeycloakVersion() != null) {
-            LegacyStoreMigrateRepresentationEvent.fire(session, realm, rep, skipUserDependent);
-        }
-
-        session.clientPolicy().updateRealmModelFromRepresentation(realm, rep);
-
-        fireRealmPostCreate(realm);
 
         return realm;
     }

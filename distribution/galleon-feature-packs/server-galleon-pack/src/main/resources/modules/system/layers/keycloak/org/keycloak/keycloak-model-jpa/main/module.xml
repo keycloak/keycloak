@@ -37,7 +37,6 @@
         <module name="org.liquibase" services="import"/>
         <module name="org.javassist"/>
         <module name="org.hibernate" services="import"/>
-        <module name="org.bouncycastle" />
         <module name="javax.api"/>
         <module name="com.fasterxml.jackson.core.jackson-core"/>
         <module name="com.fasterxml.jackson.core.jackson-annotations"/>

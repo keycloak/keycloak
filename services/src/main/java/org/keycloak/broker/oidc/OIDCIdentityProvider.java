@@ -18,6 +18,7 @@ package org.keycloak.broker.oidc;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import org.apache.http.client.HttpClient;
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
@@ -30,6 +31,7 @@ import org.keycloak.broker.provider.util.SimpleHttp;
 import org.keycloak.common.util.Base64Url;
 import org.keycloak.common.util.SecretGenerator;
 import org.keycloak.common.util.Time;
+import org.keycloak.connections.httpclient.HttpClientProvider;
 import org.keycloak.crypto.KeyWrapper;
 import org.keycloak.crypto.SignatureProvider;
 import org.keycloak.events.Details;
@@ -39,6 +41,7 @@ import org.keycloak.events.EventType;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.keys.loader.PublicKeyStorageManager;
+import org.keycloak.models.AbstractKeycloakTransaction;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.FederatedIdentityModel;
 import org.keycloak.models.KeycloakSession;
@@ -134,16 +137,28 @@ public class OIDCIdentityProvider extends AbstractOAuth2IdentityProvider<OIDCIde
         UriBuilder logoutUri = UriBuilder.fromUri(getConfig().getLogoutUrl())
                 .queryParam("state", sessionId);
         logoutUri.queryParam("id_token_hint", idToken);
-        String url = logoutUri.build().toString();
-        try {
-            int status = SimpleHttp.doGet(url, session).asStatus();
-            boolean success = status >= 200 && status < 400;
-            if (!success) {
-                logger.warn("Failed backchannel broker logout to: " + url);
+
+        final String url = logoutUri.build().toString();
+        final HttpClient client = session.getProvider(HttpClientProvider.class).getHttpClient();
+        session.getTransactionManager().enlistAfterCompletion(new AbstractKeycloakTransaction() {
+            @Override
+            protected void commitImpl() {
+                try {
+                    int status = SimpleHttp.doGet(url, client).asStatus();
+                    boolean success = status >= 200 && status < 400;
+                    if (!success) {
+                        logger.warn("Failed backchannel broker logout to: " + url);
+                    }
+                } catch (Exception e) {
+                    logger.warn("Failed backchannel broker logout to: " + url, e);
+                }
             }
-        } catch (Exception e) {
-            logger.warn("Failed backchannel broker logout to: " + url, e);
-        }
+
+            @Override
+            protected void rollbackImpl() {
+                // no-op
+            }
+        });
     }
 
 

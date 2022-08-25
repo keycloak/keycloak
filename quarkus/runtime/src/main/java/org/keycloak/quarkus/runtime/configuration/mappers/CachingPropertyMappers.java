@@ -8,6 +8,7 @@ import io.smallrye.config.ConfigSourceInterceptorContext;
 import static java.util.Optional.of;
 import static org.keycloak.quarkus.runtime.configuration.mappers.PropertyMapper.fromOption;
 
+import java.io.File;
 import java.util.Optional;
 
 final class CachingPropertyMappers {
@@ -46,7 +47,7 @@ final class CachingPropertyMappers {
         if (homeDir == null) {
             pathPrefix = "";
         } else {
-            pathPrefix = homeDir + "/conf/";
+            pathPrefix = homeDir + File.separator + "conf" + File.separator;
         }
 
         return of(pathPrefix + value.get());

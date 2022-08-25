@@ -2,6 +2,7 @@ package org.keycloak.config;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 public class Option<T> {
 
@@ -12,9 +13,9 @@ public class Option<T> {
     private final boolean buildTime;
     private final String description;
     private final Optional<T> defaultValue;
-    private final List<String> expectedValues;
+    private final Supplier<List<String>> expectedValues;
 
-    public Option(Class<T> type, String key, OptionCategory category, boolean hidden, boolean buildTime, String description, Optional<T> defaultValue, List<String> expectedValues) {
+    public Option(Class<T> type, String key, OptionCategory category, boolean hidden, boolean buildTime, String description, Optional<T> defaultValue, Supplier<List<String>> expectedValues) {
         this.type = type;
         this.key = key;
         this.category = category;
@@ -50,7 +51,7 @@ public class Option<T> {
     }
 
     public List<String> getExpectedValues() {
-        return expectedValues;
+        return expectedValues.get();
     }
 
     public Option<T> withRuntimeSpecificDefault(T defaultValue) {

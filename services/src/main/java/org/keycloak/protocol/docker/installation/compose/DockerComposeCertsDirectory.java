@@ -1,10 +1,12 @@
 package org.keycloak.protocol.docker.installation.compose;
 
+import org.keycloak.common.util.BouncyIntegration;
 import org.keycloak.common.util.CertificateUtils;
 
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.SecureRandom;
 import java.security.cert.Certificate;
@@ -24,7 +26,7 @@ public class DockerComposeCertsDirectory {
 
         final KeyPairGenerator keyGen;
         try {
-            keyGen = KeyPairGenerator.getInstance("RSA");
+            keyGen = KeyPairGenerator.getInstance("RSA", BouncyIntegration.PROVIDER);
             keyGen.initialize(2048, new SecureRandom());
 
             final KeyPair keypair = keyGen.generateKeyPair();
@@ -35,10 +37,7 @@ public class DockerComposeCertsDirectory {
             localhostKeyFile = new AbstractMap.SimpleImmutableEntry<>(registryKeyFilename, DockerCertFileUtils.formatPrivateKeyContents(privateKey).getBytes());
             idpTrustChainFile = new AbstractMap.SimpleEntry<>(idpCertTrustChainFilename, DockerCertFileUtils.formatCrtFileContents(realmCert).getBytes());
 
-        } catch (final NoSuchAlgorithmException e) {
-            // TODO throw error here descritively
-            throw new RuntimeException(e);
-        } catch (final CertificateEncodingException e) {
+        } catch (NoSuchAlgorithmException | NoSuchProviderException | CertificateEncodingException e) {
             // TODO throw error here descritively
             throw new RuntimeException(e);
         }

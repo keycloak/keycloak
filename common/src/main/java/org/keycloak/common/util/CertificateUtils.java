@@ -30,10 +30,6 @@ import org.keycloak.common.crypto.CryptoIntegration;
  */
 public class CertificateUtils {
 
-    static {
-        CryptoIntegration.init(ClassLoader.getSystemClassLoader());
-    }
-
 
     /**
      * Generates version 3 {@link java.security.cert.X509Certificate}.

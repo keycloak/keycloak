@@ -21,6 +21,7 @@ import static org.junit.Assert.assertEquals;
 
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.OS;
 import org.keycloak.it.cli.HelpCommandTest;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
@@ -35,7 +36,13 @@ public class HelpCommandDistTest extends HelpCommandTest {
     public void testHelpDoesNotStartReAugJvm(KeycloakDistribution dist) {
         for (String helpCmd : List.of("-h", "--help", "--help-all")) {
             for (String cmd : List.of("", "start", "start-dev", "build")) {
-                CLIResult run = dist.run("--debug", cmd, helpCmd);
+                String debugOption = "--debug";
+
+                if (OS.WINDOWS.isCurrentOs()) {
+                    debugOption = "--debug=8787";
+                }
+
+                CLIResult run = dist.run(debugOption, cmd, helpCmd);
                 assertSingleJvmStarted(run);
             }
         }

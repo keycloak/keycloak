@@ -7,8 +7,11 @@ import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.junit.Assert;
+import org.junit.Assume;
+import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.common.util.BouncyIntegration;
+import org.keycloak.common.util.Environment;
 import org.keycloak.jose.HmacTest;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.jose.jws.JWSInput;
@@ -20,6 +23,12 @@ import org.keycloak.jose.jws.crypto.HMACProvider;
  *
  */
 public class FIPS1402HmacTest extends HmacTest {
+
+    @Before
+    public void before() {
+        // Run this test just if java is in FIPS mode
+        Assume.assumeTrue("Java is not in FIPS mode. Skipping the test.", Environment.isJavaInFipsMode());
+    }
 
     @Test
     public void testHmacSignaturesFIPS() throws Exception {

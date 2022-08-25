@@ -25,7 +25,7 @@ Example CORS application. For more information look at `cors/README.md`.
 JS Console
 ----------
 
-Example JavaScript application that let's you experiment with the JavaScript adapter. For more information look at `js-console/README.md`.
+Example JavaScript application that lets you experiment with the JavaScript adapter. For more information look at `js-console/README.md`.
 
 
 Providers

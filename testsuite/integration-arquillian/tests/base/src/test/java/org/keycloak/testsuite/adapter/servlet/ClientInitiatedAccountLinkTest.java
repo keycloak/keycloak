@@ -44,6 +44,7 @@ import org.keycloak.testsuite.adapter.AbstractServletsAdapterTest;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.AppServerContainer;
 import org.keycloak.testsuite.arquillian.annotation.DisableFeature;
+import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
 import org.keycloak.testsuite.utils.arquillian.ContainerConstants;
 import org.keycloak.testsuite.broker.BrokerTestTools;
 import org.keycloak.testsuite.page.AbstractPageWithInjectedUrl;
@@ -377,6 +378,14 @@ public class ClientInitiatedAccountLinkTest extends AbstractServletsAdapterTest 
         logoutAll();
     }
 
+    // TODO remove this once DYNAMIC_SCOPES feature is enabled by default
+    @Test
+    @EnableFeature(value = Profile.Feature.DYNAMIC_SCOPES, skipRestart = true)
+    public void testErrorConditionsWithDynamicScope() throws Exception {
+        // Just use existing test with DYNAMIC_SCOPES feature enabled as it was failing with DYNAMIC_SCOPES
+        testErrorConditions();
+    }
+
     @Test
     public void testAccountLink() throws Exception {
         RealmResource realm = adminClient.realms().realm(CHILD_IDP);
@@ -429,6 +438,14 @@ public class ClientInitiatedAccountLinkTest extends AbstractServletsAdapterTest 
         logoutAll();
 
 
+    }
+
+    // TODO remove this once DYNAMIC_SCOPES feature is enabled by default
+    @Test
+    @EnableFeature(value = Profile.Feature.DYNAMIC_SCOPES, skipRestart = true)
+    public void testAccountLinkWithDynamicScope() throws Exception {
+        // Just use existing test with DYNAMIC_SCOPES feature enabled as it was failing with DYNAMIC_SCOPES
+        testAccountLink();
     }
 
     private String getToken(OAuthClient.AccessTokenResponse response, Client httpClient) throws Exception {

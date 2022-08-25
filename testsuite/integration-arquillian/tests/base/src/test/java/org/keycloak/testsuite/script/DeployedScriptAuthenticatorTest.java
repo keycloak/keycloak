@@ -190,7 +190,11 @@ public class DeployedScriptAuthenticatorTest extends AbstractFlowTest {
 
         loginPage.login("user", "password");
 
-        events.expectLogin().user("user").detail(Details.USERNAME, "user").assertEvent();
+        events.expectLogin().user(okayUser()).detail(Details.USERNAME, "user").assertEvent();
+    }
+
+    private UserRepresentation okayUser() {
+        return adminClient.realm(TEST_REALM_NAME).users().search("user", true).get(0);
     }
 
     /**

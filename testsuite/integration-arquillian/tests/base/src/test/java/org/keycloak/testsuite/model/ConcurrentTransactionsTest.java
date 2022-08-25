@@ -189,7 +189,7 @@ public class ConcurrentTransactionsTest extends AbstractTestRealmKeycloakTest {
 
             });
         } finally {
-            tearDownRealm(session, "user1", "user2");
+            KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), kcSession -> tearDownRealm(kcSession, "user1", "user2"));
         }
     }
 

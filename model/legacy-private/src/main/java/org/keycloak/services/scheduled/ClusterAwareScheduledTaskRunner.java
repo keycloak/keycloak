@@ -49,11 +49,13 @@ public class ClusterAwareScheduledTaskRunner extends ScheduledTaskRunner {
         ClusterProvider clusterProvider = session.getProvider(ClusterProvider.class);
         String taskKey = task.getClass().getSimpleName();
 
+        // copying over the value as parent class is in another module that wouldn't allow access from the lambda in Wildfly
+        ScheduledTask localTask = this.task;
         ExecutionResult<Void> result = clusterProvider.executeIfNotExecuted(taskKey, intervalSecs, new Callable<Void>() {
 
             @Override
             public Void call() throws Exception {
-                task.run(session);
+                localTask.run(session);
                 return null;
             }
 

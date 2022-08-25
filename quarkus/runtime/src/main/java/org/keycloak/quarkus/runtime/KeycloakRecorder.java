@@ -47,6 +47,7 @@ import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
 import org.keycloak.quarkus.runtime.storage.legacy.infinispan.CacheManagerFactory;
+import org.keycloak.theme.ClasspathThemeProviderFactory;
 
 import io.quarkus.runtime.RuntimeValue;
 import io.quarkus.runtime.ShutdownContext;
@@ -69,10 +70,10 @@ public class KeycloakRecorder {
             Map<Spi, Map<Class<? extends Provider>, Map<String, Class<? extends ProviderFactory>>>> factories,
             Map<Class<? extends Provider>, String> defaultProviders,
             Map<String, ProviderFactory> preConfiguredProviders,
-            Boolean reaugmented) {
+            List<ClasspathThemeProviderFactory.ThemesRepresentation> themes, Boolean reaugmented) {
         Config.init(new MicroProfileConfigProvider());
         Profile.setInstance(new QuarkusProfile());
-        QuarkusKeycloakSessionFactory.setInstance(new QuarkusKeycloakSessionFactory(factories, defaultProviders, preConfiguredProviders, reaugmented));
+        QuarkusKeycloakSessionFactory.setInstance(new QuarkusKeycloakSessionFactory(factories, defaultProviders, preConfiguredProviders, themes, reaugmented));
     }
 
     public RuntimeValue<CacheManagerFactory> createCacheInitializer(String config, ShutdownContext shutdownContext) {
