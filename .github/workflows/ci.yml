@@ -133,7 +133,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        server: ['quarkus', 'quarkus-map', 'undertow-map-hot-rod']
+        server: ['quarkus', 'quarkus-map', 'quarkus-map-hot-rod']
         tests: ['group1','group2','group3']
       fail-fast: false
     steps:
@@ -145,7 +145,7 @@ jobs:
         run: echo "GIT_HOTROD_RELEVANT_DIFF=$( git diff --name-only HEAD^ | egrep -ic -e '^model/map-hot-rod|^model/map/|^model/build-processor' )" >> $GITHUB_ENV
 
       - name: Cache Maven packages
-        if: ${{ github.event_name != 'pull_request' || matrix.server != 'undertow-map-hot-rod' || env.GIT_HOTROD_RELEVANT_DIFF != 0 }}
+        if: ${{ github.event_name != 'pull_request' || matrix.server != 'quarkus-map-hot-rod' || env.GIT_HOTROD_RELEVANT_DIFF != 0 }}
         uses: actions/cache@v3
         with:
           path: ~/.m2/repository
@@ -153,7 +153,7 @@ jobs:
           restore-keys: cache-1-${{ runner.os }}-m2
 
       - name: Download built keycloak
-        if: ${{ github.event_name != 'pull_request' || matrix.server != 'undertow-map-hot-rod' || env.GIT_HOTROD_RELEVANT_DIFF != 0 }}
+        if: ${{ github.event_name != 'pull_request' || matrix.server != 'quarkus-map-hot-rod' || env.GIT_HOTROD_RELEVANT_DIFF != 0 }}
         id: download-keycloak
         uses: actions/download-artifact@v3
         with:
@@ -166,23 +166,23 @@ jobs:
       #     ls -lR ~/.m2/repository
 
       - uses: actions/setup-java@v3
-        if: ${{ github.event_name != 'pull_request' || matrix.server != 'undertow-map-hot-rod' || env.GIT_HOTROD_RELEVANT_DIFF != 0 }}
+        if: ${{ github.event_name != 'pull_request' || matrix.server != 'quarkus-map-hot-rod' || env.GIT_HOTROD_RELEVANT_DIFF != 0 }}
         with:
           distribution: 'temurin'
           java-version: ${{ env.DEFAULT_JDK_VERSION }}
       - name: Update maven settings
-        if: ${{ github.event_name != 'pull_request' || matrix.server != 'undertow-map-hot-rod' || env.GIT_HOTROD_RELEVANT_DIFF != 0 }}
+        if: ${{ github.event_name != 'pull_request' || matrix.server != 'quarkus-map-hot-rod' || env.GIT_HOTROD_RELEVANT_DIFF != 0 }}
         run: mkdir -p ~/.m2 ; cp .github/settings.xml ~/.m2/
       - name: Prepare test providers
         if: ${{ matrix.server == 'quarkus' || matrix.server == 'quarkus-map' }}
         run: ./mvnw clean install -nsu -B -e -f testsuite/integration-arquillian/servers/auth-server/services/testsuite-providers -Pauth-server-quarkus
       - name: Run base tests
-        if: ${{ github.event_name != 'pull_request' || matrix.server != 'undertow-map-hot-rod' || env.GIT_HOTROD_RELEVANT_DIFF != 0 }}
+        if: ${{ github.event_name != 'pull_request' || matrix.server != 'quarkus-map-hot-rod' || env.GIT_HOTROD_RELEVANT_DIFF != 0 }}
         run: |
           declare -A PARAMS TESTGROUP
           PARAMS["quarkus"]="-Pauth-server-quarkus"
           PARAMS["quarkus-map"]="-Pauth-server-quarkus -Pmap-storage -Dpageload.timeout=90000"
-          PARAMS["undertow-map-hot-rod"]="-Pauth-server-undertow -Pmap-storage,map-storage-hot-rod -Dpageload.timeout=90000"
+          PARAMS["quarkus-map-hot-rod"]="-Pauth-server-quarkus -Pmap-storage,map-storage-hot-rod -Dpageload.timeout=90000"
           TESTGROUP["group1"]="-Dtest=!**.crossdc.**,!**.cluster.**,%regex[org.keycloak.testsuite.(a[abc]|ad[a-l]|[^a-q]).*]"   # Tests alphabetically before admin tests and those after "r"
           TESTGROUP["group2"]="-Dtest=!**.crossdc.**,!**.cluster.**,%regex[org.keycloak.testsuite.(ad[^a-l]|a[^a-d]|b).*]"      # Admin tests and those starting with "b"
           TESTGROUP["group3"]="-Dtest=!**.crossdc.**,!**.cluster.**,%regex[org.keycloak.testsuite.([c-q]).*]"                   # All the rest
