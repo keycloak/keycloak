@@ -200,6 +200,13 @@ class AdminClient {
     });
   }
 
+  async deleteIdentityProvider(idpAlias: string) {
+    await this.login();
+    await this.client.identityProviders.del({
+      alias: idpAlias,
+    });
+  }
+
   async unlinkAccountIdentityProvider(
     username: string,
     idpDisplayName: string

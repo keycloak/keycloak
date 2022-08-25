@@ -234,7 +234,14 @@ describe("User creation", () => {
       ]);
     });
 
-    after(() => adminClient.deleteUser(usernameIdpLinksTest));
+    after(async () => {
+      await adminClient.deleteUser(usernameIdpLinksTest);
+      await Promise.all(
+        identityProviders.map((idp) =>
+          adminClient.deleteIdentityProvider(idp.alias)
+        )
+      );
+    });
 
     beforeEach(() => {
       usersPage.goToUserListTab().goToUserDetailsPage(usernameIdpLinksTest);
