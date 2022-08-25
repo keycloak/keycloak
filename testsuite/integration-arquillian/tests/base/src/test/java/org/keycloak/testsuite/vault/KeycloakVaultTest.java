@@ -32,7 +32,6 @@ import org.keycloak.vault.VaultTranscriber;
 import java.util.List;
 import java.util.Optional;
 
-import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.QUARKUS;
 import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 
 /**
@@ -42,7 +41,7 @@ import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerEx
  * @author <a href="mailto:sguilhen@redhat.com">Stefan Guilhen</a>
  */
 @EnableVault
-@AuthServerContainerExclude({REMOTE, QUARKUS})
+@AuthServerContainerExclude(REMOTE)
 public class KeycloakVaultTest extends AbstractKeycloakTest {
 
     @Override

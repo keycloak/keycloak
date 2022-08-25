@@ -39,13 +39,12 @@ import java.util.stream.Collectors;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.QUARKUS;
 import static org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer.REMOTE;
 
 /**
  * @author Vaclav Muzikar <vmuzikar@redhat.com>
  */
-@AuthServerContainerExclude({REMOTE})
+@AuthServerContainerExclude(REMOTE)
 public class ClientSearchTest extends AbstractClientTest {
     @ArquillianResource
     protected ContainerController controller;
@@ -160,7 +159,7 @@ public class ClientSearchTest extends AbstractClientTest {
             String s = String.join(",",searchableAttributes);
             controller.stop(suiteContext.getAuthServerInfo().getQualifier());
             KeycloakQuarkusServerDeployableContainer container = (KeycloakQuarkusServerDeployableContainer)suiteContext.getAuthServerInfo().getArquillianContainer().getDeployableContainer();
-            container.setRuntimeProperties(Collections.singletonList("--spi-client-jpa-searchable-attributes=\""+ s + "\""));
+            container.setAdditionalBuildArgs(Collections.singletonList("--spi-client-jpa-searchable-attributes=\""+ s + "\""));
             controller.start(suiteContext.getAuthServerInfo().getQualifier());
         } else {
             throw new RuntimeException("Don't know how to config");
@@ -180,8 +179,8 @@ public class ClientSearchTest extends AbstractClientTest {
             executeCli("/subsystem=keycloak-server/spi=client:remove");
         } else if(suiteContext.getAuthServerInfo().isQuarkus()) {
             KeycloakQuarkusServerDeployableContainer container = (KeycloakQuarkusServerDeployableContainer)suiteContext.getAuthServerInfo().getArquillianContainer().getDeployableContainer();
-            container.setRuntimeProperties(Collections.emptyList());
-            container.restartServer(false);
+            container.setAdditionalBuildArgs(Collections.emptyList());
+            container.restartServer();
         } else {
             throw new RuntimeException("Don't know how to config");
         }

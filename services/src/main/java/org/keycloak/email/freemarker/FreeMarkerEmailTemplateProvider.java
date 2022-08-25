@@ -48,6 +48,7 @@ import org.keycloak.theme.FreeMarkerUtil;
 import org.keycloak.theme.Theme;
 import org.keycloak.theme.beans.LinkExpirationFormatterMethod;
 import org.keycloak.theme.beans.MessageFormatterMethod;
+import org.keycloak.utils.StringUtil;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
@@ -181,6 +182,22 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
         send("emailVerificationSubject", "email-verification.ftl", attributes);
     }
 
+    @Override
+    public void sendEmailUpdateConfirmation(String link, long expirationInMinutes, String newEmail) throws EmailException {
+        if (newEmail == null) {
+            throw new IllegalArgumentException("The new email is mandatory");
+        }
+
+        Map<String, Object> attributes = new HashMap<>(this.attributes);
+        attributes.put("user", new ProfileBean(user));
+        attributes.put("newEmail", newEmail);
+        addLinkInfoIntoAttributes(link, expirationInMinutes, attributes);
+
+        attributes.put("realmName", getRealmName());
+
+        send("emailUpdateConfirmationSubject", Collections.emptyList(), "email-update-confirmation.ftl", attributes, newEmail);
+    }
+
     /**
      * Add link info into template attributes.
      * 
@@ -213,6 +230,10 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
             Locale locale = session.getContext().resolveLocale(user);
             attributes.put("locale", locale);
             Properties rb = new Properties();
+            if(!StringUtil.isNotBlank(realm.getDefaultLocale()))
+            {
+                rb.putAll(realm.getRealmLocalizationTextsByLocale(realm.getDefaultLocale()));
+            }
             rb.putAll(theme.getMessages(locale));
             rb.putAll(realm.getRealmLocalizationTextsByLocale(locale.toLanguageTag()));
             attributes.put("msg", new MessageFormatterMethod(locale, rb));
@@ -245,9 +266,13 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
 
     @Override
     public void send(String subjectFormatKey, List<Object> subjectAttributes, String bodyTemplate, Map<String, Object> bodyAttributes) throws EmailException {
+        send(subjectFormatKey, subjectAttributes, bodyTemplate, bodyAttributes, null);
+    }
+
+    protected void send(String subjectFormatKey, List<Object> subjectAttributes, String bodyTemplate, Map<String, Object> bodyAttributes, String address) throws EmailException {
         try {
             EmailTemplate email = processTemplate(subjectFormatKey, subjectAttributes, bodyTemplate, bodyAttributes);
-            send(email.getSubject(), email.getTextBody(), email.getHtmlBody());
+            send(email.getSubject(), email.getTextBody(), email.getHtmlBody(), address);
         } catch (EmailException e) {
             throw e;
         } catch (Exception e) {
@@ -255,13 +280,21 @@ public class FreeMarkerEmailTemplateProvider implements EmailTemplateProvider {
         }
     }
 
-    protected void send(String subject, String textBody, String htmlBody) throws EmailException {
-        send(realm.getSmtpConfig(), subject, textBody, htmlBody);
+    protected void send(String subject, String textBody, String htmlBody, String address) throws EmailException {
+        send(realm.getSmtpConfig(), subject, textBody, htmlBody, address);
     }
 
     protected void send(Map<String, String> config, String subject, String textBody, String htmlBody) throws EmailException {
+        send(config, subject, textBody, htmlBody, null);
+    }
+
+    protected void send(Map<String, String> config, String subject, String textBody, String htmlBody, String address) throws EmailException {
         EmailSenderProvider emailSender = session.getProvider(EmailSenderProvider.class);
-        emailSender.send(config, user, subject, textBody, htmlBody);
+        if (address == null) {
+            emailSender.send(config, user, subject, textBody, htmlBody);
+        } else {
+            emailSender.send(config, address, subject, textBody, htmlBody);
+        }
     }
 
     @Override

@@ -1,19 +1,18 @@
 /*
- *  Copyright 2021 Red Hat, Inc. and/or its affiliates
- *  and other contributors as indicated by the @author tags.
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- *  http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.keycloak.authorization.policy.provider.clientscope;
 
@@ -69,12 +68,13 @@ public class ClientScopePolicyProviderFactory implements PolicyProviderFactory<C
                 StoreFactory storeFactory = provider.getStoreFactory();
                 PolicyStore policyStore = storeFactory.getPolicyStore();
                 ClientScopeModel removedClientScope = ((ClientScopeRemovedEvent) event).getClientScope();
+                RealmModel realm = ((ClientScopeRemovedEvent) event).getClientScope().getRealm();
 
                 Map<Policy.FilterOption, String[]> filters = new HashMap<>();
 
                 filters.put(Policy.FilterOption.TYPE, new String[] { getId() });
 
-                policyStore.findByResourceServer(filters, null, -1, -1).forEach(new Consumer<Policy>() {
+                policyStore.find(realm, null, filters, null, null).forEach(new Consumer<Policy>() {
 
                     @Override
                     public void accept(Policy policy) {
@@ -93,7 +93,7 @@ public class ClientScopePolicyProviderFactory implements PolicyProviderFactory<C
                         }
 
                         if (clientScopes.isEmpty()) {
-                            policyStore.delete(policy.getId());
+                            policyStore.delete(realm, policy.getId());
                         } else {
                             try {
                                 policy.putConfig("clientScopes", JsonSerialization.writeValueAsString(clientScopes));

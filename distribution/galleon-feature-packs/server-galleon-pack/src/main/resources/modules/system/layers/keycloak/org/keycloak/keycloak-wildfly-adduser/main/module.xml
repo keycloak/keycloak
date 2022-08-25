@@ -29,6 +29,7 @@
     <dependencies>
         <module name="org.keycloak.keycloak-common"/>
         <module name="org.keycloak.keycloak-core"/>
+        <module name="org.keycloak.keycloak-crypto-default" services="import"/>
         <module name="org.keycloak.keycloak-server-spi" services="import"/>
         <module name="org.keycloak.keycloak-server-spi-private" services="import"/>
         <module name="org.keycloak.keycloak-services" services="import"/>

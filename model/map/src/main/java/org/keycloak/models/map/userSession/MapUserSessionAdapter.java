@@ -20,22 +20,28 @@ import org.keycloak.common.util.Time;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelIllegalStateException;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 
 import org.keycloak.models.UserSessionModel;
+import org.keycloak.models.map.common.TimeAdapter;
+
+import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
+
+import static org.keycloak.models.map.common.ExpirationUtils.isExpired;
+import static org.keycloak.models.map.userSession.SessionExpiration.setUserSessionExpiration;
 
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
-public abstract class MapUserSessionAdapter extends AbstractUserSessionModel {
+public class MapUserSessionAdapter extends AbstractUserSessionModel {
 
     public MapUserSessionAdapter(KeycloakSession session, RealmModel realm, MapUserSessionEntity entity) {
         super(session, realm, entity);
@@ -83,79 +89,115 @@ public abstract class MapUserSessionAdapter extends AbstractUserSessionModel {
 
     @Override
     public boolean isRememberMe() {
-        return entity.isRememberMe();
+        Boolean rememberMe = entity.isRememberMe();
+        return rememberMe != null ? rememberMe : false;
     }
 
     @Override
     public int getStarted() {
-        return entity.getStarted();
+        Long started = entity.getTimestamp();
+        return started != null ? TimeAdapter.fromLongWithTimeInSecondsToIntegerWithTimeInSeconds(TimeAdapter.fromMilliSecondsToSeconds(started)) : 0;
     }
 
     @Override
     public int getLastSessionRefresh() {
-        return entity.getLastSessionRefresh();
+        Long lastSessionRefresh = entity.getLastSessionRefresh();
+        return lastSessionRefresh != null ? TimeAdapter.fromLongWithTimeInSecondsToIntegerWithTimeInSeconds(TimeAdapter.fromMilliSecondsToSeconds(lastSessionRefresh)) : 0;
     }
 
     @Override
     public void setLastSessionRefresh(int seconds) {
-        entity.setLastSessionRefresh(seconds);
+        entity.setLastSessionRefresh(TimeAdapter.fromSecondsToMilliseconds(seconds));
+
+        // whenever the lastSessionRefresh is changed recompute the expiration time
+        setUserSessionExpiration(entity, realm);
     }
 
     @Override
     public boolean isOffline() {
-        return entity.isOffline();
+        Boolean offline = entity.isOffline();
+        return offline != null ? offline : false;
     }
 
     @Override
     public Map<String, AuthenticatedClientSessionModel> getAuthenticatedClientSessions() {
-        Map<String, AuthenticatedClientSessionModel> result = new HashMap<>();
-        List<String> removedClientUUIDS = new LinkedList<>();
+        Set<MapAuthenticatedClientSessionEntity> authenticatedClientSessions = entity.getAuthenticatedClientSessions();
+        if (authenticatedClientSessions == null) {
+            return Collections.emptyMap();
+        }
 
-        // to avoid concurrentModificationException
-        Map<String, String> authenticatedClientSessions = new HashMap<>(entity.getAuthenticatedClientSessions());
+        return authenticatedClientSessions
+                    .stream()
+                    .filter(this::filterAndRemoveExpiredClientSessions)
+                    .filter(this::matchingOfflineFlag)
+                    .filter(this::filterAndRemoveClientSessionWithoutClient)
+                    .collect(Collectors.toMap(MapAuthenticatedClientSessionEntity::getClientId, this::clientEntityToModel));
+    }
 
-        authenticatedClientSessions.forEach((clientUUID, clientSessionId) -> {
-            ClientModel client = realm.getClientById(clientUUID);
-
-            if (client != null) {
-                AuthenticatedClientSessionModel clientSession = session.sessions()
-                        .getClientSession(this, client, clientSessionId, isOffline());
-                if (clientSession != null) {
-                    result.put(clientUUID, clientSession);
-                }
-            } else {
-                removedClientUUIDS.add(clientUUID);
+    private AuthenticatedClientSessionModel clientEntityToModel(MapAuthenticatedClientSessionEntity clientSessionEntity) {
+        return new MapAuthenticatedClientSessionAdapter(session, realm, this, clientSessionEntity) {
+            @Override
+            public void detachFromUserSession() {
+                MapUserSessionAdapter.this.entity.removeAuthenticatedClientSession(entity.getClientId());
+                this.userSession = null;
             }
-        });
+        };
+    }
 
-        removeAuthenticatedClientSessions(removedClientUUIDS);
+    public boolean filterAndRemoveExpiredClientSessions(MapAuthenticatedClientSessionEntity clientSession) {
+        try {
+            if (isExpired(clientSession, false)) {
+                entity.removeAuthenticatedClientSession(clientSession.getClientId());
+                return false;
+            }
+        } catch (ModelIllegalStateException ex) {
+            entity.removeAuthenticatedClientSession(clientSession.getClientId());
+            return false;
+        }
 
-        return Collections.unmodifiableMap(result);
+        return true;
+    }
+
+    public boolean filterAndRemoveClientSessionWithoutClient(MapAuthenticatedClientSessionEntity clientSession) {
+        ClientModel client = realm.getClientById(clientSession.getClientId());
+
+        if (client == null) {
+            entity.removeAuthenticatedClientSession(clientSession.getId());
+
+            // Filter out entities that doesn't have client
+            return false;
+        }
+
+        // client session has client so we do not filter it out
+        return true;
+    }
+
+    public boolean matchingOfflineFlag(MapAuthenticatedClientSessionEntity clientSession) {
+        Boolean isClientSessionOffline = clientSession.isOffline();
+
+        // If client session doesn't have offline flag default to false
+        if (isClientSessionOffline == null) return !isOffline();
+
+        return isOffline() == isClientSessionOffline;
     }
 
     @Override
     public AuthenticatedClientSessionModel getAuthenticatedClientSessionByClient(String clientUUID) {
-        String clientSessionId = entity.getAuthenticatedClientSessions().get(clientUUID);
-
-        if (clientSessionId == null) {
-            return null;
-        }
-
-        ClientModel client = realm.getClientById(clientUUID);
-
-        if (client != null) {
-            return session.sessions().getClientSession(this, client, clientSessionId, isOffline());
-        }
-
-        removeAuthenticatedClientSessions(Collections.singleton(clientUUID));
-
-        return null;
+        return entity.getAuthenticatedClientSession(clientUUID)
+                .filter(this::filterAndRemoveExpiredClientSessions)
+                .filter(this::matchingOfflineFlag)
+                .filter(this::filterAndRemoveClientSessionWithoutClient)
+                .map(this::clientEntityToModel)
+                .orElse(null);
     }
-
+    @Override
+    public void removeAuthenticatedClientSessions(Collection<String> removedClientUKS) {
+        removedClientUKS.forEach(entity::removeAuthenticatedClientSession);
+    }
 
     @Override
     public String getNote(String name) {
-        return (name != null) ? entity.getNotes().get(name) : null;
+        return (name != null) ? entity.getNote(name) : null;
     }
 
     @Override
@@ -164,7 +206,7 @@ public abstract class MapUserSessionAdapter extends AbstractUserSessionModel {
             if (value == null) {
                 entity.removeNote(name);
             } else {
-                entity.addNote(name, value);
+                entity.setNote(name, value);
             }
         }
     }
@@ -178,7 +220,8 @@ public abstract class MapUserSessionAdapter extends AbstractUserSessionModel {
 
     @Override
     public Map<String, String> getNotes() {
-        return entity.getNotes();
+        Map<String, String> notes = entity.getNotes();
+        return notes == null ? Collections.emptyMap() : Collections.unmodifiableMap(notes);
     }
 
     @Override
@@ -203,8 +246,8 @@ public abstract class MapUserSessionAdapter extends AbstractUserSessionModel {
         entity.setBrokerSessionId(brokerSessionId);
         entity.setBrokerUserId(brokerUserId);
 
-        int currentTime = Time.currentTime();
-        entity.setStarted(currentTime);
+        long currentTime = Time.currentTimeMillis();
+        entity.setTimestamp(currentTime);
         entity.setLastSessionRefresh(currentTime);
 
         entity.setState(null);
@@ -212,7 +255,7 @@ public abstract class MapUserSessionAdapter extends AbstractUserSessionModel {
         String correspondingSessionId = entity.getNote(CORRESPONDING_SESSION_ID);
         entity.setNotes(new ConcurrentHashMap<>());
         if (correspondingSessionId != null)
-            entity.addNote(CORRESPONDING_SESSION_ID, correspondingSessionId);
+            entity.setNote(CORRESPONDING_SESSION_ID, correspondingSessionId);
 
         entity.clearAuthenticatedClientSessions();
     }

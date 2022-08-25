@@ -81,11 +81,11 @@
     <dependency>
       <groupId>org.liquibase</groupId>
       <artifactId>liquibase-core</artifactId>
-      <version>3.5.5.redhat-1</version>
+      <version>4.8.0.redhat-00001</version>
       <licenses>
         <license>
           <name>Apache Software License 2.0</name>
-          <url>https://raw.githubusercontent.com/liquibase/liquibase/liquibase-parent-3.5.5/LICENSE.txt</url>
+          <url>https://raw.githubusercontent.com/liquibase/liquibase/v4.8.0/LICENSE.txt</url>
         </license>
       </licenses>
     </dependency>
@@ -481,18 +481,6 @@
         <license>
           <name>Apache Software License 2.0</name>
           <url>https://raw.githubusercontent.com/google/fonts/master/apache/opensans/LICENSE.txt</url>
-        </license>
-      </licenses>
-    </other>
-    <other>
-      <description>Zocial</description>
-      <locations>
-        <directory>themes/keycloak/common/resources/lib/zocial</directory>
-      </locations>
-      <licenses>
-        <license>
-          <name>MIT License</name>
-          <url>https://raw.githubusercontent.com/smcllns/css-social-buttons/547237515694d05eaa38aeae3fb4d2eb4dee1ac9/README.md</url>
         </license>
       </licenses>
     </other>

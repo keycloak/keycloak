@@ -35,6 +35,7 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
     public static final XmlKeyInfoKeyNameTransformer DEFAULT_XML_KEY_INFO_KEY_NAME_TRANSFORMER = XmlKeyInfoKeyNameTransformer.NONE;
 
     public static final String ENTITY_ID = "entityId";
+    public static final String IDP_ENTITY_ID = "idpEntityId";
     public static final String ADD_EXTENSIONS_ELEMENT_WITH_KEY_INFO = "addExtensionsElementWithKeyInfo";
     public static final String BACKCHANNEL_SUPPORTED = "backchannelSupported";
     public static final String ENCRYPTION_PUBLIC_KEY = "encryptionPublicKey";
@@ -76,6 +77,14 @@ public class SAMLIdentityProviderConfig extends IdentityProviderModel {
 
     public void setEntityId(String entityId) {
         getConfig().put(ENTITY_ID, entityId);
+    }
+
+    public String getIdpEntityId() {
+        return getConfig().get(IDP_ENTITY_ID);
+    }
+
+    public void setIdpEntityId(String idpEntityId) {
+        getConfig().put(IDP_ENTITY_ID, idpEntityId);
     }
 
     public String getSingleSignOnServiceUrl() {

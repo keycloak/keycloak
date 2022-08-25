@@ -125,7 +125,7 @@ public class CompositeRolesModelTest extends AbstractTestRealmKeycloakTest {
 
         KeycloakModelUtils.runJobInTransaction(session.getKeycloakSessionFactory(), (KeycloakSession session5) -> {
 
-            RealmModel realm = session5.realms().getRealm("TestComposites");
+            RealmModel realm = session5.realms().getRealmByName("TestComposites");
 
             Set<RoleModel> requestedRoles = getRequestedRoles(realm.getClientByClientId("APP_COMPOSITE_APPLICATION"), session.users().getUserByUsername(realm, "APP_COMPOSITE_USER"));
 
@@ -166,7 +166,6 @@ public class CompositeRolesModelTest extends AbstractTestRealmKeycloakTest {
     public void configureTestRealm(RealmRepresentation testRealm) {
         log.infof("testcomposites imported");
         RealmRepresentation newRealm = loadJson(getClass().getResourceAsStream("/model/testcomposites2.json"), RealmRepresentation.class);
-        newRealm.setId("TestComposites");
         adminClient.realms().create(newRealm);
 
     }

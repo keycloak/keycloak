@@ -25,8 +25,7 @@ import java.util.concurrent.FutureTask;
 import org.infinispan.Cache;
 import org.jboss.logging.Logger;
 import org.keycloak.Config;
-import org.keycloak.cluster.ClusterEvent;
-import org.keycloak.cluster.ClusterProvider;
+import org.keycloak.common.Profile;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.jose.jwk.JWK;
 import org.keycloak.keys.PublicKeyStorageProvider;
@@ -36,21 +35,18 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
+import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.ProviderEvent;
 import org.keycloak.provider.ProviderEventListener;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
-public class InfinispanPublicKeyStorageProviderFactory implements PublicKeyStorageProviderFactory {
+public class InfinispanPublicKeyStorageProviderFactory implements PublicKeyStorageProviderFactory, EnvironmentDependentProviderFactory {
 
     private static final Logger log = Logger.getLogger(InfinispanPublicKeyStorageProviderFactory.class);
 
     public static final String PROVIDER_ID = "infinispan";
-
-    public static final String KEYS_CLEAR_CACHE_EVENTS = "KEYS_CLEAR_CACHE_EVENTS";
-
-    public static final String PUBLIC_KEY_STORAGE_INVALIDATION_EVENT = "PUBLIC_KEY_STORAGE_INVALIDATION_EVENT";
 
     private volatile Cache<String, PublicKeysEntry> keysCache;
 
@@ -69,20 +65,6 @@ public class InfinispanPublicKeyStorageProviderFactory implements PublicKeyStora
             synchronized (this) {
                 if (keysCache == null) {
                     this.keysCache = session.getProvider(InfinispanConnectionProvider.class).getCache(InfinispanConnectionProvider.KEYS_CACHE_NAME);
-
-                    ClusterProvider cluster = session.getProvider(ClusterProvider.class);
-                    cluster.registerListener(PUBLIC_KEY_STORAGE_INVALIDATION_EVENT, (ClusterEvent event) -> {
-
-                        PublicKeyStorageInvalidationEvent invalidationEvent = (PublicKeyStorageInvalidationEvent) event;
-                        keysCache.remove(invalidationEvent.getCacheKey());
-
-                    });
-
-                    cluster.registerListener(KEYS_CLEAR_CACHE_EVENTS, (ClusterEvent event) -> {
-
-                        keysCache.clear();
-
-                    });
                 }
             }
         }
@@ -145,6 +127,11 @@ public class InfinispanPublicKeyStorageProviderFactory implements PublicKeyStora
         } else {
             return null;
         }
+    }
+
+    @Override
+    public boolean isSupported() {
+        return !Profile.isFeatureEnabled(Profile.Feature.MAP_STORAGE);
     }
 
     private static class SessionAndKeyHolder {

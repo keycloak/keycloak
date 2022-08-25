@@ -15,4 +15,4 @@
     String authUri = authScheme + "://" + authHost + ":" + authPort + "/auth";
 %>
 <h2>Click here <a href="<%= KeycloakUriBuilder.fromUri(authUri).path(ServiceUrlConstants.TOKEN_SERVICE_LOGOUT_PATH)
-            .queryParam("redirect_uri", redirectUri).build("servlet-authz").toString()%>">Sign Out</a></h2>
+            .build("servlet-authz").toString()%>">Sign Out</a></h2>

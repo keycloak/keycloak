@@ -16,18 +16,19 @@
  */
 package org.keycloak.admin.client;
 
-import org.jboss.resteasy.client.jaxrs.ResteasyWebTarget;
-import org.jboss.resteasy.plugins.providers.jackson.ResteasyJackson2Provider;
+import javax.ws.rs.client.WebTarget;
 import org.keycloak.admin.client.resource.BearerAuthFilter;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.admin.client.resource.RealmsResource;
 import org.keycloak.admin.client.resource.ServerInfoResource;
+import org.keycloak.admin.client.spi.ResteasyClientProvider;
 import org.keycloak.admin.client.token.TokenManager;
 
 import javax.net.ssl.SSLContext;
 import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
 import java.net.URI;
+import java.util.Iterator;
+import java.util.ServiceLoader;
 
 import static org.keycloak.OAuth2Constants.PASSWORD;
 
@@ -41,41 +42,72 @@ import static org.keycloak.OAuth2Constants.PASSWORD;
  * @see KeycloakBuilder
  */
 public class Keycloak implements AutoCloseable {
+
+    private static volatile ResteasyClientProvider CLIENT_PROVIDER = resolveResteasyClientProvider();
+
+    private static ResteasyClientProvider resolveResteasyClientProvider() {
+        Iterator<ResteasyClientProvider> providers = ServiceLoader.load(ResteasyClientProvider.class).iterator();
+
+        if (providers.hasNext()) {
+            ResteasyClientProvider provider = providers.next();
+
+            if (providers.hasNext()) {
+                throw new IllegalArgumentException("Multiple " + ResteasyClientProvider.class + " implementations found");
+            }
+
+            return provider;
+        }
+
+        return createDefaultResteasyClientProvider();
+    }
+
+    private static ResteasyClientProvider createDefaultResteasyClientProvider() {
+        try {
+            return (ResteasyClientProvider) Keycloak.class.getClassLoader().loadClass("org.keycloak.admin.client.spi.ResteasyClientClassicProvider").getDeclaredConstructor().newInstance();
+        } catch (Exception cause) {
+            throw new RuntimeException("Could not instantiate default client provider", cause);
+        }
+    }
+
+    public static void setClientProvider(ResteasyClientProvider provider) {
+        CLIENT_PROVIDER = provider;
+    }
+
+    public static ResteasyClientProvider getClientProvider() {
+        return CLIENT_PROVIDER;
+    }
+
     private final Config config;
     private final TokenManager tokenManager;
     private final String authToken;
-    private final ResteasyWebTarget target;
+    private final WebTarget target;
     private final Client client;
     private boolean closed = false;
 
-    Keycloak(String serverUrl, String realm, String username, String password, String clientId, String clientSecret, String grantType, Client resteasyClient, String authtoken) {
-        config = new Config(serverUrl, realm, username, password, clientId, clientSecret, grantType);
+    Keycloak(String serverUrl, String realm, String username, String password, String clientId, String clientSecret, String grantType, Client resteasyClient, String authtoken, String scope) {
+        config = new Config(serverUrl, realm, username, password, clientId, clientSecret, grantType, scope);
         client = resteasyClient != null ? resteasyClient : newRestEasyClient(null, null, false);
         authToken = authtoken;
         tokenManager = authtoken == null ? new TokenManager(config, client) : null;
 
-        target = (ResteasyWebTarget) client.target(config.getServerUrl());
+        target = client.target(config.getServerUrl());
         target.register(newAuthFilter());
+    }
+
+    private static Client newRestEasyClient(Object customJacksonProvider, SSLContext sslContext, boolean disableTrustManager) {
+        return CLIENT_PROVIDER.newRestEasyClient(customJacksonProvider, sslContext, disableTrustManager);
     }
 
     private BearerAuthFilter newAuthFilter() {
         return authToken != null ? new BearerAuthFilter(authToken) : new BearerAuthFilter(tokenManager);
     }
-
-    private static Client newRestEasyClient(ResteasyJackson2Provider customJacksonProvider, SSLContext sslContext, boolean disableTrustManager) {
-        ClientBuilder clientBuilder = ClientBuilderWrapper.create(sslContext, disableTrustManager);
-
-        if (customJacksonProvider != null) {
-            clientBuilder.register(customJacksonProvider, 100);
-        } else {
-            clientBuilder.register(JacksonProvider.class, 100);
-        }
-
-        return clientBuilder.build();
+    
+    public static Keycloak getInstance(String serverUrl, String realm, String username, String password, String clientId, String clientSecret, SSLContext sslContext, Object customJacksonProvider, boolean disableTrustManager, String authToken, String scope) {
+        return new Keycloak(serverUrl, realm, username, password, clientId, clientSecret, PASSWORD, newRestEasyClient(customJacksonProvider, sslContext, disableTrustManager), authToken, scope);
     }
 
-    public static Keycloak getInstance(String serverUrl, String realm, String username, String password, String clientId, String clientSecret, SSLContext sslContext, ResteasyJackson2Provider customJacksonProvider, boolean disableTrustManager, String authToken) {
-        return new Keycloak(serverUrl, realm, username, password, clientId, clientSecret, PASSWORD, newRestEasyClient(customJacksonProvider, sslContext, disableTrustManager), authToken);
+    public static Keycloak getInstance(String serverUrl, String realm, String username, String password, String clientId, String clientSecret, SSLContext sslContext, Object customJacksonProvider, boolean disableTrustManager, String authToken) {
+        return new Keycloak(serverUrl, realm, username, password, clientId, clientSecret, PASSWORD, newRestEasyClient(customJacksonProvider, sslContext, disableTrustManager), authToken, null);
     }
 
     public static Keycloak getInstance(String serverUrl, String realm, String username, String password, String clientId, String clientSecret) {
@@ -86,7 +118,7 @@ public class Keycloak implements AutoCloseable {
         return getInstance(serverUrl, realm, username, password, clientId, clientSecret, sslContext, null, false, null);
     }
 
-    public static Keycloak getInstance(String serverUrl, String realm, String username, String password, String clientId, String clientSecret, SSLContext sslContext, ResteasyJackson2Provider customJacksonProvider) {
+    public static Keycloak getInstance(String serverUrl, String realm, String username, String password, String clientId, String clientSecret, SSLContext sslContext, Object customJacksonProvider) {
         return getInstance(serverUrl, realm, username, password, clientId, clientSecret, sslContext, customJacksonProvider, false, null);
     }
 
@@ -107,7 +139,7 @@ public class Keycloak implements AutoCloseable {
     }
 
     public RealmsResource realms() {
-        return target.proxy(RealmsResource.class);
+        return CLIENT_PROVIDER.targetProxy(target, RealmsResource.class);
     }
 
     public RealmResource realm(String realmName) {
@@ -115,7 +147,7 @@ public class Keycloak implements AutoCloseable {
     }
 
     public ServerInfoResource serverInfo() {
-        return target.proxy(ServerInfoResource.class);
+        return CLIENT_PROVIDER.targetProxy(target, ServerInfoResource.class);
     }
 
     public TokenManager tokenManager() {
@@ -132,7 +164,8 @@ public class Keycloak implements AutoCloseable {
      * @return
      */
     public <T> T proxy(Class<T> proxyClass, URI absoluteURI) {
-        return ((ResteasyWebTarget) client.target(absoluteURI)).register(newAuthFilter()).proxy(proxyClass);
+        WebTarget register = client.target(absoluteURI).register(newAuthFilter());
+        return CLIENT_PROVIDER.targetProxy(register, proxyClass);
     }
 
     /**

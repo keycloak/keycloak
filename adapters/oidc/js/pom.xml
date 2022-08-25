@@ -16,75 +16,72 @@
   ~ limitations under the License.
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<parent>
 		<artifactId>keycloak-parent</artifactId>
 		<groupId>org.keycloak</groupId>
-		<version>16.0.0-SNAPSHOT</version>
-        <relativePath>../../../pom.xml</relativePath>
+		<version>999-SNAPSHOT</version>
+		<relativePath>../../../pom.xml</relativePath>
 	</parent>
 	<modelVersion>4.0.0</modelVersion>
 
 	<artifactId>keycloak-js-adapter</artifactId>
 	<name>Keycloak JS Integration</name>
-	<description />
-
-	<dependencies>
-	</dependencies>
 
 	<build>
-        <plugins>
-            <plugin>
-                <groupId>com.samaxes.maven</groupId>
-                <artifactId>minify-maven-plugin</artifactId>
-                <configuration>
-                    <jsEngine>CLOSURE</jsEngine>
-                    <closureLanguageIn>ECMASCRIPT5</closureLanguageIn>
-                    <closureCreateSourceMap>true</closureCreateSourceMap>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>min-js</id>
-                        <phase>compile</phase>
-                        <configuration>
-                            <charset>utf-8</charset>
-                            <webappSourceDir>${basedir}/src/main/resources</webappSourceDir>
-                            <jsSourceDir>.</jsSourceDir>
-                            <jsSourceFiles>
-                                <jsSourceFile>keycloak.js</jsSourceFile>
-                            </jsSourceFiles>
-
-                            <webappTargetDir>${project.build.directory}/classes</webappTargetDir>
-                            <jsTargetDir>.</jsTargetDir>
-                            <jsFinalFile>keycloak.js</jsFinalFile>
-                        </configuration>
-                        <goals>
-                            <goal>minify</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>min-authz-js</id>
-                        <phase>compile</phase>
-                        <configuration>
-                            <charset>utf-8</charset>
-                            <webappSourceDir>${basedir}/src/main/resources</webappSourceDir>
-                            <jsSourceDir>.</jsSourceDir>
-                            <jsSourceFiles>
-                                <jsSourceFile>keycloak-authz.js</jsSourceFile>
-                            </jsSourceFiles>
-
-                            <webappTargetDir>${project.build.directory}/classes</webappTargetDir>
-                            <jsTargetDir>.</jsTargetDir>
-                            <jsFinalFile>keycloak-authz.js</jsFinalFile>
-                        </configuration>
-                        <goals>
-                            <goal>minify</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
+		<resources>
+			<resource>
+				<directory>static</directory>
+			</resource>
+			<resource>
+				<directory>dist</directory>
+			</resource>
+		</resources>
+		<plugins>
+			<plugin>
+				<artifactId>maven-clean-plugin</artifactId>
+				<version>3.1.0</version>
+				<configuration>
+					<filesets>
+						<fileset>
+							<directory>dist</directory>
+							<excludes>
+								<exclude>*.d.ts</exclude>
+							</excludes>
+						</fileset>
+					</filesets>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>com.github.eirslett</groupId>
+				<artifactId>frontend-maven-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>install node and npm</id>
+						<goals>
+							<goal>install-node-and-npm</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>npm install</id>
+						<goals>
+							<goal>npm</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>npm run build</id>
+						<goals>
+							<goal>npm</goal>
+						</goals>
+						<configuration>
+							<arguments>run build</arguments>
+						</configuration>
+					</execution>
+				</executions>
+				<configuration>
+					<nodeVersion>${node.version}</nodeVersion>
+				</configuration>
+			</plugin>
 		</plugins>
 	</build>
-
 </project>

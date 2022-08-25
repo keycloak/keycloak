@@ -3,6 +3,7 @@ package org.keycloak.testsuite.federation.ldap;
 
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.FixMethodOrder;
 import org.junit.Rule;
 import org.junit.Test;
@@ -11,6 +12,7 @@ import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authentication.authenticators.browser.OTPFormAuthenticatorFactory;
 import org.keycloak.authentication.authenticators.browser.PasswordFormFactory;
 import org.keycloak.authentication.authenticators.browser.UsernameFormFactory;
+import org.keycloak.common.Profile;
 import org.keycloak.models.AuthenticationExecutionModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -18,6 +20,7 @@ import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.storage.ldap.idm.model.LDAPObject;
+import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.arquillian.annotation.EnableVault;
 import org.keycloak.testsuite.client.KeycloakTestingClient;
 import org.keycloak.testsuite.pages.LoginTotpPage;
@@ -61,6 +64,12 @@ public class LDAPUserMultipleCredentialTest extends AbstractLDAPTest {
         return ldapRule;
     }
 
+    @Before
+    public void before() {
+        // don't run this test when map storage is enabled, as map storage doesn't support LDAP, yet
+        ProfileAssume.assumeFeatureDisabled(Profile.Feature.MAP_STORAGE);
+    }
+
     @Override
     protected void afterImportTestRealm() {
         getTestingClient().server().run(session -> {
@@ -96,7 +105,7 @@ public class LDAPUserMultipleCredentialTest extends AbstractLDAPTest {
             LDAPTestUtils.updateLDAPPassword(ctx.getLdapProvider(), user2, "some-other-password");
             UserModel userWithOtp = session.users().getUserByUsername(appRealm, "test-user-with-otp");
             OTPCredentialModel otpCredential = OTPCredentialModel.createHOTP("DJmQfC73VGFhw7D4QJ8A", 6, 0, "HmacSHA1");
-            session.userCredentialManager().createCredential(appRealm, userWithOtp, otpCredential);
+            userWithOtp.credentialManager().createStoredCredential(otpCredential);
         });
     }
 

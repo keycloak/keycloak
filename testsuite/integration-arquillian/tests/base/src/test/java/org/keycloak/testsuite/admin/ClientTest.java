@@ -19,8 +19,11 @@ package org.keycloak.testsuite.admin;
 
 import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.lessThan;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -97,6 +100,7 @@ public class ClientTest extends AbstractAdminTest {
         rep.setClientId("my-app");
         rep.setDescription("my-app description");
         rep.setEnabled(true);
+        rep.setPublicClient(true);
         Response response = realm.clients().create(rep);
         response.close();
         String id = ApiUtil.getCreatedId(response);
@@ -109,6 +113,37 @@ public class ClientTest extends AbstractAdminTest {
         rep.setId(id);
 
         return rep;
+    }
+    
+    private ClientRepresentation createClientNonPublic() {
+        ClientRepresentation rep = new ClientRepresentation();
+        rep.setClientId("my-app");
+        rep.setDescription("my-app description");
+        rep.setEnabled(true);
+        rep.setPublicClient(false);
+        Response response = realm.clients().create(rep);
+        response.close();
+        String id = ApiUtil.getCreatedId(response);
+        getCleanup().addClientUuid(id);
+        ClientRepresentation found = ApiUtil.findClientResourceByClientId(realm, "my-app").toRepresentation();
+
+        assertEquals("my-app", found.getClientId());
+        assertAdminEvents.assertEvent(realmId, OperationType.CREATE, AdminEventPaths.clientResourcePath(id), rep, ResourceType.CLIENT);
+
+        rep.setId(id);
+
+        return rep;
+    }
+    
+    @Test
+    @AuthServerContainerExclude(AuthServer.REMOTE)
+    public void createClientVerifyWithSecret() {
+        String id = createClientNonPublic().getId();
+
+        ClientResource client = realm.clients().get(id);
+        assertNotNull(client);
+        assertNotNull(client.toRepresentation().getSecret());
+        Assert.assertNames(realm.clients().findAll(), "account", "account-console", "realm-management", "security-admin-console", "broker", "my-app", Constants.ADMIN_CLI_CLIENT_ID);
     }
 
     @Test
@@ -536,6 +571,8 @@ public class ClientTest extends AbstractAdminTest {
         List<UserSessionRepresentation> offlineUserSessions = realm.clients().get(id).getOfflineUserSessions(0, 100);
         assertEquals(1, offlineUserSessions.size());
         assertEquals("testuser", offlineUserSessions.get(0).getUsername());
+        org.hamcrest.MatcherAssert.assertThat(offlineUserSessions.get(0).getLastAccess(),
+            allOf(greaterThan(Time.currentTimeMillis() - 10000L), lessThan(Time.currentTimeMillis())));
 
         userSessions = realm.users().get(userId).getOfflineSessions(id);
         assertEquals("There should be one offline session", 1, userSessions.size());

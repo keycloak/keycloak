@@ -25,9 +25,11 @@ import org.jboss.logging.Logger;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.representations.idm.ClientPolicyConditionConfigurationRepresentation;
+import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.services.clientpolicy.ClientPolicyContext;
 import org.keycloak.services.clientpolicy.ClientPolicyException;
 import org.keycloak.services.clientpolicy.ClientPolicyVote;
+import org.keycloak.services.clientpolicy.context.ClientCRUDContext;
 
 /**
  * @author <a href="mailto:takashi.norimatsu.ws@hitachi.com">Takashi Norimatsu</a>
@@ -74,7 +76,13 @@ public class ClientAccessTypeCondition extends AbstractClientPolicyConditionProv
             case TOKEN_INTROSPECT:
             case USERINFO_REQUEST:
             case LOGOUT_REQUEST:
+            case UPDATE:
+            case UPDATED:
+            case REGISTERED:
                 if (isClientAccessTypeMatched()) return ClientPolicyVote.YES;
+                return ClientPolicyVote.NO;
+            case REGISTER:
+                if (isProposedClientAccessTypeMatched((ClientCRUDContext)context)) return ClientPolicyVote.YES;
                 return ClientPolicyVote.NO;
             default:
                 return ClientPolicyVote.ABSTAIN;
@@ -84,14 +92,31 @@ public class ClientAccessTypeCondition extends AbstractClientPolicyConditionProv
     private String getClientAccessType() {
         ClientModel client = session.getContext().getClient();
         if (client == null) return null;
+        return getClientAccessType(client.isPublicClient(), client.isBearerOnly());
+    }
 
-        if (client.isPublicClient()) return ClientAccessTypeConditionFactory.TYPE_PUBLIC;
-        if (client.isBearerOnly()) return ClientAccessTypeConditionFactory.TYPE_BEARERONLY;
+    private String getProposedClientAccessType(ClientCRUDContext context) {
+        ClientRepresentation clientRep = context.getProposedClientRepresentation();
+        if (clientRep == null) return null;
+        return getClientAccessType(Optional.ofNullable(clientRep.isPublicClient()).orElse(Boolean.FALSE).booleanValue(),
+                Optional.ofNullable(clientRep.isBearerOnly()).orElse(Boolean.FALSE).booleanValue());
+    }
+
+    private String getClientAccessType(boolean isPublicClient, boolean isBearerOnly) {
+        if (isPublicClient) return ClientAccessTypeConditionFactory.TYPE_PUBLIC;
+        if (isBearerOnly) return ClientAccessTypeConditionFactory.TYPE_BEARERONLY;
         else return ClientAccessTypeConditionFactory.TYPE_CONFIDENTIAL;
     }
 
     private boolean isClientAccessTypeMatched() {
-        final String accessType = getClientAccessType();
+        return isClientAccessTypeMatched(getClientAccessType());
+    }
+
+    private boolean isProposedClientAccessTypeMatched(ClientCRUDContext context) {
+        return isClientAccessTypeMatched(getProposedClientAccessType(context));
+    }
+
+    private boolean isClientAccessTypeMatched(String accessType) {
         if (accessType == null) return false;
 
         List<String> expectedAccessTypes = Optional.ofNullable(configuration.getType()).orElse(Collections.emptyList());

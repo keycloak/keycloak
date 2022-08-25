@@ -27,6 +27,7 @@ import org.keycloak.federation.sssd.impl.PAMAuthenticator;
 import org.keycloak.models.*;
 import org.keycloak.models.credential.PasswordCredentialModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
+import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.storage.user.ImportedUserValidation;
@@ -85,7 +86,7 @@ public class SSSDFederationProvider implements UserStorageProvider,
          * @return user if found or successfully created. Null if user with same username already exists, but is not linked to this provider
          */
     protected UserModel findOrCreateAuthenticatedUser(RealmModel realm, String username) {
-        UserModel user = session.userLocalStorage().getUserByUsername(realm, username);
+        UserModel user = UserStoragePrivateUtil.userLocalStorage(session).getUserByUsername(realm, username);
         if (user != null) {
             logger.debug("SSSD authenticated user " + username + " found in Keycloak storage");
 
@@ -100,7 +101,7 @@ public class SSSDFederationProvider implements UserStorageProvider,
                     logger.warn("User with username " + username + " already exists and is linked to provider [" + model.getName() +
                             "] but principal is not correct.");
                     logger.warn("Will re-create user");
-                    new UserManager(session).removeUser(realm, user, session.userLocalStorage());
+                    new UserManager(session).removeUser(realm, user, UserStoragePrivateUtil.userLocalStorage(session));
                 }
             }
         }
@@ -113,7 +114,7 @@ public class SSSDFederationProvider implements UserStorageProvider,
         Sssd sssd = new Sssd(username);
         User sssdUser = sssd.getUser();
         logger.debugf("Creating SSSD user: %s to local Keycloak storage", username);
-        UserModel user = session.userLocalStorage().addUser(realm, username);
+        UserModel user = UserStoragePrivateUtil.userLocalStorage(session).addUser(realm, username);
         user.setEnabled(true);
         user.setEmail(sssdUser.getEmail());
         user.setFirstName(sssdUser.getFirstName());

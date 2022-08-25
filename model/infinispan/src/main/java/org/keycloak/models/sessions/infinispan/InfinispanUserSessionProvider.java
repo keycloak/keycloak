@@ -20,6 +20,7 @@ package org.keycloak.models.sessions.infinispan;
 import org.infinispan.Cache;
 import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.client.hotrod.exceptions.HotRodClientException;
+import org.infinispan.commons.api.BasicCache;
 import org.infinispan.context.Flag;
 import org.infinispan.stream.CacheCollectors;
 import org.jboss.logging.Logger;
@@ -34,12 +35,15 @@ import org.keycloak.models.ModelException;
 import org.keycloak.models.OfflineUserSessionModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.models.UserProvider;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.UserSessionProvider;
+import org.keycloak.models.UserSessionSpi;
 import org.keycloak.models.session.UserSessionPersisterProvider;
 import org.keycloak.models.sessions.infinispan.changes.Tasks;
 import org.keycloak.models.sessions.infinispan.changes.sessions.CrossDCLastSessionRefreshStore;
 import org.keycloak.models.sessions.infinispan.changes.sessions.PersisterLastSessionRefreshStore;
+import org.keycloak.models.sessions.infinispan.entities.SessionEntity;
 import org.keycloak.models.sessions.infinispan.remotestore.RemoteCacheInvoker;
 import org.keycloak.models.sessions.infinispan.changes.SessionEntityWrapper;
 import org.keycloak.models.sessions.infinispan.changes.InfinispanChangelogBasedTransaction;
@@ -70,7 +74,9 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -108,7 +114,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
     protected final RemoteCacheInvoker remoteCacheInvoker;
     protected final InfinispanKeyGenerator keyGenerator;
 
-    protected final boolean loadOfflineSessionsStatsFromDatabase;
+    protected final boolean loadOfflineSessionsFromDatabase;
 
     public InfinispanUserSessionProvider(KeycloakSession session,
                                          RemoteCacheInvoker remoteCacheInvoker,
@@ -120,7 +126,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
                                          Cache<String, SessionEntityWrapper<UserSessionEntity>> offlineSessionCache,
                                          Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> clientSessionCache,
                                          Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> offlineClientSessionCache,
-                                         boolean loadOfflineSessionsStatsFromDatabase) {
+                                         boolean loadOfflineSessionsFromDatabase) {
         this.session = session;
 
         this.sessionCache = sessionCache;
@@ -140,7 +146,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
         this.persisterLastSessionRefreshStore = persisterLastSessionRefreshStore;
         this.remoteCacheInvoker = remoteCacheInvoker;
         this.keyGenerator = keyGenerator;
-        this.loadOfflineSessionsStatsFromDatabase = loadOfflineSessionsStatsFromDatabase;
+        this.loadOfflineSessionsFromDatabase = loadOfflineSessionsFromDatabase;
 
         session.getTransactionManager().enlistAfterCompletion(clusterEventsSenderTx);
         session.getTransactionManager().enlistAfterCompletion(sessionTx);
@@ -341,28 +347,39 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
     protected Stream<UserSessionModel> getUserSessionsStream(RealmModel realm, UserSessionPredicate predicate, boolean offline) {
 
-        if (offline && loadOfflineSessionsStatsFromDatabase) {
+        if (offline && loadOfflineSessionsFromDatabase) {
 
             // fetch the offline user-sessions from the persistence provider
             UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
 
-            UserModel user = session.users().getUserById(realm, predicate.getUserId());
-            if (user != null) {
-                return persister.loadUserSessionsStream(realm, user, offline, 0, null);
+            if (predicate.getUserId() != null) {
+                UserModel user = session.users().getUserById(realm, predicate.getUserId());
+                if (user != null) {
+                    return persister.loadUserSessionsStream(realm, user, true, 0, null);
+                }
+            }
+
+            if (predicate.getBrokerUserId() != null) {
+                String[] idpAliasSessionId = predicate.getBrokerUserId().split("\\.");
+
+                Map<String, String> attributes = new HashMap<>();
+                attributes.put(UserModel.IDP_ALIAS, idpAliasSessionId[0]);
+                attributes.put(UserModel.IDP_USER_ID, idpAliasSessionId[1]);
+
+                UserProvider userProvider = session.getProvider(UserProvider.class);
+                UserModel userModel = userProvider.searchForUserStream(realm, attributes, 0, null).findFirst().orElse(null);
+                return userModel != null ?
+                        persister.loadUserSessionsStream(realm, userModel, true, 0, null) :
+                        Stream.empty();
             }
 
             if (predicate.getBrokerSessionId() != null) {
                 // TODO add support for offline user-session lookup by brokerSessionId
                 // currently it is not possible to access the brokerSessionId in offline user-session in a database agnostic way
-                throw new ModelException("Dynamic database lookup for offline user-sessions by brokerSessionId is currently only supported for preloaded sessions.");
+                throw new ModelException("Dynamic database lookup for offline user-sessions by broker session ID is currently only supported for preloaded sessions. " +
+                        "Set preloadOfflineSessionsFromDatabase option to \"true\" in " + UserSessionSpi.NAME + " SPI in "
+                        + InfinispanUserSessionProviderFactory.PROVIDER_ID + " provider to enable the lookup.");
             }
-
-            if (predicate.getBrokerUserId() != null) {
-                // TODO add support for offline user-session lookup by brokerUserId
-                // currently it is not possible to access the brokerUserId in offline user-session in a database agnostic way
-                throw new ModelException("Dynamic database lookup for offline user-sessions by brokerUserId is currently only supported for preloaded sessions.");
-            }
-
         }
 
         Cache<String, SessionEntityWrapper<UserSessionEntity>> cache = getCache(offline);
@@ -421,10 +438,10 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
     protected Stream<UserSessionModel> getUserSessionsStream(final RealmModel realm, ClientModel client, Integer firstResult, Integer maxResults, final boolean offline) {
 
-        if (offline && loadOfflineSessionsStatsFromDatabase) {
+        if (offline && loadOfflineSessionsFromDatabase) {
             // fetch the actual offline user session count from the database
             UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
-            return persister.loadUserSessionsStream(realm, client, offline, firstResult, maxResults);
+            return persister.loadUserSessionsStream(realm, client, true, firstResult, maxResults);
         }
 
         final String clientUuid = client.getId();
@@ -516,9 +533,9 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
     @Override
     public Map<String, Long> getActiveClientSessionStats(RealmModel realm, boolean offline) {
 
-        if (offline && loadOfflineSessionsStatsFromDatabase) {
+        if (offline && loadOfflineSessionsFromDatabase) {
             UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
-            return persister.getUserSessionsCountsByClients(realm, offline);
+            return persister.getUserSessionsCountsByClients(realm, true);
         }
 
         Cache<String, SessionEntityWrapper<UserSessionEntity>> cache = getCache(offline);
@@ -536,10 +553,10 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
      protected long getUserSessionsCount(RealmModel realm, ClientModel client, boolean offline) {
 
-        if (offline && loadOfflineSessionsStatsFromDatabase) {
+        if (offline && loadOfflineSessionsFromDatabase) {
             // fetch the actual offline user session count from the database
             UserSessionPersisterProvider persister = session.getProvider(UserSessionPersisterProvider.class);
-            return persister.getUserSessionsCount(realm, client, offline);
+            return persister.getUserSessionsCount(realm, client, true);
         }
 
         Cache<String, SessionEntityWrapper<UserSessionEntity>> cache = getCache(offline);
@@ -692,6 +709,12 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
     public void close() {
     }
 
+    @Override
+    public int getStartupTime(RealmModel realm) {
+        // TODO: take realm.getNotBefore() into account?
+        return session.getProvider(ClusterProvider.class).getClusterStartupTime();
+    }
+
     protected void removeUserSession(UserSessionEntity sessionEntity, boolean offline) {
         InfinispanChangelogBasedTransaction<String, UserSessionEntity> userSessionUpdateTx = getTransaction(offline);
         InfinispanChangelogBasedTransaction<UUID, AuthenticatedClientSessionEntity> clientSessionUpdateTx = getClientSessionTransaction(offline);
@@ -782,7 +805,7 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
     @Override
     public Stream<UserSessionModel> getOfflineUserSessionsStream(RealmModel realm, UserModel user) {
 
-        if (loadOfflineSessionsStatsFromDatabase) {
+        if (loadOfflineSessionsFromDatabase) {
             return getUserSessionsFromPersistenceProviderStream(realm, user, true);
         }
 
@@ -835,7 +858,15 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
 
         // Directly put all entities to the infinispan cache
         Cache<String, SessionEntityWrapper<UserSessionEntity>> cache = CacheDecorators.skipCacheLoaders(getCache(offline));
-        cache.putAll(sessionsById);
+
+        boolean importWithExpiration = sessionsById.size() == 1;
+        if (importWithExpiration) {
+            importSessionsWithExpiration(sessionsById, cache,
+                    offline ? SessionTimeouts::getOfflineSessionLifespanMs : SessionTimeouts::getUserSessionLifespanMs,
+                    offline ? SessionTimeouts::getOfflineSessionMaxIdleMs : SessionTimeouts::getUserSessionMaxIdleMs);
+        } else {
+            cache.putAll(sessionsById);
+        }
 
         // put all entities to the remoteCache (if exists)
         RemoteCache remoteCache = InfinispanUtil.getRemoteCache(cache);
@@ -844,28 +875,40 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
                     .map(SessionEntityWrapper::forTransport)
                     .collect(Collectors.toMap(sessionEntityWrapper -> sessionEntityWrapper.getEntity().getId(), Function.identity()));
 
-            Retry.executeWithBackoff((int iteration) -> {
+            if (importWithExpiration) {
+                importSessionsWithExpiration(sessionsByIdForTransport, remoteCache,
+                        offline ? SessionTimeouts::getOfflineSessionLifespanMs : SessionTimeouts::getUserSessionLifespanMs,
+                        offline ? SessionTimeouts::getOfflineSessionMaxIdleMs : SessionTimeouts::getUserSessionMaxIdleMs);
+            } else {
+                Retry.executeWithBackoff((int iteration) -> {
 
-                try {
-                    remoteCache.putAll(sessionsByIdForTransport);
-                } catch (HotRodClientException re) {
-                    if (log.isDebugEnabled()) {
-                        log.debugf(re, "Failed to put import %d sessions to remoteCache. Iteration '%s'. Will try to retry the task",
-                                sessionsByIdForTransport.size(), iteration);
+                    try {
+                        remoteCache.putAll(sessionsByIdForTransport);
+                    } catch (HotRodClientException re) {
+                        if (log.isDebugEnabled()) {
+                            log.debugf(re, "Failed to put import %d sessions to remoteCache. Iteration '%s'. Will try to retry the task",
+                                    sessionsByIdForTransport.size(), iteration);
+                        }
+
+                        // Rethrow the exception. Retry will take care of handle the exception and eventually retry the operation.
+                        throw re;
                     }
 
-                    // Rethrow the exception. Retry will take care of handle the exception and eventually retry the operation.
-                    throw re;
-                }
-
-            }, 10, 10);
+                }, 10, 10);
+            }
         }
 
         // Import client sessions
         Cache<UUID, SessionEntityWrapper<AuthenticatedClientSessionEntity>> clientSessCache = offline ? offlineClientSessionCache : clientSessionCache;
         clientSessCache = CacheDecorators.skipCacheLoaders(clientSessCache);
 
-        clientSessCache.putAll(clientSessionsById);
+        if (importWithExpiration) {
+            importSessionsWithExpiration(clientSessionsById, clientSessCache,
+                    offline ? SessionTimeouts::getOfflineClientSessionLifespanMs : SessionTimeouts::getClientSessionLifespanMs,
+                    offline ? SessionTimeouts::getOfflineClientSessionMaxIdleMs : SessionTimeouts::getClientSessionMaxIdleMs);
+        } else {
+            clientSessCache.putAll(clientSessionsById);
+        }
 
         // put all entities to the remoteCache (if exists)
         RemoteCache remoteCacheClientSessions = InfinispanUtil.getRemoteCache(clientSessCache);
@@ -874,24 +917,64 @@ public class InfinispanUserSessionProvider implements UserSessionProvider {
                     .map(SessionEntityWrapper::forTransport)
                     .collect(Collectors.toMap(sessionEntityWrapper -> sessionEntityWrapper.getEntity().getId(), Function.identity()));
 
-            Retry.executeWithBackoff((int iteration) -> {
+            if (importWithExpiration) {
+                importSessionsWithExpiration(sessionsByIdForTransport, remoteCacheClientSessions,
+                        offline ? SessionTimeouts::getOfflineClientSessionLifespanMs : SessionTimeouts::getClientSessionLifespanMs,
+                        offline ? SessionTimeouts::getOfflineClientSessionMaxIdleMs : SessionTimeouts::getClientSessionMaxIdleMs);
+            } else {
+                Retry.executeWithBackoff((int iteration) -> {
 
-                try {
-                    remoteCacheClientSessions.putAll(sessionsByIdForTransport);
-                } catch (HotRodClientException re) {
-                    if (log.isDebugEnabled()) {
-                        log.debugf(re, "Failed to put import %d client sessions to remoteCache. Iteration '%s'. Will try to retry the task",
-                                sessionsByIdForTransport.size(), iteration);
+                    try {
+                        remoteCacheClientSessions.putAll(sessionsByIdForTransport);
+                    } catch (HotRodClientException re) {
+                        if (log.isDebugEnabled()) {
+                            log.debugf(re, "Failed to put import %d client sessions to remoteCache. Iteration '%s'. Will try to retry the task",
+                                    sessionsByIdForTransport.size(), iteration);
+                        }
+
+                        // Rethrow the exception. Retry will take care of handle the exception and eventually retry the operation.
+                        throw re;
                     }
 
-                    // Rethrow the exception. Retry will take care of handle the exception and eventually retry the operation.
-                    throw re;
-                }
-
-            }, 10, 10);
+                }, 10, 10);
+            }
         }
     }
 
+    private <T extends SessionEntity> void importSessionsWithExpiration(Map<? extends Object, SessionEntityWrapper<T>> sessionsById,
+                                              BasicCache cache, BiFunction<RealmModel, T, Long> lifespanMsCalculator,
+                                              BiFunction<RealmModel, T, Long> maxIdleTimeMsCalculator) {
+        sessionsById.forEach((id, sessionEntityWrapper) -> {
+
+            T sessionEntity = sessionEntityWrapper.getEntity();
+            RealmModel currentRealm = session.realms().getRealm(sessionEntity.getRealmId());
+            long lifespan = lifespanMsCalculator.apply(currentRealm, sessionEntity);
+            long maxIdle = maxIdleTimeMsCalculator.apply(currentRealm, sessionEntity);
+
+            if(lifespan != SessionTimeouts.ENTRY_EXPIRED_FLAG
+                    && maxIdle != SessionTimeouts.ENTRY_EXPIRED_FLAG ) {
+                if (cache instanceof RemoteCache) {
+                    Retry.executeWithBackoff((int iteration) -> {
+
+                        try {
+                            cache.put(id, sessionEntityWrapper, lifespan, TimeUnit.MILLISECONDS, maxIdle, TimeUnit.MILLISECONDS);
+                        } catch (HotRodClientException re) {
+                            if (log.isDebugEnabled()) {
+                                log.debugf(re, "Failed to put import %d sessions to remoteCache. Iteration '%s'. Will try to retry the task",
+                                        sessionsById.size(), iteration);
+                            }
+
+                            // Rethrow the exception. Retry will take care of handle the exception and eventually retry the operation.
+                            throw re;
+                        }
+
+                    }, 10, 10);
+                } else {
+                    cache.put(id, sessionEntityWrapper, lifespan, TimeUnit.MILLISECONDS, maxIdle, TimeUnit.MILLISECONDS);
+                }
+            }
+        });
+    }
 
     // Imports just userSession without it's clientSessions
     protected UserSessionAdapter importUserSession(UserSessionModel userSession, boolean offline) {

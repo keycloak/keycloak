@@ -18,7 +18,6 @@ package org.keycloak.testsuite.script;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.keycloak.common.Profile.Feature.UPLOAD_SCRIPTS;
 import static org.keycloak.testsuite.arquillian.DeploymentTargetModifier.AUTH_SERVER_CURRENT;
 
 import javax.ws.rs.core.Response;
@@ -122,14 +121,12 @@ public class DeployedScriptPolicyTest extends AbstractAuthzTest {
     }
 
     @Test
-    @DisableFeature(value = UPLOAD_SCRIPTS, skipRestart = true)
     public void testJSPolicyProviderNotAvailable() {
         assertFalse(getAuthorizationResource().policies().policyProviders().stream().anyMatch(rep -> "js".equals(rep.getType())));
     }
 
     @Test
     @UncaughtServerErrorExpected
-    @DisableFeature(value = UPLOAD_SCRIPTS, skipRestart = true)
     public void failCreateJSPolicy() {
         JSPolicyRepresentation grantPolicy = new JSPolicyRepresentation();
 

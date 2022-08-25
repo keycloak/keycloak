@@ -1,13 +1,12 @@
 /*
- * JBoss, Home of Professional Open Source.
- * Copyright 2016 Red Hat, Inc., and individual contributors
- * as indicated by the @author tags.
+ * Copyright 2022 Red Hat, Inc. and/or its affiliates
+ * and other contributors as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -113,7 +112,7 @@ public class ResourceSetService {
 
         if (owner == null) {
             owner = new ResourceOwnerRepresentation();
-            owner.setId(resourceServer.getId());
+            owner.setId(resourceServer.getClientId());
             resource.setOwner(owner);
         }
 
@@ -123,13 +122,13 @@ public class ResourceSetService {
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "You must specify the resource owner.", Status.BAD_REQUEST);
         }
 
-        Resource existingResource = storeFactory.getResourceStore().findByName(resource.getName(), ownerId, this.resourceServer.getId());
+        Resource existingResource = storeFactory.getResourceStore().findByName(this.resourceServer, resource.getName(), ownerId);
 
         if (existingResource != null) {
             throw new ErrorResponseException(OAuthErrorException.INVALID_REQUEST, "Resource with name [" + resource.getName() + "] already exists.", Status.CONFLICT);
         }
 
-        return toRepresentation(toModel(resource, this.resourceServer, authorization), resourceServer.getId(), authorization);
+        return toRepresentation(toModel(resource, this.resourceServer, authorization), resourceServer, authorization);
     }
 
     @Path("{id}")
@@ -141,7 +140,7 @@ public class ResourceSetService {
         resource.setId(id);
         StoreFactory storeFactory = this.authorization.getStoreFactory();
         ResourceStore resourceStore = storeFactory.getResourceStore();
-        Resource model = resourceStore.findById(resource.getId(), resourceServer.getId());
+        Resource model = resourceStore.findById(resourceServer.getRealm(), resourceServer, resource.getId());
 
         if (model == null) {
             return Response.status(Status.NOT_FOUND).build();
@@ -159,15 +158,18 @@ public class ResourceSetService {
     public Response delete(@PathParam("id") String id) {
         requireManage();
         StoreFactory storeFactory = authorization.getStoreFactory();
-        Resource resource = storeFactory.getResourceStore().findById(id, resourceServer.getId());
+        Resource resource = storeFactory.getResourceStore().findById(resourceServer.getRealm(), resourceServer, id);
 
         if (resource == null) {
             return Response.status(Status.NOT_FOUND).build();
         }
 
-        storeFactory.getResourceStore().delete(id);
+        //to be able to access all lazy loaded fields it's needed to create representation before it's deleted
+        ResourceRepresentation resourceRep = toRepresentation(resource, resourceServer, authorization);
 
-        audit(toRepresentation(resource, resourceServer.getId(), authorization), OperationType.DELETE);
+        storeFactory.getResourceStore().delete(resourceServer.getRealm(), id);
+
+        audit(resourceRep, OperationType.DELETE);
 
         return Response.noContent().build();
     }
@@ -177,13 +179,13 @@ public class ResourceSetService {
     @NoCache
     @Produces("application/json")
     public Response findById(@PathParam("id") String id) {
-        return findById(id, resource -> toRepresentation(resource, resourceServer.getId(), authorization, true));
+        return findById(id, resource -> toRepresentation(resource, resourceServer, authorization, true));
     }
 
     public Response findById(String id, Function<Resource, ? extends ResourceRepresentation> toRepresentation) {
         requireView();
         StoreFactory storeFactory = authorization.getStoreFactory();
-        Resource model = storeFactory.getResourceStore().findById(id, resourceServer.getId());
+        Resource model = storeFactory.getResourceStore().findById(resourceServer.getRealm(), resourceServer, id);
 
         if (model == null) {
             return Response.status(Status.NOT_FOUND).build();
@@ -199,7 +201,7 @@ public class ResourceSetService {
     public Response getScopes(@PathParam("id") String id) {
         requireView();
         StoreFactory storeFactory = authorization.getStoreFactory();
-        Resource model = storeFactory.getResourceStore().findById(id, resourceServer.getId());
+        Resource model = storeFactory.getResourceStore().findById(resourceServer.getRealm(), resourceServer, id);
 
         if (model == null) {
             return Response.status(Status.NOT_FOUND).build();
@@ -214,10 +216,10 @@ public class ResourceSetService {
             return representation;
         }).collect(Collectors.toList());
 
-        if (model.getType() != null && !model.getOwner().equals(resourceServer.getId())) {
+        if (model.getType() != null && !model.getOwner().equals(resourceServer.getClientId())) {
             ResourceStore resourceStore = authorization.getStoreFactory().getResourceStore();
-            for (Resource typed : resourceStore.findByType(model.getType(), resourceServer.getId())) {
-                if (typed.getOwner().equals(resourceServer.getId()) && !typed.getId().equals(model.getId())) {
+            for (Resource typed : resourceStore.findByType(resourceServer, model.getType())) {
+                if (typed.getOwner().equals(resourceServer.getClientId()) && !typed.getId().equals(model.getId())) {
                     scopes.addAll(typed.getScopes().stream().map(model1 -> {
                         ScopeRepresentation scope = new ScopeRepresentation();
                         scope.setId(model1.getId());
@@ -243,7 +245,7 @@ public class ResourceSetService {
         requireView();
         StoreFactory storeFactory = authorization.getStoreFactory();
         ResourceStore resourceStore = storeFactory.getResourceStore();
-        Resource model = resourceStore.findById(id, resourceServer.getId());
+        Resource model = resourceStore.findById(resourceServer.getRealm(), resourceServer, id);
 
         if (model == null) {
             return Response.status(Status.NOT_FOUND).build();
@@ -252,23 +254,27 @@ public class ResourceSetService {
         PolicyStore policyStore = authorization.getStoreFactory().getPolicyStore();
         Set<Policy> policies = new HashSet<>();
 
-        policies.addAll(policyStore.findByResource(model.getId(), resourceServer.getId()));
+        policies.addAll(policyStore.findByResource(resourceServer, model));
 
         if (model.getType() != null) {
-            policies.addAll(policyStore.findByResourceType(model.getType(), resourceServer.getId()));
+            if (!model.getOwner().equals(resourceServer.getClientId())) {
+                // only add policies if the resource is a resource type instance
+                policies.addAll(policyStore.findByResourceType(resourceServer, model.getType()));
 
-            Map<Resource.FilterOption, String[]> resourceFilter = new EnumMap<>(Resource.FilterOption.class);
+                Map<Resource.FilterOption, String[]> resourceFilter = new EnumMap<>(Resource.FilterOption.class);
 
-            resourceFilter.put(Resource.FilterOption.OWNER, new String[]{resourceServer.getId()});
-            resourceFilter.put(Resource.FilterOption.TYPE, new String[]{model.getType()});
+                resourceFilter.put(Resource.FilterOption.OWNER, new String[]{resourceServer.getClientId()});
+                resourceFilter.put(Resource.FilterOption.TYPE, new String[]{model.getType()});
 
-            for (Resource resourceType : resourceStore.findByResourceServer(resourceFilter, resourceServer.getId(), -1, -1)) {
-                policies.addAll(policyStore.findByResource(resourceType.getId(), resourceServer.getId()));
+            for (Resource resourceType : resourceStore.find(resourceServer.getRealm(), resourceServer, resourceFilter, null, null)) {
+                policies.addAll(policyStore.findByResource(resourceServer, resourceType));
             }
         }
 
-        policies.addAll(policyStore.findByScopeIds(model.getScopes().stream().map(scope -> scope.getId()).collect(Collectors.toList()), id, resourceServer.getId()));
-        policies.addAll(policyStore.findByScopeIds(model.getScopes().stream().map(scope -> scope.getId()).collect(Collectors.toList()), null, resourceServer.getId()));
+        }
+
+        policies.addAll(policyStore.findByScopes(resourceServer, model, model.getScopes()));
+        policies.addAll(policyStore.findByScopes(resourceServer, null, model.getScopes()));
 
         List<PolicyRepresentation> representation = new ArrayList<>();
 
@@ -296,7 +302,7 @@ public class ResourceSetService {
     public Response getAttributes(@PathParam("id") String id) {
         requireView();
         StoreFactory storeFactory = authorization.getStoreFactory();
-        Resource model = storeFactory.getResourceStore().findById(id, resourceServer.getId());
+        Resource model = storeFactory.getResourceStore().findById(resourceServer.getRealm(), resourceServer, id);
 
         if (model == null) {
             return Response.status(Status.NOT_FOUND).build();
@@ -317,13 +323,13 @@ public class ResourceSetService {
             return Response.status(Status.BAD_REQUEST).build();
         }
 
-        Resource model = storeFactory.getResourceStore().findByName(name, this.resourceServer.getId());
+        Resource model = storeFactory.getResourceStore().findByName(this.resourceServer, name);
 
         if (model == null) {
             return Response.status(Status.NO_CONTENT).build();
         }
 
-        return Response.ok(toRepresentation(model, this.resourceServer.getId(), authorization)).build();
+        return Response.ok(toRepresentation(model, this.resourceServer, authorization)).build();
     }
 
     @GET
@@ -340,7 +346,7 @@ public class ResourceSetService {
                          @QueryParam("deep") Boolean deep,
                          @QueryParam("first") Integer firstResult,
                          @QueryParam("max") Integer maxResult) {
-        return find(id, name, uri, owner, type, scope, matchingUri, exactName, deep, firstResult, maxResult, (BiFunction<Resource, Boolean, ResourceRepresentation>) (resource, deep1) -> toRepresentation(resource, resourceServer.getId(), authorization, deep1));
+        return find(id, name, uri, owner, type, scope, matchingUri, exactName, deep, firstResult, maxResult, (BiFunction<Resource, Boolean, ResourceRepresentation>) (resource, deep1) -> toRepresentation(resource, resourceServer, authorization, deep1));
     }
 
     public Response find(@QueryParam("_id") String id,
@@ -403,7 +409,7 @@ public class ResourceSetService {
 
             scopeFilter.put(Scope.FilterOption.NAME, new String[] {scope});
 
-            List<Scope> scopes = authorization.getStoreFactory().getScopeStore().findByResourceServer(scopeFilter, resourceServer.getId(), -1, -1);
+            List<Scope> scopes = authorization.getStoreFactory().getScopeStore().findByResourceServer(resourceServer, scopeFilter, null, null);
 
             if (scopes.isEmpty()) {
                 return Response.ok(Collections.emptyList()).build();
@@ -412,15 +418,15 @@ public class ResourceSetService {
             search.put(Resource.FilterOption.SCOPE_ID, scopes.stream().map(Scope::getId).toArray(String[]::new));
         }
 
-        List<Resource> resources = storeFactory.getResourceStore().findByResourceServer(search, this.resourceServer.getId(), firstResult != null ? firstResult : -1, maxResult != null ? maxResult : Constants.DEFAULT_MAX_RESULTS);
+        List<Resource> resources = storeFactory.getResourceStore().find(resourceServer.getRealm(), this.resourceServer, search, firstResult != null ? firstResult : -1, maxResult != null ? maxResult : Constants.DEFAULT_MAX_RESULTS);
 
         if (matchingUri != null && matchingUri && resources.isEmpty()) {
             Map<Resource.FilterOption, String[]> attributes = new EnumMap<>(Resource.FilterOption.class);
 
             attributes.put(Resource.FilterOption.URI_NOT_NULL, new String[] {"true"});
-            attributes.put(Resource.FilterOption.OWNER, new String[] {resourceServer.getId()});
+            attributes.put(Resource.FilterOption.OWNER, new String[] {resourceServer.getClientId()});
 
-            List<Resource> serverResources = storeFactory.getResourceStore().findByResourceServer(attributes, this.resourceServer.getId(), firstResult != null ? firstResult : -1, maxResult != null ? maxResult : -1);
+            List<Resource> serverResources = storeFactory.getResourceStore().find(resourceServer.getRealm(), this.resourceServer, attributes, firstResult != null ? firstResult : -1, maxResult != null ? maxResult : -1);
 
             PathMatcher<Map.Entry<String, Resource>> pathMatcher = new PathMatcher<Map.Entry<String, Resource>>() {
                 @Override

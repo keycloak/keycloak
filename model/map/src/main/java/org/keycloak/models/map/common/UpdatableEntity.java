@@ -16,6 +16,9 @@
  */
 package org.keycloak.models.map.common;
 
+import org.keycloak.models.map.annotations.IgnoreForEntityImplementationGenerator;
+
+@IgnoreForEntityImplementationGenerator
 public interface UpdatableEntity {
 
     public static class Impl implements UpdatableEntity {

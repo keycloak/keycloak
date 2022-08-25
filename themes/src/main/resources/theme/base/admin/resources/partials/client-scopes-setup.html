@@ -48,7 +48,7 @@
                         <select id="available" class="form-control overflow-select" multiple size="5"
                                 ng-multiple="true"
                                 ng-model="selectedDefaultClientScopes">
-                            <option ng-repeat="r in availableClientScopes | orderBy:'name'"
+                            <option ng-repeat="r in availableClientScopes | orderBy:'name' | filter: {attributes: {'is.dynamic.scope': '!true'}}"
                                     value="{{r}}" title="{{r.name}}">
                                 {{r.name}}
                             </option>

@@ -18,121 +18,37 @@
 package org.keycloak.keys;
 
 import org.jboss.logging.Logger;
-import org.keycloak.common.util.CertificateUtils;
-import org.keycloak.common.util.KeyUtils;
-import org.keycloak.common.util.MultivaluedHashMap;
-import org.keycloak.common.util.PemUtils;
 import org.keycloak.component.ComponentModel;
-import org.keycloak.component.ComponentValidationException;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.KeyUse;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.provider.ConfigurationValidationHelper;
 import org.keycloak.provider.ProviderConfigProperty;
 
-import java.security.KeyPair;
-import java.security.PrivateKey;
-import java.security.cert.Certificate;
-import java.security.interfaces.RSAPrivateKey;
 import java.util.List;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class GeneratedRsaKeyProviderFactory extends AbstractRsaKeyProviderFactory {
+public class GeneratedRsaKeyProviderFactory extends AbstractGeneratedRsaKeyProviderFactory {
 
     private static final Logger logger = Logger.getLogger(GeneratedRsaKeyProviderFactory.class);
 
     public static final String ID = "rsa-generated";
 
-    private static final String HELP_TEXT = "Generates RSA keys and creates a self-signed certificate";
+    private static final String HELP_TEXT = "Generates RSA signature keys and creates a self-signed certificate";
 
-    private static final List<ProviderConfigProperty> CONFIG_PROPERTIES = AbstractRsaKeyProviderFactory.configurationBuilder()
+    private static final List<ProviderConfigProperty> CONFIG_PROPERTIES = AbstractGeneratedRsaKeyProviderFactory.rsaKeyConfigurationBuilder()
             .property(Attributes.KEY_SIZE_PROPERTY)
-            .property(Attributes.KEY_USE_PROPERTY)
+            .property(Attributes.RS_ALGORITHM_PROPERTY)
             .build();
 
     @Override
     public KeyProvider create(KeycloakSession session, ComponentModel model) {
+        if (model.getConfig().get(Attributes.KEY_USE) == null) {
+            // for backward compatibility : it allows "enc" key use for "rsa-generated" provider
+            model.put(Attributes.KEY_USE, KeyUse.SIG.name());
+        }
         return new ImportedRsaKeyProvider(session.getContext().getRealm(), model);
-    }
-
-    @Override
-    public boolean createFallbackKeys(KeycloakSession session, KeyUse keyUse, String algorithm) {
-        if (keyUse.equals(KeyUse.SIG) && isSupportedRsaAlgorithm(algorithm)) {
-            RealmModel realm = session.getContext().getRealm();
-
-            ComponentModel generated = new ComponentModel();
-            generated.setName("fallback-" + algorithm);
-            generated.setParentId(realm.getId());
-            generated.setProviderId(ID);
-            generated.setProviderType(KeyProvider.class.getName());
-
-            MultivaluedHashMap<String, String> config = new MultivaluedHashMap<>();
-            config.putSingle(Attributes.PRIORITY_KEY, "-100");
-            config.putSingle(Attributes.ALGORITHM_KEY, algorithm);
-            generated.setConfig(config);
-
-            realm.addComponentModel(generated);
-
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    private boolean isSupportedRsaAlgorithm(String algorithm) {
-        return algorithm.equals(Algorithm.RS256) 
-            || algorithm.equals(Algorithm.PS256) 
-            || algorithm.equals(Algorithm.RS384)
-            || algorithm.equals(Algorithm.PS384) 
-            || algorithm.equals(Algorithm.RS512) 
-            || algorithm.equals(Algorithm.PS512);
-    }
-
-    @Override
-    public void validateConfiguration(KeycloakSession session, RealmModel realm, ComponentModel model) throws ComponentValidationException {
-        super.validateConfiguration(session, realm, model);
-
-        ConfigurationValidationHelper.check(model).checkList(Attributes.KEY_SIZE_PROPERTY, false);
-
-        int size = model.get(Attributes.KEY_SIZE_KEY, 2048);
-
-        if (!(model.contains(Attributes.PRIVATE_KEY_KEY) && model.contains(Attributes.CERTIFICATE_KEY))) {
-            generateKeys(realm, model, size);
-
-            logger.debugv("Generated keys for {0}", realm.getName());
-        } else {
-            PrivateKey privateKey = PemUtils.decodePrivateKey(model.get(Attributes.PRIVATE_KEY_KEY));
-            int currentSize = ((RSAPrivateKey) privateKey).getModulus().bitLength();
-            if (currentSize != size) {
-                generateKeys(realm, model, size);
-
-                logger.debugv("Key size changed, generating new keys for {0}", realm.getName());
-            }
-        }
-    }
-
-    private void generateKeys(RealmModel realm, ComponentModel model, int size) {
-        KeyPair keyPair;
-        try {
-            keyPair = KeyUtils.generateRsaKeyPair(size);
-            model.put(Attributes.PRIVATE_KEY_KEY, PemUtils.encodeKey(keyPair.getPrivate()));
-        } catch (Throwable t) {
-            throw new ComponentValidationException("Failed to generate keys", t);
-        }
-
-        generateCertificate(realm, model, keyPair);
-    }
-
-    private void generateCertificate(RealmModel realm, ComponentModel model, KeyPair keyPair) {
-        try {
-            Certificate certificate = CertificateUtils.generateV1SelfSignedCertificate(keyPair, realm.getName());
-            model.put(Attributes.CERTIFICATE_KEY, PemUtils.encodeCertificate(certificate));
-        } catch (Throwable t) {
-            throw new ComponentValidationException("Failed to generate certificate", t);
-        }
     }
 
     @Override
@@ -148,6 +64,26 @@ public class GeneratedRsaKeyProviderFactory extends AbstractRsaKeyProviderFactor
     @Override
     public String getId() {
         return ID;
+    }
+
+    @Override
+    protected boolean isValidKeyUse(KeyUse keyUse) {
+        return keyUse.equals(KeyUse.SIG);
+    }
+
+    @Override
+    protected boolean isSupportedRsaAlgorithm(String algorithm) {
+        return algorithm.equals(Algorithm.RS256) 
+                || algorithm.equals(Algorithm.PS256) 
+                || algorithm.equals(Algorithm.RS384)
+                || algorithm.equals(Algorithm.PS384) 
+                || algorithm.equals(Algorithm.RS512) 
+                || algorithm.equals(Algorithm.PS512);
+    }
+
+    @Override
+    protected Logger getLogger() {
+        return logger;
     }
 
 }

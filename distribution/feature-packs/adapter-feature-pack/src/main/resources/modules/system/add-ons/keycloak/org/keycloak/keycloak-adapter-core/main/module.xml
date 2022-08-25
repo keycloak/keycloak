@@ -34,6 +34,7 @@
         <module name="org.keycloak.keycloak-adapter-spi"/>
         <module name="org.keycloak.keycloak-common"/>
         <module name="org.keycloak.keycloak-core"/>
+        <module name="org.keycloak.keycloak-crypto-default" services="import"/>
         <module name="org.keycloak.keycloak-authz-client"/>
     </dependencies>
 

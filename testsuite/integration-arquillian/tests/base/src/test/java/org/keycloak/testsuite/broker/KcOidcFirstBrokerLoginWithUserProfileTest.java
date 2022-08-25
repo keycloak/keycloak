@@ -16,6 +16,8 @@
  */
 package org.keycloak.testsuite.broker;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.keycloak.testsuite.broker.BrokerTestTools.getConsumerRoot;
 import static org.keycloak.testsuite.broker.BrokerTestTools.waitForPage;
@@ -23,6 +25,7 @@ import static org.keycloak.testsuite.forms.VerifyProfileTest.ATTRIBUTE_DEPARTMEN
 import static org.keycloak.testsuite.forms.VerifyProfileTest.PERMISSIONS_ADMIN_EDITABLE;
 import static org.keycloak.testsuite.forms.VerifyProfileTest.PERMISSIONS_ALL;
 
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -37,35 +40,35 @@ import org.keycloak.testsuite.util.ClientScopeBuilder;
 import org.openqa.selenium.By;
 
 /**
- * 
+ *
  * @author Vlastimil Elias <velias@redhat.com>
  *
  */
 @EnableFeature(value = Profile.Feature.DECLARATIVE_USER_PROFILE)
 @AuthServerContainerExclude(AuthServerContainerExclude.AuthServer.REMOTE)
 public class KcOidcFirstBrokerLoginWithUserProfileTest extends KcOidcFirstBrokerLoginTest {
-    
+
     @Override
     @Before
     public void beforeBrokerTest() {
         super.beforeBrokerTest();
         enableDynamicUserProfile();
     }
-    
+
     @Test
     public void testDisplayName() {
 
         updateExecutions(AbstractBrokerTest::enableUpdateProfileOnFirstLogin);
 
-        setUserProfileConfiguration("{\"attributes\": [" 
-                + "{\"name\": \"firstName\",\"displayName\":\"${firstName}\"," + PERMISSIONS_ALL + ", \"required\": {}}," 
+        setUserProfileConfiguration("{\"attributes\": ["
+                + "{\"name\": \"firstName\",\"displayName\":\"${firstName}\"," + PERMISSIONS_ALL + ", \"required\": {}},"
                 + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + "},"
-                + "{\"name\": \"department\", \"displayName\" : \"Department\", " + PERMISSIONS_ALL + ", \"required\":{}}" 
+                + "{\"name\": \"department\", \"displayName\" : \"Department\", " + PERMISSIONS_ALL + ", \"required\":{}}"
                 + "]}");
 
         driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
         logInWithBroker(bc);
-        
+
         waitForPage(driver, "update account information", false);
         updateAccountInformationPage.assertCurrent();
 
@@ -80,7 +83,7 @@ public class KcOidcFirstBrokerLoginWithUserProfileTest extends KcOidcFirstBroker
 
     @Test
     public void testAttributeGrouping() {
-        
+
         updateExecutions(AbstractBrokerTest::enableUpdateProfileOnFirstLogin);
 
         setUserProfileConfiguration("{\"attributes\": ["
@@ -102,7 +105,7 @@ public class KcOidcFirstBrokerLoginWithUserProfileTest extends KcOidcFirstBroker
 
         //assert fields location in form
         String htmlFormId = "kc-idp-review-profile-form";
-        
+
         //assert fields and groups location in form
         Assert.assertTrue(
                 driver.findElement(
@@ -145,10 +148,10 @@ public class KcOidcFirstBrokerLoginWithUserProfileTest extends KcOidcFirstBroker
                 ).isDisplayed()
         );
     }
-    
+
     @Test
     public void testAttributeGuiOrder() {
-        
+
         updateExecutions(AbstractBrokerTest::enableUpdateProfileOnFirstLogin);
 
         setUserProfileConfiguration("{\"attributes\": ["
@@ -161,42 +164,42 @@ public class KcOidcFirstBrokerLoginWithUserProfileTest extends KcOidcFirstBroker
 
         driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
         logInWithBroker(bc);
-        
+
         waitForPage(driver, "update account information", false);
         updateAccountInformationPage.assertCurrent();
-        
+
         //assert fields location in form
         String htmlFormId = "kc-idp-review-profile-form";
         Assert.assertTrue(
-            driver.findElement(
-                By.cssSelector("form#"+htmlFormId+" > div:nth-child(1) > div:nth-child(2) > input#lastName")
-            ).isDisplayed()
+                driver.findElement(
+                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(1) > div:nth-child(2) > input#lastName")
+                ).isDisplayed()
         );
         Assert.assertTrue(
-            driver.findElement(
-                By.cssSelector("form#"+htmlFormId+" > div:nth-child(2) > div:nth-child(2) > input#department")
-            ).isDisplayed()
+                driver.findElement(
+                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(2) > div:nth-child(2) > input#department")
+                ).isDisplayed()
         );
         Assert.assertTrue(
-            driver.findElement(
-                By.cssSelector("form#"+htmlFormId+" > div:nth-child(3) > div:nth-child(2) > input#username")
-            ).isDisplayed()
+                driver.findElement(
+                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(3) > div:nth-child(2) > input#username")
+                ).isDisplayed()
         );
         Assert.assertTrue(
-            driver.findElement(
-                By.cssSelector("form#"+htmlFormId+" > div:nth-child(4) > div:nth-child(2) > input#firstName")
-            ).isDisplayed()
+                driver.findElement(
+                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(4) > div:nth-child(2) > input#firstName")
+                ).isDisplayed()
         );
         Assert.assertTrue(
-            driver.findElement(
-                By.cssSelector("form#"+htmlFormId+" > div:nth-child(5) > div:nth-child(2) > input#email")
-            ).isDisplayed()
+                driver.findElement(
+                        By.cssSelector("form#"+htmlFormId+" > div:nth-child(5) > div:nth-child(2) > input#email")
+                ).isDisplayed()
         );
     }
-    
+
     @Test
     public void testAttributeInputTypes() {
-        
+
         updateExecutions(AbstractBrokerTest::enableUpdateProfileOnFirstLogin);
 
         setUserProfileConfiguration("{\"attributes\": ["
@@ -205,22 +208,22 @@ public class KcOidcFirstBrokerLoginWithUserProfileTest extends KcOidcFirstBroker
 
         driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
         logInWithBroker(bc);
-        
+
         waitForPage(driver, "update account information", false);
         updateAccountInformationPage.assertCurrent();
-        
+
         RegisterWithUserProfileTest.assertFieldTypes(driver);
     }
-    
+
     @Test
     public void testDynamicUserProfileReviewWhenMissing_requiredReadOnlyAttributeDoesnotForceUpdate() {
 
         updateExecutions(AbstractBrokerTest::setUpMissingUpdateProfileOnFirstLogin);
-        
-        setUserProfileConfiguration("{\"attributes\": [" 
-                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + "}," 
+
+        setUserProfileConfiguration("{\"attributes\": ["
+                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + "},"
                 + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + "},"
-                + "{\"name\": \"department\", " + PERMISSIONS_ADMIN_EDITABLE + ", \"required\":{}}" 
+                + "{\"name\": \"department\", " + PERMISSIONS_ADMIN_EDITABLE + ", \"required\":{}}"
                 + "]}");
 
         driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
@@ -229,18 +232,18 @@ public class KcOidcFirstBrokerLoginWithUserProfileTest extends KcOidcFirstBroker
         waitForAccountManagementTitle();
         accountUpdateProfilePage.assertCurrent();
     }
-    
+
     @Test
     public void testDynamicUserProfileReviewWhenMissing_requiredButNotSelectedByScopeAttributeDoesnotForceUpdate() {
 
         addDepartmentScopeIntoRealm();
 
         updateExecutions(AbstractBrokerTest::setUpMissingUpdateProfileOnFirstLogin);
-        
-        setUserProfileConfiguration("{\"attributes\": [" 
-                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + "}," 
+
+        setUserProfileConfiguration("{\"attributes\": ["
+                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + "},"
                 + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + "},"
-                + "{\"name\": \"department\", " + PERMISSIONS_ALL + ", \"required\":{}, \"selector\":{\"scopes\":[\"department\"]}}" 
+                + "{\"name\": \"department\", " + PERMISSIONS_ALL + ", \"required\":{}, \"selector\":{\"scopes\":[\"department\"]}}"
                 + "]}");
 
         driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
@@ -249,17 +252,17 @@ public class KcOidcFirstBrokerLoginWithUserProfileTest extends KcOidcFirstBroker
         waitForAccountManagementTitle();
         accountUpdateProfilePage.assertCurrent();
     }
-    
+
     @Test
     public void testDynamicUserProfileReviewWhenMissing_requiredAndSelectedByScopeAttributeForcesUpdate() {
 
         updateExecutions(AbstractBrokerTest::setUpMissingUpdateProfileOnFirstLogin);
-        
+
         //we use 'profile' scope which is requested by default
-        setUserProfileConfiguration("{\"attributes\": [" 
-                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + "}," 
+        setUserProfileConfiguration("{\"attributes\": ["
+                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + "},"
                 + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + "},"
-                + "{\"name\": \"department\", " + PERMISSIONS_ALL + ", \"required\":{}, \"selector\":{\"scopes\":[\"profile\"]}}" 
+                + "{\"name\": \"department\", " + PERMISSIONS_ALL + ", \"required\":{}, \"selector\":{\"scopes\":[\"profile\"]}}"
                 + "]}");
 
         driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
@@ -267,22 +270,22 @@ public class KcOidcFirstBrokerLoginWithUserProfileTest extends KcOidcFirstBroker
 
         waitForPage(driver, "update account information", false);
         updateAccountInformationPage.assertCurrent();
-    }    
-    
+    }
+
     @Test
     public void testDynamicUserProfileReview_requiredReadOnlyAttributeNotRenderedAndNotBlockingProcess() {
 
         updateExecutions(AbstractBrokerTest::enableUpdateProfileOnFirstLogin);
-        
-        setUserProfileConfiguration("{\"attributes\": [" 
-                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}}," 
+
+        setUserProfileConfiguration("{\"attributes\": ["
+                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
                 + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + "},"
-                + "{\"name\": \"department\", " + PERMISSIONS_ADMIN_EDITABLE + ", \"required\":{}}" 
+                + "{\"name\": \"department\", " + PERMISSIONS_ADMIN_EDITABLE + ", \"required\":{}}"
                 + "]}");
 
         driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
         logInWithBroker(bc);
-        
+
         waitForPage(driver, "update account information", false);
         updateAccountInformationPage.assertCurrent();
 
@@ -294,22 +297,22 @@ public class KcOidcFirstBrokerLoginWithUserProfileTest extends KcOidcFirstBroker
         waitForAccountManagementTitle();
         accountUpdateProfilePage.assertCurrent();
     }
-    
+
     @Test
     public void testDynamicUserProfileReview_attributeRequiredAndSelectedByScopeMustBeSet() {
 
         updateExecutions(AbstractBrokerTest::enableUpdateProfileOnFirstLogin);
 
         //we use 'profile' scope which is requested by default
-        setUserProfileConfiguration("{\"attributes\": [" 
-                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}}," 
+        setUserProfileConfiguration("{\"attributes\": ["
+                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
                 + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + "},"
-                + "{\"name\": \"department\"," + PERMISSIONS_ALL + ", \"required\":{}, \"selector\":{\"scopes\":[\"profile\"]}}" 
+                + "{\"name\": \"department\"," + PERMISSIONS_ALL + ", \"required\":{}, \"selector\":{\"scopes\":[\"profile\"]}}"
                 + "]}");
 
         driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
         logInWithBroker(bc);
-        
+
         waitForPage(driver, "update account information", false);
         updateAccountInformationPage.assertCurrent();
 
@@ -327,22 +330,22 @@ public class KcOidcFirstBrokerLoginWithUserProfileTest extends KcOidcFirstBroker
         assertEquals("LastAA", user.getLastName());
         assertEquals("DepartmentAA", user.firstAttribute(ATTRIBUTE_DEPARTMENT));
     }
-    
+
     @Test
     public void testDynamicUserProfileReview_attributeNotRequiredAndSelectedByScopeCanBeIgnored() {
 
         updateExecutions(AbstractBrokerTest::enableUpdateProfileOnFirstLogin);
-        
+
         //we use 'profile' scope which is requested by default
-        setUserProfileConfiguration("{\"attributes\": [" 
-                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}}," 
+        setUserProfileConfiguration("{\"attributes\": ["
+                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
                 + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
-                + "{\"name\": \"department\"," + PERMISSIONS_ALL + ", \"selector\":{\"scopes\":[\"profile\"]}}" 
+                + "{\"name\": \"department\"," + PERMISSIONS_ALL + ", \"selector\":{\"scopes\":[\"profile\"]}}"
                 + "]}");
 
         driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
         logInWithBroker(bc);
-        
+
         waitForPage(driver, "update account information", false);
         updateAccountInformationPage.assertCurrent();
 
@@ -355,24 +358,24 @@ public class KcOidcFirstBrokerLoginWithUserProfileTest extends KcOidcFirstBroker
         UserRepresentation user = VerifyProfileTest.getUserByUsername(testRealm(),"attributeNotRequiredAndSelectedByScopeCanBeIgnored");
         assertEquals("FirstAA", user.getFirstName());
         assertEquals("LastAA", user.getLastName());
-        assertEquals("", user.firstAttribute(ATTRIBUTE_DEPARTMENT));
+        assertThat(StringUtils.isEmpty(user.firstAttribute(ATTRIBUTE_DEPARTMENT)), is(true));
     }
-    
+
     @Test
     public void testDynamicUserProfileReview_attributeNotRequiredAndSelectedByScopeCanBeSet() {
 
         updateExecutions(AbstractBrokerTest::enableUpdateProfileOnFirstLogin);
-        
+
         //we use 'profile' scope which is requested by default
-        setUserProfileConfiguration("{\"attributes\": [" 
-                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}}," 
+        setUserProfileConfiguration("{\"attributes\": ["
+                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
                 + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
-                + "{\"name\": \"department\"," + PERMISSIONS_ALL + ", \"selector\":{\"scopes\":[\"profile\"]}}" 
+                + "{\"name\": \"department\"," + PERMISSIONS_ALL + ", \"selector\":{\"scopes\":[\"profile\"]}}"
                 + "]}");
 
         driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
         logInWithBroker(bc);
-        
+
         waitForPage(driver, "update account information", false);
         updateAccountInformationPage.assertCurrent();
 
@@ -387,23 +390,23 @@ public class KcOidcFirstBrokerLoginWithUserProfileTest extends KcOidcFirstBroker
         assertEquals("LastAA", user.getLastName());
         assertEquals("Department AA", user.firstAttribute(ATTRIBUTE_DEPARTMENT));
     }
-    
+
     @Test
     public void testDynamicUserProfileReview_attributeRequiredButNotSelectedByScopeIsNotRenderedAndNotBlockingProcess() {
 
         addDepartmentScopeIntoRealm();
-        
+
         updateExecutions(AbstractBrokerTest::enableUpdateProfileOnFirstLogin);
-        
-        setUserProfileConfiguration("{\"attributes\": [" 
-                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}}," 
+
+        setUserProfileConfiguration("{\"attributes\": ["
+                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
                 + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
-                + "{\"name\": \"department\"," + PERMISSIONS_ALL + ", \"required\":{}, \"selector\":{\"scopes\":[\"department\"]}}" 
+                + "{\"name\": \"department\"," + PERMISSIONS_ALL + ", \"required\":{}, \"selector\":{\"scopes\":[\"department\"]}}"
                 + "]}");
 
         driver.navigate().to(getAccountUrl(getConsumerRoot(), bc.consumerRealmName()));
         logInWithBroker(bc);
-        
+
         waitForPage(driver, "update account information", false);
         updateAccountInformationPage.assertCurrent();
 
@@ -422,7 +425,7 @@ public class KcOidcFirstBrokerLoginWithUserProfileTest extends KcOidcFirstBroker
     public void addDepartmentScopeIntoRealm() {
         testRealm().clientScopes().create(ClientScopeBuilder.create().name("department").protocol("openid-connect").build());
     }
-    
+
     protected void setUserProfileConfiguration(String configuration) {
         VerifyProfileTest.setUserProfileConfiguration(testRealm(), configuration);
     }

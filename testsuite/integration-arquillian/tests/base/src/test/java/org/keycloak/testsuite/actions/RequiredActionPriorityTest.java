@@ -16,6 +16,11 @@
  */
 package org.keycloak.testsuite.actions;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+
 import org.jboss.arquillian.graphene.page.Page;
 import org.junit.Assert;
 import org.junit.Before;
@@ -42,11 +47,6 @@ import org.keycloak.testsuite.pages.LoginPasswordUpdatePage;
 import org.keycloak.testsuite.pages.LoginUpdateProfileEditUsernameAllowedPage;
 import org.keycloak.testsuite.pages.TermsAndConditionsPage;
 import org.keycloak.testsuite.util.UserBuilder;
-
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
 
 /**
  * @author <a href="mailto:wadahiro@gmail.com">Hiroyuki Wada</a>
@@ -116,7 +116,7 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
 
         // Finally, update profile
         updateProfilePage.assertCurrent();
-        updateProfilePage.update("New first", "New last", "new@email.com", "test-user@localhost");
+        updateProfilePage.prepareUpdate().username("test-user@localhost").firstName("New first").lastName("New last").email("new@email.com").submit();
         events.expectRequiredAction(EventType.UPDATE_PROFILE).detail(Details.UPDATED_FIRST_NAME, "New first")
                 .detail(Details.UPDATED_LAST_NAME, "New last")
                 .detail(Details.PREVIOUS_EMAIL, "test-user@localhost")
@@ -150,7 +150,7 @@ public class RequiredActionPriorityTest extends AbstractTestRealmKeycloakTest {
 
         // Second, update profile
         updateProfilePage.assertCurrent();
-        updateProfilePage.update("New first", "New last", "new@email.com", "test-user@localhost");
+        updateProfilePage.prepareUpdate().username("test-user@localhost").firstName("New first").lastName("New last").email("new@email.com").submit();
         events.expectRequiredAction(EventType.UPDATE_PROFILE).detail(Details.UPDATED_FIRST_NAME, "New first")
                 .detail(Details.UPDATED_LAST_NAME, "New last")
                 .detail(Details.PREVIOUS_EMAIL, "test-user@localhost")

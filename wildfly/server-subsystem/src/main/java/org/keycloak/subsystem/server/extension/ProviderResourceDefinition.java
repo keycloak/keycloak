@@ -49,7 +49,7 @@ public class ProviderResourceDefinition extends SimpleResourceDefinition {
             .setAllowExpression(true)
             .build();
     
-    protected static final ReloadRequiredWriteAttributeHandler WRITE_ATTR_HANDLER = new ReloadRequiredWriteAttributeHandler(ENABLED);
+    protected static final ReloadRequiredWriteAttributeHandler WRITE_ATTR_HANDLER = new ReloadRequiredWriteAttributeHandler(ENABLED, PROPERTIES);
     
     protected ProviderResourceDefinition() {
         super(PathElement.pathElement(TAG_NAME),

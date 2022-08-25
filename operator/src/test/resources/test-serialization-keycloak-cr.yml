@@ -1,0 +1,18 @@
+apiVersion: k8s.keycloak.org/v2alpha1
+kind: Keycloak
+metadata:
+  name: test-serialization-kc
+spec:
+  instances: 3
+  image: my-image
+  serverConfiguration:
+    - name: key1
+      value: value1
+  hostname: my-hostname
+  tlsSecret: my-tls-secret
+  disableDefaultIngress: true
+  unsupported:
+    podTemplate:
+      metadata:
+        labels:
+          my-label: "foo"

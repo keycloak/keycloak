@@ -17,7 +17,6 @@
 
 package org.keycloak.protocol.saml;
 
-import org.apache.http.HttpEntity;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
@@ -43,7 +42,7 @@ import org.keycloak.models.KeyManager;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.models.RealmModel;
-import org.keycloak.models.SamlArtifactSessionMappingStoreProvider;
+import org.keycloak.models.SingleUseObjectProvider;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.protocol.LoginProtocol;
@@ -85,7 +84,6 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URI;
 import java.security.PublicKey;
 import java.util.ArrayList;
@@ -140,6 +138,9 @@ public class SamlProtocol implements LoginProtocol {
     public static final String SAML_LOGIN_REQUEST_FORCEAUTHN = "SAML_LOGIN_REQUEST_FORCEAUTHN";
     public static final String SAML_FORCEAUTHN_REQUIREMENT = "true";
     public static final String SAML_LOGOUT_INITIATOR_CLIENT_ID = "SAML_LOGOUT_INITIATOR_CLIENT_ID";
+    public static final String USER_SESSION_ID = "userSessionId";
+    public static final String CLIENT_SESSION_ID = "clientSessionId";
+
 
     protected static final Logger logger = Logger.getLogger(SamlProtocol.class);
 
@@ -154,7 +155,7 @@ public class SamlProtocol implements LoginProtocol {
     protected EventBuilder event;
 
     protected ArtifactResolver artifactResolver;
-    protected SamlArtifactSessionMappingStoreProvider artifactSessionMappingStore;
+    protected SingleUseObjectProvider singleUseStore;
 
     @Override
     public SamlProtocol setSession(KeycloakSession session) {
@@ -193,11 +194,11 @@ public class SamlProtocol implements LoginProtocol {
         return artifactResolver;
     }
 
-    private SamlArtifactSessionMappingStoreProvider getArtifactSessionMappingStore() {
-        if (artifactSessionMappingStore == null) {
-            artifactSessionMappingStore = session.getProvider(SamlArtifactSessionMappingStoreProvider.class);
+    private SingleUseObjectProvider getSingleUseStore() {
+        if (singleUseStore == null) {
+            singleUseStore = session.getProvider(SingleUseObjectProvider.class);
         }
-        return artifactSessionMappingStore;
+        return singleUseStore;
     }
 
     @Override
@@ -672,7 +673,7 @@ public class SamlProtocol implements LoginProtocol {
     }
 
     @Override
-    public Response finishLogout(UserSessionModel userSession) {
+    public Response finishBrowserLogout(UserSessionModel userSession, AuthenticationSessionModel logoutSession) {
         logger.debug("finishLogout");
         String logoutBindingUri = userSession.getNote(SAML_LOGOUT_BINDING_URI);
         if (logoutBindingUri == null) {
@@ -929,7 +930,10 @@ public class SamlProtocol implements LoginProtocol {
         // Create artifact and store session mapping
         SAMLDataMarshaller marshaller = new SAMLDataMarshaller();
         String artifact = getArtifactResolver().buildArtifact(clientSessionModel, entityId, marshaller.serialize(artifactResponseType));
-        getArtifactSessionMappingStore().put(artifact, realm.getAccessCodeLifespan(), clientSessionModel);
+        HashMap<String, String> notes = new HashMap<>();
+        notes.put(USER_SESSION_ID, clientSessionModel.getUserSession().getId());
+        notes.put(CLIENT_SESSION_ID, clientSessionModel.getClient().getId());
+        getSingleUseStore().put(artifact, realm.getAccessCodeLifespan(), notes);
         
         return artifact;
     }

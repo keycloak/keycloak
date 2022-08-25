@@ -6,17 +6,17 @@ import org.jboss.logging.Logger;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.arquillian.AuthServerTestEnricher;
 import org.keycloak.testsuite.arquillian.containers.KeycloakQuarkusServerDeployableContainer;
+import org.keycloak.testsuite.util.OAuthClient;
 import org.wildfly.extras.creaper.core.online.OnlineManagementClient;
 import org.wildfly.extras.creaper.core.online.operations.admin.Administration;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
 public abstract class AbstractHostnameTest extends AbstractKeycloakTest {
 
     private static final Logger LOGGER = Logger.getLogger(AbstractHostnameTest.class);
-
-    private boolean isReaugmentationNeeded;
 
     @ArquillianResource
     protected ContainerController controller;
@@ -40,10 +40,10 @@ public abstract class AbstractHostnameTest extends AbstractKeycloakTest {
                     "/subsystem=keycloak-server/spi=hostname/:add(default-provider=default)",
                     "/subsystem=keycloak-server/spi=hostname/provider=default/:add(properties={frontendUrl => \"${keycloak.frontendUrl:}\",forceBackendUrlToFrontendUrl => \"false\"},enabled=true)");
         } else if (suiteContext.getAuthServerInfo().isQuarkus()) {
-            controller.stop(suiteContext.getAuthServerInfo().getQualifier());
             KeycloakQuarkusServerDeployableContainer container = (KeycloakQuarkusServerDeployableContainer)suiteContext.getAuthServerInfo().getArquillianContainer().getDeployableContainer();
-            container.resetConfiguration(isReaugmentationNeeded);
-            controller.start(suiteContext.getAuthServerInfo().getQualifier());
+            container.resetConfiguration();
+            configureDefault(OAuthClient.AUTH_SERVER_ROOT, false, null);
+            container.restartServer();
         } else {
             throw new RuntimeException("Don't know how to config");
         }
@@ -73,15 +73,18 @@ public abstract class AbstractHostnameTest extends AbstractKeycloakTest {
         } else if (suiteContext.getAuthServerInfo().isQuarkus()) {
             controller.stop(suiteContext.getAuthServerInfo().getQualifier());
             KeycloakQuarkusServerDeployableContainer container = (KeycloakQuarkusServerDeployableContainer)suiteContext.getAuthServerInfo().getArquillianContainer().getDeployableContainer();
-            List<String> runtimeProperties = new ArrayList<>();
-            runtimeProperties.add("--spi-hostname-default-frontend-url="+frontendUrl);
-            runtimeProperties.add("--spi-hostname-default-force-backend-url-to-frontend-url="+ forceBackendUrlToFrontendUrl);
-            if (adminUrl != null){
-                runtimeProperties.add("--spi-hostname-default-admin-url="+adminUrl);
+            List<String> additionalArgs = new ArrayList<>();
+            URI frontendUri = URI.create(frontendUrl);
+            // enable proxy so that we can check headers are taken into account when building urls
+            additionalArgs.add("--proxy=reencrypt");
+            additionalArgs.add("--hostname=" + frontendUri.getHost());
+            additionalArgs.add("--hostname-path=" + frontendUri.getPath());
+            if ("https".equals(frontendUri.getScheme())) {
+                additionalArgs.add("--hostname-strict-https=true");
             }
-            container.setRuntimeProperties(runtimeProperties);
+            additionalArgs.add("--hostname-strict-backchannel="+ forceBackendUrlToFrontendUrl);
+            container.setAdditionalBuildArgs(additionalArgs);
             controller.start(suiteContext.getAuthServerInfo().getQualifier());
-            isReaugmentationNeeded = false;
         } else {
             throw new RuntimeException("Don't know how to config");
         }
@@ -103,16 +106,6 @@ public abstract class AbstractHostnameTest extends AbstractKeycloakTest {
             executeCli("/subsystem=keycloak-server/spi=hostname:remove",
                     "/subsystem=keycloak-server/spi=hostname/:add(default-provider=fixed)",
                     "/subsystem=keycloak-server/spi=hostname/provider=fixed/:add(properties={hostname => \"" + hostname + "\",httpPort => \"" + httpPort + "\",httpsPort => \"" + httpsPort + "\",alwaysHttps => \"" + alwaysHttps + "\"},enabled=true)");
-        } else if (suiteContext.getAuthServerInfo().isQuarkus()) {
-            controller.stop(suiteContext.getAuthServerInfo().getQualifier());
-            KeycloakQuarkusServerDeployableContainer container = (KeycloakQuarkusServerDeployableContainer)suiteContext.getAuthServerInfo().getArquillianContainer().getDeployableContainer();
-            container.forceReAugmentation("--spi-hostname-provider=fixed" +
-                    " --spi-hostname-fixed-hostname="+ hostname +
-                    " --spi-hostname-fixed-http-port="+ httpPort +
-                    " --spi-hostname-fixed-https-port="+ httpsPort +
-                    " --spi-hostname-fixed-always-https="+ alwaysHttps);
-            controller.start(suiteContext.getAuthServerInfo().getQualifier());
-            isReaugmentationNeeded = true;
         } else {
             throw new RuntimeException("Don't know how to config");
         }

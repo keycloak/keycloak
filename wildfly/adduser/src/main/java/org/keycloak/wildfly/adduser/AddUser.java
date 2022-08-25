@@ -29,8 +29,7 @@ import org.aesh.command.invocation.CommandInvocation;
 import org.aesh.command.impl.registry.AeshCommandRegistryBuilder;
 import org.aesh.command.registry.CommandRegistry;
 import org.aesh.command.registry.CommandRegistryException;
-import org.keycloak.common.util.Base64;
-import org.keycloak.credential.CredentialModel;
+import org.keycloak.common.crypto.CryptoIntegration;
 import org.keycloak.credential.hash.PasswordHashProvider;
 import org.keycloak.credential.hash.PasswordHashProviderFactory;
 import org.keycloak.models.PasswordPolicy;
@@ -107,6 +106,8 @@ public class AddUser {
                     }
 
                     File addUserFile = getAddUserFile(this);
+
+                    CryptoIntegration.init(AddUser.class.getClassLoader());
 
                     createUser(addUserFile, realm, user, password, roles, iterations);
                 }

@@ -41,6 +41,7 @@ import org.keycloak.testsuite.console.page.clients.authorization.policy.UserPoli
 import org.keycloak.testsuite.console.page.fragment.ModalDialog;
 import org.keycloak.testsuite.console.page.fragment.MultipleStringSelect2;
 import org.keycloak.testsuite.console.page.fragment.SingleStringSelect2;
+import org.keycloak.testsuite.console.page.fragment.OnOffSwitch;
 import org.keycloak.testsuite.page.Form;
 import org.keycloak.testsuite.util.UIUtils;
 import org.openqa.selenium.WebElement;
@@ -73,9 +74,6 @@ public class ScopePermissionForm extends Form {
     @FindBy(id = "s2id_scopes")
     private MultipleStringSelect2 scopeSelect;
 
-    @FindBy(id = "s2id_resourceScopes")
-    private MultipleStringSelect2 resourceScopeSelect;
-
     @FindBy(id = "s2id_resources")
     private ResourceSelect resourceSelect;
 
@@ -84,6 +82,12 @@ public class ScopePermissionForm extends Form {
 
     @FindBy(id = "create-policy")
     private Select createPolicySelect;
+
+    @FindBy(xpath = ".//div[@class='onoffswitch' and ./input[@id='applyToResourceTypeFlag']]")
+    private OnOffSwitch resourceTypeSwitch;
+
+    @FindBy(id = "resourceType")
+    private WebElement resourceType;
 
     @Page
     private RolePolicy rolePolicy;
@@ -110,15 +114,24 @@ public class ScopePermissionForm extends Form {
 
         Set<String> resources = expected.getResources();
 
-        if (resources != null && !resources.isEmpty()) {
-            resourceSelect.update(resources);
-            resourceScopeSelect.update(expected.getScopes());
-        } else {
-            if (resourceSelectRemoveChoice.isDisplayed()) {
-                resourceSelectRemoveChoice.click();
-            }
-            scopeSelect.update(expected.getScopes());
+        resourceTypeSwitch.setOn(expected.getResourceType() != null);
+
+        if (expected.getResourceType() != null) {
+            UIUtils.setTextInputValue(resourceType, expected.getResourceType());
         }
+        else {
+            resourceTypeSwitch.setOn(false);
+            if (resources != null && !resources.isEmpty()) {
+                resourceSelect.update(resources);
+            } 
+            else {
+                if (resourceSelectRemoveChoice.isDisplayed()) {
+                    resourceSelectRemoveChoice.click();
+                }
+            }
+        }
+
+        scopeSelect.update(expected.getScopes());
 
         if (expected.getPolicies() != null) {
             policySelect.update(expected.getPolicies());
@@ -141,9 +154,15 @@ public class ScopePermissionForm extends Form {
         representation.setDescription(UIUtils.getTextInputValue(description));
         representation.setDecisionStrategy(DecisionStrategy.valueOf(UIUtils.getTextFromElement(decisionStrategy.getFirstSelectedOption()).toUpperCase()));
         representation.setPolicies(policySelect.getSelected());
-        representation.setResources(resourceSelect.getSelected());
+        String inputValue = UIUtils.getTextInputValue(resourceType);
+        if (!"".equals(inputValue)) {
+            representation.setResourceType(inputValue);
+        }
+        else{
+            representation.setResources(resourceSelect.getSelected());
+        }
+
         representation.setScopes(scopeSelect.getSelected());
-        representation.getScopes().addAll(resourceScopeSelect.getSelected());
 
         return representation;
     }

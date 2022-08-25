@@ -17,10 +17,13 @@
 
 package org.keycloak.testsuite.domainextension;
 
+import org.junit.BeforeClass;
 import org.junit.Test;
+import org.keycloak.common.Profile;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.testsuite.AbstractKeycloakTest;
 import org.keycloak.testsuite.Assert;
+import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.client.resources.TestExampleCompanyResource;
 import org.keycloak.testsuite.util.RealmBuilder;
@@ -45,6 +48,11 @@ public class CustomExtensionTest extends AbstractKeycloakTest {
     public void addTestRealms(List<RealmRepresentation> testRealms) {
         RealmRepresentation foo = RealmBuilder.create().name("foo").build();
         testRealms.add(foo);
+    }
+
+    @BeforeClass
+    public static void checkNotMapStorage() {
+        ProfileAssume.assumeFeatureDisabled(Profile.Feature.MAP_STORAGE);
     }
 
     @Test

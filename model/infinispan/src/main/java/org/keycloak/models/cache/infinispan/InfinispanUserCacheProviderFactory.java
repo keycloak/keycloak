@@ -29,11 +29,12 @@ import org.keycloak.models.cache.UserCache;
 import org.keycloak.models.cache.UserCacheProviderFactory;
 import org.keycloak.models.cache.infinispan.entities.Revisioned;
 import org.keycloak.models.cache.infinispan.events.InvalidationEvent;
+import org.keycloak.provider.InvalidationHandler;
 
 /**
  * @author <a href="mailto:sthorger@redhat.com">Stian Thorgersen</a>
  */
-public class InfinispanUserCacheProviderFactory implements UserCacheProviderFactory {
+public class InfinispanUserCacheProviderFactory implements UserCacheProviderFactory, InvalidationHandler {
 
     private static final Logger log = Logger.getLogger(InfinispanUserCacheProviderFactory.class);
     public static final String USER_CLEAR_CACHE_EVENTS = "USER_CLEAR_CACHE_EVENTS";
@@ -79,6 +80,15 @@ public class InfinispanUserCacheProviderFactory implements UserCacheProviderFact
     }
 
     @Override
+    public void invalidate(KeycloakSession session, InvalidableObjectType type, Object... params) {
+        if (type == ObjectType.REALM || type == ObjectType.USER) {
+            if (this.userCache != null) {
+                this.userCache.clear();
+            }
+        }
+    }
+
+    @Override
     public void init(Config.Scope config) {
     }
 
@@ -95,6 +105,4 @@ public class InfinispanUserCacheProviderFactory implements UserCacheProviderFact
     public String getId() {
         return "default";
     }
-
-
 }

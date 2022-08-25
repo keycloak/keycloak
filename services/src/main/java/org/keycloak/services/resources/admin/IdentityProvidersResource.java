@@ -89,7 +89,7 @@ public class IdentityProvidersResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response getIdentityProviders(@PathParam("provider_id") String providerId) {
         this.auth.realm().requireViewIdentityProviders();
-        IdentityProviderFactory providerFactory = getProviderFactorytById(providerId);
+        IdentityProviderFactory providerFactory = getProviderFactoryById(providerId);
         if (providerFactory != null) {
             return Response.ok(providerFactory).build();
         }
@@ -116,7 +116,7 @@ public class IdentityProvidersResource {
         String providerId = formDataMap.get("providerId").get(0).getBodyAsString();
         InputPart file = formDataMap.get("file").get(0);
         InputStream inputStream = file.getBody(InputStream.class, null);
-        IdentityProviderFactory providerFactory = getProviderFactorytById(providerId);
+        IdentityProviderFactory providerFactory = getProviderFactoryById(providerId);
         Map<String, String> config = providerFactory.parseConfig(session, inputStream);
         return config;
     }
@@ -144,7 +144,7 @@ public class IdentityProvidersResource {
         String from = data.get("fromUrl").toString();
         InputStream inputStream = session.getProvider(HttpClientProvider.class).get(from);
         try {
-            IdentityProviderFactory providerFactory = getProviderFactorytById(providerId);
+            IdentityProviderFactory providerFactory = getProviderFactoryById(providerId);
             Map<String, String> config;
             config = providerFactory.parseConfig(session, inputStream);
             return config;
@@ -221,7 +221,7 @@ public class IdentityProvidersResource {
         return identityProviderResource;
     }
 
-    private IdentityProviderFactory getProviderFactorytById(String providerId) {
+    private IdentityProviderFactory getProviderFactoryById(String providerId) {
         return getProviderFactories()
                 .filter(providerFactory -> Objects.equals(providerId, providerFactory.getId()))
                 .map(IdentityProviderFactory.class::cast)

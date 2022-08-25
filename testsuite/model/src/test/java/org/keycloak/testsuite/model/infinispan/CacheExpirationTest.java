@@ -16,7 +16,6 @@
  */
 package org.keycloak.testsuite.model.infinispan;
 
-import org.hamcrest.Matchers;
 import org.infinispan.Cache;
 import org.junit.Assume;
 import org.junit.Test;
@@ -33,13 +32,11 @@ import java.util.Collections;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
-import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assume.assumeThat;
 
@@ -51,9 +48,14 @@ import static org.junit.Assume.assumeThat;
 @RequireProvider(InfinispanConnectionProvider.class)
 public class CacheExpirationTest extends KeycloakModelTest {
 
+    public static final int NUM_EXTRA_FACTORIES = 4;
+
     @Test
     public void testCacheExpiration() throws Exception {
-        AtomicLong putTime = new AtomicLong();
+
+        log.debugf("Number of previous instances of the class on the heap: %d", getNumberOfInstancesOfClass(AuthenticationSessionAuthNoteUpdateEvent.class));
+
+        log.debug("Put two events to the main cache");
         inComittedTransaction(session -> {
             InfinispanConnectionProvider provider = session.getProvider(InfinispanConnectionProvider.class);
             Cache<String, Object> cache = provider.getCache(InfinispanConnectionProvider.WORK_CACHE_NAME);
@@ -61,59 +63,63 @@ public class CacheExpirationTest extends KeycloakModelTest {
               .filter(me -> me.getValue() instanceof AuthenticationSessionAuthNoteUpdateEvent)
               .forEach((c, me) -> c.remove(me.getKey()));
 
-            putTime.set(System.currentTimeMillis());
             cache.put("1-2", AuthenticationSessionAuthNoteUpdateEvent.create("g1", "p1", "r1", Collections.emptyMap()), 20000, TimeUnit.MILLISECONDS);
             cache.put("1-2-3", AuthenticationSessionAuthNoteUpdateEvent.create("g2", "p2", "r2", Collections.emptyMap()), 20000, TimeUnit.MILLISECONDS);
         });
 
         assumeThat("jmap output format unsupported", getNumberOfInstancesOfClass(AuthenticationSessionAuthNoteUpdateEvent.class), notNullValue());
 
+        // Ensure that instance counting works as expected, there should be at least two instances in memory now.
         // Infinispan server is decoding the client request before processing the request at the cache level,
         // therefore there are sometimes three instances of AuthenticationSessionAuthNoteUpdateEvent class in the memory
-        assertThat(getNumberOfInstancesOfClass(AuthenticationSessionAuthNoteUpdateEvent.class), greaterThanOrEqualTo(2));
+        Integer instancesAfterInsertion = getNumberOfInstancesOfClass(AuthenticationSessionAuthNoteUpdateEvent.class);
+        assertThat(instancesAfterInsertion, greaterThanOrEqualTo(2));
 
-        AtomicInteger maxCountOfInstances = new AtomicInteger();
-        AtomicInteger minCountOfInstances = new AtomicInteger(100);
-        inIndependentFactories(4, 5 * 60, () -> {
+        // A third instance created when inserting the instances is never collected from GC for a yet unknown reason.
+        // Therefore, ignore this additional instance in the upcoming tests.
+        int previousInstancesOfClass = instancesAfterInsertion - 2;
+        log.debug("Expecting instance count to go down to " + previousInstancesOfClass);
+
+        log.debug("Starting other nodes and see that they join, receive the data and have their data expired");
+
+        inIndependentFactories(NUM_EXTRA_FACTORIES, 2 * 60, () -> {
             log.debug("Joining the cluster");
             inComittedTransaction(session -> {
                 InfinispanConnectionProvider provider = session.getProvider(InfinispanConnectionProvider.class);
                 Cache<String, Object> cache = provider.getCache(InfinispanConnectionProvider.WORK_CACHE_NAME);
+
+                log.debug("Waiting for caches to join the cluster");
                 do {
-                    try { Thread.sleep(1000); } catch (InterruptedException ex) {}
+                    sleep(1000);
                 } while (! cache.getAdvancedCache().getDistributionManager().isJoinComplete());
-                cache.keySet().forEach(s -> {});
+
+                String site = CONFIG.scope("connectionsInfinispan", "default").get("siteName");
+                log.debug("Cluster joined " + site);
+
+                log.debug("Waiting for cache to receive the two elements within the cluster");
+                do {
+                    sleep(1000);
+                } while (cache.entrySet().stream()
+                        .filter(me -> me.getValue() instanceof AuthenticationSessionAuthNoteUpdateEvent)
+                        .count() != 2);
+
+                // access the items in the local cache in the different site (site-2) in order to fetch them from the remote cache
+                assertThat(cache.get("1-2"), notNullValue());
+                assertThat(cache.get("1-2-3"), notNullValue());
+
+                // this is testing for a situation where an expiration lifespan configuration was missing in a replicated cache;
+                // the elements were no longer seen in the cache, still they weren't garbage collected.
+                // we must not look into the cache as that would trigger expiration explicitly.
+                // original issue: https://issues.redhat.com/browse/KEYCLOAK-18518
+                log.debug("Waiting for garbage collection to collect the entries across all caches in JVM");
+                do {
+                    sleep(1000);
+                } while (getNumberOfInstancesOfClass(AuthenticationSessionAuthNoteUpdateEvent.class) > previousInstancesOfClass);
+
+                log.debug("Test completed");
+
             });
-            log.debug("Cluster joined");
-
-            // access the items in the local cache in the different site (site-2) in order to fetch them from the remote cache
-            String site = CONFIG.scope("connectionsInfinispan", "default").get("siteName");
-            if ("site-2".equals(site)) {
-                inComittedTransaction(session -> {
-                    InfinispanConnectionProvider provider = session.getProvider(InfinispanConnectionProvider.class);
-                    Cache<String, Object> cache = provider.getCache(InfinispanConnectionProvider.WORK_CACHE_NAME);
-                    cache.get("1-2");
-                    cache.get("1-2-3");
-                });
-            }
-            int c = getNumberOfInstancesOfClass(AuthenticationSessionAuthNoteUpdateEvent.class);
-            maxCountOfInstances.getAndAccumulate(c, Integer::max);
-            assumeThat("Seems we're running on a way too slow a computer", System.currentTimeMillis() - putTime.get(), Matchers.lessThan(20000L));
-
-            // Wait for at most 3 minutes which is much more than 15 seconds expiration set in DefaultInfinispanConnectionProviderFactory
-            for (int i = 0; i < 3 * 60; i++) {
-                try { Thread.sleep(1000); } catch (InterruptedException ex) {}
-                if (getNumberOfInstancesOfClass(AuthenticationSessionAuthNoteUpdateEvent.class) == 0) {
-                    break;
-                }
-            }
-
-            c = getNumberOfInstancesOfClass(AuthenticationSessionAuthNoteUpdateEvent.class);
-            minCountOfInstances.getAndAccumulate(c, Integer::min);
         });
-
-        assertThat(maxCountOfInstances.get(), is(10));
-        assertThat(minCountOfInstances.get(), is(0));
     }
 
     private static final Pattern JMAP_HOTSPOT_PATTERN = Pattern.compile("\\s*\\d+:\\s+(\\d+)\\s+(\\d+)\\s+(\\S+)\\s*");
@@ -124,9 +130,14 @@ public class CacheExpirationTest extends KeycloakModelTest {
         return getNumberOfInstancesOfClass(c, str[0]);
     }
 
-    public Integer getNumberOfInstancesOfClass(Class<?> c, String pid) {
+    // This is synchronized as it doesn't make sense to run this in parallel with multiple threads
+    // as each invocation will run a garbage collection anyway.
+    public synchronized Integer getNumberOfInstancesOfClass(Class<?> c, String pid) {
         Process proc;
         try {
+            // running jmap command will also trigger a garbage collection on the VM, but that might be VM specific
+            // a test run with adding "-verbose:gc" showed the message "GC(23) Pause Full (Heap Inspection Initiated GC)" that
+            // indicates a full GC run
             proc = Runtime.getRuntime().exec("jmap -histo:live " + pid);
 
             try (BufferedReader stdInput = new BufferedReader(new InputStreamReader(proc.getInputStream()))) {

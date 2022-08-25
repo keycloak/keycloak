@@ -65,7 +65,7 @@ public class SecureLogoutExecutor implements ClientPolicyExecutorProvider<Secure
 
     @Override
     public String getProviderId() {
-        return PKCEEnforcerExecutorFactory.PROVIDER_ID;
+        return SecureLogoutExecutorFactory.PROVIDER_ID;
     }
 
     @Override

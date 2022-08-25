@@ -30,5 +30,8 @@
         <module name="org.keycloak.keycloak-core" />
         <module name="org.keycloak.keycloak-server-spi" />
         <module name="org.keycloak.keycloak-server-spi-private"/>
+        <module name="org.keycloak.keycloak-model-legacy"/>
+        <module name="org.keycloak.keycloak-model-legacy-private"/>
+        <module name="org.keycloak.keycloak-model-legacy-services"/>
     </dependencies>
 </module>

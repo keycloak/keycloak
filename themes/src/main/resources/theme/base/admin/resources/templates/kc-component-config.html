@@ -43,9 +43,9 @@
         </div>
 
         <div class="col-md-6" data-ng-if="option.type == 'Script'">
-            <div ng-model="config[option.name]" placeholder="Enter your script..." ui-ace="{ onLoad : initEditor, useWrapMode: true, showGutter: true, theme:'github', mode: 'javascript'}">
+            <textarea class="form-control" ng-model="config[option.name]" data-ng-readonly="option.readOnly">
                 {{config[option.name]}}
-            </div>
+            </textarea>
         </div>
 
         <div class="col-sm-6" data-ng-if="option.type == 'MultivaluedString'">

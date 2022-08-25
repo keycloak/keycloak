@@ -55,6 +55,7 @@ import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Expression;
+import javax.persistence.criteria.From;
 import javax.persistence.criteria.Join;
 import javax.persistence.criteria.JoinType;
 import javax.persistence.criteria.Predicate;
@@ -607,12 +608,20 @@ public class JpaUserProvider implements UserProvider.Streams, UserCredentialStor
 
     @Override
     public int getUsersCount(RealmModel realm, String search) {
-        TypedQuery<Long> query = em.createNamedQuery("searchForUserCount", Long.class);
-        query.setParameter("realmId", realm.getId());
-        query.setParameter("search", "%" + search.toLowerCase() + "%");
-        Long count = query.getSingleResult();
+        CriteriaBuilder builder = em.getCriteriaBuilder();
+        CriteriaQuery<Long> queryBuilder = builder.createQuery(Long.class);
+        Root<UserEntity> root = queryBuilder.from(UserEntity.class);
 
-        return count.intValue();
+        queryBuilder.select(builder.count(root));
+
+        List<Predicate> predicates = new ArrayList<>();
+
+        predicates.add(builder.equal(root.get("realmId"), realm.getId()));
+        predicates.add(builder.or(getSearchOptionPredicateArray(search, builder, root)));
+
+        queryBuilder.where(predicates.toArray(new Predicate[0]));
+
+        return em.createQuery(queryBuilder).getSingleResult().intValue();
     }
 
     @Override
@@ -621,13 +630,23 @@ public class JpaUserProvider implements UserProvider.Streams, UserCredentialStor
             return 0;
         }
 
-        TypedQuery<Long> query = em.createNamedQuery("searchForUserCountInGroups", Long.class);
-        query.setParameter("realmId", realm.getId());
-        query.setParameter("search", "%" + search.toLowerCase() + "%");
-        query.setParameter("groupIds", groupIds);
-        Long count = query.getSingleResult();
+        CriteriaBuilder builder = em.getCriteriaBuilder();
+        CriteriaQuery<Long> queryBuilder = builder.createQuery(Long.class);
 
-        return count.intValue();
+        Root<UserGroupMembershipEntity> groupMembership = queryBuilder.from(UserGroupMembershipEntity.class);
+        Join<UserGroupMembershipEntity, UserEntity> userJoin = groupMembership.join("user");
+
+        queryBuilder.select(builder.count(userJoin));
+
+        List<Predicate> predicates = new ArrayList<>();
+
+        predicates.add(builder.equal(userJoin.get("realmId"), realm.getId()));
+        predicates.add(builder.or(getSearchOptionPredicateArray(search, builder, userJoin)));
+        predicates.add(groupMembership.get("groupId").in(groupIds));
+
+        queryBuilder.where(predicates.toArray(new Predicate[0]));
+
+        return em.createQuery(queryBuilder).getSingleResult().intValue();
     }
 
     @Override
@@ -660,6 +679,9 @@ public class JpaUserProvider implements UserProvider.Streams, UserCredentialStor
                     break;
                 case UserModel.EMAIL:
                     restrictions.add(qb.like(from.get("email"), "%" + value + "%"));
+                    break;
+                case UserModel.ENABLED:
+                    restrictions.add(qb.equal(from.get("enabled"), Boolean.parseBoolean(value.toLowerCase())));
                     break;
                 case UserModel.EMAIL_VERIFIED:
                     restrictions.add(qb.equal(from.get("emailVerified"), Boolean.parseBoolean(value.toLowerCase())));
@@ -710,6 +732,9 @@ public class JpaUserProvider implements UserProvider.Streams, UserCredentialStor
                 case UserModel.EMAIL:
                     restrictions.add(qb.like(from.get("user").get("email"), "%" + value + "%"));
                     break;
+                case UserModel.ENABLED:
+                     restrictions.add(qb.equal(from.get("enabled"), Boolean.parseBoolean(value.toLowerCase())));
+                     break;
                 case UserModel.EMAIL_VERIFIED:
                     restrictions.add(qb.equal(from.get("emailVerified"), Boolean.parseBoolean(value.toLowerCase())));
                     break;
@@ -789,29 +814,24 @@ public class JpaUserProvider implements UserProvider.Streams, UserCredentialStor
 
             switch (key) {
                 case UserModel.SEARCH:
-                    List<Predicate> orPredicates = new ArrayList<>();
-
-                    orPredicates
-                            .add(builder.like(builder.lower(root.get(USERNAME)), "%" + value.toLowerCase() + "%"));
-                    orPredicates.add(builder.like(builder.lower(root.get(EMAIL)), "%" + value.toLowerCase() + "%"));
-                    orPredicates.add(builder.like(
-                            builder.lower(builder.concat(builder.concat(
-                                    builder.coalesce(root.get(FIRST_NAME), builder.literal("")), " "),
-                                    builder.coalesce(root.get(LAST_NAME), builder.literal("")))),
-                            "%" + value.toLowerCase() + "%"));
-
-                    predicates.add(builder.or(orPredicates.toArray(new Predicate[0])));
-
+                    for (String stringToSearch : value.trim().split("\\s+")) {
+                        predicates.add(builder.or(getSearchOptionPredicateArray(stringToSearch, builder, root)));
+                    }
                     break;
-
-                case USERNAME:
                 case FIRST_NAME:
                 case LAST_NAME:
-                case EMAIL:
                     if (Boolean.valueOf(attributes.getOrDefault(UserModel.EXACT, Boolean.FALSE.toString()))) {
                         predicates.add(builder.equal(builder.lower(root.get(key)), value.toLowerCase()));
                     } else {
                         predicates.add(builder.like(builder.lower(root.get(key)), "%" + value.toLowerCase() + "%"));
+                    }
+                    break;
+                case USERNAME:
+                case EMAIL:
+                    if (Boolean.valueOf(attributes.getOrDefault(UserModel.EXACT, Boolean.FALSE.toString()))) {
+                        predicates.add(builder.equal(root.get(key), value.toLowerCase()));
+                    } else {
+                        predicates.add(builder.like(root.get(key), "%" + value.toLowerCase() + "%"));
                     }
                     break;
                 case EMAIL_VERIFIED:
@@ -1033,9 +1053,42 @@ public class JpaUserProvider implements UserProvider.Streams, UserCredentialStor
         }
     }
 
+    private Predicate[] getSearchOptionPredicateArray(String value, CriteriaBuilder builder, From<?, UserEntity> from) {
+        value = value.toLowerCase();
+
+        List<Predicate> orPredicates = new ArrayList<>();
+
+        if (value.length() >= 2 && value.charAt(0) == '"' && value.charAt(value.length() - 1) == '"') {
+            // exact search
+            value = value.substring(1, value.length() - 1);
+
+            orPredicates.add(builder.equal(from.get(USERNAME), value));
+            orPredicates.add(builder.equal(from.get(EMAIL), value));
+            orPredicates.add(builder.equal(builder.lower(from.get(FIRST_NAME)), value));
+            orPredicates.add(builder.equal(builder.lower(from.get(LAST_NAME)), value));
+        } else {
+            if (value.length() >= 2 && value.charAt(0) == '*' && value.charAt(value.length() - 1) == '*') {
+                // infix search
+                value = "%" + value.substring(1, value.length() - 1) + "%";
+            } else {
+                // default to prefix search
+                if (value.length() > 0 && value.charAt(value.length() - 1) == '*') {
+                    value = value.substring(0, value.length() - 1);
+                }
+                value += "%";
+            }
+
+            orPredicates.add(builder.like(from.get(USERNAME), value));
+            orPredicates.add(builder.like(from.get(EMAIL), value));
+            orPredicates.add(builder.like(builder.lower(from.get(FIRST_NAME)), value));
+            orPredicates.add(builder.like(builder.lower(from.get(LAST_NAME)), value));
+        }
+
+        return orPredicates.toArray(new Predicate[0]);
+    }
+
     private UserEntity userInEntityManagerContext(String id) {
         UserEntity user = em.getReference(UserEntity.class, id);
-        boolean isLoaded = em.getEntityManagerFactory().getPersistenceUnitUtil().isLoaded(user);
-        return isLoaded ? user : null;
+        return em.contains(user) ? user : null;
     }
 }

@@ -16,50 +16,36 @@
  */
 package org.keycloak.models.map.client;
 
-import org.keycloak.models.ClientModel;
-import org.keycloak.models.map.common.AbstractMapProviderFactory;
-import org.keycloak.models.ClientProvider;
-import org.keycloak.models.ClientProviderFactory;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.KeycloakSessionFactory;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.RoleContainerModel;
-import org.keycloak.models.RoleContainerModel.RoleRemovedEvent;
-import org.keycloak.models.RoleModel;
-import org.keycloak.provider.ProviderEvent;
-import org.keycloak.provider.ProviderEventListener;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import org.keycloak.models.ClientModel;
+import org.keycloak.models.map.common.AbstractMapProviderFactory;
+import org.keycloak.models.ClientProviderFactory;
+import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
+import org.keycloak.provider.InvalidationHandler;
+import org.keycloak.provider.InvalidationHandler.InvalidableObjectType;
+
+import static org.keycloak.models.map.common.AbstractMapProviderFactory.MapProviderObjectType.CLIENT_AFTER_REMOVE;
+import static org.keycloak.models.map.common.AbstractMapProviderFactory.MapProviderObjectType.REALM_BEFORE_REMOVE;
+import static org.keycloak.models.map.common.AbstractMapProviderFactory.MapProviderObjectType.ROLE_BEFORE_REMOVE;
 
 /**
  *
  * @author hmlnarik
  */
-public class MapClientProviderFactory extends AbstractMapProviderFactory<ClientProvider, MapClientEntity, ClientModel> implements ClientProviderFactory, ProviderEventListener {
+public class MapClientProviderFactory extends AbstractMapProviderFactory<MapClientProvider, MapClientEntity, ClientModel> implements ClientProviderFactory<MapClientProvider>, InvalidationHandler {
 
-    private final ConcurrentHashMap<String, ConcurrentMap<String, Integer>> REGISTERED_NODES_STORE = new ConcurrentHashMap<>();
-
-    private Runnable onClose;
+    private final ConcurrentHashMap<String, ConcurrentMap<String, Long>> REGISTERED_NODES_STORE = new ConcurrentHashMap<>();
 
     public MapClientProviderFactory() {
-        super(ClientModel.class);
+        super(ClientModel.class, MapClientProvider.class);
     }
 
     @Override
-    public void postInit(KeycloakSessionFactory factory) {
-        factory.register(this);
-        onClose = () -> factory.unregister(this);
-    }
-
-    @Override
-    public MapClientProvider create(KeycloakSession session) {
+    public MapClientProvider createNew(KeycloakSession session) {
         return new MapClientProvider(session, getStorage(session), REGISTERED_NODES_STORE);
-    }
-
-    @Override
-    public void close() {
-        super.close();
-        onClose.run();
     }
 
     @Override
@@ -68,20 +54,16 @@ public class MapClientProviderFactory extends AbstractMapProviderFactory<ClientP
     }
 
     @Override
-    public void onEvent(ProviderEvent event) {
-        if (event instanceof RoleContainerModel.RoleRemovedEvent) {
-            RoleRemovedEvent e = (RoleContainerModel.RoleRemovedEvent) event;
-            RoleModel role = e.getRole();
-            RoleContainerModel container = role.getContainer();
-            RealmModel realm;
-            if (container instanceof RealmModel) {
-                realm = (RealmModel) container;
-            } else if (container instanceof ClientModel) {
-                realm = ((ClientModel) container).getRealm();
-            } else {
-                return;
-            }
-            ((MapClientProvider) e.getKeycloakSession().getProvider(ClientProvider.class)).preRemove(realm, role);
+    public void invalidate(KeycloakSession session, InvalidableObjectType type, Object... params) {
+        if (type == REALM_BEFORE_REMOVE) {
+            create(session).preRemove((RealmModel) params[0]);
+        } else if (type == ROLE_BEFORE_REMOVE) {
+            create(session).preRemove((RealmModel) params[0], (RoleModel) params[1]);
+        } else if (type == CLIENT_AFTER_REMOVE) {
+            session.getKeycloakSessionFactory().publish(new ClientModel.ClientRemovedEvent() {
+                @Override public ClientModel getClient() { return (ClientModel) params[0]; }
+                @Override public KeycloakSession getKeycloakSession() { return session; }
+            });
         }
     }
 }
