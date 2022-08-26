@@ -24,6 +24,7 @@ import org.junit.Assume;
 import org.junit.Test;
 import org.keycloak.common.util.Time;
 import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
+import org.keycloak.connections.infinispan.TopologyInfo;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -42,6 +43,8 @@ import org.keycloak.services.managers.UserSessionManager;
 import org.keycloak.testsuite.model.infinispan.InfinispanTestUtil;
 import org.keycloak.timer.TimerProvider;
 
+import java.util.Collections;
+import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -331,43 +334,39 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
 
     @Test
     public void testOfflineSessionLazyLoadingPropagationBetweenNodes() throws InterruptedException {
-        // This test is only unstable after setting "keycloak.userSessions.infinispan.preloadOfflineSessionsFromDatabase" to "true" and
-        // CrossDC is enabled.
-        // This is tracked in https://github.com/keycloak/keycloak/issues/14020 to be resolved.
-        Assume.assumeFalse(Objects.equals(CONFIG.scope("userSessions.infinispan").get("preloadOfflineSessionsFromDatabase"), "true") &&
-                Objects.equals(CONFIG.scope("connectionsInfinispan.default").get("remoteStoreEnabled"), "true"));
-
         // as one thread fills this list and the others read it, ensure that it is synchronized to avoid side effects
         List<UserSessionModel> offlineUserSessions = Collections.synchronizedList(new LinkedList<>());
         List<AuthenticatedClientSessionModel> offlineClientSessions = Collections.synchronizedList(new LinkedList<>());
 
+        final int NUM_FACTORIES = 4;
         AtomicInteger index = new AtomicInteger();
         CountDownLatch afterFirstNodeLatch = new CountDownLatch(1);
+        CountDownLatch allNodesJoined = new CountDownLatch(NUM_FACTORIES);
 
-        inIndependentFactories(4, 60, () -> {
+        inIndependentFactories(NUM_FACTORIES, 60, () -> {
+            waitForCachesToSettle();
+
+            allNodesJoined.countDown();
+            awaitLatch(allNodesJoined);
+
             if (index.incrementAndGet() == 1) {
                 createOfflineSessions("user1", 10, offlineUserSessions, offlineClientSessions);
 
                 afterFirstNodeLatch.countDown();
             }
-            awaitLatch(afterFirstNodeLatch);
 
-            log.debug("Joining the cluster");
-            inComittedTransaction(session -> {
-                InfinispanConnectionProvider provider = session.getProvider(InfinispanConnectionProvider.class);
-                Cache<String, Object> cache = provider.getCache(InfinispanConnectionProvider.WORK_CACHE_NAME);
-                while (! cache.getAdvancedCache().getDistributionManager().isJoinComplete()) {
-                    sleep(1000);
-                }
-                cache.keySet().forEach(s -> {});
-            });
-            log.debug("Cluster joined");
+            awaitLatch(afterFirstNodeLatch);
 
             withRealm(realmId, (session, realm) -> {
                 final UserModel user = session.users().getUserByUsername(realm, "user1");
                 // it might take a moment to propagate, therefore loop
+                int retry = 5;
                 while (!assertOfflineSession(offlineUserSessions, session.sessions().getOfflineUserSessionsStream(realm, user).collect(Collectors.toList()))) {
-                    sleep(1000);
+                    -- retry;
+                    sleep(500);
+                    if (retry == 0) {
+                        throw new RuntimeException("Missing some replicated sessions, aborting.");
+                    }
                 }
                 return null;
             });
@@ -400,6 +399,7 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
                         AuthenticatedClientSessionModel testAppClientSession = session.sessions().createClientSession(realm, testAppClient, userSession);
                         AuthenticatedClientSessionModel thirdPartyClientSession = session.sessions().createClientSession(realm, thirdPartyClient, userSession);
                         UserSessionModel offlineUserSession = session.sessions().createOfflineUserSession(userSession);
+                        log.warnf("created offline session %s", offlineUserSession.getId());
                         offlineUserSessions.add(offlineUserSession);
                         offlineClientSessions.add(session.sessions().createOfflineClientSession(testAppClientSession, offlineUserSession));
                         offlineClientSessions.add(session.sessions().createOfflineClientSession(thirdPartyClientSession, offlineUserSession));
@@ -414,7 +414,7 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
         // User sessions are compared by their ID given the
         for (UserSessionModel userSession: expectedUserSessions) {
             if (!actualUserSessions.contains(userSession)) {
-                log.warnf("missing session %s", userSession);
+                log.warnf("missing session %s", userSession.getId());
                 result = false;
             }
         }
@@ -439,5 +439,24 @@ public class UserSessionProviderOfflineModelTest extends KeycloakModelTest {
             Thread.currentThread().interrupt();
             throw new RuntimeException(e);
         }
+    }
+
+    private void waitForCachesToSettle() {
+        log.debug("Joining the cluster");
+        String[] cacheNames = {InfinispanConnectionProvider.WORK_CACHE_NAME,
+                InfinispanConnectionProvider.USER_SESSION_CACHE_NAME,
+                InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME,
+                InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME,
+                InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME};
+        for (String cacheName : cacheNames) {
+            inComittedTransaction(session -> {
+                InfinispanConnectionProvider provider = session.getProvider(InfinispanConnectionProvider.class);
+                Cache<String, Object> cache = provider.getCache(cacheName);
+                while (!cache.getAdvancedCache().getDistributionManager().isJoinComplete() || cache.getAdvancedCache().getDistributionManager().isRehashInProgress()) {
+                    sleep(1000);
+                }
+            });
+        }
+        log.debug("Cluster joined");
     }
 }

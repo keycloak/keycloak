@@ -16,8 +16,10 @@
  */
 package org.keycloak.testsuite.model.session;
 
+import org.infinispan.Cache;
 import org.infinispan.client.hotrod.RemoteCache;
 import org.infinispan.commons.CacheException;
+import org.keycloak.connections.infinispan.InfinispanConnectionProvider;
 import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.Constants;
@@ -185,9 +187,14 @@ public class OfflineSessionPersistenceTest extends KeycloakModelTest {
         closeKeycloakSessionFactory();
         Set<String> clientSessionIds = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
-        int NUM_FACTORIES = 3;
+        final int NUM_FACTORIES = 3;
         CountDownLatch intermediate = new CountDownLatch(NUM_FACTORIES);
+        CountDownLatch allNodesJoined = new CountDownLatch(NUM_FACTORIES);
         inIndependentFactories(NUM_FACTORIES, 60, () -> {
+            waitForCachesToSettle();
+            allNodesJoined.countDown();
+            awaitLatch(allNodesJoined);
+
             withRealm(realmId, (session, realm) -> {
                 // Create offline sessions
                 userIds.stream().limit(userIds.size() / 10).forEach(userId -> createOfflineSessions(session, realm, userId, offlineUserSession -> {
@@ -204,12 +211,7 @@ public class OfflineSessionPersistenceTest extends KeycloakModelTest {
 
             // ensure that all session have been created on all nodes
             intermediate.countDown();
-            try {
-                intermediate.await();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new RuntimeException(e);
-            }
+            awaitLatch(intermediate);
 
             // defer the shutdown and check if all sessions exist to ensure that they replicate across the different nodes
             // this should avoid an "org.infinispan.remoting.transport.jgroups.SuspectException: ISPN000400: Node node-XX was suspected"
@@ -243,7 +245,13 @@ public class OfflineSessionPersistenceTest extends KeycloakModelTest {
 
         Map<String, List<String>> clientSessionIds = new ConcurrentHashMap<>();
         AtomicInteger i = new AtomicInteger();
-        inIndependentFactories(3, 60, () -> {
+        final int NUM_FACTORIES = 3;
+        CountDownLatch allNodesJoined = new CountDownLatch(NUM_FACTORIES);
+        inIndependentFactories(NUM_FACTORIES, 60, () -> {
+            waitForCachesToSettle();
+            allNodesJoined.countDown();
+            awaitLatch(allNodesJoined);
+
             for (int j = 0; j < USER_COUNT * 3; j ++) {
                 int index = i.incrementAndGet();
                 int oid = index % offlineSessionIds.size();
@@ -420,6 +428,34 @@ public class OfflineSessionPersistenceTest extends KeycloakModelTest {
         final UserModel user = session.users().getUserById(realm, userId);
         UserSessionModel us = session.sessions().createUserSession(realm, user, "un" + sessionIndex, "ip1", "auth", false, null, null);
         return session.sessions().createOfflineUserSession(us);
+    }
+
+    private void awaitLatch(CountDownLatch latch) {
+        try {
+            latch.await();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void waitForCachesToSettle() {
+        log.debug("Joining the cluster");
+        String[] cacheNames = {InfinispanConnectionProvider.WORK_CACHE_NAME,
+                InfinispanConnectionProvider.USER_SESSION_CACHE_NAME,
+                InfinispanConnectionProvider.CLIENT_SESSION_CACHE_NAME,
+                InfinispanConnectionProvider.OFFLINE_USER_SESSION_CACHE_NAME,
+                InfinispanConnectionProvider.OFFLINE_CLIENT_SESSION_CACHE_NAME};
+        for (String cacheName : cacheNames) {
+            inComittedTransaction(session -> {
+                InfinispanConnectionProvider provider = session.getProvider(InfinispanConnectionProvider.class);
+                Cache<String, Object> cache = provider.getCache(cacheName);
+                while (!cache.getAdvancedCache().getDistributionManager().isJoinComplete() || cache.getAdvancedCache().getDistributionManager().isRehashInProgress()) {
+                    sleep(1000);
+                }
+            });
+        }
+        log.debug("Cluster joined");
     }
 
 }
