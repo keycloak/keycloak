@@ -11,7 +11,7 @@ public class FeatureOptions {
     public static final Option<List> FEATURES = new OptionBuilder("features", List.class, Profile.Feature.class)
             .category(OptionCategory.FEATURE)
             .description("Enables a set of one or more features.")
-            .expectedStringValues(getFeatureValues())
+            .expectedValues(FeatureOptions::getFeatureValues)
             .defaultValue(Optional.empty())
             .buildTime(true)
             .build();
@@ -19,7 +19,7 @@ public class FeatureOptions {
     public static final Option FEATURES_DISABLED = new OptionBuilder("features-disabled", List.class, Profile.Feature.class)
             .category(OptionCategory.FEATURE)
             .description("Disables a set of one or more features.")
-            .expectedStringValues(getFeatureValues())
+            .expectedValues(FeatureOptions::getFeatureValues)
             .buildTime(true)
             .build();
 
@@ -33,12 +33,5 @@ public class FeatureOptions {
         features.add(Profile.Type.PREVIEW.name().toLowerCase());
 
         return features;
-    }
-
-    public static final List<Option<?>> ALL_OPTIONS = new ArrayList<>();
-
-    static {
-        ALL_OPTIONS.add(FEATURES);
-        ALL_OPTIONS.add(FEATURES_DISABLED);
     }
 }

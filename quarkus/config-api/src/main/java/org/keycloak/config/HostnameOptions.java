@@ -1,8 +1,5 @@
 package org.keycloak.config;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class HostnameOptions {
 
     public static final Option HOSTNAME = new OptionBuilder<>("hostname", String.class)
@@ -10,9 +7,19 @@ public class HostnameOptions {
             .description("Hostname for the Keycloak server.")
             .build();
 
+    public static final Option HOSTNAME_URL = new OptionBuilder<>("hostname-url", String.class)
+            .category(OptionCategory.HOSTNAME)
+            .description("Set the base URL for frontend URLs, including scheme, host, port and path.")
+            .build();
+
     public static final Option HOSTNAME_ADMIN = new OptionBuilder<>("hostname-admin", String.class)
             .category(OptionCategory.HOSTNAME)
             .description("The hostname for accessing the administration console. Use this option if you are exposing the administration console using a hostname other than the value set to the 'hostname' option.")
+            .build();
+
+    public static final Option HOSTNAME_ADMIN_URL = new OptionBuilder<>("hostname-admin-url", String.class)
+            .category(OptionCategory.HOSTNAME)
+            .description("Set the base URL for accessing the administration console, including scheme, host, port and path")
             .build();
 
     public static final Option HOSTNAME_STRICT = new OptionBuilder<>("hostname-strict", Boolean.class)
@@ -23,7 +30,7 @@ public class HostnameOptions {
 
     public static final Option HOSTNAME_STRICT_HTTPS = new OptionBuilder<>("hostname-strict-https", Boolean.class)
             .category(OptionCategory.HOSTNAME)
-            .description("Forces URLs to use HTTPS. Only needed if proxy does not properly set the X-Forwarded-Proto header.")
+            .description("Forces frontend URLs to use the 'https' scheme. If set to false, the HTTP scheme is inferred from requests.")
             .hidden()
             .defaultValue(Boolean.TRUE)
             .build();
@@ -43,15 +50,4 @@ public class HostnameOptions {
             .description("The port used by the proxy when exposing the hostname. Set this option if the proxy uses a port other than the default HTTP and HTTPS ports.")
             .defaultValue(-1)
             .build();
-
-    public static final List<Option<?>> ALL_OPTIONS = new ArrayList<>();
-
-    static {
-        ALL_OPTIONS.add(HOSTNAME);
-        ALL_OPTIONS.add(HOSTNAME_STRICT);
-        ALL_OPTIONS.add(HOSTNAME_STRICT_HTTPS);
-        ALL_OPTIONS.add(HOSTNAME_STRICT_BACKCHANNEL);
-        ALL_OPTIONS.add(HOSTNAME_PATH);
-        ALL_OPTIONS.add(HOSTNAME_PORT);
-    }
 }

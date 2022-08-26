@@ -53,12 +53,14 @@ public class MapRootAuthenticationSessionProvider implements AuthenticationSessi
     private static final Logger LOG = Logger.getLogger(MapRootAuthenticationSessionProvider.class);
     private final KeycloakSession session;
     protected final MapKeycloakTransaction<MapRootAuthenticationSessionEntity, RootAuthenticationSessionModel> tx;
+    private int authSessionsLimit;
 
-    private static final String AUTHENTICATION_SESSION_EVENTS = "AUTHENTICATION_SESSION_EVENTS";
-
-    public MapRootAuthenticationSessionProvider(KeycloakSession session, MapStorage<MapRootAuthenticationSessionEntity, RootAuthenticationSessionModel> sessionStore) {
+    public MapRootAuthenticationSessionProvider(KeycloakSession session,
+                                                MapStorage<MapRootAuthenticationSessionEntity, RootAuthenticationSessionModel> sessionStore,
+                                                int authSessionsLimit) {
         this.session = session;
         this.tx = sessionStore.createTransaction(session);
+        this.authSessionsLimit = authSessionsLimit;
 
         session.getTransactionManager().enlistAfterCompletion(tx);
     }
@@ -69,7 +71,7 @@ public class MapRootAuthenticationSessionProvider implements AuthenticationSessi
                 tx.delete(origEntity.getId());
                 return null;
             } else {
-                return new MapRootAuthenticationSessionAdapter(session, realm, origEntity);
+                return new MapRootAuthenticationSessionAdapter(session, realm, origEntity, authSessionsLimit);
             }
         };
     }
@@ -165,15 +167,6 @@ public class MapRootAuthenticationSessionProvider implements AuthenticationSessi
             return;
         }
         Objects.requireNonNull(authNotesFragment, "The provided authentication's notes map can't be null!");
-
-        ClusterProvider cluster = session.getProvider(ClusterProvider.class);
-        cluster.notify(
-                AUTHENTICATION_SESSION_EVENTS,
-                MapAuthenticationSessionAuthNoteUpdateEvent.create(compoundId.getRootSessionId(), compoundId.getTabId(),
-                        compoundId.getClientUUID(), authNotesFragment),
-                true,
-                ClusterProvider.DCNotify.ALL_BUT_LOCAL_DC
-        );
     }
 
     @Override

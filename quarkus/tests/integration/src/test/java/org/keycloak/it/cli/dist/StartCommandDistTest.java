@@ -22,7 +22,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMISED_BUILD_OPTION_LONG;
+import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
 
 import org.junit.jupiter.api.Test;
 import org.keycloak.it.cli.StartCommandTest;
@@ -47,7 +47,7 @@ public class StartCommandDistTest extends StartCommandTest {
     @Test
     @Launch({ "start", "--http-enabled=true" })
     void failNoHostnameNotSet(LaunchResult result) {
-        assertTrue(result.getErrorOutput().contains("ERROR: Strict hostname resolution configured but no hostname was set"),
+        assertTrue(result.getErrorOutput().contains("ERROR: Strict hostname resolution configured but no hostname setting provided"),
                 () -> "The Output:\n" + result.getOutput() + "doesn't contains the expected string.");
     }
 
@@ -60,9 +60,16 @@ public class StartCommandDistTest extends StartCommandTest {
         cliResult.assertMessage("Server configuration updated and persisted. Run the following command to review the configuration:");
         cliResult.assertMessage(KeycloakDistribution.SCRIPT_CMD + " show-config");
         cliResult.assertMessage("Next time you run the server, just run:");
-        cliResult.assertMessage(KeycloakDistribution.SCRIPT_CMD + " start " + OPTIMISED_BUILD_OPTION_LONG + " --http-enabled=true --hostname-strict=false");
+        cliResult.assertMessage(KeycloakDistribution.SCRIPT_CMD + " start " + OPTIMIZED_BUILD_OPTION_LONG + " --http-enabled=true --hostname-strict=false");
         assertFalse(cliResult.getOutput().contains("--cache"));
         cliResult.assertStarted();
+    }
+
+    @Test
+    @Launch({ "start", "--optimized", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
+    void testStartUsingOptimizedDoesNotAllowBuildOptions(LaunchResult result) {
+        CLIResult cliResult = (CLIResult) result;
+        cliResult.assertError("Unknown option: '--cache'");
     }
 
 }

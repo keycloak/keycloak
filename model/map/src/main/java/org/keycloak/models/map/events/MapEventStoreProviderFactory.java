@@ -30,14 +30,11 @@ import org.keycloak.models.RealmModel;
 import org.keycloak.models.map.common.AbstractMapProviderFactory;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.MapStorageProvider;
-import org.keycloak.models.map.storage.MapStorageProviderFactory;
-import org.keycloak.models.map.storage.MapStorageSpi;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.InvalidationHandler;
 
 import static org.keycloak.models.map.common.AbstractMapProviderFactory.MapProviderObjectType.REALM_BEFORE_REMOVE;
 import static org.keycloak.models.map.common.AbstractMapProviderFactory.uniqueCounter;
-import static org.keycloak.models.utils.KeycloakModelUtils.getComponentFactory;
 
 public class MapEventStoreProviderFactory implements AmphibianProviderFactory<EventStoreProvider>, EnvironmentDependentProviderFactory, EventStoreProviderFactory, InvalidationHandler {
 
@@ -62,15 +59,11 @@ public class MapEventStoreProviderFactory implements AmphibianProviderFactory<Ev
         MapEventStoreProvider provider = session.getAttribute(uniqueKey, MapEventStoreProvider.class);
         if (provider != null) return provider;
 
-        MapStorageProviderFactory storageProviderFactoryAe = (MapStorageProviderFactory) getComponentFactory(session.getKeycloakSessionFactory(),
-                MapStorageProvider.class, storageConfigScopeAdminEvents, MapStorageSpi.NAME);
-        final MapStorageProvider factoryAe = storageProviderFactoryAe.create(session);
-        MapStorage adminEventsStore = factoryAe.getStorage(AdminEvent.class);
+        final MapStorageProvider factoryAe = AbstractMapProviderFactory.getProviderFactoryOrComponentFactory(session, storageConfigScopeAdminEvents).create(session);
+        MapStorage<MapAdminEventEntity, AdminEvent> adminEventsStore = factoryAe.getStorage(AdminEvent.class);
 
-        MapStorageProviderFactory storageProviderFactoryLe = (MapStorageProviderFactory) getComponentFactory(session.getKeycloakSessionFactory(),
-                MapStorageProvider.class, storageConfigScopeLoginEvents, MapStorageSpi.NAME);
-        final MapStorageProvider factoryLe = storageProviderFactoryLe.create(session);
-        MapStorage loginEventsStore = factoryLe.getStorage(Event.class);
+        final MapStorageProvider factoryLe = AbstractMapProviderFactory.getProviderFactoryOrComponentFactory(session, storageConfigScopeLoginEvents).create(session);
+        MapStorage<MapAuthEventEntity, Event> loginEventsStore = factoryLe.getStorage(Event.class);
 
         provider = new MapEventStoreProvider(session, loginEventsStore, adminEventsStore);
         session.setAttribute(uniqueKey, provider);

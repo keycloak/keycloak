@@ -535,7 +535,7 @@ public class MapFieldPredicates {
         return mcb.fieldCompare(Boolean.TRUE::equals, getter);
     }
 
-    protected static <K, V extends AbstractEntity, M> Map<SearchableModelField<M>, UpdatePredicatesFunc<K, V, M>> basePredicates(SearchableModelField<M> idField) {
+    public static <K, V extends AbstractEntity, M> Map<SearchableModelField<M>, UpdatePredicatesFunc<K, V, M>> basePredicates(SearchableModelField<M> idField) {
         Map<SearchableModelField<M>, UpdatePredicatesFunc<K, V, M>> fieldPredicates = new HashMap<>();
         fieldPredicates.put(idField, MapModelCriteriaBuilder::idCompare);
         return fieldPredicates;

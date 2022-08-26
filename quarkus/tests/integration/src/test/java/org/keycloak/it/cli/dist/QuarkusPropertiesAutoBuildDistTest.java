@@ -105,7 +105,7 @@ public class QuarkusPropertiesAutoBuildDistTest {
     }
 
     @Test
-    @BeforeStartDistribution(EnableDatasourceMetrics.class)
+    @BeforeStartDistribution(EnableQuarkusMetrics.class)
     @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
     @Order(8)
     void testWrappedBuildPropertyTriggersBuildButGetsIgnoredWhenSetByQuarkus(LaunchResult result) {
@@ -163,11 +163,11 @@ public class QuarkusPropertiesAutoBuildDistTest {
         }
     }
 
-    public static class EnableDatasourceMetrics implements Consumer<KeycloakDistribution> {
+    public static class EnableQuarkusMetrics implements Consumer<KeycloakDistribution> {
         @Override
         public void accept(KeycloakDistribution distribution) {
             distribution.setManualStop(true);
-            distribution.setQuarkusProperty("quarkus.datasource.metrics.enabled","true");
+            distribution.setQuarkusProperty("quarkus.smallrye-metrics.extensions.enabled","true");
         }
     }
 }

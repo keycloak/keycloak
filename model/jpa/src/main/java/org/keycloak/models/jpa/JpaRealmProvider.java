@@ -558,6 +558,8 @@ public class JpaRealmProvider implements RealmProvider, ClientProvider, ClientSc
 
         return closing(paginateQuery(groupsQuery, first, max).getResultStream()
                 .map(realm::getGroupById)
+                // In concurrent tests, the group might be deleted in another thread, therefore, skip those null values.
+                .filter(Objects::nonNull)
                 .sorted(GroupModel.COMPARE_BY_NAME)
         );
     }

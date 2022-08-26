@@ -57,9 +57,4 @@ public class JpaUserSessionMapKeycloakTransaction extends JpaMapKeycloakTransact
         return original;
     }
 
-    @Override
-    protected boolean lockingSupportedForEntity() {
-        return true;
-    }
-
 }

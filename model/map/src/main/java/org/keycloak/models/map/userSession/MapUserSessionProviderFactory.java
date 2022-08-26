@@ -16,30 +16,17 @@
  */
 package org.keycloak.models.map.userSession;
 
-import org.keycloak.Config.Scope;
-import org.keycloak.common.Profile;
-import org.keycloak.component.AmphibianProviderFactory;
-import org.keycloak.models.AuthenticatedClientSessionModel;
-import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserSessionModel;
-import org.keycloak.models.UserSessionProvider;
 import org.keycloak.models.UserSessionProviderFactory;
-import org.keycloak.models.map.client.MapClientProvider;
 import org.keycloak.models.map.common.AbstractMapProviderFactory;
-import org.keycloak.models.map.storage.MapStorage;
-import org.keycloak.models.map.storage.MapStorageProvider;
-import org.keycloak.models.map.storage.MapStorageProviderFactory;
-import org.keycloak.models.map.storage.MapStorageSpi;
-import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.InvalidationHandler;
 
+import static org.keycloak.models.map.common.AbstractMapProviderFactory.MapProviderObjectType.REALM_BEFORE_REMOVE;
 import static org.keycloak.models.map.common.AbstractMapProviderFactory.MapProviderObjectType.USER_BEFORE_REMOVE;
-import static org.keycloak.models.map.common.AbstractMapProviderFactory.uniqueCounter;
-import static org.keycloak.models.utils.KeycloakModelUtils.getComponentFactory;
 
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
@@ -64,6 +51,8 @@ public class MapUserSessionProviderFactory extends AbstractMapProviderFactory<Ma
     public void invalidate(KeycloakSession session, InvalidableObjectType type, Object... params) {
         if (type == USER_BEFORE_REMOVE) {
             create(session).removeUserSessions((RealmModel) params[0], (UserModel) params[1]);
+        } else if (type == REALM_BEFORE_REMOVE) {
+            create(session).removeAllUserSessions((RealmModel) params[0]);
         }
     }
 

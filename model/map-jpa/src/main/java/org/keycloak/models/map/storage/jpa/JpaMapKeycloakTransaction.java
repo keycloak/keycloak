@@ -72,15 +72,6 @@ public abstract class JpaMapKeycloakTransaction<RE extends JpaRootEntity, E exte
     protected abstract JpaModelCriteriaBuilder createJpaModelCriteriaBuilder();
     protected abstract E mapToEntityDelegate(RE original);
 
-    /**
-     * Indicates of pessimistic locking should be allowed for this entity. This should be enabled only for those entities
-     * where there is no expected contention from different callers. For UserSessions and ClientSessions this should be possible.
-     * The locking on Clients would be problematic as such a lock affects multiple callers.
-     */
-    protected boolean lockingSupportedForEntity() {
-        return false;
-    }
-
     private final HashMap<String, E> cacheWithinSession = new HashMap<>();
 
     /**
@@ -116,7 +107,7 @@ public abstract class JpaMapKeycloakTransaction<RE extends JpaRootEntity, E exte
         UUID uuid = StringKeyConverter.UUIDKey.INSTANCE.fromStringSafe(key);
         if (uuid == null) return null;
         E e = mapToEntityDelegateUnique(
-                lockingSupportedForEntity() && LockObjectsForModification.isEnabled(session) ?
+                LockObjectsForModification.isEnabled(session, modelType) ?
                         em.find(entityType, uuid, LockModeType.PESSIMISTIC_WRITE) :
                         em.find(entityType, uuid)
         );
@@ -161,7 +152,7 @@ public abstract class JpaMapKeycloakTransaction<RE extends JpaRootEntity, E exte
         if (predicateFunc != null) query.where(predicateFunc.apply(cb, query::subquery, root));
 
         TypedQuery<RE> emQuery = em.createQuery(query);
-        if (lockingSupportedForEntity() && LockObjectsForModification.isEnabled(session)) {
+        if (LockObjectsForModification.isEnabled(session, modelType)) {
             emQuery = emQuery.setLockMode(LockModeType.PESSIMISTIC_WRITE);
         }
         return closing(paginateQuery(emQuery, queryParameters.getOffset(), queryParameters.getLimit()).getResultStream())

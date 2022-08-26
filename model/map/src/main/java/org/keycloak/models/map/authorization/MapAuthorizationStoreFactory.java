@@ -17,7 +17,6 @@
 
 package org.keycloak.models.map.authorization;
 
-import java.util.concurrent.atomic.AtomicInteger;
 import org.keycloak.Config;
 import org.keycloak.authorization.AuthorizationProvider;
 import org.keycloak.authorization.model.PermissionTicket;
@@ -31,18 +30,20 @@ import org.keycloak.common.Profile;
 import org.keycloak.component.AmphibianProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.map.authorization.entity.MapPermissionTicketEntity;
+import org.keycloak.models.map.authorization.entity.MapPolicyEntity;
+import org.keycloak.models.map.authorization.entity.MapResourceEntity;
+import org.keycloak.models.map.authorization.entity.MapResourceServerEntity;
+import org.keycloak.models.map.authorization.entity.MapScopeEntity;
 import org.keycloak.models.map.common.AbstractMapProviderFactory;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.MapStorageProvider;
-import org.keycloak.models.map.storage.MapStorageProviderFactory;
-import org.keycloak.models.map.storage.MapStorageSpi;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
 import org.keycloak.provider.InvalidationHandler;
 
 import static org.keycloak.models.map.common.AbstractMapProviderFactory.MapProviderObjectType.REALM_BEFORE_REMOVE;
 import static org.keycloak.models.map.common.AbstractMapProviderFactory.MapProviderObjectType.RESOURCE_SERVER_BEFORE_REMOVE;
 import static org.keycloak.models.map.common.AbstractMapProviderFactory.uniqueCounter;
-import static org.keycloak.models.utils.KeycloakModelUtils.getComponentFactory;
 
 /**
  * @author mhajas
@@ -60,16 +61,14 @@ public class MapAuthorizationStoreFactory implements AmphibianProviderFactory<St
 
         if (authzStore != null) return authzStore;
 
-        MapStorageProviderFactory storageProviderFactory = (MapStorageProviderFactory) getComponentFactory(session.getKeycloakSessionFactory(),
-          MapStorageProvider.class, storageConfigScope, MapStorageSpi.NAME);
-        final MapStorageProvider mapStorageProvider = storageProviderFactory.create(session);
+        final MapStorageProvider mapStorageProvider = AbstractMapProviderFactory.getProviderFactoryOrComponentFactory(session, storageConfigScope).create(session);
         AuthorizationProvider provider = session.getProvider(AuthorizationProvider.class);
 
-        MapStorage permissionTicketStore = mapStorageProvider.getStorage(PermissionTicket.class);
-        MapStorage policyStore = mapStorageProvider.getStorage(Policy.class);
-        MapStorage resourceServerStore = mapStorageProvider.getStorage(ResourceServer.class);
-        MapStorage resourceStore = mapStorageProvider.getStorage(Resource.class);
-        MapStorage scopeStore = mapStorageProvider.getStorage(Scope.class);
+        MapStorage<MapPermissionTicketEntity, PermissionTicket> permissionTicketStore = mapStorageProvider.getStorage(PermissionTicket.class);
+        MapStorage<MapPolicyEntity, Policy> policyStore = mapStorageProvider.getStorage(Policy.class);
+        MapStorage<MapResourceServerEntity, ResourceServer> resourceServerStore = mapStorageProvider.getStorage(ResourceServer.class);
+        MapStorage<MapResourceEntity, Resource> resourceStore = mapStorageProvider.getStorage(Resource.class);
+        MapStorage<MapScopeEntity, Scope> scopeStore = mapStorageProvider.getStorage(Scope.class);
 
         authzStore = new MapAuthorizationStore(session,
             permissionTicketStore,

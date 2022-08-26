@@ -17,7 +17,6 @@
 
 package org.keycloak.models.utils;
 
-import org.bouncycastle.jcajce.BCFKSLoadStoreParameter;
 import org.keycloak.Config;
 import org.keycloak.Config.Scope;
 import org.keycloak.broker.social.SocialIdentityProvider;

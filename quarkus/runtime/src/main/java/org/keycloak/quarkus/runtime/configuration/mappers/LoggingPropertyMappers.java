@@ -71,6 +71,10 @@ public final class LoggingPropertyMappers {
                         .paramLabel(Boolean.TRUE + "|" + Boolean.FALSE)
                         .transformer(LoggingPropertyMappers.resolveLogHandler("gelf"))
                         .build(),
+                fromOption(LoggingOptions.LOG_GELF_LEVEL)
+                        .to("quarkus.log.handler.gelf.level")
+                        .paramLabel("level")
+                        .build(),
                 fromOption(LoggingOptions.LOG_GELF_HOST)
                         .to("quarkus.log.handler.gelf.host")
                         .paramLabel("hostname")

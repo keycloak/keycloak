@@ -67,7 +67,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.keycloak.utils.LockObjectsForModification.lockObjectsForModification;
+import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForModification;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
@@ -588,21 +588,6 @@ public class AuthenticationProcessor {
         }
 
         @Override
-        public URI getActionUrl(String code, boolean authSessionIdParam) {
-            UriBuilder uriBuilder = LoginActionsService.loginActionsBaseUrl(getUriInfo())
-                    .path(AuthenticationProcessor.this.flowPath)
-                    .queryParam(LoginActionsService.SESSION_CODE, code)
-                    .queryParam(Constants.EXECUTION, getExecution().getId())
-                    .queryParam(Constants.CLIENT_ID, getAuthenticationSession().getClient().getClientId())
-                    .queryParam(Constants.TAB_ID, getAuthenticationSession().getTabId());
-            if (authSessionIdParam) {
-                uriBuilder.queryParam(LoginActionsService.AUTH_SESSION_ID, getAuthenticationSession().getParentSession().getId());
-            }
-            return uriBuilder
-                    .build(getRealm().getName());
-        }
-
-        @Override
         public URI getRefreshExecutionUrl() {
             UriBuilder uriBuilder = LoginActionsService.loginActionsBaseUrl(getUriInfo())
                     .path(AuthenticationProcessor.this.flowPath)
@@ -1068,7 +1053,7 @@ public class AuthenticationProcessor {
 
         if (userSession == null) { // if no authenticator attached a usersession
 
-            userSession = lockObjectsForModification(session, () -> session.sessions().getUserSession(realm, authSession.getParentSession().getId()));
+            userSession = lockUserSessionsForModification(session, () -> session.sessions().getUserSession(realm, authSession.getParentSession().getId()));
             if (userSession == null) {
                 UserSessionModel.SessionPersistenceState persistenceState = UserSessionModel.SessionPersistenceState.fromString(authSession.getClientNote(AuthenticationManager.USER_SESSION_PERSISTENT_STATE));
 

@@ -18,29 +18,29 @@
 package org.keycloak.it.junit5.extension;
 
 import java.time.Duration;
-import org.jetbrains.annotations.NotNull;
+
+import org.keycloak.it.utils.KeycloakDistribution;
+import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 import org.testcontainers.containers.MariaDBContainer;
+import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.utility.DockerImageName;
+import org.testcontainers.utility.DockerImageName;
 
 public class DatabaseContainer {
 
     static final String DEFAULT_PASSWORD = "Password1!";
 
     private final String alias;
-    private JdbcDatabaseContainer container;
+    private GenericContainer<?> container;
 
     DatabaseContainer(String alias) {
         this.alias = alias;
     }
 
     void start() {
-        container = createContainer()
-                .withDatabaseName("keycloak")
-                .withUsername(getUsername())
-                .withPassword(getPassword())
-                .withInitScript(resolveInitScript());
-
+        container = createContainer();
         container.withStartupTimeout(Duration.ofMinutes(5)).start();
     }
 
@@ -48,8 +48,22 @@ public class DatabaseContainer {
         return container.isRunning();
     }
 
-    String getJdbcUrl() {
-        return container.getJdbcUrl();
+    void configureDistribution(KeycloakDistribution dist) {
+        if (alias.equals("infinispan")) {
+            dist.setProperty("storage-hotrod-username", getUsername());
+            dist.setProperty("storage-hotrod-password", getPassword());
+            dist.setProperty("storage-hotrod-host", container.getContainerIpAddress());
+            dist.setProperty("storage-hotrod-port", String.valueOf(container.getMappedPort(11222)));
+        } else {
+            dist.setProperty("db-username", getUsername());
+            dist.setProperty("db-password", getPassword());
+            dist.setProperty("db-url", getJdbcUrl());
+        }
+
+    }
+
+    private String getJdbcUrl() {
+        return ((JdbcDatabaseContainer)container).getJdbcUrl();
     }
 
     String getUsername() {
@@ -65,12 +79,40 @@ public class DatabaseContainer {
         container = null;
     }
 
-    private JdbcDatabaseContainer createContainer() {
+    private GenericContainer<?> configureJdbcContainer(JdbcDatabaseContainer jdbcDatabaseContainer) {
+        return jdbcDatabaseContainer
+                .withDatabaseName("keycloak")
+                .withUsername(getUsername())
+                .withPassword(getPassword())
+                .withInitScript(resolveInitScript());
+    }
+
+    private GenericContainer<?> configureInfinispanUser(GenericContainer<?> infinispanContainer) {
+        infinispanContainer.addEnv("USER", getUsername());
+        infinispanContainer.addEnv("PASS", getPassword());
+        return infinispanContainer;
+    }
+
+    private GenericContainer<?> createContainer() {
+        String POSTGRES_IMAGE = System.getProperty("kc.db.postgresql.container.image", "postgres:alpine");
+        String MARIADB_IMAGE = System.getProperty("kc.db.mariadb.container.image", "mariadb:10.5.9");
+        String MYSQL_IMAGE = System.getProperty("kc.db.mysql.container.image", "mysql:latest");
+        String INFINISPAN_IMAGE = System.getProperty("kc.infinispan.container.image");
+
+        DockerImageName POSTGRES = DockerImageName.parse(POSTGRES_IMAGE).asCompatibleSubstituteFor("postgres");
+        DockerImageName MARIADB = DockerImageName.parse(MARIADB_IMAGE).asCompatibleSubstituteFor("mariadb");
+        DockerImageName MYSQL = DockerImageName.parse(MYSQL_IMAGE).asCompatibleSubstituteFor("mysql");
+
         switch (alias) {
             case "postgres":
-                return new PostgreSQLContainer("postgres:alpine");
+                return configureJdbcContainer(new PostgreSQLContainer(POSTGRES));
             case "mariadb":
-                return new MariaDBContainer("mariadb:10.5.9");
+                return configureJdbcContainer(new MariaDBContainer(MARIADB));
+            case "mysql":
+                return configureJdbcContainer(new MySQLContainer(MYSQL));
+            case "infinispan":
+                return configureInfinispanUser(new GenericContainer(INFINISPAN_IMAGE))
+                        .withExposedPorts(11222);
             default:
                 throw new RuntimeException("Unsupported database: " + alias);
         }

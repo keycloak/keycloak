@@ -701,7 +701,8 @@ public class IdentityBrokerService implements IdentityProvider.AuthenticationCal
                     federatedUser.setEmailVerified(true);
                 }
 
-                event.event(EventType.REGISTER)
+                event.clone()
+                        .event(EventType.REGISTER)
                         .detail(Details.REGISTER_METHOD, "broker")
                         .detail(Details.EMAIL, federatedUser.getEmail())
                         .success();

@@ -18,9 +18,7 @@
 package org.keycloak.authentication.requiredactions;
 
 import org.keycloak.Config;
-import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.CredentialRegistrator;
-import org.keycloak.authentication.DisplayTypeRequiredActionFactory;
 import org.keycloak.authentication.InitiatedActionSupport;
 import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionFactory;
@@ -49,7 +47,7 @@ import java.util.stream.Stream;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory, DisplayTypeRequiredActionFactory, CredentialRegistrator {
+public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory, CredentialRegistrator {
     @Override
     public InitiatedActionSupport initiatedActionSupport() {
         return InitiatedActionSupport.SUPPORTED;
@@ -134,15 +132,6 @@ public class UpdateTotp implements RequiredActionProvider, RequiredActionFactory
     public RequiredActionProvider create(KeycloakSession session) {
         return this;
     }
-
-
-    @Override
-    public RequiredActionProvider createDisplay(KeycloakSession session, String displayType) {
-        if (displayType == null) return this;
-        if (!OAuth2Constants.DISPLAY_CONSOLE.equalsIgnoreCase(displayType)) return null;
-        return ConsoleUpdateTotp.SINGLETON;
-    }
-
 
     @Override
     public void init(Config.Scope config) {

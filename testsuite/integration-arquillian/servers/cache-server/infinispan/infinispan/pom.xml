@@ -31,7 +31,8 @@
     
     <properties>
         <cache.server>infinispan</cache.server>
-        
+        <!--  CrossDC tests are failing with ISPN version 13.0.10, these tests will be updated in future therefore we leave this version on ISPN 12  -->
+        <infinispan.version>12.1.7.Final</infinispan.version>
         <cache.server.infinispan.groupId>org.infinispan.server</cache.server.infinispan.groupId>
         <cache.server.infinispan.artifactId>infinispan-server</cache.server.infinispan.artifactId>
         <cache.server.infinispan.version>${infinispan.version}</cache.server.infinispan.version>

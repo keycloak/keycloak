@@ -24,6 +24,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.models.utils.RepresentationToModel;
+import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.PartialImportRepresentation;
 import org.keycloak.representations.idm.ProtocolMapperRepresentation;
@@ -118,6 +119,9 @@ public class ClientsPartialImport extends AbstractPartialImport<ClientRepresenta
         }
 
         ClientModel client = RepresentationToModel.createClient(session, realm, clientRep);
+        if(OIDCAdvancedConfigWrapper.fromClientModel(client).getPostLogoutRedirectUris() == null) {
+            OIDCAdvancedConfigWrapper.fromClientModel(client).setPostLogoutRedirectUris(Collections.singletonList("+"));
+        }
         RepresentationToModel.importAuthorizationSettings(clientRep, client, session);
     }
 

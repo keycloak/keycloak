@@ -12,7 +12,7 @@ final class MetricsPropertyMappers {
     public static PropertyMapper[] getMetricsPropertyMappers() {
         return new PropertyMapper[] {
                 fromOption(MetricsOptions.METRICS_ENABLED)
-                        .to("quarkus.datasource.metrics.enabled")
+                        .to("quarkus.smallrye-metrics.extensions.enabled")
                         .paramLabel(Boolean.TRUE + "|" + Boolean.FALSE)
                         .build()
         };

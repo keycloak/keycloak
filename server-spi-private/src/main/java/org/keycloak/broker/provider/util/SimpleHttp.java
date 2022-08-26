@@ -314,7 +314,7 @@ public class SimpleHttp {
             }
         }
 
-        return new UrlEncodedFormEntity(urlParameters);
+        return new UrlEncodedFormEntity(urlParameters, StandardCharsets.UTF_8);
     }
 
     public static class Response {

@@ -9,6 +9,8 @@ import java.security.cert.X509Certificate;
 import org.junit.ClassRule;
 import org.keycloak.rule.CryptoInitRule;
 import org.junit.Test;
+import org.keycloak.common.crypto.CryptoIntegration;
+import org.keycloak.common.crypto.UserIdentityExtractor;
 import org.keycloak.common.util.PemUtils;
 import org.keycloak.common.util.StreamUtil;
 
@@ -23,8 +25,8 @@ public class CertificatePemIdentityExtractorTest {
         X509Certificate x509Certificate = PemUtils.decodeCertificate(StreamUtil.readString(is, Charset.defaultCharset()));
         String certificatePem = PemUtils.encodeCertificate(x509Certificate);
 
-        X509AuthenticatorConfigModel config = new X509AuthenticatorConfigModel();
-        UserIdentityExtractor extractor = UserIdentityExtractor.getCertificatePemIdentityExtractor(config);
+        //X509AuthenticatorConfigModel config = new X509AuthenticatorConfigModel();
+        UserIdentityExtractor extractor = CryptoIntegration.getProvider().getIdentityExtractorProvider().getCertificatePemIdentityExtractor();
 
         String userIdentity = (String) extractor.extractUserIdentity(new X509Certificate[]{x509Certificate});
 

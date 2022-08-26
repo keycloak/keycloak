@@ -23,6 +23,7 @@ import org.keycloak.authorization.model.ResourceServer;
 import org.keycloak.events.Event;
 import org.keycloak.events.admin.AdminEvent;
 import org.keycloak.models.ActionTokenValueModel;
+import org.keycloak.models.AuthenticatedClientSessionModel;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.GroupModel;
@@ -48,6 +49,7 @@ import org.keycloak.models.map.loginFailure.MapUserLoginFailureEntity;
 import org.keycloak.models.map.realm.MapRealmEntity;
 import org.keycloak.models.map.role.MapRoleEntity;
 import org.keycloak.models.map.user.MapUserEntity;
+import org.keycloak.models.map.userSession.MapAuthenticatedClientSessionEntity;
 import org.keycloak.models.map.userSession.MapUserSessionEntity;
 import org.keycloak.sessions.RootAuthenticationSessionModel;
 import java.util.HashMap;
@@ -100,6 +102,7 @@ public class ModelEntityUtil {
         MODEL_TO_ENTITY_TYPE.put(UserLoginFailureModel.class, MapUserLoginFailureEntity.class);
         MODEL_TO_ENTITY_TYPE.put(UserModel.class, MapUserEntity.class);
         MODEL_TO_ENTITY_TYPE.put(UserSessionModel.class, MapUserSessionEntity.class);
+        MODEL_TO_ENTITY_TYPE.put(AuthenticatedClientSessionModel.class, MapAuthenticatedClientSessionEntity.class);
 
         // authz
         MODEL_TO_ENTITY_TYPE.put(PermissionTicket.class, MapPermissionTicketEntity.class);

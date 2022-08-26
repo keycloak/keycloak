@@ -24,6 +24,7 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.utils.StringUtil;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -353,6 +354,29 @@ public class OIDCAdvancedConfigWrapper extends AbstractClientConfigWrapper {
 
     public void setTosUri(String tosUri) {
         setAttribute(ClientModel.TOS_URI, tosUri);
+    }
+
+    public List<String> getPostLogoutRedirectUris() {
+        List<String> postLogoutRedirectUris = getAttributeMultivalued(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS);
+        if(postLogoutRedirectUris == null || postLogoutRedirectUris.isEmpty()) {
+            return null;
+        }
+        else if (postLogoutRedirectUris.get(0).equals("+")) {
+            if(clientModel != null) {
+                return new ArrayList(clientModel.getRedirectUris());
+            }
+            else if(clientRep != null) {
+                return clientRep.getRedirectUris();
+            }
+            return null;
+        }
+        else {
+            return postLogoutRedirectUris;
+        }
+    }
+
+    public void setPostLogoutRedirectUris(List<String> postLogoutRedirectUris) {
+        setAttributeMultivalued(OIDCConfigAttributes.POST_LOGOUT_REDIRECT_URIS, postLogoutRedirectUris);
     }
 
 }

@@ -633,6 +633,7 @@ public abstract class AbstractClientPoliciesTest extends AbstractKeycloakTest {
         clientRep.setPublicClient(Boolean.FALSE);
         clientRep.setServiceAccountsEnabled(Boolean.TRUE);
         clientRep.setRedirectUris(Collections.singletonList(ServerURLs.getAuthServerContextRoot() + "/auth/realms/master/app/auth"));
+        OIDCAdvancedConfigWrapper.fromClientRepresentation(clientRep).setPostLogoutRedirectUris(Collections.singletonList("+"));
         op.accept(clientRep);
         Response resp = adminClient.realm(REALM_NAME).clients().create(clientRep);
         if (resp.getStatus() == Response.Status.BAD_REQUEST.getStatusCode()) {

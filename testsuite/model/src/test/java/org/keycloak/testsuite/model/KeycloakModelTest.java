@@ -22,6 +22,9 @@ import org.junit.Assert;
 import org.keycloak.Config.Scope;
 import org.keycloak.authorization.AuthorizationSpi;
 import org.keycloak.authorization.DefaultAuthorizationProviderFactory;
+import org.keycloak.authorization.policy.provider.PolicyProviderFactory;
+import org.keycloak.authorization.policy.provider.PolicySpi;
+import org.keycloak.authorization.policy.provider.permission.UMAPolicyProviderFactory;
 import org.keycloak.authorization.store.StoreFactorySpi;
 import org.keycloak.cluster.ClusterSpi;
 import org.keycloak.common.util.Time;
@@ -213,6 +216,7 @@ public abstract class KeycloakModelTest {
 
     private static final Set<Class<? extends Spi>> ALLOWED_SPIS = ImmutableSet.<Class<? extends Spi>>builder()
       .add(AuthorizationSpi.class)
+      .add(PolicySpi.class)
       .add(ClientScopeSpi.class)
       .add(ClientSpi.class)
       .add(ComponentFactorySpi.class)
@@ -235,6 +239,7 @@ public abstract class KeycloakModelTest {
     private static final Set<Class<? extends ProviderFactory>> ALLOWED_FACTORIES = ImmutableSet.<Class<? extends ProviderFactory>>builder()
       .add(ComponentFactoryProviderFactory.class)
       .add(DefaultAuthorizationProviderFactory.class)
+      .add(PolicyProviderFactory.class)
       .add(DefaultExecutorsProviderFactory.class)
       .add(DeploymentStateProviderFactory.class)
       .add(DatastoreProviderFactory.class)

@@ -89,7 +89,6 @@ public class GenerateHotRodEntityImplementationsProcessor extends AbstractGenera
         }
     }
 
-
     private class HotRodGettersAndSettersDelegateGenerator implements Generator {
 
         private static final String ENTITY_VARIABLE = "hotRodEntity";
@@ -643,11 +642,13 @@ public class GenerateHotRodEntityImplementationsProcessor extends AbstractGenera
                         "    }");
 
                 // cache name
+                boolean isMethodCall = hotRodAnnotation.cacheName().contains("(");
+                String quotes = isMethodCall ? "" : "\"";
                 pw.println("    @Override\n" +
                         "    public String getCacheName() {\n" +
                         (hotRodAnnotation.cacheName().isEmpty() ?
                         "        return org.keycloak.models.map.storage.ModelEntityUtil.getModelName(" + hotRodAnnotation.modelClass() + ".class);\n"
-                        : "        return \"" + hotRodAnnotation.cacheName() + "\";\n") +
+                        : "        return " + quotes + hotRodAnnotation.cacheName() + quotes + ";\n") +
                         "    }");
 
                 // delegate provider

@@ -20,6 +20,8 @@ package org.keycloak.it.cli.dist;
 import java.nio.file.Path;
 import java.util.function.Consumer;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.keycloak.it.junit5.extension.BeforeStartDistribution;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
@@ -60,11 +62,12 @@ public class ImportAtStartupDistTest {
     }
 
     @Test
+    @EnabledOnOs(value = { OS.LINUX, OS.MAC }, disabledReason = "different shell escaping behaviour on Windows.")
     @BeforeStartDistribution(CreateRealmConfigurationFile.class)
-    @Launch({"start-dev", "--import-realm", "some-file"})
+    @Launch({"start-dev", "--import-realm=some-file"})
     void failSetValueToImportRealmOption(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        cliResult.assertError("Instead of manually specifying the files to import, just copy them to the 'data/import' directory.");
+        cliResult.assertError("option '--import-realm' should be specified without 'some-file' parameter");
     }
 
     public static class CreateRealmConfigurationFile implements Consumer<KeycloakDistribution> {

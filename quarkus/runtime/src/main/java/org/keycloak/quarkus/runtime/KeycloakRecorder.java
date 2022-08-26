@@ -21,6 +21,7 @@ import java.lang.annotation.Annotation;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
+import java.util.function.Predicate;
 
 import io.agroal.api.AgroalDataSource;
 import io.quarkus.agroal.DataSource;
@@ -40,11 +41,13 @@ import org.keycloak.common.Profile;
 import org.keycloak.quarkus.runtime.configuration.Configuration;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 import org.keycloak.quarkus.runtime.integration.QuarkusKeycloakSessionFactory;
+import org.keycloak.quarkus.runtime.integration.web.QuarkusRequestFilter;
 import org.keycloak.quarkus.runtime.storage.database.liquibase.FastServiceLocator;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.Spi;
 import org.keycloak.quarkus.runtime.storage.legacy.infinispan.CacheManagerFactory;
+import org.keycloak.theme.ClasspathThemeProviderFactory;
 
 import io.quarkus.runtime.RuntimeValue;
 import io.quarkus.runtime.ShutdownContext;
@@ -53,6 +56,9 @@ import liquibase.servicelocator.ServiceLocator;
 
 @Recorder
 public class KeycloakRecorder {
+
+    public static final String DEFAULT_HEALTH_ENDPOINT = "/health";
+    public static final String DEFAULT_METRICS_ENDPOINT = "/metrics";
 
     public void configureLiquibase(Map<String, List<String>> services) {
         ServiceLocator locator = Scope.getCurrentScope().getServiceLocator();
@@ -64,10 +70,10 @@ public class KeycloakRecorder {
             Map<Spi, Map<Class<? extends Provider>, Map<String, Class<? extends ProviderFactory>>>> factories,
             Map<Class<? extends Provider>, String> defaultProviders,
             Map<String, ProviderFactory> preConfiguredProviders,
-            Boolean reaugmented) {
+            List<ClasspathThemeProviderFactory.ThemesRepresentation> themes, Boolean reaugmented) {
         Config.init(new MicroProfileConfigProvider());
         Profile.setInstance(new QuarkusProfile());
-        QuarkusKeycloakSessionFactory.setInstance(new QuarkusKeycloakSessionFactory(factories, defaultProviders, preConfiguredProviders, reaugmented));
+        QuarkusKeycloakSessionFactory.setInstance(new QuarkusKeycloakSessionFactory(factories, defaultProviders, preConfiguredProviders, themes, reaugmented));
     }
 
     public RuntimeValue<CacheManagerFactory> createCacheInitializer(String config, ShutdownContext shutdownContext) {
@@ -132,5 +138,21 @@ public class KeycloakRecorder {
                 propertyCollector.accept(AvailableSettings.DEFAULT_SCHEMA, Configuration.getRawValue("kc.db-schema"));
             }
         };
+    }
+
+    public QuarkusRequestFilter createRequestFilter(boolean healthOrMetricsEnabled) {
+        Predicate<RoutingContext> ignoreContext = null;
+
+        if (healthOrMetricsEnabled) {
+            // ignore metrics and health endpoints because they execute in their own worker thread
+            ignoreContext = new Predicate<>() {
+                @Override
+                public boolean test(RoutingContext context) {
+                    return context.request().uri().startsWith("/health") || context.request().uri().startsWith("/metrics");
+                }
+            };
+        }
+
+        return new QuarkusRequestFilter(ignoreContext);
     }
 }

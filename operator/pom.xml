@@ -114,6 +114,16 @@
             <artifactId>keycloak-common</artifactId>
         </dependency>
 
+        <!-- FIXME: Adding BC for now as removing the Bouncycastle dependencies from the operator makes it unusable on K3s and possibly on other kubernetes distributions (e.g. Rancher is based on K3s). -->
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk15on</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcpkix-jdk15on</artifactId>
+        </dependency>
+
         <!-- Test -->
         <dependency>
             <groupId>io.quarkus</groupId>
