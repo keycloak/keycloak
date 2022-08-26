@@ -98,6 +98,8 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
 
     private static String user6Id;
 
+    private static String userWithoutEmailId;
+
     private static ClientRepresentation client_scope_default;
     private static ClientRepresentation client_scope_optional;
 
@@ -124,7 +126,10 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
         UserRepresentation user6 = UserBuilder.create().id(UUID.randomUUID().toString()).username("login-test6").email("login6@test.com").enabled(true).password("password").firstName("ExistingFirst").lastName("ExistingLast").build();
         user6Id = user6.getId();
 
-        RealmBuilder.edit(testRealm).user(user).user(user2).user(user3).user(user4).user(user5).user(user6);
+        UserRepresentation userWithoutEmail = UserBuilder.create().id(UUID.randomUUID().toString()).username("login-nomail").enabled(true).password("password").firstName("NoMailFirst").lastName("NoMailLast").build();
+        userWithoutEmailId = userWithoutEmail.getId();
+
+        RealmBuilder.edit(testRealm).user(user).user(user2).user(user3).user(user4).user(user5).user(user6).user(userWithoutEmail);
 
         RequiredActionProviderRepresentation action = new RequiredActionProviderRepresentation();
         action.setAlias(UserModel.RequiredAction.VERIFY_PROFILE.name());
@@ -587,6 +592,34 @@ public class VerifyProfileTest extends AbstractTestRealmKeycloakTest {
         Assert.assertEquals("ExistingLast", verifyProfilePage.getLastName());
 
         Assert.assertFalse("username should not be shown to user", verifyProfilePage.isUsernamePresent());
+    }
+
+    @Test
+    public void testEMailRequiredInProfile() {
+
+        setUserProfileConfiguration("{\"attributes\": ["
+                + "{\"name\": \"firstName\"," + PERMISSIONS_ALL + ", \"required\": {}},"
+                + "{\"name\": \"lastName\"," + PERMISSIONS_ALL + "},"
+                + "{\"name\": \"username\"," + PERMISSIONS_ADMIN_ONLY + "},"
+                + "{\"name\": \"email\"," + PERMISSIONS_ALL + ", \"required\":{\"roles\":[\"user\"]}}"
+                + "]}");
+
+        loginPage.open();
+        loginPage.login("login-nomail", "password");
+
+        // no email is set => expect verify profile page to be displayed
+        verifyProfilePage.assertCurrent();
+
+        // set e-mail, update firstname/lastname and complete login
+        verifyProfilePage.updateEmail("foo@bar.com", "HasNowMailFirst", "HasNowMailLast");
+
+        Assert.assertEquals(RequestType.AUTH_RESPONSE, appPage.getRequestType());
+        Assert.assertNotNull(oauth.getCurrentQuery().get(OAuth2Constants.CODE));
+
+        UserRepresentation user = getUser(userWithoutEmailId);
+        assertEquals("HasNowMailFirst", user.getFirstName());
+        assertEquals("HasNowMailLast", user.getLastName());
+        assertEquals("foo@bar.com", user.getEmail());
     }
 
     @Test
