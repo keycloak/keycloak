@@ -190,7 +190,7 @@
                   <span class="pf-c-button__icon pf-m-start">
                       <i class="pf-icon pf-icon-arrow" aria-hidden="true"></i>
                   </span>
-                  ${msg("backToAdminConsole")}
+                  ${msg("backTo",referrerName)}
               </a>
             </div>
             </#if>
@@ -209,7 +209,7 @@
                     <ul id="landingMobileDropdown" aria-labelledby="landingMobileKebabButton" class="pf-c-dropdown__menu pf-m-align-right" role="menu" style="display:none">
                         <#if referrer?has_content && referrer_uri?has_content>
                         <li role="none">
-                            <a id="landingMobileReferrerLink" href="${referrer_uri}" role="menuitem" tabindex="0" aria-disabled="false" class="pf-c-dropdown__menu-item">${msg("backToAdminConsole")}</a>
+                            <a id="landingMobileReferrerLink" href="${referrer_uri}" role="menuitem" tabindex="0" aria-disabled="false" class="pf-c-dropdown__menu-item">${msg("backTo",referrerName)}</a>
                         </li>
                         </#if>
 

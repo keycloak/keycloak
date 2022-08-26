@@ -16,6 +16,8 @@
  */
 package org.keycloak.models.map.storage.chm;
 
+import org.keycloak.models.ActionTokenValueModel;
+import org.keycloak.models.map.singleUseObject.MapSingleUseObjectEntity;
 import org.keycloak.models.map.authSession.MapAuthenticationSessionEntity;
 import org.keycloak.models.map.authSession.MapAuthenticationSessionEntityImpl;
 import org.keycloak.models.map.authSession.MapRootAuthenticationSessionEntity;
@@ -45,6 +47,10 @@ import org.keycloak.models.map.common.AbstractEntity;
 import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.Serialization;
 import org.keycloak.models.map.common.UpdatableEntity;
+import org.keycloak.models.map.events.MapAdminEventEntity;
+import org.keycloak.models.map.events.MapAdminEventEntityImpl;
+import org.keycloak.models.map.events.MapAuthEventEntity;
+import org.keycloak.models.map.events.MapAuthEventEntityImpl;
 import org.keycloak.models.map.group.MapGroupEntityImpl;
 import org.keycloak.models.map.loginFailure.MapUserLoginFailureEntity;
 import org.keycloak.models.map.loginFailure.MapUserLoginFailureEntityImpl;
@@ -60,6 +66,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jboss.logging.Logger;
+import org.keycloak.models.map.singleUseObject.MapSingleUseObjectEntityImpl;
 import org.keycloak.models.map.storage.MapStorageProvider;
 import org.keycloak.models.map.storage.MapStorageProviderFactory;
 import org.keycloak.models.map.user.MapUserConsentEntityImpl;
@@ -137,6 +144,9 @@ public class ConcurrentHashMapStorageProviderFactory implements AmphibianProvide
       .constructor(MapUserLoginFailureEntity.class,                 MapUserLoginFailureEntityImpl::new)
       .constructor(MapUserSessionEntity.class,                      MapUserSessionEntityImpl::new)
       .constructor(MapAuthenticatedClientSessionEntity.class,       MapAuthenticatedClientSessionEntityImpl::new)
+      .constructor(MapAuthEventEntity.class,                        MapAuthEventEntityImpl::new)
+      .constructor(MapAdminEventEntity.class,                       MapAdminEventEntityImpl::new)
+      .constructor(MapSingleUseObjectEntity.class,                  MapSingleUseObjectEntityImpl::new)
       .build();
 
     private static final Map<String, StringKeyConverter> KEY_CONVERTERS = new HashMap<>();
@@ -230,9 +240,8 @@ public class ConcurrentHashMapStorageProviderFactory implements AmphibianProvide
         LOG.debugf("Initializing new map storage: %s", mapName);
 
         ConcurrentHashMapStorage<K, V, M> store;
-        if (modelType == UserSessionModel.class) {
-            ConcurrentHashMapStorage clientSessionStore = getStorage(AuthenticatedClientSessionModel.class);
-            store = new UserSessionConcurrentHashMapStorage(clientSessionStore, kc, CLONER) {
+        if(modelType == ActionTokenValueModel.class) {
+            store = new SingleUseObjectConcurrentHashMapStorage(kc, CLONER) {
                 @Override
                 public String toString() {
                     return "ConcurrentHashMapStorage(" + mapName + suffix + ")";
@@ -282,14 +291,7 @@ public class ConcurrentHashMapStorageProviderFactory implements AmphibianProvide
         /* From ConcurrentHashMapStorage.computeIfAbsent javadoc:
          *
          *   "... the computation [...] must not attempt to update any other mappings of this map."
-         *
-         * For UserSessionModel, there is a separate clientSessionStore in this CHM implementation. Thus
-         * we cannot guarantee that this won't be the case e.g. for user and client sessions. Hence we need
-         * to prepare clientSessionStore outside computeIfAbsent, otherwise deadlock occurs.
          */
-        if (modelType == UserSessionModel.class) {
-            getStorage(AuthenticatedClientSessionModel.class, flags);
-        }
         return (ConcurrentHashMapStorage<K, V, M>) storages.computeIfAbsent(name, n -> loadMap(name, modelType, f));
     }
 

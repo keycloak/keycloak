@@ -35,6 +35,7 @@ public class ExportDistTest {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertMessage("Export of realm 'master' requested.");
         cliResult.assertMessage("Export finished successfully");
+        cliResult.assertNoMessage("Changes detected in configuration");
     }
 
     @Test

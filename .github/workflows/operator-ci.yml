@@ -4,6 +4,9 @@ on:
   push:
     branches-ignore: [main]
   pull_request:
+    paths-ignore:
+      - '.github/workflows/**'
+      - '!.github/workflows/operator-ci.yml'
   schedule:
     - cron: '0 0 * * *'
 
@@ -14,7 +17,7 @@ env:
 
 concurrency:
   # Only run once for latest commit per ref and cancel other (previous) runs.
-  group: ci-operator-keycloak-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -59,7 +62,7 @@ jobs:
           java-version: ${{ env.JDK_VERSION }}
           cache: 'maven'
       - name: Setup Minikube-Kubernetes
-        uses: manusa/actions-setup-minikube@v2.6.0
+        uses: manusa/actions-setup-minikube@v2.7.0
         with:
           minikube version: ${{ env.MINIKUBE_VERSION }}
           kubernetes version: ${{ env.KUBERNETES_VERSION }}
@@ -79,10 +82,9 @@ jobs:
           (cd operator && ./scripts/build-testing-docker-images.sh ${{ steps.vars.outputs.version }} keycloak custom-keycloak)
 
       - name: Test operator running locally
-        working-directory: operator
         run: |
-          mvn clean verify \
-              -Dquarkus.kubernetes.deployment-target=kubernetes \
+          mvn clean install -Poperator -pl :keycloak-operator -am \
+              -Dquarkus.kubernetes.image-pull-policy=IfNotPresent \
               -Doperator.keycloak.image=keycloak:${{ steps.vars.outputs.version }} \
               -Dtest.operator.custom.image=custom-keycloak:${{ steps.vars.outputs.version }} \
               -Doperator.keycloak.image-pull-policy=Never \
@@ -105,7 +107,7 @@ jobs:
           java-version: ${{ env.JDK_VERSION }}
           cache: 'maven'
       - name: Setup Minikube-Kubernetes
-        uses: manusa/actions-setup-minikube@v2.6.0
+        uses: manusa/actions-setup-minikube@v2.7.0
         with:
           minikube version: ${{ env.MINIKUBE_VERSION }}
           kubernetes version: ${{ env.KUBERNETES_VERSION }}
@@ -125,12 +127,11 @@ jobs:
           (cd operator && ./scripts/build-testing-docker-images.sh ${{ steps.vars.outputs.version }} keycloak custom-keycloak)
 
       - name: Test operator running in cluster
-        working-directory: operator
         run: |
           eval $(minikube -p minikube docker-env)
-          mvn clean verify \
+          mvn clean install -Poperator -pl :keycloak-operator -am \
               -Dquarkus.container-image.build=true \
-              -Dquarkus.kubernetes.deployment-target=kubernetes \
+              -Dquarkus.kubernetes.image-pull-policy=IfNotPresent \
               -Doperator.keycloak.image=keycloak:${{ steps.vars.outputs.version }} \
               -Dquarkus.jib.jvm-arguments="-Djava.util.logging.manager=org.jboss.logmanager.LogManager","-Doperator.keycloak.image-pull-policy=Never" \
               -Dtest.operator.custom.image=custom-keycloak:${{ steps.vars.outputs.version }} \
@@ -151,7 +152,7 @@ jobs:
           java-version: ${{ env.JDK_VERSION }}
           cache: 'maven'
       - name: Setup Minikube-Kubernetes
-        uses: manusa/actions-setup-minikube@v2.6.0
+        uses: manusa/actions-setup-minikube@v2.7.0
         with:
           minikube version: ${{ env.MINIKUBE_VERSION }}
           kubernetes version: ${{ env.KUBERNETES_VERSION }}

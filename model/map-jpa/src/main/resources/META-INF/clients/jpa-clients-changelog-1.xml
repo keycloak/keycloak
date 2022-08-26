@@ -64,8 +64,6 @@ limitations under the License.
             <column name="name" type="VARCHAR(255)"/>
             <column name="value" type="text"/>
         </createTable>
-        <!-- this is deferrable and initiallyDeferred as hibernate will first insert new entries and then delete the old by default -->
-        <addUniqueConstraint tableName="kc_client_attribute" columnNames="fk_root, name, value" deferrable="true" initiallyDeferred="true" />
         <createIndex tableName="kc_client_attribute" indexName="client_attr_fk_root">
             <column name="fk_root"/>
         </createIndex>
@@ -76,6 +74,13 @@ limitations under the License.
         <modifySql dbms="postgresql,cockroachdb">
             <replace replace="VALUE(255)" with="(value::varchar(250))"/>
         </modifySql>
+    </changeSet>
+
+    <changeSet author="keycloak" id="clients-2" dbms="postgresql">
+        <!-- this is deferrable and initiallyDeferred as hibernate will first insert new entries and then delete the old by default -->
+        <!-- this will not work on cockroachdb as deferred indexes are not supported in version 22.1 yet, therefore, only run it on postgresql -->
+        <!-- see https://go.crdb.dev/issue-v/31632/v21.2 for the current status of the implementation -->
+        <addUniqueConstraint tableName="kc_client_attribute" columnNames="fk_root, name, value" deferrable="true" initiallyDeferred="true" />
     </changeSet>
 
 </databaseChangeLog>

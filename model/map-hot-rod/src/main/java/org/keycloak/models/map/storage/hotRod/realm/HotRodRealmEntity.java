@@ -17,10 +17,12 @@
 
 package org.keycloak.models.map.storage.hotRod.realm;
 
+import org.infinispan.protostream.GeneratedSchema;
+import org.infinispan.protostream.annotations.AutoProtoSchemaBuilder;
 import org.infinispan.protostream.annotations.ProtoDoc;
 import org.infinispan.protostream.annotations.ProtoField;
-import org.keycloak.common.util.Time;
 import org.keycloak.models.map.annotations.GenerateHotRodEntityImplementation;
+import org.keycloak.models.map.annotations.IgnoreForEntityImplementationGenerator;
 import org.keycloak.models.map.common.UpdatableEntity;
 import org.keycloak.models.map.realm.MapRealmEntity;
 import org.keycloak.models.map.realm.entity.MapAuthenticationExecutionEntity;
@@ -35,6 +37,7 @@ import org.keycloak.models.map.realm.entity.MapRequiredActionProviderEntity;
 import org.keycloak.models.map.realm.entity.MapRequiredCredentialEntity;
 import org.keycloak.models.map.realm.entity.MapWebAuthnPolicyEntity;
 import org.keycloak.models.map.storage.hotRod.common.AbstractHotRodEntity;
+import org.keycloak.models.map.storage.hotRod.common.CommonPrimitivesProtoSchemaInitializer;
 import org.keycloak.models.map.storage.hotRod.common.HotRodAttributeEntityNonIndexed;
 import org.keycloak.models.map.storage.hotRod.common.HotRodPair;
 import org.keycloak.models.map.storage.hotRod.common.UpdatableHotRodEntityDelegateImpl;
@@ -64,16 +67,48 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.keycloak.models.map.common.ExpirationUtils.isExpired;
+
 @GenerateHotRodEntityImplementation(
         implementInterface = "org.keycloak.models.map.realm.MapRealmEntity",
-        inherits = "org.keycloak.models.map.storage.hotRod.realm.HotRodRealmEntity.AbstractHotRodRealmEntityDelegate"
+        inherits = "org.keycloak.models.map.storage.hotRod.realm.HotRodRealmEntity.AbstractHotRodRealmEntityDelegate",
+        topLevelEntity = true,
+        modelClass = "org.keycloak.models.RealmModel"
 )
 @ProtoDoc("@Indexed")
+@ProtoDoc("schema-version: " + HotRodRealmEntity.VERSION)
 public class HotRodRealmEntity extends AbstractHotRodEntity {
 
+    @IgnoreForEntityImplementationGenerator
+    public static final int VERSION = 1;
+
+    @AutoProtoSchemaBuilder(
+            includeClasses = {
+                    HotRodAuthenticationExecutionEntity.class,
+                    HotRodAuthenticationFlowEntity.class,
+                    HotRodAuthenticatorConfigEntity.class,
+                    HotRodClientInitialAccessEntity.class,
+                    HotRodComponentEntity.class,
+                    HotRodIdentityProviderEntity.class,
+                    HotRodIdentityProviderMapperEntity.class,
+                    HotRodLocalizationTexts.class,
+                    HotRodOTPPolicyEntity.class,
+                    HotRodRequiredActionProviderEntity.class,
+                    HotRodRequiredCredentialEntity.class,
+                    HotRodWebAuthnPolicyEntity.class,
+                    HotRodRealmEntity.class
+            },
+            schemaFilePath = "proto/",
+            schemaPackageName = CommonPrimitivesProtoSchemaInitializer.HOT_ROD_ENTITY_PACKAGE,
+            dependsOn = {CommonPrimitivesProtoSchemaInitializer.class}
+    )
+    public interface HotRodRealmEntitySchema extends GeneratedSchema {
+        HotRodRealmEntitySchema INSTANCE = new HotRodRealmEntitySchemaImpl();
+    }
+
     @ProtoDoc("@Field(index = Index.YES, store = Store.YES)")
-    @ProtoField(number = 1, required = true)
-    public int entityVersion = 1;
+    @ProtoField(number = 1)
+    public Integer entityVersion = VERSION;
 
     @ProtoField(number = 2)
     public String id;
@@ -424,8 +459,7 @@ public class HotRodRealmEntity extends AbstractHotRodEntity {
         }
 
         private boolean checkIfExpired(MapClientInitialAccessEntity cia) {
-            return cia.getRemainingCount() < 1 ||
-                    (cia.getExpiration() > 0 && (cia.getTimestamp() + cia.getExpiration()) < Time.currentTime());
+            return cia.getRemainingCount() < 1 || isExpired(cia, true);
         }
     }
     @Override

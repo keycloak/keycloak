@@ -17,21 +17,15 @@
 
 package org.keycloak.models.map.storage.hotRod.common;
 
-import org.keycloak.models.AuthenticationExecutionModel;
-import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.map.common.AbstractEntity;
+import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.storage.hotRod.authSession.HotRodAuthenticationSessionEntity;
-import org.keycloak.models.map.storage.hotRod.authorization.HotRodDecisionStrategy;
-import org.keycloak.models.map.storage.hotRod.authorization.HotRodLogic;
-import org.keycloak.models.map.storage.hotRod.authorization.HotRodPolicyEnforcementMode;
 import org.keycloak.models.map.storage.hotRod.realm.entity.HotRodLocalizationTexts;
-import org.keycloak.models.map.storage.hotRod.realm.entity.HotRodRequirement;
 import org.keycloak.models.map.storage.hotRod.user.HotRodUserConsentEntity;
 import org.keycloak.models.map.storage.hotRod.user.HotRodUserFederatedIdentityEntity;
-import org.keycloak.models.map.storage.hotRod.userSession.HotRodSessionState;
-import org.keycloak.representations.idm.authorization.DecisionStrategy;
-import org.keycloak.representations.idm.authorization.Logic;
-import org.keycloak.representations.idm.authorization.PolicyEnforcementMode;
+import org.keycloak.models.map.storage.hotRod.userSession.AuthenticatedClientSessionReferenceOnlyFieldDelegate;
+import org.keycloak.models.map.storage.hotRod.userSession.HotRodAuthenticatedClientSessionEntityReference;
+import org.keycloak.models.map.userSession.MapAuthenticatedClientSessionEntity;
 
 import java.util.HashMap;
 import java.util.List;
@@ -139,14 +133,6 @@ public class HotRodTypesUtils {
         return hotRodAuthenticationSessionEntity.tabId;
     }
 
-    public static AuthenticationExecutionModel.Requirement migrateHotRodRequirementToRequirement(HotRodRequirement p0) {
-        return p0 == null ? null : AuthenticationExecutionModel.Requirement.values()[p0.ordinal()];
-    }
-
-    public static HotRodRequirement migrateRequirementToHotRodRequirement(AuthenticationExecutionModel.Requirement p0) {
-        return p0 == null ? null : HotRodRequirement.values()[p0.ordinal()];
-    }
-
     public static String getKey(HotRodLocalizationTexts hotRodLocalizationTexts) {
         return hotRodLocalizationTexts.getLocale();
     }
@@ -164,35 +150,11 @@ public class HotRodTypesUtils {
         return hotRodLocalizationTexts;
     }
 
-    public static UserSessionModel.State migrateHotRodSessionStateToState(HotRodSessionState hotRodState) {
-        return UserSessionModel.State.valueOf(hotRodState.name());
+    public static HotRodAuthenticatedClientSessionEntityReference migrateMapAuthenticatedClientSessionEntityToHotRodAuthenticatedClientSessionEntityReference(MapAuthenticatedClientSessionEntity p0) {
+        return new HotRodAuthenticatedClientSessionEntityReference(p0.getClientId(), p0.getId());
     }
 
-    public static HotRodSessionState migrateStateToHotRodSessionState(UserSessionModel.State state) {
-        return HotRodSessionState.valueOf(state.name());
-    }
-
-    public static HotRodDecisionStrategy migrateDecisionStrategyToHotRodDecisionStrategy(DecisionStrategy p0) {
-        return p0 == null ? null : HotRodDecisionStrategy.values()[p0.ordinal()];
-    }
-
-    public static DecisionStrategy migrateHotRodDecisionStrategyToDecisionStrategy(HotRodDecisionStrategy p0) {
-        return p0 == null ? null :  DecisionStrategy.values()[p0.ordinal()];
-    }
-
-    public static HotRodPolicyEnforcementMode migratePolicyEnforcementModeToHotRodPolicyEnforcementMode(PolicyEnforcementMode p0) {
-        return p0 == null ? null :  HotRodPolicyEnforcementMode.values()[p0.ordinal()];
-    }
-
-    public static PolicyEnforcementMode migrateHotRodPolicyEnforcementModeToPolicyEnforcementMode(HotRodPolicyEnforcementMode p0) {
-        return p0 == null ? null :  PolicyEnforcementMode.values()[p0.ordinal()];
-    }
-
-    public static HotRodLogic migrateLogicToHotRodLogic(Logic p0) {
-        return p0 == null ? null :  HotRodLogic.values()[p0.ordinal()];
-    }
-
-    public static Logic migrateHotRodLogicToLogic(HotRodLogic p0) {
-        return p0 == null ? null :  Logic.values()[p0.ordinal()];
+    public static MapAuthenticatedClientSessionEntity migrateHotRodAuthenticatedClientSessionEntityReferenceToMapAuthenticatedClientSessionEntity(HotRodAuthenticatedClientSessionEntityReference collectionItem) {
+        return DeepCloner.DUMB_CLONER.entityFieldDelegate(MapAuthenticatedClientSessionEntity.class, new AuthenticatedClientSessionReferenceOnlyFieldDelegate(collectionItem));
     }
 }

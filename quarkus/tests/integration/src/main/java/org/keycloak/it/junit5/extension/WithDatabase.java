@@ -33,8 +33,11 @@ public @interface WithDatabase {
 
     /**
      * The database name as per database aliases.
-     *
-     * @return the database alias
      */
     String alias();
+
+    /**
+     * The build options that should be used to build the server prior to starting.
+     */
+    String[] buildOptions() default {};
 }

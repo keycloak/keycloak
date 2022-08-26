@@ -206,10 +206,14 @@ public class PolicyAdapter implements Policy, CachedModel<Policy> {
         }
         if (associatedPolicies != null) return associatedPolicies;
         associatedPolicies = new HashSet<>();
-        PolicyStore policyStore = cacheSession.getPolicyStore();
+        PolicyStore policyStore = cacheSession.getPolicyStoreDelegate();
         String resourceServerId = cached.getResourceServerId();
         for (String id : cached.getAssociatedPoliciesIds(modelSupplier)) {
             Policy policy = policyStore.findById(InfinispanCacheStoreFactoryProviderFactory.NULL_REALM, cacheSession.getResourceServerStore().findById(InfinispanCacheStoreFactoryProviderFactory.NULL_REALM, resourceServerId), id);
+            if (policy == null) {
+                // probably because the policy was removed
+                continue;
+            }
             cacheSession.cachePolicy(policy);
             associatedPolicies.add(policy);
         }

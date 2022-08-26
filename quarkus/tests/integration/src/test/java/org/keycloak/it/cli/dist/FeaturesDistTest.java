@@ -19,6 +19,7 @@ import org.keycloak.quarkus.runtime.cli.command.StartDev;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
 
 @DistributionTest
 @RawDistOnly(reason = "Containers are immutable")
@@ -35,7 +36,7 @@ public class FeaturesDistTest {
     }
 
     @Test
-    @Launch({ Start.NAME, "--http-enabled=true", "--hostname-strict=false"})
+    @Launch({ Start.NAME, "--http-enabled=true", "--hostname-strict=false", OPTIMIZED_BUILD_OPTION_LONG})
     @Order(2)
     public void testFeatureEnabledOnStart(LaunchResult result) {
         assertPreviewFeaturesEnabled((CLIResult) result);

@@ -37,7 +37,7 @@ Also if you are on Linux, make sure that record like:
 ```
 is in your `/etc/hosts` before other records for the 127.0.0.1 host to avoid issues related to incompatible reverse lookup (Ensure the similar for other OS as well)
 
-**4)** Install kerberos client. This is platform dependent. If you are on Fedora, Ubuntu or RHEL, you can install package `freeipa-client`, which contains Kerberos client and bunch of other stuff.
+**4)** Install kerberos client. This is platform dependent. If you are on Fedora, Ubuntu or RHEL, you can install package `freeipa-client`, which contains Kerberos client and a bunch of other stuff.
 
 
 **5)** Configure Kerberos client (On linux it's in file `/etc/krb5.conf` ). You need to configure `KEYCLOAK.ORG` realm for host `localhost` and enable `forwardable` flag, which is needed 
@@ -74,8 +74,8 @@ kinit hnelson@KEYCLOAK.ORG
 with password `secret` .
 
 Then in your web browser open `http://localhost:8080/kerberos-portal` . You should be logged-in automatically through SPNEGO without displaying Keycloak login screen.
-Keycloak will also transmit the delegated GSS credential to the application inside access token and application will be able to login with this credential
-to the LDAP server and retrieve some data from it (Actually it just retrieve few simple data about authenticated user himself).
+Keycloak will also transmit the delegated GSS credential to the application inside access token and application will be able to log in with this credential
+to the LDAP server and retrieve some data from it (Actually it just retrieve few simple data about authenticated user themself).
 
 
 Troubleshooting
@@ -84,7 +84,7 @@ Troubleshooting
 You followed the instructions, but things don't seem to be working. Follow these instructions to troubleshoot.
 
 **1)** Make sure to use the default user in all Terminal / CMD sessions. Do not use 'sudo' or 'su'.
-The reason is that when you open Firefox, it will open within the context of currently signed in user. And it will use that user's Kerberos ticket to perform authentication.
+The reason is that when you open Firefox, it will open within the context of currently signed-in user. And it will use that user's Kerberos ticket to perform authentication.
 When you obtain Kerberos ticket using Terminal session, you have to be that same user, otherwise the ticket will not be visible to the browser.
 
 Of course make sure to obtain the ticket:

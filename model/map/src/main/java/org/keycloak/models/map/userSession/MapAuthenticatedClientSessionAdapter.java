@@ -25,14 +25,16 @@ import org.keycloak.models.map.common.TimeAdapter;
 import java.util.Collections;
 import java.util.Map;
 
+import static org.keycloak.models.map.userSession.SessionExpiration.setClientSessionExpiration;
+
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
  */
 public abstract class MapAuthenticatedClientSessionAdapter extends AbstractAuthenticatedClientSessionModel {
 
-    public MapAuthenticatedClientSessionAdapter(KeycloakSession session, RealmModel realm, ClientModel client,
+    public MapAuthenticatedClientSessionAdapter(KeycloakSession session, RealmModel realm,
                                                 UserSessionModel userSession, MapAuthenticatedClientSessionEntity entity) {
-        super(session, realm, client, userSession, entity);
+        super(session, realm, userSession, entity);
     }
 
     @Override
@@ -43,12 +45,15 @@ public abstract class MapAuthenticatedClientSessionAdapter extends AbstractAuthe
     @Override
     public int getTimestamp() {
         Long timestamp = entity.getTimestamp();
-        return timestamp != null ? TimeAdapter.fromLongWithTimeInSecondsToIntegerWithTimeInSeconds(timestamp) : 0;
+        return timestamp != null ? TimeAdapter.fromLongWithTimeInSecondsToIntegerWithTimeInSeconds(TimeAdapter.fromMilliSecondsToSeconds(timestamp)) : 0;
     }
 
     @Override
     public void setTimestamp(int timestamp) {
-        entity.setTimestamp(TimeAdapter.fromIntegerWithTimeInSecondsToLongWithTimeAsInSeconds(timestamp));
+        entity.setTimestamp(TimeAdapter.fromSecondsToMilliseconds(timestamp));
+
+        // whenever the timestamp is changed recompute the expiration time
+        setClientSessionExpiration(entity, realm, getClient());
     }
 
     @Override
@@ -123,7 +128,7 @@ public abstract class MapAuthenticatedClientSessionAdapter extends AbstractAuthe
 
     @Override
     public ClientModel getClient() {
-        return client;
+        return realm.getClientById(entity.getClientId());
     }
 
     @Override

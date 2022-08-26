@@ -18,6 +18,7 @@
 package org.keycloak.quarkus.runtime.configuration.test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.keycloak.quarkus.runtime.configuration.ConfigArgsConfigSource.CLI_ARGS;
 
@@ -38,6 +39,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 import org.keycloak.Config;
+import org.keycloak.models.map.storage.chm.ConcurrentHashMapStorageProviderFactory;
 import org.keycloak.quarkus.runtime.configuration.KeycloakConfigSourceProvider;
 import org.keycloak.quarkus.runtime.configuration.MicroProfileConfigProvider;
 
@@ -126,6 +128,11 @@ public class ConfigurationTest {
         assertEquals("warn", createConfig().getRawValue("kc.log-level"));
         putEnvVar("SOME_LOG_LEVEL", "debug");
         assertEquals("debug", createConfig().getRawValue("kc.log-level"));
+    }
+
+    @Test
+    public void testSanitizeKey() {
+        assertEquals("string", initConfig("map-storage", ConcurrentHashMapStorageProviderFactory.PROVIDER_ID).get("keyType.realms"));
     }
 
     @Test
@@ -417,22 +424,32 @@ public class ConfigurationTest {
         System.setProperty(CLI_ARGS, "--db=mssql" + ARG_SEPARATOR + "--transaction-xa-enabled=false");
         assertTrue(System.getProperty(CLI_ARGS, "").contains("mssql"));
 
-        SmallRyeConfig config = createConfig();
-        assertEquals("com.microsoft.sqlserver.jdbc.SQLServerDriver", config.getConfigValue("quarkus.datasource.jdbc.driver").getValue());
-        assertEquals("enabled", config.getConfigValue("quarkus.datasource.jdbc.transactions").getValue());
+        SmallRyeConfig jtaEnabledConfig = createConfig();
+        assertEquals("com.microsoft.sqlserver.jdbc.SQLServerDriver", jtaEnabledConfig.getConfigValue("quarkus.datasource.jdbc.driver").getValue());
+        assertEquals("enabled", jtaEnabledConfig.getConfigValue("quarkus.datasource.jdbc.transactions").getValue());
 
         System.setProperty(CLI_ARGS, "--db=mssql" + ARG_SEPARATOR + "--transaction-xa-enabled=true");
         assertTrue(System.getProperty(CLI_ARGS, "").contains("mssql"));
-        SmallRyeConfig config2 = createConfig();
+        SmallRyeConfig xaConfig = createConfig();
 
-        assertEquals("com.microsoft.sqlserver.jdbc.SQLServerXADataSource", config2.getConfigValue("quarkus.datasource.jdbc.driver").getValue());
-        assertEquals("xa", config2.getConfigValue("quarkus.datasource.jdbc.transactions").getValue());
+        assertEquals("com.microsoft.sqlserver.jdbc.SQLServerXADataSource", xaConfig.getConfigValue("quarkus.datasource.jdbc.driver").getValue());
+        assertEquals("xa", xaConfig.getConfigValue("quarkus.datasource.jdbc.transactions").getValue());
+
+        System.setProperty(CLI_ARGS, "--db=mssql" + ARG_SEPARATOR + "--transaction-jta-enabled=false");
+        SmallRyeConfig jtaDisabledConfig = createConfig();
+
+        assertEquals("com.microsoft.sqlserver.jdbc.SQLServerDriver", jtaDisabledConfig.getConfigValue("quarkus.datasource.jdbc.driver").getValue());
+        assertEquals("disabled", jtaDisabledConfig.getConfigValue("quarkus.datasource.jdbc.transactions").getValue());
     }
-    
+
+    @Test
     public void testResolveHealthOption() {
         System.setProperty(CLI_ARGS, "--health-enabled=true");
         SmallRyeConfig config = createConfig();
-        assertEquals("true", config.getConfigValue("quarkus.datasource.health.enabled").getValue());
+        assertEquals("true", config.getConfigValue("quarkus.health.extensions.enabled").getValue());
+        System.setProperty(CLI_ARGS, "");
+        config = createConfig();
+        assertEquals("false", config.getConfigValue("quarkus.health.extensions.enabled").getValue());
     }
 
     @Test
@@ -448,21 +465,54 @@ public class ConfigurationTest {
         SmallRyeConfig config = createConfig();
         assertEquals("true", config.getConfigValue("quarkus.log.console.enable").getValue());
         assertEquals("true", config.getConfigValue("quarkus.log.file.enable").getValue());
+        assertEquals("false", config.getConfigValue("quarkus.log.handler.gelf.enabled").getValue());
 
         System.setProperty(CLI_ARGS, "--log=file");
         SmallRyeConfig config2 = createConfig();
         assertEquals("false", config2.getConfigValue("quarkus.log.console.enable").getValue());
         assertEquals("true", config2.getConfigValue("quarkus.log.file.enable").getValue());
+        assertEquals("false", config2.getConfigValue("quarkus.log.handler.gelf.enabled").getValue());
 
         System.setProperty(CLI_ARGS, "--log=console");
         SmallRyeConfig config3 = createConfig();
         assertEquals("true", config3.getConfigValue("quarkus.log.console.enable").getValue());
         assertEquals("false", config3.getConfigValue("quarkus.log.file.enable").getValue());
+        assertEquals("false", config3.getConfigValue("quarkus.log.handler.gelf.enabled").getValue());
+
+        System.setProperty(CLI_ARGS, "--log=console,gelf");
+        SmallRyeConfig config4 = createConfig();
+        assertEquals("true", config4.getConfigValue("quarkus.log.console.enable").getValue());
+        assertEquals("false", config4.getConfigValue("quarkus.log.file.enable").getValue());
+        assertEquals("true", config4.getConfigValue("quarkus.log.handler.gelf.enabled").getValue());
+    }
+
+    @Test
+    public void testStorageMixedStorageOptions() {
+        System.setProperty(CLI_ARGS, "--storage=jpa" + ARG_SEPARATOR + "--storage-area-realm=chm");
+        SmallRyeConfig config = createConfig();
+        assertEquals("jpa", config.getConfigValue("kc.storage").getValue());
+        assertNull(config.getConfigValue("kc.spi-map-storage-provider").getValue());
+        assertEquals("map", config.getConfigValue("kc.spi-realm-provider").getValue());
+        assertEquals("concurrenthashmap", config.getConfigValue("kc.spi-realm-map-storage-provider").getValue());
+        assertEquals("map", config.getConfigValue("kc.spi-user-provider").getValue());
+        assertEquals("jpa", config.getConfigValue("kc.spi-user-map-storage-provider").getValue());
+    }
+
+    @Test
+    public void testStoragePureJpa() {
+        System.setProperty(CLI_ARGS, "--storage=jpa");
+        SmallRyeConfig config = createConfig();
+        assertEquals("jpa", config.getConfigValue("kc.storage").getValue());
+        assertNull(config.getConfigValue("kc.spi-map-storage-provider").getValue());
+        assertEquals("map", config.getConfigValue("kc.spi-realm-provider").getValue());
+        assertEquals("jpa", config.getConfigValue("kc.spi-realm-map-storage-provider").getValue());
+        assertEquals("map", config.getConfigValue("kc.spi-user-provider").getValue());
+        assertEquals("jpa", config.getConfigValue("kc.spi-user-map-storage-provider").getValue());
     }
 
     @Test
     public void testOptionValueWithEqualSign() {
-        System.setProperty(CLI_ARGS, "--db-password=my_secret=");
+        System.setProperty(CLI_ARGS, "--db=postgres" + ARG_SEPARATOR + "--db-password=my_secret=");
         SmallRyeConfig config = createConfig();
         assertEquals("my_secret=", config.getConfigValue("kc.db-password").getValue());
     }
@@ -483,6 +533,7 @@ public class ConfigurationTest {
 
     private SmallRyeConfig createConfig() {
         KeycloakConfigSourceProvider.reload();
+        ConfigProviderResolver.setInstance(null);
         return ConfigUtils.configBuilder(true, LaunchMode.NORMAL).build();
     }
 }

@@ -23,8 +23,11 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
+import org.jboss.logging.Logger;
 import org.keycloak.models.ScriptModel;
+import org.keycloak.platform.Platform;
 import org.keycloak.services.ServicesLogger;
+import org.keycloak.utils.ProxyClassLoader;
 
 /**
  * A {@link ScriptingProvider} that uses a {@link ScriptEngineManager} to evaluate scripts with a {@link ScriptEngine}.
@@ -32,6 +35,8 @@ import org.keycloak.services.ServicesLogger;
  * @author <a href="mailto:thomas.darimont@gmail.com">Thomas Darimont</a>
  */
 public class DefaultScriptingProvider implements ScriptingProvider {
+
+    private static final Logger logger = Logger.getLogger(DefaultScriptingProvider.class);
 
     private final DefaultScriptingProviderFactory factory;
 
@@ -125,8 +130,19 @@ public class DefaultScriptingProvider implements ScriptingProvider {
     private ScriptEngine lookupScriptEngineFor(ScriptModel script) {
         ClassLoader cl = Thread.currentThread().getContextClassLoader();
         try {
-            Thread.currentThread().setContextClassLoader(DefaultScriptingProvider.class.getClassLoader());
-            return factory.getScriptEngineManager().getEngineByMimeType(script.getMimeType());
+            ClassLoader scriptClassLoader = Platform.getPlatform().getScriptEngineClassLoader(factory.getConfig());
+
+            // Also need to use classloader of keycloak services itself to be able to use keycloak classes in the scripts
+            if (scriptClassLoader != null) {
+                scriptClassLoader = new ProxyClassLoader(scriptClassLoader, DefaultScriptingProvider.class.getClassLoader());
+            } else {
+                scriptClassLoader = DefaultScriptingProvider.class.getClassLoader();
+            }
+
+            logger.debugf("Using classloader %s to load script engine", scriptClassLoader);
+
+            Thread.currentThread().setContextClassLoader(scriptClassLoader);
+            return new ScriptEngineManager().getEngineByMimeType(script.getMimeType());
         }
         finally {
             Thread.currentThread().setContextClassLoader(cl);

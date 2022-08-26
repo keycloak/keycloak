@@ -20,7 +20,9 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.annotation.JsonValue;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -76,8 +78,9 @@ import org.keycloak.models.map.realm.entity.MapRequiredCredentialEntity;
 import org.keycloak.models.map.realm.entity.MapRequiredCredentialEntityImpl;
 import org.keycloak.models.map.realm.entity.MapWebAuthnPolicyEntity;
 import org.keycloak.models.map.realm.entity.MapWebAuthnPolicyEntityImpl;
-
-import static org.keycloak.models.map.storage.jpa.hibernate.jsonb.JpaEntityMigration.MIGRATIONS;
+import org.keycloak.models.map.user.MapUserCredentialEntity;
+import org.keycloak.models.map.user.MapUserCredentialEntityImpl;
+import org.keycloak.util.EnumWithStableIndex;
 
 public class JsonbType extends AbstractSingleColumnStandardBasicType<Object> implements DynamicParameterizedType {
 
@@ -85,6 +88,7 @@ public class JsonbType extends AbstractSingleColumnStandardBasicType<Object> imp
     public static final ObjectMapper MAPPER = new ObjectMapper()
             .configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false)
             .enable(SerializationFeature.INDENT_OUTPUT)
+            .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
             .setSerializationInclusion(JsonInclude.Include.NON_NULL)
             .setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.NONE)
             .setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY)
@@ -100,10 +104,14 @@ public class JsonbType extends AbstractSingleColumnStandardBasicType<Object> imp
                     .addAbstractTypeMapping(MapOTPPolicyEntity.class, MapOTPPolicyEntityImpl.class)
                     .addAbstractTypeMapping(MapRequiredActionProviderEntity.class, MapRequiredActionProviderEntityImpl.class)
                     .addAbstractTypeMapping(MapRequiredCredentialEntity.class, MapRequiredCredentialEntityImpl.class)
-                    .addAbstractTypeMapping(MapWebAuthnPolicyEntity.class, MapWebAuthnPolicyEntityImpl.class))
+                    .addAbstractTypeMapping(MapWebAuthnPolicyEntity.class, MapWebAuthnPolicyEntityImpl.class)
+                    // user abstract type mappings
+                    .addAbstractTypeMapping(MapUserCredentialEntity.class, MapUserCredentialEntityImpl.class))
             .addMixIn(UpdatableEntity.class, IgnoreUpdatedMixIn.class)
             .addMixIn(DeepCloner.class, IgnoredTypeMixIn.class)
-            .addMixIn(EntityWithAttributes.class, IgnoredMetadataFieldsMixIn.class);
+            .addMixIn(EntityWithAttributes.class, IgnoredMetadataFieldsMixIn.class)
+            .addMixIn(EnumWithStableIndex.class, EnumsMixIn.class)
+            ;
 
     abstract class IgnoredMetadataFieldsMixIn {
         @JsonIgnore public abstract String getId();
@@ -111,6 +119,13 @@ public class JsonbType extends AbstractSingleColumnStandardBasicType<Object> imp
 
         // roles: assumed it's true when getClient() != null, see AbstractRoleEntity.isClientRole()
         @JsonIgnore public abstract Boolean isClientRole();
+    }
+
+    abstract static class EnumsMixIn implements EnumWithStableIndex {
+
+        // we convert enums to its index and vice versa
+        @Override
+        @JsonValue public abstract int getStableIndex();
     }
 
     public JsonbType() {
@@ -230,7 +245,7 @@ public class JsonbType extends AbstractSingleColumnStandardBasicType<Object> imp
         }
 
         private ObjectNode migrate(ObjectNode tree, Integer entityVersion) {
-            return MIGRATIONS.getOrDefault(valueType, (node, version) -> node).apply(tree, entityVersion);
+            return JpaEntityMigration.MIGRATIONS.getOrDefault(valueType, (node, version) -> node).apply(tree, entityVersion);
         }
 
         @Override

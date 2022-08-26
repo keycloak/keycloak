@@ -18,12 +18,19 @@ package org.keycloak.models.map.userSession;
 
 import org.keycloak.models.UserSessionModel;
 import org.keycloak.models.map.annotations.GenerateEntityImplementations;
+import org.keycloak.models.map.annotations.IgnoreForEntityImplementationGenerator;
+import org.keycloak.models.map.client.MapProtocolMapperEntity;
 import org.keycloak.models.map.common.AbstractEntity;
-
 import org.keycloak.models.map.common.DeepCloner;
+import org.keycloak.models.map.common.ExpirableEntity;
 import org.keycloak.models.map.common.UpdatableEntity;
 
+import java.util.Collections;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:mkanis@redhat.com">Martin Kanis</a>
@@ -32,7 +39,7 @@ import java.util.Map;
         inherits = "org.keycloak.models.map.userSession.MapUserSessionEntity.AbstractUserSessionEntity"
 )
 @DeepCloner.Root
-public interface MapUserSessionEntity extends AbstractEntity, UpdatableEntity {
+public interface MapUserSessionEntity extends AbstractEntity, UpdatableEntity, ExpirableEntity {
 
     abstract class AbstractUserSessionEntity extends UpdatableEntity.Impl implements MapUserSessionEntity {
 
@@ -48,6 +55,44 @@ public interface MapUserSessionEntity extends AbstractEntity, UpdatableEntity {
             if (this.id != null) throw new IllegalStateException("Id cannot be changed");
             this.id = id;
             this.updated |= id != null;
+        }
+
+        @Override
+        public boolean isUpdated() {
+            return this.updated
+                    || Optional.ofNullable(getAuthenticatedClientSessions()).orElseGet(Collections::emptySet).stream().anyMatch(UpdatableEntity::isUpdated);
+        }
+
+        @Override
+        public void clearUpdatedFlag() {
+            this.updated = false;
+            Optional.ofNullable(getAuthenticatedClientSessions()).orElseGet(Collections::emptySet).forEach(UpdatableEntity::clearUpdatedFlag);
+        }
+
+        @Override
+        public Optional<MapAuthenticatedClientSessionEntity> getAuthenticatedClientSession(String clientUUID) {
+            Set<MapAuthenticatedClientSessionEntity> acss = getAuthenticatedClientSessions();
+            if (acss == null || acss.isEmpty()) return Optional.empty();
+
+            return acss.stream().filter(acs -> Objects.equals(acs.getClientId(), clientUUID)).findFirst();
+        }
+
+        @Override
+        public Boolean removeAuthenticatedClientSession(String clientUUID) {
+            Set<MapAuthenticatedClientSessionEntity> acss = getAuthenticatedClientSessions();
+            boolean removed = acss != null && acss.removeIf(uc -> Objects.equals(uc.getClientId(), clientUUID));
+            this.updated |= removed;
+            return removed;
+        }
+
+        @Override
+        public void clearAuthenticatedClientSessions() {
+            Set<MapAuthenticatedClientSessionEntity> acss = getAuthenticatedClientSessions();
+            if (acss != null) {
+                acss.stream().map(MapAuthenticatedClientSessionEntity::getClientId)
+                        .collect(Collectors.toSet())
+                        .forEach(this::removeAuthenticatedClientSession);
+            }
         }
     }
 
@@ -75,14 +120,31 @@ public interface MapUserSessionEntity extends AbstractEntity, UpdatableEntity {
     Boolean isRememberMe();
     void setRememberMe(Boolean rememberMe);
 
-    Long getStarted();
-    void setStarted(Long started);
+    /**
+     * Returns a point in time (timestamp in milliseconds since The Epoch) when the user session entity was created.
+     *
+     * @return a timestamp in milliseconds since The Epoch or {@code null} when the time is unknown
+     */
+    Long getTimestamp();
 
+    /**
+     * Sets a point in the (timestamp in milliseconds since The Epoch) when the user session entity was created.
+     * @param timestamp a timestamp in milliseconds since The Epoch or {@code null} when the time is unknown
+     */
+    void setTimestamp(Long timestamp);
+
+    /**
+     * Returns a point in time (timestamp in milliseconds since The Epoch) when the user session entity was last refreshed.
+     *
+     * @return a timestamp in milliseconds since The Epoch or {@code null} when the time is unknown
+     */
     Long getLastSessionRefresh();
-    void setLastSessionRefresh(Long lastSessionRefresh);
 
-    Long getExpiration();
-    void setExpiration(Long expiration);
+    /**
+     * Sets a point in the (timestamp in milliseconds since The Epoch) when the user session entity was last refreshed.
+     * @param lastSessionRefresh a timestamp in milliseconds since The Epoch or {@code null} when the time is unknown
+     */
+    void setLastSessionRefresh(Long lastSessionRefresh);
 
     Map<String, String> getNotes();
     String getNote(String name);
@@ -93,11 +155,12 @@ public interface MapUserSessionEntity extends AbstractEntity, UpdatableEntity {
     UserSessionModel.State getState();
     void setState(UserSessionModel.State state);
 
-    Map<String, String> getAuthenticatedClientSessions();
-    void setAuthenticatedClientSessions(Map<String, String> authenticatedClientSessions);
-    String getAuthenticatedClientSession(String clientUUID);
-    void setAuthenticatedClientSession(String clientUUID, String clientSessionId);
+    Set<MapAuthenticatedClientSessionEntity> getAuthenticatedClientSessions();
+    Optional<MapAuthenticatedClientSessionEntity> getAuthenticatedClientSession(String clientUUID);
+    void addAuthenticatedClientSession(MapAuthenticatedClientSessionEntity clientSession);
     Boolean removeAuthenticatedClientSession(String clientUUID);
+    @IgnoreForEntityImplementationGenerator
+    void clearAuthenticatedClientSessions();
 
     Boolean isOffline();
     void setOffline(Boolean offline);

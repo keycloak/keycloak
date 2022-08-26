@@ -35,16 +35,14 @@ public abstract class AbstractAuthenticatedClientSessionModel implements Authent
     protected UserSessionModel userSession;
     protected final MapAuthenticatedClientSessionEntity entity;
 
-    public AbstractAuthenticatedClientSessionModel(KeycloakSession session, RealmModel realm, ClientModel client,
+    public AbstractAuthenticatedClientSessionModel(KeycloakSession session, RealmModel realm,
                                                    UserSessionModel userSession, MapAuthenticatedClientSessionEntity entity) {
         Objects.requireNonNull(entity, "entity");
         Objects.requireNonNull(realm, "realm");
-        Objects.requireNonNull(client, "client");
         Objects.requireNonNull(userSession, "userSession");
 
         this.session = session;
         this.realm = realm;
-        this.client = client;
         this.userSession = userSession;
         this.entity = entity;
     }

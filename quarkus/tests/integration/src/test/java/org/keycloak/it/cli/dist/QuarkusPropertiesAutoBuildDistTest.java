@@ -41,7 +41,7 @@ import io.quarkus.test.junit.main.LaunchResult;
 public class QuarkusPropertiesAutoBuildDistTest {
 
     @Test
-    @Launch({ "start", "--auto-build", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
+    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
     @Order(1)
     void reAugOnFirstRun(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
@@ -50,7 +50,7 @@ public class QuarkusPropertiesAutoBuildDistTest {
 
     @Test
     @BeforeStartDistribution(QuarkusPropertiesAutoBuildDistTest.UpdateConsoleLogLevelToWarn.class)
-    @Launch({ "start", "--auto-build", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
+    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
     @Order(2)
     void testQuarkusRuntimePropDoesNotTriggerReAug(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
@@ -60,7 +60,7 @@ public class QuarkusPropertiesAutoBuildDistTest {
 
     @Test
     @BeforeStartDistribution(UpdateConsoleLogLevelToInfo.class)
-    @Launch({ "start", "--auto-build", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
+    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
     @Order(3)
     void testNoReAugAfterChangingRuntimeProperty(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
@@ -70,7 +70,7 @@ public class QuarkusPropertiesAutoBuildDistTest {
 
     @Test
     @BeforeStartDistribution(AddAdditionalDatasource.class)
-    @Launch({ "start", "--auto-build", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
+    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
     @Order(4)
     void testReAugForAdditionalDatasource(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
@@ -79,7 +79,7 @@ public class QuarkusPropertiesAutoBuildDistTest {
 
     @Test
     @BeforeStartDistribution(ChangeAdditionalDatasourceUsername.class)
-    @Launch({ "start", "--auto-build", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
+    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
     @Order(5)
     void testNoReAugForAdditionalDatasourceRuntimeProperty(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
@@ -88,7 +88,7 @@ public class QuarkusPropertiesAutoBuildDistTest {
 
     @Test
     @BeforeStartDistribution(ChangeAdditionalDatasourceDbKind.class)
-    @Launch({ "start", "--auto-build", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
+    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
     @Order(6)
     void testNoReAugWhenBuildTimePropertiesAreTheSame(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
@@ -97,7 +97,7 @@ public class QuarkusPropertiesAutoBuildDistTest {
 
     @Test
     @BeforeStartDistribution(AddAdditionalDatasource2.class)
-    @Launch({ "start", "--auto-build", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
+    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
     @Order(7)
     void testReAugWhenAnotherDatasourceAdded(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
@@ -105,8 +105,8 @@ public class QuarkusPropertiesAutoBuildDistTest {
     }
 
     @Test
-    @BeforeStartDistribution(EnableDatasourceMetrics.class)
-    @Launch({ "start", "--auto-build", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
+    @BeforeStartDistribution(EnableQuarkusMetrics.class)
+    @Launch({ "start", "--http-enabled=true", "--hostname-strict=false", "--cache=local" })
     @Order(8)
     void testWrappedBuildPropertyTriggersBuildButGetsIgnoredWhenSetByQuarkus(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
@@ -163,11 +163,11 @@ public class QuarkusPropertiesAutoBuildDistTest {
         }
     }
 
-    public static class EnableDatasourceMetrics implements Consumer<KeycloakDistribution> {
+    public static class EnableQuarkusMetrics implements Consumer<KeycloakDistribution> {
         @Override
         public void accept(KeycloakDistribution distribution) {
             distribution.setManualStop(true);
-            distribution.setQuarkusProperty("quarkus.datasource.metrics.enabled","true");
+            distribution.setQuarkusProperty("quarkus.smallrye-metrics.extensions.enabled","true");
         }
     }
 }

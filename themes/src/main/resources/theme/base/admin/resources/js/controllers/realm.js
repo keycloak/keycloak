@@ -104,7 +104,7 @@ module.controller('GlobalCtrl', function($scope, $http, Auth, Current, $location
         if(Current.realm !== null && currentRealm !== Current.realm.id) {
             currentRealm = Current.realm.id;
             translateProvider.translations(locale, resourceBundle);
-            RealmSpecificLocalizationTexts.get({id: Current.realm.realm, locale: locale}, function (localizationTexts) {
+            RealmSpecificLocalizationTexts.get({id: Current.realm.realm, locale: locale, useRealmDefaultLocaleFallback:true}, function (localizationTexts) {
                 translateProvider.translations(locale, localizationTexts.toJSON());
             })
         }
@@ -1715,7 +1715,8 @@ module.controller('RealmUserProfileCtrl', function($scope, Realm, realm, clientS
     }
 
     $scope.editAttribute = function(attribute) {
-        if (attribute.permissions == null) {
+        // it isn't be possible to set permissions to username and email
+        if (attribute.permissions == null && (attribute.name != 'username' && attribute.name != 'email')) {
             attribute.permissions = {
                 view: [],
                 edit: []
@@ -1752,10 +1753,14 @@ module.controller('RealmUserProfileCtrl', function($scope, Realm, realm, clientS
         }
 
         $scope.isRequired = attribute.required != null;
-        $scope.canUserView = attribute.permissions.view.includes('user');
-        $scope.canAdminView = attribute.permissions.view.includes('admin');
-        $scope.canUserEdit = attribute.permissions.edit.includes('user');
-        $scope.canAdminEdit = attribute.permissions.edit.includes('admin');
+
+        if (attribute.permissions != null) {
+            $scope.canUserView = attribute.permissions.view.includes('user');
+            $scope.canAdminView = attribute.permissions.view.includes('admin');
+            $scope.canUserEdit = attribute.permissions.edit.includes('user');
+            $scope.canAdminEdit = attribute.permissions.edit.includes('admin');
+        }
+
         $scope.currentAttribute = attribute;
         $scope.attributeSelected = true;
     };

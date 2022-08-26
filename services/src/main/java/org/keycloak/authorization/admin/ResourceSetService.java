@@ -164,9 +164,12 @@ public class ResourceSetService {
             return Response.status(Status.NOT_FOUND).build();
         }
 
+        //to be able to access all lazy loaded fields it's needed to create representation before it's deleted
+        ResourceRepresentation resourceRep = toRepresentation(resource, resourceServer, authorization);
+
         storeFactory.getResourceStore().delete(resourceServer.getRealm(), id);
 
-        audit(toRepresentation(resource, resourceServer, authorization), OperationType.DELETE);
+        audit(resourceRep, OperationType.DELETE);
 
         return Response.noContent().build();
     }

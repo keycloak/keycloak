@@ -17,6 +17,7 @@
 
 package org.keycloak.testsuite.federation.storage;
 
+import org.keycloak.common.Profile.Feature;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.common.util.MultivaluedHashMap;
@@ -28,6 +29,7 @@ import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.storage.StorageId;
 import org.keycloak.storage.group.GroupStorageProvider;
 import org.keycloak.testsuite.AbstractTestRealmKeycloakTest;
+import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
@@ -39,6 +41,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.stream.Collectors;
 
+import org.junit.BeforeClass;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
@@ -60,6 +63,11 @@ public class GroupStorageTest extends AbstractTestRealmKeycloakTest {
             getCleanup().addComponentId(id);
             return id;
         }
+    }
+
+    @BeforeClass
+    public static void checkNotMapStorage() {
+        ProfileAssume.assumeFeatureDisabled(Feature.MAP_STORAGE);
     }
 
     @Before
@@ -95,7 +103,7 @@ public class GroupStorageTest extends AbstractTestRealmKeycloakTest {
             testingClient.server().run(session -> {
                 RealmModel realm = session.realms().getRealmByName(AuthRealm.TEST);
 
-                assertThat(session.groupStorageManager()
+                assertThat(session.groups()
                             .searchForGroupByName(realm, "group", null, null).stream()
                             .map(GroupModel::getName)
                             .collect(Collectors.toList()),
@@ -113,7 +121,7 @@ public class GroupStorageTest extends AbstractTestRealmKeycloakTest {
             testingClient.server().run(session -> {
                 RealmModel realm = session.realms().getRealmByName(AuthRealm.TEST);
                 // search for groups and check hardcoded-group is not present
-                assertThat(session.groupStorageManager()
+                assertThat(session.groups()
                             .searchForGroupByName(realm, "group", null, null).stream()
                             .map(GroupModel::getName)
                             .collect(Collectors.toList()),

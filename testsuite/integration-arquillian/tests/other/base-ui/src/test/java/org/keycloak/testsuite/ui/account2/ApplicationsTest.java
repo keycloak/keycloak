@@ -32,9 +32,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertNotNull;
 import static org.keycloak.testsuite.util.OAuthClient.APP_ROOT;
 import static org.hamcrest.Matchers.containsInAnyOrder;

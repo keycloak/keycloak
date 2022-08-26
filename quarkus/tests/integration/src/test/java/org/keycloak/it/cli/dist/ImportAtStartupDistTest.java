@@ -20,6 +20,8 @@ package org.keycloak.it.cli.dist;
 import java.nio.file.Path;
 import java.util.function.Consumer;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledOnOs;
+import org.junit.jupiter.api.condition.OS;
 import org.keycloak.it.junit5.extension.BeforeStartDistribution;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
@@ -44,7 +46,7 @@ public class ImportAtStartupDistTest {
 
     @Test
     @BeforeStartDistribution(CreateRealmConfigurationFileAndDir.class)
-    @Launch({"start-dev", "--import-realm", "--log-level=org.keycloak.quarkus.runtime.storage.database.jpa:debug"})
+    @Launch({"start-dev", "--import-realm", "--log-level=org.keycloak.services.resources.KeycloakApplication:debug"})
     void testImportAndIgnoreDirectory(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertMessage("Imported realm quickstart-realm from file");
@@ -53,18 +55,19 @@ public class ImportAtStartupDistTest {
 
     @Test
     @BeforeStartDistribution(CreateRealmConfigurationFileWithUnsupportedExtension.class)
-    @Launch({"start-dev", "--import-realm", "--log-level=org.keycloak.quarkus.runtime.storage.database.jpa:debug"})
+    @Launch({"start-dev", "--import-realm", "--log-level=org.keycloak.services.resources.KeycloakApplication:debug"})
     void testIgnoreFileWithUnsupportedExtension(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertMessage("Ignoring import file because it is not a valid file");
     }
 
     @Test
+    @EnabledOnOs(value = { OS.LINUX, OS.MAC }, disabledReason = "different shell escaping behaviour on Windows.")
     @BeforeStartDistribution(CreateRealmConfigurationFile.class)
-    @Launch({"start-dev", "--import-realm", "some-file"})
+    @Launch({"start-dev", "--import-realm=some-file"})
     void failSetValueToImportRealmOption(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        cliResult.assertError("Instead of manually specifying the files to import, just copy them to the 'data/import' directory.");
+        cliResult.assertError("option '--import-realm' should be specified without 'some-file' parameter");
     }
 
     public static class CreateRealmConfigurationFile implements Consumer<KeycloakDistribution> {

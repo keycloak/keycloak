@@ -31,9 +31,6 @@
     <description/>
 
     <properties>
-        <maven.compiler.target>1.8</maven.compiler.target>
-        <maven.compiler.source>1.8</maven.compiler.source>
-
         <keycloak.osgi.export>
             org.keycloak.adapters.*
         </keycloak.osgi.export>
@@ -75,6 +72,10 @@
             <groupId>org.keycloak</groupId>
             <artifactId>keycloak-core</artifactId>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>${keycloak.crypto.artifactId}</artifactId>
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>

@@ -367,8 +367,6 @@ public class OAuthGrantTest extends AbstractKeycloakTest {
 
         String logoutUrl = oauth.getLogoutUrl().idTokenHint(res.getIdToken()).build();
         driver.navigate().to(logoutUrl);
-        logoutConfirmPage.assertCurrent();
-        logoutConfirmPage.confirmLogout();
 
         events.expectLogout(loginEvent.getSessionId()).removeDetail(Details.REDIRECT_URI).assertEvent();
 

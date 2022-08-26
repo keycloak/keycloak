@@ -315,6 +315,10 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         testRealmDefaultClientScopes(migrationRealm);
     }
 
+    protected void testMigrationTo19_0_0() {
+        testPostLogoutRedirectUrisSet(migrationRealm);
+    }
+
     protected void testDeleteAccount(RealmResource realm) {
         ClientRepresentation accountClient = realm.clients().findByClientId(ACCOUNT_MANAGEMENT_CLIENT_ID).get(0);
         ClientResource accountResource = realm.clients().get(accountClient.getId());
@@ -728,6 +732,11 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
         ExportImportUtil.testClientDefaultClientScopes(realm);
     }
 
+    private void testPostLogoutRedirectUrisSet(RealmResource realm) {
+        log.info("Testing that POST_LOGOUT_REDIRECT_URI is set to '+' for all clients in " + realm.toRepresentation().getRealm());
+        ExportImportUtil.testDefaultPostLogoutRedirectUris(realm);
+    }
+
     private void testOfflineScopeAddedToClient() {
         log.infof("Testing offline_access optional scope present in realm %s for client migration-test-client", migrationRealm.toRepresentation().getRealm());
 
@@ -939,6 +948,10 @@ public abstract class AbstractMigrationTest extends AbstractKeycloakTest {
 
     protected void testMigrationTo18_x() {
         testMigrationTo18_0_0();
+    }
+
+    protected void testMigrationTo19_x() {
+        testMigrationTo19_0_0();
     }
 
     protected void testMigrationTo7_x(boolean supportedAuthzServices) {

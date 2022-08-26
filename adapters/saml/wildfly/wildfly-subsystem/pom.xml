@@ -98,7 +98,7 @@
         </dependency>
         <dependency>
             <groupId>org.keycloak</groupId>
-            <artifactId>keycloak-saml-wildfly-adapter</artifactId>
+            <artifactId>keycloak-saml-adapter-core</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

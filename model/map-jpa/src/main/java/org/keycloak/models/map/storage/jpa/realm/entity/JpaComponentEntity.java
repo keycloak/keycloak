@@ -38,10 +38,10 @@ import org.keycloak.models.map.common.DeepCloner;
 import org.keycloak.models.map.common.UpdatableEntity;
 import org.keycloak.models.map.common.UuidValidator;
 import org.keycloak.models.map.realm.entity.MapComponentEntity;
+import org.keycloak.models.map.storage.jpa.Constants;
 import org.keycloak.models.map.storage.jpa.JpaRootVersionedEntity;
 import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
 
-import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_REALM;
 
 /**
  * JPA {@link MapComponentEntity} implementation. Some fields are annotated with {@code @Column(insertable = false, updatable = false)}
@@ -132,7 +132,7 @@ public class JpaComponentEntity extends UpdatableEntity.Impl implements MapCompo
 
     @Override
     public Integer getCurrentSchemaVersion() {
-        return CURRENT_SCHEMA_VERSION_REALM;
+        return Constants.CURRENT_SCHEMA_VERSION_COMPONENT;
     }
 
     @Override

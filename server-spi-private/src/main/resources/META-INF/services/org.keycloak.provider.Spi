@@ -17,7 +17,6 @@
 
 org.keycloak.component.ComponentFactorySpi
 org.keycloak.provider.ExceptionConverterSpi
-org.keycloak.storage.UserStorageProviderSpi
 org.keycloak.storage.federated.UserFederatedStorageProviderSpi
 org.keycloak.models.ClientSpi
 org.keycloak.models.ClientScopeSpi
@@ -31,7 +30,6 @@ org.keycloak.models.SingleUseObjectSpi
 org.keycloak.models.UserSessionSpi
 org.keycloak.models.UserLoginFailureSpi
 org.keycloak.models.UserSpi
-org.keycloak.models.session.UserSessionPersisterSpi
 org.keycloak.models.dblock.DBLockSpi
 org.keycloak.migration.MigrationSpi
 org.keycloak.events.EventListenerSpi
@@ -58,14 +56,11 @@ org.keycloak.executors.ExecutorsSpi
 org.keycloak.theme.ThemeSpi
 org.keycloak.truststore.TruststoreSpi
 org.keycloak.connections.httpclient.HttpClientSpi
-org.keycloak.models.cache.CacheRealmProviderSpi
-org.keycloak.models.cache.CacheUserProviderSpi
 org.keycloak.authentication.AuthenticatorSpi
 org.keycloak.authentication.ClientAuthenticatorSpi
 org.keycloak.authentication.RequiredActionSpi
 org.keycloak.authentication.FormAuthenticatorSpi
 org.keycloak.authentication.FormActionSpi
-org.keycloak.cluster.ClusterSpi
 org.keycloak.authorization.policy.provider.PolicySpi
 org.keycloak.authorization.store.StoreFactorySpi
 org.keycloak.authorization.AuthorizationSpi
@@ -80,10 +75,8 @@ org.keycloak.credential.hash.PasswordHashSpi
 org.keycloak.credential.CredentialSpi
 org.keycloak.keys.PublicKeyStorageSpi
 org.keycloak.keys.KeySpi
-org.keycloak.storage.client.ClientStorageProviderSpi
-org.keycloak.storage.clientscope.ClientScopeStorageProviderSpi
+org.keycloak.storage.DatastoreSpi
 org.keycloak.storage.role.RoleStorageProviderSpi
-org.keycloak.storage.group.GroupStorageProviderSpi
 org.keycloak.crypto.SignatureSpi
 org.keycloak.crypto.ClientSignatureVerifierSpi
 org.keycloak.crypto.HashSpi

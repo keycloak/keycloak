@@ -18,6 +18,7 @@
 package org.keycloak.it.cli;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.keycloak.quarkus.runtime.cli.command.AbstractStartCommand.OPTIMIZED_BUILD_OPTION_LONG;
 
 import org.junit.jupiter.api.Test;
 import org.keycloak.it.junit5.extension.CLIResult;
@@ -51,7 +52,7 @@ public class StartCommandTest {
     }
 
     @Test
-    @Launch({ "-v", "start", "--db=dev-mem" })
+    @Launch({ "-v", "start", "--db=dev-mem", OPTIMIZED_BUILD_OPTION_LONG})
     void failBuildPropertyNotAvailable(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         cliResult.assertError("Unknown option: '--db'");

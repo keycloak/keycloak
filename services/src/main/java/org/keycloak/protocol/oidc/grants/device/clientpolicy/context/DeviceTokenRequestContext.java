@@ -39,7 +39,7 @@ public class DeviceTokenRequestContext implements ClientPolicyContext {
 
     @Override
     public ClientPolicyEvent getEvent() {
-        return ClientPolicyEvent.DEVICE_AUTHORIZATION_REQUEST;
+        return ClientPolicyEvent.DEVICE_TOKEN_REQUEST;
     }
 
     public OAuth2DeviceCodeModel getDeviceCodeModel() {

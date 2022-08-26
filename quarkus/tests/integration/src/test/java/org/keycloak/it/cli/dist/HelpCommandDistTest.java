@@ -17,11 +17,38 @@
 
 package org.keycloak.it.cli.dist;
 
+import static org.junit.Assert.assertEquals;
+
+import java.util.List;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.OS;
 import org.keycloak.it.cli.HelpCommandTest;
+import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.RawDistOnly;
+import org.keycloak.it.utils.KeycloakDistribution;
 
 @DistributionTest
 @RawDistOnly(reason = "Verifying the help message output doesn't need long spin-up of docker dist tests.")
 public class HelpCommandDistTest extends HelpCommandTest {
+
+    @Test
+    public void testHelpDoesNotStartReAugJvm(KeycloakDistribution dist) {
+        for (String helpCmd : List.of("-h", "--help", "--help-all")) {
+            for (String cmd : List.of("", "start", "start-dev", "build")) {
+                String debugOption = "--debug";
+
+                if (OS.WINDOWS.isCurrentOs()) {
+                    debugOption = "--debug=8787";
+                }
+
+                CLIResult run = dist.run(debugOption, cmd, helpCmd);
+                assertSingleJvmStarted(run);
+            }
+        }
+    }
+
+    private void assertSingleJvmStarted(CLIResult run) {
+        assertEquals(1, run.getOutputStream().stream().filter(s -> s.contains("Listening for transport dt_socket")).count());
+    }
 }

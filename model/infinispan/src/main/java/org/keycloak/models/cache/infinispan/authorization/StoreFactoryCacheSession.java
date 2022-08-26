@@ -485,7 +485,7 @@ public class StoreFactoryCacheSession implements CachedStoreFactoryProvider {
             } else if (managedResourceServers.containsKey(id)) {
                 return managedResourceServers.get(id);
             }
-            ResourceServerAdapter adapter = new ResourceServerAdapter(cached, StoreFactoryCacheSession.this);
+            ResourceServerAdapter adapter = new ResourceServerAdapter(realm, cached, StoreFactoryCacheSession.this);
              managedResourceServers.put(id, adapter);
             return adapter;
         }

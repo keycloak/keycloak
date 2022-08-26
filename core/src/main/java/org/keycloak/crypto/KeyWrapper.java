@@ -21,6 +21,7 @@ import java.util.List;
 import javax.crypto.SecretKey;
 import java.security.Key;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.Map;
 
 public class KeyWrapper {
@@ -166,4 +167,22 @@ public class KeyWrapper {
         this.certificateChain = certificateChain;
     }
 
+    public KeyWrapper cloneKey() {
+        KeyWrapper key = new KeyWrapper();
+        key.providerId = this.providerId;
+        key.providerPriority = this.providerPriority;
+        key.kid = this.kid;
+        key.algorithm = this.algorithm;
+        key.type = this.type;
+        key.use = this.use;
+        key.status = this.status;
+        key.secretKey = this.secretKey;
+        key.publicKey = this.publicKey;
+        key.privateKey = this.privateKey;
+        key.certificate = this.certificate;
+        if (this.certificateChain != null) {
+            key.certificateChain = new ArrayList<>(this.certificateChain);
+        }
+        return key;
+    }
 }

@@ -47,6 +47,9 @@ import org.keycloak.testsuite.webauthn.pages.WebAuthnLoginPage;
 import org.keycloak.testsuite.webauthn.pages.WebAuthnRegisterPage;
 import org.openqa.selenium.virtualauthenticator.VirtualAuthenticatorOptions;
 
+import javax.ws.rs.ClientErrorException;
+
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.keycloak.models.AuthenticationExecutionModel.Requirement.REQUIRED;
@@ -133,10 +136,15 @@ public abstract class AbstractWebAuthnAccountTest extends AbstractAuthTest imple
         RequiredActionProviderSimpleRepresentation requiredAction = new RequiredActionProviderSimpleRepresentation();
         requiredAction.setProviderId(WebAuthnRegisterFactory.PROVIDER_ID);
         requiredAction.setName("blahblah");
-        testRealmResource().flows().registerRequiredAction(requiredAction);
 
-        requiredAction.setProviderId(WebAuthnPasswordlessRegisterFactory.PROVIDER_ID);
-        testRealmResource().flows().registerRequiredAction(requiredAction);
+        try {
+            testRealmResource().flows().registerRequiredAction(requiredAction);
+            requiredAction.setProviderId(WebAuthnPasswordlessRegisterFactory.PROVIDER_ID);
+            testRealmResource().flows().registerRequiredAction(requiredAction);
+        } catch (ClientErrorException e) {
+            assertThat(e.getResponse(), notNullValue());
+            assertThat(e.getResponse().getStatus(), is(409));
+        }
     }
 
     protected VirtualAuthenticatorManager getWebAuthnManager() {

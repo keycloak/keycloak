@@ -19,6 +19,7 @@ package org.keycloak.authorization.policy.provider.clientscope;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -151,9 +152,15 @@ public class ClientScopePolicyProviderFactory implements PolicyProviderFactory<C
         ClientScopePolicyRepresentation representation = new ClientScopePolicyRepresentation();
 
         try {
-            representation
-                .setClientScopes(new HashSet<>(Arrays.asList(JsonSerialization.readValue(policy.getConfig().get("clientScopes"),
-                    ClientScopePolicyRepresentation.ClientScopeDefinition[].class))));
+            String clientScopes = policy.getConfig().get("clientScopes");
+
+            if (clientScopes == null) {
+                representation.setClientScopes(Collections.emptySet());
+            } else {
+                representation
+                        .setClientScopes(new HashSet<>(Arrays.asList(JsonSerialization.readValue(clientScopes,
+                                ClientScopePolicyRepresentation.ClientScopeDefinition[].class))));
+            }
         } catch (IOException e) {
             throw new RuntimeException("Failed to deserialize client scopes", e);
         }

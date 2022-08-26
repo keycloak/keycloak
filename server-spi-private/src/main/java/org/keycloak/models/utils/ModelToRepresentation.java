@@ -124,6 +124,10 @@ public class ModelToRepresentation {
     }
 
 
+    public static GroupRepresentation groupToBriefRepresentation(GroupModel g) {
+        return toRepresentation(g, false);
+    }
+
     public static GroupRepresentation toRepresentation(GroupModel group, boolean full) {
         GroupRepresentation rep = new GroupRepresentation();
         rep.setId(group.getId());
@@ -216,9 +220,9 @@ public class ModelToRepresentation {
         rep.setEmail(user.getEmail());
         rep.setEnabled(user.isEnabled());
         rep.setEmailVerified(user.isEmailVerified());
-        rep.setTotp(session.userCredentialManager().isConfiguredFor(realm, user, OTPCredentialModel.TYPE));
-        rep.setDisableableCredentialTypes(session.userCredentialManager()
-                .getDisableableCredentialTypesStream(realm, user).collect(Collectors.toSet()));
+        rep.setTotp(user.credentialManager().isConfiguredFor(OTPCredentialModel.TYPE));
+        rep.setDisableableCredentialTypes(user.credentialManager()
+                .getDisableableCredentialTypesStream().collect(Collectors.toSet()));
         rep.setFederationLink(user.getFederationLink());
         rep.setNotBefore(session.users().getNotBeforeOfUser(realm, user));
         rep.setRequiredActions(user.getRequiredActionsStream().collect(Collectors.toList()));
@@ -637,6 +641,7 @@ public class ModelToRepresentation {
         rep.setUsername(session.getUser().getUsername());
         rep.setUserId(session.getUser().getId());
         rep.setIpAddress(session.getIpAddress());
+        rep.setRememberMe(session.isRememberMe());
         for (AuthenticatedClientSessionModel clientSession : session.getAuthenticatedClientSessions().values()) {
             ClientModel client = clientSession.getClient();
             rep.getClients().put(client.getId(), client.getClientId());
@@ -690,6 +695,13 @@ public class ModelToRepresentation {
         rep.setNotBefore(clientModel.getNotBefore());
         rep.setNodeReRegistrationTimeout(clientModel.getNodeReRegistrationTimeout());
         rep.setClientAuthenticatorType(clientModel.getClientAuthenticatorType());
+
+        // adding the secret if non public or bearer only
+        if (clientModel.isBearerOnly() || clientModel.isPublicClient()) {
+            rep.setSecret(null);
+        } else {
+            rep.setSecret(clientModel.getSecret());
+        }
 
         rep.setDefaultClientScopes(new LinkedList<>(clientModel.getClientScopes(true).keySet()));
         rep.setOptionalClientScopes(new LinkedList<>(clientModel.getClientScopes(false).keySet()));
@@ -926,7 +938,7 @@ public class ModelToRepresentation {
     public static <R extends AbstractPolicyRepresentation> R toRepresentation(Policy policy, AuthorizationProvider authorization, boolean genericRepresentation, boolean export) {
         return toRepresentation(policy, authorization, genericRepresentation, export, false);
     }
-    
+
     public static <R extends AbstractPolicyRepresentation> R toRepresentation(Policy policy, AuthorizationProvider authorization, boolean genericRepresentation, boolean export, boolean allFields) {
         PolicyProviderFactory providerFactory = authorization.getProviderFactory(policy.getType());
         R representation;
@@ -951,7 +963,7 @@ public class ModelToRepresentation {
         representation.setType(policy.getType());
         representation.setDecisionStrategy(policy.getDecisionStrategy());
         representation.setLogic(policy.getLogic());
-        
+
         if (allFields) {
             representation.setResourcesData(policy.getResources().stream()
                     .map(resource -> toRepresentation(resource, policy.getResourceServer(), authorization, true))

@@ -15,7 +15,7 @@ public class HotRodAuthenticationExecutionEntity extends AbstractHotRodEntity {
     @ProtoField(number = 3)
     public Integer priority;
     @ProtoField(number = 4)
-    public HotRodRequirement requirement;
+    public Integer requirement;
     @ProtoField(number = 5)
     public String authenticator;
     @ProtoField(number = 6)

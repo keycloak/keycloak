@@ -8,49 +8,54 @@ Creates a new and optimized server image based on the configuration options
 passed to this command. Once created, the configuration will be persisted and
 read during startup without having to pass them over again.
 
-Some configuration options require this command to be executed in order to
-actually change a configuration. For instance
-
-- Change database vendor
-- Enable/disable features
-- Enable/Disable providers or set a default
-
 Consider running this command before running the server in production for an
 optimal runtime.
 
 Options:
 
 -h, --help           This help message.
+--help-all           This same help message but with additional options.
 
-Cluster:
+Cache:
 
 --cache <type>       Defines the cache mechanism for high-availability. By default, a 'ispn' cache
                        is used to create a cluster between multiple server nodes. A 'local' cache
                        disables clustering and is intended for development and testing purposes.
-                       Default: ispn.
+                       Possible values are: ispn, local. Default: ispn.
 --cache-config-file <file>
                      Defines the file from which cache configuration should be loaded from. The
                        configuration file is relative to the 'conf/' directory.
 --cache-stack <stack>
                      Define the default stack to use for cluster communication and node discovery.
                        This option only takes effect if 'cache' is set to 'ispn'. Default: udp.
+                       Possible values are: tcp, udp, kubernetes, ec2, azure, google.
 
 Database:
 
 --db <vendor>        The database vendor. Possible values are: dev-file, dev-mem, mariadb, mssql,
-                       mysql, oracle, postgres
+                       mysql, oracle, postgres. Default: dev-file.
 
 Transaction:
 
 --transaction-xa-enabled <true|false>
-                     Manually override the transaction type. Transaction type XA and the
-                       appropriate driver is used by default. Default: true.
+                     If set to false, Keycloak uses a non-XA datasource in case the database does
+                       not support XA transactions. Default: true.
 
 Feature:
 
---features <feature> Enables a set of one or more features.
+--features <feature> Enables a set of one or more features. Possible values are: authorization,
+                       account2, account-api, admin-fine-grained-authz, admin2, docker,
+                       impersonation, openshift-integration, scripts, token-exchange, web-authn,
+                       client-policies, ciba, map-storage, par, declarative-user-profile,
+                       dynamic-scopes, client-secret-rotation, step-up-authentication,
+                       recovery-codes, update-email, preview.
 --features-disabled <feature>
-                     Disables a set of one or more features.
+                     Disables a set of one or more features. Possible values are: authorization,
+                       account2, account-api, admin-fine-grained-authz, admin2, docker,
+                       impersonation, openshift-integration, scripts, token-exchange, web-authn,
+                       client-policies, ciba, map-storage, par, declarative-user-profile,
+                       dynamic-scopes, client-secret-rotation, step-up-authentication,
+                       recovery-codes, update-email, preview.
 
 HTTP/TLS:
 
@@ -72,7 +77,7 @@ Metrics:
 
 Vault:
 
---vault <provider>   Enables a vault provider.
+--vault <provider>   Enables a vault provider. Possible values are: file, hashicorp.
 
 Examples:
 
@@ -99,10 +104,3 @@ Examples:
   Change the relative path:
 
       $ kc.sh build --http-relative-path=/auth
-
-You can also use the "--auto-build" option when starting the server to avoid
-running this command every time you change a configuration:
-
-    $ kc.sh start --auto-build <OPTIONS>
-
-By doing that you have an additional overhead when the server is starting.

@@ -21,7 +21,6 @@ import static org.keycloak.testsuite.admin.AbstractAdminTest.loadJson;
 import static org.keycloak.testsuite.auth.page.AuthRealm.TEST;
 
 import java.net.URI;
-import java.security.Principal;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
@@ -35,16 +34,13 @@ import javax.naming.directory.InitialDirContext;
 import javax.security.sasl.Sasl;
 import javax.ws.rs.core.Response;
 import org.apache.http.NameValuePair;
-import org.apache.http.auth.AuthScope;
-import org.apache.http.auth.Credentials;
-import org.apache.http.client.config.AuthSchemes;
+import org.apache.http.client.HttpClient;
 import org.apache.http.client.utils.URLEncodedUtils;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.ietf.jgss.GSSCredential;
 import org.jboss.arquillian.graphene.page.Page;
 import org.jboss.resteasy.client.jaxrs.ResteasyClient;
 import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
-import org.jboss.resteasy.client.jaxrs.engines.ApacheHttpClient4Engine;
+import org.jboss.resteasy.client.jaxrs.engines.ApacheHttpClient43Engine;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -52,6 +48,7 @@ import org.keycloak.OAuth2Constants;
 import org.keycloak.adapters.HttpClientBuilder;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.authentication.authenticators.browser.SpnegoAuthenticatorFactory;
+import org.keycloak.common.Profile.Feature;
 import org.keycloak.common.util.MultivaluedHashMap;
 import org.keycloak.events.Details;
 import org.keycloak.federation.kerberos.CommonKerberosConfig;
@@ -70,6 +67,7 @@ import org.keycloak.storage.UserStorageProviderModel;
 import org.keycloak.testsuite.AbstractAuthTest;
 import org.keycloak.testsuite.Assert;
 import org.keycloak.testsuite.AssertEvents;
+import org.keycloak.testsuite.ProfileAssume;
 import org.keycloak.testsuite.admin.ApiUtil;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
 import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.AuthServer;
@@ -77,6 +75,7 @@ import org.keycloak.testsuite.pages.AccountPasswordPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.KerberosRule;
 import org.keycloak.testsuite.util.OAuthClient;
+import org.junit.BeforeClass;
 
 /**
  * Contains just helper methods. No test methods.
@@ -135,6 +134,10 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
         return adminClient.realm("test");
     }
 
+    @BeforeClass
+    public static void checkNotMapStorage() {
+        ProfileAssume.assumeFeatureDisabled(Feature.MAP_STORAGE);
+    }
 
     @Before
     @Override
@@ -255,33 +258,14 @@ public abstract class AbstractKerberosTest extends AbstractAuthTest {
             cleanupApacheHttpClient();
         }
         
-        DefaultHttpClient httpClient = (DefaultHttpClient) new HttpClientBuilder()
+        HttpClient httpClient = new HttpClientBuilder()
                 .disableCookieCache(false)
+                .spNegoSchemeFactory(spnegoSchemeFactory)
+                .useSPNego(useSpnego)
                 .build();
 
-        httpClient.getAuthSchemes().register(AuthSchemes.SPNEGO, spnegoSchemeFactory);
-
-        if (useSpnego) {
-            Credentials fake = new Credentials() {
-
-                @Override
-                public String getPassword() {
-                    return null;
-                }
-
-                @Override
-                public Principal getUserPrincipal() {
-                    return null;
-                }
-
-            };
-
-            httpClient.getCredentialsProvider().setCredentials(
-                    new AuthScope(null, -1, null),
-                    fake);
-        }
-        ApacheHttpClient4Engine engine = new ApacheHttpClient4Engine(httpClient);
-        client = new ResteasyClientBuilder().httpEngine(engine).build();
+        ApacheHttpClient43Engine engine = new ApacheHttpClient43Engine(httpClient);
+        client = ((ResteasyClientBuilder) ResteasyClientBuilder.newBuilder()).httpEngine(engine).build();
     }
 
 

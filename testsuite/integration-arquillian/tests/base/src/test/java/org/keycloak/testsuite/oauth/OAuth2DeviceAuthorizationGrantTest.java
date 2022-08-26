@@ -28,10 +28,10 @@ import org.junit.Test;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
+import org.keycloak.events.Errors;
 import org.keycloak.models.ClientScopeModel;
 import org.keycloak.models.OAuth2DeviceConfig;
 import org.keycloak.models.utils.KeycloakModelUtils;
-import org.keycloak.protocol.oidc.OIDCAdvancedConfigWrapper;
 import org.keycloak.protocol.oidc.OIDCConfigAttributes;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.representations.UserInfo;
@@ -469,6 +469,7 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
 
     @Test
     public void testExpiredUserCodeTest() throws Exception {
+        getTestingClient().testing().setTestingInfinispanTimeService();
         // Device Authorization Request from device
         oauth.realm(REALM_NAME);
         oauth.clientId(DEVICE_APP);
@@ -486,10 +487,12 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
             setTimeOffset(610);
             openVerificationPage(response.getVerificationUriComplete());
         } finally {
+            getTestingClient().testing().revertTestingInfinispanTimeService();
             resetTimeOffset();
         }
 
-        verificationPage.assertExpiredUserCodePage();
+        // device code not found in the cache because of expiration => invalid_grant error and redirection to the login page
+        loginPage.assertCurrent();
     }
 
     @Test
@@ -561,6 +564,7 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
 
     @Test
     public void testExpiredDeviceCode() throws Exception {
+        getTestingClient().testing().setTestingInfinispanTimeService();
         // Device Authorization Request from device
         oauth.realm(REALM_NAME);
         oauth.clientId(DEVICE_APP);
@@ -581,8 +585,9 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
                 response.getDeviceCode());
 
             Assert.assertEquals(400, tokenResponse.getStatusCode());
-            Assert.assertEquals("expired_token", tokenResponse.getError());
+            Assert.assertEquals("invalid_grant", tokenResponse.getError());
         } finally {
+            getTestingClient().testing().revertTestingInfinispanTimeService();
             resetTimeOffset();
         }
     }
@@ -600,6 +605,7 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
 
     @Test
     public void testDeviceCodeLifespanPerClient() throws Exception {
+        getTestingClient().testing().setTestingInfinispanTimeService();
         ClientResource client = ApiUtil.findClientByClientId(adminClient.realm(REALM_NAME), DEVICE_APP);
         ClientRepresentation clientRepresentation = client.toRepresentation();
         // Device Authorization Request from device
@@ -638,6 +644,7 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
             Assert.assertEquals(400, tokenResponse.getStatusCode());
             Assert.assertEquals("expired_token", tokenResponse.getError());
         } finally {
+            getTestingClient().testing().revertTestingInfinispanTimeService();
             resetTimeOffset();
         }
 
@@ -842,6 +849,51 @@ public class OAuth2DeviceAuthorizationGrantTest extends AbstractKeycloakTest {
         openVerificationPage(response.getVerificationUriComplete());
 
         verificationPage.assertInvalidUserCodePage();
+    }
+
+    @Test
+    public void testNotFoundClient() throws Exception {
+        oauth.realm(REALM_NAME);
+        oauth.clientId("test-device-public2");
+        OAuthClient.DeviceAuthorizationResponse response = oauth.doDeviceAuthorizationRequest("test-device-public2", null);
+
+        Assert.assertEquals(400, response.getStatusCode());
+        Assert.assertEquals(Errors.INVALID_CLIENT, response.getError());
+        Assert.assertEquals("Invalid client credentials", response.getErrorDescription());
+    }
+    @Test
+    public void testClientWithErrors() throws Exception {
+        try {
+            ClientResource client = ApiUtil.findClientByClientId(adminClient.realm(REALM_NAME), DEVICE_APP_PUBLIC);
+            ClientRepresentation clientRepresentation = client.toRepresentation();
+            clientRepresentation.getAttributes().put(OAuth2DeviceConfig.OAUTH2_DEVICE_AUTHORIZATION_GRANT_ENABLED, "false");
+            client.update(clientRepresentation);
+            oauth.realm(REALM_NAME);
+            oauth.clientId(DEVICE_APP_PUBLIC);
+
+            //DeviceAuthorizationGrant not enabled
+            OAuthClient.DeviceAuthorizationResponse response = oauth.doDeviceAuthorizationRequest(DEVICE_APP_PUBLIC, null);
+            Assert.assertEquals(400, response.getStatusCode());
+            Assert.assertEquals(Errors.UNAUTHORIZED_CLIENT, response.getError());
+            Assert.assertEquals("Client is not allowed to initiate OAuth 2.0 Device Authorization Grant. The flow is disabled for the client.", response.getErrorDescription());
+
+            clientRepresentation.getAttributes().put(OAuth2DeviceConfig.OAUTH2_DEVICE_AUTHORIZATION_GRANT_ENABLED, "true");
+            clientRepresentation.setBearerOnly(true);
+            client.update(clientRepresentation);
+
+            //BearerOnly client
+            response = oauth.doDeviceAuthorizationRequest(DEVICE_APP_PUBLIC, null);
+            Assert.assertEquals(403, response.getStatusCode());
+            Assert.assertEquals(Errors.UNAUTHORIZED_CLIENT, response.getError());
+            Assert.assertEquals("Bearer-only applications are not allowed to initiate browser login.", response.getErrorDescription());
+
+        } finally {
+            ClientResource client = ApiUtil.findClientByClientId(adminClient.realm(REALM_NAME), DEVICE_APP_PUBLIC);
+            ClientRepresentation clientRepresentation = client.toRepresentation();
+            clientRepresentation.getAttributes().put(OAuth2DeviceConfig.OAUTH2_DEVICE_AUTHORIZATION_GRANT_ENABLED, "true");
+            clientRepresentation.setBearerOnly(false);
+            client.update(clientRepresentation);
+        }
     }
 
     private void openVerificationPage(String verificationUri) {

@@ -18,6 +18,5 @@ limitations under the License.
 
 
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
-    <!-- format of id of changelog file names: jpa-realms-changelog-${org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_REALM}.xml -->
     <include file="META-INF/realms/jpa-realms-changelog-1.xml"/>
 </databaseChangeLog>

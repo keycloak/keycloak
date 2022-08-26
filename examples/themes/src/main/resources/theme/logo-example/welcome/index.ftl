@@ -37,7 +37,7 @@
 
         <p><a href="http://www.keycloak.org">Keycloak Project</a> |
             <a href="https://groups.google.com/forum/#!forum/keycloak-user">Mailing List</a> |
-            <a href="https://issues.jboss.org/browse/KEYCLOAK">Report an issue</a></p>
+            <a href="https://github.com/keycloak/keycloak/issues">Report an issue</a></p>
     </div>
 </div>
 </body>

@@ -58,6 +58,7 @@ import org.keycloak.representations.idm.authorization.ResourceOwnerRepresentatio
 import org.keycloak.representations.idm.authorization.ResourceRepresentation;
 import org.keycloak.representations.idm.authorization.ResourceServerRepresentation;
 import org.keycloak.representations.idm.authorization.ScopeRepresentation;
+import org.keycloak.storage.federated.UserFederatedStorageProvider;
 import org.keycloak.util.JsonSerialization;
 
 import java.io.IOException;
@@ -234,10 +235,13 @@ public class ExportUtils {
                 rep.setUsers(users);
             }
 
-            List<UserRepresentation> federatedUsers = session.userFederatedStorage().getStoredUsersStream(realm, 0, -1)
-                    .map(user -> exportFederatedUser(session, realm, user, options)).collect(Collectors.toList());
-            if (federatedUsers.size() > 0) {
-                rep.setFederatedUsers(federatedUsers);
+            UserFederatedStorageProvider userFederatedStorageProvider = userFederatedStorage(session);
+            if (userFederatedStorageProvider != null) {
+                List<UserRepresentation> federatedUsers = userFederatedStorage(session).getStoredUsersStream(realm, 0, -1)
+                        .map(user -> exportFederatedUser(session, realm, user, options)).collect(Collectors.toList());
+                if (federatedUsers.size() > 0) {
+                    rep.setFederatedUsers(federatedUsers);
+                }
             }
 
         } else if (options.isClientsIncluded() && options.isOnlyServiceAccountsIncluded()) {
@@ -498,7 +502,7 @@ public class ExportUtils {
 
         // Credentials - extra security, do not export credentials if service accounts
         if (internal) {
-            List<CredentialRepresentation> credReps = session.userCredentialManager().getStoredCredentialsStream(realm, user)
+            List<CredentialRepresentation> credReps = user.credentialManager().getStoredCredentialsStream()
                     .map(ExportUtils::exportCredential).collect(Collectors.toList());
             userRep.setCredentials(credReps);
         }
@@ -613,20 +617,20 @@ public class ExportUtils {
     public static UserRepresentation exportFederatedUser(KeycloakSession session, RealmModel realm, String id, ExportOptions options) {
         UserRepresentation userRep = new UserRepresentation();
         userRep.setId(id);
-        MultivaluedHashMap<String, String> attributes = session.userFederatedStorage().getAttributes(realm, id);
+        MultivaluedHashMap<String, String> attributes = userFederatedStorage(session).getAttributes(realm, id);
         if (attributes.size() > 0) {
             Map<String, List<String>> attrs = new HashMap<>();
             attrs.putAll(attributes);
             userRep.setAttributes(attrs);
         }
 
-        List<String> requiredActions = session.userFederatedStorage().getRequiredActionsStream(realm, id).collect(Collectors.toList());
+        List<String> requiredActions = userFederatedStorage(session).getRequiredActionsStream(realm, id).collect(Collectors.toList());
         if (requiredActions.size() > 0) {
             userRep.setRequiredActions(requiredActions);
         }
 
         // Social links
-        List<FederatedIdentityRepresentation> socialLinkReps = session.userFederatedStorage().getFederatedIdentitiesStream(id, realm)
+        List<FederatedIdentityRepresentation> socialLinkReps = userFederatedStorage(session).getFederatedIdentitiesStream(id, realm)
                 .map(ExportUtils::exportSocialLink).collect(Collectors.toList());
 
         if (socialLinkReps.size() > 0) {
@@ -635,7 +639,7 @@ public class ExportUtils {
 
         // Role mappings
         if (options.isGroupsAndRolesIncluded()) {
-            Set<RoleModel> roles = session.userFederatedStorage().getRoleMappingsStream(realm, id).collect(Collectors.toSet());
+            Set<RoleModel> roles = userFederatedStorage(session).getRoleMappingsStream(realm, id).collect(Collectors.toSet());
             List<String> realmRoleNames = new ArrayList<>();
             Map<String, List<String>> clientRoleNames = new HashMap<>();
             for (RoleModel role : roles) {
@@ -663,7 +667,7 @@ public class ExportUtils {
         }
 
         // Credentials
-        List<CredentialRepresentation> credReps = session.userFederatedStorage().getStoredCredentialsStream(realm, id)
+        List<CredentialRepresentation> credReps = userFederatedStorage(session).getStoredCredentialsStream(realm, id)
                 .map(ExportUtils::exportCredential).collect(Collectors.toList());
         userRep.setCredentials(credReps);
 
@@ -675,15 +679,19 @@ public class ExportUtils {
         }
 
         // Not Before
-        int notBefore = session.userFederatedStorage().getNotBeforeOfUser(realm, userRep.getId());
+        int notBefore = userFederatedStorage(session).getNotBeforeOfUser(realm, userRep.getId());
         userRep.setNotBefore(notBefore);
 
         if (options.isGroupsAndRolesIncluded()) {
-            List<String> groups = session.userFederatedStorage().getGroupsStream(realm, id)
+            List<String> groups = userFederatedStorage(session).getGroupsStream(realm, id)
                     .map(ModelToRepresentation::buildGroupPath).collect(Collectors.toList());
             userRep.setGroups(groups);
         }
         return userRep;
+    }
+    
+    private static UserFederatedStorageProvider userFederatedStorage(KeycloakSession session) {
+        return session.getProvider(UserFederatedStorageProvider.class);
     }
 
 }

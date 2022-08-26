@@ -2,6 +2,7 @@ package org.keycloak.it.utils;
 
 import org.jboss.logging.Logger;
 import org.keycloak.common.Version;
+import org.keycloak.it.junit5.extension.CLIResult;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.output.OutputFrame;
 import org.testcontainers.containers.output.ToStringConsumer;
@@ -42,7 +43,7 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
 
     private GenericContainer getKeycloakContainer() {
         if (!distributionFile.exists()) {
-            throw new RuntimeException("Distribution archive " + distributionFile.getAbsolutePath() +" doesn't exists");
+            throw new RuntimeException("Distribution archive " + distributionFile.getAbsolutePath() +" doesn't exist");
         }
         return new GenericContainer(
                 new ImageFromDockerfile("keycloak-under-test", false)
@@ -57,7 +58,7 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
     }
 
     @Override
-    public void start(List<String> arguments) {
+    public CLIResult run(List<String> arguments) {
         stop();
         try {
             this.exitCode = -1;
@@ -86,6 +87,8 @@ public final class DockerKeycloakDistribution implements KeycloakDistribution {
             keycloakContainer = null;
             LOGGER.warn("Failed to start Keycloak container", cause);
         }
+
+        return CLIResult.create(getOutputStream(), getErrorStream(), getExitCode());
     }
 
     // After the web server is responding we are still producing some logs that got checked in the tests

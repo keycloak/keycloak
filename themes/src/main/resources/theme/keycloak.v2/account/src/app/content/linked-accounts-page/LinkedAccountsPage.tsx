@@ -24,7 +24,6 @@ import {
     DataListItemCells,
     DataListCell,
     DataListItemRow,
-    Divider,
     Label,
     PageSection,
     PageSectionVariants,
@@ -43,7 +42,15 @@ import {
     LinkIcon,
     OpenshiftIcon,
     PaypalIcon,
-    UnlinkIcon
+    UnlinkIcon,
+    FacebookIcon,
+    GoogleIcon,
+    InstagramIcon,
+    MicrosoftIcon,
+    TwitterIcon,
+    StackOverflowIcon,
+    LinkedinIcon,
+    GithubIcon
 } from '@patternfly/react-icons';
 
 import {HttpResponse} from '../../account-service/account.service';
@@ -222,14 +229,31 @@ class LinkedAccountsPage extends React.Component<LinkedAccountsPageProps, Linked
       const socialIconId = `${account.providerAlias}-idp-icon-social`;
       console.log(account);
       switch (true) {
+        case account.providerName.toLowerCase().includes('linkedin'):
+          return <LinkedinIcon id={socialIconId} size='lg'/>;
+        case account.providerName.toLowerCase().includes('facebook'):
+          return <FacebookIcon id={socialIconId} size='lg'/>;
+        case account.providerName.toLowerCase().includes('google'):
+          return <GoogleIcon id={socialIconId} size='lg'/>;
+        case account.providerName.toLowerCase().includes('instagram'):
+          return <InstagramIcon id={socialIconId} size='lg'/>;
+        case account.providerName.toLowerCase().includes('microsoft'):
+          return <MicrosoftIcon id={socialIconId} size='lg'/>;
         case account.providerName.toLowerCase().includes('bitbucket'):
           return <BitbucketIcon id={socialIconId} size='lg'/>;
+        case account.providerName.toLowerCase().includes('twitter'):
+          return <TwitterIcon id={socialIconId} size='lg'/>;
         case account.providerName.toLowerCase().includes('openshift'):
-          return <div className="idp-icon-social" id="openshift-idp-icon-social" />;
+          // return <div className="idp-icon-social" id="openshift-idp-icon-social" />;
+          return <OpenshiftIcon id={socialIconId} size='lg'/>;
         case account.providerName.toLowerCase().includes('gitlab'):
           return <GitlabIcon id={socialIconId} size='lg'/>;
+        case account.providerName.toLowerCase().includes('github'):
+          return <GithubIcon id={socialIconId} size='lg'/>;
         case account.providerName.toLowerCase().includes('paypal'):
           return <PaypalIcon id={socialIconId} size='lg'/>;
+        case account.providerName.toLowerCase().includes('stackoverflow'):
+          return <StackOverflowIcon id={socialIconId} size='lg'/>;
         case (account.providerName !== '' && account.social):
           return <div className="idp-icon-social" id={socialIconId}/>;
         default:

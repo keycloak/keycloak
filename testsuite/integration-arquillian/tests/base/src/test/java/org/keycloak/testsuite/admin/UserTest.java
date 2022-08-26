@@ -679,6 +679,16 @@ public class UserTest extends AbstractAdminTest {
     }
 
     @Test
+    public void searchByEmailExactMatch() {
+        createUsers();
+        List<UserRepresentation> users = realm.users().searchByEmail("user1@localhost", true);
+        assertEquals(1, users.size());
+
+        users = realm.users().search("@localhost", true);
+        assertEquals(0, users.size());
+    }
+
+    @Test
     public void searchByUsername() {
         createUsers();
 
@@ -750,8 +760,25 @@ public class UserTest extends AbstractAdminTest {
         List<UserRepresentation> users = realm.users().search("username1", true);
         assertEquals(1, users.size());
 
+        users = realm.users().searchByUsername("username1", true);
+        assertEquals(1, users.size());
+
         users = realm.users().search("user", true);
         assertEquals(0, users.size());
+    }
+
+    @Test
+    public void searchByFirstNameExact() {
+        createUsers();
+        List<UserRepresentation> users = realm.users().searchByFirstName("First1", true);
+        assertEquals(1, users.size());
+    }
+
+    @Test
+    public void searchByLastNameExact() {
+        createUsers();
+        List<UserRepresentation> users = realm.users().searchByLastName("Last1", true);
+        assertEquals(1, users.size());
     }
 
     @Test
@@ -1490,6 +1517,51 @@ public class UserTest extends AbstractAdminTest {
         driver.navigate().to(link);
 
         assertEquals("We are sorry...", PageUtils.getPageTitle(driver));
+    }
+
+    @Test
+    @AuthServerContainerExclude(AuthServer.REMOTE)
+    public void testEmailLinkBasedOnRealmFrontEndUrl() throws Exception {
+        try {
+            updateRealmFrontEndUrl(adminClient.realm("master"), suiteContext.getAuthServerInfo().getContextRoot().toString());
+            String expectedFrontEndUrl = "https://mytestrealm";
+            updateRealmFrontEndUrl(adminClient.realm(REALM_NAME), expectedFrontEndUrl);
+
+            UserRepresentation userRep = new UserRepresentation();
+            userRep.setEnabled(true);
+            userRep.setUsername("user1");
+            userRep.setEmail("user1@test.com");
+
+            String id = createUser(userRep, false);
+            UserResource user = realm.users().get(id);
+            List<String> actions = new LinkedList<>();
+            actions.add(UserModel.RequiredAction.UPDATE_PASSWORD.name());
+            user.executeActionsEmail(actions);
+            Assert.assertEquals(1, greenMail.getReceivedMessages().length);
+
+            MimeMessage message = greenMail.getReceivedMessages()[0];
+            MailUtils.EmailBody body = MailUtils.getBody(message);
+            String link = MailUtils.getPasswordResetEmailLink(body);
+            assertTrue(link.contains(expectedFrontEndUrl));
+        } finally {
+            updateRealmFrontEndUrl(adminClient.realm("master"), null);
+            updateRealmFrontEndUrl(adminClient.realm(REALM_NAME), null);
+        }
+    }
+
+    private void updateRealmFrontEndUrl(RealmResource realm, String url) throws Exception {
+        RealmRepresentation master = realm.toRepresentation();
+        Map<String, String> attributes = Optional.ofNullable(master.getAttributes()).orElse(new HashMap<>());
+
+        if (url == null) {
+            attributes.remove("frontendUrl");
+        } else {
+            attributes.put("frontendUrl", url);
+        }
+
+        realm.update(master);
+        reconnectAdminClient();
+        this.realm = adminClient.realm(REALM_NAME);
     }
 
     @Test

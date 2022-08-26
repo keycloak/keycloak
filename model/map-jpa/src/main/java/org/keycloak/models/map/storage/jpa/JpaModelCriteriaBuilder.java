@@ -17,13 +17,21 @@
 package org.keycloak.models.map.storage.jpa;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.function.BiFunction;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Set;
+import java.util.UUID;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
+
+import org.keycloak.models.map.common.StringKeyConverter;
 import org.keycloak.models.map.storage.CriterionNotSupportedException;
 import org.keycloak.models.map.storage.ModelCriteriaBuilder;
 import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
@@ -38,22 +46,22 @@ import org.keycloak.storage.SearchableModelField;
  */
 public abstract class JpaModelCriteriaBuilder<E, M, Self extends JpaModelCriteriaBuilder<E, M, Self>> implements ModelCriteriaBuilder<M, Self> {
 
-    private final Function<BiFunction<CriteriaBuilder, Root<E>, Predicate>, Self> instantiator;
-    private BiFunction<CriteriaBuilder, Root<E>, Predicate> predicateFunc = null;
+    private final Function<JpaPredicateFunction<E>, Self> instantiator;
+    private JpaPredicateFunction<E> predicateFunc = null;
     private boolean isDistinct = false;
 
-    public JpaModelCriteriaBuilder(Function<BiFunction<CriteriaBuilder, Root<E>, Predicate>, Self> instantiator) {
+    public JpaModelCriteriaBuilder(Function<JpaPredicateFunction<E>, Self> instantiator) {
         this.instantiator = instantiator;
     }
 
-    public JpaModelCriteriaBuilder(Function<BiFunction<CriteriaBuilder, Root<E>, Predicate>, Self> instantiator,
-            BiFunction<CriteriaBuilder, Root<E>, Predicate> predicateFunc) {
+    public JpaModelCriteriaBuilder(Function<JpaPredicateFunction<E>, Self> instantiator,
+                                                                      JpaPredicateFunction<E> predicateFunc) {
         this.instantiator = instantiator;
         this.predicateFunc = predicateFunc;
     }
 
-    public JpaModelCriteriaBuilder(Function<BiFunction<CriteriaBuilder, Root<E>, Predicate>, Self> instantiator,
-                                   BiFunction<CriteriaBuilder, Root<E>, Predicate> predicateFunc,
+    public JpaModelCriteriaBuilder(Function<JpaPredicateFunction<E>, Self> instantiator,
+                                   JpaPredicateFunction<E> predicateFunc,
                                    boolean isDistinct) {
         this.instantiator = instantiator;
         this.predicateFunc = predicateFunc;
@@ -83,25 +91,57 @@ public abstract class JpaModelCriteriaBuilder<E, M, Self extends JpaModelCriteri
     @SafeVarargs
     @Override
     public final Self and(Self... builders) {
-        return instantiator.apply((cb, root) -> cb.and(Stream.of(builders).map((Self b) -> b.getPredicateFunc().apply(cb, root)).toArray(Predicate[]::new)));
+        return instantiator.apply((cb, query, root) -> cb.and(Stream.of(builders).map((Self b) -> b.getPredicateFunc().apply(cb, query, root)).toArray(Predicate[]::new)));
     }
 
     @SafeVarargs
     @Override
     public final Self or(Self... builders) {
-        return instantiator.apply((cb, root) -> cb.or(Stream.of(builders).map((Self b) -> (b).getPredicateFunc().apply(cb, root)).toArray(Predicate[]::new)));
+        return instantiator.apply((cb, query, root) -> cb.or(Stream.of(builders).map((Self b) -> (b).getPredicateFunc().apply(cb, query, root)).toArray(Predicate[]::new)));
     }
 
     @Override
     public Self not(Self builder) {
-        return instantiator.apply((cb, root) -> cb.not(builder.getPredicateFunc().apply(cb, root)));
+        return instantiator.apply((cb, query, root) -> cb.not(builder.getPredicateFunc().apply(cb, query, root)));
     }
 
-    public BiFunction<CriteriaBuilder, Root<E>, Predicate> getPredicateFunc() {
+    public JpaPredicateFunction<E> getPredicateFunc() {
         return predicateFunc;
     }
 
     public boolean isDistinct() {
         return this.isDistinct;
+    }
+
+    @SuppressWarnings("unchecked")
+    protected Collection<?> getValuesForInOperator(Object[] values, SearchableModelField<?> modelField) {
+        if (values == null || values.length == 0) throw new CriterionNotSupportedException(modelField, Operator.IN);
+
+        Collection<?> collectionValues;
+        if (values.length == 1) {
+
+            if (values[0] instanceof Object[]) {
+                collectionValues = Arrays.asList(values[0]);
+            } else if (values[0] instanceof Collection) {
+                collectionValues = (Collection) values[0];
+            } else if (values[0] instanceof Stream) {
+                try (Stream<?> str = ((Stream) values[0])) {
+                    collectionValues = str.collect(Collectors.toCollection(ArrayList::new));
+                }
+            } else {
+                collectionValues = Collections.singleton(values[0]);
+            }
+
+        } else  {
+            collectionValues = new HashSet(Arrays.asList(values));
+        }
+        return collectionValues;
+    }
+
+    protected Set<UUID> getUuidsForInOperator(Object[] values, SearchableModelField<?> modelField) {
+        return getValuesForInOperator(values, modelField).stream()
+                    .map(val -> StringKeyConverter.UUIDKey.INSTANCE.fromStringSafe(Objects.toString(val, null)))
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet());
     }
 }

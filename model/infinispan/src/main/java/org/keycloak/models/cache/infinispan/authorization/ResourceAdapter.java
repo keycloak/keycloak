@@ -134,7 +134,7 @@ public class ResourceAdapter implements Resource, CachedModel<Resource> {
 
     @Override
     public ResourceServer getResourceServer() {
-        return cacheSession.getResourceServerStoreDelegate().findById(InfinispanCacheStoreFactoryProviderFactory.NULL_REALM, cached.getResourceServerId());
+        return cacheSession.getResourceServerStore().findById(InfinispanCacheStoreFactoryProviderFactory.NULL_REALM, cached.getResourceServerId());
     }
 
     @Override

@@ -18,6 +18,7 @@
 package org.keycloak.services.resources;
 
 import java.net.URI;
+
 import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
@@ -151,7 +152,8 @@ public class SessionCodeChecks {
         // object retrieve
         AuthenticationSessionManager authSessionManager = new AuthenticationSessionManager(session);
         AuthenticationSessionModel authSession = null;
-        if (authSessionId != null) authSession = authSessionManager.getAuthenticationSessionByIdAndClient(realm, authSessionId, client, tabId);
+        if (authSessionId != null)
+            authSession = authSessionManager.getAuthenticationSessionByIdAndClient(realm, authSessionId, client, tabId);
         AuthenticationSessionModel authSessionCookie = authSessionManager.getCurrentAuthenticationSession(realm, client, tabId);
 
         if (authSession != null && authSessionCookie != null && !authSession.getParentSession().getId().equals(authSessionCookie.getParentSession().getId())) {
@@ -222,9 +224,9 @@ public class SessionCodeChecks {
         setClientToEvent(client);
         session.getContext().setClient(client);
 
-        if (!client.isEnabled()) {
+        if (checkClientDisabled(client)) {
             event.error(Errors.CLIENT_DISABLED);
-            response = ErrorPage.error(session,authSession, Response.Status.BAD_REQUEST, Messages.LOGIN_REQUESTER_NOT_ENABLED);
+            response = ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.LOGIN_REQUESTER_NOT_ENABLED);
             clientCode.removeExpiredClientSession();
             return false;
         }
@@ -236,7 +238,7 @@ public class SessionCodeChecks {
             String lastFlow = authSession.getAuthNote(AuthenticationProcessor.CURRENT_FLOW_PATH);
 
             // Check if we transitted between flows (eg. clicking "register" on login screen)
-            if (execution==null && !flowPath.equals(lastFlow)) {
+            if (execution == null && !flowPath.equals(lastFlow)) {
                 logger.debugf("Transition between flows! Current flow: %s, Previous flow: %s", flowPath, lastFlow);
 
                 // Don't allow moving to different flow if I am on requiredActions already
@@ -378,7 +380,7 @@ public class SessionCodeChecks {
         AuthenticationSessionModel authSession = null;
 
         Cookie cook = RestartLoginCookie.getRestartCookie(session);
-        if(cook == null){
+        if (cook == null) {
             event.error(Errors.COOKIE_NOT_FOUND);
             return ErrorPage.error(session, authSession, Response.Status.BAD_REQUEST, Messages.COOKIE_NOT_FOUND);
         }
@@ -448,5 +450,9 @@ public class SessionCodeChecks {
 
     protected EventBuilder getEvent() {
         return event;
+    }
+
+    protected boolean checkClientDisabled(ClientModel client) {
+        return !client.isEnabled();
     }
 }

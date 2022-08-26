@@ -96,7 +96,7 @@ public class X509ClientCertificateAuthenticator extends AbstractX509ClientCertif
                 String errorMessage = "Certificate validation's failed.";
                 // TODO is calling form().setErrors enough to show errors on login screen?
                 context.challenge(createErrorResponse(context, certs[0].getSubjectDN().getName(),
-                        errorMessage, e.getMessage()));
+                        errorMessage, "Certificate revoked or incorrect."));
                 context.attempted();
                 return;
             }

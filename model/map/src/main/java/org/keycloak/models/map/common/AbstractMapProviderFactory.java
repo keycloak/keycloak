@@ -20,9 +20,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.keycloak.Config.Scope;
 import org.keycloak.common.Profile;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.map.storage.MapStorage;
 import org.keycloak.models.map.storage.MapStorageProvider;
-import org.keycloak.models.map.storage.MapStorageSpi;
 import org.keycloak.component.AmphibianProviderFactory;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.provider.EnvironmentDependentProviderFactory;
@@ -30,8 +30,6 @@ import org.keycloak.provider.InvalidationHandler;
 import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.jboss.logging.Logger;
-
-import static org.keycloak.models.utils.KeycloakModelUtils.getComponentFactory;
 
 /**
  *
@@ -108,11 +106,32 @@ public abstract class AbstractMapProviderFactory<T extends Provider, V extends A
     }
 
     protected MapStorage<V, M> getStorage(KeycloakSession session) {
-        ProviderFactory<MapStorageProvider> storageProviderFactory = getComponentFactory(session.getKeycloakSessionFactory(),
-          MapStorageProvider.class, storageConfigScope, MapStorageSpi.NAME);
+        ProviderFactory<MapStorageProvider> storageProviderFactory = getProviderFactoryOrComponentFactory(session, storageConfigScope);
         final MapStorageProvider factory = storageProviderFactory.create(session);
-
         return factory.getStorage(modelType);
+    }
+
+    public static ProviderFactory<MapStorageProvider> getProviderFactoryOrComponentFactory(KeycloakSession session, Scope storageConfigScope) {
+        ProviderFactory<MapStorageProvider> storageProviderFactory;
+        if (!hasRealmSpecificStorage(session, storageConfigScope)) {
+            String provider = storageConfigScope.get("provider");
+            if (provider == null) {
+                storageProviderFactory = session.getKeycloakSessionFactory().getProviderFactory(MapStorageProvider.class);
+            } else {
+                storageProviderFactory = session.getKeycloakSessionFactory().getProviderFactory(MapStorageProvider.class, provider);
+            }
+        } else {
+            // If this is being implemented, make sure that the factory is being closed eventually.
+            // When no cluster provider is available, the componentFactory will not be cached and a new instance is being returned all the time
+            // when calling `getComponentFactory(session.getKeycloakSessionFactory(), MapStorageProvider.class, storageConfigScope, MapStorageSpi.NAME)`.
+            throw new ModelException("not supported yet");
+        }
+        return storageProviderFactory;
+    }
+
+    private static boolean hasRealmSpecificStorage(KeycloakSession session, Scope storageConfigScope) {
+        // Once there is functionality for a realm-specific storage, implement the logic on how to detect it here.
+        return false;
     }
 
     @Override

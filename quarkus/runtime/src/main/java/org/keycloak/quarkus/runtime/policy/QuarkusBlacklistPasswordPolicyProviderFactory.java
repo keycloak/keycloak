@@ -20,6 +20,8 @@ package org.keycloak.quarkus.runtime.policy;
 import org.keycloak.policy.BlacklistPasswordPolicyProviderFactory;
 import org.keycloak.quarkus.runtime.Environment;
 
+import java.io.File;
+
 /**
  * <p>Quarkus implementation of the BlacklistPasswordPolicyProviderFactory. The
  * default path for the list files is calculated using the quarkus environment
@@ -31,6 +33,6 @@ public class QuarkusBlacklistPasswordPolicyProviderFactory extends BlacklistPass
 
     @Override
     public String getDefaultBlacklistsBasePath() {
-        return Environment.getDataDir() + "/" + PASSWORD_BLACKLISTS_FOLDER;
+        return Environment.getDataDir() + File.separator + PASSWORD_BLACKLISTS_FOLDER;
     }
 }

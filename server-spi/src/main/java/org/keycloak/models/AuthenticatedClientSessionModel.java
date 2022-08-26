@@ -21,21 +21,11 @@ package org.keycloak.models;
 import java.util.Map;
 
 import org.keycloak.sessions.CommonClientSessionModel;
-import org.keycloak.storage.SearchableModelField;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 public interface AuthenticatedClientSessionModel extends CommonClientSessionModel {
-
-    class SearchableFields {
-        public static final SearchableModelField<AuthenticatedClientSessionModel> ID      = new SearchableModelField<>("id", String.class);
-        public static final SearchableModelField<AuthenticatedClientSessionModel> REALM_ID = new SearchableModelField<>("realmId", String.class);
-        public static final SearchableModelField<AuthenticatedClientSessionModel> CLIENT_ID = new SearchableModelField<>("clientId", String.class);
-        public static final SearchableModelField<AuthenticatedClientSessionModel> USER_SESSION_ID = new SearchableModelField<>("userSessionId", String.class);
-        public static final SearchableModelField<AuthenticatedClientSessionModel> IS_OFFLINE = new SearchableModelField<>("isOffline", Boolean.class);
-        public static final SearchableModelField<AuthenticatedClientSessionModel> TIMESTAMP  = new SearchableModelField<>("timestamp", Integer.class);
-    }
 
     String STARTED_AT_NOTE = "startedAt";
 

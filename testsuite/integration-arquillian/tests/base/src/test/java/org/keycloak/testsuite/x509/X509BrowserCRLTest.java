@@ -136,7 +136,7 @@ public class X509BrowserCRLTest extends AbstractX509AuthenticationTest {
         Assert.assertNotNull(cfgId);
 
         // Verify there is an error message because of invalid CRL signature
-        assertLoginFailedWithExpectedX509Error("Certificate validation's failed.\nSignature length not correct");
+        assertLoginFailedWithExpectedX509Error("Certificate validation's failed.\nCertificate revoked or incorrect.");
     }
 
 
@@ -194,7 +194,7 @@ public class X509BrowserCRLTest extends AbstractX509AuthenticationTest {
 
 
     private void assertLoginFailedDueRevokedCertificate() {
-        assertLoginFailedWithExpectedX509Error("Certificate validation's failed.\nCertificate has been revoked, certificate's subject:");
+        assertLoginFailedWithExpectedX509Error("Certificate validation's failed.\nCertificate revoked or incorrect.");
     }
 
     private void assertLoginFailedWithExpectedX509Error(String expectedError) {

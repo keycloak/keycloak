@@ -115,6 +115,8 @@ public class MapPolicyStore implements PolicyStore {
     public Policy findById(RealmModel realm, ResourceServer resourceServer, String id) {
         LOG.tracef("findById(%s, %s)%s", id, resourceServer, getShortStackTrace());
 
+        if (id == null) return null;
+
         return tx.read(withCriteria(forRealmAndResourceServer(realm, resourceServer)
                 .compare(SearchableFields.ID, Operator.EQ, id)))
                 .findFirst()
@@ -160,10 +162,8 @@ public class MapPolicyStore implements PolicyStore {
         }
 
         return tx.read(withCriteria(mcb).pagination(firstResult, maxResults, SearchableFields.NAME))
-            .map(MapPolicyEntity::getId)
-            // We need to go through cache
-            .map(id -> authorizationProvider.getStoreFactory().getPolicyStore().findById(realm, resourceServer, id))
-            .collect(Collectors.toList());
+                .map(entityToAdapterFunc(realm, resourceServer))
+                .collect(Collectors.toList());
     }
 
     private DefaultModelCriteria<Policy> filterEntryToDefaultModelCriteria(Map.Entry<Policy.FilterOption, String[]> entry) {

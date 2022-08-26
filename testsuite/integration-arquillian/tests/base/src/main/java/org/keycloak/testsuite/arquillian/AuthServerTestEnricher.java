@@ -142,10 +142,6 @@ public class AuthServerTestEnricher {
     public static final String AUTH_SERVER_CROSS_DC_PROPERTY = "auth.server.crossdc";
     public static final boolean AUTH_SERVER_CROSS_DC = Boolean.parseBoolean(System.getProperty(AUTH_SERVER_CROSS_DC_PROPERTY, "false"));
 
-
-    public static final String HOT_ROD_STORE_ENABLED_PROPERTY = "hotrod.store.enabled";
-    public static final boolean HOT_ROD_STORE_ENABLED = Boolean.parseBoolean(System.getProperty(HOT_ROD_STORE_ENABLED_PROPERTY, "false"));
-
     public static final String AUTH_SERVER_HOME_PROPERTY = "auth.server.home";
 
     public static final String CACHE_SERVER_LIFECYCLE_SKIP_PROPERTY = "cache.server.lifecycle.skip";
@@ -338,26 +334,15 @@ public class AuthServerTestEnricher {
             // init migratedAuthServerInfo
             for (ContainerInfo container : suiteContext.getContainers()) {
                 // migrated auth server
-                if (container.getQualifier().equals("auth-server-jboss-migration")) {
+                if (container.getQualifier().equals("auth-server-jboss-migration") || container.getQualifier().equals("auth-server-migration")) {
                     updateWithAuthServerInfo(container);
                     suiteContext.setMigratedAuthServerInfo(container);
                 }
             }
             // validate setup
             if (suiteContext.getMigratedAuthServerInfo() == null) {
-                throw new RuntimeException(String.format("Migration test was enabled but no auth server from which to migrate was activated. "
-                        + "A container matching auth-server-jboss-migration needs to be enabled in arquillian.xml."));
-            }
-        }
-
-        if (HOT_ROD_STORE_ENABLED) {
-            HotRodStoreTestEnricher.initializeSuiteContext(suiteContext);
-
-            for (ContainerInfo container : suiteContext.getContainers()) {
-                // migrated auth server
-                if (container.getQualifier().equals("hot-rod-store")) {
-                    suiteContext.setHotRodStoreInfo(container);
-                }
+                throw new RuntimeException("Migration test was enabled but no auth server from which to migrate was activated. "
+                        + "A container matching 'auth-server-jboss-migration' or 'auth-server-migration' needs to be enabled in arquillian.xml.");
             }
         }
 
@@ -457,6 +442,7 @@ public class AuthServerTestEnricher {
         if (suiteContext.isAuthServerMigrationEnabled()) {
             log.info("## STOP old container: " + suiteContext.getMigratedAuthServerInfo().getQualifier());
             stopContainerEvent.fire(new StopContainer(suiteContext.getMigratedAuthServerInfo().getArquillianContainer()));
+            suiteContext.setMigratedAuthServerInfo(null);
         }
     }
 

@@ -142,19 +142,7 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
     protected AppPage appPage;
 
     @Page
-    @JavascriptBrowser
-    protected AdminConsole jsAdminConsole;
-
-    @Drone
-    @JavascriptBrowser
-    protected WebDriver jsDriver;
-
-    @Page
     protected LoginPage loginPage;
-
-    @Page
-    @JavascriptBrowser
-    protected LoginPage jsLoginPage;
 
     @Page
     protected ErrorPage errorPage;
@@ -806,24 +794,18 @@ public class LoginTest extends AbstractTestRealmKeycloakTest {
                 })
                 .update()) {
 
-            DroneUtils.addWebDriver(jsDriver);
+            loginPage.open();
+            loginPage.login("login@test.com", "password");
 
-            jsAdminConsole.setAdminRealm(testRealm().toRepresentation().getRealm());
-
-            jsAdminConsole.navigateTo();
-            assertCurrentUrlStartsWithLoginUrlOf(jsAdminConsole);
-
-            // login for the first time
-            jsLoginPage.login("admin", "admin");
+            events.expectLogin().user(userId).assertEvent();
 
             // wait for a timeout
-            TimeUnit.SECONDS.sleep(5);
-            Retry.execute(() -> jsLoginPage.assertCurrent(), 20, 500);
+            setTimeOffset(6);
 
-            // try to re-login immediately, it should be successful i.e without "You took too long to login. Login process starting from beginning." message
-            jsLoginPage.login("admin", "admin");
+            loginPage.open();
+            loginPage.login("login@test.com", "password");
 
-            assertFalse(jsLoginPage.isCurrent());
+            events.expectLogin().user(userId).assertEvent();
         }
     }
 

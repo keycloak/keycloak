@@ -18,9 +18,6 @@
     <description>KeyCloak AuthZ: Client API</description>
 
     <properties>
-        <maven.compiler.target>1.8</maven.compiler.target>
-        <maven.compiler.source>1.8</maven.compiler.source>
-
         <keycloak.osgi.export>
             org.keycloak.authorization.client.*
         </keycloak.osgi.export>

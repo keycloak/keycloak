@@ -11,6 +11,7 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 import static org.keycloak.testsuite.util.DroneUtils.getCurrentDriver;
@@ -94,6 +95,28 @@ public final class URLUtils {
             return false;
         }
         return true;
+    }
+
+    /**
+     * @see #sendPOSTRequestWithWebDriver(String, String)
+     *
+     * @param postRequestUrl
+     * @param formParams form params in key/value form
+     */
+    public static void sendPOSTRequestWithWebDriver(String postRequestUrl, Map<String, String> formParams) {
+        StringBuilder sb = new StringBuilder();
+        boolean first = true;
+        for (Map.Entry<String, String> entry : formParams.entrySet()) {
+            if (first) {
+                first = false;
+            } else {
+                sb.append("&");
+            }
+            sb.append(entry.getKey())
+                    .append("=")
+                    .append(entry.getValue());
+        }
+        sendPOSTRequestWithWebDriver(postRequestUrl, sb.toString());
     }
 
     /**

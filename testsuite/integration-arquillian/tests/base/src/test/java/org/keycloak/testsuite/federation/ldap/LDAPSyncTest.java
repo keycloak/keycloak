@@ -33,6 +33,7 @@ import org.keycloak.component.ComponentModel;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.LDAPConstants;
+import org.keycloak.models.LegacyRealmModel;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.UserProvider;
@@ -40,7 +41,9 @@ import org.keycloak.models.cache.UserCache;
 import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.representations.idm.ComponentRepresentation;
 import org.keycloak.representations.idm.SynchronizationResultRepresentation;
-import org.keycloak.services.managers.UserStorageSyncManager;
+import org.keycloak.storage.managers.UserStorageSyncManager;
+import org.keycloak.storage.UserStoragePrivateUtil;
+import org.keycloak.storage.UserStorageUtil;
 import org.keycloak.storage.ldap.LDAPStorageProvider;
 import org.keycloak.storage.ldap.LDAPStorageProviderFactory;
 import org.keycloak.storage.ldap.LDAPUtils;
@@ -135,7 +138,7 @@ public class LDAPSyncTest extends AbstractLDAPTest {
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel testRealm = ctx.getRealm();
-            UserProvider userProvider = session.userLocalStorage();
+            UserProvider userProvider = UserStoragePrivateUtil.userLocalStorage(session);
 
             // Assert users imported
             LDAPTestAsserts.assertUserImported(userProvider, testRealm, "user1", "User1FN", "User1LN", "user1@email.org", "121");
@@ -146,7 +149,7 @@ public class LDAPSyncTest extends AbstractLDAPTest {
 
             // Assert lastSync time updated
             Assert.assertTrue(ctx.getLdapModel().getLastSync() > 0);
-            testRealm.getUserStorageProvidersStream().forEachOrdered(persistentFedModel -> {
+            ((LegacyRealmModel) testRealm).getUserStorageProvidersStream().forEachOrdered(persistentFedModel -> {
                 if (LDAPStorageProviderFactory.PROVIDER_NAME.equals(persistentFedModel.getProviderId())) {
                     Assert.assertTrue(persistentFedModel.getLastSync() > 0);
                 } else {
@@ -162,7 +165,7 @@ public class LDAPSyncTest extends AbstractLDAPTest {
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel testRealm = ctx.getRealm();
-            UserProvider userProvider = session.userLocalStorage();
+            UserProvider userProvider = UserStoragePrivateUtil.userLocalStorage(session);
             UserStorageSyncManager usersSyncManager = new UserStorageSyncManager();
 
             // Add user to LDAP and update 'user5' in LDAP
@@ -185,7 +188,7 @@ public class LDAPSyncTest extends AbstractLDAPTest {
 
         testingClient.server().run(session -> {
             RealmModel testRealm = session.realms().getRealmByName(TEST_REALM_NAME);
-            UserProvider userProvider = session.userLocalStorage();
+            UserProvider userProvider = UserStoragePrivateUtil.userLocalStorage(session);
             // Assert users updated in local provider
             LDAPTestAsserts.assertUserImported(userProvider, testRealm, "user5", "User5FN", "User5LN", "user5updated@email.org", "521");
             LDAPTestAsserts.assertUserImported(userProvider, testRealm, "user6", "User6FN", "User6LN", "user6@email.org", "126");
@@ -227,7 +230,7 @@ public class LDAPSyncTest extends AbstractLDAPTest {
             // Assert syncing from LDAP fails due to duplicated email
             SynchronizationResult result = new UserStorageSyncManager().syncAllUsers(session.getKeycloakSessionFactory(), ctx.getRealm().getId(), ctx.getLdapModel());
             Assert.assertEquals(1, result.getFailed());
-            Assert.assertNull(session.userLocalStorage().getUserByUsername(ctx.getRealm(), "user7-something"));
+            Assert.assertNull(UserStoragePrivateUtil.userLocalStorage(session).getUserByUsername(ctx.getRealm(), "user7-something"));
 
             // Update LDAP user to avoid duplicated email
             LDAPObject duplicatedLdapUser = ctx.getLdapProvider().loadLDAPUserByUsername(ctx.getRealm(), "user7-something");
@@ -242,7 +245,7 @@ public class LDAPSyncTest extends AbstractLDAPTest {
         // Assert user was imported. Use another transaction for that
         testingClient.server().run(session -> {
             RealmModel testRealm = session.realms().getRealmByName(TEST_REALM_NAME);
-            LDAPTestAsserts.assertUserImported(session.userLocalStorage(), testRealm, "user7-something", "User7FNN", "User7LNL", "user7-changed@email.org", "126");
+            LDAPTestAsserts.assertUserImported(UserStoragePrivateUtil.userLocalStorage(session), testRealm, "user7-something", "User7FNN", "User7LNL", "user7-changed@email.org", "126");
         });
     }
 
@@ -273,7 +276,7 @@ public class LDAPSyncTest extends AbstractLDAPTest {
             ctx.getLdapProvider().getLdapIdentityStore().update(ldapUser);
 
             // Assert still old users in local provider
-            LDAPTestAsserts.assertUserImported(session.userLocalStorage(), testRealm, "beckybecks", "Becky", "Becks", "becky-becks@email.org", "123");
+            LDAPTestAsserts.assertUserImported(UserStoragePrivateUtil.userLocalStorage(session), testRealm, "beckybecks", "Becky", "Becks", "becky-becks@email.org", "123");
 
             // Trigger partial sync
             KeycloakSessionFactory sessionFactory = session.getKeycloakSessionFactory();
@@ -284,7 +287,7 @@ public class LDAPSyncTest extends AbstractLDAPTest {
         testingClient.server().run(session -> {
             LDAPTestContext ctx = LDAPTestContext.init(session);
             RealmModel testRealm = session.realms().getRealmByName(TEST_REALM_NAME);
-            UserProvider userProvider = session.userLocalStorage();
+            UserProvider userProvider = UserStoragePrivateUtil.userLocalStorage(session);
             // Assert users updated in local provider
             LDAPTestAsserts.assertUserImported(session.users(), testRealm, "beckyupdated", "Becky", "Becks", "becky-updated@email.org", "123");
             UserModel updatedLocalUser = userProvider.getUserByUsername(testRealm, "beckyupdated");
@@ -304,9 +307,9 @@ public class LDAPSyncTest extends AbstractLDAPTest {
             LDAPTestContext ctx = LDAPTestContext.init(session);
 
             // Remove all users from model
-            session.userLocalStorage().getUsersStream(ctx.getRealm(), true)
+            UserStoragePrivateUtil.userLocalStorage(session).getUsersStream(ctx.getRealm(), true)
                     .collect(Collectors.toList())
-                    .forEach(user -> session.userLocalStorage().removeUser(ctx.getRealm(), user));
+                    .forEach(user -> UserStoragePrivateUtil.userLocalStorage(session).removeUser(ctx.getRealm(), user));
 
             // Change name of UUID attribute to same like usernameAttribute
             String uidAttrName = ctx.getLdapProvider().getLdapIdentityStore().getConfig().getUsernameLdapAttribute();
@@ -353,15 +356,15 @@ public class LDAPSyncTest extends AbstractLDAPTest {
             LDAPTestContext ctx = LDAPTestContext.init(session);
 
             // Remove all users from model
-            session.userLocalStorage().getUsersStream(ctx.getRealm(), true)
+            UserStoragePrivateUtil.userLocalStorage(session).getUsersStream(ctx.getRealm(), true)
                     .peek(user -> System.out.println("trying to delete user: " + user.getUsername()))
                     .collect(Collectors.toList())
                     .forEach(user -> {
-                        UserCache userCache = session.userCache();
+                        UserCache userCache = UserStorageUtil.userCache(session);
                         if (userCache != null) {
                             userCache.evict(ctx.getRealm(), user);
                         }
-                        session.userLocalStorage().removeUser(ctx.getRealm(), user);
+                        UserStoragePrivateUtil.userLocalStorage(session).removeUser(ctx.getRealm(), user);
                     });
 
             // Add street mapper and add some user including street
@@ -507,15 +510,15 @@ public class LDAPSyncTest extends AbstractLDAPTest {
             RealmModel appRealm = ctx.getRealm();
 
             // Remove all users from model
-            session.userLocalStorage().getUsersStream(ctx.getRealm(), true)
+            UserStoragePrivateUtil.userLocalStorage(session).getUsersStream(ctx.getRealm(), true)
                     .peek(user -> System.out.println("trying to delete user: " + user.getUsername()))
                     .collect(Collectors.toList())
                     .forEach(user -> {
-                        UserCache userCache = session.userCache();
+                        UserCache userCache = UserStorageUtil.userCache(session);
                         if (userCache != null) {
                             userCache.evict(ctx.getRealm(), user);
                         }
-                        session.userLocalStorage().removeUser(ctx.getRealm(), user);
+                        UserStoragePrivateUtil.userLocalStorage(session).removeUser(ctx.getRealm(), user);
                     });
 
             Map<String, String> orig = new HashMap<>();

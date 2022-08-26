@@ -33,7 +33,6 @@ import { KeycloakContext } from './keycloak-service/KeycloakContext';
 
 declare function toggleReact(): void;
 declare function isWelcomePage(): boolean;
-declare function loggedInUserName(): string;
 
 declare const brandImg: string;
 declare const brandUrl: string;
@@ -56,10 +55,6 @@ export class App extends React.Component<AppProps> {
         if (!this.context!.authenticated() && !isWelcomePage()) {
             this.context!.login();
         }
-
-        const username = (
-            <span style={{marginLeft: '10px'}} id="loggedInUser">{loggedInUserName()}</span>
-        );
 
         const Header = (
             <PageHeader

@@ -18,7 +18,6 @@
 package org.keycloak.models;
 
 import org.keycloak.component.ComponentModel;
-import org.keycloak.models.cache.UserCache;
 import org.keycloak.provider.InvalidationHandler.InvalidableObjectType;
 import org.keycloak.provider.Provider;
 import org.keycloak.services.clientpolicy.ClientPolicyManager;
@@ -71,7 +70,7 @@ public interface KeycloakSession {
      * @param clazz
      * @param componentId Component configuration
      * @throws IllegalArgumentException If the realm is not set in the context.
-     * @return Provider configured according to the {@link componentId}, {@code null} if it cannot be instantiated.
+     * @return Provider configured according to the {@param componentId}, {@code null} if it cannot be instantiated.
      */
     <T extends Provider> T getComponentProvider(Class<T> clazz, String componentId);
 
@@ -83,7 +82,7 @@ public interface KeycloakSession {
      * @param componentId Component configuration
      * @param modelGetter Getter to retrieve componentModel
      * @throws IllegalArgumentException If the realm is not set in the context.
-     * @return Provider configured according to the {@link componentId}, {@code null} if it cannot be instantiated.
+     * @return Provider configured according to the {@param componentId}, {@code null} if it cannot be instantiated.
      */
     <T extends Provider> T getComponentProvider(Class<T> clazz, String componentId, Function<KeycloakSessionFactory, ComponentModel> modelGetter);
 
@@ -207,35 +206,43 @@ public interface KeycloakSession {
     /**
      * The user cache
      *
+     * @deprecated The access to the UserCache interface is no longer possible here, and this method is about to be removed.
+     * Adjust your code according to the Keycloak 19 Upgrading Guide.
      * @return may be null if cache is disabled
      */
-    UserCache userCache();
+    @Deprecated
+    UserProvider userCache();
 
     /**
      * A cached view of all users in system including  users loaded by UserStorageProviders
      *
-     * @return
+     * @return UserProvider instance
      */
     UserProvider users();
 
     /**
      * @return ClientStorageManager instance
      */
+    @Deprecated
     ClientProvider clientStorageManager();
 
     /**
      * @return ClientScopeStorageManager instance
+     * @deprecated Use {@link #clientScopes()} instead
      */
+    @Deprecated
     ClientScopeProvider clientScopeStorageManager();
 
     /**
      * @return RoleStorageManager instance
      */
+    @Deprecated
     RoleProvider roleStorageManager();
 
     /**
      * @return GroupStorageManager instance
      */
+    @Deprecated
     GroupProvider groupStorageManager();
 
     /**
@@ -243,58 +250,65 @@ public interface KeycloakSession {
      *
      * @return
      */
+    @Deprecated
     UserProvider userStorageManager();
 
     /**
      * Service that allows you to valid and update credentials for a user
-     *
+     * @deprecated Use {@link UserModel#credentialManager()} instead.
      * @return
      */
+    @Deprecated
     UserCredentialManager userCredentialManager();
 
     /**
      * Keycloak specific local storage for users.  No cache in front, this api talks directly to database configured for Keycloak
-     *
-     * @return
      */
+    @Deprecated
     UserProvider userLocalStorage();
 
+    @Deprecated
     RealmProvider realmLocalStorage();
 
     /**
      * Keycloak specific local storage for clients.  No cache in front, this api talks directly to database configured for Keycloak
      *
-     * @return
+     * @deprecated Access to the legacy store is no longer possible via this method. Adjust your code according to the Keycloak 19 Upgrading Guide.
      */
+    @Deprecated
     ClientProvider clientLocalStorage();
 
     /**
      * Keycloak specific local storage for client scopes.  No cache in front, this api talks directly to database configured for Keycloak
      *
-     * @return
+     * @deprecated Access to the legacy store is no longer possible via this method. Adjust your code according to the Keycloak 19 Upgrading Guide.
      */
+    @Deprecated
     ClientScopeProvider clientScopeLocalStorage();
 
     /**
      * Keycloak specific local storage for groups.  No cache in front, this api talks directly to storage configured for Keycloak
      *
-     * @return
+     * @deprecated Access to the legacy store is no longer possible via this method. Adjust your code according to the Keycloak 19 Upgrading Guide.
      */
+    @Deprecated
     GroupProvider groupLocalStorage();
 
     /**
      * Keycloak specific local storage for roles.  No cache in front, this api talks directly to storage configured for Keycloak
      *
-     * @return
+     * @deprecated Access to the legacy store is no longer possible via this method. Adjust your code according to the Keycloak 19 Upgrading Guide.
      */
+    @Deprecated
     RoleProvider roleLocalStorage();
 
     /**
      * Hybrid storage for UserStorageProviders that can't store a specific piece of keycloak data in their external storage.
      * No cache in front.
      *
-     * @return
+     * @deprecated Access to the legacy store is no longer possible via this method. Adjust your code according to the Keycloak 19 Upgrading Guide.
      */
+    @Deprecated
     UserFederatedStorageProvider userFederatedStorage();
 
     /**

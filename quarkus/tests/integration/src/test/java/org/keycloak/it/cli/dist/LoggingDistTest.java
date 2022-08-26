@@ -24,6 +24,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.api.condition.OS;
+import org.keycloak.config.LoggingOptions;
 import org.keycloak.it.junit5.extension.CLIResult;
 import org.keycloak.it.junit5.extension.DistributionTest;
 import org.keycloak.it.junit5.extension.RawDistOnly;
@@ -48,7 +49,7 @@ public class LoggingDistTest {
     @Launch({ "start-dev", "--log-level=debug" })
     void testSetRootLevel(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        assertTrue(cliResult.getOutput().contains("DEBUG [org.hibernate"));
+        assertTrue(cliResult.getOutput().contains("DEBUG [io.quarkus.resteasy.runtime]"));
         cliResult.assertStartedDevMode();
     }
 
@@ -86,7 +87,7 @@ public class LoggingDistTest {
     @Launch({ "start-dev", "--log-level=off,org.keycloak:warn,debug" })
     void testSetLastRootLevelIfMultipleSet(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
-        assertTrue(cliResult.getOutput().contains("DEBUG [org.hibernate"));
+        assertTrue(cliResult.getOutput().contains("DEBUG [io.quarkus.resteasy.runtime]"));
         assertFalse(cliResult.getOutput().contains("INFO  [org.keycloak"));
         cliResult.assertStartedDevMode();
     }
@@ -124,7 +125,7 @@ public class LoggingDistTest {
     void testLogLevelSettingsAppliedWhenJsonEnabled(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         assertFalse(cliResult.getOutput().contains("\"loggerName\":\"io.quarkus\",\"level\":\"INFO\")"));
-        assertTrue(cliResult.getOutput().contains("\"loggerName\":\"org.keycloak.quarkus.runtime.storage.database.jpa.QuarkusJpaConnectionProviderFactory\",\"level\":\"DEBUG\""));
+        assertTrue(cliResult.getOutput().contains("\"loggerName\":\"org.keycloak.services.resources.KeycloakApplication\",\"level\":\"DEBUG\""));
         assertTrue(cliResult.getOutput().contains("\"loggerName\":\"org.infinispan.CONTAINER\",\"level\":\"INFO\""));
     }
 
@@ -134,7 +135,8 @@ public class LoggingDistTest {
     void testWinLogLevelSettingsAppliedWhenJsonEnabled(LaunchResult result) {
         CLIResult cliResult = (CLIResult) result;
         assertFalse(cliResult.getOutput().contains("\"loggerName\":\"io.quarkus\",\"level\":\"INFO\")"));
-        assertTrue(cliResult.getOutput().contains("\"loggerName\":\"org.keycloak.quarkus.runtime.storage.database.jpa.QuarkusJpaConnectionProviderFactory\",\"level\":\"DEBUG\""));
+        assertTrue(cliResult.getOutput().contains("\"loggerName\":\"org.keycloak.quarkus.runtime.storage.legacy.database.LegacyJpaConnectionProviderFactory\",\"level\":\"DEBUG\""));
+        assertTrue(cliResult.getOutput().contains("\"loggerName\":\"org.keycloak.services.resources.KeycloakApplication\",\"level\":\"DEBUG\""));
         assertTrue(cliResult.getOutput().contains("\"loggerName\":\"org.infinispan.CONTAINER\",\"level\":\"INFO\""));
     }
 
@@ -142,7 +144,7 @@ public class LoggingDistTest {
     @EnabledOnOs(value = { OS.LINUX, OS.MAC }, disabledReason = "different shell escaping behaviour on Windows.")
     @Launch({ "start-dev", "--log=console,file"})
     void testKeycloakLogFileCreated(RawDistRootPath path) {
-        Path logFilePath = Paths.get(path.getDistRootPath() + File.separator + LoggingPropertyMappers.DEFAULT_LOG_PATH);
+        Path logFilePath = Paths.get(path.getDistRootPath() + File.separator + LoggingOptions.DEFAULT_LOG_PATH);
         File logFile = new File(logFilePath.toString());
         assertTrue(logFile.isFile(), "Log file does not exist!");
     }
@@ -151,7 +153,7 @@ public class LoggingDistTest {
     @EnabledOnOs(value = { OS.WINDOWS }, disabledReason = "different shell escaping behaviour on Windows.")
     @Launch({ "start-dev", "--log=\"console,file\""})
     void testWinKeycloakLogFileCreated(RawDistRootPath path) {
-        Path logFilePath = Paths.get(path.getDistRootPath() + File.separator + LoggingPropertyMappers.DEFAULT_LOG_PATH);
+        Path logFilePath = Paths.get(path.getDistRootPath() + File.separator + LoggingOptions.DEFAULT_LOG_PATH);
         File logFile = new File(logFilePath.toString());
         assertTrue(logFile.isFile(), "Log file does not exist!");
     }
@@ -160,7 +162,7 @@ public class LoggingDistTest {
     @EnabledOnOs(value = { OS.LINUX, OS.MAC }, disabledReason = "different shell escaping behaviour on Windows.")
     @Launch({ "start-dev", "--log=console,file", "--log-file-format=\"%d{HH:mm:ss} %-5p [%c{1.}] (%t) %s%e%n\""})
     void testFileLoggingHasDifferentFormat(RawDistRootPath path) throws IOException {
-        Path logFilePath = Paths.get(path.getDistRootPath() + File.separator + LoggingPropertyMappers.DEFAULT_LOG_PATH);
+        Path logFilePath = Paths.get(path.getDistRootPath() + File.separator + LoggingOptions.DEFAULT_LOG_PATH);
         File logFile = new File(logFilePath.toString());
 
         String data = FileUtils.readFileToString(logFile, Charset.defaultCharset());

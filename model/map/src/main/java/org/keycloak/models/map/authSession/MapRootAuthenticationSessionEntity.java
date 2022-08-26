@@ -20,6 +20,7 @@ import org.keycloak.models.map.annotations.GenerateEntityImplementations;
 import org.keycloak.models.map.common.AbstractEntity;
 
 import org.keycloak.models.map.common.DeepCloner;
+import org.keycloak.models.map.common.ExpirableEntity;
 import org.keycloak.models.map.common.UpdatableEntity;
 
 import java.util.Collections;
@@ -34,7 +35,7 @@ import java.util.Set;
         inherits = "org.keycloak.models.map.authSession.MapRootAuthenticationSessionEntity.AbstractRootAuthenticationSessionEntity"
 )
 @DeepCloner.Root
-public interface MapRootAuthenticationSessionEntity extends AbstractEntity, UpdatableEntity {
+public interface MapRootAuthenticationSessionEntity extends AbstractEntity, UpdatableEntity, ExpirableEntity {
 
     public abstract class AbstractRootAuthenticationSessionEntity extends UpdatableEntity.Impl implements MapRootAuthenticationSessionEntity {
 
@@ -84,11 +85,20 @@ public interface MapRootAuthenticationSessionEntity extends AbstractEntity, Upda
     String getRealmId();
     void setRealmId(String realmId);
 
+    /**
+     * Returns a point in time (timestamp in milliseconds since The Epoch) when the root authentication session entity was created or
+     * updated during an authentication process.
+     *
+     * @return a timestamp in milliseconds since The Epoch or {@code null} when the time is unknown
+     */
     Long getTimestamp();
-    void setTimestamp(Long timestamp);
 
-    Long getExpiration();
-    void setExpiration(Long expiration);
+    /**
+     * Sets a point in the (timestamp in milliseconds since The Epoch) when the root authentication session entity was created or
+     * updated during an authentication process.
+     * @param timestamp a timestamp in milliseconds since The Epoch or {@code null} when the time is unknown
+     */
+    void setTimestamp(Long timestamp);
 
     Set<MapAuthenticationSessionEntity> getAuthenticationSessions();
     void setAuthenticationSessions(Set<MapAuthenticationSessionEntity> authenticationSessions);

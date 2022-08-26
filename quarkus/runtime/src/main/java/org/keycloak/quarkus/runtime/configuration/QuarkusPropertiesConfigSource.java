@@ -60,10 +60,6 @@ public final class QuarkusPropertiesConfigSource extends AbstractLocationConfigS
         return NAME.equals(value.getConfigSourceName());
     }
 
-    public static boolean isQuarkusPropertiesEnabled() {
-        return parseBoolean(getRawPersistedProperty(QUARKUS_PROPERTY_ENABLED).orElse(Boolean.FALSE.toString()));
-    }
-
     public static Path getConfigurationFile() {
         String homeDir = Environment.getHomeDir();
 

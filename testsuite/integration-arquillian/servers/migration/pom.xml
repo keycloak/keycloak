@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <!--
-~ Copyright 2016 Red Hat, Inc. and/or its affiliates
+~ Copyright 2022 Red Hat, Inc. and/or its affiliates
 ~ and other contributors as indicated by the @author tags.
 ~
 ~ Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,14 +25,14 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>integration-arquillian-migration-server</artifactId>
+    <artifactId>integration-arquillian-migration-server-parent</artifactId>
+    <name>Migration Server Parent</name>
     <packaging>pom</packaging>
-    <name>Migration Server</name>
 
     <properties>
-        <common.resources>${basedir}/../auth-server/jboss/common</common.resources>
-        <ant.scenario>scenario-standalone</ant.scenario>
-        <auth.server.home>${project.build.directory}/unpacked/keycloak-${migrated.auth.server.version}</auth.server.home>
+        <auth.server.home>${project.build.directory}/unpacked/keycloak-${migrated.auth.server.version}
+        </auth.server.home>
+        <auth.server.dist.artifactId>keycloak-quarkus-dist</auth.server.dist.artifactId>
         <jdbc.driver.tmp.dir>${project.build.directory}/jdbc-driver</jdbc.driver.tmp.dir>
     </properties>
 
@@ -101,7 +101,7 @@
                             <artifactItems>
                                 <artifactItem>
                                     <groupId>org.keycloak</groupId>
-                                    <artifactId>keycloak-server-dist</artifactId>
+                                    <artifactId>${auth.server.dist.artifactId}</artifactId>
                                     <version>${migrated.auth.server.version}</version>
                                     <type>zip</type>
                                     <outputDirectory>${project.build.directory}/unpacked</outputDirectory>
@@ -130,120 +130,30 @@
                     </execution>
                 </executions>
             </plugin>
-            <plugin>
-                <artifactId>maven-resources-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>copy-keystore</id>
-                        <phase>process-resources</phase>
-                        <goals>
-                            <goal>copy-resources</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>${auth.server.home}/standalone/configuration</outputDirectory>
-                            <resources>
-                                <resource>
-                                    <directory>${common.resources}/keystore</directory>
-                                    <includes>
-                                        <include>keycloak.jks</include>
-                                        <include>keycloak.truststore</include>
-                                    </includes>
-                                </resource>
-                            </resources>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-antrun-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>configure-server-jpa</id>
-                        <phase>generate-resources</phase>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                        <configuration>
-                            <target>
-                                <ant antfile="${common.resources}/ant/configure.xml" target="configure-server-jpa-legacy">
-                                    <!-- These properties become equivalent to properties defined on the command line. -->
-                                    <!-- Without specifying those the default values would be used regardless what is -->
-                                    <!-- defined via -Dproperty=value when executing maven command -->
-                                    <property name="jdbc.driver.tmp.dir">${jdbc.driver.tmp.dir}</property>
-                                    <property name="jdbc.mvn.artifactId">${jdbc.mvn.artifactId}</property>
-                                    <property name="jdbc.mvn.version">${jdbc.mvn.version}</property>
-                                    <property name="keycloak.connectionsJpa.url">${keycloak.connectionsJpa.url}</property>
-                                    <property name="keycloak.connectionsJpa.user">${keycloak.connectionsJpa.user}</property>
-                                    <property name="keycloak.connectionsJpa.password">${keycloak.connectionsJpa.password}</property>
-                                    <property name="keycloak.connectionsJpa.schema">${keycloak.connectionsJpa.schema}</property>
-                                </ant>
-                            </target>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>inject-truststore</id>
-                        <phase>generate-resources</phase>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                        <configuration>
-                            <target>
-                                <ant antfile="${common.resources}/ant/configure.xml" target="inject-truststore" />
-                            </target>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>ant-apply-prepared-clis</id>
-                        <phase>process-resources</phase>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                        <configuration>
-                            <target>
-                                <ant antfile="${common.resources}/ant/configure.xml" target="apply-cli-scripts" />
-                            </target>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <!-- to workaround the fact that in older wildlfy/eap versions was missing the option -->
-                        <!-- 'module-root-dir' when adding module we need to move it manually afterwards -->
-                        <id>move-driver-module</id>
-                        <phase>process-test-resources</phase>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                        <configuration>
-                            <target>
-                                <move file="${auth.server.home}/modules/test" todir="${auth.server.home}/modules/system/layers/base/" verbose="true" />
-                            </target>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>create-zip</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>single</goal>
-                        </goals>
-                        <configuration>
-                            <descriptors>
-                                <descriptor>assembly.xml</descriptor>
-                            </descriptors>
-                            <appendAssemblyId>false</appendAssemblyId>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
         </plugins>
     </build>
     
     <profiles>
+        <profile>
+            <id>auth-server-migration-legacy</id>
+            <modules>
+                <module>legacy</module>
+            </modules>
+            <properties>
+                <auth.server.dist.artifactId>keycloak-server-dist</auth.server.dist.artifactId>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>auth-server-migration</id>
+            <modules>
+                <module>quarkus</module>
+            </modules>
+            <properties>
+                <auth.server.dist.artifactId>keycloak-quarkus-dist</auth.server.dist.artifactId>
+            </properties>
+        </profile>
+
         <profile>
             <id>community</id>
             <activation>
@@ -263,6 +173,7 @@
                 </plugins>
             </build>
         </profile>
+
         <profile>
             <id>productized-server</id>
             <activation>

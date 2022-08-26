@@ -37,13 +37,12 @@ import org.hibernate.annotations.TypeDefs;
 import org.keycloak.models.map.authSession.MapAuthenticationSessionEntity;
 import org.keycloak.models.map.authSession.MapRootAuthenticationSessionEntity.AbstractRootAuthenticationSessionEntity;
 import org.keycloak.models.map.common.DeepCloner;
-import static org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_AUTH_SESSION;
-import static org.keycloak.models.map.storage.jpa.JpaMapStorageProviderFactory.CLONER;
-
 import org.keycloak.models.map.common.UuidValidator;
+import org.keycloak.models.map.storage.jpa.Constants;
 import org.keycloak.models.map.storage.jpa.JpaRootVersionedEntity;
 import org.keycloak.models.map.storage.jpa.hibernate.jsonb.JsonbType;
 
+import static org.keycloak.models.map.storage.jpa.JpaMapStorageProviderFactory.CLONER;
 
 /**
  * Entity represents root authentication session.
@@ -130,7 +129,7 @@ public class JpaRootAuthenticationSessionEntity extends AbstractRootAuthenticati
 
     @Override
     public Integer getCurrentSchemaVersion() {
-        return CURRENT_SCHEMA_VERSION_AUTH_SESSION;
+        return Constants.CURRENT_SCHEMA_VERSION_ROOT_AUTH_SESSION;
     }
 
     @Override

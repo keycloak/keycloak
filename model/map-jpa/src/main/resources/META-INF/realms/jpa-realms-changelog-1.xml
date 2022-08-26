@@ -22,7 +22,6 @@ limitations under the License.
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd
                     http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
 
-    <!-- format of id of changeSet: realms-${org.keycloak.models.map.storage.jpa.Constants.CURRENT_SCHEMA_VERSION_REALM} -->
     <changeSet author="keycloak" id="realms-1">
 
         <createTable tableName="kc_realm">
@@ -83,8 +82,6 @@ limitations under the License.
             <column name="name" type="VARCHAR(255)"/>
             <column name="value" type="TEXT"/>
         </createTable>
-        <!-- this is deferrable and initiallyDeferred as hibernate will first insert new entries and then delete the old by default -->
-        <addUniqueConstraint tableName="kc_realm_attribute" columnNames="fk_root, name, value" deferrable="true" initiallyDeferred="true" />
         <createIndex tableName="kc_realm_attribute" indexName="realm_attr_fk_root">
             <column name="fk_root"/>
         </createIndex>
@@ -95,6 +92,13 @@ limitations under the License.
         <modifySql dbms="postgresql,cockroachdb">
             <replace replace="VALUE(255)" with="(value::varchar(250))"/>
         </modifySql>
+    </changeSet>
+
+    <changeSet author="keycloak" id="realms-2" dbms="postgresql">
+        <!-- this is deferrable and initiallyDeferred as hibernate will first insert new entries and then delete the old by default -->
+        <!-- this will not work on cockroachdb as deferred indexes are not supported in version 22.1 yet, therefore, only run it on postgresql -->
+        <!-- see https://go.crdb.dev/issue-v/31632/v21.2 for the current status of the implementation -->
+        <addUniqueConstraint tableName="kc_realm_attribute" columnNames="fk_root, name, value" deferrable="true" initiallyDeferred="true" />
     </changeSet>
 
 </databaseChangeLog>

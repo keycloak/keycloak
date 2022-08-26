@@ -12,8 +12,6 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import javax.json.Json;
-import javax.json.JsonObjectBuilder;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Context;
@@ -47,7 +45,9 @@ import org.keycloak.theme.FreeMarkerUtil;
 import org.keycloak.theme.Theme;
 import org.keycloak.theme.beans.MessageFormatterMethod;
 import org.keycloak.urls.UrlType;
+import org.keycloak.util.JsonSerialization;
 import org.keycloak.utils.MediaType;
+import org.keycloak.utils.StringUtil;
 
 /**
  * Created by st on 29/03/17.
@@ -115,6 +115,9 @@ public class AccountConsole {
             Locale locale = session.getContext().resolveLocale(user);
             map.put("locale", locale.toLanguageTag());
             Properties messages = theme.getMessages(locale);
+            if(StringUtil.isNotBlank(realm.getDefaultLocale())) {
+                messages.putAll(realm.getRealmLocalizationTextsByLocale(realm.getDefaultLocale()));
+            }
             messages.putAll(realm.getRealmLocalizationTextsByLocale(locale.toLanguageTag()));
             map.put("msg", new MessageFormatterMethod(locale, messages));
             map.put("msgJSON", messagesToJsonString(messages));
@@ -136,7 +139,7 @@ public class AccountConsole {
             boolean isTotpConfigured = false;
             boolean deleteAccountAllowed = false;
             if (user != null) {
-                isTotpConfigured = session.userCredentialManager().isConfiguredFor(realm, user, realm.getOTPPolicy().getType());
+                isTotpConfigured = user.credentialManager().isConfiguredFor(realm.getOTPPolicy().getType());
                 RoleModel deleteAccountRole = realm.getClientByClientId(Constants.ACCOUNT_MANAGEMENT_CLIENT_ID).getRole(AccountRoles.DELETE_ACCOUNT);
                 deleteAccountAllowed = deleteAccountRole != null && user.hasRole(deleteAccountRole) && realm.getRequiredActionProviderByAlias(DeleteAccount.PROVIDER_ID).isEnabled();
             }
@@ -162,13 +165,15 @@ public class AccountConsole {
     
     private String messagesToJsonString(Properties props) {
         if (props == null) return "";
-        
-        JsonObjectBuilder json = Json.createObjectBuilder();
-        for (String prop : props.stringPropertyNames()) {
-            json.add(prop, convertPropValue(props.getProperty(prop)));
+        Properties newProps = new Properties();
+        for (String prop: props.stringPropertyNames()) {
+            newProps.put(prop, convertPropValue(props.getProperty(prop)));
         }
-        
-        return json.build().toString();
+        try {
+            return JsonSerialization.writeValueAsString(newProps);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
     
     private String convertPropValue(String propertyValue) {
