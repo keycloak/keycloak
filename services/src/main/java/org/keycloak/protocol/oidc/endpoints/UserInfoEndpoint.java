@@ -19,6 +19,7 @@ package org.keycloak.protocol.oidc.endpoints;
 import org.jboss.resteasy.annotations.cache.NoCache;
 import org.jboss.resteasy.spi.HttpRequest;
 import org.jboss.resteasy.spi.HttpResponse;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.OAuthErrorException;
 import org.keycloak.TokenCategory;
 import org.keycloak.TokenVerifier;
@@ -77,6 +78,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.MultivaluedMap;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -136,7 +138,9 @@ public class UserInfoEndpoint {
 
         // Fallback to form parameter
         if (accessToken == null) {
-            accessToken = request.getDecodedFormParameters().getFirst("access_token");
+            MultivaluedMap<String, String> formParams = request.getDecodedFormParameters();
+            checkAccessTokenDuplicated(formParams);
+            accessToken = formParams.getFirst(OAuth2Constants.ACCESS_TOKEN);
         }
 
         return issueUserInfo(accessToken);
@@ -391,6 +395,15 @@ public class UserInfoEndpoint {
         if (token.isIssuedBeforeSessionStart(clientSession.getStarted())) {
             event.error(Errors.INVALID_TOKEN);
             throw newUnauthorizedErrorResponseException(OAuthErrorException.INVALID_TOKEN, "Stale token");
+        }
+    }
+
+    private void checkAccessTokenDuplicated(MultivaluedMap<String, String> formParams) {
+        // If access_token is not provided, error is thrown in issueUserInfo().
+        // Only checks duplication of access token parameter in this function.
+        if (formParams.containsKey(OAuth2Constants.ACCESS_TOKEN) && formParams.get(OAuth2Constants.ACCESS_TOKEN).size() != 1) {
+            cors = Cors.add(request).auth().allowedMethods(request.getHttpMethod()).auth().exposedHeaders(Cors.ACCESS_CONTROL_ALLOW_METHODS);
+            throw new CorsErrorResponseException(cors, OAuthErrorException.INVALID_REQUEST, "duplicated parameter", Response.Status.BAD_REQUEST);
         }
     }
 }
