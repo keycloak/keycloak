@@ -292,11 +292,12 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
             }
 
             UPAttributeRequired rc = attrConfig.getRequired();
-            Predicate<AttributeContext> required = AttributeMetadata.ALWAYS_FALSE;
+            if (rc != null) {
+                validators.add(new AttributeValidatorMetadata(AttributeRequiredByMetadataValidator.ID));
+            }
 
+            Predicate<AttributeContext> required = AttributeMetadata.ALWAYS_FALSE;
             if (rc != null && !isUsernameOrEmailAttribute(attributeName)) {
-                // do not take requirements from config for username and email as they are
-                // driven by business logic from parent!
                 if (rc.isAlways() || UPConfigUtils.isRoleForContext(context, rc.getRoles())) {
                     required = AttributeMetadata.ALWAYS_TRUE;
                 } else if (UPConfigUtils.canBeAuthFlowContext(context) && rc.getScopes() != null && !rc.getScopes().isEmpty()) {
@@ -304,8 +305,6 @@ public class DeclarativeUserProfileProvider extends AbstractUserProfileProvider<
                     // we have to create required validation with scopes based selector
                     required = (c) -> requestedScopePredicate(c, rc.getScopes());
                 }
-
-                validators.add(new AttributeValidatorMetadata(AttributeRequiredByMetadataValidator.ID));
             }
 
             Predicate<AttributeContext> writeAllowed = AttributeMetadata.ALWAYS_FALSE;
