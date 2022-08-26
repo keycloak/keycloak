@@ -170,7 +170,10 @@ public enum EventType implements EnumWithStableIndex {
     FEDERATED_IDENTITY_OVERRIDE_LINK(55, true),
     FEDERATED_IDENTITY_OVERRIDE_LINK_ERROR(0x10000 + FEDERATED_IDENTITY_OVERRIDE_LINK.getStableIndex(), true),
     INVITE_ORG(60, true),
-    INVITE_ORG_ERROR(0x10000 + INVITE_ORG.getStableIndex(), true);
+    INVITE_ORG_ERROR(0x10000 + INVITE_ORG.getStableIndex(), true),
+
+    JWT_BEARER(61, true),
+    JWT_BEARER_ERROR(0x10000 + JWT_BEARER.getStableIndex(), true);
 
     private final int stableIndex;
     private final boolean saveByDefault;

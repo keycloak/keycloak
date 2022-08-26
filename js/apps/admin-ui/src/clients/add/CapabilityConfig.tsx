@@ -149,6 +149,32 @@ export const CapabilityConfig = ({
                   )}
                 />
               </GridItem>
+              {isFeatureEnabled(Feature.AssertionGrant) && (
+                <GridItem lg={8} sm={6}>
+                  <Controller
+                    name={convertAttributeNameToForm<FormFields>(
+                      "attributes.oidc.grants.assertion.enabled",
+                    )}
+                    defaultValue={false}
+                    control={control}
+                    render={({ field }) => (
+                      <InputGroup>
+                        <Checkbox
+                          data-testid="oidc-assertion-grant"
+                          label={t("oidcClientJWTBearerEnabled")}
+                          id="kc-oidc-assertion-grant"
+                          isChecked={field.value.toString() === "true"}
+                          onChange={field.onChange}
+                        />
+                        <HelpItem
+                          helpText={t("oidcClientJWTBearerEnabledHelp")}
+                          fieldLabelId="oidcClientJWTBearerEnabled"
+                        />
+                      </InputGroup>
+                    )}
+                  />
+                </GridItem>
+              )}
               <GridItem lg={8} sm={6}>
                 <Controller
                   name="directAccessGrantsEnabled"

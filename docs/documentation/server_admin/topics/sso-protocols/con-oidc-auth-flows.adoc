@@ -101,6 +101,23 @@ This is used by clients running on internet-connected devices that have limited 
 . The application provides the user with the user code and the verification URI. The user accesses a verification URI to be authenticated by using another browser. You could define a short verification_uri that will be redirected to {project_name} verification URI (/realms/realm_name/device)outside {project_name} - fe in a proxy.
 . The application repeatedly polls {project_name} to find out if the user completed the user authorization. If user authentication is complete, the application exchanges the device code for an _identity_, _access_ and _refresh_ token.
 
+[[_assertion_grant]]
+===== JWTs as Authorization Grants
+
+The JWTs as authorization grants flow described in https://www.rfc-editor.org/rfc/rfc7523#section-2.1[RFC 7523 Section 2.1] enables trusted entities to authenticate users by submitting a signed JWT to the OIDC token endpoint.
+
+The protocol works as follows:
+
+. A trusted entity generates a JWT, specifying the username of the user in the _sub_ claim of the JWT
+. The trusted entity signs the JWT with the private key assocated with a pre-registered certificate (see the <<_assertion_grant_configuration,Assertion Grant Trusted Issuer Configuration>> chapter for configuring trusted certificates)
+. The trusted entity submits the JWT to the oidc _token_ endpoint with _grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer_
+. Keycloak validates the submitted assertion against cross-domain trusts in the client configuration
+. If the assertion is valid, Keycloak creates an authentication session for the requested user and returns the generated OIDC tokens
+
+To perform assertion grant requests, the client submitting the assertion grant request must be authorized to impersonate users.
+
+For details on fine grain permissions and the _impersonate_ role, see the <<full-list-of-permissions,Fine grain admin permissions>> chapter.
+
 [[_client_initiated_backchannel_authentication_grant]]
 ===== Client initiated backchannel authentication grant
 

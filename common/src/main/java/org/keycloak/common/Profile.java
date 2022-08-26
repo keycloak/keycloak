@@ -69,6 +69,8 @@ public class Profile {
 
         TOKEN_EXCHANGE("Token Exchange Service", Type.PREVIEW),
 
+        ASSERTION_GRANT("AssertionGrantService",Type.PREVIEW),
+
         WEB_AUTHN("W3C Web Authentication (WebAuthn)", Type.DEFAULT),
 
         CLIENT_POLICIES("Client configuration policies", Type.DEFAULT),

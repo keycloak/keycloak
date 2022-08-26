@@ -164,6 +164,36 @@ public class TokenVerifier<T extends JsonWebToken> {
         }
     };
 
+    /**
+     * Verify the 'iss' claim in OIDC tokens
+     */
+    public static class IssuerCheck implements Predicate<JsonWebToken> {
+
+        private final String expectedIssuer;
+
+        public IssuerCheck(String expectedIssuer) {
+            this.expectedIssuer = expectedIssuer;
+        }
+
+        @Override
+        public boolean test(JsonWebToken t) throws VerificationException {
+            if (expectedIssuer == null) {
+                throw new VerificationException("Missing expectedIssuer");
+            }
+
+            String issuer = t.getIssuer();
+            if (issuer == null) {
+                throw new VerificationException("No issuer in the token");
+            }
+
+            if (issuer.equals(expectedIssuer)) {
+                return true;
+            }
+
+            throw new VerificationException("Expected issuer not available in the token");
+        }
+    };
+
 
     public static class IssuedForCheck implements Predicate<JsonWebToken> {
 
