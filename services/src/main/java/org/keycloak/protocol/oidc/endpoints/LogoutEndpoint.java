@@ -173,6 +173,9 @@ public class LogoutEndpoint {
                            @QueryParam(OIDCLoginProtocol.STATE_PARAM) String state,
                            @QueryParam(OIDCLoginProtocol.UI_LOCALES_PARAM) String uiLocales,
                            @QueryParam(AuthenticationManager.INITIATING_IDP_PARAM) String initiatingIdp) {
+        
+        boolean confirmationNeeded = true;
+        boolean forcedConfirmation = false;
 
         if (!providerConfig.isLegacyLogoutRedirectUri()) {
             if (deprecatedRedirectUri != null) {
@@ -184,20 +187,13 @@ public class LogoutEndpoint {
             }
 
             if (postLogoutRedirectUri != null && encodedIdToken == null && clientId == null) {
-                event.event(EventType.LOGOUT);
-                event.error(Errors.INVALID_REQUEST);
-                logger.warnf(
-                        "Either the parameter 'client_id' or the parameter 'id_token_hint' is required when 'post_logout_redirect_uri' is used.");
-                return ErrorPage.error(session, null, Response.Status.BAD_REQUEST, Messages.MISSING_PARAMETER,
-                        OIDCLoginProtocol.ID_TOKEN_HINT);
+                forcedConfirmation = true;
             }
         }
 
         deprecatedRedirectUri = providerConfig.isLegacyLogoutRedirectUri() ? deprecatedRedirectUri : null;
         final String redirectUri = postLogoutRedirectUri != null ? postLogoutRedirectUri : deprecatedRedirectUri;
 
-        boolean confirmationNeeded = true;
-        boolean forcedConfirmation = false;
         ClientModel client = clientId == null ? null : realm.getClientByClientId(clientId);
         if (clientId != null && client == null) {
             logger.warnf("Client '%s' not found.", clientId);
