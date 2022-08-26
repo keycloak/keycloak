@@ -21,7 +21,7 @@ import java.util.function.Predicate;
 public final class PropertyMappers {
 
     public static String VALUE_MASK = "*******";
-    static final MappersConfig MAPPERS = new MappersConfig();
+    private static final MappersConfig MAPPERS = new MappersConfig();
 
     private PropertyMappers(){}
 

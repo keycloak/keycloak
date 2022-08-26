@@ -1,35 +1,19 @@
 package org.keycloak.authentication.authenticators.x509;
 
-import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.x500.X500Name;
-import org.bouncycastle.asn1.x509.CertificatePolicies;
-import org.bouncycastle.asn1.x509.Extension;
-import org.bouncycastle.asn1.x509.PolicyInformation;
-import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.cert.CertIOException;
-import org.bouncycastle.cert.X509v3CertificateBuilder;
-import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.operator.ContentSigner;
-import org.bouncycastle.operator.OperatorCreationException;
-import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
+import org.junit.ClassRule;
 import org.junit.Test;
+import org.keycloak.common.crypto.CryptoIntegration;
+import org.keycloak.common.util.BouncyIntegration;
+import org.keycloak.rule.CryptoInitRule;
 
-import java.io.IOException;
-import java.math.BigInteger;
 import java.security.GeneralSecurityException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
-import java.security.SecureRandom;
-import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Date;
-import java.util.LinkedList;
-import java.util.List;
 
 import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.CERTIFICATE_POLICY_MODE_ALL;
 import static org.keycloak.authentication.authenticators.x509.AbstractX509ClientCertificateAuthenticator.CERTIFICATE_POLICY_MODE_ANY;
@@ -42,19 +26,20 @@ import static org.keycloak.authentication.authenticators.x509.AbstractX509Client
  */
 public class CertificateValidatorTest {
 
-    private static final BouncyCastleProvider BOUNCY_CASTLE_PROVIDER = new BouncyCastleProvider();
+    @ClassRule
+    public static CryptoInitRule cryptoInitRule = new CryptoInitRule();
 
     /**
      * will validate that the certificate validation succeeds if the certificate is currently valid
      */
     @Test
     public void testValidityOfCertificatesSuccess() throws GeneralSecurityException {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", BouncyIntegration.PROVIDER);
         kpg.initialize(512);
         KeyPair keyPair = kpg.generateKeyPair();
-        X509Certificate certificate =
-            createCertificate("CN=keycloak-test", new Date(),
-                new Date(System.currentTimeMillis() + 1000L * 60), keyPair, null);
+        X509Certificate certificate = CryptoIntegration.getProvider().getCertificateUtils()
+                .createServicesTestCertificate("CN=keycloak-test", new Date(),
+                        new Date(System.currentTimeMillis() + 1000L * 60), keyPair);
 
         CertificateValidator.CertificateValidatorBuilder builder =
             new CertificateValidator.CertificateValidatorBuilder();
@@ -75,12 +60,12 @@ public class CertificateValidatorTest {
      */
     @Test
     public void testValidityOfCertificatesNotValidYet() throws GeneralSecurityException {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", BouncyIntegration.PROVIDER);
         kpg.initialize(512);
         KeyPair keyPair = kpg.generateKeyPair();
-        X509Certificate certificate =
-            createCertificate("CN=keycloak-test", new Date(System.currentTimeMillis() + 1000L * 60),
-                new Date(System.currentTimeMillis() + 1000L * 60), keyPair, null);
+        X509Certificate certificate = CryptoIntegration.getProvider().getCertificateUtils()
+                .createServicesTestCertificate("CN=keycloak-test", new Date(System.currentTimeMillis() + 1000L * 60),
+                        new Date(System.currentTimeMillis() + 1000L * 60), keyPair);
 
         CertificateValidator.CertificateValidatorBuilder builder =
             new CertificateValidator.CertificateValidatorBuilder();
@@ -102,12 +87,13 @@ public class CertificateValidatorTest {
      */
     @Test
     public void testValidityOfCertificatesHasExpired() throws GeneralSecurityException {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", BouncyIntegration.PROVIDER);
         kpg.initialize(512);
         KeyPair keyPair = kpg.generateKeyPair();
-        X509Certificate certificate =
-            createCertificate("CN=keycloak-test", new Date(System.currentTimeMillis() - 1000L * 60 * 2),
-                new Date(System.currentTimeMillis() - 1000L * 60), keyPair, null);
+        X509Certificate certificate = CryptoIntegration.getProvider().getCertificateUtils()
+                .createServicesTestCertificate("CN=keycloak-test",
+                        new Date(System.currentTimeMillis() - 1000L * 60 * 2),
+                        new Date(System.currentTimeMillis() - 1000L * 60), keyPair);
 
         CertificateValidator.CertificateValidatorBuilder builder =
             new CertificateValidator.CertificateValidatorBuilder();
@@ -157,7 +143,7 @@ public class CertificateValidatorTest {
      */
     @Test(expected = GeneralSecurityException.class)
     public void testCertificatePolicyModeAllOneRequestedAndNotPresent() throws GeneralSecurityException {
-        testCertificatePolicyValidation("1.3.76.16.2.1", CERTIFICATE_POLICY_MODE_ALL, null);
+        testCertificatePolicyValidation("1.3.76.16.2.1", CERTIFICATE_POLICY_MODE_ALL);
     }
 
     /**
@@ -265,7 +251,7 @@ public class CertificateValidatorTest {
      */
     @Test(expected = GeneralSecurityException.class)
     public void testCertificatePolicyModeAnyOneRequestedAndNotPresent() throws GeneralSecurityException {
-        testCertificatePolicyValidation("1.3.76.16.2.1", CERTIFICATE_POLICY_MODE_ANY, null);
+        testCertificatePolicyValidation("1.3.76.16.2.1", CERTIFICATE_POLICY_MODE_ANY);
     }
 
     /**
@@ -344,35 +330,15 @@ public class CertificateValidatorTest {
     private void testCertificatePolicyValidation(String expectedPolicy, String mode, String... certificatePolicyOid)
         throws GeneralSecurityException
     {
-        List<Extension> certificatePolicies = null;
+        
 
-        if (certificatePolicyOid != null && certificatePolicyOid.length > 0)
-        {
-            certificatePolicies = new LinkedList<>();
-
-            List<PolicyInformation> policyInfoList = new LinkedList<>();
-            for (String oid: certificatePolicyOid)
-            {
-                policyInfoList.add(new PolicyInformation(new ASN1ObjectIdentifier(oid)));
-            }
-
-            CertificatePolicies policies = new CertificatePolicies(policyInfoList.toArray(new PolicyInformation[0]));
-
-            try {
-                boolean isCritical = false;
-                Extension extension = new Extension(Extension.certificatePolicies, isCritical, policies.getEncoded());
-                certificatePolicies.add(extension);
-            } catch (IOException e) {
-                throw new IllegalStateException(e);
-            }
-        }
-
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", BouncyIntegration.PROVIDER);
         kpg.initialize(512);
         KeyPair keyPair = kpg.generateKeyPair();
-        X509Certificate certificate =
-            createCertificate("CN=keycloak-test", new Date(System.currentTimeMillis() - 1000L * 60 * 2),
-                new Date(System.currentTimeMillis() - 1000L * 60), keyPair, certificatePolicies);
+        X509Certificate certificate = CryptoIntegration.getProvider().getCertificateUtils()
+                .createServicesTestCertificate("CN=keycloak-test",
+                        new Date(System.currentTimeMillis() - 1000L * 60 * 2),
+                        new Date(System.currentTimeMillis() - 1000L * 60), keyPair, certificatePolicyOid);
 
         CertificateValidator.CertificateValidatorBuilder builder =
             new CertificateValidator.CertificateValidatorBuilder();
@@ -385,57 +351,4 @@ public class CertificateValidatorTest {
         validator.validatePolicy();
     }
 
-    /**
-     * will create a self-signed certificate
-     *
-     * @param dn the DN of the subject and issuer
-     * @param startDate startdate of the validity of the created certificate
-     * @param expiryDate expiration date of the created certificate
-     * @param keyPair the keypair that is used to create the certificate
-     * @param extensions optional list of extensions to include in the certificate
-     * @return a X509-Certificate in version 3
-     */
-    public X509Certificate createCertificate(String dn,
-                                             Date startDate,
-                                             Date expiryDate,
-                                             KeyPair keyPair,
-                                             List<Extension> extensions) {
-        // Cert data
-        X500Name subjectDN = new X500Name(dn);
-        X500Name issuerDN = new X500Name(dn);
-
-        SubjectPublicKeyInfo subjPubKeyInfo = SubjectPublicKeyInfo.getInstance(
-            ASN1Sequence.getInstance(keyPair.getPublic().getEncoded()));
-
-        BigInteger serialNumber = new BigInteger(130, new SecureRandom());
-
-        // Build the certificate
-        X509v3CertificateBuilder certGen = new X509v3CertificateBuilder(issuerDN, serialNumber, startDate, expiryDate,
-            subjectDN, subjPubKeyInfo);
-
-        if (extensions != null)
-        {
-            try
-            {
-                for (Extension certExtension: extensions)
-                    certGen.addExtension(certExtension);
-            } catch (CertIOException e) {
-                throw new IllegalStateException(e);
-            }
-        }
-
-        // Sign the cert with the private key
-        try {
-            ContentSigner contentSigner = new JcaContentSignerBuilder("SHA256withRSA")
-                .setProvider(BOUNCY_CASTLE_PROVIDER)
-                .build(keyPair.getPrivate());
-            X509Certificate x509Certificate = new JcaX509CertificateConverter()
-                .setProvider(BOUNCY_CASTLE_PROVIDER)
-                .getCertificate(certGen.build(contentSigner));
-
-            return x509Certificate;
-        } catch (CertificateException | OperatorCreationException e) {
-            throw new IllegalStateException(e);
-        }
-    }
 }

@@ -1,11 +1,8 @@
 package org.keycloak.config;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
-import java.util.stream.Collectors;
 
 public class LoggingOptions {
 
@@ -23,9 +20,8 @@ public class LoggingOptions {
 
     public static final Option LOG = new OptionBuilder("log", List.class, Handler.class)
             .category(OptionCategory.LOGGING)
-            .description("Enable one or more log handlers in a comma-separated list. Available log handlers are: " + Arrays.stream(Handler.values()).map(Enum::toString).collect(Collectors.joining(",")))
+            .description("Enable one or more log handlers in a comma-separated list.")
             .defaultValue(DEFAULT_LOG_HANDLER)
-            .expectedValues(Handler.values())
             .build();
 
     public enum Level {
@@ -44,9 +40,9 @@ public class LoggingOptions {
         }
     }
 
-    public static final Option<Level> LOG_LEVEL = new OptionBuilder<>("log-level", Level.class)
+    public static final Option<String> LOG_LEVEL = new OptionBuilder<>("log-level", String.class)
             .category(OptionCategory.LOGGING)
-            .defaultValue(DEFAULT_LOG_LEVEL)
+            .defaultValue(DEFAULT_LOG_LEVEL.toString())
             .description("The log level of the root category or a comma-separated list of individual categories and their levels. For the root category, you don't need to specify a category.")
             .build();
 
@@ -63,7 +59,6 @@ public class LoggingOptions {
             .category(OptionCategory.LOGGING)
             .defaultValue(DEFAULT_CONSOLE_OUTPUT)
             .description("Set the log output to JSON or default (plain) unstructured logging.")
-            .expectedValues(Output.values())
             .build();
 
     public static final Option<String> LOG_CONSOLE_FORMAT = new OptionBuilder<>("log-console-format", String.class)
@@ -135,7 +130,6 @@ public class LoggingOptions {
             .category(OptionCategory.LOGGING)
             .description("If set to true, occuring stack traces are included in the 'StackTrace' field in the GELF output.")
             .defaultValue(Boolean.TRUE)
-            .expectedValues(Boolean.TRUE, Boolean.FALSE)
             .build();
 
     public static final Option<String> LOG_GELF_TIMESTAMP_FORMAT = new OptionBuilder<>("log-gelf-timestamp-format", String.class)
@@ -167,28 +161,4 @@ public class LoggingOptions {
             .description("Include source code location.")
             .defaultValue(Boolean.TRUE)
             .build();
-
-    public static final List<Option<?>> ALL_OPTIONS = new ArrayList<>();
-
-    static {
-        ALL_OPTIONS.add(LOG);
-        ALL_OPTIONS.add(LOG_LEVEL);
-        ALL_OPTIONS.add(LOG_CONSOLE_OUTPUT);
-        ALL_OPTIONS.add(LOG_CONSOLE_FORMAT);
-        ALL_OPTIONS.add(LOG_CONSOLE_COLOR);
-        ALL_OPTIONS.add(LOG_CONSOLE_ENABLED);
-        ALL_OPTIONS.add(LOG_FILE_ENABLED);
-        ALL_OPTIONS.add(LOG_FILE);
-        ALL_OPTIONS.add(LOG_FILE_FORMAT);
-        ALL_OPTIONS.add(LOG_GELF_ENABLED);
-        ALL_OPTIONS.add(LOG_GELF_HOST);
-        ALL_OPTIONS.add(LOG_GELF_PORT);
-        ALL_OPTIONS.add(LOG_GELF_VERSION);
-        ALL_OPTIONS.add(LOG_GELF_INCLUDE_STACK_TRACE);
-        ALL_OPTIONS.add(LOG_GELF_TIMESTAMP_FORMAT);
-        ALL_OPTIONS.add(LOG_GELF_FACILITY);
-        ALL_OPTIONS.add(LOG_GELF_MAX_MSG_SIZE);
-        ALL_OPTIONS.add(LOG_GELF_INCLUDE_LOG_MSG_PARAMS);
-        ALL_OPTIONS.add(LOG_GELF_INCLUDE_LOCATION);
-    }
 }

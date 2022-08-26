@@ -82,6 +82,8 @@ You are also able to import realms when the server is starting by using the `--i
 When you set the `--import-realm` option, the server is going to try to import any realm configuration file from the `data/import` directory. Each file in this directory should
 contain a single realm configuration. Only regular files using the `.json` extension are read from this directory, sub-directories are ignored.
 
+NOTE: For the https://quay.io/keycloak/keycloak[published containers], the import directory is `/opt/keycloak/data/import`
+
 If a realm already exists in the server, the import operation is skipped.
 
 === Using Environment Variables within the Realm Configuration Files

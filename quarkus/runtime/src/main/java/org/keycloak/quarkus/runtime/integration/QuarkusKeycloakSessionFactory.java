@@ -19,6 +19,7 @@ package org.keycloak.quarkus.runtime.integration;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.keycloak.Config;
@@ -26,8 +27,10 @@ import org.keycloak.provider.Provider;
 import org.keycloak.provider.ProviderFactory;
 import org.keycloak.provider.ProviderManagerRegistry;
 import org.keycloak.provider.Spi;
+import org.keycloak.quarkus.runtime.themes.QuarkusJarThemeProviderFactory;
 import org.keycloak.services.DefaultKeycloakSessionFactory;
 import org.keycloak.services.resources.admin.permissions.AdminPermissions;
+import org.keycloak.theme.ClasspathThemeProviderFactory;
 
 public final class QuarkusKeycloakSessionFactory extends DefaultKeycloakSessionFactory {
 
@@ -52,6 +55,7 @@ public final class QuarkusKeycloakSessionFactory extends DefaultKeycloakSessionF
             Map<Spi, Map<Class<? extends Provider>, Map<String, Class<? extends ProviderFactory>>>> factories,
             Map<Class<? extends Provider>, String> defaultProviders,
             Map<String, ProviderFactory> preConfiguredProviders,
+            List<ClasspathThemeProviderFactory.ThemesRepresentation> themes,
             Boolean reaugmented) {
         this.provider = defaultProviders;
         this.factories = factories;
@@ -67,6 +71,10 @@ public final class QuarkusKeycloakSessionFactory extends DefaultKeycloakSessionF
 
                     if (factory == null) {
                         factory = lookupProviderFactory(entry.getValue());
+                    }
+
+                    if (factory instanceof QuarkusJarThemeProviderFactory) {
+                        ((QuarkusJarThemeProviderFactory) factory).setThemes(themes);
                     }
 
                     Config.Scope scope = Config.scope(spi.getName(), factory.getId());

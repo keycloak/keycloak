@@ -44,6 +44,10 @@
         <mvel.version>2.4.0.Final</mvel.version>
         <systemrules.version>1.19.0</systemrules.version>
         <common.resources>${basedir}/../../servers/auth-server/jboss/common</common.resources>
+        <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
+        <maven.compiler.release>11</maven.compiler.release>
+        <maven.compiler.target>11</maven.compiler.target>
+        <maven.compiler.source>11</maven.compiler.source>
     </properties>
     
     <dependencies>
@@ -101,7 +105,6 @@
             <groupId>org.testcontainers</groupId>
             <artifactId>testcontainers</artifactId>
             <version>${testcontainers.version}</version>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.google.guava</groupId>
@@ -366,7 +369,10 @@
                     </execution>
                 </executions>
             </plugin>
-
+            <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>${maven-compiler-plugin.version}</version>
+            </plugin>
         </plugins>
 
     </build>

@@ -156,7 +156,7 @@ public class PropertyMapper<T> {
     public String getDescription() { return this.option.getDescription(); }
 
     public List<String> getExpectedValues() {
-        return this.option.getExpectedValues().stream().map(v -> v.toString()).collect(Collectors.toList());
+        return this.option.getExpectedValues();
     }
 
     public Optional<T> getDefaultValue() { return this.option.getDefaultValue(); }
