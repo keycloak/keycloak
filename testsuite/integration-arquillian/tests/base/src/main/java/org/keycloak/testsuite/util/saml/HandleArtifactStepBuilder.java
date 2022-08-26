@@ -11,7 +11,8 @@ import org.apache.http.util.EntityUtils;
 import org.keycloak.common.util.KeyUtils;
 import org.keycloak.dom.saml.v2.assertion.NameIDType;
 import org.keycloak.dom.saml.v2.protocol.ArtifactResolveType;
-import org.keycloak.models.SamlArtifactSessionMappingStoreProvider;
+import org.keycloak.models.SingleUseObjectProvider;
+import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.protocol.saml.SamlService;
 import org.keycloak.protocol.saml.profile.util.Soap;
 import org.keycloak.saml.BaseSAML2BindingBuilder;
@@ -195,8 +196,8 @@ public class HandleArtifactStepBuilder extends SamlDocumentStepBuilder<ArtifactR
 
         if (beforeStepChecker != null && beforeStepChecker instanceof SessionStateChecker) {
             SessionStateChecker sessionStateChecker = (SessionStateChecker) beforeStepChecker;
-            sessionStateChecker.setUserSessionProvider(session -> session.getProvider(SamlArtifactSessionMappingStoreProvider.class).get(artifact).getUserSessionId());
-            sessionStateChecker.setClientSessionProvider(session -> session.getProvider(SamlArtifactSessionMappingStoreProvider.class).get(artifact).getClientSessionId());
+            sessionStateChecker.setUserSessionProvider(session -> session.getProvider(SingleUseObjectProvider.class).get(artifact).get(SamlProtocol.USER_SESSION_ID));
+            sessionStateChecker.setClientSessionProvider(session -> session.getProvider(SingleUseObjectProvider.class).get(artifact).get(SamlProtocol.CLIENT_SESSION_ID));
         }
 
         HttpPost post =  Soap.createMessage().addToBody(DocumentUtil.getDocument(transformed)).buildHttpPost(authServerSamlUrl);

@@ -124,7 +124,7 @@ public interface GroupProvider extends Provider, GroupLookupProvider {
     Long getGroupsCount(RealmModel realm, Boolean onlyTopGroups);
 
     /**
-     * Returns number of groups with the given string in name for the given realm.
+     * Returns the number of top level groups containing groups with the given string in name for the given realm.
      *
      * @param realm Realm.
      * @param search Case insensitive string which will be searched for.

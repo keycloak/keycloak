@@ -29,9 +29,9 @@ public class ProvidersListAttributeBuilder extends StringListAttributeDefinition
         super("providers");
         ModelNode provider = new ModelNode();
         provider.add("classpath:${jboss.home.dir}/providers/*");
-        this.defaultValue = provider;
+        setDefaultValue(provider);
         setAllowExpression(true);
-        setAllowNull(true);
+        setRequired(false);
     }
     
 }

@@ -17,6 +17,13 @@
  */
 package org.keycloak.authorization.policy.provider.regex;
 
+import static org.keycloak.utils.JsonUtils.getJsonValue;
+import static org.keycloak.utils.JsonUtils.hasPath;
+import static org.keycloak.utils.JsonUtils.splitClaimPath;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -27,6 +34,8 @@ import org.keycloak.authorization.model.Policy;
 import org.keycloak.authorization.policy.evaluation.Evaluation;
 import org.keycloak.authorization.policy.provider.PolicyProvider;
 import org.keycloak.representations.idm.authorization.RegexPolicyRepresentation;
+import org.keycloak.util.JsonSerialization;
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * @author <a href="mailto:yoshiyuki.tabata.jy@hitachi.com">Yoshiyuki Tabata</a>
@@ -47,17 +56,60 @@ public class RegexPolicyProvider implements PolicyProvider {
     public void evaluate(Evaluation evaluation) {
         AuthorizationProvider authorizationProvider = evaluation.getAuthorizationProvider();
         RegexPolicyRepresentation policy = representationFunction.apply(evaluation.getPolicy(), authorizationProvider);
-        Attributes.Entry targetClaim = evaluation.getContext().getIdentity().getAttributes().getValue(policy.getTargetClaim());
+        String value = getClaimValue(evaluation, policy);
 
-        if (targetClaim == null) {
+        if (value == null) {
             return;
         }
 
         Pattern pattern = Pattern.compile(policy.getPattern());
-        Matcher matcher = pattern.matcher(targetClaim.asString(0));
+        Matcher matcher = pattern.matcher(value);
         if (matcher.matches()) {
             evaluation.grant();
         }
     }
 
+    private String getClaimValue(Evaluation evaluation, RegexPolicyRepresentation policy) {
+        Attributes attributes = evaluation.getContext().getIdentity().getAttributes();
+        String targetClaim = policy.getTargetClaim();
+
+        try {
+            if (hasPath(targetClaim)) {
+                return resolveJsonValue(attributes, targetClaim);
+            }
+
+            return resolveSimpleValue(attributes, targetClaim);
+        } catch (IOException cause) {
+            throw new RuntimeException("Failed to resolve value from claim: " + targetClaim, cause);
+        }
+    }
+
+    private String resolveSimpleValue(Attributes attributes, String targetClaim) {
+        Attributes.Entry value = attributes.getValue(targetClaim);
+
+        if (value == null || value.isEmpty()) {
+            return null;
+        }
+
+        return value.asString(0);
+    }
+
+    private String resolveJsonValue(Attributes attributes, String targetClaim) throws IOException {
+        List<String> paths = splitClaimPath(targetClaim);
+
+        if (paths.isEmpty()) {
+            return null;
+        }
+
+        Attributes.Entry attribute = attributes.getValue(paths.get(0));
+
+        if (attribute == null || attribute.isEmpty()) {
+            return null;
+        }
+
+        JsonNode node = JsonSerialization.readValue(attribute.asString(0), JsonNode.class);
+        String path = String.join(".", paths.subList(1, paths.size()));
+
+        return Optional.ofNullable(getJsonValue(node, path)).map(Object::toString).orElse(null);
+    }
 }

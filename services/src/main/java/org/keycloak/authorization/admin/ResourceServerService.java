@@ -86,7 +86,7 @@ public class ResourceServerService {
         if (this.resourceServer == null) {
             this.resourceServer = RepresentationToModel.createResourceServer(client, session, true);
             createDefaultPermission(createDefaultResource(), createDefaultPolicy());
-            audit(OperationType.CREATE, session.getContext().getUri(), newClient);
+            audit(ModelToRepresentation.toRepresentation(resourceServer, client), OperationType.CREATE, session.getContext().getUri(), newClient);
         }
 
         return resourceServer;
@@ -100,14 +100,16 @@ public class ResourceServerService {
         this.resourceServer.setAllowRemoteResourceManagement(server.isAllowRemoteResourceManagement());
         this.resourceServer.setPolicyEnforcementMode(server.getPolicyEnforcementMode());
         this.resourceServer.setDecisionStrategy(server.getDecisionStrategy());
-        audit(OperationType.UPDATE, session.getContext().getUri(), false);
+        audit(ModelToRepresentation.toRepresentation(resourceServer, client), OperationType.UPDATE, session.getContext().getUri(), false);
         return Response.noContent().build();
     }
 
     public void delete() {
         this.auth.realm().requireManageAuthorization();
-        authorization.getStoreFactory().getResourceServerStore().delete(resourceServer.getId());
-        audit(OperationType.DELETE, session.getContext().getUri(), false);
+        //need to create representation before the object is deleted to be able to get lazy loaded fields
+        ResourceServerRepresentation rep = ModelToRepresentation.toRepresentation(resourceServer, client);
+        authorization.getStoreFactory().getResourceServerStore().delete(client);
+        audit(rep, OperationType.DELETE, session.getContext().getUri(), false);
     }
 
     @GET
@@ -133,9 +135,9 @@ public class ResourceServerService {
 
         rep.setClientId(client.getId());
 
-        RepresentationToModel.toModel(rep, authorization);
+        resourceServer = RepresentationToModel.toModel(rep, authorization, client);
 
-        audit(OperationType.UPDATE, session.getContext().getUri(), false);
+        audit(ModelToRepresentation.toRepresentation(resourceServer, client), OperationType.UPDATE, session.getContext().getUri(), false);
 
         return Response.noContent().build();
     }
@@ -224,13 +226,13 @@ public class ResourceServerService {
         return defaultResource;
     }
 
-    private void audit(OperationType operation, UriInfo uriInfo, boolean newClient) {
+    private void audit(ResourceServerRepresentation rep, OperationType operation, UriInfo uriInfo, boolean newClient) {
         if (newClient) {
             adminEvent.resource(ResourceType.AUTHORIZATION_RESOURCE_SERVER).operation(operation).resourcePath(uriInfo, client.getId())
-                    .representation(ModelToRepresentation.toRepresentation(resourceServer, client)).success();
+                    .representation(rep).success();
         } else {
             adminEvent.resource(ResourceType.AUTHORIZATION_RESOURCE_SERVER).operation(operation).resourcePath(uriInfo)
-                    .representation(ModelToRepresentation.toRepresentation(resourceServer, client)).success();
+                    .representation(rep).success();
         }
     }
 }

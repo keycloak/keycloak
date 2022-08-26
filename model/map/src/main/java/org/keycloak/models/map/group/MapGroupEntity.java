@@ -1,13 +1,13 @@
 /*
- * Copyright 2020 Red Hat, Inc. and/or its affiliates
+ * Copyright 2021 Red Hat, Inc. and/or its affiliates
  * and other contributors as indicated by the @author tags.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,118 +17,49 @@
 
 package org.keycloak.models.map.group;
 
+import org.keycloak.models.map.annotations.GenerateEntityImplementations;
 import org.keycloak.models.map.common.AbstractEntity;
-
+import org.keycloak.models.map.common.DeepCloner;
+import org.keycloak.models.map.common.EntityWithAttributes;
 import org.keycloak.models.map.common.UpdatableEntity;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+
 import java.util.Set;
 
-/**
- *
- * @author mhajas
- */
-public class MapGroupEntity implements AbstractEntity, UpdatableEntity {
+@GenerateEntityImplementations(
+        inherits = "org.keycloak.models.map.group.MapGroupEntity.AbstractGroupEntity"
+)
+@DeepCloner.Root
+public interface MapGroupEntity extends UpdatableEntity, AbstractEntity, EntityWithAttributes {
 
-    private String id;
-    private final String realmId;
+    public abstract class AbstractGroupEntity extends UpdatableEntity.Impl implements MapGroupEntity {
 
-    private String name;
-    private String parentId;
-    private Map<String, List<String>> attributes = new HashMap<>();
-    private Set<String> grantedRoles = new HashSet<>();
+        private String id;
 
-    /**
-     * Flag signalizing that any of the setters has been meaningfully used.
-     */
-    protected boolean updated;
+        @Override
+        public String getId() {
+            return this.id;
+        }
 
-    protected MapGroupEntity() {
-        this.id = null;
-        this.realmId = null;
+        @Override
+        public void setId(String id) {
+            if (this.id != null) throw new IllegalStateException("Id cannot be changed");
+            this.id = id;
+            this.updated |= id != null;
+        }
+
     }
 
-    public MapGroupEntity(String id, String realmId) {
-        Objects.requireNonNull(realmId, "realmId");
+    String getName();
+    void setName(String name);
 
-        this.id = id;
-        this.realmId = realmId;
-    }
+    String getParentId();
+    void setParentId(String parentId);
 
-    @Override
-    public String getId() {
-        return this.id;
-    }
+    String getRealmId();
+    void setRealmId(String realmId);
 
-    @Override
-    public boolean isUpdated() {
-        return this.updated;
-    }
-
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.updated |= ! Objects.equals(this.name, name);
-        this.name = name;
-    }
-
-    public String getParentId() {
-        return parentId;
-    }
-
-    public void setParentId(String parentId) {
-        this.updated |= !Objects.equals(this.parentId, parentId);
-        this.parentId = parentId;
-    }
-
-    public Map<String, List<String>> getAttributes() {
-        return attributes;
-    }
-
-    public void setAttributes(Map<String, List<String>> attributes) {
-        this.updated |= ! Objects.equals(this.attributes, attributes);
-        this.attributes = attributes;
-    }
-
-    public void setAttribute(String name, List<String> value) {
-        this.updated |= !this.attributes.containsKey(name) || !this.attributes.get(name).equals(value);
-        this.attributes.put(name, value);
-    }
-
-    public void removeAttribute(String name) {
-        this.updated |= this.attributes.remove(name) != null;
-    }
-
-    public List<String> getAttribute(String name) {
-        return this.attributes.get(name);
-    }
-
-    public String getRealmId() {
-        return this.realmId;
-    }
-
-    public Set<String> getGrantedRoles() {
-        return grantedRoles;
-    }
-
-    public void setGrantedRoles(Set<String> grantedRoles) {
-        this.updated |= !Objects.equals(this.grantedRoles, grantedRoles);
-        this.grantedRoles = grantedRoles;
-    }
-
-    public void removeRole(String role) {
-        this.updated |= this.grantedRoles.contains(role);
-        this.grantedRoles.remove(role);
-    }
-
-    public void addGrantedRole(String role) {
-        this.updated |= !this.grantedRoles.contains(role);
-        this.grantedRoles.add(role);
-    }
+    Set<String> getGrantedRoles();
+    void setGrantedRoles(Set<String> grantedRoles);
+    void addGrantedRole(String role);
+    void removeGrantedRole(String role);
 }

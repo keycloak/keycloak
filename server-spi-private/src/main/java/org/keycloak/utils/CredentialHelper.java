@@ -100,7 +100,7 @@ public class CredentialHelper {
         String totpSecret = credentialModel.getOTPSecretData().getValue();
 
         UserCredentialModel otpUserCredential = new UserCredentialModel("", realm.getOTPPolicy().getType(), totpSecret);
-        boolean userStorageCreated = session.userCredentialManager().updateCredential(realm, user, otpUserCredential);
+        boolean userStorageCreated = user.credentialManager().updateCredential(otpUserCredential);
 
         String credentialId = null;
         if (userStorageCreated) {
@@ -112,7 +112,7 @@ public class CredentialHelper {
 
         //If the type is HOTP, call verify once to consume the OTP used for registration and increase the counter.
         UserCredentialModel credential = new UserCredentialModel(credentialId, otpCredentialProvider.getType(), totpCode);
-        return session.userCredentialManager().isValid(realm, user, credential);
+        return user.credentialManager().isValid(credential);
     }
 
     public static void deleteOTPCredential(KeycloakSession session, RealmModel realm, UserModel user, String credentialId) {
@@ -122,7 +122,7 @@ public class CredentialHelper {
         // This can usually happened when credential is stored in the userStorage. Propagate to "disable" credential in the userStorage
         if (!removed) {
             logger.debug("Removing OTP credential from userStorage");
-            session.userCredentialManager().disableCredentialType(realm, user, OTPCredentialModel.TYPE);
+            user.credentialManager().disableCredentialType(OTPCredentialModel.TYPE);
         }
     }
 

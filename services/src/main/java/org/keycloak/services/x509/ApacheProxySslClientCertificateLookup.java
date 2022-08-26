@@ -41,8 +41,8 @@ public class ApacheProxySslClientCertificateLookup extends AbstractClientCertifi
     }
 
     private static String removeBeginEnd(String pem) {
-        pem = pem.replace("-----BEGIN CERTIFICATE-----", "");
-        pem = pem.replace("-----END CERTIFICATE-----", "");
+        pem = pem.replace(PemUtils.BEGIN_CERT, "");
+        pem = pem.replace(PemUtils.END_CERT, "");
         pem = pem.replace("\r\n", "");
         pem = pem.replace("\n", "");
         return pem.trim();
@@ -53,7 +53,7 @@ public class ApacheProxySslClientCertificateLookup extends AbstractClientCertifi
         if (pem == null) {
             return null;
         }
-        if (pem.startsWith("-----BEGIN CERTIFICATE-----")) {
+        if (pem.startsWith(PemUtils.BEGIN_CERT)) {
             pem = removeBeginEnd(pem);
         }
         return PemUtils.decodeCertificate(pem);

@@ -56,6 +56,8 @@ import org.keycloak.testsuite.util.RealmBuilder;
 import org.keycloak.testsuite.util.TokenSignatureUtil;
 import org.keycloak.testsuite.util.UserBuilder;
 
+import javax.ws.rs.ClientErrorException;
+import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
@@ -67,9 +69,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
-
-import javax.ws.rs.ClientErrorException;
-import javax.ws.rs.core.Response;
 
 /**
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
@@ -125,6 +124,15 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
                 .build();
 
         realm.client(disabledApp);
+
+        ClientRepresentation secretsWithSpecialCharacterClient = ClientBuilder.create()
+            .id(KeycloakModelUtils.generateId())
+            .clientId("service-account-cl-special-secrets")
+            .secret("secret/with=special?character")
+            .serviceAccountsEnabled(true)
+            .build();
+
+        realm.client(secretsWithSpecialCharacterClient);
 
         UserBuilder defaultUser = UserBuilder.create()
                 .id(KeycloakModelUtils.generateId())
@@ -333,13 +341,13 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
 
         representation.setCredentials(Arrays.asList(password));
 
-        this.expectedException.expect(Matchers.allOf(Matchers.instanceOf(ClientErrorException.class), 
+        this.expectedException.expect(Matchers.allOf(Matchers.instanceOf(ClientErrorException.class),
                 Matchers.hasProperty("response", Matchers.hasProperty("status", Matchers.is(400)))));
         this.expectedException.reportMissingExceptionWithMessage("Should fail, should not be possible to manage credentials for service accounts");
 
         serviceAccount.update(representation);
     }
-    
+
     /**
      * See KEYCLOAK-9551
      */
@@ -512,5 +520,17 @@ public class ServiceAccountTest extends AbstractKeycloakTest {
 
         HttpResponse logoutResponse = oauth.doLogout(response.getRefreshToken(), "secret1");
         assertEquals(204, logoutResponse.getStatusLine().getStatusCode());
+    }
+
+    /**
+     *  See KEYCLOAK-18704
+     */
+    @Test
+    public void clientCredentialsAuthSuccessWithUrlEncodedSpecialCharactersSecret() throws Exception {
+        oauth.clientId("service-account-cl-special-secrets");
+
+        OAuthClient.AccessTokenResponse response = oauth.doClientCredentialsGrantAccessTokenRequest("secret/with=special?character");
+
+        assertEquals(200, response.getStatusCode());
     }
 }

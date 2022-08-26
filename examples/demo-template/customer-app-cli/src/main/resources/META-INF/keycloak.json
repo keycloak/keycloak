@@ -1,7 +1,0 @@
-{
-  "realm" : "demo",
-  "auth-server-url" : "http://localhost:8080/auth",
-  "ssl-required" : "external",
-  "resource" : "customer-portal-cli",
-  "public-client" : true
-}

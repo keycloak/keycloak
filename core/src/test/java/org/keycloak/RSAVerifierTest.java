@@ -17,105 +17,44 @@
 
 package org.keycloak;
 
-import junit.framework.Assert;
-import org.bouncycastle.asn1.x500.X500Name;
-import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
-import org.bouncycastle.cert.X509CertificateHolder;
-import org.bouncycastle.cert.X509v1CertificateBuilder;
-import org.bouncycastle.crypto.util.PrivateKeyFactory;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
-import org.bouncycastle.operator.bc.BcRSAContentSignerBuilder;
-import org.bouncycastle.operator.ContentSigner;
-import org.bouncycastle.operator.DefaultDigestAlgorithmIdentifierFinder;
-import org.bouncycastle.operator.DefaultSignatureAlgorithmIdentifierFinder;
-import org.bouncycastle.operator.OperatorCreationException;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 import org.keycloak.common.util.Time;
 import org.keycloak.common.VerificationException;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.representations.AccessToken;
+import org.keycloak.rule.CryptoInitRule;
 import org.keycloak.util.JsonSerialization;
 import org.keycloak.util.TokenUtil;
 
-import java.io.IOException;
-import java.io.StringWriter;
-import java.math.BigInteger;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
-import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.PublicKey;
-import java.security.Security;
-import java.security.SignatureException;
-import java.util.Date;
-import javax.security.auth.x500.X500Principal;
 
 /**
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class RSAVerifierTest {
-    private static X509Certificate[] idpCertificates;
+public abstract class RSAVerifierTest {
+    // private static X509Certificate[] idpCertificates;
     private static KeyPair idpPair;
     private static KeyPair badPair;
-    private static KeyPair clientPair;
-    private static X509Certificate[] clientCertificateChain;
+    // private static KeyPair clientPair;
+    // private static X509Certificate[] clientCertificateChain;
     private AccessToken token;
 
-    static {
-        if (Security.getProvider("BC") == null) Security.addProvider(new BouncyCastleProvider());
-    }
-
-    public static X509Certificate generateTestCertificate(String subject, String issuer, KeyPair pair)
-        throws CertificateException, InvalidKeyException, IOException,
-               NoSuchProviderException, OperatorCreationException,
-               SignatureException
-    {
-        X500Name issuerDN = new X500Name("CN=" + issuer);
-        BigInteger serialNumber = BigInteger.valueOf(System.currentTimeMillis());
-        Date notBefore = new Date(System.currentTimeMillis() - 10000);
-        Date notAfter = new Date(System.currentTimeMillis() + 10000);
-        X500Name subjectDN = new X500Name("CN=" + subject);
-        SubjectPublicKeyInfo subjectPublicKeyInfo = SubjectPublicKeyInfo
-            .getInstance(pair.getPublic().getEncoded());
-
-        X509v1CertificateBuilder builder = new X509v1CertificateBuilder(
-            issuerDN, serialNumber, notBefore, notAfter, subjectDN, subjectPublicKeyInfo
-        );
-
-        AlgorithmIdentifier sigAlgId = new DefaultSignatureAlgorithmIdentifierFinder()
-            .find("SHA256WithRSAEncryption");
-
-        AlgorithmIdentifier digAlgId = new DefaultDigestAlgorithmIdentifierFinder()
-            .find(sigAlgId);
-
-        ContentSigner signer = new BcRSAContentSignerBuilder(sigAlgId, digAlgId)
-            .build(PrivateKeyFactory.createKey(pair.getPrivate().getEncoded()));
-
-        X509CertificateHolder holder = builder.build(signer);
-
-        return new JcaX509CertificateConverter().getCertificate(holder);
-    }
+    @ClassRule
+    public static CryptoInitRule cryptoInitRule = new CryptoInitRule();
 
     @BeforeClass
     public static void setupCerts()
-        throws CertificateException, InvalidKeyException, IOException,
-               NoSuchAlgorithmException, NoSuchProviderException,
-               OperatorCreationException, SignatureException
+        throws Exception
     {
+        // CryptoIntegration.init(ClassLoader.getSystemClassLoader());
         badPair = KeyPairGenerator.getInstance("RSA").generateKeyPair();
         idpPair = KeyPairGenerator.getInstance("RSA").generateKeyPair();
-        idpCertificates = new X509Certificate[]{generateTestCertificate("CN=IDP", "CN=IDP", idpPair)};
-        clientPair = KeyPairGenerator.getInstance("RSA").generateKeyPair();
-        clientCertificateChain = new X509Certificate[]{generateTestCertificate("CN=Client", "CN=IDP", idpPair)};
     }
 
     @Before
@@ -128,22 +67,7 @@ public class RSAVerifierTest {
                 .addAccess("service").addRole("admin");
     }
 
-    @Test
-    public void testPemWriter() {
-        PublicKey realmPublicKey = idpPair.getPublic();
-        StringWriter sw = new StringWriter();
-        JcaPEMWriter writer = new JcaPEMWriter(sw);
-        try {
-            writer.writeObject(realmPublicKey);
-            writer.flush();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        System.out.println(sw.toString());
-    }
-
-
-    @Test
+        @Test
     public void testSimpleVerification() throws Exception {
         String encoded = new JWSBuilder()
                 .jsonContent(token)
@@ -157,7 +81,6 @@ public class RSAVerifierTest {
     private AccessToken verifySkeletonKeyToken(String encoded) throws VerificationException {
         return RSATokenVerifier.verifyToken(encoded, idpPair.getPublic(), "http://localhost:8080/auth/realm");
     }
-
 
    // @Test
    public void testSpeed() throws Exception
@@ -179,8 +102,6 @@ public class RSAVerifierTest {
       long end = System.currentTimeMillis() - start;
       System.out.println("took: " + end);
    }
-
-
 
     @Test
     public void testBadSignature() {

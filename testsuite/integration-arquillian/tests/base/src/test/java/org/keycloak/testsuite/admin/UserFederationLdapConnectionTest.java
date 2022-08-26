@@ -40,7 +40,7 @@ import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude.A
  * @author <a href="mailto:mposolda@redhat.com">Marek Posolda</a>
  */
 @EnableVault
-@AuthServerContainerExclude({AuthServer.REMOTE, AuthServer.QUARKUS})
+@AuthServerContainerExclude(AuthServer.REMOTE)
 public class UserFederationLdapConnectionTest extends AbstractAdminTest {
 
     @ClassRule

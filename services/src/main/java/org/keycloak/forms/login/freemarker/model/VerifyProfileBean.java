@@ -1,5 +1,7 @@
 package org.keycloak.forms.login.freemarker.model;
 
+import java.util.stream.Stream;
+
 import javax.ws.rs.core.MultivaluedMap;
 
 import org.keycloak.models.KeycloakSession;
@@ -27,8 +29,8 @@ public class VerifyProfileBean extends AbstractUserProfileBean {
     }
 
     @Override
-    protected String getAttributeDefaultValue(String name) {
-        return user.getFirstAttribute(name);
+    protected Stream<String> getAttributeDefaultValues(String name){
+        return user.getAttributeStream(name);
     }
     
     @Override 

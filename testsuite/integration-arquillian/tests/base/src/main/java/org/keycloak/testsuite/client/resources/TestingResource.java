@@ -350,6 +350,23 @@ public interface TestingResource {
     @Consumes(MediaType.TEXT_HTML_UTF_8)
     void setSystemPropertyOnServer(@QueryParam("property-name") String propertyName, @QueryParam("property-value") String propertyValue);
 
+    /**
+     * Re-initialize specified provider factory with system properties scope. This will allow to change providerConfig in runtime with {@link #setSystemPropertyOnServer}
+     *
+     * This works just for the provider factories, which can be re-initialized without any side-effects (EG. some functionality already dependent
+     * on the previously initialized properties, which cannot be easily changed in runtime)
+     *
+     * @param providerType fully qualified class name of provider (subclass of org.keycloak.provider.Provider)
+     * @param providerId provider Id
+     * @param systemPropertiesPrefix prefix to be used for system properties
+     */
+    @GET
+    @Path("/reinitialize-provider-factory-with-system-properties-scope")
+    @Consumes(MediaType.TEXT_HTML_UTF_8)
+    @NoCache
+    void reinitializeProviderFactoryWithSystemPropertiesScope(@QueryParam("provider-type") String providerType, @QueryParam("provider-id") String providerId,
+                                                              @QueryParam("system-properties-prefix") String systemPropertiesPrefix);
+
 
     /**
      * This method is here just to have all endpoints from TestingResourceProvider available here.
@@ -362,4 +379,13 @@ public interface TestingResource {
     Response simulatePostRequest(@QueryParam("postRequestUrl") String postRequestUrl,
                                          @QueryParam("encodedFormParameters") String encodedFormParameters);
 
+    /**
+     * Display message to Error Page - for testing purposes
+     *
+     * @param message message
+     */
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/display-error-message")
+    Response displayErrorMessage(@QueryParam("message") String message);
 }

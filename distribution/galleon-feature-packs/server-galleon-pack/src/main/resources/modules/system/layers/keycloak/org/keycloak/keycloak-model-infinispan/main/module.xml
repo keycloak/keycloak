@@ -30,6 +30,8 @@
         <module name="org.keycloak.keycloak-server-spi"/>
         <module name="org.keycloak.keycloak-server-spi-private"/>
         <module name="org.keycloak.keycloak-wildfly-extensions" export="true" services="import"/>
+        <module name="org.keycloak.keycloak-model-legacy"/>
+        <module name="org.keycloak.keycloak-model-legacy-private"/>
         <module name="org.infinispan"/>
         <module name="org.infinispan.commons"/>
         <module name="org.infinispan.persistence.remote"/>
@@ -38,7 +40,21 @@
         <module name="org.jgroups"/>
         <module name="org.jboss.logging"/>
         <module name="org.wildfly.clustering.marshalling.api"/>
-        <module name="io.netty"/>
+        <module name="io.netty.netty-buffer"/>
+        <module name="io.netty.netty-codec"/>
+        <module name="io.netty.netty-codec-dns"/>
+        <module name="io.netty.netty-codec-http"/>
+        <module name="io.netty.netty-codec-http2"/>
+        <module name="io.netty.netty-codec-socks"/>
+        <module name="io.netty.netty-common"/>
+        <module name="io.netty.netty-handler"/>
+        <module name="io.netty.netty-handler-proxy"/>
+        <module name="io.netty.netty-resolver"/>
+        <module name="io.netty.netty-resolver-dns"/>
+        <module name="io.netty.netty-transport"/>
+        <module name="io.netty.netty-transport-native-epoll"/>
+        <module name="io.netty.netty-transport-native-kqueue"/>
+        <module name="io.netty.netty-transport-native-unix-common"/>
         <module name="javax.api"/>
     </dependencies>
 </module>

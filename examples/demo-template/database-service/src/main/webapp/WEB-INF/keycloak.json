@@ -1,7 +1,0 @@
-{
-  "realm" : "demo",
-  "resource" : "database-service",
-  "auth-server-url": "/auth",
-  "bearer-only" : true,
-  "ssl-required" : "external"
-}

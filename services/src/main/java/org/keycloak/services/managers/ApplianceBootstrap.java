@@ -43,7 +43,7 @@ public class ApplianceBootstrap {
     }
 
     public boolean isNewInstall() {
-        if (session.realms().getRealm(Config.getAdminRealm()) != null) {
+        if (session.realms().getRealmByName(Config.getAdminRealm()) != null) {
             return false;
         } else {
             return true;
@@ -51,7 +51,7 @@ public class ApplianceBootstrap {
     }
 
     public boolean isNoMasterUser() {
-        RealmModel realm = session.realms().getRealm(Config.getAdminRealm());
+        RealmModel realm = session.realms().getRealmByName(Config.getAdminRealm());
         return session.users().getUsersCount(realm) == 0;
     }
 
@@ -64,7 +64,7 @@ public class ApplianceBootstrap {
         ServicesLogger.LOGGER.initializingAdminRealm(adminRealmName);
 
         RealmManager manager = new RealmManager(session);
-        RealmModel realm = manager.createRealm(adminRealmName, adminRealmName);
+        RealmModel realm = manager.createRealm(adminRealmName);
         realm.setName(adminRealmName);
         realm.setDisplayName(Version.NAME);
         realm.setDisplayNameHtml(Version.NAME_HTML);
@@ -93,7 +93,7 @@ public class ApplianceBootstrap {
     }
 
     public void createMasterRealmUser(String username, String password) {
-        RealmModel realm = session.realms().getRealm(Config.getAdminRealm());
+        RealmModel realm = session.realms().getRealmByName(Config.getAdminRealm());
         session.getContext().setRealm(realm);
 
         if (session.users().getUsersCount(realm) > 0) {
@@ -104,7 +104,7 @@ public class ApplianceBootstrap {
         adminUser.setEnabled(true);
 
         UserCredentialModel usrCredModel = UserCredentialModel.password(password);
-        session.userCredentialManager().updateCredential(realm, adminUser, usrCredModel);
+        adminUser.credentialManager().updateCredential(usrCredModel);
 
         RoleModel adminRole = realm.getRole(AdminRoles.ADMIN);
         adminUser.grantRole(adminRole);

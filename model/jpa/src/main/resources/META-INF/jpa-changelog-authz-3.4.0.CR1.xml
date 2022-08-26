@@ -18,6 +18,7 @@
 
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.2.xsd">
     <changeSet author="glavoie@gmail.com" id="authz-3.4.0.CR1-resource-server-pk-change-part1">
+        <validCheckSum>7:6a48ce645a3525488a90fbf76adf3bb3</validCheckSum>
         <!-- Data migration to change the PK of RESOURCE_SERVER to use the CLIENT_ID. -->
         <addColumn tableName="RESOURCE_SERVER_POLICY">
             <column name="RESOURCE_SERVER_CLIENT_ID" type="VARCHAR(36)"/>
@@ -31,6 +32,7 @@
     </changeSet>
 
     <changeSet author="hmlnarik@redhat.com" id="authz-3.4.0.CR1-resource-server-pk-change-part2-KEYCLOAK-6095">
+        <validCheckSum>7:e64b5dcea7db06077c6e57d3b9e5ca14</validCheckSum>
         <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
             <not>
                 <changeSetExecuted id="authz-3.4.0.CR1-resource-server-pk-change-part3" author="glavoie@gmail.com" changeLogFile="META-INF/jpa-changelog-authz-3.4.0.CR1.xml" />
@@ -41,6 +43,7 @@
     </changeSet>
 
     <changeSet author="glavoie@gmail.com" id="authz-3.4.0.CR1-resource-server-pk-change-part3-fixed">
+        <validCheckSum>7:fd8cf02498f8b1e72496a20afc75178c</validCheckSum>
         <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
             <dbms type="mssql" />
             <not>
@@ -54,6 +57,7 @@
     </changeSet>
         
     <changeSet author="glavoie@gmail.com" id="authz-3.4.0.CR1-resource-server-pk-change-part3-fixed-nodropindex">
+        <validCheckSum>7:542794f25aa2b1fbabb7e577d6646319</validCheckSum>
         <preConditions onFail="MARK_RAN" onSqlOutput="TEST">
             <not>
                 <changeSetExecuted id="authz-3.4.0.CR1-resource-server-pk-change-part3" author="glavoie@gmail.com" changeLogFile="META-INF/jpa-changelog-authz-3.4.0.CR1.xml" />
@@ -117,6 +121,7 @@
     </changeSet>
 
     <changeSet author="glavoie@gmail.com" id="authn-3.4.0.CR1-refresh-token-max-reuse">
+        <validCheckSum>7:edad604c882df12f74941dac3cc6d650</validCheckSum>
         <addColumn tableName="REALM">
             <column name="REFRESH_TOKEN_MAX_REUSE" type="INT" defaultValueNumeric="0"/>
         </addColumn>

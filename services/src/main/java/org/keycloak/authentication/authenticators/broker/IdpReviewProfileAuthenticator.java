@@ -107,7 +107,8 @@ public class IdpReviewProfileAuthenticator extends AbstractIdpAuthenticator {
     @Override
     protected void actionImpl(AuthenticationFlowContext context, SerializedBrokeredIdentityContext userCtx, BrokeredIdentityContext brokerContext) {
         EventBuilder event = context.getEvent();
-        event.event(EventType.UPDATE_PROFILE);
+        //velias: looks like UPDATE_PROFILE event is not fired. IMHO it should not be fired here as user record in keycloak is not changed, user doesn't exist yet 
+        event.event(EventType.UPDATE_PROFILE).detail(Details.CONTEXT, UserProfileContext.IDP_REVIEW.name());
         MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
         UserModelDelegate updatedProfile = new UserModelDelegate(null) {
 
@@ -153,10 +154,10 @@ public class IdpReviewProfileAuthenticator extends AbstractIdpAuthenticator {
         try {
             String oldEmail = userCtx.getEmail();
 
-            profile.update((attributeName, userModel) -> {
+            profile.update((attributeName, userModel, oldValue) -> {
                 if (attributeName.equals(UserModel.EMAIL)) {
                     context.getAuthenticationSession().setAuthNote(UPDATE_PROFILE_EMAIL_CHANGED, "true");
-                    event.clone().event(EventType.UPDATE_EMAIL).detail(Details.PREVIOUS_EMAIL, oldEmail).detail(Details.UPDATED_EMAIL, profile.getAttributes().getFirstValue(UserModel.EMAIL)).success();
+                    event.clone().event(EventType.UPDATE_EMAIL).detail(Details.CONTEXT, UserProfileContext.IDP_REVIEW.name()).detail(Details.PREVIOUS_EMAIL, oldEmail).detail(Details.UPDATED_EMAIL, profile.getAttributes().getFirstValue(UserModel.EMAIL)).success();
                 }
             });
         } catch (ValidationException pve) {

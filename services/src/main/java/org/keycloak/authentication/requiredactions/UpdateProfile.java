@@ -18,8 +18,6 @@
 package org.keycloak.authentication.requiredactions;
 
 import org.keycloak.Config;
-import org.keycloak.OAuth2Constants;
-import org.keycloak.authentication.DisplayTypeRequiredActionFactory;
 import org.keycloak.authentication.InitiatedActionSupport;
 import org.keycloak.authentication.RequiredActionContext;
 import org.keycloak.authentication.RequiredActionFactory;
@@ -37,6 +35,7 @@ import org.keycloak.userprofile.UserProfileContext;
 import org.keycloak.userprofile.ValidationException;
 import org.keycloak.userprofile.UserProfile;
 import org.keycloak.userprofile.UserProfileProvider;
+import org.keycloak.userprofile.EventAuditingAttributeChangeListener;
 
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
@@ -46,7 +45,7 @@ import java.util.List;
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
-public class UpdateProfile implements RequiredActionProvider, RequiredActionFactory, DisplayTypeRequiredActionFactory {
+public class UpdateProfile implements RequiredActionProvider, RequiredActionFactory {
     @Override
     public InitiatedActionSupport initiatedActionSupport() {
         return InitiatedActionSupport.SUPPORTED;
@@ -64,29 +63,16 @@ public class UpdateProfile implements RequiredActionProvider, RequiredActionFact
     @Override
     public void processAction(RequiredActionContext context) {
         EventBuilder event = context.getEvent();
-        event.event(EventType.UPDATE_PROFILE);
+        event.event(EventType.UPDATE_PROFILE).detail(Details.CONTEXT, UserProfileContext.UPDATE_PROFILE.name());
         MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
         UserModel user = context.getUser();
 
-        String oldFirstName = user.getFirstName();
-        String oldLastName = user.getLastName();
-        String oldEmail = user.getEmail();
         UserProfileProvider provider = context.getSession().getProvider(UserProfileProvider.class);
         UserProfile profile = provider.create(UserProfileContext.UPDATE_PROFILE, formData, user);
 
         try {
             // backward compatibility with old account console where attributes are not removed if missing
-            profile.update(false, (attributeName, userModel) -> {
-                if (attributeName.equals(UserModel.FIRST_NAME)) {
-                    event.detail(Details.PREVIOUS_FIRST_NAME, oldFirstName).detail(Details.UPDATED_FIRST_NAME, user.getFirstName());
-                }
-                if (attributeName.equals(UserModel.LAST_NAME)) {
-                    event.detail(Details.PREVIOUS_LAST_NAME, oldLastName).detail(Details.UPDATED_LAST_NAME, user.getLastName());
-                }
-                if (attributeName.equals(UserModel.EMAIL)) {
-                    event.detail(Details.PREVIOUS_EMAIL, oldEmail).detail(Details.UPDATED_EMAIL, user.getEmail());
-                }
-            });
+            profile.update(false, new EventAuditingAttributeChangeListener(profile, event));
 
             context.success();
         } catch (ValidationException pve) {
@@ -95,7 +81,7 @@ public class UpdateProfile implements RequiredActionProvider, RequiredActionFact
             context.challenge(createResponse(context, formData, errors));
         }
     }
-
+    
     protected UserModel.RequiredAction getResponseAction(){
         return UserModel.RequiredAction.UPDATE_PROFILE;
     }
@@ -124,16 +110,6 @@ public class UpdateProfile implements RequiredActionProvider, RequiredActionFact
     public RequiredActionProvider create(KeycloakSession session) {
         return this;
     }
-
-
-    @Override
-    public RequiredActionProvider createDisplay(KeycloakSession session, String displayType) {
-        if (displayType == null) return this;
-        if (!OAuth2Constants.DISPLAY_CONSOLE.equalsIgnoreCase(displayType)) return null;
-        return ConsoleUpdateProfile.SINGLETON;
-    }
-
-
 
     @Override
     public void init(Config.Scope config) {

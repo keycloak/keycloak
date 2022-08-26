@@ -43,7 +43,6 @@ import java.util.function.Consumer;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.keycloak.common.Profile;
 import org.keycloak.component.ComponentModel;
 import org.keycloak.component.ComponentValidationException;
 import org.keycloak.models.Constants;
@@ -53,13 +52,9 @@ import org.keycloak.models.UserModel;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.services.messages.Messages;
-import org.keycloak.testsuite.arquillian.annotation.AuthServerContainerExclude;
-import org.keycloak.testsuite.arquillian.annotation.EnableFeature;
-import org.keycloak.testsuite.arquillian.annotation.SetDefaultProvider;
 import org.keycloak.testsuite.runonserver.RunOnServer;
 import org.keycloak.userprofile.AttributeGroupMetadata;
 import org.keycloak.userprofile.DeclarativeUserProfileProvider;
-import org.keycloak.userprofile.UserProfileSpi;
 import org.keycloak.userprofile.config.UPAttribute;
 import org.keycloak.userprofile.config.UPAttributePermissions;
 import org.keycloak.userprofile.config.UPAttributeRequired;
@@ -459,8 +454,15 @@ public class UserProfileTest extends AbstractUserProfileTest {
 
         profile = provider.create(UserProfileContext.ACCOUNT, attributes, user);
         Set<String> attributesUpdated = new HashSet<>();
-
-        profile.update((attributeName, userModel) -> assertTrue(attributesUpdated.add(attributeName)));
+        Map<String, String> attributesUpdatedOldValues = new HashMap<>();
+        attributesUpdatedOldValues.put(UserModel.FIRST_NAME, "Joe");
+        attributesUpdatedOldValues.put(UserModel.LAST_NAME, "Doe");
+        
+        profile.update((attributeName, userModel, oldValue) -> {
+            assertTrue(attributesUpdated.add(attributeName)); 
+            assertEquals(attributesUpdatedOldValues.get(attributeName), getSingleValue(oldValue));
+            assertEquals(attributes.get(attributeName), userModel.getFirstAttribute(attributeName));
+            });
 
         assertThat(attributesUpdated, containsInAnyOrder(UserModel.FIRST_NAME, UserModel.LAST_NAME, UserModel.EMAIL));
 
@@ -470,13 +472,19 @@ public class UserProfileTest extends AbstractUserProfileTest {
         profile = provider.create(UserProfileContext.ACCOUNT, attributes, user);
 
         attributesUpdated.clear();
-        profile.update((attributeName, userModel) -> assertTrue(attributesUpdated.add(attributeName)));
+        profile.update((attributeName, userModel, oldValue) -> assertTrue(attributesUpdated.add(attributeName)));
 
         assertThat(attributesUpdated, containsInAnyOrder("business.address"));
 
         assertEquals("fixed-business-address", user.getFirstAttribute("business.address"));
     }
-
+    
+    private static String getSingleValue(List<String> vals) {
+        if(vals==null || vals.isEmpty())
+            return null;
+        return vals.get(0);
+    }
+    
     @Test
     public void testReadonlyUpdates() {
         getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testReadonlyUpdates);
@@ -505,7 +513,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
 
         Set<String> attributesUpdated = new HashSet<>();
 
-        profile.update((attributeName, userModel) -> assertTrue(attributesUpdated.add(attributeName)));
+        profile.update((attributeName, userModel, oldValue) -> assertTrue(attributesUpdated.add(attributeName)));
 
         assertThat(attributesUpdated, containsInAnyOrder("department"));
 
@@ -525,6 +533,85 @@ public class UserProfileTest extends AbstractUserProfileTest {
         assertEquals("sales", user.getFirstAttribute("department"));
 
         assertTrue(profile.getAttributes().isReadOnly("department"));
+    }
+
+    @Test
+    public void testReadonlyEmailCannotBeUpdated() {
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testReadonlyEmailCannotBeUpdated);
+    }
+
+    private static void testReadonlyEmailCannotBeUpdated(KeycloakSession session) {
+        Map<String, Object> attributes = new HashMap<>();
+
+        attributes.put(UserModel.USERNAME, org.keycloak.models.utils.KeycloakModelUtils.generateId());
+        attributes.put(UserModel.EMAIL, "readonly@foo.bar");
+
+        UserProfileProvider provider = getDynamicUserProfileProvider(session);
+
+        // configure email r/o for user
+        provider.setConfiguration("{\"attributes\": [{\"name\": \"email\", \"permissions\": {\"edit\": [ \"admin\"]}}]}");
+
+        UserProfile profile = provider.create(UserProfileContext.ACCOUNT, attributes);
+        UserModel user = profile.create();
+
+        assertThat(profile.getAttributes().nameSet(),
+                containsInAnyOrder(UserModel.USERNAME, UserModel.EMAIL));
+
+        profile = provider.create(UserProfileContext.USER_API, attributes, user);
+
+        Set<String> attributesUpdated = new HashSet<>();
+
+        profile.update((attributeName, userModel, oldValue) -> assertTrue(attributesUpdated.add(attributeName)));
+
+        attributes.put(UserModel.EMAIL, "cannot-change@foo.bar");
+
+        profile = provider.create(UserProfileContext.ACCOUNT, attributes, user);
+
+        try {
+            profile.update();
+            fail("Should fail since email is read only");
+        } catch (ValidationException ve) {
+            assertTrue(ve.isAttributeOnError("email"));
+        }
+
+        assertEquals("E-Mail address shouldn't be changed", "readonly@foo.bar", user.getEmail());
+    }
+
+    @Test
+    public void testUpdateEmail() {
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testUpdateEmail);
+    }
+
+    private static void testUpdateEmail(KeycloakSession session) {
+        Map<String, Object> attributes = new HashMap<>();
+
+        attributes.put(UserModel.USERNAME, org.keycloak.models.utils.KeycloakModelUtils.generateId());
+        attributes.put(UserModel.EMAIL, "canchange@foo.bar");
+
+        UserProfileProvider provider = getDynamicUserProfileProvider(session);
+
+        // configure email r/w for user
+        provider.setConfiguration("{\"attributes\": [{\"name\": \"email\", \"permissions\": {\"edit\": [ \"user\", \"admin\"]}}]}");
+
+        UserProfile profile = provider.create(UserProfileContext.ACCOUNT, attributes);
+        UserModel user = profile.create();
+
+        assertThat(profile.getAttributes().nameSet(),
+                containsInAnyOrder(UserModel.USERNAME, UserModel.EMAIL));
+
+        profile = provider.create(UserProfileContext.USER_API, attributes, user);
+
+        Set<String> attributesUpdated = new HashSet<>();
+
+        profile.update((attributeName, userModel, oldValue) -> assertTrue(attributesUpdated.add(attributeName)));
+
+        attributes.put("email", "changed@foo.bar");
+
+        profile = provider.create(UserProfileContext.ACCOUNT, attributes, user);
+
+        profile.update();
+
+        assertEquals("E-Mail address should have been changed!", "changed@foo.bar", user.getEmail());
     }
 
     @Test
@@ -556,7 +643,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
 
         Set<String> attributesUpdated = new HashSet<>();
 
-        profile.update((attributeName, userModel) -> assertTrue(attributesUpdated.add(attributeName)));
+        profile.update((attributeName, userModel, oldValue) -> assertTrue(attributesUpdated.add(attributeName)));
         assertThat(attributesUpdated, containsInAnyOrder("department", "address", "phone"));
 
         provider.setConfiguration("{\"attributes\": [{\"name\": \"department\", \"permissions\": {\"edit\": [\"admin\"]}},"
@@ -566,7 +653,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
         attributes.put("department", "foo");
         attributes.put("phone", "foo");
         profile = provider.create(UserProfileContext.USER_API, attributes, user);
-        profile.update((attributeName, userModel) -> assertTrue(attributesUpdated.add(attributeName)));
+        profile.update((attributeName, userModel, oldValue) -> assertTrue(attributesUpdated.add(attributeName)));
         assertThat(attributesUpdated, containsInAnyOrder("department", "phone"));
         assertTrue(user.getAttributes().containsKey("address"));
 
@@ -578,7 +665,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
         attributes.put("address", "bar");
         attributesUpdated.clear();
         profile = provider.create(UserProfileContext.USER_API, attributes, user);
-        profile.update((attributeName, userModel) -> assertTrue(attributesUpdated.add(attributeName)));
+        profile.update((attributeName, userModel, oldValue) -> assertTrue(attributesUpdated.add(attributeName)));
         assertThat(attributesUpdated, containsInAnyOrder("address"));
         assertEquals("bar", user.getFirstAttribute("address"));
         assertEquals("foo", user.getFirstAttribute("phone"));
@@ -587,7 +674,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
         attributes.remove("address");
         attributesUpdated.clear();
         profile = provider.create(UserProfileContext.USER_API, attributes, user);
-        profile.update((attributeName, userModel) -> assertTrue(attributesUpdated.add(attributeName)));
+        profile.update((attributeName, userModel, oldValue) -> assertTrue(attributesUpdated.add(attributeName)));
         assertThat(attributesUpdated, containsInAnyOrder("address"));
         assertFalse(user.getAttributes().containsKey("address"));
         assertTrue(user.getAttributes().containsKey("phone"));
@@ -597,9 +684,19 @@ public class UserProfileTest extends AbstractUserProfileTest {
         attributes.put(prefixedAttributeName, "foo");
         attributesUpdated.clear();
         profile = provider.create(UserProfileContext.USER_API, attributes, user);
-        profile.update((attributeName, userModel) -> assertTrue(attributesUpdated.add(attributeName)));
+        profile.update((attributeName, userModel, oldValue) -> assertTrue(attributesUpdated.add(attributeName)));
         assertTrue(attributesUpdated.isEmpty());
         assertFalse(user.getAttributes().containsKey("prefixedAttributeName"));
+    }
+
+    @Test
+    public void testComponentModelId() {
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testComponentModelId);
+    }
+
+    private static void testComponentModelId(KeycloakSession session) {
+        DeclarativeUserProfileProvider provider = getDynamicUserProfileProvider(session);
+        assertEquals("declarative-user-profile", provider.getComponentModel().getProviderId());
     }
 
     @Test
@@ -630,18 +727,7 @@ public class UserProfileTest extends AbstractUserProfileTest {
 
         assertNotNull(component);
 
-        // generate big configuration to test slicing in the persistence/component config
-        UPConfig config = new UPConfig();
-        for (int i = 0; i < 80; i++) {
-            UPAttribute attribute = new UPAttribute();
-            attribute.setName(UserModel.USERNAME+i);
-            Map<String, Object> validatorConfig = new HashMap<>();
-            validatorConfig.put("min", 3);
-            attribute.addValidation("length", validatorConfig);
-            config.addAttribute(attribute);
-        }
-        String newConfig = JsonSerialization.writeValueAsString(config);
-
+        String newConfig = generateLargeProfileConfig();
         provider.setConfiguration(newConfig);
 
         component = provider.getComponentModel();
@@ -1298,5 +1384,38 @@ public class UserProfileTest extends AbstractUserProfileTest {
         } catch (ComponentValidationException cve) {
             //ignore
         }
+    }
+
+    @Test
+    public void testUsernameAndEmailPermissionNotSetIfEmpty() {
+        getTestingClient().server(TEST_REALM_NAME).run((RunOnServer) UserProfileTest::testUsernameAndEmailPermissionNotSetIfEmpty);
+    }
+
+    private static void testUsernameAndEmailPermissionNotSetIfEmpty(KeycloakSession session) throws IOException {
+        DeclarativeUserProfileProvider provider = getDynamicUserProfileProvider(session);
+        UPConfig config = JsonSerialization.readValue(provider.getConfiguration(), UPConfig.class);
+
+        for (UPAttribute attribute : config.getAttributes()) {
+            if (attribute.getName().equals(UserModel.USERNAME) || attribute.getName().equals(UserModel.EMAIL)) {
+                attribute.setPermissions(new UPAttributePermissions());
+            }
+        }
+
+        provider.setConfiguration(JsonSerialization.writeValueAsString(config));
+
+        RealmModel realm = session.getContext().getRealm();
+        String username = "profiled-user-profile";
+        UserModel user = session.users().addUser(realm, username);
+        Map<String, Object> attributes = new HashMap<>();
+
+        attributes.put(UserModel.EMAIL, "test@keycloak.com");
+
+        UserProfile profile = provider.create(UserProfileContext.USER_API, attributes, user);
+
+        profile.update();
+
+        user = session.users().getUserById(realm, user.getId());
+
+        assertEquals("test@keycloak.com", user.getEmail());
     }
 }

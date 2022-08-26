@@ -47,6 +47,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.ws.rs.BadRequestException;
 import javax.ws.rs.ClientErrorException;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -370,6 +371,12 @@ public class RealmRolesTest extends AbstractAdminTest {
         assertThat(expectedMembers, containsInAnyOrder("test-role-member", "test-role-member2"));
     }
 
+    // issue #9587
+    @Test
+    public void testSearchForRealmRoles() {
+        resource.list("role-", true).stream().forEach(role -> assertThat("There is client role '" + role.getName() + "' among realm roles.", role.getClientRole(), is(false)));
+    }
+
     @Test
     public void testSearchForRoles() {
 
@@ -521,6 +528,11 @@ public class RealmRolesTest extends AbstractAdminTest {
         assertThat(convertRolesToNames(userResource.roles().clientLevel(clientUuid).listEffective()),
                 hasItem("role-c")
         );
+    }
+
+    @Test(expected = BadRequestException.class)
+    public void testDeleteDefaultRole() {
+        adminClient.realm(REALM_NAME).roles().deleteRole(Constants.DEFAULT_ROLES_ROLE_PREFIX + "-" + REALM_NAME);
     }
 
     private List<String> convertRolesToNames(List<RoleRepresentation> roles) {

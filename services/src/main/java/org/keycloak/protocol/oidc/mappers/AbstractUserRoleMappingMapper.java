@@ -17,6 +17,8 @@
 
 package org.keycloak.protocol.oidc.mappers;
 
+import static org.keycloak.utils.JsonUtils.splitClaimPath;
+
 import org.keycloak.models.ProtocolMapperModel;
 import org.keycloak.protocol.ProtocolMapperUtils;
 import org.keycloak.representations.AccessToken;
@@ -100,7 +102,7 @@ abstract class AbstractUserRoleMappingMapper extends AbstractOIDCProtocolMapper 
             protocolClaim = CLIENT_ID_PATTERN.matcher(protocolClaim).replaceAll(clientId);
         }
 
-        List<String> split = OIDCAttributeMapperHelper.splitClaimPath(protocolClaim);
+        List<String> split = splitClaimPath(protocolClaim);
 
         // Special case
         if (checkAccessToken(token, split, attributeValue)) {

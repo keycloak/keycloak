@@ -17,6 +17,10 @@
 
 package org.keycloak.connections.jpa;
 
+import static org.keycloak.connections.jpa.util.JpaUtils.configureNamedQuery;
+import static org.keycloak.connections.jpa.util.JpaUtils.getDatabaseType;
+import static org.keycloak.connections.jpa.util.JpaUtils.loadSpecificNamedQueries;
+
 import org.hibernate.cfg.AvailableSettings;
 import org.hibernate.engine.transaction.jta.platform.internal.AbstractJtaPlatform;
 import org.jboss.logging.Logger;
@@ -25,6 +29,7 @@ import org.keycloak.ServerStartupError;
 import org.keycloak.common.util.StackUtil;
 import org.keycloak.common.util.StringPropertyReplacer;
 import org.keycloak.connections.jpa.updater.JpaUpdaterProvider;
+import org.keycloak.connections.jpa.updater.liquibase.LiquibaseJpaUpdaterProviderFactory;
 import org.keycloak.connections.jpa.util.JpaUtils;
 import org.keycloak.migration.MigrationModelManager;
 import org.keycloak.models.KeycloakSession;
@@ -82,6 +87,10 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
         logger.trace("Create JpaConnectionProvider");
         lazyInit(session);
 
+        return new DefaultJpaConnectionProvider(createEntityManager(session));
+    }
+
+    private EntityManager createEntityManager(KeycloakSession session) {
         EntityManager em;
         if (!jtaEnabled) {
             logger.trace("enlisting EntityManager in JpaKeycloakTransaction");
@@ -91,8 +100,27 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
             em = emf.createEntityManager(SynchronizationType.SYNCHRONIZED);
         }
         em = PersistenceExceptionConverter.create(session, em);
-        if (!jtaEnabled) session.getTransactionManager().enlist(new JpaKeycloakTransaction(em));
-        return new DefaultJpaConnectionProvider(em);
+        if (!jtaEnabled) {
+            session.getTransactionManager().enlist(new JpaKeycloakTransaction(em));
+        }
+        return em;
+    }
+
+    private void addSpecificNamedQueries(KeycloakSession session, Connection connection) {
+        EntityManager em = null;
+        try {
+            em = createEntityManager(session);
+            String dbKind = getDatabaseType(connection.getMetaData().getDatabaseProductName());
+            for (Map.Entry<Object, Object> query : loadSpecificNamedQueries(dbKind.toLowerCase()).entrySet()) {
+                String queryName = query.getKey().toString();
+                String querySql = query.getValue().toString();
+                configureNamedQuery(queryName, querySql, em);
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException(e);
+        } finally {
+            JpaUtils.closeEntityManager(em);
+        }
     }
 
     @Override
@@ -210,6 +238,7 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
                             classLoaders.add(getClass().getClassLoader());
                             properties.put(AvailableSettings.CLASSLOADERS, classLoaders);
                             emf = JpaUtils.createEntityManagerFactory(session, unitName, properties, jtaEnabled);
+                            addSpecificNamedQueries(session, connection);
                             logger.trace("EntityManagerFactory created");
 
                             if (globalStatsInterval != -1) {
@@ -310,7 +339,7 @@ public class DefaultJpaConnectionProviderFactory implements JpaConnectionProvide
     }
 
     void migration(MigrationStrategy strategy, boolean initializeEmpty, String schema, File databaseUpdateFile, Connection connection, KeycloakSession session) {
-        JpaUpdaterProvider updater = session.getProvider(JpaUpdaterProvider.class);
+        JpaUpdaterProvider updater = session.getProvider(JpaUpdaterProvider.class, LiquibaseJpaUpdaterProviderFactory.PROVIDER_ID);
 
         JpaUpdaterProvider.Status status = updater.validate(connection, schema);
         if (status == JpaUpdaterProvider.Status.VALID) {

@@ -27,6 +27,7 @@ import org.keycloak.models.RoleModel;
 import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.OTPCredentialModel;
 import org.keycloak.models.credential.PasswordCredentialModel;
+import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.UserStorageProvider;
 import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.storage.user.UserRegistrationProvider;
@@ -67,7 +68,7 @@ public class DummyUserFederationProvider implements UserStorageProvider,
 
     @Override
     public UserModel addUser(RealmModel realm, String username) {
-        UserModel local = session.userLocalStorage().addUser(realm, username);
+        UserModel local = UserStoragePrivateUtil.userLocalStorage(session).addUser(realm, username);
         local.setFederationLink(component.getId());
 
         users.put(username, local);

@@ -90,22 +90,23 @@ public class InfinispanServerDeployableContainer implements DeployableContainer<
         commands.add("-Dcom.sun.management.jmxremote.authenticate=false");
         commands.add("-Dcom.sun.management.jmxremote.ssl=false");
 
-        if (configuration.getJavaVmArguments() != null) {
-            commands.addAll(Arrays.asList(configuration.getJavaVmArguments().split("\\s+")));
-        }
-
         ProcessBuilder pb = new ProcessBuilder(commands);
         pb = pb.directory(new File(configuration.getInfinispanHome(), "/bin")).inheritIO().redirectErrorStream(true);
         pb.environment().put("LAUNCH_ISPN_IN_BACKGROUND", "false");
         pb.environment().put("ISPN_PIDFILE", pidFile.getAbsolutePath());
+        if (configuration.getJavaVmArguments() != null) {
+            pb.environment().put("JAVA_OPTS", configuration.getJavaVmArguments());
+        }
+
         String javaHome = configuration.getJavaHome();
         if (javaHome != null && !javaHome.isEmpty()) {
             pb.environment().put("JAVA_HOME", javaHome);
         }
         try {
             log.info("Starting Infinispan server");
-            log.info(configuration.getInfinispanHome());
-            log.info(commands);
+            log.infof("  Home directory: %s", configuration.getInfinispanHome());
+            log.infof("  Commands: %s", commands);
+            log.infof("  Environment: %s", pb.environment());
             infinispanServerProcess = pb.start();
 
             trustAllCertificates();

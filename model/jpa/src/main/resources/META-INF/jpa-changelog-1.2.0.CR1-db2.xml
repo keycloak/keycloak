@@ -18,6 +18,7 @@
 
 <databaseChangeLog logicalFilePath="META-INF/db2-jpa-changelog-1.2.0.CR1.xml" xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
     <changeSet author="bburke@redhat.com" id="1.2.0.RC1">
+        <validCheckSum>7:a77ea2ad226b345e7d689d366f185c8c</validCheckSum>
         <preConditions onSqlOutput="TEST" onFail="MARK_RAN">
             <dbms type="db2" />
         </preConditions>

@@ -26,9 +26,13 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
+ * Manage the credentials for a user.
+ *
+ * @deprecated Instead of this class, use {@link UserModel#credentialManager()} instead.
  * @author <a href="mailto:bill@burkecentral.com">Bill Burke</a>
  * @version $Revision: 1 $
  */
+@Deprecated
 public interface UserCredentialManager extends UserCredentialStore {
 
     /**
@@ -97,14 +101,13 @@ public interface UserCredentialManager extends UserCredentialStore {
      * @param realm
      * @param user
      * @return
-     * @deprecated Use {@link #getDisableableCredentialTypesStream(RealmModel, UserModel) getDisableableCredentialTypesStream}
-     * instead.
+     * @deprecated Use {@link UserModel#credentialManager()} and {@link SubjectCredentialManager#getDisableableCredentialTypesStream()} instead.
      */
     @Deprecated
     Set<String> getDisableableCredentialTypes(RealmModel realm, UserModel user);
 
     /**
-     * Obtains the credential types that can be disabled by means of the {@link #disableCredentialType(RealmModel, UserModel, String)}
+     * Obtains the credential types that can be disabled.
      * method.
      *
      * @param realm a reference to the realm.
@@ -112,8 +115,7 @@ public interface UserCredentialManager extends UserCredentialStore {
      * @return a non-null {@link Stream} of credential types.
      */
     default Stream<String> getDisableableCredentialTypesStream(RealmModel realm, UserModel user) {
-        Set<String> result = this.getDisableableCredentialTypes(realm, user);
-        return result != null ? result.stream() : Stream.empty();
+        return user.credentialManager().getDisableableCredentialTypesStream();
     }
 
     /**
@@ -156,8 +158,7 @@ public interface UserCredentialManager extends UserCredentialStore {
      * Return credential types, which are provided by the user storage where user is stored. Returned values can contain for example "password", "otp" etc.
      * This will always return empty list for "local" users, which are not backed by any user storage
      *
-     * @return
-     * @deprecated Use {@link #getConfiguredUserStorageCredentialTypesStream(RealmModel, UserModel) getConfiguredUserStorageCredentialTypesStream}
+     * @deprecated Use {@link UserModel#credentialManager()} and then call {@link SubjectCredentialManager#getConfiguredUserStorageCredentialTypesStream()}
      * instead.
      */
     @Deprecated
@@ -174,8 +175,7 @@ public interface UserCredentialManager extends UserCredentialStore {
      * @return a non-null {@link Stream} of credential types.
      */
     default Stream<String> getConfiguredUserStorageCredentialTypesStream(RealmModel realm, UserModel user) {
-        List<String> result = this.getConfiguredUserStorageCredentialTypes(realm, user);
-        return result != null ? result.stream() : Stream.empty();
+        return user.credentialManager().getConfiguredUserStorageCredentialTypesStream();
     }
 
     /**
@@ -188,7 +188,7 @@ public interface UserCredentialManager extends UserCredentialStore {
     interface Streams extends UserCredentialManager, UserCredentialStore.Streams {
         @Override
         default Set<String> getDisableableCredentialTypes(RealmModel realm, UserModel user) {
-            return this.getDisableableCredentialTypesStream(realm, user).collect(Collectors.toSet());
+            return user.credentialManager().getDisableableCredentialTypesStream().collect(Collectors.toSet());
         }
 
         @Override
@@ -196,7 +196,7 @@ public interface UserCredentialManager extends UserCredentialStore {
 
         @Override
         default List<String> getConfiguredUserStorageCredentialTypes(RealmModel realm, UserModel user) {
-            return this.getConfiguredUserStorageCredentialTypesStream(realm, user).collect(Collectors.toList());
+            return user.credentialManager().getConfiguredUserStorageCredentialTypesStream().collect(Collectors.toList());
         }
 
         @Override

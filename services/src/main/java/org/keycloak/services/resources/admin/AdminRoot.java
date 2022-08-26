@@ -179,13 +179,7 @@ public class AdminRoot {
             throw new NotAuthorizedException("Bearer");
         }
 
-        ClientModel client = realm.getClientByClientId(token.getIssuedFor());
-        if (client == null) {
-            throw new NotFoundException("Could not find client for authorization");
-
-        }
-
-        return new AdminAuth(realm, authResult.getToken(), authResult.getUser(), client);
+        return new AdminAuth(realm, authResult.getToken(), authResult.getUser(), authResult.getClient());
     }
 
     public static UriBuilder realmsUrl(UriInfo uriInfo) {

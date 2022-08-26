@@ -174,7 +174,7 @@
                 <input type="hidden" ui-select2="isRequiredScopes" id="isRequiredScopes" data-ng-model="requiredScopes" data-placeholder="Select a scope..." multiple/>
             </div>
         </div>
-        <fieldset class="border-top" data-ng-show="isNotUsernameOrEmail(currentAttribute.name)">
+        <fieldset class="border-top">
             <legend collapsed><span class="text">{{:: 'user.profile.attribute.permission' | translate}}</span></legend>
             <div class="form-group">
                 <label class="col-md-2 control-label" for="canUserView">{{:: 'user.profile.attribute.canUserView' | translate}}</label>
@@ -273,7 +273,7 @@
                     <td>{{key}}</td>
                     <td><input ng-model="currentAttribute.annotations[key]" class="form-control" type="text" name="{{key}}"
                                id="attribute-{{key}}"/></td>
-                    <td class="kc-action-cell" data-ng-click="removeAnnotation(key)">{{:: 'delete' | translate}}</td>
+                    <td class="kc-action-cell" data-ng-click="removeAttributeAnnotation(key)">{{:: 'delete' | translate}}</td>
                 </tr>
                 <tr>
                     <td><input ng-model="newAnnotation.key" class="form-control" type="text" id="newAnnotationKey"/></td>

@@ -18,6 +18,7 @@
 
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.2.xsd">
     <changeSet author="mhajas@redhat.com" id="authz-4.2.0.Final">
+        <validCheckSum>7:2aa42a964c59cd5b8ca9822340ba33a8</validCheckSum>
         <createTable tableName="RESOURCE_URIS">
             <column name="RESOURCE_ID" type="VARCHAR(36)">
                 <constraints nullable="false"/>
@@ -35,6 +36,7 @@
     </changeSet>
     
     <changeSet author="hmlnarik@redhat.com" id="authz-4.2.0.Final-KEYCLOAK-9944">
+        <validCheckSum>7:9ac9e58545479929ba23f4a3087a0346</validCheckSum>
         <addPrimaryKey constraintName="CONSTRAINT_RESOUR_URIS_PK" tableName="RESOURCE_URIS" columnNames="RESOURCE_ID,VALUE"/>
     </changeSet>
 </databaseChangeLog>

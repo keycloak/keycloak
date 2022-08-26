@@ -82,7 +82,7 @@ first need to download the JDBC driver and install it to your local maven repo
     mvn install:install-file -DgroupId=com.oracle -DartifactId=ojdbc7 -Dversion=12.1.0 -Dpackaging=jar -Dfile=ojdbc7.jar -DgeneratePom=true
 
 Then build the Docker image per instructions at
-https://github.com/oracle/docker-images/tree/master/OracleDatabase. The last
+https://github.com/oracle/docker-images/tree/main/OracleDatabase. The last
 step is running which might require updating the `jdbc.mvn.groupId`,
 `jdbc.mvn.artifactId`, and `jdbc.mvn.version` according to the parameters you
 used in the command above, and `docker.database.image` if you used a different

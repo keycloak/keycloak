@@ -130,6 +130,57 @@ public class LDAPUtil {
     }
 
     /**
+     * <p>Encode a string representing the display value of the <code>objectGUID</code> attribute retrieved from Active
+     * Directory.</p>
+     *
+     * @param displayString A string representing the decoded value in the form of [3][2][1][0]-[5][4]-[7][6]-[8][9]-[10][11][12][13][14][15].
+     *
+     * @return A raw byte array representing the value of the <code>objectGUID</code> attribute retrieved from
+     * Active Directory.
+     */
+    public static byte[] encodeObjectGUID(String displayString) {
+        byte [] objectGUID = new byte[16];
+        // [3][2][1][0]
+        objectGUID[0] = (byte) ((Character.digit(displayString.charAt(6), 16) << 4)
+                + Character.digit(displayString.charAt(7), 16));
+        objectGUID[1] = (byte) ((Character.digit(displayString.charAt(4), 16) << 4)
+                + Character.digit(displayString.charAt(5), 16));
+        objectGUID[2] = (byte) ((Character.digit(displayString.charAt(2), 16) << 4)
+                + Character.digit(displayString.charAt(3), 16));
+        objectGUID[3] = (byte) ((Character.digit(displayString.charAt(0), 16) << 4)
+                + Character.digit(displayString.charAt(1), 16));
+        // [5][4]
+        objectGUID[4] = (byte) ((Character.digit(displayString.charAt(11), 16) << 4)
+                + Character.digit(displayString.charAt(12), 16));
+        objectGUID[5] = (byte) ((Character.digit(displayString.charAt(9), 16) << 4)
+                + Character.digit(displayString.charAt(10), 16));
+        // [7][6]
+        objectGUID[6] = (byte) ((Character.digit(displayString.charAt(16), 16) << 4)
+                + Character.digit(displayString.charAt(17), 16));
+        objectGUID[7] = (byte) ((Character.digit(displayString.charAt(14), 16) << 4)
+                + Character.digit(displayString.charAt(15), 16));
+        // [8][9]
+        objectGUID[8] = (byte) ((Character.digit(displayString.charAt(19), 16) << 4)
+                + Character.digit(displayString.charAt(20), 16));
+        objectGUID[9] = (byte) ((Character.digit(displayString.charAt(21), 16) << 4)
+                + Character.digit(displayString.charAt(22), 16));
+        // [10][11][12][13][14][15]
+        objectGUID[10] = (byte) ((Character.digit(displayString.charAt(24), 16) << 4)
+                + Character.digit(displayString.charAt(25), 16));
+        objectGUID[11] = (byte) ((Character.digit(displayString.charAt(26), 16) << 4)
+                + Character.digit(displayString.charAt(27), 16));
+        objectGUID[12] = (byte) ((Character.digit(displayString.charAt(28), 16) << 4)
+                + Character.digit(displayString.charAt(29), 16));
+        objectGUID[13] = (byte) ((Character.digit(displayString.charAt(30), 16) << 4)
+                + Character.digit(displayString.charAt(31), 16));
+        objectGUID[14] = (byte) ((Character.digit(displayString.charAt(32), 16) << 4)
+                + Character.digit(displayString.charAt(33), 16));
+        objectGUID[15] = (byte) ((Character.digit(displayString.charAt(34), 16) << 4)
+                + Character.digit(displayString.charAt(35), 16));
+        return objectGUID;
+    }
+
+    /**
      * <p>Decode a raw byte array representing the value of the <code>objectGUID</code> attribute retrieved from Active
      * Directory.</p>
      *

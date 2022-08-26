@@ -87,6 +87,11 @@ public abstract class AbstractX509ClientCertificateAuthenticatorFactory implemen
             USERNAME_EMAIL_MAPPER
     };
 
+    private static final String[] CERTIFICATE_POLICY_MODES = {
+            CERTIFICATE_POLICY_MODE_ALL,
+            CERTIFICATE_POLICY_MODE_ANY
+    };
+
     protected static final List<ProviderConfigProperty> configProperties;
     static {
         List<String> mappingSourceTypes = new LinkedList<>();
@@ -177,6 +182,13 @@ public abstract class AbstractX509ClientCertificateAuthenticatorFactory implemen
         oCspCheckingEnabled.setHelpText("Enable Certificate Revocation Checking using OCSP");
         oCspCheckingEnabled.setLabel("OCSP Checking Enabled");
 
+        ProviderConfigProperty ocspFailOpen = new ProviderConfigProperty();
+        ocspFailOpen.setType(BOOLEAN_TYPE);
+        ocspFailOpen.setName(OCSP_FAIL_OPEN);
+        ocspFailOpen.setDefaultValue(Boolean.toString(false));
+        ocspFailOpen.setHelpText("Whether to allow or deny authentication for client certificates that have missing/invalid/inconclusive OCSP endpoints. By default a successful OCSP response is required.");
+        ocspFailOpen.setLabel("OCSP Fail-Open Behavior");
+
         ProviderConfigProperty ocspResponderUri = new ProviderConfigProperty();
         ocspResponderUri.setType(STRING_TYPE);
         ocspResponderUri.setName(OCSPRESPONDER_URI);
@@ -201,11 +213,33 @@ public abstract class AbstractX509ClientCertificateAuthenticatorFactory implemen
         extendedKeyUsage.setLabel("Validate Extended Key Usage");
         extendedKeyUsage.setHelpText("Validates the extended purposes of the certificate's key using certificate's Extended Key Usage extension. Leaving the field blank will disable Extended Key Usage validation. See RFC 5280 for a detailed definition of X509 Extended Key Usage extension.");
 
+        ProviderConfigProperty certificatePolicy = new ProviderConfigProperty();
+        certificatePolicy.setType(STRING_TYPE);
+        certificatePolicy.setName(CERTIFICATE_POLICY);
+        certificatePolicy.setLabel("Validate Certificate Policy");
+        certificatePolicy.setHelpText("Validates the certificate policies of the certificate's key using certificate's Policy extension. Leaving the field blank will disable Certificate Policies validation. Multiple policies should be separated using a comma. See RFC 5280 for a detailed definition of X509 Certificate Policy extension.");
+
+        List<String> certificatePolicyModesOptions = new LinkedList<>();
+        Collections.addAll(certificatePolicyModesOptions, CERTIFICATE_POLICY_MODES);
+        ProviderConfigProperty certificatePolicyMode = new ProviderConfigProperty();
+        certificatePolicyMode.setType(ProviderConfigProperty.LIST_TYPE);
+        certificatePolicyMode.setName(CERTIFICATE_POLICY_MODE);
+        certificatePolicyMode.setLabel("Certificate Policy Validation Mode");
+        certificatePolicyMode.setHelpText("If Certificate Policy validation is specified, indicates whether it should match all or at least one of the specified policies.");
+        certificatePolicyMode.setDefaultValue(CERTIFICATE_POLICY_MODES[0]);
+        certificatePolicyMode.setOptions(certificatePolicyModesOptions);
+
         ProviderConfigProperty identityConfirmationPageDisallowed = new ProviderConfigProperty();
         identityConfirmationPageDisallowed.setType(BOOLEAN_TYPE);
         identityConfirmationPageDisallowed.setName(CONFIRMATION_PAGE_DISALLOWED);
         identityConfirmationPageDisallowed.setLabel("Bypass identity confirmation");
         identityConfirmationPageDisallowed.setHelpText("By default, the users are prompted to confirm their identity extracted from X509 client certificate. The identity confirmation prompt is skipped if the option is switched on.");
+
+        ProviderConfigProperty revalidateCertificateEnabled = new ProviderConfigProperty();
+        revalidateCertificateEnabled.setType(BOOLEAN_TYPE);
+        revalidateCertificateEnabled.setName(REVALIDATE_CERTIFICATE);
+        revalidateCertificateEnabled.setLabel("Revalidate Client Certificate");
+        revalidateCertificateEnabled.setHelpText("Forces revalidation of the client certificate according to the certificates defined in the truststore. This is useful when behind a non-validating proxy or when the number of allowed certificate chains would be too large for mutual SSL negotiation.");
 
         configProperties = asList(mappingMethodList,
                 canonicalDn,
@@ -218,11 +252,15 @@ public abstract class AbstractX509ClientCertificateAuthenticatorFactory implemen
                 crlDPEnabled,
                 cRLRelativePath,
                 oCspCheckingEnabled,
+                ocspFailOpen,
                 ocspResponderUri,
                 ocspResponderCert,
                 keyUsage,
                 extendedKeyUsage,
-                identityConfirmationPageDisallowed);
+                identityConfirmationPageDisallowed,
+                revalidateCertificateEnabled,
+                certificatePolicy,
+                certificatePolicyMode);
     }
 
     @Override

@@ -19,6 +19,7 @@ package org.keycloak.testsuite.admin.realm;
 
 import org.apache.commons.io.IOUtils;
 import org.hamcrest.Matchers;
+import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -35,6 +36,7 @@ import org.keycloak.models.CibaConfig;
 import org.keycloak.models.Constants;
 import org.keycloak.models.OAuth2DeviceConfig;
 import org.keycloak.models.ParConfig;
+import org.keycloak.models.utils.KeycloakModelUtils;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.saml.SamlProtocol;
 import org.keycloak.representations.adapters.action.GlobalRequestResult;
@@ -289,6 +291,7 @@ public class RealmTest extends AbstractAdminTest {
     @Test
     public void createRealmWithPasswordPolicyFromJsonWithValidPasswords() {
         RealmRepresentation rep = loadJson(getClass().getResourceAsStream("/import/testrealm-keycloak-6146.json"), RealmRepresentation.class);
+        rep.setId(KeycloakModelUtils.generateId());
         try (Creator<RealmResource> c = Creator.create(adminClient, rep)) {
             RealmRepresentation created = c.resource().toRepresentation();
             assertRealm(rep, created);
@@ -683,6 +686,7 @@ public class RealmTest extends AbstractAdminTest {
 
     @Test
     public void clearRealmCache() {
+        Assume.assumeTrue("Realm cache disabled.", isRealmCacheEnabled());
         RealmRepresentation realmRep = realm.toRepresentation();
         assertTrue(testingClient.testing().cache("realms").contains(realmRep.getId()));
 
@@ -694,6 +698,7 @@ public class RealmTest extends AbstractAdminTest {
 
     @Test
     public void clearUserCache() {
+        Assume.assumeTrue("User cache disabled.", isUserCacheEnabled());
         UserRepresentation user = new UserRepresentation();
         user.setUsername("clearcacheuser");
         Response response = realm.users().create(user);

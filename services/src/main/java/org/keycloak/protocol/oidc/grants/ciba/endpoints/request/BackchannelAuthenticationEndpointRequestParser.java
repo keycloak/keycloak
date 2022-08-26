@@ -19,6 +19,7 @@
 package org.keycloak.protocol.oidc.grants.ciba.endpoints.request;
 
 import org.jboss.logging.Logger;
+import org.keycloak.OAuth2Constants;
 import org.keycloak.protocol.oidc.OIDCLoginProtocol;
 import org.keycloak.protocol.oidc.grants.ciba.CibaGrantType;
 
@@ -71,6 +72,11 @@ public abstract class BackchannelAuthenticationEndpointRequestParser {
         KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.MAX_AGE_PARAM);
         KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.UI_LOCALES_PARAM);
         KNOWN_REQ_PARAMS.add(OIDCLoginProtocol.CLAIMS_PARAM);
+
+        // these parameters are not included in Authentication Channel Request
+        // if these are included in Backchannel Authentication Request's body part for "client_secret_post" client authentication
+        KNOWN_REQ_PARAMS.add(OAuth2Constants.CLIENT_ID);
+        KNOWN_REQ_PARAMS.add(OAuth2Constants.CLIENT_SECRET);
     }
 
     public void parseRequest(BackchannelAuthenticationEndpointRequest request) {

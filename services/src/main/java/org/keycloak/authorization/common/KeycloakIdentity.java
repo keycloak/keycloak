@@ -46,6 +46,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import static org.keycloak.utils.LockObjectsForModification.lockUserSessionsForModification;
+
 /**
  * @author <a href="mailto:psilva@redhat.com">Pedro Igor</a>
  */
@@ -118,7 +120,7 @@ public class KeycloakIdentity implements Identity {
             this.accessToken = AccessToken.class.cast(token);
         } else {
             UserSessionProvider sessions = keycloakSession.sessions();
-            UserSessionModel userSession = sessions.getUserSession(realm, token.getSessionState());
+            UserSessionModel userSession = lockUserSessionsForModification(keycloakSession, () -> sessions.getUserSession(realm, token.getSessionState()));
 
             if (userSession == null) {
                 userSession = sessions.getOfflineUserSession(realm, token.getSessionState());
@@ -150,7 +152,7 @@ public class KeycloakIdentity implements Identity {
         ClientModel clientModel = getTargetClient();
         UserModel clientUser = null;
 
-        if (clientModel != null) {
+        if (clientModel != null && clientModel.isServiceAccountsEnabled()) {
             clientUser = this.keycloakSession.users().getServiceAccount(clientModel);
         }
 
@@ -195,6 +197,8 @@ public class KeycloakIdentity implements Identity {
                     while (valueIterator.hasNext()) {
                         values.add(valueIterator.next().asText());
                     }
+                } else if (fieldValue.isObject()) {
+                    values.add(fieldValue.toString());
                 } else {
                     String value = fieldValue.asText();
 
@@ -225,7 +229,7 @@ public class KeycloakIdentity implements Identity {
             ClientModel clientModel = getTargetClient();
             UserModel clientUser = null;
 
-            if (clientModel != null) {
+            if (clientModel != null && clientModel.isServiceAccountsEnabled()) {
                 clientUser = this.keycloakSession.users().getServiceAccount(clientModel);
             }
 
@@ -282,7 +286,7 @@ public class KeycloakIdentity implements Identity {
         }
 
         UserSessionProvider sessions = keycloakSession.sessions();
-        UserSessionModel userSession = sessions.getUserSession(realm, accessToken.getSessionState());
+        UserSessionModel userSession = lockUserSessionsForModification(keycloakSession, () -> sessions.getUserSession(realm, accessToken.getSessionState()));
 
         if (userSession == null) {
             userSession = sessions.getOfflineUserSession(realm, accessToken.getSessionState());

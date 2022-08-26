@@ -44,7 +44,7 @@ public abstract class AuthzEndpointRequestParser {
      * Max size of additional req param value copied into client session note to prevent DoS attacks - params with longer value are ignored
      *
      */
-    public static final int ADDITIONAL_REQ_PARAMS_MAX_SIZE = 200;
+    public static final int ADDITIONAL_REQ_PARAMS_MAX_SIZE = 2000;
 
     public static final String AUTHZ_REQUEST_OBJECT = "ParsedRequestObject";
     public static final String AUTHZ_REQUEST_OBJECT_ENCRYPTED = "EncryptedRequestObject";
