@@ -24,7 +24,9 @@ import org.keycloak.storage.user.UserLookupProvider;
 import org.keycloak.storage.user.UserQueryProvider;
 import org.keycloak.storage.user.UserRegistrationProvider;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -71,10 +73,13 @@ public interface UserProvider extends Provider,
     UserModel getServiceAccount(ClientModel client);
 
     /**
-     * @deprecated Use {@link #getUsersStream(RealmModel, boolean) getUsersStream} instead.
+     * @deprecated Use {@link UserQueryProvider#searchForUserStream(RealmModel, Map)} with
+     * {@link UserModel#INCLUDE_SERVICE_ACCOUNT} within params instead.
      */
     @Deprecated
-    List<UserModel> getUsers(RealmModel realm, boolean includeServiceAccounts);
+    default List<UserModel> getUsers(RealmModel realm, boolean includeServiceAccounts) {
+        return this.getUsersStream(realm, includeServiceAccounts).collect(Collectors.toList());
+    }
 
     /**
      * Obtains the users associated with the specified realm.
@@ -82,17 +87,25 @@ public interface UserProvider extends Provider,
      * @param realm a reference to the realm being used for the search.
      * @param includeServiceAccounts {@code true} if service accounts should be included in the result; {@code false} otherwise.
      * @return a non-null {@link Stream} of users associated withe the realm.
+     *
+     * @deprecated Use {@link UserQueryProvider#searchForUserStream(RealmModel, Map)} with
+     * {@link UserModel#INCLUDE_SERVICE_ACCOUNT} within params instead.
      */
+    @Deprecated
     default Stream<UserModel> getUsersStream(RealmModel realm, boolean includeServiceAccounts) {
-        List<UserModel> value = this.getUsers(realm, includeServiceAccounts);
-        return value != null ? value.stream() : Stream.empty();
+        Map<String, String> searchAttributes = new HashMap<>(1);
+        searchAttributes.put(UserModel.INCLUDE_SERVICE_ACCOUNT, Boolean.toString(includeServiceAccounts));
+        return this.searchForUserStream(realm, searchAttributes);
     }
 
     /**
-     * @deprecated Use {@link #getUsersStream(RealmModel, Integer, Integer, boolean) getUsersStream} instead.
+     * @deprecated Use {@link UserQueryProvider#searchForUserStream(RealmModel, Map, Integer, Integer)} with 
+     * {@link UserModel#INCLUDE_SERVICE_ACCOUNT} within params instead.
      */
     @Deprecated
-    List<UserModel> getUsers(RealmModel realm, int firstResult, int maxResults, boolean includeServiceAccounts);
+    default List<UserModel> getUsers(RealmModel realm, int firstResult, int maxResults, boolean includeServiceAccounts) {
+        return this.getUsersStream(realm, firstResult, maxResults, includeServiceAccounts).collect(Collectors.toList());
+    }
 
     /**
      * Obtains the users associated with the specified realm.
@@ -102,10 +115,15 @@ public interface UserProvider extends Provider,
      * @param maxResults maximum number of results to return. Ignored if negative or {@code null}.
      * @param includeServiceAccounts {@code true} if service accounts should be included in the result; {@code false} otherwise.
      * @return a non-null {@link Stream} of users associated withe the realm.
+     * 
+     * @deprecated Use {@link UserQueryProvider#searchForUserStream(RealmModel, Map, Integer, Integer)} 
+     * with {@link UserModel#INCLUDE_SERVICE_ACCOUNT} within params
      */
+    @Deprecated
     default Stream<UserModel> getUsersStream(RealmModel realm, Integer firstResult, Integer maxResults, boolean includeServiceAccounts) {
-        List<UserModel> value = this.getUsers(realm, firstResult == null ? -1 : firstResult, maxResults == null ? -1 : maxResults, includeServiceAccounts);
-        return value != null ? value.stream() : Stream.empty();
+        Map<String, String> searchAttributes = new HashMap<>(1);
+        searchAttributes.put(UserModel.INCLUDE_SERVICE_ACCOUNT, Boolean.toString(includeServiceAccounts));
+        return this.searchForUserStream(realm, searchAttributes, firstResult, maxResults);
     }
 
     /**
@@ -412,23 +430,5 @@ public interface UserProvider extends Provider,
 
         @Override
         Stream<UserConsentModel> getConsentsStream(RealmModel realm, String userId);
-
-        @Override
-        default List<UserModel> getUsers(RealmModel realm, boolean includeServiceAccounts) {
-            return this.getUsersStream(realm, includeServiceAccounts).collect(Collectors.toList());
-        }
-
-        @Override
-        default Stream<UserModel> getUsersStream(RealmModel realm, boolean includeServiceAccounts) {
-            return getUsersStream(realm, null, null, includeServiceAccounts);
-        }
-
-        @Override
-        default List<UserModel> getUsers(RealmModel realm, int firstResult, int maxResults, boolean includeServiceAccounts) {
-            return this.getUsersStream(realm, firstResult, maxResults, includeServiceAccounts).collect(Collectors.toList());
-        }
-
-        @Override
-        Stream<UserModel> getUsersStream(RealmModel realm, Integer firstResult, Integer maxResults, boolean includeServiceAccounts);
     }
 }

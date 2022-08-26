@@ -56,6 +56,7 @@ import org.keycloak.testsuite.pages.AppPage;
 import org.keycloak.testsuite.pages.LoginPage;
 import org.keycloak.testsuite.util.OAuthClient;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -345,7 +346,7 @@ public class UserStorageFailureTest extends AbstractTestRealmKeycloakTest {
             Assert.assertEquals(1, result.count());
 
             // we run a terminal operation on the stream to make sure it is consumed.
-            session.users().getUsersStream(realm).count();
+            session.users().searchForUserStream(realm, Collections.emptyMap()).count();
             session.users().getUsersCount(realm);
 
             UserModel user = session.users().getUserByUsername(realm, FailableHardcodedStorageProvider.username);

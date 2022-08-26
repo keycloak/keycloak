@@ -307,7 +307,8 @@ public class LDAPSyncTest extends AbstractLDAPTest {
             LDAPTestContext ctx = LDAPTestContext.init(session);
 
             // Remove all users from model
-            UserStoragePrivateUtil.userLocalStorage(session).getUsersStream(ctx.getRealm(), true)
+            UserStoragePrivateUtil.userLocalStorage(session)
+                    .searchForUserStream(ctx.getRealm(), Collections.emptyMap())
                     .collect(Collectors.toList())
                     .forEach(user -> UserStoragePrivateUtil.userLocalStorage(session).removeUser(ctx.getRealm(), user));
 
@@ -356,7 +357,8 @@ public class LDAPSyncTest extends AbstractLDAPTest {
             LDAPTestContext ctx = LDAPTestContext.init(session);
 
             // Remove all users from model
-            UserStoragePrivateUtil.userLocalStorage(session).getUsersStream(ctx.getRealm(), true)
+            UserStoragePrivateUtil.userLocalStorage(session)
+                    .searchForUserStream(ctx.getRealm(), Collections.emptyMap())
                     .peek(user -> System.out.println("trying to delete user: " + user.getUsername()))
                     .collect(Collectors.toList())
                     .forEach(user -> {

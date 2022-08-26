@@ -61,6 +61,8 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
@@ -191,7 +193,7 @@ public class IdentityProviderResource {
             // Admin changed the ID (alias) of identity provider. We must update all clients and users
             logger.debug("Changing providerId in all clients and linked users. oldProviderId=" + oldProviderId + ", newProviderId=" + newProviderId);
 
-            updateUsersAfterProviderAliasChange(session.users().getUsersStream(realm, false),
+            updateUsersAfterProviderAliasChange(session.users().searchForUserStream(realm, Collections.singletonMap(UserModel.INCLUDE_SERVICE_ACCOUNT, Boolean.FALSE.toString())),
                     oldProviderId, newProviderId, realm, session);
         }
     }
