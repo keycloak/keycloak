@@ -24,6 +24,7 @@ import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.LDAPConstants;
 import org.keycloak.models.LegacyRealmModel;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.models.cache.UserCache;
 import org.keycloak.models.utils.DefaultAuthenticationFlows;
 import org.keycloak.models.utils.DefaultRequiredActions;
@@ -33,7 +34,9 @@ import org.keycloak.storage.UserStoragePrivateUtil;
 import org.keycloak.storage.UserStorageUtil;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -81,7 +84,10 @@ public class MigrateTo1_4_0 implements Migration {
     }
 
     private void migrateUsers(KeycloakSession session, RealmModel realm) {
-        UserStoragePrivateUtil.userLocalStorage(session).getUsersStream(realm, false)
+        Map<String, String> searchAttributes = new HashMap<>(1);
+        searchAttributes.put(UserModel.INCLUDE_SERVICE_ACCOUNT, Boolean.FALSE.toString());
+
+        UserStoragePrivateUtil.userLocalStorage(session).searchForUserStream(realm, searchAttributes)
                 .forEach(user -> {
                     String email = KeycloakModelUtils.toLowerCaseSafe(user.getEmail());
                     if (email != null && !email.equals(user.getEmail())) {
