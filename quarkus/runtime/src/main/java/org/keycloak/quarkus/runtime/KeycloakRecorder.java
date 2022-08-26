@@ -140,19 +140,26 @@ public class KeycloakRecorder {
         };
     }
 
-    public QuarkusRequestFilter createRequestFilter(boolean healthOrMetricsEnabled) {
-        Predicate<RoutingContext> ignoreContext = null;
+    public QuarkusRequestFilter createRequestFilter(List<String> ignoredPaths) {
+        return new QuarkusRequestFilter(createIgnoredHttpPathsPredicate(ignoredPaths));
+    }
 
-        if (healthOrMetricsEnabled) {
-            // ignore metrics and health endpoints because they execute in their own worker thread
-            ignoreContext = new Predicate<>() {
-                @Override
-                public boolean test(RoutingContext context) {
-                    return context.request().uri().startsWith("/health") || context.request().uri().startsWith("/metrics");
-                }
-            };
+    private Predicate<RoutingContext> createIgnoredHttpPathsPredicate(List<String> ignoredPaths) {
+        if (ignoredPaths == null || ignoredPaths.isEmpty()) {
+            return null;
         }
 
-        return new QuarkusRequestFilter(ignoreContext);
+        return new Predicate<>() {
+            @Override
+            public boolean test(RoutingContext context) {
+                for (String ignoredPath : ignoredPaths) {
+                    if (context.request().uri().startsWith(ignoredPath)) {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+        };
     }
 }

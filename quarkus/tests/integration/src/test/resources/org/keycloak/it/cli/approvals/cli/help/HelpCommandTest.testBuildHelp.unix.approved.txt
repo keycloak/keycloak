@@ -60,7 +60,8 @@ Feature:
 HTTP/TLS:
 
 --http-relative-path <path>
-                     Set the path relative to '/' for serving resources. Default: /.
+                     Set the path relative to '/' for serving resources. The path must start with a
+                       '/'. Default: /.
 
 Health:
 
